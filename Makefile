@@ -3,83 +3,53 @@
 .PHONY: all
 all: help
 
-.PHONY: venv
-venv:
-	python3 -m venv .venv ## Provision a Python 3 virtualenv for **development**
-	.venv/bin/pip install --upgrade pip wheel
-	.venv/bin/pip install --require-hashes -r "requirements/dev-requirements.txt"
-
 .PHONY: bandit
 bandit: ## Run bandit with medium level excluding test-related folders
-	pip install --upgrade pip && \
-		pip install --upgrade bandit!=1.6.0 && \
-	bandit -ll --recursive securedrop_proxy
+	@echo "Running bandit security checks…"
+	@poetry run bandit -ll --recursive securedrop_proxy
 
 .PHONY: safety
 safety: ## Runs `safety check` to check python dependencies for vulnerabilities
-	pip install --upgrade safety && \
-		for req_file in `find . -type f -name '*requirements.txt'`; do \
-			echo "Checking file $$req_file" \
-			&& safety check --full-report -r $$req_file \
-			&& echo -e '\n' \
-			|| exit 1; \
-		done
+	@echo "Running safety against build requirements…"
+	@poetry run safety check --full-report -r build-requirements.txt
 
 .PHONY: lint
 lint: check-isort check-black mypy ## Run isort, black and flake8 and mypy
-	@flake8 securedrop_proxy tests
+	@poetry run flake8 securedrop_proxy tests
 
 .PHONY: mypy
 mypy: ## Run mypy static type checker
-	@mypy --ignore-missing-imports securedrop_proxy
+	@poetry run mypy --ignore-missing-imports securedrop_proxy
 
 .PHONY: black
 black: ## Run black for file formatting
-	@black securedrop_proxy tests
+	@echo "Running black (may result in changes in your working directory)…"
+	@poetry run black securedrop_proxy tests
 
 .PHONY: check-black
 check-black: ## Check Python source code formatting with black
-	@black --check --diff securedrop_proxy tests
+	@echo "Running black formatting check…"
+	@poetry run black --check --diff securedrop_proxy tests
 
 .PHONY: isort
 isort: ## Run isort for file formatting
-	@isort securedrop_proxy/*.py tests/*.py
+	@echo "Running isort (may result in changes in your working directory)…"
+	@poetry run isort securedrop_proxy/*.py tests/*.py
 
 .PHONY: check-isort
 check-isort: ## Check isort for file formatting
-	@isort --check-only --diff securedrop_proxy/*.py tests/*.py
-
-.PHONY: sync-requirements
-sync-requirements:  ## Update dev-requirements.txt to pin to the same versions of prod dependencies
-	rm -r requirements/dev-requirements.txt && cp requirements/requirements.txt requirements/dev-requirements.txt
-	pip-compile --allow-unsafe --generate-hashes --output-file requirements/dev-requirements.txt requirements/requirements.in requirements/dev-requirements.in
-
-.PHONY: requirements
-requirements:  ## Update *requirements.txt files if pinned versions do not comply with the dependency specifications in *requirements.in
-	pip-compile --generate-hashes --output-file requirements/requirements.txt requirements/requirements.in
-	$(MAKE) sync-requirements
-
-.PHONY: update-dependency
-update-dependency:  ## Add or upgrade a package to the latest version that complies with the dependency specifications in requirements.in
-	pip-compile --generate-hashes --upgrade-package $(PACKAGE) --output-file requirements/requirements.txt requirements/requirements.in
-	$(MAKE) sync-requirements
-
-.PHONY: update-dev-only-dependencies
-update-dev-only-dependencies:  ## Update dev-requirements.txt to pin to the latest versions of dev-only dependencies that comply with the dependency specifications in dev-requirements.in
-	$(MAKE) sync-requirements
-	@while read line; do \
-		pip-compile --allow-unsafe --generate-hashes --upgrade-package $file --output-file requirements/dev-requirements.txt requirements/requirements.in requirements/dev-requirements.in; \
-	done < 'requirements/dev-requirements.in'
+	@echo "Running isort module ordering check…"
+	@poetry run isort --check-only --diff securedrop_proxy/*.py tests/*.py
 
 .PHONY: test
 test: clean .coverage ## Runs tests with coverage
 
 .coverage:
-	@coverage run --source securedrop_proxy -m unittest
+	@poetry run coverage run --source securedrop_proxy -m unittest
 
 .PHONY: browse-coverage
 browse-coverage: .coverage ## Generates and opens HTML coverage report
-	@coverage html
+	@poetry run coverage html
 	@xdg-open htmlcov/index.html 2>/dev/null || open htmlcov/index.html 2>/dev/null
 
 .PHONY: check

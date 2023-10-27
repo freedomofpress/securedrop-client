@@ -1,26 +1,41 @@
 ---
 common-steps:
+  - &install_poetry
+    run:
+      name: Install Poetry
+      command: |
+        set -e
+        source /etc/os-release
+        if [[ "$VERSION_CODENAME" == "bullseye" ]]; then
+            # Install Poetry via PyPI
+            apt-get update && apt-get install --yes --no-install-recommends python3-pip
+            pip install poetry==1.6.1
+        elif [[ "$VERSION_CODENAME" == "bookworm" ]]; then
+            # Install Poetry via system package
+            apt-get update && apt-get install --yes --no-install-recommends python3-poetry
+        else
+            echo "Unsupported Debian version: $VERSION_CODENAME"
+            exit 1
+        fi
+
   - &install_testing_dependencies
     run:
       name: Install testing dependencies
       command: |
-        set -e
-        apt update && apt install -y git gnupg make python3-dev python3-venv
+        apt-get install --yes --no-install-recommends git gnupg make
+        poetry install --no-ansi
 
   - &install_build_dependencies
     run:
       name: Install build dependencies
       command: |
         set -e
-        apt update && apt install -y git make sudo
+        apt-get update && apt-get install --yes git make sudo
 
   - &run_unit_tests
     run:
       name: Install requirements and run unit tests
       command: |
-        set -e
-        make venv
-        source .venv/bin/activate
         export PYTHONPATH=$PYTHONPATH:.  # so alembic can get to Base metadata
         make test
 
@@ -28,9 +43,6 @@ common-steps:
     run:
       name: Run lint, type checking, code formatting
       command: |
-        set -e
-        make venv
-        source .venv/bin/activate
         make lint
 
   - &check_security
@@ -38,8 +50,7 @@ common-steps:
       name: Run static analysis on source code to find security issues
       command: |
         set -e
-        make venv
-        source .venv/bin/activate
+        poetry update bandit
         make bandit
 
   - &check_python_dependencies_for_vulnerabilities
@@ -47,8 +58,7 @@ common-steps:
       name: Check Python dependencies for known vulnerabilities
       command: |
         set -e
-        make venv
-        source .venv/bin/activate
+        poetry update safety
         make safety
 
   - &install_packaging_dependencies
@@ -59,10 +69,11 @@ common-steps:
         mkdir ~/packaging && cd ~/packaging
         # local builds may not have an ssh url, so || true
         git config --global --unset url.ssh://git@github.com.insteadof || true
-        git clone https://github.com/freedomofpress/securedrop-debian-packaging.git
-        cd securedrop-debian-packaging
+        git clone https://github.com/freedomofpress/securedrop-builder.git
+        cd securedrop-builder
         apt-get update && apt-get install -y sudo make
         make install-deps
+        source .venv/bin/activate
         PKG_DIR=~/project make requirements
 
   - &verify_requirements
@@ -78,9 +89,10 @@ common-steps:
     run:
       name: Build debian package
       command: |
-        cd ~/packaging/securedrop-debian-packaging
+        cd ~/packaging/securedrop-builder
         export PKG_VERSION=1000.0
         export PKG_PATH=~/project/
+        source .venv/bin/activate
         make securedrop-proxy
 
 version: 2.1
@@ -93,8 +105,8 @@ jobs:
     docker: &docker
       - image: debian:<< parameters.image >>
     steps:
-      - *install_build_dependencies
       - checkout
+      - *install_build_dependencies
       - *install_packaging_dependencies
       - *verify_requirements
       - *build_debian_package
@@ -103,8 +115,9 @@ jobs:
     parameters: *parameters
     docker: *docker
     steps:
-      - *install_testing_dependencies
       - checkout
+      - *install_poetry
+      - *install_testing_dependencies
       - *run_unit_tests
       - store_test_results:
           path: test-results
@@ -113,24 +126,27 @@ jobs:
     parameters: *parameters
     docker: *docker
     steps:
-      - *install_testing_dependencies
       - checkout
+      - *install_poetry
+      - *install_testing_dependencies
       - *run_lint
 
   check-security:
     parameters: *parameters
     docker: *docker
     steps:
-      - *install_testing_dependencies
       - checkout
+      - *install_poetry
+      - *install_testing_dependencies
       - *check_security
 
   check-python-security:
     parameters: *parameters
     docker: *docker
     steps:
-      - *install_testing_dependencies
       - checkout
+      - *install_poetry
+      - *install_testing_dependencies
       - *check_python_dependencies_for_vulnerabilities
 
 

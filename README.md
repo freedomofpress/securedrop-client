@@ -29,27 +29,40 @@ https://github.com/freedomofpress/securedrop-workstation/issues/107.
 
 #### Quick Start
 
-To try the proxy script, create a virtual environment and install the
-requirements. In the root of the project directory, run
+1. [Install Poetry](https://python-poetry.org/docs/#installing-with-the-official-installer)
+2. Run `make test` to verify the installation
 
-```
-make venv
-source .venv/bin/activate
-make test
-```
+#### Managing Dependencies
 
-#### Update Dependencies
+We use Poetry to manage dependencies for this project.
 
-If you're adding or updating a dependency, you need to:
+### Development dependencies
 
-1. Modify either `dev-requirements.in` and `requirements.in` (depending on whether it is prod or dev only) and then run `make update-pip-dependencies`. This will generate `dev-requirements.txt` and `requirements.txt`.
+You can add development dependencies via  `poetry add <name> --group dev`.
+Make sure you commit changes to the lockfile along with changes to `pyproject.toml`.
 
-2. For building a debian package from this project, we use the requirements in
-`build-requirements.txt` which uses our pip mirror, i.e. the hashes in that file point to
-wheels on our pip mirror. A maintainer will need to add
-the updated dependency to our pip mirror (you can request this in the PR).
+To update the dependency to the latest version within the specified
+version constraints, simply run `poetry update <name>` and commit the resutling
+changes.
 
-3. Once the pip mirror is updated, you should checkout the [securedrop-debian-packaging repo](https://github.com/freedomofpress/securedrop-debian-packaging) and run `make requirements`. Commit the `build-requirements.txt` that results and add it to your PR.
+To update to a new major version (e.g., from 1.0.0 to 2.0.0), you will typically have to
+update `pyproject.toml`.
+
+### Production dependencies
+
+To add a production dependency, use `poetry add <name>`, and to update it,
+use `poetry update <name>`.
+
+For our production Debian packages, we use locally built wheels instead of
+downloading wheels from PyPI.
+
+This means that whenever you add or update a production dependency, you also
+have to build and commit a new wheel according to the process described in the
+[securedrop-builder](https://github.com/freedomofpress/securedrop-builder)
+repository.
+
+This will result in an updated `build-requirements.txt` file you can add to your
+PR in this repository.
 
 ## Making a Release
 
