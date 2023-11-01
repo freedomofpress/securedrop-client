@@ -25,10 +25,11 @@ def test_export_file_dialog(functional_test_logged_in_context, qtbot, mocker, mo
     Download a file, export it, and verify that the export is complete by checking that the label of
     the export dialog's continue button is "DONE".
     """
+
     mocker.patch(
-        "securedrop_client.gui.conversation.export.device.export.getService",
-        return_value=mock_export_service,
+        "securedrop_client.gui.widgets.export.getService", return_value=mock_export_service
     )
+
     gui, controller = functional_test_logged_in_context
 
     def check_for_sources():
