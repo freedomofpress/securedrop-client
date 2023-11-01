@@ -190,7 +190,9 @@ def test_ExportDialog__on_export_preflight_check_succeeded(mocker, export_file_d
     )
 
 
-def test_ExportDialog__on_export_preflight_check_succeeded_device_unlocked(mocker, export_file_dialog):
+def test_ExportDialog__on_export_preflight_check_succeeded_device_unlocked(
+    mocker, export_file_dialog
+):
     export_file_dialog._export_file = mocker.MagicMock()
     export_file_dialog.continue_button = mocker.MagicMock()
     export_file_dialog.continue_button.clicked = mocker.MagicMock()
