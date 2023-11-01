@@ -25,6 +25,7 @@ from securedrop_client.db import (
 from securedrop_client.gui import conversation
 from securedrop_client.gui.main import Window
 from securedrop_client.logic import Controller
+from securedrop_client.export import ExportStatus
 
 with open(os.path.join(os.path.dirname(__file__), "files", "test-key.gpg.pub.asc")) as f:
     PUB_KEY = f.read()
@@ -172,11 +173,10 @@ def mock_export_service():
     """An export service that assumes the Qubes RPC calls are successful and skips them."""
     export_service = export.Service()
     # Ensure the export_service doesn't rely on Qubes OS:
-    export_service._run_disk_test = lambda dir: None
-    export_service._run_usb_test = lambda dir: None
-    export_service._run_disk_export = lambda dir, paths, passphrase: None
-    export_service._run_printer_preflight = lambda dir: None
-    export_service._run_print = lambda dir, paths: None
+    export_service.run_preflight_checks = lambda: ExportStatus.DEVICE_LOCKED
+    export_service.send_file_to_usb_device = lambda paths, passphrase: ExportStatus.SUCCESS_EXPORT
+    export_service.run_printer_preflight = lambda: ExportStatus.PRINT_PREFLIGHT_SUCCESS
+    export_service.run_print = lambda dir, paths: ExportStatus.PRINT_SUCCESS
     return export_service
 
 
