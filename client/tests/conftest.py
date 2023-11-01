@@ -176,7 +176,7 @@ def mock_export_service():
     export_service.run_preflight_checks = lambda: ExportStatus.DEVICE_LOCKED
     export_service.send_file_to_usb_device = lambda paths, passphrase: ExportStatus.SUCCESS_EXPORT
     export_service.run_printer_preflight = lambda: ExportStatus.PRINT_PREFLIGHT_SUCCESS
-    export_service.run_print = lambda dir, paths: ExportStatus.PRINT_SUCCESS
+    export_service.run_print = lambda paths: ExportStatus.PRINT_SUCCESS
     return export_service
 
 
