@@ -226,7 +226,6 @@ class FileDialog(ModalDialog):
         self.header.setText(self.ready_header)
         if not self.continue_button.isEnabled():
             self.continue_button.clicked.disconnect()
-            # What we do depends on what the result of the last dialog was
             if result == ExportStatus.DEVICE_WRITABLE:
                 # Skip password prompt, we're there
                 self.continue_button.clicked.connect(self._export_file)
