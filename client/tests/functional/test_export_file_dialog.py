@@ -8,6 +8,7 @@ import pytest
 from flaky import flaky
 from PyQt5.QtCore import Qt
 
+from securedrop_client.export import ExportStatus
 from securedrop_client.gui.widgets import FileWidget, SourceConversationWrapper
 from tests.conftest import (
     TIME_CLICK_ACTION,
@@ -25,6 +26,10 @@ def test_export_file_dialog(functional_test_logged_in_context, qtbot, mocker, mo
     Download a file, export it, and verify that the export is complete by checking that the label of
     the export dialog's continue button is "DONE".
     """
+
+    # Simulate different export service calls, in this case, a lock device, then a writable device
+    usb_results = [ExportStatus.DEVICE_LOCKED, ExportStatus.DEVICE_WRITABLE]
+    mock_export_service.run_preflight_checks.side_effect = usb_results
 
     mocker.patch(
         "securedrop_client.gui.widgets.export.getService", return_value=mock_export_service
