@@ -1,8 +1,7 @@
 include LICENSE
 include README.md
 include changelog.md
-include requirements/build-requirements.txt
-include requirements/requirements.txt
+include build-requirements.txt
 include securedrop-log*
 include securedrop-redis-log
 include securedrop.Log
