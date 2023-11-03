@@ -7,7 +7,7 @@ class Status(BaseStatus):
         "INVALID_DEVICE_DETECTED"  # Multi partitioned, not encrypted, etc
     )
     MULTI_DEVICE_DETECTED = "MULTI_DEVICE_DETECTED"  # Not currently supported
-    UKNOWN_DEVICE_DETECTED = (
+    UNKNOWN_DEVICE_DETECTED = (
         "UNKNOWN_DEVICE_DETECTED"  # Badly-formatted USB or VeraCrypt/TC
     )
 

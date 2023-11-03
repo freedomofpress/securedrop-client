@@ -86,12 +86,12 @@ class CLI:
         logger.info(f"{len(usb_devices)} connected")
         return usb_devices
 
-    def get_all_volumes(self) -> [Volume]:
+    def get_all_volumes(self) -> List[Volume]:
         """
         Returns a list of all currently-attached removable Volumes that are
         export device candidates, attempting to get as far towards export process
         as possible (i.e. probing if device is already unlocked and/or mounted,
-        and mounting it if appropriate.)
+        and mounting it if unlocked but unmounted.)
 
         Caller must handle ExportException.
         """
@@ -117,7 +117,9 @@ class CLI:
                             Volume(
                                 device_name=blkid,
                                 encryption=EncryptionScheme.UNKNOWN,
-                                mapped_name=None,
+                                # This will be the name we use if
+                                # trying to unlock the drive.
+                                mapped_name=self._DEFAULT_VC_CONTAINER_NAME,
                             )
                         )
 
@@ -255,7 +257,7 @@ class CLI:
             # use the existing mountpoint, or mount it ourselves.
             # Either way, return a MountedVolume.
             if os.path.exists(os.path.join("/dev/mapper/", mapped_name)):
-                return self._mount_volume(luks_volume)
+                return self.mount_volume(luks_volume)
 
             # It's still locked
             else:
@@ -294,11 +296,8 @@ class CLI:
             rc = p.returncode
 
             if rc == 0:
-                return Volume(
-                    device_name=volume.device_name,
-                    mapped_name=volume.mapped_name,
-                    encryption=EncryptionScheme.LUKS,
-                )
+                logger.debug("Successfully unlocked.")
+                return volume
             else:
                 logger.error("Bad volume passphrase")
                 raise ExportException(sdstatus=Status.ERROR_UNLOCK_LUKS)
@@ -306,20 +305,18 @@ class CLI:
         except subprocess.CalledProcessError as ex:
             raise ExportException(sdstatus=Status.DEVICE_ERROR) from ex
 
-    def _get_dev_mapper_entries(self) -> [str]:
+    def _get_dev_mapper_entries(self) -> List[str]:
         """
         Helper function to return a list of entries in /dev/mapper/
         (excluding `system` and `dmroot`).
         """
         try:
-            ls = subprocess.check_output(
-                ["ls", "/dev/mapper/"], stdout=subprocess.PIPE, stderr=subprocess.PIPE
-            )
-            results = ls.decode().rstrip().split("\n")
+            ls = subprocess.check_output(["ls", "/dev/mapper/"], stderr=subprocess.PIPE)
+            entries = ls.decode().rstrip().split("\n")
 
-            return [r for r in results if r not in self._DEVMAPPER_SYSTEM]
+            return [r for r in entries if r not in _DEVMAPPER_SYSTEM]
 
-        except subprocess.CalledProcessError as ex:
+        except (subprocess.CalledProcessError, ValueError) as ex:
             logger.error(f"Error checking entries in /dev/mapper: {ex}")
             raise ExportException(sdstatus=Status.DEVICE_ERROR) from ex
 
@@ -327,7 +324,7 @@ class CLI:
         """
         Looks for an already-unlocked VeraCrypt volume in /dev/mapper and see if the
         device ID matches given device name.
-        Raises ExportException on error.
+        Returns MountedVolume object if a drive is found. Otherwise, raises ExportException.
         """
         try:
             for entry in self._get_dev_mapper_entries():
@@ -357,6 +354,14 @@ class CLI:
                     else:
                         return self._mount_at_mountpoint(vol, self._DEFAULT_MOUNTPOINT)
 
+                # If we got here, there is no unlocked VC drive present. Not an error, but not
+                # a state we can continue the workflow in, so raise ExportException.
+                logger.info("No unlocked Veracrypt drive found.")
+                raise ExportException(sdstatus=Status.UNKNOWN_DEVICE_DETECTED)
+
+            # If we got here, there were no entries in `/dev/mapper/` for us to look at.
+            raise ExportException(sdstatus=Status.DEVICE_ERROR)
+
         except subprocess.CalledProcessError as e:
             logger.error(e)
             raise ExportException(sdstatus=Status.DEVICE_ERROR)
@@ -368,7 +373,7 @@ class CLI:
         Attempt to unlock and mount a presumed-Veracrypt drive at the default mountpoint.
         """
         try:
-            with subprocess.Popen(
+            p = subprocess.Popen(
                 [
                     "sudo",
                     "cryptsetup",
@@ -381,31 +386,26 @@ class CLI:
                 ],
                 stdout=subprocess.PIPE,
                 stderr=subprocess.PIPE,
-            ) as p:
-                p.communicate(input=str.encode(encryption_key, "utf-8"))
-                rc = p.returncode
+            )
+            p.communicate(input=str.encode(encryption_key, "utf-8"))
+            rc = p.returncode
 
-                if rc == 0:
-                    volume.encryption = EncryptionScheme.VERACRYPT
+            if rc == 0:
+                volume.encryption = EncryptionScheme.VERACRYPT
 
-                    # Mapped name is /dev/mapper/${self._DEFAULT_VC_CONTAINER_NAME}, since
-                    # the /dev/mapper entry isn't derived from the header like a LUKS drive
-                    volume.mapped_name = self._DEFAULT_VC_CONTAINER_NAME
+                # Mapped name is /dev/mapper/${self._DEFAULT_VC_CONTAINER_NAME}, since
+                # the /dev/mapper entry isn't derived from the header like a LUKS drive
+                volume.mapped_name = self._DEFAULT_VC_CONTAINER_NAME
+                return self.mount_volume(volume)
 
-                    return self._mount_volume(volume)
-
-                else:
-                    # Something was wrong and we could not unlock.
-                    logger.error(
-                        "Unlocking failed. Bad passphrase, or unsuitable volume."
-                    )
-                    raise ExportException(sdstatus=Status.ERROR_UNLOCK_GENERIC)
+            else:
+                # Something was wrong and we could not unlock.
+                logger.error("Unlocking failed. Bad passphrase, or unsuitable volume.")
+                raise ExportException(sdstatus=Status.ERROR_UNLOCK_GENERIC)
 
         except subprocess.CalledProcessError as error:
-            # What kind of error message do we have? We may be able to get a little
-            # more granular about what the problem is. But basically, unlocking didn't work.
-            logger.error("Unlocking failed. Bad passphrase, or unsuitable volume.")
-            logger.error(error)
+            logger.error("Error during unlock/mount attempt.")
+            logger.debug(error)
             raise ExportException(sdstatus=Status.ERROR_UNLOCK_GENERIC)
 
     def _get_mountpoint(self, volume: Volume) -> Optional[str]:
@@ -424,7 +424,7 @@ class CLI:
             logger.error(ex)
             raise ExportException(sdstatus=Status.ERROR_MOUNT) from ex
 
-    def _mount_volume(self, volume: Volume) -> MountedVolume:
+    def mount_volume(self, volume: Volume) -> MountedVolume:
         """
         Given an unlocked LUKS volume, return MountedVolume object.
 

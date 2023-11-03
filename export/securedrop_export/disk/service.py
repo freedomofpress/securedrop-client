@@ -5,7 +5,7 @@ from .status import Status
 from .volume import Volume, MountedVolume, EncryptionScheme
 from securedrop_export.archive import Archive
 from securedrop_export.exceptions import ExportException
-from typing import Optional
+from typing import List, Optional, Tuple
 
 
 logger = logging.getLogger(__name__)
@@ -17,8 +17,8 @@ class Service:
     This is the "API" portion of the export workflow.
     """
 
-    def __init__(self, submission: Archive, cli: CLI = None):
-        self.cli = cli or CLI()
+    def __init__(self, submission: Archive, cli: CLI = CLI()):
+        self.cli = cli
         self.submission = submission
 
     def scan_all_devices(self) -> Status:
@@ -42,23 +42,36 @@ class Service:
             volumes = self.cli.get_all_volumes()
             status, target = self._check_volumes(volumes)
 
-            if status == Status.DEVICE_WRITABLE:
+            if not target:
+                logger.error(f"Could not export, no available volumes ({status.value})")
+                return status
+
+            # If it's writable, it's a MountedVolume object
+            if status == Status.DEVICE_WRITABLE and isinstance(target, MountedVolume):
                 return self._write_to_device(target, self.submission)
             elif status == Status.DEVICE_LOCKED:
                 status, unlocked_volume = self._unlock_device(
                     self.submission.encryption_key, target
                 )
-                if status == Status.DEVICE_WRITABLE:
+                if status == Status.DEVICE_WRITABLE and isinstance(
+                    target, MountedVolume
+                ):
                     return self._write_to_device(target, self.submission)
                 else:
                     return status
+            else:
+                logger.info(f"Could not export, volume check was {status.value}")
+                return status
 
         except ExportException as ex:
-            logger.error(f"Enountered {ex.sdstatus.value} while trying to export")
             logger.debug(ex)
-            return ex.sdstatus.value
+            status = ex.sdstatus if ex.sdstatus is not None else Status.ERROR_EXPORT
+            logger.error(f"Enountered {status.value} while trying to export")
+            return status
 
-    def _check_volumes(self, all_volumes: [Volume]) -> (Status, Optional[Volume]):
+    def _check_volumes(
+        self, all_volumes: List[Volume]
+    ) -> Tuple[Status, Optional[Volume]]:
         """
         Check all potentially-compatible export devices (removable,
         single-partition USB devices).
@@ -92,11 +105,11 @@ class Service:
                 # a finite number of re-prompts before giving up, in case of
                 # user error with typing the password, and would return the volume
                 # (eg to print information about which drive failed).
-                return (Status.UKNOWN_DEVICE_DETECTED, target_volume)
+                return (Status.UNKNOWN_DEVICE_DETECTED, target_volume)
 
     def _unlock_device(
         self, passphrase: str, volume: Volume
-    ) -> (Status, Optional[Volume]):
+    ) -> Tuple[Status, Optional[Volume]]:
         """
         Given provided passphrase, unlock target volume.
         """
@@ -105,14 +118,14 @@ class Service:
                 try:
                     logger.info("Unlocking LUKS drive")
                     volume = self.cli.unlock_luks_volume(volume, passphrase)
-                    if isinstance(volume, MountedVolume):
-                        return (Status.DEVICE_WRITABLE, volume)
-                    else:
-                        return (Status.ERROR_UNLOCK_LUKS, volume)
-
+                    if volume.unlocked:
+                        logger.debug("Volume unlocked, attempt to mount")
+                        # Returns MountedVolume or errors
+                        return (Status.DEVICE_WRITABLE, self.cli.mount_volume(volume))
                 except ExportException as ex:
                     logger.error(ex)
-                    return (Status.ERROR_UNLOCK_LUKS, volume)
+
+                return (Status.ERROR_UNLOCK_LUKS, volume)
 
             # Try to unlock another drive, opportunistically
             # hoping it is VeraCrypt/TC.
@@ -135,7 +148,7 @@ class Service:
         else:
             # Trying to unlock devices before having an active device
             logger.warning("Tried to unlock_device but no current volume detected.")
-            return Status.NO_DEVICE_DETECTED, None
+            return (Status.NO_DEVICE_DETECTED, None)
 
     def _write_to_device(self, volume: MountedVolume, data: Archive) -> Status:
         """
@@ -144,6 +157,5 @@ class Service:
 
         Calling method should handle ExportException.
         """
-
         self.cli.write_data_to_device(data.tmpdir, data.target_dirname, volume)
         return Status.SUCCESS_EXPORT
