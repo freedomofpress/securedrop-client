@@ -124,7 +124,7 @@ def _configure_logging():
         raise ExportException(sdstatus=Status.ERROR_LOGGING) from ex
 
 
-def _start_service(submission: Archive) -> Status:
+def _start_service(submission: Archive) -> BaseStatus:
     """
     Start print or export service.
     """
