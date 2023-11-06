@@ -58,6 +58,11 @@ else
     qubes_flag="--no-qubes"
 fi
 
+if [[ $XDG_SESSION_TYPE = "wayland" ]]; then
+    echo "Detected Wayland, will run with QT_QPA_PLATFORM variable..."
+    export QT_QPA_PLATFORM=wayland
+fi
+
 wait
 
 echo "Starting client, log available at: $SDC_HOME/logs/client.log"

@@ -1940,7 +1940,7 @@ def test_SourceWidget_set_snippet(mocker, session_maker, session, homedir):
 def test_SourceWidget_update_truncate_latest_msg(mocker):
     """
     If the latest message in the conversation is longer than 150 characters,
-    truncate and add "..." to the end.
+    truncate and add "…" to the end.
     """
     controller = mocker.MagicMock()
     source = mocker.MagicMock()
@@ -1951,7 +1951,7 @@ def test_SourceWidget_update_truncate_latest_msg(mocker):
     sw = SourceWidget(controller, source, mark_seen_signal, mocker.MagicMock())
 
     sw.reload()
-    assert sw.preview.text().endswith("...")
+    assert sw.preview.text().endswith("…")
 
 
 def test_SourceWidget__on_source_deleted(mocker, session, source):
@@ -3471,7 +3471,7 @@ def test_FileWidget_filename_truncation(mocker, source, session):
 
     fw._on_file_downloaded(file.source.uuid, file.uuid, str(file))
 
-    assert fw.file_name.text().endswith("...")
+    assert fw.file_name.text().endswith("…")
     assert fw.file_name.toolTip() == filename
 
 

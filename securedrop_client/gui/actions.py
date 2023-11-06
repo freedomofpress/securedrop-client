@@ -29,6 +29,8 @@ from securedrop_client.gui.conversation.export.whistleflow_dialog import Whistle
 from securedrop_client.logic import Controller
 from securedrop_client.utils import safe_mkdir
 
+TRANSCRIPT_FILENAME = "transcript.txt"
+
 
 class DownloadConversation(QAction):
     """Download all files and messages of the currently selected conversation."""
@@ -203,7 +205,7 @@ class PrintConversationAction(QAction):  # pragma: nocover
         file_path = (
             Path(self.controller.data_dir)
             .joinpath(self._source.journalist_filename)
-            .joinpath("transcript.txt")
+            .joinpath(TRANSCRIPT_FILENAME)
         )
 
         transcript = ConversationTranscript(self._source)
@@ -220,7 +222,7 @@ class PrintConversationAction(QAction):  # pragma: nocover
         # by the operating system.
         with open(file_path, "r") as f:
             dialog = PrintConversationTranscriptDialog(
-                self._export_device, "transcript.txt", str(file_path)
+                self._export_device, TRANSCRIPT_FILENAME, str(file_path)
             )
             dialog.exec()
 
@@ -261,7 +263,7 @@ class ExportConversationTranscriptAction(QAction):  # pragma: nocover
         file_path = (
             Path(self.controller.data_dir)
             .joinpath(self._source.journalist_filename)
-            .joinpath("transcript.txt")
+            .joinpath(TRANSCRIPT_FILENAME)
         )
 
         transcript = ConversationTranscript(self._source)
@@ -339,7 +341,7 @@ class ExportConversationAction(QAction):  # pragma: nocover
                     "<h2>Some files will not be exported</h2>"
                     "Some files from this source have not yet been downloaded, and will not be exported."  # noqa: E501
                     "<br /><br />"
-                    'To export the currently-downloaded files, click "Continue."'
+                    'To export the currently downloaded files, click "Continue."'
                 )
                 dialog.body.setText(message)
                 dialog.rejected.connect(self._on_confirmation_dialog_rejected)
@@ -358,7 +360,7 @@ class ExportConversationAction(QAction):  # pragma: nocover
         transcript_location = (
             Path(self.controller.data_dir)
             .joinpath(self._source.journalist_filename)
-            .joinpath("transcript.txt")
+            .joinpath(TRANSCRIPT_FILENAME)
         )
 
         transcript = ConversationTranscript(self._source)
@@ -388,7 +390,7 @@ class ExportConversationAction(QAction):  # pragma: nocover
 
             file_count = len(files)
             if file_count == 1:
-                summary = "transcript.txt"
+                summary = TRANSCRIPT_FILENAME
             else:
                 summary = _("all files and transcript")
 

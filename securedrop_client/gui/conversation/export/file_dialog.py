@@ -17,7 +17,6 @@ from .device import Device
 
 
 class FileDialog(ModalDialog):
-
     DIALOG_CSS = resource_string(__name__, "dialog.css").decode("utf-8")
 
     PASSPHRASE_LABEL_SPACING = 0.5

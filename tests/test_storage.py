@@ -1812,7 +1812,7 @@ def test_mark_pending_replies_as_failed(mocker, session, reply_status_codes):
 
     mark_all_pending_drafts_as_failed(session)
 
-    for (i, draft) in enumerate(session.query(db.DraftReply).all()):
+    for i, draft in enumerate(session.query(db.DraftReply).all()):
         if i == 0:
             assert draft.send_status == pending_status
         else:
@@ -2377,7 +2377,6 @@ def test__delete_source_collection_from_db_uuid_not_found(mocker, homedir):
 
 
 def test__delete_source_collection_from_db_query_error(mocker, session):
-
     mock_session = mocker.MagicMock()
     mock_session.query().filter_by().all.return_value = [mocker.MagicMock()]
     mock_session.query().filter_by().one_or_none.side_effect = SQLAlchemyError()
@@ -2402,7 +2401,6 @@ def test__delete_source_collection_from_db_query_error(mocker, session):
 
 
 def test__delete_source_collection_from_db_commit_error(mocker, session):
-
     mock_session = mocker.MagicMock()
     mock_session.commit.return_value = [mocker.MagicMock()]
     mock_session.commit.side_effect = SQLAlchemyError()
