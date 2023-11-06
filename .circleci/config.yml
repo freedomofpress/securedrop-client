@@ -17,6 +17,16 @@ common-steps:
         echo "en_US UTF-8" >> /etc/locale.gen
         locale-gen
 
+  - &configure_locales
+    run:
+      name: Configure locales
+      command: |
+        set -e
+        apt update && apt install -y locales
+        echo "en_US ISO-8859-1" >> /etc/locale.gen
+        echo "en_US UTF-8" >> /etc/locale.gen
+        locale-gen
+
   - &install_build_dependencies
     run:
       name: Install build dependencies
