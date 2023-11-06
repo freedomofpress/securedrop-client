@@ -1,27 +1,40 @@
 ---
 common-steps:
+  - &install_poetry
+    run:
+      name: Install Poetry
+      command: |
+        set -e
+        source /etc/os-release
+        if [[ "$VERSION_CODENAME" == "bullseye" ]]; then
+            # Install Poetry via PyPI
+            apt-get update && apt-get install --yes --no-install-recommends python3-pip
+            pip install poetry==1.6.1
+        elif [[ "$VERSION_CODENAME" == "bookworm" ]]; then
+            # Install Poetry via system package
+            apt-get update && apt-get install --yes --no-install-recommends python3-poetry
+        else
+            echo "Unsupported Debian version: $VERSION_CODENAME"
+            exit 1
+        fi
+
   - &install_testing_dependencies
     run:
       name: Install testing dependencies
       command: |
-        set -e
         apt update && apt install -y git gnupg make python3-dev gnupg python3-venv libnotify-bin
+        poetry install --no-ansi
 
   - &install_build_dependencies
     run:
       name: Install build dependencies
       command: |
-        set -e
         apt update && apt install -y git make sudo
 
   - &run_unit_tests
     run:
       name: Install requirements and run unit tests
       command: |
-        set -e
-        export VERSION_CODENAME=$(~/project/scripts/codename)
-        make venv
-        source .venv/bin/activate
         export PYTHONPATH=$PYTHONPATH:.  # so alembic can get to Base metadata
         make test
 
@@ -29,30 +42,18 @@ common-steps:
     run:
       name: Run lint, type checking, code formatting
       command: |
-        set -e
-        export VERSION_CODENAME=$(~/project/scripts/codename)
-        make venv
-        source .venv/bin/activate
         make check-black lint
 
   - &check_security
     run:
       name: Run static analysis on source code to find security issues
       command: |
-        set -e
-        export VERSION_CODENAME=$(~/project/scripts/codename)
-        make venv
-        source .venv/bin/activate
         make semgrep
 
   - &check_python_dependencies_for_vulnerabilities
     run:
       name: Check Python dependencies for known vulnerabilities
       command: |
-        set -e
-        export VERSION_CODENAME=$(~/project/scripts/codename)
-        make venv
-        source .venv/bin/activate
         make safety
 
   - &install_packaging_dependencies
@@ -63,10 +64,10 @@ common-steps:
         mkdir ~/packaging && cd ~/packaging
         # local builds may not have an ssh url, so || true
         git config --global --unset url.ssh://git@github.com.insteadof || true
-        git clone https://github.com/freedomofpress/securedrop-debian-packaging.git
-        cd securedrop-debian-packaging
-        apt-get update && apt-get install -y sudo make
+        git clone https://github.com/freedomofpress/securedrop-builder.git
+        cd securedrop-builder
         make install-deps
+        source .venv/bin/activate
         PKG_DIR=~/project make requirements
 
   - &check_packaging_requirements
@@ -77,24 +78,14 @@ common-steps:
         # Fail if unstaged changes exist (after `make requirements` in the previous run step).
         git diff --ignore-matching-lines=# --exit-code
 
-  - &check_testing_requirements
-    run:
-      name: Ensure that the same Python requirements are used for development/testing and production.
-      command: |
-        set -e
-        export VERSION_CODENAME=$(~/project/scripts/codename)
-        make venv
-        source .venv/bin/activate
-        make requirements
-        git diff --exit-code requirements/dev-${VERSION_CODENAME}-requirements.txt
-
   - &build_debian_package
     run:
       name: Build debian package
       command: |
-        cd ~/packaging/securedrop-debian-packaging
+        cd ~/packaging/securedrop-builder
         export PKG_VERSION=1000.0
         export PKG_PATH=~/project/
+        source .venv/bin/activate
         make securedrop-export
 
 version: 2.1
@@ -117,8 +108,9 @@ jobs:
     parameters: *parameters
     docker: *docker
     steps:
-      - *install_testing_dependencies
+      - *install_poetry
       - checkout
+      - *install_testing_dependencies
       - *run_unit_tests
       - store_test_results:
           path: test-results
@@ -127,33 +119,28 @@ jobs:
     parameters: *parameters
     docker: *docker
     steps:
-      - *install_testing_dependencies
+      - *install_poetry
       - checkout
+      - *install_testing_dependencies
       - *run_lint
 
   check-security:
     parameters: *parameters
     docker: *docker
     steps:
-      - *install_testing_dependencies
+      - *install_poetry
       - checkout
+      - *install_testing_dependencies
       - *check_security
 
   check-python-security:
     parameters: *parameters
     docker: *docker
     steps:
-      - *install_testing_dependencies
+      - *install_poetry
       - checkout
+      - *install_testing_dependencies
       - *check_python_dependencies_for_vulnerabilities
-
-  check-testing-requirements:
-    parameters: *parameters
-    docker: *docker
-    steps:
-      - *install_testing_dependencies
-      - checkout
-      - *check_testing_requirements
 
 workflows:
   securedrop_export_ci:
@@ -165,8 +152,6 @@ workflows:
                 - bullseye
                 - bookworm
       - lint:
-          matrix: *matrix
-      - check-testing-requirements:
           matrix: *matrix
       - check-security:
           matrix: *matrix

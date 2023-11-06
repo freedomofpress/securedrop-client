@@ -1,2 +1,24 @@
+[tool.poetry]
+name = "securedrop-export"
+version = "0.1.0"
+description = "SecureDrop Qubes export scripts"
+authors = ["SecureDrop Team"]
+license = "GPLv3+"
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.9"
+
+[tool.poetry.group.dev.dependencies]
+black = "^23.7.0"
+flake8 = "^6.0.0"
+mypy = "^1.4.1"
+types-setuptools = "^68.0.0"
+pytest = "^7.4.0"
+pytest-cov = "^4.1.0"
+pytest-mock = "^3.11.1"
+semgrep = "^1.31.2"
+safety = "*"
+
 [tool.mypy]
 python_version = "3.9"
