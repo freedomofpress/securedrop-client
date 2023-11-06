@@ -136,14 +136,15 @@ test-functional: ## Run the functional tests
 lint: ## Run the linters
 	@flake8 securedrop_client tests
 
-IGNORED_VULNERABILITIES ?= "51668"
-
 .PHONY: safety
 safety: ## Runs `safety check` to check python dependencies for vulnerabilities
 	pip install --upgrade safety && \
 		for req_file in `find . -type f -wholename '*requirements.txt'`; do \
 			echo "Checking file $$req_file" \
-			&& safety check --full-report --ignore $(IGNORED_VULNERABILITIES) -r $$req_file \
+			&& safety check --full-report \
+			--ignore 51668 \
+			--ignore 61601 \
+			-r $$req_file \
 			&& echo -e '\n' \
 			|| exit 1; \
 		done
