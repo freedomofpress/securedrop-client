@@ -181,6 +181,20 @@ def mock_export_service():
 
 
 @pytest.fixture(scope="function")
+def mock_export_service_unlocked_device():
+    """
+    An export service that assumes the Qubes RPC calls are successful and skips them.
+    In this case the USB peripheral is presumed unlocked outside of the client (i.e.
+    manually by the user).
+    """
+    export_service = export.Service()
+    export_service.run_preflight_checks = lambda: ExportStatus.DEVICE_WRITABLE
+    export_service.send_file_to_usb_device = lambda paths, passphrase: ExportStatus.SUCCESS_EXPORT
+    export_service.run_printer_preflight = lambda: ExportStatus.PRINT_PREFLIGHT_SUCCESS
+    export_service.run_print = lambda paths: ExportStatus.PRINT_SUCCESS
+    return export_service
+
+@pytest.fixture(scope="function")
 def functional_test_app_started_context(homedir, reply_status_codes, session, config, qtbot):
     """
     Returns a tuple containing the gui window and controller of a configured client. This should be
