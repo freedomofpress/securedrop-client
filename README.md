@@ -2,15 +2,15 @@
 
 # securedrop-log
 
-This is a Python module and qrexec service for logging in Qubes for [SecureDrop](https://securedrop.org).
+`securedrop-log` is part of the [SecureDrop
+Workstation](https://github.com/freedomofpress/securedrop-workstation) project.
 
-## How to upgrade the dependencies?
+This is a Python module and qrexec service for logging in Qubes.
 
-To upgrade one single Python dependency, say `redis`, run the following:
+#### Quick Start
 
-```bash
-PACKAGE=redis make upgrade-pip
-```
+1. [Install Poetry](https://python-poetry.org/docs/#installing-with-the-official-installer)
+2. Run `make test` to verify the installation
 
 ## How to use/try this?
 

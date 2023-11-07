@@ -1,12 +1,34 @@
 ---
 common-steps:
+  - &install_poetry
+    run:
+      name: Install Poetry
+      command: |
+        set -e
+        source /etc/os-release
+        if [[ "$VERSION_CODENAME" == "bullseye" ]]; then
+            # Install Poetry via PyPI
+            apt-get update && apt-get install --yes --no-install-recommends python3-pip
+            pip install poetry==1.6.1
+        elif [[ "$VERSION_CODENAME" == "bookworm" ]]; then
+            # Install Poetry via system package
+            apt-get update && apt-get install --yes --no-install-recommends python3-poetry
+        else
+            echo "Unsupported Debian version: $VERSION_CODENAME"
+            exit 1
+        fi
+
+  - &install_testing_dependencies
+    run:
+      name: Install testing dependencies
+      command: |
+        apt-get install --yes --no-install-recommends git gnupg make
+        poetry install --no-ansi
+
   - &run_tests
     run:
       name: Install requirements and run tests
       command: |
-        apt-get update && apt-get install -y make python3-venv
-        make venv
-        source .venv/bin/activate
         make check
 
   - &install_packaging_dependencies
@@ -15,9 +37,10 @@ common-steps:
       command: |
         apt-get update && apt-get install -y git git-lfs make sudo
         mkdir ~/packaging && cd ~/packaging
-        git clone https://github.com/freedomofpress/securedrop-debian-packaging.git
-        cd securedrop-debian-packaging
+        git clone https://github.com/freedomofpress/securedrop-builder.git
+        cd securedrop-builder
         make install-deps
+        source .venv/bin/activate
         PKG_DIR=~/project make requirements
 
   - &verify_requirements
@@ -33,9 +56,10 @@ common-steps:
     run:
       name: Build debian package
       command: |
-        cd ~/packaging/securedrop-debian-packaging
+        cd ~/packaging/securedrop-builder
         export PKG_VERSION=1000.0
         export PKG_PATH=~/project/
+        source .venv/bin/activate
         make securedrop-log
 
 version: 2
@@ -45,6 +69,8 @@ jobs:
       - image: debian:bullseye
     steps:
       - checkout
+      - *install_poetry
+      - *install_testing_dependencies
       - *run_tests
 
   build-bullseye:

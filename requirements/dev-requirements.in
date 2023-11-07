@@ -1,6 +1,0 @@
-flake8
-pip-tools
-
-mypy
-types-redis<4
-types-setuptools
