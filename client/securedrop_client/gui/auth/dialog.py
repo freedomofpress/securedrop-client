@@ -20,7 +20,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 import logging
 from gettext import gettext as _
 
-from pkg_resources import resource_string
 from PyQt5.QtCore import QSize, Qt
 from PyQt5.QtGui import QBrush, QPalette
 from PyQt5.QtWidgets import (
@@ -40,7 +39,7 @@ from securedrop_client.gui.auth.use_offline import LoginOfflineLink
 from securedrop_client.gui.base import PasswordEdit
 from securedrop_client.gui.base.checkbox import SDCheckBox
 from securedrop_client.logic import Controller
-from securedrop_client.resources import load_image
+from securedrop_client.resources import load_image, load_relative_css
 
 logger = logging.getLogger(__name__)
 
@@ -83,8 +82,7 @@ class LoginDialog(QDialog):
         form = QWidget()
 
         form.setObjectName("LoginDialog_form")
-        styles = resource_string(__name__, "dialog.css").decode("utf-8")
-        self.setStyleSheet(styles)
+        self.setStyleSheet(load_relative_css(__file__, "dialog.css"))
 
         form_layout = QVBoxLayout()
         form.setLayout(form_layout)

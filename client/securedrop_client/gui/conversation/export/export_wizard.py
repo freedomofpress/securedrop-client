@@ -2,7 +2,6 @@ import logging
 from gettext import gettext as _
 from typing import List, Optional
 
-from pkg_resources import resource_string
 from PyQt5.QtCore import QSize, Qt, pyqtSlot
 from PyQt5.QtGui import QIcon, QKeyEvent
 from PyQt5.QtWidgets import QAbstractButton  # noqa: F401
@@ -20,7 +19,7 @@ from securedrop_client.gui.conversation.export.export_wizard_page import (
     PassphraseWizardPage,
     PreflightPage,
 )
-from securedrop_client.resources import load_movie
+from securedrop_client.resources import load_movie, load_relative_css
 
 logger = logging.getLogger(__name__)
 
@@ -34,8 +33,6 @@ class ExportWizard(QWizard):
     NO_MARGIN = 0
     FILENAME_WIDTH_PX = 260
     FILE_OPTIONS_FONT_SPACING = 1.6
-    BUTTON_CSS = resource_string(__name__, "wizard_button.css").decode("utf-8")
-    WIZARD_CSS = resource_string(__name__, "wizard.css").decode("utf-8")
 
     # If the drive is unlocked, we don't need a passphrase; if we do need one,
     # it's populated later.
@@ -97,6 +94,7 @@ class ExportWizard(QWizard):
         self.button_animation = load_movie("activestate-wide.gif")
         self.button_animation.setScaledSize(QSize(32, 32))
         self.button_animation.frameChanged.connect(self._animate_activestate)
+        button_stylesheet = load_relative_css(__file__, "wizard_button.css")
 
         # Buttons
         self.next_button = self.button(QWizard.WizardButton.NextButton)  # type: QAbstractButton
@@ -105,7 +103,7 @@ class ExportWizard(QWizard):
         self.finish_button = self.button(QWizard.WizardButton.FinishButton)  # type: QAbstractButton
 
         self.next_button.setObjectName("QWizardButton_PrimaryButton")
-        self.next_button.setStyleSheet(self.BUTTON_CSS)
+        self.next_button.setStyleSheet(button_stylesheet)
         self.next_button.setMinimumSize(QSize(142, 40))
         self.next_button.setMaximumHeight(40)
         self.next_button.setIconSize(QSize(21, 21))
@@ -113,19 +111,19 @@ class ExportWizard(QWizard):
         self.next_button.setFixedSize(QSize(142, 40))
 
         self.cancel_button.setObjectName("QWizardButton_GenericButton")
-        self.cancel_button.setStyleSheet(self.BUTTON_CSS)
+        self.cancel_button.setStyleSheet(button_stylesheet)
         self.cancel_button.setMinimumSize(QSize(142, 40))
         self.cancel_button.setMaximumHeight(40)
         self.cancel_button.setFixedSize(QSize(142, 40))
 
         self.back_button.setObjectName("QWizardButton_GenericButton")
-        self.back_button.setStyleSheet(self.BUTTON_CSS)
+        self.back_button.setStyleSheet(button_stylesheet)
         self.back_button.setMinimumSize(QSize(142, 40))
         self.back_button.setMaximumHeight(40)
         self.back_button.setFixedSize(QSize(142, 40))
 
         self.finish_button.setObjectName("QWizardButton_GenericButton")
-        self.finish_button.setStyleSheet(self.BUTTON_CSS)
+        self.finish_button.setStyleSheet(button_stylesheet)
         self.finish_button.setMinimumSize(QSize(142, 40))
         self.finish_button.setMaximumHeight(40)
         self.finish_button.setFixedSize(QSize(142, 40))
@@ -149,7 +147,7 @@ class ExportWizard(QWizard):
         title = ("Export %(summary)s") % {"summary": self.summary_text}
         self.setWindowTitle(title)
         self.setObjectName("QWizard_export")
-        self.setStyleSheet(self.WIZARD_CSS)
+        self.setStyleSheet(load_relative_css(__file__, "wizard.css"))
         self.setModal(False)
         self.setOptions(
             QWizard.NoBackButtonOnLastPage

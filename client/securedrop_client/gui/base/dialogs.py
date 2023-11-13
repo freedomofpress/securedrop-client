@@ -19,7 +19,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 from gettext import gettext as _
 
-from pkg_resources import resource_string
 from PyQt5.QtCore import QSize, Qt
 from PyQt5.QtGui import QIcon, QKeyEvent, QPixmap
 from PyQt5.QtWidgets import (
@@ -34,13 +33,13 @@ from PyQt5.QtWidgets import (
 )
 
 from securedrop_client.gui.base.misc import SvgLabel
-from securedrop_client.resources import load_movie
+from securedrop_client.resources import load_movie, load_relative_css
 
 
 class ModalDialog(QDialog):
-    DIALOG_CSS = resource_string(__name__, "dialogs.css").decode("utf-8")
-    BUTTON_CSS = resource_string(__name__, "dialog_button.css").decode("utf-8")
-    ERROR_DETAILS_CSS = resource_string(__name__, "dialog_message.css").decode("utf-8")
+    DIALOG_CSS = load_relative_css(__file__, "dialogs.css")
+    BUTTON_CSS = load_relative_css(__file__, "dialog_button.css")
+    ERROR_DETAILS_CSS = load_relative_css(__file__, "dialog_message.css")
 
     MARGIN = 40
     NO_MARGIN = 0

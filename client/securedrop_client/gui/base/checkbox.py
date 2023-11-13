@@ -8,21 +8,21 @@ Present in the Sign-in and Export Dialog.
 
 from gettext import gettext as _
 
-from pkg_resources import resource_string
 from PyQt5.QtCore import Qt, pyqtSignal
 from PyQt5.QtGui import QCursor, QFont, QMouseEvent
 from PyQt5.QtWidgets import QCheckBox, QFrame, QHBoxLayout, QLabel, QWidget
 
+from securedrop_client.resources import load_relative_css
+
 
 class SDCheckBox(QWidget):
     clicked = pyqtSignal()
-    CHECKBOX_CSS = resource_string(__name__, "checkbox.css").decode("utf-8")
     PASSPHRASE_LABEL_SPACING = 1
 
     def __init__(self) -> None:
         super().__init__()
         self.setObjectName("ShowPassphrase_widget")
-        self.setStyleSheet(self.CHECKBOX_CSS)
+        self.setStyleSheet(load_relative_css(__file__, "checkbox.css"))
 
         font = QFont()
         font.setLetterSpacing(QFont.AbsoluteSpacing, self.PASSPHRASE_LABEL_SPACING)

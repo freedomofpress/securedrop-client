@@ -18,33 +18,33 @@ You should have received a copy of the GNU Affero General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
-import os
+from pathlib import Path
 from typing import Optional
 
-from pkg_resources import resource_filename, resource_string
 from PyQt5.QtCore import QDir
 from PyQt5.QtGui import QFontDatabase, QIcon, QMovie, QPixmap
 from PyQt5.QtSvg import QSvgWidget
 
+RESOURCES_DIR = Path(__file__).parent
+
 # Add resource directories to the search path.
-QDir.addSearchPath("images", resource_filename(__name__, "images"))
-QDir.addSearchPath("css", resource_filename(__name__, "css"))
+QDir.addSearchPath("images", str(RESOURCES_DIR / "images"))
+QDir.addSearchPath("css", str(RESOURCES_DIR / "css"))
 
 
-def path(name: str, resource_dir: str = "images/") -> str:
+def path(name: str) -> str:
     """
     Return the filename for the referenced image.
 
     Qt uses unix path conventions.
     """
-    return resource_filename(__name__, resource_dir + name)
+    return str(RESOURCES_DIR / "images" / name)
 
 
-def load_font(font_folder_name: str) -> None:
-    directory = resource_filename(__name__, "fonts/") + font_folder_name
-    for filename in os.listdir(directory):
-        if filename.endswith(".ttf"):
-            QFontDatabase.addApplicationFont(directory + "/" + filename)
+def load_all_fonts() -> None:
+    """Load all the fonts in the fonts/ directory"""
+    for font in (RESOURCES_DIR / "fonts").glob("**/*.ttf"):
+        QFontDatabase.addApplicationFont(str(font.absolute()))
 
 
 def load_icon(
@@ -134,7 +134,15 @@ def load_css(name: str) -> str:
     """
     Return the contents of the referenced CSS file in the resources.
     """
-    return resource_string(__name__, "css/" + name).decode("utf-8")
+    return (RESOURCES_DIR / "css" / name).read_text()
+
+
+def load_relative_css(file: str, name: str) -> str:
+    """
+    Load CSS that's in the same directory as the file calling this.
+    The first argument should be __name__ and the second is the name of the CSS
+    """
+    return (Path(file).parent / name).read_text()
 
 
 def load_movie(name: str) -> QMovie:
