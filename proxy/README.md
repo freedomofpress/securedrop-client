@@ -1,4 +1,5 @@
 ## securedrop workstation proxy
+
 `securedrop-proxy` is part of the [SecureDrop
 Workstation](https://github.com/freedomofpress/securedrop-workstation) project.
 
@@ -13,21 +14,74 @@ rest of the Securedrop Workstation project. However, it is ready to be poked at
 and demonstrated. Feel free to explore and contribute! You'll need a machine
 running [Qubes OS](https://qubes-os.org).
 
-### How It Works
+## Security Properties
 
-The proxy works by reading a JSON object from STDIN, generating an
-HTTP request from that JSON, making that request against the remote
-server, then writing a JSON object which represents the remote
-server's response to STDOUT. For discussion about the shape of the
-request and response objects, see
+### Isolation
+
+The SecureDrop Client/SDK can talk only to the proxy. The proxy talks only to
+the (onion) origin it's configured with.
+
+**Mitigates against:** A compromised Client/VM tries to contact or exfiltrate
+data to an arbitrary origin.
+
+### Sanitization
+
+The SDK talks JSON. The proxy translates JSON to HTTP and back again. (In v3, it
+will just construct a sanitized HTTP request and do the same for the response.)
+
+**Mitigates against:** A compromised Client/VM constructs a malicious HTTP
+request. (The server returning a malicious HTTP response is already game over.)
+
+## How It Works
+
+```mermaid
+sequenceDiagram
+
+participant c as securedrop-client
+participant sdk as securedrop-sdk
+participant p as securedrop-proxy
+participant w as sd-whonix
+participant server as SecureDrop
+
+c ->> sdk: job
+activate sdk
+sdk -->> p: JSON over qrexec
+activate p
+p -->> w: HTTP
+w -->> server: HTTP over Tor
+
+server -->> w: HTTP over Tor
+w -->> p: HTTP
+
+alt stream: false
+p -->> sdk: JSON over qrexec
+sdk ->> c: response
+else stream: true
+p -->> sdk: HTTP over qrexec
+sdk ->> c: stream
+else error
+p ->> sdk: JSON over qrexec
+sdk ->> c: error
+end
+
+deactivate p
+deactivate sdk
+```
+
+The proxy works by reading a JSON object from the standard input, generating an
+HTTP request from that JSON, making that request against the remote server, and
+then either (a) writing to the standard output a JSON object which represents
+the remote server's response or (b) streaming the response directly to the
+standard output. For discussion about the shape of the request and response
+objects, see
 https://github.com/freedomofpress/securedrop-workstation/issues/107.
 
-#### Quick Start
+## Quick Start
 
 1. [Install Poetry](https://python-poetry.org/docs/#installing-with-the-official-installer)
 2. Run `make test` to verify the installation
 
-#### Managing Dependencies
+## Managing Dependencies
 
 We use Poetry to manage dependencies for this project.
 
@@ -70,34 +124,29 @@ PR in this repository.
 7. Add a detached signature (with the release key) for the source tarball.
 8. Submit the source tarball and signature via PR into this [repository](https://github.com/freedomofpress/securedrop-debian-packaging). This tarball will be used by the package builder.
 
-#### Configuration
+## Configuration
 
-The proxy script must be run with the path to its configuration file
-as its first argument. This repo includes an example configuration
-file, at `config-example.yaml`. Configuration consists of the
-following values:
+In development, the proxy should be run with the `SD_PROXY_ORIGIN` environment
+variable set, like:
 
-- `host` - The hostname of the remote server. Must be set.
-- `port` - The port the request should be sent to. Must be set.
-- `scheme` - `http` or `https`. Must be set.
-- `dev` - A boolean, where `True` indicates we're running in development mode, any other value (or not set) indicates we're running in production. See below for what that means.
-- `target_vm` - The name of the VM we should `qvm-move` non-JSON responses to. Must be set if dev is not True.
+```sh-session
+$ export SD_PROXY_ORIGIN=http://${JOURNALIST_INTERFACE}.onion
+```
 
-#### dev vs prod
+In a production build with the `qubesdb` feature, the same value is expected in
+the Qubes feature `vm-config.SD_PROXY_ORIGIN`, exposed in QubesDB at
+`/vm-config/SD_PROXY_ORIGIN`. Yo can simulate this, including on Qubes 4.1,
+with:
 
-Configuration includes a "dev" attribute. At this point, the only
-difference between dev and production modes is how non-JSON responses
-are handled. In prod mode, the content is saved to a local file, then
-moved (via `qvm-move`) to the VM indicated by `target_vm`. In dev
-mode, the file is not moved off the VM, but is saved as a temporary
-file in `/tmp`. In both cases, the response written to STDOUT includes
-the name of the new file.
+```sh-session
+[user@dom0 ~] qubesdb-write sd-proxy -c write /vm-config/SD_PROXY_ORIGIN $JOURNALIST_INTERFACE
+```
 
-#### Tests
+## Tests
 
 Unit tests can be run with `make test`.
 
-#### Example Commands
+## Example Commands
 
 The following commands can be used to demonstrate the proxy.
 
@@ -118,7 +167,7 @@ JSON. The proxy detects the malformed request, and prints an error message.
 
     $ cat examples/bad.json | ./sd-proxy.py ./config-example.yaml
 
-#### Qubes Integration
+## Qubes Integration
 
 Until we determine how we wish to package and install this script,
 demonstrating the proxy in a Qubes environment is a somewhat manual
