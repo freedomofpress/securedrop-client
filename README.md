@@ -6,21 +6,10 @@
 
 Code for exporting and printing files from the SecureDrop Qubes Workstation.
 
-## Getting Started
+## Quick Start
 
-Python 3 support is required. To get started:
-
-```
-virtualenv --python=python3.7 .venv
-source .venv/bin/activate
-pip install -r test-requirements.txt
-```
-
-To run the linter and tests:
-
-```
-make check
-```
+1. [Install Poetry](https://python-poetry.org/docs/#installing-with-the-official-installer)
+2. Run `make check` to verify the installation
 
 ## Supported Printers
 
