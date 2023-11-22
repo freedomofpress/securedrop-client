@@ -1,0 +1,381 @@
+# Translations template for SecureDrop Client.
+# Copyright (C) 2022 Freedom of the Press Foundation
+# This file is distributed under the same license as the SecureDrop Client project.
+# FIRST AUTHOR <EMAIL@ADDRESS>, 2022.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: SecureDrop Client 0.8.1\n"
+"Report-Msgid-Bugs-To: securedrop@freedom.press\n"
+"PO-Revision-Date: 2023-03-15 23:17+0000\n"
+"Last-Translator: Cory Francis Myers <cory@freedom.press>\n"
+"Language-Team: Greek <https://weblate.securedrop.org/projects/securedrop/securedrop-client/el/>\n"
+"Language: el\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=n != 1;\n"
+"X-Generator: Weblate 4.14.1\n"
+"Generated-By: Babel 2.10.3\n"
+
+msgid "{application_name} is already running"
+msgstr "Το {application_name} εκτελείται ήδη"
+
+msgid "Retrieving 1 message"
+msgid_plural "Retrieving {message_count} messages"
+msgstr[0] ""
+msgstr[1] ""
+
+msgid "The SecureDrop server cannot be reached. Trying to reconnect..."
+msgstr "Ο διακομιστής του SecureDrop δεν είναι προσπελάσιμος. Προσπάθεια επανασύνδεσης..."
+
+msgid ""
+"Could not reach the SecureDrop server. Please check your \n"
+"Internet and Tor connection and try again."
+msgstr ""
+"Δεν μπορούμε να προσπελάσουμε τον διακομιστή του SecureDrop. \n"
+"Παρακαλούμε ελέγξτε τη σύνδεσή σας στο διαδίκτυο και το Tor, και προσπαθήστε ξανά."
+
+msgid ""
+"Those credentials didn't work. Please try again, and \n"
+"make sure to use a new two-factor code."
+msgstr ""
+"Αυτά τα στοιχεία σύνδεσης δεν δούλεψαν. Παρακαλώ προσπαθήστε ξανά,\n"
+"και επιβεβαιώστε πως θα χρησιμοποιήσετε ένα νέο κωδικό δύο παραγόντων."
+
+msgid "That didn't work. Please check everything and try again."
+msgstr "Αυτό δε δούλεψε. Παρακαλώ ελέγξτε τα πάντα και προσπαθήστε ξανά."
+
+msgid "You must sign in to perform this action."
+msgstr "Πρέπει να συνδεθείτε για να πραγματοποιήσετε αυτή την ενέργεια."
+
+msgid "Your session expired. Please log in again."
+msgstr "Η συνεδρία σας έληξε. Παρακαλώ συνδεθείτε ξανά."
+
+msgid "Failed to update star."
+msgstr "Αδυναμία ανανέωσης αγαπημένου."
+
+msgid "File does not exist in the data directory. Please try re-downloading."
+msgstr "Το αρχείο δεν υπάρχει στο φάκελο δεδομένων. Παρακαλώ προσπαθήστε να το ξανακατεβάσετε."
+
+msgid "The file download failed. Please try again."
+msgstr "Η λήψη του αρχείου απέτυχε. Παρακαλώ δοκιμάστε ξανά."
+
+msgid "Failed to delete conversation at server"
+msgstr "Αποτυχία διαγραφής της συζήτησης στον διακομιστή"
+
+msgid "Failed to delete source at server"
+msgstr "Αποτυχία διαγραφής της πηγής στον διακομιστή"
+
+msgid "No messages."
+msgstr ""
+
+#, python-format
+msgid "%(sender)s wrote:"
+msgstr ""
+
+#, python-format
+msgid "%(sender)s sent:"
+msgstr ""
+
+#, python-format
+msgid "File: %(filename)s"
+msgstr ""
+
+msgid "Download All"
+msgstr ""
+
+msgid "Delete Source Account"
+msgstr "Διαγραφή λογαριασμού πηγής"
+
+msgid "Delete All Files and Messages"
+msgstr "Διαγραφή όλων των αρχείων και μηνυμάτων"
+
+msgid "Print Transcript"
+msgstr ""
+
+msgid "Export Transcript"
+msgstr ""
+
+msgid "Export All"
+msgstr ""
+
+msgid "<h2>Some files will not be exported</h2>Some files from this source have not yet been downloaded, and will not be exported.<br /><br />To export the currently downloaded files, click \"Continue.\""
+msgstr ""
+
+msgid "all files and transcript"
+msgstr ""
+
+msgid "SecureDrop Client {}"
+msgstr "SecureDrop Client {}"
+
+msgid "Quit"
+msgstr "Έξοδος"
+
+msgid "Last Refresh: {}"
+msgstr "Τελευταία ανανέωση: {}"
+
+msgid "Last Refresh: never"
+msgstr "Τελευταία ανανέωση: ποτέ"
+
+msgid "{}"
+msgstr "{}"
+
+msgid "SIGN OUT"
+msgstr "ΑΠΟΣΥΝΔΕΣΗ"
+
+msgid "SIGN IN"
+msgstr "ΣΥΝΔΕΣΗ"
+
+msgid "Nothing to see just yet!"
+msgstr "Δεν υπάρχει κάτι να δείτε ακόμα!"
+
+msgid "Source submissions will be listed to the left, once downloaded and decrypted."
+msgstr "Οι υποβολές από τις πηγές θα εμφανίζονται στα αριστερά, αφού ληφθούν και αποκρυπτογραφηθούν."
+
+msgid "This is where you will read messages, reply to sources, and work with files."
+msgstr "Εδώ θα διαβάζετε τα μηνύματα, θα απαντάτε στις πηγές και θα χρησιμοποιείτε τα αρχεία."
+
+msgid "Select a source from the list, to:"
+msgstr "Επιλέξτε μια πηγή από τη λίστα, για να:"
+
+msgid "Read a conversation"
+msgstr "Διαβάστε μια συνομιλία"
+
+msgid "View or retrieve files"
+msgstr "Δείτε ή λάβετε αρχεία"
+
+msgid "Send a response"
+msgstr "Στείλτε μια απάντηση"
+
+msgid "Deleting files and messages…"
+msgstr ""
+
+msgid "Deleting source account…"
+msgstr ""
+
+msgid "— All files and messages deleted for this source —"
+msgstr "— Όλα τα αρχεία και τα μηνύματα αυτής της πηγής διαγράφτηκαν —"
+
+msgid "Failed to send"
+msgstr "Αποτυχία αποστολής"
+
+msgid " DOWNLOAD"
+msgstr " ΛΗΨΗ"
+
+msgid "EXPORT"
+msgstr "ΕΞΑΓΩΓΗ"
+
+msgid "PRINT"
+msgstr "ΕΚΤΥΠΩΣΗ"
+
+msgid "ENCRYPTED FILE ON SERVER"
+msgstr "ΚΡΥΠΤΟΓΡΑΦΗΜΕΝΟ ΑΡΧΕΙΟ ΣΤΟΝ ΔΙΑΚΟΜΙΣΤΗ"
+
+msgid "DOWNLOAD"
+msgstr "ΛΗΨΗ"
+
+msgid " DOWNLOADING "
+msgstr " ΓΙΝΕΤΑΙ ΛΗΨΗ "
+
+msgid "Earlier files and messages deleted."
+msgstr "Τα προηγούμενα αρχεία και μηνύματα διαγράφτηκαν."
+
+msgid ""
+"Files and messages deleted\n"
+" for this source"
+msgstr ""
+"Τα αρχεία και τα μηνύματα\n"
+"αυτής της πηγής διαγράφτηκαν"
+
+msgid "Compose a reply to "
+msgstr "Σύνταξη μιας απάντησης προς "
+
+msgid "Awaiting encryption key"
+msgstr "Αναμένεται το κλειδί κρυπτογράφησης"
+
+msgid " from server to enable replies"
+msgstr " από τον διακομιστή για να επιτραπούν οι απαντήσεις"
+
+msgid "Sign in"
+msgstr "Συνδεθείτε"
+
+msgid " to compose or send a reply"
+msgstr " για να συντάξετε ή να στείλετε μια απάντηση"
+
+msgid "FILES AND MESSAGES"
+msgstr ""
+
+msgid "SOURCE ACCOUNT"
+msgstr ""
+
+msgid "Username"
+msgstr "Όνομα χρήστη"
+
+msgid "Passphrase"
+msgstr "Κωδική φράση"
+
+msgid "Two-Factor Code"
+msgstr "Κωδικός δύο παραγόντων"
+
+msgid "SecureDrop Client v{}"
+msgstr "SecureDrop Client v{}"
+
+msgid ""
+"That username won't work.\n"
+"It should be at least 3 characters long."
+msgstr ""
+"Αυτό το όνομα χρήστη δεν θα δουλέψει.\n"
+"Θα πρέπει να είναι τουλάχιστον 3 χαρακτήρες."
+
+msgid ""
+"That passphrase won't work.\n"
+"It should be between 14 and 128 characters long."
+msgstr ""
+"Αυτή η κωδική φράση δεν θα δουλέψει.\n"
+"Θα πρέπει να είναι από 14 έως 128 χαρακτήρες."
+
+msgid ""
+"That two-factor code won't work.\n"
+"It should only contain numerals."
+msgstr ""
+"Αυτός ο κωδικός δύο παραγόντων δεν θα δουλέψει.\n"
+"Θα πρέπει να περιέχει μόνο αριθμούς."
+
+msgid "SIGNING IN"
+msgstr "ΣΥΝΔΕΕΤΑΙ"
+
+msgid "Please enter a username, passphrase and two-factor code."
+msgstr "Παρακαλούμε εισάγετε το όνομα χρήστη, τη κωδική φράση και τον κωδικό δύο παραγόντων."
+
+msgid "USE OFFLINE"
+msgstr "ΧΡΗΣΗ ΕΚΤΟΣ ΣΥΝΔΕΣΗΣ"
+
+msgid "Show Passphrase"
+msgstr "Εμφάνιση κωδικής φράσης"
+
+msgid "CANCEL"
+msgstr "ΑΚΥΡΩΣΗ"
+
+msgid "CONTINUE"
+msgstr "ΣΥΝΕΧΕΙΑ"
+
+msgid "YES, DELETE FILES AND MESSAGES"
+msgstr "ΝΑΙ, ΔΙΑΓΡΑΦΗ ΑΡΧΕΙΩΝ ΚΑΙ ΜΗΝΥΜΑΤΩΝ"
+
+msgid "Would you like to delete {files_to_delete}, {replies_to_delete}, {messages_to_delete} from the source account for {source}?"
+msgstr ""
+
+msgid "Preserving the account will retain its metadata, and the ability for {source} to log in to your SecureDrop again."
+msgstr "Με τη διατήρηση του λογαριασμού, θα παραμείνουν τα μεταδεδομένα και η δυνατότητα του/της {source} να συνδεθεί ξανά στο SecureDrop σας."
+
+msgid "one file"
+msgid_plural "{file_count} files"
+msgstr[0] "ένα αρχείο"
+msgstr[1] "{file_count} αρχεία"
+
+msgid "one reply"
+msgid_plural "{reply_count} replies"
+msgstr[0] "μια απάντηση"
+msgstr[1] "{reply_count} απαντήσεις"
+
+msgid "one message"
+msgid_plural "{message_count} messages"
+msgstr[0] "ένα μήνυμα"
+msgstr[1] "{message_count} μηνύματα"
+
+msgid "SUBMIT"
+msgstr "ΥΠΟΒΟΛΗ"
+
+msgid "Preparing to export:<br /><span style=\"font-weight:normal\">{}</span>"
+msgstr "Προετοιμασία εξαγωγής:<br /><span style=\"font-weight:normal\">{}</span>"
+
+msgid "Ready to export:<br /><span style=\"font-weight:normal\">{}</span>"
+msgstr "Έτοιμο για εξαγωγή:<br /><span style=\"font-weight:normal\">{}</span>"
+
+msgid "Insert encrypted USB drive"
+msgstr "Εισάγετε το κρυπτογραφημένο στικάκι USB"
+
+msgid "Enter passphrase for USB drive"
+msgstr "Εισάγετε τη κωδική φράση για το στικάκι USB"
+
+msgid "Export successful"
+msgstr "Επιτυχής εξαγωγή"
+
+msgid "Export failed"
+msgstr "Αποτυχία εξαγωγής"
+
+msgid "<h2>Understand the risks before exporting files</h2><b>Malware</b><br />This workstation lets you open files securely. If you open files on another computer, any embedded malware may spread to your computer or network. If you are unsure how to manage this risk, please print the file, or contact your administrator.<br /><br /><b>Anonymity</b><br />Files submitted by sources may contain information or hidden metadata that identifies who they are. To protect your sources, please consider redacting files before working with them on network-connected computers."
+msgstr "<h2>Έχετε επίγνωση των κινδύνων πριν εξάγετε τα αρχεία</h2><b>Malware</b><br />Αυτός ο σταθμός εργασίας σας επιτρέπει να ανοίξετε τα αρχεία με ασφάλεια. Αν ανοίξετε τα αρχεία σε άλλο υπολογιστή, οποιοδήποτε κακόβουλο λογισμικό (malware) που τυχόν υπάρχει εκεί μπορεί να μεταδοθεί στον υπολογιστή σας ή στο δίκτυο. Αν δεν είστε σίγουροι πως να αντιμετωπίσετε αυτό το ρίσκο, παρακαλούμε εκτυπώστε το αρχείο, ή επικοινωνήστε με τον διαχειριστή σας.<br /><br /><b>Ανωνυμία</b><br />Τα αρχεία που υποβάλλονται από τις πηγές σας μπορεί να περιέχουν πληροφορίες ή κρυμμένα μεταδεδομένα που να τους ταυτοποιούν. Για να προστατέψετε τις πηγές σας, σκεφτείτε να επεξεργαστείτε τα αρχεία και να σβήσετε ευαίσθητες πληροφορίες, πριν τα χρησιμοποιήσετε σε υπολογιστές που είναι συνδεδεμένοι στο δίκτυο."
+
+msgid "Exporting: {}"
+msgstr "Εξάγεται: {}"
+
+msgid "Please insert one of the export drives provisioned specifically for the SecureDrop Workstation."
+msgstr "Παρακαλούμε εισάγετε ένα από τα μέσα εξαγωγής που προορίζονται συγκεκριμένα για τον σταθμό εργασίας SecureDrop Workstation."
+
+msgid "Either the drive is not encrypted or there is something else wrong with it."
+msgstr "Είτε το συγκεκριμένο μέσο δεν είναι κρυπτογραφημένο, είτε κάτι άλλο πάει στραβά με αυτό."
+
+msgid "The passphrase provided did not work. Please try again."
+msgstr "Η κωδική φράση που εισάγατε δεν λειτούργησε. Παρακαλούμε προσπαθήστε ξανά."
+
+msgid "See your administrator for help."
+msgstr "Μιλήστε με τον διαχειριστή σας για βοήθεια."
+
+msgid "Remember to be careful when working with files outside of your Workstation machine."
+msgstr "Θυμηθείτε να είστε προσεκτικοί όταν χρησιμοποιείτε τα αρχεία εκτός του σταθμού εργασίας σας."
+
+msgid "DONE"
+msgstr "ΤΕΛΟΣ"
+
+msgid "Preparing to print:<br /><span style=\"font-weight:normal\">{}</span>"
+msgstr "Προετοιμασία για εκτύπωση:<br /><span style=\"font-weight:normal\">{}</span>"
+
+msgid "Ready to print:<br /><span style=\"font-weight:normal\">{}</span>"
+msgstr "Έτοιμο για εκτύπωση:<br /><span style=\"font-weight:normal\">{}</span>"
+
+msgid "Connect USB printer"
+msgstr "Σύνδεση εκτυπωτή USB"
+
+msgid "Printing failed"
+msgstr "Αποτυχία εκτύπωσης"
+
+msgid "<h2>Managing printout risks</h2><b>QR codes and web addresses</b><br />Never type in and open web addresses or scan QR codes contained in printed documents without taking security precautions. If you are unsure how to manage this risk, please contact your administrator.<br /><br /><b>Printer dots</b><br />Any part of a printed page may contain identifying information invisible to the naked eye, such as printer dots. Please carefully consider this risk when working with or publishing scanned printouts."
+msgstr "<h2>Διαχείριση κινδύνων εκτύπωσης</h2><b>Κώδικες QR και διευθύνσεις διαδικτύου</b><br />Ποτέ μη πληκτρολογείτε και ανοίγετε διευθύνσεις, και ποτέ μη σκανάρετε κώδικες QR που περιέχονται σε εκτυπωμένα έγγραφα, χωρίς να λαμβάνετε κατάλληλα μέτρα ασφαλείας. Αν δεν είστε σίγουροι πως να διαχειριστείτε αυτό τον κίνδυνο, παρακαλώ επικοινωνήστε με τον διαχειριστή σας.<br /><br /><b>Κουκίδες εκτύπωσης</b><br />Οποιοδήποτε τμήμα μιας εκτυπωμένης σελίδας μπορεί να περιέχει πληροφορίες ταυτοποίησης που δεν είναι ορατές με γυμνό μάτι, όπως για παράδειγμα κουκίδες από τον εκτυπωτή. Παρακαλούμε εξετάστε αυτό τον κίνδυνο με προσοχή, όταν εργάζεστε με ή δημοσιοποιείτε σκαναρισμένα έγγραφα."
+
+msgid "Please connect your printer to a USB port."
+msgstr "Παρακαλούμε συνδέστε τον εκτυπωτή σας μέσω μιας θύρας USB."
+
+msgid "YES, DELETE ENTIRE SOURCE ACCOUNT"
+msgstr "ΝΑΙ, ΔΙΑΓΡΑΦΗ ΟΛΟΚΛΗΡΟΥ ΤΟΥ ΛΟΓΑΡΙΑΣΜΟΥ ΠΗΓΗΣ"
+
+msgid "Are you sure this is what you want?"
+msgstr "Σίγουρα θέλετε να κάνετε αυτή την ενέργεια;"
+
+msgid "When the entire account for a source is deleted:"
+msgstr "Όταν διαγράφεται ολόκληρος ο λογαριασμός μιας πηγής:"
+
+msgid "The source will not be able to log in with their codename again."
+msgstr "Η πηγή δεν θα μπορεί να ξανασυνδεθεί με το κωδικό όνομά της."
+
+msgid "Your organization will not be able to send them replies."
+msgstr "Ο οργανισμός σας δεν θα μπορεί να του/της στείλει απαντήσεις."
+
+msgid "All files and messages from that source will also be destroyed."
+msgstr "Επίσης, όλα τα αρχεία και τα μηνύματα αυτής της πηγής θα καταστραφούν."
+
+#~ msgid "You would like to delete {files_to_delete}, {replies_to_delete}, {messages_to_delete} from the source account for {source}?"
+#~ msgstr "Θέλετε να διαγράψετε τα {files_to_delete}, {replies_to_delete}, {messages_to_delete} από το λογαριασμό πηγής του/της {source}?"
+
+#~ msgid "Deleting files and messages..."
+#~ msgstr "Τα αρχεία και τα μηνύματα διαγράφονται..."
+
+#~ msgid "Deleting source account..."
+#~ msgstr "Ο λογαριασμός της πηγής διαγράφεται..."
+
+#~ msgid "Download All Files"
+#~ msgstr "Λήψη όλων των αρχείων"
+
+#~ msgid "The CONTINUE button will be disabled until the Export VM is ready"
+#~ msgstr "Το κουμπί ΣΥΝΕΧΕΙΑ δεν θα είναι διαθέσιμο μέχρι να ετοιμαστεί το VM Εξαγωγής"
