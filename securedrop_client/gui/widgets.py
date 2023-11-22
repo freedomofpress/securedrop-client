@@ -22,7 +22,7 @@ import html
 import logging
 from datetime import datetime
 from gettext import gettext as _
-from typing import Dict, List, Optional, Union  # noqa: F401
+from typing import Dict, List, Optional, Union
 from uuid import uuid4
 
 import arrow
@@ -91,8 +91,6 @@ from securedrop_client.utils import humanize_filesize
 logger = logging.getLogger(__name__)
 
 
-MINIMUM_ANIMATION_DURATION_IN_MILLISECONDS = 300
-NO_DELAY = 1
 
 
 class TopPane(QWidget):
@@ -2238,6 +2236,8 @@ class FileWidget(QWidget):
     MIN_CONTAINER_WIDTH = 750
     MIN_WIDTH = 400
 
+    ANIMATION_DURATION_MS = 300
+
     def __init__(
         self,
         file_uuid: str,
@@ -2432,14 +2432,15 @@ class FileWidget(QWidget):
     def _on_file_download_started(self, id: state.FileId) -> None:
         if str(id) == self.uuid:
             self.downloading = True
-            QTimer.singleShot(NO_DELAY, self.start_button_animation)
+            # 1 means no delay
+            QTimer.singleShot(1, self.start_button_animation)
 
     @pyqtSlot(str, str, str)
     def _on_file_downloaded(self, source_uuid: str, file_uuid: str, filename: str) -> None:
         if file_uuid == self.uuid:
             self.downloading = False
             QTimer.singleShot(
-                MINIMUM_ANIMATION_DURATION_IN_MILLISECONDS, self.stop_button_animation
+                self.ANIMATION_DURATION_MS, self.stop_button_animation
             )
 
     @pyqtSlot(str, str, str)
@@ -2447,7 +2448,7 @@ class FileWidget(QWidget):
         if file_uuid == self.uuid:
             self.downloading = False
             QTimer.singleShot(
-                MINIMUM_ANIMATION_DURATION_IN_MILLISECONDS, self.stop_button_animation
+                self.ANIMATION_DURATION_MS, self.stop_button_animation
             )
 
     @pyqtSlot()
