@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: SecureDrop Client 0.6.0\n"
 "Report-Msgid-Bugs-To: securedrop@freedom.press\n"
-"PO-Revision-Date: 2022-06-27 23:09+0000\n"
+"PO-Revision-Date: 2023-04-23 18:13+0000\n"
 "Last-Translator: deeplow <deeplower@protonmail.com>\n"
 "Language-Team: Portuguese (Portugal) <https://weblate.securedrop.org/projects/securedrop/securedrop-client/pt_PT/>\n"
 "Language: pt_PT\n"
@@ -15,11 +15,16 @@ msgstr ""
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=n > 1;\n"
-"X-Generator: Weblate 4.13\n"
+"X-Generator: Weblate 4.14.1\n"
 "Generated-By: Babel 2.9.1\n"
 
 msgid "{application_name} is already running"
 msgstr "{application_name} já está aberto"
+
+msgid "Retrieving 1 message"
+msgid_plural "Retrieving {message_count} messages"
+msgstr[0] "A obter 1 mensagem"
+msgstr[1] "A obter {message_count} novas mensagens"
 
 msgid "The SecureDrop server cannot be reached. Trying to reconnect..."
 msgstr "Não é possível aceder ao servidor SecureDrop. A reconectar..."
@@ -50,9 +55,6 @@ msgstr "A sua sessão expirou. Por favor, inicie sessão novamente."
 msgid "Failed to update star."
 msgstr "Falha ao atualizar a estrela."
 
-msgid "Retrieving new messages"
-msgstr "A obter novas mensagens"
-
 msgid "File does not exist in the data directory. Please try re-downloading."
 msgstr "O ficheiro não existe na pasta. Por favor, tente transferi-lo de novo."
 
@@ -65,14 +67,44 @@ msgstr "Não foi possível eliminar a conversa no servidor"
 msgid "Failed to delete source at server"
 msgstr "Falha ao eliminar fonte no servidor"
 
-msgid "Download All Files"
-msgstr "Transferir Todos os Ficheiros"
+msgid "No messages."
+msgstr "Não há ainda mensagens."
+
+#, python-format
+msgid "%(sender)s wrote:"
+msgstr "%(sender)s escreveu:"
+
+#, python-format
+msgid "%(sender)s sent:"
+msgstr "%(sender)s enviada:"
+
+#, python-format
+msgid "File: %(filename)s"
+msgstr "Ficheiro: %(filename)s"
+
+msgid "Download All"
+msgstr "Transferir tudo"
 
 msgid "Delete Source Account"
 msgstr "Eliminar Conta da Fonte"
 
 msgid "Delete All Files and Messages"
 msgstr "Eliminar Todos os Ficheiros e Mensagens"
+
+msgid "Print Transcript"
+msgstr "Imprimir conversa"
+
+msgid "Export Transcript"
+msgstr "Exportar Conversa"
+
+msgid "Export All"
+msgstr "Exportar tudo"
+
+msgid "<h2>Some files will not be exported</h2>Some files from this source have not yet been downloaded, and will not be exported.<br /><br />To export the currently downloaded files, click \"Continue.\""
+msgstr "<h2>Há ficheiros que não serão exportados</h2>Alguns ficheiros desta fonte ainda não foram transferidos e, por isso, não vão ser exportados.<br /><br />Para exportar os ficheiros já transferidos clique em \"Continuar.\""
+
+msgid "all files and transcript"
+msgstr "todos os ficheiros e a conversa"
 
 msgid "SecureDrop Client {}"
 msgstr "Cliente SecureDrop {}"
@@ -116,11 +148,11 @@ msgstr "Veja ou transferira ficheiros"
 msgid "Send a response"
 msgstr "Envie uma resposta"
 
-msgid "Deleting files and messages..."
-msgstr "A eliminar ficheiros e mensagens..."
+msgid "Deleting files and messages…"
+msgstr "A eliminar ficheiros e mensagens…"
 
-msgid "Deleting source account..."
-msgstr "A eliminar conta da fonte..."
+msgid "Deleting source account…"
+msgstr "A eliminar a conta da fonte…"
 
 msgid "— All files and messages deleted for this source —"
 msgstr "— Todos os ficheiros e mensagens eliminados para esta fonte —"
@@ -170,6 +202,12 @@ msgstr "Iniciar sessão"
 
 msgid " to compose or send a reply"
 msgstr " para escrever ou responder"
+
+msgid "FILES AND MESSAGES"
+msgstr "FICHEIROS E MENSAGENS"
+
+msgid "SOURCE ACCOUNT"
+msgstr "CONTA DA FONTE"
 
 msgid "Username"
 msgstr "Nome de utilizador"
@@ -225,8 +263,8 @@ msgstr "CONTINUAR"
 msgid "YES, DELETE FILES AND MESSAGES"
 msgstr "SIM, ELIMINAR FICHEIROS E MENSAGENS"
 
-msgid "You would like to delete {files_to_delete}, {replies_to_delete}, {messages_to_delete} from the source account for {source}?"
-msgstr "Gostaria de eliminar {files_to_delete}, {replies_to_delete}, {messages_to_delete} da conta da fonte {source}?"
+msgid "Would you like to delete {files_to_delete}, {replies_to_delete}, {messages_to_delete} from the source account for {source}?"
+msgstr "Deseja eliminar {files_to_delete}, {replies_to_delete}, {messages_to_delete} da conta da fonte {source}?"
 
 msgid "Preserving the account will retain its metadata, and the ability for {source} to log in to your SecureDrop again."
 msgstr "Manter a conta irá preservar os seus metadados e permite à fonte {source} iniciar sessão no SecureDrop de novo."
@@ -245,6 +283,9 @@ msgid "one message"
 msgid_plural "{message_count} messages"
 msgstr[0] "uma mensagem"
 msgstr[1] "{message_count} mensagens"
+
+msgid "SUBMIT"
+msgstr "SUBMETER"
 
 msgid "Preparing to export:<br /><span style=\"font-weight:normal\">{}</span>"
 msgstr "A preparar para exportar:<br /><span style=\"font-weight:normal\">{}</span>"
@@ -282,14 +323,8 @@ msgstr "A frase-chave inserida não funcionou. Por favor, tente novamente."
 msgid "See your administrator for help."
 msgstr "Consulte o administrador do sistema para obter ajuda."
 
-msgid "The CONTINUE button will be disabled until the Export VM is ready"
-msgstr "O botão CONTINUAR será desativado até a \"Export VM\" estar pronta"
-
 msgid "Remember to be careful when working with files outside of your Workstation machine."
 msgstr "Lembre-se de ter cuidado quando trabalha com ficheiros fora da Estação de Trabalho SecureDrop."
-
-msgid "SUBMIT"
-msgstr "SUBMETER"
 
 msgid "DONE"
 msgstr "FEITO"
@@ -329,6 +364,21 @@ msgstr "A sua organização não lhes conseguirá enviar respostas."
 
 msgid "All files and messages from that source will also be destroyed."
 msgstr "Todos os ficheiros e mensagens da fonte serão também destruídos."
+
+#~ msgid "You would like to delete {files_to_delete}, {replies_to_delete}, {messages_to_delete} from the source account for {source}?"
+#~ msgstr "Gostaria de eliminar {files_to_delete}, {replies_to_delete}, {messages_to_delete} da conta da fonte {source}?"
+
+#~ msgid "Deleting files and messages..."
+#~ msgstr "A eliminar ficheiros e mensagens..."
+
+#~ msgid "Deleting source account..."
+#~ msgstr "A eliminar conta da fonte..."
+
+#~ msgid "Download All Files"
+#~ msgstr "Transferir Todos os Ficheiros"
+
+#~ msgid "The CONTINUE button will be disabled until the Export VM is ready"
+#~ msgstr "O botão CONTINUAR será desativado até a \"Export VM\" estar pronta"
 
 #~ msgid "Entire source account"
 #~ msgstr "Conta completa da fonte"
