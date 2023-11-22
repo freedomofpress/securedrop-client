@@ -1,0 +1,391 @@
+# Translations template for SecureDrop Client.
+# Copyright (C) 2022 Freedom of the Press Foundation
+# This file is distributed under the same license as the SecureDrop Client project.
+# FIRST AUTHOR <EMAIL@ADDRESS>, 2022.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: SecureDrop Client 0.8.1\n"
+"Report-Msgid-Bugs-To: securedrop@freedom.press\n"
+"PO-Revision-Date: 2023-04-22 20:13+0000\n"
+"Last-Translator: Adam Rak <kitynska@gmail.com>\n"
+"Language-Team: Polish <https://weblate.securedrop.org/projects/securedrop/securedrop-client/pl/>\n"
+"Language: pl\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=3; plural=n==1 ? 0 : n%10>=2 && n%10<=4 && (n%100<10 || n%100>=20) ? 1 : 2;\n"
+"X-Generator: Weblate 4.14.1\n"
+"Generated-By: Babel 2.10.3\n"
+
+msgid "{application_name} is already running"
+msgstr "{application_name} już działa"
+
+msgid "Retrieving 1 message"
+msgid_plural "Retrieving {message_count} messages"
+msgstr[0] "Pobieranie 1 wiadomości"
+msgstr[1] "Pobieranie {message_count} wiadomości"
+msgstr[2] "Pobieranie {message_count} wiadomości"
+
+msgid "The SecureDrop server cannot be reached. Trying to reconnect..."
+msgstr "Serwer SecureDrop jest nieosiągalny. Próbuję ponownie się połączyć..."
+
+msgid ""
+"Could not reach the SecureDrop server. Please check your \n"
+"Internet and Tor connection and try again."
+msgstr ""
+"Nie można połączyć się z serwerem SecureDrop. Sprawdź swoje \n"
+"połączenie z Internetem oraz siecią Tor i spróbuj ponownie."
+
+msgid ""
+"Those credentials didn't work. Please try again, and \n"
+"make sure to use a new two-factor code."
+msgstr ""
+"Te dane uwierzytelniające nie zadziałały. Spróbuj ponownie \n"
+"i upewnij się, że używasz nowego kodu dwuskładnikowego."
+
+msgid "That didn't work. Please check everything and try again."
+msgstr "To nie zadziałało. Sprawdź wszystko i spróbuj ponownie."
+
+msgid "You must sign in to perform this action."
+msgstr "Aby wykonać tę czynność, musisz się zalogować."
+
+msgid "Your session expired. Please log in again."
+msgstr "Twoja sesja wygasła. Zaloguj się ponownie."
+
+msgid "Failed to update star."
+msgstr "Nie udało się zaktualizować gwiazdy."
+
+msgid "File does not exist in the data directory. Please try re-downloading."
+msgstr "Plik nie istnieje w katalogu danych. Spróbuj pobrać ponownie."
+
+msgid "The file download failed. Please try again."
+msgstr "Pobieranie pliku nie powiodło się. Spróbuj ponownie."
+
+msgid "Failed to delete conversation at server"
+msgstr "Nie udało się usunąć rozmowy na serwerze"
+
+msgid "Failed to delete source at server"
+msgstr "Nie udało się usunąć źródła na serwerze"
+
+msgid "No messages."
+msgstr "Brak wiadomości."
+
+#, python-format
+msgid "%(sender)s wrote:"
+msgstr "%(sender)s napisał(a):"
+
+#, python-format
+msgid "%(sender)s sent:"
+msgstr "%(sender)s wysłał(a):"
+
+#, python-format
+msgid "File: %(filename)s"
+msgstr "Plik: %(filename)s"
+
+msgid "Download All"
+msgstr "Pobierz wszystko"
+
+msgid "Delete Source Account"
+msgstr "Usuń konto źródła"
+
+msgid "Delete All Files and Messages"
+msgstr "Usuń wszystkie pliki i wiadomości"
+
+msgid "Print Transcript"
+msgstr "Wydrukuj transkrypcję"
+
+msgid "Export Transcript"
+msgstr "Eksportuj transkrypcję"
+
+msgid "Export All"
+msgstr "Eksportuj wszystko"
+
+msgid "<h2>Some files will not be exported</h2>Some files from this source have not yet been downloaded, and will not be exported.<br /><br />To export the currently downloaded files, click \"Continue.\""
+msgstr "<h2>Niektóre pliki nie zostaną wyeksportowane</h2>Niektóre pliki z tego źródła nie zostały jeszcze pobrane i nie zostaną wyeksportowane.<br /><br />Aby wyeksportować aktualnie pobrane pliki, kliknij „Kontynuuj”."
+
+msgid "all files and transcript"
+msgstr "wszystkie pliki i transkrypcje"
+
+msgid "SecureDrop Client {}"
+msgstr "Klient SecureDrop {}"
+
+msgid "Quit"
+msgstr "Zakończ"
+
+msgid "Last Refresh: {}"
+msgstr "Ostatnie odświeżenie: {}"
+
+msgid "Last Refresh: never"
+msgstr "Ostatnie odświeżenie: nigdy"
+
+msgid "{}"
+msgstr "{}"
+
+msgid "SIGN OUT"
+msgstr "WYLOGUJ SIĘ"
+
+msgid "SIGN IN"
+msgstr "ZALOGUJ SIĘ"
+
+msgid "Nothing to see just yet!"
+msgstr "Nie ma jeszcze nic do zobaczenia!"
+
+msgid "Source submissions will be listed to the left, once downloaded and decrypted."
+msgstr "Zgłoszenia źródła zostaną wyświetlone po lewej stronie po pobraniu i odszyfrowaniu."
+
+msgid "This is where you will read messages, reply to sources, and work with files."
+msgstr "Tutaj będziesz czytać wiadomości, odpowiadać źródłom i pracować z plikami."
+
+msgid "Select a source from the list, to:"
+msgstr "Wybierz źródło z listy, aby:"
+
+msgid "Read a conversation"
+msgstr "Przeczytaj rozmowę"
+
+msgid "View or retrieve files"
+msgstr "Wyświetl lub pobierz pliki"
+
+msgid "Send a response"
+msgstr "Wyślij odpowiedź"
+
+msgid "Deleting files and messages…"
+msgstr "Usuwanie plików i wiadomości…"
+
+msgid "Deleting source account…"
+msgstr "Usuwanie konta źródła…"
+
+msgid "— All files and messages deleted for this source —"
+msgstr "— Wszystkie pliki i wiadomości tego źródła usunięto —"
+
+msgid "Failed to send"
+msgstr "Nie udało się wysłać"
+
+msgid " DOWNLOAD"
+msgstr " POBIERZ"
+
+msgid "EXPORT"
+msgstr "EKSPORTUJ"
+
+msgid "PRINT"
+msgstr "WYDRUKUJ"
+
+msgid "ENCRYPTED FILE ON SERVER"
+msgstr "ZASZYFROWANY PLIK NA SERWERZE"
+
+msgid "DOWNLOAD"
+msgstr "POBIERZ"
+
+msgid " DOWNLOADING "
+msgstr " POBIERANIE "
+
+msgid "Earlier files and messages deleted."
+msgstr "Wcześniejsze pliki i wiadomości zostały usunięte."
+
+msgid ""
+"Files and messages deleted\n"
+" for this source"
+msgstr ""
+"Usunięto pliki i wiadomości\n"
+" tego źródła"
+
+msgid "Compose a reply to "
+msgstr "Utwórz odpowiedź do "
+
+msgid "Awaiting encryption key"
+msgstr "Oczekiwanie na klucz szyfrowania"
+
+msgid " from server to enable replies"
+msgstr " z serwera, aby umożliwić odpowiedzi"
+
+msgid "Sign in"
+msgstr "Zaloguj się"
+
+msgid " to compose or send a reply"
+msgstr " aby utworzyć lub wysłać odpowiedź"
+
+msgid "FILES AND MESSAGES"
+msgstr "PLIKI I WIADOMOŚCI"
+
+msgid "SOURCE ACCOUNT"
+msgstr "KONTO ŹRÓDŁA"
+
+msgid "Username"
+msgstr "Nazwa użytkownika"
+
+msgid "Passphrase"
+msgstr "Hasło"
+
+msgid "Two-Factor Code"
+msgstr "Kod dwuskładnikowy"
+
+msgid "SecureDrop Client v{}"
+msgstr "Klient SecureDrop v{}"
+
+msgid ""
+"That username won't work.\n"
+"It should be at least 3 characters long."
+msgstr ""
+"Ta nazwa użytkownika nie będzie działać.\n"
+"Powinna mieć co najmniej 3 znaki."
+
+msgid ""
+"That passphrase won't work.\n"
+"It should be between 14 and 128 characters long."
+msgstr ""
+"To hasło nie zadziała.\n"
+"Powinno mieć od 14 do 128 znaków."
+
+msgid ""
+"That two-factor code won't work.\n"
+"It should only contain numerals."
+msgstr ""
+"Ten kod dwuskładnikowy nie zadziała.\n"
+"Powinien zawierać tylko cyfry."
+
+msgid "SIGNING IN"
+msgstr "LOGOWANIE"
+
+msgid "Please enter a username, passphrase and two-factor code."
+msgstr "Wprowadź nazwę użytkownika, hasło i kod dwuskładnikowy."
+
+msgid "USE OFFLINE"
+msgstr "UŻYWAJ OFFLINE"
+
+msgid "Show Passphrase"
+msgstr "Pokaż hasło"
+
+msgid "CANCEL"
+msgstr "ANULUJ"
+
+msgid "CONTINUE"
+msgstr "DALEJ"
+
+msgid "YES, DELETE FILES AND MESSAGES"
+msgstr "TAK, USUŃ PLIKI I WIADOMOŚCI"
+
+msgid "Would you like to delete {files_to_delete}, {replies_to_delete}, {messages_to_delete} from the source account for {source}?"
+msgstr "Czy chcesz usunąć {files_to_delete}, {replies_to_delete}, {messages_to_delete} z konta źródła {source}?"
+
+msgid "Preserving the account will retain its metadata, and the ability for {source} to log in to your SecureDrop again."
+msgstr "Zachowanie konta pozwoli pozostawić jego metadane oraz utrzymać możliwość ponownego zalogowania się {source} do Twojego SecureDrop."
+
+msgid "one file"
+msgid_plural "{file_count} files"
+msgstr[0] "jeden plik"
+msgstr[1] "{file_count} pliki"
+msgstr[2] "{file_count} plików"
+
+msgid "one reply"
+msgid_plural "{reply_count} replies"
+msgstr[0] "jedna odpowiedź"
+msgstr[1] "{reply_count} odpowiedzi"
+msgstr[2] "{reply_count} odpowiedzi"
+
+msgid "one message"
+msgid_plural "{message_count} messages"
+msgstr[0] "jedna wiadomość"
+msgstr[1] "{message_count} wiadomości"
+msgstr[2] "{message_count} wiadomości"
+
+msgid "SUBMIT"
+msgstr "PRZEŚLIJ"
+
+msgid "Preparing to export:<br /><span style=\"font-weight:normal\">{}</span>"
+msgstr "Przygotowanie do eksportu:<br /><span style=\"font-weight:normal\">{}</span>"
+
+msgid "Ready to export:<br /><span style=\"font-weight:normal\">{}</span>"
+msgstr "Gotowość do eksportu:<br /><span style=\"font-weight:normal\">{}</span>"
+
+msgid "Insert encrypted USB drive"
+msgstr "Włóż zaszyfrowany dysk USB"
+
+msgid "Enter passphrase for USB drive"
+msgstr "Wprowadź hasło do dysku USB"
+
+msgid "Export successful"
+msgstr "Eksport udany"
+
+msgid "Export failed"
+msgstr "Eksport nie powiódł się"
+
+msgid "<h2>Understand the risks before exporting files</h2><b>Malware</b><br />This workstation lets you open files securely. If you open files on another computer, any embedded malware may spread to your computer or network. If you are unsure how to manage this risk, please print the file, or contact your administrator.<br /><br /><b>Anonymity</b><br />Files submitted by sources may contain information or hidden metadata that identifies who they are. To protect your sources, please consider redacting files before working with them on network-connected computers."
+msgstr "<h2>Zrozum zagrożenia przed wyeksportowaniem plików</h2><b>Złośliwe oprogramowanie</b><br />Ta stacja robocza umożliwia bezpieczne otwieranie plików. Jeśli otworzysz pliki na innym komputerze, każde osadzone złośliwe oprogramowanie może rozprzestrzenić się na Twój komputer lub sieć. Jeśli nie masz pewności, jak zarządzać tym ryzykiem, wydrukuj plik lub skontaktuj się z administratorem.<br /><br /><b>Anonimowość</b><br />Pliki przesłane przez źródła mogą zawierać informacje lub ukryte metadane, które identyfikują, kim są. Aby chronić swoje źródła, rozważ redagowanie plików przed rozpoczęciem pracy z nimi na komputerach podłączonych do sieci."
+
+msgid "Exporting: {}"
+msgstr "Eksportowanie: {}"
+
+msgid "Please insert one of the export drives provisioned specifically for the SecureDrop Workstation."
+msgstr "Włóż jeden z dysków eksportu, który jest przeznaczony specjalnie dla stacji roboczej SecureDrop."
+
+msgid "Either the drive is not encrypted or there is something else wrong with it."
+msgstr "Albo dysk nie jest zaszyfrowany, albo jest z nim coś nie tak."
+
+msgid "The passphrase provided did not work. Please try again."
+msgstr "Podane hasło nie zadziałało. Spróbuj ponownie."
+
+msgid "See your administrator for help."
+msgstr "Skontaktuj się z administratorem, aby uzyskać pomoc."
+
+msgid "Remember to be careful when working with files outside of your Workstation machine."
+msgstr "Pamiętaj, aby zachować ostrożność podczas pracy z plikami poza maszyną stacji roboczej."
+
+msgid "DONE"
+msgstr "GOTOWE"
+
+msgid "Preparing to print:<br /><span style=\"font-weight:normal\">{}</span>"
+msgstr "Przygotowanie do druku:<br /><span style=\"font-weight:normal\">{}</span>"
+
+msgid "Ready to print:<br /><span style=\"font-weight:normal\">{}</span>"
+msgstr "Gotowość do druku:<br /><span style=\"font-weight:normal\">{}</span>"
+
+msgid "Connect USB printer"
+msgstr "Podłącz drukarkę USB"
+
+msgid "Printing failed"
+msgstr "Drukowanie nie powiodło się"
+
+msgid "<h2>Managing printout risks</h2><b>QR codes and web addresses</b><br />Never type in and open web addresses or scan QR codes contained in printed documents without taking security precautions. If you are unsure how to manage this risk, please contact your administrator.<br /><br /><b>Printer dots</b><br />Any part of a printed page may contain identifying information invisible to the naked eye, such as printer dots. Please carefully consider this risk when working with or publishing scanned printouts."
+msgstr "<h2>Zarządzanie ryzykiem związanym z wydrukami</h2><b>Kody QR i adresy internetowe</b><br />Nigdy nie wpisuj i nie otwieraj adresów internetowych ani nie skanuj kodów QR zawartych w drukowanych dokumentach bez zachowania środków ostrożności. Jeśli nie masz pewności, jak zarządzać tym ryzykiem, skontaktuj się z administratorem.<br /><br /><b>Kropki na wydrukach</b><br />Każda część drukowanej strony może zawierać informacje identyfikujące niewidoczne gołym okiem, takie jak kropki na wydrukach. Prosimy o uważne rozważenie tego ryzyka podczas pracy lub publikowania zeskanowanych wydruków."
+
+msgid "Please connect your printer to a USB port."
+msgstr "Podłącz drukarkę do portu USB."
+
+msgid "YES, DELETE ENTIRE SOURCE ACCOUNT"
+msgstr "TAK, USUŃ CAŁE KONTO ŹRÓDŁA"
+
+msgid "Are you sure this is what you want?"
+msgstr "Czy na pewno tego chcesz?"
+
+msgid "When the entire account for a source is deleted:"
+msgstr "Po usunięciu całego konta źródła:"
+
+msgid "The source will not be able to log in with their codename again."
+msgstr "Źródło nie będzie mogło ponownie zalogować się za pomocą swojego kryptonimu."
+
+msgid "Your organization will not be able to send them replies."
+msgstr "Twoja organizacja nie będzie mogła wysyłać im odpowiedzi."
+
+msgid "All files and messages from that source will also be destroyed."
+msgstr "Wszystkie pliki i wiadomośc od tego źródła również zostaną zniszczone."
+
+#~ msgid "You would like to delete {files_to_delete}, {replies_to_delete}, {messages_to_delete} from the source account for {source}?"
+#~ msgstr "Chcesz usunąć {files_to_delete}, {replies_to_delete}, {messages_to_delete} z konta źródła {source}?"
+
+#~ msgid "<h2>Some files will not be exported</h2>Some files from this source have not yet been downloaded, and will not be exported.<br /><br />To export the currently-downloaded files, click \"Continue.\""
+#~ msgstr "<h2>Niektóre pliki nie zostaną wyeksportowane</h2>Niektóre pliki z tego źródła nie zostały jeszcze pobrane i nie zostaną wyeksportowane.<br /><br />Aby wyeksportować aktualnie pobrane pliki, kliknij „Kontynuuj\"."
+
+#~ msgid "Deleting files and messages..."
+#~ msgstr "Usuwam pliki i wiadomości..."
+
+#~ msgid "Deleting source account..."
+#~ msgstr "Usuwam konto źródła..."
+
+#~ msgid "Download All Files"
+#~ msgstr "Pobierz wszystkie pliki"
+
+#~ msgid "Print Conversation Transcript"
+#~ msgstr "Wydrukuj transkrypcję rozmowy"
+
+#~ msgid "The CONTINUE button will be disabled until the Export VM is ready"
+#~ msgstr "Przycisk DALEJ będzie nieaktywny, dopóki maszyna wirtualna eksportu nie będzie gotowa"
