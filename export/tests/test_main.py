@@ -1,13 +1,13 @@
 import pytest
-import tempfile
-import os
 from unittest import mock
 import shutil
 
+from pathlib import Path
 from securedrop_export.archive import Archive, Metadata, Status as ArchiveStatus
 from securedrop_export.status import BaseStatus
 from securedrop_export.command import Command
 from securedrop_export.exceptions import ExportException
+from securedrop_export.disk.status import Status as ExportStatus
 
 from securedrop_export.main import (
     Status,
@@ -18,44 +18,31 @@ from securedrop_export.main import (
     _configure_logging,
 )
 
-SUBMISSION_SAMPLE_ARCHIVE = "pretendfile.tar.gz"
+_PRINT_SAMPLE_ARCHIVE = "sample_print.sd_export"
+_EXPORT_SAMPLE_ARCHIVE = "sample_export.sd_export"
 
 
 class TestMain:
     def setup_method(self, method):
-        # This can't be a class method, since we expect sysexit during this test suite,
-        # which
-        self.submission = Archive("pretendfile.tar.gz")
-        assert os.path.exists(self.submission.tmpdir)
+        # These can't be class setup methods, since we expect sysexit during this test suite
+        self.print_archive_path = Path.cwd() / "tests/files" / _PRINT_SAMPLE_ARCHIVE
+        assert self.print_archive_path.exists()
+
+        self.export_archive_path = Path.cwd() / "tests/files" / _EXPORT_SAMPLE_ARCHIVE
+        assert self.export_archive_path.exists()
+
+        self.print_submission = Archive(str(self.print_archive_path))
+        assert Path(self.print_submission.tmpdir).exists()
+
+        self.export_submission = Archive(str(self.export_archive_path))
+        assert Path(self.export_submission.tmpdir).exists()
 
     def teardown_method(self, method):
-        if os.path.exists(self.submission.tmpdir):
-            shutil.rmtree(self.submission.tmpdir)
-        self.submission = None
+        if Path(self.print_submission.tmpdir).exists():
+            shutil.rmtree(self.print_submission.tmpdir)
 
-    def test_exit_gracefully_no_exception(self, capsys):
-        with pytest.raises(SystemExit) as sysexit:
-            _exit_gracefully(self.submission, Status.ERROR_GENERIC)
-
-        assert self._did_exit_gracefully(sysexit, capsys, Status.ERROR_GENERIC)
-
-    def test_exit_gracefully_exception(self, capsys):
-        with pytest.raises(SystemExit) as sysexit:
-            _exit_gracefully(self.submission, Status.ERROR_GENERIC)
-
-        # A graceful exit means a return code of 0
-        assert self._did_exit_gracefully(sysexit, capsys, Status.ERROR_GENERIC)
-
-    @pytest.mark.parametrize("status", [s for s in Status])
-    def test_write_status(self, status, capsys):
-        _write_status(status)
-        captured = capsys.readouterr()
-        assert captured.err == status.value + "\n"
-
-    @pytest.mark.parametrize("invalid_status", ["foo", ";ls", "&& echo 0", None])
-    def test_write_status_error(self, invalid_status, capsys):
-        with pytest.raises(ValueError):
-            _write_status(Status(invalid_status))
+        if Path(self.export_submission.tmpdir).exists():
+            shutil.rmtree(self.export_submission.tmpdir)
 
     def _did_exit_gracefully(self, exit, capsys, status: BaseStatus) -> bool:
         """
@@ -69,56 +56,85 @@ class TestMain:
             and captured.out == ""
         )
 
-    @pytest.mark.parametrize("command", list(Command))
-    @mock.patch("securedrop_export.main._configure_logging")
-    @mock.patch("os.path.exists", return_value=True)
-    def test_entrypoint_success_start_service(self, mock_log, mock_path, command):
-        metadata = os.path.join(self.submission.tmpdir, Metadata.METADATA_FILE)
+    def test__exit_gracefully_no_exception(self, capsys):
+        with pytest.raises(SystemExit) as sysexit:
+            # `ERROR_GENERIC` is just a placeholder status here
+            _exit_gracefully(self.print_submission, Status.ERROR_GENERIC)
 
-        with open(metadata, "w") as f:
-            f.write(f'{{"device": "{command.value}", "encryption_method": "luks"}}')
+        assert self._did_exit_gracefully(sysexit, capsys, Status.ERROR_GENERIC)
 
+    @mock.patch(
+        "securedrop_export.main.shutil.rmtree",
+        side_effect=FileNotFoundError("oh no", 0),
+    )
+    def test__exit_gracefully_even_with_cleanup_exception(self, mock_rm, capsys):
         with mock.patch(
-            "sys.argv", ["qvm-send-to-usb", SUBMISSION_SAMPLE_ARCHIVE]
+            "sys.argv", ["qvm-send-to-usb", self.export_archive_path]
+        ), mock.patch(
+            "securedrop_export.main._start_service",
+            return_value=ExportStatus.SUCCESS_EXPORT,
+        ), pytest.raises(
+            SystemExit
+        ) as sysexit:
+            entrypoint()
+
+        assert self._did_exit_gracefully(sysexit, capsys, Status.ERROR_GENERIC)
+
+    def test_entrypoint_success(self, capsys):
+        with mock.patch(
+            "sys.argv", ["qvm-send-to-usb", self.export_archive_path]
+        ), mock.patch(
+            "securedrop_export.main._start_service",
+            return_value=ExportStatus.SUCCESS_EXPORT,
+        ), pytest.raises(
+            SystemExit
+        ) as sysexit:
+            entrypoint()
+
+        assert self._did_exit_gracefully(sysexit, capsys, ExportStatus.SUCCESS_EXPORT)
+
+    @pytest.mark.parametrize("status", [s for s in Status])
+    def test__write_status_success(self, status, capsys):
+        _write_status(status)
+        captured = capsys.readouterr()
+        assert captured.err == status.value + "\n"
+
+    @pytest.mark.parametrize("invalid_status", ["foo", ";ls", "&& echo 0", None])
+    def test__write_status_will_not_write_bad_value(self, invalid_status, capsys):
+        with pytest.raises(ValueError):
+            _write_status(Status(invalid_status))
+
+        captured = capsys.readouterr()
+        assert captured.err == ""
+        assert captured.out == ""
+
+    def test_entrypoint_success_start_service(self):
+        with mock.patch(
+            "sys.argv", ["qvm-send-to-usb", self.export_archive_path]
         ), mock.patch(
             "securedrop_export.main._start_service"
-        ) as mock_service, mock.patch(
-            "securedrop_export.main.Archive.extract_tarball",
-            return_value=self.submission,
-        ), pytest.raises(
+        ) as mock_service, pytest.raises(
             SystemExit
         ):
             entrypoint()
 
-        if command is not Command.START_VM:
-            assert self.submission.command == command
-            assert mock_service.call_args[0][0].archive == SUBMISSION_SAMPLE_ARCHIVE
-            mock_service.assert_called_once_with(self.submission)
+        assert mock_service.call_args[0][0].archive == self.export_archive_path
+        assert mock_service.call_args[0][0].command == Command.EXPORT
 
-    def test_valid_printer_test_config(self, capsys):
-        Archive("testfile")
-        temp_folder = tempfile.mkdtemp()
-        metadata = os.path.join(temp_folder, Metadata.METADATA_FILE)
-        with open(metadata, "w") as f:
-            f.write('{"device": "printer-test"}')
+    def test_validate_metadata(self):
+        for archive_path in [self.print_archive_path, self.export_archive_path]:
+            archive = Archive(archive_path)
+            extracted = archive.extract_tarball()
 
-        config = Metadata(temp_folder).validate()
-
-        assert config.encryption_key is None
-        assert config.encryption_method is None
+            assert Metadata(extracted.tmpdir).validate()
 
     @mock.patch(
         "securedrop_export.archive.safe_extractall",
         side_effect=ValueError("A tarball problem!"),
     )
-    @mock.patch("securedrop_export.main.os.path.exists", return_value=True)
-    @mock.patch("securedrop_export.main.shutil.rmtree")
-    @mock.patch("securedrop_export.main._configure_logging")
-    def test_entrypoint_failure_extraction(
-        self, mock_log, mock_rm, mock_path, mock_extract, capsys
-    ):
+    def test_entrypoint_failure_extraction(self, mock_extract, capsys):
         with mock.patch(
-            "sys.argv", ["qvm-send-to-usb", SUBMISSION_SAMPLE_ARCHIVE]
+            "sys.argv", ["qvm-send-to-usb", self.export_archive_path]
         ), pytest.raises(SystemExit) as sysexit:
             entrypoint()
 
@@ -149,9 +165,10 @@ class TestMain:
 
         assert self._did_exit_gracefully(sysexit, capsys, Status.ERROR_GENERIC)
 
-    @mock.patch("os.path.exists", return_value=False)
-    def test_entrypoint_archive_path_fails(self, mock_path, capsys):
-        with pytest.raises(SystemExit) as sysexit:
+    def test_entrypoint_archive_path_fails(self, capsys):
+        with mock.patch(
+            "sys.argv", ["qvm-send-to-usb", "THIS_FILE_DOES_NOT_EXIST.sd_export"]
+        ), pytest.raises(SystemExit) as sysexit:
             entrypoint()
 
         assert self._did_exit_gracefully(sysexit, capsys, Status.ERROR_FILE_NOT_FOUND)
@@ -171,14 +188,15 @@ class TestMain:
         if command is Command.START_VM:
             pytest.skip("Command does not start a service")
 
-        self.submission.command = command
+        mock_submission = Archive("mock_submission.sd_export")
+        mock_submission.command = command
 
         with mock.patch("securedrop_export.main.PrintService") as ps, mock.patch(
             "securedrop_export.main.ExportService"
         ) as es:
-            _start_service(self.submission)
+            _start_service(mock_submission)
 
         if command in [Command.PRINT, Command.PRINTER_TEST, Command.PRINTER_PREFLIGHT]:
-            assert ps.call_args[0][0] is self.submission
+            assert ps.call_args[0][0] is mock_submission
         else:
-            assert es.call_args[0][0] is self.submission
+            assert es.call_args[0][0] is mock_submission

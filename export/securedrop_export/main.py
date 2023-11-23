@@ -42,6 +42,8 @@ def entrypoint():
 
     Non-zero exit values will cause the system to try alternative
     solutions for mimetype handling, which we want to avoid.
+
+    The program is called with the archive name as the first argument.
     """
     status, submission = None, None
 
@@ -53,7 +55,8 @@ def entrypoint():
 
         # Halt if target file is absent
         if not os.path.exists(data_path):
-            logger.info("Archive is not found {}.".format(data_path))
+            logger.error("Archive not found at provided path.")
+            logger.debug("Archive missing, path: {}".format(data_path))
             status = Status.ERROR_FILE_NOT_FOUND
 
         else:
