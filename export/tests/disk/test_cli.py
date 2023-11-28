@@ -22,6 +22,10 @@ _SAMPLE_OUTPUT_MULTI_PART = b"disk\npart\npart\npart\ncrypt"  # noqa
 _SAMPLE_OUTPUT_USB = b"/dev/sda"  # noqa
 
 _SAMPLE_LUKS_HEADER = b"\n\nUUID:\t123456-DEADBEEF"  # noqa
+_SAMPLE_CRYPTSETUP_STATUS_OUTPUT = b"/dev/mapper/vc is active and is in use.\n  type:    \
+TCRYPT\n  cipher:  aes-xts-plain64\n  keysize: 512 bits\n  key location: dm-crypt\n  device:  \
+/dev/sdc\n  sector size:  512\n  mode:    read/write\n"
+_SAMPLE_MOUNTED_VC_OUTPUT = b"/media/custom_mount"
 
 
 class TestCli:
@@ -288,7 +292,7 @@ class TestCli:
     @mock.patch("os.path.exists", return_value=True)
     @mock.patch("subprocess.check_output", return_value=b"\n")
     @mock.patch("subprocess.check_call", return_value=0)
-    def testmount_volume(self, mocked_call, mocked_output, mocked_path):
+    def test_mount_volume(self, mocked_call, mocked_output, mocked_path):
         vol = Volume(
             device_name=_DEFAULT_USB_DEVICE_ONE_PART,
             mapped_name=_PRETEND_LUKS_ID,
@@ -303,7 +307,9 @@ class TestCli:
         "subprocess.check_output", return_value=b"/dev/pretend/luks-id-123456\n"
     )
     @mock.patch("subprocess.check_call", return_value=0)
-    def testmount_volume_already_mounted(self, mocked_output, mocked_call, mocked_path):
+    def test_mount_volume_already_mounted(
+        self, mocked_output, mocked_call, mocked_path
+    ):
         md = Volume(
             device_name=_DEFAULT_USB_DEVICE_ONE_PART,
             mapped_name=_PRETEND_LUKS_ID,
@@ -316,7 +322,7 @@ class TestCli:
     @mock.patch("os.path.exists", return_value=True)
     @mock.patch("subprocess.check_output", return_value=b"\n")
     @mock.patch("subprocess.check_call", return_value=0)
-    def testmount_volume_mkdir(self, mocked_output, mocked_subprocess, mocked_path):
+    def test_mount_volume_mkdir(self, mocked_output, mocked_subprocess, mocked_path):
         md = Volume(
             device_name=_DEFAULT_USB_DEVICE_ONE_PART,
             mapped_name=_PRETEND_LUKS_ID,
@@ -331,7 +337,7 @@ class TestCli:
         "subprocess.check_call",
         side_effect=subprocess.CalledProcessError(1, "check_call"),
     )
-    def testmount_volume_error(self, mocked_subprocess, mocked_output):
+    def test_mount_volume_error(self, mocked_subprocess, mocked_output):
         md = Volume(
             device_name=_DEFAULT_USB_DEVICE_ONE_PART,
             mapped_name=_PRETEND_LUKS_ID,
@@ -577,3 +583,59 @@ class TestCli:
             self.cli.mount_volume(vol)
 
         assert ex.value.sdstatus == Status.ERROR_MOUNT
+
+    @mock.patch("os.path.exists", return_value=True)
+    @mock.patch(
+        "subprocess.check_output",
+        side_effect=[b"vc", _SAMPLE_CRYPTSETUP_STATUS_OUTPUT, b""],
+    )
+    @mock.patch("subprocess.check_call")
+    def test_get_unlocked_veracrypt_unmounted(
+        self, mock_call, mock_subprocess, mock_os
+    ):
+        vol = self.cli._attempt_get_unlocked_veracrypt_volume("/dev/sdc")
+
+        assert vol.unlocked
+        assert vol.mountpoint == self.cli._DEFAULT_MOUNTPOINT
+
+    @mock.patch("os.path.exists", return_value=True)
+    @mock.patch(
+        "subprocess.check_output",
+        side_effect=[
+            b"vc",
+            _SAMPLE_CRYPTSETUP_STATUS_OUTPUT,
+            _SAMPLE_MOUNTED_VC_OUTPUT,
+        ],
+    )
+    def test_get_unlocked_veracrypt_mounted(self, mock_subprocess, mock_os):
+        v = self.cli._attempt_get_unlocked_veracrypt_volume("/dev/sdc")
+
+        assert v.unlocked
+        assert v.mountpoint == _SAMPLE_MOUNTED_VC_OUTPUT.decode("utf-8")
+
+    @mock.patch("os.path.exists", return_value=True)
+    @mock.patch(
+        "subprocess.check_output",
+        side_effect=subprocess.CalledProcessError(1, "Oh no!"),
+    )
+    def test_get_unlocked_veracrypt_lsblk_error(self, mock_subprocess, mock_os):
+        with pytest.raises(ExportException) as ex:
+            self.cli._attempt_get_unlocked_veracrypt_volume("/dev/sdc")
+
+        assert ex.value.sdstatus == Status.DEVICE_ERROR
+
+    @mock.patch("os.path.exists", return_value=True)
+    @mock.patch("subprocess.check_output", return_value=b"sdc disk\n")
+    def test_get_unlocked_veracrypt_no_vc_drive(self, mock_subprocess, mock_os):
+        with pytest.raises(ExportException) as ex:
+            self.cli._attempt_get_unlocked_veracrypt_volume("/dev/sdc")
+
+        assert ex.value.sdstatus == Status.UNKNOWN_DEVICE_DETECTED
+
+    @mock.patch("os.path.exists", return_value=True)
+    @mock.patch("subprocess.check_output", return_value=b"\n")
+    def test_get_unlocked_veracrypt_empty_lsblk_error(self, mock_subprocess, mock_os):
+        with pytest.raises(ExportException) as ex:
+            self.cli._attempt_get_unlocked_veracrypt_volume("/dev/sdc")
+
+        assert ex.value.sdstatus == Status.UNKNOWN_DEVICE_DETECTED
