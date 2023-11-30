@@ -26,7 +26,6 @@ class Metadata(object):
     """
 
     METADATA_FILE = "metadata.json"
-    SUPPORTED_ENCRYPTION_METHODS = ["luks"]
 
     def __init__(self, archive_path: str):
         self.metadata_path = os.path.join(archive_path, self.METADATA_FILE)
@@ -38,11 +37,10 @@ class Metadata(object):
                 logger.info("Parsing archive metadata")
                 json_config = json.loads(f.read())
                 self.export_method = json_config.get("device", None)
-                self.encryption_method = json_config.get("encryption_method", None)
                 self.encryption_key = json_config.get("encryption_key", None)
                 logger.info(
-                    "Target: {}, encryption_method {}".format(
-                        self.export_method, self.encryption_method
+                    "Command: {}".format(
+                        self.export_method
                     )
                 )
 
@@ -54,12 +52,6 @@ class Metadata(object):
         try:
             logger.debug("Validate export action")
             self.command = Command(self.export_method)
-            if (
-                self.command is Command.EXPORT
-                and self.encryption_method not in self.SUPPORTED_ENCRYPTION_METHODS
-            ):
-                logger.error("Unsupported encryption method")
-                raise ExportException(sdstatus=Status.ERROR_ARCHIVE_METADATA)
         except ValueError as v:
             raise ExportException(sdstatus=Status.ERROR_ARCHIVE_METADATA) from v
 
@@ -95,7 +87,5 @@ class Archive(object):
         """
         self.command = metadata.command
         if self.command is Command.EXPORT:
-            # When we support multiple encryption types, we will also want to add the
-            # encryption_method here
             self.encryption_key = metadata.encryption_key
         return self
