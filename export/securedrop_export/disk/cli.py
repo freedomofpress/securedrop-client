@@ -24,8 +24,6 @@ class CLI:
     sys.exit(0) so that another program does not attempt to open the submission.
     """
 
-    # Default mountpoint (unless drive is already mounted manually by the user)
-    _DEFAULT_MOUNTPOINT = "/media/usb"
     _DEFAULT_VC_CONTAINER_NAME = "vc-volume"
 
     def _get_connected_devices(self) -> List[str]:
@@ -71,7 +69,6 @@ class CLI:
                     ["cat", f"/sys/class/block/{device}/removable"],
                     stderr=subprocess.PIPE,
                 )
-
                 # removable is "0" for non-removable device, "1" for removable,
                 # convert that into a Python boolean
                 is_removable = bool(int(removable.decode("utf8").strip()))
@@ -96,7 +93,9 @@ class CLI:
         Caller must handle ExportException.
         """
         volumes = []
+
         removable_devices = self._get_connected_devices()
+
         try:
             for item in removable_devices:
                 blkid = self._get_partitioned_device(item)
@@ -233,8 +232,8 @@ class CLI:
 
         If LUKS volume is already mounted, existing mountpoint will be preserved and a
         MountedVolume object will be returned.
-        If LUKS volume is unlocked but not mounted, volume will be mounted at _DEFAULT_MOUNTPOINT,
-        and a MountedVolume object will be returned.
+        If LUKS volume is unlocked but not mounted, volume will be mounted and a MountedVolume
+        object will be returned.
 
         If device is still locked, mountpoint will not be set, and a Volume object will be retuned.
         Once the decrpytion passphrase is available, call unlock_luks_volume(), passing the Volume
@@ -378,18 +377,11 @@ class CLI:
                         logger.info(f"Drive is already mounted at {mountpoint}")
                         return MountedVolume.from_volume(volume, mountpoint)
                     else:
-                        logger.info(
-                            "Drive is not mounted; mounting at default mountpoint"
-                        )
+                        logger.info("Drive is not mounted; mounting")
+                        return self.mount_volume(volume)
 
-                        # Fixme: we can't reliably use chown as we do with luks+ext4,
-                        # since we don't know what filesystem is inside the veracrypt container.
-                        return self._mount_at_mountpoint(
-                            volume, self._DEFAULT_MOUNTPOINT
-                        )
-
-                else:  # somehow it didn't work. dump the device info for now.
-                    # fixme: this isn't necessarily. an error
+                else:
+                    # Somehow it didn't work.
                     logger.error(f"Did not parse veracrypt drive from: {status}")
 
             # If we got here, there is no unlocked VC drive present. Not an error, but not
@@ -465,7 +457,7 @@ class CLI:
         Given an unlocked LUKS volume, return MountedVolume object.
 
         If volume is already mounted, mountpoint is not changed. Otherwise,
-        volume is mounted at _DEFAULT_MOUNTPOINT.
+        volume is mounted inside /media/user/ by udisksctl.
 
         Raise ExportException if errors are encountered during mounting.
         """
@@ -480,39 +472,21 @@ class CLI:
             return MountedVolume.from_volume(volume, mountpoint)
 
         else:
-            logger.info("Mount volume at default mountpoint")
-            return self._mount_at_mountpoint(volume, self._DEFAULT_MOUNTPOINT)
-
-    def _mount_at_mountpoint(self, volume: Volume, mountpoint: str) -> MountedVolume:
-        """
-        Mount a volume at the supplied mountpoint, creating the mountpoint directory and
-        adjusting permissions (user:user) if need be. `mountpoint` must be a full path.
-
-        Return MountedVolume object.
-        Raise ExportException if unable to mount volume at target mountpoint.
-        """
-        if not os.path.exists(mountpoint):
             try:
-                subprocess.check_call(["sudo", "mkdir", mountpoint])
+                logger.info("Mount volume in /media/user using udisksctl")
+                output = subprocess.check_output(
+                    ["udisksctl", "mount", "-b", f"/dev/mapper/{volume.mapped_name}"]
+                ).decode("utf-8")
+
+                # Success is "Mounted $device at $path"
+                if output.startswith("Mounted "):
+                    mountpoint = output.split()[-1]
+
+                return MountedVolume.from_volume(volume, mountpoint)
+
             except subprocess.CalledProcessError as ex:
                 logger.error(ex)
                 raise ExportException(sdstatus=Status.ERROR_MOUNT) from ex
-
-        # Mount device /dev/mapper/{mapped_name} at /media/usb/
-        mapped_device_path = os.path.join(
-            volume.MAPPED_VOLUME_PREFIX, volume.mapped_name
-        )
-
-        try:
-            logger.info(f"Mounting volume at {mountpoint}")
-            subprocess.check_call(["sudo", "mount", mapped_device_path, mountpoint])
-            subprocess.check_call(["sudo", "chown", "-R", "user:user", mountpoint])
-
-            return MountedVolume.from_volume(volume, mountpoint)
-
-        except subprocess.CalledProcessError as ex:
-            logger.error(ex)
-            raise ExportException(sdstatus=Status.ERROR_MOUNT) from ex
 
     def write_data_to_device(
         self,
@@ -557,8 +531,10 @@ class CLI:
         try:
             subprocess.check_call(["sync"])
             umounted = self._unmount_volume(volume)
-            if umounted:
+            if umounted.encryption is EncryptionScheme.LUKS:
                 self._close_luks_volume(umounted)
+            elif umounted.encryption is EncryptionScheme.VERACRYPT:
+                self._close_veracrypt_volume(umounted)
             self._remove_temp_directory(submission_tmpdir)
 
         except subprocess.CalledProcessError as ex:
@@ -572,7 +548,7 @@ class CLI:
         if os.path.exists(volume.mountpoint):
             logger.debug(f"Unmounting drive from {volume.mountpoint}")
             try:
-                subprocess.check_call(["sudo", "umount", volume.mountpoint])
+                subprocess.check_call(["udisksctl", "unmount", volume.mountpoint])
 
             except subprocess.CalledProcessError as ex:
                 logger.error("Error unmounting device")

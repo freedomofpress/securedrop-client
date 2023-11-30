@@ -27,6 +27,8 @@ TCRYPT\n  cipher:  aes-xts-plain64\n  keysize: 512 bits\n  key location: dm-cryp
 /dev/sdc\n  sector size:  512\n  mode:    read/write\n"
 _SAMPLE_MOUNTED_VC_OUTPUT = b"/media/custom_mount"
 
+_EXAMPLE_MOUNTPOINT = "/media/usb"
+
 
 class TestCli:
     """
@@ -290,19 +292,6 @@ class TestCli:
         assert ex.value.sdstatus is Status.DEVICE_ERROR
 
     @mock.patch("os.path.exists", return_value=True)
-    @mock.patch("subprocess.check_output", return_value=b"\n")
-    @mock.patch("subprocess.check_call", return_value=0)
-    def test_mount_volume(self, mocked_call, mocked_output, mocked_path):
-        vol = Volume(
-            device_name=_DEFAULT_USB_DEVICE_ONE_PART,
-            mapped_name=_PRETEND_LUKS_ID,
-            encryption=EncryptionScheme.LUKS,
-        )
-        mv = self.cli.mount_volume(vol)
-        assert isinstance(mv, MountedVolume)
-        assert mv.mountpoint is self.cli._DEFAULT_MOUNTPOINT
-
-    @mock.patch("os.path.exists", return_value=True)
     @mock.patch(
         "subprocess.check_output", return_value=b"/dev/pretend/luks-id-123456\n"
     )
@@ -349,47 +338,13 @@ class TestCli:
 
         assert ex.value.sdstatus is Status.ERROR_MOUNT
 
-    @mock.patch("os.path.exists", return_value=False)
-    @mock.patch(
-        "subprocess.check_call",
-        side_effect=subprocess.CalledProcessError(1, "check_call"),
-    )
-    def test_mount_at_mountpoint_mkdir_error(self, mocked_subprocess, mocked_path):
-        md = Volume(
-            device_name=_DEFAULT_USB_DEVICE_ONE_PART,
-            mapped_name=_PRETEND_LUKS_ID,
-            encryption=EncryptionScheme.LUKS,
-        )
-
-        with pytest.raises(ExportException) as ex:
-            self.cli._mount_at_mountpoint(md, self.cli._DEFAULT_MOUNTPOINT)
-
-        assert ex.value.sdstatus is Status.ERROR_MOUNT
-
-    @mock.patch("os.path.exists", return_value=True)
-    @mock.patch(
-        "subprocess.check_call",
-        side_effect=subprocess.CalledProcessError(1, "check_call"),
-    )
-    def test_mount_at_mountpoint_mounting_error(self, mocked_subprocess, mocked_path):
-        md = Volume(
-            device_name=_DEFAULT_USB_DEVICE_ONE_PART,
-            mapped_name=_PRETEND_LUKS_ID,
-            encryption=EncryptionScheme.LUKS,
-        )
-
-        with pytest.raises(ExportException) as ex:
-            self.cli._mount_at_mountpoint(md, self.cli._DEFAULT_MOUNTPOINT)
-
-        assert ex.value.sdstatus is Status.ERROR_MOUNT
-
     @mock.patch("os.path.exists", return_value=True)
     @mock.patch("subprocess.check_call", return_value=0)
     def test__unmount_volume(self, mocked_subprocess, mocked_mountpath):
         mounted = MountedVolume(
             device_name=_DEFAULT_USB_DEVICE_ONE_PART,
             mapped_name=_PRETEND_LUKS_ID,
-            mountpoint=self.cli._DEFAULT_MOUNTPOINT,
+            mountpoint="/media/usb",
             encryption=EncryptionScheme.LUKS,
         )
 
@@ -405,7 +360,7 @@ class TestCli:
         mounted = MountedVolume(
             device_name=_DEFAULT_USB_DEVICE_ONE_PART,
             mapped_name=_PRETEND_LUKS_ID,
-            mountpoint=self.cli._DEFAULT_MOUNTPOINT,
+            mountpoint=_EXAMPLE_MOUNTPOINT,
             encryption=EncryptionScheme.LUKS,
         )
 
@@ -461,7 +416,7 @@ class TestCli:
         vol = MountedVolume(
             device_name=_DEFAULT_USB_DEVICE_ONE_PART,
             mapped_name=_PRETEND_LUKS_ID,
-            mountpoint=self.cli._DEFAULT_MOUNTPOINT,
+            mountpoint=_EXAMPLE_MOUNTPOINT,
             encryption=EncryptionScheme.LUKS,
         )
 
@@ -486,7 +441,7 @@ class TestCli:
         vol = MountedVolume(
             device_name=_DEFAULT_USB_DEVICE_ONE_PART,
             mapped_name=_PRETEND_LUKS_ID,
-            mountpoint=self.cli._DEFAULT_MOUNTPOINT,
+            mountpoint=_EXAMPLE_MOUNTPOINT,
             encryption=EncryptionScheme.LUKS,
         )
         submission = Archive("testfile")
@@ -520,7 +475,7 @@ class TestCli:
             mapped_name=_PRETEND_LUKS_ID,
             encryption=EncryptionScheme.LUKS,
         )
-        mv = MountedVolume.from_volume(vol, mountpoint=self.cli._DEFAULT_MOUNTPOINT)
+        mv = MountedVolume.from_volume(vol, mountpoint=_EXAMPLE_MOUNTPOINT)
 
         close_patch = mock.patch.object(self.cli, "_close_luks_volume")
         remove_tmpdir_patch = mock.patch.object(self.cli, "_remove_temp_directory")
@@ -583,20 +538,6 @@ class TestCli:
             self.cli.mount_volume(vol)
 
         assert ex.value.sdstatus == Status.ERROR_MOUNT
-
-    @mock.patch("os.path.exists", return_value=True)
-    @mock.patch(
-        "subprocess.check_output",
-        side_effect=[b"vc", _SAMPLE_CRYPTSETUP_STATUS_OUTPUT, b""],
-    )
-    @mock.patch("subprocess.check_call")
-    def test_get_unlocked_veracrypt_unmounted(
-        self, mock_call, mock_subprocess, mock_os
-    ):
-        vol = self.cli._attempt_get_unlocked_veracrypt_volume("/dev/sdc")
-
-        assert vol.unlocked
-        assert vol.mountpoint == self.cli._DEFAULT_MOUNTPOINT
 
     @mock.patch("os.path.exists", return_value=True)
     @mock.patch(
