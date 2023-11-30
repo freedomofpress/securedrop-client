@@ -27,7 +27,13 @@ class Service:
         status.
         """
         try:
-            status, _ = self._check_volumes(self.cli.get_all_volumes())
+            volumes = self.cli.get_all_volumes()
+            if len(volumes) == 0:
+                status = Status.NO_DEVICE_DETECTED
+            elif len(volumes) > 1:
+                status = Status.MULTI_DEVICE_DETECTED
+            else:
+                status, _ = self._check_volumes(volumes)
             return status
 
         except ExportException as ex:
