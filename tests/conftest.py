@@ -194,6 +194,7 @@ def mock_export_service_unlocked_device():
     export_service.run_print = lambda paths: ExportStatus.PRINT_SUCCESS
     return export_service
 
+
 @pytest.fixture(scope="function")
 def functional_test_app_started_context(homedir, reply_status_codes, session, config, qtbot):
     """
