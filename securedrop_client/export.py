@@ -45,7 +45,8 @@ class Export(QObject):
     PRINT_METADATA = {"device": "printer"}
 
     DISK_FN = "archive.sd-export"
-    DISK_METADATA = {"device": "disk", "encryption_method": "luks"}
+
+    DISK_METADATA = {"device": "disk"}
     DISK_ENCRYPTION_KEY_NAME = "encryption_key"
     DISK_EXPORT_DIR = "export_data"
 
