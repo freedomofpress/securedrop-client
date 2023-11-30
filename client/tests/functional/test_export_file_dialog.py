@@ -8,7 +8,6 @@ import pytest
 from flaky import flaky
 from PyQt5.QtCore import Qt
 
-from securedrop_client.export import ExportStatus
 from securedrop_client.gui.widgets import FileWidget, SourceConversationWrapper
 from tests.conftest import (
     TIME_CLICK_ACTION,
@@ -71,6 +70,7 @@ def _setup_export(functional_test_logged_in_context, qtbot, mocker, mock_export_
     qtbot.waitUntil(check_for_export_dialog, timeout=TIME_RENDER_EXPORT_DIALOG)
 
     return file_widget.export_dialog
+
 
 @flaky
 @pytest.mark.vcr()
@@ -145,14 +145,19 @@ def test_export_file_dialog(functional_test_logged_in_context, qtbot, mocker, mo
     # Verify export is complete by checking that the continue button says "DONE"
     assert export_dialog.continue_button.text() == "DONE"
 
+
 @flaky
 @pytest.mark.vcr()
-def test_export_file_dialog_device_already_unlocked(functional_test_logged_in_context, qtbot, mocker, mock_export_service_unlocked_device):
+def test_export_file_dialog_device_already_unlocked(
+    functional_test_logged_in_context, qtbot, mocker, mock_export_service_unlocked_device
+):
     """
     Download a file, export it, and verify that the export is complete by checking that the label of
     the export dialog's continue button is "DONE".
     """
-    export_dialog = _setup_export(functional_test_logged_in_context, qtbot, mocker, mock_export_service_unlocked_device)
+    export_dialog = _setup_export(
+        functional_test_logged_in_context, qtbot, mocker, mock_export_service_unlocked_device
+    )
 
     def check_skip_password_prompt_for_unlocked_device():
         assert export_dialog.passphrase_form.isHidden() is True
