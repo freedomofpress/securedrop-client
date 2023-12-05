@@ -1,10 +1,12 @@
 import logging
 import os
+import shutil
 import subprocess
 
 from typing import List, Optional, Union
 
 from securedrop_export.exceptions import ExportException
+from securedrop_export.directory import safe_mkdir
 
 from .volume import EncryptionScheme, Volume, MountedVolume
 from .status import Status
@@ -35,24 +37,16 @@ class CLI:
         """
         logger.info("Checking connected volumes")
         try:
-            lsblk = subprocess.Popen(
-                ["lsblk", "-o", "NAME,TYPE"],
-                stdout=subprocess.PIPE,
-                stderr=subprocess.PIPE,
-            )
-            grep = subprocess.Popen(
-                ["grep", "disk"],
-                stdin=lsblk.stdout,
-                stdout=subprocess.PIPE,
-                stderr=subprocess.PIPE,
-            )
-            command_output = grep.stdout.readlines()  # type: ignore[union-attr]
-
-            # The first word in each element of the command_output list is the device name
-            attached_devices = [x.decode("utf8").split()[0] for x in command_output]
-
+            lsblk = subprocess.check_output(
+                ["lsblk", "-o", "NAME,TYPE", "--noheadings"]
+            ).decode()
         except subprocess.CalledProcessError as ex:
             raise ExportException(sdstatus=Status.DEVICE_ERROR) from ex
+        attached_devices = []
+        for line in lsblk.splitlines():
+            if line.endswith("disk"):
+                # The first word is the device name
+                attached_devices.append(line.split()[0])
 
         return self._get_removable_devices(attached_devices)
 
@@ -63,20 +57,11 @@ class CLI:
         logger.info("Checking removable devices")
         usb_devices = []
         for device in attached_devices:
-            is_removable = False
-            try:
-                removable = subprocess.check_output(
-                    ["cat", f"/sys/class/block/{device}/removable"],
-                    stderr=subprocess.PIPE,
-                )
-                # removable is "0" for non-removable device, "1" for removable,
-                # convert that into a Python boolean
-                is_removable = bool(int(removable.decode("utf8").strip()))
-
-            except subprocess.CalledProcessError:
-                # Not a removable device
-                continue
-
+            with open(f"/sys/class/block/{device}/removable") as f:
+                removable = f.read().strip()
+            # removable is "0" for non-removable device, "1" for removable,
+            # convert that into a Python boolean
+            is_removable = bool(int(removable))
             if is_removable:
                 usb_devices.append(f"/dev/{device}")
 
@@ -181,22 +166,12 @@ class CLI:
         Given a string representing a volume (/dev/sdX or /dev/sdX1), return True if volume is
         LUKS-encrypted, otherwise False.
         """
-        isLuks = False
+        logger.debug("Checking if target device is luks encrypted")
 
-        try:
-            logger.debug("Checking if target device is luks encrypted")
-
-            # cryptsetup isLuks returns 0 if the device is a luks volume
-            # subprocess will throw if the device is not luks (rc !=0)
-            subprocess.check_call(["sudo", "cryptsetup", "isLuks", device])
-
-            isLuks = True
-
-        except subprocess.CalledProcessError:
-            # Not necessarily an error state, just means the volume is not LUKS encrypted
-            logger.info("Target device is not LUKS-encrypted")
-
-        return isLuks
+        # cryptsetup isLuks returns 0 if the device is a luks volume
+        # subprocess will throw if the device is not luks (rc !=0)
+        rc = subprocess.call(["sudo", "cryptsetup", "isLuks", device])
+        return rc == 0
 
     def _get_luks_name_from_headers(self, device: str) -> str:
         """
@@ -309,15 +284,7 @@ class CLI:
         Helper function to return a list of entries in /dev/mapper/
         (excluding `system` and `dmroot`).
         """
-        try:
-            ls = subprocess.check_output(["ls", "/dev/mapper/"], stderr=subprocess.PIPE)
-            entries = ls.decode("utf-8").rstrip().split("\n")
-
-            return [r for r in entries if r not in _DEVMAPPER_SYSTEM]
-
-        except (subprocess.CalledProcessError, ValueError) as ex:
-            logger.error(f"Error checking entries in /dev/mapper: {ex}")
-            raise ExportException(sdstatus=Status.DEVICE_ERROR) from ex
+        return [r for r in os.listdir("/dev/mapper") if r not in _DEVMAPPER_SYSTEM]
 
     def _attempt_get_unlocked_veracrypt_volume(self, device_name: str) -> MountedVolume:
         """
@@ -505,20 +472,14 @@ class CLI:
 
         try:
             target_path = os.path.join(device.mountpoint, submission_target_dirname)
-            subprocess.check_call(["mkdir", target_path])
+            safe_mkdir(target_path)
 
             export_data = os.path.join(submission_tmpdir, "export_data/")
             logger.debug("Copying file to {}".format(submission_target_dirname))
-
-            subprocess.check_call(["cp", "-r", export_data, target_path])
+            shutil.copytree(export_data, target_path)
             logger.info(
                 "File copied successfully to {}".format(submission_target_dirname)
             )
-
-        except (subprocess.CalledProcessError, OSError) as ex:
-            logger.error(ex)
-            raise ExportException(sdstatus=Status.ERROR_EXPORT) from ex
-
         finally:
             self.cleanup_drive_and_tmpdir(device, submission_tmpdir)
 
@@ -538,7 +499,7 @@ class CLI:
                 self._close_luks_volume(umounted)
             elif umounted.encryption is EncryptionScheme.VERACRYPT:
                 self._close_veracrypt_volume(umounted)
-            self._remove_temp_directory(submission_tmpdir)
+            shutil.rmtree(submission_tmpdir)
 
         except subprocess.CalledProcessError as ex:
             logger.error("Error syncing filesystem")
@@ -594,14 +555,3 @@ class CLI:
             except subprocess.CalledProcessError as ex:
                 logger.error("Error closing device")
                 raise ExportException(sdstatus=Status.DEVICE_ERROR) from ex
-
-    def _remove_temp_directory(self, tmpdir: str):
-        """
-        Helper. Remove temporary directory used during archive export.
-        """
-        logger.debug(f"Deleting temporary directory {tmpdir}")
-        try:
-            subprocess.check_call(["rm", "-rf", tmpdir])
-        except subprocess.CalledProcessError as ex:
-            logger.error("Error removing temporary directory")
-            raise ExportException(sdstatus=Status.DEVICE_ERROR) from ex

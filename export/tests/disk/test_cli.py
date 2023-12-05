@@ -136,7 +136,7 @@ class TestCli:
 
         assert ex.value.sdstatus is Status.DEVICE_ERROR
 
-    @mock.patch("subprocess.check_call", return_value=0)
+    @mock.patch("subprocess.call", return_value=0)
     def test_is_luks_volume_true(self, mocked_call):
         # `sudo cryptsetup isLuks` returns 0 if true
         assert self.cli.is_luks_volume(_SAMPLE_OUTPUT_ONE_PART)
@@ -402,14 +402,6 @@ class TestCli:
 
         assert ex.value.sdstatus is Status.DEVICE_ERROR
 
-    @mock.patch(
-        "subprocess.check_call",
-        side_effect=subprocess.CalledProcessError(1, "check_call"),
-    )
-    def test__remove_temp_directory_error(self, mocked_subprocess):
-        with pytest.raises(ExportException):
-            self.cli._remove_temp_directory("tmp")
-
     @mock.patch("subprocess.check_call", return_value=0)
     def test_write_to_disk(self, mock_check_call):
         # Temporarily patch a method, to later assert it is called
@@ -472,7 +464,8 @@ class TestCli:
 
     @mock.patch("os.path.exists", return_value=False)
     @mock.patch("subprocess.check_call", return_value=0)
-    def test_cleanup_drive_and_tmpdir(self, mock_subprocess, mocked_path):
+    @mock.patch("shutil.rmtree")
+    def test_cleanup_drive_and_tmpdir(self, mock_subprocess, mocked_path, mocked_rmtree):
         submission = Archive("testfile")
         vol = Volume(
             device_name=_DEFAULT_USB_DEVICE_ONE_PART,
@@ -482,20 +475,16 @@ class TestCli:
         mv = MountedVolume.from_volume(vol, mountpoint=_EXAMPLE_MOUNTPOINT)
 
         close_patch = mock.patch.object(self.cli, "_close_luks_volume")
-        remove_tmpdir_patch = mock.patch.object(self.cli, "_remove_temp_directory")
 
         close_mock = close_patch.start()
-        rm_tpdir_mock = remove_tmpdir_patch.start()
 
         # That was all setup. Here's our test
         self.cli.cleanup_drive_and_tmpdir(mv, submission.tmpdir)
 
         close_mock.assert_called_once()
-        rm_tpdir_mock.assert_called_once_with(submission.tmpdir)
 
         # Undo patch changes
         close_patch.stop()
-        remove_tmpdir_patch.stop()
 
     @mock.patch(
         "subprocess.check_output",
@@ -544,15 +533,15 @@ class TestCli:
         assert ex.value.sdstatus == Status.ERROR_MOUNT
 
     @mock.patch("os.path.exists", return_value=True)
+    @mock.patch("os.listdir", return_value=["vc"])
     @mock.patch(
         "subprocess.check_output",
         side_effect=[
-            b"vc",
             _SAMPLE_CRYPTSETUP_STATUS_OUTPUT,
             _SAMPLE_MOUNTED_VC_OUTPUT,
         ],
     )
-    def test_get_unlocked_veracrypt_mounted(self, mock_subprocess, mock_os):
+    def test_get_unlocked_veracrypt_mounted(self, mock_subprocess, mock_os, mock_listdir):
         v = self.cli._attempt_get_unlocked_veracrypt_volume("/dev/sdc")
 
         assert v.unlocked
