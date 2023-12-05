@@ -481,6 +481,9 @@ class CLI:
                 # Success is "Mounted $device at $path"
                 if output.startswith("Mounted "):
                     mountpoint = output.split()[-1]
+                else:
+                    # it didn't successfully mount, but also exited with code 0?
+                    raise ExportException(sdstatus=Status.ERROR_MOUNT)
 
                 return MountedVolume.from_volume(volume, mountpoint)
 

@@ -309,17 +309,21 @@ class TestCli:
         assert isinstance(result, MountedVolume)
 
     @mock.patch("os.path.exists", return_value=True)
-    @mock.patch("subprocess.check_output", return_value=b"\n")
+    @mock.patch("subprocess.check_output", return_value=b"Mounted $device at $path")
     @mock.patch("subprocess.check_call", return_value=0)
-    def test_mount_volume_mkdir(self, mocked_output, mocked_subprocess, mocked_path):
+    @mock.patch("securedrop_export.disk.cli.CLI._get_mountpoint", return_value=None)
+    def test_mount_volume_mkdir(
+        self, mocked_output, mocked_subprocess, mocked_path, mocked_mountpoint
+    ):
         md = Volume(
             device_name=_DEFAULT_USB_DEVICE_ONE_PART,
             mapped_name=_PRETEND_LUKS_ID,
             encryption=EncryptionScheme.LUKS,
         )
         mv = self.cli.mount_volume(md)
-        assert mv.mapped_name == _PRETEND_LUKS_ID
         assert isinstance(mv, MountedVolume)
+        assert mv.mapped_name == _PRETEND_LUKS_ID
+        assert mv.mountpoint == "$path"
 
     @mock.patch("subprocess.check_output", return_value=b"\n")
     @mock.patch(
