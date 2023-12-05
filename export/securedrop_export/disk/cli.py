@@ -580,7 +580,7 @@ class CLI:
                 logger.error("Error closing device")
                 raise ExportException(sdstatus=Status.DEVICE_ERROR) from ex
 
-    def _close_veracrypt_volume(self, unlocked_device: MountedVolume) -> None:
+    def _close_veracrypt_volume(self, unlocked_device: Volume) -> None:
         """
         Helper. Close VeraCrypt volume.
         """
