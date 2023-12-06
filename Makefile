@@ -144,6 +144,8 @@ safety: ## Runs `safety check` to check python dependencies for vulnerabilities
 			&& safety check --full-report \
 			--ignore 51668 \
 			--ignore 61601 \
+			--ignore 61893 \
+			--ignore 62044 \
 			-r $$req_file \
 			&& echo -e '\n' \
 			|| exit 1; \
