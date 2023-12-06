@@ -14,7 +14,7 @@ from tests import factory
 @pytest.fixture(scope="function")
 def main_window(mocker, homedir, mock_export_service):
     mocker.patch(
-        "securedrop_client.gui.conversation.export.device.export.getService",
+        "securedrop_client.export.getService",
         return_value=mock_export_service,
     )
     # Setup
@@ -70,7 +70,7 @@ def main_window(mocker, homedir, mock_export_service):
 @pytest.fixture(scope="function")
 def main_window_no_key(mocker, homedir, mock_export_service):
     mocker.patch(
-        "securedrop_client.gui.conversation.export.device.export.getService",
+        "securedrop_client.export.getService",
         return_value=mock_export_service,
     )
     # Setup
@@ -169,7 +169,7 @@ def mock_export_service():
 @pytest.fixture(scope="function")
 def print_dialog(mocker, homedir, mock_export_service):
     mocker.patch(
-        "securedrop_client.gui.conversation.export.device.export.getService",
+        "securedrop_client.export.getService",
         return_value=mock_export_service,
     )
     app = QApplication([])
@@ -193,7 +193,7 @@ def print_dialog(mocker, homedir, mock_export_service):
         )
         controller.authenticated_user = factory.User()
         controller.qubes = False
-        export_device = conversation.ExportDevice(controller)
+        export_device = conversation.ExportDevice(controller, mock_export_service)
         gui.setup(controller)
         gui.login_dialog.close()
         dialog = conversation.PrintFileDialog(export_device, "file_uuid", "file_name")
@@ -208,7 +208,7 @@ def print_dialog(mocker, homedir, mock_export_service):
 @pytest.fixture(scope="function")
 def export_file_dialog(mocker, homedir, mock_export_service):
     mocker.patch(
-        "securedrop_client.gui.conversation.export.device.export.getService",
+        "securedrop_client.export.getService",
         return_value=mock_export_service,
     )
     app = QApplication([])
@@ -229,7 +229,7 @@ def export_file_dialog(mocker, homedir, mock_export_service):
         )
         controller.authenticated_user = factory.User()
         controller.qubes = False
-        export_device = conversation.ExportDevice(controller)
+        export_device = conversation.ExportDevice(controller, mock_export_service)
         gui.setup(controller)
         gui.login_dialog.close()
         dialog = conversation.ExportFileDialog(export_device, "file_uuid", "file_name")
