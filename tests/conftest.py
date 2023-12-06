@@ -22,10 +22,10 @@ from securedrop_client.db import (
     Source,
     make_session_maker,
 )
+from securedrop_client.export import ExportStatus
 from securedrop_client.gui import conversation
 from securedrop_client.gui.main import Window
 from securedrop_client.logic import Controller
-from securedrop_client.export import ExportStatus
 
 with open(os.path.join(os.path.dirname(__file__), "files", "test-key.gpg.pub.asc")) as f:
     PUB_KEY = f.read()
