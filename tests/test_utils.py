@@ -98,36 +98,36 @@ def test_safe_mkdir_with_base_dir_with_parent_dirs_that_do_not_exist():
     assert "No such file or directory: '/this/does/not/exist'" in str(e_info.value)
 
 
-def test_safe_mkdir_with_base_dir_that_does_not_exist():
+def test_safe_mkdir_with_base_dir_that_does_not_exist(homedir):
     """
     Ensure you can create a base dir if parent directories already exist.
     """
-    with tempfile.TemporaryDirectory() as temp_dir:
+    with tempfile.TemporaryDirectory(dir=homedir) as temp_dir:
         safe_mkdir(temp_dir)
         safe_mkdir(f"{temp_dir}/does-not-exist", "test")
 
 
-def test_safe_mkdir_happy_path_with_secure_permissions():
+def test_safe_mkdir_happy_path_with_secure_permissions(homedir):
     """
     Test that safe_mkdir works with one param.
     """
-    with tempfile.TemporaryDirectory() as temp_dir:
+    with tempfile.TemporaryDirectory(dir=homedir) as temp_dir:
         safe_mkdir(temp_dir)
         safe_mkdir(temp_dir, "test")
         assert oct(os.stat(temp_dir).st_mode) == "0o40700"
         assert oct(os.stat(os.path.join(temp_dir, "test")).st_mode) == "0o40700"
 
-    with tempfile.TemporaryDirectory() as temp_dir:
+    with tempfile.TemporaryDirectory(dir=homedir) as temp_dir:
         safe_mkdir(temp_dir, "test")
         assert oct(os.stat(temp_dir).st_mode) == "0o40700"
         assert oct(os.stat(os.path.join(temp_dir, "test")).st_mode) == "0o40700"
 
 
-def test_safe_mkdir_sets_secure_permissions_for_each_directory_in_rel_path():
+def test_safe_mkdir_sets_secure_permissions_for_each_directory_in_rel_path(homedir):
     """
     Test safe directory permissions when two paths are supplied.
     """
-    with tempfile.TemporaryDirectory() as temp_dir:
+    with tempfile.TemporaryDirectory(dir=homedir) as temp_dir:
         safe_mkdir(temp_dir, "check/each/dir/in/path")
         full_path = os.path.join(temp_dir, "check/each/dir/in/path")
         assert os.path.exists(full_path)
@@ -141,7 +141,7 @@ def test_safe_mkdir_fixes_insecure_permissions_on_base_dir(homedir):
     """
     Test that safe_mkdir fixes insecure permissions on base dir.
     """
-    with tempfile.TemporaryDirectory() as temp_dir:
+    with tempfile.TemporaryDirectory(dir=homedir) as temp_dir:
         insecure_base_path = os.path.join(temp_dir, "base_dir")
         os.mkdir(insecure_base_path, 0o777)
 
@@ -154,7 +154,7 @@ def test_safe_mkdir_leaves_parent_dir_permissions_alone_on_base_path(homedir):
     """
     Test that safe_mkdir leaves base_dir parent permissions alone.
     """
-    with tempfile.TemporaryDirectory() as temp_dir:
+    with tempfile.TemporaryDirectory(dir=homedir) as temp_dir:
         os.chmod(temp_dir, 0o777)
 
         base_path = os.path.join(temp_dir, "base_dir")
@@ -167,7 +167,7 @@ def test_safe_mkdir_fixes_insecure_permissions_on_rel_dir(homedir):
     """
     Test that safe_mkdir raises when a parent directory has insecure permissions.
     """
-    with tempfile.TemporaryDirectory() as temp_dir:
+    with tempfile.TemporaryDirectory(dir=homedir) as temp_dir:
         os.mkdir(os.path.join(temp_dir, "rel"), 0o777)
 
         safe_mkdir(temp_dir, "rel")
@@ -180,7 +180,7 @@ def test_safe_mkdir_fixes_insecure_permissions_on_parent_dir(homedir):
     """
     Test that safe_mkdir raises when a parent directory has insecure permissions.
     """
-    with tempfile.TemporaryDirectory() as temp_dir:
+    with tempfile.TemporaryDirectory(dir=homedir) as temp_dir:
         os.mkdir(os.path.join(temp_dir, "rel"), 0o700)
         os.mkdir(os.path.join(temp_dir, "rel/path"), 0o700)
         os.mkdir(os.path.join(temp_dir, "rel/path/test"), 0o777)
@@ -195,7 +195,7 @@ def test_safe_mkdir_fixes_insecure_permissions_on_inner_parent_dir(homedir):
     """
     Test that safe_mkdir raises when a parent directory has insecure permissions.
     """
-    with tempfile.TemporaryDirectory() as temp_dir:
+    with tempfile.TemporaryDirectory(dir=homedir) as temp_dir:
         os.mkdir(os.path.join(temp_dir, "rel"), 0o700)
         os.mkdir(os.path.join(temp_dir, "rel/path"), 0o777)
         os.mkdir(os.path.join(temp_dir, "rel/path/test"), 0o700)
@@ -210,7 +210,7 @@ def test_safe_mkdir_fixes_insecure_permissions_on_last_parent_dir(homedir):
     """
     Test that safe_mkdir raises when a parent directory has insecure permissions.
     """
-    with tempfile.TemporaryDirectory() as temp_dir:
+    with tempfile.TemporaryDirectory(dir=homedir) as temp_dir:
         os.mkdir(os.path.join(temp_dir, "rel"), 0o777)
         os.mkdir(os.path.join(temp_dir, "rel/path"), 0o700)
         os.mkdir(os.path.join(temp_dir, "rel/path/test"), 0o700)
@@ -279,10 +279,10 @@ def test_check_path_traversal():
         assert "Unsafe file or directory name" in str(e.value)
 
 
-def test_check_all_permissions():
+def test_check_all_permissions(homedir):
     check_all_permissions("/this/path/does/not/exist/so/just/return", "/this/path")
 
-    with tempfile.TemporaryDirectory() as temp_dir:
+    with tempfile.TemporaryDirectory(dir=homedir) as temp_dir:
         os.mkdir(os.path.join(temp_dir, "bad"), 0o777)
         os.mkdir(os.path.join(temp_dir, "not_good"), 0o755)
         os.mkdir(os.path.join(temp_dir, "not_good/good"), 0o700)

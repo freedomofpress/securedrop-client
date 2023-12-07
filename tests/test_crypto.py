@@ -2,6 +2,7 @@ import os
 import struct
 import subprocess
 import tempfile
+from unittest import mock
 
 import pytest
 
@@ -20,20 +21,22 @@ def test_message_logic(homedir, config, mocker, session_maker):
     Ensure that messages are handled.
     Using the `config` fixture to ensure the config is written to disk.
     """
-    gpg = GpgHelper(homedir, session_maker, is_qubes=False)
-
-    test_msg = "tests/files/test-msg.gpg"
-    expected_output_filepath = os.path.join(homedir, "data", "test-msg")
-
+    mocker.patch("tempfile.gettempdir", return_value=homedir)
     mock_gpg = mocker.patch("subprocess.call", return_value=0)
     mocker.patch("os.unlink")
 
-    original_filename = gpg.decrypt_submission_or_reply(
-        test_msg, expected_output_filepath, is_doc=False
-    )
+    with mock.patch.object(GpgHelper, "EXTRACTION_PATH", homedir):
+        gpg = GpgHelper(homedir, session_maker, is_qubes=False)
 
-    assert mock_gpg.call_count == 1
-    assert original_filename == "test-msg"
+        test_msg = os.path.join(homedir, "tests/files/test-msg.gpg")
+        expected_output_filepath = os.path.join(homedir, "data", "test-msg")
+
+        original_filename = gpg.decrypt_submission_or_reply(
+            test_msg, expected_output_filepath, is_doc=False
+        )
+
+        assert mock_gpg.call_count == 1
+        assert original_filename == "test-msg"
 
 
 def test_gunzip_logic(homedir, config, mocker, session_maker):
@@ -51,6 +54,7 @@ def test_gunzip_logic(homedir, config, mocker, session_maker):
 
     # mock_gpg = mocker.patch('subprocess.call', return_value=0)
     mock_unlink = mocker.patch("os.unlink")
+    mocker.patch("tempfile.gettempdir", return_value=homedir)
     original_filename = gpg.decrypt_submission_or_reply(
         test_gzip, expected_output_filepath, is_doc=True
     )
@@ -79,6 +83,7 @@ def test_gzip_header_without_filename(homedir, config, mocker, session_maker):
         "securedrop_client.crypto.read_gzip_header_filename"
     )
     mock_read_gzip_header_filename.return_value = ""
+    mocker.patch("tempfile.gettempdir", return_value=homedir)
 
     test_gzip = "tests/files/test-doc.gz.gpg"
     output_filename = "test-doc"
