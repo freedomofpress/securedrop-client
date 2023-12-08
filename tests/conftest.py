@@ -36,11 +36,6 @@ HOSTNAME = "http://localhost:8081/"
 USERNAME = "journalist"
 PASSWORD = "correct horse battery staple profanity oil chewy"
 
-# Modify cassettes to use the following TOTP code. For developing new tests,
-# you can modify this so you don't need to keep editing cassettes during
-# development.
-TOTP = "123456"
-
 # Time (in milliseconds) to wait for these GUI elements to render.
 TIME_APP_START = 1000
 TIME_LOGIN = 10000
@@ -51,6 +46,32 @@ TIME_RENDER_SOURCE_LIST = 20000
 TIME_RENDER_CONV_VIEW = 1000
 TIME_RENDER_EXPORT_DIALOG = 1000
 TIME_FILE_DOWNLOAD = 5000
+
+
+@pytest.fixture(scope="module")
+def vcr_config():
+    """filter out the TOTP token since it's dynamic"""
+    def before_record_cb(request):
+        if request.path == "/api/v1/token":
+            body = json.loads(request.body.decode())
+            del body['one_time_code']
+            request.body = json.dumps(body).encode()
+        return request
+    return {"before_record_request": before_record_cb}
+
+
+@pytest.fixture()
+def totp_code():
+    """
+    generate a real TOTP token if oathtool is installed,
+    otherwise return a dummy one, which should be good enough for cassettes
+    """
+    if os.path.exists("/usr/bin/oathtool"):
+        return subprocess.check_output(
+            ["oathtool", "--totp", "--base32", "JHCOGO7VCER3EJ4L"], text=True
+        ).strip()
+    else:
+        return "123456"
 
 
 @pytest.fixture(scope="function")
@@ -227,7 +248,7 @@ def functional_test_app_started_context(homedir, reply_status_codes, session, co
 
 
 @pytest.fixture(scope="function")
-def functional_test_logged_in_context(functional_test_app_started_context, qtbot):
+def functional_test_logged_in_context(functional_test_app_started_context, qtbot, totp_code):
     """
     Returns a tuple containing the gui window and controller of a configured client after logging in
     with our test user account.
@@ -238,7 +259,7 @@ def functional_test_logged_in_context(functional_test_app_started_context, qtbot
     qtbot.keyClicks(gui.login_dialog.username_field, USERNAME)
     qtbot.wait(TIME_CLICK_ACTION)
     qtbot.keyClicks(gui.login_dialog.password_field, PASSWORD)
-    qtbot.keyClicks(gui.login_dialog.tfa_field, TOTP)
+    qtbot.keyClicks(gui.login_dialog.tfa_field, totp_code)
     qtbot.mouseClick(gui.login_dialog.submit, Qt.LeftButton)
     qtbot.wait(TIME_CLICK_ACTION)
 
