@@ -23,7 +23,7 @@ def _setup_export(functional_test_logged_in_context, qtbot, mocker, mock_export_
     Helper. Set up export test context and return reference to export dialog.
     """
     mocker.patch(
-        "securedrop_client.gui.widgets.export.getService", return_value=mock_export_service
+        "securedrop_client.export.getService", return_value=mock_export_service
     )
 
     gui, controller = functional_test_logged_in_context
@@ -80,7 +80,7 @@ def test_export_file_dialog(functional_test_logged_in_context, qtbot, mocker, mo
     the export dialog's continue button is "DONE".
     """
     mocker.patch(
-        "securedrop_client.gui.widgets.export.getService", return_value=mock_export_service
+        "securedrop_client.export.getService", return_value=mock_export_service
     )
 
     gui, controller = functional_test_logged_in_context
