@@ -4,6 +4,7 @@ import subprocess
 import tempfile
 from configparser import ConfigParser
 from datetime import datetime
+from typing import List
 from uuid import uuid4
 
 import pytest
@@ -168,31 +169,39 @@ def homedir(i18n):
     yield tmpdir
 
 
+class MockExportService(export.Service):
+    """An export service that assumes the Qubes RPC calls are successful and skips them."""
+
+    def __init__(self, unlocked: bool):
+        super().__init__()
+        if unlocked:
+            self.preflight_response = ExportStatus.DEVICE_WRITABLE
+        else:
+            self.preflight_response = ExportStatus.DEVICE_LOCKED
+
+    def run_preflight_checks(self) -> None:
+        self.preflight_check_call_success.emit(self.preflight_response)
+
+    def send_file_to_usb_device(self, filepaths: List[str], passphrase: str) -> None:
+        self.export_usb_call_success.emit(ExportStatus.SUCCESS_EXPORT)
+        self.export_completed.emit(filepaths)
+
+    def run_printer_preflight(self) -> None:
+        self.printer_preflight_success.emit(ExportStatus.PRINT_PREFLIGHT_SUCCESS)
+
+    def print(self, filepaths: List[str]) -> None:
+        self.print_call_success.emit(ExportStatus.PRINT_SUCCESS)
+        self.export_completed.emit(filepaths)
+
+
 @pytest.fixture(scope="function")
 def mock_export_service():
-    """An export service that assumes the Qubes RPC calls are successful and skips them."""
-    export_service = export.Service()
-    # Ensure the export_service doesn't rely on Qubes OS:
-    export_service.run_preflight_checks = lambda: ExportStatus.DEVICE_LOCKED
-    export_service.send_file_to_usb_device = lambda paths, passphrase: ExportStatus.SUCCESS_EXPORT
-    export_service.run_printer_preflight = lambda: ExportStatus.PRINT_PREFLIGHT_SUCCESS
-    export_service.run_print = lambda paths: ExportStatus.PRINT_SUCCESS
-    return export_service
+    return MockExportService(unlocked=False)
 
 
 @pytest.fixture(scope="function")
 def mock_export_service_unlocked_device():
-    """
-    An export service that assumes the Qubes RPC calls are successful and skips them.
-    In this case the USB peripheral is presumed unlocked outside of the client (i.e.
-    manually by the user).
-    """
-    export_service = export.Service()
-    export_service.run_preflight_checks = lambda: ExportStatus.DEVICE_WRITABLE
-    export_service.send_file_to_usb_device = lambda paths, passphrase: ExportStatus.SUCCESS_EXPORT
-    export_service.run_printer_preflight = lambda: ExportStatus.PRINT_PREFLIGHT_SUCCESS
-    export_service.run_print = lambda paths: ExportStatus.PRINT_SUCCESS
-    return export_service
+    return MockExportService(unlocked=True)
 
 
 @pytest.fixture(scope="function")
