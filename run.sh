@@ -19,7 +19,7 @@ done
 
 source scripts/setup-tmp-directories.sh
 
-PYTHON="python"
+PYTHON="poetry run python"
 if [[ $OSTYPE == 'darwin'* ]] && [[ "$(uname -m)" == "arm64" ]]; then
     PYTHON="arch -x86_64 ${PYTHON}"
 fi
@@ -42,7 +42,7 @@ cleanup
 gpg --allow-secret-key-import --import tests/files/securedrop.gpg.asc &
 
 # create the database and config for local testing
-./create_dev_data.py "$SDC_HOME" &
+poetry run python create_dev_data.py "$SDC_HOME" &
 
 # check whether current env is qubes
 is_qubes="$(printenv | grep ^QUBES_)" || true

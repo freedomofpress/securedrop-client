@@ -74,17 +74,16 @@ Tor is not used in the developer environment. If you want to use a Tor connectio
 
 See [SecureDrop docs](https://docs.securedrop.org/en/latest/development/setup_development.html) for setup instructions, including post-installation steps for allowing docker to be run as a non-root user, which is a requirement on Qubes.
 
-3. In a new terminal tab, clone the SecureDrop Client repo and set up its virtual environment
+3. In a new terminal tab, clone the SecureDrop Client repo and install its dependencies:
 
 ```
 git clone git@github.com:freedomofpress/securedrop-client.git
 cd securedrop-client
-make venv
-source .venv/bin/activate
+poetry install
 ```
 
-   * You will need Python 3.9 to run the client. If it's not the default `python3` on your installation, you can use `PYTHON=python3.9 make venv` to explicitly use a `python3.9` binary.
-   * `make venv` will also run `make hooks`, which will configure Git to use the hooks found in `.githooks/` to check certain code-quality standards on new commits in this repository.  These checks are also enforced in CI.
+   * You will need Python 3.9 to run the client. If it's not the default `python3` on your installation, you can set `poetry env use python3.9`.
+   * You may also want to run `make hooks`, which will configure Git to use the hooks found in `.githooks/` to check certain code-quality standards on new commits in this repository.  These checks are also enforced in CI.
 
 4. Run SecureDrop Client
 
@@ -112,16 +111,15 @@ Tor is not used in the developer environment. If you want to use a Tor connectio
 
 See [SecureDrop docs](https://docs.securedrop.org/en/latest/development/setup_development.html) for setup instructions.
 
-3. In a new terminal tab, clone the SecureDrop Client repo and set up its virtual environment
+3. In a new terminal tab, clone the SecureDrop Client repo and install its dependencies
 
 ```
 git clone git@github.com:freedomofpress/securedrop-client.git
 cd securedrop-client
-make venv
-source .venv/bin/activate
+poetry install
 ```
 
-   * `make venv` will also run `make hooks`, which will configure Git to use the hooks found in `.githooks/` to check certain code-quality standards on new commits in this repository.  These checks are also enforced in CI.
+   * You may also want to run `make hooks`, which will configure Git to use the hooks found in `.githooks/` to check certain code-quality standards on new commits in this repository.  These checks are also enforced in CI.
 
 4. Run SecureDrop Client
 
@@ -164,20 +162,19 @@ socat TCP4-LISTEN:8081,fork,reuseaddr TCP4:A.B.C.D:8081
 2. Install Homebrew
   a. If you use an Intel based machine, follow the instructions at https://brew.sh/
   b. If you use an Apple Silicon based machine (M1 or M2 Macs):
-    1. (Informational) If you already have a native `arm64` version of Homebrew, you will wind up with a separate Homebrew installation for each architecture. While they do not conflict, combining them in your `PATH` permanently may cause confusion about which brews are installed where. You may want to modify your `PATH` temporarily to perform this installation. The virtual environment you create in this session will continue to work in subsequent sessions.
+    1. (Informational) If you already have a native `arm64` version of Homebrew, you will wind up with a separate Homebrew installation for each architecture. While they do not conflict, combining them in your `PATH` permanently may cause confusion about which brews are installed where. You may want to modify your `PATH` temporarily to perform this installation. The environment you create in this session will continue to work in subsequent sessions.
     2. Run `/usr/sbin/softwareupdate --install-rosetta` to allow you to run `x86_64` binaries
     3. Enter a shell in `x86_64` mode with `arch -x86_64 bash`
     4. Install Homebrew via the instructions at https://brew.sh/
     5. Install the dependencies below in the same `x86_64` shell session
 3. Install dependencies via Homebrew: `brew install python@3.9 gnupg oath-toolkit`
-4. clone the SecureDrop Client repo and set up its virtual environment
+4. clone the SecureDrop Client repo and install its dependencies
    ```
    git clone git@github.com:freedomofpress/securedrop-client.git
    cd securedrop-client
-   make venv-mac
-   source .venv/bin/activate
+   poetry install
    ```
-   * `make venv-mac` will also run `make hooks`, which will configure Git to use the hooks found in `.githooks/` to check certain code-quality standards on new commits in this repository.  These checks are also enforced in CI.
+   * You may also want to run `make hooks`, which will configure Git to use the hooks found in `.githooks/` to check certain code-quality standards on new commits in this repository.  These checks are also enforced in CI.
 
 5. Run SecureDrop Client
    ```
@@ -230,18 +227,16 @@ Or [manually initialize](https://github.com/freedomofpress/securedrop-client/blo
 8. To run a different version of the client, say the version from a branch called `<branchname>`, first add a NetVM (`sys-firewall`) to `sd-app` via its Qubes Settings so you can clone the client repository, and then follow these steps:
 
 ```
-sudo apt-get install git virtualenv  # NB. won't persist across "sd-app" reboots
+sudo apt-get install git python3-poetry  # NB. won't persist across "sd-app" reboots
 git clone -b <branchname> https://github.com/freedomofpress/securedrop-client.git
 cd securedrop-client
-virtualenv --python=python3.9 .venv
-source .venv/bin/activate
-pip install --require-hashes -r requirements/dev-bullseye-requirements.txt
+poetry install
 ```
 
 9. Run the client
 
 ```
-python -m securedrop_client
+poetry run securedrop_client
 ```
 
 ### Production environment
@@ -280,40 +275,13 @@ securedrop-client
 
 ## Updating dependencies
 
-`dev-*-requirements.txt` and `requirements.txt` point to python software foundation hashes, and `build-requirements.txt` points to our builds of the wheels from our own pip mirror (https://github.com/freedomofpress/securedrop-builder/tree/main/localwheels). Whenever a dependency in `build-requirements.txt` changes, our team needs to manually review the code in the dependency diff with a focus on spotting vulnerabilities.
-
-### Production
+`pyproject.toml` and `Poetry.lock` point to hashes of artifacts hosted on PyPI, and `build-requirements.txt` points to our reproducible builds of the wheels (https://github.com/freedomofpress/securedrop-builder/). Whenever a dependency in `build-requirements.txt` changes, our team needs to manually review the code in the dependency diff with a focus on spotting vulnerabilities.
 
 If you're adding or updating a production dependency, you need to:
 
-1. Modify `requirements.in`
-2. Activate a Python 3.9 virtual environment (default version on Debian Bullseye, used in production)
-3. Run `make requirements`. This will generate `requirements.txt`. Review and commit the changes.
-
-### Development
-
-In addition to supporting Debian Bullseye, we keep track of changes in the next version of Debian (Bookworm). In order to do that we need to maintain requirement files for both. If you're adding or updating a development dependency, you need to:
-
-1. Modify `dev-sdw-requirements.in` when possible. If needed modify `dev-bullseye-requirements.in` or `dev-bookworm-requirements.in`.
-2. Activate a Python 3.9 virtual environment (default version on Debian Bullseye, used in production)
-3. Run `make dev-requirements`. This will generate `dev-*-requirements.txt`. Only commit `dev-bullseye-requirements.txt` and `dev-sdw-requirements.txt`.
-4. Discard the other changes.
-5. Activate a Python 3.10 virtual environment (default version on Debian Bookworm).
-   If needed you can create one and activate it by running `python3.10 -m venv .venv310 && source .venv310/bin/activate`.
-6. Run `make dev-requirements`. This will generate `dev-*-requirements.txt`. Only commit `dev-bookworm-requirements.txt`.
-7. Discard the other changes.
-
-### Build dependencies
-
-1. For building a debian package from this project, we use the requirements in
-`build-requirements.txt` which uses our pip mirror, i.e. the hashes in that file point to
-wheels on our pip mirror. 
-
-2. A maintainer will need to add
-the updated dependency to our pip mirror (you can request this in the PR).
-
-3. Once the pip mirror is updated, you should checkout the [securedrop-builder repo](https://github.com/freedomofpress/securedrop-builder) and run `make requirements`. Commit the `build-requirements.txt` that results and add it to your PR.
-
+1. Modify `pyproject.toml`.
+2. Build the relevant wheels in the `securedrop-builder` Git repository.
+3. Synchronize `build-requirements.txt` with hashes of the newly built wheels.
 
 ## Generating and running database migrations
 

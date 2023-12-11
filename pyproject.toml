@@ -1,3 +1,57 @@
+[tool.poetry]
+name = "securedrop-client"
+version = "0.1.0"
+description = "SecureDrop Workstation client application"
+authors = ["SecureDrop Team"]
+license = "AGPLv3+"
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.9"
+Jinja2 = "^3.0.2"
+SQLAlchemy = "^1.3.3"
+alembic = "^1.1.0"
+arrow = "^0.12.1"
+python-dateutil = "^2.7.5"
+requests = "^2.31.0"
+securedrop-sdk = "^0.4.0"
+
+[tool.poetry.group.dev.dependencies]
+# In production these two are installed using a system package
+# so match those versions exactly
+PyQt5 = [
+    {version = "=5.15.8", python = ">=3.10"}, # bookworm
+    {version = "=5.15.2", python = "< 3.10"}, # bullseye
+]
+PyQt5-sip = [
+    {version = "=12.11.1", python = ">=3.10"}, # bookworm
+    {version = "=12.8.1", python = "< 3.10"}, # bullseye
+]
+PyAutoGUI = "*"
+babel = "^2.12.1"
+bandit = "*"
+black = "^23.7.0"
+diffoscope = "*"
+flake8 = "^6.0.0"
+flaky = "*"
+isort = "*"
+mypy = "^1.4.1"
+polib = "*"
+pyqt5-stubs = "*"
+pytest = "^7.2.0"
+pytest-cov = "*"
+pytest-mock = "*"
+pytest-qt = "^4.2.0"
+pytest-random-order = "*"
+pytest-vcr = "*"
+pytest-xdist = "^3.0.2"
+safety = "*"
+semgrep = "*"
+translate-toolkit = "*"
+types-polib = "*"
+types-python-dateutil = "*"
+types-setuptools = "^68.0.0"
+
 [tool.black]
 line-length = 100
 
