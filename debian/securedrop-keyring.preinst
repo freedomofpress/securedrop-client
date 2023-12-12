@@ -1,0 +1,34 @@
+#!/bin/bash
+
+set -e
+
+# Solution adapted from DKG's work on `deb.torproject.org-keyring` and
+# the securedrop core keyring package.
+#
+# The salt provisioning logic uses pkgrepo.managed, which writes the
+# key to `/etc/apt/trusted.gpg`. It's cleaner to use the trusted.gpg.d
+# subdirectory, since we can update that trivially in future versions
+# of the keyring package.
+#
+# Therefore let's clean up prior versions of the key installed
+# to the general apt keyring, to ensure we only have one signing key
+# installed for authenticating securedrop-related packages.
+
+if [ -e /etc/apt/trusted.gpg ] && which gpg >/dev/null; then
+   (
+   h="$(mktemp -d)"
+   trap "rm -rf '$h'" EXIT
+
+   if gpg --homedir="$h" \
+          --batch --no-tty --no-default-keyring --keyring /etc/apt/trusted.gpg \
+          --list-key 0x2359E6538C0613E652955E6C188EDD3B7B22E6A3 > /dev/null 2>&1 ; then
+      gpg --homedir="$h" \
+          --batch --no-tty --no-default-keyring --keyring /etc/apt/trusted.gpg \
+          --no-auto-check-trustdb \
+          --delete-key 0x2359E6538C0613E652955E6C188EDD3B7B22E6A3 || true
+   fi
+   )
+fi
+
+#DEBHELPER#
+

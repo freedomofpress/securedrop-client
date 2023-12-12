@@ -1,0 +1,25 @@
+#!/usr/bin/make -f
+
+%:
+	dh $@
+
+override_dh_auto_install:
+	bash ./debian/setup-venv.sh client
+	bash ./debian/setup-venv.sh export
+	bash ./debian/setup-venv.sh log
+	bash ./debian/setup-venv.sh proxy
+	dh_auto_install
+
+override_dh_strip_nondeterminism:
+	find ./debian/ -type f -name '*.pyc' -delete
+	find ./debian/ -type f -name 'pip-selfcheck.json' -delete
+	find ./debian/ -type f -name 'direct_url.json' -delete
+	find ./debian/ -type f -name 'RECORD' -delete
+	dh_strip_nondeterminism $@
+
+# Override debhelper's auto-generated files in `/etc/`
+# to force an exact replacement of the files we are modifying
+# there (specifically, `/etc/apt/trusted.gpg.d/securedrop-keyring.gpg`).
+override_dh_installdeb:
+	dh_installdeb
+	cat /dev/null > ${CURDIR}/debian/securedrop-keyring/DEBIAN/conffiles

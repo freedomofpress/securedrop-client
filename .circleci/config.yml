@@ -37,13 +37,6 @@ common-steps:
         echo "en_US UTF-8" >> /etc/locale.gen
         locale-gen
 
-  - &client_install_build_dependencies
-    run:
-      name: Install build dependencies
-      command: |
-        set -e
-        apt update && apt install -y git make sudo
-
   - &client_run_unit_tests
     run:
       name: Install requirements and run unit tests
@@ -106,41 +99,6 @@ common-steps:
         set -e
         make -C client safety
 
-  - &client_install_packaging_dependencies
-    run:
-      name: Install Debian packaging dependencies and download Python wheels
-      command: |
-        set -x
-        mkdir ~/packaging && cd ~/packaging
-        # local builds may not have an ssh url, so || true
-        git config --global --unset url.ssh://git@github.com.insteadof || true
-        git clone https://github.com/freedomofpress/securedrop-builder.git
-        cd securedrop-builder
-        apt-get update && apt-get install -y sudo make
-        make install-deps
-        source .venv/bin/activate
-        PKG_DIR=~/project/client make requirements
-
-  - &client_check_packaging_requirements
-    run:
-      name: Ensure that the same Python requirements are used for packaging and production.
-      command: |
-        cd ~/project/client
-        # Fail if unstaged changes exist that are not comments (after `make requirements` in the previous run step).
-        git diff --ignore-matching-lines=# --exit-code
-
-  - &client_build_debian_package
-    run:
-      name: Build debian package
-      command: |
-        cd ~/project/client
-        ./update_version.sh 1000.0  # Dummy version number, doesn't matter what we put here
-        cd ~/packaging/securedrop-builder
-        export PKG_VERSION=1000.0
-        export PKG_PATH=~/project/client
-        source .venv/bin/activate
-        make securedrop-client
-
   - &export_install_poetry
     run:
       name: Install Poetry
@@ -167,12 +125,6 @@ common-steps:
         cd export
         poetry install --no-ansi
 
-  - &export_install_build_dependencies
-    run:
-      name: Install build dependencies
-      command: |
-        apt update && apt install -y git make sudo
-
   - &export_run_unit_tests
     run:
       name: Install requirements and run unit tests
@@ -198,38 +150,6 @@ common-steps:
       name: Check Python dependencies for known vulnerabilities
       command: |
         make -C export safety
-
-  - &export_install_packaging_dependencies
-    run:
-      name: Install Debian packaging dependencies and download Python wheels
-      command: |
-        set -x
-        mkdir ~/packaging && cd ~/packaging
-        # local builds may not have an ssh url, so || true
-        git config --global --unset url.ssh://git@github.com.insteadof || true
-        git clone https://github.com/freedomofpress/securedrop-builder.git
-        cd securedrop-builder
-        make install-deps
-        source .venv/bin/activate
-        PKG_DIR=~/project/export make requirements
-
-  - &export_check_packaging_requirements
-    run:
-      name: Ensure that the same Python requirements are used for packaging and production.
-      command: |
-        cd ~/project/export
-        # Fail if unstaged changes exist (after `make requirements` in the previous run step).
-        git diff --ignore-matching-lines=# --exit-code
-
-  - &export_build_debian_package
-    run:
-      name: Build debian package
-      command: |
-        cd ~/packaging/securedrop-builder
-        export PKG_VERSION=1000.0
-        export PKG_PATH=~/project/export
-        source .venv/bin/activate
-        make securedrop-export
 
   - &log_install_poetry
     run:
@@ -263,37 +183,6 @@ common-steps:
       command: |
         make -C log check
 
-  - &log_install_packaging_dependencies
-    run:
-      name: Install Debian packaging dependencies and download wheels
-      command: |
-        apt-get update && apt-get install -y git git-lfs make sudo
-        mkdir ~/packaging && cd ~/packaging
-        git clone https://github.com/freedomofpress/securedrop-builder.git
-        cd securedrop-builder
-        make install-deps
-        source .venv/bin/activate
-        PKG_DIR=~/project/log make requirements
-
-  - &log_verify_requirements
-    run:
-      name: Ensure that build-requirements.txt and requirements.txt are in sync.
-      command: |
-        cd ~/project/log
-        # Return 1 if unstaged changes exist (after `make requirements` in the
-        # previous run step), else return 0.
-        git diff --quiet
-
-  - &log_build_debian_package
-    run:
-      name: Build debian package
-      command: |
-        cd ~/packaging/securedrop-builder
-        export PKG_VERSION=1000.0
-        export PKG_PATH=~/project/log
-        source .venv/bin/activate
-        make securedrop-log
-
   - &proxy_install_poetry
     run:
       name: Install Poetry
@@ -319,13 +208,6 @@ common-steps:
         apt-get install --yes --no-install-recommends git gnupg make
         cd proxy
         poetry install --no-ansi
-
-  - &proxy_install_build_dependencies
-    run:
-      name: Install build dependencies
-      command: |
-        set -e
-        apt-get update && apt-get install --yes git make sudo
 
   - &proxy_run_unit_tests
     run:
@@ -359,60 +241,15 @@ common-steps:
         poetry update safety
         make safety
 
-  - &proxy_install_packaging_dependencies
-    run:
-      name: Install Debian packaging dependencies and download Python wheels
-      command: |
-        set -x
-        mkdir ~/packaging && cd ~/packaging
-        # local builds may not have an ssh url, so || true
-        git config --global --unset url.ssh://git@github.com.insteadof || true
-        git clone https://github.com/freedomofpress/securedrop-builder.git
-        cd securedrop-builder
-        apt-get update && apt-get install -y sudo make
-        make install-deps
-        source .venv/bin/activate
-        PKG_DIR=~/project/proxy make requirements
-
-  - &proxy_verify_requirements
-    run:
-      name: Ensure that build-requirements.txt and requirements.txt are in sync.
-      command: |
-        cd ~/project/proxy
-        # Return 1 if unstaged changes exist (after `make requirements` in the
-        # previous run step), else return 0.
-        git diff --quiet
-
-  - &proxy_build_debian_package
-    run:
-      name: Build debian package
-      command: |
-        cd ~/packaging/securedrop-builder
-        export PKG_VERSION=1000.0
-        export PKG_PATH=~/project/proxy
-        source .venv/bin/activate
-        make securedrop-proxy
-
-
 version: 2.1
 
 jobs:
-  client_build:
+  client_unit-test:
     parameters: &parameters
       image:
         type: string
     docker: &docker
       - image: debian:<< parameters.image >>
-    steps:
-      - *client_install_build_dependencies
-      - checkout
-      - *client_install_packaging_dependencies
-      - *client_check_packaging_requirements
-      - *client_build_debian_package
-
-  client_unit-test:
-    parameters: *parameters
-    docker: *docker
     steps:
       - *client_install_poetry
       - checkout
@@ -478,16 +315,6 @@ jobs:
       - *client_check_source_strings
       - *client_check_mo_repro
 
-  export_build:
-    parameters: *parameters
-    docker: *docker
-    steps:
-      - *export_install_build_dependencies
-      - checkout
-      - *export_install_packaging_dependencies
-      - *export_check_packaging_requirements
-      - *export_build_debian_package
-
   export_unit-test:
     parameters: *parameters
     docker: *docker
@@ -534,25 +361,6 @@ jobs:
       - *log_install_poetry
       - *log_install_testing_dependencies
       - *log_run_tests
-
-  log_build-bullseye:
-    docker:
-      - image: debian:bullseye
-    steps:
-      - checkout
-      - *log_install_packaging_dependencies
-      - *log_verify_requirements
-      - *log_build_debian_package
-
-  proxy_build:
-    parameters: *parameters
-    docker: *docker
-    steps:
-      - checkout
-      - *proxy_install_build_dependencies
-      - *proxy_install_packaging_dependencies
-      - *proxy_verify_requirements
-      - *proxy_build_debian_package
 
   proxy_unit-test:
     parameters: *parameters
@@ -614,8 +422,6 @@ workflows:
           matrix: *matrix
       - client_check-internationalization:
           matrix: *matrix
-      - client_build:
-          matrix: *matrix
 
   securedrop_export_ci:
     jobs: &export_jobs
@@ -627,13 +433,10 @@ workflows:
           matrix: *matrix
       - export_check-python-security:
           matrix: *matrix
-      - export_build:
-          matrix: *matrix
 
   securedrop_log_ci:
     jobs:
       - log_test-bullseye
-      - log_build-bullseye
 
   securedrop_proxy_ci:
     jobs: &proxy_jobs
@@ -644,8 +447,6 @@ workflows:
       - proxy_check-security:
           matrix: *matrix
       - proxy_check-python-security:
-          matrix: *matrix
-      - proxy_build:
           matrix: *matrix
 
   client_nightly:

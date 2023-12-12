@@ -1,0 +1,4 @@
+# speed is preferred over disk space
+compression = "gzip"
+# ignore the build/ directory, that contains our artifacts
+tar-ignore = "build"

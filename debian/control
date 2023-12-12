@@ -1,0 +1,53 @@
+Source: securedrop-client
+Section: unknown
+Priority: optional
+Maintainer: SecureDrop Team <securedrop@freedom.press>
+Build-Depends: debhelper-compat (= 11), python3-virtualenv
+Standards-Version: 3.9.8
+Homepage: https://github.com/freedomofpress/securedrop-client
+X-Python3-Version: >= 3.5
+
+Package: securedrop-client
+Architecture: all
+Depends: ${python3:Depends},${misc:Depends}, python3-pyqt5, python3-pyqt5.qtsvg, apparmor-utils
+Description: securedrop client for qubes workstation
+
+Package: securedrop-export
+Architecture: all
+Depends: ${python3:Depends}, ${misc:Depends}, cryptsetup, cups, printer-driver-brlaser, printer-driver-hpcups, system-config-printer, xpp, libcups2-dev, python3-dev, libtool-bin, unoconv, gnome-disk-utility
+Description: Submission export scripts for SecureDrop Workstation
+ This package provides scripts used by the SecureDrop Qubes Workstation to
+ export submissions from the client to external storage, via the sd-export
+ Qube.
+
+Package: securedrop-keyring
+Architecture: all
+Depends: gnupg
+Description: Provides an apt keyring for SecureDrop-related packages, so the master signing key used for SecureDrop packages can be updated via apt.
+
+Package: securedrop-log
+Architecture: all
+Depends: python3-distutils, ${misc:Depends}, ${python3:Depends}
+Description: Python module and qrexec service to store logs for SecureDrop Workstation
+ This package provides Python module and qrexec service files to create a logging VM in
+ SecureDrop Workstation project in Qubes.
+
+Package: securedrop-proxy
+Architecture: all
+Depends: ${python3:Depends}, ${misc:Depends}, libyaml-0-2
+Description: This is securedrop Qubes proxy service
+ This package provides the network proxy on Qubes to talk to the SecureDrop server.
+
+Package: securedrop-workstation-config
+Architecture: all
+Depends: nautilus, gvfs-bin, securedrop-keyring
+Description: This is the SecureDrop workstation template configuration package.
+ This package provides dependencies and configuration for the Qubes SecureDrop workstation VM Templates.
+
+Package: securedrop-workstation-viewer
+Architecture: all
+Depends: securedrop-workstation-config,securedrop-workstation-grsec,apparmor-profiles,apparmor-profiles-extra,apparmor-utils,audacious,eog,evince,file-roller,gedit,totem
+Description: This is the SecureDrop workstation SecureDrop Viewer Disposable VM template configuration package. This package provides dependencies and configuration for the Qubes SecureDrop workstation sd-viewer Template VM.
+Provides: securedrop-workstation-svs-disp
+Conflicts: securedrop-workstation-svs-disp
+Replaces: securedrop-workstation-svs-disp
