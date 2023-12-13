@@ -1,6 +1,6 @@
 ---
 common-steps:
-  - &install_poetry
+  - &client_install_poetry
     run:
       name: Install Poetry
       command: |
@@ -18,15 +18,16 @@ common-steps:
             exit 1
         fi
 
-  - &install_testing_dependencies
+  - &client_install_testing_dependencies
     run:
       name: Install testing dependencies
       command: |
         set -e
         apt update && apt install -y git gnupg libarchive13 libmagic1 libqt5x11extras5 make python3-tk python3-dev gnupg python3-venv sqlite3 xvfb
+        cd client
         poetry install --no-ansi
 
-  - &configure_locales
+  - &client_configure_locales
     run:
       name: Configure locales
       command: |
@@ -36,64 +37,76 @@ common-steps:
         echo "en_US UTF-8" >> /etc/locale.gen
         locale-gen
 
-  - &install_build_dependencies
+  - &client_install_build_dependencies
     run:
       name: Install build dependencies
       command: |
+        set -e
         apt update && apt install -y git make sudo
 
-  - &run_unit_tests
+  - &client_run_unit_tests
     run:
       name: Install requirements and run unit tests
       command: |
+        set -e
+        cd client
         export PYTHONPATH=$PYTHONPATH:.  # so alembic can get to Base metadata
         make test-random
 
-  - &run_integration_tests
+  - &client_run_integration_tests
     run:
       name: Install requirements and run integration tests
       command: |
+        set -e
+        cd client
         export PYTHONPATH=$PYTHONPATH:.  # so alembic can get to Base metadata
         make test-integration
 
-  - &run_functional_tests
+  - &client_run_functional_tests
     run:
       name: Install requirements and run functional tests
       command: |
+        set -e
+        cd client
         export PYTHONPATH=$PYTHONPATH:.  # so alembic can get to Base metadata
         make test-functional
 
-  - &run_lint
+  - &client_run_lint
     run:
       name: Run lint, type checking, code formatting
       command: |
-        make check-black check-isort lint mypy
+        set -e
+        make -C client check-black check-isort lint mypy
 
-  - &check_security
+  - &client_check_security
     run:
       name: Run static analysis on source code to find security issues
       command: |
-        make semgrep bandit
+        set -e
+        make -C client semgrep bandit
 
-  - &check_source_strings
+  - &client_check_source_strings
     run:
       name: Check that source strings are updated
       command: |
-        make check-strings
+        set -e
+        make -C client check-strings
 
-  - &check_mo_repro
+  - &client_check_mo_repro
     run:
       name: Check that translation machine objects are reproducible
       command: |
-        make verify-mo
+        set -e
+        make -C client verify-mo
 
-  - &check_python_dependencies_for_vulnerabilities
+  - &client_check_python_dependencies_for_vulnerabilities
     run:
       name: Check Python dependencies for known vulnerabilities
       command: |
-        make safety
+        set -e
+        make -C client safety
 
-  - &install_packaging_dependencies
+  - &client_install_packaging_dependencies
     run:
       name: Install Debian packaging dependencies and download Python wheels
       command: |
@@ -106,137 +119,536 @@ common-steps:
         apt-get update && apt-get install -y sudo make
         make install-deps
         source .venv/bin/activate
-        PKG_DIR=~/project make requirements
+        PKG_DIR=~/project/client make requirements
 
-  - &check_packaging_requirements
+  - &client_check_packaging_requirements
     run:
       name: Ensure that the same Python requirements are used for packaging and production.
       command: |
-        cd ~/project
+        cd ~/project/client
         # Fail if unstaged changes exist that are not comments (after `make requirements` in the previous run step).
         git diff --ignore-matching-lines=# --exit-code
 
-  - &build_debian_package
+  - &client_build_debian_package
     run:
       name: Build debian package
       command: |
-        cd ~/project
+        cd ~/project/client
         ./update_version.sh 1000.0  # Dummy version number, doesn't matter what we put here
         cd ~/packaging/securedrop-builder
         export PKG_VERSION=1000.0
-        export PKG_PATH=~/project/
+        export PKG_PATH=~/project/client
         source .venv/bin/activate
         make securedrop-client
+
+  - &export_install_poetry
+    run:
+      name: Install Poetry
+      command: |
+        set -e
+        source /etc/os-release
+        if [[ "$VERSION_CODENAME" == "bullseye" ]]; then
+            # Install Poetry via PyPI
+            apt-get update && apt-get install --yes --no-install-recommends python3-pip
+            pip install poetry==1.6.1
+        elif [[ "$VERSION_CODENAME" == "bookworm" ]]; then
+            # Install Poetry via system package
+            apt-get update && apt-get install --yes --no-install-recommends python3-poetry
+        else
+            echo "Unsupported Debian version: $VERSION_CODENAME"
+            exit 1
+        fi
+
+  - &export_install_testing_dependencies
+    run:
+      name: Install testing dependencies
+      command: |
+        apt update && apt install -y git gnupg make python3-dev gnupg python3-venv libnotify-bin
+        cd export
+        poetry install --no-ansi
+
+  - &export_install_build_dependencies
+    run:
+      name: Install build dependencies
+      command: |
+        apt update && apt install -y git make sudo
+
+  - &export_run_unit_tests
+    run:
+      name: Install requirements and run unit tests
+      command: |
+        cd export
+        export PYTHONPATH=$PYTHONPATH:.  # so alembic can get to Base metadata
+        make test
+
+  - &export_run_lint
+    run:
+      name: Run lint, type checking, code formatting
+      command: |
+        make -C export check-black lint
+
+  - &export_check_security
+    run:
+      name: Run static analysis on source code to find security issues
+      command: |
+        make -C export semgrep
+
+  - &export_check_python_dependencies_for_vulnerabilities
+    run:
+      name: Check Python dependencies for known vulnerabilities
+      command: |
+        make -C export safety
+
+  - &export_install_packaging_dependencies
+    run:
+      name: Install Debian packaging dependencies and download Python wheels
+      command: |
+        set -x
+        mkdir ~/packaging && cd ~/packaging
+        # local builds may not have an ssh url, so || true
+        git config --global --unset url.ssh://git@github.com.insteadof || true
+        git clone https://github.com/freedomofpress/securedrop-builder.git
+        cd securedrop-builder
+        make install-deps
+        source .venv/bin/activate
+        PKG_DIR=~/project/export make requirements
+
+  - &export_check_packaging_requirements
+    run:
+      name: Ensure that the same Python requirements are used for packaging and production.
+      command: |
+        cd ~/project/export
+        # Fail if unstaged changes exist (after `make requirements` in the previous run step).
+        git diff --ignore-matching-lines=# --exit-code
+
+  - &export_build_debian_package
+    run:
+      name: Build debian package
+      command: |
+        cd ~/packaging/securedrop-builder
+        export PKG_VERSION=1000.0
+        export PKG_PATH=~/project/export
+        source .venv/bin/activate
+        make securedrop-export
+
+  - &log_install_poetry
+    run:
+      name: Install Poetry
+      command: |
+        set -e
+        source /etc/os-release
+        if [[ "$VERSION_CODENAME" == "bullseye" ]]; then
+            # Install Poetry via PyPI
+            apt-get update && apt-get install --yes --no-install-recommends python3-pip
+            pip install poetry==1.6.1
+        elif [[ "$VERSION_CODENAME" == "bookworm" ]]; then
+            # Install Poetry via system package
+            apt-get update && apt-get install --yes --no-install-recommends python3-poetry
+        else
+            echo "Unsupported Debian version: $VERSION_CODENAME"
+            exit 1
+        fi
+
+  - &log_install_testing_dependencies
+    run:
+      name: Install testing dependencies
+      command: |
+        apt-get install --yes --no-install-recommends git gnupg make
+        cd log
+        poetry install --no-ansi
+
+  - &log_run_tests
+    run:
+      name: Install requirements and run tests
+      command: |
+        make -C log check
+
+  - &log_install_packaging_dependencies
+    run:
+      name: Install Debian packaging dependencies and download wheels
+      command: |
+        apt-get update && apt-get install -y git git-lfs make sudo
+        mkdir ~/packaging && cd ~/packaging
+        git clone https://github.com/freedomofpress/securedrop-builder.git
+        cd securedrop-builder
+        make install-deps
+        source .venv/bin/activate
+        PKG_DIR=~/project/log make requirements
+
+  - &log_verify_requirements
+    run:
+      name: Ensure that build-requirements.txt and requirements.txt are in sync.
+      command: |
+        cd ~/project/log
+        # Return 1 if unstaged changes exist (after `make requirements` in the
+        # previous run step), else return 0.
+        git diff --quiet
+
+  - &log_build_debian_package
+    run:
+      name: Build debian package
+      command: |
+        cd ~/packaging/securedrop-builder
+        export PKG_VERSION=1000.0
+        export PKG_PATH=~/project/log
+        source .venv/bin/activate
+        make securedrop-log
+
+  - &proxy_install_poetry
+    run:
+      name: Install Poetry
+      command: |
+        set -e
+        source /etc/os-release
+        if [[ "$VERSION_CODENAME" == "bullseye" ]]; then
+            # Install Poetry via PyPI
+            apt-get update && apt-get install --yes --no-install-recommends python3-pip
+            pip install poetry==1.6.1
+        elif [[ "$VERSION_CODENAME" == "bookworm" ]]; then
+            # Install Poetry via system package
+            apt-get update && apt-get install --yes --no-install-recommends python3-poetry
+        else
+            echo "Unsupported Debian version: $VERSION_CODENAME"
+            exit 1
+        fi
+
+  - &proxy_install_testing_dependencies
+    run:
+      name: Install testing dependencies
+      command: |
+        apt-get install --yes --no-install-recommends git gnupg make
+        cd proxy
+        poetry install --no-ansi
+
+  - &proxy_install_build_dependencies
+    run:
+      name: Install build dependencies
+      command: |
+        set -e
+        apt-get update && apt-get install --yes git make sudo
+
+  - &proxy_run_unit_tests
+    run:
+      name: Install requirements and run unit tests
+      command: |
+        cd proxy
+        export PYTHONPATH=$PYTHONPATH:.  # so alembic can get to Base metadata
+        make test
+
+  - &proxy_run_lint
+    run:
+      name: Run lint, type checking, code formatting
+      command: |
+        make -C proxy lint
+
+  - &proxy_check_security
+    run:
+      name: Run static analysis on source code to find security issues
+      command: |
+        set -e
+        cd proxy
+        poetry update bandit
+        make bandit
+
+  - &proxy_check_python_dependencies_for_vulnerabilities
+    run:
+      name: Check Python dependencies for known vulnerabilities
+      command: |
+        set -e
+        cd proxy
+        poetry update safety
+        make safety
+
+  - &proxy_install_packaging_dependencies
+    run:
+      name: Install Debian packaging dependencies and download Python wheels
+      command: |
+        set -x
+        mkdir ~/packaging && cd ~/packaging
+        # local builds may not have an ssh url, so || true
+        git config --global --unset url.ssh://git@github.com.insteadof || true
+        git clone https://github.com/freedomofpress/securedrop-builder.git
+        cd securedrop-builder
+        apt-get update && apt-get install -y sudo make
+        make install-deps
+        source .venv/bin/activate
+        PKG_DIR=~/project/proxy make requirements
+
+  - &proxy_verify_requirements
+    run:
+      name: Ensure that build-requirements.txt and requirements.txt are in sync.
+      command: |
+        cd ~/project/proxy
+        # Return 1 if unstaged changes exist (after `make requirements` in the
+        # previous run step), else return 0.
+        git diff --quiet
+
+  - &proxy_build_debian_package
+    run:
+      name: Build debian package
+      command: |
+        cd ~/packaging/securedrop-builder
+        export PKG_VERSION=1000.0
+        export PKG_PATH=~/project/proxy
+        source .venv/bin/activate
+        make securedrop-proxy
+
 
 version: 2.1
 
 jobs:
-  build:
+  client_build:
     parameters: &parameters
       image:
         type: string
     docker: &docker
       - image: debian:<< parameters.image >>
     steps:
-      - *install_build_dependencies
+      - *client_install_build_dependencies
       - checkout
-      - *install_packaging_dependencies
-      - *check_packaging_requirements
-      - *build_debian_package
+      - *client_install_packaging_dependencies
+      - *client_check_packaging_requirements
+      - *client_build_debian_package
 
-  unit-test:
+  client_unit-test:
     parameters: *parameters
     docker: *docker
     steps:
-      - *install_poetry
+      - *client_install_poetry
       - checkout
-      - *install_testing_dependencies
-      - *configure_locales
-      - *run_unit_tests
+      - *client_install_testing_dependencies
+      - *client_configure_locales
+      - *client_run_unit_tests
       - store_test_results:
           path: test-results
 
-  integration-test:
+  client_integration-test:
     parameters: *parameters
     docker: *docker
     steps:
-      - *install_poetry
+      - *client_install_poetry
       - checkout
-      - *install_testing_dependencies
-      - *run_integration_tests
+      - *client_install_testing_dependencies
+      - *client_run_integration_tests
 
-  functional-test:
+  client_functional-test:
     parameters: *parameters
     docker: *docker
     steps:
-      - *install_poetry
+      - *client_install_poetry
       - checkout
-      - *install_testing_dependencies
-      - *run_functional_tests
+      - *client_install_testing_dependencies
+      - *client_run_functional_tests
 
-  lint:
+  client_lint:
     parameters: *parameters
     docker: *docker
     steps:
-      - *install_poetry
+      - *client_install_poetry
       - checkout
-      - *install_testing_dependencies
-      - *run_lint
+      - *client_install_testing_dependencies
+      - *client_run_lint
 
-  check-security:
+  client_check-security:
     parameters: *parameters
     docker: *docker
     steps:
-      - *install_poetry
+      - *client_install_poetry
       - checkout
-      - *install_testing_dependencies
-      - *check_security
+      - *client_install_testing_dependencies
+      - *client_check_security
 
-  check-python-security:
+  client_check-python-security:
     parameters: *parameters
     docker: *docker
     steps:
-      - *install_poetry
+      - *client_install_poetry
       - checkout
-      - *install_testing_dependencies
-      - *check_python_dependencies_for_vulnerabilities
+      - *client_install_testing_dependencies
+      - *client_check_python_dependencies_for_vulnerabilities
 
 
-  check-internationalization:
+  client_check-internationalization:
     parameters: *parameters
     docker: *docker
     steps:
-      - *install_poetry
+      - *client_install_poetry
       - checkout
-      - *install_testing_dependencies
-      - *check_source_strings
-      - *check_mo_repro
+      - *client_install_testing_dependencies
+      - *client_check_source_strings
+      - *client_check_mo_repro
+
+  export_build:
+    parameters: *parameters
+    docker: *docker
+    steps:
+      - *export_install_build_dependencies
+      - checkout
+      - *export_install_packaging_dependencies
+      - *export_check_packaging_requirements
+      - *export_build_debian_package
+
+  export_unit-test:
+    parameters: *parameters
+    docker: *docker
+    steps:
+      - *export_install_poetry
+      - checkout
+      - *export_install_testing_dependencies
+      - *export_run_unit_tests
+      - store_test_results:
+          path: test-results
+
+  export_lint:
+    parameters: *parameters
+    docker: *docker
+    steps:
+      - *export_install_poetry
+      - checkout
+      - *export_install_testing_dependencies
+      - *export_run_lint
+
+  export_check-security:
+    parameters: *parameters
+    docker: *docker
+    steps:
+      - *export_install_poetry
+      - checkout
+      - *export_install_testing_dependencies
+      - *export_check_security
+
+  export_check-python-security:
+    parameters: *parameters
+    docker: *docker
+    steps:
+      - *export_install_poetry
+      - checkout
+      - *export_install_testing_dependencies
+      - *export_check_python_dependencies_for_vulnerabilities
+
+  log_test-bullseye:
+    docker:
+      - image: debian:bullseye
+    steps:
+      - checkout
+      - *log_install_poetry
+      - *log_install_testing_dependencies
+      - *log_run_tests
+
+  log_build-bullseye:
+    docker:
+      - image: debian:bullseye
+    steps:
+      - checkout
+      - *log_install_packaging_dependencies
+      - *log_verify_requirements
+      - *log_build_debian_package
+
+  proxy_build:
+    parameters: *parameters
+    docker: *docker
+    steps:
+      - checkout
+      - *proxy_install_build_dependencies
+      - *proxy_install_packaging_dependencies
+      - *proxy_verify_requirements
+      - *proxy_build_debian_package
+
+  proxy_unit-test:
+    parameters: *parameters
+    docker: *docker
+    steps:
+      - checkout
+      - *proxy_install_poetry
+      - *proxy_install_testing_dependencies
+      - *proxy_run_unit_tests
+      - store_test_results:
+          path: test-results
+
+  proxy_lint:
+    parameters: *parameters
+    docker: *docker
+    steps:
+      - checkout
+      - *proxy_install_poetry
+      - *proxy_install_testing_dependencies
+      - *proxy_run_lint
+
+  proxy_check-security:
+    parameters: *parameters
+    docker: *docker
+    steps:
+      - checkout
+      - *proxy_install_poetry
+      - *proxy_install_testing_dependencies
+      - *proxy_check_security
+
+  proxy_check-python-security:
+    parameters: *parameters
+    docker: *docker
+    steps:
+      - checkout
+      - *proxy_install_poetry
+      - *proxy_install_testing_dependencies
+      - *proxy_check_python_dependencies_for_vulnerabilities
+
 
 workflows:
   securedrop_client_ci:
-    jobs: &jobs
-      - unit-test:
+    jobs: &client_jobs
+      - client_unit-test:
           matrix: &matrix
             parameters:
               image:
                 - bullseye
                 - bookworm
-      - integration-test:
+      - client_integration-test:
           matrix: *matrix
-      - functional-test:
+      - client_functional-test:
           matrix: *matrix
-      - lint:
+      - client_lint:
           matrix: *matrix
-      - check-security:
+      - client_check-security:
           matrix: *matrix
-      - check-python-security:
+      - client_check-python-security:
           matrix: *matrix
-      - check-internationalization:
+      - client_check-internationalization:
           matrix: *matrix
-      - build:
+      - client_build:
           matrix: *matrix
 
-  nightly:
+  securedrop_export_ci:
+    jobs: &export_jobs
+      - export_unit-test:
+          matrix: *matrix
+      - export_lint:
+          matrix: *matrix
+      - export_check-security:
+          matrix: *matrix
+      - export_check-python-security:
+          matrix: *matrix
+      - export_build:
+          matrix: *matrix
+
+  securedrop_log_ci:
+    jobs:
+      - log_test-bullseye
+      - log_build-bullseye
+
+  securedrop_proxy_ci:
+    jobs: &proxy_jobs
+      - proxy_unit-test:
+          matrix: *matrix
+      - proxy_lint:
+          matrix: *matrix
+      - proxy_check-security:
+          matrix: *matrix
+      - proxy_check-python-security:
+          matrix: *matrix
+      - proxy_build:
+          matrix: *matrix
+
+  client_nightly:
     triggers:
       - schedule:
           cron: "0 6 * * *"
@@ -244,4 +656,24 @@ workflows:
             branches:
               only:
                 - main
-    jobs: *jobs
+    jobs: *client_jobs
+
+  export_nightly:
+    triggers:
+      - schedule:
+          cron: "0 6 * * *"
+          filters:
+            branches:
+              only:
+                - main
+    jobs: *export_jobs
+
+  proxy_nightly:
+    triggers:
+      - schedule:
+          cron: "0 6 * * *"
+          filters:
+            branches:
+              only:
+                - main
+    jobs: *proxy_jobs
