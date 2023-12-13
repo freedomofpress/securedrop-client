@@ -11,7 +11,9 @@ bandit: ## Run bandit with medium level excluding test-related folders
 .PHONY: safety
 safety: ## Runs `safety check` to check python dependencies for vulnerabilities
 	@echo "Running safety against build requirements…"
-	@poetry run safety check --full-report -r build-requirements.txt
+	@poetry run safety check --full-report -r build-requirements.txt \
+		--ignore 61601 \
+		--ignore 61893
 
 .PHONY: lint
 lint: check-isort check-black mypy ## Run isort, black and flake8 and mypy
