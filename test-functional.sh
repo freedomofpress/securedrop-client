@@ -7,7 +7,7 @@
 TESTFILES=$(find tests/functional/test_*.py -print | sort -R)
 for f in $TESTFILES
 do
-    TEST_CMD=(python -m pytest -v --random-order-bucket global "$f")
+    TEST_CMD=(poetry run pytest -v --random-order-bucket global "$f")
     echo "${TEST_CMD[@]}"
     if command -v xvfb-run > /dev/null; then
         xvfb-run  --server-args="-screen 0, 1680x1050x24" -a "${TEST_CMD[@]}"

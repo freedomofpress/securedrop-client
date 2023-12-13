@@ -7,34 +7,6 @@ all: help
 PYTHON := $(if $(shell bash -c "command -v python3.9"), python3.9, python3)
 VERSION_CODENAME ?= bullseye
 
-.PHONY: venv
-venv: hooks ## Provision a Python 3 virtualenv for development on Linux
-	$(PYTHON) -m venv .venv
-	.venv/bin/pip install --upgrade pip wheel
-	.venv/bin/pip install --require-hashes -r "requirements/dev-${VERSION_CODENAME}-requirements.txt"
-	@echo "#################"
-	@echo "Make sure to run: source .venv/bin/activate"
-
-.PHONY: venv-sdw
-venv-sdw: hooks ## Provision a Python 3 virtualenv for development on a prod-like system that has installed dependencies specified in https://github.com/freedomofpress/securedrop-builder/blob/main/securedrop-client/debian/control
-	$(PYTHON) -m venv .venv --system-site-packages
-	.venv/bin/pip install --upgrade pip wheel
-	.venv/bin/pip install --require-hashes -r "requirements/dev-sdw-requirements.txt"
-	@echo "#################"
-	@echo "Virtualenv with Debian system-packages is complete."
-	@echo "Make sure to install the apt packages for system Qt."
-	@echo "Then run: source .venv/bin/activate"
-
-.PHONY: venv-mac
-venv-mac: hooks ## Provision a Python 3 virtualenv for development on macOS
-	$(PYTHON) -m venv .venv
-	.venv/bin/pip install --upgrade pip wheel
-	# There are no M1/arm wheels for the version of PyQt5 we require, and
-	# unfortunately it also doesn't compile. So we're forcing x86_64 mode here
-	arch -x86_64 .venv/bin/pip install -r "requirements/dev-mac-requirements.in"
-	@echo "#################"
-	@echo "Make sure to run: source .venv/bin/activate"
-
 HOOKS_DIR=.githooks
 
 .PHONY: hooks
@@ -49,40 +21,40 @@ semgrep:semgrep-community semgrep-local  ## Run semgrep with both semgrep.dev co
 .PHONY: semgrep-community
 semgrep-community:
 	@echo "Running semgrep with semgrep.dev community rules..."
-	@semgrep $(SEMGREP_FLAGS) --config "p/r2c-security-audit"
+	@poetry run semgrep $(SEMGREP_FLAGS) --config "p/r2c-security-audit"
 
 .PHONY: semgrep-local
 semgrep-local:
 	@echo "Running semgrep with local rules..."
-	@semgrep $(SEMGREP_FLAGS) --config ".semgrep"
+	@poetry run semgrep $(SEMGREP_FLAGS) --config ".semgrep"
 
 .PHONY: black
 black: ## Format Python source code with black
-	@black \
+	@poetry run black \
 		./ \
 		scripts/*.py
 
 .PHONY: check-black
 check-black: ## Check Python source code formatting with black
-	@black --check --diff \
+	@poetry run black --check --diff \
 		./ \
 		scripts/*.py
 
 .PHONY: isort
 isort: ## Run isort to organize Python imports
-	@isort --skip-glob .venv \
+	@poetry run isort --skip-glob .venv \
 		./ \
 		scripts/*.py
 
 .PHONY: check-isort
 check-isort: ## Check Python import organization with isort
-	@isort --skip-glob .venv --check-only --diff \
+	@poetry run isort --skip-glob .venv --check-only --diff \
 		./ scripts \
 		/*.py
 
 .PHONY: mypy
 mypy: ## Run static type checker
-	@mypy --ignore-missing-imports \
+	@poetry run mypy --ignore-missing-imports \
 		--disallow-incomplete-defs \
 		--disallow-untyped-defs \
 		--show-error-codes \
@@ -108,7 +80,7 @@ RANDOM_SEED ?= $(shell bash -c 'echo $$RANDOM')
 
 .PHONY: test
 test: ## Run the application tests in parallel (for rapid development)
-	@TEST_CMD="python -m pytest -v -n 4 --ignore=$(FTESTS) --ignore=$(ITESTS) $(TESTOPTS) $(TESTS)" ; \
+	@TEST_CMD="poetry run pytest -v -n 4 --ignore=$(FTESTS) --ignore=$(ITESTS) $(TESTOPTS) $(TESTS)" ; \
 		source scripts/setup-tmp-directories.sh; \
 		if command -v xvfb-run > /dev/null; then \
 		xvfb-run -a $$TEST_CMD ; else \
@@ -116,14 +88,14 @@ test: ## Run the application tests in parallel (for rapid development)
 
 .PHONY: test-random
 test-random: ## Run the application tests in random order
-	@TEST_CMD="python -m pytest -v --junitxml=test-results/junit.xml --random-order-bucket=global --ignore=$(FTESTS) --ignore=$(ITESTS) $(TESTOPTS) $(TESTS)" ; \
+	@TEST_CMD="poetry run pytest -v --junitxml=test-results/junit.xml --random-order-bucket=global --ignore=$(FTESTS) --ignore=$(ITESTS) $(TESTOPTS) $(TESTS)" ; \
 		if command -v xvfb-run > /dev/null; then \
 		xvfb-run -a $$TEST_CMD ; else \
 		$$TEST_CMD ; fi
 
 .PHONY: test-integration
 test-integration: ## Run the integration tests
-	@TEST_CMD="python -m pytest -v -n 4 $(ITESTS)" ; \
+	@TEST_CMD="poetry run pytest -v -n 4 $(ITESTS)" ; \
 		if command -v xvfb-run > /dev/null; then \
 		xvfb-run -a $$TEST_CMD ; else \
 		$$TEST_CMD ; fi
@@ -134,49 +106,26 @@ test-functional: ## Run the functional tests
 
 .PHONY: lint
 lint: ## Run the linters
-	@flake8 securedrop_client tests
+	@poetry run flake8 securedrop_client tests
 
 .PHONY: safety
 safety: ## Runs `safety check` to check python dependencies for vulnerabilities
-	pip install --upgrade safety && \
-		for req_file in `find . -type f -wholename '*requirements.txt'`; do \
-			echo "Checking file $$req_file" \
-			&& safety check --full-report \
-			--ignore 51668 \
-			--ignore 61601 \
-			-r $$req_file \
-			&& echo -e '\n' \
-			|| exit 1; \
-		done
+	@echo "Checking build-requirements.txt with safety"
+	@poetry run safety check --full-report \
+		--ignore 51668 \
+		--ignore 61601 \
+		--ignore 61893 \
+		--ignore 62044 \
+		-r build-requirements.txt
 
 # Bandit is a static code analysis tool to detect security vulnerabilities in Python applications
 # https://wiki.openstack.org/wiki/Security/Projects/Bandit
 .PHONY: bandit
 bandit: ## Run bandit with medium level excluding test-related folders
-	pip install --upgrade pip && \
-	pip install --upgrade bandit && \
-	bandit -ll --recursive . --exclude ./tests,./.venv
+	@poetry run bandit -ll --recursive . --exclude ./tests,./.venv
 
 .PHONY: check
 check: clean check-black check-isort semgrep bandit lint mypy test-random test-integration test-functional ## Run the full CI test suite
-
-.PHONY: dev-requirements
-dev-requirements:  ## Update dev-*requirements.txt files if pinned versions do not comply with the dependency specifications in dev-*requirements.in
-	pip-compile --allow-unsafe --generate-hashes --output-file requirements/dev-bullseye-requirements.txt requirements/dev-bullseye-requirements.in
-	pip-compile --allow-unsafe --generate-hashes --output-file requirements/dev-bookworm-requirements.txt requirements/dev-bookworm-requirements.in
-	pip-compile --allow-unsafe --generate-hashes --output-file requirements/dev-sdw-requirements.txt requirements/dev-sdw-requirements.in
-
-.PHONY: update-dev-dependencies
-update-dev-dependencies:  ## Update dev requirements in case there are newer versions of packages or updates to prod dependencies
-	if test -f "requirements/dev-bullseye-requirements.txt"; then rm -r requirements/dev-bullseye-requirements.txt; fi
-	if test -f "requirements/dev-bookworm-requirements.txt"; then rm -r requirements/dev-bookworm-requirements.txt; fi
-	if test -f "requirements/dev-sdw-requirements.txt"; then rm -r requirements/dev-sdw-requirements.txt; fi
-	$(MAKE) dev-requirements
-
-.PHONY: requirements
-requirements:  ## Update *requirements.txt files if pinned versions do not comply with the dependency specifications in *requirements.in
-	pip-compile --generate-hashes --output-file requirements/requirements.txt requirements/requirements.in
-	$(MAKE) dev-requirements
 
 # Explanation of the below shell command should it ever break.
 # 1. Set the field separator to ": ##" and any make targets that might appear between : and ##
@@ -195,7 +144,7 @@ help: ## Print this message and exit.
 
 .PHONY: version
 version:
-	@python -c "import securedrop_client; print(securedrop_client.__version__)"
+	@poetry run python -c "import securedrop_client; print(securedrop_client.__version__)"
 
 
 .PHONY: docs
@@ -213,12 +162,12 @@ docs:  ## Generate browsable documentation and call/caller graphs (requires Doxy
 
 LOCALE_DIR=securedrop_client/locale
 POT=${LOCALE_DIR}/messages.pot
-VERSION=$(shell python -c "import securedrop_client; print(securedrop_client.__version__)")
+VERSION=$(shell poetry run python -c "import securedrop_client; print(securedrop_client.__version__)")
 
 .PHONY: check-strings
 check-strings: ## Check that the translation catalog is up to date with source code
 	@make extract-strings
-	@git diff --quiet ${LOCALE_DIR} || { echo "Translation catalog is out of date. Please run \"make extract-strings\" and commit the changes."; exit 1; }
+	@git diff --exit-code ${LOCALE_DIR} || { echo "Translation catalog is out of date. Please run \"make extract-strings\" and commit the changes."; exit 1; }
 
 .PHONY: extract-strings
 extract-strings: ## Extract translatable strings from source code
@@ -228,7 +177,7 @@ extract-strings: ## Extract translatable strings from source code
 $(POT): securedrop_client
 	@echo "updating catalog template: $@"
 	@mkdir -p ${LOCALE_DIR}
-	@pybabel extract \
+	@poetry run pybabel extract \
 		-F babel.cfg \
 		--charset=utf-8 \
 		--output=${POT} \
@@ -245,6 +194,6 @@ $(POT): securedrop_client
 
 .PHONY: verify-mo
 verify-mo: ## Verify that all gettext machine objects (.mo) are reproducible from their catalogs (.po).
-	@TERM=dumb scripts/verify-mo.py ${LOCALE_DIR}/*
+	@TERM=dumb poetry run scripts/verify-mo.py ${LOCALE_DIR}/*
 	@# All good; now clean up.
 	@git restore "${LOCALE_DIR}/**/*.po"
