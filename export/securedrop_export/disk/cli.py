@@ -551,7 +551,7 @@ class CLI:
         if os.path.exists(volume.mountpoint):
             logger.debug(f"Unmounting drive from {volume.mountpoint}")
             try:
-                subprocess.check_call(["udisksctl", "unmount", volume.mountpoint])
+                subprocess.check_call(["udisksctl", "unmount", "--block-device", f"/dev/mapper/{volume.mapped_name}"])
 
             except subprocess.CalledProcessError as ex:
                 logger.error("Error unmounting device")
