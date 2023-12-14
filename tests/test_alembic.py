@@ -70,7 +70,7 @@ def get_schema(session):
 
 
 def assert_schemas_equal(left, right):
-    for k, v in left.items():
+    for (k, v) in left.items():
         if k not in right:
             raise AssertionError("Left contained {} but right did not".format(k))
         if not ddl_equal(v, right[k]):

@@ -154,7 +154,7 @@ def test_SecureQLabel_get_elided_text(mocker):
     sl = SecureQLabel(long_string, wordwrap=False, max_length=100)
     elided_text = sl.get_elided_text(long_string)
     assert sl.text() == elided_text
-    assert "…" in elided_text
+    assert "..." in elided_text
 
 
 def test_SecureQLabel_get_elided_text_short_string(mocker):
@@ -181,7 +181,7 @@ def test_SecureQLabel_get_elided_text_only_returns_oneline_elided(mocker):
     sl = SecureQLabel(string_with_newline, wordwrap=False, max_length=38)
     elided_text = sl.get_elided_text(string_with_newline)
     assert sl.text() == elided_text
-    assert "…" in elided_text
+    assert "..." in elided_text
 
 
 def test_SecureQLabel_quotes_not_escaped_for_readability():

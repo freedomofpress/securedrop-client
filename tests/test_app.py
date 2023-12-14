@@ -178,6 +178,7 @@ PERMISSIONS_CASES = [
 
 
 def test_create_app_dir_permissions(tmpdir, mocker):
+
     for idx, case in enumerate(PERMISSIONS_CASES):
         mock_session_maker = mocker.MagicMock()
         mock_args = mocker.MagicMock()

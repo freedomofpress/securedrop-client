@@ -1,7 +1,6 @@
 -r requirements.in
 babel
 black
-diffoscope
 flake8
 flaky
 isort
@@ -9,7 +8,6 @@ MarkupSafe
 mypy
 Pillow>=9.0.1  # for mouseinfo, pyscreeze as of CVE-2022-{22817,24303}
 pip-tools>=6.8.0  # for jazzband/piptools#1617
-polib
 PyAutoGUI
 pyobjc-core;platform_system=="Darwin"
 pyobjc;platform_system=="Darwin"
@@ -23,8 +21,6 @@ pytest-vcr
 pytest-xdist>=3.0.2  # CVE-2022-42969
 semgrep
 toml
-translate-toolkit
-types-polib
 types-python-dateutil
 types-setuptools
 wlc

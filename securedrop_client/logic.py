@@ -72,9 +72,9 @@ logger = logging.getLogger(__name__)
 LAST_SYNC_REFRESH_INTERVAL_MS = 1000 * 30
 
 
-def login_required(f):  # type: ignore[no-untyped-def]
+def login_required(f):  # type: ignore [no-untyped-def]
     @functools.wraps(f)
-    def decorated_function(self, *args, **kwargs):  # type: ignore[no-untyped-def]
+    def decorated_function(self, *args, **kwargs):  # type: ignore [no-untyped-def]
         if not self.api:
             self.on_action_requiring_login()
             return
@@ -97,7 +97,7 @@ class APICallRunner(QObject):
     call_failed = pyqtSignal()
     call_timed_out = pyqtSignal()
 
-    def __init__(  # type: ignore[no-untyped-def]
+    def __init__(  # type: ignore [no-untyped-def]
         self, api_call, current_object=None, *args, **kwargs
     ):
         """
@@ -312,7 +312,7 @@ class Controller(QObject):
     """
     add_job = pyqtSignal("PyQt_PyObject")
 
-    def __init__(  # type: ignore[no-untyped-def]
+    def __init__(  # type: ignore [no-untyped-def]
         self,
         hostname: str,
         gui,
@@ -473,7 +473,7 @@ class Controller(QObject):
 
         storage.clear_download_errors(self.session)
 
-    def call_api(  # type: ignore[no-untyped-def]
+    def call_api(  # type: ignore [no-untyped-def]
         self,
         api_call_func,
         success_callback,
@@ -526,7 +526,7 @@ class Controller(QObject):
         # clear error status in case queue was paused resulting in a permanent error message
         self.gui.clear_error_status()
 
-    def completed_api_call(self, thread_id, user_callback):  # type: ignore[no-untyped-def]
+    def completed_api_call(self, thread_id, user_callback):  # type: ignore [no-untyped-def]
         """
         Manage a completed API call. The actual result *may* be an exception or
         error result from the API. It's up to the handler (user_callback) to
@@ -565,7 +565,7 @@ class Controller(QObject):
             self.api.authenticate, self.on_authenticate_success, self.on_authenticate_failure
         )
 
-    def on_authenticate_success(self, result):  # type: ignore[no-untyped-def]
+    def on_authenticate_success(self, result):  # type: ignore [no-untyped-def]
         """
         Handles a successful authentication call against the API.
         """
@@ -641,7 +641,7 @@ class Controller(QObject):
         """
         return bool(self.api and self.api.token is not None)
 
-    def get_last_sync(self):  # type: ignore[no-untyped-def]
+    def get_last_sync(self):  # type: ignore [no-untyped-def]
         """
         Returns the time of last synchronisation with the remote SD server.
         """

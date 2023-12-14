@@ -149,6 +149,7 @@ class SvgLabel(QLabel):
 
 
 class SecureQLabel(QLabel):
+
     MAX_PREVIEW_LENGTH = 200
 
     def __init__(
@@ -196,7 +197,7 @@ class SecureQLabel(QLabel):
             elided_text = ""
             for c in full_text:
                 if fm.horizontalAdvance(elided_text) > self.max_length:
-                    elided_text = elided_text[:-3] + "…"
+                    elided_text = elided_text[:-3] + "..."
                     return elided_text
                 elided_text = elided_text + c
 

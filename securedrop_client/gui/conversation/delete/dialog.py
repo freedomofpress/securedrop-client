@@ -56,7 +56,7 @@ class DeleteConversationDialog(ModalDialog):
             "<style>li {{line-height: 150%;}}</li></style>",
             "<p>",
             _(
-                "Would you like to delete {files_to_delete}, {replies_to_delete}, "
+                "You would like to delete {files_to_delete}, {replies_to_delete}, "
                 "{messages_to_delete} from the source account for {source}?"
             ),
             "</p>",

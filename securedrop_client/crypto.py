@@ -32,6 +32,7 @@ logger = logging.getLogger(__name__)
 
 
 class CryptoError(Exception):
+
     pass
 
 
@@ -207,6 +208,7 @@ class GpgHelper:
         with tempfile.NamedTemporaryFile("w+") as content, tempfile.NamedTemporaryFile(
             "w+"
         ) as stdout, tempfile.NamedTemporaryFile("w+") as stderr:
+
             content.write(data)
             content.seek(0)
 

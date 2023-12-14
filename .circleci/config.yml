@@ -5,17 +5,7 @@ common-steps:
       name: Install testing dependencies
       command: |
         set -e
-        apt update && apt install -y git gnupg libarchive13 libmagic1 libqt5x11extras5 make python3-tk python3-dev gnupg python3-venv sqlite3 xvfb
-
-  - &configure_locales
-    run:
-      name: Configure locales
-      command: |
-        set -e
-        apt update && apt install -y locales
-        echo "en_US ISO-8859-1" >> /etc/locale.gen
-        echo "en_US UTF-8" >> /etc/locale.gen
-        locale-gen
+        apt update && apt install -y git gnupg libqt5x11extras5 make python3-tk python3-dev gnupg python3-venv sqlite3 xvfb
 
   - &configure_locales
     run:
@@ -87,25 +77,15 @@ common-steps:
         source .venv/bin/activate
         make semgrep bandit
 
-  - &check_source_strings
+  - &check_internationalization
     run:
-      name: Check that source strings are updated
+      name: Run internationalization check
       command: |
         set -e
         export VERSION_CODENAME=$(~/project/scripts/codename)
         make venv
         source .venv/bin/activate
         make check-strings
-
-  - &check_mo_repro
-    run:
-      name: Check that translation machine objects are reproducible
-      command: |
-        set -e
-        export VERSION_CODENAME=$(~/project/scripts/codename)
-        make venv
-        source .venv/bin/activate
-        make verify-mo
 
   - &check_python_dependencies_for_vulnerabilities
     run:
@@ -235,8 +215,7 @@ jobs:
     steps:
       - *install_testing_dependencies
       - checkout
-      - *check_source_strings
-      - *check_mo_repro
+      - *check_internationalization
 
   check-testing-requirements:
     parameters: *parameters

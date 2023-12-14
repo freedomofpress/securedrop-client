@@ -116,7 +116,7 @@ class SingleObjectApiJob(ApiJob):
 
     def __eq__(self, other: Any) -> bool:
         # https://github.com/python/mypy/issues/2783
-        if self.uuid == getattr(other, "uuid", None) and type(self) is type(other):
+        if self.uuid == getattr(other, "uuid", None) and type(self) == type(other):
             return True
         else:
             return False

@@ -58,27 +58,19 @@ semgrep-local:
 
 .PHONY: black
 black: ## Format Python source code with black
-	@black \
-		./ \
-		scripts/*.py
+	@black ./
 
 .PHONY: check-black
 check-black: ## Check Python source code formatting with black
-	@black --check --diff \
-		./ \
-		scripts/*.py
+	@black --check --diff ./
 
 .PHONY: isort
 isort: ## Run isort to organize Python imports
-	@isort --skip-glob .venv \
-		./ \
-		scripts/*.py
+	@isort --skip-glob .venv ./
 
 .PHONY: check-isort
 check-isort: ## Check Python import organization with isort
-	@isort --skip-glob .venv --check-only --diff \
-		./ scripts \
-		/*.py
+	@isort --skip-glob .venv --check-only --diff ./
 
 .PHONY: mypy
 mypy: ## Run static type checker
@@ -88,7 +80,6 @@ mypy: ## Run static type checker
 		--show-error-codes \
 		--warn-unreachable \
 		--warn-unused-ignores \
-		scripts/*.py \
 		securedrop_client \
 		*.py
 
@@ -130,7 +121,10 @@ test-integration: ## Run the integration tests
 
 .PHONY: test-functional
 test-functional: ## Run the functional tests
-	@./test-functional.sh
+	@TEST_CMD="python -m pytest -v -n 4 --random-order-bucket global --random-order-seed=$(RANDOM_SEED) $(FTESTS)" ; \
+		if command -v xvfb-run > /dev/null; then \
+		xvfb-run --server-args="-screen 0, 1680x1050x24" -a $$TEST_CMD ; else \
+		$$TEST_CMD ; fi
 
 .PHONY: lint
 lint: ## Run the linters
@@ -242,8 +236,3 @@ $(POT): securedrop_client
 		$^
 	@sed -i -e '/^"POT-Creation-Date/d' ${POT}
 
-.PHONY: verify-mo
-verify-mo: ## Verify that all gettext machine objects (.mo) are reproducible from their catalogs (.po).
-	@TERM=dumb scripts/verify-mo.py ${LOCALE_DIR}/*
-	@# All good; now clean up.
-	@git restore "${LOCALE_DIR}/**/*.po"

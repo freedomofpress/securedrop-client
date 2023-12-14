@@ -108,7 +108,7 @@ def safe_copyfileobj(src_file: gzip.GzipFile, dest_file: BinaryIO, dest_base_pat
     check_path_traversal(dest_file.name)
     # Ensure directories of dest_file are created safely if they don't exist
     safe_mkdir(dest_base_path, Path(dest_file.name).parent)
-    shutil.copyfileobj(src_file, dest_file)  # type: ignore # (pending python/mypy#14943)
+    shutil.copyfileobj(src_file, dest_file)
     Path(dest_file.name).chmod(0o600)
 
 

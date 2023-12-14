@@ -6,6 +6,7 @@ logger = logging.getLogger(__name__)
 
 
 class Config:
+
     CONFIG_NAME = "config.json"
 
     def __init__(self, journalist_key_fingerprint: str) -> None:

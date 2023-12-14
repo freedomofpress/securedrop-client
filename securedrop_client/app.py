@@ -57,7 +57,7 @@ def init(sdc_home: Path) -> None:
     safe_mkdir(sdc_home, "data")
 
 
-def excepthook(*exc_args):  # type: ignore[no-untyped-def]
+def excepthook(*exc_args):  # type: ignore [no-untyped-def]
     """
     This function is called in the event of a catastrophic failure.
     Log exception and exit cleanly.
@@ -125,7 +125,7 @@ def configure_logging(sdc_home: Path) -> None:
 
 
 def configure_signal_handlers(app: QApplication) -> None:
-    def signal_handler(*nargs) -> None:  # type: ignore[no-untyped-def]
+    def signal_handler(*nargs) -> None:  # type: ignore [no-untyped-def]
         app.quit()
 
     for sig in [signal.SIGINT, signal.SIGTERM]:
@@ -170,11 +170,11 @@ def prevent_second_instance(app: QApplication, unique_name: str) -> None:
     IDENTIFIER = "\0" + app.applicationName() + unique_name
     ALREADY_BOUND_ERRNO = 98
 
-    app.instance_binding = socket.socket(  # type: ignore[attr-defined]
+    app.instance_binding = socket.socket(  # type: ignore [attr-defined]
         socket.AF_UNIX, socket.SOCK_DGRAM
     )
     try:
-        app.instance_binding.bind(IDENTIFIER)  # type: ignore[attr-defined]
+        app.instance_binding.bind(IDENTIFIER)  # type: ignore [attr-defined]
     except OSError as e:
         if e.errno == ALREADY_BOUND_ERRNO:
             err_dialog = QMessageBox()
@@ -206,7 +206,7 @@ def threads(count: int) -> Any:
         thread.wait(TWO_SECONDS_IN_MILLISECONDS)
 
 
-def start_app(args, qt_args) -> NoReturn:  # type: ignore[no-untyped-def]
+def start_app(args, qt_args) -> NoReturn:  # type: ignore [no-untyped-def]
     """
     Create all the top-level assets for the application, set things up and
     run the application. Specific tasks include:

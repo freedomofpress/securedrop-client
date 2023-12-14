@@ -16,7 +16,7 @@ env = Environment(
     lstrip_blocks=True,
     trim_blocks=True,
 )
-env.install_gettext_translations(gettext)  # type: ignore[attr-defined]
+env.install_gettext_translations(gettext)  # type: ignore [attr-defined]
 
 
 def transcribe(record: database.Base) -> Optional[Item]:
