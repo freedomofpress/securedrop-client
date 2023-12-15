@@ -26,7 +26,7 @@ class ApiSync(QObject):
 
     def __init__(
         self,
-        api_client: API,
+        api_client: Optional[API],
         session_maker: scoped_session,
         gpg: GpgHelper,
         data_dir: str,
@@ -106,7 +106,7 @@ class ApiSyncBackgroundTask(QObject):
 
     def __init__(  # type: ignore[no-untyped-def]
         self,
-        api_client: API,
+        api_client: Optional[API],
         session_maker: scoped_session,
         gpg: GpgHelper,
         data_dir: str,

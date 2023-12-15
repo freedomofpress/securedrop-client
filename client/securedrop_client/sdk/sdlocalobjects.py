@@ -81,22 +81,20 @@ class Reply:
             self.source_uuid = kwargs["source_uuid"]
             return
 
-        for key in [
-            "filename",
-            "journalist_uuid",
-            "journalist_username",
-            "journalist_first_name",
-            "journalist_last_name",
-            "is_deleted_by_source",
-            "reply_url",
-            "size",
-            "source_url",
-            "uuid",
-            "seen_by",
-        ]:
-            if key not in kwargs:
-                AttributeError("Missing key {}".format(key))
-            setattr(self, key, kwargs[key])
+        try:
+            self.filename = kwargs["filename"]
+            self.journalist_uuid = kwargs["journalist_uuid"]
+            self.journalist_username = kwargs["journalist_username"]
+            self.journalist_first_name = kwargs["journalist_first_name"]
+            self.journalist_last_name = kwargs["journalist_last_name"]
+            self.is_deleted_by_source = kwargs["is_deleted_by_source"]
+            self.reply_url = kwargs["reply_url"]
+            self.size = kwargs["size"]
+            self.source_url = kwargs["source_url"]
+            self.uuid = kwargs["uuid"]
+            self.seen_by = kwargs["seen_by"]
+        except KeyError as err:
+            raise AttributeError("Missing key {}".format(err.args[0])) from err
 
         # Now let us set source uuid
         values = self.source_url.split("/")
@@ -128,19 +126,18 @@ class Submission:
             self.source_uuid = kwargs["source_uuid"]
             return
 
-        for key in [
-            "download_url",
-            "filename",
-            "is_read",
-            "size",
-            "source_url",
-            "submission_url",
-            "uuid",
-            "seen_by",
-        ]:
-            if key not in kwargs:
-                AttributeError("Missing key {}".format(key))
-            setattr(self, key, kwargs[key])
+        try:
+            self.download_url = kwargs["download_url"]
+            self.filename = kwargs["filename"]
+            self.is_read = kwargs["is_read"]
+            self.size = kwargs["size"]
+            self.source_url = kwargs["source_url"]
+            self.submission_url = kwargs["submission_url"]
+            self.uuid = kwargs["uuid"]
+            self.seen_by = kwargs["seen_by"]
+        except KeyError as err:
+            raise AttributeError("Missing key {}".format(err.args[0])) from err
+
         _, self.source_uuid = self.source_url.rsplit("/", 1)
 
     def is_file(self) -> bool:

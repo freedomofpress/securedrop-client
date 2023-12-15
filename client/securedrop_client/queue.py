@@ -109,7 +109,7 @@ class RunnableQueue(QObject):
 
     def __init__(
         self,
-        api_client: API,
+        api_client: Optional[API],
         session_maker: scoped_session,
         queue_updated_signal: Optional[pyqtBoundSignal] = None,
     ) -> None:
@@ -273,7 +273,7 @@ class ApiJobQueue(QObject):
 
     def __init__(
         self,
-        api_client: API,
+        api_client: Optional[API],
         session_maker: scoped_session,
         main_thread: QThread,
         download_file_thread: QThread,

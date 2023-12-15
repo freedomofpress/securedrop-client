@@ -368,7 +368,7 @@ class Controller(QObject):
         self.gui = gui
 
         # Reference to the API for secure drop proxy.
-        self.api: sdk.API = None
+        self.api: Optional[sdk.API] = None
 
         # Store authenticated user
         self.authenticated_user: Union[db.User, None] = None

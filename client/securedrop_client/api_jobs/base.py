@@ -68,7 +68,7 @@ class ApiJob(QueueJob):
     def __init__(self, remaining_attempts: int = DEFAULT_NUM_ATTEMPTS) -> None:
         super().__init__(remaining_attempts)
 
-    def _do_call_api(self, api_client: API, session: Session) -> None:
+    def _do_call_api(self, api_client: Optional[API], session: Session) -> None:
         if not api_client:
             raise ApiInaccessibleError()
 
