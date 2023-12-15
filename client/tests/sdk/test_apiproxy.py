@@ -9,8 +9,8 @@ import pytest
 from test_shared import TestShared
 from utils import qrexec_datasaver
 
-from sdclientapi import API, RequestTimeoutError
-from sdclientapi.sdlocalobjects import AuthError, BaseError, Reply, Submission
+from securedrop_client.sdk import API, RequestTimeoutError
+from securedrop_client.sdk.sdlocalobjects import AuthError, BaseError, Reply, Submission
 
 
 class TestAPIProxy(TestShared):
@@ -206,7 +206,7 @@ def test_request_timeout(mocker):
             raise TimeoutExpired(["mock"], 123)
 
     api = API("mock", "mock", "mock", "mock", proxy=True)
-    mocker.patch("sdclientapi.Popen", MockedPopen)
+    mocker.patch("securedrop_client.sdk.Popen", MockedPopen)
 
     with pytest.raises(RequestTimeoutError):
         api.authenticate()
@@ -221,7 +221,7 @@ def test_download_reply_timeout(mocker):
             raise TimeoutExpired(["mock"], 123)
 
     api = API("mock", "mock", "mock", "mock", proxy=True)
-    mocker.patch("sdclientapi.Popen", MockedPopen)
+    mocker.patch("securedrop_client.sdk.Popen", MockedPopen)
     with pytest.raises(RequestTimeoutError):
         r = Reply(uuid="humanproblem", filename="secret.txt")
         api.download_reply(r)
@@ -236,7 +236,7 @@ def test_download_submission_timeout(mocker):
             raise TimeoutExpired(["mock"], 123)
 
     api = API("mock", "mock", "mock", "mock", proxy=True)
-    mocker.patch("sdclientapi.Popen", MockedPopen)
+    mocker.patch("securedrop_client.sdk.Popen", MockedPopen)
     with pytest.raises(RequestTimeoutError):
         s = Submission(uuid="climateproblem")
         api.download_submission(s)
@@ -245,7 +245,7 @@ def test_download_submission_timeout(mocker):
 def test_download_get_sources_error_request_timeout(mocker):
     api = API("mock", "mock", "mock", "mock", True)
     mocker.patch(
-        "sdclientapi.json_query",
+        "securedrop_client.sdk.json_query",
         return_value=(
             json.dumps(
                 {
@@ -264,7 +264,7 @@ def test_filename_key_not_in_download_response(mocker):
     api = API("mock", "mock", "mock", "mock", True)
     s = Submission(uuid="foobar")
     mocker.patch(
-        "sdclientapi.json_query",
+        "securedrop_client.sdk.json_query",
         return_value=(
             json.dumps({"body": json.dumps({"error": "wah"}), "status": 200, "headers": "foo"})
         ),

@@ -10,12 +10,12 @@ from tempfile import TemporaryDirectory
 import pytest
 from dateutil.parser import parse
 from PyQt5.QtCore import QThread
-from sdclientapi import Reply, Submission
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm.exc import NoResultFound
 
 import securedrop_client.db
 from securedrop_client import db, utils
+from securedrop_client.sdk import Reply, Submission
 from securedrop_client.storage import (
     __update_submissions,
     _cleanup_directory_if_empty,
@@ -56,7 +56,7 @@ from tests import factory
 
 def make_remote_message(source_uuid, file_counter=1):
     """
-    Utility function for generating sdclientapi Message instances to act
+    Utility function for generating sdk Message instances to act
     upon in the following unit tests. The passed in source_uuid is used to
     generate a valid URL.
     """
@@ -75,7 +75,7 @@ def make_remote_message(source_uuid, file_counter=1):
 
 def make_remote_submission(source_uuid):
     """
-    Utility function for generating sdclientapi Submission instances to act
+    Utility function for generating sdk Submission instances to act
     upon in the following unit tests. The passed in source_uuid is used to
     generate a valid URL.
     """
@@ -94,7 +94,7 @@ def make_remote_submission(source_uuid):
 
 def make_remote_reply(source_uuid, journalist_uuid="testymctestface"):
     """
-    Utility function for generating sdclientapi Reply instances to act
+    Utility function for generating sdk Reply instances to act
     upon in the following unit tests. The passed in source_uuid is used to
     generate a valid URL.
     """

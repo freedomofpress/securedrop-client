@@ -2,8 +2,9 @@ import logging
 from typing import Any, Optional, TypeVar
 
 from PyQt5.QtCore import QObject, pyqtSignal
-from sdclientapi import API, AuthError, RequestTimeoutError, ServerConnectionError
 from sqlalchemy.orm.session import Session
+
+from securedrop_client.sdk import API, AuthError, RequestTimeoutError, ServerConnectionError
 
 logger = logging.getLogger(__name__)
 

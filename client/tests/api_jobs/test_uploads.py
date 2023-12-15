@@ -1,9 +1,8 @@
 import datetime
 
 import pytest
-import sdclientapi
 
-from securedrop_client import db
+from securedrop_client import db, sdk
 from securedrop_client.api_jobs.uploads import (
     SendReplyJob,
     SendReplyJobError,
@@ -42,14 +41,12 @@ def test_send_reply_success(homedir, mocker, session, session_maker, reply_statu
     mock_encrypt = mocker.patch.object(gpg, "encrypt_to_source", return_value=encrypted_reply)
     msg = "wat"
 
-    mock_reply_response = sdclientapi.Reply(uuid=msg_uuid, filename="5-dummy-reply")
+    mock_reply_response = sdk.Reply(uuid=msg_uuid, filename="5-dummy-reply")
     api_client.reply_source = mocker.MagicMock()
     api_client.reply_source.return_value = mock_reply_response
 
     mock_sdk_source = mocker.Mock()
-    mock_source_init = mocker.patch(
-        "securedrop_client.logic.sdclientapi.Source", return_value=mock_sdk_source
-    )
+    mock_source_init = mocker.patch("securedrop_client.sdk.Source", return_value=mock_sdk_source)
 
     job = SendReplyJob(source.uuid, msg_uuid, msg, gpg)
 
@@ -71,7 +68,7 @@ def test_send_reply_fails_when_no_user(homedir, mocker, session, session_maker, 
     """
     source = factory.Source()
     session.add(source)
-    mocker.patch("securedrop_client.logic.sdclientapi.Source", return_value=mocker.Mock())
+    mocker.patch("securedrop_client.sdk.Source", return_value=mocker.Mock())
 
     draft_reply = factory.DraftReply(uuid="mock_reply_uuid")
     session.add(draft_reply)
@@ -150,14 +147,12 @@ def test_drafts_ordering(homedir, mocker, session, session_maker, reply_status_c
     mock_encrypt = mocker.patch.object(gpg, "encrypt_to_source", return_value=encrypted_reply)
     msg = "wat"
 
-    mock_reply_response = sdclientapi.Reply(uuid=msg_uuid, filename="2-dummy-reply")
+    mock_reply_response = sdk.Reply(uuid=msg_uuid, filename="2-dummy-reply")
     api_client.reply_source = mocker.MagicMock()
     api_client.reply_source.return_value = mock_reply_response
 
     mock_sdk_source = mocker.Mock()
-    mock_source_init = mocker.patch(
-        "securedrop_client.logic.sdclientapi.Source", return_value=mock_sdk_source
-    )
+    mock_source_init = mocker.patch("securedrop_client.sdk.Source", return_value=mock_sdk_source)
 
     job = SendReplyJob(source.uuid, msg_uuid, msg, gpg)
 
@@ -217,14 +212,12 @@ def test_send_reply_failure_gpg_error(homedir, mocker, session, session_maker, r
     mock_encrypt = mocker.patch.object(gpg, "encrypt_to_source", side_effect=CryptoError)
     msg = "wat"
 
-    mock_reply_response = sdclientapi.Reply(uuid=msg_uuid, filename="5-dummy-reply")
+    mock_reply_response = sdk.Reply(uuid=msg_uuid, filename="5-dummy-reply")
     api_client.reply_source = mocker.MagicMock()
     api_client.reply_source.return_value = mock_reply_response
 
     mock_sdk_source = mocker.Mock()
-    mock_source_init = mocker.patch(
-        "securedrop_client.logic.sdclientapi.Source", return_value=mock_sdk_source
-    )
+    mock_source_init = mocker.patch("securedrop_client.sdk.Source", return_value=mock_sdk_source)
 
     job = SendReplyJob(source.uuid, msg_uuid, msg, gpg)
 
@@ -324,9 +317,7 @@ def test_send_reply_failure_unknown_error(
     assert len(drafts) == 1
 
 
-@pytest.mark.parametrize(
-    "exception", [sdclientapi.RequestTimeoutError, sdclientapi.ServerConnectionError]
-)
+@pytest.mark.parametrize("exception", [sdk.RequestTimeoutError, sdk.ServerConnectionError])
 def test_send_reply_failure_timeout_error(
     homedir, mocker, session, session_maker, reply_status_codes, exception
 ):

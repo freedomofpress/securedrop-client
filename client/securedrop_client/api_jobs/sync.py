@@ -2,13 +2,13 @@ import logging
 import os
 from typing import Any, List, Optional
 
-from sdclientapi import API
-from sdclientapi import User as SDKUser
 from sqlalchemy.orm.session import Session
 
 from securedrop_client import state
 from securedrop_client.api_jobs.base import ApiJob
 from securedrop_client.db import DeletedUser, DraftReply, User
+from securedrop_client.sdk import API
+from securedrop_client.sdk import User as SDKUser
 from securedrop_client.storage import get_remote_data, update_local_storage
 
 logger = logging.getLogger(__name__)

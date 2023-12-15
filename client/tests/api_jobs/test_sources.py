@@ -1,5 +1,4 @@
 import pytest
-from sdclientapi import RequestTimeoutError, ServerConnectionError
 
 from securedrop_client.api_jobs.sources import (
     DeleteConversationJob,
@@ -7,6 +6,7 @@ from securedrop_client.api_jobs.sources import (
     DeleteSourceJob,
     DeleteSourceJobException,
 )
+from securedrop_client.sdk import RequestTimeoutError, ServerConnectionError
 from tests import factory
 
 
@@ -76,9 +76,7 @@ def test_delete_source_job(homedir, mocker, session, session_maker):
     api_client.delete_source = mocker.MagicMock()
 
     mock_sdk_source = mocker.Mock()
-    mock_source_init = mocker.patch(
-        "securedrop_client.logic.sdclientapi.Source", return_value=mock_sdk_source
-    )
+    mock_source_init = mocker.patch("securedrop_client.sdk.Source", return_value=mock_sdk_source)
 
     job = DeleteSourceJob(source.uuid)
     uuid = job.call_api(api_client, session)

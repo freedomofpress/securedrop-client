@@ -13,7 +13,6 @@ import arrow
 import pytest
 import sqlalchemy.orm.exc
 from PyQt5.QtTest import QSignalSpy
-from sdclientapi import AuthError, RequestTimeoutError, ServerConnectionError
 from sqlalchemy.orm import attributes
 
 from securedrop_client import db, state
@@ -31,6 +30,7 @@ from securedrop_client.api_jobs.updatestar import UpdateStarJobError, UpdateStar
 from securedrop_client.api_jobs.uploads import SendReplyJobError, SendReplyJobTimeoutError
 from securedrop_client.app import threads
 from securedrop_client.logic import APICallRunner, Controller
+from securedrop_client.sdk import AuthError, RequestTimeoutError, ServerConnectionError
 from tests import factory
 
 MAX_SIGNAL_WAITING_TIME = 50
@@ -168,7 +168,7 @@ def test_Controller_login(homedir, config, mocker, session_maker):
     Using the `config` fixture to ensure the config is written to disk.
     """
     mock_gui = mocker.MagicMock()
-    mock_api = mocker.patch("securedrop_client.logic.sdclientapi.API")
+    mock_api = mocker.patch("securedrop_client.sdk.API")
 
     co = Controller("http://localhost", mock_gui, session_maker, homedir, None)
     co.call_api = mocker.MagicMock()

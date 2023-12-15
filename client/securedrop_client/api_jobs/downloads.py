@@ -6,14 +6,14 @@ import os
 from tempfile import NamedTemporaryFile
 from typing import Any, Optional, Tuple, Type, Union
 
-from sdclientapi import API, BaseError
-from sdclientapi import Reply as SdkReply
-from sdclientapi import Submission as SdkSubmission
 from sqlalchemy.orm.session import Session
 
 from securedrop_client.api_jobs.base import SingleObjectApiJob
 from securedrop_client.crypto import CryptoError, GpgHelper
 from securedrop_client.db import DownloadError, DownloadErrorCodes, File, Message, Reply
+from securedrop_client.sdk import API, BaseError
+from securedrop_client.sdk import Reply as SdkReply
+from securedrop_client.sdk import Submission as SdkSubmission
 from securedrop_client.storage import (
     mark_as_decrypted,
     mark_as_downloaded,

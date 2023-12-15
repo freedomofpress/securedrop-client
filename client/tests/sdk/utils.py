@@ -3,7 +3,7 @@ import os
 from collections import OrderedDict
 from unittest.mock import MagicMock, patch
 
-from sdclientapi import json_query
+from securedrop_client.sdk import json_query
 
 # We are making calls to securedrop.Proxy qrexec service
 # in the QubesOS to get the data from the server. This is difficult to test
@@ -90,14 +90,14 @@ def qrexec_datasaver(func):
         global CALLNUMBER
         global RES
         # This is the filename to store the results
-        filename = os.path.join("data", func.__name__ + ".json")
+        filename = os.path.join("tests/sdk/data", func.__name__ + ".json")
 
         if os.path.exists(filename):
             with open(filename) as fobj:
                 RES = json.load(fobj)
         mock = MagicMock()
         mock.side_effect = mocked_json_query
-        with patch("sdclientapi.json_query", mock):
+        with patch("securedrop_client.sdk.json_query", mock):
             result = func(self, *args, **kwargs)
 
         if not os.path.exists(filename):

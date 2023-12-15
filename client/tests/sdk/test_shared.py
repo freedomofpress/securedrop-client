@@ -3,7 +3,7 @@ import os
 
 import pytest
 
-from sdclientapi.sdlocalobjects import Reply, ReplyError, Source, WrongUUIDError
+from securedrop_client.sdk.sdlocalobjects import Reply, ReplyError, Source, WrongUUIDError
 
 NUM_REPLIES_PER_SOURCE = 2
 

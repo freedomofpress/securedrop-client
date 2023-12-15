@@ -1,7 +1,7 @@
 import pytest
-from sdclientapi import AuthError, RequestTimeoutError, ServerConnectionError
 
 from securedrop_client.api_jobs.base import ApiInaccessibleError, ApiJob, SingleObjectApiJob
+from securedrop_client.sdk import AuthError, RequestTimeoutError, ServerConnectionError
 from tests.factory import dummy_job_factory
 
 

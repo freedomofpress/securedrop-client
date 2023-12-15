@@ -28,10 +28,6 @@ from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple, Type, Union
 
 from dateutil.parser import parse
-from sdclientapi import API
-from sdclientapi import Reply as SDKReply
-from sdclientapi import Source as SDKSource
-from sdclientapi import Submission as SDKSubmission
 from sqlalchemy import and_, desc, or_
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm.exc import NoResultFound
@@ -53,6 +49,10 @@ from securedrop_client.db import (
     Source,
     User,
 )
+from securedrop_client.sdk import API
+from securedrop_client.sdk import Reply as SDKReply
+from securedrop_client.sdk import Source as SDKSource
+from securedrop_client.sdk import Submission as SDKSubmission
 from securedrop_client.utils import SourceCache, chronometer
 
 logger = logging.getLogger(__name__)

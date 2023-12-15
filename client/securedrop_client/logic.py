@@ -27,13 +27,11 @@ from gettext import ngettext
 from typing import Dict, List, Optional, Type, Union  # noqa: F401
 
 import arrow
-import sdclientapi
 import sqlalchemy.orm.exc
 from PyQt5.QtCore import QObject, QProcess, QThread, QTimer, pyqtSignal, pyqtSlot
-from sdclientapi import AuthError, RequestTimeoutError, ServerConnectionError
 from sqlalchemy.orm.session import sessionmaker
 
-from securedrop_client import db, state, storage
+from securedrop_client import db, sdk, state, storage
 from securedrop_client.api_jobs.base import ApiInaccessibleError
 from securedrop_client.api_jobs.downloads import (
     DownloadChecksumMismatchException,
@@ -62,6 +60,7 @@ from securedrop_client.api_jobs.uploads import (
 )
 from securedrop_client.crypto import GpgHelper
 from securedrop_client.queue import ApiJobQueue
+from securedrop_client.sdk import AuthError, RequestTimeoutError, ServerConnectionError
 from securedrop_client.sync import ApiSync
 from securedrop_client.utils import check_dir_permissions
 
@@ -369,7 +368,7 @@ class Controller(QObject):
         self.gui = gui
 
         # Reference to the API for secure drop proxy.
-        self.api = None  # type: sdclientapi.API
+        self.api: sdk.API = None
 
         # Store authenticated user
         self.authenticated_user: Union[db.User, None] = None
@@ -541,7 +540,7 @@ class Controller(QObject):
         default_request_timeout for Queue API requests in ApiJobQueue in order to display errors
         faster.
         """
-        self.api = sdclientapi.API(
+        self.api = sdk.API(
             self.hostname, username, password, totp, self.proxy, default_request_timeout=60
         )
         self.call_api(

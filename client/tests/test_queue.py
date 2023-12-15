@@ -5,7 +5,6 @@ from queue import Queue
 
 import pytest
 from PyQt5.QtTest import QSignalSpy
-from sdclientapi import RequestTimeoutError, ServerConnectionError
 
 from securedrop_client.api_jobs.base import ApiInaccessibleError, ClearQueueJob, PauseQueueJob
 from securedrop_client.api_jobs.downloads import (
@@ -17,6 +16,7 @@ from securedrop_client.api_jobs.seen import SeenJob
 from securedrop_client.api_jobs.uploads import SendReplyJob
 from securedrop_client.app import threads
 from securedrop_client.queue import ApiJobQueue, RunnableQueue
+from securedrop_client.sdk import RequestTimeoutError, ServerConnectionError
 from tests import factory
 
 MAX_SIGNAL_WAITING_TIME = 50

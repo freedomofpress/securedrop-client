@@ -3,7 +3,7 @@
 import unittest
 from datetime import timedelta, timezone
 
-from sdclientapi.timestamps import parse as parse_datetime
+from securedrop_client.sdk.timestamps import parse as parse_datetime
 
 
 class TestTimestamps(unittest.TestCase):

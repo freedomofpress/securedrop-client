@@ -7,13 +7,12 @@ from datetime import datetime
 from itertools import cycle
 from typing import List
 
-from sdclientapi import Reply as SDKReply
-from sdclientapi import Source as SDKSource
-from sdclientapi import Submission as SDKSubmission
-from sdclientapi import User as SDKUser
-
 from securedrop_client import db
 from securedrop_client.api_jobs.base import ApiJob
+from securedrop_client.sdk import Reply as SDKReply
+from securedrop_client.sdk import Source as SDKSource
+from securedrop_client.sdk import Submission as SDKSubmission
+from securedrop_client.sdk import User as SDKUser
 
 SOURCE_COUNT = 0
 MESSAGE_COUNT = 0

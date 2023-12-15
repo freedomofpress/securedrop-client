@@ -40,7 +40,7 @@ class TestUpdateState(unittest.TestCase):
 
 
 def test_MetadataSyncJob_has_default_timeout(mocker, homedir, session, session_maker):
-    api_client = mocker.patch("securedrop_client.logic.sdclientapi.API")
+    api_client = mocker.patch("securedrop_client.sdk.API")
     remote_user = factory.RemoteUser()
     api_client.get_users = mocker.MagicMock(return_value=[remote_user])
 
@@ -50,7 +50,7 @@ def test_MetadataSyncJob_has_default_timeout(mocker, homedir, session, session_m
 
 
 def test_MetadataSyncJob_takes_overridden_timeout(mocker, homedir, session, session_maker):
-    api_client = mocker.patch("securedrop_client.logic.sdclientapi.API")
+    api_client = mocker.patch("securedrop_client.sdk.API")
     remote_user = factory.RemoteUser()
     api_client.get_users = mocker.MagicMock(return_value=[remote_user])
 
@@ -65,7 +65,7 @@ def test_MetadataSyncJob_takes_overridden_timeout(mocker, homedir, session, sess
 
 
 def test_MetadataSyncJob_creates_new_user(mocker, homedir, session, session_maker):
-    api_client = mocker.patch("securedrop_client.logic.sdclientapi.API")
+    api_client = mocker.patch("securedrop_client.sdk.API")
     remote_user = factory.RemoteUser()
     api_client.get_users = mocker.MagicMock(return_value=[remote_user])
 
@@ -77,7 +77,7 @@ def test_MetadataSyncJob_creates_new_user(mocker, homedir, session, session_make
 
 
 def test_MetadataSyncJob_creates_new_special_deleted_user(mocker, homedir, session, session_maker):
-    api_client = mocker.patch("securedrop_client.logic.sdclientapi.API")
+    api_client = mocker.patch("securedrop_client.sdk.API")
     remote_user = factory.RemoteUser(username="deleted")
     api_client.get_users = mocker.MagicMock(return_value=[remote_user])
 
@@ -89,7 +89,7 @@ def test_MetadataSyncJob_creates_new_special_deleted_user(mocker, homedir, sessi
 
 
 def test_MetadataSyncJob_updates_application_state(mocker, homedir, session, session_maker):
-    api_client = mocker.patch("securedrop_client.logic.sdclientapi.API")
+    api_client = mocker.patch("securedrop_client.sdk.API")
     some_file = factory.RemoteFile()
     some_message = factory.RemoteMessage()
     another_file = factory.RemoteFile()
@@ -111,7 +111,7 @@ def test_MetadataSyncJob_updates_application_state(mocker, homedir, session, ses
 
 
 def test_MetadataSyncJob_updates_existing_user(mocker, homedir, session, session_maker):
-    api_client = mocker.patch("securedrop_client.logic.sdclientapi.API")
+    api_client = mocker.patch("securedrop_client.sdk.API")
     remote_user = factory.RemoteUser(
         uuid="abc123-ima-uuid",
         username="new-username",
@@ -132,7 +132,7 @@ def test_MetadataSyncJob_updates_existing_user(mocker, homedir, session, session
 
 
 def test_MetadataSyncJob_deletes_user(mocker, homedir, session, session_maker):
-    api_client = mocker.patch("securedrop_client.logic.sdclientapi.API")
+    api_client = mocker.patch("securedrop_client.sdk.API")
     api_client.get_users = mocker.MagicMock(return_value=[])
 
     user = factory.User()
@@ -153,7 +153,7 @@ def test_MetadataSyncJob_does_not_delete_reserved_deleted_user(mocker, homedir, 
     This test is to ensure that we support an edge case that can occur on a pre-2.2.0 server
     (before the server added support for creating an actual deleted user account).
     """
-    api_client = mocker.patch("securedrop_client.logic.sdclientapi.API")
+    api_client = mocker.patch("securedrop_client.sdk.API")
     api_client.get_users = mocker.MagicMock(return_value=[])
 
     reserved_deleted_user = factory.User(username="deleted")
@@ -182,7 +182,7 @@ def test_MetadataSyncJob_reassociates_draftreplies_to_new_account_before_deletin
     remote_reserved_deleted_user = factory.RemoteUser(username="deleted")
     # Set up get_users so that `user_to_delete_with_drafts` will be deleted and
     # `remote_reserved_deleted_user` will be created since it exists on the server
-    api_client = mocker.patch("securedrop_client.logic.sdclientapi.API")
+    api_client = mocker.patch("securedrop_client.sdk.API")
     api_client.get_users = mocker.MagicMock(return_value=[remote_reserved_deleted_user])
 
     job = MetadataSyncJob(homedir)
@@ -222,7 +222,7 @@ def test_MetadataSyncJob_reassociates_draftreplies_to_existing_account_before_de
     )
     # Set up get_users so that `user_to_delete_with_drafts` will be deleted and
     # `remote_reserved_deleted_user` will replace `local_reserved_deleted_user`
-    api_client = mocker.patch("securedrop_client.logic.sdclientapi.API")
+    api_client = mocker.patch("securedrop_client.sdk.API")
     api_client.get_users = mocker.MagicMock(return_value=[remote_reserved_deleted_user])
 
     job = MetadataSyncJob(homedir)
@@ -256,7 +256,7 @@ def test_MetadataSyncJob_reassociates_draftreplies_to_new_local_account_before_d
     draftreply = factory.DraftReply(journalist_id=user_to_delete_with_drafts.id)
     session.add(draftreply)
     # Set up get_users so that `user_to_delete_with_drafts` will be deleted
-    api_client = mocker.patch("securedrop_client.logic.sdclientapi.API")
+    api_client = mocker.patch("securedrop_client.sdk.API")
     api_client.get_users = mocker.MagicMock(return_value=[])
 
     job = MetadataSyncJob(homedir)
@@ -290,7 +290,7 @@ def test_MetadataSyncJob_replaces_reserved_deleted_user_account(mocker, homedir,
     remote_reserved_deleted_user = factory.RemoteUser(username="deleted")
     # Set up get_users so that `user_to_delete_with_drafts` will be deleted and
     # `remote_reserved_deleted_user` will replace `local_reserved_deleted_user`
-    api_client = mocker.patch("securedrop_client.logic.sdclientapi.API")
+    api_client = mocker.patch("securedrop_client.sdk.API")
     api_client.get_users = mocker.MagicMock(return_value=[remote_reserved_deleted_user])
 
     job = MetadataSyncJob(homedir)
@@ -318,7 +318,7 @@ def test_MetadataSyncJob_success(mocker, homedir, session, session_maker):
     user = factory.User(uuid="mock1", username="mock1", firstname="mock1", lastname="mock1")
     session.add(user)
 
-    api_client = mocker.patch("securedrop_client.logic.sdclientapi.API")
+    api_client = mocker.patch("securedrop_client.sdk.API")
 
     user = {"uuid": "mock1", "username": "mock1", "first_name": "mock1", "last_name": "mock1"}
     mocker.patch.object(api_client, "get_current_user", return_value=user)
@@ -342,7 +342,7 @@ def test_MetadataSyncJob_success_current_user_name_change(mocker, homedir, sessi
     user = factory.User(uuid="mock1", username="mock1", firstname="mock1", lastname="mock1")
     session.add(user)
 
-    api_client = mocker.patch("securedrop_client.logic.sdclientapi.API")
+    api_client = mocker.patch("securedrop_client.sdk.API")
 
     user = {"uuid": "mock2", "username": "mock2", "first_name": "mock2", "last_name": "mock2"}
     mocker.patch.object(api_client, "get_current_user", return_value=user)

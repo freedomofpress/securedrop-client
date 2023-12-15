@@ -5,7 +5,6 @@ from queue import PriorityQueue
 from typing import Any, Optional, Tuple
 
 from PyQt5.QtCore import QObject, QThread, pyqtBoundSignal, pyqtSignal, pyqtSlot
-from sdclientapi import API, RequestTimeoutError, ServerConnectionError
 from sqlalchemy.orm import scoped_session
 
 from securedrop_client.api_jobs.base import (
@@ -25,6 +24,7 @@ from securedrop_client.api_jobs.seen import SeenJob
 from securedrop_client.api_jobs.sources import DeleteConversationJob, DeleteSourceJob
 from securedrop_client.api_jobs.updatestar import UpdateStarJob
 from securedrop_client.api_jobs.uploads import SendReplyJob
+from securedrop_client.sdk import API, RequestTimeoutError, ServerConnectionError
 
 logger = logging.getLogger(__name__)
 

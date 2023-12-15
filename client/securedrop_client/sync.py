@@ -2,13 +2,13 @@ import logging
 from typing import Optional
 
 from PyQt5.QtCore import QObject, QThread, QTimer, pyqtBoundSignal, pyqtSignal
-from sdclientapi import API
 from sqlalchemy.orm import scoped_session
 
 from securedrop_client import state
 from securedrop_client.api_jobs.base import ApiInaccessibleError
 from securedrop_client.api_jobs.sync import MetadataSyncJob
 from securedrop_client.crypto import GpgHelper
+from securedrop_client.sdk import API
 
 logger = logging.getLogger(__name__)
 

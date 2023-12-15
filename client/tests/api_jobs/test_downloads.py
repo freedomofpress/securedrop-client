@@ -3,8 +3,6 @@ import os
 from typing import Tuple
 
 import pytest
-from sdclientapi import BaseError
-from sdclientapi import Submission as SdkSubmission
 
 from securedrop_client.api_jobs.downloads import (
     DownloadChecksumMismatchException,
@@ -15,6 +13,8 @@ from securedrop_client.api_jobs.downloads import (
     ReplyDownloadJob,
 )
 from securedrop_client.crypto import CryptoError, GpgHelper
+from securedrop_client.sdk import BaseError
+from securedrop_client.sdk import Submission as SdkSubmission
 from tests import factory
 
 with open(os.path.join(os.path.dirname(__file__), "..", "files", "test-key.gpg.pub.asc")) as f:
