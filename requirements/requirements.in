@@ -1,7 +1,0 @@
-# Ensure these match client production dependencies
-
-certifi>=2023.07.22
-charset-normalizer>=2.0.4
-idna>=2.7
-requests>=2.26.0
-urllib3>=1.26.5
