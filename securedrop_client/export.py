@@ -220,7 +220,12 @@ class Export(QObject):
             raise ExportError(ExportStatus.CALLED_PROCESS_ERROR)
 
     def _create_archive(
-        cls, archive_dir: str, archive_fn: str, metadata: dict, filepaths: List[str] = []
+        cls,
+        archive_dir: str,
+        archive_fn: str,
+        metadata: dict,
+        filepaths: List[str] = [],
+        whistleflow=False,
     ) -> str:
         """
         Create the archive to be sent to the Export VM.
@@ -243,9 +248,14 @@ class Export(QObject):
             # When more than one file is added to the archive,
             # extra care must be taken to prevent name collisions.
             is_one_of_multiple_files = len(filepaths) > 1
+            # If this is an export to Whistleflow, we want to create a directory
+            # called source_name even if it only contains a single file.
+            # whistleflow-view relies on this directory to pre-populate the
+            # source name field in the send-to-giant form.
+            prevent_name_collisions = is_one_of_multiple_files or whistleflow
             for filepath in filepaths:
                 cls._add_file_to_archive(
-                    archive, filepath, prevent_name_collisions=is_one_of_multiple_files
+                    archive, filepath, prevent_name_collisions=prevent_name_collisions
                 )
 
         return archive_path
@@ -369,7 +379,9 @@ class Export(QObject):
             ExportError: Raised if the usb-test does not return a DISK_ENCRYPTED status.
         """
         metadata = self.WHISTLEFLOW_METADATA.copy()
-        archive_path = self._create_archive(archive_dir, filename, metadata, filepaths)
+        archive_path = self._create_archive(
+            archive_dir, filename, metadata, filepaths, whistleflow=True
+        )
 
         status = self._export_archive_to_whistleflow(archive_path)
         if status:
