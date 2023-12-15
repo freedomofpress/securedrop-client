@@ -1,0 +1,334 @@
+# Catalan translations for SecureDrop Client.
+# Copyright (C) 2021 Freedom of the Press Foundation
+# This file is distributed under the same license as the SecureDrop Client project.
+# FIRST AUTHOR <EMAIL@ADDRESS>, 2021.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: SecureDrop Client 0.5.0\n"
+"Report-Msgid-Bugs-To: securedrop@freedom.press\n"
+"PO-Revision-Date: 2022-06-23 12:33+0000\n"
+"Last-Translator: Benet (BennyBeat) R. i Camps <bennybeat@gmail.com>\n"
+"Language-Team: Catalan <https://weblate.securedrop.org/projects/securedrop/securedrop-client/ca/>\n"
+"Language: ca\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=n != 1;\n"
+"X-Generator: Weblate 4.13\n"
+"Generated-By: Babel 2.9.1\n"
+
+msgid "{application_name} is already running"
+msgstr "{application_name} ja s'ha iniciat"
+
+msgid "The SecureDrop server cannot be reached. Trying to reconnect..."
+msgstr "No es pot arribar al servidor del SecureDrop. S'intenta de nou..."
+
+msgid ""
+"Could not reach the SecureDrop server. Please check your \n"
+"Internet and Tor connection and try again."
+msgstr ""
+"No s'ha pogut arribar al servidor del SecureDrop. Comproveu la vostra\n"
+"connexió a internet, la del Tor i torneu a provar."
+
+msgid ""
+"Those credentials didn't work. Please try again, and \n"
+"make sure to use a new two-factor code."
+msgstr ""
+"Aquestes credencials no han funcionat. Proveu de nou, i\n"
+"comproveu que useu un codi de doble factor."
+
+msgid "That didn't work. Please check everything and try again."
+msgstr "Això no ha funcionat. Comproveu-ho tot i torneu a provar."
+
+msgid "You must sign in to perform this action."
+msgstr "Cal que inicieu sessió per a fer aquesta acció."
+
+msgid "Your session expired. Please log in again."
+msgstr "La sessió ha caducat. Torneu a iniciar-hi sessió."
+
+msgid "Failed to update star."
+msgstr "No s'ha pogut actualitzar l'estrela."
+
+msgid "Retrieving new messages"
+msgstr "S'estan obtenint els missatges nous"
+
+msgid "File does not exist in the data directory. Please try re-downloading."
+msgstr "Els fitxers no existeixen al directori de dades. Proveu baixant-los novament."
+
+msgid "The file download failed. Please try again."
+msgstr "Ha fallat la baixada del fitxer. Proveu-ho de nou."
+
+msgid "Failed to delete conversation at server"
+msgstr "Ha fallat la supressió de la conversa al servidor"
+
+msgid "Failed to delete source at server"
+msgstr "Ha fallat la supressió de la font al servidor"
+
+msgid "Download All Files"
+msgstr "Baixa tots els fitxers"
+
+msgid "Delete Source Account"
+msgstr "Supressió del compte de la font"
+
+msgid "Delete All Files and Messages"
+msgstr "Suprimeix tots els fitxers i missatges"
+
+msgid "SecureDrop Client {}"
+msgstr "Client del SecureDrop {}"
+
+msgid "Quit"
+msgstr "Surt"
+
+msgid "Last Refresh: {}"
+msgstr "Última actualització: {}"
+
+msgid "Last Refresh: never"
+msgstr "Última actualització: mai"
+
+msgid "{}"
+msgstr "{}"
+
+msgid "SIGN OUT"
+msgstr "TANCA LA SESSIÓ"
+
+msgid "SIGN IN"
+msgstr "INICIA LA SESSIÓ"
+
+msgid "Nothing to see just yet!"
+msgstr "Encara no hi ha res per mostrar"
+
+msgid "Source submissions will be listed to the left, once downloaded and decrypted."
+msgstr "Els enviaments de les fonts es llistaran a l'esquerra, una vegada es baixen i es desxifren."
+
+msgid "This is where you will read messages, reply to sources, and work with files."
+msgstr "Aquí és on llegireu els missatges, respostes a les fonts, i on treballareu amb els fitxers."
+
+msgid "Select a source from the list, to:"
+msgstr "Seleccioneu una font de la llista, per a:"
+
+msgid "Read a conversation"
+msgstr "Llegir una conversa"
+
+msgid "View or retrieve files"
+msgstr "Veure o obtenir fitxers"
+
+msgid "Send a response"
+msgstr "Enviar una resposta"
+
+msgid "Deleting files and messages..."
+msgstr "S'estan suprimint fitxers i missatges..."
+
+msgid "Deleting source account..."
+msgstr "S'està suprimint el compte de la font..."
+
+msgid "— All files and messages deleted for this source —"
+msgstr "— S'han suprimit tots els fitxers i missatges d'aquesta font —"
+
+msgid "Failed to send"
+msgstr "Ha fallat en enviar"
+
+msgid " DOWNLOAD"
+msgstr " BAIXA"
+
+msgid "EXPORT"
+msgstr "EXPORTA"
+
+msgid "PRINT"
+msgstr "IMPRIMEIX"
+
+msgid "ENCRYPTED FILE ON SERVER"
+msgstr "FITXER XIFRAT AL SERVIDOR"
+
+msgid "DOWNLOAD"
+msgstr "BAIXADA"
+
+msgid " DOWNLOADING "
+msgstr " S'ESTÀ BAIXANT... "
+
+msgid "Earlier files and messages deleted."
+msgstr "Fitxers i missatges anteriors suprimits."
+
+msgid ""
+"Files and messages deleted\n"
+" for this source"
+msgstr ""
+"Fitxers i missatges suprimits\n"
+" per a aquesta font"
+
+msgid "Compose a reply to "
+msgstr "Responeu a "
+
+msgid "Awaiting encryption key"
+msgstr "S'està esperant la clau de xifratge"
+
+msgid " from server to enable replies"
+msgstr " del servidor per habilitar respostes"
+
+msgid "Sign in"
+msgstr "Inici de sessió"
+
+msgid " to compose or send a reply"
+msgstr " per escriure o respondre"
+
+msgid "Username"
+msgstr "Nom d’usuari"
+
+msgid "Passphrase"
+msgstr "Contrasenya"
+
+msgid "Two-Factor Code"
+msgstr "Codi d'autenticació de factor doble"
+
+msgid "SecureDrop Client v{}"
+msgstr "Client del SecureDrop v{}"
+
+msgid ""
+"That username won't work.\n"
+"It should be at least 3 characters long."
+msgstr ""
+"No es pot utilitzar aquest nom d'usuari.\n"
+"Indiqueu un nom d'usuari d'almenys 3 caràcters."
+
+msgid ""
+"That passphrase won't work.\n"
+"It should be between 14 and 128 characters long."
+msgstr ""
+"No es pot utilitzar aquesta contrasenya.\n"
+"Indiqueu una contrasenya de 14 a 128 caràcters."
+
+msgid ""
+"That two-factor code won't work.\n"
+"It should only contain numerals."
+msgstr ""
+"No es pot utilitzar aquest codi.\n"
+"El codi ha de ser només numèric."
+
+msgid "SIGNING IN"
+msgstr "S'ESTÀ INICIANT..."
+
+msgid "Please enter a username, passphrase and two-factor code."
+msgstr "Inseriu un nom d'usuari, contrasenya i codi de factor doble."
+
+msgid "USE OFFLINE"
+msgstr "USA-HO FORA DE LÍNIA"
+
+msgid "Show Passphrase"
+msgstr "Mostra la contrasenya"
+
+msgid "CANCEL"
+msgstr "CANCEL·LA"
+
+msgid "CONTINUE"
+msgstr "CONTINUA"
+
+msgid "YES, DELETE FILES AND MESSAGES"
+msgstr "SÍ, SUPRIMEIX FITXERS I MISSATGES"
+
+msgid "You would like to delete {files_to_delete}, {replies_to_delete}, {messages_to_delete} from the source account for {source}?"
+msgstr "Segur que voleu suprimir {files_to_delete}, {replies_to_delete}, {messages_to_delete} del compte font {source}?"
+
+msgid "Preserving the account will retain its metadata, and the ability for {source} to log in to your SecureDrop again."
+msgstr "Preservant el compte es mantindran les metadades i podreu iniciar sessió novament a {source} del vostre SecureDrop."
+
+msgid "one file"
+msgid_plural "{file_count} files"
+msgstr[0] "un fitxer"
+msgstr[1] "{file_count} fitxers"
+
+msgid "one reply"
+msgid_plural "{reply_count} replies"
+msgstr[0] "una resposta"
+msgstr[1] "{reply_count} respostes"
+
+msgid "one message"
+msgid_plural "{message_count} messages"
+msgstr[0] "un missatge"
+msgstr[1] "{message_count} missatges"
+
+msgid "Preparing to export:<br /><span style=\"font-weight:normal\">{}</span>"
+msgstr "S'està preparant per a exportar: <br /><span style=\"font-weight:normal\">{}</span>"
+
+msgid "Ready to export:<br /><span style=\"font-weight:normal\">{}</span>"
+msgstr "Preparat per a exportar: <br /><span style=\"font-weight:normal\">{}</span>"
+
+msgid "Insert encrypted USB drive"
+msgstr "Inseriu la unitat USB xifrada"
+
+msgid "Enter passphrase for USB drive"
+msgstr "Introduïu la contrasenya de la unitat USB"
+
+msgid "Export successful"
+msgstr "S'ha exportat correctament"
+
+msgid "Export failed"
+msgstr "Ha fallat l'exportació"
+
+msgid "<h2>Understand the risks before exporting files</h2><b>Malware</b><br />This workstation lets you open files securely. If you open files on another computer, any embedded malware may spread to your computer or network. If you are unsure how to manage this risk, please print the file, or contact your administrator.<br /><br /><b>Anonymity</b><br />Files submitted by sources may contain information or hidden metadata that identifies who they are. To protect your sources, please consider redacting files before working with them on network-connected computers."
+msgstr "<h2>Entenent els riscos abans d'exportar fitxers</h2><b>Fitxers perjudicials</b><br />Aquesta estació de treball us permet obrir fitxers de forma segura. Si obriu fitxers des d'altre ordinador, qualsevol fitxer perillós o perjudicial podria afectar el vostre equip o cap altre de la xarxa. Si no sabeu com manegar aquest risc, imprimiu el fitxer o bé contacteu amb el vostre administrador.<br /><br /><b>Anonimat</b><br />Els fitxers enviats per determinades fonts poden contenir informació amagada o metadades que us poden identificar. Per a protegir les vostres fonts, considereu la possibilitat de censurar parts sensibles del fitxer original abans de posar el fitxer resultant a l'abast d'ordinadors en xarxa."
+
+msgid "Exporting: {}"
+msgstr "S'està exportant: {}"
+
+msgid "Please insert one of the export drives provisioned specifically for the SecureDrop Workstation."
+msgstr "Inseriu una de les unitats d'exportació proveïdes específicament per a la màquina del SecureDrop."
+
+msgid "Either the drive is not encrypted or there is something else wrong with it."
+msgstr "La unitat no està xifrada o bé s'ha produït un error."
+
+msgid "The passphrase provided did not work. Please try again."
+msgstr "La contrasenya que he inserit no és vàlida. Torneu a provar."
+
+msgid "See your administrator for help."
+msgstr "Contacteu amb l'administrador si us cal ajuda."
+
+msgid "The CONTINUE button will be disabled until the Export VM is ready"
+msgstr "El botó CONTINUA romandrà desactivat fins que la informació no estigui enllestida"
+
+msgid "Remember to be careful when working with files outside of your Workstation machine."
+msgstr "Recordeu tenir cura quan treballeu amb informació fora del vostre equip."
+
+msgid "SUBMIT"
+msgstr "ENVIA"
+
+msgid "DONE"
+msgstr "FET"
+
+msgid "Preparing to print:<br /><span style=\"font-weight:normal\">{}</span>"
+msgstr "S'està preparant per a imprimir:<br /><span style=\"font-weight:normal\">{}</span>"
+
+msgid "Ready to print:<br /><span style=\"font-weight:normal\">{}</span>"
+msgstr "Preparat per a imprimir: <br /><span style=\"font-weight:normal\">{}</span>"
+
+msgid "Connect USB printer"
+msgstr "Connecteu una impressora USB"
+
+msgid "Printing failed"
+msgstr "Ha fallat la impressió"
+
+msgid "<h2>Managing printout risks</h2><b>QR codes and web addresses</b><br />Never type in and open web addresses or scan QR codes contained in printed documents without taking security precautions. If you are unsure how to manage this risk, please contact your administrator.<br /><br /><b>Printer dots</b><br />Any part of a printed page may contain identifying information invisible to the naked eye, such as printer dots. Please carefully consider this risk when working with or publishing scanned printouts."
+msgstr "<h2>Gestió dels riscos d'impressió</h2><b>Codis QR i adreces web</b><br />Mai introduïu i obriu adreces web ni escanegeu codis QR presents en documents impresos sense prendre precaucions de seguretat. Si no sabeu com gestionar aquest risc, contacteu amb el vostre administrador.<br /><br /><b>Punts de la impressora</b><br />Qualsevol part d'una pàgina impresa podria contenir informació identificable, invisible a simple vista, com ara punts de la impressora. Tingueu en compte aquest risc en treballar o publicar impressions escanejades."
+
+msgid "Please connect your printer to a USB port."
+msgstr "Connecteu la impressora a un port USB."
+
+msgid "YES, DELETE ENTIRE SOURCE ACCOUNT"
+msgstr "SÍ, SUPRIMEIX EL COMPTE SENCER"
+
+msgid "Are you sure this is what you want?"
+msgstr "Segur que això és el que voleu?"
+
+msgid "When the entire account for a source is deleted:"
+msgstr "En suprimir el compte font sencer:"
+
+msgid "The source will not be able to log in with their codename again."
+msgstr "El compte font no podrà mai més iniciar sessió amb el mateix àlies."
+
+msgid "Your organization will not be able to send them replies."
+msgstr "La vostra organització no podrà enviar respostes."
+
+msgid "All files and messages from that source will also be destroyed."
+msgstr "També es destruiran tots els missatges de la font."
+
+#~ msgid "DELETE"
+#~ msgstr "SUPRIMEIX"

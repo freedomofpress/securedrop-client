@@ -1,0 +1,349 @@
+# Translations template for SecureDrop Client.
+# Copyright (C) 2022 Freedom of the Press Foundation
+# This file is distributed under the same license as the SecureDrop Client project.
+# FIRST AUTHOR <EMAIL@ADDRESS>, 2022.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: SecureDrop Client 0.6.0\n"
+"Report-Msgid-Bugs-To: securedrop@freedom.press\n"
+"PO-Revision-Date: 2022-05-19 21:11+0000\n"
+"Last-Translator: Andrey <andrey@mailbox.org>\n"
+"Language-Team: Russian <https://weblate.securedrop.org/projects/securedrop/securedrop-client/ru/>\n"
+"Language: ru\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=3; plural=n%10==1 && n%100!=11 ? 0 : n%10>=2 && n%10<=4 && (n%100<10 || n%100>=20) ? 1 : 2;\n"
+"X-Generator: Weblate 4.11.2\n"
+"Generated-By: Babel 2.9.1\n"
+
+msgid "{application_name} is already running"
+msgstr "{application_name} уже запущено"
+
+msgid "The SecureDrop server cannot be reached. Trying to reconnect..."
+msgstr "С сервером SecureDrop не удается связаться. Попытка повторного подключения..."
+
+msgid ""
+"Could not reach the SecureDrop server. Please check your \n"
+"Internet and Tor connection and try again."
+msgstr ""
+"Не удалось связаться с сервером SecureDrop. Пожалуйста, проверьте\n"
+"ваше подключение к сети интернет и Tor и повторите попытку."
+
+msgid ""
+"Those credentials didn't work. Please try again, and \n"
+"make sure to use a new two-factor code."
+msgstr ""
+"Эти учетные данные не подходят. Пожалуйста, попробуйте еще раз, и\n"
+"обязательно используйте новый код двухфакторной аутентификации."
+
+msgid "That didn't work. Please check everything and try again."
+msgstr "Это не сработало. Пожалуйста, проверьте все данные и попробуйте еще раз."
+
+msgid "You must sign in to perform this action."
+msgstr "Для выполнения этого действия необходимо авторизоваться."
+
+msgid "Your session expired. Please log in again."
+msgstr "Ваша сессия истекла. Пожалуйста, авторизуйтесь повторно."
+
+msgid "Failed to update star."
+msgstr "Ошибка добавления в избранное."
+
+msgid "Retrieving new messages"
+msgstr "Получение новых сообщений"
+
+msgid "File does not exist in the data directory. Please try re-downloading."
+msgstr "Файл не существует в каталоге данных. Попробуйте повторить загрузку."
+
+msgid "The file download failed. Please try again."
+msgstr "Загрузка файла не удалась. Попробуйте еще раз."
+
+msgid "Failed to delete conversation at server"
+msgstr "Не удалось удалить беседу на сервере"
+
+msgid "Failed to delete source at server"
+msgstr "Не удалось удалить источник на сервере"
+
+#, fuzzy
+#| msgid "All Files"
+msgid "Download All Files"
+msgstr "Все файлы"
+
+#, fuzzy
+#| msgid "Deleting source account..."
+msgid "Delete Source Account"
+msgstr "Удаление исходного аккаунта..."
+
+#, fuzzy
+#| msgid "Deleting files and messages..."
+msgid "Delete All Files and Messages"
+msgstr "Удаление файлов и сообщений..."
+
+msgid "SecureDrop Client {}"
+msgstr "Клиент SecureDrop {}"
+
+msgid "Quit"
+msgstr "Выход"
+
+msgid "Last Refresh: {}"
+msgstr "Последнее обновление: {}"
+
+msgid "Last Refresh: never"
+msgstr "Последнее обновление: никогда"
+
+msgid "{}"
+msgstr "{}"
+
+msgid "SIGN OUT"
+msgstr "ВЫХОД"
+
+msgid "SIGN IN"
+msgstr "ВХОД"
+
+msgid "Nothing to see just yet!"
+msgstr "Пока не на что смотреть!"
+
+msgid "Source submissions will be listed to the left, once downloaded and decrypted."
+msgstr "После загрузки и расшифровки исходные материалы будут перечислены слева."
+
+msgid "This is where you will read messages, reply to sources, and work with files."
+msgstr "Здесь вы будете читать сообщения, отвечать на источники и работать с файлами."
+
+msgid "Select a source from the list, to:"
+msgstr "Выберите источник из списка, чтобы:"
+
+msgid "Read a conversation"
+msgstr "Прочитать беседу"
+
+msgid "View or retrieve files"
+msgstr "Просмотр или получение файлов"
+
+msgid "Send a response"
+msgstr "Отправить ответ"
+
+msgid "Deleting files and messages..."
+msgstr "Удаление файлов и сообщений..."
+
+msgid "Deleting source account..."
+msgstr "Удаление исходного аккаунта..."
+
+msgid "— All files and messages deleted for this source —"
+msgstr "— Все файлы и сообщения удалены для этого источника —"
+
+msgid "Failed to send"
+msgstr "Ошибка при отправке"
+
+msgid " DOWNLOAD"
+msgstr " ЗАГРУЗКА"
+
+msgid "EXPORT"
+msgstr "ЭКСПОРТ"
+
+msgid "PRINT"
+msgstr "ПЕЧАТЬ"
+
+msgid "ENCRYPTED FILE ON SERVER"
+msgstr "ЗАШИФРОВАННЫЙ ФАЙЛ НА СЕРВЕРЕ"
+
+msgid "DOWNLOAD"
+msgstr "ЗАГРУЗКА"
+
+msgid " DOWNLOADING "
+msgstr " ЗАГРУЗКА "
+
+msgid "Earlier files and messages deleted."
+msgstr "Предыдущие файлы и сообщения удалены."
+
+msgid ""
+"Files and messages deleted\n"
+" for this source"
+msgstr ""
+"Файлы и сообщения удалены\n"
+"для этого источника"
+
+msgid "Compose a reply to "
+msgstr "Составить ответ на "
+
+msgid "Awaiting encryption key"
+msgstr "Ожидание ключа шифрования"
+
+msgid " from server to enable replies"
+msgstr " с сервера для обеспечения возможности получения ответов"
+
+msgid "Sign in"
+msgstr "Вход"
+
+msgid " to compose or send a reply"
+msgstr " для написания или отправки ответа"
+
+msgid "Username"
+msgstr "Имя пользователя"
+
+msgid "Passphrase"
+msgstr "Пароль"
+
+msgid "Two-Factor Code"
+msgstr "Двухфакторный код"
+
+msgid "SecureDrop Client v{}"
+msgstr "Клиент SecureDrop v{}"
+
+msgid ""
+"That username won't work.\n"
+"It should be at least 3 characters long."
+msgstr ""
+"Это имя пользователя не подойдет.\n"
+"Оно должно быть длиной не менее 3 символов."
+
+msgid ""
+"That passphrase won't work.\n"
+"It should be between 14 and 128 characters long."
+msgstr ""
+"Этот пароль не будет работать.\n"
+"Его длина должна быть в пределах от 14 до 128 символов."
+
+msgid ""
+"That two-factor code won't work.\n"
+"It should only contain numerals."
+msgstr ""
+"Этот двухфакторный код не сработает.\n"
+"Он должен содержать только цифры."
+
+msgid "SIGNING IN"
+msgstr "АВТОРИЗАЦИЯ"
+
+msgid "Please enter a username, passphrase and two-factor code."
+msgstr "Введите имя пользователя, пароль и двухфакторный код."
+
+msgid "USE OFFLINE"
+msgstr "ИСПОЛЬЗОВАТЬ АВТОНОМНО"
+
+msgid "Show Passphrase"
+msgstr "Показать пароль"
+
+msgid "CANCEL"
+msgstr "ОТМЕНИТЬ"
+
+msgid "CONTINUE"
+msgstr "ПРОДОЛЖИТЬ"
+
+msgid "YES, DELETE FILES AND MESSAGES"
+msgstr "ДА, УДАЛИТЬ ФАЙЛЫ И СООБЩЕНИЯ"
+
+msgid "You would like to delete {files_to_delete}, {replies_to_delete}, {messages_to_delete} from the source account for {source}?"
+msgstr "Вы хотите удалить {files_to_delete}, {replies_to_delete}, {messages_to_delete} из учетной записи источника для {source}?"
+
+msgid "Preserving the account will retain its metadata, and the ability for {source} to log in to your SecureDrop again."
+msgstr "При сохранении учетной записи ее метаданные будут сохранены, и {source} сможет снова авторизоваться в SecureDrop."
+
+msgid "one file"
+msgid_plural "{file_count} files"
+msgstr[0] "{file_count} файл"
+msgstr[1] "{file_count} файла"
+msgstr[2] "{file_count} файлов"
+
+msgid "one reply"
+msgid_plural "{reply_count} replies"
+msgstr[0] "{reply_count} ответ"
+msgstr[1] "{reply_count} ответа"
+msgstr[2] "{reply_count} ответов"
+
+msgid "one message"
+msgid_plural "{message_count} messages"
+msgstr[0] "{message_count} сообщение"
+msgstr[1] "{message_count} сообщения"
+msgstr[2] "{message_count} сообщений"
+
+msgid "Preparing to export:<br /><span style=\"font-weight:normal\">{}</span>"
+msgstr "Подготовка к экспорту:<br /><span style=\"font-weight:normal\">{}</span>"
+
+msgid "Ready to export:<br /><span style=\"font-weight:normal\">{}</span>"
+msgstr "Готовность к экспорту:<br /><span style=\"font-weight:normal\">{}</span>"
+
+msgid "Insert encrypted USB drive"
+msgstr "Вставьте зашифрованный USB-накопитель"
+
+msgid "Enter passphrase for USB drive"
+msgstr "Введите пароль для USB-накопителя"
+
+msgid "Export successful"
+msgstr "Экспорт выполнен успешно"
+
+msgid "Export failed"
+msgstr "Не удалось экспортировать"
+
+msgid "<h2>Understand the risks before exporting files</h2><b>Malware</b><br />This workstation lets you open files securely. If you open files on another computer, any embedded malware may spread to your computer or network. If you are unsure how to manage this risk, please print the file, or contact your administrator.<br /><br /><b>Anonymity</b><br />Files submitted by sources may contain information or hidden metadata that identifies who they are. To protect your sources, please consider redacting files before working with them on network-connected computers."
+msgstr "<h2>Поймите риски перед экспортом файлов</h2><b>Вредоносное ПО</b><br />Эта рабочая станция позволяет безопасно открывать файлы. Если вы открываете файлы на другом компьютере, любое встроенное вредоносное ПО может распространиться на ваш компьютер или сеть. Если вы не знаете, как управлять этим риском, распечатайте файл или обратитесь к вашему администратору.<br /><br /><b>Анонимность</b><br />Файлы, предоставленные источниками, могут содержать информацию или скрытые метаданные, позволяющие определить, чьи это источники. Для защиты источников просим вас отредактировать файлы перед работой с ними на компьютерах, подключенных к сети."
+
+msgid "Exporting: {}"
+msgstr "Экспорт: {}"
+
+msgid "Please insert one of the export drives provisioned specifically for the SecureDrop Workstation."
+msgstr "Вставьте один из дисков для экспорта, специально предназначенных для рабочей станции SecureDrop."
+
+msgid "Either the drive is not encrypted or there is something else wrong with it."
+msgstr "Либо диск не зашифрован, либо с ним что-то не так."
+
+msgid "The passphrase provided did not work. Please try again."
+msgstr "Введенный пароль не сработал. Пожалуйста, попробуйте еще раз."
+
+msgid "See your administrator for help."
+msgstr "Обратитесь за помощью к вашему администратору."
+
+msgid "The CONTINUE button will be disabled until the Export VM is ready"
+msgstr "Кнопка ПРОДОЛЖИТЬ будет отключена до тех пор, пока экспортируемая виртуальная машина не будет готова"
+
+msgid "Remember to be careful when working with files outside of your Workstation machine."
+msgstr "Помните, что нужно проявлять осторожность при работе с файлами за пределами вашей рабочей станции."
+
+msgid "SUBMIT"
+msgstr "ОТПРАВИТЬ"
+
+msgid "DONE"
+msgstr "ГОТОВО"
+
+msgid "Preparing to print:<br /><span style=\"font-weight:normal\">{}</span>"
+msgstr "Подготовка к печати:<br /><span style=\"font-weight:normal\">{}</span>"
+
+msgid "Ready to print:<br /><span style=\"font-weight:normal\">{}</span>"
+msgstr "Готовность к печати:<br /><span style=\"font-weight:normal\">{}</span>"
+
+msgid "Connect USB printer"
+msgstr "Подключите USB-принтер"
+
+msgid "Printing failed"
+msgstr "Печать не удалась"
+
+msgid "<h2>Managing printout risks</h2><b>QR codes and web addresses</b><br />Never type in and open web addresses or scan QR codes contained in printed documents without taking security precautions. If you are unsure how to manage this risk, please contact your administrator.<br /><br /><b>Printer dots</b><br />Any part of a printed page may contain identifying information invisible to the naked eye, such as printer dots. Please carefully consider this risk when working with or publishing scanned printouts."
+msgstr "<h2>Управление рисками распечатки</h2><b>QR-кодов и веб-адресов</b><br />Никогда не набирайте и не открывайте веб-адреса и не сканируйте QR-коды, содержащиеся в печатных документах, без принятия мер безопасности. Если вы не знаете, как управлять этим риском, обратитесь к вашему администратору.<br /><br /><b>Точки принтера</b><br />Любая часть печатной страницы может содержать идентификационную информацию, невидимую невооруженным глазом, например, точки принтера. Пожалуйста, тщательно учитывайте этот риск при работе с отсканированными распечатками или их публикации."
+
+msgid "Please connect your printer to a USB port."
+msgstr "Пожалуйста, подключите принтер к порту USB."
+
+msgid "YES, DELETE ENTIRE SOURCE ACCOUNT"
+msgstr "ДА, УДАЛИТЬ ВЕСЬ ИСХОДНЫЙ АККАУНТ"
+
+msgid "Are you sure this is what you want?"
+msgstr "Вы уверены в этом?"
+
+msgid "When the entire account for a source is deleted:"
+msgstr "Когда удаляется весь аккаунт для источника:"
+
+msgid "The source will not be able to log in with their codename again."
+msgstr "Источник не сможет снова войти под своим кодовым именем."
+
+msgid "Your organization will not be able to send them replies."
+msgstr "Ваша организация не сможет отправлять им ответы."
+
+msgid "All files and messages from that source will also be destroyed."
+msgstr "Все файлы и сообщения источника будут очищены."
+
+#~ msgid "Entire source account"
+#~ msgstr "Весь исходный аккаунт"
+
+#~ msgid "Files and messages"
+#~ msgstr "Файлы и сообщения"
+
+#~ msgid "DELETE"
+#~ msgstr "УДАЛИТЬ"
