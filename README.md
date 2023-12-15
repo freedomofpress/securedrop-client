@@ -142,7 +142,8 @@ socat TCP4-LISTEN:8081,fork,reuseaddr TCP4:A.B.C.D:8081
     2. Run `/usr/sbin/softwareupdate --install-rosetta` to allow you to run `x86_64` binaries
     3. Enter a shell in `x86_64` mode with `arch -x86_64 bash`
     4. Install Homebrew via the instructions at https://brew.sh/
-    5. Install the dependencies below in the same `x86_64` shell session
+    5. To add the x86_64 version of the homebrew to your PATH, you need to run `eval "$(/usr/local/bin/brew shellenv)"`
+    6. Install the dependencies below in the same `x86_64` shell session
 3. Install dependencies via Homebrew: `brew install python@3.9 gnupg oath-toolkit`
 4. clone the SecureDrop Client repo and set up its virtual environment
    ```
