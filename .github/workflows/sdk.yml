@@ -1,0 +1,38 @@
+name: SDK
+on: [push, pull_request]
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  sdk-with-server:
+    runs-on: ubuntu-latest
+    env:
+      DOCKERIZE_VERSION: "v0.7.0"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/checkout@v4
+        with:
+          repository: "freedomofpress/securedrop"
+          path: "securedrop-server"
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.9"
+      - name: Install dependencies
+        run: |
+          pip install poetry==1.6.1
+          wget https://github.com/jwilder/dockerize/releases/download/$DOCKERIZE_VERSION/dockerize-linux-amd64-$DOCKERIZE_VERSION.tar.gz &&
+          tar -C /usr/local/bin -xzvf dockerize-linux-amd64-$DOCKERIZE_VERSION.tar.gz &&
+          rm dockerize-linux-amd64-$DOCKERIZE_VERSION.tar.gz
+      - name: Run tests without VCR cassettes
+        run: |
+          # Start the server in the background
+          NUM_SOURCES=5 make -C securedrop-server dev &
+          # And install deps
+          poetry -C client install --no-ansi
+          # Wait for server to come up
+          dockerize -wait http://127.0.0.1:8080 -timeout 5m
+          # Run tests
+          rm client/tests/sdk/data/*.yml
+          make -C client test-sdk
