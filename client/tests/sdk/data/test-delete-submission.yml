@@ -1,0 +1,458 @@
+interactions:
+- request:
+    body: null
+    headers:
+      Accept:
+      - application/json
+      Accept-Encoding:
+      - gzip, deflate
+      Authorization:
+      - Token eyJhbGciOiJIUzI1NiIsImlhdCI6MTYyMzk0MjczOCwiZXhwIjoxNjIzOTcxNTM4fQ.eyJpZCI6MX0.xNE1oOw5qVbJjX3qZB4dYJW1pnhWHu1pEJ6j7Xoy0do
+      Connection:
+      - keep-alive
+      Content-Type:
+      - application/json
+      User-Agent:
+      - python-requests/2.22.0
+    method: GET
+    uri: http://127.0.0.1:8081/api/v1/submissions
+  response:
+    body:
+      string: "{\n  \"submissions\": [\n    {\n      \"download_url\": \"/api/v1/sources/a04f525c-155c-4f5a-a549-a1966f78c1d2/submissions/7474699f-ef83-44a2-bdbe-072ff5e19905/download\",
+        \n      \"filename\": \"1-humorless_steelmaker-msg.gpg\", \n      \"is_file\":
+        false, \n      \"is_message\": true, \n      \"is_read\": true, \n      \"seen_by\":
+        [\n        \"4333050a-5415-4ef7-bfd6-2152f9743648\", \n        \"636dbf24-2f83-458b-8ec2-f26e9c14dc86\"\n
+        \     ], \n      \"size\": 611, \n      \"source_url\": \"/api/v1/sources/a04f525c-155c-4f5a-a549-a1966f78c1d2\",
+        \n      \"submission_url\": \"/api/v1/sources/a04f525c-155c-4f5a-a549-a1966f78c1d2/submissions/7474699f-ef83-44a2-bdbe-072ff5e19905\",
+        \n      \"uuid\": \"7474699f-ef83-44a2-bdbe-072ff5e19905\"\n    }, \n    {\n
+        \     \"download_url\": \"/api/v1/sources/a04f525c-155c-4f5a-a549-a1966f78c1d2/submissions/bc914985-dd69-4aee-b25a-549e8d5daeb1/download\",
+        \n      \"filename\": \"2-humorless_steelmaker-msg.gpg\", \n      \"is_file\":
+        false, \n      \"is_message\": true, \n      \"is_read\": true, \n      \"seen_by\":
+        [\n        \"4333050a-5415-4ef7-bfd6-2152f9743648\"\n      ], \n      \"size\":
+        758, \n      \"source_url\": \"/api/v1/sources/a04f525c-155c-4f5a-a549-a1966f78c1d2\",
+        \n      \"submission_url\": \"/api/v1/sources/a04f525c-155c-4f5a-a549-a1966f78c1d2/submissions/bc914985-dd69-4aee-b25a-549e8d5daeb1\",
+        \n      \"uuid\": \"bc914985-dd69-4aee-b25a-549e8d5daeb1\"\n    }, \n    {\n
+        \     \"download_url\": \"/api/v1/sources/a04f525c-155c-4f5a-a549-a1966f78c1d2/submissions/59822dde-92c9-4872-80dc-6061818fdadd/download\",
+        \n      \"filename\": \"3-humorless_steelmaker-doc.gz.gpg\", \n      \"is_file\":
+        true, \n      \"is_message\": false, \n      \"is_read\": true, \n      \"seen_by\":
+        [\n        \"4333050a-5415-4ef7-bfd6-2152f9743648\", \n        \"636dbf24-2f83-458b-8ec2-f26e9c14dc86\"\n
+        \     ], \n      \"size\": 661, \n      \"source_url\": \"/api/v1/sources/a04f525c-155c-4f5a-a549-a1966f78c1d2\",
+        \n      \"submission_url\": \"/api/v1/sources/a04f525c-155c-4f5a-a549-a1966f78c1d2/submissions/59822dde-92c9-4872-80dc-6061818fdadd\",
+        \n      \"uuid\": \"59822dde-92c9-4872-80dc-6061818fdadd\"\n    }, \n    {\n
+        \     \"download_url\": \"/api/v1/sources/a04f525c-155c-4f5a-a549-a1966f78c1d2/submissions/9690a838-56f1-45a9-9920-d97ad3c645fd/download\",
+        \n      \"filename\": \"4-humorless_steelmaker-doc.gz.gpg\", \n      \"is_file\":
+        true, \n      \"is_message\": false, \n      \"is_read\": true, \n      \"seen_by\":
+        [\n        \"4333050a-5415-4ef7-bfd6-2152f9743648\", \n        \"636dbf24-2f83-458b-8ec2-f26e9c14dc86\"\n
+        \     ], \n      \"size\": 661, \n      \"source_url\": \"/api/v1/sources/a04f525c-155c-4f5a-a549-a1966f78c1d2\",
+        \n      \"submission_url\": \"/api/v1/sources/a04f525c-155c-4f5a-a549-a1966f78c1d2/submissions/9690a838-56f1-45a9-9920-d97ad3c645fd\",
+        \n      \"uuid\": \"9690a838-56f1-45a9-9920-d97ad3c645fd\"\n    }, \n    {\n
+        \     \"download_url\": \"/api/v1/sources/fa717c8e-fa66-4ef4-b15f-1621318bbd5c/submissions/2971feb6-bd55-4bea-bb89-14a2b75b13ec/download\",
+        \n      \"filename\": \"1-compensable_patchiness-msg.gpg\", \n      \"is_file\":
+        false, \n      \"is_message\": true, \n      \"is_read\": true, \n      \"seen_by\":
+        [\n        \"4333050a-5415-4ef7-bfd6-2152f9743648\", \n        \"636dbf24-2f83-458b-8ec2-f26e9c14dc86\"\n
+        \     ], \n      \"size\": 593, \n      \"source_url\": \"/api/v1/sources/fa717c8e-fa66-4ef4-b15f-1621318bbd5c\",
+        \n      \"submission_url\": \"/api/v1/sources/fa717c8e-fa66-4ef4-b15f-1621318bbd5c/submissions/2971feb6-bd55-4bea-bb89-14a2b75b13ec\",
+        \n      \"uuid\": \"2971feb6-bd55-4bea-bb89-14a2b75b13ec\"\n    }, \n    {\n
+        \     \"download_url\": \"/api/v1/sources/fa717c8e-fa66-4ef4-b15f-1621318bbd5c/submissions/f61693ef-ff7f-4602-aa3a-b56ea90a1508/download\",
+        \n      \"filename\": \"2-compensable_patchiness-msg.gpg\", \n      \"is_file\":
+        false, \n      \"is_message\": true, \n      \"is_read\": true, \n      \"seen_by\":
+        [\n        \"4333050a-5415-4ef7-bfd6-2152f9743648\"\n      ], \n      \"size\":
+        595, \n      \"source_url\": \"/api/v1/sources/fa717c8e-fa66-4ef4-b15f-1621318bbd5c\",
+        \n      \"submission_url\": \"/api/v1/sources/fa717c8e-fa66-4ef4-b15f-1621318bbd5c/submissions/f61693ef-ff7f-4602-aa3a-b56ea90a1508\",
+        \n      \"uuid\": \"f61693ef-ff7f-4602-aa3a-b56ea90a1508\"\n    }, \n    {\n
+        \     \"download_url\": \"/api/v1/sources/fa717c8e-fa66-4ef4-b15f-1621318bbd5c/submissions/897f81a7-7d67-4638-b804-396fdbcd4daf/download\",
+        \n      \"filename\": \"3-compensable_patchiness-doc.gz.gpg\", \n      \"is_file\":
+        true, \n      \"is_message\": false, \n      \"is_read\": true, \n      \"seen_by\":
+        [\n        \"4333050a-5415-4ef7-bfd6-2152f9743648\", \n        \"636dbf24-2f83-458b-8ec2-f26e9c14dc86\"\n
+        \     ], \n      \"size\": 661, \n      \"source_url\": \"/api/v1/sources/fa717c8e-fa66-4ef4-b15f-1621318bbd5c\",
+        \n      \"submission_url\": \"/api/v1/sources/fa717c8e-fa66-4ef4-b15f-1621318bbd5c/submissions/897f81a7-7d67-4638-b804-396fdbcd4daf\",
+        \n      \"uuid\": \"897f81a7-7d67-4638-b804-396fdbcd4daf\"\n    }, \n    {\n
+        \     \"download_url\": \"/api/v1/sources/fa717c8e-fa66-4ef4-b15f-1621318bbd5c/submissions/62361a6d-4574-4d10-82b2-988f37730a84/download\",
+        \n      \"filename\": \"4-compensable_patchiness-doc.gz.gpg\", \n      \"is_file\":
+        true, \n      \"is_message\": false, \n      \"is_read\": true, \n      \"seen_by\":
+        [\n        \"4333050a-5415-4ef7-bfd6-2152f9743648\", \n        \"636dbf24-2f83-458b-8ec2-f26e9c14dc86\"\n
+        \     ], \n      \"size\": 661, \n      \"source_url\": \"/api/v1/sources/fa717c8e-fa66-4ef4-b15f-1621318bbd5c\",
+        \n      \"submission_url\": \"/api/v1/sources/fa717c8e-fa66-4ef4-b15f-1621318bbd5c/submissions/62361a6d-4574-4d10-82b2-988f37730a84\",
+        \n      \"uuid\": \"62361a6d-4574-4d10-82b2-988f37730a84\"\n    }, \n    {\n
+        \     \"download_url\": \"/api/v1/sources/887ab883-d5db-4ccf-9884-4125fa32076e/submissions/fe6b99ee-a541-45a8-bcec-13a31ee57bae/download\",
+        \n      \"filename\": \"1-elliptic_friar-msg.gpg\", \n      \"is_file\": false,
+        \n      \"is_message\": true, \n      \"is_read\": true, \n      \"seen_by\":
+        [\n        \"4333050a-5415-4ef7-bfd6-2152f9743648\", \n        \"636dbf24-2f83-458b-8ec2-f26e9c14dc86\"\n
+        \     ], \n      \"size\": 637, \n      \"source_url\": \"/api/v1/sources/887ab883-d5db-4ccf-9884-4125fa32076e\",
+        \n      \"submission_url\": \"/api/v1/sources/887ab883-d5db-4ccf-9884-4125fa32076e/submissions/fe6b99ee-a541-45a8-bcec-13a31ee57bae\",
+        \n      \"uuid\": \"fe6b99ee-a541-45a8-bcec-13a31ee57bae\"\n    }, \n    {\n
+        \     \"download_url\": \"/api/v1/sources/887ab883-d5db-4ccf-9884-4125fa32076e/submissions/c86fc22e-fc95-46e1-9db7-5ff524efb54d/download\",
+        \n      \"filename\": \"2-elliptic_friar-msg.gpg\", \n      \"is_file\": false,
+        \n      \"is_message\": true, \n      \"is_read\": true, \n      \"seen_by\":
+        [\n        \"4333050a-5415-4ef7-bfd6-2152f9743648\"\n      ], \n      \"size\":
+        666, \n      \"source_url\": \"/api/v1/sources/887ab883-d5db-4ccf-9884-4125fa32076e\",
+        \n      \"submission_url\": \"/api/v1/sources/887ab883-d5db-4ccf-9884-4125fa32076e/submissions/c86fc22e-fc95-46e1-9db7-5ff524efb54d\",
+        \n      \"uuid\": \"c86fc22e-fc95-46e1-9db7-5ff524efb54d\"\n    }, \n    {\n
+        \     \"download_url\": \"/api/v1/sources/887ab883-d5db-4ccf-9884-4125fa32076e/submissions/38984757-d81b-47ad-b79f-d0e8e6c84d00/download\",
+        \n      \"filename\": \"3-elliptic_friar-doc.gz.gpg\", \n      \"is_file\":
+        true, \n      \"is_message\": false, \n      \"is_read\": true, \n      \"seen_by\":
+        [\n        \"4333050a-5415-4ef7-bfd6-2152f9743648\", \n        \"636dbf24-2f83-458b-8ec2-f26e9c14dc86\"\n
+        \     ], \n      \"size\": 661, \n      \"source_url\": \"/api/v1/sources/887ab883-d5db-4ccf-9884-4125fa32076e\",
+        \n      \"submission_url\": \"/api/v1/sources/887ab883-d5db-4ccf-9884-4125fa32076e/submissions/38984757-d81b-47ad-b79f-d0e8e6c84d00\",
+        \n      \"uuid\": \"38984757-d81b-47ad-b79f-d0e8e6c84d00\"\n    }, \n    {\n
+        \     \"download_url\": \"/api/v1/sources/887ab883-d5db-4ccf-9884-4125fa32076e/submissions/d9ea9d08-9474-45c9-b00b-8f4127620102/download\",
+        \n      \"filename\": \"4-elliptic_friar-doc.gz.gpg\", \n      \"is_file\":
+        true, \n      \"is_message\": false, \n      \"is_read\": true, \n      \"seen_by\":
+        [\n        \"4333050a-5415-4ef7-bfd6-2152f9743648\"\n      ], \n      \"size\":
+        661, \n      \"source_url\": \"/api/v1/sources/887ab883-d5db-4ccf-9884-4125fa32076e\",
+        \n      \"submission_url\": \"/api/v1/sources/887ab883-d5db-4ccf-9884-4125fa32076e/submissions/d9ea9d08-9474-45c9-b00b-8f4127620102\",
+        \n      \"uuid\": \"d9ea9d08-9474-45c9-b00b-8f4127620102\"\n    }, \n    {\n
+        \     \"download_url\": \"/api/v1/sources/08085505-fe4d-41aa-8732-6f6fe67e4e87/submissions/85d7e9ff-7e86-4a05-b19e-a62d3c87a0f5/download\",
+        \n      \"filename\": \"1-welcome_nightmare-msg.gpg\", \n      \"is_file\":
+        false, \n      \"is_message\": true, \n      \"is_read\": true, \n      \"seen_by\":
+        [\n        \"4333050a-5415-4ef7-bfd6-2152f9743648\"\n      ], \n      \"size\":
+        591, \n      \"source_url\": \"/api/v1/sources/08085505-fe4d-41aa-8732-6f6fe67e4e87\",
+        \n      \"submission_url\": \"/api/v1/sources/08085505-fe4d-41aa-8732-6f6fe67e4e87/submissions/85d7e9ff-7e86-4a05-b19e-a62d3c87a0f5\",
+        \n      \"uuid\": \"85d7e9ff-7e86-4a05-b19e-a62d3c87a0f5\"\n    }, \n    {\n
+        \     \"download_url\": \"/api/v1/sources/08085505-fe4d-41aa-8732-6f6fe67e4e87/submissions/7738b283-b094-433b-a62f-1212b6dd24f5/download\",
+        \n      \"filename\": \"2-welcome_nightmare-msg.gpg\", \n      \"is_file\":
+        false, \n      \"is_message\": true, \n      \"is_read\": true, \n      \"seen_by\":
+        [\n        \"4333050a-5415-4ef7-bfd6-2152f9743648\"\n      ], \n      \"size\":
+        591, \n      \"source_url\": \"/api/v1/sources/08085505-fe4d-41aa-8732-6f6fe67e4e87\",
+        \n      \"submission_url\": \"/api/v1/sources/08085505-fe4d-41aa-8732-6f6fe67e4e87/submissions/7738b283-b094-433b-a62f-1212b6dd24f5\",
+        \n      \"uuid\": \"7738b283-b094-433b-a62f-1212b6dd24f5\"\n    }, \n    {\n
+        \     \"download_url\": \"/api/v1/sources/08085505-fe4d-41aa-8732-6f6fe67e4e87/submissions/53150f88-7a9a-4e3b-bb8f-a2582ee5be59/download\",
+        \n      \"filename\": \"3-welcome_nightmare-doc.gz.gpg\", \n      \"is_file\":
+        true, \n      \"is_message\": false, \n      \"is_read\": true, \n      \"seen_by\":
+        [\n        \"4333050a-5415-4ef7-bfd6-2152f9743648\"\n      ], \n      \"size\":
+        661, \n      \"source_url\": \"/api/v1/sources/08085505-fe4d-41aa-8732-6f6fe67e4e87\",
+        \n      \"submission_url\": \"/api/v1/sources/08085505-fe4d-41aa-8732-6f6fe67e4e87/submissions/53150f88-7a9a-4e3b-bb8f-a2582ee5be59\",
+        \n      \"uuid\": \"53150f88-7a9a-4e3b-bb8f-a2582ee5be59\"\n    }, \n    {\n
+        \     \"download_url\": \"/api/v1/sources/08085505-fe4d-41aa-8732-6f6fe67e4e87/submissions/711ea1dc-092f-41e2-9036-c19b6b62c223/download\",
+        \n      \"filename\": \"4-welcome_nightmare-doc.gz.gpg\", \n      \"is_file\":
+        true, \n      \"is_message\": false, \n      \"is_read\": true, \n      \"seen_by\":
+        [\n        \"4333050a-5415-4ef7-bfd6-2152f9743648\"\n      ], \n      \"size\":
+        661, \n      \"source_url\": \"/api/v1/sources/08085505-fe4d-41aa-8732-6f6fe67e4e87\",
+        \n      \"submission_url\": \"/api/v1/sources/08085505-fe4d-41aa-8732-6f6fe67e4e87/submissions/711ea1dc-092f-41e2-9036-c19b6b62c223\",
+        \n      \"uuid\": \"711ea1dc-092f-41e2-9036-c19b6b62c223\"\n    }\n  ]\n}\n"
+    headers:
+      Content-Length:
+      - '10589'
+      Content-Type:
+      - application/json
+      Date:
+      - Thu, 17 Jun 2021 15:12:21 GMT
+      Server:
+      - Werkzeug/0.16.0 Python/3.8.5
+    status:
+      code: 200
+      message: OK
+- request:
+    body: null
+    headers:
+      Accept:
+      - application/json
+      Accept-Encoding:
+      - gzip, deflate
+      Authorization:
+      - Token eyJhbGciOiJIUzI1NiIsImlhdCI6MTYyMzk0MjczOCwiZXhwIjoxNjIzOTcxNTM4fQ.eyJpZCI6MX0.xNE1oOw5qVbJjX3qZB4dYJW1pnhWHu1pEJ6j7Xoy0do
+      Connection:
+      - keep-alive
+      Content-Type:
+      - application/json
+      User-Agent:
+      - python-requests/2.22.0
+    method: GET
+    uri: http://127.0.0.1:8081/api/v1/submissions
+  response:
+    body:
+      string: "{\n  \"submissions\": [\n    {\n      \"download_url\": \"/api/v1/sources/a04f525c-155c-4f5a-a549-a1966f78c1d2/submissions/7474699f-ef83-44a2-bdbe-072ff5e19905/download\",
+        \n      \"filename\": \"1-humorless_steelmaker-msg.gpg\", \n      \"is_file\":
+        false, \n      \"is_message\": true, \n      \"is_read\": true, \n      \"seen_by\":
+        [\n        \"4333050a-5415-4ef7-bfd6-2152f9743648\", \n        \"636dbf24-2f83-458b-8ec2-f26e9c14dc86\"\n
+        \     ], \n      \"size\": 611, \n      \"source_url\": \"/api/v1/sources/a04f525c-155c-4f5a-a549-a1966f78c1d2\",
+        \n      \"submission_url\": \"/api/v1/sources/a04f525c-155c-4f5a-a549-a1966f78c1d2/submissions/7474699f-ef83-44a2-bdbe-072ff5e19905\",
+        \n      \"uuid\": \"7474699f-ef83-44a2-bdbe-072ff5e19905\"\n    }, \n    {\n
+        \     \"download_url\": \"/api/v1/sources/a04f525c-155c-4f5a-a549-a1966f78c1d2/submissions/bc914985-dd69-4aee-b25a-549e8d5daeb1/download\",
+        \n      \"filename\": \"2-humorless_steelmaker-msg.gpg\", \n      \"is_file\":
+        false, \n      \"is_message\": true, \n      \"is_read\": true, \n      \"seen_by\":
+        [\n        \"4333050a-5415-4ef7-bfd6-2152f9743648\"\n      ], \n      \"size\":
+        758, \n      \"source_url\": \"/api/v1/sources/a04f525c-155c-4f5a-a549-a1966f78c1d2\",
+        \n      \"submission_url\": \"/api/v1/sources/a04f525c-155c-4f5a-a549-a1966f78c1d2/submissions/bc914985-dd69-4aee-b25a-549e8d5daeb1\",
+        \n      \"uuid\": \"bc914985-dd69-4aee-b25a-549e8d5daeb1\"\n    }, \n    {\n
+        \     \"download_url\": \"/api/v1/sources/a04f525c-155c-4f5a-a549-a1966f78c1d2/submissions/59822dde-92c9-4872-80dc-6061818fdadd/download\",
+        \n      \"filename\": \"3-humorless_steelmaker-doc.gz.gpg\", \n      \"is_file\":
+        true, \n      \"is_message\": false, \n      \"is_read\": true, \n      \"seen_by\":
+        [\n        \"4333050a-5415-4ef7-bfd6-2152f9743648\", \n        \"636dbf24-2f83-458b-8ec2-f26e9c14dc86\"\n
+        \     ], \n      \"size\": 661, \n      \"source_url\": \"/api/v1/sources/a04f525c-155c-4f5a-a549-a1966f78c1d2\",
+        \n      \"submission_url\": \"/api/v1/sources/a04f525c-155c-4f5a-a549-a1966f78c1d2/submissions/59822dde-92c9-4872-80dc-6061818fdadd\",
+        \n      \"uuid\": \"59822dde-92c9-4872-80dc-6061818fdadd\"\n    }, \n    {\n
+        \     \"download_url\": \"/api/v1/sources/a04f525c-155c-4f5a-a549-a1966f78c1d2/submissions/9690a838-56f1-45a9-9920-d97ad3c645fd/download\",
+        \n      \"filename\": \"4-humorless_steelmaker-doc.gz.gpg\", \n      \"is_file\":
+        true, \n      \"is_message\": false, \n      \"is_read\": true, \n      \"seen_by\":
+        [\n        \"4333050a-5415-4ef7-bfd6-2152f9743648\", \n        \"636dbf24-2f83-458b-8ec2-f26e9c14dc86\"\n
+        \     ], \n      \"size\": 661, \n      \"source_url\": \"/api/v1/sources/a04f525c-155c-4f5a-a549-a1966f78c1d2\",
+        \n      \"submission_url\": \"/api/v1/sources/a04f525c-155c-4f5a-a549-a1966f78c1d2/submissions/9690a838-56f1-45a9-9920-d97ad3c645fd\",
+        \n      \"uuid\": \"9690a838-56f1-45a9-9920-d97ad3c645fd\"\n    }, \n    {\n
+        \     \"download_url\": \"/api/v1/sources/fa717c8e-fa66-4ef4-b15f-1621318bbd5c/submissions/2971feb6-bd55-4bea-bb89-14a2b75b13ec/download\",
+        \n      \"filename\": \"1-compensable_patchiness-msg.gpg\", \n      \"is_file\":
+        false, \n      \"is_message\": true, \n      \"is_read\": true, \n      \"seen_by\":
+        [\n        \"4333050a-5415-4ef7-bfd6-2152f9743648\", \n        \"636dbf24-2f83-458b-8ec2-f26e9c14dc86\"\n
+        \     ], \n      \"size\": 593, \n      \"source_url\": \"/api/v1/sources/fa717c8e-fa66-4ef4-b15f-1621318bbd5c\",
+        \n      \"submission_url\": \"/api/v1/sources/fa717c8e-fa66-4ef4-b15f-1621318bbd5c/submissions/2971feb6-bd55-4bea-bb89-14a2b75b13ec\",
+        \n      \"uuid\": \"2971feb6-bd55-4bea-bb89-14a2b75b13ec\"\n    }, \n    {\n
+        \     \"download_url\": \"/api/v1/sources/fa717c8e-fa66-4ef4-b15f-1621318bbd5c/submissions/f61693ef-ff7f-4602-aa3a-b56ea90a1508/download\",
+        \n      \"filename\": \"2-compensable_patchiness-msg.gpg\", \n      \"is_file\":
+        false, \n      \"is_message\": true, \n      \"is_read\": true, \n      \"seen_by\":
+        [\n        \"4333050a-5415-4ef7-bfd6-2152f9743648\"\n      ], \n      \"size\":
+        595, \n      \"source_url\": \"/api/v1/sources/fa717c8e-fa66-4ef4-b15f-1621318bbd5c\",
+        \n      \"submission_url\": \"/api/v1/sources/fa717c8e-fa66-4ef4-b15f-1621318bbd5c/submissions/f61693ef-ff7f-4602-aa3a-b56ea90a1508\",
+        \n      \"uuid\": \"f61693ef-ff7f-4602-aa3a-b56ea90a1508\"\n    }, \n    {\n
+        \     \"download_url\": \"/api/v1/sources/fa717c8e-fa66-4ef4-b15f-1621318bbd5c/submissions/897f81a7-7d67-4638-b804-396fdbcd4daf/download\",
+        \n      \"filename\": \"3-compensable_patchiness-doc.gz.gpg\", \n      \"is_file\":
+        true, \n      \"is_message\": false, \n      \"is_read\": true, \n      \"seen_by\":
+        [\n        \"4333050a-5415-4ef7-bfd6-2152f9743648\", \n        \"636dbf24-2f83-458b-8ec2-f26e9c14dc86\"\n
+        \     ], \n      \"size\": 661, \n      \"source_url\": \"/api/v1/sources/fa717c8e-fa66-4ef4-b15f-1621318bbd5c\",
+        \n      \"submission_url\": \"/api/v1/sources/fa717c8e-fa66-4ef4-b15f-1621318bbd5c/submissions/897f81a7-7d67-4638-b804-396fdbcd4daf\",
+        \n      \"uuid\": \"897f81a7-7d67-4638-b804-396fdbcd4daf\"\n    }, \n    {\n
+        \     \"download_url\": \"/api/v1/sources/fa717c8e-fa66-4ef4-b15f-1621318bbd5c/submissions/62361a6d-4574-4d10-82b2-988f37730a84/download\",
+        \n      \"filename\": \"4-compensable_patchiness-doc.gz.gpg\", \n      \"is_file\":
+        true, \n      \"is_message\": false, \n      \"is_read\": true, \n      \"seen_by\":
+        [\n        \"4333050a-5415-4ef7-bfd6-2152f9743648\", \n        \"636dbf24-2f83-458b-8ec2-f26e9c14dc86\"\n
+        \     ], \n      \"size\": 661, \n      \"source_url\": \"/api/v1/sources/fa717c8e-fa66-4ef4-b15f-1621318bbd5c\",
+        \n      \"submission_url\": \"/api/v1/sources/fa717c8e-fa66-4ef4-b15f-1621318bbd5c/submissions/62361a6d-4574-4d10-82b2-988f37730a84\",
+        \n      \"uuid\": \"62361a6d-4574-4d10-82b2-988f37730a84\"\n    }, \n    {\n
+        \     \"download_url\": \"/api/v1/sources/887ab883-d5db-4ccf-9884-4125fa32076e/submissions/fe6b99ee-a541-45a8-bcec-13a31ee57bae/download\",
+        \n      \"filename\": \"1-elliptic_friar-msg.gpg\", \n      \"is_file\": false,
+        \n      \"is_message\": true, \n      \"is_read\": true, \n      \"seen_by\":
+        [\n        \"4333050a-5415-4ef7-bfd6-2152f9743648\", \n        \"636dbf24-2f83-458b-8ec2-f26e9c14dc86\"\n
+        \     ], \n      \"size\": 637, \n      \"source_url\": \"/api/v1/sources/887ab883-d5db-4ccf-9884-4125fa32076e\",
+        \n      \"submission_url\": \"/api/v1/sources/887ab883-d5db-4ccf-9884-4125fa32076e/submissions/fe6b99ee-a541-45a8-bcec-13a31ee57bae\",
+        \n      \"uuid\": \"fe6b99ee-a541-45a8-bcec-13a31ee57bae\"\n    }, \n    {\n
+        \     \"download_url\": \"/api/v1/sources/887ab883-d5db-4ccf-9884-4125fa32076e/submissions/c86fc22e-fc95-46e1-9db7-5ff524efb54d/download\",
+        \n      \"filename\": \"2-elliptic_friar-msg.gpg\", \n      \"is_file\": false,
+        \n      \"is_message\": true, \n      \"is_read\": true, \n      \"seen_by\":
+        [\n        \"4333050a-5415-4ef7-bfd6-2152f9743648\"\n      ], \n      \"size\":
+        666, \n      \"source_url\": \"/api/v1/sources/887ab883-d5db-4ccf-9884-4125fa32076e\",
+        \n      \"submission_url\": \"/api/v1/sources/887ab883-d5db-4ccf-9884-4125fa32076e/submissions/c86fc22e-fc95-46e1-9db7-5ff524efb54d\",
+        \n      \"uuid\": \"c86fc22e-fc95-46e1-9db7-5ff524efb54d\"\n    }, \n    {\n
+        \     \"download_url\": \"/api/v1/sources/887ab883-d5db-4ccf-9884-4125fa32076e/submissions/38984757-d81b-47ad-b79f-d0e8e6c84d00/download\",
+        \n      \"filename\": \"3-elliptic_friar-doc.gz.gpg\", \n      \"is_file\":
+        true, \n      \"is_message\": false, \n      \"is_read\": true, \n      \"seen_by\":
+        [\n        \"4333050a-5415-4ef7-bfd6-2152f9743648\", \n        \"636dbf24-2f83-458b-8ec2-f26e9c14dc86\"\n
+        \     ], \n      \"size\": 661, \n      \"source_url\": \"/api/v1/sources/887ab883-d5db-4ccf-9884-4125fa32076e\",
+        \n      \"submission_url\": \"/api/v1/sources/887ab883-d5db-4ccf-9884-4125fa32076e/submissions/38984757-d81b-47ad-b79f-d0e8e6c84d00\",
+        \n      \"uuid\": \"38984757-d81b-47ad-b79f-d0e8e6c84d00\"\n    }, \n    {\n
+        \     \"download_url\": \"/api/v1/sources/887ab883-d5db-4ccf-9884-4125fa32076e/submissions/d9ea9d08-9474-45c9-b00b-8f4127620102/download\",
+        \n      \"filename\": \"4-elliptic_friar-doc.gz.gpg\", \n      \"is_file\":
+        true, \n      \"is_message\": false, \n      \"is_read\": true, \n      \"seen_by\":
+        [\n        \"4333050a-5415-4ef7-bfd6-2152f9743648\"\n      ], \n      \"size\":
+        661, \n      \"source_url\": \"/api/v1/sources/887ab883-d5db-4ccf-9884-4125fa32076e\",
+        \n      \"submission_url\": \"/api/v1/sources/887ab883-d5db-4ccf-9884-4125fa32076e/submissions/d9ea9d08-9474-45c9-b00b-8f4127620102\",
+        \n      \"uuid\": \"d9ea9d08-9474-45c9-b00b-8f4127620102\"\n    }, \n    {\n
+        \     \"download_url\": \"/api/v1/sources/08085505-fe4d-41aa-8732-6f6fe67e4e87/submissions/85d7e9ff-7e86-4a05-b19e-a62d3c87a0f5/download\",
+        \n      \"filename\": \"1-welcome_nightmare-msg.gpg\", \n      \"is_file\":
+        false, \n      \"is_message\": true, \n      \"is_read\": true, \n      \"seen_by\":
+        [\n        \"4333050a-5415-4ef7-bfd6-2152f9743648\"\n      ], \n      \"size\":
+        591, \n      \"source_url\": \"/api/v1/sources/08085505-fe4d-41aa-8732-6f6fe67e4e87\",
+        \n      \"submission_url\": \"/api/v1/sources/08085505-fe4d-41aa-8732-6f6fe67e4e87/submissions/85d7e9ff-7e86-4a05-b19e-a62d3c87a0f5\",
+        \n      \"uuid\": \"85d7e9ff-7e86-4a05-b19e-a62d3c87a0f5\"\n    }, \n    {\n
+        \     \"download_url\": \"/api/v1/sources/08085505-fe4d-41aa-8732-6f6fe67e4e87/submissions/7738b283-b094-433b-a62f-1212b6dd24f5/download\",
+        \n      \"filename\": \"2-welcome_nightmare-msg.gpg\", \n      \"is_file\":
+        false, \n      \"is_message\": true, \n      \"is_read\": true, \n      \"seen_by\":
+        [\n        \"4333050a-5415-4ef7-bfd6-2152f9743648\"\n      ], \n      \"size\":
+        591, \n      \"source_url\": \"/api/v1/sources/08085505-fe4d-41aa-8732-6f6fe67e4e87\",
+        \n      \"submission_url\": \"/api/v1/sources/08085505-fe4d-41aa-8732-6f6fe67e4e87/submissions/7738b283-b094-433b-a62f-1212b6dd24f5\",
+        \n      \"uuid\": \"7738b283-b094-433b-a62f-1212b6dd24f5\"\n    }, \n    {\n
+        \     \"download_url\": \"/api/v1/sources/08085505-fe4d-41aa-8732-6f6fe67e4e87/submissions/53150f88-7a9a-4e3b-bb8f-a2582ee5be59/download\",
+        \n      \"filename\": \"3-welcome_nightmare-doc.gz.gpg\", \n      \"is_file\":
+        true, \n      \"is_message\": false, \n      \"is_read\": true, \n      \"seen_by\":
+        [\n        \"4333050a-5415-4ef7-bfd6-2152f9743648\"\n      ], \n      \"size\":
+        661, \n      \"source_url\": \"/api/v1/sources/08085505-fe4d-41aa-8732-6f6fe67e4e87\",
+        \n      \"submission_url\": \"/api/v1/sources/08085505-fe4d-41aa-8732-6f6fe67e4e87/submissions/53150f88-7a9a-4e3b-bb8f-a2582ee5be59\",
+        \n      \"uuid\": \"53150f88-7a9a-4e3b-bb8f-a2582ee5be59\"\n    }, \n    {\n
+        \     \"download_url\": \"/api/v1/sources/08085505-fe4d-41aa-8732-6f6fe67e4e87/submissions/711ea1dc-092f-41e2-9036-c19b6b62c223/download\",
+        \n      \"filename\": \"4-welcome_nightmare-doc.gz.gpg\", \n      \"is_file\":
+        true, \n      \"is_message\": false, \n      \"is_read\": true, \n      \"seen_by\":
+        [\n        \"4333050a-5415-4ef7-bfd6-2152f9743648\"\n      ], \n      \"size\":
+        661, \n      \"source_url\": \"/api/v1/sources/08085505-fe4d-41aa-8732-6f6fe67e4e87\",
+        \n      \"submission_url\": \"/api/v1/sources/08085505-fe4d-41aa-8732-6f6fe67e4e87/submissions/711ea1dc-092f-41e2-9036-c19b6b62c223\",
+        \n      \"uuid\": \"711ea1dc-092f-41e2-9036-c19b6b62c223\"\n    }\n  ]\n}\n"
+    headers:
+      Content-Length:
+      - '10589'
+      Content-Type:
+      - application/json
+      Date:
+      - Thu, 17 Jun 2021 15:12:21 GMT
+      Server:
+      - Werkzeug/0.16.0 Python/3.8.5
+    status:
+      code: 200
+      message: OK
+- request:
+    body: null
+    headers:
+      Accept:
+      - application/json
+      Accept-Encoding:
+      - gzip, deflate
+      Authorization:
+      - Token eyJhbGciOiJIUzI1NiIsImlhdCI6MTYyMzk0MjczOCwiZXhwIjoxNjIzOTcxNTM4fQ.eyJpZCI6MX0.xNE1oOw5qVbJjX3qZB4dYJW1pnhWHu1pEJ6j7Xoy0do
+      Connection:
+      - keep-alive
+      Content-Length:
+      - '0'
+      Content-Type:
+      - application/json
+      User-Agent:
+      - python-requests/2.22.0
+    method: DELETE
+    uri: http://127.0.0.1:8081/api/v1/sources/a04f525c-155c-4f5a-a549-a1966f78c1d2/submissions/7474699f-ef83-44a2-bdbe-072ff5e19905
+  response:
+    body:
+      string: "{\n  \"message\": \"Submission deleted\"\n}\n"
+    headers:
+      Content-Length:
+      - '38'
+      Content-Type:
+      - application/json
+      Date:
+      - Thu, 17 Jun 2021 15:12:21 GMT
+      Server:
+      - Werkzeug/0.16.0 Python/3.8.5
+    status:
+      code: 200
+      message: OK
+- request:
+    body: null
+    headers:
+      Accept:
+      - application/json
+      Accept-Encoding:
+      - gzip, deflate
+      Authorization:
+      - Token eyJhbGciOiJIUzI1NiIsImlhdCI6MTYyMzk0MjczOCwiZXhwIjoxNjIzOTcxNTM4fQ.eyJpZCI6MX0.xNE1oOw5qVbJjX3qZB4dYJW1pnhWHu1pEJ6j7Xoy0do
+      Connection:
+      - keep-alive
+      Content-Type:
+      - application/json
+      User-Agent:
+      - python-requests/2.22.0
+    method: GET
+    uri: http://127.0.0.1:8081/api/v1/submissions
+  response:
+    body:
+      string: "{\n  \"submissions\": [\n    {\n      \"download_url\": \"/api/v1/sources/a04f525c-155c-4f5a-a549-a1966f78c1d2/submissions/bc914985-dd69-4aee-b25a-549e8d5daeb1/download\",
+        \n      \"filename\": \"2-humorless_steelmaker-msg.gpg\", \n      \"is_file\":
+        false, \n      \"is_message\": true, \n      \"is_read\": true, \n      \"seen_by\":
+        [\n        \"4333050a-5415-4ef7-bfd6-2152f9743648\"\n      ], \n      \"size\":
+        758, \n      \"source_url\": \"/api/v1/sources/a04f525c-155c-4f5a-a549-a1966f78c1d2\",
+        \n      \"submission_url\": \"/api/v1/sources/a04f525c-155c-4f5a-a549-a1966f78c1d2/submissions/bc914985-dd69-4aee-b25a-549e8d5daeb1\",
+        \n      \"uuid\": \"bc914985-dd69-4aee-b25a-549e8d5daeb1\"\n    }, \n    {\n
+        \     \"download_url\": \"/api/v1/sources/a04f525c-155c-4f5a-a549-a1966f78c1d2/submissions/59822dde-92c9-4872-80dc-6061818fdadd/download\",
+        \n      \"filename\": \"3-humorless_steelmaker-doc.gz.gpg\", \n      \"is_file\":
+        true, \n      \"is_message\": false, \n      \"is_read\": true, \n      \"seen_by\":
+        [\n        \"4333050a-5415-4ef7-bfd6-2152f9743648\", \n        \"636dbf24-2f83-458b-8ec2-f26e9c14dc86\"\n
+        \     ], \n      \"size\": 661, \n      \"source_url\": \"/api/v1/sources/a04f525c-155c-4f5a-a549-a1966f78c1d2\",
+        \n      \"submission_url\": \"/api/v1/sources/a04f525c-155c-4f5a-a549-a1966f78c1d2/submissions/59822dde-92c9-4872-80dc-6061818fdadd\",
+        \n      \"uuid\": \"59822dde-92c9-4872-80dc-6061818fdadd\"\n    }, \n    {\n
+        \     \"download_url\": \"/api/v1/sources/a04f525c-155c-4f5a-a549-a1966f78c1d2/submissions/9690a838-56f1-45a9-9920-d97ad3c645fd/download\",
+        \n      \"filename\": \"4-humorless_steelmaker-doc.gz.gpg\", \n      \"is_file\":
+        true, \n      \"is_message\": false, \n      \"is_read\": true, \n      \"seen_by\":
+        [\n        \"4333050a-5415-4ef7-bfd6-2152f9743648\", \n        \"636dbf24-2f83-458b-8ec2-f26e9c14dc86\"\n
+        \     ], \n      \"size\": 661, \n      \"source_url\": \"/api/v1/sources/a04f525c-155c-4f5a-a549-a1966f78c1d2\",
+        \n      \"submission_url\": \"/api/v1/sources/a04f525c-155c-4f5a-a549-a1966f78c1d2/submissions/9690a838-56f1-45a9-9920-d97ad3c645fd\",
+        \n      \"uuid\": \"9690a838-56f1-45a9-9920-d97ad3c645fd\"\n    }, \n    {\n
+        \     \"download_url\": \"/api/v1/sources/fa717c8e-fa66-4ef4-b15f-1621318bbd5c/submissions/2971feb6-bd55-4bea-bb89-14a2b75b13ec/download\",
+        \n      \"filename\": \"1-compensable_patchiness-msg.gpg\", \n      \"is_file\":
+        false, \n      \"is_message\": true, \n      \"is_read\": true, \n      \"seen_by\":
+        [\n        \"4333050a-5415-4ef7-bfd6-2152f9743648\", \n        \"636dbf24-2f83-458b-8ec2-f26e9c14dc86\"\n
+        \     ], \n      \"size\": 593, \n      \"source_url\": \"/api/v1/sources/fa717c8e-fa66-4ef4-b15f-1621318bbd5c\",
+        \n      \"submission_url\": \"/api/v1/sources/fa717c8e-fa66-4ef4-b15f-1621318bbd5c/submissions/2971feb6-bd55-4bea-bb89-14a2b75b13ec\",
+        \n      \"uuid\": \"2971feb6-bd55-4bea-bb89-14a2b75b13ec\"\n    }, \n    {\n
+        \     \"download_url\": \"/api/v1/sources/fa717c8e-fa66-4ef4-b15f-1621318bbd5c/submissions/f61693ef-ff7f-4602-aa3a-b56ea90a1508/download\",
+        \n      \"filename\": \"2-compensable_patchiness-msg.gpg\", \n      \"is_file\":
+        false, \n      \"is_message\": true, \n      \"is_read\": true, \n      \"seen_by\":
+        [\n        \"4333050a-5415-4ef7-bfd6-2152f9743648\"\n      ], \n      \"size\":
+        595, \n      \"source_url\": \"/api/v1/sources/fa717c8e-fa66-4ef4-b15f-1621318bbd5c\",
+        \n      \"submission_url\": \"/api/v1/sources/fa717c8e-fa66-4ef4-b15f-1621318bbd5c/submissions/f61693ef-ff7f-4602-aa3a-b56ea90a1508\",
+        \n      \"uuid\": \"f61693ef-ff7f-4602-aa3a-b56ea90a1508\"\n    }, \n    {\n
+        \     \"download_url\": \"/api/v1/sources/fa717c8e-fa66-4ef4-b15f-1621318bbd5c/submissions/897f81a7-7d67-4638-b804-396fdbcd4daf/download\",
+        \n      \"filename\": \"3-compensable_patchiness-doc.gz.gpg\", \n      \"is_file\":
+        true, \n      \"is_message\": false, \n      \"is_read\": true, \n      \"seen_by\":
+        [\n        \"4333050a-5415-4ef7-bfd6-2152f9743648\", \n        \"636dbf24-2f83-458b-8ec2-f26e9c14dc86\"\n
+        \     ], \n      \"size\": 661, \n      \"source_url\": \"/api/v1/sources/fa717c8e-fa66-4ef4-b15f-1621318bbd5c\",
+        \n      \"submission_url\": \"/api/v1/sources/fa717c8e-fa66-4ef4-b15f-1621318bbd5c/submissions/897f81a7-7d67-4638-b804-396fdbcd4daf\",
+        \n      \"uuid\": \"897f81a7-7d67-4638-b804-396fdbcd4daf\"\n    }, \n    {\n
+        \     \"download_url\": \"/api/v1/sources/fa717c8e-fa66-4ef4-b15f-1621318bbd5c/submissions/62361a6d-4574-4d10-82b2-988f37730a84/download\",
+        \n      \"filename\": \"4-compensable_patchiness-doc.gz.gpg\", \n      \"is_file\":
+        true, \n      \"is_message\": false, \n      \"is_read\": true, \n      \"seen_by\":
+        [\n        \"4333050a-5415-4ef7-bfd6-2152f9743648\", \n        \"636dbf24-2f83-458b-8ec2-f26e9c14dc86\"\n
+        \     ], \n      \"size\": 661, \n      \"source_url\": \"/api/v1/sources/fa717c8e-fa66-4ef4-b15f-1621318bbd5c\",
+        \n      \"submission_url\": \"/api/v1/sources/fa717c8e-fa66-4ef4-b15f-1621318bbd5c/submissions/62361a6d-4574-4d10-82b2-988f37730a84\",
+        \n      \"uuid\": \"62361a6d-4574-4d10-82b2-988f37730a84\"\n    }, \n    {\n
+        \     \"download_url\": \"/api/v1/sources/887ab883-d5db-4ccf-9884-4125fa32076e/submissions/fe6b99ee-a541-45a8-bcec-13a31ee57bae/download\",
+        \n      \"filename\": \"1-elliptic_friar-msg.gpg\", \n      \"is_file\": false,
+        \n      \"is_message\": true, \n      \"is_read\": true, \n      \"seen_by\":
+        [\n        \"4333050a-5415-4ef7-bfd6-2152f9743648\", \n        \"636dbf24-2f83-458b-8ec2-f26e9c14dc86\"\n
+        \     ], \n      \"size\": 637, \n      \"source_url\": \"/api/v1/sources/887ab883-d5db-4ccf-9884-4125fa32076e\",
+        \n      \"submission_url\": \"/api/v1/sources/887ab883-d5db-4ccf-9884-4125fa32076e/submissions/fe6b99ee-a541-45a8-bcec-13a31ee57bae\",
+        \n      \"uuid\": \"fe6b99ee-a541-45a8-bcec-13a31ee57bae\"\n    }, \n    {\n
+        \     \"download_url\": \"/api/v1/sources/887ab883-d5db-4ccf-9884-4125fa32076e/submissions/c86fc22e-fc95-46e1-9db7-5ff524efb54d/download\",
+        \n      \"filename\": \"2-elliptic_friar-msg.gpg\", \n      \"is_file\": false,
+        \n      \"is_message\": true, \n      \"is_read\": true, \n      \"seen_by\":
+        [\n        \"4333050a-5415-4ef7-bfd6-2152f9743648\"\n      ], \n      \"size\":
+        666, \n      \"source_url\": \"/api/v1/sources/887ab883-d5db-4ccf-9884-4125fa32076e\",
+        \n      \"submission_url\": \"/api/v1/sources/887ab883-d5db-4ccf-9884-4125fa32076e/submissions/c86fc22e-fc95-46e1-9db7-5ff524efb54d\",
+        \n      \"uuid\": \"c86fc22e-fc95-46e1-9db7-5ff524efb54d\"\n    }, \n    {\n
+        \     \"download_url\": \"/api/v1/sources/887ab883-d5db-4ccf-9884-4125fa32076e/submissions/38984757-d81b-47ad-b79f-d0e8e6c84d00/download\",
+        \n      \"filename\": \"3-elliptic_friar-doc.gz.gpg\", \n      \"is_file\":
+        true, \n      \"is_message\": false, \n      \"is_read\": true, \n      \"seen_by\":
+        [\n        \"4333050a-5415-4ef7-bfd6-2152f9743648\", \n        \"636dbf24-2f83-458b-8ec2-f26e9c14dc86\"\n
+        \     ], \n      \"size\": 661, \n      \"source_url\": \"/api/v1/sources/887ab883-d5db-4ccf-9884-4125fa32076e\",
+        \n      \"submission_url\": \"/api/v1/sources/887ab883-d5db-4ccf-9884-4125fa32076e/submissions/38984757-d81b-47ad-b79f-d0e8e6c84d00\",
+        \n      \"uuid\": \"38984757-d81b-47ad-b79f-d0e8e6c84d00\"\n    }, \n    {\n
+        \     \"download_url\": \"/api/v1/sources/887ab883-d5db-4ccf-9884-4125fa32076e/submissions/d9ea9d08-9474-45c9-b00b-8f4127620102/download\",
+        \n      \"filename\": \"4-elliptic_friar-doc.gz.gpg\", \n      \"is_file\":
+        true, \n      \"is_message\": false, \n      \"is_read\": true, \n      \"seen_by\":
+        [\n        \"4333050a-5415-4ef7-bfd6-2152f9743648\"\n      ], \n      \"size\":
+        661, \n      \"source_url\": \"/api/v1/sources/887ab883-d5db-4ccf-9884-4125fa32076e\",
+        \n      \"submission_url\": \"/api/v1/sources/887ab883-d5db-4ccf-9884-4125fa32076e/submissions/d9ea9d08-9474-45c9-b00b-8f4127620102\",
+        \n      \"uuid\": \"d9ea9d08-9474-45c9-b00b-8f4127620102\"\n    }, \n    {\n
+        \     \"download_url\": \"/api/v1/sources/08085505-fe4d-41aa-8732-6f6fe67e4e87/submissions/85d7e9ff-7e86-4a05-b19e-a62d3c87a0f5/download\",
+        \n      \"filename\": \"1-welcome_nightmare-msg.gpg\", \n      \"is_file\":
+        false, \n      \"is_message\": true, \n      \"is_read\": true, \n      \"seen_by\":
+        [\n        \"4333050a-5415-4ef7-bfd6-2152f9743648\"\n      ], \n      \"size\":
+        591, \n      \"source_url\": \"/api/v1/sources/08085505-fe4d-41aa-8732-6f6fe67e4e87\",
+        \n      \"submission_url\": \"/api/v1/sources/08085505-fe4d-41aa-8732-6f6fe67e4e87/submissions/85d7e9ff-7e86-4a05-b19e-a62d3c87a0f5\",
+        \n      \"uuid\": \"85d7e9ff-7e86-4a05-b19e-a62d3c87a0f5\"\n    }, \n    {\n
+        \     \"download_url\": \"/api/v1/sources/08085505-fe4d-41aa-8732-6f6fe67e4e87/submissions/7738b283-b094-433b-a62f-1212b6dd24f5/download\",
+        \n      \"filename\": \"2-welcome_nightmare-msg.gpg\", \n      \"is_file\":
+        false, \n      \"is_message\": true, \n      \"is_read\": true, \n      \"seen_by\":
+        [\n        \"4333050a-5415-4ef7-bfd6-2152f9743648\"\n      ], \n      \"size\":
+        591, \n      \"source_url\": \"/api/v1/sources/08085505-fe4d-41aa-8732-6f6fe67e4e87\",
+        \n      \"submission_url\": \"/api/v1/sources/08085505-fe4d-41aa-8732-6f6fe67e4e87/submissions/7738b283-b094-433b-a62f-1212b6dd24f5\",
+        \n      \"uuid\": \"7738b283-b094-433b-a62f-1212b6dd24f5\"\n    }, \n    {\n
+        \     \"download_url\": \"/api/v1/sources/08085505-fe4d-41aa-8732-6f6fe67e4e87/submissions/53150f88-7a9a-4e3b-bb8f-a2582ee5be59/download\",
+        \n      \"filename\": \"3-welcome_nightmare-doc.gz.gpg\", \n      \"is_file\":
+        true, \n      \"is_message\": false, \n      \"is_read\": true, \n      \"seen_by\":
+        [\n        \"4333050a-5415-4ef7-bfd6-2152f9743648\"\n      ], \n      \"size\":
+        661, \n      \"source_url\": \"/api/v1/sources/08085505-fe4d-41aa-8732-6f6fe67e4e87\",
+        \n      \"submission_url\": \"/api/v1/sources/08085505-fe4d-41aa-8732-6f6fe67e4e87/submissions/53150f88-7a9a-4e3b-bb8f-a2582ee5be59\",
+        \n      \"uuid\": \"53150f88-7a9a-4e3b-bb8f-a2582ee5be59\"\n    }, \n    {\n
+        \     \"download_url\": \"/api/v1/sources/08085505-fe4d-41aa-8732-6f6fe67e4e87/submissions/711ea1dc-092f-41e2-9036-c19b6b62c223/download\",
+        \n      \"filename\": \"4-welcome_nightmare-doc.gz.gpg\", \n      \"is_file\":
+        true, \n      \"is_message\": false, \n      \"is_read\": true, \n      \"seen_by\":
+        [\n        \"4333050a-5415-4ef7-bfd6-2152f9743648\"\n      ], \n      \"size\":
+        661, \n      \"source_url\": \"/api/v1/sources/08085505-fe4d-41aa-8732-6f6fe67e4e87\",
+        \n      \"submission_url\": \"/api/v1/sources/08085505-fe4d-41aa-8732-6f6fe67e4e87/submissions/711ea1dc-092f-41e2-9036-c19b6b62c223\",
+        \n      \"uuid\": \"711ea1dc-092f-41e2-9036-c19b6b62c223\"\n    }\n  ]\n}\n"
+    headers:
+      Content-Length:
+      - '9904'
+      Content-Type:
+      - application/json
+      Date:
+      - Thu, 17 Jun 2021 15:12:21 GMT
+      Server:
+      - Werkzeug/0.16.0 Python/3.8.5
+    status:
+      code: 200
+      message: OK
+version: 1

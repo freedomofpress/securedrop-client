@@ -1,0 +1,166 @@
+interactions:
+- request:
+    body: null
+    headers:
+      Accept:
+      - application/json
+      Accept-Encoding:
+      - gzip, deflate
+      Authorization:
+      - Token eyJhbGciOiJIUzI1NiIsImlhdCI6MTYyMzk0MjczOCwiZXhwIjoxNjIzOTcxNTM4fQ.eyJpZCI6MX0.xNE1oOw5qVbJjX3qZB4dYJW1pnhWHu1pEJ6j7Xoy0do
+      Connection:
+      - keep-alive
+      Content-Type:
+      - application/json
+      User-Agent:
+      - python-requests/2.22.0
+    method: GET
+    uri: http://127.0.0.1:8081/api/v1/replies
+  response:
+    body:
+      string: "{\n  \"replies\": [\n    {\n      \"filename\": \"5-welcoming_imperialist-reply.gpg\",
+        \n      \"is_deleted_by_source\": false, \n      \"journalist_first_name\":
+        null, \n      \"journalist_last_name\": null, \n      \"journalist_username\":
+        \"dellsberg\", \n      \"journalist_uuid\": \"636dbf24-2f83-458b-8ec2-f26e9c14dc86\",
+        \n      \"reply_url\": \"/api/v1/sources/e203b5fe-c2c7-40c2-a679-7c5e663d627b/replies/61891d96-19d8-4753-9be9-705eb0d2bf88\",
+        \n      \"seen_by\": [\n        \"4333050a-5415-4ef7-bfd6-2152f9743648\",
+        \n        \"636dbf24-2f83-458b-8ec2-f26e9c14dc86\"\n      ], \n      \"size\":
+        765, \n      \"source_url\": \"/api/v1/sources/e203b5fe-c2c7-40c2-a679-7c5e663d627b\",
+        \n      \"uuid\": \"61891d96-19d8-4753-9be9-705eb0d2bf88\"\n    }, \n    {\n
+        \     \"filename\": \"6-welcoming_imperialist-reply.gpg\", \n      \"is_deleted_by_source\":
+        false, \n      \"journalist_first_name\": \"\", \n      \"journalist_last_name\":
+        \"\", \n      \"journalist_username\": \"deleted\", \n      \"journalist_uuid\":
+        \"deleted\", \n      \"reply_url\": \"/api/v1/sources/e203b5fe-c2c7-40c2-a679-7c5e663d627b/replies/38e040ba-f004-41e1-98a9-5c66b704b3da\",
+        \n      \"seen_by\": [\n        \"4333050a-5415-4ef7-bfd6-2152f9743648\"\n
+        \     ], \n      \"size\": 832, \n      \"source_url\": \"/api/v1/sources/e203b5fe-c2c7-40c2-a679-7c5e663d627b\",
+        \n      \"uuid\": \"38e040ba-f004-41e1-98a9-5c66b704b3da\"\n    }, \n    {\n
+        \     \"filename\": \"5-humorless_steelmaker-reply.gpg\", \n      \"is_deleted_by_source\":
+        false, \n      \"journalist_first_name\": null, \n      \"journalist_last_name\":
+        null, \n      \"journalist_username\": \"dellsberg\", \n      \"journalist_uuid\":
+        \"636dbf24-2f83-458b-8ec2-f26e9c14dc86\", \n      \"reply_url\": \"/api/v1/sources/a04f525c-155c-4f5a-a549-a1966f78c1d2/replies/f5fe9fa3-3a17-4cd6-b48e-90257877bb33\",
+        \n      \"seen_by\": [\n        \"4333050a-5415-4ef7-bfd6-2152f9743648\",
+        \n        \"636dbf24-2f83-458b-8ec2-f26e9c14dc86\"\n      ], \n      \"size\":
+        753, \n      \"source_url\": \"/api/v1/sources/a04f525c-155c-4f5a-a549-a1966f78c1d2\",
+        \n      \"uuid\": \"f5fe9fa3-3a17-4cd6-b48e-90257877bb33\"\n    }, \n    {\n
+        \     \"filename\": \"6-humorless_steelmaker-reply.gpg\", \n      \"is_deleted_by_source\":
+        false, \n      \"journalist_first_name\": null, \n      \"journalist_last_name\":
+        null, \n      \"journalist_username\": \"dellsberg\", \n      \"journalist_uuid\":
+        \"636dbf24-2f83-458b-8ec2-f26e9c14dc86\", \n      \"reply_url\": \"/api/v1/sources/a04f525c-155c-4f5a-a549-a1966f78c1d2/replies/2387a167-4c3c-4732-a13e-a104b2657b74\",
+        \n      \"seen_by\": [\n        \"4333050a-5415-4ef7-bfd6-2152f9743648\",
+        \n        \"636dbf24-2f83-458b-8ec2-f26e9c14dc86\"\n      ], \n      \"size\":
+        900, \n      \"source_url\": \"/api/v1/sources/a04f525c-155c-4f5a-a549-a1966f78c1d2\",
+        \n      \"uuid\": \"2387a167-4c3c-4732-a13e-a104b2657b74\"\n    }, \n    {\n
+        \     \"filename\": \"5-compensable_patchiness-reply.gpg\", \n      \"is_deleted_by_source\":
+        false, \n      \"journalist_first_name\": null, \n      \"journalist_last_name\":
+        null, \n      \"journalist_username\": \"dellsberg\", \n      \"journalist_uuid\":
+        \"636dbf24-2f83-458b-8ec2-f26e9c14dc86\", \n      \"reply_url\": \"/api/v1/sources/fa717c8e-fa66-4ef4-b15f-1621318bbd5c/replies/9ad0bf31-f920-411b-a0e0-d7d45b5bebd8\",
+        \n      \"seen_by\": [\n        \"4333050a-5415-4ef7-bfd6-2152f9743648\",
+        \n        \"636dbf24-2f83-458b-8ec2-f26e9c14dc86\"\n      ], \n      \"size\":
+        735, \n      \"source_url\": \"/api/v1/sources/fa717c8e-fa66-4ef4-b15f-1621318bbd5c\",
+        \n      \"uuid\": \"9ad0bf31-f920-411b-a0e0-d7d45b5bebd8\"\n    }, \n    {\n
+        \     \"filename\": \"6-compensable_patchiness-reply.gpg\", \n      \"is_deleted_by_source\":
+        false, \n      \"journalist_first_name\": null, \n      \"journalist_last_name\":
+        null, \n      \"journalist_username\": \"dellsberg\", \n      \"journalist_uuid\":
+        \"636dbf24-2f83-458b-8ec2-f26e9c14dc86\", \n      \"reply_url\": \"/api/v1/sources/fa717c8e-fa66-4ef4-b15f-1621318bbd5c/replies/3154a8e5-2cde-416a-b53d-2168865d70b6\",
+        \n      \"seen_by\": [\n        \"4333050a-5415-4ef7-bfd6-2152f9743648\",
+        \n        \"636dbf24-2f83-458b-8ec2-f26e9c14dc86\"\n      ], \n      \"size\":
+        737, \n      \"source_url\": \"/api/v1/sources/fa717c8e-fa66-4ef4-b15f-1621318bbd5c\",
+        \n      \"uuid\": \"3154a8e5-2cde-416a-b53d-2168865d70b6\"\n    }, \n    {\n
+        \     \"filename\": \"5-elliptic_friar-reply.gpg\", \n      \"is_deleted_by_source\":
+        false, \n      \"journalist_first_name\": \"\", \n      \"journalist_last_name\":
+        \"\", \n      \"journalist_username\": \"deleted\", \n      \"journalist_uuid\":
+        \"deleted\", \n      \"reply_url\": \"/api/v1/sources/887ab883-d5db-4ccf-9884-4125fa32076e/replies/1953dde7-8506-4faf-97cf-e40b7c99391c\",
+        \n      \"seen_by\": [\n        \"4333050a-5415-4ef7-bfd6-2152f9743648\"\n
+        \     ], \n      \"size\": 779, \n      \"source_url\": \"/api/v1/sources/887ab883-d5db-4ccf-9884-4125fa32076e\",
+        \n      \"uuid\": \"1953dde7-8506-4faf-97cf-e40b7c99391c\"\n    }, \n    {\n
+        \     \"filename\": \"6-elliptic_friar-reply.gpg\", \n      \"is_deleted_by_source\":
+        false, \n      \"journalist_first_name\": \"\", \n      \"journalist_last_name\":
+        \"\", \n      \"journalist_username\": \"deleted\", \n      \"journalist_uuid\":
+        \"deleted\", \n      \"reply_url\": \"/api/v1/sources/887ab883-d5db-4ccf-9884-4125fa32076e/replies/6359a232-cb5d-4fae-b832-409b348124f7\",
+        \n      \"seen_by\": [\n        \"4333050a-5415-4ef7-bfd6-2152f9743648\"\n
+        \     ], \n      \"size\": 808, \n      \"source_url\": \"/api/v1/sources/887ab883-d5db-4ccf-9884-4125fa32076e\",
+        \n      \"uuid\": \"6359a232-cb5d-4fae-b832-409b348124f7\"\n    }, \n    {\n
+        \     \"filename\": \"5-welcome_nightmare-reply.gpg\", \n      \"is_deleted_by_source\":
+        false, \n      \"journalist_first_name\": null, \n      \"journalist_last_name\":
+        null, \n      \"journalist_username\": \"dellsberg\", \n      \"journalist_uuid\":
+        \"636dbf24-2f83-458b-8ec2-f26e9c14dc86\", \n      \"reply_url\": \"/api/v1/sources/08085505-fe4d-41aa-8732-6f6fe67e4e87/replies/4ff5e1cf-eb2c-44b7-85ca-c47c85dbb363\",
+        \n      \"seen_by\": [\n        \"4333050a-5415-4ef7-bfd6-2152f9743648\",
+        \n        \"636dbf24-2f83-458b-8ec2-f26e9c14dc86\"\n      ], \n      \"size\":
+        733, \n      \"source_url\": \"/api/v1/sources/08085505-fe4d-41aa-8732-6f6fe67e4e87\",
+        \n      \"uuid\": \"4ff5e1cf-eb2c-44b7-85ca-c47c85dbb363\"\n    }, \n    {\n
+        \     \"filename\": \"6-welcome_nightmare-reply.gpg\", \n      \"is_deleted_by_source\":
+        false, \n      \"journalist_first_name\": \"\", \n      \"journalist_last_name\":
+        \"\", \n      \"journalist_username\": \"deleted\", \n      \"journalist_uuid\":
+        \"deleted\", \n      \"reply_url\": \"/api/v1/sources/08085505-fe4d-41aa-8732-6f6fe67e4e87/replies/d3145c36-ea7f-4da5-89b5-c507c473aaa2\",
+        \n      \"seen_by\": [\n        \"4333050a-5415-4ef7-bfd6-2152f9743648\"\n
+        \     ], \n      \"size\": 733, \n      \"source_url\": \"/api/v1/sources/08085505-fe4d-41aa-8732-6f6fe67e4e87\",
+        \n      \"uuid\": \"d3145c36-ea7f-4da5-89b5-c507c473aaa2\"\n    }\n  ]\n}\n"
+    headers:
+      Content-Length:
+      - '6543'
+      Content-Type:
+      - application/json
+      Date:
+      - Thu, 17 Jun 2021 15:12:20 GMT
+      Server:
+      - Werkzeug/0.16.0 Python/3.8.5
+    status:
+      code: 200
+      message: OK
+- request:
+    body: null
+    headers:
+      Accept:
+      - application/json
+      Accept-Encoding:
+      - gzip, deflate
+      Authorization:
+      - Token eyJhbGciOiJIUzI1NiIsImlhdCI6MTYyMzk0MjczOCwiZXhwIjoxNjIzOTcxNTM4fQ.eyJpZCI6MX0.xNE1oOw5qVbJjX3qZB4dYJW1pnhWHu1pEJ6j7Xoy0do
+      Connection:
+      - keep-alive
+      Content-Type:
+      - application/json
+      User-Agent:
+      - python-requests/2.22.0
+    method: GET
+    uri: http://127.0.0.1:8081/api/v1/sources/e203b5fe-c2c7-40c2-a679-7c5e663d627b/replies/61891d96-19d8-4753-9be9-705eb0d2bf88/download
+  response:
+    body:
+      string: !!binary |
+        hIwDbv4ZBGDDU0YBA/sHZ/R6kYC9KKEJ9phgr21CpUbaYt+E1Ki8YsHiq/uSw1Kz40aWh088raQk
+        BD1YyKAWKecRDuCVLUX773P7ZpycRrNALQC+lEiC2lKcPR97rin3c53EQqM+SIErEUsL5tXt3Xw8
+        /q+69XsLss7ON34C//ZPX2jqKX3Yi6ROivtAbIUCDAPD58TAoiAbKgEP/AhAkqtHqA6wAOZhoc3U
+        KqofBCy8+LnuR8sp53o8JYaTqAotcgx+DGbti0/DmLOZR2+mWgRToQ7WJUDFmU8FWE/a4IDsdPl7
+        eJmbLDZ/zCmHIMGQGm/QZpAWlbzG54nD9C+SagUGz+RDNMmfWbo37GIPF9TnasVGQByjfSdWSbqQ
+        BUCP1Aew9l/0Z6u+VB0VVV/2DRROlYFFM9j37mKv+I5G4tah9QrojiUertCNLRU5nTzY4EOx/wbf
+        2g1VOFOQ6wyXvFHN3bSOsNZ+t+nEZWgOZYmaYBG8210OlIt6fqsSMfiJTWkEQPV2BFEEZ9oXLOLm
+        b/nyaO8UxheKCErgtVZSotoBhWwK2AoHmAtPl93zmyT2nHdiymWbowkK4pWa0dpPy0RIXeQiQMdM
+        MjHi8LuNMOR1VOsj1Q8vDenHe45tNzabP9lN2kS1eVLYRH15BXolu7q38FqHdUPYNxEL5ZwYCwBh
+        4rRR6j3z1Wx8iFhGGjShH1NNDlHDzCR4o9Wy+rP9AXksZTUNhqBLd4P8mi9lkjRrrYVfZF/faHvX
+        bt3WYHtN6iI5eDtRIuXV+zgtStRkH7HWbuchYRhgwbvIgsouWlpCL6ZLsGLak53ijrVXVMz9VCdW
+        e0d3E6PYn82IcBg122v6JgZw0QmaW5jhgXaknbl72YXRR9Rf8Mf9w8TE0l4B+v535V5fv8sGvXpj
+        h0OGMbZnmZADOqemqH6owqUJf43/EElVW5LYAoCRCWqxxH6Yv0HSFURBcQf2sJo04mbzZsXP/GHO
+        OKLCv29jcrVRrZYmwfkOTQoMUD0QxOkB
+    headers:
+      Cache-Control:
+      - public, max-age=43200
+      Content-Disposition:
+      - attachment; filename=5-welcoming_imperialist-reply.gpg
+      Content-Length:
+      - '765'
+      Content-Type:
+      - application/pgp-encrypted
+      Date:
+      - Thu, 17 Jun 2021 15:12:20 GMT
+      Etag:
+      - sha256:880e6ef3117e8888563e9cd7fdda1622a7855582f2d5f29c5273d0f37f10e776
+      Expires:
+      - Fri, 18 Jun 2021 03:12:20 GMT
+      Last-Modified:
+      - Thu, 17 Jun 2021 15:11:16 GMT
+      Server:
+      - Werkzeug/0.16.0 Python/3.8.5
+    status:
+      code: 200
+      message: OK
+version: 1

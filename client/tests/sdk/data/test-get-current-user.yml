@@ -1,0 +1,36 @@
+interactions:
+- request:
+    body: null
+    headers:
+      Accept:
+      - application/json
+      Accept-Encoding:
+      - gzip, deflate
+      Authorization:
+      - Token eyJhbGciOiJIUzI1NiIsImlhdCI6MTYyMzk0MjczOCwiZXhwIjoxNjIzOTcxNTM4fQ.eyJpZCI6MX0.xNE1oOw5qVbJjX3qZB4dYJW1pnhWHu1pEJ6j7Xoy0do
+      Connection:
+      - keep-alive
+      Content-Type:
+      - application/json
+      User-Agent:
+      - python-requests/2.22.0
+    method: GET
+    uri: http://127.0.0.1:8081/api/v1/user
+  response:
+    body:
+      string: "{\n  \"first_name\": null, \n  \"is_admin\": true, \n  \"last_login\":
+        \"2021-06-17T15:12:18.455273Z\", \n  \"last_name\": null, \n  \"username\":
+        \"journalist\", \n  \"uuid\": \"4333050a-5415-4ef7-bfd6-2152f9743648\"\n}\n"
+    headers:
+      Content-Length:
+      - '196'
+      Content-Type:
+      - application/json
+      Date:
+      - Thu, 17 Jun 2021 15:12:20 GMT
+      Server:
+      - Werkzeug/0.16.0 Python/3.8.5
+    status:
+      code: 200
+      message: OK
+version: 1
