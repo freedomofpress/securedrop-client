@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: SecureDrop Client 0.7.0\n"
 "Report-Msgid-Bugs-To: securedrop@freedom.press\n"
-"PO-Revision-Date: 2022-06-13 14:02+0000\n"
+"PO-Revision-Date: 2023-04-24 08:13+0000\n"
 "Last-Translator: Jonas Waga <jonas.waga@schibsted.com>\n"
 "Language-Team: Swedish <https://weblate.securedrop.org/projects/securedrop/securedrop-client/sv/>\n"
 "Language: sv\n"
@@ -15,11 +15,16 @@ msgstr ""
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=n != 1;\n"
-"X-Generator: Weblate 4.11.2\n"
+"X-Generator: Weblate 4.14.1\n"
 "Generated-By: Babel 2.9.1\n"
 
 msgid "{application_name} is already running"
 msgstr "{application_name} är redan igång"
+
+msgid "Retrieving 1 message"
+msgid_plural "Retrieving {message_count} messages"
+msgstr[0] "Hämtar 1 meddelande"
+msgstr[1] "Hämtar {message_count} meddelanden"
 
 msgid "The SecureDrop server cannot be reached. Trying to reconnect..."
 msgstr "SecureDrop-servern kan inte nås. Försöker att återansluta..."
@@ -50,9 +55,6 @@ msgstr "Din session har gått ut. Försök att logga in igen."
 msgid "Failed to update star."
 msgstr "Misslyckades att uppdatera stjärnmarkering."
 
-msgid "Retrieving new messages"
-msgstr "Hämtar nya meddelanden"
-
 msgid "File does not exist in the data directory. Please try re-downloading."
 msgstr "Filen finns inte i mappen. Försök att ladda hem igen."
 
@@ -65,14 +67,44 @@ msgstr "Misslyckades att radera konversation på servern"
 msgid "Failed to delete source at server"
 msgstr "Misslyckades att radera källan på servern"
 
-msgid "Download All Files"
-msgstr "Ladda hem alla filer"
+msgid "No messages."
+msgstr "Inga meddelanden."
+
+#, python-format
+msgid "%(sender)s wrote:"
+msgstr "%(sender)s skrev:"
+
+#, python-format
+msgid "%(sender)s sent:"
+msgstr "%(sender)s skickade:"
+
+#, python-format
+msgid "File: %(filename)s"
+msgstr "Fil: %(filename)s"
+
+msgid "Download All"
+msgstr "Ladda hem alla"
 
 msgid "Delete Source Account"
-msgstr "Radera käll-konto"
+msgstr "Radera en källa"
 
 msgid "Delete All Files and Messages"
 msgstr "Radera alla filer och meddelanden"
+
+msgid "Print Transcript"
+msgstr "Skriv ut kopia"
+
+msgid "Export Transcript"
+msgstr "Exportera kopia"
+
+msgid "Export All"
+msgstr "Exportera alla"
+
+msgid "<h2>Some files will not be exported</h2>Some files from this source have not yet been downloaded, and will not be exported.<br /><br />To export the currently downloaded files, click \"Continue.\""
+msgstr "<h2>Vissa filer kommer inte att exporteras</h2>Vissa filer från den här källan har inte laddats ned , och kommer inte att exporteras. <br /><br /> För att exportera de redan nedladdade filerna, klicka på \"Fortsätt.\""
+
+msgid "all files and transcript"
+msgstr "alla filer och kopior"
 
 msgid "SecureDrop Client {}"
 msgstr "SecureDrop Klient {}"
@@ -116,11 +148,11 @@ msgstr "Se eller hämta filer"
 msgid "Send a response"
 msgstr "Skicka ett svar"
 
-msgid "Deleting files and messages..."
-msgstr "Radera filer och meddelanden…"
+msgid "Deleting files and messages…"
+msgstr "Raderar filer och meddelanden…"
 
-msgid "Deleting source account..."
-msgstr "Radera källans konto…"
+msgid "Deleting source account…"
+msgstr "Raderar källkonto…"
 
 msgid "— All files and messages deleted for this source —"
 msgstr "— Alla filer och meddelanden raderade för denna källan —"
@@ -170,6 +202,12 @@ msgstr "Logga in"
 
 msgid " to compose or send a reply"
 msgstr " för att skriva eller skicka ett svar"
+
+msgid "FILES AND MESSAGES"
+msgstr "FILER och MEDDELANDEN"
+
+msgid "SOURCE ACCOUNT"
+msgstr "KÄLLKONTO"
 
 msgid "Username"
 msgstr "Användarnamn"
@@ -225,8 +263,8 @@ msgstr "FORTSÄTT"
 msgid "YES, DELETE FILES AND MESSAGES"
 msgstr "JA, RADERA FILER OCH MEDDELANDEN"
 
-msgid "You would like to delete {files_to_delete}, {replies_to_delete}, {messages_to_delete} from the source account for {source}?"
-msgstr "Du vill radera {files_to_delete},{replies_to_delete},{messages_to_delete} från källan {source}?"
+msgid "Would you like to delete {files_to_delete}, {replies_to_delete}, {messages_to_delete} from the source account for {source}?"
+msgstr "Vill du radera {files_to_delete}, {replies_to_delete}, {messages_to_delete} från källkontot för {source}?"
 
 msgid "Preserving the account will retain its metadata, and the ability for {source} to log in to your SecureDrop again."
 msgstr "Om du behåller kontot så kommer dess metadata att sparas, och {source} kommer kunna logga in i SecureDrop igen."
@@ -245,6 +283,9 @@ msgid "one message"
 msgid_plural "{message_count} messages"
 msgstr[0] "ett meddelande"
 msgstr[1] "{message_count} meddelanden"
+
+msgid "SUBMIT"
+msgstr "SKICKA IN"
 
 msgid "Preparing to export:<br /><span style=\"font-weight:normal\">{}</span>"
 msgstr "Förbereder export: <br /><span style=\"font-weight:normal\">{}</span>"
@@ -282,14 +323,8 @@ msgstr "Lösenordsfrasen som angavs fungerade inte. Vänligen försök igen."
 msgid "See your administrator for help."
 msgstr "Kontakta din administratör för hjälp."
 
-msgid "The CONTINUE button will be disabled until the Export VM is ready"
-msgstr "FORTSÄTT-knappen kommer att vara inaktiv tills Export VM är klar"
-
 msgid "Remember to be careful when working with files outside of your Workstation machine."
 msgstr "Kom ihåg att vara försiktig när du arbetar med filer utanför den här arbetsstationen."
-
-msgid "SUBMIT"
-msgstr "SKICKA IN"
 
 msgid "DONE"
 msgstr "KLAR"
@@ -316,7 +351,7 @@ msgid "YES, DELETE ENTIRE SOURCE ACCOUNT"
 msgstr "JA, RADERA HELA KÄLLANS KONTO"
 
 msgid "Are you sure this is what you want?"
-msgstr "Är du säker på att detta är vad du vill?"
+msgstr "Är du säker på att detta är det du vill?"
 
 msgid "When the entire account for a source is deleted:"
 msgstr "När hela kontot för källan raderas:"
@@ -329,3 +364,24 @@ msgstr "Din organisation kommer inte att kunna skicka svar till källan."
 
 msgid "All files and messages from that source will also be destroyed."
 msgstr "Alla filer och meddelanden från den källan kommer också att raderas."
+
+#~ msgid "You would like to delete {files_to_delete}, {replies_to_delete}, {messages_to_delete} from the source account for {source}?"
+#~ msgstr "Du vill radera {files_to_delete},{replies_to_delete},{messages_to_delete} från källan {source}?"
+
+#~ msgid "<h2>Some files will not be exported</h2>Some files from this source have not yet been downloaded, and will not be exported.<br /><br />To export the currently-downloaded files, click \"Continue.\""
+#~ msgstr "<h2>Vissa filer kommer inte att exporteras</h2> Vissa filer från den här källan har inte laddats hem ännu och kommer därför inte exporteras. <br /><br /> För att exportera the nedladdade filerna, klicka på \"Fortsätt.\""
+
+#~ msgid "Deleting files and messages..."
+#~ msgstr "Radera filer och meddelanden…"
+
+#~ msgid "Deleting source account..."
+#~ msgstr "Radera källans konto…"
+
+#~ msgid "Download All Files"
+#~ msgstr "Ladda hem alla filer"
+
+#~ msgid "Print Conversation Transcript"
+#~ msgstr "Skriv ut konversations-kopia"
+
+#~ msgid "The CONTINUE button will be disabled until the Export VM is ready"
+#~ msgstr "FORTSÄTT-knappen kommer att vara inaktiv tills Export VM är klar"

@@ -7,19 +7,24 @@ msgid ""
 msgstr ""
 "Project-Id-Version: SecureDrop Client 0.5.1\n"
 "Report-Msgid-Bugs-To: securedrop@freedom.press\n"
-"PO-Revision-Date: 2022-06-23 05:17+0000\n"
-"Last-Translator: tekrei <tekrei@tutanota.com>\n"
+"PO-Revision-Date: 2023-10-13 13:30+0000\n"
+"Last-Translator: Alper Gunay <aalpergunay@gmail.com>\n"
 "Language-Team: Turkish <https://weblate.securedrop.org/projects/securedrop/securedrop-client/tr/>\n"
 "Language: tr\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=n != 1;\n"
-"X-Generator: Weblate 4.13\n"
+"X-Generator: Weblate 4.18.2\n"
 "Generated-By: Babel 2.9.1\n"
 
 msgid "{application_name} is already running"
 msgstr "{application_name} zaten çalışıyor"
+
+msgid "Retrieving 1 message"
+msgid_plural "Retrieving {message_count} messages"
+msgstr[0] "1 mesaj gösteriliyor"
+msgstr[1] "{message_count} mesaj gösteriliyor"
 
 msgid "The SecureDrop server cannot be reached. Trying to reconnect..."
 msgstr "SecureDrop sunucusuna erişilemedi. Bağlantı yeniden kurulmaya çalışılıyor..."
@@ -50,9 +55,6 @@ msgstr "Oturumunuzun süresi dolmuş. Lütfen yeniden oturum açın."
 msgid "Failed to update star."
 msgstr "Yıldız güncellenemedi."
 
-msgid "Retrieving new messages"
-msgstr "Yeni iletiler alınıyor"
-
 msgid "File does not exist in the data directory. Please try re-downloading."
 msgstr "Dosya data klasöründe bulunamadı. Lütfen yeniden indirmeyi deneyin."
 
@@ -65,14 +67,44 @@ msgstr "Sunucudaki yazışma silinemedi"
 msgid "Failed to delete source at server"
 msgstr "Sunucudaki kaynak silinemedi"
 
-msgid "Download All Files"
-msgstr "Tüm Dosyaları İndir"
+msgid "No messages."
+msgstr "Mesaj yok."
+
+#, python-format
+msgid "%(sender)s wrote:"
+msgstr "%(sender)s yazdı:"
+
+#, python-format
+msgid "%(sender)s sent:"
+msgstr "%(sender)s gönderdi:"
+
+#, python-format
+msgid "File: %(filename)s"
+msgstr "Dosya: %(filename)s"
+
+msgid "Download All"
+msgstr "Hepsini indir"
 
 msgid "Delete Source Account"
 msgstr "Kaynak Hesabını Sil"
 
 msgid "Delete All Files and Messages"
 msgstr "Tüm Dosya ve İletileri Sil"
+
+msgid "Print Transcript"
+msgstr "Transkripti yazdır"
+
+msgid "Export Transcript"
+msgstr "Transkripti dışa aktar"
+
+msgid "Export All"
+msgstr "Hepsini dışa aktar"
+
+msgid "<h2>Some files will not be exported</h2>Some files from this source have not yet been downloaded, and will not be exported.<br /><br />To export the currently downloaded files, click \"Continue.\""
+msgstr "<h2>Bazı dosyalar dışa aktarılmayacak</h2>Bu kaynaktaki bazı dosyalar henüz indirilmedi ve dışa aktarılmayacak.<br /><br />İndirilen dosyaları dışa aktarmak için \"Devam et.\" seçeneğine tıklayın."
+
+msgid "all files and transcript"
+msgstr "tüm dosyalar ve transkript"
 
 msgid "SecureDrop Client {}"
 msgstr "SecureDrop İstemcisi {}"
@@ -116,11 +148,11 @@ msgstr "Dosyaları görüntüle ya da al"
 msgid "Send a response"
 msgstr "Yanıt ver"
 
-msgid "Deleting files and messages..."
-msgstr "Dosya ve iletiler siliniyor..."
+msgid "Deleting files and messages…"
+msgstr "Dosyalar ve mesajlar siliniyor…"
 
-msgid "Deleting source account..."
-msgstr "Kaynak hesap siliniyor..."
+msgid "Deleting source account…"
+msgstr "Kaynak hesap siliniyor…"
 
 msgid "— All files and messages deleted for this source —"
 msgstr "— Bu kaynağın tüm dosya ve iletileri silindi —"
@@ -170,6 +202,12 @@ msgstr "Oturum açarak"
 
 msgid " to compose or send a reply"
 msgstr " yanıt yazın ya da gönderin"
+
+msgid "FILES AND MESSAGES"
+msgstr "DOSYALAR VE MESAJLAR"
+
+msgid "SOURCE ACCOUNT"
+msgstr "KAYNAK HESAP"
 
 msgid "Username"
 msgstr "Kullanıcı adı"
@@ -225,8 +263,8 @@ msgstr "DEVAM"
 msgid "YES, DELETE FILES AND MESSAGES"
 msgstr "EVET, DOSYALARI VE İLETİLERİ SİL"
 
-msgid "You would like to delete {files_to_delete}, {replies_to_delete}, {messages_to_delete} from the source account for {source}?"
-msgstr "{source} hesabından {files_to_delete}, {replies_to_delete}, {messages_to_delete} silmek istiyor musunuz?"
+msgid "Would you like to delete {files_to_delete}, {replies_to_delete}, {messages_to_delete} from the source account for {source}?"
+msgstr "{source} kaynak hesabından bunları silmek istiyor musunuz: {files_to_delete}{replies_to_delete}{messages_to_delete}?"
 
 msgid "Preserving the account will retain its metadata, and the ability for {source} to log in to your SecureDrop again."
 msgstr "Hesabı korumak, üst verileri korur ve {source} için SecureDrop ile yeniden oturum açılabilmesini sağlar."
@@ -245,6 +283,9 @@ msgid "one message"
 msgid_plural "{message_count} messages"
 msgstr[0] "bir ileti"
 msgstr[1] "{message_count} ileti"
+
+msgid "SUBMIT"
+msgstr "GÖNDER"
 
 msgid "Preparing to export:<br /><span style=\"font-weight:normal\">{}</span>"
 msgstr "Dışa aktarmaya hazırlanılıyor:<br /><span style=\"font-weight:normal\">{}</span>"
@@ -282,14 +323,8 @@ msgstr "Belirtilen parola işe yaramadı. Lütfen yeniden deneyin."
 msgid "See your administrator for help."
 msgstr "Yardım almak için yöneticinizle görüşün."
 
-msgid "The CONTINUE button will be disabled until the Export VM is ready"
-msgstr "Dışa aktarma sanal makinesi hazır olana kadar DEVAM düğmesi devre dışı görünür"
-
 msgid "Remember to be careful when working with files outside of your Workstation machine."
 msgstr "İş İstasyonu bilgisayarınızın dışındaki dosyalarla çalışırken dikkatli olmayı unutmayın."
-
-msgid "SUBMIT"
-msgstr "GÖNDER"
 
 msgid "DONE"
 msgstr "TAMAM"
@@ -329,6 +364,21 @@ msgstr "Kuruluşunuz onlara yanıt gönderemeyecek."
 
 msgid "All files and messages from that source will also be destroyed."
 msgstr "Bu kaynağın tüm dosya ve iletileri de silinir."
+
+#~ msgid "You would like to delete {files_to_delete}, {replies_to_delete}, {messages_to_delete} from the source account for {source}?"
+#~ msgstr "{source} hesabından {files_to_delete}, {replies_to_delete}, {messages_to_delete} silmek istiyor musunuz?"
+
+#~ msgid "Deleting files and messages..."
+#~ msgstr "Dosya ve iletiler siliniyor..."
+
+#~ msgid "Deleting source account..."
+#~ msgstr "Kaynak hesap siliniyor..."
+
+#~ msgid "Download All Files"
+#~ msgstr "Tüm Dosyaları İndir"
+
+#~ msgid "The CONTINUE button will be disabled until the Export VM is ready"
+#~ msgstr "Dışa aktarma sanal makinesi hazır olana kadar DEVAM düğmesi devre dışı görünür"
 
 #~ msgid "Entire source account"
 #~ msgstr "Tüm kaynak hesabı"
