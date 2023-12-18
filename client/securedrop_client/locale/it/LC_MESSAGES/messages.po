@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: SecureDrop Client 0.7.0\n"
 "Report-Msgid-Bugs-To: securedrop@freedom.press\n"
-"PO-Revision-Date: 2022-06-27 19:09+0000\n"
+"PO-Revision-Date: 2023-10-31 18:30+0000\n"
 "Last-Translator: Claudio Arseni <claudio.arseni@ubuntu.com>\n"
 "Language-Team: Italian <https://weblate.securedrop.org/projects/securedrop/securedrop-client/it/>\n"
 "Language: it\n"
@@ -15,11 +15,16 @@ msgstr ""
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=n != 1;\n"
-"X-Generator: Weblate 4.13\n"
+"X-Generator: Weblate 4.18.2\n"
 "Generated-By: Babel 2.9.1\n"
 
 msgid "{application_name} is already running"
 msgstr "{application_name} è già in esecuzione"
+
+msgid "Retrieving 1 message"
+msgid_plural "Retrieving {message_count} messages"
+msgstr[0] "Recupero di 1 messaggio"
+msgstr[1] "Recupero di {message_count} messaggi"
 
 msgid "The SecureDrop server cannot be reached. Trying to reconnect..."
 msgstr "Impossibile raggiungere il sevrer SecureDrop. Nuovo tentativo di connessione in corso..."
@@ -35,14 +40,14 @@ msgid ""
 "Those credentials didn't work. Please try again, and \n"
 "make sure to use a new two-factor code."
 msgstr ""
-"Quelle credenziali non funzionano. Riprovare, e \n"
+"Le credenziali non funzionano. Riprovare, e \n"
 "assicurarsi di usare un nuovo codice a due fattori."
 
 msgid "That didn't work. Please check everything and try again."
-msgstr ""
+msgstr "Qualcosa non ha funzionato. Verificare tutto e riprovare."
 
 msgid "You must sign in to perform this action."
-msgstr ""
+msgstr "Devi effettuare l'accesso per eseguire questa azione."
 
 msgid "Your session expired. Please log in again."
 msgstr "Sessione scaduta. Effettuare nuovamente l'accesso."
@@ -50,29 +55,56 @@ msgstr "Sessione scaduta. Effettuare nuovamente l'accesso."
 msgid "Failed to update star."
 msgstr ""
 
-msgid "Retrieving new messages"
-msgstr ""
-
 msgid "File does not exist in the data directory. Please try re-downloading."
-msgstr ""
+msgstr "Il file non esiste nella cartella dati. Prova a scaricarlo nuovamente."
 
 msgid "The file download failed. Please try again."
 msgstr "Scaricamento del file non riuscito. Riprovare."
 
 msgid "Failed to delete conversation at server"
-msgstr ""
+msgstr "Eliminazione della conversazione sul server non riuscita"
 
 msgid "Failed to delete source at server"
-msgstr ""
+msgstr "Eliminazione della fonte sul server non riuscita"
 
-msgid "Download All Files"
-msgstr "Scarica tutti i file"
+msgid "No messages."
+msgstr "Nessun messaggio."
+
+#, python-format
+msgid "%(sender)s wrote:"
+msgstr "%(sender)s ha scritto:"
+
+#, python-format
+msgid "%(sender)s sent:"
+msgstr "%(sender)s ha inviato:"
+
+#, python-format
+msgid "File: %(filename)s"
+msgstr "File: %(filename)s"
+
+msgid "Download All"
+msgstr "Scarica tutto"
 
 msgid "Delete Source Account"
-msgstr ""
+msgstr "Elimina l'account della fonte"
 
 msgid "Delete All Files and Messages"
+msgstr "Elimina tutti i file e i messaggi"
+
+msgid "Print Transcript"
+msgstr "Stampa trascrizione"
+
+msgid "Export Transcript"
+msgstr "Esporta trascrizione"
+
+msgid "Export All"
+msgstr "Esporta tutto"
+
+msgid "<h2>Some files will not be exported</h2>Some files from this source have not yet been downloaded, and will not be exported.<br /><br />To export the currently downloaded files, click \"Continue.\""
 msgstr ""
+
+msgid "all files and transcript"
+msgstr "tutti i file e la trascrizione"
 
 msgid "SecureDrop Client {}"
 msgstr "Client SecureDrop {}"
@@ -90,134 +122,148 @@ msgid "{}"
 msgstr "{}"
 
 msgid "SIGN OUT"
-msgstr ""
+msgstr "ESCI"
 
 msgid "SIGN IN"
-msgstr ""
+msgstr "ACCEDI"
 
 msgid "Nothing to see just yet!"
-msgstr ""
+msgstr "Non c'è ancora nulla da vedere!"
 
 msgid "Source submissions will be listed to the left, once downloaded and decrypted."
-msgstr ""
+msgstr "Gli invii della fonte verranno mostarti sulla sinistra, una volta scaricati e decifrati."
 
 msgid "This is where you will read messages, reply to sources, and work with files."
 msgstr ""
 
 msgid "Select a source from the list, to:"
-msgstr ""
+msgstr "Selezionare una fonte dall'elenco, per:"
 
 msgid "Read a conversation"
-msgstr ""
+msgstr "Leggere una conversazione"
 
 msgid "View or retrieve files"
-msgstr ""
+msgstr "Visualizzare o recuperare i file"
 
 msgid "Send a response"
-msgstr ""
+msgstr "Inviare una risposta"
 
-msgid "Deleting files and messages..."
-msgstr ""
+msgid "Deleting files and messages…"
+msgstr "Eliminazione in corso di file e messaggi…"
 
-msgid "Deleting source account..."
-msgstr ""
+msgid "Deleting source account…"
+msgstr "Eliminazione in corso dell'account della fonte…"
 
 msgid "— All files and messages deleted for this source —"
-msgstr ""
+msgstr "— Tutti i file e i messaggi eliminati per questa fonte —"
 
 msgid "Failed to send"
-msgstr ""
+msgstr "Invio non riuscito"
 
 msgid " DOWNLOAD"
-msgstr ""
+msgstr " SCARICA"
 
 msgid "EXPORT"
-msgstr ""
+msgstr "ESPORTA"
 
 msgid "PRINT"
-msgstr ""
+msgstr "STAMPA"
 
 msgid "ENCRYPTED FILE ON SERVER"
-msgstr ""
+msgstr "FILE CIFRATO SUL SERVER"
 
 msgid "DOWNLOAD"
-msgstr ""
+msgstr "SCARICA"
 
 msgid " DOWNLOADING "
-msgstr ""
+msgstr " SCARICAMENTO IN CORSO "
 
 msgid "Earlier files and messages deleted."
-msgstr ""
+msgstr "File e messaggi predecenti eliminati."
 
 msgid ""
 "Files and messages deleted\n"
 " for this source"
 msgstr ""
+"File e messaggi eliminati\n"
+" per questa fonte"
 
 msgid "Compose a reply to "
-msgstr ""
+msgstr "Rispondere a "
 
 msgid "Awaiting encryption key"
-msgstr ""
+msgstr "In attesa della chiave di cifratura"
 
 msgid " from server to enable replies"
-msgstr ""
+msgstr " dal server per abilitare le risposte"
 
 msgid "Sign in"
-msgstr ""
+msgstr "Accedi"
 
 msgid " to compose or send a reply"
-msgstr ""
+msgstr " per scrivere o inviare una risposta"
+
+msgid "FILES AND MESSAGES"
+msgstr "FILE E MESSAGGI"
+
+msgid "SOURCE ACCOUNT"
+msgstr "ACCOUNT DELLA FONTE"
 
 msgid "Username"
-msgstr ""
+msgstr "Nome utente"
 
 msgid "Passphrase"
-msgstr ""
+msgstr "Passphrase"
 
 msgid "Two-Factor Code"
-msgstr ""
+msgstr "Codice a due fattori"
 
 msgid "SecureDrop Client v{}"
-msgstr ""
+msgstr "Client SecureDrop v{}"
 
 msgid ""
 "That username won't work.\n"
 "It should be at least 3 characters long."
 msgstr ""
+"Il nome utente non è valido.\n"
+"Deve avere una lunghezza di almeno 3 caratteri."
 
 msgid ""
 "That passphrase won't work.\n"
 "It should be between 14 and 128 characters long."
 msgstr ""
+"La passphrase non è valida.\n"
+"Deve avere una lunghezza compresa tra 14 e 128 caratteri."
 
 msgid ""
 "That two-factor code won't work.\n"
 "It should only contain numerals."
 msgstr ""
+"Il codice a due fattori non è valido.\n"
+"Deve contenere solo numeri."
 
 msgid "SIGNING IN"
-msgstr ""
+msgstr "ACCESSO IN CORSO"
 
 msgid "Please enter a username, passphrase and two-factor code."
-msgstr ""
+msgstr "Inserire un nome utente, una passphrase e un codice a due fattori."
 
 msgid "USE OFFLINE"
-msgstr ""
+msgstr "USA OFFLINE"
 
 msgid "Show Passphrase"
-msgstr ""
+msgstr "Mostra passphrase"
 
 msgid "CANCEL"
-msgstr ""
+msgstr "ANNULLA"
 
 msgid "CONTINUE"
-msgstr ""
+msgstr "CONTINUA"
 
 msgid "YES, DELETE FILES AND MESSAGES"
-msgstr ""
+msgstr "SI, ELIMINA FILE E MESSAGGI"
 
-msgid "You would like to delete {files_to_delete}, {replies_to_delete}, {messages_to_delete} from the source account for {source}?"
+msgid "Would you like to delete {files_to_delete}, {replies_to_delete}, {messages_to_delete} from the source account for {source}?"
 msgstr ""
 
 msgid "Preserving the account will retain its metadata, and the ability for {source} to log in to your SecureDrop again."
@@ -225,18 +271,21 @@ msgstr ""
 
 msgid "one file"
 msgid_plural "{file_count} files"
-msgstr[0] ""
-msgstr[1] ""
+msgstr[0] "un file"
+msgstr[1] "{file_count} file"
 
 msgid "one reply"
 msgid_plural "{reply_count} replies"
-msgstr[0] ""
-msgstr[1] ""
+msgstr[0] "una risposta"
+msgstr[1] "{reply_count} risposte"
 
 msgid "one message"
 msgid_plural "{message_count} messages"
-msgstr[0] ""
-msgstr[1] ""
+msgstr[0] "un messaggio"
+msgstr[1] "{message_count} messaggi"
+
+msgid "SUBMIT"
+msgstr "INVIA"
 
 msgid "Preparing to export:<br /><span style=\"font-weight:normal\">{}</span>"
 msgstr ""
@@ -251,16 +300,16 @@ msgid "Enter passphrase for USB drive"
 msgstr ""
 
 msgid "Export successful"
-msgstr ""
+msgstr "Esportazione avvenuta con successo"
 
 msgid "Export failed"
-msgstr ""
+msgstr "Esportazione non riuscita"
 
 msgid "<h2>Understand the risks before exporting files</h2><b>Malware</b><br />This workstation lets you open files securely. If you open files on another computer, any embedded malware may spread to your computer or network. If you are unsure how to manage this risk, please print the file, or contact your administrator.<br /><br /><b>Anonymity</b><br />Files submitted by sources may contain information or hidden metadata that identifies who they are. To protect your sources, please consider redacting files before working with them on network-connected computers."
 msgstr ""
 
 msgid "Exporting: {}"
-msgstr ""
+msgstr "Esportazione: {}"
 
 msgid "Please insert one of the export drives provisioned specifically for the SecureDrop Workstation."
 msgstr ""
@@ -274,13 +323,7 @@ msgstr ""
 msgid "See your administrator for help."
 msgstr ""
 
-msgid "The CONTINUE button will be disabled until the Export VM is ready"
-msgstr ""
-
 msgid "Remember to be careful when working with files outside of your Workstation machine."
-msgstr ""
-
-msgid "SUBMIT"
 msgstr ""
 
 msgid "DONE"
@@ -308,7 +351,7 @@ msgid "YES, DELETE ENTIRE SOURCE ACCOUNT"
 msgstr ""
 
 msgid "Are you sure this is what you want?"
-msgstr ""
+msgstr "Procedere veramente con questa scelta?"
 
 msgid "When the entire account for a source is deleted:"
 msgstr ""
@@ -320,4 +363,13 @@ msgid "Your organization will not be able to send them replies."
 msgstr ""
 
 msgid "All files and messages from that source will also be destroyed."
-msgstr ""
+msgstr "Anche tutti i file e i messaggi inviati da quella fonte verranno distrutti."
+
+#~ msgid "Deleting files and messages..."
+#~ msgstr "Eliminare file e messaggi..."
+
+#~ msgid "Deleting source account..."
+#~ msgstr "Eliminare gli account delle fonti..."
+
+#~ msgid "Download All Files"
+#~ msgstr "Scarica tutti i file"
