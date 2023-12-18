@@ -7,19 +7,25 @@ msgid ""
 msgstr ""
 "Project-Id-Version: SecureDrop Client 0.5.0\n"
 "Report-Msgid-Bugs-To: securedrop@freedom.press\n"
-"PO-Revision-Date: 2022-05-18 11:11+0000\n"
-"Last-Translator: Igor K. <igorkrainovic@gmail.com>\n"
+"PO-Revision-Date: 2023-10-14 20:30+0000\n"
+"Last-Translator: \"Igor K.\" <igorkrainovic@gmail.com>\n"
 "Language-Team: Croatian <https://weblate.securedrop.org/projects/securedrop/securedrop-client/hr/>\n"
 "Language: hr\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=3; plural=n%10==1 && n%100!=11 ? 0 : n%10>=2 && n%10<=4 && (n%100<10 || n%100>=20) ? 1 : 2;\n"
-"X-Generator: Weblate 4.11.2\n"
+"X-Generator: Weblate 4.18.2\n"
 "Generated-By: Babel 2.9.1\n"
 
 msgid "{application_name} is already running"
 msgstr "Aplikacija {application_name} je već pokrenuta"
+
+msgid "Retrieving 1 message"
+msgid_plural "Retrieving {message_count} messages"
+msgstr[0] "Preuzimanje jedne poruke"
+msgstr[1] "Preuzimanje {message_count} poruka"
+msgstr[2] "Preuzimanje {message_count} poruka"
 
 msgid "The SecureDrop server cannot be reached. Trying to reconnect..."
 msgstr "Nije moguće doći do SecureDrop poslužitelja. Pokušavam se spojiti..."
@@ -50,9 +56,6 @@ msgstr "Vaša sesija je istekla. Prijavite se opet."
 msgid "Failed to update star."
 msgstr "Nije uspjelo ažuriranje zvijezdice."
 
-msgid "Retrieving new messages"
-msgstr "Dohvaćanje novih poruka"
-
 msgid "File does not exist in the data directory. Please try re-downloading."
 msgstr "Datoteka ne postoji u direktoriju. Pokušajte ponovno preuzimanje."
 
@@ -65,20 +68,44 @@ msgstr "Nije uspjelo brisanje razgovora na poslužitelju"
 msgid "Failed to delete source at server"
 msgstr "Nije uspjelo brisanje izvora na poslužitelju"
 
-#, fuzzy
-#| msgid "All Files"
-msgid "Download All Files"
-msgstr "Sve datoteke"
+msgid "No messages."
+msgstr "Nema poruka."
 
-#, fuzzy
-#| msgid "Deleting source account..."
+#, python-format
+msgid "%(sender)s wrote:"
+msgstr "%(sender)s je napisao/la:"
+
+#, python-format
+msgid "%(sender)s sent:"
+msgstr "%(sender)s je poslao/la:"
+
+#, python-format
+msgid "File: %(filename)s"
+msgstr "Datoteka: %(filename)s"
+
+msgid "Download All"
+msgstr "Preuzmi sve"
+
 msgid "Delete Source Account"
-msgstr "Brišem račun izvora..."
+msgstr "Obriši račun izvora"
 
-#, fuzzy
-#| msgid "Deleting files and messages..."
 msgid "Delete All Files and Messages"
-msgstr "Brišem datoteke i poruke..."
+msgstr "Izbriši sve datoteke i poruke"
+
+msgid "Print Transcript"
+msgstr "Ispiši prijepis"
+
+msgid "Export Transcript"
+msgstr "Izvezi prijepis"
+
+msgid "Export All"
+msgstr "Izvezi sve"
+
+msgid "<h2>Some files will not be exported</h2>Some files from this source have not yet been downloaded, and will not be exported.<br /><br />To export the currently downloaded files, click \"Continue.\""
+msgstr "<h2>Neke datoteke neće biti izvezene</h2>Neke datoteke iz ovog izvora još nisu preuzete i neće biti izvezene.<br /><br />Za izvoz trenutno preuzetih datoteka kliknite \"Nastavi.\""
+
+msgid "all files and transcript"
+msgstr "sve datoteke i prijepis"
 
 msgid "SecureDrop Client {}"
 msgstr "SecureDrop klijent{}"
@@ -122,11 +149,11 @@ msgstr "Pogledali ili dohvatili datoteke"
 msgid "Send a response"
 msgstr "Poslali odgovor"
 
-msgid "Deleting files and messages..."
-msgstr "Brišem datoteke i poruke..."
+msgid "Deleting files and messages…"
+msgstr "Brisanje datoteka i poruka …"
 
-msgid "Deleting source account..."
-msgstr "Brišem račun izvora..."
+msgid "Deleting source account…"
+msgstr "Brisanje računa izvora …"
 
 msgid "— All files and messages deleted for this source —"
 msgstr "— Sve datoteke i poruke obrisane za ovaj izvor —"
@@ -177,6 +204,12 @@ msgstr "Prijava"
 msgid " to compose or send a reply"
 msgstr " kako bi napisao ili poslao odgovor"
 
+msgid "FILES AND MESSAGES"
+msgstr "DATOTEKE I PORUKE"
+
+msgid "SOURCE ACCOUNT"
+msgstr "RAČUN IZVORA"
+
 msgid "Username"
 msgstr "Korisničko ime"
 
@@ -219,22 +252,20 @@ msgstr "Molimo unesite korisničko ime, lozinku i dvofaktorski kod."
 msgid "USE OFFLINE"
 msgstr "Koristi offline"
 
-#, fuzzy
-#| msgid "Passphrase"
 msgid "Show Passphrase"
-msgstr "Lozinka"
+msgstr "Pokaži lozinku"
 
 msgid "CANCEL"
 msgstr "Otkaži"
 
 msgid "CONTINUE"
-msgstr "Nastavi"
+msgstr "NASTAVI"
 
 msgid "YES, DELETE FILES AND MESSAGES"
 msgstr "Da, obriši datoteke i poruke"
 
-msgid "You would like to delete {files_to_delete}, {replies_to_delete}, {messages_to_delete} from the source account for {source}?"
-msgstr "Želite obrisati {files_to_delete}, {replies_to_delete}, {messages_to_delete} od izvora {source}?"
+msgid "Would you like to delete {files_to_delete}, {replies_to_delete}, {messages_to_delete} from the source account for {source}?"
+msgstr "Želite li izbrisati {files_to_delete}, {replies_to_delete}, {messages_to_delete} s računa izvora za {source}?"
 
 msgid "Preserving the account will retain its metadata, and the ability for {source} to log in to your SecureDrop again."
 msgstr "Očuvanje računa će zadržati njegove metapodatke i mogućnost da se {source} ponovno prijavi na Vaš SecureDrop."
@@ -256,6 +287,9 @@ msgid_plural "{message_count} messages"
 msgstr[0] "jedna poruka"
 msgstr[1] "{message_count} poruke"
 msgstr[2] "{message_count} poruka"
+
+msgid "SUBMIT"
+msgstr "POŠALJI"
 
 msgid "Preparing to export:<br /><span style=\"font-weight:normal\">{}</span>"
 msgstr "Priprema za izvoz:<br /><span style=\"font-weight:normal\">{}</span>"
@@ -293,14 +327,8 @@ msgstr "Dana lozinka ne radi. Molimo pokušajte opet."
 msgid "See your administrator for help."
 msgstr "Obratite se administratoru za pomoć."
 
-msgid "The CONTINUE button will be disabled until the Export VM is ready"
-msgstr "Gumb Nastavi će biti onemogućen sve dok Izvoz VM-a nije spreman"
-
 msgid "Remember to be careful when working with files outside of your Workstation machine."
 msgstr "Zapamtite - budite oprezni kad radite s datotekama izvan svoje radne stanice."
-
-msgid "SUBMIT"
-msgstr "Predaj"
 
 msgid "DONE"
 msgstr "Gotovo"
@@ -340,6 +368,21 @@ msgstr "Vaša organizacija mu neće moći slati odgovore."
 
 msgid "All files and messages from that source will also be destroyed."
 msgstr "Sve datoteke i poruke tog izvora će također biti uništene."
+
+#~ msgid "You would like to delete {files_to_delete}, {replies_to_delete}, {messages_to_delete} from the source account for {source}?"
+#~ msgstr "Želite obrisati {files_to_delete}, {replies_to_delete}, {messages_to_delete} od izvora {source}?"
+
+#~ msgid "Deleting files and messages..."
+#~ msgstr "Brišem datoteke i poruke..."
+
+#~ msgid "Deleting source account..."
+#~ msgstr "Brišem račun izvora..."
+
+#~ msgid "Download All Files"
+#~ msgstr "Preuzmi sve datoteke"
+
+#~ msgid "The CONTINUE button will be disabled until the Export VM is ready"
+#~ msgstr "Gumb Nastavi će biti onemogućen sve dok Izvoz VM-a nije spreman"
 
 #~ msgid "Entire source account"
 #~ msgstr "Cijeli račun izvora"

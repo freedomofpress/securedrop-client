@@ -7,19 +7,25 @@ msgid ""
 msgstr ""
 "Project-Id-Version: SecureDrop Client 0.6.0\n"
 "Report-Msgid-Bugs-To: securedrop@freedom.press\n"
-"PO-Revision-Date: 2022-05-19 21:11+0000\n"
-"Last-Translator: Andrey <andrey@mailbox.org>\n"
+"PO-Revision-Date: 2023-10-15 16:30+0000\n"
+"Last-Translator: Alexey Peschany <securedrop@sandboiii.xyz>\n"
 "Language-Team: Russian <https://weblate.securedrop.org/projects/securedrop/securedrop-client/ru/>\n"
 "Language: ru\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=3; plural=n%10==1 && n%100!=11 ? 0 : n%10>=2 && n%10<=4 && (n%100<10 || n%100>=20) ? 1 : 2;\n"
-"X-Generator: Weblate 4.11.2\n"
+"X-Generator: Weblate 4.18.2\n"
 "Generated-By: Babel 2.9.1\n"
 
 msgid "{application_name} is already running"
 msgstr "{application_name} уже запущено"
+
+msgid "Retrieving 1 message"
+msgid_plural "Retrieving {message_count} messages"
+msgstr[0] "Получаю 1 сообщение"
+msgstr[1] "Получаю {message_count} сообщения"
+msgstr[2] "Получаю {message_count} сообщений"
 
 msgid "The SecureDrop server cannot be reached. Trying to reconnect..."
 msgstr "С сервером SecureDrop не удается связаться. Попытка повторного подключения..."
@@ -50,9 +56,6 @@ msgstr "Ваша сессия истекла. Пожалуйста, автори
 msgid "Failed to update star."
 msgstr "Ошибка добавления в избранное."
 
-msgid "Retrieving new messages"
-msgstr "Получение новых сообщений"
-
 msgid "File does not exist in the data directory. Please try re-downloading."
 msgstr "Файл не существует в каталоге данных. Попробуйте повторить загрузку."
 
@@ -65,20 +68,44 @@ msgstr "Не удалось удалить беседу на сервере"
 msgid "Failed to delete source at server"
 msgstr "Не удалось удалить источник на сервере"
 
-#, fuzzy
-#| msgid "All Files"
-msgid "Download All Files"
-msgstr "Все файлы"
+msgid "No messages."
+msgstr "Нет сообщений."
 
-#, fuzzy
-#| msgid "Deleting source account..."
+#, python-format
+msgid "%(sender)s wrote:"
+msgstr "%(sender)s написал:"
+
+#, python-format
+msgid "%(sender)s sent:"
+msgstr "%(sender)s отправил:"
+
+#, python-format
+msgid "File: %(filename)s"
+msgstr "Файл: %(filename)s"
+
+msgid "Download All"
+msgstr "Скачать все"
+
 msgid "Delete Source Account"
-msgstr "Удаление исходного аккаунта..."
+msgstr "Удалить исходный аккаунт"
 
-#, fuzzy
-#| msgid "Deleting files and messages..."
 msgid "Delete All Files and Messages"
-msgstr "Удаление файлов и сообщений..."
+msgstr "Удалить все файлы и сообщения"
+
+msgid "Print Transcript"
+msgstr "Напечатать транскрипцию"
+
+msgid "Export Transcript"
+msgstr "Экспортировать транскрипцию"
+
+msgid "Export All"
+msgstr "Экспортировать все"
+
+msgid "<h2>Some files will not be exported</h2>Some files from this source have not yet been downloaded, and will not be exported.<br /><br />To export the currently downloaded files, click \"Continue.\""
+msgstr "<h2>Некоторые файлы не будут экспортированы</h2>Некоторые файлы из этого источника ещё не были загружены, и не будут экспортированы.<br /><br />Чтобы экспортировать уже загруженные файлы, нажмите \"Продолжить.\""
+
+msgid "all files and transcript"
+msgstr "все файлы и транскрипции"
 
 msgid "SecureDrop Client {}"
 msgstr "Клиент SecureDrop {}"
@@ -122,11 +149,11 @@ msgstr "Просмотр или получение файлов"
 msgid "Send a response"
 msgstr "Отправить ответ"
 
-msgid "Deleting files and messages..."
-msgstr "Удаление файлов и сообщений..."
+msgid "Deleting files and messages…"
+msgstr "Удаляю файлы и сообщения…"
 
-msgid "Deleting source account..."
-msgstr "Удаление исходного аккаунта..."
+msgid "Deleting source account…"
+msgstr "Удаляю аккаунт источника…"
 
 msgid "— All files and messages deleted for this source —"
 msgstr "— Все файлы и сообщения удалены для этого источника —"
@@ -176,6 +203,12 @@ msgstr "Вход"
 
 msgid " to compose or send a reply"
 msgstr " для написания или отправки ответа"
+
+msgid "FILES AND MESSAGES"
+msgstr "ФАЙЛЫ И СООБЩЕНИЯ"
+
+msgid "SOURCE ACCOUNT"
+msgstr ""
 
 msgid "Username"
 msgstr "Имя пользователя"
@@ -231,8 +264,8 @@ msgstr "ПРОДОЛЖИТЬ"
 msgid "YES, DELETE FILES AND MESSAGES"
 msgstr "ДА, УДАЛИТЬ ФАЙЛЫ И СООБЩЕНИЯ"
 
-msgid "You would like to delete {files_to_delete}, {replies_to_delete}, {messages_to_delete} from the source account for {source}?"
-msgstr "Вы хотите удалить {files_to_delete}, {replies_to_delete}, {messages_to_delete} из учетной записи источника для {source}?"
+msgid "Would you like to delete {files_to_delete}, {replies_to_delete}, {messages_to_delete} from the source account for {source}?"
+msgstr ""
 
 msgid "Preserving the account will retain its metadata, and the ability for {source} to log in to your SecureDrop again."
 msgstr "При сохранении учетной записи ее метаданные будут сохранены, и {source} сможет снова авторизоваться в SecureDrop."
@@ -254,6 +287,9 @@ msgid_plural "{message_count} messages"
 msgstr[0] "{message_count} сообщение"
 msgstr[1] "{message_count} сообщения"
 msgstr[2] "{message_count} сообщений"
+
+msgid "SUBMIT"
+msgstr "ОТПРАВИТЬ"
 
 msgid "Preparing to export:<br /><span style=\"font-weight:normal\">{}</span>"
 msgstr "Подготовка к экспорту:<br /><span style=\"font-weight:normal\">{}</span>"
@@ -291,14 +327,8 @@ msgstr "Введенный пароль не сработал. Пожалуйс�
 msgid "See your administrator for help."
 msgstr "Обратитесь за помощью к вашему администратору."
 
-msgid "The CONTINUE button will be disabled until the Export VM is ready"
-msgstr "Кнопка ПРОДОЛЖИТЬ будет отключена до тех пор, пока экспортируемая виртуальная машина не будет готова"
-
 msgid "Remember to be careful when working with files outside of your Workstation machine."
 msgstr "Помните, что нужно проявлять осторожность при работе с файлами за пределами вашей рабочей станции."
-
-msgid "SUBMIT"
-msgstr "ОТПРАВИТЬ"
 
 msgid "DONE"
 msgstr "ГОТОВО"
@@ -338,6 +368,23 @@ msgstr "Ваша организация не сможет отправлять �
 
 msgid "All files and messages from that source will also be destroyed."
 msgstr "Все файлы и сообщения источника будут очищены."
+
+#~ msgid "You would like to delete {files_to_delete}, {replies_to_delete}, {messages_to_delete} from the source account for {source}?"
+#~ msgstr "Вы хотите удалить {files_to_delete}, {replies_to_delete}, {messages_to_delete} из учетной записи источника для {source}?"
+
+#~ msgid "Deleting files and messages..."
+#~ msgstr "Удаление файлов и сообщений..."
+
+#~ msgid "Deleting source account..."
+#~ msgstr "Удаление исходного аккаунта..."
+
+#, fuzzy
+#~| msgid "All Files"
+#~ msgid "Download All Files"
+#~ msgstr "Все файлы"
+
+#~ msgid "The CONTINUE button will be disabled until the Export VM is ready"
+#~ msgstr "Кнопка ПРОДОЛЖИТЬ будет отключена до тех пор, пока экспортируемая виртуальная машина не будет готова"
 
 #~ msgid "Entire source account"
 #~ msgstr "Весь исходный аккаунт"

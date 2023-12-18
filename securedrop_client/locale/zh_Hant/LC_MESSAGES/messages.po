@@ -1,375 +1,362 @@
 # Translations template for SecureDrop Client.
-# Copyright (C) 2022 Freedom of the Press Foundation
+# Copyright (C) 2023 Freedom of the Press Foundation
 # This file is distributed under the same license as the SecureDrop Client project.
-# FIRST AUTHOR <EMAIL@ADDRESS>, 2022.
+# FIRST AUTHOR <EMAIL@ADDRESS>, 2023.
 #
 msgid ""
 msgstr ""
-"Project-Id-Version: SecureDrop Client 0.7.0\n"
+"Project-Id-Version: SecureDrop Client 0.9.0\n"
 "Report-Msgid-Bugs-To: securedrop@freedom.press\n"
-"PO-Revision-Date: 2023-10-31 18:30+0000\n"
-"Last-Translator: Claudio Arseni <claudio.arseni@ubuntu.com>\n"
-"Language-Team: Italian <https://weblate.securedrop.org/projects/securedrop/securedrop-client/it/>\n"
-"Language: it\n"
+"PO-Revision-Date: 2023-10-26 02:30+0000\n"
+"Last-Translator: Chi-Hsun Tsai <chihsun.tsai@gmail.com>\n"
+"Language-Team: Chinese (Traditional) <https://weblate.securedrop.org/projects/securedrop/securedrop-client/zh_Hant/>\n"
+"Language: zh_Hant\n"
 "MIME-Version: 1.0\n"
-"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"Plural-Forms: nplurals=2; plural=n != 1;\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
 "X-Generator: Weblate 4.18.2\n"
-"Generated-By: Babel 2.9.1\n"
+"Generated-By: Babel 2.12.1\n"
 
 msgid "{application_name} is already running"
-msgstr "{application_name} è già in esecuzione"
+msgstr "{application_name} 已在運行"
 
 msgid "Retrieving 1 message"
 msgid_plural "Retrieving {message_count} messages"
-msgstr[0] "Recupero di 1 messaggio"
-msgstr[1] "Recupero di {message_count} messaggi"
+msgstr[0] "接收{message_count} 訊息"
 
 msgid "The SecureDrop server cannot be reached. Trying to reconnect..."
-msgstr "Impossibile raggiungere il sevrer SecureDrop. Nuovo tentativo di connessione in corso..."
+msgstr "無法連接 SecureDrop 伺服器，嘗試重新連接...."
 
 msgid ""
 "Could not reach the SecureDrop server. Please check your \n"
 "Internet and Tor connection and try again."
 msgstr ""
-"Impossibile raggiungere il server SecureDrop. Verificare la propria \n"
-"connessione a Internet e a Tor, quindi riprovare."
+"無法連上 SecureDrop 伺服器，請檢查網際網路\n"
+"與 Tor 連線狀態後再試試。"
 
 msgid ""
 "Those credentials didn't work. Please try again, and \n"
 "make sure to use a new two-factor code."
 msgstr ""
-"Le credenziali non funzionano. Riprovare, e \n"
-"assicurarsi di usare un nuovo codice a due fattori."
+"這些憑證無效，請重試一遍，\n"
+"並確認使用新的雙因素驗證碼。"
 
 msgid "That didn't work. Please check everything and try again."
-msgstr "Qualcosa non ha funzionato. Verificare tutto e riprovare."
+msgstr "此為無效，請檢查後再重試。"
 
 msgid "You must sign in to perform this action."
-msgstr "Devi effettuare l'accesso per eseguire questa azione."
+msgstr "須先登錄方能進行此動作。"
 
 msgid "Your session expired. Please log in again."
-msgstr "Sessione scaduta. Effettuare nuovamente l'accesso."
+msgstr "期效已過，請重新登錄。"
 
 msgid "Failed to update star."
-msgstr ""
+msgstr "更新失敗的星號。"
 
 msgid "File does not exist in the data directory. Please try re-downloading."
-msgstr "Il file non esiste nella cartella dati. Prova a scaricarlo nuovamente."
+msgstr "資料目錄中無檔案，請試著重新下載。"
 
 msgid "The file download failed. Please try again."
-msgstr "Scaricamento del file non riuscito. Riprovare."
+msgstr "檔案下載失敗，請重試。"
 
 msgid "Failed to delete conversation at server"
-msgstr "Eliminazione della conversazione sul server non riuscita"
+msgstr "無法刪除伺服器上的對話"
 
 msgid "Failed to delete source at server"
-msgstr "Eliminazione della fonte sul server non riuscita"
+msgstr "無法刪除伺服器上的消息來源"
 
 msgid "No messages."
-msgstr "Nessun messaggio."
+msgstr "無訊息。"
 
 #, python-format
 msgid "%(sender)s wrote:"
-msgstr "%(sender)s ha scritto:"
+msgstr "%(sender) 寫道:"
 
 #, python-format
 msgid "%(sender)s sent:"
-msgstr "%(sender)s ha inviato:"
+msgstr "%(發訊者) 送出:"
 
 #, python-format
 msgid "File: %(filename)s"
-msgstr "File: %(filename)s"
+msgstr "檔案: %%(filename)"
 
 msgid "Download All"
-msgstr "Scarica tutto"
+msgstr "全部下載"
 
 msgid "Delete Source Account"
-msgstr "Elimina l'account della fonte"
+msgstr "刪除線人帳戶"
 
 msgid "Delete All Files and Messages"
-msgstr "Elimina tutti i file e i messaggi"
+msgstr "刪除全部的檔案與訊息"
 
 msgid "Print Transcript"
-msgstr "Stampa trascrizione"
+msgstr "列印記錄文本"
 
 msgid "Export Transcript"
-msgstr "Esporta trascrizione"
+msgstr "滙出記錄文"
 
 msgid "Export All"
-msgstr "Esporta tutto"
+msgstr "滙出全部"
 
 msgid "<h2>Some files will not be exported</h2>Some files from this source have not yet been downloaded, and will not be exported.<br /><br />To export the currently downloaded files, click \"Continue.\""
-msgstr ""
+msgstr "<h2>某些檔案不會匯出</h2>尚未完整下載這名線人的檔案，故不會匯出。<br /><br />欲匯出目前下載的檔案，請按“繼續”"
 
 msgid "all files and transcript"
-msgstr "tutti i file e la trascrizione"
+msgstr "所有的檔案與記錄"
 
 msgid "SecureDrop Client {}"
-msgstr "Client SecureDrop {}"
+msgstr "SecureDrop 客戶端 {}"
 
 msgid "Quit"
-msgstr "Esci"
+msgstr "停止"
 
 msgid "Last Refresh: {}"
-msgstr "Ultimo aggiornamento: {}"
+msgstr "近期重新整理: {}"
 
 msgid "Last Refresh: never"
-msgstr "Ultimo aggiornamento: mai"
+msgstr "上一回重新整理: 尚無"
 
 msgid "{}"
 msgstr "{}"
 
 msgid "SIGN OUT"
-msgstr "ESCI"
+msgstr "登出"
 
 msgid "SIGN IN"
-msgstr "ACCEDI"
+msgstr "登錄"
 
 msgid "Nothing to see just yet!"
-msgstr "Non c'è ancora nulla da vedere!"
+msgstr "尚無東西可看!"
 
 msgid "Source submissions will be listed to the left, once downloaded and decrypted."
-msgstr "Gli invii della fonte verranno mostarti sulla sinistra, una volta scaricati e decifrati."
+msgstr "一旦下載或解密線人提交，就會列入至左側。"
 
 msgid "This is where you will read messages, reply to sources, and work with files."
-msgstr ""
+msgstr "這處可讀取訊息、回覆與使用檔案。"
 
 msgid "Select a source from the list, to:"
-msgstr "Selezionare una fonte dall'elenco, per:"
+msgstr "從列表中選取線人至:"
 
 msgid "Read a conversation"
-msgstr "Leggere una conversazione"
+msgstr "讀取對話"
 
 msgid "View or retrieve files"
-msgstr "Visualizzare o recuperare i file"
+msgstr "檢視或取回檔案"
 
 msgid "Send a response"
-msgstr "Inviare una risposta"
+msgstr "發送回應"
 
 msgid "Deleting files and messages…"
-msgstr "Eliminazione in corso di file e messaggi…"
+msgstr "刪除檔案與訊息…"
 
 msgid "Deleting source account…"
-msgstr "Eliminazione in corso dell'account della fonte…"
+msgstr "刪除線人帳戶…"
 
 msgid "— All files and messages deleted for this source —"
-msgstr "— Tutti i file e i messaggi eliminati per questa fonte —"
+msgstr "— 刪除此名線人的全部檔案和訊息 —"
 
 msgid "Failed to send"
-msgstr "Invio non riuscito"
+msgstr "無法發送"
 
 msgid " DOWNLOAD"
-msgstr " SCARICA"
+msgstr " 下載"
 
 msgid "EXPORT"
-msgstr "ESPORTA"
+msgstr "滙出"
 
 msgid "PRINT"
-msgstr "STAMPA"
+msgstr "列印"
 
 msgid "ENCRYPTED FILE ON SERVER"
-msgstr "FILE CIFRATO SUL SERVER"
+msgstr "伺服器上的加密檔案"
 
 msgid "DOWNLOAD"
-msgstr "SCARICA"
+msgstr "下載"
 
 msgid " DOWNLOADING "
-msgstr " SCARICAMENTO IN CORSO "
+msgstr " 下載 "
 
 msgid "Earlier files and messages deleted."
-msgstr "File e messaggi predecenti eliminati."
+msgstr "早先刪除的檔案與訊息。"
 
 msgid ""
 "Files and messages deleted\n"
 " for this source"
 msgstr ""
-"File e messaggi eliminati\n"
-" per questa fonte"
+"此名線人\n"
+"檔案與訊息已刪除"
 
 msgid "Compose a reply to "
-msgstr "Rispondere a "
+msgstr "撰寫回覆給: "
 
 msgid "Awaiting encryption key"
-msgstr "In attesa della chiave di cifratura"
+msgstr "等待加密密鑰"
 
 msgid " from server to enable replies"
-msgstr " dal server per abilitare le risposte"
+msgstr " 從伺服器上開啟回覆"
 
 msgid "Sign in"
-msgstr "Accedi"
+msgstr "登錄"
 
 msgid " to compose or send a reply"
-msgstr " per scrivere o inviare una risposta"
+msgstr " 欲撰寫或發送回覆"
 
 msgid "FILES AND MESSAGES"
-msgstr "FILE E MESSAGGI"
+msgstr "檔案與訊息"
 
 msgid "SOURCE ACCOUNT"
-msgstr "ACCOUNT DELLA FONTE"
+msgstr "線人帳戶"
 
 msgid "Username"
-msgstr "Nome utente"
+msgstr "用戶名"
 
 msgid "Passphrase"
-msgstr "Passphrase"
+msgstr "密語"
 
 msgid "Two-Factor Code"
-msgstr "Codice a due fattori"
+msgstr "雙因素驗證碼"
 
 msgid "SecureDrop Client v{}"
-msgstr "Client SecureDrop v{}"
+msgstr "SecureDrop 客戶端版本{}"
 
 msgid ""
 "That username won't work.\n"
 "It should be at least 3 characters long."
 msgstr ""
-"Il nome utente non è valido.\n"
-"Deve avere una lunghezza di almeno 3 caratteri."
+"此用戶名無效。\n"
+"至少須 3 個字元。"
 
 msgid ""
 "That passphrase won't work.\n"
 "It should be between 14 and 128 characters long."
 msgstr ""
-"La passphrase non è valida.\n"
-"Deve avere una lunghezza compresa tra 14 e 128 caratteri."
+"此密語無效\n"
+"密語須介於 14 ~ 128 字元長度。"
 
 msgid ""
 "That two-factor code won't work.\n"
 "It should only contain numerals."
 msgstr ""
-"Il codice a due fattori non è valido.\n"
-"Deve contenere solo numeri."
+"雙因素驗證無效。\n"
+"其應該只有數字。"
 
 msgid "SIGNING IN"
-msgstr "ACCESSO IN CORSO"
+msgstr "登錄"
 
 msgid "Please enter a username, passphrase and two-factor code."
-msgstr "Inserire un nome utente, una passphrase e un codice a due fattori."
+msgstr "請輸入用名、密語與雙因素驗證碼。"
 
 msgid "USE OFFLINE"
-msgstr "USA OFFLINE"
+msgstr "離線使用"
 
 msgid "Show Passphrase"
-msgstr "Mostra passphrase"
+msgstr "顯示密語"
 
 msgid "CANCEL"
-msgstr "ANNULLA"
+msgstr "取消"
 
 msgid "CONTINUE"
-msgstr "CONTINUA"
+msgstr "繼續"
 
 msgid "YES, DELETE FILES AND MESSAGES"
-msgstr "SI, ELIMINA FILE E MESSAGGI"
+msgstr "確認刪除檔案與訊息"
 
 msgid "Would you like to delete {files_to_delete}, {replies_to_delete}, {messages_to_delete} from the source account for {source}?"
-msgstr ""
+msgstr "要刪除來自線人帳戶 {source}的全部{files_to_delete}, {replies_to_delete}, {messages_to_delete} 嗎？"
 
 msgid "Preserving the account will retain its metadata, and the ability for {source} to log in to your SecureDrop again."
-msgstr ""
+msgstr "保留帳戶將會留下中繼資料，也會讓{source}可再繼續登錄 SecureDrop。"
 
 msgid "one file"
 msgid_plural "{file_count} files"
-msgstr[0] "un file"
-msgstr[1] "{file_count} file"
+msgstr[0] "{file_count}檔案"
 
 msgid "one reply"
 msgid_plural "{reply_count} replies"
-msgstr[0] "una risposta"
-msgstr[1] "{reply_count} risposte"
+msgstr[0] "{reply_count}回覆"
 
 msgid "one message"
 msgid_plural "{message_count} messages"
-msgstr[0] "un messaggio"
-msgstr[1] "{message_count} messaggi"
+msgstr[0] "{message_count}訊息"
 
 msgid "SUBMIT"
-msgstr "INVIA"
+msgstr "提交"
 
 msgid "Preparing to export:<br /><span style=\"font-weight:normal\">{}</span>"
-msgstr ""
+msgstr "準備滙出:<br /><span style=\"font-weight:normal\">{}</span>"
 
 msgid "Ready to export:<br /><span style=\"font-weight:normal\">{}</span>"
-msgstr ""
+msgstr "已滙出:<br /><span style=\"font-weight:normal\">{}</span>"
 
 msgid "Insert encrypted USB drive"
-msgstr ""
+msgstr "插入加密的 USB 隨身碟"
 
 msgid "Enter passphrase for USB drive"
-msgstr ""
+msgstr "輸入 USB 隨身碟 的密語"
 
 msgid "Export successful"
-msgstr "Esportazione avvenuta con successo"
+msgstr "成功滙出"
 
 msgid "Export failed"
-msgstr "Esportazione non riuscita"
+msgstr "滙出失敗"
 
 msgid "<h2>Understand the risks before exporting files</h2><b>Malware</b><br />This workstation lets you open files securely. If you open files on another computer, any embedded malware may spread to your computer or network. If you are unsure how to manage this risk, please print the file, or contact your administrator.<br /><br /><b>Anonymity</b><br />Files submitted by sources may contain information or hidden metadata that identifies who they are. To protect your sources, please consider redacting files before working with them on network-connected computers."
-msgstr ""
+msgstr "<h2>匯出檔案前了解相關風險</h2><b>惡意軟體</b><br />此工作站可讓您安全地開啟檔案。 如果在另一台電腦上打開檔案，任何嵌入的惡意軟體都可能傳播到電腦或網路。 如果不確定如何管理此風險，請列印該文件，或聯絡管理員。<br /><br /><b>匿名性</b><br />線人提交的檔案可能有足以識別出他們是誰的資訊或隱藏元數據。 為了保護消息來源，請考慮在連網的電腦上使用檔案之前先對其進行編輯。"
 
 msgid "Exporting: {}"
-msgstr "Esportazione: {}"
+msgstr "滙出中: {}"
 
 msgid "Please insert one of the export drives provisioned specifically for the SecureDrop Workstation."
-msgstr ""
+msgstr "請接上專為 SecureDrop 工作站配置的匯出磁碟。"
 
 msgid "Either the drive is not encrypted or there is something else wrong with it."
-msgstr ""
+msgstr "該磁碟可能未加密，或存在其他問題。"
 
 msgid "The passphrase provided did not work. Please try again."
-msgstr ""
+msgstr "所提供的密語無效，請重試。"
 
 msgid "See your administrator for help."
-msgstr ""
+msgstr "聯絡求助管理員。"
 
 msgid "Remember to be careful when working with files outside of your Workstation machine."
-msgstr ""
+msgstr "記住在工作站以外的電腦上處理檔案時要小心。"
 
 msgid "DONE"
-msgstr ""
+msgstr "完成"
 
 msgid "Preparing to print:<br /><span style=\"font-weight:normal\">{}</span>"
-msgstr ""
+msgstr "準備列印:<br /><span style=\"font-weight:normal\">{}</span>"
 
 msgid "Ready to print:<br /><span style=\"font-weight:normal\">{}</span>"
-msgstr ""
+msgstr "已可列印:<br /><span style=\"font-weight:normal\">{}</span>"
 
 msgid "Connect USB printer"
-msgstr ""
+msgstr "連接 USB 印表機"
 
 msgid "Printing failed"
-msgstr ""
+msgstr "列印失敗"
 
 msgid "<h2>Managing printout risks</h2><b>QR codes and web addresses</b><br />Never type in and open web addresses or scan QR codes contained in printed documents without taking security precautions. If you are unsure how to manage this risk, please contact your administrator.<br /><br /><b>Printer dots</b><br />Any part of a printed page may contain identifying information invisible to the naked eye, such as printer dots. Please carefully consider this risk when working with or publishing scanned printouts."
-msgstr ""
+msgstr "<h2>管理列印輸出風險</h2><b>二維碼和網址</b><br />在未採取安全預防措施的情況下，切勿輸入並開啟網址或掃描列印文件中包含的QR 圖碼。如果不確定如何管理此風險，請聯絡管理員。<br /><br /><b>印表機隱寫技術</b><br />列印頁面的任何部分都可能包含肉眼看不見的識別資訊，例如印表機隱寫技術。 在使用或發布掃描的列印輸出時，請仔細考慮此風險。"
 
 msgid "Please connect your printer to a USB port."
-msgstr ""
+msgstr "請將印表機接入 USB 端口。"
 
 msgid "YES, DELETE ENTIRE SOURCE ACCOUNT"
-msgstr ""
+msgstr "確認刪除全部的線人帳戶"
 
 msgid "Are you sure this is what you want?"
-msgstr "Procedere veramente con questa scelta?"
+msgstr "確認真要這麼做？"
 
 msgid "When the entire account for a source is deleted:"
-msgstr ""
+msgstr "若某名線人的帳戶被刪除："
 
 msgid "The source will not be able to log in with their codename again."
-msgstr ""
+msgstr "此名線人將無法再利用其代碼名稱來登錄。"
 
 msgid "Your organization will not be able to send them replies."
-msgstr ""
+msgstr "您的組織將無法向他們發送回覆。"
 
 msgid "All files and messages from that source will also be destroyed."
-msgstr "Anche tutti i file e i messaggi inviati da quella fonte verranno distrutti."
-
-#~ msgid "Deleting files and messages..."
-#~ msgstr "Eliminare file e messaggi..."
-
-#~ msgid "Deleting source account..."
-#~ msgstr "Eliminare gli account delle fonti..."
-
-#~ msgid "Download All Files"
-#~ msgstr "Scarica tutti i file"
+msgstr "即將刪除此線人全部的檔案與訊息。"
