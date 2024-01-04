@@ -1,9 +1,9 @@
 from typing import List
 
-from sdclientapi import API
 from sqlalchemy.orm.session import Session
 
 from securedrop_client.api_jobs.base import ApiJob
+from securedrop_client.sdk import API
 
 
 class SeenJob(ApiJob):

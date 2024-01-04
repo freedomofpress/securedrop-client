@@ -4639,7 +4639,7 @@ def test_ReplyBoxWidget_enable_after_source_gets_key(mocker, session, session_ma
     Test that it's enabled when a source that lacked a key now has one.
     """
 
-    mocker.patch("sdclientapi.API")
+    mocker.patch("securedrop_client.sdk.API")
     mock_gui = mocker.MagicMock()
     controller = logic.Controller("http://localhost", mock_gui, session_maker, homedir, None)
     controller.is_authenticated = True

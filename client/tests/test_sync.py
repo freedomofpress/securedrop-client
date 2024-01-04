@@ -1,8 +1,8 @@
 import pytest
-from sdclientapi import RequestTimeoutError, ServerConnectionError
 
 from securedrop_client.api_jobs.base import ApiInaccessibleError
 from securedrop_client.app import threads
+from securedrop_client.sdk import RequestTimeoutError, ServerConnectionError
 from securedrop_client.sync import ApiSync
 
 

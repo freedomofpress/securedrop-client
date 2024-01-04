@@ -1,10 +1,10 @@
 import logging
 
-import sdclientapi
-from sdclientapi import API, RequestTimeoutError, ServerConnectionError
 from sqlalchemy.orm.session import Session
 
+from securedrop_client import sdk
 from securedrop_client.api_jobs.base import SingleObjectApiJob
+from securedrop_client.sdk import API, RequestTimeoutError, ServerConnectionError
 
 logger = logging.getLogger(__name__)
 
@@ -21,7 +21,7 @@ class UpdateStarJob(SingleObjectApiJob):
         Star or Unstar an user on the server
         """
         try:
-            source_sdk_object = sdclientapi.Source(uuid=self.uuid)
+            source_sdk_object = sdk.Source(uuid=self.uuid)
 
             if self.is_starred:
                 api_client.remove_star(source_sdk_object)

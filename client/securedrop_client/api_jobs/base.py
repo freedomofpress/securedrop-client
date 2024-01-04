@@ -2,8 +2,9 @@ import logging
 from typing import Any, Optional, TypeVar
 
 from PyQt5.QtCore import QObject, pyqtSignal
-from sdclientapi import API, AuthError, RequestTimeoutError, ServerConnectionError
 from sqlalchemy.orm.session import Session
+
+from securedrop_client.sdk import API, AuthError, RequestTimeoutError, ServerConnectionError
 
 logger = logging.getLogger(__name__)
 
@@ -67,7 +68,7 @@ class ApiJob(QueueJob):
     def __init__(self, remaining_attempts: int = DEFAULT_NUM_ATTEMPTS) -> None:
         super().__init__(remaining_attempts)
 
-    def _do_call_api(self, api_client: API, session: Session) -> None:
+    def _do_call_api(self, api_client: Optional[API], session: Session) -> None:
         if not api_client:
             raise ApiInaccessibleError()
 

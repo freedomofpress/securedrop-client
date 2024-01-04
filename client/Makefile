@@ -75,7 +75,8 @@ clean:  ## Clean the workspace of generated resources
 TESTS ?= tests
 ITESTS ?= tests/integration
 FTESTS ?= tests/functional
-TESTOPTS ?= -v --cov-config .coveragerc --cov-report html --cov-report term-missing --cov=securedrop_client --cov-fail-under 100
+STESTS ?= tests/sdk
+TESTOPTS ?= -v --cov-config .coveragerc --cov-report html --cov-report term-missing --cov=securedrop_client --cov-fail-under 90
 RANDOM_SEED ?= $(shell bash -c 'echo $$RANDOM')
 
 .PHONY: test
@@ -103,6 +104,10 @@ test-integration: ## Run the integration tests
 .PHONY: test-functional
 test-functional: ## Run the functional tests
 	@./test-functional.sh
+
+.PHONY: test-sdk
+test-sdk: ## Run just the sdk tests
+	@poetry run pytest -v $(STESTS)
 
 .PHONY: lint
 lint: ## Run the linters

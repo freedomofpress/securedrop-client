@@ -25,13 +25,9 @@ import re
 import shutil
 from datetime import datetime
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Tuple, Type, Union
+from typing import Any, Dict, List, Optional, Tuple, Type, TypeVar, Union
 
 from dateutil.parser import parse
-from sdclientapi import API
-from sdclientapi import Reply as SDKReply
-from sdclientapi import Source as SDKSource
-from sdclientapi import Submission as SDKSubmission
 from sqlalchemy import and_, desc, or_
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm.exc import NoResultFound
@@ -53,11 +49,15 @@ from securedrop_client.db import (
     Source,
     User,
 )
+from securedrop_client.sdk import API
+from securedrop_client.sdk import Reply as SDKReply
+from securedrop_client.sdk import Source as SDKSource
+from securedrop_client.sdk import Submission as SDKSubmission
 from securedrop_client.utils import SourceCache, chronometer
 
 logger = logging.getLogger(__name__)
 
-
+SubmissionOrReply = TypeVar("SubmissionOrReply", SDKSubmission, SDKReply)
 VALID_JOURNALIST_DESIGNATION = re.compile(r"^(?P<adjective>[a-z'-]+) (?P<noun>[a-z'-]+)$").match
 
 VALID_FILENAME = re.compile(
@@ -128,8 +128,8 @@ def get_remote_data(api: API) -> Tuple[List[SDKSource], List[SDKSubmission], Lis
 
 
 def sanitize_submissions_or_replies(
-    remote_sdk_objects: Union[List[SDKSubmission], List[SDKReply]]
-) -> Union[List[SDKSubmission], List[SDKReply]]:
+    remote_sdk_objects: List[SubmissionOrReply],
+) -> List[SubmissionOrReply]:
     """
     Return submissions or replies that contain invalid strings, e.g. '1-../../traversed-msg'.
     """

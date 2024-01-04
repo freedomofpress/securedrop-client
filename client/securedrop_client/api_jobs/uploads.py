@@ -1,11 +1,10 @@
 import logging
 import os
 
-import sdclientapi
-from sdclientapi import API, RequestTimeoutError, ServerConnectionError
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm.session import Session
 
+from securedrop_client import sdk
 from securedrop_client.api_jobs.base import SingleObjectApiJob
 from securedrop_client.crypto import GpgHelper
 from securedrop_client.db import (
@@ -16,6 +15,7 @@ from securedrop_client.db import (
     Source,
     User,
 )
+from securedrop_client.sdk import API, RequestTimeoutError, ServerConnectionError
 from securedrop_client.storage import update_draft_replies
 
 logger = logging.getLogger(__name__)
@@ -151,8 +151,8 @@ class SendReplyJob(SingleObjectApiJob):
                 f"Unknown error when setting reply {self.reply_uuid} as failed, skipping: {e}"
             )
 
-    def _make_call(self, encrypted_reply: str, api_client: API) -> sdclientapi.Reply:
-        sdk_source = sdclientapi.Source(uuid=self.source_uuid)
+    def _make_call(self, encrypted_reply: str, api_client: API) -> sdk.Reply:
+        sdk_source = sdk.Source(uuid=self.source_uuid)
         return api_client.reply_source(sdk_source, encrypted_reply, self.reply_uuid)
 
 

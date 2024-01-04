@@ -1,11 +1,11 @@
 import pytest
-from sdclientapi import RequestTimeoutError, ServerConnectionError
 
 from securedrop_client.api_jobs.updatestar import (
     UpdateStarJob,
     UpdateStarJobError,
     UpdateStarJobTimeoutError,
 )
+from securedrop_client.sdk import RequestTimeoutError, ServerConnectionError
 from tests import factory
 
 
@@ -22,9 +22,7 @@ def test_star_if_unstar(homedir, mocker, session, session_maker):
     api_client.add_star = mocker.MagicMock()
 
     mock_sdk_source = mocker.Mock()
-    mock_source_init = mocker.patch(
-        "securedrop_client.logic.sdclientapi.Source", return_value=mock_sdk_source
-    )
+    mock_source_init = mocker.patch("securedrop_client.sdk.Source", return_value=mock_sdk_source)
 
     job = UpdateStarJob(source.uuid, source.is_starred)
 
@@ -49,9 +47,7 @@ def test_unstar_if_star(homedir, mocker, session, session_maker):
     api_client.remove_star = mocker.MagicMock()
 
     mock_sdk_source = mocker.Mock()
-    mock_source_init = mocker.patch(
-        "securedrop_client.logic.sdclientapi.Source", return_value=mock_sdk_source
-    )
+    mock_source_init = mocker.patch("securedrop_client.sdk.Source", return_value=mock_sdk_source)
 
     job = UpdateStarJob(source.uuid, source.is_starred)
 
