@@ -39,7 +39,10 @@ echo ""
 
 cleanup
 
-gpg --allow-secret-key-import --import tests/files/securedrop.gpg.asc &
+gpg --allow-secret-key-import --import tests/files/securedrop.gpg.asc
+
+echo "Building proxy..."
+(cd ../proxy && cargo build)
 
 # create the database and config for local testing
 poetry run python create_dev_data.py "$SDC_HOME" &
