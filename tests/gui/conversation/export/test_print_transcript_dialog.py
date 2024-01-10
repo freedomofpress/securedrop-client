@@ -99,7 +99,9 @@ def test_PrintTranscriptDialog__on_print_preflight_check_succeeded(mocker, print
     print_transcript_dialog.continue_button.clicked = mocker.MagicMock()
     mocker.patch.object(print_transcript_dialog.continue_button, "isEnabled", return_value=False)
 
-    print_transcript_dialog._on_print_preflight_check_succeeded()
+    print_transcript_dialog._on_print_preflight_check_succeeded(
+        ExportStatus.PRINT_PREFLIGHT_SUCCESS
+    )
 
     print_transcript_dialog._print_transcript.assert_not_called()
     print_transcript_dialog.continue_button.clicked.connect.assert_called_once_with(
@@ -113,7 +115,9 @@ def test_PrintTranscriptDialog__on_print_preflight_check_succeeded_when_continue
     print_transcript_dialog._print_transcript = mocker.MagicMock()
     print_transcript_dialog.continue_button.setEnabled(True)
 
-    print_transcript_dialog._on_print_preflight_check_succeeded()
+    print_transcript_dialog._on_print_preflight_check_succeeded(
+        ExportStatus.PRINT_PREFLIGHT_SUCCESS
+    )
 
     print_transcript_dialog._print_transcript.assert_called_once_with()
 
@@ -122,7 +126,9 @@ def test_PrintTranscriptDialog__on_print_preflight_check_succeeded_enabled_after
     mocker, print_transcript_dialog
 ):
     assert not print_transcript_dialog.continue_button.isEnabled()
-    print_transcript_dialog._on_print_preflight_check_succeeded()
+    print_transcript_dialog._on_print_preflight_check_succeeded(
+        ExportStatus.PRINT_PREFLIGHT_SUCCESS
+    )
     assert print_transcript_dialog.continue_button.isEnabled()
 
 

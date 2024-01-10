@@ -12,7 +12,7 @@ class ExportStatus(Enum):
     NO_DEVICE_DETECTED = "NO_DEVICE_DETECTED"
     INVALID_DEVICE_DETECTED = "INVALID_DEVICE_DETECTED"  # Multi partitioned, not encrypted, etc
     MULTI_DEVICE_DETECTED = "MULTI_DEVICE_DETECTED"  # Not currently supported
-    UKNOWN_DEVICE_DETECTED = "UNKNOWN_DEVICE_DETECTED"  # Badly-formatted USB or VeraCrypt/TC
+    UNKNOWN_DEVICE_DETECTED = "UNKNOWN_DEVICE_DETECTED"  # Badly-formatted USB or VeraCrypt/TC
 
     DEVICE_LOCKED = "DEVICE_LOCKED"  # One valid device detected, and it's locked
     DEVICE_WRITABLE = (

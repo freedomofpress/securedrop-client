@@ -229,8 +229,11 @@ class FileDialog(ModalDialog):
             if result == ExportStatus.DEVICE_WRITABLE:
                 # Skip password prompt, we're there
                 self.continue_button.clicked.connect(self._export_file)
-            else:  # result == ExportStatus.DEVICE_LOCKED
+            elif result == ExportStatus.DEVICE_LOCKED:
                 self.continue_button.clicked.connect(self._show_passphrase_request_message)
+            else:
+                # Fixme: This should be unreachable (not "success" statuses)
+                self.continue_button.clicked.connect(self._show_generic_error_message)
             self.continue_button.setEnabled(True)
             self.continue_button.setFocus()
             return

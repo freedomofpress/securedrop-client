@@ -100,9 +100,6 @@ class PrintDialog(ModalDialog):
 
     @pyqtSlot()
     def _on_print_preflight_check_succeeded(self, status: ExportStatus) -> None:
-        # We don't use the ExportStatus for now for "success" status,
-        # but in future work we will migrate towards a wizard-style dialog, where
-        # success and intermediate status values all use the same PyQt slot.
         # If the continue button is disabled then this is the result of a background preflight check
         self.stop_animate_header()
         self.header_icon.update_image("printer.svg", svg_size=QSize(64, 64))

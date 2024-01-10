@@ -10,6 +10,7 @@ from PyQt5.QtWidgets import QDialog, QMenu
 
 from securedrop_client import state
 from securedrop_client.db import Source
+from securedrop_client.export_status import ExportStatus
 from securedrop_client.gui.actions import (
     DeleteConversationAction,
     DeleteSourceAction,
@@ -276,10 +277,14 @@ class TestPrintConversationAction(unittest.TestCase):
                     )
 
                     action._export_device.run_printer_preflight_checks = (
-                        lambda: action._export_device.print_preflight_check_succeeded.emit()
+                        lambda: action._export_device.print_preflight_check_succeeded.emit(
+                            ExportStatus.PRINT_PREFLIGHT_SUCCESS
+                        )
                     )
                     action._export_device.print_transcript = (
-                        lambda transcript: action._export_device.print_succeeded.emit()
+                        lambda transcript: action._export_device.print_succeeded.emit(
+                            ExportStatus.PRINT_SUCCESS
+                        )
                     )
 
                     action.trigger()
@@ -304,10 +309,14 @@ class TestExportConversationTranscriptAction(unittest.TestCase):
                     )
 
                     action._export_device.run_printer_preflight_checks = (
-                        lambda: action._export_device.print_preflight_check_succeeded.emit()
+                        lambda: action._export_device.print_preflight_check_succeeded.emit(
+                            ExportStatus.PRINT_PREFLIGHT_SUCCESS
+                        )
                     )
                     action._export_device.print_transcript = (
-                        lambda transcript: action._export_device.print_succeeded.emit()
+                        lambda transcript: action._export_device.print_succeeded.emit(
+                            ExportStatus.PRINT_SUCCESS
+                        )
                     )
 
                     action.trigger()

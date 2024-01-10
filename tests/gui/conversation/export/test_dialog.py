@@ -173,7 +173,7 @@ def test_ExportDialog__on_export_preflight_check_succeeded(mocker, export_dialog
     export_dialog.continue_button.clicked = mocker.MagicMock()
     mocker.patch.object(export_dialog.continue_button, "isEnabled", return_value=False)
 
-    export_dialog._on_export_preflight_check_succeeded(ExportStatus.PRINT_PREFLIGHT_SUCCESS)
+    export_dialog._on_export_preflight_check_succeeded(ExportStatus.DEVICE_LOCKED)
 
     export_dialog._show_passphrase_request_message.assert_not_called()
     export_dialog.continue_button.clicked.connect.assert_called_once_with(

@@ -247,8 +247,17 @@ class Export(QObject):
                 metadata=self.USB_TEST_METADATA, filename=self.USB_TEST_FN
             )
 
-            logger.debug("completed preflight checks: success")
-            self.preflight_check_call_success.emit(status)
+            logger.debug(f"Preflight check result: {status.value}")
+
+            if status in [ExportStatus.DEVICE_LOCKED, ExportStatus.DEVICE_WRITABLE]:
+                self.preflight_check_call_success.emit(status)
+            else:
+                # These are error states, or at least, they require the user
+                # to behave differently. In future we should probably not
+                # emit different signals for "success" and "error"
+                # and just emit one signal and let the UI decide how
+                # to handle it.
+                self.preflight_check_call_failure.emit(ExportError(status=status))
         except ExportError as e:
             logger.debug("completed preflight checks: failure")
             self.preflight_check_call_failure.emit(e)

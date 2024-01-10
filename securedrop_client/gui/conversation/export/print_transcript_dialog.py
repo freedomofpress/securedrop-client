@@ -1,5 +1,6 @@
 from PyQt5.QtCore import QSize, pyqtSlot
 
+from securedrop_client.export_status import ExportStatus
 from securedrop_client.gui.conversation.export import PrintDialog
 
 from .device import Device
@@ -23,7 +24,7 @@ class PrintTranscriptDialog(PrintDialog):
         self.close()
 
     @pyqtSlot()
-    def _on_print_preflight_check_succeeded(self) -> None:
+    def _on_print_preflight_check_succeeded(self, status: ExportStatus) -> None:
         # If the continue button is disabled then this is the result of a background preflight check
         self.stop_animate_header()
         self.header_icon.update_image("printer.svg", svg_size=QSize(64, 64))
