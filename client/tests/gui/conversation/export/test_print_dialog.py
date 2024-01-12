@@ -97,7 +97,7 @@ def test_PrintFileDialog__on_print_preflight_check_succeeded(mocker, print_dialo
     print_dialog.continue_button.clicked = mocker.MagicMock()
     mocker.patch.object(print_dialog.continue_button, "isEnabled", return_value=False)
 
-    print_dialog._on_print_preflight_check_succeeded()
+    print_dialog._on_print_preflight_check_succeeded(ExportStatus.PRINT_PREFLIGHT_SUCCESS)
 
     print_dialog._print_file.assert_not_called()
     print_dialog.continue_button.clicked.connect.assert_called_once_with(print_dialog._print_file)
@@ -109,7 +109,7 @@ def test_PrintFileDialog__on_print_preflight_check_succeeded_when_continue_enabl
     print_dialog._print_file = mocker.MagicMock()
     print_dialog.continue_button.setEnabled(True)
 
-    print_dialog._on_print_preflight_check_succeeded()
+    print_dialog._on_print_preflight_check_succeeded(ExportStatus.PRINT_PREFLIGHT_SUCCESS)
 
     print_dialog._print_file.assert_called_once_with()
 
@@ -118,7 +118,7 @@ def test_PrintFileDialog__on_print_preflight_check_succeeded_enabled_after_prefl
     mocker, print_dialog
 ):
     assert not print_dialog.continue_button.isEnabled()
-    print_dialog._on_print_preflight_check_succeeded()
+    print_dialog._on_print_preflight_check_succeeded(ExportStatus.PRINT_PREFLIGHT_SUCCESS)
     assert print_dialog.continue_button.isEnabled()
 
 
@@ -139,18 +139,18 @@ def test_PrintFileDialog__on_print_preflight_check_failed_when_status_is_PRINTER
     mocker.patch.object(print_dialog.continue_button, "isEnabled", return_value=False)
 
     # When the continue button is enabled, ensure clicking continue will show next instructions
-    print_dialog._on_print_preflight_check_failed(ExportError(ExportStatus.PRINTER_NOT_FOUND))
+    print_dialog._on_print_preflight_check_failed(ExportError(ExportStatus.ERROR_PRINTER_NOT_FOUND))
     print_dialog.continue_button.clicked.connect.assert_called_once_with(
         print_dialog._show_insert_usb_message
     )
 
     # When the continue button is enabled, ensure next instructions are shown
     mocker.patch.object(print_dialog.continue_button, "isEnabled", return_value=True)
-    print_dialog._on_print_preflight_check_failed(ExportError(ExportStatus.PRINTER_NOT_FOUND))
+    print_dialog._on_print_preflight_check_failed(ExportError(ExportStatus.ERROR_PRINTER_NOT_FOUND))
     print_dialog._show_insert_usb_message.assert_called_once_with()
 
 
-def test_PrintFileDialog__on_print_preflight_check_failed_when_status_is_MISSING_PRINTER_URI(
+def test_PrintFileDialog__on_print_preflight_check_failed_when_status_is_ERROR_PRINTER_URI(
     mocker, print_dialog
 ):
     print_dialog._show_generic_error_message = mocker.MagicMock()
@@ -159,17 +159,17 @@ def test_PrintFileDialog__on_print_preflight_check_failed_when_status_is_MISSING
     mocker.patch.object(print_dialog.continue_button, "isEnabled", return_value=False)
 
     # When the continue button is enabled, ensure clicking continue will show next instructions
-    print_dialog._on_print_preflight_check_failed(ExportError(ExportStatus.MISSING_PRINTER_URI))
+    print_dialog._on_print_preflight_check_failed(ExportError(ExportStatus.ERROR_PRINTER_URI))
     print_dialog.continue_button.clicked.connect.assert_called_once_with(
         print_dialog._show_generic_error_message
     )
-    assert print_dialog.error_status == ExportStatus.MISSING_PRINTER_URI
+    assert print_dialog.error_status == ExportStatus.ERROR_PRINTER_URI
 
     # When the continue button is enabled, ensure next instructions are shown
     mocker.patch.object(print_dialog.continue_button, "isEnabled", return_value=True)
-    print_dialog._on_print_preflight_check_failed(ExportError(ExportStatus.MISSING_PRINTER_URI))
+    print_dialog._on_print_preflight_check_failed(ExportError(ExportStatus.ERROR_PRINTER_URI))
     print_dialog._show_generic_error_message.assert_called_once_with()
-    assert print_dialog.error_status == ExportStatus.MISSING_PRINTER_URI
+    assert print_dialog.error_status == ExportStatus.ERROR_PRINTER_URI
 
 
 def test_PrintFileDialog__on_print_preflight_check_failed_when_status_is_CALLED_PROCESS_ERROR(

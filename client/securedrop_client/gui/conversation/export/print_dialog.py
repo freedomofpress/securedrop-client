@@ -3,7 +3,8 @@ from typing import Optional
 
 from PyQt5.QtCore import QSize, pyqtSlot
 
-from securedrop_client.export import ExportError, ExportStatus
+from securedrop_client.export import ExportError
+from securedrop_client.export_status import ExportStatus
 from securedrop_client.gui.base import ModalDialog, SecureQLabel
 
 from .device import Device
@@ -98,7 +99,10 @@ class PrintDialog(ModalDialog):
         self.close()
 
     @pyqtSlot()
-    def _on_print_preflight_check_succeeded(self) -> None:
+    def _on_print_preflight_check_succeeded(self, status: ExportStatus) -> None:
+        # We don't use the ExportStatus for now for "success" status,
+        # but in future work we will migrate towards a wizard-style dialog, where
+        # success and intermediate status values all use the same PyQt slot.
         # If the continue button is disabled then this is the result of a background preflight check
         self.stop_animate_header()
         self.header_icon.update_image("printer.svg", svg_size=QSize(64, 64))
@@ -120,7 +124,7 @@ class PrintDialog(ModalDialog):
         # If the continue button is disabled then this is the result of a background preflight check
         if not self.continue_button.isEnabled():
             self.continue_button.clicked.disconnect()
-            if error.status == ExportStatus.PRINTER_NOT_FOUND:
+            if error.status == ExportStatus.ERROR_PRINTER_NOT_FOUND:
                 self.continue_button.clicked.connect(self._show_insert_usb_message)
             else:
                 self.continue_button.clicked.connect(self._show_generic_error_message)
@@ -128,7 +132,7 @@ class PrintDialog(ModalDialog):
             self.continue_button.setEnabled(True)
             self.continue_button.setFocus()
         else:
-            if error.status == ExportStatus.PRINTER_NOT_FOUND:
+            if error.status == ExportStatus.ERROR_PRINTER_NOT_FOUND:
                 self._show_insert_usb_message()
             else:
                 self._show_generic_error_message()

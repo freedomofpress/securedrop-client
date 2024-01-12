@@ -11,8 +11,7 @@ from securedrop_export.status import BaseStatus
 from securedrop_export.directory import safe_mkdir
 from securedrop_export.exceptions import ExportException
 
-from securedrop_export.disk import LegacyService as ExportService
-from securedrop_export.disk import LegacyStatus
+from securedrop_export.disk import Service as ExportService
 from securedrop_export.print import Service as PrintService
 
 from logging.handlers import TimedRotatingFileHandler, SysLogHandler
@@ -43,6 +42,8 @@ def entrypoint():
 
     Non-zero exit values will cause the system to try alternative
     solutions for mimetype handling, which we want to avoid.
+
+    The program is called with the archive name as the first argument.
     """
     status, submission = None, None
 
@@ -54,7 +55,8 @@ def entrypoint():
 
         # Halt if target file is absent
         if not os.path.exists(data_path):
-            logger.info("Archive is not found {}.".format(data_path))
+            logger.error("Archive not found at provided path.")
+            logger.debug("Archive missing, path: {}".format(data_path))
             status = Status.ERROR_FILE_NOT_FOUND
 
         else:
@@ -125,7 +127,7 @@ def _configure_logging():
         raise ExportException(sdstatus=Status.ERROR_LOGGING) from ex
 
 
-def _start_service(submission: Archive) -> LegacyStatus:
+def _start_service(submission: Archive) -> BaseStatus:
     """
     Start print or export service.
     """
@@ -140,10 +142,11 @@ def _start_service(submission: Archive) -> LegacyStatus:
     # Export routines
     elif submission.command is Command.EXPORT:
         return ExportService(submission).export()
-    elif submission.command is Command.CHECK_USBS:
-        return ExportService(submission).check_connected_devices()
-    elif submission.command is Command.CHECK_VOLUME:
-        return ExportService(submission).check_disk_format()
+    elif (
+        submission.command is Command.CHECK_USBS
+        or submission.command is Command.CHECK_VOLUME
+    ):
+        return ExportService(submission).scan_all_devices()
 
     # Unreachable
     raise ExportException(

@@ -12,7 +12,7 @@ from typing import Callable, Optional
 from PyQt5.QtCore import Qt, pyqtSlot
 from PyQt5.QtWidgets import QAction, QDialog, QMenu
 
-from securedrop_client import state
+from securedrop_client import export, state
 from securedrop_client.conversation import Transcript as ConversationTranscript
 from securedrop_client.db import Source
 from securedrop_client.gui.base import ModalDialog
@@ -160,7 +160,7 @@ class PrintConversationAction(QAction):  # pragma: nocover
         self.controller = controller
         self._source = source
 
-        self._export_device = ConversationExportDevice(controller)
+        self._export_device = ConversationExportDevice(controller, export.getService())
 
         self.triggered.connect(self._on_triggered)
 
@@ -212,7 +212,7 @@ class ExportConversationTranscriptAction(QAction):  # pragma: nocover
         self.controller = controller
         self._source = source
 
-        self._export_device = ConversationExportDevice(controller)
+        self._export_device = ConversationExportDevice(controller, export.getService())
 
         self.triggered.connect(self._on_triggered)
 
@@ -267,7 +267,7 @@ class ExportConversationAction(QAction):  # pragma: nocover
         self._source = source
         self._state = app_state
 
-        self._export_device = ConversationExportDevice(controller)
+        self._export_device = ConversationExportDevice(controller, export.getService())
 
         self.triggered.connect(self._on_triggered)
 
