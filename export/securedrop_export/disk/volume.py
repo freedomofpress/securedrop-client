@@ -66,12 +66,3 @@ class MountedVolume(Volume):
         super().__init__(device_name=device_name, encryption=encryption)
         self.mapped_name = mapped_name
         self.mountpoint = mountpoint
-
-    @classmethod
-    def from_volume(cls, vol: Volume, mapped_name: str, mountpoint: str):
-        return cls(
-            device_name=vol.device_name,
-            mapped_name=mapped_name,
-            encryption=vol.encryption,
-            mountpoint=mountpoint,
-        )

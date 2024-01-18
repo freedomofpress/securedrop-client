@@ -52,13 +52,24 @@ class CLI:
 
             if len(supported_devices) == 0:
                 raise ExportException(sdstatus=Status.NO_DEVICE_DETECTED)
-            elif len(supported_devices) > 1:
-                # For now we only support inserting one device at a time
-                # during export. To support multi-device-select, parse
-                # these results as well
-                raise ExportException(sdstatus=Status.MULTI_DEVICE_DETECTED)
             else:
-                return self._parse_single_device(supported_devices[0])
+                possible_export_volumes = []
+                for device in supported_devices:
+                    possible_export_volumes.append(self._parse_single_device(device))
+
+                if len(possible_export_volumes) == 0:
+                    logger.error("No inserted device meets export criteria")
+                    raise ExportException(sdstatus=Status.INVALID_DEVICE_DETECTED)
+
+                elif len(possible_export_volumes) > 1:
+                    # For now we don't offer volume selection, so with multiple
+                    # supported USB devices inserted, raise MULTI_DEVICE error.
+                    # (Note: if one particular device has multiple possible
+                    # partitions that could be targets, INVALID_DEVICE_DETECTED will
+                    # be raised by _parse_single_device)
+                    raise ExportException(sdstatus=Status.MULTI_DEVICE_DETECTED)
+                else:
+                    return possible_export_volumes[0]
 
         except json.JSONDecodeError as err:
             logger.error(err)
@@ -96,12 +107,13 @@ class CLI:
             if item:
                 volumes.append(item)
 
-        # This restriction is only due to UI complexity--we don't offer users a
-        # way to choose a specific target volume on their device.
+        # We don't currently offer users a way to choose a specific volume
+        # on their device.
         if len(volumes) != 1:
             logger.error(f"Need one target on {block_device}, got {len(volumes)}")
             raise ExportException(sdstatus=Status.INVALID_DEVICE_DETECTED)
-            return volumes[0]
+
+        return volumes[0]
 
     def _get_supported_volume(
         self, device: dict
@@ -112,7 +124,7 @@ class CLI:
         Supported volumes:
           * Unlocked Veracrypt drives
           * Locked or unlocked LUKS drives
-          * No more than one encrypted partition (multiple nonencrypted partitions
+          * No more than one encrypted partition (multiple non-encrypted partitions
             are OK as they will be ignored).
 
         Note: It would be possible to support other unlocked encrypted drives, as long as
@@ -128,8 +140,7 @@ class CLI:
         elif device_fstype == "crypto_TCRYPT":
             vol.encryption == EncryptionScheme.VERACRYPT
 
-        # If drive is locked or is unsupported type, children will be None
-        # (but in locked case, children will be shown once drive is unlocked)
+        # If drive is locked, children will be None
         children = device.get("children")
         if children:
             # It's an unlocked drive, possibly mounted
@@ -137,7 +148,7 @@ class CLI:
                 logger.error(f"Unexpected volume format on {device_name}")
                 return None
             # TODO: This is for supporting unknown encryption types if they are already mounted.
-            # It's currently redundant due to check on line 147.
+            # It's currently redundant due to check on line 170.
             elif children[0].get("type") != "crypt":
                 logger.info("Not an encrypted partition")
                 return None
@@ -184,7 +195,7 @@ class CLI:
                 stderr=subprocess.PIPE,
             )
             logger.debug("Passing key")
-            p.communicate(input=str.encode(encryption_key, "utf-8")).decode("utf-8")
+            p.communicate(input=str.encode(encryption_key, "utf-8"))
             rc = p.returncode
 
             # Unlocked, or was already unlocked
@@ -192,7 +203,13 @@ class CLI:
                 logger.info("Device unlocked")
 
                 mapped_name = self._get_mapped_name(volume)
-                return self._mount_volume(volume, mapped_name)
+                if mapped_name:
+                    return self._mount_volume(volume, mapped_name)
+                else:
+                    # This is really covering our bases, we shouldn't get here
+                    # if we already unlocked successfully.
+                    logger.error(f"No mapped device for {volume.device_name} found")
+                    raise ExportException(sdstatus=Status.ERROR_UNLOCK_GENERIC)
 
             else:
                 logger.error("Bad volume passphrase")
@@ -224,8 +241,10 @@ class CLI:
                 .split("\n")
             )
             mapped_items = [
-                i for i in items if not i.startswith(f"{volume.device_name}")
-            ]  # todo: if i.endswith("crypt") true for vc as well as luks?
+                i
+                for i in items
+                if i.endswith("crypt") and not i.startswith(f"{volume.device_name}")
+            ]
             if len(mapped_items) == 1:
                 # Space-separated name and type (eg `luks-123456-456789 crypt`)
                 return mapped_items[0].split()[0]
@@ -255,7 +274,7 @@ class CLI:
                     "--block-device",
                     f"{_DEVMAPPER_PREFIX}{mapped_name}",
                 ]
-            ).decode("utf-8")
+            )
 
             # Success (Mounted successfully, or was already mounted)
             if exit_code == 0 or exit_code == 1:
@@ -276,6 +295,7 @@ class CLI:
                 return MountedVolume(
                     device_name=volume.device_name,
                     mapped_name=mapped_name,
+                    encryption=volume.encryption,
                     mountpoint=mountpoint,
                 )
 
@@ -368,7 +388,7 @@ class CLI:
                 subprocess.check_call(
                     [
                         "udisksctl",
-                        "close",
+                        "lock",
                         "--block-device",
                         f"{_DEVMAPPER_PREFIX}{mv.mapped_name}",
                     ]

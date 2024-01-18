@@ -2,7 +2,7 @@ import logging
 
 from .cli import CLI
 from .status import Status
-from .volume import MountedVolume
+from .volume import MountedVolume, Volume
 from securedrop_export.archive import Archive
 from securedrop_export.exceptions import ExportException
 
@@ -26,10 +26,14 @@ class Service:
         """
         try:
             volume = self.cli.get_volume()
-            if isinstance(MountedVolume):
+            if isinstance(volume, MountedVolume):
                 return Status.DEVICE_WRITABLE
-            else:
+            elif isinstance(volume, Volume):
                 return Status.DEVICE_LOCKED
+            else:
+                # Above will return MountedVolume, Volume, or raise error;
+                # this shouldn't be reachable
+                raise ExportException(sdstatus=Status.DEVICE_ERROR)
 
         except ExportException as ex:
             logger.debug(ex)
@@ -43,18 +47,22 @@ class Service:
         """
         try:
             volume = self.cli.get_volume()
-            if isinstance(MountedVolume):
+            if isinstance(volume, MountedVolume):
                 logger.debug("Mounted volume detected, exporting files")
-                return self.cli._write_data_to_device(volume, self.submission)
-            else:
+                self.cli.write_data_to_device(volume, self.submission)
+                return Status.SUCCESS_EXPORT
+            elif isinstance(volume, Volume):
                 logger.debug("Volume is locked, unlocking")
                 mv = self.cli.unlock_volume(volume, self.submission.encryption_key)
-                logger.debug("Export to device")
-                # Exports then locks the drive.
-                # If the export succeeds but the drive is in use, will raise
-                # exception. 
-                self.cli._write_data_to_device(mv, self.submission)
-                return Status.SUCCESS_EXPORT
+                if isinstance(mv, MountedVolume):
+                    logger.debug("Export to device")
+                    # Exports then locks the drive.
+                    # If the export succeeds but the drive is in use, will raise
+                    # exception.
+                    self.cli.write_data_to_device(mv, self.submission)
+                    return Status.SUCCESS_EXPORT
+                else:
+                    raise ExportException(sdstatus=Status.ERROR_UNLOCK_GENERIC)
 
         except ExportException as ex:
             logger.debug(ex)
