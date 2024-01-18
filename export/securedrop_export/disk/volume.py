@@ -17,18 +17,15 @@ class Volume:
 
     """
     A volume on a removable device.
-    Volumes have a device name ("/dev/sdX"), a mapped name that represents their intended
-    name ("/dev/mapper/xxx"), an encryption scheme, and a mountpoint.
+    Volumes have a device name ("/dev/sdX") and an encryption scheme.
     """
 
     def __init__(
         self,
         device_name: str,
-        mapped_name: str,
         encryption: EncryptionScheme,
     ):
         self.device_name = device_name
-        self.mapped_name = mapped_name
         self.encryption = encryption
 
     @property
@@ -66,16 +63,15 @@ class MountedVolume(Volume):
         encryption: EncryptionScheme,
         mountpoint: str,
     ):
-        super().__init__(
-            device_name=device_name, mapped_name=mapped_name, encryption=encryption
-        )
+        super().__init__(device_name=device_name, encryption=encryption)
+        self.mapped_name = mapped_name
         self.mountpoint = mountpoint
 
     @classmethod
-    def from_volume(cls, vol: Volume, mountpoint: str):
+    def from_volume(cls, vol: Volume, mapped_name: str, mountpoint: str):
         return cls(
             device_name=vol.device_name,
-            mapped_name=vol.mapped_name,
+            mapped_name=mapped_name,
             encryption=vol.encryption,
             mountpoint=mountpoint,
         )
