@@ -1,0 +1,187 @@
+securedrop-client (0.9.0) unstable; urgency=medium
+
+  * see changelog.md 
+
+ -- SecureDrop Team <securedrop@freedom.press>  Thu, 16 Mar 2023 16:29:03 -0400
+
+securedrop-client (0.8.1+bullseye) unstable; urgency=medium
+
+  * See changelog.md 
+
+ -- SecureDrop Team <securedrop@freedom.press>  Thu, 15 Sep 2022 08:37:55 +1000
+
+securedrop-client (0.8.0+buster) unstable; urgency=medium
+
+  * See changelog.md 
+
+ -- SecureDrop Team <securedrop@freedom.press>  Wed, 06 Jul 2022 14:06:23 +1000
+
+securedrop-client (0.7.0+buster) unstable; urgency=medium
+
+  * See changelog.md
+
+ -- SecureDrop Team <securedrop@freedom.press>  Wed, 20 Apr 2022 10:41:31 -0400
+
+securedrop-client (0.6.0+buster) unstable; urgency=medium
+
+  * See changelog.md
+
+ -- SecureDrop Team <securedrop@freedom.press>  Tue, 15 Feb 2022 10:45:20 -0800
+
+securedrop-client (0.5.1+buster) unstable; urgency=medium
+
+  * See changelog.md
+
+ -- SecureDrop Team <securedrop@freedom.press>  Thu, 02 Dec 2021 16:41:49 -0800
+
+securedrop-client (0.5.0+buster) unstable; urgency=medium
+
+  * See changelog.md
+
+ -- SecureDrop Team <securedrop@freedom.press>  Wed, 01 Dec 2021 12:09:27 -0800
+
+securedrop-client (0.4.1+buster) unstable; urgency=medium
+
+  * See changelog.md 
+
+ -- SecureDrop Team <securedrop@freedom.press>  Wed, 17 Mar 2021 11:20:12 -0700
+
+securedrop-client (0.4.0+buster) unstable; urgency=medium
+
+  * See changelog.md
+
+ -- SecureDrop Team <securedrop@freedom.press>  Thu, 10 Dec 2020 14:36:06 -0800
+
+securedrop-client (0.3.0+buster) unstable; urgency=medium
+
+  * See changelog.md
+ 
+ -- SecureDrop Team <securedrop@freedom.press>  Thu, 05 Nov 2020 11:40:46 -0500
+
+securedrop-client (0.2.1+buster) unstable; urgency=medium
+
+  * See changelog.md
+
+ -- SecureDrop Team <securedrop@freedom.press>  Thu, 16 Jul 2020 11:56:07 -0400
+
+securedrop-client (0.2.0+buster) unstable; urgency=medium
+
+  * See changelog.md 
+
+ -- SecureDrop Team <securedrop@freedom.press>  Fri, 29 May 2020 17:19:31 -0400
+
+securedrop-client (0.1.6+buster) unstable; urgency=medium
+
+  * See changelog.md
+
+ -- SecureDrop Team <securedrop@freedom.press>  Tue, 31 Mar 2020 10:45:27 -0400
+
+securedrop-client (0.1.5+buster) unstable; urgency=medium
+
+  * See changelog.md
+
+ -- SecureDrop Team <securedrop@freedom.press>  Mon, 30 Mar 2020 14:11:21 -0400
+
+securedrop-client (0.1.4+buster) unstable; urgency=medium
+
+  * See changelog.md
+
+ -- SecureDrop Team <securedrop@freedom.press>  Thu, 26 Mar 2020 11:45:01 -0400
+
+securedrop-client (0.1.3+buster) unstable; urgency=medium
+
+  * See changelog.md
+
+ -- mickael e. <mickael@freedom.press>  Wed, 18 Mar 2020 12:32:35 -0400
+
+securedrop-client (0.1.2+buster) unstable; urgency=medium
+
+  * See changelog.md
+
+ -- redshiftzero <jen@freedom.press>  Tue, 10 Mar 2020 13:12:54 -0400
+
+securedrop-client (0.1.1+buster) unstable; urgency=medium
+
+  * See changelog.md
+
+ -- redshiftzero <jen@freedom.press>  Tue, 03 Mar 2020 11:39:03 -0500
+
+securedrop-client (0.1.0+buster) unstable; urgency=medium
+
+  * See changelog.md
+
+ -- redshiftzero <jen@freedom.press>  Fri, 21 Feb 2020 13:34:42 -0500
+
+securedrop-client (0.0.13+buster) unstable; urgency=medium
+
+  * remove user refresh and replace with sync icon (#732)
+  * build-requirements: update for production beta (#730)
+  * No sync on ui operations (#721)
+  * Use SecureQLabel for message previews (#720)
+  * Show DD MMM format for source title (#719)
+  * Add new metadata queue. (#715)
+  * Improve performance of storage.get_remote_data (#709)
+  * app/queue: prioritize user-triggered state changes (#708)
+  * Fix HTML entities being escaped in speech bubbles. (#703)
+  * Activity indicator for file download / decryption. (#702)
+  * Rename VMs (#701)
+
+ -- SecureDrop Team <securedrop@freedom.press>  Fri, 17 Jan 2020 18:20:20 -0800
+
+securedrop-client (0.0.12+buster) unstable; urgency=medium
+
+  * Use revised VM names (securedrop-workstation #285)
+  * Delete sources using the general queue (#402)
+  * Add a preview snippet for sources (#135)
+  * Add a show/hide password feature on the login screen (#659)
+  * Disable sync icon during active sync (#388)
+  * Add keyboard shortcuts for sending replies (#606)
+  * Add hover states for UI elements (#591)
+
+ -- SecureDrop Team <securedrop@freedom.press>  Fri, 17 Jan 2020 18:20:20 -0800
+
+securedrop-client (0.0.11+buster) unstable; urgency=medium
+
+  * Add apparmor profile (#673)
+  * Add failure message for replies (#664)
+  * Move metadata sync to api queue (#640)
+  * Add print integration (#631)
+  * Populate source list immediately upon login (#626)
+
+ -- SecureDrop Team <securedrop@freedom.press>  Thu, 19 Dec 2019 12:20:20 -0500
+
+securedrop-client (0.0.10+buster) unstable; urgency=medium
+
+  * Add Python 3.7/buster support (#568, #609)
+  * Add export to USB support (#611, #547, #562, #563, #564)
+  * Retry failed replies (#530)
+  * Pause queue on auth errors, connection failures, and timeouts (#531)
+  * Add pending reply status, persist replies in the database (#578)
+  * Set realistic timeouts, scale file/message download timeouts using file size (#515, #567)
+  * Update qrexec keyword prefix characters (#537)
+  * Reply box no longer accepts rich text input (#580)
+  * Format reply box placeholder text (#597)
+  * Redesign FileWidget (#535)
+  * Style conversation header (#543)
+  * Login form submits if user presses Enter or Return (#615)
+  * Enable changeable log levels (#603)
+  * Remove borders around source list, send icon, and reply box (#505)
+  * Move star and date in source widget (#506)
+  * Polish source widget (#522)
+  * Polish offline UI (#586)
+  * Add branding image to left pane and polish styling (#520)
+  * Add empty conversation view (#510)
+  * Update fonts weights and colors (#502)
+  * Bugfix: handle missing files during export and open (#566)
+  * Bugfix: do not escape quotes in SecureQLabel (#516)
+  * Bugfix: skip round trip to user endpoint during logic (#605, #621, #623)
+  * Bugfix: fix bug of sources disappearing from source list (#620)
+  * Bugfix: fix db warnings upon source deletion (#581)
+  * Add more detailed developer documentation (#508)
+  * Add documentation for updating dependencies (#536)
+  * Ensure build/dev requirements files stay in sync (#602)
+  * Parallelize test suite (#569)
+  * Ignore third-party deprecation warnings (#576)
+  * Add bandit to check target (#548)
+
+ -- redshiftzero <jen@freedom.press>  Wed, 20 Nov 2019 09:20:22 -0500

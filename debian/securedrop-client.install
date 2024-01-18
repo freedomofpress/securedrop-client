@@ -1,0 +1,7 @@
+client/files/alembic.ini usr/share/securedrop-client/
+client/alembic usr/share/securedrop-client/
+client/files/sd-app-qubes-gpg-domain.sh etc/profile.d/
+client/files/securedrop-client usr/bin/
+client/files/securedrop-client.desktop usr/share/applications/
+client/files/press.freedom.SecureDropClient.desktop usr/share/applications/
+client/files/usr.bin.securedrop-client /etc/apparmor.d/
