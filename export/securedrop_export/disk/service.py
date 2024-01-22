@@ -49,7 +49,9 @@ class Service:
             volume = self.cli.get_volume()
             if isinstance(volume, MountedVolume):
                 logger.debug("Mounted volume detected, exporting files")
-                self.cli.write_data_to_device(volume, self.submission)
+                self.cli.write_data_to_device(
+                    volume, self.submission.tmpdir, self.submission.target_dirname
+                )
                 return Status.SUCCESS_EXPORT
             elif isinstance(volume, Volume):
                 logger.debug("Volume is locked, unlocking")
@@ -59,7 +61,9 @@ class Service:
                     # Exports then locks the drive.
                     # If the export succeeds but the drive is in use, will raise
                     # exception.
-                    self.cli.write_data_to_device(mv, self.submission)
+                    self.cli.write_data_to_device(
+                        mv, self.submission.tmpdir, self.submission.target_dirname
+                    )
                     return Status.SUCCESS_EXPORT
                 else:
                     raise ExportException(sdstatus=Status.ERROR_UNLOCK_GENERIC)

@@ -1,8 +1,6 @@
 import pytest
 from unittest import mock
 
-import json
-
 import subprocess
 
 from securedrop_export.disk.cli import CLI
@@ -12,76 +10,54 @@ from securedrop_export.disk.status import Status
 
 from securedrop_export.archive import Archive
 
-import pdb  # TODO
-
-# Mock lsblk output
-from ..lsblk_sample import *
-
-# Test data for parametrization
-lsblk_supported = [
-    (LSBLK_VALID_DEVICE_LOCKED, Volume("/dev/sda", EncryptionScheme.LUKS)),
-    (
-        LSBLK_VALID_DEVICE_WRITABLE,
-        MountedVolume(
-            "/dev/sda1",
-            "luks-dbfb85f2-77c4-4b1f-99a9-2dd3c6789094",
-            encryption=EncryptionScheme.LUKS,
-            mountpoint="/media/usb",
-        ),
-    ),
-    (
-        LSBLK_VALID_MULTIPART_DEVICE_LOCKED_PLUS_INVALID_DEVICE_INSERTED,
-        Volume("/dev/sda2", EncryptionScheme.LUKS),
-    ),
-]
-
-lsblk_unsupported = [
-    (LSBLK_ERROR_NO_DEVICE, Status.NO_DEVICE_DETECTED),
-    # Only an error if both devices are suitable targets
-    (LSBLK_ERROR_MULTI_DEVICE_INSERTED, Status.MULTI_DEVICE_DETECTED),
-]
-
-single_device_supported = [
-    (SINGLE_DEVICE_LOCKED, Volume("/dev/sda", EncryptionScheme.LUKS)),
-    (SINGLE_DEVICE_MULTIPART_LOCKED, Volume("/dev/sda2", EncryptionScheme.LUKS)),
-    (
-        SINGLE_DEVICE_WRITABLE,
-        MountedVolume(
-            "/dev/sda1",
-            "luks-dbfb85f2-77c4-4b1f-99a9-2dd3c6789094",
-            encryption=EncryptionScheme.LUKS,
-            mountpoint="/media/usb",
-        ),
-    ),
-    (
-        SINGLE_DEVICE_UNLOCKED_VC_UNMOUNTED,
-        MountedVolume(
-            "/dev/sda1",
-            "tcrypt-2049",
-            EncryptionScheme.VERACRYPT,
-            mountpoint="/media/usb",
-        ),
-    ),
-    (
-        SINGLE_DEVICE_WRITABLE_SECOND_PART,
-        MountedVolume(
-            "/dev/sda2",
-            "luks-dbfb85f2-77c4-4b1f-99a9-2dd3c6789094",
-            EncryptionScheme.LUKS,
-            mountpoint="/media/usb",
-        ),
-    ),
-]
-
-single_device_unsupported = [
-    SINGLE_DEVICE_ERROR_MULTI_ENC_PARTITION,
+# Sample lsblk and udisk inputs for testing the parsing of different device conditions
+from ..lsblk_sample import (
+    UDISKS_STATUS_MULTI_CONNECTED,
+    UDISKS_STATUS_ONE_DEVICE_CONNECTED,
+    UDISKS_STATUS_NOTHING_CONNECTED,
+    ONE_DEVICE_LUKS_UNMOUNTED,
+    ONE_DEVICE_VC_UNLOCKED,
+    ERROR_ONE_DEVICE_LUKS_MOUNTED_MULTI_UNKNOWN_AVAILABLE,
+    ERROR_NO_SUPPORTED_DEVICE,
+    ERROR_UNENCRYPTED_DEVICE_MOUNTED,
+    ERROR_DEVICE_MULTI_ENC_PARTITION,
+    SINGLE_DEVICE_LOCKED,
+    SINGLE_PART_LUKS_WRITABLE,
+    SINGLE_PART_LUKS_UNLOCKED_UNMOUNTED,
+    SINGLE_PART_UNLOCKED_VC_UNMOUNTED,
     SINGLE_DEVICE_ERROR_PARTITIONS_TOO_NESTED,
     SINGLE_DEVICE_ERROR_MOUNTED_PARTITION_NOT_ENCRYPTED,
-]
+    SINGLE_PART_VC_WRITABLE,
+)
 
 _PRETEND_LUKS_ID = "luks-dbfb85f2-77c4-4b1f-99a9-2dd3c6789094"
 _PRETEND_VC = "tcrypt-2049"
 _DEFAULT_USB_DEVICE = "/dev/sda"
+
+
+# Lists for test paramaterization
+
+supported_volumes_no_mount_required = [
+    SINGLE_DEVICE_LOCKED,
+    SINGLE_PART_LUKS_WRITABLE,
+    SINGLE_PART_VC_WRITABLE,
+]
+
+# Volume, expected device name, expected mapped device name
+# (used to mount)
+supported_volumes_mount_required = [
+    (SINGLE_PART_UNLOCKED_VC_UNMOUNTED, "sda1", "tcrypt-2049"),
+    (
+        SINGLE_PART_LUKS_UNLOCKED_UNMOUNTED,
+        "sda1",
+        "luks-dbfb85f2-77c4-4b1f-99a9-2dd3c6789094",
+    ),
+]
+
+unsupported_volumes = [
+    SINGLE_DEVICE_ERROR_MOUNTED_PARTITION_NOT_ENCRYPTED,
+    SINGLE_DEVICE_ERROR_PARTITIONS_TOO_NESTED,
+]
 
 
 class TestCli:
@@ -102,65 +78,114 @@ class TestCli:
     def teardown_class(cls):
         cls.cli = None
 
-    @mock.patch("securedrop_export.disk.cli.CLI._parse_single_device")
     @mock.patch("subprocess.check_output")
-    def test_get_volume2(self, mock_sp, mock_parse):
-        mock_sp.return_value = LSBLK_VALID_DEVICE_LOCKED
-        self.cli.get_volume()
+    def test_get_volume_no_devices(self, mock_sp):
+        mock_sp.side_effect = [
+            UDISKS_STATUS_NOTHING_CONNECTED,
+            ERROR_NO_SUPPORTED_DEVICE,
+        ]
 
-        mock_parse.assert_called()
+        with pytest.raises(ExportException) as ex:
+            self.cli.get_volume()
+        assert ex.value.sdstatus == Status.NO_DEVICE_DETECTED
 
-    @pytest.mark.parametrize("lsblk,expected", lsblk_supported)
+    @mock.patch("securedrop_export.disk.cli.CLI._mount_volume")
     @mock.patch("subprocess.check_output")
-    def test_get_volume(self, mock_subprocess, lsblk, expected):
-        mock_subprocess.return_value = lsblk
+    def test_get_volume_one_device(self, mock_sp, mock_mount):
+        mock_sp.side_effect = [
+            UDISKS_STATUS_ONE_DEVICE_CONNECTED,
+            ONE_DEVICE_LUKS_UNMOUNTED,
+        ]
+        v = self.cli.get_volume()
 
-        with mock.patch.object(
-            self.cli, "_parse_single_device", wraps="_parse_single_device"
-        ) as patch_parse, mock.patch.object(
-            self.cli, "_get_supported_volume", wraps="_get_supported_volume"
-        ) as patch_gsv:
-            patch_parse.return_value = expected
-            v = self.cli.get_volume()
+        assert v.encryption == EncryptionScheme.LUKS
+        # todo: list call args, make this test more specific
 
-    @pytest.mark.parametrize("output,expected", lsblk_unsupported)
     @mock.patch("subprocess.check_output")
-    def test_get_volume_fail(self, mock_subprocess, output, expected):
-        mock_subprocess.return_value = output
-
-        with mock.patch.object(self.cli, "_parse_single_device"), pytest.raises(
-            ExportException
-        ) as ex:
+    def test_get_volume_multi_devices_error(self, mock_sp):
+        mock_sp.side_effect = [
+            UDISKS_STATUS_MULTI_CONNECTED,
+            ERROR_ONE_DEVICE_LUKS_MOUNTED_MULTI_UNKNOWN_AVAILABLE,
+        ]
+        with pytest.raises(ExportException) as ex:
             self.cli.get_volume()
 
-        assert ex.value.sdstatus == expected
+        assert ex.value.sdstatus == Status.MULTI_DEVICE_DETECTED
 
-    @pytest.mark.parametrize("input,expected", single_device_supported)
-    @mock.patch("subprocess.getstatusoutput", returncode=0)
-    @mock.patch("subprocess.check_output")
     @mock.patch("securedrop_export.disk.cli.CLI._mount_volume")
-    def test__parse_single_device_success(
-        self, mock_mount, mock_status_output, mock_subprocess, input, expected
-    ):
-        mock_subprocess.returncode = 0
-        mock_subprocess.return_value = "/media/usb"  # pretend mountpoint
-        mock_status_output.returncode = 0
+    @mock.patch("subprocess.check_output")
+    def test_get_volume_too_many_encrypted_partitions(self, mock_sp, mock_mount):
+        mock_sp.side_effect = [
+            UDISKS_STATUS_ONE_DEVICE_CONNECTED,
+            ERROR_DEVICE_MULTI_ENC_PARTITION,
+        ]
+        with pytest.raises(ExportException) as ex:
+            self.cli.get_volume()
 
-        vol = self.cli._parse_single_device(input)
+        assert ex.value.sdstatus == Status.INVALID_DEVICE_DETECTED
+
+    @mock.patch("securedrop_export.disk.cli.CLI._get_supported_volume")
+    @mock.patch("subprocess.check_output")
+    def test_get_volume_no_encrypted_partition(self, mock_sp, mock_gsv):
+        mock_sp.side_effect = [
+            UDISKS_STATUS_ONE_DEVICE_CONNECTED,
+            ERROR_UNENCRYPTED_DEVICE_MOUNTED,
+        ]
+        with pytest.raises(ExportException) as ex:
+            self.cli.get_volume()
+
+        assert ex.value.sdstatus == Status.INVALID_DEVICE_DETECTED
+
+    @mock.patch("securedrop_export.disk.cli.CLI._get_supported_volume")
+    @mock.patch("subprocess.check_output")
+    def test_get_volume_empty_udisks_does_not_keep_checking(self, mock_sp, mock_gsv):
+        mock_sp.side_effect = [
+            UDISKS_STATUS_NOTHING_CONNECTED,
+            ONE_DEVICE_VC_UNLOCKED,
+        ]
+
+        # If udisks2 didn't find it, don't keep looking
+        with pytest.raises(ExportException) as ex:
+            self.cli.get_volume()
+
+        assert ex.value.sdstatus == Status.NO_DEVICE_DETECTED
+        mock_gsv.assert_not_called()
+
+    @pytest.mark.parametrize("input", supported_volumes_no_mount_required)
+    def test__get_supported_volume_success_no_mount(self, input):
+        vol = self.cli._get_supported_volume(input)
 
         assert vol
 
     @mock.patch("subprocess.check_output")
-    def test__parse_single_device_locked_success(self, mock_subprocess):
-        vol = self.cli._parse_single_device(SINGLE_DEVICE_LOCKED)
+    def test__get_supported_volume_locked_success(self, mock_subprocess):
+        vol = self.cli._get_supported_volume(SINGLE_DEVICE_LOCKED)
         assert vol.device_name == "sda"
 
-    @pytest.mark.parametrize("input", single_device_unsupported)
-    def test__parse_single_device_fail(self, input):
-        with pytest.raises(ExportException) as ex:
-            self.cli._parse_single_device(input)
+    @pytest.mark.parametrize(
+        "input,expected_device,expected_devmapper", supported_volumes_mount_required
+    )
+    @mock.patch("securedrop_export.disk.cli.CLI._mount_volume")
+    @mock.patch(
+        "securedrop_export.disk.cli.CLI._is_it_veracrypt",
+        return_value=EncryptionScheme.VERACRYPT,
+    )
+    def test__get_supported_volume_requires_mounting(
+        self, mock_v, mock_mount, input, expected_device, expected_devmapper
+    ):
+        self.cli._get_supported_volume(input)
 
-        assert ex.value.sdstatus == Status.INVALID_DEVICE_DETECTED
+        mock_mount.assert_called_once()
+
+        assert mock_mount.call_args_list[0][0][0].device_name == expected_device
+        assert mock_mount.call_args_list[0][0][1] == expected_devmapper
+
+    @pytest.mark.parametrize("input", unsupported_volumes)
+    @mock.patch("securedrop_export.disk.cli.CLI._mount_volume")
+    def test__get_supported_volume_none_supported(self, mock_subprocess, input):
+        result = self.cli._get_supported_volume(input)
+
+        assert result is None
 
     def test_unlock_success(self, mocker):
         mock_popen = mocker.MagicMock()
@@ -187,6 +212,10 @@ class TestCli:
     def test_unlock_already_unlocked(self, mocker):
         mock_popen = mocker.MagicMock()
         mock_communicate = mocker.MagicMock()
+        mock_communicate.return_value = (
+            b"1",
+            b"Error: Disk already unlocked",
+        )  # out, err
         mock_popen.returncode = 1  # udisks2 already unlocked
 
         mocker.patch("subprocess.Popen", return_value=mock_popen)
@@ -209,24 +238,20 @@ class TestCli:
     def test_unlock_devmapper_fail(self, mocker):
         mock_popen = mocker.MagicMock()
         mock_communicate = mocker.MagicMock()
-        mock_popen.returncode = 1  # udisks2 already unlocked
+        mock_popen.returncode = 0
 
         mocker.patch("subprocess.Popen", return_value=mock_popen)
         mocker.patch("subprocess.Popen.communicate", return_value=mock_communicate)
 
-        mv = mock.MagicMock(spec=MountedVolume)
         vol = Volume(_DEFAULT_USB_DEVICE, EncryptionScheme.LUKS)
 
-        mock_mapped_name = mock.patch.object(
-            self.cli, "_get_mapped_name", return_value=None
-        )
-        mock_mapped_name.start()
-
-        with pytest.raises(ExportException) as ex:
+        with mock.patch.object(self.cli, "_get_mapped_name") as mock_map, pytest.raises(
+            ExportException
+        ) as ex:
+            mock_map.return_value = None
             self.cli.unlock_volume(vol, "a passw0rd!")
 
         assert ex.value.sdstatus == Status.ERROR_UNLOCK_GENERIC
-        mock_mapped_name.stop()
 
     @mock.patch(
         "subprocess.Popen", side_effect=subprocess.CalledProcessError(4, "Popen")
@@ -270,11 +295,16 @@ class TestCli:
         assert ex.value.sdstatus is Status.ERROR_UNLOCK_LUKS
 
     @mock.patch("subprocess.check_output")
-    @mock.patch("subprocess.getstatusoutput", return_value=(0, b"AlreadyMounted"))
-    def test__mount_volume_already_mounted(
-        self, mocked_statusoutput, mocked_subprocess
-    ):
-        mocked_subprocess.return_value = b"/media/usb"
+    def test__mount_volume_already_mounted(self, mocked_subprocess):
+        mocked_subprocess.side_effect = [
+            subprocess.CalledProcessError(1, "check_output"),
+            "/media/usb",
+        ]
+        mocked_subprocess.returncode = 1
+        mocked_subprocess.error.output = (
+            b"GDBus.Error:org.freedesktop.UDisks2.Error.AlreadyMounted: "
+            b"Device is already mounted"
+        )
         md = Volume(
             device_name=_DEFAULT_USB_DEVICE,
             encryption=EncryptionScheme.LUKS,
@@ -284,10 +314,10 @@ class TestCli:
         assert isinstance(result, MountedVolume)
 
     @mock.patch(
-        "subprocess.getstatusoutput",
+        "subprocess.check_output",
         side_effect=subprocess.CalledProcessError(1, "Oh no"),
     )
-    def test__mount_volume_error(self, mock_getstatusoutput):
+    def test__mount_volume_error(self, mock_sp):
         md = Volume(
             device_name="/dev/sda",
             encryption=EncryptionScheme.LUKS,
@@ -298,22 +328,9 @@ class TestCli:
 
         assert ex.value.sdstatus is Status.ERROR_MOUNT
 
-    def test_write_to_disk(self):
-        pass
-
-    def test_write_to_disk_error(self):
-        pass
-
-    def test_cleanup(self):
-        pass
-
-    def test_cleanup_error_device_busy(self):
-        pass
-
-    def test_cleanup_error_generic(self):
-        pass
-
-    def test__unmount_volume(self):
+    @mock.patch("subprocess.check_call")
+    def test__unmount_volume(self, mock_sp):
+        mock_sp.returncode = 0
         mounted = MountedVolume(
             device_name="/dev/sda",
             mapped_name=_PRETEND_LUKS_ID,
@@ -340,7 +357,7 @@ class TestCli:
 
         submission = Archive("testfile")
 
-        self.cli.write_data_to_device(submission.tmpdir, submission.target_dirname, vol)
+        self.cli.write_data_to_device(vol, submission.tmpdir, submission.target_dirname)
         self.cli.cleanup.assert_called_once()
 
         # Don't want to patch it indefinitely though, that will mess with the other tests
@@ -366,7 +383,7 @@ class TestCli:
 
         with pytest.raises(ExportException):
             self.cli.write_data_to_device(
-                submission.tmpdir, submission.target_dirname, vol
+                vol, submission.tmpdir, submission.target_dirname
             )
             self.cli.cleanup.assert_called_once()
 

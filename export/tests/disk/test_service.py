@@ -1,9 +1,7 @@
 from unittest import mock
-import pytest
 import os
 import tempfile
 
-import pdb  # todo remove
 from securedrop_export.exceptions import ExportException
 from securedrop_export.disk.status import Status
 from securedrop_export.disk.volume import Volume, MountedVolume, EncryptionScheme
@@ -111,7 +109,9 @@ class TestExportService:
 
         assert result == Status.SUCCESS_EXPORT
         mock_write.assert_called_once_with(
-            self.mock_luks_volume_mounted, self.mock_submission
+            self.mock_luks_volume_mounted,
+            self.mock_submission.tmpdir,
+            self.mock_submission.target_dirname,
         )
 
     def test_export_write_error(self):

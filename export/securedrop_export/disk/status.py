@@ -3,9 +3,12 @@ from securedrop_export.status import BaseStatus
 
 class Status(BaseStatus):
     NO_DEVICE_DETECTED = "NO_DEVICE_DETECTED"
-    INVALID_DEVICE_DETECTED = "INVALID_DEVICE_DETECTED"  # Not encrypted, too many encrypted partitions, too nested partition scheme, etc
+
+    INVALID_DEVICE_DETECTED = (
+        "INVALID_DEVICE_DETECTED"  # Not encrypted, or partitions too many/too nested
+    )
+
     MULTI_DEVICE_DETECTED = "MULTI_DEVICE_DETECTED"  # Not currently supported
-    UNKNOWN_DEVICE_DETECTED = "UNKNOWN_DEVICE_DETECTED"  # Badly-formatted USB (or locked VeraCrypt/TC - currently not supported)
 
     DEVICE_LOCKED = "DEVICE_LOCKED"  # One valid device detected, and it's locked
     DEVICE_WRITABLE = (
