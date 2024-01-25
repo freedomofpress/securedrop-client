@@ -3,103 +3,159 @@ import logging
 import os
 import subprocess
 import tarfile
-import threading
 from io import BytesIO
 from shlex import quote
 from tempfile import TemporaryDirectory
 from typing import List, Optional
 
-from PyQt5.QtCore import QObject, pyqtBoundSignal, pyqtSignal, pyqtSlot
+from PyQt5.QtCore import QObject, pyqtSignal
 
-from securedrop_client.export_status import ExportStatus
+from securedrop_client.export_status import ExportError, ExportStatus
 
 logger = logging.getLogger(__name__)
 
 
-class ExportError(Exception):
-    def __init__(self, status: "ExportStatus"):
-        self.status: "ExportStatus" = status
-
-
 class Export(QObject):
     """
-    This class sends files over to the Export VM so that they can be copied to a luks-encrypted USB
+    Interface for sending files to Export VM for transfer to a
     disk drive or printed by a USB-connected printer.
 
-    Files are archived in a specified format, which you can learn more about in the README for the
-    securedrop-export repository.
+    Files are archived in a specified format, (see `export` README).
+
+    A list of valid filepaths must be supplied.
     """
 
-    METADATA_FN = "metadata.json"
+    _METADATA_FN = "metadata.json"
 
-    USB_TEST_FN = "usb-test.sd-export"
-    USB_TEST_METADATA = {"device": "usb-test"}
+    _USB_TEST_FN = "usb-test.sd-export"
+    _USB_TEST_METADATA = {"device": "usb-test"}
 
-    PRINTER_PREFLIGHT_FN = "printer-preflight.sd-export"
-    PRINTER_PREFLIGHT_METADATA = {"device": "printer-preflight"}
+    _PRINTER_PREFLIGHT_FN = "printer-preflight.sd-export"
+    _PRINTER_PREFLIGHT_METADATA = {"device": "printer-preflight"}
 
-    DISK_TEST_FN = "disk-test.sd-export"
-    DISK_TEST_METADATA = {"device": "disk-test"}
+    _PRINT_FN = "print_archive.sd-export"
+    _PRINT_METADATA = {"device": "printer"}
 
-    PRINT_FN = "print_archive.sd-export"
-    PRINT_METADATA = {"device": "printer"}
+    _DISK_FN = "archive.sd-export"
+    _DISK_METADATA = {"device": "disk", "encryption_method": "luks"}
+    _DISK_ENCRYPTION_KEY_NAME = "encryption_key"
+    _DISK_EXPORT_DIR = "export_data"
 
-    DISK_FN = "archive.sd-export"
-    DISK_METADATA = {"device": "disk", "encryption_method": "luks"}
-    DISK_ENCRYPTION_KEY_NAME = "encryption_key"
-    DISK_EXPORT_DIR = "export_data"
-
-    # Set up signals for communication with the controller #
     # Emit ExportStatus
-    preflight_check_call_success = pyqtSignal(object)
-    export_usb_call_success = pyqtSignal(object)
-    printer_preflight_success = pyqtSignal(object)
-    print_call_success = pyqtSignal(object)
+    export_preflight_check_succeeded = pyqtSignal(object)
+    export_succeeded = pyqtSignal(object)
+
+    print_preflight_check_succeeded = pyqtSignal(object)
+    print_succeeded = pyqtSignal(object)
+
+    # Used for both print and export
+    export_completed = pyqtSignal(object)
 
     # Emit ExportError(status=ExportStatus)
-    export_usb_call_failure = pyqtSignal(object)
-    preflight_check_call_failure = pyqtSignal(object)
-    printer_preflight_failure = pyqtSignal(object)
-    print_call_failure = pyqtSignal(object)
+    export_preflight_check_failed = pyqtSignal(object)
+    export_failed = pyqtSignal(object)
 
-    # Emit List[str] of filepaths
-    export_completed = pyqtSignal(list)
+    print_preflight_check_failed = pyqtSignal(object)
+    print_failed = pyqtSignal(object)
 
-    def __init__(
-        self,
-        export_preflight_check_requested: Optional[pyqtBoundSignal] = None,
-        export_requested: Optional[pyqtBoundSignal] = None,
-        print_preflight_check_requested: Optional[pyqtBoundSignal] = None,
-        print_requested: Optional[pyqtBoundSignal] = None,
-    ) -> None:
-        super().__init__()
+    def run_printer_preflight_checks(self) -> None:
+        """
+        Make sure the Export VM is started.
+        """
+        logger.info("Beginning printer preflight check")
+        try:
+            with TemporaryDirectory() as tmp_dir:
+                archive_path = self._create_archive(
+                    archive_dir=tmp_dir,
+                    archive_fn=self._PRINTER_PREFLIGHT_FN,
+                    metadata=self._PRINTER_PREFLIGHT_METADATA,
+                )
+                status = self._run_qrexec_export(archive_path)
+                self.print_preflight_check_succeeded.emit(status)
+        except ExportError as e:
+            logger.error("Print preflight failed")
+            logger.debug(f"Print preflight failed: {e}")
+            self.print_preflight_check_failed.emit(e)
 
-        self.connect_signals(
-            export_preflight_check_requested,
-            export_requested,
-            print_preflight_check_requested,
-            print_requested,
-        )
+    def run_export_preflight_checks(self) -> None:
+        """
+        Run preflight check to verify that a valid USB device is connected.
+        """
+        try:
+            logger.debug("Beginning export preflight check")
 
-    def connect_signals(
-        self,
-        export_preflight_check_requested: Optional[pyqtBoundSignal] = None,
-        export_requested: Optional[pyqtBoundSignal] = None,
-        print_preflight_check_requested: Optional[pyqtBoundSignal] = None,
-        print_requested: Optional[pyqtBoundSignal] = None,
-    ) -> None:
-        # This instance can optionally react to events to prevent
-        # coupling it to dependent code.
-        if export_preflight_check_requested is not None:
-            export_preflight_check_requested.connect(self.run_preflight_checks)
-        if export_requested is not None:
-            export_requested.connect(self.send_file_to_usb_device)
-        if print_requested is not None:
-            print_requested.connect(self.print)
-        if print_preflight_check_requested is not None:
-            print_preflight_check_requested.connect(self.run_printer_preflight)
+            with TemporaryDirectory() as tmp_dir:
+                archive_path = self._create_archive(
+                    archive_dir=tmp_dir,
+                    archive_fn=self._USB_TEST_FN,
+                    metadata=self._USB_TEST_METADATA,
+                )
+                status = self._run_qrexec_export(archive_path)
+                self.export_preflight_check_succeeded.emit(status)
 
-    def _run_qrexec_export(cls, archive_path: str) -> ExportStatus:
+        except ExportError as e:
+            logger.error("Export preflight failed")
+            self.export_preflight_check_failed.emit(e)
+
+    def export(self, filepaths: List[str], passphrase: Optional[str]) -> None:
+        """
+        Bundle filepaths into a tarball and send to encrypted USB via qrexec,
+        optionally supplying a passphrase to unlock encrypted drives.
+        """
+        try:
+            logger.debug(f"Begin exporting {len(filepaths)} item(s)")
+
+            # Edit metadata template to include passphrase
+            metadata = self._DISK_METADATA.copy()
+            if passphrase:
+                metadata[self._DISK_ENCRYPTION_KEY_NAME] = passphrase
+
+            with TemporaryDirectory() as tmp_dir:
+                archive_path = self._create_archive(
+                    archive_dir=tmp_dir,
+                    archive_fn=self._DISK_FN,
+                    metadata=metadata,
+                    filepaths=filepaths,
+                )
+                status = self._run_qrexec_export(archive_path)
+
+                self.export_succeeded.emit(status)
+                logger.debug(f"Status {status}")
+
+        except ExportError as e:
+            logger.error("Export failed")
+            logger.debug(f"Export failed: {e}")
+            self.export_failed.emit(e)
+
+        self.export_completed.emit(filepaths)
+
+    def print(self, filepaths: List[str]) -> None:
+        """
+        Bundle files at self._filepaths_list into tarball and send for
+        printing via qrexec.
+        """
+        try:
+            logger.debug("Beginning print")
+
+            with TemporaryDirectory() as tmp_dir:
+                archive_path = self._create_archive(
+                    archive_dir=tmp_dir,
+                    archive_fn=self._PRINT_FN,
+                    metadata=self._PRINT_METADATA,
+                    filepaths=filepaths,
+                )
+                status = self._run_qrexec_export(archive_path)
+                self.print_succeeded.emit(status)
+                logger.debug(f"Status {status}")
+
+        except ExportError as e:
+            logger.error("Export failed")
+            logger.debug(f"Export failed: {e}")
+            self.print_failed.emit(e)
+
+        self.export_completed.emit(filepaths)
+
+    def _run_qrexec_export(self, archive_path: str) -> ExportStatus:
         """
         Make the subprocess call to send the archive to the Export VM, where the archive will be
         processed.
@@ -147,7 +203,7 @@ class Export(QObject):
             raise ExportError(ExportStatus.CALLED_PROCESS_ERROR)
 
     def _create_archive(
-        cls, archive_dir: str, archive_fn: str, metadata: dict, filepaths: List[str]
+        self, archive_dir: str, archive_fn: str, metadata: dict, filepaths: List[str] = []
     ) -> str:
         """
         Create the archive to be sent to the Export VM.
@@ -164,20 +220,35 @@ class Export(QObject):
         archive_path = os.path.join(archive_dir, archive_fn)
 
         with tarfile.open(archive_path, "w:gz") as archive:
-            cls._add_virtual_file_to_archive(archive, cls.METADATA_FN, metadata)
+            self._add_virtual_file_to_archive(archive, self._METADATA_FN, metadata)
 
             # When more than one file is added to the archive,
             # extra care must be taken to prevent name collisions.
             is_one_of_multiple_files = len(filepaths) > 1
+            missing_count = 0
             for filepath in filepaths:
-                cls._add_file_to_archive(
-                    archive, filepath, prevent_name_collisions=is_one_of_multiple_files
-                )
+                if not (os.path.exists(filepath)):
+                    missing_count += 1
+                    logger.debug(
+                        f"'{filepath}' does not exist, and will not be included in archive"
+                    )
+                    # Controller checks files and keeps a reference open during export,
+                    # so this shouldn't be reachable
+                    logger.warning("File not found at specified filepath, skipping")
+                else:
+                    self._add_file_to_archive(
+                        archive, filepath, prevent_name_collisions=is_one_of_multiple_files
+                    )
+            if missing_count == len(filepaths) and missing_count > 0:
+                # Context manager will delete archive even if an exception occurs
+                # since the archive is in a TemporaryDirectory
+                logger.error("Files were moved or missing")
+                raise ExportError(ExportStatus.ERROR_MISSING_FILES)
 
         return archive_path
 
     def _add_virtual_file_to_archive(
-        cls, archive: tarfile.TarFile, filename: str, filedata: dict
+        self, archive: tarfile.TarFile, filename: str, filedata: dict
     ) -> None:
         """
         Add filedata to a stream of in-memory bytes and add these bytes to the archive.
@@ -195,7 +266,7 @@ class Export(QObject):
         archive.addfile(tarinfo, filedata_bytes)
 
     def _add_file_to_archive(
-        cls, archive: tarfile.TarFile, filepath: str, prevent_name_collisions: bool = False
+        self, archive: tarfile.TarFile, filepath: str, prevent_name_collisions: bool = False
     ) -> None:
         """
         Add the file to the archive. When the archive is extracted, the file should exist in a
@@ -206,7 +277,7 @@ class Export(QObject):
             filepath: The path to the file that will be added to the supplied archive.
         """
         filename = os.path.basename(filepath)
-        arcname = os.path.join(cls.DISK_EXPORT_DIR, filename)
+        arcname = os.path.join(self._DISK_EXPORT_DIR, filename)
         if prevent_name_collisions:
             (parent_path, _) = os.path.split(filepath)
             grand_parent_path, parent_name = os.path.split(parent_path)
@@ -216,126 +287,3 @@ class Export(QObject):
                 arcname = os.path.join("export_data", parent_name, filename)
 
         archive.add(filepath, arcname=arcname, recursive=False)
-
-    def _build_archive_and_export(
-        self, metadata: dict, filename: str, filepaths: List[str] = []
-    ) -> ExportStatus:
-        """
-        Build archive, run qrexec command and return resulting ExportStatus.
-
-        ExportError may be raised during underlying _run_qrexec_export call,
-        and is handled by the calling method.
-        """
-        with TemporaryDirectory() as tmp_dir:
-            archive_path = self._create_archive(
-                archive_dir=tmp_dir, archive_fn=filename, metadata=metadata, filepaths=filepaths
-            )
-            return self._run_qrexec_export(archive_path)
-
-    @pyqtSlot()
-    def run_preflight_checks(self) -> None:
-        """
-        Run preflight checks to verify that a valid USB device is connected.
-        """
-        try:
-            logger.debug(
-                "beginning preflight checks in thread {}".format(threading.current_thread().ident)
-            )
-
-            status = self._build_archive_and_export(
-                metadata=self.USB_TEST_METADATA, filename=self.USB_TEST_FN
-            )
-
-            logger.debug("completed preflight checks: success")
-            self.preflight_check_call_success.emit(status)
-        except ExportError as e:
-            logger.debug("completed preflight checks: failure")
-            self.preflight_check_call_failure.emit(e)
-
-    @pyqtSlot()
-    def run_printer_preflight(self) -> None:
-        """
-        Make sure the Export VM is started.
-        """
-        try:
-            status = self._build_archive_and_export(
-                metadata=self.PRINTER_PREFLIGHT_METADATA, filename=self.PRINTER_PREFLIGHT_FN
-            )
-            self.printer_preflight_success.emit(status)
-        except ExportError as e:
-            logger.error("Export failed")
-            logger.debug(f"Export failed: {e}")
-            self.printer_preflight_failure.emit(e)
-
-    @pyqtSlot(list, str)
-    def send_file_to_usb_device(self, filepaths: List[str], passphrase: str) -> None:
-        """
-        Export the file to the luks-encrypted usb disk drive attached to the Export VM.
-
-        Args:
-            filepath: The path of file to export.
-            passphrase: The passphrase to unlock the luks-encrypted usb disk drive.
-        """
-        try:
-            logger.debug("beginning export from thread {}".format(threading.current_thread().ident))
-            # Edit metadata template to include passphrase
-            metadata = self.DISK_METADATA.copy()
-            metadata[self.DISK_ENCRYPTION_KEY_NAME] = passphrase
-            status = self._build_archive_and_export(
-                metadata=metadata, filename=self.DISK_FN, filepaths=filepaths
-            )
-
-            self.export_usb_call_success.emit(status)
-            logger.debug(f"Status {status}")
-        except ExportError as e:
-            logger.error("Export failed")
-            logger.debug(f"Export failed: {e}")
-            self.export_usb_call_failure.emit(e)
-
-        self.export_completed.emit(filepaths)
-
-    @pyqtSlot(list)
-    def print(self, filepaths: List[str]) -> None:
-        """
-        Print the file to the printer attached to the Export VM.
-
-        Args:
-            filepath: The path of file to export.
-        """
-        try:
-            logger.debug(
-                "beginning printer from thread {}".format(threading.current_thread().ident)
-            )
-            status = self._build_archive_and_export(
-                metadata=self.PRINT_METADATA, filename=self.PRINT_FN, filepaths=filepaths
-            )
-            self.print_call_success.emit(status)
-            logger.debug(f"Status {status}")
-        except ExportError as e:
-            logger.error("Export failed")
-            logger.debug(f"Export failed: {e}")
-            self.print_call_failure.emit(e)
-
-        self.export_completed.emit(filepaths)
-
-
-Service = Export
-
-# Store a singleton service instance.
-_service = Service()
-
-
-def resetService() -> None:
-    """Replaces the existing sngleton service instance by a new one.
-
-    Get the instance by using getService().
-    """
-    global _service
-    _service = Service()
-
-
-def getService() -> Service:
-    """All calls to this function return the same singleton service instance.
-
-    Use resetService() to replace it by a new one."""
-    return _service

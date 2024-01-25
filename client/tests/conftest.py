@@ -4,14 +4,13 @@ import subprocess
 import tempfile
 from configparser import ConfigParser
 from datetime import datetime
-from typing import List
 from uuid import uuid4
 
 import pytest
 from PyQt5.QtCore import Qt
 from PyQt5.QtWidgets import QMainWindow
 
-from securedrop_client import export, state
+from securedrop_client import state
 from securedrop_client.app import configure_locale_and_language
 from securedrop_client.config import Config
 from securedrop_client.db import (
@@ -23,7 +22,6 @@ from securedrop_client.db import (
     Source,
     make_session_maker,
 )
-from securedrop_client.export import ExportStatus
 from securedrop_client.gui import conversation
 from securedrop_client.gui.main import Window
 from securedrop_client.logic import Controller
@@ -80,7 +78,7 @@ def print_dialog(mocker, homedir):
 
     export_device = mocker.MagicMock(spec=conversation.ExportDevice)
 
-    dialog = conversation.PrintFileDialog(export_device, "file_UUID", "file123.jpg")
+    dialog = conversation.PrintFileDialog(export_device, "file123.jpg", ["/mock/path/to/file"])
 
     yield dialog
 
@@ -92,14 +90,14 @@ def print_transcript_dialog(mocker, homedir):
     export_device = mocker.MagicMock(spec=conversation.ExportDevice)
 
     dialog = conversation.PrintTranscriptDialog(
-        export_device, "transcript.txt", "some/path/transcript.txt"
+        export_device, "transcript.txt", ["some/path/transcript.txt"]
     )
 
     yield dialog
 
 
 @pytest.fixture(scope="function")
-def export_dialog(mocker, homedir):
+def export_dialog_multifile(mocker, homedir):
     mocker.patch("PyQt5.QtWidgets.QApplication.activeWindow", return_value=QMainWindow())
 
     export_device = mocker.MagicMock(spec=conversation.ExportDevice)
@@ -114,12 +112,12 @@ def export_dialog(mocker, homedir):
 
 
 @pytest.fixture(scope="function")
-def export_file_dialog(mocker, homedir):
+def export_dialog(mocker, homedir):
     mocker.patch("PyQt5.QtWidgets.QApplication.activeWindow", return_value=QMainWindow())
 
     export_device = mocker.MagicMock(spec=conversation.ExportDevice)
 
-    dialog = conversation.ExportFileDialog(export_device, "file_UUID", "file123.jpg")
+    dialog = conversation.ExportDialog(export_device, "file123.jpg", ["/mock/path/to/file"])
 
     yield dialog
 
@@ -130,8 +128,8 @@ def export_transcript_dialog(mocker, homedir):
 
     export_device = mocker.MagicMock(spec=conversation.ExportDevice)
 
-    dialog = conversation.ExportTranscriptDialog(
-        export_device, "transcript.txt", "/some/path/transcript.txt"
+    dialog = conversation.ExportDialog(
+        export_device, "transcript.txt", ["/some/path/transcript.txt"]
     )
 
     yield dialog
@@ -169,39 +167,16 @@ def homedir(i18n):
     yield tmpdir
 
 
-class MockExportService(export.Service):
-    """An export service that assumes the Qubes RPC calls are successful and skips them."""
-
-    def __init__(self, unlocked: bool):
-        super().__init__()
-        if unlocked:
-            self.preflight_response = ExportStatus.DEVICE_WRITABLE
-        else:
-            self.preflight_response = ExportStatus.DEVICE_LOCKED
-
-    def run_preflight_checks(self) -> None:
-        self.preflight_check_call_success.emit(self.preflight_response)
-
-    def send_file_to_usb_device(self, filepaths: List[str], passphrase: str) -> None:
-        self.export_usb_call_success.emit(ExportStatus.SUCCESS_EXPORT)
-        self.export_completed.emit(filepaths)
-
-    def run_printer_preflight(self) -> None:
-        self.printer_preflight_success.emit(ExportStatus.PRINT_PREFLIGHT_SUCCESS)
-
-    def print(self, filepaths: List[str]) -> None:
-        self.print_call_success.emit(ExportStatus.PRINT_SUCCESS)
-        self.export_completed.emit(filepaths)
-
-
 @pytest.fixture(scope="function")
-def mock_export_service():
-    return MockExportService(unlocked=False)
+def mock_export():
+    device = conversation.ExportDevice()
 
+    device.run_export_preflight_checks = lambda dir: None
+    device.run_printer_preflight_checks = lambda dir: None
+    device.print = lambda filepaths: None
+    device.export = lambda filepaths, passphrase: None
 
-@pytest.fixture(scope="function")
-def mock_export_service_unlocked_device():
-    return MockExportService(unlocked=True)
+    return device
 
 
 @pytest.fixture(scope="function")

@@ -12,15 +12,11 @@ from typing import Callable, Optional
 from PyQt5.QtCore import Qt, pyqtSlot
 from PyQt5.QtWidgets import QAction, QDialog, QMenu
 
-from securedrop_client import export, state
+from securedrop_client import state
 from securedrop_client.conversation import Transcript as ConversationTranscript
 from securedrop_client.db import Source
 from securedrop_client.gui.base import ModalDialog
-from securedrop_client.gui.conversation import ExportDevice as ConversationExportDevice
-from securedrop_client.gui.conversation import ExportDialog as ExportConversationDialog
-from securedrop_client.gui.conversation import (
-    ExportTranscriptDialog as ExportConversationTranscriptDialog,
-)
+from securedrop_client.gui.conversation import ExportDevice, ExportDialog
 from securedrop_client.gui.conversation import (
     PrintTranscriptDialog as PrintConversationTranscriptDialog,
 )
@@ -160,8 +156,6 @@ class PrintConversationAction(QAction):  # pragma: nocover
         self.controller = controller
         self._source = source
 
-        self._export_device = ConversationExportDevice(controller, export.getService())
-
         self.triggered.connect(self._on_triggered)
 
     @pyqtSlot()
@@ -189,8 +183,9 @@ class PrintConversationAction(QAction):  # pragma: nocover
         # out of scope, any pending file removal will be performed
         # by the operating system.
         with open(file_path, "r") as f:
+            export = ExportDevice()
             dialog = PrintConversationTranscriptDialog(
-                self._export_device, TRANSCRIPT_FILENAME, str(file_path)
+                export, TRANSCRIPT_FILENAME, [str(file_path)]
             )
             dialog.exec()
 
@@ -212,15 +207,13 @@ class ExportConversationTranscriptAction(QAction):  # pragma: nocover
         self.controller = controller
         self._source = source
 
-        self._export_device = ConversationExportDevice(controller, export.getService())
-
         self.triggered.connect(self._on_triggered)
 
     @pyqtSlot()
     def _on_triggered(self) -> None:
         """
         (Re-)generates the conversation transcript and opens a confirmation dialog to export it,
-        in the manner of the existing ExportFileDialog.
+        in the manner of the existing ExportDialog.
         """
         file_path = (
             Path(self.controller.data_dir)
@@ -241,9 +234,8 @@ class ExportConversationTranscriptAction(QAction):  # pragma: nocover
         # out of scope, any pending file removal will be performed
         # by the operating system.
         with open(file_path, "r") as f:
-            dialog = ExportConversationTranscriptDialog(
-                self._export_device, TRANSCRIPT_FILENAME, str(file_path)
-            )
+            export_device = ExportDevice()
+            dialog = ExportDialog(export_device, TRANSCRIPT_FILENAME, [str(file_path)])
             dialog.exec()
 
 
@@ -267,8 +259,6 @@ class ExportConversationAction(QAction):  # pragma: nocover
         self._source = source
         self._state = app_state
 
-        self._export_device = ConversationExportDevice(controller, export.getService())
-
         self.triggered.connect(self._on_triggered)
 
     @pyqtSlot()
@@ -276,7 +266,7 @@ class ExportConversationAction(QAction):  # pragma: nocover
         """
         (Re-)generates the conversation transcript and opens a confirmation dialog to export it
         alongside all the (attached) files that are downloaded, in the manner
-        of the existing ExportFileDialog.
+        of the existing ExportDialog.
         """
         if self._state is not None:
             id = self._state.selected_conversation
@@ -302,7 +292,7 @@ class ExportConversationAction(QAction):  # pragma: nocover
         """
         (Re-)generates the conversation transcript and opens a confirmation dialog to export it
         alongside all the (attached) files that are downloaded, in the manner
-        of the existing ExportFileDialog.
+        of the existing ExportDialog.
         """
         transcript_location = (
             Path(self.controller.data_dir)
@@ -331,6 +321,7 @@ class ExportConversationAction(QAction):  # pragma: nocover
         # out of scope, any pending file removal will be performed
         # by the operating system.
         with ExitStack() as stack:
+            export_device = ExportDevice()
             files = [
                 stack.enter_context(open(file_location, "r")) for file_location in file_locations
             ]
@@ -341,8 +332,8 @@ class ExportConversationAction(QAction):  # pragma: nocover
             else:
                 summary = _("all files and transcript")
 
-            dialog = ExportConversationDialog(
-                self._export_device,
+            dialog = ExportDialog(
+                export_device,
                 summary,
                 [str(file_location) for file_location in file_locations],
             )

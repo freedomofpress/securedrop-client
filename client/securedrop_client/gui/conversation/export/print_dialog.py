@@ -1,23 +1,22 @@
 from gettext import gettext as _
-from typing import Optional
+from typing import List, Optional
 
 from PyQt5.QtCore import QSize, pyqtSlot
 
-from securedrop_client.export import ExportError
-from securedrop_client.export_status import ExportStatus
+from securedrop_client.export_status import ExportError, ExportStatus
 from securedrop_client.gui.base import ModalDialog, SecureQLabel
 
-from .device import Device
+from ....export import Export
 
 
 class PrintDialog(ModalDialog):
     FILENAME_WIDTH_PX = 260
 
-    def __init__(self, device: Device, file_uuid: str, file_name: str) -> None:
+    def __init__(self, device: Export, file_name: str, filepaths: List[str]) -> None:
         super().__init__()
 
         self._device = device
-        self.file_uuid = file_uuid
+        self.filepaths = filepaths
         self.file_name = SecureQLabel(
             file_name, wordwrap=False, max_length=self.FILENAME_WIDTH_PX
         ).text()
@@ -95,7 +94,7 @@ class PrintDialog(ModalDialog):
 
     @pyqtSlot()
     def _print_file(self) -> None:
-        self._device.print_file(self.file_uuid)
+        self._device.print(self.filepaths)
         self.close()
 
     @pyqtSlot()

@@ -1,11 +1,16 @@
 from enum import Enum
 
 
+class ExportError(Exception):
+    def __init__(self, status: "ExportStatus"):
+        self.status: "ExportStatus" = status
+
+
 class ExportStatus(Enum):
     """
     All possible strings returned by the qrexec calls to sd-devices. These values come from
-    `print/status.py` and `disk/status.py` in `https://github.com/freedomofpress/securedrop-export`
-    and must only be changed in coordination with changes released in that repo.
+    `print/status.py` and `disk/status.py` in `securedrop-export`
+    and must only be changed in coordination with changes released in that component.
     """
 
     # Export
@@ -53,3 +58,6 @@ class ExportStatus(Enum):
     CALLED_PROCESS_ERROR = "CALLED_PROCESS_ERROR"
     ERROR_USB_CONFIGURATION = "ERROR_USB_CONFIGURATION"
     UNEXPECTED_RETURN_STATUS = "UNEXPECTED_RETURN_STATUS"
+
+    # Client-side error only
+    ERROR_MISSING_FILES = "ERROR_MISSING_FILES"  # All files meant for export are missing

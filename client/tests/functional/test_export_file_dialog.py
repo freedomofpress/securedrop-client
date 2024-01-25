@@ -17,11 +17,11 @@ from tests.conftest import (
 )
 
 
-def _setup_export(functional_test_logged_in_context, qtbot, mocker, mock_export_service):
+def _setup_export(functional_test_logged_in_context, qtbot, mocker, mock_export):
     """
     Helper. Set up export test context and return reference to export dialog.
     """
-    mocker.patch("securedrop_client.export.getService", return_value=mock_export_service)
+    mocker.patch("securedrop_client.export.Export", return_value=mock_export)
 
     gui, controller = functional_test_logged_in_context
 
@@ -68,16 +68,12 @@ def _setup_export(functional_test_logged_in_context, qtbot, mocker, mock_export_
 
 
 @pytest.mark.vcr()
-def test_export_file_dialog_locked(
-    functional_test_logged_in_context, qtbot, mocker, mock_export_service
-):
+def test_export_file_dialog_locked(functional_test_logged_in_context, qtbot, mocker, mock_export):
     """
     Download a file, export it, and verify that the export is complete by checking that the label of
     the export dialog's continue button is "DONE".
     """
-    export_dialog = _setup_export(
-        functional_test_logged_in_context, qtbot, mocker, mock_export_service
-    )
+    export_dialog = _setup_export(functional_test_logged_in_context, qtbot, mocker, mock_export)
 
     assert export_dialog.passphrase_form.isHidden() is True
 
@@ -102,15 +98,13 @@ def test_export_file_dialog_locked(
 
 @pytest.mark.vcr()
 def test_export_file_dialog_device_already_unlocked(
-    functional_test_logged_in_context, qtbot, mocker, mock_export_service_unlocked_device
+    functional_test_logged_in_context, qtbot, mocker, mock_export
 ):
     """
     Download a file, export it, and verify that the export is complete by checking that the label of
     the export dialog's continue button is "DONE".
     """
-    export_dialog = _setup_export(
-        functional_test_logged_in_context, qtbot, mocker, mock_export_service_unlocked_device
-    )
+    export_dialog = _setup_export(functional_test_logged_in_context, qtbot, mocker, mock_export)
 
     def check_skip_password_prompt_for_unlocked_device():
         assert export_dialog.passphrase_form.isHidden() is True

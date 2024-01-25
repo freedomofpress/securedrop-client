@@ -2,36 +2,37 @@
 A dialog that allows journalists to export sensitive files to a USB drive.
 """
 from gettext import gettext as _
-from typing import Optional
+from typing import List, Optional
 
 from pkg_resources import resource_string
 from PyQt5.QtCore import QSize, Qt, pyqtSlot
 from PyQt5.QtGui import QColor, QFont
 from PyQt5.QtWidgets import QGraphicsDropShadowEffect, QLineEdit, QVBoxLayout, QWidget
 
-from securedrop_client.export import ExportError
-from securedrop_client.export_status import ExportStatus
+from securedrop_client.export_status import ExportError, ExportStatus
 from securedrop_client.gui.base import ModalDialog, PasswordEdit, SecureQLabel
 from securedrop_client.gui.base.checkbox import SDCheckBox
 
-from .device import Device
+from ....export import Export
 
 
-class FileDialog(ModalDialog):
+class ExportDialog(ModalDialog):
     DIALOG_CSS = resource_string(__name__, "dialog.css").decode("utf-8")
 
     PASSPHRASE_LABEL_SPACING = 0.5
     NO_MARGIN = 0
     FILENAME_WIDTH_PX = 260
 
-    def __init__(self, device: Device, file_uuid: str, file_name: str) -> None:
+    def __init__(self, device: Export, summary_text: str, filepaths: List[str]) -> None:
         super().__init__()
         self.setStyleSheet(self.DIALOG_CSS)
 
         self._device = device
-        self.file_uuid = file_uuid
-        self.file_name = SecureQLabel(
-            file_name, wordwrap=False, max_length=self.FILENAME_WIDTH_PX
+        self.filepaths = filepaths
+
+        # This could be the filename, if a single file, or "{n} files"
+        self.summary_text = SecureQLabel(
+            summary_text, wordwrap=False, max_length=self.FILENAME_WIDTH_PX
         ).text()
         # Hold onto the error status we receive from the Export VM
         self.error_status: Optional[ExportStatus] = None
@@ -51,10 +52,10 @@ class FileDialog(ModalDialog):
         # Dialog content
         self.starting_header = _(
             "Preparing to export:<br />" '<span style="font-weight:normal">{}</span>'
-        ).format(self.file_name)
+        ).format(self.summary_text)
         self.ready_header = _(
             "Ready to export:<br />" '<span style="font-weight:normal">{}</span>'
-        ).format(self.file_name)
+        ).format(self.summary_text)
         self.insert_usb_header = _("Insert encrypted USB drive")
         self.passphrase_header = _("Enter passphrase for USB drive")
         self.success_header = _("Export successful")
@@ -74,7 +75,7 @@ class FileDialog(ModalDialog):
             "identifies who they are. To protect your sources, please consider redacting files "
             "before working with them on network-connected computers."
         )
-        self.exporting_message = _("Exporting: {}").format(self.file_name)
+        self.exporting_message = _("Exporting: {}").format(self.summary_text)
         self.insert_usb_message = _(
             "Please insert one of the export drives provisioned specifically "
             "for the SecureDrop Workstation."
@@ -128,7 +129,7 @@ class FileDialog(ModalDialog):
 
     def _show_passphrase_request_message(self) -> None:
         self.continue_button.clicked.disconnect()
-        self.continue_button.clicked.connect(self._export_file)
+        self.continue_button.clicked.connect(self._export)
         self.header.setText(self.passphrase_header)
         self.continue_button.setText(_("SUBMIT"))
         self.header_line.hide()
@@ -140,7 +141,7 @@ class FileDialog(ModalDialog):
 
     def _show_passphrase_request_message_again(self) -> None:
         self.continue_button.clicked.disconnect()
-        self.continue_button.clicked.connect(self._export_file)
+        self.continue_button.clicked.connect(self._export)
         self.header.setText(self.passphrase_header)
         self.error_details.setText(self.passphrase_error_message)
         self.continue_button.setText(_("SUBMIT"))
@@ -208,7 +209,7 @@ class FileDialog(ModalDialog):
         self._device.run_export_preflight_checks()
 
     @pyqtSlot()
-    def _export_file(self, checked: bool = False) -> None:
+    def _export(self, checked: bool = False) -> None:
         self.start_animate_activestate()
         self.cancel_button.setEnabled(False)
         self.passphrase_field.setDisabled(True)
@@ -216,7 +217,7 @@ class FileDialog(ModalDialog):
         # TODO: If the drive is already unlocked, the passphrase field will be empty.
         # This is ok, but could violate expectations. The password should be passed
         # via qrexec in future, to avoid writing it to even a temporary file at all.
-        self._device.export_file_to_usb_drive(self.file_uuid, self.passphrase_field.text())
+        self._device.export(self.filepaths, self.passphrase_field.text())
 
     @pyqtSlot(object)
     def _on_export_preflight_check_succeeded(self, result: ExportStatus) -> None:
@@ -228,7 +229,7 @@ class FileDialog(ModalDialog):
             self.continue_button.clicked.disconnect()
             if result == ExportStatus.DEVICE_WRITABLE:
                 # Skip password prompt, we're there
-                self.continue_button.clicked.connect(self._export_file)
+                self.continue_button.clicked.connect(self._export)
             else:  # result == ExportStatus.DEVICE_LOCKED
                 self.continue_button.clicked.connect(self._show_passphrase_request_message)
             self.continue_button.setEnabled(True)
@@ -237,7 +238,7 @@ class FileDialog(ModalDialog):
 
         # Skip passphrase prompt if device is unlocked
         if result == ExportStatus.DEVICE_WRITABLE:
-            self._export_file()
+            self._export()
         else:
             self._show_passphrase_request_message()
 

@@ -1,4 +1,4 @@
-from securedrop_client.export import ExportError, ExportStatus
+from securedrop_client.export_status import ExportError, ExportStatus
 from securedrop_client.gui.conversation import PrintFileDialog
 from tests.helper import app  # noqa: F401
 
@@ -8,7 +8,7 @@ def test_PrintFileDialog_init(mocker):
         "securedrop_client.gui.conversation.PrintFileDialog._show_starting_instructions"
     )
 
-    PrintFileDialog(mocker.MagicMock(), "mock_uuid", "mock.jpg")
+    PrintFileDialog(mocker.MagicMock(), "mock.jpg", ["/mock/path/to/file"])
 
     _show_starting_instructions_fn.assert_called_once_with()
 
@@ -19,7 +19,7 @@ def test_PrintFileDialog_init_sanitizes_filename(mocker):
     )
     filename = '<script>alert("boom!");</script>'
 
-    PrintFileDialog(mocker.MagicMock(), "mock_uuid", filename)
+    PrintFileDialog(mocker.MagicMock(), filename, ["/mock/path/to/file"])
 
     secure_qlabel.assert_any_call(filename, wordwrap=False, max_length=260)
 

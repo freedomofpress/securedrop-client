@@ -60,7 +60,7 @@ from PyQt5.QtWidgets import (
     QWidget,
 )
 
-from securedrop_client import export, state
+from securedrop_client import state
 from securedrop_client.db import (
     DraftReply,
     File,
@@ -2255,8 +2255,6 @@ class FileWidget(QWidget):
 
         self.controller = controller
 
-        self._export_device = conversation.ExportDevice(controller, export.getService())
-
         self.file = self.controller.get_file(file_uuid)
         self.uuid = file_uuid
         self.index = index
@@ -2455,11 +2453,16 @@ class FileWidget(QWidget):
         """
         Called when the export button is clicked.
         """
+        file_location = self.file.location(self.controller.data_dir)
+
         if not self.controller.downloaded_file_exists(self.file):
+            logger.debug("Clicked export but file not downloaded")
             return
 
-        self.export_dialog = conversation.ExportFileDialog(
-            self._export_device, self.uuid, self.file.filename
+        export_device = conversation.ExportDevice()
+
+        self.export_dialog = conversation.ExportDialog(
+            export_device, self.file.filename, [file_location]
         )
         self.export_dialog.show()
 
@@ -2469,9 +2472,14 @@ class FileWidget(QWidget):
         Called when the print button is clicked.
         """
         if not self.controller.downloaded_file_exists(self.file):
+            logger.debug("Clicked print but file not downloaded")
             return
 
-        dialog = conversation.PrintFileDialog(self._export_device, self.uuid, self.file.filename)
+        filepath = self.file.location(self.controller.data_dir)
+
+        export_device = conversation.ExportDevice()
+
+        dialog = conversation.PrintFileDialog(export_device, self.file.filename, [filepath])
         dialog.exec()
 
     def _on_left_click(self) -> None:

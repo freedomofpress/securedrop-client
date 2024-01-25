@@ -1,144 +1,255 @@
+import os
+import subprocess
+import tarfile
+from tempfile import NamedTemporaryFile, TemporaryDirectory
 from unittest import mock
 
-from PyQt5.QtTest import QSignalSpy
+import pytest
 
-from securedrop_client.export import Export
-from securedrop_client.gui.conversation.export import Device
-from securedrop_client.logic import Controller
+from securedrop_client.export_status import ExportError, ExportStatus
+from securedrop_client.gui.conversation.export import Export
 from tests import factory
 
+_PATH_TO_PRETEND_ARCHIVE = "/tmp/archive-pretend"
+_QREXEC_EXPORT_COMMAND = [
+    "qrexec-client-vm",
+    "--",
+    "sd-devices",
+    "qubes.OpenInVM",
+    "/usr/lib/qubes/qopen-in-vm",
+    "--view-only",
+    "--",
+    f"{_PATH_TO_PRETEND_ARCHIVE}",
+]
+_MOCK_FILEDIR = "/tmp/mock_tmpdir/"
 
+
+@mock.patch("subprocess.check_output")
 class TestDevice:
     @classmethod
     def setup_class(cls):
-        mock_export_service = mock.MagicMock(spec=Export)
-        mock_get_file = mock.MagicMock()
-        cls.mock_controller = mock.MagicMock(spec=Controller)
-        cls.mock_controller.data_dir = "pretend-data-dir"
-        cls.mock_controller.get_file = mock_get_file
-        cls.device = Device(cls.mock_controller, mock_export_service)
+        cls.device = None
 
-    # Reset any manually-changed mock controller values before next test
+    # Reset any manually-changed mock values before next test
     @classmethod
     def setup_method(cls):
         cls.mock_file = factory.File(source=factory.Source())
-        cls.mock_controller.get_file.return_value = cls.mock_file
-        cls.mock_controller.downloaded_file_exists.return_value = True
+        cls.mock_file_location = f"{_MOCK_FILEDIR}{cls.mock_file.filename}"
+        cls.device = Export()
+        cls.device._create_archive = mock.MagicMock()
+        cls.device._create_archive.return_value = _PATH_TO_PRETEND_ARCHIVE
+        cls.mock_tmpdir = mock.MagicMock()
+        cls.mock_tmpdir.__enter__ = mock.MagicMock(return_value=_MOCK_FILEDIR)
 
     @classmethod
     def teardown_method(cls):
         cls.mock_file = None
-        cls.mock_controller.get_file.return_value = None
+        cls.device._create_archive = None
 
-    def test_Device_run_printer_preflight_checks(self):
-        print_preflight_check_requested_emissions = QSignalSpy(
-            self.device.print_preflight_check_requested
+    def test_Device_run_printer_preflight_checks(self, mock_subprocess):
+        device = Export()
+        device._create_archive = mock.MagicMock()
+        device._create_archive.return_value = _PATH_TO_PRETEND_ARCHIVE
+
+        with mock.patch(
+            "securedrop_client.export.TemporaryDirectory",
+            return_value=self.mock_tmpdir,
+        ):
+            device.run_printer_preflight_checks()
+
+        mock_subprocess.assert_called_once()
+        assert (
+            _QREXEC_EXPORT_COMMAND in mock_subprocess.call_args[0]
+        ), f"Actual: {mock_subprocess.call_args[0]}"
+
+    def test_Device_run_print_preflight_checks_with_error(self, mock_sp):
+        mock_sp.side_effect = subprocess.CalledProcessError(1, "check_output")
+
+        with mock.patch("securedrop_client.export.logger.error") as err:
+            self.device.run_printer_preflight_checks()
+
+        assert "Print preflight failed" in err.call_args[0]
+
+    def test_Device_print(self, mock_subprocess):
+        with mock.patch(
+            "securedrop_client.export.TemporaryDirectory",
+            return_value=self.mock_tmpdir,
+        ):
+            self.device.print([self.mock_file_location])
+
+        self.device._create_archive.assert_called_once_with(
+            archive_dir=_MOCK_FILEDIR,
+            archive_fn=self.device._PRINT_FN,
+            metadata=self.device._PRINT_METADATA,
+            filepaths=[self.mock_file_location],
         )
+        mock_subprocess.assert_called_once()
+        assert _QREXEC_EXPORT_COMMAND in mock_subprocess.call_args[0]
 
-        self.device.run_printer_preflight_checks()
+    def test_Device_print_file_file_missing(self, mock_subprocess, mocker):
+        device = Export()
+        warning_logger = mocker.patch("securedrop_client.export.logger.warning")
 
-        assert len(print_preflight_check_requested_emissions) == 1
+        log_msg = "File not found at specified filepath, skipping"
 
-    def test_Device_run_print_file(self):
-        # file = factory.File(source=factory.Source())
-        file = self.mock_file
-        print_requested_emissions = QSignalSpy(self.device.print_requested)
+        device.print("some-missing-file-uuid")
 
-        self.device.print_file(file.uuid)
+        assert log_msg in warning_logger.call_args[0]
+        mock_subprocess.assert_not_called()
 
-        assert len(print_requested_emissions) == 1
+    def test_Device_run_export_preflight_checks(self, mock_subprocess):
+        with mock.patch(
+            "securedrop_client.export.TemporaryDirectory",
+            return_value=self.mock_tmpdir,
+        ):
+            self.device.run_export_preflight_checks()
+        mock_subprocess.assert_called_once()
 
-    def test_Device_print_transcript(self):
-        print_requested_emissions = QSignalSpy(self.device.print_requested)
+        self.device._create_archive.assert_called_once_with(
+            archive_dir=_MOCK_FILEDIR,
+            archive_fn=self.device._USB_TEST_FN,
+            metadata=self.device._USB_TEST_METADATA,
+        )
+        mock_subprocess.assert_called_once()
+        assert _QREXEC_EXPORT_COMMAND in mock_subprocess.call_args[0]
 
+    def test_Device_run_export_preflight_checks_with_error(self, mock_sp):
+        mock_sp.side_effect = subprocess.CalledProcessError(1, "check_output")
+
+        with mock.patch("securedrop_client.export.logger.error") as err:
+            self.device.run_export_preflight_checks()
+
+        assert "Export preflight failed" in err.call_args[0]
+
+    def test_Device_export_file_missing(self, mock_subprocess, mocker):
+        device = Export()
+
+        warning_logger = mocker.patch("securedrop_client.export.logger.warning")
+        with mock.patch(
+            "securedrop_client.export.tarfile.open",
+            return_value=mock.MagicMock(),
+        ), mock.patch(
+            "securedrop_client.export.TemporaryDirectory",
+            return_value=self.mock_tmpdir,
+        ):
+            device.export(["/not/a/real/location"], "mock passphrase")
+
+        warning_logger.assert_called_once()
+        mock_subprocess.assert_not_called()
+        # Todo: could get more specific about looking for the emitted failure signal
+
+    def test_Device_export(self, mock_subprocess):
         filepath = "some/file/path"
+        passphrase = "passphrase"
 
-        self.device.print_transcript(filepath)
+        with mock.patch(
+            "securedrop_client.export.TemporaryDirectory",
+            return_value=self.mock_tmpdir,
+        ):
+            self.device.export([filepath], passphrase)
 
-        assert len(print_requested_emissions) == 1
-        assert print_requested_emissions[0] == [["some/file/path"]]
+        expected_metadata = self.device._DISK_METADATA.copy()
+        expected_metadata[self.device._DISK_ENCRYPTION_KEY_NAME] = passphrase
 
-    def test_Device_print_file_file_missing(self, mocker):
-        file = self.mock_file
-        self.mock_controller.downloaded_file_exists.return_value = False
+        self.device._create_archive.assert_called_once_with(
+            archive_dir=_MOCK_FILEDIR,
+            archive_fn=self.device._DISK_FN,
+            metadata=expected_metadata,
+            filepaths=[filepath],
+        )
+        mock_subprocess.assert_called_once()
+        assert _QREXEC_EXPORT_COMMAND in mock_subprocess.call_args[0]
 
-        warning_logger = mocker.patch(
-            "securedrop_client.gui.conversation.export.device.logger.warning"
+    @pytest.mark.parametrize("status", [i.value for i in ExportStatus])
+    def test__run_qrexec_success(self, mocked_subprocess, status):
+        mocked_subprocess.return_value = f"{status}\n".encode("utf-8")
+        enum = ExportStatus(status)
+
+        assert self.device._run_qrexec_export(_PATH_TO_PRETEND_ARCHIVE) == enum
+
+    def test__run_qrexec_calledprocess_raises_exportstatus(self, mocked_subprocess):
+        mocked_subprocess.side_effect = ValueError(
+            "These are not the ExportStatuses you're looking for..."
+        )
+        with pytest.raises(ExportError) as e:
+            self.device._run_qrexec_export(_PATH_TO_PRETEND_ARCHIVE)
+
+        assert e.value.status == ExportStatus.UNEXPECTED_RETURN_STATUS
+
+    def test__run_qrexec_valuerror_raises_exportstatus(self, mocked_subprocess):
+        mocked_subprocess.side_effect = subprocess.CalledProcessError(1, "check_output")
+        with pytest.raises(ExportError) as e:
+            self.device._run_qrexec_export(_PATH_TO_PRETEND_ARCHIVE)
+
+        assert e.value.status == ExportStatus.CALLED_PROCESS_ERROR
+
+    @mock.patch("securedrop_client.export.tarfile")
+    def test__add_virtual_file_to_archive(self, mock_tarfile, mock_sp):
+        mock_tarinfo = mock.MagicMock(spec=tarfile.TarInfo)
+        mock_tarfile.TarInfo.return_value = mock_tarinfo
+
+        self.device._add_virtual_file_to_archive(
+            mock_tarfile, "mock_file", {"test_filedata": "lgtm"}
         )
 
-        self.device.print_file(file.uuid)
+        mock_tarfile.TarInfo.assert_called_once()
 
-        path = str(file.location(self.mock_controller.data_dir))
-        log_msg = f"Cannot find file in {path}"
+    def test__create_archive(self, mocker):
+        """
+        Ensure _create_archive creates an archive in the supplied directory.
+        """
+        archive_path = None
+        with TemporaryDirectory() as temp_dir:
+            # We'll do this in the tmpdir for ease of cleanup
+            open(os.path.join(temp_dir, "temp_1"), "w+").close()
+            open(os.path.join(temp_dir, "temp_2"), "w+").close()
+            filepaths = [os.path.join(temp_dir, "temp_1"), os.path.join(temp_dir, "temp_2")]
+            device = Export()
 
-        warning_logger.assert_called_once_with(log_msg)
+            archive_path = device._create_archive(temp_dir, "mock.sd-export", {}, filepaths)
 
-    def test_Device_print_file_when_orig_file_already_exists(self):
-        file = self.mock_file
-        print_requested_emissions = QSignalSpy(self.device.print_requested)
+            assert archive_path == os.path.join(temp_dir, "mock.sd-export")
+            assert os.path.exists(archive_path)  # sanity check
 
-        self.device.print_file(file.uuid)
+        assert not os.path.exists(archive_path)
 
-        assert len(print_requested_emissions) == 1
-        self.mock_controller.get_file.assert_called_with(file.uuid)
+    def test__create_archive_with_an_export_file(self, mocker):
+        device = Export()
+        archive_path = None
+        with TemporaryDirectory() as temp_dir, NamedTemporaryFile() as export_file:
+            archive_path = device._create_archive(
+                temp_dir, "mock.sd-export", {}, [export_file.name]
+            )
+            assert archive_path == os.path.join(temp_dir, "mock.sd-export")
+            assert os.path.exists(archive_path)  # sanity check
 
-    def test_Device_run_export_preflight_checks(self):
-        export_preflight_check_requested_emissions = QSignalSpy(
-            self.device.export_preflight_check_requested
-        )
+        assert not os.path.exists(archive_path)
 
-        self.device.run_export_preflight_checks()
+    def test__create_archive_with_multiple_export_files(self, mocker):
+        device = Export()
+        archive_path = None
+        with TemporaryDirectory() as tmpdir, NamedTemporaryFile() as f1, NamedTemporaryFile() as f2:
+            transcript_path = os.path.join(tmpdir, "transcript.txt")
+            with open(transcript_path, "a+") as transcript:
+                archive_path = device._create_archive(
+                    tmpdir,
+                    "mock.sd-export",
+                    {},
+                    [f1.name, f2.name, transcript.name],
+                )
+                assert archive_path == os.path.join(tmpdir, "mock.sd-export")
+                assert os.path.exists(archive_path)  # sanity check
 
-        assert len(export_preflight_check_requested_emissions) == 1
+        assert not os.path.exists(archive_path)
 
-    def test_Device_export_file_to_usb_drive(self):
-        file = self.mock_file
-        export_requested_emissions = QSignalSpy(self.device.export_requested)
-        self.device.export_file_to_usb_drive(file.uuid, "mock passphrase")
+    def test__tmpdir_cleaned_up_on_exception(self, mock_sp):
+        """
+        Sanity check. If we encounter an error after archive has been built,
+        ensure the tmpdir directory cleanup happens.
+        """
+        with TemporaryDirectory() as tmpdir, pytest.raises(ExportError):
+            print(f"{tmpdir} created")
 
-        assert len(export_requested_emissions) == 1
+            raise ExportError("Something bad happened!")
 
-    def test_Device_export_file_to_usb_drive_file_missing(self, mocker):
-        file = self.mock_file
-        self.mock_controller.downloaded_file_exists.return_value = False
-
-        warning_logger = mocker.patch(
-            "securedrop_client.gui.conversation.export.device.logger.warning"
-        )
-
-        self.device.export_file_to_usb_drive(file.uuid, "mock passphrase")
-
-        path = str(file.location(self.mock_controller.data_dir))
-        log_msg = f"Cannot find file in {path}"
-        warning_logger.assert_called_once_with(log_msg)
-
-    def test_Device_export_file_to_usb_drive_when_orig_file_already_exists(self):
-        export_requested_emissions = QSignalSpy(self.device.export_requested)
-        file = self.mock_file
-
-        self.device.export_file_to_usb_drive(file.uuid, "mock passphrase")
-
-        assert len(export_requested_emissions) == 1
-        self.mock_controller.get_file.assert_called_with(file.uuid)
-
-    def test_Device_export_transcript(self):
-        export_requested_emissions = QSignalSpy(self.device.export_requested)
-        filepath = "some/file/path"
-
-        self.device.export_transcript(filepath, "passphrase")
-
-        assert len(export_requested_emissions) == 1
-        assert export_requested_emissions[0] == [["some/file/path"], "passphrase"]
-
-    def test_Device_export_files(self):
-        export_requested_emissions = QSignalSpy(self.device.export_requested)
-
-        filepaths = ["some/file/path", "some/other/file/path"]
-
-        self.device.export_files(filepaths, "passphrase")
-
-        assert len(export_requested_emissions) == 1
-        assert export_requested_emissions[0] == [
-            ["some/file/path", "some/other/file/path"],
-            "passphrase",
-        ]
+        assert not os.path.exists(tmpdir)
