@@ -3,7 +3,6 @@ import pytest
 from securedrop_client.export_status import ExportError, ExportStatus
 
 from securedrop_client.gui.conversation.export import Device
-from securedrop_client.logic import Controller
 import subprocess
 import tarfile
 from tests import factory
@@ -21,42 +20,41 @@ _QREXEC_EXPORT_COMMAND = [
     "--",
     f"{_PATH_TO_PRETEND_ARCHIVE}",
 ]
-_MOCK_TMPDIR = "/tmp/mock_tmpdir"
+_MOCK_FILEDIR = "/tmp/mock_tmpdir/"
 
 
 @mock.patch("subprocess.check_output")
 class TestDevice:
     @classmethod
     def setup_class(cls):
-        mock_get_file = mock.MagicMock()
-        cls.mock_controller = mock.MagicMock(spec=Controller)
-        cls.mock_controller.data_dir = "pretend-data-dir"
-        cls.mock_controller.get_file = mock_get_file
-        cls.device = Device(cls.mock_controller)
+        cls.device = None
 
-    # Reset any manually-changed mock controller values before next test
+    # Reset any manually-changed mock values before next test
     @classmethod
     def setup_method(cls):
         cls.mock_file = factory.File(source=factory.Source())
-        cls.mock_controller.get_file.return_value = cls.mock_file
-        cls.mock_controller.downloaded_file_exists.return_value = True
+        cls.mock_file_location = f"{_MOCK_FILEDIR}{cls.mock_file.filename}"
+        cls.device = Device([cls.mock_file_location])
         cls.device._create_archive = mock.MagicMock()
         cls.device._create_archive.return_value = _PATH_TO_PRETEND_ARCHIVE
         cls.mock_tmpdir = mock.MagicMock()
-        cls.mock_tmpdir.__enter__ = mock.MagicMock(return_value=_MOCK_TMPDIR)
+        cls.mock_tmpdir.__enter__ = mock.MagicMock(return_value=_MOCK_FILEDIR)
 
     @classmethod
     def teardown_method(cls):
         cls.mock_file = None
-        cls.mock_controller.get_file.return_value = None
         cls.device._create_archive = None
 
     def test_Device_run_printer_preflight_checks(self, mock_subprocess):
+        device = Device(["/fake/file/name"])
+        device._create_archive = mock.MagicMock()
+        device._create_archive.return_value = _PATH_TO_PRETEND_ARCHIVE
+
         with mock.patch(
             "securedrop_client.gui.conversation.export.device.TemporaryDirectory",
             return_value=self.mock_tmpdir,
         ):
-            self.device.run_printer_preflight_checks()
+            device.run_printer_preflight_checks()
 
         mock_subprocess.assert_called_once()
         assert (
@@ -64,95 +62,74 @@ class TestDevice:
         ), f"Actual: {mock_subprocess.call_args[0]}"
 
     def test_Device_run_print_preflight_checks_with_error(self, mock_sp):
-        with mock.patch.object(
-            self.device,
-            "_build_archive_and_export",
-            side_effect=ExportError(ExportStatus.ERROR_PRINTER_NOT_SUPPORTED),
-        ), mock.patch(
-            "securedrop_client.gui.conversation.export.device.logger.error"
-        ) as err, pytest.raises(
-            ExportError
-        ) as e:
-            self.device.run_export_preflight_checks()
+        mock_sp.side_effect = subprocess.CalledProcessError(1, "check_output")
 
-        err.assert_called_once_with("Print preflight failed")
+        with mock.patch("securedrop_client.gui.conversation.export.device.logger.error") as err:
+            self.device.run_printer_preflight_checks()
+
+        assert "Print preflight failed" in err.call_args[0]
 
     def test_Device_run_print_file(self, mock_subprocess):
-        file = self.mock_file
         with mock.patch(
             "securedrop_client.gui.conversation.export.device.TemporaryDirectory",
             return_value=self.mock_tmpdir,
         ):
-            self.device.print_file(file.uuid)
-
-        filepath = file.location(self.mock_controller.data_dir)
+            self.device.print_file(self.mock_file.uuid)
 
         self.device._create_archive.assert_called_once_with(
-            archive_dir=_MOCK_TMPDIR,
+            archive_dir=_MOCK_FILEDIR,
             archive_fn=self.device._PRINT_FN,
             metadata=self.device._PRINT_METADATA,
-            filepaths=[filepath],
+            filepaths=[self.mock_file_location],
         )
         mock_subprocess.assert_called_once()
         assert _QREXEC_EXPORT_COMMAND in mock_subprocess.call_args[0]
 
     def test_Device_print_transcript(self, mock_subprocess):
-        filepath = "some/file/path"
-
         with mock.patch(
             "securedrop_client.gui.conversation.export.device.TemporaryDirectory",
             return_value=self.mock_tmpdir,
         ):
-            self.device.print_transcript(filepath)
+            self.device.print_transcript(self.mock_file_location)
 
         mock_subprocess.assert_called_once()
 
         self.device._create_archive.assert_called_once_with(
-            archive_dir=_MOCK_TMPDIR,
+            archive_dir=_MOCK_FILEDIR,
             archive_fn=self.device._PRINT_FN,
             metadata=self.device._PRINT_METADATA,
-            filepaths=[filepath],
+            filepaths=[self.mock_file_location],
         )
         mock_subprocess.assert_called_once()
         assert _QREXEC_EXPORT_COMMAND in mock_subprocess.call_args[0]
 
     def test_Device_print_file_file_missing(self, mock_subprocess, mocker):
-        file = self.mock_file
-        self.mock_controller.downloaded_file_exists.return_value = False
-
+        device = Device(["/no/such/file"])
         warning_logger = mocker.patch(
             "securedrop_client.gui.conversation.export.device.logger.warning"
         )
 
-        self.device.print_file(file.uuid)
+        log_msg = f"File not found at specified filepath, skipping"
+
+        device.print_file("some-missing-file-uuid")
+
+        assert log_msg in warning_logger.call_args[0]
         mock_subprocess.assert_not_called()
 
-        path = str(file.location(self.mock_controller.data_dir))
-        log_msg = f"Cannot find file in {path}"
-
-        warning_logger.assert_called_once_with(log_msg)
-
     def test_Device_print_file_when_orig_file_already_exists(self, mock_subprocess):
-        file = self.mock_file
-
         with mock.patch(
             "securedrop_client.gui.conversation.export.device.TemporaryDirectory",
             return_value=self.mock_tmpdir,
         ):
-            self.device.print_file(file.uuid)
+            self.device.print_file(self.mock_file.uuid)
 
-        self.mock_controller.get_file.assert_called_with(file.uuid)
         mock_subprocess.assert_called_once()
-
-        filepath = file.location(self.mock_controller.data_dir)
-
         self.device._create_archive.assert_called_once_with(
-            archive_dir=_MOCK_TMPDIR,
+            archive_dir=_MOCK_FILEDIR,
             archive_fn=self.device._PRINT_FN,
             metadata=self.device._PRINT_METADATA,
-            filepaths=[filepath],
+            filepaths=[self.mock_file_location],
         )
-        mock_subprocess.assert_called_once()
         assert _QREXEC_EXPORT_COMMAND in mock_subprocess.call_args[0]
 
     def test_Device_run_export_preflight_checks(self, mock_subprocess):
@@ -164,7 +141,7 @@ class TestDevice:
         mock_subprocess.assert_called_once()
 
         self.device._create_archive.assert_called_once_with(
-            archive_dir=_MOCK_TMPDIR,
+            archive_dir=_MOCK_FILEDIR,
             archive_fn=self.device._USB_TEST_FN,
             metadata=self.device._USB_TEST_METADATA,
             filepaths=[],
@@ -173,18 +150,14 @@ class TestDevice:
         assert _QREXEC_EXPORT_COMMAND in mock_subprocess.call_args[0]
 
     def test_Device_run_export_preflight_checks_with_error(self, mock_sp):
-        with mock.patch.object(
-            self.device,
-            "_build_archive_and_export",
-            side_effect=ExportError(ExportStatus.DEVICE_ERROR),
-        ), mock.patch(
+        mock_sp.side_effect = subprocess.CalledProcessError(1, "check_output")
+
+        with mock.patch(
             "securedrop_client.gui.conversation.export.device.logger.error"
-        ) as err, pytest.raises(
-            ExportError
-        ) as e:
+        ) as err, mock.patch.object(self.device, "export_preflight_check_failed") as mock_signal:
             self.device.run_export_preflight_checks()
 
-        err.assert_called_once_with("Export preflight failed")
+        assert "Export preflight failed" in err.call_args[0]
 
     def test_Device_export_file_to_usb_drive(self, mock_subprocess):
         file = self.mock_file
@@ -197,36 +170,35 @@ class TestDevice:
             self.device.export_file_to_usb_drive(file.uuid, passphrase)
         mock_subprocess.assert_called_once()
 
-        filepath = file.location(self.mock_controller.data_dir)
-
         expected_md = self.device._DISK_METADATA.copy()
         expected_md[self.device._DISK_ENCRYPTION_KEY_NAME] = passphrase
 
         self.device._create_archive.assert_called_once_with(
-            archive_dir=_MOCK_TMPDIR,
+            archive_dir=_MOCK_FILEDIR,
             archive_fn=self.device._DISK_FN,
             metadata=expected_md,
-            filepaths=[filepath],
+            filepaths=[self.mock_file_location],
         )
 
     def test_Device_export_file_to_usb_drive_file_missing(self, mock_subprocess, mocker):
-        file = self.mock_file
-        self.mock_controller.downloaded_file_exists.return_value = False
+        file = factory.File()  # Not a real file, so not anywhere
+        device = Device(["/fake/file/location"])
 
         warning_logger = mocker.patch(
             "securedrop_client.gui.conversation.export.device.logger.warning"
         )
         with mock.patch(
+            "securedrop_client.gui.conversation.export.device.tarfile.open",
+            return_value=mock.MagicMock(),
+        ), mock.patch(
             "securedrop_client.gui.conversation.export.device.TemporaryDirectory",
             return_value=self.mock_tmpdir,
         ):
-            self.device.export_file_to_usb_drive(file.uuid, "mock passphrase")
+            device.export_file_to_usb_drive(file.uuid, "mock passphrase")
 
-        path = str(file.location(self.mock_controller.data_dir))
-        log_msg = f"Cannot find file in {path}"
-        warning_logger.assert_called_once_with(log_msg)
-
+        warning_logger.assert_called_once()
         mock_subprocess.assert_not_called()
+        # Todo: could get more specific about looking for the emitted failure signal
 
     def test_Device_export_file_to_usb_drive_when_orig_file_already_exists(self, mock_subprocess):
         file = self.mock_file
@@ -240,11 +212,10 @@ class TestDevice:
 
         expected_metadata = self.device._DISK_METADATA.copy()
         expected_metadata[self.device._DISK_ENCRYPTION_KEY_NAME] = passphrase
-        expected_filepath = file.location(self.mock_controller.data_dir)
+        expected_filepath = self.mock_file_location
 
-        self.mock_controller.get_file.assert_called_with(file.uuid)
         self.device._create_archive.assert_called_once_with(
-            archive_dir=_MOCK_TMPDIR,
+            archive_dir=_MOCK_FILEDIR,
             archive_fn=self.device._DISK_FN,
             metadata=expected_metadata,
             filepaths=[expected_filepath],
@@ -267,7 +238,7 @@ class TestDevice:
         expected_metadata[self.device._DISK_ENCRYPTION_KEY_NAME] = passphrase
 
         self.device._create_archive.assert_called_once_with(
-            archive_dir=_MOCK_TMPDIR,
+            archive_dir=_MOCK_FILEDIR,
             archive_fn=self.device._DISK_FN,
             metadata=expected_metadata,
             filepaths=[filepath],
@@ -289,7 +260,7 @@ class TestDevice:
             self.device.export_files(filepaths, passphrase)
 
         self.device._create_archive.assert_called_once_with(
-            archive_dir=_MOCK_TMPDIR,
+            archive_dir=_MOCK_FILEDIR,
             archive_fn=self.device._DISK_FN,
             metadata=expected_metadata,
             filepaths=filepaths,
@@ -335,19 +306,25 @@ class TestDevice:
         """
         Ensure _create_archive creates an archive in the supplied directory.
         """
-        # A Device where we don't mock out the tempfile
-        device = Device(self.mock_controller)
         archive_path = None
-        filepaths = [_PATH_TO_PRETEND_ARCHIVE]
         with TemporaryDirectory() as temp_dir:
+            # We'll do this in the tmpdir for ease of cleanup
+            open(os.path.join(temp_dir, "temp_1"), "w+").close()
+            open(os.path.join(temp_dir, "temp_2"), "w+").close()
+            filepaths = [os.path.join(temp_dir, "temp_1"), os.path.join(temp_dir, "temp_2")]
+            device = Device(filepaths)
+
             archive_path = device._create_archive(temp_dir, "mock.sd-export", {}, filepaths)
+
             assert archive_path == os.path.join(temp_dir, "mock.sd-export")
             assert os.path.exists(archive_path)  # sanity check
 
         assert not os.path.exists(archive_path)
 
     def test__create_archive_with_an_export_file(self, mocker):
-        device = Device(self.mock_controller)
+        device = Device(
+            self.mock_file_location
+        )  # TODO might not work - might want the tmpdir below
         archive_path = None
         with TemporaryDirectory() as temp_dir, NamedTemporaryFile() as export_file:
             archive_path = device._create_archive(
@@ -359,7 +336,7 @@ class TestDevice:
         assert not os.path.exists(archive_path)
 
     def test__create_archive_with_multiple_export_files(self, mocker):
-        device = Device(self.mock_controller)
+        device = Device(self.mock_file_location)
         archive_path = None
         with TemporaryDirectory() as temp_dir, NamedTemporaryFile() as export_file_one, NamedTemporaryFile() as export_file_two:
             transcript_path = os.path.join(temp_dir, "transcript.txt")
@@ -374,3 +351,15 @@ class TestDevice:
                 assert os.path.exists(archive_path)  # sanity check
 
         assert not os.path.exists(archive_path)
+
+    def test__tmpdir_cleaned_up_on_exception(self, mock_sp):
+        """
+        Sanity check. If we encounter an error after archive has been built,
+        ensure the tmpdir directory cleanup happens.
+        """
+        with TemporaryDirectory() as tmpdir, pytest.raises(ExportError):
+            print(f"{tmpdir} created")
+
+            raise ExportError("Something bad happened!")
+
+        assert not os.path.exists(tmpdir)

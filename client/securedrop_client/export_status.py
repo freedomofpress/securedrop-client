@@ -58,3 +58,6 @@ class ExportStatus(Enum):
     CALLED_PROCESS_ERROR = "CALLED_PROCESS_ERROR"
     ERROR_USB_CONFIGURATION = "ERROR_USB_CONFIGURATION"
     UNEXPECTED_RETURN_STATUS = "UNEXPECTED_RETURN_STATUS"
+
+    # Client-side error only
+    ERROR_MISSING_FILES = "ERROR_MISSING_FILES"  # All files meant for export are missing

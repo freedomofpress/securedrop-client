@@ -10,8 +10,6 @@ from typing import List
 
 from PyQt5.QtCore import QObject, pyqtSignal
 
-from securedrop_client.logic import Controller
-
 from securedrop_client.export_status import ExportStatus, ExportError
 
 logger = logging.getLogger(__name__)
@@ -19,10 +17,12 @@ logger = logging.getLogger(__name__)
 
 class Device(QObject):
     """
-    Send files to Export VM so that they can be copied to a
+    Interface for sending files to Export VM for transfer to a
     disk drive or printed by a USB-connected printer.
 
     Files are archived in a specified format, (see `export` README).
+
+    A list of valid filepaths must be supplied.
     """
 
     _METADATA_FN = "metadata.json"
@@ -55,10 +55,10 @@ class Device(QObject):
     print_preflight_check_failed = pyqtSignal(object)
     print_failed = pyqtSignal(object)
 
-    def __init__(self, controller: Controller) -> None:
+    def __init__(self, filepaths: [str]) -> None:
         super().__init__()
 
-        self._controller = controller
+        self._filepaths_list = filepaths
 
     def run_printer_preflight_checks(self) -> None:
         """
@@ -109,15 +109,8 @@ class Device(QObject):
         unlocking the attached transfer device.  If the file is missing, update the db so that
         is_downloaded is set to False.
         """
-        file = self._controller.get_file(file_uuid)
-        file_location = file.location(self._controller.data_dir)
-        logger.debug("Exporting file in: {}".format(os.path.dirname(file_location)))
 
-        if not self._controller.downloaded_file_exists(file):
-            logger.warning(f"Cannot find file in {file_location}")
-            return
-
-        self._send_file_to_usb_device([file_location], passphrase)
+        self._send_file_to_usb_device(self._filepaths_list, passphrase)
 
     def print_transcript(self, file_location: str) -> None:
         """
@@ -130,15 +123,8 @@ class Device(QObject):
         Send the file specified by file_uuid to the Export VM. If the file is missing, update the db
         so that is_downloaded is set to False.
         """
-        file = self._controller.get_file(file_uuid)
-        file_location = file.location(self._controller.data_dir)
-        logger.debug("Printing file in: {}".format(os.path.dirname(file_location)))
 
-        if not self._controller.downloaded_file_exists(file):
-            logger.warning(f"Cannot find file in {file_location}")
-            return
-
-        self._print([file_location])
+        self._print(self._filepaths_list)
 
     def _run_qrexec_export(self, archive_path: str) -> ExportStatus:
         """
@@ -210,10 +196,25 @@ class Device(QObject):
             # When more than one file is added to the archive,
             # extra care must be taken to prevent name collisions.
             is_one_of_multiple_files = len(filepaths) > 1
+            missing_count = 0
             for filepath in filepaths:
-                self._add_file_to_archive(
-                    archive, filepath, prevent_name_collisions=is_one_of_multiple_files
-                )
+                if not (os.path.exists(filepath)):
+                    missing_count += 1
+                    logger.debug(
+                        f"'{filepath}' does not exist, and will not be included in archive"
+                    )
+                    # Controller checks files and keeps a reference open during export,
+                    # so this shouldn't be reachable
+                    logger.warning("File not found at specified filepath, skipping")
+                else:
+                    self._add_file_to_archive(
+                        archive, filepath, prevent_name_collisions=is_one_of_multiple_files
+                    )
+            if missing_count == len(filepaths):
+                # Context manager will delete archive even if an exception occurs
+                # since the archive is in a TemporaryDirectory
+                logger.error("Files were moved or missing")
+                raise ExportError(ExportStatus.ERROR_MISSING_FILES)
 
         return archive_path
 
