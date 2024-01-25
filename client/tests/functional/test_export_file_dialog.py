@@ -17,12 +17,10 @@ from tests.conftest import (
 )
 
 
-def _setup_export(functional_test_logged_in_context, qtbot, mocker, mock_export_service):
+def _setup_export(functional_test_logged_in_context, qtbot, mocker):
     """
     Helper. Set up export test context and return reference to export dialog.
     """
-    mocker.patch("securedrop_client.export.getService", return_value=mock_export_service)
-
     gui, controller = functional_test_logged_in_context
 
     def check_for_sources():

@@ -60,7 +60,7 @@ from PyQt5.QtWidgets import (
     QWidget,
 )
 
-from securedrop_client import export, state
+from securedrop_client import state
 from securedrop_client.db import (
     DraftReply,
     File,
@@ -2255,7 +2255,7 @@ class FileWidget(QWidget):
 
         self.controller = controller
 
-        self._export_device = conversation.ExportDevice(controller, export.getService())
+        self._export_device = conversation.ExportDevice(controller)
 
         self.file = self.controller.get_file(file_uuid)
         self.uuid = file_uuid

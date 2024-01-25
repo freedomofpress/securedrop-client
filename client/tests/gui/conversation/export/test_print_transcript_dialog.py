@@ -1,4 +1,4 @@
-from securedrop_client.export import ExportError, ExportStatus
+from securedrop_client.export_status import ExportError, ExportStatus
 from securedrop_client.gui.conversation import PrintTranscriptDialog
 from tests.helper import app  # noqa: F401
 

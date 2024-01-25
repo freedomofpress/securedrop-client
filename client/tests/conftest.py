@@ -11,7 +11,7 @@ import pytest
 from PyQt5.QtCore import Qt
 from PyQt5.QtWidgets import QMainWindow
 
-from securedrop_client import export, state
+from securedrop_client import state
 from securedrop_client.app import configure_locale_and_language
 from securedrop_client.config import Config
 from securedrop_client.db import (
@@ -23,7 +23,7 @@ from securedrop_client.db import (
     Source,
     make_session_maker,
 )
-from securedrop_client.export import ExportStatus
+from securedrop_client.export_status import ExportStatus
 from securedrop_client.gui import conversation
 from securedrop_client.gui.main import Window
 from securedrop_client.logic import Controller
@@ -169,7 +169,7 @@ def homedir(i18n):
     yield tmpdir
 
 
-class MockExportService(export.Service):
+class MockExportService:  # todo
     """An export service that assumes the Qubes RPC calls are successful and skips them."""
 
     def __init__(self, unlocked: bool):

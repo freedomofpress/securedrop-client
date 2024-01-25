@@ -1,9 +1,8 @@
 import pytest
 from PyQt5.QtWidgets import QApplication
 
-from securedrop_client import export
 from securedrop_client.app import threads
-from securedrop_client.export import ExportStatus
+from securedrop_client.export_status import ExportStatus
 from securedrop_client.gui import conversation
 from securedrop_client.gui.base import ModalDialog
 from securedrop_client.gui.main import Window
@@ -12,11 +11,7 @@ from tests import factory
 
 
 @pytest.fixture(scope="function")
-def main_window(mocker, homedir, mock_export_service):
-    mocker.patch(
-        "securedrop_client.export.getService",
-        return_value=mock_export_service,
-    )
+def main_window(mocker, homedir):
     # Setup
     app = QApplication([])
     gui = Window()
@@ -68,11 +63,7 @@ def main_window(mocker, homedir, mock_export_service):
 
 
 @pytest.fixture(scope="function")
-def main_window_no_key(mocker, homedir, mock_export_service):
-    mocker.patch(
-        "securedrop_client.export.getService",
-        return_value=mock_export_service,
-    )
+def main_window_no_key(mocker, homedir):
     # Setup
     app = QApplication([])
     gui = Window()
@@ -155,9 +146,9 @@ def modal_dialog(mocker, homedir):
 
 
 @pytest.fixture(scope="function")
-def mock_export_service():
-    """An export service that assumes the Qubes RPC calls are successful and skips them."""
-    export_service = export.Service()
+def mock_device():
+    """A export that assumes the Qubes RPC calls are successful and skips them."""
+    # todo: This will be done without export.Service(), i.e just with Device
     # Ensure the export_service doesn't rely on Qubes OS:
     export_service.run_preflight_checks = lambda: ExportStatus.DEVICE_LOCKED
     export_service.send_file_to_usb_device = lambda paths, passphrase: ExportStatus.SUCCESS_EXPORT
@@ -167,11 +158,7 @@ def mock_export_service():
 
 
 @pytest.fixture(scope="function")
-def print_dialog(mocker, homedir, mock_export_service):
-    mocker.patch(
-        "securedrop_client.export.getService",
-        return_value=mock_export_service,
-    )
+def print_dialog(mocker, homedir):
     app = QApplication([])
     gui = Window()
     app.setActiveWindow(gui)
@@ -193,7 +180,7 @@ def print_dialog(mocker, homedir, mock_export_service):
         )
         controller.authenticated_user = factory.User()
         controller.qubes = False
-        export_device = conversation.ExportDevice(controller, mock_export_service)
+        export_device = conversation.ExportDevice(controller)
         gui.setup(controller)
         gui.login_dialog.close()
         dialog = conversation.PrintFileDialog(export_device, "file_uuid", "file_name")
@@ -206,11 +193,7 @@ def print_dialog(mocker, homedir, mock_export_service):
 
 
 @pytest.fixture(scope="function")
-def export_file_dialog(mocker, homedir, mock_export_service):
-    mocker.patch(
-        "securedrop_client.export.getService",
-        return_value=mock_export_service,
-    )
+def export_file_dialog(mocker, homedir):
     app = QApplication([])
     gui = Window()
     app.setActiveWindow(gui)
@@ -229,7 +212,7 @@ def export_file_dialog(mocker, homedir, mock_export_service):
         )
         controller.authenticated_user = factory.User()
         controller.qubes = False
-        export_device = conversation.ExportDevice(controller, mock_export_service)
+        export_device = conversation.ExportDevice(controller)
         gui.setup(controller)
         gui.login_dialog.close()
         dialog = conversation.ExportFileDialog(export_device, "file_uuid", "file_name")
