@@ -227,7 +227,7 @@ class CLI:
                     "udisksctl",
                     "unlock",
                     "--block-device",
-                    volume.device_name,
+                    f"{_DEV_PREFIX}{volume.device_name}",
                 ],
                 stdin=subprocess.PIPE,
                 stdout=subprocess.PIPE,
