@@ -13,7 +13,7 @@ from securedrop_client.export_status import ExportError, ExportStatus
 from securedrop_client.gui.base import ModalDialog, PasswordEdit, SecureQLabel
 from securedrop_client.gui.base.checkbox import SDCheckBox
 
-from .device import Device
+from ....export import Export
 
 
 class FileDialog(ModalDialog):
@@ -23,7 +23,7 @@ class FileDialog(ModalDialog):
     NO_MARGIN = 0
     FILENAME_WIDTH_PX = 260
 
-    def __init__(self, device: Device, file_name: str, filepaths: List[str]) -> None:
+    def __init__(self, device: Export, file_name: str, filepaths: List[str]) -> None:
         super().__init__()
         self.setStyleSheet(self.DIALOG_CSS)
 

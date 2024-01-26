@@ -6,7 +6,7 @@ from typing import List
 
 from PyQt5.QtCore import pyqtSlot
 
-from .device import Device
+from ....export import Export
 from .file_dialog import FileDialog
 
 
@@ -18,7 +18,7 @@ class TranscriptDialog(FileDialog):
     - Overrides the two slots that handles the export action to call said method.
     """
 
-    def __init__(self, device: Device, file_name: str, filepath: List[str]) -> None:
+    def __init__(self, device: Export, file_name: str, filepath: List[str]) -> None:
         super().__init__(device, file_name, filepath)
 
         # List[str] to foreshadow multifile export and combining all export dialogs

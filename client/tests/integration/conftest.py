@@ -5,7 +5,7 @@ from securedrop_client.app import threads
 from securedrop_client.export_status import ExportStatus
 from securedrop_client.gui import conversation
 from securedrop_client.gui.base import ModalDialog
-from securedrop_client.gui.conversation.export import Device
+from securedrop_client.gui.conversation.export import Export
 from securedrop_client.gui.main import Window
 from securedrop_client.logic import Controller
 from tests import factory
@@ -148,7 +148,7 @@ def modal_dialog(mocker, homedir):
 
 @pytest.fixture(scope="function")
 def mock_export(mocker):
-    device = Device()
+    device = Export()
 
     """A export that assumes the Qubes RPC calls are successful and skips them."""
     device.run_preflight_checks = lambda: ExportStatus.DEVICE_LOCKED

@@ -7,7 +7,7 @@ from unittest import mock
 import pytest
 
 from securedrop_client.export_status import ExportError, ExportStatus
-from securedrop_client.gui.conversation.export import Device
+from securedrop_client.gui.conversation.export import Export
 from tests import factory
 
 _PATH_TO_PRETEND_ARCHIVE = "/tmp/archive-pretend"
@@ -35,7 +35,7 @@ class TestDevice:
     def setup_method(cls):
         cls.mock_file = factory.File(source=factory.Source())
         cls.mock_file_location = f"{_MOCK_FILEDIR}{cls.mock_file.filename}"
-        cls.device = Device()
+        cls.device = Export()
         cls.device._create_archive = mock.MagicMock()
         cls.device._create_archive.return_value = _PATH_TO_PRETEND_ARCHIVE
         cls.mock_tmpdir = mock.MagicMock()
@@ -47,12 +47,12 @@ class TestDevice:
         cls.device._create_archive = None
 
     def test_Device_run_printer_preflight_checks(self, mock_subprocess):
-        device = Device()
+        device = Export()
         device._create_archive = mock.MagicMock()
         device._create_archive.return_value = _PATH_TO_PRETEND_ARCHIVE
 
         with mock.patch(
-            "securedrop_client.gui.conversation.export.device.TemporaryDirectory",
+            "securedrop_client.export.TemporaryDirectory",
             return_value=self.mock_tmpdir,
         ):
             device.run_printer_preflight_checks()
@@ -65,14 +65,14 @@ class TestDevice:
     def test_Device_run_print_preflight_checks_with_error(self, mock_sp):
         mock_sp.side_effect = subprocess.CalledProcessError(1, "check_output")
 
-        with mock.patch("securedrop_client.gui.conversation.export.device.logger.error") as err:
+        with mock.patch("securedrop_client.export.logger.error") as err:
             self.device.run_printer_preflight_checks()
 
         assert "Print preflight failed" in err.call_args[0]
 
     def test_Device_print(self, mock_subprocess):
         with mock.patch(
-            "securedrop_client.gui.conversation.export.device.TemporaryDirectory",
+            "securedrop_client.export.TemporaryDirectory",
             return_value=self.mock_tmpdir,
         ):
             self.device.print([self.mock_file_location])
@@ -87,9 +87,9 @@ class TestDevice:
         assert _QREXEC_EXPORT_COMMAND in mock_subprocess.call_args[0]
 
     def test_Device_print_file_file_missing(self, mock_subprocess, mocker):
-        device = Device()
+        device = Export()
         warning_logger = mocker.patch(
-            "securedrop_client.gui.conversation.export.device.logger.warning"
+            "securedrop_client.export.logger.warning"
         )
 
         log_msg = "File not found at specified filepath, skipping"
@@ -101,7 +101,7 @@ class TestDevice:
 
     def test_Device_run_export_preflight_checks(self, mock_subprocess):
         with mock.patch(
-            "securedrop_client.gui.conversation.export.device.TemporaryDirectory",
+            "securedrop_client.export.TemporaryDirectory",
             return_value=self.mock_tmpdir,
         ):
             self.device.run_export_preflight_checks()
@@ -118,22 +118,22 @@ class TestDevice:
     def test_Device_run_export_preflight_checks_with_error(self, mock_sp):
         mock_sp.side_effect = subprocess.CalledProcessError(1, "check_output")
 
-        with mock.patch("securedrop_client.gui.conversation.export.device.logger.error") as err:
+        with mock.patch("securedrop_client.export.logger.error") as err:
             self.device.run_export_preflight_checks()
 
         assert "Export preflight failed" in err.call_args[0]
 
     def test_Device_export_file_missing(self, mock_subprocess, mocker):
-        device = Device()
+        device = Export()
 
         warning_logger = mocker.patch(
-            "securedrop_client.gui.conversation.export.device.logger.warning"
+            "securedrop_client.export.logger.warning"
         )
         with mock.patch(
-            "securedrop_client.gui.conversation.export.device.tarfile.open",
+            "securedrop_client.export.tarfile.open",
             return_value=mock.MagicMock(),
         ), mock.patch(
-            "securedrop_client.gui.conversation.export.device.TemporaryDirectory",
+            "securedrop_client.export.TemporaryDirectory",
             return_value=self.mock_tmpdir,
         ):
             device.export(["/not/a/real/location"], "mock passphrase")
@@ -147,7 +147,7 @@ class TestDevice:
         passphrase = "passphrase"
 
         with mock.patch(
-            "securedrop_client.gui.conversation.export.device.TemporaryDirectory",
+            "securedrop_client.export.TemporaryDirectory",
             return_value=self.mock_tmpdir,
         ):
             self.device.export([filepath], passphrase)
@@ -187,7 +187,7 @@ class TestDevice:
 
         assert e.value.status == ExportStatus.CALLED_PROCESS_ERROR
 
-    @mock.patch("securedrop_client.gui.conversation.export.device.tarfile")
+    @mock.patch("securedrop_client.export.tarfile")
     def test__add_virtual_file_to_archive(self, mock_tarfile, mock_sp):
         mock_tarinfo = mock.MagicMock(spec=tarfile.TarInfo)
         mock_tarfile.TarInfo.return_value = mock_tarinfo
@@ -208,7 +208,7 @@ class TestDevice:
             open(os.path.join(temp_dir, "temp_1"), "w+").close()
             open(os.path.join(temp_dir, "temp_2"), "w+").close()
             filepaths = [os.path.join(temp_dir, "temp_1"), os.path.join(temp_dir, "temp_2")]
-            device = Device()
+            device = Export()
 
             archive_path = device._create_archive(temp_dir, "mock.sd-export", {}, filepaths)
 
@@ -218,7 +218,7 @@ class TestDevice:
         assert not os.path.exists(archive_path)
 
     def test__create_archive_with_an_export_file(self, mocker):
-        device = Device()
+        device = Export()
         archive_path = None
         with TemporaryDirectory() as temp_dir, NamedTemporaryFile() as export_file:
             archive_path = device._create_archive(
@@ -230,7 +230,7 @@ class TestDevice:
         assert not os.path.exists(archive_path)
 
     def test__create_archive_with_multiple_export_files(self, mocker):
-        device = Device()
+        device = Export()
         archive_path = None
         with TemporaryDirectory() as tmpdir, NamedTemporaryFile() as f1, NamedTemporaryFile() as f2:
             transcript_path = os.path.join(tmpdir, "transcript.txt")

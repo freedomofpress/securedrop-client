@@ -3,7 +3,7 @@ from typing import List
 
 from PyQt5.QtCore import pyqtSlot
 
-from .device import Device
+from ....export import Export
 from .file_dialog import FileDialog
 
 
@@ -15,7 +15,7 @@ class Dialog(FileDialog):
     - Overrides the two slots that handles the export action to call said method.
     """
 
-    def __init__(self, device: Device, summary: str, filepaths: List[str]) -> None:
+    def __init__(self, device: Export, summary: str, filepaths: List[str]) -> None:
         super().__init__(device, summary, filepaths)
 
         self.filepaths = filepaths

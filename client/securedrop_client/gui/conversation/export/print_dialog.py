@@ -6,13 +6,13 @@ from PyQt5.QtCore import QSize, pyqtSlot
 from securedrop_client.export_status import ExportError, ExportStatus
 from securedrop_client.gui.base import ModalDialog, SecureQLabel
 
-from .device import Device
+from ....export import Export
 
 
 class PrintDialog(ModalDialog):
     FILENAME_WIDTH_PX = 260
 
-    def __init__(self, device: Device, file_name: str, filepaths: List[str]) -> None:
+    def __init__(self, device: Export, file_name: str, filepaths: List[str]) -> None:
         super().__init__()
 
         self._device = device

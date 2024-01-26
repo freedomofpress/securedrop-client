@@ -15,7 +15,7 @@ from securedrop_client.export_status import ExportError, ExportStatus
 logger = logging.getLogger(__name__)
 
 
-class Device(QObject):
+class Export(QObject):
     """
     Interface for sending files to Export VM for transfer to a
     disk drive or printed by a USB-connected printer.
