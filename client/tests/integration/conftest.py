@@ -5,9 +5,9 @@ from securedrop_client.app import threads
 from securedrop_client.export_status import ExportStatus
 from securedrop_client.gui import conversation
 from securedrop_client.gui.base import ModalDialog
+from securedrop_client.gui.conversation.export import Device
 from securedrop_client.gui.main import Window
 from securedrop_client.logic import Controller
-from securedrop_client.gui.conversation.export import Device
 from tests import factory
 
 

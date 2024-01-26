@@ -4,7 +4,6 @@ import subprocess
 import tempfile
 from configparser import ConfigParser
 from datetime import datetime
-from typing import List
 from uuid import uuid4
 
 import pytest
@@ -23,7 +22,6 @@ from securedrop_client.db import (
     Source,
     make_session_maker,
 )
-from securedrop_client.export_status import ExportStatus
 from securedrop_client.gui import conversation
 from securedrop_client.gui.main import Window
 from securedrop_client.logic import Controller
@@ -168,9 +166,9 @@ def homedir(i18n):
 
     yield tmpdir
 
+
 @pytest.fixture(scope="function")
 def mock_export():
-
     device = conversation.ExportDevice(["/mock/file/path"])
 
     device.run_export_preflight_checks = lambda dir: None
@@ -183,6 +181,7 @@ def mock_export():
     device.export_files = lambda filepaths, passphrase: None
 
     return device
+
 
 @pytest.fixture(scope="function")
 def functional_test_app_started_context(homedir, reply_status_codes, session, config, qtbot):

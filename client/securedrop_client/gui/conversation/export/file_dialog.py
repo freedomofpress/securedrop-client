@@ -9,7 +9,7 @@ from PyQt5.QtCore import QSize, Qt, pyqtSlot
 from PyQt5.QtGui import QColor, QFont
 from PyQt5.QtWidgets import QGraphicsDropShadowEffect, QLineEdit, QVBoxLayout, QWidget
 
-from securedrop_client.export_status import ExportStatus, ExportError
+from securedrop_client.export_status import ExportError, ExportStatus
 from securedrop_client.gui.base import ModalDialog, PasswordEdit, SecureQLabel
 from securedrop_client.gui.base.checkbox import SDCheckBox
 

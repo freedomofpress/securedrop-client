@@ -68,16 +68,12 @@ def _setup_export(functional_test_logged_in_context, qtbot, mocker, mock_export)
 
 
 @pytest.mark.vcr()
-def test_export_file_dialog_locked(
-    functional_test_logged_in_context, qtbot, mocker, mock_export
-):
+def test_export_file_dialog_locked(functional_test_logged_in_context, qtbot, mocker, mock_export):
     """
     Download a file, export it, and verify that the export is complete by checking that the label of
     the export dialog's continue button is "DONE".
     """
-    export_dialog = _setup_export(
-        functional_test_logged_in_context, qtbot, mocker, mock_export
-    )
+    export_dialog = _setup_export(functional_test_logged_in_context, qtbot, mocker, mock_export)
 
     assert export_dialog.passphrase_form.isHidden() is True
 
@@ -108,9 +104,7 @@ def test_export_file_dialog_device_already_unlocked(
     Download a file, export it, and verify that the export is complete by checking that the label of
     the export dialog's continue button is "DONE".
     """
-    export_dialog = _setup_export(
-        functional_test_logged_in_context, qtbot, mocker, mock_export
-    )
+    export_dialog = _setup_export(functional_test_logged_in_context, qtbot, mocker, mock_export)
 
     def check_skip_password_prompt_for_unlocked_device():
         assert export_dialog.passphrase_form.isHidden() is True

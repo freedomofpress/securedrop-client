@@ -1,16 +1,16 @@
-from io import BytesIO
-import logging
 import json
+import logging
 import os
 import subprocess
-from shlex import quote
 import tarfile
+from io import BytesIO
+from shlex import quote
 from tempfile import TemporaryDirectory
 from typing import List
 
 from PyQt5.QtCore import QObject, pyqtSignal
 
-from securedrop_client.export_status import ExportStatus, ExportError
+from securedrop_client.export_status import ExportError, ExportStatus
 
 logger = logging.getLogger(__name__)
 

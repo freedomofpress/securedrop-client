@@ -1,13 +1,14 @@
 import os
-import pytest
-from securedrop_client.export_status import ExportError, ExportStatus
-
-from securedrop_client.gui.conversation.export import Device
 import subprocess
 import tarfile
-from tests import factory
 from tempfile import NamedTemporaryFile, TemporaryDirectory
 from unittest import mock
+
+import pytest
+
+from securedrop_client.export_status import ExportError, ExportStatus
+from securedrop_client.gui.conversation.export import Device
+from tests import factory
 
 _PATH_TO_PRETEND_ARCHIVE = "/tmp/archive-pretend"
 _QREXEC_EXPORT_COMMAND = [
@@ -109,7 +110,7 @@ class TestDevice:
             "securedrop_client.gui.conversation.export.device.logger.warning"
         )
 
-        log_msg = f"File not found at specified filepath, skipping"
+        log_msg = "File not found at specified filepath, skipping"
 
         device.print_file("some-missing-file-uuid")
 
@@ -152,9 +153,7 @@ class TestDevice:
     def test_Device_run_export_preflight_checks_with_error(self, mock_sp):
         mock_sp.side_effect = subprocess.CalledProcessError(1, "check_output")
 
-        with mock.patch(
-            "securedrop_client.gui.conversation.export.device.logger.error"
-        ) as err, mock.patch.object(self.device, "export_preflight_check_failed") as mock_signal:
+        with mock.patch("securedrop_client.gui.conversation.export.device.logger.error") as err:
             self.device.run_export_preflight_checks()
 
         assert "Export preflight failed" in err.call_args[0]
@@ -338,16 +337,16 @@ class TestDevice:
     def test__create_archive_with_multiple_export_files(self, mocker):
         device = Device(self.mock_file_location)
         archive_path = None
-        with TemporaryDirectory() as temp_dir, NamedTemporaryFile() as export_file_one, NamedTemporaryFile() as export_file_two:
-            transcript_path = os.path.join(temp_dir, "transcript.txt")
+        with TemporaryDirectory() as tmpdir, NamedTemporaryFile() as f1, NamedTemporaryFile() as f2:
+            transcript_path = os.path.join(tmpdir, "transcript.txt")
             with open(transcript_path, "a+") as transcript:
                 archive_path = device._create_archive(
-                    temp_dir,
+                    tmpdir,
                     "mock.sd-export",
                     {},
-                    [export_file_one.name, export_file_two.name, transcript.name],
+                    [f1.name, f2.name, transcript.name],
                 )
-                assert archive_path == os.path.join(temp_dir, "mock.sd-export")
+                assert archive_path == os.path.join(tmpdir, "mock.sd-export")
                 assert os.path.exists(archive_path)  # sanity check
 
         assert not os.path.exists(archive_path)
