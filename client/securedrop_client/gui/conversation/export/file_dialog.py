@@ -2,7 +2,7 @@
 A dialog that allows journalists to export sensitive files to a USB drive.
 """
 from gettext import gettext as _
-from typing import Optional
+from typing import List, Optional
 
 from pkg_resources import resource_string
 from PyQt5.QtCore import QSize, Qt, pyqtSlot
@@ -23,12 +23,12 @@ class FileDialog(ModalDialog):
     NO_MARGIN = 0
     FILENAME_WIDTH_PX = 260
 
-    def __init__(self, device: Device, file_uuid: str, file_name: str) -> None:
+    def __init__(self, device: Device, file_name: str, filepaths: List[str]) -> None:
         super().__init__()
         self.setStyleSheet(self.DIALOG_CSS)
 
         self._device = device
-        self.file_uuid = file_uuid
+        self.filepaths = filepaths
         self.file_name = SecureQLabel(
             file_name, wordwrap=False, max_length=self.FILENAME_WIDTH_PX
         ).text()
@@ -215,7 +215,7 @@ class FileDialog(ModalDialog):
         # TODO: If the drive is already unlocked, the passphrase field will be empty.
         # This is ok, but could violate expectations. The password should be passed
         # via qrexec in future, to avoid writing it to even a temporary file at all.
-        self._device.export_file_to_usb_drive(self.file_uuid, self.passphrase_field.text())
+        self._device.export(self.filepaths, self.passphrase_field.text())
 
     @pyqtSlot(object)
     def _on_export_preflight_check_succeeded(self, result: ExportStatus) -> None:

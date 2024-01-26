@@ -6,7 +6,7 @@ import tarfile
 from io import BytesIO
 from shlex import quote
 from tempfile import TemporaryDirectory
-from typing import List
+from typing import List, Optional
 
 from PyQt5.QtCore import QObject, pyqtSignal
 
@@ -48,6 +48,9 @@ class Device(QObject):
     print_preflight_check_succeeded = pyqtSignal(object)
     print_succeeded = pyqtSignal(object)
 
+    # Used for both print and export
+    export_completed = pyqtSignal(object)
+
     # Emit ExportError(status=ExportStatus)
     export_preflight_check_failed = pyqtSignal(object)
     export_failed = pyqtSignal(object)
@@ -55,21 +58,20 @@ class Device(QObject):
     print_preflight_check_failed = pyqtSignal(object)
     print_failed = pyqtSignal(object)
 
-    def __init__(self, filepaths: [str]) -> None:
-        super().__init__()
-
-        self._filepaths_list = filepaths
-
     def run_printer_preflight_checks(self) -> None:
         """
         Make sure the Export VM is started.
         """
-        logger.info("Running printer preflight check")
+        logger.info("Beginning printer preflight check")
         try:
-            status = self._build_archive_and_export(
-                metadata=self._PRINTER_PREFLIGHT_METADATA, filename=self._PRINTER_PREFLIGHT_FN
-            )
-            self.print_preflight_check_succeeded.emit(status)
+            with TemporaryDirectory() as tmp_dir:
+                archive_path = self._create_archive(
+                    archive_dir=tmp_dir,
+                    archive_fn=self._PRINTER_PREFLIGHT_FN,
+                    metadata=self._PRINTER_PREFLIGHT_METADATA,
+                )
+                status = self._run_qrexec_export(archive_path)
+                self.print_preflight_check_succeeded.emit(status)
         except ExportError as e:
             logger.error("Print preflight failed")
             logger.debug(f"Print preflight failed: {e}")
@@ -81,50 +83,77 @@ class Device(QObject):
         """
         try:
             logger.debug("Beginning export preflight check")
-            status = self._build_archive_and_export(
-                metadata=self._USB_TEST_METADATA, filename=self._USB_TEST_FN
-            )
-            self.export_preflight_check_succeeded.emit(status)
+
+            with TemporaryDirectory() as tmp_dir:
+                archive_path = self._create_archive(
+                    archive_dir=tmp_dir,
+                    archive_fn=self._USB_TEST_FN,
+                    metadata=self._USB_TEST_METADATA,
+                )
+                status = self._run_qrexec_export(archive_path)
+                self.export_preflight_check_succeeded.emit(status)
+
         except ExportError as e:
             logger.error("Export preflight failed")
             self.export_preflight_check_failed.emit(e)
 
-    def export_transcript(self, file_location: str, passphrase: str) -> None:
+    def export(self, filepaths: List[str], passphrase: Optional[str]) -> None:
         """
-        Send the transcript specified by file_location to the Export VM.
+        Bundle filepaths into a tarball and send to encrypted USB via qrexec,
+        optionally supplying a passphrase to unlock encrypted drives.
         """
-        logger.debug("Export transcript")
-        self._send_file_to_usb_device([file_location], passphrase)
+        try:
+            logger.debug(f"Begin exporting {len(filepaths)} item(s)")
 
-    def export_files(self, file_locations: List[str], passphrase: str) -> None:
-        """
-        Send the files specified by file_locations to the Export VM.
-        """
-        logger.debug(f"Export {len(file_locations)} files")
-        self._send_file_to_usb_device(file_locations, passphrase)
+            # Edit metadata template to include passphrase
+            metadata = self._DISK_METADATA.copy()
+            if passphrase:
+                metadata[self._DISK_ENCRYPTION_KEY_NAME] = passphrase
 
-    def export_file_to_usb_drive(self, file_uuid: str, passphrase: str) -> None:
-        """
-        Send the file specified by file_uuid to the Export VM with the user-provided passphrase for
-        unlocking the attached transfer device.  If the file is missing, update the db so that
-        is_downloaded is set to False.
-        """
+            with TemporaryDirectory() as tmp_dir:
+                archive_path = self._create_archive(
+                    archive_dir=tmp_dir,
+                    archive_fn=self._DISK_FN,
+                    metadata=metadata,
+                    filepaths=filepaths,
+                )
+                status = self._run_qrexec_export(archive_path)
 
-        self._send_file_to_usb_device(self._filepaths_list, passphrase)
+                self.export_succeeded.emit(status)
+                logger.debug(f"Status {status}")
 
-    def print_transcript(self, file_location: str) -> None:
-        """
-        Send the transcript specified by file_location to the Export VM.
-        """
-        self._print([file_location])
+        except ExportError as e:
+            logger.error("Export failed")
+            logger.debug(f"Export failed: {e}")
+            self.export_failed.emit(e)
 
-    def print_file(self, file_uuid: str) -> None:
-        """
-        Send the file specified by file_uuid to the Export VM. If the file is missing, update the db
-        so that is_downloaded is set to False.
-        """
+        self.export_completed.emit(filepaths)
 
-        self._print(self._filepaths_list)
+    def print(self, filepaths: List[str]) -> None:
+        """
+        Bundle files at self._filepaths_list into tarball and send for
+        printing via qrexec.
+        """
+        try:
+            logger.debug("Beginning print")
+
+            with TemporaryDirectory() as tmp_dir:
+                archive_path = self._create_archive(
+                    archive_dir=tmp_dir,
+                    archive_fn=self._PRINT_FN,
+                    metadata=self._PRINT_METADATA,
+                    filepaths=filepaths,
+                )
+                status = self._run_qrexec_export(archive_path)
+                self.print_succeeded.emit(status)
+                logger.debug(f"Status {status}")
+
+        except ExportError as e:
+            logger.error("Export failed")
+            logger.debug(f"Export failed: {e}")
+            self.print_failed.emit(e)
+
+        self.export_completed.emit(filepaths)
 
     def _run_qrexec_export(self, archive_path: str) -> ExportStatus:
         """
@@ -174,7 +203,7 @@ class Device(QObject):
             raise ExportError(ExportStatus.CALLED_PROCESS_ERROR)
 
     def _create_archive(
-        self, archive_dir: str, archive_fn: str, metadata: dict, filepaths: List[str]
+        self, archive_dir: str, archive_fn: str, metadata: dict, filepaths: List[str] = []
     ) -> str:
         """
         Create the archive to be sent to the Export VM.
@@ -210,7 +239,7 @@ class Device(QObject):
                     self._add_file_to_archive(
                         archive, filepath, prevent_name_collisions=is_one_of_multiple_files
                     )
-            if missing_count == len(filepaths):
+            if missing_count == len(filepaths) and missing_count > 0:
                 # Context manager will delete archive even if an exception occurs
                 # since the archive is in a TemporaryDirectory
                 logger.error("Files were moved or missing")
@@ -258,63 +287,3 @@ class Device(QObject):
                 arcname = os.path.join("export_data", parent_name, filename)
 
         archive.add(filepath, arcname=arcname, recursive=False)
-
-    def _build_archive_and_export(
-        self, metadata: dict, filename: str, filepaths: List[str] = []
-    ) -> ExportStatus:
-        """
-        Build archive, run qrexec command and return resulting ExportStatus.
-
-        ExportError may be raised during underlying _run_qrexec_export call,
-        and is handled by the calling method.
-        """
-        with TemporaryDirectory() as tmp_dir:
-            archive_path = self._create_archive(
-                archive_dir=tmp_dir, archive_fn=filename, metadata=metadata, filepaths=filepaths
-            )
-            return self._run_qrexec_export(archive_path)
-
-    def _send_file_to_usb_device(self, filepaths: List[str], passphrase: str) -> None:
-        """
-        Export the file to the luks-encrypted usb disk drive attached to the Export VM.
-
-        Args:
-            filepath: The path of file to export.
-            passphrase: The passphrase to unlock the luks-encrypted usb disk drive.
-        """
-        try:
-            logger.debug("beginning export")
-            # Edit metadata template to include passphrase
-            metadata = self._DISK_METADATA.copy()
-            metadata[self._DISK_ENCRYPTION_KEY_NAME] = passphrase
-            status = self._build_archive_and_export(
-                metadata=metadata, filename=self._DISK_FN, filepaths=filepaths
-            )
-
-            self.export_succeeded.emit(status)
-            logger.debug(f"Status {status}")
-        except ExportError as e:
-            logger.error("Export failed")
-            logger.debug(f"Export failed: {e}")
-            self.export_failed.emit(e)
-
-    def _print(self, filepaths: List[str]) -> None:
-        """
-        Print the file to the printer attached to the Export VM.
-
-        Args:
-            filepath: The path of file to export.
-        """
-        try:
-            logger.debug("beginning print")
-            status = self._build_archive_and_export(
-                metadata=self._PRINT_METADATA, filename=self._PRINT_FN, filepaths=filepaths
-            )
-            self.print_succeeded.emit(status)
-            logger.debug(f"Status {status}")
-        except ExportError as e:
-            logger.error("Export failed")
-            logger.debug(f"Export failed: {e}")
-            self.print_failed.emit(e)
-
-        self.export_succeeded.emit(filepaths)

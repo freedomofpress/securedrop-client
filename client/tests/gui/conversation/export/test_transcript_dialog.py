@@ -171,7 +171,7 @@ def test_TranscriptDialog__show_generic_error_message(mocker, export_transcript_
 
 def test_TranscriptDialog__export_transcript(mocker, export_transcript_dialog):
     device = mocker.MagicMock()
-    device.export_transcript = mocker.MagicMock()
+    device.export = mocker.MagicMock()
     export_transcript_dialog._device = device
     export_transcript_dialog.passphrase_field.text = mocker.MagicMock(
         return_value="mock_passphrase"
@@ -179,7 +179,7 @@ def test_TranscriptDialog__export_transcript(mocker, export_transcript_dialog):
 
     export_transcript_dialog._export_transcript()
 
-    device.export_transcript.assert_called_once_with("/some/path/transcript.txt", "mock_passphrase")
+    device.export.assert_called_once_with(["/some/path/transcript.txt"], "mock_passphrase")
 
 
 def test_TranscriptDialog__on_export_preflight_check_succeeded(mocker, export_transcript_dialog):

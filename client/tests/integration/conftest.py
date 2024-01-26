@@ -148,7 +148,7 @@ def modal_dialog(mocker, homedir):
 
 @pytest.fixture(scope="function")
 def mock_export(mocker):
-    device = Device(["/tmp/imaginary-export/imaginary-file-1.tar.gz.gpg"])
+    device = Device()
 
     """A export that assumes the Qubes RPC calls are successful and skips them."""
     device.run_preflight_checks = lambda: ExportStatus.DEVICE_LOCKED
@@ -184,8 +184,8 @@ def print_dialog(mocker, homedir):
         controller.qubes = False
         gui.setup(controller)
         gui.login_dialog.close()
-        export_device = conversation.ExportDevice(["/mock/export/file"])
-        dialog = conversation.PrintFileDialog(export_device, "file_uuid", "file_name")
+        export_device = conversation.ExportDevice()
+        dialog = conversation.PrintFileDialog(export_device, "file_name", ["/mock/export/file"])
 
         yield dialog
 
@@ -217,8 +217,10 @@ def export_file_dialog(mocker, homedir):
         controller.qubes = False
         gui.setup(controller)
         gui.login_dialog.close()
-        export_device = conversation.ExportDevice(["/mock/export/filepath"])
-        dialog = conversation.ExportFileDialog(export_device, "file_uuid", "file_name")
+        export_device = conversation.ExportDevice()
+        dialog = conversation.ExportFileDialog(
+            export_device, "file_name", ["/mock/export/filepath"]
+        )
         dialog.show()
 
         yield dialog

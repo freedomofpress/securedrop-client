@@ -187,8 +187,10 @@ class PrintConversationAction(QAction):  # pragma: nocover
         # out of scope, any pending file removal will be performed
         # by the operating system.
         with open(file_path, "r") as f:
-            export = ExportDevice([file_path])
-            dialog = PrintConversationTranscriptDialog(export, TRANSCRIPT_FILENAME, str(file_path))
+            export = ExportDevice()
+            dialog = PrintConversationTranscriptDialog(
+                export, TRANSCRIPT_FILENAME, [str(file_path)]
+            )
             dialog.exec()
 
 
@@ -236,9 +238,9 @@ class ExportConversationTranscriptAction(QAction):  # pragma: nocover
         # out of scope, any pending file removal will be performed
         # by the operating system.
         with open(file_path, "r") as f:
-            export_device = ExportDevice([file_path])
+            export_device = ExportDevice()
             dialog = ExportConversationTranscriptDialog(
-                export_device, TRANSCRIPT_FILENAME, str(file_path)
+                export_device, TRANSCRIPT_FILENAME, [str(file_path)]
             )
             dialog.exec()
 
@@ -325,7 +327,7 @@ class ExportConversationAction(QAction):  # pragma: nocover
         # out of scope, any pending file removal will be performed
         # by the operating system.
         with ExitStack() as stack:
-            export_device = ExportDevice(file_locations)
+            export_device = ExportDevice()
             files = [
                 stack.enter_context(open(file_location, "r")) for file_location in file_locations
             ]

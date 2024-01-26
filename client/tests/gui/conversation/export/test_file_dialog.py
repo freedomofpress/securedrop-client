@@ -8,7 +8,7 @@ def test_ExportDialog_init(mocker):
         "securedrop_client.gui.conversation.ExportFileDialog._show_starting_instructions"
     )
 
-    export_file_dialog = ExportFileDialog(mocker.MagicMock(), "mock_uuid", "mock.jpg")
+    export_file_dialog = ExportFileDialog(mocker.MagicMock(), "mock.jpg", ["/mock/path/to/file"])
 
     _show_starting_instructions_fn.assert_called_once_with()
     assert export_file_dialog.passphrase_form.isHidden()
@@ -21,7 +21,7 @@ def test_ExportDialog_init_sanitizes_filename(mocker):
     mocker.patch("securedrop_client.gui.widgets.QVBoxLayout.addWidget")
     filename = '<script>alert("boom!");</script>'
 
-    ExportFileDialog(mocker.MagicMock(), "mock_uuid", filename)
+    ExportFileDialog(mocker.MagicMock(), filename, ["/mock/path/to/file"])
 
     secure_qlabel.assert_any_call(filename, wordwrap=False, max_length=260)
 
@@ -171,9 +171,7 @@ def test_ExportDialog__export_file(mocker, export_file_dialog):
 
     export_file_dialog._export_file()
 
-    device.export_file_to_usb_drive.assert_called_once_with(
-        export_file_dialog.file_uuid, "mock_passphrase"
-    )
+    device.export.assert_called_once_with(export_file_dialog.filepaths, "mock_passphrase")
 
 
 def test_ExportDialog__on_export_preflight_check_succeeded(mocker, export_file_dialog):

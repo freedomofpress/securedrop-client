@@ -1,3 +1,5 @@
+from typing import List
+
 from PyQt5.QtCore import QSize, pyqtSlot
 
 from securedrop_client.gui.conversation.export import PrintDialog
@@ -13,13 +15,15 @@ class PrintTranscriptDialog(PrintDialog):
     - Overrides the slot that handles the printing action to call said method.
     """
 
-    def __init__(self, device: Device, file_name: str, transcript_location: str) -> None:
-        super().__init__(device, "", file_name)
+    def __init__(self, device: Device, file_name: str, filepath: List[str]) -> None:
+        super().__init__(device, file_name, filepath)
 
-        self.transcript_location = transcript_location
+        # List might seem like an odd choice for this, but this is on the
+        # way to standardizing one export/print dialog that can send multiple items
+        self.transcript_location = filepath
 
     def _print_transcript(self) -> None:
-        self._device.print_transcript(self.transcript_location)
+        self._device.print(self.transcript_location)
         self.close()
 
     @pyqtSlot()

@@ -15,17 +15,17 @@ class Dialog(FileDialog):
     - Overrides the two slots that handles the export action to call said method.
     """
 
-    def __init__(self, device: Device, summary: str, file_locations: List[str]) -> None:
-        super().__init__(device, "", summary)
+    def __init__(self, device: Device, summary: str, filepaths: List[str]) -> None:
+        super().__init__(device, summary, filepaths)
 
-        self.file_locations = file_locations
+        self.filepaths = filepaths
 
     @pyqtSlot(bool)
     def _export_files(self, checked: bool = False) -> None:
         self.start_animate_activestate()
         self.cancel_button.setEnabled(False)
         self.passphrase_field.setDisabled(True)
-        self._device.export_files(self.file_locations, self.passphrase_field.text())
+        self._device.export(self.filepaths, self.passphrase_field.text())
 
     @pyqtSlot()
     def _show_passphrase_request_message(self) -> None:

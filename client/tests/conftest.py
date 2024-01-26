@@ -78,7 +78,7 @@ def print_dialog(mocker, homedir):
 
     export_device = mocker.MagicMock(spec=conversation.ExportDevice)
 
-    dialog = conversation.PrintFileDialog(export_device, "file_UUID", "file123.jpg")
+    dialog = conversation.PrintFileDialog(export_device, "file123.jpg", ["/mock/path/to/file"])
 
     yield dialog
 
@@ -90,7 +90,7 @@ def print_transcript_dialog(mocker, homedir):
     export_device = mocker.MagicMock(spec=conversation.ExportDevice)
 
     dialog = conversation.PrintTranscriptDialog(
-        export_device, "transcript.txt", "some/path/transcript.txt"
+        export_device, "transcript.txt", ["some/path/transcript.txt"]
     )
 
     yield dialog
@@ -117,7 +117,7 @@ def export_file_dialog(mocker, homedir):
 
     export_device = mocker.MagicMock(spec=conversation.ExportDevice)
 
-    dialog = conversation.ExportFileDialog(export_device, "file_UUID", "file123.jpg")
+    dialog = conversation.ExportFileDialog(export_device, "file123.jpg", ["/mock/path/to/file"])
 
     yield dialog
 
@@ -129,7 +129,7 @@ def export_transcript_dialog(mocker, homedir):
     export_device = mocker.MagicMock(spec=conversation.ExportDevice)
 
     dialog = conversation.ExportTranscriptDialog(
-        export_device, "transcript.txt", "/some/path/transcript.txt"
+        export_device, "transcript.txt", ["/some/path/transcript.txt"]
     )
 
     yield dialog
@@ -169,16 +169,12 @@ def homedir(i18n):
 
 @pytest.fixture(scope="function")
 def mock_export():
-    device = conversation.ExportDevice(["/mock/file/path"])
+    device = conversation.ExportDevice()
 
     device.run_export_preflight_checks = lambda dir: None
     device.run_printer_preflight_checks = lambda dir: None
-    device.export_files = lambda dir, paths, passphrase: None
-    device.export_transcript = lambda dir, paths, passphrase: None
-    device.print_file = lambda uuid: None
-    device.print_transcript = lambda file: None
-    device.export_file_to_usb_drive = lambda uuid, passphrase: None
-    device.export_files = lambda filepaths, passphrase: None
+    device.print = lambda filepaths: None
+    device.export = lambda filepaths, passphrase: None
 
     return device
 

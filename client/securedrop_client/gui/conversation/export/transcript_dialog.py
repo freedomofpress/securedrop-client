@@ -2,6 +2,7 @@
 A dialog that allows journalists to export sensitive files to a USB drive.
 """
 from gettext import gettext as _
+from typing import List
 
 from PyQt5.QtCore import pyqtSlot
 
@@ -17,16 +18,17 @@ class TranscriptDialog(FileDialog):
     - Overrides the two slots that handles the export action to call said method.
     """
 
-    def __init__(self, device: Device, file_name: str, transcript_location: str) -> None:
-        super().__init__(device, "", file_name)
+    def __init__(self, device: Device, file_name: str, filepath: List[str]) -> None:
+        super().__init__(device, file_name, filepath)
 
-        self.transcript_location = transcript_location
+        # List[str] to foreshadow multifile export and combining all export dialogs
+        self.transcript_location = filepath
 
     def _export_transcript(self, checked: bool = False) -> None:
         self.start_animate_activestate()
         self.cancel_button.setEnabled(False)
         self.passphrase_field.setDisabled(True)
-        self._device.export_transcript(self.transcript_location, self.passphrase_field.text())
+        self._device.export(self.transcript_location, self.passphrase_field.text())
 
     @pyqtSlot()
     def _show_passphrase_request_message(self) -> None:

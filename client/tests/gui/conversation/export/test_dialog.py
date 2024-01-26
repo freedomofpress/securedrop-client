@@ -161,7 +161,7 @@ def test_ExportDialog__export_files(mocker, export_dialog):
 
     export_dialog._export_files()
 
-    device.export_files.assert_called_once_with(
+    device.export.assert_called_once_with(
         ["/some/path/file123.jpg", "/some/path/memo.txt", "/some/path/transcript.txt"],
         "mock_passphrase",
     )

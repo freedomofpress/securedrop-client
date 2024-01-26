@@ -2459,10 +2459,10 @@ class FileWidget(QWidget):
             logger.debug("Clicked export but file not downloaded")
             return
 
-        export_device = conversation.ExportDevice([file_location])
+        export_device = conversation.ExportDevice()
 
         self.export_dialog = conversation.ExportFileDialog(
-            export_device, self.uuid, self.file.filename
+            export_device, self.file.filename, [file_location]
         )
         self.export_dialog.show()
 
@@ -2476,9 +2476,10 @@ class FileWidget(QWidget):
             return
 
         filepath = self.file.location(self.controller.data_dir)
-        export_device = conversation.ExportDevice([filepath])
 
-        dialog = conversation.PrintFileDialog(export_device, self.uuid, self.file.filename)
+        export_device = conversation.ExportDevice()
+
+        dialog = conversation.PrintFileDialog(export_device, self.file.filename, [filepath])
         dialog.exec()
 
     def _on_left_click(self) -> None:

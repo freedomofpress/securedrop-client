@@ -279,7 +279,7 @@ class TestPrintConversationAction(unittest.TestCase):
                     # action._export_device.run_printer_preflight_checks = (
                     #     lambda: action._export_device.print_preflight_check_succeeded.emit()
                     # )
-                    # action._export_device.print_transcript = (
+                    # action._export_device.print = (
                     #     lambda transcript: action._export_device.print_succeeded.emit()
                     # )
 
@@ -342,7 +342,7 @@ class TestExportConversationAction(unittest.TestCase):
                     # action._export_device.run_printer_preflight_checks = (
                     #     lambda: action._export_device.print_preflight_check_succeeded.emit()
                     # )
-                    # action._export_device.print_transcript = (
+                    # action._export_device.print = (
                     #     lambda transcript: action._export_device.print_succeeded.emit()
                     # )
 
