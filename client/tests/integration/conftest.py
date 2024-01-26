@@ -7,6 +7,7 @@ from securedrop_client.gui import conversation
 from securedrop_client.gui.base import ModalDialog
 from securedrop_client.gui.main import Window
 from securedrop_client.logic import Controller
+from securedrop_client.gui.conversation.export import Device
 from tests import factory
 
 
@@ -146,15 +147,15 @@ def modal_dialog(mocker, homedir):
 
 
 @pytest.fixture(scope="function")
-def mock_device():
+def mock_export(mocker):
+    device = Device(["/tmp/imaginary-export/imaginary-file-1.tar.gz.gpg"])
+
     """A export that assumes the Qubes RPC calls are successful and skips them."""
-    # todo: This will be done without export.Service(), i.e just with Device
-    # Ensure the export_service doesn't rely on Qubes OS:
-    export_service.run_preflight_checks = lambda: ExportStatus.DEVICE_LOCKED
-    export_service.send_file_to_usb_device = lambda paths, passphrase: ExportStatus.SUCCESS_EXPORT
-    export_service.run_printer_preflight = lambda: ExportStatus.PRINT_PREFLIGHT_SUCCESS
-    export_service.run_print = lambda paths: ExportStatus.PRINT_SUCCESS
-    return export_service
+    device.run_preflight_checks = lambda: ExportStatus.DEVICE_LOCKED
+    device.send_file_to_usb_device = lambda paths, passphrase: ExportStatus.SUCCESS_EXPORT
+    device.run_printer_preflight = lambda: ExportStatus.PRINT_PREFLIGHT_SUCCESS
+    device.run_print = lambda paths: ExportStatus.PRINT_SUCCESS
+    return device
 
 
 @pytest.fixture(scope="function")
