@@ -160,6 +160,7 @@ def mock_export(mocker):
 
 @pytest.fixture(scope="function")
 def print_dialog(mocker, homedir):
+    mocker.patch("securedrop_client.gui.conversation.export.Device", return_value=mock_export)
     app = QApplication([])
     gui = Window()
     app.setActiveWindow(gui)
@@ -181,9 +182,9 @@ def print_dialog(mocker, homedir):
         )
         controller.authenticated_user = factory.User()
         controller.qubes = False
-        export_device = conversation.ExportDevice(controller)
         gui.setup(controller)
         gui.login_dialog.close()
+        export_device = conversation.ExportDevice(["/mock/export/file"])
         dialog = conversation.PrintFileDialog(export_device, "file_uuid", "file_name")
 
         yield dialog
@@ -195,6 +196,7 @@ def print_dialog(mocker, homedir):
 
 @pytest.fixture(scope="function")
 def export_file_dialog(mocker, homedir):
+    mocker.patch("securedrop_client.gui.conversation.export.Device", return_value=mock_export)
     app = QApplication([])
     gui = Window()
     app.setActiveWindow(gui)
@@ -213,9 +215,9 @@ def export_file_dialog(mocker, homedir):
         )
         controller.authenticated_user = factory.User()
         controller.qubes = False
-        export_device = conversation.ExportDevice(controller)
         gui.setup(controller)
         gui.login_dialog.close()
+        export_device = conversation.ExportDevice(["/mock/export/filepath"])
         dialog = conversation.ExportFileDialog(export_device, "file_uuid", "file_name")
         dialog.show()
 

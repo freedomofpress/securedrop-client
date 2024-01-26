@@ -168,41 +168,21 @@ def homedir(i18n):
 
     yield tmpdir
 
-
-class MockExportService:  # todo
-    """An export service that assumes the Qubes RPC calls are successful and skips them."""
-
-    def __init__(self, unlocked: bool):
-        super().__init__()
-        if unlocked:
-            self.preflight_response = ExportStatus.DEVICE_WRITABLE
-        else:
-            self.preflight_response = ExportStatus.DEVICE_LOCKED
-
-    def run_preflight_checks(self) -> None:
-        self.preflight_check_call_success.emit(self.preflight_response)
-
-    def send_file_to_usb_device(self, filepaths: List[str], passphrase: str) -> None:
-        self.export_usb_call_success.emit(ExportStatus.SUCCESS_EXPORT)
-        self.export_completed.emit(filepaths)
-
-    def run_printer_preflight(self) -> None:
-        self.printer_preflight_success.emit(ExportStatus.PRINT_PREFLIGHT_SUCCESS)
-
-    def print(self, filepaths: List[str]) -> None:
-        self.print_call_success.emit(ExportStatus.PRINT_SUCCESS)
-        self.export_completed.emit(filepaths)
-
-
 @pytest.fixture(scope="function")
-def mock_export_service():
-    return MockExportService(unlocked=False)
+def mock_export():
 
+    device = conversation.ExportDevice(["/mock/file/path"])
 
-@pytest.fixture(scope="function")
-def mock_export_service_unlocked_device():
-    return MockExportService(unlocked=True)
+    device.run_export_preflight_checks = lambda dir: None
+    device.run_printer_preflight_checks = lambda dir: None
+    device.export_files = lambda dir, paths, passphrase: None
+    device.export_transcript = lambda dir, paths, passphrase: None
+    device.print_file = lambda uuid: None
+    device.print_transcript = lambda file: None
+    device.export_file_to_usb_drive = lambda uuid, passphrase: None
+    device.export_files = lambda filepaths, passphrase: None
 
+    return device
 
 @pytest.fixture(scope="function")
 def functional_test_app_started_context(homedir, reply_status_codes, session, config, qtbot):
