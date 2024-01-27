@@ -16,11 +16,7 @@ from securedrop_client import state
 from securedrop_client.conversation import Transcript as ConversationTranscript
 from securedrop_client.db import Source
 from securedrop_client.gui.base import ModalDialog
-from securedrop_client.gui.conversation import ExportDevice
-from securedrop_client.gui.conversation import ExportDialog as ExportConversationDialog
-from securedrop_client.gui.conversation import (
-    ExportTranscriptDialog as ExportConversationTranscriptDialog,
-)
+from securedrop_client.gui.conversation import ExportDevice, ExportDialog
 from securedrop_client.gui.conversation import (
     PrintTranscriptDialog as PrintConversationTranscriptDialog,
 )
@@ -217,7 +213,7 @@ class ExportConversationTranscriptAction(QAction):  # pragma: nocover
     def _on_triggered(self) -> None:
         """
         (Re-)generates the conversation transcript and opens a confirmation dialog to export it,
-        in the manner of the existing ExportFileDialog.
+        in the manner of the existing ExportDialog.
         """
         file_path = (
             Path(self.controller.data_dir)
@@ -239,9 +235,7 @@ class ExportConversationTranscriptAction(QAction):  # pragma: nocover
         # by the operating system.
         with open(file_path, "r") as f:
             export_device = ExportDevice()
-            dialog = ExportConversationTranscriptDialog(
-                export_device, TRANSCRIPT_FILENAME, [str(file_path)]
-            )
+            dialog = ExportDialog(export_device, TRANSCRIPT_FILENAME, [str(file_path)])
             dialog.exec()
 
 
@@ -272,7 +266,7 @@ class ExportConversationAction(QAction):  # pragma: nocover
         """
         (Re-)generates the conversation transcript and opens a confirmation dialog to export it
         alongside all the (attached) files that are downloaded, in the manner
-        of the existing ExportFileDialog.
+        of the existing ExportDialog.
         """
         if self._state is not None:
             id = self._state.selected_conversation
@@ -298,7 +292,7 @@ class ExportConversationAction(QAction):  # pragma: nocover
         """
         (Re-)generates the conversation transcript and opens a confirmation dialog to export it
         alongside all the (attached) files that are downloaded, in the manner
-        of the existing ExportFileDialog.
+        of the existing ExportDialog.
         """
         transcript_location = (
             Path(self.controller.data_dir)
@@ -338,7 +332,7 @@ class ExportConversationAction(QAction):  # pragma: nocover
             else:
                 summary = _("all files and transcript")
 
-            dialog = ExportConversationDialog(
+            dialog = ExportDialog(
                 export_device,
                 summary,
                 [str(file_location) for file_location in file_locations],

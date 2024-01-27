@@ -2461,7 +2461,7 @@ class FileWidget(QWidget):
 
         export_device = conversation.ExportDevice()
 
-        self.export_dialog = conversation.ExportFileDialog(
+        self.export_dialog = conversation.ExportDialog(
             export_device, self.file.filename, [file_location]
         )
         self.export_dialog.show()

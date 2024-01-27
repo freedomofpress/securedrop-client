@@ -130,8 +130,8 @@ def test_class_name_matches_css_object_name_for_print_dialog(print_dialog):
 
 
 def test_class_name_matches_css_object_name_for_export_file_dialog(export_file_dialog):
-    assert "FileDialog" == export_file_dialog.__class__.__name__
-    assert "FileDialog" in export_file_dialog.passphrase_form.objectName()
+    assert "ExportDialog" == export_file_dialog.__class__.__name__
+    assert "ExportDialog" in export_file_dialog.passphrase_form.objectName()
 
 
 def test_class_name_matches_css_object_name_for_modal_dialog(modal_dialog):

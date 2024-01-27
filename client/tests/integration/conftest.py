@@ -218,9 +218,7 @@ def export_file_dialog(mocker, homedir):
         gui.setup(controller)
         gui.login_dialog.close()
         export_device = conversation.ExportDevice()
-        dialog = conversation.ExportFileDialog(
-            export_device, "file_name", ["/mock/export/filepath"]
-        )
+        dialog = conversation.ExportDialog(export_device, "file_name", ["/mock/export/filepath"])
         dialog.show()
 
         yield dialog

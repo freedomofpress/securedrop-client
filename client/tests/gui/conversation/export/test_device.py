@@ -88,9 +88,7 @@ class TestDevice:
 
     def test_Device_print_file_file_missing(self, mock_subprocess, mocker):
         device = Export()
-        warning_logger = mocker.patch(
-            "securedrop_client.export.logger.warning"
-        )
+        warning_logger = mocker.patch("securedrop_client.export.logger.warning")
 
         log_msg = "File not found at specified filepath, skipping"
 
@@ -126,9 +124,7 @@ class TestDevice:
     def test_Device_export_file_missing(self, mock_subprocess, mocker):
         device = Export()
 
-        warning_logger = mocker.patch(
-            "securedrop_client.export.logger.warning"
-        )
+        warning_logger = mocker.patch("securedrop_client.export.logger.warning")
         with mock.patch(
             "securedrop_client.export.tarfile.open",
             return_value=mock.MagicMock(),

@@ -3588,6 +3588,8 @@ def test_FileWidget__on_export_clicked(mocker, session, source):
     get_file = mocker.MagicMock(return_value=file)
     controller = mocker.MagicMock(get_file=get_file)
     file_location = file.location(controller.data_dir)
+
+    # It doesn't live here, but see __init__.py
     export_device = mocker.patch("securedrop_client.gui.conversation.ExportDevice")
 
     fw = FileWidget(
@@ -3598,7 +3600,7 @@ def test_FileWidget__on_export_clicked(mocker, session, source):
     controller.run_export_preflight_checks = mocker.MagicMock()
     controller.downloaded_file_exists = mocker.MagicMock(return_value=True)
 
-    dialog = mocker.patch("securedrop_client.gui.conversation.ExportFileDialog")
+    dialog = mocker.patch("securedrop_client.gui.conversation.ExportDialog")
 
     fw._on_export_clicked()
     dialog.assert_called_once_with(export_device(), file.filename, [file_location])
@@ -3628,7 +3630,7 @@ def test_FileWidget__on_export_clicked_missing_file(mocker, session, source):
     mocker.patch("PyQt5.QtWidgets.QDialog.exec")
     controller.run_export_preflight_checks = mocker.MagicMock()
     controller.downloaded_file_exists = mocker.MagicMock(return_value=False)
-    dialog = mocker.patch("securedrop_client.gui.conversation.ExportFileDialog")
+    dialog = mocker.patch("securedrop_client.gui.conversation.ExportDialog")
 
     fw._on_export_clicked()
 

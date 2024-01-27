@@ -289,7 +289,7 @@ class TestPrintConversationAction(unittest.TestCase):
 
 
 class TestExportConversationTranscriptAction(unittest.TestCase):
-    @patch("securedrop_client.gui.actions.ExportConversationTranscriptDialog")
+    @patch("securedrop_client.gui.actions.ExportDialog")
     def test_trigger(self, _):
         with managed_locale():
             locale.setlocale(locale.LC_ALL, ("en_US", "latin-1"))
@@ -304,7 +304,7 @@ class TestExportConversationTranscriptAction(unittest.TestCase):
                         return_value="☠ A string with unicode characters."
                     )
 
-                    # TOdo: these are now accessible through the Device or the Dialog.
+                    # TODO: these are now accessible through the Device or the Dialog.
                     # action._export_device.run_printer_preflight_checks = (
                     #     lambda: action._export_device.print_preflight_check_succeeded.emit()
                     # )
@@ -318,7 +318,7 @@ class TestExportConversationTranscriptAction(unittest.TestCase):
 
 
 class TestExportConversationAction(unittest.TestCase):
-    @patch("securedrop_client.gui.actions.ExportConversationDialog")
+    @patch("securedrop_client.gui.actions.ExportDialog")
     def test_trigger(self, _):
         with managed_locale():
             locale.setlocale(locale.LC_ALL, ("en_US", "latin-1"))
