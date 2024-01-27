@@ -21,7 +21,7 @@ def _setup_export(functional_test_logged_in_context, qtbot, mocker, mock_export)
     """
     Helper. Set up export test context and return reference to export dialog.
     """
-    mocker.patch("securedrop_client.gui.conversation.export.Device", return_value=mock_export)
+    mocker.patch("securedrop_client.export.Export", return_value=mock_export)
 
     gui, controller = functional_test_logged_in_context
 

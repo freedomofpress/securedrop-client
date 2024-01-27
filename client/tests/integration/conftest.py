@@ -160,7 +160,7 @@ def mock_export(mocker):
 
 @pytest.fixture(scope="function")
 def print_dialog(mocker, homedir):
-    mocker.patch("securedrop_client.gui.conversation.export.Device", return_value=mock_export)
+    mocker.patch("securedrop_client.export.Export", return_value=mock_export)
     app = QApplication([])
     gui = Window()
     app.setActiveWindow(gui)
@@ -196,7 +196,7 @@ def print_dialog(mocker, homedir):
 
 @pytest.fixture(scope="function")
 def export_file_dialog(mocker, homedir):
-    mocker.patch("securedrop_client.gui.conversation.export.Device", return_value=mock_export)
+    mocker.patch("securedrop_client.export.Export", return_value=mock_export)
     app = QApplication([])
     gui = Window()
     app.setActiveWindow(gui)
