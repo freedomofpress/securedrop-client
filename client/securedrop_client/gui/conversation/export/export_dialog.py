@@ -23,14 +23,28 @@ class ExportDialog(ModalDialog):
     NO_MARGIN = 0
     FILENAME_WIDTH_PX = 260
 
-    def __init__(self, device: Export, summary_text: str, filepaths: List[str]) -> None:
+    def __init__(self, export: Export, summary_text: str, filepaths: List[str]) -> None:
+        """
+        Args:
+            export (Export): manages the export and returns status information to the
+            dialog
+
+            summary_text (str): String descriptor of what is being exported (will be
+            displayed to user). For single-item exports, the filename can be used; for
+            multifile exports, a summary (such as f"{len(filepaths) files"}) can be used.
+
+            filepaths (List[str]): list of complete non-relative paths to items targeted for
+            export. Filepaths should be checked by the controller before this dialog launches,
+            although the dialog performs basic before attempting to export to ensure the file
+            is present. (In the current implementation, are held open by a context manager to
+            prevent the scenario where the file is deleted while the dialog is open).
+        """
         super().__init__()
         self.setStyleSheet(self.DIALOG_CSS)
 
-        self._device = device
+        self._device = export
         self.filepaths = filepaths
 
-        # This could be the filename, if a single file, or "{n} files"
         self.summary_text = SecureQLabel(
             summary_text, wordwrap=False, max_length=self.FILENAME_WIDTH_PX
         ).text()
@@ -139,6 +153,7 @@ class ExportDialog(ModalDialog):
         self.passphrase_form.show()
         self.adjustSize()
 
+    # Retrying an incorrect passphrase
     def _show_passphrase_request_message_again(self) -> None:
         self.continue_button.clicked.disconnect()
         self.continue_button.clicked.connect(self._export)
@@ -287,3 +302,51 @@ class ExportDialog(ModalDialog):
                 self._show_insert_encrypted_usb_message()
             else:
                 self._show_generic_error_message()
+
+
+# def _ui_preparing_to_export(self):
+#     pass
+
+
+# def _ui_ready_export_no_passphrase_prompt(self):
+#     pass
+
+
+# def _ui_ready_export_passphrase_prompt(self):
+#     pass
+
+
+# def _ui_ready_export_retry_passphrase(self):
+#     pass
+
+
+# def _ui_no_devices(self):
+#     pass
+
+
+# def _ui_too_many_devices(self):
+#     pass
+
+
+def _ui_invalid_device(self):
+    pass
+
+
+def _ui_error_export_did_not_complete(self):
+    pass
+
+
+def _ui_error_after_export_complete(self):
+    pass
+
+
+# Dialog states:
+# Preparing to Export.... (preflight)
+# Ready to export (no passphrase just "export")
+
+# please enter your passphrase (->"export")
+
+# Please insert a USB (no_device)
+# Please re-enter your passphrase (-> "export")
+# Error, time to close (invalid device)
+# Too many options (multi-device)

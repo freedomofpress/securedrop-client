@@ -16,10 +16,11 @@ from securedrop_client import state
 from securedrop_client.conversation import Transcript as ConversationTranscript
 from securedrop_client.db import Source
 from securedrop_client.gui.base import ModalDialog
-from securedrop_client.gui.conversation import ExportDevice, ExportDialog
+from securedrop_client.gui.conversation import ExportDevice
 from securedrop_client.gui.conversation import (
     PrintTranscriptDialog as PrintConversationTranscriptDialog,
 )
+from securedrop_client.gui.conversation.export import ExportWizard
 from securedrop_client.logic import Controller
 from securedrop_client.utils import safe_mkdir
 
@@ -235,7 +236,7 @@ class ExportConversationTranscriptAction(QAction):  # pragma: nocover
         # by the operating system.
         with open(file_path, "r") as f:
             export_device = ExportDevice()
-            dialog = ExportDialog(export_device, TRANSCRIPT_FILENAME, [str(file_path)])
+            dialog = ExportWizard(export_device, TRANSCRIPT_FILENAME, [str(file_path)])
             dialog.exec()
 
 
@@ -332,7 +333,7 @@ class ExportConversationAction(QAction):  # pragma: nocover
             else:
                 summary = _("all files and transcript")
 
-            dialog = ExportDialog(
+            dialog = ExportWizard(
                 export_device,
                 summary,
                 [str(file_location) for file_location in file_locations],

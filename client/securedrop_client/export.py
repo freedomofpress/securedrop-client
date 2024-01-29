@@ -41,6 +41,9 @@ class Export(QObject):
     _DISK_ENCRYPTION_KEY_NAME = "encryption_key"
     _DISK_EXPORT_DIR = "export_data"
 
+    # New, replacement for export success and error statuses
+    export_state_changed = pyqtSignal(object)
+
     # Emit ExportStatus
     export_preflight_check_succeeded = pyqtSignal(object)
     export_succeeded = pyqtSignal(object)
@@ -97,6 +100,13 @@ class Export(QObject):
             logger.error("Export preflight failed")
             self.export_preflight_check_failed.emit(e)
 
+            if e.status:
+                self.export_state_changed.emit(e.status)
+            else:
+                logger.error("ExportError, no status supplied")
+                # Emit a generic error
+                self.export_state_changed.emit(ExportStatus.ERROR_EXPORT)
+
     def export(self, filepaths: List[str], passphrase: Optional[str]) -> None:
         """
         Bundle filepaths into a tarball and send to encrypted USB via qrexec,
@@ -118,6 +128,7 @@ class Export(QObject):
                     filepaths=filepaths,
                 )
                 status = self._run_qrexec_export(archive_path)
+                self.export_state_changed.emit(status)
 
                 self.export_succeeded.emit(status)
                 logger.debug(f"Status {status}")
@@ -126,6 +137,13 @@ class Export(QObject):
             logger.error("Export failed")
             logger.debug(f"Export failed: {e}")
             self.export_failed.emit(e)
+
+            if e.status and isinstance(e.status, ExportStatus):
+                self.export_state_changed.emit(e.status)
+            else:
+                logger.error("ExportError, no status supplied")
+                # Emit a generic error
+                self.export_state_changed.emit(ExportStatus.ERROR_EXPORT)
 
         self.export_completed.emit(filepaths)
 
@@ -191,8 +209,15 @@ class Export(QObject):
                 stderr=subprocess.STDOUT,
             )
             result = output.decode("utf-8").strip()
+            if result:
 
-            return ExportStatus(result)
+                # This is a bit messy, but make sure we are just taking the last line
+                # (no-op if no newline)
+                status_string = result.split("\n")[-1]
+                return ExportStatus(status_string)
+            else:
+                logger.error("Export subprocess did not return a value we could parse")
+                raise ExportError(ExportStatus.UNEXPECTED_RETURN_STATUS)
 
         except ValueError as e:
             logger.debug(f"Export subprocess returned unexpected value: {e}")
