@@ -81,6 +81,7 @@ from securedrop_client.gui.actions import (
 )
 from securedrop_client.gui.base import SecureQLabel, SvgLabel, SvgPushButton, SvgToggleButton
 from securedrop_client.gui.conversation import DeleteConversationDialog
+from securedrop_client.gui.conversation.export import ExportWizard
 from securedrop_client.gui.datetime_helpers import format_datetime_local
 from securedrop_client.gui.source import DeleteSourceDialog
 from securedrop_client.logic import Controller
@@ -2461,10 +2462,8 @@ class FileWidget(QWidget):
 
         export_device = conversation.ExportDevice()
 
-        self.export_dialog = conversation.ExportDialog(
-            export_device, self.file.filename, [file_location]
-        )
-        self.export_dialog.show()
+        self.export_wizard = ExportWizard(export_device, self.file.filename, [file_location])
+        self.export_wizard.show()
 
     @pyqtSlot()
     def _on_print_clicked(self) -> None:

@@ -5,6 +5,7 @@ import tempfile
 from configparser import ConfigParser
 from datetime import datetime
 from uuid import uuid4
+from unittest import mock
 
 import pytest
 from PyQt5.QtCore import Qt
@@ -22,6 +23,7 @@ from securedrop_client.db import (
     Source,
     make_session_maker,
 )
+from securedrop_client.export_status import ExportStatus
 from securedrop_client.gui import conversation
 from securedrop_client.gui.main import Window
 from securedrop_client.logic import Controller
@@ -47,7 +49,7 @@ TIME_SYNC = 10000
 TIME_CLICK_ACTION = 1000
 TIME_RENDER_SOURCE_LIST = 20000
 TIME_RENDER_CONV_VIEW = 1000
-TIME_RENDER_EXPORT_DIALOG = 1000
+TIME_RENDER_EXPORT_WIZARD = 1000
 TIME_FILE_DOWNLOAD = 5000
 
 
@@ -97,38 +99,38 @@ def print_transcript_dialog(mocker, homedir):
 
 
 @pytest.fixture(scope="function")
-def export_dialog_multifile(mocker, homedir):
+def export_wizard_multifile(mocker, homedir):
     mocker.patch("PyQt5.QtWidgets.QApplication.activeWindow", return_value=QMainWindow())
 
     export_device = mocker.MagicMock(spec=conversation.ExportDevice)
 
-    dialog = conversation.ExportDialog(
+    wizard = conversation.ExportWizard(
         export_device,
         "3 files",
         ["/some/path/file123.jpg", "/some/path/memo.txt", "/some/path/transcript.txt"],
     )
 
-    yield dialog
+    yield wizard
 
 
 @pytest.fixture(scope="function")
-def export_dialog(mocker, homedir):
+def export_wizard(mocker, homedir):
     mocker.patch("PyQt5.QtWidgets.QApplication.activeWindow", return_value=QMainWindow())
 
     export_device = mocker.MagicMock(spec=conversation.ExportDevice)
 
-    dialog = conversation.ExportDialog(export_device, "file123.jpg", ["/mock/path/to/file"])
+    dialog = conversation.ExportWizard(export_device, "file123.jpg", ["/mock/path/to/file"])
 
     yield dialog
 
 
 @pytest.fixture(scope="function")
-def export_transcript_dialog(mocker, homedir):
+def export_transcript_wizard(mocker, homedir):
     mocker.patch("PyQt5.QtWidgets.QApplication.activeWindow", return_value=QMainWindow())
 
     export_device = mocker.MagicMock(spec=conversation.ExportDevice)
 
-    dialog = conversation.ExportDialog(
+    dialog = conversation.ExportWizard(
         export_device, "transcript.txt", ["/some/path/transcript.txt"]
     )
 
@@ -168,13 +170,105 @@ def homedir(i18n):
 
 
 @pytest.fixture(scope="function")
-def mock_export():
+def mock_export_locked():
+    """
+    Represents the following scenario:
+        * Locked USB already inserted
+        * "Export" clicked, export wizard launched
+        * Passphrase successfully entered on first attempt (and export suceeeds)
+    """
     device = conversation.ExportDevice()
 
-    device.run_export_preflight_checks = lambda dir: None
-    device.run_printer_preflight_checks = lambda dir: None
+    device.run_export_preflight_checks = lambda: device.export_state_changed.emit(
+        ExportStatus.DEVICE_LOCKED
+    )
+    device.run_printer_preflight_checks = lambda: None
     device.print = lambda filepaths: None
-    device.export = lambda filepaths, passphrase: None
+    device.export = mock.MagicMock()
+    device.export.side_effect = [
+        lambda filepaths, passphrase: device.export_state_changed.emit(
+            ExportStatus.DEVICE_WRITABLE
+        ),
+        lambda filepaths, passphrase: device.export_state_changed.emit(ExportStatus.SUCCESS_EXPORT),
+    ]
+
+    return device
+
+
+@pytest.fixture(scope="function")
+def mock_export_unlocked():
+    """
+    Represents the following scenario:
+        * USB already inserted and unlocked by the user
+        * Export wizard launched
+        * Export succeeds
+    """
+    device = conversation.ExportDevice()
+
+    device.run_export_preflight_checks = lambda: device.export_state_changed.emit(
+        ExportStatus.DEVICE_WRITABLE
+    )
+    device.run_printer_preflight_checks = lambda: None
+    device.print = lambda filepaths: None
+    device.export = lambda filepaths, passphrase: device.export_state_changed.emit(
+        ExportStatus.SUCCESS_EXPORT
+    )
+
+    return device
+
+
+@pytest.fixture(scope="function")
+def mock_export_no_usb_then_bad_passphrase_then_fail():
+    """
+    Represents the following scenario:
+        * Export wizard launched
+        * Locked USB inserted
+        * Mistyped Passphrase
+        * Correct passphrase
+        * Export fails
+    """
+    device = conversation.ExportDevice()
+
+    device.run_export_preflight_checks = lambda: device.export_state_changed.emit(
+        ExportStatus.NO_DEVICE_DETECTED
+    )
+    device.run_printer_preflight_checks = lambda: None
+    device.print = lambda filepaths: None
+    device.export = mock.MagicMock()
+    device.export.side_effect = [
+        lambda filepaths, passphrase: device.export_state_changed.emit(ExportStatus.DEVICE_LOCKED),
+        lambda filepaths, passphrase: device.export_state_changed.emit(
+            ExportStatus.ERROR_UNLOCK_LUKS
+        ),
+        lambda filepaths, passphrase: device.export_state_changed.emit(
+            ExportStatus.DEVICE_WRITABLE
+        ),
+        lambda filepaths, passphrase: device.export_state_changed.emit(ExportStatus.ERROR_EXPORT),
+    ]
+
+    return device
+
+
+@pytest.fixture(scope="function")
+def mock_export_fail_early():
+    """
+    Represents the following scenario:
+        * Locked USB inserted
+        * Export wizard launched
+        * Unrecoverable error before export happens
+          (eg, mount error)
+    """
+    device = conversation.ExportDevice()
+
+    device.run_export_preflight_checks = lambda: device.export_state_changed.emit(
+        ExportStatus.DEVICE_LOCKED
+    )
+    device.run_printer_preflight_checks = lambda: None
+    device.print = lambda filepaths: None
+    device.export = mock.MagicMock()
+    device.export = lambda filepaths, passphrase: device.export_state_changed.emit(
+        ExportStatus.ERROR_MOUNT
+    )
 
     return device
 
