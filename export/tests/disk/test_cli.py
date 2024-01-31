@@ -309,9 +309,10 @@ class TestCli:
             device_name=_DEFAULT_USB_DEVICE,
             encryption=EncryptionScheme.LUKS,
         )
-        result = self.cli._mount_volume(md, _PRETEND_LUKS_ID)
-        assert result.mountpoint == "/media/usb"
-        assert isinstance(result, MountedVolume)
+        with pytest.raises(ExportException) as e:
+            result = self.cli._mount_volume(md, _PRETEND_LUKS_ID)
+            assert result.mountpoint == "/media/usb"
+            assert isinstance(result, MountedVolume)
 
     @mock.patch(
         "subprocess.check_output",

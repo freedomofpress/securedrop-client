@@ -1,3 +1,5 @@
+import contextlib
+import io
 import os
 import shutil
 import platform
@@ -182,10 +184,18 @@ def _exit_gracefully(submission: Archive, status: Optional[BaseStatus] = None):
 
 def _write_status(status: Optional[BaseStatus]):
     """
-    Write string to stderr.
+    Write status string to stderr.
     """
     if status:
         logger.info(f"Write status {status.value}")
+
+        # First we will log errors from stderr elsewhere
+        tmp_stderr = io.StringIO()
+        with contextlib.redirect_stderr(tmp_stderr):
+            sys.stderr.flush()
+        if tmp_stderr.getvalue() is not None:
+            logger.error(f"Error-capture: {tmp_stderr.getvalue()}")
+
         sys.stderr.write(status.value)
         sys.stderr.write("\n")
     else:
