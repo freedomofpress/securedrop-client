@@ -1,6 +1,7 @@
 import json
 import logging
 import os
+import pexpect
 import subprocess
 
 from typing import Optional, Union
@@ -134,7 +135,7 @@ class CLI:
         device_name = device.get("name")
         device_fstype = device.get("fstype")
 
-        vol = Volume(device_name, EncryptionScheme.UNKNOWN)
+        vol = Volume(f"{_DEV_PREFIX}{device_name}", EncryptionScheme.UNKNOWN)
 
         if device_fstype == "crypto_LUKS":
             logger.debug(f"{device_name} is LUKS-encrypted")
@@ -142,23 +143,26 @@ class CLI:
 
         children = device.get("children")
         if children:
-            # It's an unlocked drive, possibly mounted
             if len(children) != 1:
-                logger.error(f"Unexpected volume format on {device_name}")
+                logger.error(f"Unexpected volume format on {vol.device_name}")
                 return None
             elif children[0].get("type") != "crypt":
                 return None
             else:
+                # It's an unlocked drive, possibly mounted
+                mapped_name = f"{_DEVMAPPER_PREFIX}{children[0].get('name')}"
+
                 # Unlocked VC/TC drives will still have EncryptionScheme.UNKNOWN;
                 # see if we can do better
                 if vol.encryption == EncryptionScheme.UNKNOWN:
                     vol.encryption = self._is_it_veracrypt(vol)
 
                 if children[0].get("mountpoint"):
-                    logger.debug(f"{_DEV_PREFIX}{device_name} is mounted")
+                    logger.debug(f"{vol.device_name} is mounted")
+
                     return MountedVolume(
-                        device_name=device_name,
-                        mapped_name=children[0].get("name"),
+                        device_name=vol.device_name,
+                        unlocked_name=mapped_name,
                         encryption=vol.encryption,
                         mountpoint=children[0].get("mountpoint"),
                     )
@@ -172,14 +176,14 @@ class CLI:
                         logger.debug(
                             f"{device_name} is unlocked but unmounted; attempting mount"
                         )
-                        return self._mount_volume(vol, children[0].get("name"))
+                        return self._mount_volume(vol, mapped_name)
 
         # Locked VeraCrypt drives are rejected here (EncryptionScheme.UNKNOWN)
         if vol.encryption in (EncryptionScheme.LUKS, EncryptionScheme.VERACRYPT):
-            logger.debug(f"{_DEV_PREFIX}{device_name} is supported export target")
+            logger.debug(f"{vol.device_name} is supported export target")
             return vol
         else:
-            logger.debug(f"No suitable volume found on {device_name}")
+            logger.debug(f"No suitable volume found on {vol.device_name}")
             return None
 
     def _is_it_veracrypt(self, volume: Volume) -> EncryptionScheme:
@@ -194,21 +198,19 @@ class CLI:
                     "udisksctl",
                     "info",
                     "--block-device",
-                    f"{_DEV_PREFIX}{volume.device_name}",
+                    f"{volume.device_name}",
                 ]
             ).decode("utf-8")
             if "IdType:                     crypto_TCRYPT\n" in info:
                 return EncryptionScheme.VERACRYPT
             elif "IdType:                     crypto_LUKS\n" in info:
                 # Don't downgrade LUKS to UNKNOWN if someone
-                # calls this on a LUKS drive by accident
+                # calls this method on a LUKS drive
                 return EncryptionScheme.LUKS
             else:
                 return EncryptionScheme.UNKNOWN
         except subprocess.CalledProcessError as err:
-            logger.debug(
-                f"Error checking disk info of {_DEV_PREFIX}{volume.device_name}"
-            )
+            logger.debug(f"Error checking disk info of {volume.device_name}")
             logger.error(err)
             # Not a showstopper
             return EncryptionScheme.UNKNOWN
@@ -222,102 +224,71 @@ class CLI:
         """
         try:
             logger.debug("Unlocking volume {}".format(volume.device_name))
-            p = subprocess.Popen(
-                [
-                    "udisksctl",
-                    "unlock",
-                    "--block-device",
-                    f"{_DEV_PREFIX}{volume.device_name}",
-                ],
-                stdin=subprocess.PIPE,
-                stdout=subprocess.PIPE,
-                stderr=subprocess.PIPE,
-            )
-            logger.debug("Passing key")
-            _, err = p.communicate(input=str.encode(encryption_key, "utf-8"))
-            rc = p.returncode
 
-            # Unlocked
-            if rc == 0 or (
-                err is not None and "is already unlocked as" in err.decode("utf-8")
-            ):
-                logger.info("Device unlocked")
+            command = f"udisksctl unlock --block-device {volume.device_name}"
+            prompt = ["Passphrase: ", pexpect.EOF, pexpect.TIMEOUT]
 
-                mapped_name = self._get_mapped_name(volume)
-                if mapped_name:
-                    return self._mount_volume(volume, mapped_name)
+            unlock_results = [
+                f"[Unlocked {volume.device_name} as ",
+                f"GDBus.Error:org.freedesktop.UDisks2.Error.Failed: Device {volume.device_name} is "
+                "already unlocked as ",
+                "GDBus.Error:org.freedesktop.UDisks2.Error.Failed: Error "
+                f"unlocking {volume.device_name}: Failed to activate device: Incorrect passphrase",
+                pexpect.EOF,
+                pexpect.TIMEOUT,
+            ]
+            child = pexpect.spawn(command)
+            index = child.expect(prompt)
+            if index != 0:
+                logger.error("Did not receive disk unlock prompt")
+                raise ExportException(sdstatus=Status.ERROR_UNLOCK_GENERIC)
+            else:
+                logger.debug("Passing key")
+                child.sendline(encryption_key)
+                index = child.expect(unlock_results)
+                if index == 0 or index == 1:
+                    dm_name = child.after.strip()
+                    child.close()
+                    if (child.exitstatus) != 0:
+                        logger.warning("Error closing child process")
+
+                    if dm_name:
+                        logger.debug(f"Device is unlocked as {dm_name}")
+
+                        # The mapped_name format here is /dev/dm-X
+                        return self._mount_volume(volume, dm_name)
+                    else:
+                        # This is really covering our bases, we shouldn't get here
+                        logger.error(f"No mapped device for {volume.device_name} found")
+                elif index == 2:
+                    logger.debug("Bad volume passphrase")
+                    raise ExportException(sdstatus=Status.ERROR_UNLOCK_LUKS)
                 else:
-                    # This is really covering our bases, we shouldn't get here
-                    # if we already unlocked successfully.
-                    logger.error(
-                        f"No mapped device for {_DEV_PREFIX}{volume.device_name} found"
-                    )
+                    logger.error("Unspecified error unlocking drive")
                     raise ExportException(sdstatus=Status.ERROR_UNLOCK_GENERIC)
 
-            else:
-                logger.error("Bad volume passphrase")
-                raise ExportException(sdstatus=Status.ERROR_UNLOCK_LUKS)
+        # Shouldn't happen, we are trapping EOF in child calls, but being cautious
+        except pexpect.ExceptionPexpect as ex:
+            logger.error(f"Error encountered while unlocking {volume.device_name}")
+            raise ExportException(sdstatus=Status.ERROR_UNLOCK_GENERIC) from ex
 
-        except subprocess.CalledProcessError as ex:
-            logger.error(
-                f"Error encountered while unlocking {_DEV_PREFIX}{volume.device_name}"
-            )
-            raise ExportException(sdstatus=Status.ERROR_UNLOCK_LUKS) from ex
-
-    def _get_mapped_name(self, volume: Volume) -> Optional[str]:
-        """
-        Get name of mapped volume from a target device.
-        Returns None if device is locked (no mapped name), throws ExportException on error.
-        """
-        try:
-            items = (
-                subprocess.check_output(
-                    [
-                        "lsblk",
-                        f"{_DEV_PREFIX}{volume.device_name}",
-                        "--raw",
-                        "--noheadings",
-                        "--output",
-                        "NAME,TYPE",
-                    ]
-                )
-                .decode("utf-8")
-                .rstrip()
-                .split("\n")
-            )
-            mapped_items = [
-                i
-                for i in items
-                if i.endswith("crypt") and not i.startswith(f"{volume.device_name}")
-            ]
-            if len(mapped_items) == 1:
-                # Space-separated name and type (eg `luks-123456-456789 crypt`)
-                return mapped_items[0].split()[0]
-            else:
-                # Not an error, could just be a locked device or the wrong type of volume
-                logger.info(
-                    f"Found {len(mapped_items)} mapped volumes on {_DEV_PREFIX}{volume.device_name}"
-                )
-
-        except subprocess.CalledProcessError as e:
-            logger.error("Error retrieving mapped volume name")
-            raise ExportException(sdstatus=Status.DEVICE_ERROR) from e
-
-    def _mount_volume(self, volume: Volume, mapped_name: str) -> MountedVolume:
+    def _mount_volume(self, volume: Volume, full_unlocked_name: str) -> MountedVolume:
         """
         Given an unlocked volume, mount volume in /media/user/ by udisksctl and
         return MountedVolume object.
 
+        Unlocked name could be `/dev/mapper/$id` or `/dev/dm-X`.
+
         Raise ExportException if errors are encountered during mounting.
         """
         try:
-            logger.info(f"Mount {_DEVMAPPER_PREFIX}{mapped_name} using udisksctl")
+            logger.info(f"Mount {full_unlocked_name} using udisksctl")
             subprocess.check_output(
                 [
                     "udisksctl",
                     "mount",
                     "--block-device",
-                    f"{_DEVMAPPER_PREFIX}{mapped_name}",
+                    f"{full_unlocked_name}",
                 ]
             )
         except subprocess.CalledProcessError as e:
@@ -340,7 +311,7 @@ class CLI:
                         "--noheadings",
                         "--output",
                         "MOUNTPOINT",
-                        f"{_DEVMAPPER_PREFIX}{mapped_name}",
+                        f"{full_unlocked_name}",
                     ]
                 )
                 .decode("utf-8")
@@ -349,14 +320,12 @@ class CLI:
             if mountpoint:
                 return MountedVolume(
                     device_name=volume.device_name,
-                    mapped_name=mapped_name,
+                    unlocked_name=full_unlocked_name,
                     encryption=volume.encryption,
                     mountpoint=mountpoint,
                 )
 
-            logger.error(
-                f"Could not get mountpoint for {_DEV_PREFIX}{volume.device_name}"
-            )
+            logger.error(f"Could not get mountpoint for {volume.device_name}")
             raise ExportException(sdstatus=Status.ERROR_MOUNT)
 
         except subprocess.CalledProcessError as ex:
@@ -417,14 +386,14 @@ class CLI:
         Unmount and close volume.
         """
         if os.path.exists(mv.mountpoint):
-            logger.debug(f"Unmounting drive {mv.mapped_name} from {mv.mountpoint}")
+            logger.debug(f"Unmounting drive {mv.unlocked_name} from {mv.mountpoint}")
             try:
                 subprocess.check_call(
                     [
                         "udisksctl",
                         "unmount",
                         "--block-device",
-                        f"{_DEVMAPPER_PREFIX}{mv.mapped_name}",
+                        f"{mv.unlocked_name}",
                     ]
                 )
 
@@ -437,15 +406,15 @@ class CLI:
         else:
             logger.info("Mountpoint does not exist; volume was already unmounted")
 
-        if os.path.exists(f"{_DEVMAPPER_PREFIX}{mv.mapped_name}"):
-            logger.debug(f"Closing drive {_DEV_PREFIX}{mv.device_name}")
+        if os.path.exists(f"{mv.unlocked_name}"):
+            logger.debug(f"Closing drive {mv.device_name}")
             try:
                 subprocess.check_call(
                     [
                         "udisksctl",
                         "lock",
                         "--block-device",
-                        f"{_DEV_PREFIX}{mv.device_name}",
+                        f"{mv.device_name}",
                     ]
                 )
 
@@ -456,7 +425,7 @@ class CLI:
             logger.info("Mapped entry does not exist; volume was already closed")
 
         return Volume(
-            device_name=mv.device_name,
+            device_name=f"{_DEV_PREFIX}{mv.device_name}",
             encryption=mv.encryption,
         )
 

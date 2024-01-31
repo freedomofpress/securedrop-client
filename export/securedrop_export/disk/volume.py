@@ -1,5 +1,4 @@
 from enum import Enum
-import os
 
 
 class EncryptionScheme(Enum):
@@ -13,8 +12,6 @@ class EncryptionScheme(Enum):
 
 
 class Volume:
-    MAPPED_VOLUME_PREFIX = "/dev/mapper/"
-
     """
     A volume on a removable device.
     Volumes have a device name ("/dev/sdX") and an encryption scheme.
@@ -39,30 +36,22 @@ class Volume:
         else:
             self._encryption = EncryptionScheme.UNKNOWN
 
-    @property
-    def unlocked(self) -> bool:
-        return (
-            self.mapped_name is not None
-            and self.encryption is not None
-            and self.encryption is not EncryptionScheme.UNKNOWN
-            and os.path.exists(
-                os.path.join(self.MAPPED_VOLUME_PREFIX, self.mapped_name)
-            )
-        )
-
 
 class MountedVolume(Volume):
     """
     An unlocked and mounted Volume.
+
+    Device name (from Volume) and unlocked name
+    are full paths (/dev/sdX, /dev/dm-X, /dev/mapper/idx).
     """
 
     def __init__(
         self,
         device_name: str,
-        mapped_name: str,
+        unlocked_name: str,
         encryption: EncryptionScheme,
         mountpoint: str,
     ):
         super().__init__(device_name=device_name, encryption=encryption)
-        self.mapped_name = mapped_name
+        self.unlocked_name = unlocked_name
         self.mountpoint = mountpoint

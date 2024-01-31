@@ -8,6 +8,7 @@ readme = "README.md"
 
 [tool.poetry.dependencies]
 python = "^3.9"
+pexpect = "^4.9.0"
 
 [tool.poetry.group.dev.dependencies]
 black = "^23.7.0"
