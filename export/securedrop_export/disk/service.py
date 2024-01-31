@@ -54,19 +54,23 @@ class Service:
                 )
                 return Status.SUCCESS_EXPORT
             elif isinstance(volume, Volume):
-                logger.debug("Volume is locked, unlocking")
-                mv = self.cli.unlock_volume(volume, self.submission.encryption_key)
-                if isinstance(mv, MountedVolume):
-                    logger.debug("Export to device")
-                    # Exports then locks the drive.
-                    # If the export succeeds but the drive is in use, will raise
-                    # exception.
-                    self.cli.write_data_to_device(
-                        mv, self.submission.tmpdir, self.submission.target_dirname
-                    )
-                    return Status.SUCCESS_EXPORT
+                if self.submission.encryption_key is not None:
+                    logger.debug("Volume is locked, try unlocking")
+                    mv = self.cli.unlock_volume(volume, self.submission.encryption_key)
+                    if isinstance(mv, MountedVolume):
+                        logger.debug("Export to device")
+                        # Exports then locks the drive.
+                        # If the export succeeds but the drive is in use, will raise
+                        # exception.
+                        self.cli.write_data_to_device(
+                            mv, self.submission.tmpdir, self.submission.target_dirname
+                        )
+                        return Status.SUCCESS_EXPORT
+                    else:
+                        raise ExportException(sdstatus=Status.ERROR_UNLOCK_GENERIC)
                 else:
-                    raise ExportException(sdstatus=Status.ERROR_UNLOCK_GENERIC)
+                    logger.info("Volume is locked and no key has been provided")
+                    return Status.DEVICE_LOCKED
 
         except ExportException as ex:
             logger.debug(ex)
