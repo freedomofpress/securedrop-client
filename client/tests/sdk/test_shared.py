@@ -1,5 +1,6 @@
 import datetime
 import os
+import time
 
 import pytest
 
@@ -10,9 +11,9 @@ NUM_REPLIES_PER_SOURCE = 2
 
 class TestShared:
     """
-    Base class for test code that is shared by the API and API proxy tests.
-    Tests in this file should not be prefixed with test_; they are called
-    only from subclasses.
+    Base class for tests against the SDK.  Methods in this file should not be
+    prefixed with `test_`; they are run only from subclasses that define their
+    own `test_` methods to be picked up by pytest.
     """
 
     # ---------------- AUTH VALIDATION ----------------
@@ -37,11 +38,20 @@ class TestShared:
 
         self.api.delete_conversation(s.uuid)
 
-        submissions = self.api.get_submissions(s)
-        assert 0 == len(submissions)
+        attempts = 3
+        while attempts >= 0:  # Deletion is both non-blocking and slow.
+            attempts = attempts - 1
+            try:
+                submissions = self.api.get_submissions(s)
+                assert 0 == len(submissions)
 
-        replies = self.api.get_replies_from_source(s)
-        assert 0 == len(replies)
+                replies = self.api.get_replies_from_source(s)
+                assert 0 == len(replies)
+            except AssertionError:
+                if attempts == 0:
+                    raise
+                else:
+                    time.sleep(5)
 
     def delete_source(self, from_string=False):
         number_of_sources_before = len(self.api.get_sources())
@@ -98,9 +108,19 @@ class TestShared:
         else:
             subs = self.api.get_all_submissions()
         assert self.api.delete_submission(subs[0])
-        new_subs = self.api.get_all_submissions()
-        # We now should have 1 less submission
-        assert len(new_subs) == number_of_submissions_before - 1
+
+        attempts = 3
+        while attempts >= 0:  # Deletion is both non-blocking and slow.
+            attempts = attempts - 1
+            try:
+                new_subs = self.api.get_all_submissions()
+                # We now should have 1 less submission
+                assert len(new_subs) == number_of_submissions_before - 1
+            except:
+                if attempts == 0:
+                    raise
+                else:
+                    time.sleep(5)
 
         # Let us make sure that sub[0] is not there
         for s in new_subs:

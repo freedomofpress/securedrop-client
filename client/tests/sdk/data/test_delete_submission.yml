@@ -1,0 +1,369 @@
+interactions:
+- request:
+    body: null
+    headers:
+      Accept:
+      - application/json
+      Authorization:
+      - Token Ilhha2ZHZWpVcFZQVmpKdWJOUzJYRG1YVUc4QXZWS0JiOGVNQXJycE5GUFUi.ZeDzXQ.10ODTj49yF7kxKbeMm9eaayR3Xo
+      Content-Type:
+      - application/json
+    method: GET
+    uri: api/v1/submissions
+  response: !!python/object:securedrop_client.sdk.JSONResponse
+    data:
+      submissions:
+      - download_url: /api/v1/sources/127ce85b-2c3e-4f06-a46f-89882ecb82d0/submissions/dbcfad7b-628d-46d9-8af3-d3cfbb01e04c/download
+        filename: 1-hand-to-mouth_greasewood-msg.gpg
+        is_file: false
+        is_message: true
+        is_read: true
+        seen_by:
+        - ed64b0fa-0565-4b12-9c48-6cfe27a73fd9
+        size: 804
+        source_url: /api/v1/sources/127ce85b-2c3e-4f06-a46f-89882ecb82d0
+        submission_url: /api/v1/sources/127ce85b-2c3e-4f06-a46f-89882ecb82d0/submissions/dbcfad7b-628d-46d9-8af3-d3cfbb01e04c
+        uuid: dbcfad7b-628d-46d9-8af3-d3cfbb01e04c
+      - download_url: /api/v1/sources/127ce85b-2c3e-4f06-a46f-89882ecb82d0/submissions/2da18dee-ddfc-4727-aa0b-a872b2e2f1be/download
+        filename: 2-hand-to-mouth_greasewood-msg.gpg
+        is_file: false
+        is_message: true
+        is_read: true
+        seen_by:
+        - ed64b0fa-0565-4b12-9c48-6cfe27a73fd9
+        size: 710
+        source_url: /api/v1/sources/127ce85b-2c3e-4f06-a46f-89882ecb82d0
+        submission_url: /api/v1/sources/127ce85b-2c3e-4f06-a46f-89882ecb82d0/submissions/2da18dee-ddfc-4727-aa0b-a872b2e2f1be
+        uuid: 2da18dee-ddfc-4727-aa0b-a872b2e2f1be
+      - download_url: /api/v1/sources/127ce85b-2c3e-4f06-a46f-89882ecb82d0/submissions/29e2a718-6530-43c5-9948-95b50905db18/download
+        filename: 3-hand-to-mouth_greasewood-doc.gz.gpg
+        is_file: true
+        is_message: false
+        is_read: true
+        seen_by:
+        - ed64b0fa-0565-4b12-9c48-6cfe27a73fd9
+        size: 651
+        source_url: /api/v1/sources/127ce85b-2c3e-4f06-a46f-89882ecb82d0
+        submission_url: /api/v1/sources/127ce85b-2c3e-4f06-a46f-89882ecb82d0/submissions/29e2a718-6530-43c5-9948-95b50905db18
+        uuid: 29e2a718-6530-43c5-9948-95b50905db18
+      - download_url: /api/v1/sources/127ce85b-2c3e-4f06-a46f-89882ecb82d0/submissions/3189e62c-fd9a-4a59-aa86-b157d4f45bc6/download
+        filename: 4-hand-to-mouth_greasewood-doc.gz.gpg
+        is_file: true
+        is_message: false
+        is_read: true
+        seen_by:
+        - ed64b0fa-0565-4b12-9c48-6cfe27a73fd9
+        size: 651
+        source_url: /api/v1/sources/127ce85b-2c3e-4f06-a46f-89882ecb82d0
+        submission_url: /api/v1/sources/127ce85b-2c3e-4f06-a46f-89882ecb82d0/submissions/3189e62c-fd9a-4a59-aa86-b157d4f45bc6
+        uuid: 3189e62c-fd9a-4a59-aa86-b157d4f45bc6
+    headers:
+      connection: close
+      content-length: '2591'
+      content-type: application/json
+      date: Thu, 29 Feb 2024 21:13:12 GMT
+      server: Werkzeug/2.2.3 Python/3.8.10
+    status: 200
+- request:
+    body: null
+    headers:
+      Accept:
+      - application/json
+      Authorization:
+      - Token Ilhha2ZHZWpVcFZQVmpKdWJOUzJYRG1YVUc4QXZWS0JiOGVNQXJycE5GUFUi.ZeDzXQ.10ODTj49yF7kxKbeMm9eaayR3Xo
+      Content-Type:
+      - application/json
+    method: GET
+    uri: api/v1/submissions
+  response: !!python/object:securedrop_client.sdk.JSONResponse
+    data:
+      submissions:
+      - download_url: /api/v1/sources/127ce85b-2c3e-4f06-a46f-89882ecb82d0/submissions/dbcfad7b-628d-46d9-8af3-d3cfbb01e04c/download
+        filename: 1-hand-to-mouth_greasewood-msg.gpg
+        is_file: false
+        is_message: true
+        is_read: true
+        seen_by:
+        - ed64b0fa-0565-4b12-9c48-6cfe27a73fd9
+        size: 804
+        source_url: /api/v1/sources/127ce85b-2c3e-4f06-a46f-89882ecb82d0
+        submission_url: /api/v1/sources/127ce85b-2c3e-4f06-a46f-89882ecb82d0/submissions/dbcfad7b-628d-46d9-8af3-d3cfbb01e04c
+        uuid: dbcfad7b-628d-46d9-8af3-d3cfbb01e04c
+      - download_url: /api/v1/sources/127ce85b-2c3e-4f06-a46f-89882ecb82d0/submissions/2da18dee-ddfc-4727-aa0b-a872b2e2f1be/download
+        filename: 2-hand-to-mouth_greasewood-msg.gpg
+        is_file: false
+        is_message: true
+        is_read: true
+        seen_by:
+        - ed64b0fa-0565-4b12-9c48-6cfe27a73fd9
+        size: 710
+        source_url: /api/v1/sources/127ce85b-2c3e-4f06-a46f-89882ecb82d0
+        submission_url: /api/v1/sources/127ce85b-2c3e-4f06-a46f-89882ecb82d0/submissions/2da18dee-ddfc-4727-aa0b-a872b2e2f1be
+        uuid: 2da18dee-ddfc-4727-aa0b-a872b2e2f1be
+      - download_url: /api/v1/sources/127ce85b-2c3e-4f06-a46f-89882ecb82d0/submissions/29e2a718-6530-43c5-9948-95b50905db18/download
+        filename: 3-hand-to-mouth_greasewood-doc.gz.gpg
+        is_file: true
+        is_message: false
+        is_read: true
+        seen_by:
+        - ed64b0fa-0565-4b12-9c48-6cfe27a73fd9
+        size: 651
+        source_url: /api/v1/sources/127ce85b-2c3e-4f06-a46f-89882ecb82d0
+        submission_url: /api/v1/sources/127ce85b-2c3e-4f06-a46f-89882ecb82d0/submissions/29e2a718-6530-43c5-9948-95b50905db18
+        uuid: 29e2a718-6530-43c5-9948-95b50905db18
+      - download_url: /api/v1/sources/127ce85b-2c3e-4f06-a46f-89882ecb82d0/submissions/3189e62c-fd9a-4a59-aa86-b157d4f45bc6/download
+        filename: 4-hand-to-mouth_greasewood-doc.gz.gpg
+        is_file: true
+        is_message: false
+        is_read: true
+        seen_by:
+        - ed64b0fa-0565-4b12-9c48-6cfe27a73fd9
+        size: 651
+        source_url: /api/v1/sources/127ce85b-2c3e-4f06-a46f-89882ecb82d0
+        submission_url: /api/v1/sources/127ce85b-2c3e-4f06-a46f-89882ecb82d0/submissions/3189e62c-fd9a-4a59-aa86-b157d4f45bc6
+        uuid: 3189e62c-fd9a-4a59-aa86-b157d4f45bc6
+    headers:
+      connection: close
+      content-length: '2591'
+      content-type: application/json
+      date: Thu, 29 Feb 2024 21:13:13 GMT
+      server: Werkzeug/2.2.3 Python/3.8.10
+    status: 200
+- request:
+    body: null
+    headers:
+      Accept:
+      - application/json
+      Authorization:
+      - Token Ilhha2ZHZWpVcFZQVmpKdWJOUzJYRG1YVUc4QXZWS0JiOGVNQXJycE5GUFUi.ZeDzXQ.10ODTj49yF7kxKbeMm9eaayR3Xo
+      Content-Type:
+      - application/json
+    method: DELETE
+    uri: api/v1/sources/127ce85b-2c3e-4f06-a46f-89882ecb82d0/submissions/dbcfad7b-628d-46d9-8af3-d3cfbb01e04c
+  response: !!python/object:securedrop_client.sdk.JSONResponse
+    data:
+      message: Submission deleted
+    headers:
+      connection: close
+      content-length: '38'
+      content-type: application/json
+      date: Thu, 29 Feb 2024 21:13:13 GMT
+      server: Werkzeug/2.2.3 Python/3.8.10
+    status: 200
+- request:
+    body: null
+    headers:
+      Accept:
+      - application/json
+      Authorization:
+      - Token Ilhha2ZHZWpVcFZQVmpKdWJOUzJYRG1YVUc4QXZWS0JiOGVNQXJycE5GUFUi.ZeDzXQ.10ODTj49yF7kxKbeMm9eaayR3Xo
+      Content-Type:
+      - application/json
+    method: GET
+    uri: api/v1/submissions
+  response: !!python/object:securedrop_client.sdk.JSONResponse
+    data:
+      submissions:
+      - download_url: /api/v1/sources/127ce85b-2c3e-4f06-a46f-89882ecb82d0/submissions/2da18dee-ddfc-4727-aa0b-a872b2e2f1be/download
+        filename: 2-hand-to-mouth_greasewood-msg.gpg
+        is_file: false
+        is_message: true
+        is_read: true
+        seen_by:
+        - ed64b0fa-0565-4b12-9c48-6cfe27a73fd9
+        size: 710
+        source_url: /api/v1/sources/127ce85b-2c3e-4f06-a46f-89882ecb82d0
+        submission_url: /api/v1/sources/127ce85b-2c3e-4f06-a46f-89882ecb82d0/submissions/2da18dee-ddfc-4727-aa0b-a872b2e2f1be
+        uuid: 2da18dee-ddfc-4727-aa0b-a872b2e2f1be
+      - download_url: /api/v1/sources/127ce85b-2c3e-4f06-a46f-89882ecb82d0/submissions/29e2a718-6530-43c5-9948-95b50905db18/download
+        filename: 3-hand-to-mouth_greasewood-doc.gz.gpg
+        is_file: true
+        is_message: false
+        is_read: true
+        seen_by:
+        - ed64b0fa-0565-4b12-9c48-6cfe27a73fd9
+        size: 651
+        source_url: /api/v1/sources/127ce85b-2c3e-4f06-a46f-89882ecb82d0
+        submission_url: /api/v1/sources/127ce85b-2c3e-4f06-a46f-89882ecb82d0/submissions/29e2a718-6530-43c5-9948-95b50905db18
+        uuid: 29e2a718-6530-43c5-9948-95b50905db18
+      - download_url: /api/v1/sources/127ce85b-2c3e-4f06-a46f-89882ecb82d0/submissions/3189e62c-fd9a-4a59-aa86-b157d4f45bc6/download
+        filename: 4-hand-to-mouth_greasewood-doc.gz.gpg
+        is_file: true
+        is_message: false
+        is_read: true
+        seen_by:
+        - ed64b0fa-0565-4b12-9c48-6cfe27a73fd9
+        size: 651
+        source_url: /api/v1/sources/127ce85b-2c3e-4f06-a46f-89882ecb82d0
+        submission_url: /api/v1/sources/127ce85b-2c3e-4f06-a46f-89882ecb82d0/submissions/3189e62c-fd9a-4a59-aa86-b157d4f45bc6
+        uuid: 3189e62c-fd9a-4a59-aa86-b157d4f45bc6
+    headers:
+      connection: close
+      content-length: '1951'
+      content-type: application/json
+      date: Thu, 29 Feb 2024 21:13:13 GMT
+      server: Werkzeug/2.2.3 Python/3.8.10
+    status: 200
+- request:
+    body: null
+    headers:
+      Accept:
+      - application/json
+      Authorization:
+      - Token Ilhha2ZHZWpVcFZQVmpKdWJOUzJYRG1YVUc4QXZWS0JiOGVNQXJycE5GUFUi.ZeDzXQ.10ODTj49yF7kxKbeMm9eaayR3Xo
+      Content-Type:
+      - application/json
+    method: GET
+    uri: api/v1/submissions
+  response: !!python/object:securedrop_client.sdk.JSONResponse
+    data:
+      submissions:
+      - download_url: /api/v1/sources/127ce85b-2c3e-4f06-a46f-89882ecb82d0/submissions/2da18dee-ddfc-4727-aa0b-a872b2e2f1be/download
+        filename: 2-hand-to-mouth_greasewood-msg.gpg
+        is_file: false
+        is_message: true
+        is_read: true
+        seen_by:
+        - ed64b0fa-0565-4b12-9c48-6cfe27a73fd9
+        size: 710
+        source_url: /api/v1/sources/127ce85b-2c3e-4f06-a46f-89882ecb82d0
+        submission_url: /api/v1/sources/127ce85b-2c3e-4f06-a46f-89882ecb82d0/submissions/2da18dee-ddfc-4727-aa0b-a872b2e2f1be
+        uuid: 2da18dee-ddfc-4727-aa0b-a872b2e2f1be
+      - download_url: /api/v1/sources/127ce85b-2c3e-4f06-a46f-89882ecb82d0/submissions/29e2a718-6530-43c5-9948-95b50905db18/download
+        filename: 3-hand-to-mouth_greasewood-doc.gz.gpg
+        is_file: true
+        is_message: false
+        is_read: true
+        seen_by:
+        - ed64b0fa-0565-4b12-9c48-6cfe27a73fd9
+        size: 651
+        source_url: /api/v1/sources/127ce85b-2c3e-4f06-a46f-89882ecb82d0
+        submission_url: /api/v1/sources/127ce85b-2c3e-4f06-a46f-89882ecb82d0/submissions/29e2a718-6530-43c5-9948-95b50905db18
+        uuid: 29e2a718-6530-43c5-9948-95b50905db18
+      - download_url: /api/v1/sources/127ce85b-2c3e-4f06-a46f-89882ecb82d0/submissions/3189e62c-fd9a-4a59-aa86-b157d4f45bc6/download
+        filename: 4-hand-to-mouth_greasewood-doc.gz.gpg
+        is_file: true
+        is_message: false
+        is_read: true
+        seen_by:
+        - ed64b0fa-0565-4b12-9c48-6cfe27a73fd9
+        size: 651
+        source_url: /api/v1/sources/127ce85b-2c3e-4f06-a46f-89882ecb82d0
+        submission_url: /api/v1/sources/127ce85b-2c3e-4f06-a46f-89882ecb82d0/submissions/3189e62c-fd9a-4a59-aa86-b157d4f45bc6
+        uuid: 3189e62c-fd9a-4a59-aa86-b157d4f45bc6
+    headers:
+      connection: close
+      content-length: '1951'
+      content-type: application/json
+      date: Thu, 29 Feb 2024 21:13:13 GMT
+      server: Werkzeug/2.2.3 Python/3.8.10
+    status: 200
+- request:
+    body: null
+    headers:
+      Accept:
+      - application/json
+      Authorization:
+      - Token Ilhha2ZHZWpVcFZQVmpKdWJOUzJYRG1YVUc4QXZWS0JiOGVNQXJycE5GUFUi.ZeDzXQ.10ODTj49yF7kxKbeMm9eaayR3Xo
+      Content-Type:
+      - application/json
+    method: GET
+    uri: api/v1/submissions
+  response: !!python/object:securedrop_client.sdk.JSONResponse
+    data:
+      submissions:
+      - download_url: /api/v1/sources/127ce85b-2c3e-4f06-a46f-89882ecb82d0/submissions/2da18dee-ddfc-4727-aa0b-a872b2e2f1be/download
+        filename: 2-hand-to-mouth_greasewood-msg.gpg
+        is_file: false
+        is_message: true
+        is_read: true
+        seen_by:
+        - ed64b0fa-0565-4b12-9c48-6cfe27a73fd9
+        size: 710
+        source_url: /api/v1/sources/127ce85b-2c3e-4f06-a46f-89882ecb82d0
+        submission_url: /api/v1/sources/127ce85b-2c3e-4f06-a46f-89882ecb82d0/submissions/2da18dee-ddfc-4727-aa0b-a872b2e2f1be
+        uuid: 2da18dee-ddfc-4727-aa0b-a872b2e2f1be
+      - download_url: /api/v1/sources/127ce85b-2c3e-4f06-a46f-89882ecb82d0/submissions/29e2a718-6530-43c5-9948-95b50905db18/download
+        filename: 3-hand-to-mouth_greasewood-doc.gz.gpg
+        is_file: true
+        is_message: false
+        is_read: true
+        seen_by:
+        - ed64b0fa-0565-4b12-9c48-6cfe27a73fd9
+        size: 651
+        source_url: /api/v1/sources/127ce85b-2c3e-4f06-a46f-89882ecb82d0
+        submission_url: /api/v1/sources/127ce85b-2c3e-4f06-a46f-89882ecb82d0/submissions/29e2a718-6530-43c5-9948-95b50905db18
+        uuid: 29e2a718-6530-43c5-9948-95b50905db18
+      - download_url: /api/v1/sources/127ce85b-2c3e-4f06-a46f-89882ecb82d0/submissions/3189e62c-fd9a-4a59-aa86-b157d4f45bc6/download
+        filename: 4-hand-to-mouth_greasewood-doc.gz.gpg
+        is_file: true
+        is_message: false
+        is_read: true
+        seen_by:
+        - ed64b0fa-0565-4b12-9c48-6cfe27a73fd9
+        size: 651
+        source_url: /api/v1/sources/127ce85b-2c3e-4f06-a46f-89882ecb82d0
+        submission_url: /api/v1/sources/127ce85b-2c3e-4f06-a46f-89882ecb82d0/submissions/3189e62c-fd9a-4a59-aa86-b157d4f45bc6
+        uuid: 3189e62c-fd9a-4a59-aa86-b157d4f45bc6
+    headers:
+      connection: close
+      content-length: '1951'
+      content-type: application/json
+      date: Thu, 29 Feb 2024 21:13:13 GMT
+      server: Werkzeug/2.2.3 Python/3.8.10
+    status: 200
+- request:
+    body: null
+    headers:
+      Accept:
+      - application/json
+      Authorization:
+      - Token Ilhha2ZHZWpVcFZQVmpKdWJOUzJYRG1YVUc4QXZWS0JiOGVNQXJycE5GUFUi.ZeDzXQ.10ODTj49yF7kxKbeMm9eaayR3Xo
+      Content-Type:
+      - application/json
+    method: GET
+    uri: api/v1/submissions
+  response: !!python/object:securedrop_client.sdk.JSONResponse
+    data:
+      submissions:
+      - download_url: /api/v1/sources/127ce85b-2c3e-4f06-a46f-89882ecb82d0/submissions/2da18dee-ddfc-4727-aa0b-a872b2e2f1be/download
+        filename: 2-hand-to-mouth_greasewood-msg.gpg
+        is_file: false
+        is_message: true
+        is_read: true
+        seen_by:
+        - ed64b0fa-0565-4b12-9c48-6cfe27a73fd9
+        size: 710
+        source_url: /api/v1/sources/127ce85b-2c3e-4f06-a46f-89882ecb82d0
+        submission_url: /api/v1/sources/127ce85b-2c3e-4f06-a46f-89882ecb82d0/submissions/2da18dee-ddfc-4727-aa0b-a872b2e2f1be
+        uuid: 2da18dee-ddfc-4727-aa0b-a872b2e2f1be
+      - download_url: /api/v1/sources/127ce85b-2c3e-4f06-a46f-89882ecb82d0/submissions/29e2a718-6530-43c5-9948-95b50905db18/download
+        filename: 3-hand-to-mouth_greasewood-doc.gz.gpg
+        is_file: true
+        is_message: false
+        is_read: true
+        seen_by:
+        - ed64b0fa-0565-4b12-9c48-6cfe27a73fd9
+        size: 651
+        source_url: /api/v1/sources/127ce85b-2c3e-4f06-a46f-89882ecb82d0
+        submission_url: /api/v1/sources/127ce85b-2c3e-4f06-a46f-89882ecb82d0/submissions/29e2a718-6530-43c5-9948-95b50905db18
+        uuid: 29e2a718-6530-43c5-9948-95b50905db18
+      - download_url: /api/v1/sources/127ce85b-2c3e-4f06-a46f-89882ecb82d0/submissions/3189e62c-fd9a-4a59-aa86-b157d4f45bc6/download
+        filename: 4-hand-to-mouth_greasewood-doc.gz.gpg
+        is_file: true
+        is_message: false
+        is_read: true
+        seen_by:
+        - ed64b0fa-0565-4b12-9c48-6cfe27a73fd9
+        size: 651
+        source_url: /api/v1/sources/127ce85b-2c3e-4f06-a46f-89882ecb82d0
+        submission_url: /api/v1/sources/127ce85b-2c3e-4f06-a46f-89882ecb82d0/submissions/3189e62c-fd9a-4a59-aa86-b157d4f45bc6
+        uuid: 3189e62c-fd9a-4a59-aa86-b157d4f45bc6
+    headers:
+      connection: close
+      content-length: '1951'
+      content-type: application/json
+      date: Thu, 29 Feb 2024 21:13:13 GMT
+      server: Werkzeug/2.2.3 Python/3.8.10
+    status: 200
+version: 1

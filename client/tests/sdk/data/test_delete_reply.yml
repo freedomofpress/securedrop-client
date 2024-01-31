@@ -1,0 +1,151 @@
+interactions:
+- request:
+    body: null
+    headers:
+      Accept:
+      - application/json
+      Authorization:
+      - Token Ilhha2ZHZWpVcFZQVmpKdWJOUzJYRG1YVUc4QXZWS0JiOGVNQXJycE5GUFUi.ZeDzXQ.10ODTj49yF7kxKbeMm9eaayR3Xo
+      Content-Type:
+      - application/json
+    method: GET
+    uri: api/v1/replies
+  response: !!python/object:securedrop_client.sdk.JSONResponse
+    data:
+      replies:
+      - filename: 5-hand-to-mouth_greasewood-reply.gpg
+        is_deleted_by_source: false
+        journalist_first_name: ''
+        journalist_last_name: ''
+        journalist_username: dellsberg
+        journalist_uuid: e101e4e2-230e-4e27-9f58-ad094079c230
+        reply_url: /api/v1/sources/127ce85b-2c3e-4f06-a46f-89882ecb82d0/replies/8d0b333a-082f-4c01-a4c4-5763795af7f7
+        seen_by:
+        - ed64b0fa-0565-4b12-9c48-6cfe27a73fd9
+        - e101e4e2-230e-4e27-9f58-ad094079c230
+        size: 1331
+        source_url: /api/v1/sources/127ce85b-2c3e-4f06-a46f-89882ecb82d0
+        uuid: 8d0b333a-082f-4c01-a4c4-5763795af7f7
+      - filename: 6-hand-to-mouth_greasewood-reply.gpg
+        is_deleted_by_source: false
+        journalist_first_name: ''
+        journalist_last_name: ''
+        journalist_username: deleted
+        journalist_uuid: b2857ac1-3765-4a3e-95d2-528209ef9525
+        reply_url: /api/v1/sources/127ce85b-2c3e-4f06-a46f-89882ecb82d0/replies/40460ca9-8d80-40d6-8181-c5175ad961cc
+        seen_by:
+        - ed64b0fa-0565-4b12-9c48-6cfe27a73fd9
+        - b2857ac1-3765-4a3e-95d2-528209ef9525
+        size: 1237
+        source_url: /api/v1/sources/127ce85b-2c3e-4f06-a46f-89882ecb82d0
+        uuid: 40460ca9-8d80-40d6-8181-c5175ad961cc
+    headers:
+      connection: close
+      content-length: '1395'
+      content-type: application/json
+      date: Thu, 29 Feb 2024 21:13:15 GMT
+      server: Werkzeug/2.2.3 Python/3.8.10
+    status: 200
+- request:
+    body: null
+    headers:
+      Accept:
+      - application/json
+      Authorization:
+      - Token Ilhha2ZHZWpVcFZQVmpKdWJOUzJYRG1YVUc4QXZWS0JiOGVNQXJycE5GUFUi.ZeDzXQ.10ODTj49yF7kxKbeMm9eaayR3Xo
+      Content-Type:
+      - application/json
+    method: GET
+    uri: api/v1/replies
+  response: !!python/object:securedrop_client.sdk.JSONResponse
+    data:
+      replies:
+      - filename: 5-hand-to-mouth_greasewood-reply.gpg
+        is_deleted_by_source: false
+        journalist_first_name: ''
+        journalist_last_name: ''
+        journalist_username: dellsberg
+        journalist_uuid: e101e4e2-230e-4e27-9f58-ad094079c230
+        reply_url: /api/v1/sources/127ce85b-2c3e-4f06-a46f-89882ecb82d0/replies/8d0b333a-082f-4c01-a4c4-5763795af7f7
+        seen_by:
+        - ed64b0fa-0565-4b12-9c48-6cfe27a73fd9
+        - e101e4e2-230e-4e27-9f58-ad094079c230
+        size: 1331
+        source_url: /api/v1/sources/127ce85b-2c3e-4f06-a46f-89882ecb82d0
+        uuid: 8d0b333a-082f-4c01-a4c4-5763795af7f7
+      - filename: 6-hand-to-mouth_greasewood-reply.gpg
+        is_deleted_by_source: false
+        journalist_first_name: ''
+        journalist_last_name: ''
+        journalist_username: deleted
+        journalist_uuid: b2857ac1-3765-4a3e-95d2-528209ef9525
+        reply_url: /api/v1/sources/127ce85b-2c3e-4f06-a46f-89882ecb82d0/replies/40460ca9-8d80-40d6-8181-c5175ad961cc
+        seen_by:
+        - ed64b0fa-0565-4b12-9c48-6cfe27a73fd9
+        - b2857ac1-3765-4a3e-95d2-528209ef9525
+        size: 1237
+        source_url: /api/v1/sources/127ce85b-2c3e-4f06-a46f-89882ecb82d0
+        uuid: 40460ca9-8d80-40d6-8181-c5175ad961cc
+    headers:
+      connection: close
+      content-length: '1395'
+      content-type: application/json
+      date: Thu, 29 Feb 2024 21:13:15 GMT
+      server: Werkzeug/2.2.3 Python/3.8.10
+    status: 200
+- request:
+    body: null
+    headers:
+      Accept:
+      - application/json
+      Authorization:
+      - Token Ilhha2ZHZWpVcFZQVmpKdWJOUzJYRG1YVUc4QXZWS0JiOGVNQXJycE5GUFUi.ZeDzXQ.10ODTj49yF7kxKbeMm9eaayR3Xo
+      Content-Type:
+      - application/json
+    method: DELETE
+    uri: api/v1/sources/127ce85b-2c3e-4f06-a46f-89882ecb82d0/replies/8d0b333a-082f-4c01-a4c4-5763795af7f7
+  response: !!python/object:securedrop_client.sdk.JSONResponse
+    data:
+      message: Reply deleted
+    headers:
+      connection: close
+      content-length: '33'
+      content-type: application/json
+      date: Thu, 29 Feb 2024 21:13:15 GMT
+      server: Werkzeug/2.2.3 Python/3.8.10
+    status: 200
+- request:
+    body: null
+    headers:
+      Accept:
+      - application/json
+      Authorization:
+      - Token Ilhha2ZHZWpVcFZQVmpKdWJOUzJYRG1YVUc4QXZWS0JiOGVNQXJycE5GUFUi.ZeDzXQ.10ODTj49yF7kxKbeMm9eaayR3Xo
+      Content-Type:
+      - application/json
+    method: GET
+    uri: api/v1/replies
+  response: !!python/object:securedrop_client.sdk.JSONResponse
+    data:
+      replies:
+      - filename: 6-hand-to-mouth_greasewood-reply.gpg
+        is_deleted_by_source: false
+        journalist_first_name: ''
+        journalist_last_name: ''
+        journalist_username: deleted
+        journalist_uuid: b2857ac1-3765-4a3e-95d2-528209ef9525
+        reply_url: /api/v1/sources/127ce85b-2c3e-4f06-a46f-89882ecb82d0/replies/40460ca9-8d80-40d6-8181-c5175ad961cc
+        seen_by:
+        - ed64b0fa-0565-4b12-9c48-6cfe27a73fd9
+        - b2857ac1-3765-4a3e-95d2-528209ef9525
+        size: 1237
+        source_url: /api/v1/sources/127ce85b-2c3e-4f06-a46f-89882ecb82d0
+        uuid: 40460ca9-8d80-40d6-8181-c5175ad961cc
+    headers:
+      connection: close
+      content-length: '707'
+      content-type: application/json
+      date: Thu, 29 Feb 2024 21:13:15 GMT
+      server: Werkzeug/2.2.3 Python/3.8.10
+    status: 200
+version: 1

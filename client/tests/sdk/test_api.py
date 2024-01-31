@@ -6,10 +6,10 @@ import time
 import pyotp
 import pytest
 import vcr
-from requests.exceptions import ConnectTimeout, ReadTimeout
 from test_shared import TestShared
+from utils import VCRAPI
 
-from securedrop_client.sdk import API, RequestTimeoutError
+from securedrop_client.sdk import API, RequestTimeoutError, ServerConnectionError
 from securedrop_client.sdk.sdlocalobjects import AuthError, Reply, Submission
 
 NUM_REPLIES_PER_SOURCE = 2
@@ -17,64 +17,55 @@ NUM_REPLIES_PER_SOURCE = 2
 
 class TestAPI(TestShared):
     """
-    Note that TestShared contains most of the test code, which is shared between
-    API and API Proxy tests.
+    Tests here used to call helper methods (without the `test_` prefix) in
+    `TestShared`, because some were implemented differently in `TestAPIProxy`,
+    which was intended to be run on Qubes with `qrexec` available.  This is now
+    the only test module and path, but the separation from `TestShared` is still
+    useful, since these test methods must be run in order while recording VCR.py
+    cassettes via `utils.VCRAPI`.
     """
 
+    @VCRAPI.use_cassette
     def setup_method(self):
         self.totp = pyotp.TOTP("JHCOGO7VCER3EJ4L")
         self.username = "journalist"
         self.password = "correct horse battery staple profanity oil chewy"
-        self.server = "http://127.0.0.1:8081/"
+        self.server = "http://localhost:8081/"
+        self.api = VCRAPI(self.server, self.username, self.password, str(self.totp.now()))
+        try:
+            self.api.authenticate()
+        except BaseError as err:
+            raise AuthError(
+                "Could not obtain API token during test setup. "
+                "TOTP code may have expired or proxy may not be reachable. "
+                "Error was: {}".format(err.msg)
+            )
 
-        # Because we may be using a TOTP code from a previous run that has since
-        # been invalidated (or that may be invalid because of bad timing),
-        # we retry repeatedly to get the token with a new TOTP code.
-        #
-        # It doesn't matter if these intermittent 403s are captured in the
-        # cassette as we ignore them during playback.
-        auth_result = None
-        with vcr.use_cassette("tests/sdk/data/test-setup.yml") as cassette:
-            for i in range(3):
-                totp = self.totp.now()
-                self.api = API(self.server, self.username, self.password, str(totp))
-                try:
-                    auth_result = self.api.authenticate()
-                except AuthError:
-                    # Don't sleep on final retry attempt or during playback
-                    if i < 2 and cassette.play_count == 0:
-                        time.sleep(31)
-                    continue
-                # No error, let's move on
-                break
-
-        if auth_result is None:
-            raise AuthError("Could not obtain API token during test setup.")
-
-    @vcr.use_cassette("tests/sdk/data/test-baduser.yml")
+    @VCRAPI.use_cassette
     def test_auth_baduser(self):
-        self.api = API(self.server, "no", self.password, str(self.totp.now()))
+        self.api = VCRAPI(self.server, "no", self.password, str(self.totp.now()))
         with pytest.raises(AuthError):
             self.api.authenticate()
 
-    @vcr.use_cassette("tests/sdk/data/test-badpassword.yml")
+    @VCRAPI.use_cassette
     def test_auth_badpassword(self):
-        self.api = API(self.server, self.username, "no", str(self.totp.now()))
+        self.api = VCRAPI(self.server, self.username, "no", str(self.totp.now()))
         with pytest.raises(AuthError):
             self.api.authenticate()
 
-    @vcr.use_cassette("tests/sdk/data/test-badotp.yml")
+    @VCRAPI.use_cassette
     def test_auth_badotp(self):
-        self.api = API(self.server, self.username, self.password, "no")
+        self.api = VCRAPI(self.server, self.username, self.password, "no")
         with pytest.raises(AuthError):
             self.api.authenticate()
 
+    @VCRAPI.use_cassette
     def test_api_auth(self):
         super().api_auth()
 
     # This test is order-sensitive and must be run before the "seen"
     # state of files is altered.
-    @vcr.use_cassette("tests/sdk/data/test-download-submission.yml")
+    @VCRAPI.use_cassette
     def test_download_submission(self):
         submissions = self.api.get_all_submissions()
         unread_submission = None
@@ -109,80 +100,79 @@ class TestAPI(TestShared):
         # Let us remove the temporary directory
         shutil.rmtree(tmpdir)
 
-    @vcr.use_cassette("tests/sdk/data/test-seen.yml")
+    @VCRAPI.use_cassette
     def test_seen(self):
         super().seen()
 
-    @vcr.use_cassette("tests/sdk/data/test-get-sources.yml")
+    @VCRAPI.use_cassette
     def test_get_sources(self):
         super().get_sources()
 
-    @vcr.use_cassette("tests/sdk/data/test-star-add-remove.yml")
+    @VCRAPI.use_cassette
     def test_star_add_remove(self):
         super().star_add_remove()
 
-    @vcr.use_cassette("tests/sdk/data/test-get-single-source.yml")
+    @VCRAPI.use_cassette
     def test_get_single_source(self):
         super().get_single_source()
 
-    @vcr.use_cassette("tests/sdk/data/test-get-single-source.yml")
+    @VCRAPI.use_cassette
     def test_get_single_source_from_string(self):
         super().get_single_source(from_string=True)
 
-    @vcr.use_cassette("tests/sdk/data/test-failed-single-source.yml")
+    @VCRAPI.use_cassette
     def test_failed_single_source(self):
         super().failed_single_source()
 
-    @vcr.use_cassette("tests/sdk/data/test-get-submissions.yml")
+    @VCRAPI.use_cassette
     def test_get_submissions(self):
         super().get_submissions()
 
-    @vcr.use_cassette("tests/sdk/data/test-get-submission.yml")
+    @VCRAPI.use_cassette
     def test_get_submission(self):
         super().get_submission()
 
-    @vcr.use_cassette("tests/sdk/data/test-get-submission.yml")
+    @VCRAPI.use_cassette
     def test_get_submission_from_string(self):
         super().get_submission(from_string=True)
 
-    @vcr.use_cassette("tests/sdk/data/test-get-wrong-submissions.yml")
+    @VCRAPI.use_cassette
     def test_get_wrong_submissions(self):
         super().get_wrong_submissions()
 
-    @vcr.use_cassette("tests/sdk/data/test-get-all-submissions.yml")
+    @VCRAPI.use_cassette
     def test_get_all_submissions(self):
         super().get_all_submissions()
 
-    @vcr.use_cassette("tests/sdk/data/test-flag-source.yml")
+    @VCRAPI.use_cassette
     def test_flag_source(self):
         super().flag_source()
 
-    @vcr.use_cassette("tests/sdk/data/test-get-current-user.yml")
+    @VCRAPI.use_cassette
     def test_get_current_user(self):
         super().get_current_user()
 
-    @vcr.use_cassette("tests/sdk/data/test-get-users.yml")
+    @VCRAPI.use_cassette
     def test_get_users(self):
         super().get_users()
 
-    @vcr.use_cassette("tests/sdk/data/test-error-unencrypted-reply.yml")
+    @VCRAPI.use_cassette
     def test_error_unencrypted_reply(self):
         super().error_unencrypted_reply()
 
-    @vcr.use_cassette("tests/sdk/data/test-get-replies-from-source.yml")
+    @VCRAPI.use_cassette
     def test_get_replies_from_source(self):
         super().get_replies_from_source()
 
-    @vcr.use_cassette("tests/sdk/data/test-get-reply-from-source.yml")
+    @VCRAPI.use_cassette
     def test_get_reply_from_source(self):
         super().get_reply_from_source()
 
-    @vcr.use_cassette("tests/sdk/data/test-get-all-replies.yml")
+    @VCRAPI.use_cassette
     def test_get_all_replies(self):
         super().get_all_replies()
 
-    # This test is materially different in the API & API Proxy versions.
-    @vcr.use_cassette("tests/sdk/data/test-download-reply.yml")
+    @VCRAPI.use_cassette
     def test_download_reply(self):
         r = self.api.get_all_replies()[0]
 
@@ -207,39 +197,39 @@ class TestAPI(TestShared):
     # not be run before other tests, which may rely on the original fixture
     # state.
 
-    @vcr.use_cassette("tests/sdk/data/test-reply-source.yml")
+    @VCRAPI.use_cassette
     def test_reply_source(self):
         super().reply_source()
 
-    @vcr.use_cassette("tests/sdk/data/test-reply-source-with-uuid.yml")
+    @VCRAPI.use_cassette
     def test_reply_source_with_uuid(self):
         super().reply_source_with_uuid()
 
-    @vcr.use_cassette("tests/sdk/data/test-delete-conversation.yml")
+    @VCRAPI.use_cassette
     def test_delete_conversation(self):
         super().delete_conversation()
 
-    @vcr.use_cassette("tests/sdk/data/test-delete-source.yml")
+    @VCRAPI.use_cassette
     def test_delete_source(self):
         super().delete_source()
 
-    @vcr.use_cassette("tests/sdk/data/test-delete-source.yml")
+    @VCRAPI.use_cassette
     def test_delete_source_from_string(self):
         super().delete_source(from_string=True)
 
-    @vcr.use_cassette("tests/sdk/data/test-delete-submission.yml")
+    @VCRAPI.use_cassette
     def test_delete_submission(self):
         super().delete_submission()
 
-    @vcr.use_cassette("tests/sdk/data/test-delete-submission-from-string.yml")
+    @VCRAPI.use_cassette
     def test_delete_submission_from_string(self):
         super().delete_submission(from_string=True)
 
-    @vcr.use_cassette("tests/sdk/data/test-delete-reply.yml")
+    @VCRAPI.use_cassette
     def test_delete_reply(self):
         super().delete_reply()
 
-    @vcr.use_cassette("tests/sdk/data/test-logout.yml")
+    @VCRAPI.use_cassette
     def test_zlogout(self):
         r = self.api.logout()
         assert r
@@ -247,21 +237,21 @@ class TestAPI(TestShared):
 
 def test_request_connect_timeout(mocker):
     api = API("mock", "mock", "mock", "mock", proxy=False)
-    mocker.patch("securedrop_client.sdk.requests.request", side_effect=ConnectTimeout)
-    with pytest.raises(RequestTimeoutError):
+    mocker.patch("securedrop_client.sdk.API._send_json_request", side_effect=ServerConnectionError)
+    with pytest.raises(ServerConnectionError):
         api.authenticate()
 
 
 def test_request_read_timeout(mocker):
     api = API("mock", "mock", "mock", "mock", proxy=False)
-    mocker.patch("securedrop_client.sdk.requests.request", side_effect=ReadTimeout)
+    mocker.patch("securedrop_client.sdk.API._send_json_request", side_effect=RequestTimeoutError)
     with pytest.raises(RequestTimeoutError):
         api.authenticate()
 
 
 def test_download_reply_timeout(mocker):
     api = API("mock", "mock", "mock", "mock", proxy=False)
-    mocker.patch("securedrop_client.sdk.requests.request", side_effect=RequestTimeoutError)
+    mocker.patch("securedrop_client.sdk.API._send_json_request", side_effect=RequestTimeoutError)
     with pytest.raises(RequestTimeoutError):
         r = Reply(uuid="humanproblem", filename="secret.txt")
         api.download_reply(r)
@@ -269,7 +259,7 @@ def test_download_reply_timeout(mocker):
 
 def test_download_submission_timeout(mocker):
     api = API("mock", "mock", "mock", "mock", proxy=False)
-    mocker.patch("securedrop_client.sdk.requests.request", side_effect=RequestTimeoutError)
+    mocker.patch("securedrop_client.sdk.API._send_json_request", side_effect=RequestTimeoutError)
     with pytest.raises(RequestTimeoutError):
         s = Submission(uuid="climateproblem")
         api.download_submission(s)

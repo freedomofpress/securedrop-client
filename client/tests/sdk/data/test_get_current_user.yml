@@ -1,0 +1,28 @@
+interactions:
+- request:
+    body: null
+    headers:
+      Accept:
+      - application/json
+      Authorization:
+      - Token Ilhha2ZHZWpVcFZQVmpKdWJOUzJYRG1YVUc4QXZWS0JiOGVNQXJycE5GUFUi.ZeDzXQ.10ODTj49yF7kxKbeMm9eaayR3Xo
+      Content-Type:
+      - application/json
+    method: GET
+    uri: api/v1/user
+  response: !!python/object:securedrop_client.sdk.JSONResponse
+    data:
+      first_name: null
+      is_admin: true
+      last_login: '2024-02-29T21:13:01.449555Z'
+      last_name: null
+      username: journalist
+      uuid: ed64b0fa-0565-4b12-9c48-6cfe27a73fd9
+    headers:
+      connection: close
+      content-length: '196'
+      content-type: application/json
+      date: Thu, 29 Feb 2024 21:13:07 GMT
+      server: Werkzeug/2.2.3 Python/3.8.10
+    status: 200
+version: 1
