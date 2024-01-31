@@ -25,14 +25,14 @@ class TestExportService:
         )
         cls.mock_luks_volume_mounted = MountedVolume(
             device_name=SAMPLE_OUTPUT_USB,
-            mapped_name="fake-luks-id-123456",
+            unlocked_name="/dev/mapper/fake-luks-id-123456",
             mountpoint="/media/usb",
             encryption=EncryptionScheme.LUKS,
         )
 
         cls.mock_vc_volume_mounted = MountedVolume(
             device_name=SAMPLE_OUTPUT_USB,
-            mapped_name="mock-veracrypt-vol",
+            unlocked_name="/dev/mapper/mock-veracrypt-vol",
             encryption=EncryptionScheme.VERACRYPT,
             mountpoint="/media/usb/",
         )

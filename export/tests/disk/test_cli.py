@@ -1,4 +1,5 @@
 import pytest
+from pexpect import ExceptionPexpect
 from unittest import mock
 
 import subprocess
@@ -188,67 +189,54 @@ class TestCli:
         assert result is None
 
     def test_unlock_success(self, mocker):
-        mock_popen = mocker.MagicMock()
-        mock_communicate = mocker.MagicMock()
-        mock_popen.returncode = 0  # Successful unlock
+        pexpect_mock = mock.MagicMock()
+        pexpect_mock.sendline = mock.MagicMock()
+        pexpect_mock.close = mock.MagicMock()
+        pexpect_mock.after.return_value = _PRETEND_LUKS_ID
 
-        mocker.patch("subprocess.Popen", return_value=mock_popen)
-        mocker.patch("subprocess.Popen.communicate", return_value=mock_communicate)
+        mocker.patch("pexpect.spawn", return_value=pexpect_mock)
 
-        mv = mock.MagicMock(spec=MountedVolume)
-        vol = Volume(_DEFAULT_USB_DEVICE, EncryptionScheme.LUKS)
-
-        with mock.patch.object(
-            self.cli, "_get_mapped_name"
-        ) as mock_mapped_name, mock.patch.object(
-            self.cli, "_mount_volume"
-        ) as mock_mount:
-            mock_mapped_name.return_value = _PRETEND_LUKS_ID
-            mock_mount.return_value = mv
-            result = self.cli.unlock_volume(vol, "a passw0rd!")
-
-        assert isinstance(result, MountedVolume)
-
-    def test_unlock_already_unlocked(self, mocker):
-        mock_popen = mocker.MagicMock()
-        mock_communicate = mocker.MagicMock()
-        mock_communicate.return_value = (
-            b"1",
-            b"Error: Disk already unlocked",
-        )  # out, err
-        mock_popen.returncode = 1  # udisks2 already unlocked
-
-        mocker.patch("subprocess.Popen", return_value=mock_popen)
-        mocker.patch("subprocess.Popen.communicate", return_value=mock_communicate)
+        # Passing a list of side effects will cycle through them as return values
+        mocker.patch("pexpect.expect", side_effect=[0, 0])
 
         mv = mock.MagicMock(spec=MountedVolume)
         vol = Volume(_DEFAULT_USB_DEVICE, EncryptionScheme.LUKS)
 
-        with mock.patch.object(
-            self.cli, "_get_mapped_name"
-        ) as mock_map, mock.patch.object(self.cli, "_mount_volume") as mock_mount:
-            mock_map.return_value = _PRETEND_LUKS_ID
+        with mock.patch.object(self.cli, "_mount_volume") as mock_mount:
             mock_mount.return_value = mv
             result = self.cli.unlock_volume(vol, "a passw0rd!")
 
-        mock_map.assert_called_once()
         mock_mount.assert_called_once_with(vol, _PRETEND_LUKS_ID)
         assert isinstance(result, MountedVolume)
 
-    def test_unlock_devmapper_fail(self, mocker):
-        mock_popen = mocker.MagicMock()
-        mock_communicate = mocker.MagicMock()
-        mock_popen.returncode = 0
+    def test_unlock_already_unlocked(self, mocker):
+        pexpect_mock = mock.MagicMock()
+        pexpect_mock.sendline = mock.MagicMock()
+        pexpect_mock.close = mock.MagicMock()
 
-        mocker.patch("subprocess.Popen", return_value=mock_popen)
-        mocker.patch("subprocess.Popen.communicate", return_value=mock_communicate)
+        mocker.patch("pexpect.spawn", return_value=pexpect_mock)
 
+        # Passing a list of side effects will cycle through them as return values
+        mocker.patch("pexpect.expect", side_effect=[0, 1])
+
+        mv = mock.MagicMock(spec=MountedVolume)
         vol = Volume(_DEFAULT_USB_DEVICE, EncryptionScheme.LUKS)
 
-        with mock.patch.object(self.cli, "_get_mapped_name") as mock_map, pytest.raises(
-            ExportException
-        ) as ex:
-            mock_map.return_value = None
+        with mock.patch.object(self.cli, "_mount_volume") as mock_mount:
+            mock_mount.return_value = mv
+            result = self.cli.unlock_volume(vol, "a passw0rd!")
+
+        mock_mount.assert_called_once_with(vol, _PRETEND_LUKS_ID)
+        assert isinstance(result, MountedVolume)
+
+    @mock.patch(
+        "securedrop_expot.disk.cli.pexpect.spawn",
+        side_effect=ExceptionPexpect("oh no!"),
+    )
+    def test_unlock_remote_fail(self):
+        vol = Volume(_DEFAULT_USB_DEVICE, EncryptionScheme.LUKS)
+
+        with pytest.raises(ExportException) as ex:
             self.cli.unlock_volume(vol, "a passw0rd!")
 
         assert ex.value.sdstatus == Status.ERROR_UNLOCK_GENERIC
@@ -309,7 +297,7 @@ class TestCli:
             device_name=_DEFAULT_USB_DEVICE,
             encryption=EncryptionScheme.LUKS,
         )
-        with pytest.raises(ExportException) as e:
+        with pytest.raises(ExportException):
             result = self.cli._mount_volume(md, _PRETEND_LUKS_ID)
             assert result.mountpoint == "/media/usb"
             assert isinstance(result, MountedVolume)
@@ -334,7 +322,7 @@ class TestCli:
         mock_sp.returncode = 0
         mounted = MountedVolume(
             device_name="/dev/sda",
-            mapped_name=_PRETEND_LUKS_ID,
+            unlocked_name=f"/dev/mapper{_PRETEND_LUKS_ID}",
             mountpoint="/media/usb",
             encryption=EncryptionScheme.LUKS,
         )
@@ -351,7 +339,7 @@ class TestCli:
 
         vol = MountedVolume(
             device_name=_DEFAULT_USB_DEVICE,
-            mapped_name=_PRETEND_LUKS_ID,
+            unlocked_name=_PRETEND_LUKS_ID,
             mountpoint="/media/usb",
             encryption=EncryptionScheme.LUKS,
         )
@@ -376,7 +364,7 @@ class TestCli:
 
         vol = MountedVolume(
             device_name=_DEFAULT_USB_DEVICE,
-            mapped_name=_PRETEND_LUKS_ID,
+            unlocked_name=_PRETEND_LUKS_ID,
             mountpoint="/media/usb",
             encryption=EncryptionScheme.LUKS,
         )
@@ -411,7 +399,10 @@ class TestCli:
             encryption=EncryptionScheme.LUKS,
         )
         mv = MountedVolume(
-            vol.device_name, _PRETEND_LUKS_ID, vol.encryption, mountpoint="/media/usb"
+            vol.device_name,
+            f"/dev/mapper/{_PRETEND_LUKS_ID}",
+            vol.encryption,
+            mountpoint="/media/usb",
         )
 
         close_patch = mock.patch.object(self.cli, "_close_volume")

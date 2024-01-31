@@ -18,8 +18,8 @@ from securedrop_export.main import (
     _configure_logging,
 )
 
-_PRINT_SAMPLE_ARCHIVE = "sample_print.sd_export"
-_EXPORT_SAMPLE_ARCHIVE = "sample_export.sd_export"
+_PRINT_SAMPLE_ARCHIVE = "sample_print.sd-export"
+_EXPORT_SAMPLE_ARCHIVE = "sample_export.sd-export"
 
 
 class TestMain:
@@ -167,7 +167,7 @@ class TestMain:
 
     def test_entrypoint_archive_path_fails(self, capsys):
         with mock.patch(
-            "sys.argv", ["qvm-send-to-usb", "THIS_FILE_DOES_NOT_EXIST.sd_export"]
+            "sys.argv", ["qvm-send-to-usb", "THIS_FILE_DOES_NOT_EXIST.sd-export"]
         ), pytest.raises(SystemExit) as sysexit:
             entrypoint()
 
@@ -188,7 +188,7 @@ class TestMain:
         if command is Command.START_VM:
             pytest.skip("Command does not start a service")
 
-        mock_submission = Archive("mock_submission.sd_export")
+        mock_submission = Archive("mock_submission.sd-export")
         mock_submission.command = command
 
         with mock.patch("securedrop_export.main.PrintService") as ps, mock.patch(
