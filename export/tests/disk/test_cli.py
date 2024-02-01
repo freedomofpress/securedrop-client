@@ -3,6 +3,8 @@ from pexpect import ExceptionPexpect
 from unittest import mock
 
 import subprocess
+import pexpect
+import re
 
 from securedrop_export.disk.cli import CLI
 from securedrop_export.disk.volume import EncryptionScheme, Volume, MountedVolume
@@ -31,8 +33,8 @@ from ..lsblk_sample import (
     SINGLE_PART_VC_WRITABLE,
 )
 
-_PRETEND_LUKS_ID = "luks-dbfb85f2-77c4-4b1f-99a9-2dd3c6789094"
-_PRETEND_VC = "tcrypt-2049"
+_PRETEND_LUKS_ID = "/dev/mapper/luks-dbfb85f2-77c4-4b1f-99a9-2dd3c6789094"
+_PRETEND_VC = "/dev/mapper/tcrypt-2049"
 _DEFAULT_USB_DEVICE = "/dev/sda"
 
 
@@ -47,11 +49,11 @@ supported_volumes_no_mount_required = [
 # Volume, expected device name, expected mapped device name
 # (used to mount)
 supported_volumes_mount_required = [
-    (SINGLE_PART_UNLOCKED_VC_UNMOUNTED, "sda1", "tcrypt-2049"),
+    (SINGLE_PART_UNLOCKED_VC_UNMOUNTED, "/dev/sda1", "/dev/mapper/tcrypt-2049"),
     (
         SINGLE_PART_LUKS_UNLOCKED_UNMOUNTED,
-        "sda1",
-        "luks-dbfb85f2-77c4-4b1f-99a9-2dd3c6789094",
+        "/dev/sda1",
+        "/dev/mapper/luks-dbfb85f2-77c4-4b1f-99a9-2dd3c6789094",
     ),
 ]
 
@@ -161,7 +163,7 @@ class TestCli:
     @mock.patch("subprocess.check_output")
     def test__get_supported_volume_locked_success(self, mock_subprocess):
         vol = self.cli._get_supported_volume(SINGLE_DEVICE_LOCKED)
-        assert vol.device_name == "sda"
+        assert vol.device_name == "/dev/sda"
 
     @pytest.mark.parametrize(
         "input,expected_device,expected_devmapper", supported_volumes_mount_required
@@ -189,51 +191,58 @@ class TestCli:
         assert result is None
 
     def test_unlock_success(self, mocker):
-        pexpect_mock = mock.MagicMock()
-        pexpect_mock.sendline = mock.MagicMock()
-        pexpect_mock.close = mock.MagicMock()
-        pexpect_mock.after.return_value = _PRETEND_LUKS_ID
+        vol = Volume(_DEFAULT_USB_DEVICE, EncryptionScheme.LUKS)
 
-        mocker.patch("pexpect.spawn", return_value=pexpect_mock)
+        mock_spawn = mocker.MagicMock(spec=pexpect.spawn)
+        mocker.patch("securedrop_export.disk.cli.pexpect.spawn", mock_spawn)
 
-        # Passing a list of side effects will cycle through them as return values
-        mocker.patch("pexpect.expect", side_effect=[0, 0])
+        # This return value is derived from the "expected" list in the
+        # unlock_volume method (list item with index 1 is the "Bad passphrase"
+        # error)
+        mock_spawn.expect.side_effect = [0, 0]
+        mock_spawn.match = mock.MagicMock(spec=re.Match)
+        mock_spawn.match.group.return_value = "/dev/dm-0".encode("utf-8")
 
         mv = mock.MagicMock(spec=MountedVolume)
-        vol = Volume(_DEFAULT_USB_DEVICE, EncryptionScheme.LUKS)
 
         with mock.patch.object(self.cli, "_mount_volume") as mock_mount:
             mock_mount.return_value = mv
             result = self.cli.unlock_volume(vol, "a passw0rd!")
 
-        mock_mount.assert_called_once_with(vol, _PRETEND_LUKS_ID)
+        mock_mount.assert_called_once_with(
+            vol,
+        )
         assert isinstance(result, MountedVolume)
 
     def test_unlock_already_unlocked(self, mocker):
-        pexpect_mock = mock.MagicMock()
-        pexpect_mock.sendline = mock.MagicMock()
-        pexpect_mock.close = mock.MagicMock()
+        vol = Volume(_DEFAULT_USB_DEVICE, EncryptionScheme.LUKS)
 
-        mocker.patch("pexpect.spawn", return_value=pexpect_mock)
+        mock_spawn = mocker.MagicMock(spec=pexpect.spawn)
+        mocker.patch("pexpect.spawn", mock_spawn)
+        mocker.patch("pexpect.spawn.expect", mock_spawn.expect)
 
-        # Passing a list of side effects will cycle through them as return values
-        mocker.patch("pexpect.expect", side_effect=[0, 1])
+        mock_spawn.expect.side_effect = [0, 1]
+        mock_spawn.match = mock.MagicMock(spec=re.Match)
+        error_msg = "GDBus.Error:org.freedesktop.UDisks2.Error.Failed: "
+        f"Device {vol.device_name} is already unlocked as /dev/dm-0".encode("utf-8")
+
+        mock_spawn.match.group.return_value = error_msg
 
         mv = mock.MagicMock(spec=MountedVolume)
-        vol = Volume(_DEFAULT_USB_DEVICE, EncryptionScheme.LUKS)
 
         with mock.patch.object(self.cli, "_mount_volume") as mock_mount:
             mock_mount.return_value = mv
             result = self.cli.unlock_volume(vol, "a passw0rd!")
 
-        mock_mount.assert_called_once_with(vol, _PRETEND_LUKS_ID)
+        mock_mount.assert_called_once_with(vol, "/dev/dm-0")
         assert isinstance(result, MountedVolume)
 
     @mock.patch(
-        "securedrop_expot.disk.cli.pexpect.spawn",
-        side_effect=ExceptionPexpect("oh no!"),
+        "securedrop_export.disk.cli.pexpect",
     )
-    def test_unlock_remote_fail(self):
+    def test_unlock_remote_fail(self, mock_pexpect):
+        mock_pexpect.spawn = mock.MagicMock(spec=pexpect.spawn)
+        mock_pexpect.spawn.expect = 3
         vol = Volume(_DEFAULT_USB_DEVICE, EncryptionScheme.LUKS)
 
         with pytest.raises(ExportException) as ex:
@@ -241,10 +250,15 @@ class TestCli:
 
         assert ex.value.sdstatus == Status.ERROR_UNLOCK_GENERIC
 
-    @mock.patch(
-        "subprocess.Popen", side_effect=subprocess.CalledProcessError(4, "Popen")
-    )
-    def test_unlock_fail(self, mock_popen):
+    def test_unlock_luks_bad_passphrase(self, mocker):
+        mock_spawn = mocker.MagicMock(spec=pexpect.spawn)
+        mocker.patch("securedrop_export.disk.cli.pexpect.spawn", mock_spawn)
+
+        # This return value is derived from the "expected" list in the
+        # unlock_volume method (list item with index 1 is the "Bad passphrase"
+        # error)
+        mock_spawn.expect.side_effect = [0, 1]
+
         vol = Volume(_DEFAULT_USB_DEVICE, EncryptionScheme.LUKS)
 
         with pytest.raises(ExportException) as ex:
@@ -252,61 +266,72 @@ class TestCli:
 
         assert ex.value.sdstatus == Status.ERROR_UNLOCK_LUKS
 
-    def test_unlock_luks_volume_bad_passphrase(self, mocker):
-        mock_popen = mocker.MagicMock()
-        mock_communicate = mocker.MagicMock()
-        mock_popen.returncode = 2  # Error unlocking
+    def test_unlock_fail(self, mocker):
+        mock_spawn = mocker.MagicMock(spec=pexpect.spawn)
+        mocker.patch("securedrop_export.disk.cli.pexpect.spawn", mock_spawn)
 
-        mocker.patch("subprocess.Popen", return_value=mock_popen)
-        mocker.patch("subprocess.Popen.communicate", return_value=mock_communicate)
+        # This is derived from the "expected" list in the unlock_volume method
+        # (list item with index 2 is the "pexpect.EOF" error)
+        mock_spawn.expect = 2
 
         vol = Volume(_DEFAULT_USB_DEVICE, EncryptionScheme.LUKS)
 
         with pytest.raises(ExportException) as ex:
             self.cli.unlock_volume(vol, "a passw0rd!")
 
-        assert ex.value.sdstatus == Status.ERROR_UNLOCK_LUKS
+        assert ex.value.sdstatus == Status.ERROR_UNLOCK_GENERIC
 
-    @mock.patch(
-        "subprocess.Popen", side_effect=subprocess.CalledProcessError(5, "Popen")
-    )
-    def test_unlock_luks_volume_exception(self, mocked_subprocess_popen):
-        vol = Volume(
+    @mock.patch("securedrop_export.disk.cli.pexpect")
+    def test__mount_volume_already_mounted(self, mock_p, mocker):
+        mock_spawn = mocker.MagicMock()
+
+        mock_p.spawn = mock_spawn
+        mock_p.spawn.expect.return_value = 1
+        mock_p.spawn.match.group = b"/media/usb"
+
+        md = MountedVolume(
             device_name=_DEFAULT_USB_DEVICE,
+            unlocked_name=_PRETEND_LUKS_ID,
             encryption=EncryptionScheme.LUKS,
+            mountpoint="/media/usb",
         )
-        key = "a key!"
+        import pdb
+        pdb.set_trace()
+        result = self.cli._mount_volume(md, _PRETEND_LUKS_ID)
 
-        with pytest.raises(ExportException) as ex:
-            self.cli.unlock_volume(vol, key)
+        assert result.mountpoint == "/media/usb"
+        assert isinstance(result, MountedVolume)
 
-        assert ex.value.sdstatus is Status.ERROR_UNLOCK_LUKS
+    @mock.patch("securedrop_export.disk.cli.pexpect")
+    def test__mount_volume_success(self, mock_p):
+        mock_spawn = mock.MagicMock(spec=pexpect.spawn)
 
-    @mock.patch("subprocess.check_output")
-    def test__mount_volume_already_mounted(self, mocked_subprocess):
-        mocked_subprocess.side_effect = [
-            subprocess.CalledProcessError(1, "check_output"),
-            "/media/usb",
-        ]
-        mocked_subprocess.returncode = 1
-        mocked_subprocess.error.output = (
-            b"GDBus.Error:org.freedesktop.UDisks2.Error.AlreadyMounted: "
-            b"Device is already mounted"
-        )
-        md = Volume(
+        mock_p.spawn = mock_spawn
+        mock_p.spawn.expect = mock.MagicMock()
+        mock_p.spawn.expect = 0
+
+        mock_p.spawn.match = mock.MagicMock(spec=re.Match)
+        mock_p.spawn.match.group = b"/media/usb"
+
+        md = MountedVolume(
             device_name=_DEFAULT_USB_DEVICE,
+            unlocked_name=_PRETEND_LUKS_ID,
             encryption=EncryptionScheme.LUKS,
+            mountpoint="/media/usb",
         )
-        with pytest.raises(ExportException):
-            result = self.cli._mount_volume(md, _PRETEND_LUKS_ID)
-            assert result.mountpoint == "/media/usb"
-            assert isinstance(result, MountedVolume)
 
-    @mock.patch(
-        "subprocess.check_output",
-        side_effect=subprocess.CalledProcessError(1, "Oh no"),
-    )
-    def test__mount_volume_error(self, mock_sp):
+        import pdb 
+        pdb.set_trace()
+        result = self.cli._mount_volume(md, _PRETEND_LUKS_ID)
+
+        assert result.mountpoint == "/media/usb"
+        assert isinstance(result, MountedVolume)
+
+    def test__mount_volume_error(self, mocker):
+        mock_spawn = mocker.MagicMock(spec=pexpect.spawn)
+        mocker.patch("securedrop_export.disk.cli.pexpect.spawn", mock_spawn)
+        mock_spawn.expect.return_value = 2
+
         md = Volume(
             device_name="/dev/sda",
             encryption=EncryptionScheme.LUKS,
@@ -418,3 +443,10 @@ class TestCli:
         # Undo patch changes
         close_patch.stop()
         remove_tmpdir_patch.stop()
+
+    @mock.patch("securedrop_export.disk.cli.pexpect.expect")
+    def test_parse_correct_mountpoint_from_pexpect_unlock(
+        self, mock_pexpect, mock_spawn, mocker
+    ):
+        mock_pexpect.return_value = 0
+        mock_spawn = mocker.MagicMock(spec=pexpect.spawn)

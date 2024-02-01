@@ -221,56 +221,58 @@ class CLI:
         existing mountpoint.
 
         Throws ExportException if errors are encountered during device unlocking.
+
+        `pexpect.ExeptionPexpect` can't be try/caught, since it's not a
+        child of BaseException, but instead, exceptions can be included
+        in the list of results to check for. (See
+        https://pexpect.readthedocs.io/en/stable/api/pexpect.html#pexpect.spawn.expect)
         """
-        try:
-            logger.debug("Unlocking volume {}".format(volume.device_name))
+        logger.debug("Unlocking volume {}".format(volume.device_name))
 
-            command = f"udisksctl unlock --block-device {volume.device_name}"
-            prompt = ["Passphrase: ", pexpect.EOF, pexpect.TIMEOUT]
+        command = f"udisksctl unlock --block-device {volume.device_name}"
+        prompt = ["Passphrase\: ", pexpect.EOF, pexpect.TIMEOUT]
+        expected = [
+            f"Unlocked {volume.device_name} as (.*)",
+            "GDBus.Error\:org.freedesktop.UDisks2.Error.Failed\: Device "  # string continues
+            f"{volume.device_name} is already unlocked as (.*)",
+            "GDBus.Error\:org.freedesktop.UDisks2.Error.Failed\: Error "  # string continues
+            f"unlocking {volume.device_name}\: Failed to activate device\: Incorrect passphrase",
+            pexpect.EOF,
+            pexpect.TIMEOUT,
+        ]
+        unlock_error = Status.ERROR_UNLOCK_GENERIC
 
-            unlock_results = [
-                f"[Unlocked {volume.device_name} as ",
-                f"GDBus.Error:org.freedesktop.UDisks2.Error.Failed: Device {volume.device_name} is "
-                "already unlocked as ",
-                "GDBus.Error:org.freedesktop.UDisks2.Error.Failed: Error "
-                f"unlocking {volume.device_name}: Failed to activate device: Incorrect passphrase",
-                pexpect.EOF,
-                pexpect.TIMEOUT,
-            ]
-            child = pexpect.spawn(command)
-            index = child.expect(prompt)
-            if index != 0:
-                logger.error("Did not receive disk unlock prompt")
-                raise ExportException(sdstatus=Status.ERROR_UNLOCK_GENERIC)
-            else:
-                logger.debug("Passing key")
-                child.sendline(encryption_key)
-                index = child.expect(unlock_results)
-                if index == 0 or index == 1:
-                    dm_name = child.after.strip()
-                    child.close()
-                    if (child.exitstatus) != 0:
-                        logger.warning("Error closing child process")
+        child = pexpect.spawn(command)
+        index = child.expect(prompt)
+        if index != 0:
+            logger.error("Did not receive disk unlock prompt")
+            raise ExportException(sdstatus=Status.ERROR_UNLOCK_GENERIC)
+        else:
+            logger.debug("Passing key")
+            child.sendline(encryption_key)
+            index = child.expect(expected)
+            if index == 0 or index == 1:
+                # We know what format the string is in
+                dm_name = child.match.group(1).decode("utf-8").strip()
+                logger.debug(f"Device is unlocked as {dm_name}")
 
-                    if dm_name:
-                        logger.debug(f"Device is unlocked as {dm_name}")
+                child.close()
+                if (child.exitstatus) != 0:
+                    logger.warning(f"pexpect: child exited with {child.exitstatus}")
 
-                        # The mapped_name format here is /dev/dm-X
-                        return self._mount_volume(volume, dm_name)
-                    else:
-                        # This is really covering our bases, we shouldn't get here
-                        logger.error(f"No mapped device for {volume.device_name} found")
-                elif index == 2:
-                    logger.debug("Bad volume passphrase")
-                    raise ExportException(sdstatus=Status.ERROR_UNLOCK_LUKS)
-                else:
-                    logger.error("Unspecified error unlocking drive")
-                    raise ExportException(sdstatus=Status.ERROR_UNLOCK_GENERIC)
+                # The mapped_name format here is /dev/dm-X
+                return self._mount_volume(volume, dm_name)
 
-        # Shouldn't happen, we are trapping EOF in child calls, but being cautious
-        except pexpect.ExceptionPexpect as ex:
+            elif index == 2:
+                # Still an error, but we can report more specific error to the user
+                logger.debug("Bad volume passphrase")
+                unlock_error = Status.ERROR_UNLOCK_LUKS
+
+            # Any other index values are also an error. Clean up and raise
+            child.close()
+
             logger.error(f"Error encountered while unlocking {volume.device_name}")
-            raise ExportException(sdstatus=Status.ERROR_UNLOCK_GENERIC) from ex
+            raise ExportException(sdstatus=unlock_error)
 
     def _mount_volume(self, volume: Volume, full_unlocked_name: str) -> MountedVolume:
         """
@@ -280,57 +282,51 @@ class CLI:
         Unlocked name could be `/dev/mapper/$id` or `/dev/dm-X`.
 
         Raise ExportException if errors are encountered during mounting.
+
+        `pexpect.ExeptionPexpect` can't be try/caught, since it's not a
+        child of BaseException, but instead, exceptions can be included
+        in the list of results to check for. (See
+        https://pexpect.readthedocs.io/en/stable/api/pexpect.html#pexpect.spawn.expect)
         """
-        try:
-            logger.info(f"Mount {full_unlocked_name} using udisksctl")
-            subprocess.check_output(
-                [
-                    "udisksctl",
-                    "mount",
-                    "--block-device",
-                    f"{full_unlocked_name}",
-                ]
+        command = f"udisksctl mount --block-device {full_unlocked_name}"
+        expected = [
+            "Mounted .* at \(.*\)",
+            f"Error mounting {full_unlocked_name}\: GDBus.Error\:org."  # string continues
+            "freedesktop.UDisks2.Error.AlreadyMounted\: "  # string continues
+            "Device .* is already mounted at `(.*)'",
+            pexpect.EOF,
+            pexpect.TIMEOUT,
+        ]
+        mountpoint = None
+
+        logger.info(f"Mount {full_unlocked_name} using udisksctl")
+        child = pexpect.spawn(command)
+        index = child.expect(expected)
+
+        if index == 0:
+            # As above, we know the format
+            mountpoint = child.match.group(1).decode("utf-8")
+            logger.debug(f"Successfully mounted device at {mountpoint}")
+
+        elif index == 1:
+            # Mountpoint needs a bit of help. It arrives in the form `/path/to/mountpoint'.
+            # including the one backtick, single quote, and the period
+
+            mountpoint = child.match.group(1).decode("utf-8")
+            logger.debug(f"Device already mounted at {mountpoint}")
+
+        child.close()
+
+        if mountpoint:
+            return MountedVolume(
+                device_name=volume.device_name,
+                unlocked_name=full_unlocked_name,
+                encryption=volume.encryption,
+                mountpoint=mountpoint,
             )
-        except subprocess.CalledProcessError as e:
-            if (
-                e.output is not None
-                and "GDBus.Error:org.freedesktop.UDisks2.Error.AlreadyMounted"
-                in e.output.decode("utf-8")
-            ):
-                logger.info("Already mounted")
-            else:
-                logger.error(e)
-                raise ExportException(sdstatus=Status.ERROR_MOUNT) from e
 
-        try:
-            mountpoint = (
-                subprocess.check_output(
-                    [
-                        "lsblk",
-                        "--raw",
-                        "--noheadings",
-                        "--output",
-                        "MOUNTPOINT",
-                        f"{full_unlocked_name}",
-                    ]
-                )
-                .decode("utf-8")
-                .strip()
-            )
-            if mountpoint:
-                return MountedVolume(
-                    device_name=volume.device_name,
-                    unlocked_name=full_unlocked_name,
-                    encryption=volume.encryption,
-                    mountpoint=mountpoint,
-                )
-
-            logger.error(f"Could not get mountpoint for {volume.device_name}")
-            raise ExportException(sdstatus=Status.ERROR_MOUNT)
-
-        except subprocess.CalledProcessError as ex:
-            logger.error(ex)
-            raise ExportException(sdstatus=Status.ERROR_MOUNT) from ex
+        logger.error("Could not get mountpoint")
+        raise ExportException(sdstatus=Status.ERROR_MOUNT)
 
     def write_data_to_device(
         self,
