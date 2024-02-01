@@ -291,9 +291,11 @@ class CLI:
         command = f"udisksctl mount --block-device {full_unlocked_name}"
         expected = [
             "Mounted .* at \(.*\)",
+
+            # Error mounting /dev/dm-0: GDBus.Error:org.freedesktop.UDisks2.Error.AlreadyMounted: Device /dev/dm-0 is already mounted at `/media/user/tx2\'
             f"Error mounting {full_unlocked_name}\: GDBus.Error\:org."  # string continues
             "freedesktop.UDisks2.Error.AlreadyMounted\: "  # string continues
-            "Device .* is already mounted at `(.*)'",
+            "Device .* is already mounted at `(.*)\'",
             pexpect.EOF,
             pexpect.TIMEOUT,
         ]
@@ -302,6 +304,8 @@ class CLI:
         logger.info(f"Mount {full_unlocked_name} using udisksctl")
         child = pexpect.spawn(command)
         index = child.expect(expected)
+
+        logger.debug(f"child: {str(child.match)}, before: {child.before}, after: {child.after}")
 
         if index == 0:
             # As above, we know the format
