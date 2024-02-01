@@ -85,6 +85,14 @@ test-functional: ## Run the functional tests
 test-sdk: ## Run just the sdk tests
 	@poetry run pytest -v $(STESTS)
 
+.PHONY: regenerate-sdk-cassettes
+regenerate-sdk-cassettes:
+	@echo "Checking if a development server is available to regenerate cassettes..."
+	@echo "NB. It should be a fresh development server via \"make dev\", with no other data!  HTTP requests and responses will be recorded unredacted, including credentials and tokens."
+	@curl http://localhost:8080/metadata
+	@rm -fr tests/sdk/data/
+	@make test-sdk
+
 .PHONY: flake8
 flake8: ## Run flake8 linting
 	@poetry run flake8 securedrop_client tests

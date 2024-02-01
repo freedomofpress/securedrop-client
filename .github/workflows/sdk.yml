@@ -29,6 +29,9 @@ jobs:
           wget https://github.com/jwilder/dockerize/releases/download/$DOCKERIZE_VERSION/dockerize-linux-amd64-$DOCKERIZE_VERSION.tar.gz &&
           tar -C /usr/local/bin -xzvf dockerize-linux-amd64-$DOCKERIZE_VERSION.tar.gz &&
           rm dockerize-linux-amd64-$DOCKERIZE_VERSION.tar.gz
+      - name: Build proxy
+        run: |
+          cargo build
       - name: Run tests without VCR cassettes
         run: |
           # Start the server in the background
@@ -38,5 +41,4 @@ jobs:
           # Wait for server to come up
           dockerize -wait http://127.0.0.1:8080 -timeout 5m
           # Run tests
-          rm client/tests/sdk/data/*.yml
-          make -C client test-sdk
+          make -C client regenerate-sdk-cassettes
