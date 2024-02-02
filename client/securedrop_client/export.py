@@ -44,19 +44,11 @@ class Export(QObject):
     # New, replacement for export success and error statuses
     export_state_changed = pyqtSignal(object)
 
-    # Emit ExportStatus
-    export_preflight_check_succeeded = pyqtSignal(object)
-    export_succeeded = pyqtSignal(object)
-
     print_preflight_check_succeeded = pyqtSignal(object)
     print_succeeded = pyqtSignal(object)
 
     # Used for both print and export
     export_completed = pyqtSignal(object)
-
-    # Emit ExportError(status=ExportStatus)
-    export_preflight_check_failed = pyqtSignal(object)
-    export_failed = pyqtSignal(object)
 
     print_preflight_check_failed = pyqtSignal(object)
     print_failed = pyqtSignal(object)
@@ -94,11 +86,10 @@ class Export(QObject):
                     metadata=self._USB_TEST_METADATA,
                 )
                 status = self._run_qrexec_export(archive_path)
-                self.export_preflight_check_succeeded.emit(status)
+                self.export_state_changed.emit(status)
 
         except ExportError as e:
             logger.error("Export preflight failed")
-            self.export_preflight_check_failed.emit(e)
 
             if e.status:
                 self.export_state_changed.emit(e.status)
@@ -130,13 +121,11 @@ class Export(QObject):
                 status = self._run_qrexec_export(archive_path)
                 self.export_state_changed.emit(status)
 
-                self.export_succeeded.emit(status)
                 logger.debug(f"Status {status}")
 
         except ExportError as e:
             logger.error("Export failed")
             logger.debug(f"Export failed: {e}")
-            self.export_failed.emit(e)
 
             if e.status and isinstance(e.status, ExportStatus):
                 self.export_state_changed.emit(e.status)
@@ -144,8 +133,6 @@ class Export(QObject):
                 logger.error("ExportError, no status supplied")
                 # Emit a generic error
                 self.export_state_changed.emit(ExportStatus.ERROR_EXPORT)
-
-        self.export_completed.emit(filepaths)
 
     def print(self, filepaths: List[str]) -> None:
         """
