@@ -436,7 +436,7 @@ def test_invalid_config(capsys):
     temp_folder = tempfile.mkdtemp()
     metadata = os.path.join(temp_folder, Metadata.METADATA_FILE)
     with open(metadata, "w") as f:
-        f.write('{"device": "asdf", "encryption_method": "OHNO"}')
+        f.write('{"device": "asdf"}')
 
     with pytest.raises(ExportException) as ex:
         Metadata(temp_folder).validate()
@@ -450,7 +450,7 @@ def test_malformed_config(capsys):
     temp_folder = tempfile.mkdtemp()
     metadata = os.path.join(temp_folder, Metadata.METADATA_FILE)
     with open(metadata, "w") as f:
-        f.write('{"device": "asdf", "encryption_method": {"OHNO", "MALFORMED"}')
+        f.write('{"device": {"OHNO", "MALFORMED"}')
 
     with pytest.raises(ExportException) as ex:
         Metadata(temp_folder).validate()
