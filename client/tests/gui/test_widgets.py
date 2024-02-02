@@ -3600,12 +3600,12 @@ def test_FileWidget__on_export_clicked(mocker, session, source):
     controller.run_export_preflight_checks = mocker.MagicMock()
     controller.downloaded_file_exists = mocker.MagicMock(return_value=True)
 
-    wizard = mocker.patch("securedrop_client.gui.conversation.ExportWizard")
+    wizard = mocker.patch("securedrop_client.gui.conversation.export.ExportWizard")
 
     fw._on_export_clicked()
     wizard.assert_called_once_with(
         export_device(), file.filename, [file_location]
-    ), wizard.call_args
+    ), f"{wizard.call_args}"
 
 
 def test_FileWidget__on_export_clicked_missing_file(mocker, session, source):

@@ -2462,9 +2462,8 @@ class FileWidget(QWidget):
 
         export_device = conversation.ExportDevice()
 
-        self.export_dialog = ExportWizard(export_device, self.file.filename, [file_location])
-        # fka conversation.ExportDialog
-        self.export_dialog.show()
+        self.export_wizard = ExportWizard(export_device, self.file.filename, [file_location])
+        self.export_wizard.show()
 
     @pyqtSlot()
     def _on_print_clicked(self) -> None:

@@ -214,6 +214,7 @@ class PreflightPage(ExportWizardPage):
         )
 
         super().__init__(export, header=header, body=body)
+        self.start_animate_header()
         self.export.run_export_preflight_checks()
 
     def nextId(self):
@@ -226,8 +227,37 @@ class PreflightPage(ExportWizardPage):
         elif self.status == ExportStatus.DEVICE_LOCKED:
             logger.debug("Device locked - prompt for passphrase")
             return Pages.UNLOCK_USB
+        elif self.status in (
+            ExportStatus.CALLED_PROCESS_ERROR,
+            ExportStatus.DEVICE_ERROR,
+            ExportStatus.UNEXPECTED_RETURN_STATUS,
+        ):
+            logger.debug("Error during preflight - show error page")
+            return Pages.ERROR
         else:
-            return super().nextId()
+            return Pages.INSERT_USB
+
+    def on_status_received(self, status: ExportStatus):
+        self.stop_animate_header()
+        if status in (ExportStatus.DEVICE_LOCKED, ExportStatus.DEVICE_WRITABLE):
+            header = _(
+                "Ready to export:<br />" '<span style="font-weight:normal">{}</span>'
+            ).format(self.header_text)
+            self.header.setText(header)
+        self.status = status
+
+
+class ErrorPage(ExportWizardPage):
+    def __init__(self, export, summary):
+        header = _("Export Failed")
+        summary = ""  # todo
+
+        super().__init__(export, header=header, body=summary)
+
+    def on_status_received(self, status: ExportStatus):
+        body = STATUS_MESSAGES.get(status)
+        self.body.setText(body)
+        self.status = status
 
 
 class InsertUSBPage(ExportWizardPage):
@@ -244,7 +274,12 @@ class InsertUSBPage(ExportWizardPage):
     @pyqtSlot(object)
     def on_status_received(self, status: ExportStatus) -> None:
         super().on_status_received(status)
-        self.update_content(status)
+        should_show_hint = status in (
+            ExportStatus.NO_DEVICE_DETECTED,
+            ExportStatus.MULTI_DEVICE_DETECTED,
+            ExportStatus.INVALID_DEVICE_DETECTED,
+        )
+        self.update_content(status, should_show_hint)
 
     def validatePage(self) -> bool:
         """
@@ -264,14 +299,11 @@ class InsertUSBPage(ExportWizardPage):
                 ExportStatus.NO_DEVICE_DETECTED,
                 ExportStatus.INVALID_DEVICE_DETECTED,
             ):
-                self.update_content(self.status)
+                self.update_content(self.status, should_show_hint=True)
             else:
                 # Shouldn't reach
                 # Status may be None here
                 logger.warning("InsertUSBPage encountered unexpected status")
-
-            # will return DEVICE_WRITABLE, DEVICE_LOCKED, or an error status
-            self.export.run_export_preflight_checks()
             return False
 
     def nextId(self):
@@ -299,13 +331,13 @@ class FinalPage(ExportWizardPage):
         self.update_content(status)
 
     def update_content(self, status: ExportStatus, should_show_hint: bool = False):
-        if self.status == ExportStatus.SUCCESS_EXPORT:
+        if status == ExportStatus.SUCCESS_EXPORT:
             header = _("Export successful")
             body = _(
                 "Remember to be careful when working with files "
                 "outside of your Workstation machine."
             )
-        elif self.status == ExportStatus.ERROR_EXPORT_CLEANUP:
+        elif status == ExportStatus.ERROR_EXPORT_CLEANUP:
             header = header = _("Export sucessful, but drive was not locked")
             body = STATUS_MESSAGES.get(ExportStatus.ERROR_EXPORT_CLEANUP)
 
@@ -368,4 +400,8 @@ class PassphraseWizardPage(ExportWizardPage):
     @pyqtSlot(object)
     def on_status_received(self, status: ExportStatus) -> None:
         super().on_status_received(status)
-        self.update_content(status)
+        should_show_hint = status in (
+            ExportStatus.ERROR_UNLOCK_LUKS,
+            ExportStatus.ERROR_UNLOCK_GENERIC,
+        )
+        self.update_content(status, should_show_hint)

@@ -11,9 +11,10 @@ Export wizard page ordering, human-readable status messages
 # Sequential list of pages (the order matters)
 class Pages(IntEnum):
     PREFLIGHT = 0
-    INSERT_USB = 1
-    UNLOCK_USB = 2
-    EXPORT_DONE = 3
+    ERROR = 1
+    INSERT_USB = 2
+    UNLOCK_USB = 3
+    EXPORT_DONE = 4
 
 
 # Human-readable status info
