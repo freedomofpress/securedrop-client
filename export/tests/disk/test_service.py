@@ -60,8 +60,7 @@ class TestExportService:
         metadata = os.path.join(temp_folder, Metadata.METADATA_FILE)
         with open(metadata, "w") as f:
             f.write(
-                '{"device": "disk", "encryption_method":'
-                ' "luks", "encryption_key": "hunter1"}'
+                '{"device": "disk", "encryption_key": "hunter1"}'
             )
 
         return submission.set_metadata(Metadata(temp_folder).validate())
