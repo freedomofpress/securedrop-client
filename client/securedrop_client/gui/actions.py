@@ -213,8 +213,7 @@ class ExportConversationTranscriptAction(QAction):  # pragma: nocover
     @pyqtSlot()
     def _on_triggered(self) -> None:
         """
-        (Re-)generates the conversation transcript and opens a confirmation dialog to export it,
-        in the manner of the existing ExportDialog.
+        (Re-)generates the conversation transcript and opens export wizard.
         """
         file_path = (
             Path(self.controller.data_dir)
@@ -236,8 +235,8 @@ class ExportConversationTranscriptAction(QAction):  # pragma: nocover
         # by the operating system.
         with open(file_path, "r") as f:
             export_device = ExportDevice()
-            dialog = ExportWizard(export_device, TRANSCRIPT_FILENAME, [str(file_path)])
-            dialog.exec()
+            wizard = ExportWizard(export_device, TRANSCRIPT_FILENAME, [str(file_path)])
+            wizard.exec()
 
 
 class ExportConversationAction(QAction):  # pragma: nocover
@@ -265,9 +264,8 @@ class ExportConversationAction(QAction):  # pragma: nocover
     @pyqtSlot()
     def _on_triggered(self) -> None:
         """
-        (Re-)generates the conversation transcript and opens a confirmation dialog to export it
-        alongside all the (attached) files that are downloaded, in the manner
-        of the existing ExportDialog.
+        (Re-)generates the conversation transcript and opens export wizard to export it
+        alongside all the (attached) files that are downloaded.
         """
         if self._state is not None:
             id = self._state.selected_conversation
@@ -293,7 +291,7 @@ class ExportConversationAction(QAction):  # pragma: nocover
         """
         (Re-)generates the conversation transcript and opens a confirmation dialog to export it
         alongside all the (attached) files that are downloaded, in the manner
-        of the existing ExportDialog.
+        of the existing ExportWizard.
         """
         transcript_location = (
             Path(self.controller.data_dir)
@@ -333,12 +331,12 @@ class ExportConversationAction(QAction):  # pragma: nocover
             else:
                 summary = _("all files and transcript")
 
-            dialog = ExportWizard(
+            wizard = ExportWizard(
                 export_device,
                 summary,
                 [str(file_location) for file_location in file_locations],
             )
-            dialog.exec()
+            wizard.exec()
 
     def _on_confirmation_dialog_accepted(self) -> None:
         self._prepare_to_export()

@@ -97,38 +97,38 @@ def print_transcript_dialog(mocker, homedir):
 
 
 @pytest.fixture(scope="function")
-def export_dialog_multifile(mocker, homedir):
+def export_wizard_multifile(mocker, homedir):
     mocker.patch("PyQt5.QtWidgets.QApplication.activeWindow", return_value=QMainWindow())
 
     export_device = mocker.MagicMock(spec=conversation.ExportDevice)
 
-    dialog = conversation.ExportDialog(
+    wizard = conversation.ExportWizard(
         export_device,
         "3 files",
         ["/some/path/file123.jpg", "/some/path/memo.txt", "/some/path/transcript.txt"],
     )
 
-    yield dialog
+    yield wizard
 
 
 @pytest.fixture(scope="function")
-def export_dialog(mocker, homedir):
+def export_wizard(mocker, homedir):
     mocker.patch("PyQt5.QtWidgets.QApplication.activeWindow", return_value=QMainWindow())
 
     export_device = mocker.MagicMock(spec=conversation.ExportDevice)
 
-    dialog = conversation.ExportDialog(export_device, "file123.jpg", ["/mock/path/to/file"])
+    dialog = conversation.ExportWizard(export_device, "file123.jpg", ["/mock/path/to/file"])
 
     yield dialog
 
 
 @pytest.fixture(scope="function")
-def export_transcript_dialog(mocker, homedir):
+def export_transcript_wizard(mocker, homedir):
     mocker.patch("PyQt5.QtWidgets.QApplication.activeWindow", return_value=QMainWindow())
 
     export_device = mocker.MagicMock(spec=conversation.ExportDevice)
 
-    dialog = conversation.ExportDialog(
+    dialog = conversation.ExportWizard(
         export_device, "transcript.txt", ["/some/path/transcript.txt"]
     )
 

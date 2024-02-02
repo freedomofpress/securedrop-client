@@ -289,7 +289,7 @@ class TestPrintConversationAction(unittest.TestCase):
 
 
 class TestExportConversationTranscriptAction(unittest.TestCase):
-    @patch("securedrop_client.gui.actions.ExportDialog")
+    @patch("securedrop_client.gui.actions.ExportWizard")
     def test_trigger(self, _):
         with managed_locale():
             locale.setlocale(locale.LC_ALL, ("en_US", "latin-1"))
@@ -318,7 +318,7 @@ class TestExportConversationTranscriptAction(unittest.TestCase):
 
 
 class TestExportConversationAction(unittest.TestCase):
-    @patch("securedrop_client.gui.actions.ExportDialog")
+    @patch("securedrop_client.gui.actions.ExportWizard")
     def test_trigger(self, _):
         with managed_locale():
             locale.setlocale(locale.LC_ALL, ("en_US", "latin-1"))
