@@ -2,7 +2,9 @@ import json
 import logging
 import os
 import pexpect
+import re
 import subprocess
+import time
 
 from typing import Optional, Union
 
@@ -230,13 +232,13 @@ class CLI:
         logger.debug("Unlocking volume {}".format(volume.device_name))
 
         command = f"udisksctl unlock --block-device {volume.device_name}"
-        prompt = ["Passphrase\: ", pexpect.EOF, pexpect.TIMEOUT]
+        prompt = ["Passphrase: ", pexpect.EOF, pexpect.TIMEOUT]
         expected = [
-            f"Unlocked {volume.device_name} as (.*)",
-            "GDBus.Error\:org.freedesktop.UDisks2.Error.Failed\: Device "  # string continues
-            f"{volume.device_name} is already unlocked as (.*)",
-            "GDBus.Error\:org.freedesktop.UDisks2.Error.Failed\: Error "  # string continues
-            f"unlocking {volume.device_name}\: Failed to activate device\: Incorrect passphrase",
+            f"Unlocked {volume.device_name} as (.*)\.",
+            "GDBus.Error:org.freedesktop.UDisks2.Error.Failed: Device "  # string continues
+            f"{volume.device_name} is already unlocked as (.*)\.",
+            "GDBus.Error:org.freedesktop.UDisks2.Error.Failed: Error "  # string continues
+            f"unlocking {volume.device_name}: Failed to activate device: Incorrect passphrase",
             pexpect.EOF,
             pexpect.TIMEOUT,
         ]
@@ -257,10 +259,10 @@ class CLI:
                 logger.debug(f"Device is unlocked as {dm_name}")
 
                 child.close()
-                if (child.exitstatus) != 0:
+                if (child.exitstatus) not in (0, 1):
                     logger.warning(f"pexpect: child exited with {child.exitstatus}")
 
-                # The mapped_name format here is /dev/dm-X
+                # dm_name format is /dev/dm-X
                 return self._mount_volume(volume, dm_name)
 
             elif index == 2:
@@ -288,36 +290,66 @@ class CLI:
         in the list of results to check for. (See
         https://pexpect.readthedocs.io/en/stable/api/pexpect.html#pexpect.spawn.expect)
         """
-        command = f"udisksctl mount --block-device {full_unlocked_name}"
-        expected = [
-            "Mounted .* at \(.*\)",
 
-            # Error mounting /dev/dm-0: GDBus.Error:org.freedesktop.UDisks2.Error.AlreadyMounted: Device /dev/dm-0 is already mounted at `/media/user/tx2\'
-            f"Error mounting {full_unlocked_name}\: GDBus.Error\:org."  # string continues
-            "freedesktop.UDisks2.Error.AlreadyMounted\: "  # string continues
-            "Device .* is already mounted at `(.*)\'",
+        info = f"udisksctl info --block-device {volume.device_name}"
+        # \x1b[37mPreferredDevice:\x1b[0m            /dev/sdaX\r\n
+        expected_info = [
+            f"PreferredDevice:[\t+]{volume.device_name}\r\n",
+            "Error looking up object for device",
+            pexpect.EOF,
+            pexpect.TIMEOUT,
+        ]
+        max_retries = 3
+
+        unlock = f"udisksctl mount --block-device {full_unlocked_name}"
+        expected_unlock = [
+            f"Mounted {full_unlocked_name} at (.*)",
+            f"Error mounting {full_unlocked_name}: GDBus.Error:org."  # string continues
+            "freedesktop.UDisks2.Error.AlreadyMounted: "  # string continues
+            "Device .* is already mounted at `(.*)'",
+            f"Error looking up object for device {full_unlocked_name}.",
             pexpect.EOF,
             pexpect.TIMEOUT,
         ]
         mountpoint = None
 
-        logger.info(f"Mount {full_unlocked_name} using udisksctl")
-        child = pexpect.spawn(command)
-        index = child.expect(expected)
+        logger.debug(f"Check to make sure udisks identified the device")
+        for attempt in range(max_retries):
+            child = pexpect.spawn(info)
+            index = child.expect(expected_info)
+            child.close()
 
-        logger.debug(f"child: {str(child.match)}, before: {child.before}, after: {child.after}")
+            if index != 0:
+                logger.debug(f"index {index}")
+                print(f"udisks can't identify {volume.device_name}, retrying...")
+                logger.warning(
+                    f"udisks can't identify {volume.device_name}, retrying..."
+                )
+                time.sleep(1)
+            else:
+                print(f"udisks found {volume.device_name}")
+
+        logger.info(f"Mount {full_unlocked_name} using udisksctl")
+        child = pexpect.spawn(unlock)
+        index = child.expect(expected_unlock)
+
+        logger.debug(
+            f"child: {str(child.match)}, before: {child.before}, after: {child.after}"
+        )
 
         if index == 0:
             # As above, we know the format
-            mountpoint = child.match.group(1).decode("utf-8")
+            mountpoint = child.match.group(1).decode("utf-8").strip()
             logger.debug(f"Successfully mounted device at {mountpoint}")
 
         elif index == 1:
             # Mountpoint needs a bit of help. It arrives in the form `/path/to/mountpoint'.
             # including the one backtick, single quote, and the period
-
-            mountpoint = child.match.group(1).decode("utf-8")
+            mountpoint = child.match.group(1).decode("utf-8").strip()
             logger.debug(f"Device already mounted at {mountpoint}")
+
+        elif index == 2:
+            logger.debug("Device is not ready")
 
         child.close()
 
@@ -340,11 +372,15 @@ class CLI:
     ):
         """
         Move files to drive (overwrites files with same filename) and unmount drive.
+
         Drive is unmounted and files are cleaned up as part of the `finally` block to ensure
         that cleanup happens even if export fails or only partially succeeds.
         """
 
         try:
+            # Flag to pass to cleanup method
+            is_error = False
+
             target_path = os.path.join(device.mountpoint, submission_target_dirname)
             subprocess.check_call(["mkdir", target_path])
 
@@ -358,28 +394,44 @@ class CLI:
 
         except (subprocess.CalledProcessError, OSError) as ex:
             logger.error(ex)
+
+            # Ensure we report an export error out after cleanup
+            is_error = True
             raise ExportException(sdstatus=Status.ERROR_EXPORT) from ex
 
         finally:
-            self.cleanup(device, submission_tmpdir)
+            self.cleanup(device, submission_tmpdir, is_error)
 
-    def cleanup(self, volume: MountedVolume, submission_tmpdir: str):
+    def cleanup(
+        self,
+        volume: MountedVolume,
+        submission_tmpdir: str,
+        is_error: bool = False,
+        should_close_volume: bool = True,
+    ):
         """
         Post-export cleanup method. Unmount and lock drive and remove temporary
-        directory. Currently called at end of `write_data_to_device()` to ensure
-        device is always locked after export.
+        directory.
 
-        Raise ExportException if errors during cleanup are encountered.
+        Raises ExportException if errors during cleanup are encountered.
+
+        Method is called whether or not export succeeds; if `is_error` is True,
+        will report export error status on error (insted of cleanup status).
         """
+        error_status = Status.ERROR_EXPORT if is_error else Status.ERROR_EXPORT_CLEANUP
+
         logger.debug("Syncing filesystems")
         try:
             subprocess.check_call(["sync"])
-            self._close_volume(volume)
             self._remove_temp_directory(submission_tmpdir)
+
+            # Future configurable option
+            if should_close_volume:
+                self._close_volume(volume)
 
         except subprocess.CalledProcessError as ex:
             logger.error("Error syncing filesystem")
-            raise ExportException(sdstatus=Status.ERROR_EXPORT_CLEANUP) from ex
+            raise ExportException(sdstatus=error_status) from ex
 
     def _close_volume(self, mv: MountedVolume) -> Volume:
         """
@@ -401,8 +453,7 @@ class CLI:
                 logger.error(ex)
                 logger.error("Error unmounting device")
 
-                # todo: return 'device busy' code
-                raise ExportException(sdstatus=Status.ERROR_EXPORT_CLEANUP) from ex
+                raise ExportException(sdstatus=Status.ERROR_UNMOUNT_VOLUME_BUSY) from ex
         else:
             logger.info("Mountpoint does not exist; volume was already unmounted")
 

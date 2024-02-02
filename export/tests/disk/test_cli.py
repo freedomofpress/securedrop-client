@@ -207,10 +207,7 @@ class TestCli:
             mock_mount.return_value = mv
             result = self.cli.unlock_volume(vol, "a passw0rd!")
 
-            mock_mount.assert_called_once_with(
-                vol,
-                "/dev/dm-0"
-            )
+            mock_mount.assert_called_once_with(vol, "/dev/dm-0")
             assert isinstance(result, MountedVolume)
 
     @mock.patch("pexpect.spawn")
@@ -249,7 +246,7 @@ class TestCli:
         # unlock_volume method (list item with index 1 is the "Bad passphrase"
         # error)
         child.expect.side_effect = [0, 2]
-        child.match = mock.MagicMock(spec=re.Match) 
+        child.match = mock.MagicMock(spec=re.Match)
         child.match.group.return_value = b"/media/usb"
 
         vol = Volume(_DEFAULT_USB_DEVICE, EncryptionScheme.LUKS)
@@ -266,7 +263,7 @@ class TestCli:
         # This is derived from the "expected" list in the unlock_volume method
         # (list item with index 3 is the "pexpect.EOF" error)
         child.expect.side_effect = [0, 3]
-        child.match = mock.MagicMock(spec=re.Match) 
+        child.match = mock.MagicMock(spec=re.Match)
         child.match.group.return_value = b"/media/usb"
 
         vol = Volume(_DEFAULT_USB_DEVICE, EncryptionScheme.LUKS)
@@ -280,7 +277,7 @@ class TestCli:
     def test__mount_volume_already_mounted(self, mock_p):
         child = mock_p()
         child.expect.return_value = 1
-        child.match = mock.MagicMock(spec=re.Match) 
+        child.match = mock.MagicMock(spec=re.Match)
         child.match.group.return_value = b"/media/usb"
 
         md = MountedVolume(
@@ -298,7 +295,7 @@ class TestCli:
     def test__mount_volume_success(self, mock_p):
         child = mock_p()
         child.expect.return_value = 0
-        child.match = mock.MagicMock(spec=re.Match) 
+        child.match = mock.MagicMock(spec=re.Match)
         child.match.group.return_value = b"/media/usb"
 
         md = MountedVolume(
@@ -401,6 +398,19 @@ class TestCli:
             self.cli.cleanup(mock_volume, submission.tmpdir)
         assert ex.value.sdstatus is Status.ERROR_EXPORT_CLEANUP
 
+    @mock.patch(
+        "subprocess.check_call",
+        side_effect=subprocess.CalledProcessError(1, "check_call"),
+    )
+    def test_cleanup_error_reports_exporterror_if_flagged(self, mock_popen):
+        submission = Archive("testfile")
+        mock_volume = mock.MagicMock(Volume)
+
+        with pytest.raises(ExportException) as ex:
+            self.cli.cleanup(mock_volume, submission.tmpdir, is_error=True)
+        assert ex.value.sdstatus is Status.ERROR_EXPORT
+
+
     @mock.patch("os.path.exists", return_value=False)
     @mock.patch("subprocess.check_call", return_value=0)
     def test_cleanup(self, mock_subprocess, mocked_path):
@@ -431,14 +441,17 @@ class TestCli:
         remove_tmpdir_patch.stop()
 
     @mock.patch("pexpect.spawn")
-    def test_parse_correct_mountpoint_from_pexpect(
-        self, mock_pexpect
-    ):
+    def test_parse_correct_mountpoint_from_pexpect(self, mock_pexpect):
         child = mock_pexpect()
         child.expect.return_value = 1
-        child.match.return_value = re.match(r"`(\w+)'\.$".encode("utf-8"), f"Error mounting /dev/dm-1\: GDBus.Error\:org."
+        child.match.return_value = re.match(
+            r"`(\w+)'\.\r\n".encode("utf-8"),
+            "Error mounting /dev/dm-1: GDBus.Error:org."
             "freedesktop.UDisks2.Error.AlreadyMounted: "
-            "Device /dev/sda1 is already mounted at `/dev/dm-0'.".encode("utf-8"))
-        
-        mv = self.cli._mount_volume(Volume("/dev/sda1", EncryptionScheme.VERACRYPT), "/dev/dm-1")
+            "Device /dev/sda1 is already mounted at `/dev/dm-0'.\r\n".encode("utf-8"),
+        )
+
+        mv = self.cli._mount_volume(
+            Volume("/dev/sda1", EncryptionScheme.VERACRYPT), "/dev/dm-1"
+        )
         assert mv.unlocked_name == "/dev/dm-0"

@@ -74,16 +74,18 @@ def entrypoint():
                 submission.set_metadata(metadata)
                 logger.info(f"Start {metadata.command.value} service")
                 status = _start_service(submission)
+                logger.info(f"Status: {status.value}")
 
-    except ExportException as ex:
-        logger.error(f"Encountered exception {ex.sdstatus.value}, exiting")
+    # Gotta catch'em all. A nonzero exit status will cause other programs
+    # to try to handle the files, which we don't want.
+    except Exception as ex:
         logger.error(ex)
-        status = ex.sdstatus
-
-    except Exception as exc:
-        logger.error("Encountered exception during export, exiting")
-        logger.error(exc)
-        status = Status.ERROR_GENERIC
+        if isinstance(ex, ExportException):
+            logger.error(f"Encountered exception {ex.sdstatus.value}, exiting")
+            status = ex.sdstatus
+        else:
+            logger.error("Encountered exception during export, exiting")
+            status = Status.ERROR_GENERIC
 
     finally:
         _exit_gracefully(submission, status)
@@ -156,16 +158,12 @@ def _start_service(submission: Archive) -> BaseStatus:
     )
 
 
-def _exit_gracefully(submission: Archive, status: Optional[BaseStatus] = None):
+def _exit_gracefully(submission: Archive, status: BaseStatus):
     """
     Write status code, ensure file cleanup, and exit with return code 0.
     Non-zero exit values will cause the system to try alternative
     solutions for mimetype handling, which we want to avoid.
     """
-    if status:
-        logger.info(f"Exit gracefully with status: {status.value}")
-    else:
-        logger.info("Exit gracefully (no status code supplied)")
     try:
         # If the file archive was extracted, delete before returning
         if submission and os.path.isdir(submission.tmpdir):
@@ -182,21 +180,30 @@ def _exit_gracefully(submission: Archive, status: Optional[BaseStatus] = None):
         sys.exit(0)
 
 
-def _write_status(status: Optional[BaseStatus]):
+def _write_status(status: BaseStatus):
     """
-    Write status string to stderr.
+    Write status string to stderr. Flush stderr and stdout before we exit.
     """
-    if status:
-        logger.info(f"Write status {status.value}")
-
+    logger.info(f"Write status {status.value}")
+    try:
         # First we will log errors from stderr elsewhere
         tmp_stderr = io.StringIO()
-        with contextlib.redirect_stderr(tmp_stderr):
+        tmp_stdout = io.StringIO()
+        with contextlib.redirect_stderr(tmp_stderr), contextlib.redirect_stdout(
+            tmp_stdout
+        ):
             sys.stderr.flush()
-        if tmp_stderr.getvalue() is not None:
-            logger.error(f"Error-capture: {tmp_stderr.getvalue()}")
+            sys.stdout.flush()
+            if len(tmp_stderr.getvalue()) > 0:
+                logger.error(f"Error capture: {tmp_stderr.getvalue()}")
+            if len(tmp_stdout.getvalue()) > 0:
+                logger.info(f"stdout capture: {tmp_stderr.getvalue()}")
 
         sys.stderr.write(status.value)
         sys.stderr.write("\n")
-    else:
-        logger.info("No status value supplied")
+        sys.stderr.flush()
+        sys.stdout.flush()
+    except BrokenPipeError:
+        devnull = os.open(os.devnull, os.O_WRONLY)
+        os.dup2(devnull, sys.stdout.fileno())
+        os.dup2(devnull, sys.stderr.fileno())
