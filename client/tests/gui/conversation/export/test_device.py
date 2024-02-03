@@ -1,11 +1,11 @@
 import os
-import subprocess
 import tarfile
 from tempfile import NamedTemporaryFile, TemporaryDirectory
 from unittest import mock
 
 import pytest
 
+from PyQt5.QtCore import QProcess
 from securedrop_client.export_status import ExportError, ExportStatus
 from securedrop_client.gui.conversation.export import Export
 from tests import factory
@@ -24,7 +24,7 @@ _QREXEC_EXPORT_COMMAND = [
 _MOCK_FILEDIR = "/tmp/mock_tmpdir/"
 
 
-@mock.patch("subprocess.check_output")
+@mock.patch("PyQt5.QtCore.QProcess")
 class TestDevice:
     @classmethod
     def setup_class(cls):
@@ -47,6 +47,11 @@ class TestDevice:
         cls.device._create_archive = None
 
     def test_Device_run_printer_preflight_checks(self, mock_subprocess):
+        mock_qp = mock_subprocess()
+        mock_qp.start = mock.MagicMock()
+        mock_qp.readAllStandardError.return_value = (
+            ExportStatus.PRINT_PREFLIGHT_SUCCESS.value.encode("utf-8")
+        )
         device = Export()
         device._create_archive = mock.MagicMock()
         device._create_archive.return_value = _PATH_TO_PRETEND_ARCHIVE
@@ -54,16 +59,18 @@ class TestDevice:
         with mock.patch(
             "securedrop_client.export.TemporaryDirectory",
             return_value=self.mock_tmpdir,
-        ):
+        ), mock.patch("securedrop_client.export.QProcess", return_value=mock_qp):
             device.run_printer_preflight_checks()
 
-        mock_subprocess.assert_called_once()
+        mock_qp.start.assert_called_once()
         assert (
             _QREXEC_EXPORT_COMMAND in mock_subprocess.call_args[0]
         ), f"Actual: {mock_subprocess.call_args[0]}"
 
     def test_Device_run_print_preflight_checks_with_error(self, mock_sp):
-        mock_sp.side_effect = subprocess.CalledProcessError(1, "check_output")
+        mock_qp = mock_sp()
+        mock_qp.start = mock.MagicMock()
+        mock_qp.readAllStandardError.return_value = b"Not a real status\n"
 
         with mock.patch("securedrop_client.export.logger.error") as err:
             self.device.run_printer_preflight_checks()
@@ -114,7 +121,7 @@ class TestDevice:
         assert _QREXEC_EXPORT_COMMAND in mock_subprocess.call_args[0]
 
     def test_Device_run_export_preflight_checks_with_error(self, mock_sp):
-        mock_sp.side_effect = subprocess.CalledProcessError(1, "check_output")
+        mock_sp.return_value = b"Houston, we have a problem\n"
 
         with mock.patch("securedrop_client.export.logger.error") as err:
             self.device.run_export_preflight_checks()
@@ -162,26 +169,17 @@ class TestDevice:
 
     @pytest.mark.parametrize("status", [i.value for i in ExportStatus])
     def test__run_qrexec_success(self, mocked_subprocess, status):
-        mocked_subprocess.return_value = f"{status}\n".encode("utf-8")
+        mocked_subprocess.readAllStandardError.return_value = f"{status}\n".encode("utf-8")
         enum = ExportStatus(status)
+        with mock.patch.object(self.device, "_on_export_process_finished") as mock_finished:
+            self.device._run_qrexec_export(
+                _PATH_TO_PRETEND_ARCHIVE,
+                self.device._on_export_process_finished,
+                self.device._on_export_process_error,
+            )
 
-        assert self.device._run_qrexec_export(_PATH_TO_PRETEND_ARCHIVE) == enum
-
-    def test__run_qrexec_calledprocess_raises_exportstatus(self, mocked_subprocess):
-        mocked_subprocess.side_effect = ValueError(
-            "These are not the ExportStatuses you're looking for..."
-        )
-        with pytest.raises(ExportError) as e:
-            self.device._run_qrexec_export(_PATH_TO_PRETEND_ARCHIVE)
-
-        assert e.value.status == ExportStatus.UNEXPECTED_RETURN_STATUS
-
-    def test__run_qrexec_valuerror_raises_exportstatus(self, mocked_subprocess):
-        mocked_subprocess.side_effect = subprocess.CalledProcessError(1, "check_output")
-        with pytest.raises(ExportError) as e:
-            self.device._run_qrexec_export(_PATH_TO_PRETEND_ARCHIVE)
-
-        assert e.value.status == ExportStatus.CALLED_PROCESS_ERROR
+        mock_finished.assert_called_once()
+        assert status in mock_finished.call_args[0]
 
     @mock.patch("securedrop_client.export.tarfile")
     def test__add_virtual_file_to_archive(self, mock_tarfile, mock_sp):

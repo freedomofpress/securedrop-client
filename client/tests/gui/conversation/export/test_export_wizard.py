@@ -4,6 +4,7 @@ from securedrop_client.export_status import ExportStatus
 from securedrop_client.gui.conversation.export import Export, ExportWizard
 from securedrop_client.gui.conversation.export.export_wizard_constants import STATUS_MESSAGES, Pages
 from securedrop_client.gui.conversation.export.export_wizard_page import (
+    ErrorPage,
     FinalPage,
     InsertUSBPage,
     PassphraseWizardPage,
@@ -139,3 +140,15 @@ class TestExportWizard:
         self.wizard.next()
         self.wizard.back()
         assert not self.wizard.currentPage().error_details.isVisible()
+
+    def test_wizard_only_shows_error_page_on_unrecoverable_error(self, qtbot):
+        self.wizard.show()
+        qtbot.addWidget(self.wizard)
+
+        self.mock_export.export_state_changed.emit(ExportStatus.NO_DEVICE_DETECTED)
+        self.wizard.next()
+        assert isinstance(self.wizard.currentPage(), InsertUSBPage)
+
+        self.mock_export.export_state_changed.emit(ExportStatus.UNEXPECTED_RETURN_STATUS)
+        self.wizard.next()
+        assert isinstance(self.wizard.currentPage(), ErrorPage)
