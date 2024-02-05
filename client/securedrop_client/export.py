@@ -1,14 +1,13 @@
 import json
 import logging
 import os
-import subprocess
 import tarfile
 from io import BytesIO
 from shlex import quote
 from tempfile import TemporaryDirectory
-from typing import List, Optional
+from typing import Callable, List, Optional
 
-from PyQt5.QtCore import QObject, pyqtSignal
+from PyQt5.QtCore import QProcess, QObject, pyqtSignal
 
 from securedrop_client.export_status import ExportError, ExportStatus
 
@@ -41,17 +40,19 @@ class Export(QObject):
     _DISK_ENCRYPTION_KEY_NAME = "encryption_key"
     _DISK_EXPORT_DIR = "export_data"
 
-    # New, replacement for export success and error statuses
+    # Emit export states
     export_state_changed = pyqtSignal(object)
 
+    # Emit print states
     print_preflight_check_succeeded = pyqtSignal(object)
     print_succeeded = pyqtSignal(object)
 
-    # Used for both print and export
     export_completed = pyqtSignal(object)
 
     print_preflight_check_failed = pyqtSignal(object)
     print_failed = pyqtSignal(object)
+
+    process = None  # Optional[QProcess]
 
     def run_printer_preflight_checks(self) -> None:
         """
@@ -65,8 +66,9 @@ class Export(QObject):
                     archive_fn=self._PRINTER_PREFLIGHT_FN,
                     metadata=self._PRINTER_PREFLIGHT_METADATA,
                 )
-                status = self._run_qrexec_export(archive_path)
-                self.print_preflight_check_succeeded.emit(status)
+                self._run_qrexec_export(
+                    archive_path, self._on_print_preflight_success, self._on_print_prefight_error
+                )
         except ExportError as e:
             logger.error("Print preflight failed")
             logger.debug(f"Print preflight failed: {e}")
@@ -85,8 +87,10 @@ class Export(QObject):
                     archive_fn=self._USB_TEST_FN,
                     metadata=self._USB_TEST_METADATA,
                 )
-                status = self._run_qrexec_export(archive_path)
-                self.export_state_changed.emit(status)
+                # Emits status via on_process_completed()
+                self._run_qrexec_export(
+                    archive_path, self._on_export_process_finished, self._on_export_process_error
+                )
 
         except ExportError as e:
             logger.error("Export preflight failed")
@@ -118,25 +122,149 @@ class Export(QObject):
                     metadata=metadata,
                     filepaths=filepaths,
                 )
-                status = self._run_qrexec_export(archive_path)
-                self.export_state_changed.emit(status)
 
-                logger.debug(f"Status {status}")
+                # Emits status through callbacks
+                self._run_qrexec_export(
+                    archive_path, self._on_export_process_finished, self._on_export_process_error
+                )
 
-        except ExportError as e:
+        except IOError as e:
             logger.error("Export failed")
             logger.debug(f"Export failed: {e}")
+            self.export_state_changed.emit(ExportStatus.ERROR_EXPORT)
 
-            if e.status and isinstance(e.status, ExportStatus):
-                self.export_state_changed.emit(e.status)
+    def _run_qrexec_export(
+        self, archive_path: str, success_callback: Callable, error_callback: Callable
+    ) -> None:
+        """
+        Send the archive to the Export VM, where the archive will be processed.
+        Uses qrexec-client-vm (via QProcess). Results are emitted via the
+        `on_process_finished` callback; errors are reported via `on_process_error`.
+
+        Args:
+            archive_path (str): The path to the archive to be processed.
+            success_callback, err_callback: Callback functions to connect to the success and
+            error signals of QProcess. They are included to accommodate the print functions,
+            which still use separate signals for print preflight, print, and error states, but
+            can be removed in favour of a generic success callback and error callback when the
+            print code is updated.
+
+        Returns:
+            str: The export status returned from the Export VM processing script.
+
+        Raises:
+            ExportError: Raised if (1) CalledProcessError is encountered, which can occur when
+                trying to start the Export VM when the USB device is not attached, or (2) when
+                the return code from `check_output` is not 0.
+        """
+        logger.debug(f"Preparing to open {archive_path} in sd-devices...")
+
+        # There are already talks of switching to a QVM-RPC implementation for unlocking devices
+        # and exporting files, so it's important to remember to shell-escape what we pass to the
+        # shell, even if for the time being we're already protected against shell injection via
+        # Python's implementation of subprocess, see
+        # https://docs.python.org/3/library/subprocess.html#security-considerations
+        qrexec = "/usr/bin/qrexec-client-vm"
+        args = [
+            quote("--"),
+            quote("sd-devices"),
+            quote("qubes.OpenInVM"),
+            quote("/usr/lib/qubes/qopen-in-vm"),
+            quote("--view-only"),
+            quote("--"),
+            quote(archive_path),
+        ]
+
+        self.process = QProcess()
+        # self.process.readyReadStandardError.connect(success_callback)
+
+        self.process.finished.connect(success_callback)
+        self.process.errorOccurred.connect(error_callback)
+
+        self.process.start(qrexec, args)
+
+    def _on_export_process_finished(self):
+        """
+        Callback to handle and emit QProcess results. Method signature
+        cannot change.
+        """
+        out = self.process.readAllStandardOutput().data().decode("utf-8")
+
+        # securedrop-export writes status to stderr
+        err = self.process.readAllStandardError()
+
+        logger.debug(f"stdout: {out}")
+        logger.debug(f"stderr: {err}")
+
+        try:
+            result = err.data().decode("utf-8").strip()
+            if result:
+                logger.debug(f"Result is {result}")
+                # This is a bit messy, but make sure we are just taking the last line
+                # (no-op if no newline, since we already stripped whitespace above)
+                status_string = result.split("\n")[-1]
+                self.export_state_changed.emit(ExportStatus(status_string))
+
             else:
-                logger.error("ExportError, no status supplied")
-                # Emit a generic error
-                self.export_state_changed.emit(ExportStatus.ERROR_EXPORT)
+                logger.error("Export subprocess did not return a value we could parse")
+                self.export_state_changed.emit(ExportStatus.UNEXPECTED_RETURN_STATUS)
+
+        except ValueError as e:
+            logger.debug(f"Export subprocess returned unexpected value: {e}")
+            self.export_state_changed.emit(ExportStatus.UNEXPECTED_RETURN_STATUS)
+
+    def _on_export_process_error(self):
+        """
+        Callback, called if QProcess cannot complete. Method signature
+        cannot change.
+        """
+        err = self.process.readAllStandardError().data().decode("utf-8")
+
+        logger.error(f"Export process error: {err}")
+        self.export_state_changed.emit(ExportStatus.CALLED_PROCESS_ERROR)
+
+    def _on_print_preflight_success(self):
+        logger.debug("Print preflight success")
+        self.print_preflight_check_succeeded.emit()
+
+    def _on_print_prefight_error(self):
+        logger.debug("Print preflight error")
+        self.print_preflight_check_failed.emit(ExportStatus.PRINT_PREFLIGHT_SUCCESS)
+
+    # Todo: not sure if we need to connect here, since the print dialog is managed by sd-devices.
+    # We can probably use the export callback.
+    def _on_print_sucess(self):
+        logger.debug("Print success")
+        self.print_succeeded.emit(ExportStatus.PRINT_SUCCESS)
+        self.export_completed.emit()
+
+    def end_process(self) -> None:
+        logger.debug("Terminate process")
+        if self.process is not None and not self.process.waitForFinished(50):
+            self.process.terminate()
+
+    def _on_print_error(self):
+        # securedrop-export writes status to stderr
+        err = self.process.readAllStandardError()
+        logger.debug(f"Print error: {err}")
+
+        try:
+            result = err.data().decode("utf-8").strip()
+            if result:
+                logger.debug(f"Result is {result}")
+                status = ExportStatus(result)
+                self.print_failed.emit(ExportError(status))
+            else:
+                logger.error("Print error, but no value we could parse")
+                self.print_failed.emit(ExportStatus.ERROR_PRINT)
+
+        except ValueError as e:
+            logger.debug(f"Export subprocess returned unexpected value: {e}")
+            self.print_failed.emit(ExportError(ExportStatus.ERROR_PRINT))
 
     def print(self, filepaths: List[str]) -> None:
         """
-        Bundle files at self._filepaths_list into tarball and send for
+        Bundle files at filepaths into tarball and send for
         printing via qrexec.
         """
         try:
@@ -149,70 +277,14 @@ class Export(QObject):
                     metadata=self._PRINT_METADATA,
                     filepaths=filepaths,
                 )
-                status = self._run_qrexec_export(archive_path)
-                self.print_succeeded.emit(status)
-                logger.debug(f"Status {status}")
+                self._run_qrexec_export(archive_path, self._on_print_sucess, self._on_print_error)
 
-        except ExportError as e:
+        except IOError as e:
             logger.error("Export failed")
             logger.debug(f"Export failed: {e}")
             self.print_failed.emit(e)
 
         self.export_completed.emit(filepaths)
-
-    def _run_qrexec_export(self, archive_path: str) -> ExportStatus:
-        """
-        Make the subprocess call to send the archive to the Export VM, where the archive will be
-        processed.
-
-        Args:
-            archive_path (str): The path to the archive to be processed.
-
-        Returns:
-            str: The export status returned from the Export VM processing script.
-
-        Raises:
-            ExportError: Raised if (1) CalledProcessError is encountered, which can occur when
-                trying to start the Export VM when the USB device is not attached, or (2) when
-                the return code from `check_output` is not 0.
-        """
-        try:
-            # There are already talks of switching to a QVM-RPC implementation for unlocking devices
-            # and exporting files, so it's important to remember to shell-escape what we pass to the
-            # shell, even if for the time being we're already protected against shell injection via
-            # Python's implementation of subprocess, see
-            # https://docs.python.org/3/library/subprocess.html#security-considerations
-            output = subprocess.check_output(
-                [
-                    quote("qrexec-client-vm"),
-                    quote("--"),
-                    quote("sd-devices"),
-                    quote("qubes.OpenInVM"),
-                    quote("/usr/lib/qubes/qopen-in-vm"),
-                    quote("--view-only"),
-                    quote("--"),
-                    quote(archive_path),
-                ],
-                stderr=subprocess.STDOUT,
-            )
-            result = output.decode("utf-8").strip()
-            if result:
-
-                # This is a bit messy, but make sure we are just taking the last line
-                # (no-op if no newline)
-                status_string = result.split("\n")[-1]
-                return ExportStatus(status_string)
-            else:
-                logger.error("Export subprocess did not return a value we could parse")
-                raise ExportError(ExportStatus.UNEXPECTED_RETURN_STATUS)
-
-        except ValueError as e:
-            logger.debug(f"Export subprocess returned unexpected value: {e}")
-            raise ExportError(ExportStatus.UNEXPECTED_RETURN_STATUS)
-        except subprocess.CalledProcessError as e:
-            logger.error("Subprocess failed")
-            logger.debug(f"Subprocess failed: {e}")
-            raise ExportError(ExportStatus.CALLED_PROCESS_ERROR)
 
     def _create_archive(
         self, archive_dir: str, archive_fn: str, metadata: dict, filepaths: List[str] = []
