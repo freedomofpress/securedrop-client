@@ -206,12 +206,13 @@ class ExportWizard(QWizard):
         end the wizard.
         """
         if isinstance(self.currentPage(), PreflightPage):
-            self.next()
+            # Update its status so it shows error next self.currentPage()
+            # self.next()
+            logger.debug("On preflight page")
         else:
             while self.currentId() > Pages.ERROR:
                 self.back()
         page = self.currentPage()
-        page.set_complete(False)
         page.update_content(error)
 
     def _create_preflight(self) -> QWizardPage:

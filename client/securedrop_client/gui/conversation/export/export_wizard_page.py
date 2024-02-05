@@ -172,6 +172,7 @@ class ExportWizardPage(QWizardPage):
 
     @pyqtSlot(object)
     def on_status_received(self, status: ExportStatus) -> None:
+        logger.debug(f"Child page received status {status.value}")
         self.status = status
         self.completeChanged.emit()
         # Some children (not the Prefight Page) may wish to call update_content here
@@ -237,6 +238,7 @@ class PreflightPage(ExportWizardPage):
         else:
             return Pages.INSERT_USB
 
+    @pyqtSlot(object)
     def on_status_received(self, status: ExportStatus):
         self.stop_animate_header()
         if status in (ExportStatus.DEVICE_LOCKED, ExportStatus.DEVICE_WRITABLE):
@@ -258,6 +260,9 @@ class ErrorPage(ExportWizardPage):
         body = STATUS_MESSAGES.get(status)
         self.body.setText(body)
         self.status = status
+
+    def isComplete(self) -> bool:
+        return False
 
 
 class InsertUSBPage(ExportWizardPage):
