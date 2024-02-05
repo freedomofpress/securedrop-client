@@ -4,3 +4,29 @@ updates:
     directory: "/"
     schedule:
       interval: "weekly"
+
+  # Python development dependencies
+  - package-ecosystem: "pip"
+    directory: "/client"
+    schedule:
+      interval: "weekly"
+    allow:
+      - dependency-type: "development"
+  - package-ecosystem: "pip"
+    directory: "/export"
+    schedule:
+      interval: "weekly"
+    allow:
+      - dependency-type: "development"
+  - package-ecosystem: "pip"
+    directory: "/log"
+    schedule:
+      interval: "weekly"
+    allow:
+      - dependency-type: "development"
+  - package-ecosystem: "pip"
+    directory: "/proxy"
+    schedule:
+      interval: "weekly"
+    allow:
+      - dependency-type: "development"
