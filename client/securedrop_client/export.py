@@ -170,8 +170,8 @@ class Export(QObject):
 
     def _on_export_process_finished(self):
         """
-        Callback to handle and emit QProcess results. Method signature
-        cannot change.
+        Callback, handle and emit QProcess result. As with all such callbacks,
+        the method signature cannot change.
         """
         self._cleanup_tmpdir()
         # securedrop-export writes status to stderr
@@ -198,8 +198,8 @@ class Export(QObject):
 
     def _on_export_process_error(self):
         """
-        Callback, called if QProcess cannot complete. Method signature
-        cannot change.
+        Callback, called if QProcess cannot complete export. As with all such, the method
+        signature cannot change.
         """
         self._cleanup_tmpdir()
         err = self.process.readAllStandardError().data().decode("utf-8")
@@ -208,12 +208,18 @@ class Export(QObject):
         self.export_state_changed.emit(ExportStatus.CALLED_PROCESS_ERROR)
 
     def _on_print_preflight_success(self):
+        """
+        Print preflight success callback.
+        """
         self._cleanup_tmpdir()
 
         logger.debug("Print preflight success")
         self.print_preflight_check_succeeded.emit()
 
     def _on_print_prefight_error(self):
+        """
+        Print Preflight error callback.
+        """
         self._cleanup_tmpdir()
         logger.debug("Print preflight error")
         self.print_preflight_check_failed.emit(ExportStatus.PRINT_PREFLIGHT_SUCCESS)
@@ -227,12 +233,20 @@ class Export(QObject):
         self.export_completed.emit()
 
     def end_process(self) -> None:
+        """
+        Tell QProcess to quit if it hasn't already.
+        Connected to the ExportWizard's `finished` signal, which fires
+        when the dialog is closed, cancelled, or finished.
+        """
         self._cleanup_tmpdir()
         logger.debug("Terminate process")
         if self.process is not None and not self.process.waitForFinished(50):
             self.process.terminate()
 
     def _on_print_error(self):
+        """
+        Error callback for print qrexec.
+        """
         self._cleanup_tmpdir()
         err = self.process.readAllStandardError()
         logger.debug(f"Print error: {err}")
