@@ -38,5 +38,6 @@ $OCI_BIN pull debian:${DEBIAN_VERSION}
 
 $OCI_BIN run --rm $OCI_RUN_ARGUMENTS \
     -v "${BUILDER}:/builder:Z" \
+    --env NIGHTLY="${NIGHTLY:-}" \
     --entrypoint "/src/scripts/build-debs-real.sh" \
     debian:${DEBIAN_VERSION}
