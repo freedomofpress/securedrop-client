@@ -173,8 +173,9 @@ class ExportWizardPage(QWizardPage):
     @pyqtSlot(object)
     def on_status_received(self, status: ExportStatus) -> None:
         logger.debug(f"Child page received status {status.value}")
-        self.status = status
-        self.completeChanged.emit()
+        # Child pages should overwrite this method
+        # self.status = status
+        # self.completeChanged.emit()
         # Some children (not the Prefight Page) may wish to call update_content here
 
     def update_content(self, status: ExportStatus, should_show_hint: bool = False) -> None:
@@ -195,6 +196,7 @@ class ExportWizardPage(QWizardPage):
 
 class PreflightPage(ExportWizardPage):
     def __init__(self, export, summary):
+        self.summary = summary
         header = _(
             "Preparing to export:<br />" '<span style="font-weight:normal">{}</span>'
         ).format(summary)
@@ -241,10 +243,16 @@ class PreflightPage(ExportWizardPage):
     @pyqtSlot(object)
     def on_status_received(self, status: ExportStatus):
         self.stop_animate_header()
-        if status in (ExportStatus.DEVICE_LOCKED, ExportStatus.DEVICE_WRITABLE):
+        if status in (
+            ExportStatus.DEVICE_LOCKED,
+            ExportStatus.DEVICE_WRITABLE,
+            ExportStatus.NO_DEVICE_DETECTED,
+            ExportStatus.MULTI_DEVICE_DETECTED,
+            ExportStatus.INVALID_DEVICE_DETECTED,
+        ):
             header = _(
                 "Ready to export:<br />" '<span style="font-weight:normal">{}</span>'
-            ).format(self.header_text)
+            ).format(self.summary)
             self.header.setText(header)
         self.status = status
 
@@ -256,17 +264,13 @@ class ErrorPage(ExportWizardPage):
 
         super().__init__(export, header=header, body=summary)
 
-    def on_status_received(self, status: ExportStatus):
-        body = STATUS_MESSAGES.get(status)
-        self.body.setText(body)
-        self.status = status
-
     def isComplete(self) -> bool:
         return False
 
 
 class InsertUSBPage(ExportWizardPage):
     def __init__(self, export, summary):
+        self.summary = summary
         header = _("Ready to export:<br />" '<span style="font-weight:normal">{}</span>').format(
             summary
         )
@@ -278,38 +282,39 @@ class InsertUSBPage(ExportWizardPage):
 
     @pyqtSlot(object)
     def on_status_received(self, status: ExportStatus) -> None:
-        super().on_status_received(status)
+        logger.debug(f"InsertUSB received {status.value}")
         should_show_hint = status in (
             ExportStatus.NO_DEVICE_DETECTED,
             ExportStatus.MULTI_DEVICE_DETECTED,
             ExportStatus.INVALID_DEVICE_DETECTED,
         )
         self.update_content(status, should_show_hint)
+        self.status = status
 
-    def validatePage(self) -> bool:
-        """
-        Override method to implement custom validation logic, which prevents the
-        wizard from advancing past this stage unless preconditions are met, and
-        shows an error-specific hint to the user.
-        """
-        if self.status in (ExportStatus.DEVICE_WRITABLE, ExportStatus.DEVICE_LOCKED):
-            self.error_details.hide()
-            return True
-        else:
-            logger.debug(f"Status is {self.status}, rechecking")
+    # def validatePage(self) -> bool:
+    #     """
+    #     Override method to implement custom validation logic, which prevents the
+    #     wizard from advancing past this stage unless preconditions are met, and
+    #     shows an error-specific hint to the user.
+    #     """
+    #     if self.status in (ExportStatus.DEVICE_WRITABLE, ExportStatus.DEVICE_LOCKED):
+    #         self.error_details.hide()
+    #         return True
+    #     else:
+    #         logger.debug(f"Status is {self.status}")
 
-            # Show the user a hint
-            if self.status in (
-                ExportStatus.MULTI_DEVICE_DETECTED,
-                ExportStatus.NO_DEVICE_DETECTED,
-                ExportStatus.INVALID_DEVICE_DETECTED,
-            ):
-                self.update_content(self.status, should_show_hint=True)
-            else:
-                # Shouldn't reach
-                # Status may be None here
-                logger.warning("InsertUSBPage encountered unexpected status")
-            return False
+    #         # Show the user a hint
+    #         if self.status in (
+    #             ExportStatus.MULTI_DEVICE_DETECTED,
+    #             ExportStatus.NO_DEVICE_DETECTED,
+    #             ExportStatus.INVALID_DEVICE_DETECTED,
+    #         ):
+    #             self.update_content(self.status, should_show_hint=True)
+    #         else:
+    #             # Shouldn't reach
+    #             # Status may be None here
+    #             logger.warning("InsertUSBPage encountered unexpected status")
+    #         return False
 
     def nextId(self):
         """
@@ -318,8 +323,14 @@ class InsertUSBPage(ExportWizardPage):
         if self.status == ExportStatus.DEVICE_WRITABLE:
             logger.debug("Skip password prompt")
             return Pages.EXPORT_DONE
+        elif self.status == ExportStatus.DEVICE_LOCKED:
+            return Pages.UNLOCK_USB
+        elif self.status in (ExportStatus.UNEXPECTED_RETURN_STATUS, ExportStatus.DEVICE_ERROR):
+            return Pages.ERROR
         else:
-            return super().nextId()
+            next = super().nextId()
+            logger.error("Unexpected status on InsertUSBPage {status.value}, nextID is {next}")
+            return next
 
 
 class FinalPage(ExportWizardPage):
@@ -332,10 +343,13 @@ class FinalPage(ExportWizardPage):
 
     @pyqtSlot(object)
     def on_status_received(self, status: ExportStatus) -> None:
-        super().on_status_received(status)
+        logger.debug(f"Final page received status {status}")
         self.update_content(status)
+        self.status = status
 
     def update_content(self, status: ExportStatus, should_show_hint: bool = False):
+        header = None
+        body = None
         if status == ExportStatus.SUCCESS_EXPORT:
             header = _("Export successful")
             body = _(
@@ -347,13 +361,11 @@ class FinalPage(ExportWizardPage):
             body = STATUS_MESSAGES.get(ExportStatus.ERROR_EXPORT_CLEANUP)
 
         else:
-            header = _("Export failed")
-            if not self.status:
-                self.status = ExportStatus.UNEXPECTED_RETURN_STATUS
-            body = STATUS_MESSAGES.get(self.status)
+            header = _("Working...")
 
         self.header.setText(header)
-        self.body.setText(body)
+        if body:
+            self.body.setText(body)
 
 
 class PassphraseWizardPage(ExportWizardPage):
@@ -398,15 +410,39 @@ class PassphraseWizardPage(ExportWizardPage):
         passphrase_form_layout.addWidget(self.passphrase_field)
         passphrase_form_layout.addWidget(check, alignment=Qt.AlignRight)
 
-        # Add it
         layout.addWidget(self.passphrase_form)
         return layout
 
     @pyqtSlot(object)
     def on_status_received(self, status: ExportStatus) -> None:
-        super().on_status_received(status)
+        logger.debug(f"Passphrase page rececived {status.value}")
         should_show_hint = status in (
             ExportStatus.ERROR_UNLOCK_LUKS,
             ExportStatus.ERROR_UNLOCK_GENERIC,
         )
         self.update_content(status, should_show_hint)
+        self.status = status
+
+    def validate(self):
+        return self.status == ExportStatus.DEVICE_WRITABLE
+
+    def nextId(self):
+        if self.status == ExportStatus.SUCCESS_EXPORT:
+            return Pages.EXPORT_DONE
+        elif self.status in (ExportStatus.ERROR_UNLOCK_LUKS, ExportStatus.ERROR_UNLOCK_GENERIC):
+            return Pages.UNLOCK_USB
+        elif self.status in (
+            ExportStatus.NO_DEVICE_DETECTED,
+            ExportStatus.MULTI_DEVICE_DETECTED,
+            ExportStatus.INVALID_DEVICE_DETECTED,
+        ):
+            return Pages.INSERT_USB
+        elif self.status in (
+            ExportStatus.ERROR_MOUNT,
+            ExportStatus.ERROR_EXPORT,
+            ExportStatus.ERROR_EXPORT_CLEANUP,
+            ExportStatus.UNEXPECTED_RETURN_STATUS,
+        ):
+            return Pages.ERROR
+        else:
+            return super().nextId()

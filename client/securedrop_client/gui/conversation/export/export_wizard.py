@@ -111,14 +111,14 @@ class ExportWizard(QWizard):
         )
 
     def _set_pages(self) -> None:
-        for page in [
-            self._create_preflight(),
-            self._create_errorpage(),
-            self._create_insert_usb(),
-            self._create_passphrase_prompt(),
-            self._create_done(),
+        for id, page in [
+            (Pages.PREFLIGHT, self._create_preflight()),
+            (Pages.ERROR, self._create_errorpage()),
+            (Pages.INSERT_USB, self._create_insert_usb()),
+            (Pages.UNLOCK_USB, self._create_passphrase_prompt()),
+            (Pages.EXPORT_DONE, self._create_done()),
         ]:
-            self.addPage(page)
+            self.setPage(id, page)
 
             # Nice to have, but steals the focus from the password field after 1 character is typed.
             # Probably another way to have it be based on validating the status
@@ -152,7 +152,7 @@ class ExportWizard(QWizard):
         To update the text on an individual page, the page listens
         for this signal and can call `update_content` in the listener.
         """
-        logger.debug(f"Wizard received {status.value}")
+        logger.debug(f"Wizard received {status.value}. Current page is {type(self.currentPage())}")
 
         # Unrecoverable - end the wizard
         if status in [
@@ -178,17 +178,8 @@ class ExportWizard(QWizard):
             target = Pages.UNLOCK_USB
 
         # Someone may have yanked out or unmounted a USB
-        if target:
+        if target and self.currentId() > target:
             self.rewind(target)
-
-        # If the user is stuck, show them a hint.
-        should_show_hint = target == self.currentId()
-        logger.debug(f"{status.value} - should show hint is {should_show_hint}")
-
-        page = self.currentPage()
-        # Sometimes self.currentPage() is None
-        if page and should_show_hint:
-            page.update_content(status, should_show_hint)
 
         # Update status
         self.current_status = status
@@ -207,8 +198,7 @@ class ExportWizard(QWizard):
         """
         if isinstance(self.currentPage(), PreflightPage):
             # Update its status so it shows error next self.currentPage()
-            # self.next()
-            logger.debug("On preflight page")
+            logger.debug("On preflight page, no reordering needed")
         else:
             while self.currentId() > Pages.ERROR:
                 self.back()
@@ -227,9 +217,5 @@ class ExportWizard(QWizard):
     def _create_passphrase_prompt(self) -> QWizardPage:
         return PassphraseWizardPage(self.export)
 
-    # def _create_export(self) -> QWizardPage:
-    #     return ExportPage(self.export)
-
-    # readywhen: all done
     def _create_done(self) -> QWizardPage:
         return FinalPage(self.export)
