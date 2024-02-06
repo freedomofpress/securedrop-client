@@ -12,7 +12,7 @@ python = "^3.9"
 [tool.poetry.group.dev.dependencies]
 black = "^23.7.0"
 flake8 = "^6.0.0"
-mypy = "^1.4.1"
+mypy = "^1.8.0"
 types-setuptools = "^68.0.0"
 pytest = "^7.4.0"
 pytest-cov = "^4.1.0"
