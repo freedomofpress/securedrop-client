@@ -1,0 +1,23 @@
+name: CI
+on: [push, pull_request]
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  lint-desktop:
+    strategy:
+      matrix:
+        debian_version:
+          - bullseye
+          - bookworm
+    runs-on: ubuntu-latest
+    container: debian:${{ matrix.debian_version }}
+    steps:
+      - run: |
+          apt-get update && apt-get install --yes git make desktop-file-utils
+      - uses: actions/checkout@v4
+      - name: Lint .desktop files
+        run: |
+          make lint-desktop
