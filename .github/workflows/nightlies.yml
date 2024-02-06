@@ -1,0 +1,79 @@
+name: Nightlies
+on:
+  schedule:
+    - cron: "0 6 * * *"
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  build-debs:
+    strategy:
+      matrix:
+        debian_version:
+          - bullseye
+          - bookworm
+    runs-on: ubuntu-latest
+    outputs:
+      artifact_id: ${{ steps.upload.outputs.artifact-id }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/checkout@v4
+        with:
+          repository: "freedomofpress/securedrop-builder"
+          path: "securedrop-builder"
+          lfs: true
+      - name: Build packages
+        run: |
+          git config --global --add safe.directory '*'
+          NIGHTLY=1 DEBIAN_VERSION=${{ matrix.debian_version }} BUILDER=securedrop-builder \
+            ./scripts/build-debs.sh
+      - uses: actions/upload-artifact@v4
+        id: upload
+        with:
+          name: build-${{ matrix.debian_version }}
+          path: build
+          if-no-files-found: error
+
+  commit-and-push:
+    runs-on: ubuntu-latest
+    container: debian:bookworm
+    needs:
+      - build-debs
+    steps:
+      - name: Install dependencies
+        run: |
+          apt-get update && apt-get install --yes git git-lfs
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: "*${{ matrix.debian_version }}"
+      - uses: actions/checkout@v4
+        with:
+          repository: "freedomofpress/securedrop-apt-test"
+          path: "securedrop-apt-test"
+          lfs: true
+          token: ${{ secrets.PUSH_TOKEN }}
+      - uses: actions/checkout@v4
+        with:
+          repository: "freedomofpress/build-logs"
+          path: "build-logs"
+          token: ${{ secrets.PUSH_TOKEN }}
+      - name: Commit and push
+        run: |
+          git config --global user.email "securedrop@freedom.press"
+          git config --global user.name "sdcibot"
+          # First publish buildinfo files
+          cd build-logs
+          mkdir -p "buildinfo/$(date +%Y)"
+          cp -v ../build-*/*.buildinfo "buildinfo/$(date +%Y)"
+          git add .
+          git diff-index --quiet HEAD || git commit -m "Publishing buildinfo files for workstation nightlies"
+          git push origin main
+          # Now the packages themselves
+          cd ../securedrop-apt-test
+          cp -v ../build-bullseye/*.deb workstation/bullseye-nightlies/
+          cp -v ../build-bookworm/*.deb workstation/bookworm-nightlies/
+          git add .
+          git diff-index --quiet HEAD || git commit -m "Automated SecureDrop workstation build"
+          git push origin main
