@@ -188,6 +188,7 @@ class ExportWizard(QWizard):
         """
         Navigate back to target page.
         """
+        logger.debug(f"Wizard: rewind from {self.currentId()} to {target}")
         while self.currentId() > target:
             self.back()
 

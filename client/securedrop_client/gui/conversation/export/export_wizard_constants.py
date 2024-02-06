@@ -7,15 +7,18 @@ from securedrop_client.export_status import ExportStatus
 Export wizard page ordering, human-readable status messages
 """
 
-
-# Sequential list of pages (the order matters)
+# Sequential list of pages (the enum value matters as a ranked ordering.)
+# The reason the 'error' page is second is because the other pages have
+# validation logic that means they can't be bypassed by QWizard::next.
+# When we need to show an error, it's easier to go 'back' to the error
+# page and set it to be a FinalPage than it is to try to skip the conditional
+# pages. PyQt6 introduces behaviour that may deprecate this requirement. 
 class Pages(IntEnum):
     PREFLIGHT = 0
     ERROR = 1
     INSERT_USB = 2
     UNLOCK_USB = 3
     EXPORT_DONE = 4
-
 
 # Human-readable status info
 STATUS_MESSAGES = {

@@ -212,17 +212,25 @@ class Export(QObject):
         Print preflight success callback.
         """
         self._cleanup_tmpdir()
+        err = self.process.readAllStandardError().data().decode("utf-8")
+        try:
+            status = ExportStatus(err)
+            self.print_preflight_check_succeeded.emit(status)
+            logger.debug("Print preflight success")
 
-        logger.debug("Print preflight success")
-        self.print_preflight_check_succeeded.emit()
-
+        except ValueError as error:
+            logger.debug(f"Print preflight check failed: {error}")
+            logger.error("Print preflight check failed")
+            self.print_preflight_check_failed.emit(ExportStatus.ERROR_PRINT)
+        
     def _on_print_prefight_error(self):
         """
         Print Preflight error callback.
         """
         self._cleanup_tmpdir()
-        logger.debug("Print preflight error")
-        self.print_preflight_check_failed.emit(ExportStatus.PRINT_PREFLIGHT_SUCCESS)
+        err = self.process.readAllStandardError().data().decode("utf-8")
+        logger.debug(f"Print preflight error: {err}")
+        self.print_preflight_check_failed.emit(ExportStatus.ERROR_PRINT)
 
     # Todo: not sure if we need to connect here, since the print dialog is managed by sd-devices.
     # We can probably use the export callback.
@@ -230,7 +238,8 @@ class Export(QObject):
         self._cleanup_tmpdir()
         logger.debug("Print success")
         self.print_succeeded.emit(ExportStatus.PRINT_SUCCESS)
-        self.export_completed.emit()
+        # TODO: Previously emitted [filepaths]
+        self.export_completed.emit([])
 
     def end_process(self) -> None:
         """
@@ -250,20 +259,7 @@ class Export(QObject):
         self._cleanup_tmpdir()
         err = self.process.readAllStandardError()
         logger.debug(f"Print error: {err}")
-
-        try:
-            result = err.data().decode("utf-8").strip()
-            if result:
-                logger.debug(f"Result is {result}")
-                status = ExportStatus(result)
-                self.print_failed.emit(ExportError(status))
-            else:
-                logger.error("Print error, but no value we could parse")
-                self.print_failed.emit(ExportStatus.ERROR_PRINT)
-
-        except ValueError as e:
-            logger.debug(f"Export subprocess returned unexpected value: {e}")
-            self.print_failed.emit(ExportError(ExportStatus.ERROR_PRINT))
+        self.print_failed.emit(ExportStatus.ERROR_PRINT)
 
     def print(self, filepaths: List[str]) -> None:
         """

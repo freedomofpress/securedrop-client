@@ -9,7 +9,9 @@ from PyQt5.QtWidgets import (
     QGraphicsDropShadowEffect,
     QHBoxLayout,
     QLabel,
+    QLayout,
     QLineEdit,
+    QSizePolicy,
     QVBoxLayout,
     QWidget,
     QWizardPage,
@@ -100,7 +102,7 @@ class ExportWizardPage(QWizardPage):
         self.header.setObjectName("ModalDialog_header")
         header_container_layout.addWidget(self.header_icon)
         header_container_layout.addWidget(self.header_spinner_label)
-        header_container_layout.addWidget(self.header, alignment=Qt.AlignCenter)
+        header_container_layout.addWidget(self.header, alignment=Qt.AlignLeft) # Prev: AlignCenter
         header_container_layout.addStretch()
         self.header_line = QWidget()
         self.header_line.setObjectName("ModalDialog_header_line")
@@ -110,6 +112,7 @@ class ExportWizardPage(QWizardPage):
         self.body.setObjectName("ModalDialog_body")
         self.body.setWordWrap(True)
         self.body.setScaledContents(True)
+
         body_container = QWidget()
         self.body_layout = QVBoxLayout()
         self.body_layout.setContentsMargins(
@@ -117,6 +120,10 @@ class ExportWizardPage(QWizardPage):
         )
         body_container.setLayout(self.body_layout)
         self.body_layout.addWidget(self.body)
+        self.body_layout.setSizeConstraint(QLayout.SetMinimumSize)
+
+        # TODO: it's either like this, or in the parent layout elements 
+        self.body_layout.setSizeConstraint(QLayout.SetMinimumSize)
 
         # Widget for displaying error messages (hidden by default)
         self.error_details = QLabel()
@@ -138,7 +145,6 @@ class ExportWizardPage(QWizardPage):
         parent_layout.addWidget(header_container)
         parent_layout.addWidget(self.header_line)
         parent_layout.addWidget(body_container)
-        # parent_layout.addStretch(1)
         parent_layout.addWidget(self.error_details)
         # parent_layout.setSizeConstraint(QLayout.SetFixedSize)
 
@@ -172,11 +178,7 @@ class ExportWizardPage(QWizardPage):
 
     @pyqtSlot(object)
     def on_status_received(self, status: ExportStatus) -> None:
-        logger.debug(f"Child page received status {status.value}")
-        # Child pages should overwrite this method
-        # self.status = status
-        # self.completeChanged.emit()
-        # Some children (not the Prefight Page) may wish to call update_content here
+        raise NotImplementedError("Children must implement")
 
     def update_content(self, status: ExportStatus, should_show_hint: bool = False) -> None:
         """
@@ -256,7 +258,6 @@ class PreflightPage(ExportWizardPage):
             self.header.setText(header)
         self.status = status
 
-
 class ErrorPage(ExportWizardPage):
     def __init__(self, export, summary):
         header = _("Export Failed")
@@ -266,7 +267,10 @@ class ErrorPage(ExportWizardPage):
 
     def isComplete(self) -> bool:
         return False
-
+    
+    @pyqtSlot(object)
+    def on_status_received(self, status: ExportStatus):
+        pass
 
 class InsertUSBPage(ExportWizardPage):
     def __init__(self, export, summary):
@@ -284,37 +288,39 @@ class InsertUSBPage(ExportWizardPage):
     def on_status_received(self, status: ExportStatus) -> None:
         logger.debug(f"InsertUSB received {status.value}")
         should_show_hint = status in (
-            ExportStatus.NO_DEVICE_DETECTED,
             ExportStatus.MULTI_DEVICE_DETECTED,
             ExportStatus.INVALID_DEVICE_DETECTED,
-        )
+        ) or (self.status == status ==  ExportStatus.NO_DEVICE_DETECTED)
         self.update_content(status, should_show_hint)
         self.status = status
+        self.completeChanged.emit()
+        if status in (ExportStatus.DEVICE_LOCKED, ExportStatus.DEVICE_WRITABLE):
+            self.wizard().next() 
 
-    # def validatePage(self) -> bool:
-    #     """
-    #     Override method to implement custom validation logic, which prevents the
-    #     wizard from advancing past this stage unless preconditions are met, and
-    #     shows an error-specific hint to the user.
-    #     """
-    #     if self.status in (ExportStatus.DEVICE_WRITABLE, ExportStatus.DEVICE_LOCKED):
-    #         self.error_details.hide()
-    #         return True
-    #     else:
-    #         logger.debug(f"Status is {self.status}")
+    def validatePage(self) -> bool:
+        """
+        Override method to implement custom validation logic, which
+        shows an error-specific hint to the user.
+        """
+        if self.status in (ExportStatus.DEVICE_WRITABLE, ExportStatus.DEVICE_LOCKED):
+            self.error_details.hide()
+            return True
+        else:
+            logger.debug(f"Status is {self.status}")
 
-    #         # Show the user a hint
-    #         if self.status in (
-    #             ExportStatus.MULTI_DEVICE_DETECTED,
-    #             ExportStatus.NO_DEVICE_DETECTED,
-    #             ExportStatus.INVALID_DEVICE_DETECTED,
-    #         ):
-    #             self.update_content(self.status, should_show_hint=True)
-    #         else:
-    #             # Shouldn't reach
-    #             # Status may be None here
-    #             logger.warning("InsertUSBPage encountered unexpected status")
-    #         return False
+            # Show the user a hint
+            if self.status in (
+                ExportStatus.MULTI_DEVICE_DETECTED,
+                ExportStatus.NO_DEVICE_DETECTED,
+                ExportStatus.INVALID_DEVICE_DETECTED,
+            ):
+                self.update_content(self.status, should_show_hint=True)
+                return False
+            else:
+                # Status may be None here
+                logger.warning("InsertUSBPage encountered unexpected status")
+                return super().validatePage()
+
 
     def nextId(self):
         """
@@ -410,7 +416,7 @@ class PassphraseWizardPage(ExportWizardPage):
         passphrase_form_layout.addWidget(self.passphrase_field)
         passphrase_form_layout.addWidget(check, alignment=Qt.AlignRight)
 
-        layout.addWidget(self.passphrase_form)
+        layout.insertWidget(1, self.passphrase_form)
         return layout
 
     @pyqtSlot(object)
@@ -422,9 +428,14 @@ class PassphraseWizardPage(ExportWizardPage):
         )
         self.update_content(status, should_show_hint)
         self.status = status
+        self.completeChanged.emit()
+        if status in (ExportStatus.SUCCESS_EXPORT, ExportStatus.ERROR_EXPORT_CLEANUP):
+            self.wizard().next()
 
-    def validate(self):
-        return self.status == ExportStatus.DEVICE_WRITABLE
+    def validatePage(self):
+        # Also to add: DEVICE_BUSY for unmounting.
+        # This shouldn't stop us from going "back" to an error page
+        return self.status in (ExportStatus.DEVICE_WRITABLE, ExportStatus.SUCCESS_EXPORT, ExportStatus.ERROR_EXPORT_CLEANUP)
 
     def nextId(self):
         if self.status == ExportStatus.SUCCESS_EXPORT:
