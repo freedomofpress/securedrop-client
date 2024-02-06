@@ -3,19 +3,6 @@
 .PHONY: all
 all: help
 
-.PHONY: bandit
-bandit: ## Run bandit with medium level excluding test-related folders
-	@echo "Running bandit security checks…"
-	@poetry run bandit -ll --recursive securedrop_proxy
-
-.PHONY: safety
-safety: ## Runs `safety check` to check python dependencies for vulnerabilities
-	@echo "Running safety against build requirements…"
-	@poetry run safety check --full-report \
-		--ignore 61601 \
-		--ignore 61893 \
-		-r build-requirements.txt
-
 .PHONY: lint
 lint: check-isort check-black mypy ## Run isort, black and flake8 and mypy
 	@poetry run flake8 securedrop_proxy tests
@@ -56,7 +43,7 @@ browse-coverage: .coverage ## Generates and opens HTML coverage report
 	@xdg-open htmlcov/index.html 2>/dev/null || open htmlcov/index.html 2>/dev/null
 
 .PHONY: check
-check: clean lint test mypy safety bandit  ## Runs all tests and code checkers
+check: clean lint test mypy ## Runs all tests and code checkers
 
 .PHONY: clean
 clean:  ## Clean the workspace of generated resources

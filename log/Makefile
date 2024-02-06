@@ -1,18 +1,6 @@
 DEFAULT_GOAL: help
 SHELL := /bin/bash
 
-# Bandit is a static code analysis tool to detect security vulnerabilities in Python applications
-# https://wiki.openstack.org/wiki/Security/Projects/Bandit
-.PHONY: bandit
-bandit: ## Run bandit with medium level excluding test-related folders
-	@echo "Running bandit security checks…"
-	@poetry run bandit -ll --recursive . --exclude tests,.venv
-
-.PHONY: safety
-safety: ## Runs `safety check` to check python dependencies for vulnerabilities
-	@echo "Running safety against build requirements…"
-	@poetry run safety check --full-report -r build-requirements.txt
-
 .PHONY: check
 check: flake8 mypy test
 

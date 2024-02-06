@@ -76,7 +76,7 @@ common-steps:
       name: Run static analysis on source code to find security issues
       command: |
         set -e
-        make -C client semgrep bandit
+        make -C client semgrep
 
   - &client_check_source_strings
     run:
@@ -91,13 +91,6 @@ common-steps:
       command: |
         set -e
         make -C client verify-mo
-
-  - &client_check_python_dependencies_for_vulnerabilities
-    run:
-      name: Check Python dependencies for known vulnerabilities
-      command: |
-        set -e
-        make -C client safety
 
   - &export_install_poetry
     run:
@@ -144,12 +137,6 @@ common-steps:
       name: Run static analysis on source code to find security issues
       command: |
         make -C export semgrep
-
-  - &export_check_python_dependencies_for_vulnerabilities
-    run:
-      name: Check Python dependencies for known vulnerabilities
-      command: |
-        make -C export safety
 
   - &log_install_poetry
     run:
@@ -223,24 +210,6 @@ common-steps:
       command: |
         make -C proxy lint
 
-  - &proxy_check_security
-    run:
-      name: Run static analysis on source code to find security issues
-      command: |
-        set -e
-        cd proxy
-        poetry update bandit
-        make bandit
-
-  - &proxy_check_python_dependencies_for_vulnerabilities
-    run:
-      name: Check Python dependencies for known vulnerabilities
-      command: |
-        set -e
-        cd proxy
-        poetry update safety
-        make safety
-
 version: 2.1
 
 jobs:
@@ -295,16 +264,6 @@ jobs:
       - *client_install_testing_dependencies
       - *client_check_security
 
-  client_check-python-security:
-    parameters: *parameters
-    docker: *docker
-    steps:
-      - *client_install_poetry
-      - checkout
-      - *client_install_testing_dependencies
-      - *client_check_python_dependencies_for_vulnerabilities
-
-
   client_check-internationalization:
     parameters: *parameters
     docker: *docker
@@ -344,15 +303,6 @@ jobs:
       - *export_install_testing_dependencies
       - *export_check_security
 
-  export_check-python-security:
-    parameters: *parameters
-    docker: *docker
-    steps:
-      - *export_install_poetry
-      - checkout
-      - *export_install_testing_dependencies
-      - *export_check_python_dependencies_for_vulnerabilities
-
   log_test-bullseye:
     docker:
       - image: debian:bullseye
@@ -382,24 +332,6 @@ jobs:
       - *proxy_install_testing_dependencies
       - *proxy_run_lint
 
-  proxy_check-security:
-    parameters: *parameters
-    docker: *docker
-    steps:
-      - checkout
-      - *proxy_install_poetry
-      - *proxy_install_testing_dependencies
-      - *proxy_check_security
-
-  proxy_check-python-security:
-    parameters: *parameters
-    docker: *docker
-    steps:
-      - checkout
-      - *proxy_install_poetry
-      - *proxy_install_testing_dependencies
-      - *proxy_check_python_dependencies_for_vulnerabilities
-
 
 workflows:
   securedrop_client_ci:
@@ -418,8 +350,6 @@ workflows:
           matrix: *matrix
       - client_check-security:
           matrix: *matrix
-      - client_check-python-security:
-          matrix: *matrix
       - client_check-internationalization:
           matrix: *matrix
 
@@ -430,8 +360,6 @@ workflows:
       - export_lint:
           matrix: *matrix
       - export_check-security:
-          matrix: *matrix
-      - export_check-python-security:
           matrix: *matrix
 
   securedrop_log_ci:
@@ -449,10 +377,6 @@ workflows:
               image:
                 - bullseye
       - proxy_lint:
-          matrix: *proxy_matrix
-      - proxy_check-security:
-          matrix: *proxy_matrix
-      - proxy_check-python-security:
           matrix: *proxy_matrix
 
   client_nightly:

@@ -7,6 +7,12 @@ updates:
 
   # Python development dependencies
   - package-ecosystem: "pip"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    allow:
+      - dependency-type: "development"
+  - package-ecosystem: "pip"
     directory: "/client"
     schedule:
       interval: "weekly"

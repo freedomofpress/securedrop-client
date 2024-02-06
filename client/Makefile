@@ -113,24 +113,8 @@ test-sdk: ## Run just the sdk tests
 lint: ## Run the linters
 	@poetry run flake8 securedrop_client tests
 
-.PHONY: safety
-safety: ## Runs `safety check` to check python dependencies for vulnerabilities
-	@echo "Checking build-requirements.txt with safety"
-	@poetry run safety check --full-report \
-		--ignore 51668 \
-		--ignore 61601 \
-		--ignore 61893 \
-		--ignore 62044 \
-		-r build-requirements.txt
-
-# Bandit is a static code analysis tool to detect security vulnerabilities in Python applications
-# https://wiki.openstack.org/wiki/Security/Projects/Bandit
-.PHONY: bandit
-bandit: ## Run bandit with medium level excluding test-related folders
-	@poetry run bandit -ll --recursive . --exclude ./tests,./.venv
-
 .PHONY: check
-check: clean check-black check-isort semgrep bandit lint mypy test-random test-integration test-functional ## Run the full CI test suite
+check: clean check-black check-isort semgrep lint mypy test-random test-integration test-functional ## Run the full CI test suite
 
 # Explanation of the below shell command should it ever break.
 # 1. Set the field separator to ": ##" and any make targets that might appear between : and ##

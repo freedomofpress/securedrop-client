@@ -10,6 +10,19 @@ lint-desktop: ## Lint .desktop files
 	# See: https://www.freedesktop.org/wiki/Software/desktop-file-utils/
 	find . -name *.desktop -type f -not -path '*/\.git/*' | xargs desktop-file-validate
 
+.PHONY: lint
+lint: bandit ## Run linters and formatters
+
+bandit: ## Run bandit security checks
+	@poetry run bandit -c pyproject.toml -r . --severity-level medium
+
+safety:  ## Run safety dependency checks on build dependencies
+	find . -name build-requirements.txt | xargs -n1 poetry run safety check --full-report \
+		--ignore 51668 \
+		--ignore 61601 \
+		--ignore 61893 \
+		--ignore 62044 \
+ 		-r
 
 # Explanation of the below shell command should it ever break.
 # 1. Set the field separator to ": ##" and any make targets that might appear between : and ##
