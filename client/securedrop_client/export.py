@@ -202,7 +202,7 @@ class Export(QObject):
         signature cannot change.
         """
         self._cleanup_tmpdir()
-        err = self.process.readAllStandardError().data().decode("utf-8")
+        err = self.process.readAllStandardError().data().decode("utf-8").strip()
 
         logger.error(f"Export process error: {err}")
         self.export_state_changed.emit(ExportStatus.CALLED_PROCESS_ERROR)
@@ -212,29 +212,29 @@ class Export(QObject):
         Print preflight success callback.
         """
         self._cleanup_tmpdir()
-        err = self.process.readAllStandardError().data().decode("utf-8")
+        output = self.process.readAllStandardError().data().decode("utf-8").strip()
         try:
-            status = ExportStatus(err)
+            status = ExportStatus(output)
             self.print_preflight_check_succeeded.emit(status)
             logger.debug("Print preflight success")
 
         except ValueError as error:
             logger.debug(f"Print preflight check failed: {error}")
             logger.error("Print preflight check failed")
-            self.print_preflight_check_failed.emit(ExportStatus.ERROR_PRINT)
+            self.print_preflight_check_failed.emit(ExportError(ExportStatus.ERROR_PRINT))
         
     def _on_print_prefight_error(self):
         """
         Print Preflight error callback.
         """
         self._cleanup_tmpdir()
-        err = self.process.readAllStandardError().data().decode("utf-8")
+        err = self.process.readAllStandardError().data().decode("utf-8").strip()
         logger.debug(f"Print preflight error: {err}")
-        self.print_preflight_check_failed.emit(ExportStatus.ERROR_PRINT)
+        self.print_preflight_check_failed.emit(ExportError(ExportStatus.ERROR_PRINT))
 
     # Todo: not sure if we need to connect here, since the print dialog is managed by sd-devices.
     # We can probably use the export callback.
-    def _on_print_sucess(self):
+    def _on_print_success(self):
         self._cleanup_tmpdir()
         logger.debug("Print success")
         self.print_succeeded.emit(ExportStatus.PRINT_SUCCESS)
@@ -259,7 +259,7 @@ class Export(QObject):
         self._cleanup_tmpdir()
         err = self.process.readAllStandardError()
         logger.debug(f"Print error: {err}")
-        self.print_failed.emit(ExportStatus.ERROR_PRINT)
+        self.print_failed.emit(ExportError(ExportStatus.ERROR_PRINT))
 
     def print(self, filepaths: List[str]) -> None:
         """
@@ -276,12 +276,12 @@ class Export(QObject):
                 metadata=self._PRINT_METADATA,
                 filepaths=filepaths,
             )
-            self._run_qrexec_export(archive_path, self._on_print_sucess, self._on_print_error)
+            self._run_qrexec_export(archive_path, self._on_print_success, self._on_print_error)
 
         except IOError as e:
             logger.error("Export failed")
             logger.debug(f"Export failed: {e}")
-            self.print_failed.emit(e)
+            self.print_failed.emit(ExportError(ExportStatus.ERROR_PRINT))
 
         self.export_completed.emit(filepaths)
 
