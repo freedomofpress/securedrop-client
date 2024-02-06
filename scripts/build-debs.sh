@@ -1,6 +1,12 @@
 #!/bin/bash
 # shellcheck disable=SC2209,SC2086
-# Build packages. This runs *outside* the container.
+# Build packages! This script is configured by environment variables:
+# `BUILDER`: relative path to the securedrop-builder repository,
+#            defaults to "../securedrop-builder"
+# `DEBIAN_VERSION`: codename to build for, defaults to "bullseye"
+# `NIGHTLY`: if set, add current time to the version number
+
+# This script runs *outside* the container.
 
 set -euxo pipefail
 
