@@ -36,7 +36,7 @@ jobs:
           PKG_DIR=../proxy make -C securedrop-builder requirements
           git config --global --add safe.directory "$GITHUB_WORKSPACE"
           git diff --ignore-matching-lines=# --exit-code
-          
+
 
   build-debs:
     strategy:
@@ -119,3 +119,39 @@ jobs:
             echo "Diffoscoping $deb"
             diffoscope build-${{ matrix.debian_version }}/$deb build2-${{ matrix.debian_version }}/$deb
           done;
+
+  piuparts:
+    strategy:
+      fail-fast: false
+      matrix:
+        # TODO: client sets up apparmor, which doesn't work in our CI setup
+        # TODO: workstation-config pulls in systemd, which doesn't work
+        # TODO: workstation-viewer pulls in grsec and qubes packages
+        package:
+          - export
+          - keyring
+          - log
+          - proxy
+        debian_version:
+          - bullseye
+          - bookworm
+    runs-on: ubuntu-latest
+    needs:
+      - build-debs
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: "build-${{ matrix.debian_version }}"
+      - name: Run piuparts
+        run: |
+          # We need to run it as docker-in-docker
+          docker run \
+            -v "/var/lib/docker:/var/lib/docker" \
+            -v "/var/run/docker.sock:/var/run/docker.sock" \
+            -v "/$(pwd)/keyring:/keyring" \
+            -v "/$(pwd)/build-${{ matrix.debian_version }}:/build" \
+            -v "/$(pwd)/.github/workflows/piuparts:/piuparts" \
+            -e DISTRO=${{ matrix.debian_version }} \
+            -e PACKAGE=${{ matrix.package }} \
+            debian:${{ matrix.debian_version }} bash /piuparts/run-piuparts.sh
