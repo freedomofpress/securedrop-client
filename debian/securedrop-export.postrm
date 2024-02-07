@@ -22,8 +22,14 @@ set -e
 case "$1" in
     purge|remove|upgrade|failed-upgrade|abort-install|abort-upgrade|disappear)
 
-    update-desktop-database /usr/share/applications
-    update-mime-database /usr/share/mime
+    # There is no guarantees dependencies are available in postrm, so
+    # conditionally issue these updates.
+    if [[ -x "/usr/bin/update-desktop-database" ]]; then
+        update-desktop-database /usr/share/applications
+    fi
+    if [[ -x "/usr/bin/update-mime-database" ]]; then
+        update-mime-database /usr/share/mime
+    fi
     ;;
 
     *)
