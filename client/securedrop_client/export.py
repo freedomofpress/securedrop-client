@@ -1,14 +1,14 @@
 import json
 import logging
 import os
-import tarfile
 import shutil
+import tarfile
 from io import BytesIO
 from shlex import quote
-from tempfile import TemporaryDirectory, mkdtemp
+from tempfile import mkdtemp
 from typing import Callable, List, Optional
 
-from PyQt5.QtCore import QProcess, QObject, pyqtSignal
+from PyQt5.QtCore import QObject, QProcess, pyqtSignal
 
 from securedrop_client.export_status import ExportError, ExportStatus
 
@@ -54,7 +54,7 @@ class Export(QObject):
     print_failed = pyqtSignal(object)
 
     process = None  # Optional[QProcess]
-    tmpdir = None  # Note: context-managed tmpdir goes out of scope too quickly, so we create then clean it up
+    tmpdir = None  # mkdtemp directory must be cleaned up when QProcess completes
 
     def run_printer_preflight_checks(self) -> None:
         """
@@ -62,6 +62,7 @@ class Export(QObject):
         """
         logger.info("Beginning printer preflight check")
         self.tmpdir = mkdtemp()
+        os.chmod(self.tmpdir, 0o700)
 
         try:
             archive_path = self._create_archive(
@@ -73,7 +74,7 @@ class Export(QObject):
                 archive_path, self._on_print_preflight_complete, self._on_print_prefight_error
             )
         except ExportError as e:
-            logger.error("Error creating archive: {e}")
+            logger.error(f"Error creating archive: {e}")
             self._on_print_prefight_error()
 
     def run_export_preflight_checks(self) -> None:
@@ -84,6 +85,7 @@ class Export(QObject):
 
         try:
             self.tmpdir = mkdtemp()
+            os.chmod(self.tmpdir, 0o700)
 
             archive_path = self._create_archive(
                 archive_dir=self.tmpdir,
@@ -112,6 +114,8 @@ class Export(QObject):
                 metadata[self._DISK_ENCRYPTION_KEY_NAME] = passphrase
 
             self.tmpdir = mkdtemp()
+            os.chmod(self.tmpdir, 0o700)
+
             archive_path = self._create_archive(
                 archive_dir=self.tmpdir,
                 archive_fn=self._DISK_FN,
@@ -180,14 +184,14 @@ class Export(QObject):
 
         self.process.start(qrexec, args)
 
-    def _cleanup_tmpdir(self):
+    def _cleanup_tmpdir(self) -> None:
         """
         Should be called in all qrexec completion callbacks.
         """
         if self.tmpdir and os.path.exists(self.tmpdir):
             shutil.rmtree(self.tmpdir)
 
-    def _on_export_process_complete(self):
+    def _on_export_process_complete(self) -> None:
         """
         Callback, handle and emit QProcess result. As with all such callbacks,
         the method signature cannot change.
@@ -217,7 +221,7 @@ class Export(QObject):
                 logger.error("Export preflight returned unexpected value")
                 self.export_state_changed.emit(ExportStatus.UNEXPECTED_RETURN_STATUS)
 
-    def _on_export_process_error(self):
+    def _on_export_process_error(self) -> None:
         """
         Callback, called if QProcess cannot complete export. As with all such, the method
         signature cannot change.
@@ -229,7 +233,7 @@ class Export(QObject):
             logger.error(f"Export process error: {err}")
         self.export_state_changed.emit(ExportStatus.CALLED_PROCESS_ERROR)
 
-    def _on_print_preflight_complete(self):
+    def _on_print_preflight_complete(self) -> None:
         """
         Print preflight completion callback.
         """
@@ -250,7 +254,7 @@ class Export(QObject):
                 logger.error("Print preflight check failed")
                 self.print_preflight_check_failed.emit(ExportError(ExportStatus.ERROR_PRINT))
 
-    def _on_print_prefight_error(self):
+    def _on_print_prefight_error(self) -> None:
         """
         Print Preflight error callback. Occurs when the QProcess itself fails.
         """
@@ -262,7 +266,7 @@ class Export(QObject):
 
     # Todo: not sure if we need to connect here, since the print dialog is managed by sd-devices.
     # We can probably use the export callback.
-    def _on_print_success(self):
+    def _on_print_success(self) -> None:
         self._cleanup_tmpdir()
         logger.debug("Print success")
         self.print_succeeded.emit(ExportStatus.PRINT_SUCCESS)
@@ -280,13 +284,16 @@ class Export(QObject):
         if self.process is not None and not self.process.waitForFinished(50):
             self.process.terminate()
 
-    def _on_print_error(self):
+    def _on_print_error(self) -> None:
         """
         Error callback for print qrexec.
         """
         self._cleanup_tmpdir()
-        err = self.process.readAllStandardError()
-        logger.debug(f"Print error: {err}")
+        if self.process:
+            err = self.process.readAllStandardError()
+            logger.debug(f"Print error: {err}")
+        else:
+            logger.error("Print error (stderr unavailable)")
         self.print_failed.emit(ExportError(ExportStatus.ERROR_PRINT))
 
     def print(self, filepaths: List[str]) -> None:

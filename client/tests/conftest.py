@@ -4,8 +4,8 @@ import subprocess
 import tempfile
 from configparser import ConfigParser
 from datetime import datetime
-from uuid import uuid4
 from unittest import mock
+from uuid import uuid4
 
 import pytest
 from PyQt5.QtCore import Qt
@@ -180,15 +180,13 @@ def mock_export_locked():
     device = conversation.ExportDevice()
 
     device.run_export_preflight_checks = lambda: device.export_state_changed.emit(
-        ExportStatus.DEVICE_LOCKED
+        ExportStatus.NO_DEVICE_DETECTED
     )
     device.run_printer_preflight_checks = lambda: None
     device.print = lambda filepaths: None
     device.export = mock.MagicMock()
     device.export.side_effect = [
-        lambda filepaths, passphrase: device.export_state_changed.emit(
-            ExportStatus.DEVICE_WRITABLE
-        ),
+        lambda filepaths, passphrase: device.export_state_changed.emit(ExportStatus.DEVICE_LOCKED),
         lambda filepaths, passphrase: device.export_state_changed.emit(ExportStatus.SUCCESS_EXPORT),
     ]
 
@@ -218,14 +216,14 @@ def mock_export_unlocked():
 
 
 @pytest.fixture(scope="function")
-def mock_export_no_usb_then_bad_passphrase_then_fail():
+def mock_export_no_usb_then_bad_passphrase():
     """
     Represents the following scenario:
         * Export wizard launched
         * Locked USB inserted
         * Mistyped Passphrase
         * Correct passphrase
-        * Export fails
+        * Export succeeds
     """
     device = conversation.ExportDevice()
 
@@ -243,7 +241,7 @@ def mock_export_no_usb_then_bad_passphrase_then_fail():
         lambda filepaths, passphrase: device.export_state_changed.emit(
             ExportStatus.DEVICE_WRITABLE
         ),
-        lambda filepaths, passphrase: device.export_state_changed.emit(ExportStatus.ERROR_EXPORT),
+        lambda filepaths, passphrase: device.export_state_changed.emit(ExportStatus.SUCCESS_EXPORT),
     ]
 
     return device

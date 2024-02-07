@@ -7,6 +7,13 @@ https://github.com/freedomofpress/securedrop-client/wiki/Test-plan#basic-client-
 import pytest
 from PyQt5.QtCore import Qt
 
+from securedrop_client.gui.conversation.export.export_wizard_page import (
+    ErrorPage,
+    FinalPage,
+    InsertUSBPage,
+    PassphraseWizardPage,
+    PreflightPage,
+)
 from securedrop_client.gui.widgets import FileWidget, SourceConversationWrapper
 from tests.conftest import (
     TIME_CLICK_ACTION,
@@ -14,13 +21,6 @@ from tests.conftest import (
     TIME_RENDER_CONV_VIEW,
     TIME_RENDER_EXPORT_WIZARD,
     TIME_RENDER_SOURCE_LIST,
-)
-
-from securedrop_client.gui.conversation.export.export_wizard_page import (
-    PreflightPage,
-    InsertUSBPage,
-    PassphraseWizardPage,
-    FinalPage,
 )
 
 
@@ -129,13 +129,13 @@ def test_export_wizard_device_locked(
     qtbot.wait(TIME_CLICK_ACTION)
 
     assert isinstance(
-        export_wizard.currentPage, FinalPage
+        export_wizard.currentPage(), FinalPage
     ), f"Actual: {export_wizard.currentPage()} ({export_wizard.currentId()})"
 
 
 @pytest.mark.vcr()
 def test_export_wizard_dialog_device_already_unlocked(
-    functional_test_logged_in_context, qtbot, mocker, mock_export_no_usb_then_locked
+    functional_test_logged_in_context, qtbot, mocker, mock_export_unlocked
 ):
     """
     Download a file, export it, and verify that the export is complete.
@@ -146,7 +146,7 @@ def test_export_wizard_dialog_device_already_unlocked(
         * Export success
     """
     export_wizard = _setup_export(
-        functional_test_logged_in_context, qtbot, mocker, mock_export_no_usb_then_locked
+        functional_test_logged_in_context, qtbot, mocker, mock_export_unlocked
     )
 
     assert isinstance(
@@ -174,11 +174,11 @@ def test_export_wizard_dialog_device_already_unlocked(
 
 
 @pytest.mark.vcr()
-def test_export_wizard_no_device_then_fail(
+def test_export_wizard_no_device_then_bad_passphrase(
     functional_test_logged_in_context,
     qtbot,
     mocker,
-    mock_export_no_usb_then_bad_passphrase_then_fail,
+    mock_export_no_usb_then_bad_passphrase,
 ):
     """
     Download a file, attempt export, encounter error that terminates the wizard early.
@@ -189,14 +189,13 @@ def test_export_wizard_no_device_then_fail(
         * Insert USB
         * Enter passphrase incorrectly
         * Re-enter passphrase
-        * Export fails (eg USB is full)
-        * Wizard should still advance to final page, but show error state
+        * Export succeeds
     """
     export_wizard = _setup_export(
         functional_test_logged_in_context,
         qtbot,
         mocker,
-        mock_export_no_usb_then_bad_passphrase_then_fail,
+        mock_export_no_usb_then_bad_passphrase,
     )
 
     assert isinstance(
@@ -250,7 +249,7 @@ def test_export_wizard_no_device_then_fail(
         export_wizard.currentPage().passphrase_field, "correct passwords unlock swimmingly!"
     )
 
-    def error_mount_page():
+    def final_page():
         """
         After an incorrect password, the 'error details' should be visible
         with a message about incorrect passphrase.
@@ -258,15 +257,54 @@ def test_export_wizard_no_device_then_fail(
         assert isinstance(
             export_wizard.currentPage(), FinalPage
         ), f"Actual: {export_wizard.currentPage()} ({export_wizard.currentId()})"
-        assert export_wizard.currentPage().header.text() == "Export failed"
 
-    qtbot.mouseClick(export_wizard.currentPage().passphrase_field, Qt.LeftButton)
+    qtbot.mouseClick(export_wizard.next_button, Qt.LeftButton)
     qtbot.wait(TIME_CLICK_ACTION)
-    qtbot.waitUntil(error_mount_page, timeout=TIME_CLICK_ACTION)
+    qtbot.waitUntil(final_page, timeout=TIME_CLICK_ACTION)
 
+    assert isinstance(
+        export_wizard.currentPage, FinalPage
+    ), f"Actual: {export_wizard.currentPage()} ({export_wizard.currentId()})"
+
+
+@pytest.mark.vcr()
+def test_export_wizard_error(
+    functional_test_logged_in_context, qtbot, mocker, mock_export_fail_early
+):
+    """
+    Represents the following scenario:
+        * Locked USB inserted
+        * Export wizard launched
+        * Unrecoverable error before export happens
+          (eg, mount error)
+    """
+    export_wizard = _setup_export(
+        functional_test_logged_in_context, qtbot, mocker, mock_export_fail_early
+    )
+
+    assert isinstance(
+        export_wizard.currentPage(), PreflightPage
+    ), f"Actual: {export_wizard.currentPage()} ({export_wizard.currentId()})"
+
+    def check_password_page():
+        assert isinstance(
+            export_wizard.currentPage(), PassphraseWizardPage
+        ), f"Actual: {export_wizard.currentPage()} ({export_wizard.currentId()})"
+
+    # Move to "insert usb" screen
+    qtbot.mouseClick(export_wizard.next_button, Qt.LeftButton)
+    qtbot.wait(TIME_CLICK_ACTION)
+    qtbot.waitUntil(check_password_page, timeout=TIME_CLICK_ACTION)
+
+    def check_error_page():
+        assert isinstance(
+            export_wizard.currentPage(), ErrorPage
+        ), f"Actual: {export_wizard.currentPage()} ({export_wizard.currentId()})"
+
+    # Continue exporting the file
     qtbot.mouseClick(export_wizard.next_button, Qt.LeftButton)
     qtbot.wait(TIME_CLICK_ACTION)
 
     assert isinstance(
-        export_wizard.currentPage, FinalPage
+        export_wizard.currentPage(), ErrorPage
     ), f"Actual: {export_wizard.currentPage()} ({export_wizard.currentId()})"

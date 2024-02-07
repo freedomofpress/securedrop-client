@@ -1,5 +1,6 @@
 import logging
 from gettext import gettext as _
+from typing import Optional
 
 from pkg_resources import resource_string
 from PyQt5.QtCore import QSize, Qt, pyqtSlot
@@ -9,9 +10,7 @@ from PyQt5.QtWidgets import (
     QGraphicsDropShadowEffect,
     QHBoxLayout,
     QLabel,
-    QLayout,
     QLineEdit,
-    QSizePolicy,
     QVBoxLayout,
     QWidget,
     QWizardPage,
@@ -30,13 +29,16 @@ logger = logging.getLogger(__name__)
 
 class ExportWizardPage(QWizardPage):
     """
-    Base class for all export wizard pages. Individual pages should inherit
+    Base class for all export wizard pages. Individual pages must inherit
     from this class to:
-        * include additional layout items
-        * implement dynamic ordering (i.e., if the next window varies
+        * Implement `on_status_received`, a listener that receives export
+          statuses in order to update the UI and store a reference to the
+          current state.
+        * Include additional layout items
+        * Implement dynamic ordering (i.e., if the next window varies
           depending on the result of the previous action, in which case the
           `nextId()` method must be overwritten)
-        * implement custom validation (logic that prevents a user
+        * Implement custom validation (logic that prevents a user
           from skipping to the next page until conditions are met)
 
     Every wizard page has:
@@ -44,18 +46,17 @@ class ExportWizardPage(QWizardPage):
         * Body (instructions)
         * Optional error_instructions (Additional text that is hidden but
           appears on recoverable error to help the user advance to the next stage)
-        * Directional buttons (continue/done, cancel)
     """
 
-    DIALOG_CSS = resource_string(__name__, "dialog.css").decode("utf-8")
-    ERROR_DETAILS_CSS = resource_string(__name__, "dialog_message.css").decode("utf-8")
+    WIZARD_CSS = resource_string(__name__, "wizard.css").decode("utf-8")
+    ERROR_DETAILS_CSS = resource_string(__name__, "wizard_message.css").decode("utf-8")
 
     MARGIN = 40
     PASSPHRASE_LABEL_SPACING = 0.5
     NO_MARGIN = 0
     FILENAME_WIDTH_PX = 260
 
-    def __init__(self, export: Export, header: str, body: str) -> None:
+    def __init__(self, export: Export, header: str, body: Optional[str]) -> None:
         parent = QApplication.activeWindow()
         super().__init__(parent)
         self.export = export
@@ -66,12 +67,14 @@ class ExportWizardPage(QWizardPage):
 
         self.setLayout(self._build_layout())
 
-        # Listen for export updates from export
+        # Listen for export updates from export.
+        # Pages will receive signals even if they are not the current active page.
         self.export.export_state_changed.connect(self.on_status_received)
 
     def set_complete(self, is_complete: bool) -> None:
         """
-        Flag a page as being incomplete. (Disables Next button)
+        Flag a page as being incomplete. (Disables Next button and prevents
+        user from advancing to next page)
         """
         self._is_complete = is_complete
 
@@ -82,8 +85,8 @@ class ExportWizardPage(QWizardPage):
         """
         Create parent layout, draw elements, return parent layout
         """
-        self.setStyleSheet(self.DIALOG_CSS)
-        parent_layout = QVBoxLayout()
+        self.setStyleSheet(self.WIZARD_CSS)
+        parent_layout = QVBoxLayout(self)
         parent_layout.setContentsMargins(self.MARGIN, self.MARGIN, self.MARGIN, self.MARGIN)
 
         # Header for icon and task title
@@ -91,25 +94,25 @@ class ExportWizardPage(QWizardPage):
         header_container_layout = QHBoxLayout()
         header_container.setLayout(header_container_layout)
         self.header_icon = SvgLabel("blank.svg", svg_size=QSize(64, 64))
-        self.header_icon.setObjectName("ModalDialog_header_icon")
+        self.header_icon.setObjectName("QWizard_header_icon")
         self.header_spinner = QPixmap()
         self.header_spinner_label = QLabel()
-        self.header_spinner_label.setObjectName("ModalDialog_header_spinner")
+        self.header_spinner_label.setObjectName("QWizard_header_spinner")
         self.header_spinner_label.setMinimumSize(64, 64)
         self.header_spinner_label.setVisible(False)
         self.header_spinner_label.setPixmap(self.header_spinner)
         self.header = QLabel()
-        self.header.setObjectName("ModalDialog_header")
+        self.header.setObjectName("QWizard_header")
+        header_container_layout.addWidget(self.header, alignment=Qt.AlignCenter)
         header_container_layout.addWidget(self.header_icon)
         header_container_layout.addWidget(self.header_spinner_label)
-        header_container_layout.addWidget(self.header, alignment=Qt.AlignLeft)  # Prev: AlignCenter
         header_container_layout.addStretch()
         self.header_line = QWidget()
-        self.header_line.setObjectName("ModalDialog_header_line")
+        self.header_line.setObjectName("QWizard_header_line")
 
         # Body to display instructions and forms
         self.body = QLabel()
-        self.body.setObjectName("ModalDialog_body")
+        self.body.setObjectName("QWizard_body")
         self.body.setWordWrap(True)
         self.body.setScaledContents(True)
 
@@ -120,15 +123,14 @@ class ExportWizardPage(QWizardPage):
         )
         body_container.setLayout(self.body_layout)
         self.body_layout.addWidget(self.body)
-        self.body_layout.setSizeConstraint(QLayout.SetMinimumSize)
-
-        # TODO: it's either like this, or in the parent layout elements
-        self.body_layout.setSizeConstraint(QLayout.SetMinimumSize)
 
         # Widget for displaying error messages (hidden by default)
         self.error_details = QLabel()
-        self.error_details.setObjectName("ModalDialog_error_details")
+        self.error_details.setObjectName("QWizard_error_details")
         self.error_details.setStyleSheet(self.ERROR_DETAILS_CSS)
+        self.error_details.setContentsMargins(
+            self.NO_MARGIN, self.NO_MARGIN, self.NO_MARGIN, self.NO_MARGIN
+        )
         self.error_details.setWordWrap(True)
         self.error_details.hide()
 
@@ -139,37 +141,25 @@ class ExportWizardPage(QWizardPage):
 
         # Populate text content
         self.header.setText(self.header_text)
-        self.body.setText(self.body_text)
+        if self.body_text:
+            self.body.setText(self.body_text)
 
         # Add all the layout elements
         parent_layout.addWidget(header_container)
         parent_layout.addWidget(self.header_line)
         parent_layout.addWidget(body_container)
         parent_layout.addWidget(self.error_details)
-        # parent_layout.setSizeConstraint(QLayout.SetFixedSize)
+        parent_layout.addStretch()
 
         return parent_layout
 
     def animate_header(self) -> None:
         self.header_spinner_label.setPixmap(self.header_animation.currentPixmap())
 
-    def animate_activestate(self) -> None:
-        pass  # Animation handled in parent
-
-    def start_animate_activestate(self) -> None:
-        self.error_details.setStyleSheet("")
-        self.error_details.setObjectName("ModalDialog_error_details_active")
-        self.error_details.setStyleSheet(self.ERROR_DETAILS_CSS)
-
     def start_animate_header(self) -> None:
         self.header_icon.setVisible(False)
         self.header_spinner_label.setVisible(True)
         self.header_animation.start()
-
-    def stop_animate_activestate(self) -> None:
-        self.error_details.setStyleSheet("")
-        self.error_details.setObjectName("ModalDialog_error_details")
-        self.error_details.setStyleSheet(self.ERROR_DETAILS_CSS)
 
     def stop_animate_header(self) -> None:
         self.header_icon.setVisible(True)
@@ -190,14 +180,16 @@ class ExportWizardPage(QWizardPage):
             status = ExportStatus.UNEXPECTED_RETURN_STATUS
 
         if should_show_hint:
-            self.error_details.setText(STATUS_MESSAGES.get(status))
-            self.error_details.show()
+            message = STATUS_MESSAGES.get(status)
+            if message:
+                self.error_details.setText(message)
+                self.error_details.show()
         else:
             self.error_details.hide()
 
 
 class PreflightPage(ExportWizardPage):
-    def __init__(self, export, summary):
+    def __init__(self, export: Export, summary: str) -> None:
         self.summary = summary
         header = _(
             "Preparing to export:<br />" '<span style="font-weight:normal">{}</span>'
@@ -222,7 +214,7 @@ class PreflightPage(ExportWizardPage):
         self.start_animate_header()
         self.export.run_export_preflight_checks()
 
-    def nextId(self):
+    def nextId(self) -> int:
         """
         Override builtin to allow bypassing the password page if device is unlocked.
         """
@@ -243,39 +235,30 @@ class PreflightPage(ExportWizardPage):
             return Pages.INSERT_USB
 
     @pyqtSlot(object)
-    def on_status_received(self, status: ExportStatus):
+    def on_status_received(self, status: ExportStatus) -> None:
         self.stop_animate_header()
-        if status in (
-            ExportStatus.DEVICE_LOCKED,
-            ExportStatus.DEVICE_WRITABLE,
-            ExportStatus.NO_DEVICE_DETECTED,
-            ExportStatus.MULTI_DEVICE_DETECTED,
-            ExportStatus.INVALID_DEVICE_DETECTED,
-        ):
-            header = _(
-                "Ready to export:<br />" '<span style="font-weight:normal">{}</span>'
-            ).format(self.summary)
-            self.header.setText(header)
+        header = _("Ready to export:<br />" '<span style="font-weight:normal">{}</span>').format(
+            self.summary
+        )
+        self.header.setText(header)
         self.status = status
 
 
 class ErrorPage(ExportWizardPage):
-    def __init__(self, export, summary):
+    def __init__(self, export: Export):
         header = _("Export Failed")
-        summary = ""  # todo
-
-        super().__init__(export, header=header, body=summary)
+        super().__init__(export, header=header, body=None)
 
     def isComplete(self) -> bool:
         return False
 
     @pyqtSlot(object)
-    def on_status_received(self, status: ExportStatus):
+    def on_status_received(self, status: ExportStatus) -> None:
         pass
 
 
 class InsertUSBPage(ExportWizardPage):
-    def __init__(self, export, summary):
+    def __init__(self, export: Export, summary: str) -> None:
         self.summary = summary
         header = _("Ready to export:<br />" '<span style="font-weight:normal">{}</span>').format(
             summary
@@ -292,11 +275,17 @@ class InsertUSBPage(ExportWizardPage):
         should_show_hint = status in (
             ExportStatus.MULTI_DEVICE_DETECTED,
             ExportStatus.INVALID_DEVICE_DETECTED,
-        ) or (self.status == status == ExportStatus.NO_DEVICE_DETECTED)
+        ) or (
+            self.status == status == ExportStatus.NO_DEVICE_DETECTED
+            and isinstance(self.wizard().currentPage, InsertUSBPage)
+        )
         self.update_content(status, should_show_hint)
         self.status = status
         self.completeChanged.emit()
-        if status in (ExportStatus.DEVICE_LOCKED, ExportStatus.DEVICE_WRITABLE):
+        if status in (ExportStatus.DEVICE_LOCKED, ExportStatus.DEVICE_WRITABLE) and isinstance(
+            self.wizard().currentPage(), InsertUSBPage
+        ):
+            logger.debug("Device detected - advance the wizard")
             self.wizard().next()
 
     def validatePage(self) -> bool:
@@ -323,7 +312,7 @@ class InsertUSBPage(ExportWizardPage):
                 logger.warning("InsertUSBPage encountered unexpected status")
                 return super().validatePage()
 
-    def nextId(self):
+    def nextId(self) -> int:
         """
         Override builtin to allow bypassing the password page if device unlocked
         """
@@ -336,7 +325,8 @@ class InsertUSBPage(ExportWizardPage):
             return Pages.ERROR
         else:
             next = super().nextId()
-            logger.error("Unexpected status on InsertUSBPage {status.value}, nextID is {next}")
+            value = self.status.value if self.status else "(no status supplied)"
+            logger.debug(f"Unexpected status on InsertUSBPage: {value}. nextID is {next}")
             return next
 
 
@@ -354,7 +344,7 @@ class FinalPage(ExportWizardPage):
         self.update_content(status)
         self.status = status
 
-    def update_content(self, status: ExportStatus, should_show_hint: bool = False):
+    def update_content(self, status: ExportStatus, should_show_hint: bool = False) -> None:
         header = None
         body = None
         if status == ExportStatus.SUCCESS_EXPORT:
@@ -380,7 +370,7 @@ class PassphraseWizardPage(ExportWizardPage):
     Wizard page that includes a passphrase prompt field
     """
 
-    def __init__(self, export):
+    def __init__(self, export: Export) -> None:
         header = _("Enter passphrase for USB drive")
         super().__init__(export, header, body=None)
 
@@ -389,7 +379,7 @@ class PassphraseWizardPage(ExportWizardPage):
 
         # Passphrase Form
         self.passphrase_form = QWidget()
-        self.passphrase_form.setObjectName("ModalDialog_passphrase_form")
+        self.passphrase_form.setObjectName("QWizard_passphrase_form")
         passphrase_form_layout = QVBoxLayout()
         passphrase_form_layout.setContentsMargins(
             self.NO_MARGIN, self.NO_MARGIN, self.NO_MARGIN, self.NO_MARGIN
@@ -430,10 +420,13 @@ class PassphraseWizardPage(ExportWizardPage):
         self.update_content(status, should_show_hint)
         self.status = status
         self.completeChanged.emit()
-        if status in (ExportStatus.SUCCESS_EXPORT, ExportStatus.ERROR_EXPORT_CLEANUP):
+        if status in (
+            ExportStatus.SUCCESS_EXPORT,
+            ExportStatus.ERROR_EXPORT_CLEANUP,
+        ) and isinstance(self.wizard().currentPage(), PassphraseWizardPage):
             self.wizard().next()
 
-    def validatePage(self):
+    def validatePage(self) -> bool:
         # Also to add: DEVICE_BUSY for unmounting.
         # This shouldn't stop us from going "back" to an error page
         return self.status in (
@@ -442,7 +435,7 @@ class PassphraseWizardPage(ExportWizardPage):
             ExportStatus.ERROR_EXPORT_CLEANUP,
         )
 
-    def nextId(self):
+    def nextId(self) -> int:
         if self.status == ExportStatus.SUCCESS_EXPORT:
             return Pages.EXPORT_DONE
         elif self.status in (ExportStatus.ERROR_UNLOCK_LUKS, ExportStatus.ERROR_UNLOCK_GENERIC):

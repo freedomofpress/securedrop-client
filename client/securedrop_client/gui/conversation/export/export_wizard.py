@@ -5,14 +5,16 @@ from typing import List
 from pkg_resources import resource_string
 from PyQt5.QtCore import QSize, Qt, pyqtSlot
 from PyQt5.QtGui import QIcon, QKeyEvent
+from PyQt5.QtWidgets import QAbstractButton  # noqa: F401
 from PyQt5.QtWidgets import QApplication, QWizard, QWizardPage
 
 from securedrop_client.export import Export
 from securedrop_client.export_status import ExportStatus
 from securedrop_client.gui.base import SecureQLabel
-from securedrop_client.gui.conversation.export.export_wizard_constants import Pages, STATUS_MESSAGES
+from securedrop_client.gui.conversation.export.export_wizard_constants import Pages
 from securedrop_client.gui.conversation.export.export_wizard_page import (
     ErrorPage,
+    ExportWizardPage,
     FinalPage,
     InsertUSBPage,
     PassphraseWizardPage,
@@ -31,7 +33,9 @@ class ExportWizard(QWizard):
     PASSPHRASE_LABEL_SPACING = 0.5
     NO_MARGIN = 0
     FILENAME_WIDTH_PX = 260
-    BUTTON_CSS = resource_string(__name__, "dialog_button.css").decode("utf-8")
+    FILE_OPTIONS_FONT_SPACING = 1.6
+    BUTTON_CSS = resource_string(__name__, "wizard_button.css").decode("utf-8")
+    WIZARD_CSS = resource_string(__name__, "wizard.css").decode("utf-8")
 
     # If the drive is unlocked, we don't need a passphrase; if we do need one,
     # it's populated later.
@@ -50,59 +54,85 @@ class ExportWizard(QWizard):
         # Signal from qrexec command runner
         self.export.export_state_changed.connect(self.on_status_received)
 
-        # Clean up export on dialog closed signal
+        # Sends cleanup signal to export if wizard is closed or completed.
+        # (Avoid orphaned QProcess)
         self.finished.connect(self.export.end_process)
 
+        # Activestate animation
+        self.button_animation = load_movie("activestate-wide.gif")
+        self.button_animation.setScaledSize(QSize(32, 32))
+        self.button_animation.frameChanged.connect(self._animate_activestate)
+
+        # Buttons
+        self.next_button = self.button(QWizard.WizardButton.NextButton)  # type: QAbstractButton
+        self.cancel_button = self.button(QWizard.WizardButton.CancelButton)  # type: QAbstractButton
+        self.back_button = self.button(QWizard.WizardButton.BackButton)  # type: QAbstractButton
+        self.finish_button = self.button(QWizard.WizardButton.FinishButton)  # type: QAbstractButton
+
+        self._style_buttons()
         self._set_layout()
         self._set_pages()
-        self._style_buttons()
+        self.adjustSize()
 
     def keyPressEvent(self, event: QKeyEvent) -> None:
+        """
+        Allow for keyboard navigation of wizard buttons.
+        """
         if event.key() == Qt.Key_Enter or event.key() == Qt.Key_Return:
             if self.cancel_button.hasFocus():
                 self.cancel_button.click()
+            elif self.back_button.hasFocus():
+                self.back_button.click()
             else:
                 self.next_button.click()
         else:
             super().keyPressEvent(event)
 
-    def text(self) -> str:
-        """A text-only representation of the dialog."""
-        return self.body.text()
-
     def _style_buttons(self) -> None:
-        self.next_button = self.button(QWizard.WizardButton.NextButton)
-        self.next_button.clicked.connect(self.request_export)
+        """
+        Style QWizard buttons and connect "Next" button click event to
+        request_export slot.
+        """
+        self.next_button.setObjectName("QWizardButton_PrimaryButton")
         self.next_button.setStyleSheet(self.BUTTON_CSS)
-        self.cancel_button = self.button(QWizard.WizardButton.CancelButton)
+        self.next_button.setMinimumSize(QSize(130, 40))
+        self.next_button.setMaximumHeight(40)
+        self.next_button.clicked.connect(self.request_export)
+
+        self.cancel_button.setObjectName("QWizardButton_GenericButton")
         self.cancel_button.setStyleSheet(self.BUTTON_CSS)
+        self.cancel_button.setMinimumSize(QSize(130, 40))
+        self.cancel_button.setMaximumHeight(40)
 
-        # Activestate animation
-        self.button_animation = load_movie("activestate-wide.gif")
-        self.button_animation.setScaledSize(QSize(32, 32))
-        self.button_animation.frameChanged.connect(self.animate_activestate)
+        self.back_button.setObjectName("QWizardButton_GenericButton")
+        self.back_button.setStyleSheet(self.BUTTON_CSS)
+        self.back_button.setMinimumSize(QSize(130, 40))
+        self.back_button.setMaximumHeight(40)
 
-    def animate_activestate(self) -> None:
+        self.finish_button.setObjectName("QWizardButton_GenericButton")
+        self.finish_button.setStyleSheet(self.BUTTON_CSS)
+        self.finish_button.setMinimumSize(QSize(130, 40))
+        self.finish_button.setMaximumHeight(40)
+
+        self.setButtonText(QWizard.WizardButton.NextButton, _("CONTINUE"))
+        self.setButtonText(QWizard.WizardButton.CancelButton, _("CANCEL"))
+        self.setButtonText(QWizard.WizardButton.FinishButton, _("DONE"))
+        self.setButtonText(QWizard.WizardButton.BackButton, _("BACK"))
+
+    def _animate_activestate(self) -> None:
         self.next_button.setIcon(QIcon(self.button_animation.currentPixmap()))
 
-    def start_animate_activestate(self) -> None:
+    def _start_animate_activestate(self) -> None:
         self.button_animation.start()
-        self.next_button.setMinimumSize(QSize(142, 43))
-        # Reset widget stylesheets
-        self.next_button.setStyleSheet("")
-        self.next_button.setObjectName("ModalDialog_primary_button_active")
-        self.next_button.setStyleSheet(self.BUTTON_CSS)
 
-    def stop_animate_activestate(self) -> None:
+    def _stop_animate_activestate(self) -> None:
         self.next_button.setIcon(QIcon())
         self.button_animation.stop()
-        # Reset widget stylesheets
-        self.next_button.setStyleSheet("")
-        self.next_button.setObjectName("ModalDialog_primary_button")
-        self.next_button.setStyleSheet(self.BUTTON_CSS)
 
     def _set_layout(self) -> None:
-        self.setWindowTitle(f"Export {self.summary_text}")
+        self.setWindowTitle(f"Export {self.summary_text}")  # TODO (il8n)
+        self.setObjectName("QWizard_export")
+        self.setStyleSheet(self.WIZARD_CSS)
         self.setModal(False)
         self.setOptions(
             QWizard.NoBackButtonOnLastPage
@@ -119,17 +149,29 @@ class ExportWizard(QWizard):
             (Pages.EXPORT_DONE, self._create_done()),
         ]:
             self.setPage(id, page)
+            self.adjustSize()
 
-            # Nice to have, but steals the focus from the password field after 1 character is typed.
-            # Probably another way to have it be based on validating the status
-            # page.completeChanged.connect(lambda: self._set_focus(QWizard.WizardButton.NextButton))
-
-    @pyqtSlot(int)
-    def _set_focus(self, which: QWizard.WizardButton) -> None:
-        self.button(which).setFocus()
-
+    @pyqtSlot()
     def request_export(self) -> None:
+        """
+        Handler for "next" button clicks. Start animation and request export.
+        (The export proceeds only as far as it's able, which is why it's
+        possible to trigger the same method on every dialog page).
+
+        The Preflight QWizardPage triggers the preflight check itself when
+        it is created, so there is no corresponding `request_export_preflight`
+        method.
+        """
         logger.debug("Request export")
+        # While we're waiting for the results to come back, stay on the same page.
+        # This prevents the dialog from briefly flashing one page and then
+        # advancing to a subsequent page (for example, flashing the "Insert a USB"
+        # page before detecting the USB and advancing to the "Unlock USB" page)
+        page = self.currentPage()
+        if isinstance(page, ExportWizardPage):
+            page.set_complete(False)
+        self._start_animate_activestate()
+
         # Registered fields let us access the passphrase field
         # of the PassphraseRequestPage from the wizard parent
         passphrase_untrusted = self.field("passphrase")
@@ -138,21 +180,27 @@ class ExportWizard(QWizard):
         else:
             self.export.export(self.filepaths, self.PASS_PLACEHOLDER_FIELD)
 
-    def request_export_preflight(self) -> None:
-        logger.debug("Request preflight check")
-        self.export.run_export_preflight_checks()
-
     @pyqtSlot(object)
     def on_status_received(self, status: ExportStatus) -> None:
         """
-        Update the wizard position based on incoming ExportStatus.
-        If a status is shown that represents a removed device,
-        rewind the wizard to the appropriate pane.
+        Receive status updates from export process. The QWizard is responsible for
+        listening for a status that requires it to adjust its own position outside of the
+        normal wizard control flow, such as jumping to an error page if an unrecoverable error
+        status is encountered, or "rewinding" to a previous page if an unexpected status is
+        encountered (USB device removed after proceeding past that part of the workflow).
 
-        To update the text on an individual page, the page listens
-        for this signal and can call `update_content` in the listener.
+        Child QWizardPages also implement this listener in order to update their own UI and store
+        a reference to the current status.
+
+        Advancing through the normal QWizard control flow is handled by child pages.
         """
         logger.debug(f"Wizard received {status.value}. Current page is {type(self.currentPage())}")
+
+        # Release the page (page was held during "next" button click event)
+        page = self.currentPage()
+        if isinstance(page, ExportWizardPage):
+            page.set_complete(True)
+        self._stop_animate_activestate()
 
         # Unrecoverable - end the wizard
         if status in [
@@ -194,23 +242,25 @@ class ExportWizard(QWizard):
 
     def end_wizard_with_error(self, error: ExportStatus) -> None:
         """
-        If and end state is reached, display message and let user
+        If an end state is reached, display message and let user
         end the wizard.
         """
+        logger.debug("End wizard with error")
         if isinstance(self.currentPage(), PreflightPage):
-            # Update its status so it shows error next self.currentPage()
             logger.debug("On preflight page, no reordering needed")
         else:
             while self.currentId() > Pages.ERROR:
                 self.back()
+        logger.debug(f"Target: {Pages.ERROR}. Actual: {self.currentId()}")
         page = self.currentPage()
-        page.update_content(error)
+        if isinstance(page, ExportWizardPage):
+            page.update_content(error)
 
     def _create_preflight(self) -> QWizardPage:
         return PreflightPage(self.export, self.summary_text)
 
     def _create_errorpage(self) -> QWizardPage:
-        return ErrorPage(self.export, "")
+        return ErrorPage(self.export)
 
     def _create_insert_usb(self) -> QWizardPage:
         return InsertUSBPage(self.export, self.summary_text)

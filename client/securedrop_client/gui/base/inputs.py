@@ -16,7 +16,7 @@ GNU Affero General Public License for more details.
 You should have received a copy of the GNU Affero General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
-from PyQt5.QtWidgets import QDialog, QLineEdit
+from PyQt5.QtWidgets import QLineEdit, QWidget
 
 
 class PasswordEdit(QLineEdit):
@@ -24,7 +24,7 @@ class PasswordEdit(QLineEdit):
     A LineEdit with icons to show/hide password entries
     """
 
-    def __init__(self, parent: QDialog) -> None:
+    def __init__(self, parent: QWidget) -> None:
         super().__init__(parent)
 
         self.setEchoMode(QLineEdit.Password)

@@ -1,4 +1,4 @@
-#ModalDialog {
+#QWizard_export {
     min-width: 800px;
     max-width: 800px;
     min-height: 300px;
@@ -6,7 +6,7 @@
     background-color: #fff;
 }
 
-#ModalDialog_header_icon, #ModalDialog_header_spinner {
+#QWizard_header_icon, #QWizard_header_spinner {
     min-width: 80px;
     max-width: 80px;
     min-height: 64px;
@@ -14,7 +14,7 @@
     margin: 0px 0px 0px 30px;
 }
 
-#ModalDialog_header {
+#QWizard_header {
     min-height: 68px;
     max-height: 68px;
     margin: 0;
@@ -24,7 +24,7 @@
     color: #2a319d;
 }
 
-#ModalDialog_header_line {
+#QWizard_header_line {
     margin: 0;
     min-height: 2px;
     max-height: 2px;
@@ -32,7 +32,7 @@
     border: none;
 }
 
-#ModalDialog_body {
+#QWizard_body {
     font-family: 'Montserrat';
     font-size: 16px;
     color: #302aa3;
@@ -40,7 +40,7 @@
     padding: 0;
 }
 
-#ModalDialogConfirmation {
+#QWizardConfirmation {
     font-family: 'Montserrat';
     font-size: 16px;
     font-weight: 600;
@@ -48,15 +48,8 @@
     margin: 0;
 }
 
-#ModalDialog.dangerous #ModalDialogConfirmation {
-    color: #ff3366;
-}
 
-#ModalDialog_button_box {
-    border: 1px solid #ff0000;
-}
-
-#ModalDialog_button_box QPushButton {
+#QWizard_button_box QWizardButton {
     margin: 0px 0px 0px 12px;
     height: 40px;
     margin: 0;
@@ -69,7 +62,7 @@
     color: #2a319d;
 }
 
-#ModalDialog_button_box QPushButton::disabled {
+#QWizard_button_box QWizardButton::disabled {
     border: 2px solid rgba(42, 49, 157, 0.4);
     color: rgba(42, 49, 157, 0.4);
 }

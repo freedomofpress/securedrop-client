@@ -4,8 +4,8 @@ from tempfile import NamedTemporaryFile, TemporaryDirectory
 from unittest import mock
 
 import pytest
-
 from PyQt5.QtTest import QSignalSpy
+
 from securedrop_client.export_status import ExportError, ExportStatus
 from securedrop_client.gui.conversation.export import Export
 from tests import factory
@@ -24,6 +24,19 @@ _QREXEC_EXPORT_COMMAND = (
     ],
 )
 _MOCK_FILEDIR = "/tmp/mock_tmpdir/"
+
+# A few different status values to be used in test paramaterization
+_SAMPLE_EXPORT = [
+    ExportStatus.NO_DEVICE_DETECTED,
+    ExportStatus.DEVICE_WRITABLE,
+    ExportStatus.ERROR_MOUNT,
+    ExportStatus.ERROR_MISSING_FILES,
+    ExportStatus.SUCCESS_EXPORT,
+]
+_SAMPLE_PRINT_PREFLIGHT_FAIL = [
+    ExportStatus.ERROR_PRINTER_NOT_FOUND,
+    ExportStatus.ERROR_PRINTER_DRIVER_UNAVAILABLE,
+]
 
 
 class TestDevice:
@@ -48,20 +61,19 @@ class TestDevice:
         cls.device._create_archive = None
 
     def test_Device_run_printer_preflight_checks(self):
-        device = Export()
-        device._create_archive = mock.MagicMock()
-        device._create_archive.return_value = _PATH_TO_PRETEND_ARCHIVE
-
         with mock.patch(
             "securedrop_client.export.mkdtemp",
             return_value=self.mock_tmpdir,
-        ), mock.patch("securedrop_client.export.QProcess") as mock_qprocess:
+        ), mock.patch("securedrop_client.export.QProcess") as mock_qprocess, mock.patch.object(
+            self.device, "_create_archive"
+        ) as mock_archive:
+            mock_archive.return_value = _PATH_TO_PRETEND_ARCHIVE
             mock_qproc = mock_qprocess.return_value
             mock_qproc.start = mock.MagicMock()
             mock_qproc.readAllStandardError.return_value = (
                 ExportStatus.PRINT_PREFLIGHT_SUCCESS.value.encode("utf-8")
             )
-            device.run_printer_preflight_checks()
+            self.device.run_printer_preflight_checks()
 
             mock_qproc.start.assert_called_once()
             assert (
@@ -69,24 +81,34 @@ class TestDevice:
             ), f"Actual: {mock_qproc.start.call_args[0]}"
 
     def test_Device_run_print_preflight_checks_with_error(self):
-        spy = QSignalSpy(self.device.export_state_changed)
+        spy = QSignalSpy(self.device.print_preflight_check_failed)
         with mock.patch(
             "securedrop_client.export.mkdtemp",
             return_value=self.mock_tmpdir,
-        ), mock.patch("securedrop_client.export.QProcess") as mock_qprocess:
+        ), mock.patch("securedrop_client.export.QProcess") as mock_qprocess, mock.patch.object(
+            self.device, "_create_archive"
+        ) as mock_archive, mock.patch(
+            "shutil.rmtree"
+        ) as mock_rmtree:
+            mock_archive.return_value = _PATH_TO_PRETEND_ARCHIVE
             mock_qproc = mock_qprocess.return_value
             mock_qproc.start = mock.MagicMock()
             mock_qproc.start.side_effect = (
-                lambda proc, args: mock_qproc.finished.emit()
+                lambda proc, args: self.device._on_print_preflight_complete()
             )  # This ain't doin it
-            mock_qproc.readAllStandardError.return_value = b"Not a real status\n"
+            mock_qproc.readAllStandardError.data.return_value = b"Not a real status\n"
 
             self.device.run_printer_preflight_checks()
 
             mock_qproc.start.assert_called_once()
+            mock_rmtree.assert_called_once()
 
-        # TODO
-        # assert len(spy) == 1 and spy[0] == ExportStatus.UNEXPECTED_RETURN_STATUS
+        # Note: in future can return UNEXPECTED_RETURN_STATUS instead
+        assert (
+            len(spy) == 1
+            and isinstance(spy[0][0], ExportError)
+            and spy[0][0].status == ExportStatus.ERROR_PRINT
+        )
 
     def test_Device_print(self):
         with mock.patch("securedrop_client.export.QProcess") as mock_qprocess, mock.patch(
@@ -95,10 +117,11 @@ class TestDevice:
         ):
             mock_qproc = mock_qprocess.return_value
             mock_qproc.start = mock.MagicMock()
+
             self.device.print([self.mock_file_location])
 
-            mock_qprocess.start.assert_called_once()
-            assert mock_qprocess.start.call_args[0] == _QREXEC_EXPORT_COMMAND
+            mock_qproc.start.assert_called_once()
+            assert mock_qproc.start.call_args[0] == _QREXEC_EXPORT_COMMAND
 
             self.device._create_archive.assert_called_once_with(
                 archive_dir=self.mock_tmpdir,
@@ -107,9 +130,10 @@ class TestDevice:
                 filepaths=[self.mock_file_location],
             )
 
-    def test_Device_print_file_file_missing(self, mocker):
+    @mock.patch("shutil.rmtree")
+    def test_Device_print_file_file_missing(self, mock_shutil):
         device = Export()
-        spy = QSignalSpy(device.export_state_changed)
+        spy = QSignalSpy(device.print_failed)
 
         with mock.patch(
             "securedrop_client.export.mkdtemp",
@@ -121,8 +145,13 @@ class TestDevice:
             device.print("some-missing-file-uuid")
 
             mock_qproc.start.assert_not_called()
-        # TODO
-        # assert len(spy) == 1 and spy[0] == ExportError(ExportStatus.ERROR_MISSING_FILES)
+
+        # Print doesn't use the new ERROR_MISSING_FILES status yet
+        assert (
+            len(spy) == 1
+            and isinstance(spy[0][0], ExportError)
+            and spy[0][0].status == ExportStatus.ERROR_PRINT
+        )
 
     def test_Device_run_export_preflight_checks(self):
         with mock.patch(
@@ -133,20 +162,18 @@ class TestDevice:
             mock_qproc.start = mock.MagicMock()
 
             self.device.run_export_preflight_checks()
-            # mock_qproc.start.call_args[0]
-            # '/usr/bin/qrexec-client-vm', ['--', 'sd-devices', 'qubes.OpenInVM', '/usr/lib/qubes/qopen-in-vm', '--view-only', '--', '/tmp/archive-pretend']
 
             mock_qproc.start.assert_called_once()
             assert mock_qproc.start.call_args[0] == _QREXEC_EXPORT_COMMAND
 
-        # Call args: call(archive_dir=<MagicMock id='130795305022032'>, archive_fn='usb-test.sd-export', metadata={'device': 'usb-test'})
         self.device._create_archive.assert_called_once_with(
             archive_dir=self.mock_tmpdir,
             archive_fn=self.device._USB_TEST_FN,
             metadata=self.device._USB_TEST_METADATA,
         )
 
-    def test_Device_run_export_preflight_checks_with_error(self):
+    @mock.patch("shutil.rmtree")
+    def test_Device_run_export_preflight_checks_with_error(self, mock_shutil):
         spy = QSignalSpy(self.device.export_state_changed)
 
         with mock.patch(
@@ -154,7 +181,10 @@ class TestDevice:
             return_value=self.mock_tmpdir,
         ), mock.patch.object(self.device, "_create_archive"), mock.patch(
             "securedrop_client.export.QProcess"
-        ) as mock_qprocess:
+        ) as mock_qprocess, mock.patch.object(
+            self.device, "_create_archive"
+        ) as mock_archive:
+            mock_archive.return_value = _PATH_TO_PRETEND_ARCHIVE
             mock_qproc = mock_qprocess.return_value
             mock_qproc.start = mock.MagicMock()
             mock_qproc.start.side_effect = (
@@ -165,7 +195,7 @@ class TestDevice:
 
             self.device.run_export_preflight_checks()
 
-            assert len(spy) == 1 and spy[0] == ExportStatus.UNEXPECTED_RETURN_STATUS
+            assert len(spy) == 1 and spy[0][0] == ExportStatus.UNEXPECTED_RETURN_STATUS
 
     def test_Device_export_file_missing(self, mocker):
         device = Export()
@@ -212,27 +242,53 @@ class TestDevice:
             filepaths=[filepath],
         )
 
-    @pytest.mark.parametrize("status", [i.value for i in ExportStatus])
-    def test__run_qrexec_success(self, status):
+    @pytest.mark.parametrize("status", [i.value for i in _SAMPLE_EXPORT])
+    def test__run_qrexec_sends_export_signal(self, status):
+        spy = QSignalSpy(self.device.export_state_changed)
         enum = ExportStatus(status)
-        with mock.patch("securedrop_client.export.QProcess") as mock_qprocess, mock.patch.object(
-            self.device, "_on_export_process_complete"
-        ) as mock_callback:
+        with mock.patch("securedrop_client.export.QProcess") as mock_qprocess:
             mock_qproc = mock_qprocess.return_value
             mock_qproc.finished = mock.MagicMock()
             mock_qproc.start = mock.MagicMock()
             mock_qproc.start.side_effect = (
                 lambda proc, args: self.device._on_export_process_complete()
             )
-            mock_qproc.readAllStandardError.return_value = f"{status}\n".encode("utf-8")
+            mock_qproc.readAllStandardError.return_value.data.return_value = f"{status}\n".encode(
+                "utf-8"
+            )
 
             self.device._run_qrexec_export(
                 _PATH_TO_PRETEND_ARCHIVE,
-                mock_callback,
+                self.device._on_export_process_complete,
                 self.device._on_export_process_error,
             )
 
             mock_qproc.start.assert_called_once()
+            assert len(spy) == 1 and spy[0][0] == enum
+
+    @pytest.mark.parametrize("status", [i.value for i in _SAMPLE_PRINT_PREFLIGHT_FAIL])
+    def test__run_qrexec_sends_print_failed_signal(self, status):
+        spy = QSignalSpy(self.device.print_preflight_check_failed)
+        enum = ExportStatus(status)
+        with mock.patch("securedrop_client.export.QProcess") as mock_qprocess:
+            mock_qproc = mock_qprocess.return_value
+            mock_qproc.finished = mock.MagicMock()
+            mock_qproc.start = mock.MagicMock()
+            mock_qproc.start.side_effect = (
+                lambda proc, args: self.device._on_print_preflight_complete()
+            )
+            mock_qproc.readAllStandardError.return_value.data.return_value = f"{status}\n".encode(
+                "utf-8"
+            )
+
+            self.device._run_qrexec_export(
+                _PATH_TO_PRETEND_ARCHIVE,
+                self.device._on_print_preflight_complete,
+                self.device._on_print_prefight_error,
+            )
+
+            mock_qproc.start.assert_called_once()
+            assert len(spy) == 1 and isinstance(spy[0][0], ExportError) and spy[0][0].status == enum
 
     @mock.patch("securedrop_client.export.tarfile")
     def test__add_virtual_file_to_archive(self, mock_tarfile):
@@ -300,7 +356,7 @@ class TestDevice:
         """
         with mock.patch(
             "securedrop_client.export.mkdtemp", return_value=self.mock_tmpdir
-        ) as tmpdir, mock.patch("securedrop_client.export.QProcess") as qprocess, mock.patch.object(
+        ), mock.patch("securedrop_client.export.QProcess") as qprocess, mock.patch.object(
             self.device, "_cleanup_tmpdir"
         ) as mock_cleanup:
             mock_qproc = qprocess.return_value
@@ -308,4 +364,4 @@ class TestDevice:
             mock_qproc.start = lambda proc, args: self.device._on_export_process_error()
             self.device.run_printer_preflight_checks()
             assert self.device.tmpdir == self.mock_tmpdir
-            mock_cleanup.assert_called()
+            mock_cleanup.assert_called_once()
