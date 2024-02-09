@@ -14,7 +14,7 @@ Description: securedrop client for qubes workstation
 
 Package: securedrop-export
 Architecture: all
-Depends: ${python3:Depends}, ${misc:Depends}, cryptsetup, cups, printer-driver-brlaser, printer-driver-hpcups, system-config-printer, xpp, libcups2-dev, python3-dev, libtool-bin, unoconv, gnome-disk-utility
+Depends: ${python3:Depends}, ${misc:Depends}, udisks2, cups, printer-driver-brlaser, printer-driver-hpcups, system-config-printer, xpp, libcups2-dev, python3-dev, libtool-bin, unoconv, gnome-disk-utility
 Description: Submission export scripts for SecureDrop Workstation
  This package provides scripts used by the SecureDrop Qubes Workstation to
  export submissions from the client to external storage, via the sd-export
