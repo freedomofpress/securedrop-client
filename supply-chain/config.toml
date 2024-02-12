@@ -22,5 +22,101 @@ url = "https://raw.githubusercontent.com/freedomofpress/securedrop-supply-chain/
 [imports.zcash]
 url = "https://raw.githubusercontent.com/zcash/rust-ecosystem/main/supply-chain/audits.toml"
 
+[policy.js-sys]
+criteria = []
+notes = "WASM-only"
+
+[policy.schannel]
+criteria = []
+notes = "Windows-only"
+
 [policy.securedrop-proxy]
 criteria = "safe-to-run"
+
+[policy.security-framework]
+criteria = []
+notes = "macOS-only"
+
+[policy.security-framework-sys]
+criteria = []
+notes = "macOS-only"
+
+[policy.system-configuration]
+criteria = []
+notes = "macOS-only"
+
+[policy.system-configuration-sys]
+criteria = []
+notes = "macOS-only"
+
+[policy.wasi]
+criteria = []
+notes = "WASM-only"
+
+[policy.wasm-bindgen]
+criteria = []
+notes = "WASM-only"
+
+[policy.wasm-bindgen-backend]
+criteria = []
+notes = "WASM-only"
+
+[policy.wasm-bindgen-macro]
+criteria = []
+notes = "WASM-only"
+
+[policy.wasm-bindgen-macro-support]
+criteria = []
+notes = "WASM-only"
+
+[policy.wasm-bindgen-shared]
+criteria = []
+notes = "WASM-only"
+
+[policy.wasm-streams]
+criteria = []
+notes = "WASM-only"
+
+[policy.web-sys]
+criteria = []
+notes = "WASM-only"
+
+[policy.windows-sys]
+criteria = []
+notes = "Windows-only"
+
+[policy.windows-targets]
+criteria = []
+notes = "Windows-only"
+
+[policy.windows_aarch64_gnullvm]
+criteria = []
+notes = "Windows-only"
+
+[policy.windows_aarch64_msvc]
+criteria = []
+notes = "Windows-only"
+
+[policy.windows_i686_gnu]
+criteria = []
+notes = "Windows-only"
+
+[policy.windows_i686_msvc]
+criteria = []
+notes = "Windows-only"
+
+[policy.windows_x86_64_gnu]
+criteria = []
+notes = "Windows-only"
+
+[policy.windows_x86_64_gnullvm]
+criteria = []
+notes = "Windows-only"
+
+[policy.windows_x86_64_msvc]
+criteria = []
+notes = "Windows-only"
+
+[policy.winreg]
+criteria = []
+notes = "Windows-only"
