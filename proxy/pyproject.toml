@@ -18,7 +18,7 @@ pyyaml = "^5.4.1"
 requests = "^2.31.0"
 
 [tool.poetry.group.dev.dependencies]
-black = "^23.7.0"
+black = "^24.2.0"
 coverage = "^7.3.0"
 flake8 = "^6.1.0"
 isort = "^5.12.0"
