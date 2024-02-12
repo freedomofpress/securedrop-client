@@ -1,6 +1,10 @@
 .PHONY: all
 all: help
 
+.PHONY: build-debs
+build-debs: ## Build Debian packages
+	./scripts/build-debs.sh
+
 .PHONY: lint-desktop
 lint-desktop: ## Lint .desktop files
 	# See: https://www.freedesktop.org/wiki/Software/desktop-file-utils/
