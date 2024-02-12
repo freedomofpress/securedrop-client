@@ -39,11 +39,12 @@ fi
 export DEBIAN_VERSION="${DEBIAN_VERSION:-bullseye}"
 export OCI_RUN_ARGUMENTS
 export OCI_BIN
+export CONTAINER="fpf.local/sd-client-builder-${DEBIAN_VERSION}"
 
-$OCI_BIN pull debian:${DEBIAN_VERSION}
+. ./scripts/image_prep.sh
 
 $OCI_BIN run --rm $OCI_RUN_ARGUMENTS \
     -v "${BUILDER}:/builder:Z" \
     --env NIGHTLY="${NIGHTLY:-}" \
     --entrypoint "/src/scripts/build-debs-real.sh" \
-    debian:${DEBIAN_VERSION}
+    $CONTAINER
