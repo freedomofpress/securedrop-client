@@ -5,7 +5,6 @@ import shutil
 import platform
 import logging
 import sys
-from typing import Optional
 
 from securedrop_export.archive import Archive, Metadata
 from securedrop_export.command import Command

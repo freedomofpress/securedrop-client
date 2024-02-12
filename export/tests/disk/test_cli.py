@@ -1,9 +1,7 @@
 import pytest
-from pexpect import ExceptionPexpect
 from unittest import mock
 
 import subprocess
-import pexpect
 import re
 
 from securedrop_export.disk.cli import CLI
@@ -410,7 +408,6 @@ class TestCli:
             self.cli.cleanup(mock_volume, submission.tmpdir, is_error=True)
         assert ex.value.sdstatus is Status.ERROR_EXPORT
 
-
     @mock.patch("os.path.exists", return_value=False)
     @mock.patch("subprocess.check_call", return_value=0)
     def test_cleanup(self, mock_subprocess, mocked_path):
@@ -444,14 +441,14 @@ class TestCli:
     def test_parse_correct_mountpoint_from_pexpect(self, mock_pexpect):
         child = mock_pexpect()
         child.expect.return_value = 1
-        child.match.return_value = re.match(
-            r"`(\w+)'\.\r\n".encode("utf-8"),
-            "Error mounting /dev/dm-1: GDBus.Error:org."
-            "freedesktop.UDisks2.Error.AlreadyMounted: "
-            "Device /dev/sda1 is already mounted at `/dev/dm-0'.\r\n".encode("utf-8"),
-        )
+        child.match = mock.MagicMock()
+        child.match.group.side_effect = [
+            "/dev/dm-0".encode("utf-8"),
+            "/media/usb".encode("utf-8"),
+        ]
 
         mv = self.cli._mount_volume(
-            Volume("/dev/sda1", EncryptionScheme.VERACRYPT), "/dev/dm-1"
+            Volume("/dev/sda1", EncryptionScheme.VERACRYPT), "/dev/mapper/vc"
         )
         assert mv.unlocked_name == "/dev/dm-0"
+        assert mv.mountpoint == "/media/usb"

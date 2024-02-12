@@ -1004,6 +1004,17 @@ files = [
 ]
 
 [[package]]
+name = "types-pexpect"
+version = "4.9.0.20240207"
+description = "Typing stubs for pexpect"
+optional = false
+python-versions = ">=3.8"
+files = [
+    {file = "types-pexpect-4.9.0.20240207.tar.gz", hash = "sha256:910e20f0f177aeee5f2808d1b3221e3a23dfa1ca3bb02f685c2788fce6ddeb73"},
+    {file = "types_pexpect-4.9.0.20240207-py3-none-any.whl", hash = "sha256:22b3fdccf253a8627bac0d3169845743fe0b1dbc87e5d33a438faaf879eb1f7a"},
+]
+
+[[package]]
 name = "types-setuptools"
 version = "68.2.0.0"
 description = "Typing stubs for setuptools"

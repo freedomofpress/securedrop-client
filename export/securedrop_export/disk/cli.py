@@ -2,10 +2,10 @@ import json
 import logging
 import os
 import pexpect
-import re
 import subprocess
 import time
 
+from re import Pattern
 from typing import Optional, Union
 
 from securedrop_export.exceptions import ExportException
@@ -21,6 +21,26 @@ _UDISKS_PREFIX = (
     "MODEL                     REVISION  SERIAL               DEVICE\n"
     "--------------------------------------------------------------------------\n"
 )
+
+# pexpect allows for a complex type to be passed to `expect` in order to match with input
+# that includes regular expressions, byte or string patterns, *or* pexpect.EOF and pexpect.TIMEOUT,
+# but mypy needs a little help with it, so the below alias is used as a typehint.
+# See https://pexpect.readthedocs.io/en/stable/api/pexpect.html#pexpect.spawn.expect
+PexpectList = Union[
+    Pattern[str],
+    Pattern[bytes],
+    str,
+    bytes,
+    type[pexpect.EOF],
+    type[pexpect.TIMEOUT],
+    list[
+        Union[
+            Pattern[str],
+            Pattern[bytes],
+            Union[str, bytes, Union[type[pexpect.EOF], type[pexpect.TIMEOUT]]],
+        ]
+    ],
+]
 
 
 class CLI:
@@ -83,7 +103,9 @@ class CLI:
                 logger.error("Unrecoverable: could not parse lsblk.")
                 raise ExportException(sdstatus=Status.DEVICE_ERROR)
 
-            volumes = []
+            # mypy complains that this is a list[str], but it is a
+            # list[Union[Volume, MountedVolume]]
+            volumes = []  # type: ignore
             for device in lsblk_json.get("blockdevices"):
                 if device.get("name") in targets and device.get("ro") is False:
                     logger.debug(
@@ -94,21 +116,21 @@ class CLI:
                     if "children" in device:
                         for partition in device.get("children"):
                             # /dev/sdX1, /dev/sdX2 etc
-                            item = self._get_supported_volume(partition)
+                            item = self._get_supported_volume(partition)  # type: ignore
                             if item:
-                                volumes.append(item)
+                                volumes.append(item)  # type: ignore
                     # /dev/sdX
                     else:
-                        item = self._get_supported_volume(device)
+                        item = self._get_supported_volume(device)  # type: ignore
                         if item:
-                            volumes.append(item)
+                            volumes.append(item)  # type: ignore
 
             if len(volumes) != 1:
                 logger.error(f"Need one target, got {len(volumes)}")
                 raise ExportException(sdstatus=Status.INVALID_DEVICE_DETECTED)
             else:
-                logger.debug(f"Export target is {volumes[0].device_name}")
-                return volumes[0]
+                logger.debug(f"Export target is {volumes[0].device_name}")  # type: ignore
+                return volumes[0]  # type: ignore
 
         except json.JSONDecodeError as err:
             logger.error(err)
@@ -232,16 +254,24 @@ class CLI:
         logger.debug("Unlocking volume {}".format(volume.device_name))
 
         command = f"udisksctl unlock --block-device {volume.device_name}"
-        prompt = ["Passphrase: ", pexpect.EOF, pexpect.TIMEOUT]
+
+        # pexpect allows for a match list that contains pexpect.EOF and pexpect.TIMEOUT
+        # as well as string/regex matches:
+        # https://pexpect.readthedocs.io/en/stable/api/pexpect.html#pexpect.spawn.expect
+        prompt = [
+            "Passphrase: ",
+            pexpect.EOF,
+            pexpect.TIMEOUT,
+        ]  # type: PexpectList
         expected = [
-            f"Unlocked {volume.device_name} as (.*)\.",
+            f"Unlocked {volume.device_name} as (.*)[^\r\n].",
             "GDBus.Error:org.freedesktop.UDisks2.Error.Failed: Device "  # string continues
-            f"{volume.device_name} is already unlocked as (.*)\.",
+            f"{volume.device_name} is already unlocked as (.*)[^\r\n].",
             "GDBus.Error:org.freedesktop.UDisks2.Error.Failed: Error "  # string continues
             f"unlocking {volume.device_name}: Failed to activate device: Incorrect passphrase",
             pexpect.EOF,
             pexpect.TIMEOUT,
-        ]
+        ]  # type: PexpectList
         unlock_error = Status.ERROR_UNLOCK_GENERIC
 
         child = pexpect.spawn(command)
@@ -254,8 +284,10 @@ class CLI:
             child.sendline(encryption_key)
             index = child.expect(expected)
             if index == 0 or index == 1:
-                # We know what format the string is in
-                dm_name = child.match.group(1).decode("utf-8").strip()
+                # We know what format the string is in.
+                # Pexpect includes a re.Match object at `child.match`, but this freaks mypy out:
+                # see https://pexpect.readthedocs.io/en/stable/api/pexpect.html#pexpect.spawn.expect
+                dm_name = child.match.group(1).decode("utf-8").strip()  # type: ignore
                 logger.debug(f"Device is unlocked as {dm_name}")
 
                 child.close()
@@ -294,64 +326,68 @@ class CLI:
         info = f"udisksctl info --block-device {volume.device_name}"
         # \x1b[37mPreferredDevice:\x1b[0m            /dev/sdaX\r\n
         expected_info = [
-            f"*PreferredDevice:[\t+]{volume.device_name}\r\n",
-            "*Error looking up object for device*",
+            f"PreferredDevice:[\t+]{volume.device_name}",
+            "Error looking up object for device",
             pexpect.EOF,
             pexpect.TIMEOUT,
-        ]
+        ]  # type: PexpectList
         max_retries = 3
 
-        unlock = f"udisksctl mount --block-device {full_unlocked_name}"
+        mount = f"udisksctl mount --block-device {full_unlocked_name}"
 
         # We can't pass {full_unlocked_name} in the match statement since even if we
         # pass in /dev/mapper/xxx, udisks2 may refer to the disk as /dev/dm-X.
-        expected_unlock = [
-            f"Mounted * at (.*)",
-            f"Error mounting *: GDBus.Error:org."  # string continues
-            "freedesktop.UDisks2.Error.AlreadyMounted: "  # string continues
-            "Device .* is already mounted at `(.*)'",
-            f"Error looking up object for device *.",
+        expected_mount = [
+            "Mounted .* at (.*)",
+            "Error mounting .*: GDBus.Error:org.freedesktop.UDisks2.Error.AlreadyMounted: "
+            "Device (.*) is already mounted at `(.*)'.",
+            "Error looking up object for device",
             pexpect.EOF,
             pexpect.TIMEOUT,
-        ]
+        ]  # type: PexpectList
         mountpoint = None
 
-        logger.debug(f"Check to make sure udisks identified {volume.device_name} "
-                     "(unlocked as {full_unlocked_name})")
+        logger.debug(
+            f"Check to make sure udisks identified {volume.device_name} "
+            f"(unlocked as {full_unlocked_name})"
+        )
         for _ in range(max_retries):
             child = pexpect.spawn(info)
             index = child.expect(expected_info)
-            logger.debug(f"Results from udisks info: {volume.device_name}, "
-                         "before: {child.before}, after: {child.after}")
+            logger.debug(
+                f"Results from udisks info: {volume.device_name}, "
+                f"before: {child.before}, after: {child.after}"
+            )
             child.close()
 
             if index != 0:
-                logger.debug(f"index {index}")
-                logger.warning(
+                logger.debug(
                     f"udisks can't identify {volume.device_name}, retrying..."
                 )
                 time.sleep(0.5)
             else:
-                print(f"udisks found {volume.device_name}")
+                logger.debug(f"udisks found {volume.device_name}")
                 break
 
         logger.info(f"Mount {full_unlocked_name} using udisksctl")
-        child = pexpect.spawn(unlock)
-        index = child.expect(expected_unlock)
+        child = pexpect.spawn(mount)
+        index = child.expect(expected_mount)
 
         logger.debug(
             f"child: {str(child.match)}, before: {child.before}, after: {child.after}"
         )
 
         if index == 0:
-            # As above, we know the format
-            mountpoint = child.match.group(1).decode("utf-8").strip()
+            # As above, we know the format.
+            # Per https://pexpect.readthedocs.io/en/stable/api/pexpect.html#pexpect.spawn.expect,
+            # `child.match` is a re.Match object
+            mountpoint = child.match.group(1).decode("utf-8").strip()  # type: ignore
             logger.debug(f"Successfully mounted device at {mountpoint}")
 
         elif index == 1:
-            # Mountpoint needs a bit of help. It arrives in the form `/path/to/mountpoint'.
-            # including the one backtick, single quote, and the period
-            mountpoint = child.match.group(1).decode("utf-8").strip()
+            # Use udisks unlocked name
+            full_unlocked_name = child.match.group(1).decode("utf-8").strip()  # type: ignore
+            mountpoint = child.match.group(2).decode("utf-8").strip()  # type: ignore
             logger.debug(f"Device already mounted at {mountpoint}")
 
         elif index == 2:
