@@ -7,7 +7,7 @@ override_dh_auto_install:
 	bash ./debian/setup-venv.sh client
 	bash ./debian/setup-venv.sh export
 	bash ./debian/setup-venv.sh log
-	bash ./debian/setup-venv.sh proxy
+	cargo build --release --locked
 	dh_auto_install
 	dh_apparmor --profile-name=usr.bin.securedrop-client -psecuredrop-client
 

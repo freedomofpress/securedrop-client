@@ -1,1 +1,1 @@
-/usr/bin/sd-proxy /home/user/.securedrop_proxy/sd-proxy.yaml
+/usr/bin/securedrop-proxy

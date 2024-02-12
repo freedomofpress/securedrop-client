@@ -2,7 +2,7 @@ Source: securedrop-client
 Section: unknown
 Priority: optional
 Maintainer: SecureDrop Team <securedrop@freedom.press>
-Build-Depends: debhelper-compat (= 11), dh-apparmor, python3-virtualenv
+Build-Depends: debhelper-compat (= 11), dh-apparmor, python3-virtualenv, libssl-dev, pkg-config
 Standards-Version: 3.9.8
 Homepage: https://github.com/freedomofpress/securedrop-client
 X-Python3-Version: >= 3.5
@@ -34,8 +34,8 @@ Description: Python module and qrexec service to store logs for SecureDrop Works
  SecureDrop Workstation project in Qubes.
 
 Package: securedrop-proxy
-Architecture: all
-Depends: ${python3:Depends}, ${misc:Depends}, libyaml-0-2
+Architecture: any
+Depends: ${misc:Depends}, ${shlibs:Depends}
 Description: This is securedrop Qubes proxy service
  This package provides the network proxy on Qubes to talk to the SecureDrop server.
 
