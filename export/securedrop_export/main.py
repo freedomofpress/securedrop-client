@@ -1,22 +1,20 @@
 import contextlib
 import io
-import os
-import shutil
-import platform
 import logging
+import os
+import platform
+import shutil
 import sys
+from logging.handlers import SysLogHandler, TimedRotatingFileHandler
 
+from securedrop_export import __version__
 from securedrop_export.archive import Archive, Metadata
 from securedrop_export.command import Command
-from securedrop_export.status import BaseStatus
 from securedrop_export.directory import safe_mkdir
-from securedrop_export.exceptions import ExportException
-
 from securedrop_export.disk import Service as ExportService
+from securedrop_export.exceptions import ExportException
 from securedrop_export.print import Service as PrintService
-
-from logging.handlers import TimedRotatingFileHandler, SysLogHandler
-from securedrop_export import __version__
+from securedrop_export.status import BaseStatus
 
 DEFAULT_HOME = os.path.join(os.path.expanduser("~"), ".securedrop_export")
 LOG_DIR_NAME = "logs"
@@ -46,7 +44,7 @@ def entrypoint():
 
     The program is called with the archive name as the first argument.
     """
-    status, submission = None, None
+    status, archive = None, None
 
     try:
         _configure_logging()
@@ -62,20 +60,20 @@ def entrypoint():
 
         else:
             logger.debug("Extract tarball")
-            submission = Archive(data_path).extract_tarball()
+            archive = Archive(data_path).extract_tarball()
             logger.debug("Validate metadata")
-            metadata = Metadata(submission.tmpdir).validate()
+            metadata = Metadata(archive.tmpdir).validate()
             logger.info("Archive extraction and metadata validation successful")
 
             # If all we're doing is starting the vm, we're done; otherwise,
             # run the appropriate print or export routine
             if metadata.command is not Command.START_VM:
-                submission.set_metadata(metadata)
+                archive.set_metadata(metadata)
                 logger.info(f"Start {metadata.command.value} service")
-                status = _start_service(submission)
+                status = _start_service(archive)
                 logger.info(f"Status: {status.value}")
 
-    # Gotta catch'em all. A nonzero exit status will cause other programs
+    # A nonzero exit status will cause other programs
     # to try to handle the files, which we don't want.
     except Exception as ex:
         logger.error(ex)
@@ -87,7 +85,7 @@ def entrypoint():
             status = Status.ERROR_GENERIC
 
     finally:
-        _exit_gracefully(submission, status)
+        _exit_gracefully(archive, status)
 
 
 def _configure_logging():
@@ -130,34 +128,33 @@ def _configure_logging():
         raise ExportException(sdstatus=Status.ERROR_LOGGING) from ex
 
 
-def _start_service(submission: Archive) -> BaseStatus:
+def _start_service(archive: Archive) -> BaseStatus:
     """
     Start print or export service.
     """
     # Print Routines
-    if submission.command is Command.PRINT:
-        return PrintService(submission).print()
-    elif submission.command is Command.PRINTER_PREFLIGHT:
-        return PrintService(submission).printer_preflight()
-    elif submission.command is Command.PRINTER_TEST:
-        return PrintService(submission).printer_test()
+    if archive.command is Command.PRINT:
+        return PrintService(archive).print()
+    elif archive.command is Command.PRINTER_PREFLIGHT:
+        return PrintService(archive).printer_preflight()
+    elif archive.command is Command.PRINTER_TEST:
+        return PrintService(archive).printer_test()
 
     # Export routines
-    elif submission.command is Command.EXPORT:
-        return ExportService(submission).export()
+    elif archive.command is Command.EXPORT:
+        return ExportService(archive).export()
     elif (
-        submission.command is Command.CHECK_USBS
-        or submission.command is Command.CHECK_VOLUME
+        archive.command is Command.CHECK_USBS or archive.command is Command.CHECK_VOLUME
     ):
-        return ExportService(submission).scan_all_devices()
+        return ExportService(archive).scan_all_devices()
 
     # Unreachable
     raise ExportException(
-        f"unreachable: unknown submission.command value: {submission.command}"
+        f"unreachable: unknown submission.command value: {archive.command}"
     )
 
 
-def _exit_gracefully(submission: Archive, status: BaseStatus):
+def _exit_gracefully(archive: Archive, status: BaseStatus):
     """
     Write status code, ensure file cleanup, and exit with return code 0.
     Non-zero exit values will cause the system to try alternative
@@ -165,8 +162,8 @@ def _exit_gracefully(submission: Archive, status: BaseStatus):
     """
     try:
         # If the file archive was extracted, delete before returning
-        if submission and os.path.isdir(submission.tmpdir):
-            shutil.rmtree(submission.tmpdir)
+        if archive and os.path.isdir(archive.tmpdir):
+            shutil.rmtree(archive.tmpdir)
         # Do this after deletion to avoid giving the client two error messages in case of the
         # block above failing
         _write_status(status)

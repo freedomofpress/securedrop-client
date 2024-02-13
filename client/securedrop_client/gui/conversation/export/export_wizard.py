@@ -1,12 +1,12 @@
 import logging
 from gettext import gettext as _
-from typing import List
+from typing import List, Optional
 
 from pkg_resources import resource_string
 from PyQt5.QtCore import QSize, Qt, pyqtSlot
 from PyQt5.QtGui import QIcon, QKeyEvent
 from PyQt5.QtWidgets import QAbstractButton  # noqa: F401
-from PyQt5.QtWidgets import QApplication, QWizard, QWizardPage
+from PyQt5.QtWidgets import QApplication, QWidget, QWizard, QWizardPage
 
 from securedrop_client.export import Export
 from securedrop_client.export_status import ExportStatus
@@ -41,15 +41,26 @@ class ExportWizard(QWizard):
     # it's populated later.
     PASS_PLACEHOLDER_FIELD = ""
 
-    def __init__(self, export: Export, summary_text: str, filepaths: List[str]) -> None:
-        parent = QApplication.activeWindow()
+    def __init__(
+        self,
+        export: Export,
+        summary_text: str,
+        filepaths: List[str],
+        parent: Optional[QWidget] = None,
+    ) -> None:
+        # Normally, the active window is the right parent, but if the wizard is launched
+        # via another element (a modal dialog, such as the "Some files may not be exported"
+        # modal), the parent will be the modal dialog and the wizard layout will be affected.
+        # In those cases we want to be able to specify a different parent.
+        if not parent:
+            parent = QApplication.activeWindow()
         super().__init__(parent)
         self.export = export
         self.summary_text = SecureQLabel(
             summary_text, wordwrap=False, max_length=self.FILENAME_WIDTH_PX
         ).text()
         self.filepaths = filepaths
-        self.current_status = None  # Optional[ExportStatus]
+        self.current_status: Optional[ExportStatus] = None
 
         # Signal from qrexec command runner
         self.export.export_state_changed.connect(self.on_status_received)
@@ -57,17 +68,6 @@ class ExportWizard(QWizard):
         # Sends cleanup signal to export if wizard is closed or completed.
         # (Avoid orphaned QProcess)
         self.finished.connect(self.export.end_process)
-
-        # Activestate animation
-        self.button_animation = load_movie("activestate-wide.gif")
-        self.button_animation.setScaledSize(QSize(32, 32))
-        self.button_animation.frameChanged.connect(self._animate_activestate)
-
-        # Buttons
-        self.next_button = self.button(QWizard.WizardButton.NextButton)  # type: QAbstractButton
-        self.cancel_button = self.button(QWizard.WizardButton.CancelButton)  # type: QAbstractButton
-        self.back_button = self.button(QWizard.WizardButton.BackButton)  # type: QAbstractButton
-        self.finish_button = self.button(QWizard.WizardButton.FinishButton)  # type: QAbstractButton
 
         self._style_buttons()
         self._set_layout()
@@ -93,26 +93,42 @@ class ExportWizard(QWizard):
         Style QWizard buttons and connect "Next" button click event to
         request_export slot.
         """
+        # Activestate animation
+        self.button_animation = load_movie("activestate-wide.gif")
+        self.button_animation.setScaledSize(QSize(32, 32))
+        self.button_animation.frameChanged.connect(self._animate_activestate)
+
+        # Buttons
+        self.next_button = self.button(QWizard.WizardButton.NextButton)  # type: QAbstractButton
+        self.cancel_button = self.button(QWizard.WizardButton.CancelButton)  # type: QAbstractButton
+        self.back_button = self.button(QWizard.WizardButton.BackButton)  # type: QAbstractButton
+        self.finish_button = self.button(QWizard.WizardButton.FinishButton)  # type: QAbstractButton
+
         self.next_button.setObjectName("QWizardButton_PrimaryButton")
         self.next_button.setStyleSheet(self.BUTTON_CSS)
-        self.next_button.setMinimumSize(QSize(130, 40))
+        self.next_button.setMinimumSize(QSize(142, 40))
         self.next_button.setMaximumHeight(40)
+        self.next_button.setIconSize(QSize(21, 21))
         self.next_button.clicked.connect(self.request_export)
+        self.next_button.setFixedSize(QSize(142, 40))
 
         self.cancel_button.setObjectName("QWizardButton_GenericButton")
         self.cancel_button.setStyleSheet(self.BUTTON_CSS)
-        self.cancel_button.setMinimumSize(QSize(130, 40))
+        self.cancel_button.setMinimumSize(QSize(142, 40))
         self.cancel_button.setMaximumHeight(40)
+        self.cancel_button.setFixedSize(QSize(142, 40))
 
         self.back_button.setObjectName("QWizardButton_GenericButton")
         self.back_button.setStyleSheet(self.BUTTON_CSS)
-        self.back_button.setMinimumSize(QSize(130, 40))
+        self.back_button.setMinimumSize(QSize(142, 40))
         self.back_button.setMaximumHeight(40)
+        self.back_button.setFixedSize(QSize(142, 40))
 
         self.finish_button.setObjectName("QWizardButton_GenericButton")
         self.finish_button.setStyleSheet(self.BUTTON_CSS)
-        self.finish_button.setMinimumSize(QSize(130, 40))
+        self.finish_button.setMinimumSize(QSize(142, 40))
         self.finish_button.setMaximumHeight(40)
+        self.finish_button.setFixedSize(QSize(142, 40))
 
         self.setButtonText(QWizard.WizardButton.NextButton, _("CONTINUE"))
         self.setButtonText(QWizard.WizardButton.CancelButton, _("CANCEL"))
@@ -130,7 +146,8 @@ class ExportWizard(QWizard):
         self.button_animation.stop()
 
     def _set_layout(self) -> None:
-        self.setWindowTitle(f"Export {self.summary_text}")  # TODO (il8n)
+        title = ("Export %(summary)s") % {"summary": self.summary_text}
+        self.setWindowTitle(title)
         self.setObjectName("QWizard_export")
         self.setStyleSheet(self.WIZARD_CSS)
         self.setModal(False)
@@ -183,78 +200,18 @@ class ExportWizard(QWizard):
     @pyqtSlot(object)
     def on_status_received(self, status: ExportStatus) -> None:
         """
-        Receive status updates from export process. The QWizard is responsible for
-        listening for a status that requires it to adjust its own position outside of the
-        normal wizard control flow, such as jumping to an error page if an unrecoverable error
-        status is encountered, or "rewinding" to a previous page if an unexpected status is
-        encountered (USB device removed after proceeding past that part of the workflow).
-
+        Receive status update from export process in order to update the animation.
         Child QWizardPages also implement this listener in order to update their own UI and store
         a reference to the current status.
 
-        Advancing through the normal QWizard control flow is handled by child pages.
+        Adjusting the QWizard control flow based on ExportStatus is handled by each child page.
         """
-        logger.debug(f"Wizard received {status.value}. Current page is {type(self.currentPage())}")
-
         # Release the page (page was held during "next" button click event)
         page = self.currentPage()
         if isinstance(page, ExportWizardPage):
             page.set_complete(True)
         self._stop_animate_activestate()
-
-        # Unrecoverable - end the wizard
-        if status in [
-            ExportStatus.ERROR_MOUNT,
-            ExportStatus.ERROR_EXPORT,
-            ExportStatus.ERROR_MISSING_FILES,
-            ExportStatus.DEVICE_ERROR,
-            ExportStatus.CALLED_PROCESS_ERROR,
-            ExportStatus.UNEXPECTED_RETURN_STATUS,
-        ]:
-            logger.error(f"Encountered {status.value}, cannot export")
-            self.end_wizard_with_error(status)
-            return
-
-        target = None  # Optional[PageEnum]
-        if status in [
-            ExportStatus.NO_DEVICE_DETECTED,
-            ExportStatus.MULTI_DEVICE_DETECTED,
-            ExportStatus.INVALID_DEVICE_DETECTED,
-        ]:
-            target = Pages.INSERT_USB
-        elif status in [ExportStatus.DEVICE_LOCKED, ExportStatus.ERROR_UNLOCK_LUKS]:
-            target = Pages.UNLOCK_USB
-
-        # Someone may have yanked out or unmounted a USB
-        if target and self.currentId() > target:
-            self.rewind(target)
-
-        # Update status
         self.current_status = status
-
-    def rewind(self, target: Pages) -> None:
-        """
-        Navigate back to target page.
-        """
-        logger.debug(f"Wizard: rewind from {self.currentId()} to {target}")
-        while self.currentId() > target:
-            self.back()
-
-    def end_wizard_with_error(self, error: ExportStatus) -> None:
-        """
-        If an end state is reached, display message and let user
-        end the wizard.
-        """
-        logger.debug("End wizard with error")
-        if isinstance(self.currentPage(), PreflightPage):
-            logger.debug("On preflight page, no reordering needed")
-        else:
-            while self.currentId() > Pages.ERROR:
-                self.back()
-        logger.debug(f"Target: {Pages.ERROR}. Actual: {self.currentId()}")
-        page = self.currentPage()
-        if isinstance(page, ExportWizardPage):
-            page.update_content(error)
 
     def _create_preflight(self) -> QWizardPage:
         return PreflightPage(self.export, self.summary_text)

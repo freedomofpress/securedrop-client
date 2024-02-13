@@ -70,6 +70,7 @@ from securedrop_client.db import (
     Source,
     User,
 )
+from securedrop_client.export import Export
 from securedrop_client.gui import conversation
 from securedrop_client.gui.actions import (
     DeleteConversationAction,
@@ -81,7 +82,6 @@ from securedrop_client.gui.actions import (
 )
 from securedrop_client.gui.base import SecureQLabel, SvgLabel, SvgPushButton, SvgToggleButton
 from securedrop_client.gui.conversation import DeleteConversationDialog
-from securedrop_client.gui.conversation.export import ExportWizard
 from securedrop_client.gui.datetime_helpers import format_datetime_local
 from securedrop_client.gui.source import DeleteSourceDialog
 from securedrop_client.logic import Controller
@@ -2460,9 +2460,11 @@ class FileWidget(QWidget):
             logger.debug("Clicked export but file not downloaded")
             return
 
-        export_device = conversation.ExportDevice()
+        export_device = Export()
 
-        self.export_wizard = ExportWizard(export_device, self.file.filename, [file_location])
+        self.export_wizard = conversation.ExportWizard(
+            export_device, self.file.filename, [file_location]
+        )
         self.export_wizard.show()
 
     @pyqtSlot()
@@ -2476,9 +2478,9 @@ class FileWidget(QWidget):
 
         filepath = self.file.location(self.controller.data_dir)
 
-        export_device = conversation.ExportDevice()
+        export_device = Export()
 
-        dialog = conversation.PrintFileDialog(export_device, self.file.filename, [filepath])
+        dialog = conversation.PrintDialog(export_device, self.file.filename, [filepath])
         dialog.exec()
 
     def _on_left_click(self) -> None:

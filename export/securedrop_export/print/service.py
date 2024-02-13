@@ -4,7 +4,8 @@ import signal
 import subprocess
 import time
 
-from securedrop_export.exceptions import handler, TimeoutException, ExportException
+from securedrop_export.exceptions import ExportException, TimeoutException, handler
+
 from .status import Status
 
 logger = logging.getLogger(__name__)
@@ -32,7 +33,7 @@ class Service:
         self.printer_name = self.PRINTER_NAME
         self.printer_wait_timeout = printer_timeout_seconds  # Override during testing
 
-    def print(self):
+    def print(self) -> Status:
         """
         Routine to print all files.
         Throws ExportException if an error is encountered.
@@ -42,9 +43,9 @@ class Service:
         self._print_all_files()
         # When client can accept new print statuses, we will return
         # a success status here
-        # return Status.PRINT_SUCCESS
+        return Status.PRINT_SUCCESS
 
-    def printer_preflight(self):
+    def printer_preflight(self) -> Status:
         """
         Routine to perform preflight printer testing.
 
@@ -54,9 +55,9 @@ class Service:
         self._check_printer_setup()
         # When client can accept new print statuses, we will return
         # a success status here
-        # return Status.PREFLIGHT_SUCCESS
+        return Status.PREFLIGHT_SUCCESS
 
-    def printer_test(self):
+    def printer_test(self) -> Status:
         """
         Routine to print a test page.
 
@@ -67,7 +68,7 @@ class Service:
         self._print_test_page()
         # When client can accept new print statuses, we will return
         # a success status here
-        # return Status.TEST_SUCCESS
+        return Status.PRINT_TEST_PAGE_SUCCESS
 
     def _wait_for_print(self):
         """

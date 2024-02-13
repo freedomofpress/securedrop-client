@@ -1,7 +1,8 @@
-import pytest
 import signal
 
-from securedrop_export.exceptions import handler, TimeoutException
+import pytest
+
+from securedrop_export.exceptions import TimeoutException, handler
 
 
 def test_handler():

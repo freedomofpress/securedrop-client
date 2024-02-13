@@ -193,8 +193,9 @@ class Export(QObject):
 
     def _on_export_process_complete(self) -> None:
         """
-        Callback, handle and emit QProcess result. As with all such callbacks,
-        the method signature cannot change.
+        Callback, handle and emit results from QProcess. Information
+        can be read from stdout/err. This callback will be triggered
+        if the QProcess exits with return code 0.
         """
         self._cleanup_tmpdir()
         # securedrop-export writes status to stderr
@@ -270,8 +271,6 @@ class Export(QObject):
         self._cleanup_tmpdir()
         logger.debug("Print success")
         self.print_succeeded.emit(ExportStatus.PRINT_SUCCESS)
-        # TODO: Previously emitted [filepaths]
-        self.export_completed.emit([])
 
     def end_process(self) -> None:
         """
@@ -305,6 +304,7 @@ class Export(QObject):
             logger.debug("Beginning print")
 
             self.tmpdir = mkdtemp()
+            os.chmod(self.tmpdir, 0o700)
             archive_path = self._create_archive(
                 archive_dir=self.tmpdir,
                 archive_fn=self._PRINT_FN,
@@ -326,8 +326,6 @@ class Export(QObject):
             else:
                 logger.error("Print failed while creating archive (no status supplied)")
                 self.print_failed.emit(ExportError(ExportStatus.ERROR_PRINT))
-
-        self.export_completed.emit(filepaths)
 
     def _create_archive(
         self, archive_dir: str, archive_fn: str, metadata: dict, filepaths: List[str] = []

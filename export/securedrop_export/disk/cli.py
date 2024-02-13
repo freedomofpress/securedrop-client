@@ -1,17 +1,18 @@
 import json
 import logging
 import os
-import pexpect
 import subprocess
 import time
-
 from re import Pattern
+from shlex import quote
 from typing import Optional, Union
+
+import pexpect
 
 from securedrop_export.exceptions import ExportException
 
-from .volume import EncryptionScheme, Volume, MountedVolume
 from .status import Status
+from .volume import EncryptionScheme, MountedVolume, Volume
 
 logger = logging.getLogger(__name__)
 
@@ -80,9 +81,7 @@ class CLI:
                 logger.info("No USB devices found")
                 raise ExportException(sdstatus=Status.NO_DEVICE_DETECTED)
             elif len(targets) > 1:
-                logger.error(
-                    "Too many possibilities! Detach a storage device before continuing."
-                )
+                logger.error("Too many USB devices! Detach a device before continuing.")
                 raise ExportException(sdstatus=Status.MULTI_DEVICE_DETECTED)
 
             # lsblk -o NAME,RM,RO,TYPE,MOUNTPOINT,FSTYPE --json
@@ -213,8 +212,8 @@ class CLI:
     def _is_it_veracrypt(self, volume: Volume) -> EncryptionScheme:
         """
         Helper. Best-effort detection of unlocked VeraCrypt drives.
-        Udisks2 requires the flag file /etc/udisks2/tcrypt.conf to
-        enable VC detection, which we will ship with the `securedrop-export` package.
+        udisks2 requires the flag file /etc/udisks2/tcrypt.conf to
+        enable VeraCrypt drive detection, which we ship with this package.
         """
         try:
             info = subprocess.check_output(
@@ -222,7 +221,7 @@ class CLI:
                     "udisksctl",
                     "info",
                     "--block-device",
-                    f"{volume.device_name}",
+                    quote(volume.device_name),
                 ]
             ).decode("utf-8")
             if "IdType:                     crypto_TCRYPT\n" in info:
@@ -251,9 +250,10 @@ class CLI:
         in the list of results to check for. (See
         https://pexpect.readthedocs.io/en/stable/api/pexpect.html#pexpect.spawn.expect)
         """
-        logger.debug("Unlocking volume {}".format(volume.device_name))
+        logger.debug("Unlocking volume {}".format(quote(volume.device_name)))
 
-        command = f"udisksctl unlock --block-device {volume.device_name}"
+        command = "udisksctl"
+        args = ["unlock", "--block-device", quote(volume.device_name)]
 
         # pexpect allows for a match list that contains pexpect.EOF and pexpect.TIMEOUT
         # as well as string/regex matches:
@@ -274,7 +274,7 @@ class CLI:
         ]  # type: PexpectList
         unlock_error = Status.ERROR_UNLOCK_GENERIC
 
-        child = pexpect.spawn(command)
+        child = pexpect.spawn(command, args)
         index = child.expect(prompt)
         if index != 0:
             logger.error("Did not receive disk unlock prompt")
@@ -284,14 +284,14 @@ class CLI:
             child.sendline(encryption_key)
             index = child.expect(expected)
             if index == 0 or index == 1:
-                # We know what format the string is in.
                 # Pexpect includes a re.Match object at `child.match`, but this freaks mypy out:
                 # see https://pexpect.readthedocs.io/en/stable/api/pexpect.html#pexpect.spawn.expect
+                # We know what format the results are in
                 dm_name = child.match.group(1).decode("utf-8").strip()  # type: ignore
                 logger.debug(f"Device is unlocked as {dm_name}")
 
                 child.close()
-                if (child.exitstatus) not in (0, 1):
+                if child.exitstatus is not None and child.exitstatus not in (0, 1):
                     logger.warning(f"pexpect: child exited with {child.exitstatus}")
 
                 # dm_name format is /dev/dm-X
@@ -323,17 +323,21 @@ class CLI:
         https://pexpect.readthedocs.io/en/stable/api/pexpect.html#pexpect.spawn.expect)
         """
 
-        info = f"udisksctl info --block-device {volume.device_name}"
+        info_cmd = "udisksctl"
+        info_args = ["info", "--block-device", quote(volume.device_name)]
+        # The terminal output has colours and other formatting. A match is anything
+        # that includes our device identified as PreferredDevice on one line
         # \x1b[37mPreferredDevice:\x1b[0m            /dev/sdaX\r\n
         expected_info = [
-            f"PreferredDevice:[\t+]{volume.device_name}",
+            f"PreferredDevice:.*[^\r\n]{volume.device_name}",
             "Error looking up object for device",
             pexpect.EOF,
             pexpect.TIMEOUT,
         ]  # type: PexpectList
         max_retries = 3
 
-        mount = f"udisksctl mount --block-device {full_unlocked_name}"
+        mount_cmd = "udisksctl"
+        mount_args = ["mount", "--block-device", quote(full_unlocked_name)]
 
         # We can't pass {full_unlocked_name} in the match statement since even if we
         # pass in /dev/mapper/xxx, udisks2 may refer to the disk as /dev/dm-X.
@@ -352,47 +356,39 @@ class CLI:
             f"(unlocked as {full_unlocked_name})"
         )
         for _ in range(max_retries):
-            child = pexpect.spawn(info)
+            child = pexpect.spawn(info_cmd, info_args)
             index = child.expect(expected_info)
-            logger.debug(
-                f"Results from udisks info: {volume.device_name}, "
-                f"before: {child.before}, after: {child.after}"
-            )
             child.close()
 
             if index != 0:
-                logger.debug(
-                    f"udisks can't identify {volume.device_name}, retrying..."
-                )
+                logger.debug(f"udisks can't identify {volume.device_name}, retrying...")
                 time.sleep(0.5)
             else:
                 logger.debug(f"udisks found {volume.device_name}")
                 break
 
         logger.info(f"Mount {full_unlocked_name} using udisksctl")
-        child = pexpect.spawn(mount)
+        child = pexpect.spawn(mount_cmd, mount_args)
         index = child.expect(expected_mount)
-
-        logger.debug(
-            f"child: {str(child.match)}, before: {child.before}, after: {child.after}"
-        )
 
         if index == 0:
             # As above, we know the format.
             # Per https://pexpect.readthedocs.io/en/stable/api/pexpect.html#pexpect.spawn.expect,
             # `child.match` is a re.Match object
             mountpoint = child.match.group(1).decode("utf-8").strip()  # type: ignore
-            logger.debug(f"Successfully mounted device at {mountpoint}")
+            logger.info(f"Successfully mounted device at {mountpoint}")
 
         elif index == 1:
             # Use udisks unlocked name
+            logger.debug("Already mounted, get unlocked_name and mountpoint")
             full_unlocked_name = child.match.group(1).decode("utf-8").strip()  # type: ignore
             mountpoint = child.match.group(2).decode("utf-8").strip()  # type: ignore
-            logger.debug(f"Device already mounted at {mountpoint}")
+            logger.info(f"Device {full_unlocked_name} already mounted at {mountpoint}")
 
         elif index == 2:
             logger.debug("Device is not ready")
 
+        logger.debug("Close pexpect process")
         child.close()
 
         if mountpoint:
@@ -409,8 +405,8 @@ class CLI:
     def write_data_to_device(
         self,
         device: MountedVolume,
-        submission_tmpdir: str,
-        submission_target_dirname: str,
+        archive_tmpdir: str,
+        archive_target_dirname: str,
     ):
         """
         Move files to drive (overwrites files with same filename) and unmount drive.
@@ -423,16 +419,14 @@ class CLI:
             # Flag to pass to cleanup method
             is_error = False
 
-            target_path = os.path.join(device.mountpoint, submission_target_dirname)
+            target_path = os.path.join(device.mountpoint, archive_target_dirname)
             subprocess.check_call(["mkdir", target_path])
 
-            export_data = os.path.join(submission_tmpdir, "export_data/")
-            logger.debug("Copying file to {}".format(submission_target_dirname))
+            export_data = os.path.join(archive_tmpdir, "export_data/")
+            logger.debug("Copying file to {}".format(archive_target_dirname))
 
             subprocess.check_call(["cp", "-r", export_data, target_path])
-            logger.info(
-                "File copied successfully to {}".format(submission_target_dirname)
-            )
+            logger.info("File copied successfully to {}".format(archive_target_dirname))
 
         except (subprocess.CalledProcessError, OSError) as ex:
             logger.error(ex)
@@ -442,12 +436,12 @@ class CLI:
             raise ExportException(sdstatus=Status.ERROR_EXPORT) from ex
 
         finally:
-            self.cleanup(device, submission_tmpdir, is_error)
+            self.cleanup(device, archive_tmpdir, is_error)
 
     def cleanup(
         self,
         volume: MountedVolume,
-        submission_tmpdir: str,
+        archive_tmpdir: str,
         is_error: bool = False,
         should_close_volume: bool = True,
     ):
@@ -465,7 +459,7 @@ class CLI:
         logger.debug("Syncing filesystems")
         try:
             subprocess.check_call(["sync"])
-            self._remove_temp_directory(submission_tmpdir)
+            self._remove_temp_directory(archive_tmpdir)
 
             # Future configurable option
             if should_close_volume:
@@ -479,43 +473,44 @@ class CLI:
         """
         Unmount and close volume.
         """
-        if os.path.exists(mv.mountpoint):
-            logger.debug(f"Unmounting drive {mv.unlocked_name} from {mv.mountpoint}")
-            try:
-                subprocess.check_call(
-                    [
-                        "udisksctl",
-                        "unmount",
-                        "--block-device",
-                        f"{mv.unlocked_name}",
-                    ]
-                )
+        logger.debug(f"Unmounting drive {mv.unlocked_name} from {mv.mountpoint}")
+        try:
+            subprocess.check_call(
+                [
+                    "udisksctl",
+                    "unmount",
+                    "--block-device",
+                    quote(mv.unlocked_name),
+                ],
+                # Redirect stderr/stdout to avoid broken pipe when subprocess terminates,
+                # which results in qrexec attempting to parse error lines written to stderr
+                stdout=subprocess.DEVNULL,
+                stderr=subprocess.DEVNULL,
+            )
 
-            except subprocess.CalledProcessError as ex:
-                logger.error(ex)
-                logger.error("Error unmounting device")
+        except subprocess.CalledProcessError as ex:
+            logger.error(ex)
+            logger.error("Error unmounting device")
 
-                raise ExportException(sdstatus=Status.ERROR_UNMOUNT_VOLUME_BUSY) from ex
-        else:
-            logger.info("Mountpoint does not exist; volume was already unmounted")
+            raise ExportException(sdstatus=Status.ERROR_UNMOUNT_VOLUME_BUSY) from ex
 
-        if os.path.exists(f"{mv.unlocked_name}"):
-            logger.debug(f"Closing drive {mv.device_name}")
-            try:
-                subprocess.check_call(
-                    [
-                        "udisksctl",
-                        "lock",
-                        "--block-device",
-                        f"{mv.device_name}",
-                    ]
-                )
+        logger.debug(f"Closing drive {mv.device_name}")
+        try:
+            subprocess.check_call(
+                [
+                    "udisksctl",
+                    "lock",
+                    "--block-device",
+                    quote(mv.device_name),
+                ],
+                # Redirect stderr/stdout to avoid broken pipe when subprocess terminates
+                stdout=subprocess.DEVNULL,
+                stderr=subprocess.DEVNULL,
+            )
 
-            except subprocess.CalledProcessError as ex:
-                logger.error("Error closing device")
-                raise ExportException(sdstatus=Status.ERROR_EXPORT_CLEANUP) from ex
-        else:
-            logger.info("Mapped entry does not exist; volume was already closed")
+        except subprocess.CalledProcessError as ex:
+            logger.error("Error closing device")
+            raise ExportException(sdstatus=Status.ERROR_EXPORT_CLEANUP) from ex
 
         return Volume(
             device_name=f"{_DEV_PREFIX}{mv.device_name}",

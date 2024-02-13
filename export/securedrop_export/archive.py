@@ -6,10 +6,10 @@ import logging
 import os
 import tempfile
 
-from securedrop_export.exceptions import ExportException
-from securedrop_export.status import BaseStatus
 from securedrop_export.command import Command
 from securedrop_export.directory import safe_extractall
+from securedrop_export.exceptions import ExportException
+from securedrop_export.status import BaseStatus
 
 logger = logging.getLogger(__name__)
 

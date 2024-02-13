@@ -29,6 +29,10 @@ class PrintDialog(ModalDialog):
         )
         self._device.print_preflight_check_failed.connect(self._on_print_preflight_check_failed)
 
+        # For now, connect both success and error signals to close the print dialog.
+        self._device.print_succeeded.connect(self._on_print_complete)
+        self._device.print_failed.connect(self._on_print_complete)
+
         # Connect parent signals to slots
         self.continue_button.setEnabled(False)
         self.continue_button.clicked.connect(self._run_preflight)
@@ -95,9 +99,15 @@ class PrintDialog(ModalDialog):
     @pyqtSlot()
     def _print_file(self) -> None:
         self._device.print(self.filepaths)
-        self.close()
 
     @pyqtSlot()
+    def _on_print_complete(self) -> None:
+        """
+        Send a signal to close the print dialog.
+        """
+        self.close()
+
+    @pyqtSlot(object)
     def _on_print_preflight_check_succeeded(self, status: ExportStatus) -> None:
         # We don't use the ExportStatus for now for "success" status,
         # but in future work we will migrate towards a wizard-style dialog, where

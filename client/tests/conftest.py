@@ -4,7 +4,6 @@ import subprocess
 import tempfile
 from configparser import ConfigParser
 from datetime import datetime
-from unittest import mock
 from uuid import uuid4
 
 import pytest
@@ -23,6 +22,7 @@ from securedrop_client.db import (
     Source,
     make_session_maker,
 )
+from securedrop_client.export import Export
 from securedrop_client.export_status import ExportStatus
 from securedrop_client.gui import conversation
 from securedrop_client.gui.main import Window
@@ -51,6 +51,7 @@ TIME_RENDER_SOURCE_LIST = 20000
 TIME_RENDER_CONV_VIEW = 1000
 TIME_RENDER_EXPORT_WIZARD = 1000
 TIME_FILE_DOWNLOAD = 5000
+TIME_KEYCLICK_ACTION = 5000
 
 
 @pytest.fixture(scope="function")
@@ -78,9 +79,9 @@ def lang(request):
 def print_dialog(mocker, homedir):
     mocker.patch("PyQt5.QtWidgets.QApplication.activeWindow", return_value=QMainWindow())
 
-    export_device = mocker.MagicMock(spec=conversation.ExportDevice)
+    export_device = mocker.MagicMock(spec=Export)
 
-    dialog = conversation.PrintFileDialog(export_device, "file123.jpg", ["/mock/path/to/file"])
+    dialog = conversation.PrintDialog(export_device, "file123.jpg", ["/mock/path/to/file"])
 
     yield dialog
 
@@ -89,7 +90,7 @@ def print_dialog(mocker, homedir):
 def print_transcript_dialog(mocker, homedir):
     mocker.patch("PyQt5.QtWidgets.QApplication.activeWindow", return_value=QMainWindow())
 
-    export_device = mocker.MagicMock(spec=conversation.ExportDevice)
+    export_device = mocker.MagicMock(spec=Export)
 
     dialog = conversation.PrintTranscriptDialog(
         export_device, "transcript.txt", ["some/path/transcript.txt"]
@@ -102,7 +103,7 @@ def print_transcript_dialog(mocker, homedir):
 def export_wizard_multifile(mocker, homedir):
     mocker.patch("PyQt5.QtWidgets.QApplication.activeWindow", return_value=QMainWindow())
 
-    export_device = mocker.MagicMock(spec=conversation.ExportDevice)
+    export_device = mocker.MagicMock(spec=Export)
 
     wizard = conversation.ExportWizard(
         export_device,
@@ -117,7 +118,7 @@ def export_wizard_multifile(mocker, homedir):
 def export_wizard(mocker, homedir):
     mocker.patch("PyQt5.QtWidgets.QApplication.activeWindow", return_value=QMainWindow())
 
-    export_device = mocker.MagicMock(spec=conversation.ExportDevice)
+    export_device = mocker.MagicMock(spec=Export)
 
     dialog = conversation.ExportWizard(export_device, "file123.jpg", ["/mock/path/to/file"])
 
@@ -128,7 +129,7 @@ def export_wizard(mocker, homedir):
 def export_transcript_wizard(mocker, homedir):
     mocker.patch("PyQt5.QtWidgets.QApplication.activeWindow", return_value=QMainWindow())
 
-    export_device = mocker.MagicMock(spec=conversation.ExportDevice)
+    export_device = mocker.MagicMock(spec=Export)
 
     dialog = conversation.ExportWizard(
         export_device, "transcript.txt", ["/some/path/transcript.txt"]
@@ -173,22 +174,29 @@ def homedir(i18n):
 def mock_export_locked():
     """
     Represents the following scenario:
-        * Locked USB already inserted
-        * "Export" clicked, export wizard launched
+        * No USB
+        * Export wizard launched
+        * USB inserted
         * Passphrase successfully entered on first attempt (and export suceeeds)
     """
-    device = conversation.ExportDevice()
+    device = Export()
+    status = iter(
+        [
+            ExportStatus.NO_DEVICE_DETECTED,
+            ExportStatus.DEVICE_LOCKED,
+            ExportStatus.SUCCESS_EXPORT,
+        ]
+    )
+
+    def get_status() -> ExportStatus:
+        return next(status)
 
     device.run_export_preflight_checks = lambda: device.export_state_changed.emit(
         ExportStatus.NO_DEVICE_DETECTED
     )
     device.run_printer_preflight_checks = lambda: None
     device.print = lambda filepaths: None
-    device.export = mock.MagicMock()
-    device.export.side_effect = [
-        lambda filepaths, passphrase: device.export_state_changed.emit(ExportStatus.DEVICE_LOCKED),
-        lambda filepaths, passphrase: device.export_state_changed.emit(ExportStatus.SUCCESS_EXPORT),
-    ]
+    device.export = lambda filepaths, passphrase: device.export_state_changed.emit(get_status())
 
     return device
 
@@ -201,7 +209,7 @@ def mock_export_unlocked():
         * Export wizard launched
         * Export succeeds
     """
-    device = conversation.ExportDevice()
+    device = Export()
 
     device.run_export_preflight_checks = lambda: device.export_state_changed.emit(
         ExportStatus.DEVICE_WRITABLE
@@ -220,29 +228,30 @@ def mock_export_no_usb_then_bad_passphrase():
     """
     Represents the following scenario:
         * Export wizard launched
-        * Locked USB inserted
+        * Locked USB detected
         * Mistyped Passphrase
         * Correct passphrase
         * Export succeeds
     """
-    device = conversation.ExportDevice()
+    device = Export()
+    status = iter(
+        [
+            ExportStatus.NO_DEVICE_DETECTED,
+            ExportStatus.DEVICE_LOCKED,
+            ExportStatus.ERROR_UNLOCK_LUKS,
+            ExportStatus.SUCCESS_EXPORT,
+        ]
+    )
+
+    def get_status() -> ExportStatus:
+        return next(status)
 
     device.run_export_preflight_checks = lambda: device.export_state_changed.emit(
         ExportStatus.NO_DEVICE_DETECTED
     )
     device.run_printer_preflight_checks = lambda: None
     device.print = lambda filepaths: None
-    device.export = mock.MagicMock()
-    device.export.side_effect = [
-        lambda filepaths, passphrase: device.export_state_changed.emit(ExportStatus.DEVICE_LOCKED),
-        lambda filepaths, passphrase: device.export_state_changed.emit(
-            ExportStatus.ERROR_UNLOCK_LUKS
-        ),
-        lambda filepaths, passphrase: device.export_state_changed.emit(
-            ExportStatus.DEVICE_WRITABLE
-        ),
-        lambda filepaths, passphrase: device.export_state_changed.emit(ExportStatus.SUCCESS_EXPORT),
-    ]
+    device.export = lambda filepaths, passphrase: device.export_state_changed.emit(get_status())
 
     return device
 
@@ -251,22 +260,31 @@ def mock_export_no_usb_then_bad_passphrase():
 def mock_export_fail_early():
     """
     Represents the following scenario:
-        * Locked USB inserted
+        * No USB inserted
         * Export wizard launched
+        * Locked USB inserted
         * Unrecoverable error before export happens
           (eg, mount error)
     """
-    device = conversation.ExportDevice()
+    device = Export()
+    # why does it need an extra ERROR_MOUNT report?
+    status = iter(
+        [
+            ExportStatus.NO_DEVICE_DETECTED,
+            ExportStatus.DEVICE_LOCKED,
+            ExportStatus.ERROR_MOUNT,
+        ]
+    )
+
+    def get_status() -> ExportStatus:
+        return next(status)
 
     device.run_export_preflight_checks = lambda: device.export_state_changed.emit(
-        ExportStatus.DEVICE_LOCKED
+        ExportStatus.NO_DEVICE_DETECTED
     )
     device.run_printer_preflight_checks = lambda: None
     device.print = lambda filepaths: None
-    device.export = mock.MagicMock()
-    device.export = lambda filepaths, passphrase: device.export_state_changed.emit(
-        ExportStatus.ERROR_MOUNT
-    )
+    device.export = lambda filepaths, passphrase: device.export_state_changed.emit(get_status())
 
     return device
 

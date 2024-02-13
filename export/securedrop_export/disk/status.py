@@ -8,15 +8,17 @@ class Status(BaseStatus):
         "INVALID_DEVICE_DETECTED"  # Not encrypted, or partitions too many/too nested
     )
 
-    MULTI_DEVICE_DETECTED = "MULTI_DEVICE_DETECTED"  # Not currently supported
+    MULTI_DEVICE_DETECTED = (
+        "MULTI_DEVICE_DETECTED"  # Multiple devices are not currently supported
+    )
 
     DEVICE_LOCKED = "DEVICE_LOCKED"  # One valid device detected, and it's locked
     DEVICE_WRITABLE = (
         "DEVICE_WRITABLE"  # One valid device detected, and it's unlocked (and mounted)
     )
 
-    ERROR_UNLOCK_LUKS = "ERROR_UNLOCK_LUKS"  # Bad passphrase (LUKS)
-    ERROR_UNLOCK_GENERIC = "ERROR_UNLOCK_GENERIC"  # May not be used
+    ERROR_UNLOCK_LUKS = "ERROR_UNLOCK_LUKS"  # Bad LUKS passphrase
+    ERROR_UNLOCK_GENERIC = "ERROR_UNLOCK_GENERIC"  # Other error during unlocking
     ERROR_MOUNT = "ERROR_MOUNT"  # Unlocked but not mounted
 
     SUCCESS_EXPORT = "SUCCESS_EXPORT"

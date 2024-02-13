@@ -6,7 +6,6 @@ from pkg_resources import resource_string
 from PyQt5.QtCore import QSize, Qt, pyqtSlot
 from PyQt5.QtGui import QColor, QFont, QPixmap
 from PyQt5.QtWidgets import (
-    QApplication,
     QGraphicsDropShadowEffect,
     QHBoxLayout,
     QLabel,
@@ -56,13 +55,22 @@ class ExportWizardPage(QWizardPage):
     NO_MARGIN = 0
     FILENAME_WIDTH_PX = 260
 
+    # All pages should show the error page if these errors are encountered
+    UNRECOVERABLE_ERRORS = [
+        ExportStatus.ERROR_MOUNT,
+        ExportStatus.ERROR_EXPORT,
+        ExportStatus.ERROR_MISSING_FILES,
+        ExportStatus.DEVICE_ERROR,
+        ExportStatus.CALLED_PROCESS_ERROR,
+        ExportStatus.UNEXPECTED_RETURN_STATUS,
+    ]
+
     def __init__(self, export: Export, header: str, body: Optional[str]) -> None:
-        parent = QApplication.activeWindow()
-        super().__init__(parent)
+        super().__init__()
         self.export = export
         self.header_text = header
         self.body_text = body
-        self.status = None  # Optional[ExportStatus]
+        self.status: Optional[ExportStatus] = None
         self._is_complete = True  # Won't override parent method unless explicitly set to False
 
         self.setLayout(self._build_layout())
@@ -85,6 +93,7 @@ class ExportWizardPage(QWizardPage):
         """
         Create parent layout, draw elements, return parent layout
         """
+        self.setObjectName("QWizard_export_page")
         self.setStyleSheet(self.WIZARD_CSS)
         parent_layout = QVBoxLayout(self)
         parent_layout.setContentsMargins(self.MARGIN, self.MARGIN, self.MARGIN, self.MARGIN)
@@ -93,7 +102,10 @@ class ExportWizardPage(QWizardPage):
         header_container = QWidget()
         header_container_layout = QHBoxLayout()
         header_container.setLayout(header_container_layout)
-        self.header_icon = SvgLabel("blank.svg", svg_size=QSize(64, 64))
+        header_container.setContentsMargins(
+            self.NO_MARGIN, self.NO_MARGIN, self.NO_MARGIN, self.NO_MARGIN
+        )
+        self.header_icon = SvgLabel("savetodisk.svg", svg_size=QSize(64, 64))
         self.header_icon.setObjectName("QWizard_header_icon")
         self.header_spinner = QPixmap()
         self.header_spinner_label = QLabel()
@@ -103,9 +115,9 @@ class ExportWizardPage(QWizardPage):
         self.header_spinner_label.setPixmap(self.header_spinner)
         self.header = QLabel()
         self.header.setObjectName("QWizard_header")
-        header_container_layout.addWidget(self.header, alignment=Qt.AlignCenter)
         header_container_layout.addWidget(self.header_icon)
         header_container_layout.addWidget(self.header_spinner_label)
+        header_container_layout.addWidget(self.header, alignment=Qt.AlignCenter)
         header_container_layout.addStretch()
         self.header_line = QWidget()
         self.header_line.setObjectName("QWizard_header_line")
@@ -170,10 +182,38 @@ class ExportWizardPage(QWizardPage):
     def on_status_received(self, status: ExportStatus) -> None:
         raise NotImplementedError("Children must implement")
 
+    def nextId(self) -> int:
+        """
+        Override builtin QWizardPage nextId() method to create custom control flow.
+        """
+        if self.status is not None:
+            if self.status in (
+                ExportStatus.DEVICE_WRITABLE,
+                ExportStatus.SUCCESS_EXPORT,
+                ExportStatus.ERROR_UNMOUNT_VOLUME_BUSY,
+                ExportStatus.ERROR_EXPORT_CLEANUP,
+            ):
+                return Pages.EXPORT_DONE
+            elif self.status in (
+                ExportStatus.DEVICE_LOCKED,
+                ExportStatus.ERROR_UNLOCK_LUKS,
+                ExportStatus.ERROR_UNLOCK_GENERIC,
+            ):
+                return Pages.UNLOCK_USB
+            elif self.status in (
+                ExportStatus.NO_DEVICE_DETECTED,
+                ExportStatus.MULTI_DEVICE_DETECTED,
+                ExportStatus.INVALID_DEVICE_DETECTED,
+            ):
+                return Pages.INSERT_USB
+            elif self.status in self.UNRECOVERABLE_ERRORS:
+                return Pages.ERROR
+
+        return super().nextId()
+
     def update_content(self, status: ExportStatus, should_show_hint: bool = False) -> None:
         """
         Update page's content based on new status.
-        Children may re-implement this method.
         """
         if not status:
             logger.error("Empty status value given to update_content")
@@ -190,6 +230,7 @@ class ExportWizardPage(QWizardPage):
 
 class PreflightPage(ExportWizardPage):
     def __init__(self, export: Export, summary: str) -> None:
+        self._should_autoskip_preflight = False
         self.summary = summary
         header = _(
             "Preparing to export:<br />" '<span style="font-weight:normal">{}</span>'
@@ -212,36 +253,57 @@ class PreflightPage(ExportWizardPage):
 
         super().__init__(export, header=header, body=body)
         self.start_animate_header()
-        self.export.run_export_preflight_checks()
 
-    def nextId(self) -> int:
+        # Don't need preflight check every time, just when the wizard is initialized
+        if self.status is None:
+            self.set_complete(False)
+            self.completeChanged.emit()
+            self.export.run_export_preflight_checks()
+
+    def set_should_autoskip_preflight(self, should_autoskip: bool) -> None:
         """
-        Override builtin to allow bypassing the password page if device is unlocked.
+        Provide setter for auto-advancing wizard past the Preflight page.
+        If True, as soon as a Status is available, the wizard will advance
+        to the appropriate page.
         """
-        if self.status == ExportStatus.DEVICE_WRITABLE:
-            logger.debug("Skip password prompt")
-            return Pages.EXPORT_DONE
-        elif self.status == ExportStatus.DEVICE_LOCKED:
-            logger.debug("Device locked - prompt for passphrase")
-            return Pages.UNLOCK_USB
-        elif self.status in (
-            ExportStatus.CALLED_PROCESS_ERROR,
-            ExportStatus.DEVICE_ERROR,
-            ExportStatus.UNEXPECTED_RETURN_STATUS,
-        ):
-            logger.debug("Error during preflight - show error page")
-            return Pages.ERROR
-        else:
-            return Pages.INSERT_USB
+        self._should_autoskip_preflight = should_autoskip
+
+    def should_autoskip_preflight(self) -> bool:
+        """
+        Return True if Preflight page should be advanced automatically as soon as
+        a given status is available.
+
+        This workaround exists to let users skip past the preflight page if they are
+        returned to it from a later page. This is required because in PyQt5,
+        QWizard cannot navigate to a specific page, meaning users who insert an
+        unlocked drive, then start the wizard, then encounter a problem are sent
+        "back" to this page rather than to the InsertUSBPage, since it wasn't in
+        their call stack.
+
+        The autoskip combined with custom nextId logic in ExporWizardPage allows us
+        to emulate the desired behaviour.
+        """
+        return self._should_autoskip_preflight
 
     @pyqtSlot(object)
     def on_status_received(self, status: ExportStatus) -> None:
+        self.status = status
         self.stop_animate_header()
         header = _("Ready to export:<br />" '<span style="font-weight:normal">{}</span>').format(
             self.summary
         )
         self.header.setText(header)
-        self.status = status
+        self.set_complete(True)
+        self.completeChanged.emit()
+
+        if self.wizard() and isinstance(self.wizard().currentPage(), PreflightPage):
+            # Let users skip preflight screen if they have already seen it. The first time a status
+            # is received, autoskip is False, and a user has to manually click "Continue";
+            # after that, it's True.
+            if self.should_autoskip_preflight():
+                self.wizard().next()
+            else:
+                self.set_should_autoskip_preflight(True)
 
 
 class ErrorPage(ExportWizardPage):
@@ -250,15 +312,21 @@ class ErrorPage(ExportWizardPage):
         super().__init__(export, header=header, body=None)
 
     def isComplete(self) -> bool:
+        """
+        Override isComplete() to always return False. This disables
+        the 'next' button on the error page and means users can
+        only go back to a previous page or exit the wizard.
+        """
         return False
 
     @pyqtSlot(object)
     def on_status_received(self, status: ExportStatus) -> None:
-        pass
+        self.status = status
 
 
 class InsertUSBPage(ExportWizardPage):
     def __init__(self, export: Export, summary: str) -> None:
+        self.no_device_hint = 0
         self.summary = summary
         header = _("Ready to export:<br />" '<span style="font-weight:normal">{}</span>').format(
             summary
@@ -271,63 +339,37 @@ class InsertUSBPage(ExportWizardPage):
 
     @pyqtSlot(object)
     def on_status_received(self, status: ExportStatus) -> None:
-        logger.debug(f"InsertUSB received {status.value}")
-        should_show_hint = status in (
-            ExportStatus.MULTI_DEVICE_DETECTED,
-            ExportStatus.INVALID_DEVICE_DETECTED,
-        ) or (
-            self.status == status == ExportStatus.NO_DEVICE_DETECTED
-            and isinstance(self.wizard().currentPage, InsertUSBPage)
-        )
-        self.update_content(status, should_show_hint)
         self.status = status
-        self.completeChanged.emit()
-        if status in (ExportStatus.DEVICE_LOCKED, ExportStatus.DEVICE_WRITABLE) and isinstance(
-            self.wizard().currentPage(), InsertUSBPage
-        ):
-            logger.debug("Device detected - advance the wizard")
-            self.wizard().next()
+        if self.wizard() and isinstance(self.wizard().currentPage(), InsertUSBPage):
+            logger.debug(f"InsertUSB received {status.value}")
+            if status in (
+                ExportStatus.MULTI_DEVICE_DETECTED,
+                ExportStatus.INVALID_DEVICE_DETECTED,
+                ExportStatus.DEVICE_WRITABLE,
+            ):
+                self.update_content(status, should_show_hint=True)
+            elif status == ExportStatus.NO_DEVICE_DETECTED:
+                if self.no_device_hint > 0:
+                    self.update_content(status, should_show_hint=True)
+                self.no_device_hint += 1
+            else:
+                # Hide the error hint, it visible, so that if the user navigates
+                # forward then back they don't see an unneeded hint
+                self.error_details.hide()
+                self.wizard().next()
 
     def validatePage(self) -> bool:
         """
-        Override method to implement custom validation logic, which
-        shows an error-specific hint to the user.
+        Implement custom validation logic.
         """
-        if self.status in (ExportStatus.DEVICE_WRITABLE, ExportStatus.DEVICE_LOCKED):
-            self.error_details.hide()
-            return True
-        else:
-            logger.debug(f"Status is {self.status}")
-
-            # Show the user a hint
-            if self.status in (
-                ExportStatus.MULTI_DEVICE_DETECTED,
+        if self.status is not None:
+            return self.status not in (
                 ExportStatus.NO_DEVICE_DETECTED,
                 ExportStatus.INVALID_DEVICE_DETECTED,
-            ):
-                self.update_content(self.status, should_show_hint=True)
-                return False
-            else:
-                # Status may be None here
-                logger.warning("InsertUSBPage encountered unexpected status")
-                return super().validatePage()
-
-    def nextId(self) -> int:
-        """
-        Override builtin to allow bypassing the password page if device unlocked
-        """
-        if self.status == ExportStatus.DEVICE_WRITABLE:
-            logger.debug("Skip password prompt")
-            return Pages.EXPORT_DONE
-        elif self.status == ExportStatus.DEVICE_LOCKED:
-            return Pages.UNLOCK_USB
-        elif self.status in (ExportStatus.UNEXPECTED_RETURN_STATUS, ExportStatus.DEVICE_ERROR):
-            return Pages.ERROR
+                ExportStatus.MULTI_DEVICE_DETECTED,
+            )
         else:
-            next = super().nextId()
-            value = self.status.value if self.status else "(no status supplied)"
-            logger.debug(f"Unexpected status on InsertUSBPage: {value}. nextID is {next}")
-            return next
+            return super().isComplete()
 
 
 class FinalPage(ExportWizardPage):
@@ -340,9 +382,13 @@ class FinalPage(ExportWizardPage):
 
     @pyqtSlot(object)
     def on_status_received(self, status: ExportStatus) -> None:
-        logger.debug(f"Final page received status {status}")
-        self.update_content(status)
         self.status = status
+        self.update_content(status)
+
+        # The completeChanged signal alerts the page to recheck its completion status,
+        # which we need to signal since we have custom isComplete() logic
+        if self.wizard() and isinstance(self.wizard().currentPage(), FinalPage):
+            self.completeChanged.emit()
 
     def update_content(self, status: ExportStatus, should_show_hint: bool = False) -> None:
         header = None
@@ -353,9 +399,9 @@ class FinalPage(ExportWizardPage):
                 "Remember to be careful when working with files "
                 "outside of your Workstation machine."
             )
-        elif status == ExportStatus.ERROR_EXPORT_CLEANUP:
-            header = header = _("Export sucessful, but drive was not locked")
-            body = STATUS_MESSAGES.get(ExportStatus.ERROR_EXPORT_CLEANUP)
+        elif status in (ExportStatus.ERROR_EXPORT_CLEANUP, ExportStatus.ERROR_UNMOUNT_VOLUME_BUSY):
+            header = _("Export sucessful, but drive was not locked")
+            body = STATUS_MESSAGES.get(status)
 
         else:
             header = _("Working...")
@@ -363,6 +409,27 @@ class FinalPage(ExportWizardPage):
         self.header.setText(header)
         if body:
             self.body.setText(body)
+
+    def isComplete(self) -> bool:
+        """
+        Override the default isComplete() implementation in order to disable the "Finish"
+        button while an export is taking place. (If the "Working...." header is being shown,
+        the export is still in progress and "Finish" should not be clickable.)
+        """
+        if self.status:
+            return self.status not in (
+                ExportStatus.DEVICE_WRITABLE,
+                ExportStatus.DEVICE_LOCKED,
+            )
+        else:
+            return True
+
+    def nextId(self) -> int:
+        """
+        The final page should not have any custom nextId() logic.
+        Disable it to ensure the Finished button ("Done") is shown.
+        """
+        return -1
 
 
 class PassphraseWizardPage(ExportWizardPage):
@@ -390,6 +457,7 @@ class PassphraseWizardPage(ExportWizardPage):
         font.setLetterSpacing(QFont.AbsoluteSpacing, self.PASSPHRASE_LABEL_SPACING)
         passphrase_label.setFont(font)
         self.passphrase_field = PasswordEdit(self)
+        self.passphrase_form.setObjectName("QWizard_passphrase_form")
         self.passphrase_field.setEchoMode(QLineEdit.Password)
         effect = QGraphicsDropShadowEffect(self)
         effect.setOffset(0, -1)
@@ -412,46 +480,20 @@ class PassphraseWizardPage(ExportWizardPage):
 
     @pyqtSlot(object)
     def on_status_received(self, status: ExportStatus) -> None:
-        logger.debug(f"Passphrase page rececived {status.value}")
-        should_show_hint = status in (
-            ExportStatus.ERROR_UNLOCK_LUKS,
-            ExportStatus.ERROR_UNLOCK_GENERIC,
-        )
-        self.update_content(status, should_show_hint)
         self.status = status
-        self.completeChanged.emit()
-        if status in (
-            ExportStatus.SUCCESS_EXPORT,
-            ExportStatus.ERROR_EXPORT_CLEANUP,
-        ) and isinstance(self.wizard().currentPage(), PassphraseWizardPage):
-            self.wizard().next()
+        if self.wizard() and isinstance(self.wizard().currentPage(), PassphraseWizardPage):
+            logger.debug(f"Passphrase page received {status.value}")
+            if status in (
+                ExportStatus.ERROR_UNLOCK_LUKS,
+                ExportStatus.ERROR_UNLOCK_GENERIC,
+            ):
+                self.update_content(status, should_show_hint=True)
+            else:
+                self.wizard().next()
 
     def validatePage(self) -> bool:
-        # Also to add: DEVICE_BUSY for unmounting.
-        # This shouldn't stop us from going "back" to an error page
-        return self.status in (
-            ExportStatus.DEVICE_WRITABLE,
-            ExportStatus.SUCCESS_EXPORT,
-            ExportStatus.ERROR_EXPORT_CLEANUP,
+        return self.status not in (
+            ExportStatus.ERROR_UNLOCK_LUKS,
+            ExportStatus.ERROR_UNLOCK_GENERIC,
+            ExportStatus.DEVICE_LOCKED,
         )
-
-    def nextId(self) -> int:
-        if self.status == ExportStatus.SUCCESS_EXPORT:
-            return Pages.EXPORT_DONE
-        elif self.status in (ExportStatus.ERROR_UNLOCK_LUKS, ExportStatus.ERROR_UNLOCK_GENERIC):
-            return Pages.UNLOCK_USB
-        elif self.status in (
-            ExportStatus.NO_DEVICE_DETECTED,
-            ExportStatus.MULTI_DEVICE_DETECTED,
-            ExportStatus.INVALID_DEVICE_DETECTED,
-        ):
-            return Pages.INSERT_USB
-        elif self.status in (
-            ExportStatus.ERROR_MOUNT,
-            ExportStatus.ERROR_EXPORT,
-            ExportStatus.ERROR_EXPORT_CLEANUP,
-            ExportStatus.UNEXPECTED_RETURN_STATUS,
-        ):
-            return Pages.ERROR
-        else:
-            return super().nextId()

@@ -3589,9 +3589,6 @@ def test_FileWidget__on_export_clicked(mocker, session, source):
     controller = mocker.MagicMock(get_file=get_file)
     file_location = file.location(controller.data_dir)
 
-    # It doesn't live here, but see __init__.py
-    export_device = mocker.patch("securedrop_client.gui.conversation.ExportDevice")
-
     fw = FileWidget(
         file.uuid, controller, mocker.MagicMock(), mocker.MagicMock(), mocker.MagicMock(), 0, 123
     )
@@ -3600,9 +3597,11 @@ def test_FileWidget__on_export_clicked(mocker, session, source):
     controller.run_export_preflight_checks = mocker.MagicMock()
     controller.downloaded_file_exists = mocker.MagicMock(return_value=True)
 
-    wizard = mocker.patch("securedrop_client.gui.conversation.export.ExportWizard")
+    export_device = mocker.patch("securedrop_client.gui.widgets.Export")
+    wizard = mocker.patch("securedrop_client.gui.conversation.ExportWizard")
 
     fw._on_export_clicked()
+    wizard.assert_called_once()
     wizard.assert_called_once_with(
         export_device(), file.filename, [file_location]
     ), f"{wizard.call_args}"
@@ -3650,7 +3649,6 @@ def test_FileWidget__on_print_clicked(mocker, session, source):
 
     get_file = mocker.MagicMock(return_value=file)
     controller = mocker.MagicMock(get_file=get_file)
-    export_device = mocker.patch("securedrop_client.gui.conversation.ExportDevice")
     file_location = file.location(controller.data_dir)
 
     fw = FileWidget(
@@ -3667,10 +3665,12 @@ def test_FileWidget__on_print_clicked(mocker, session, source):
     controller.print_file = mocker.MagicMock()
     controller.downloaded_file_exists = mocker.MagicMock(return_value=True)
 
-    dialog = mocker.patch("securedrop_client.gui.conversation.PrintFileDialog")
+    export_device = mocker.patch("securedrop_client.gui.widgets.Export")
+    dialog = mocker.patch("securedrop_client.gui.conversation.PrintDialog")
 
     fw._on_print_clicked()
 
+    dialog.assert_called_once()
     dialog.assert_called_once_with(export_device(), file.filename, [file_location])
 
 
@@ -3698,7 +3698,7 @@ def test_FileWidget__on_print_clicked_missing_file(mocker, session, source):
     mocker.patch("PyQt5.QtWidgets.QDialog.exec")
     controller.print_file = mocker.MagicMock()
     controller.downloaded_file_exists = mocker.MagicMock(return_value=False)
-    dialog = mocker.patch("securedrop_client.gui.conversation.PrintFileDialog")
+    dialog = mocker.patch("securedrop_client.gui.conversation.PrintDialog")
 
     fw._on_print_clicked()
 

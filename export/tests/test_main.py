@@ -1,22 +1,23 @@
-import pytest
-from unittest import mock
 import shutil
-
 from pathlib import Path
-from securedrop_export.archive import Archive, Metadata, Status as ArchiveStatus
-from securedrop_export.status import BaseStatus
-from securedrop_export.command import Command
-from securedrop_export.exceptions import ExportException
-from securedrop_export.disk.status import Status as ExportStatus
+from unittest import mock
 
+import pytest
+
+from securedrop_export.archive import Archive, Metadata
+from securedrop_export.archive import Status as ArchiveStatus
+from securedrop_export.command import Command
+from securedrop_export.disk.status import Status as ExportStatus
+from securedrop_export.exceptions import ExportException
 from securedrop_export.main import (
     Status,
-    entrypoint,
-    _exit_gracefully,
-    _write_status,
-    _start_service,
     _configure_logging,
+    _exit_gracefully,
+    _start_service,
+    _write_status,
+    entrypoint,
 )
+from securedrop_export.status import BaseStatus
 
 _PRINT_SAMPLE_ARCHIVE = "sample_print.sd-export"
 _EXPORT_SAMPLE_ARCHIVE = "sample_export.sd-export"

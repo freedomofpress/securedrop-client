@@ -1,13 +1,13 @@
-from unittest import mock
 import os
 import tempfile
+from unittest import mock
 
-from securedrop_export.exceptions import ExportException
-from securedrop_export.disk.status import Status
-from securedrop_export.disk.volume import Volume, MountedVolume, EncryptionScheme
 from securedrop_export.archive import Archive, Metadata
-from securedrop_export.disk.service import Service
 from securedrop_export.disk.cli import CLI
+from securedrop_export.disk.service import Service
+from securedrop_export.disk.status import Status
+from securedrop_export.disk.volume import EncryptionScheme, MountedVolume, Volume
+from securedrop_export.exceptions import ExportException
 
 SAMPLE_OUTPUT_USB = "/dev/sda"
 SAMPLE_OUTPUT_USB_PARTITIONED = "/dev/sda1"

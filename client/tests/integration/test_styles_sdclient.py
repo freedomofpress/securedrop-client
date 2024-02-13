@@ -4,6 +4,11 @@ from PyQt5.QtCore import QEvent
 from PyQt5.QtGui import QFont, QPalette
 from PyQt5.QtWidgets import QLabel, QLineEdit, QPushButton, QWidget
 
+from securedrop_client.gui.conversation.export.export_wizard_page import (
+    PassphraseWizardPage,
+    PreflightPage,
+)
+
 
 def test_css(main_window):
     login_dialog = main_window.login_dialog
@@ -129,9 +134,9 @@ def test_class_name_matches_css_object_name_for_print_dialog(print_dialog):
     assert "PrintDialog" == print_dialog.__class__.__name__
 
 
-def test_class_name_matches_css_object_name_for_export_file_dialog(export_file_dialog):
-    assert "ExportDialog" == export_file_dialog.__class__.__name__
-    assert "ExportDialog" in export_file_dialog.passphrase_form.objectName()
+def test_class_name_matches_css_object_name_for_export_file_dialog(export_file_wizard):
+    assert "ExportWizard" == export_file_wizard.__class__.__name__
+    assert "QWizard_export" in export_file_wizard.objectName()
 
 
 def test_class_name_matches_css_object_name_for_modal_dialog(modal_dialog):
@@ -507,62 +512,78 @@ def test_styles_for_print_dialog(print_dialog):
         assert 15 == c.font().pixelSize()
 
 
-def test_styles_for_export_file_dialog(export_file_dialog):
-    assert 800 == export_file_dialog.minimumSize().width()
-    assert 800 == export_file_dialog.maximumSize().width()
-    assert 300 == export_file_dialog.minimumSize().height()
-    assert 800 == export_file_dialog.maximumSize().height()
-    assert "#ffffff" == export_file_dialog.palette().color(QPalette.Background).name()
-    assert 110 == export_file_dialog.header_icon.minimumSize().width()  # 80px + 30px margin
-    assert 110 == export_file_dialog.header_icon.maximumSize().width()  # 80px + 30px margin
-    assert 64 == export_file_dialog.header_icon.minimumSize().height()  # 64px + 0px margin
-    assert 64 == export_file_dialog.header_icon.maximumSize().height()  # 64px + 0px margin
-    assert (
-        110 == export_file_dialog.header_spinner_label.minimumSize().width()
-    )  # 80px + 30px margin
-    assert (
-        110 == export_file_dialog.header_spinner_label.maximumSize().width()
-    )  # 80px + 30px margin
-    assert 64 == export_file_dialog.header_spinner_label.minimumSize().height()  # 64px + 0px margin
-    assert 64 == export_file_dialog.header_spinner_label.maximumSize().height()  # 64px + 0px margin
-    assert 68 == export_file_dialog.header.minimumSize().height()  # 68px + 0px margin
-    assert 68 == export_file_dialog.header.maximumSize().height()  # 68px + 0px margin
-    assert "Montserrat" == export_file_dialog.header.font().family()
-    assert QFont.Bold == export_file_dialog.header.font().weight()
-    assert 24 == export_file_dialog.header.font().pixelSize()
-    assert "#2a319d" == export_file_dialog.header.palette().color(QPalette.Foreground).name()
-    assert (0, 0, 0, 0) == export_file_dialog.header.getContentsMargins()
-    assert 2 == export_file_dialog.header_line.minimumSize().height()  # 2px + 20px margin
-    assert 2 == export_file_dialog.header_line.maximumSize().height()  # 2px + 20px margin
-    assert 38 == math.floor(255 * 0.15)  # sanity check
-    assert (
-        38 == export_file_dialog.header_line.palette().color(QPalette.Background).rgba64().alpha8()
-    )
-    assert 42 == export_file_dialog.header_line.palette().color(QPalette.Background).red()
-    assert 49 == export_file_dialog.header_line.palette().color(QPalette.Background).green()
-    assert 157 == export_file_dialog.header_line.palette().color(QPalette.Background).blue()
+def test_styles_for_export_file_wizard(export_file_wizard):
+    assert 800 == export_file_wizard.minimumSize().width()
+    assert 800 == export_file_wizard.maximumSize().width()
+    assert 500 == export_file_wizard.minimumSize().height()
+    assert 800 == export_file_wizard.maximumSize().height()
+    assert "#ffffff" == export_file_wizard.palette().color(QPalette.Background).name()
 
-    assert "Montserrat" == export_file_dialog.body.font().family()
-    assert 16 == export_file_dialog.body.font().pixelSize()
-    assert "#302aa3" == export_file_dialog.body.palette().color(QPalette.Foreground).name()
-    window_buttons = export_file_dialog.layout().itemAt(4).widget()
-    button_box = window_buttons.layout().itemAt(0).widget()
-    button_box_children = button_box.findChildren(QPushButton)
-    for c in button_box_children:
-        assert 44 == c.height()  # 40px + 4px of border
+    buttons = [
+        export_file_wizard.next_button,
+        export_file_wizard.back_button,
+        export_file_wizard.finish_button,
+        export_file_wizard.cancel_button,
+    ]
+
+    for c in buttons:
+        assert 40 == c.height()
         assert "Montserrat" == c.font().family()
         assert QFont.DemiBold - 1 == c.font().weight()
         assert 15 == c.font().pixelSize()
 
-    passphrase_children_qlabel = export_file_dialog.passphrase_form.findChildren(QLabel)
-    for c in passphrase_children_qlabel:
-        assert "Montserrat" == c.font().family() or "Source Sans Pro" == c.font().family()
-        assert QFont.DemiBold - 1 == c.font().weight()
-        assert 12 == c.font().pixelSize()
-        assert "#2a319d" == c.palette().color(QPalette.Foreground).name()
 
-    form_children_qlineedit = export_file_dialog.passphrase_form.findChildren(QLineEdit)
+def test_styles_for_export_file_wizard_page(export_file_wizard):
+    page = export_file_wizard.currentPage()
+    assert isinstance(page, PreflightPage)
+    assert "#ffffff" == page.palette().color(QPalette.Background).name()
+    assert 110 == page.header_icon.minimumSize().width()  # 80px + 30px margin
+    assert 110 == page.header_icon.maximumSize().width()  # 80px + 30px margin
+    assert 64 == page.header_icon.minimumSize().height()  # 64px + 0px margin
+    assert 64 == page.header_icon.maximumSize().height()  # 64px + 0px margin
+    assert 110 == page.header_spinner_label.minimumSize().width()  # 80px + 30px margin
+    assert 110 == page.header_spinner_label.maximumSize().width()  # 80px + 30px margin
+    assert 64 == page.header_spinner_label.minimumSize().height()  # 64px + 0px margin
+    assert 64 == page.header_spinner_label.maximumSize().height()  # 64px + 0px margin
+    assert 68 == page.header.minimumSize().height()  # 68px + 0px margin
+    assert 68 == page.header.maximumSize().height()  # 68px + 0px margin
+    assert "Montserrat" == page.header.font().family()
+    assert QFont.Bold == page.header.font().weight()
+    assert 24 == page.header.font().pixelSize()
+    assert "#2a319d" == page.header.palette().color(QPalette.Foreground).name()
+    assert (0, 0, 0, 0) == page.header.getContentsMargins()
+    assert 2 == page.header_line.minimumSize().height()  # 2px + 20px margin
+    assert 2 == page.header_line.maximumSize().height()  # 2px + 20px margin
+    assert 38 == math.floor(255 * 0.15)  # sanity check
+    assert 38 == page.header_line.palette().color(QPalette.Background).rgba64().alpha8()
+    assert 42 == page.header_line.palette().color(QPalette.Background).red()
+    assert 49 == page.header_line.palette().color(QPalette.Background).green()
+    assert 157 == page.header_line.palette().color(QPalette.Background).blue()
+
+    assert "Montserrat" == page.body.font().family()
+    assert 16 == page.body.font().pixelSize()
+    assert "#302aa3" == page.body.palette().color(QPalette.Foreground).name()
+
+
+def test_style_passphrase_wizard_page(export_file_wizard):
+    page = export_file_wizard.currentPage()
+    assert isinstance(page, PreflightPage)
+    export_file_wizard.next()
+
+    # The mock_export fixture starts with a device inserted, so the next page will be
+    # the passphrase prompt
+    page = export_file_wizard.currentPage()
+    assert isinstance(page, PassphraseWizardPage)
+
+    form_children_qlineedit = page.passphrase_form.findChildren(QLineEdit)
     for c in form_children_qlineedit:
+        assert "#f8f8f8" == c.palette().color(QPalette.Background).name()
         assert 32 == c.minimumSize().height()  # 30px + 2px padding-bottom
         assert 32 == c.maximumSize().height()  # 30px + 2px padding-bottom
-        assert "#f8f8f8" == c.palette().color(QPalette.Background).name()
+
+    passphrase_children_qlabel = page.passphrase_form.findChildren(QLabel)
+    for c in passphrase_children_qlabel:
+        assert "Montserrat" == c.font().family() or "Source Sans Pro" == c.font().family()
+        assert "#2a319d" == c.palette().color(QPalette.Foreground).name()
+        assert 12 == c.font().pixelSize()
+        assert QFont.DemiBold - 1 == c.font().weight()

@@ -1,7 +1,10 @@
 from unittest import mock
 
+from PyQt5.QtCore import Qt
+
+from securedrop_client.export import Export
 from securedrop_client.export_status import ExportStatus
-from securedrop_client.gui.conversation.export import Export, ExportWizard
+from securedrop_client.gui.conversation.export import ExportWizard
 from securedrop_client.gui.conversation.export.export_wizard_constants import STATUS_MESSAGES, Pages
 from securedrop_client.gui.conversation.export.export_wizard_page import (
     ErrorPage,
@@ -133,6 +136,12 @@ class TestExportWizard:
 
         self.mock_export.export_state_changed.emit(ExportStatus.NO_DEVICE_DETECTED)
         self.wizard.next()
+        self.mock_export.export_state_changed.emit(ExportStatus.NO_DEVICE_DETECTED)
+        assert isinstance(self.wizard.currentPage(), InsertUSBPage)
+
+        # Try to advance, but there's still no USB inserted
+        qtbot.mouseClick(self.wizard.next_button, Qt.LeftButton)
+        self.mock_export.export_state_changed.emit(ExportStatus.NO_DEVICE_DETECTED)
         assert isinstance(self.wizard.currentPage(), InsertUSBPage)
         assert self.wizard.currentPage().error_details.isVisible()
 
@@ -152,3 +161,25 @@ class TestExportWizard:
         self.mock_export.export_state_changed.emit(ExportStatus.UNEXPECTED_RETURN_STATUS)
         self.wizard.next()
         assert isinstance(self.wizard.currentPage(), ErrorPage)
+
+    def test_wizard_error_after_passphrase_page(self, qtbot):
+        self.wizard.show()
+        qtbot.addWidget(self.wizard)
+
+        self.wizard.next()
+        self.mock_export.export_state_changed.emit(ExportStatus.DEVICE_LOCKED)
+        self.wizard.next()
+        assert isinstance(self.wizard.currentPage(), PassphraseWizardPage)
+
+        self.mock_export.export_state_changed.emit(ExportStatus.ERROR_MOUNT)
+        self.wizard.next()
+        assert isinstance(self.wizard.currentPage(), ErrorPage)
+
+    def test_wizard_keypress_events(self, qtbot):
+        self.wizard.show()
+        qtbot.addWidget(self.wizard)
+        self.mock_export.export_state_changed.emit(ExportStatus.NO_DEVICE_DETECTED)
+
+        qtbot.keyPress(self.wizard, Qt.Key_Enter)
+        qtbot.wait(1000)
+        assert isinstance(self.wizard.currentPage(), InsertUSBPage)

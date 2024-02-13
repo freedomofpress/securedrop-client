@@ -6,8 +6,8 @@ from unittest import mock
 import pytest
 from PyQt5.QtTest import QSignalSpy
 
+from securedrop_client.export import Export
 from securedrop_client.export_status import ExportError, ExportStatus
-from securedrop_client.gui.conversation.export import Export
 from tests import factory
 
 _PATH_TO_PRETEND_ARCHIVE = "/tmp/archive-pretend"

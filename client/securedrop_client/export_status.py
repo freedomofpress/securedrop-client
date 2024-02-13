@@ -31,8 +31,9 @@ class ExportStatus(Enum):
     SUCCESS_EXPORT = "SUCCESS_EXPORT"
     ERROR_EXPORT = "ERROR_EXPORT"  # Could not write to disk
 
-    # Export succeeds but drives were not properly unmounted
+    # Export succeeds but drives were not properly closed
     ERROR_EXPORT_CLEANUP = "ERROR_EXPORT_CLEANUP"
+    ERROR_UNMOUNT_VOLUME_BUSY = "ERROR_UNMOUNT_VOLUME_BUSY"
 
     DEVICE_ERROR = "DEVICE_ERROR"  # Something went wrong while trying to check the device
 

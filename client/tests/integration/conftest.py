@@ -2,10 +2,10 @@ import pytest
 from PyQt5.QtWidgets import QApplication
 
 from securedrop_client.app import threads
+from securedrop_client.export import Export
 from securedrop_client.export_status import ExportStatus
 from securedrop_client.gui import conversation
 from securedrop_client.gui.base import ModalDialog
-from securedrop_client.gui.conversation.export import Export
 from securedrop_client.gui.main import Window
 from securedrop_client.logic import Controller
 from tests import factory
@@ -148,19 +148,24 @@ def modal_dialog(mocker, homedir):
 
 @pytest.fixture(scope="function")
 def mock_export(mocker):
-    device = Export()
+    export = Export()
 
-    """A export that assumes the Qubes RPC calls are successful and skips them."""
-    device.run_preflight_checks = lambda: ExportStatus.DEVICE_LOCKED
-    device.send_file_to_usb_device = lambda paths, passphrase: ExportStatus.SUCCESS_EXPORT
-    device.run_printer_preflight = lambda: ExportStatus.PRINT_PREFLIGHT_SUCCESS
-    device.run_print = lambda paths: ExportStatus.PRINT_SUCCESS
-    return device
+    """An export that assumes the Qubes RPC calls are successful and skips them."""
+    export.run_export_preflight_checks = lambda: export.export_state_changed.emit(
+        ExportStatus.DEVICE_LOCKED
+    )
+    export.export = lambda paths, passphrase: export.export_state_changed.emit(
+        ExportStatus.SUCCESS_EXPORT
+    )
+    export.run_printer_preflight_checks = lambda: export.export_state_changed.emit(
+        ExportStatus.PRINT_PREFLIGHT_SUCCESS
+    )
+    export.print = lambda paths: export.export_state_changed.emit(ExportStatus.PRINT_SUCCESS)
+    return export
 
 
 @pytest.fixture(scope="function")
-def print_dialog(mocker, homedir):
-    mocker.patch("securedrop_client.export.Export", return_value=mock_export)
+def print_dialog(mocker, homedir, mock_export):
     app = QApplication([])
     gui = Window()
     app.setActiveWindow(gui)
@@ -184,8 +189,7 @@ def print_dialog(mocker, homedir):
         controller.qubes = False
         gui.setup(controller)
         gui.login_dialog.close()
-        export_device = conversation.ExportDevice()
-        dialog = conversation.PrintFileDialog(export_device, "file_name", ["/mock/export/file"])
+        dialog = conversation.PrintDialog(mock_export, "file_name", ["/mock/export/file"])
 
         yield dialog
 
@@ -195,8 +199,7 @@ def print_dialog(mocker, homedir):
 
 
 @pytest.fixture(scope="function")
-def export_file_dialog(mocker, homedir):
-    mocker.patch("securedrop_client.export.Export", return_value=mock_export)
+def export_file_wizard(mocker, homedir, mock_export):
     app = QApplication([])
     gui = Window()
     app.setActiveWindow(gui)
@@ -217,8 +220,7 @@ def export_file_dialog(mocker, homedir):
         controller.qubes = False
         gui.setup(controller)
         gui.login_dialog.close()
-        export_device = conversation.ExportDevice()
-        dialog = conversation.ExportDialog(export_device, "file_name", ["/mock/export/filepath"])
+        dialog = conversation.ExportWizard(mock_export, "file_name", ["/mock/export/filepath"])
         dialog.show()
 
         yield dialog

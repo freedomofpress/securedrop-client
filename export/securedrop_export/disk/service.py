@@ -1,10 +1,11 @@
 import logging
 
+from securedrop_export.archive import Archive
+from securedrop_export.exceptions import ExportException
+
 from .cli import CLI
 from .status import Status
 from .volume import MountedVolume, Volume
-from securedrop_export.archive import Archive
-from securedrop_export.exceptions import ExportException
 
 logger = logging.getLogger(__name__)
 

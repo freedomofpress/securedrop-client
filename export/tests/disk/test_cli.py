@@ -1,34 +1,33 @@
-import pytest
+import re
+import subprocess
 from unittest import mock
 
-import subprocess
-import re
-
-from securedrop_export.disk.cli import CLI
-from securedrop_export.disk.volume import EncryptionScheme, Volume, MountedVolume
-from securedrop_export.exceptions import ExportException
-from securedrop_export.disk.status import Status
+import pytest
 
 from securedrop_export.archive import Archive
+from securedrop_export.disk.cli import CLI
+from securedrop_export.disk.status import Status
+from securedrop_export.disk.volume import EncryptionScheme, MountedVolume, Volume
+from securedrop_export.exceptions import ExportException
 
 # Sample lsblk and udisk inputs for testing the parsing of different device conditions
 from ..lsblk_sample import (
-    UDISKS_STATUS_MULTI_CONNECTED,
-    UDISKS_STATUS_ONE_DEVICE_CONNECTED,
-    UDISKS_STATUS_NOTHING_CONNECTED,
+    ERROR_DEVICE_MULTI_ENC_PARTITION,
+    ERROR_NO_SUPPORTED_DEVICE,
+    ERROR_ONE_DEVICE_LUKS_MOUNTED_MULTI_UNKNOWN_AVAILABLE,
+    ERROR_UNENCRYPTED_DEVICE_MOUNTED,
     ONE_DEVICE_LUKS_UNMOUNTED,
     ONE_DEVICE_VC_UNLOCKED,
-    ERROR_ONE_DEVICE_LUKS_MOUNTED_MULTI_UNKNOWN_AVAILABLE,
-    ERROR_NO_SUPPORTED_DEVICE,
-    ERROR_UNENCRYPTED_DEVICE_MOUNTED,
-    ERROR_DEVICE_MULTI_ENC_PARTITION,
-    SINGLE_DEVICE_LOCKED,
-    SINGLE_PART_LUKS_WRITABLE,
-    SINGLE_PART_LUKS_UNLOCKED_UNMOUNTED,
-    SINGLE_PART_UNLOCKED_VC_UNMOUNTED,
-    SINGLE_DEVICE_ERROR_PARTITIONS_TOO_NESTED,
     SINGLE_DEVICE_ERROR_MOUNTED_PARTITION_NOT_ENCRYPTED,
+    SINGLE_DEVICE_ERROR_PARTITIONS_TOO_NESTED,
+    SINGLE_DEVICE_LOCKED,
+    SINGLE_PART_LUKS_UNLOCKED_UNMOUNTED,
+    SINGLE_PART_LUKS_WRITABLE,
+    SINGLE_PART_UNLOCKED_VC_UNMOUNTED,
     SINGLE_PART_VC_WRITABLE,
+    UDISKS_STATUS_MULTI_CONNECTED,
+    UDISKS_STATUS_NOTHING_CONNECTED,
+    UDISKS_STATUS_ONE_DEVICE_CONNECTED,
 )
 
 _PRETEND_LUKS_ID = "/dev/mapper/luks-dbfb85f2-77c4-4b1f-99a9-2dd3c6789094"
@@ -153,7 +152,12 @@ class TestCli:
         mock_gsv.assert_not_called()
 
     @pytest.mark.parametrize("input", supported_volumes_no_mount_required)
-    def test__get_supported_volume_success_no_mount(self, input):
+    @mock.patch("subprocess.check_output")
+    def test__get_supported_volume_success_no_mount(self, mock_sp, input):
+        # mock subprocess results on the _is_it_veracrypt method
+        mock_sp.return_value = "IdType:                     crypto_TCRYPT\n".encode(
+            "utf-8"
+        )
         vol = self.cli._get_supported_volume(input)
 
         assert vol

@@ -1,9 +1,13 @@
 #QWizard_export {
     min-width: 800px;
     max-width: 800px;
-    min-height: 300px;
+    min-height: 500px;
     max-height: 800px;
-    background-color: #fff;
+    background: #ffffff;
+}
+
+#QWizard_export_page {
+    background: #ffffff;
 }
 
 #QWizard_header_icon, #QWizard_header_spinner {
@@ -67,7 +71,7 @@
     color: rgba(42, 49, 157, 0.4);
 }
 
-#FileDialog_passphrase_form QLabel {
+#QWizard_passphrase_form QLabel {
     font-family: 'Montserrat';
     font-weight: 500;
     font-size: 12px;
@@ -75,7 +79,7 @@
     padding-top: 6px;
 }
 
-#FileDialog_passphrase_form QLineEdit {
+#QWizard_passphrase_form QLineEdit {
     border-radius: 0px;
     min-height: 30px;
     max-height: 30px;

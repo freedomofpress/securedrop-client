@@ -1,16 +1,15 @@
+import json
 import os
 import subprocess  # noqa: F401
+import tarfile
 import tempfile
-
+from io import BytesIO
 from unittest import mock
 
-import json
 import pytest
-import tarfile
-from io import BytesIO
 
-from securedrop_export.exceptions import ExportException
 from securedrop_export.archive import Archive, Metadata, Status
+from securedrop_export.exceptions import ExportException
 
 
 def test_extract_tarball():

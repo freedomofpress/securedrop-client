@@ -25,17 +25,24 @@ class Pages(IntEnum):
 # Human-readable status info
 STATUS_MESSAGES = {
     ExportStatus.NO_DEVICE_DETECTED: _("No device detected"),
-    ExportStatus.MULTI_DEVICE_DETECTED: _("Too many USBs; please insert one supported device."),
+    ExportStatus.MULTI_DEVICE_DETECTED: _(
+        "Too many USB devices detected; please insert one supported device."
+    ),
     ExportStatus.INVALID_DEVICE_DETECTED: _(
         "Either the drive is not encrypted or there is something else wrong with it."
+        "If this is a VeraCrypt drive, please unlock it from within `sd-devices`, then try again."
     ),
     ExportStatus.DEVICE_WRITABLE: _("The device is ready for export."),
     ExportStatus.DEVICE_LOCKED: _("The device is locked."),
     ExportStatus.ERROR_UNLOCK_LUKS: _("The passphrase provided did not work. Please try again."),
     ExportStatus.ERROR_MOUNT: _("Error mounting drive"),
     ExportStatus.ERROR_EXPORT: _("Error during export"),
+    ExportStatus.ERROR_UNMOUNT_VOLUME_BUSY: _(
+        "Files were exported succesfully, but the USB device could not be unmounted."
+    ),
     ExportStatus.ERROR_EXPORT_CLEANUP: _(
-        "Files were exported succesfully, but the drive could not be unmounted"
+        "Files were exported succesfully, but some temporary files remain on disk."
+        "Reboot to remove them."
     ),
     ExportStatus.SUCCESS_EXPORT: _("Export successful"),
     ExportStatus.DEVICE_ERROR: _(

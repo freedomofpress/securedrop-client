@@ -1,6 +1,6 @@
 #QWizardButton_PrimaryButton {
     background-color: #2a319d;
-    color: #f1f1f6;
+    color: #ffffff;
     border: 2px solid #2a319d;
     font-family: 'Montserrat';
     font-weight: 500;
@@ -23,7 +23,7 @@
 }
 
 #QWizardButton_GenericButton {
-    background-color: #f1f1f6;
+    background-color: #ffffff;
     color: #2a319d;
     border: 2px solid #2a319d;
     margin: 0;

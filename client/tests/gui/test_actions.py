@@ -275,14 +275,6 @@ class TestPrintConversationAction(unittest.TestCase):
                         return_value="☠ A string with unicode characters."
                     )
 
-                    # TODO: these are now accessible through the Device or the Dialog.
-                    # action._export_device.run_printer_preflight_checks = (
-                    #     lambda: action._export_device.print_preflight_check_succeeded.emit()
-                    # )
-                    # action._export_device.print = (
-                    #     lambda transcript: action._export_device.print_succeeded.emit()
-                    # )
-
                     action.trigger()
 
                     assert True  # the transcript is written without errors
@@ -303,14 +295,6 @@ class TestExportConversationTranscriptAction(unittest.TestCase):
                     transcript.return_value.__str__ = Mock(
                         return_value="☠ A string with unicode characters."
                     )
-
-                    # TODO: these are now accessible through the Device or the Dialog.
-                    # action._export_device.run_printer_preflight_checks = (
-                    #     lambda: action._export_device.print_preflight_check_succeeded.emit()
-                    # )
-                    # action._export_device.print_transcript = (
-                    #     lambda transcript: action._export_device.print_succeeded.emit()
-                    # )
 
                     action.trigger()
 
@@ -337,14 +321,6 @@ class TestExportConversationAction(unittest.TestCase):
                     transcript.return_value.__str__ = Mock(
                         return_value="☠ A string with unicode characters."
                     )
-
-                    # TODO: preflight checks now belong to Device
-                    # action._export_device.run_printer_preflight_checks = (
-                    #     lambda: action._export_device.print_preflight_check_succeeded.emit()
-                    # )
-                    # action._export_device.print = (
-                    #     lambda transcript: action._export_device.print_succeeded.emit()
-                    # )
 
                     action.trigger()
 

@@ -10,13 +10,13 @@ from pathlib import Path
 from typing import Callable, Optional
 
 from PyQt5.QtCore import Qt, pyqtSlot
-from PyQt5.QtWidgets import QAction, QDialog, QMenu
+from PyQt5.QtWidgets import QAction, QApplication, QDialog, QMenu
 
 from securedrop_client import state
 from securedrop_client.conversation import Transcript as ConversationTranscript
 from securedrop_client.db import Source
+from securedrop_client.export import Export
 from securedrop_client.gui.base import ModalDialog
-from securedrop_client.gui.conversation import ExportDevice
 from securedrop_client.gui.conversation import (
     PrintTranscriptDialog as PrintConversationTranscriptDialog,
 )
@@ -184,7 +184,7 @@ class PrintConversationAction(QAction):  # pragma: nocover
         # out of scope, any pending file removal will be performed
         # by the operating system.
         with open(file_path, "r") as f:
-            export = ExportDevice()
+            export = Export()
             dialog = PrintConversationTranscriptDialog(
                 export, TRANSCRIPT_FILENAME, [str(file_path)]
             )
@@ -234,7 +234,7 @@ class ExportConversationTranscriptAction(QAction):  # pragma: nocover
         # out of scope, any pending file removal will be performed
         # by the operating system.
         with open(file_path, "r") as f:
-            export_device = ExportDevice()
+            export_device = Export()
             wizard = ExportWizard(export_device, TRANSCRIPT_FILENAME, [str(file_path)])
             wizard.exec()
 
@@ -320,7 +320,7 @@ class ExportConversationAction(QAction):  # pragma: nocover
         # out of scope, any pending file removal will be performed
         # by the operating system.
         with ExitStack() as stack:
-            export_device = ExportDevice()
+            export_device = Export()
             files = [
                 stack.enter_context(open(file_location, "r")) for file_location in file_locations
             ]
@@ -335,6 +335,7 @@ class ExportConversationAction(QAction):  # pragma: nocover
                 export_device,
                 summary,
                 [str(file_location) for file_location in file_locations],
+                QApplication.activeWindow(),
             )
             wizard.exec()
 
