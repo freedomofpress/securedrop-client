@@ -10,14 +10,14 @@ readme = "README.md"
 python = "^3.9"
 
 [tool.poetry.group.dev.dependencies]
-black = "^23.7.0"
-flake8 = "^6.0.0"
-mypy = "^1.4.1"
-types-setuptools = "^68.0.0"
-pytest = "^7.4.0"
+black = "^24.2.0"
+flake8 = "^7.0.0"
+mypy = "^1.8.0"
+types-setuptools = "^69.0.0"
+pytest = "^8.0.0"
 pytest-cov = "^4.1.0"
 pytest-mock = "^3.11.1"
-semgrep = "^1.31.2"
+semgrep = "^1.60.1"
 safety = "*"
 
 [tool.mypy]
