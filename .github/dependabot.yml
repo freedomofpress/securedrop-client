@@ -12,6 +12,8 @@ updates:
       interval: "weekly"
     allow:
       - dependency-type: "development"
+    ignore:
+      - dependency-name: "pyqt*"
     groups:
       dev-dependencies:
         patterns: ["*"]
