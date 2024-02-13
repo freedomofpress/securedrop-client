@@ -12,21 +12,33 @@ updates:
       interval: "weekly"
     allow:
       - dependency-type: "development"
+    groups:
+      dev-dependencies:
+        patterns: ["*"]
   - package-ecosystem: "pip"
     directory: "/export"
     schedule:
       interval: "weekly"
     allow:
       - dependency-type: "development"
+    groups:
+      dev-dependencies:
+        patterns: ["*"]
   - package-ecosystem: "pip"
     directory: "/log"
     schedule:
       interval: "weekly"
     allow:
       - dependency-type: "development"
+    groups:
+      dev-dependencies:
+        patterns: ["*"]
   - package-ecosystem: "pip"
     directory: "/proxy"
     schedule:
       interval: "weekly"
     allow:
       - dependency-type: "development"
+    groups:
+      dev-dependencies:
+        patterns: ["*"]
