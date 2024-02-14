@@ -12,9 +12,12 @@ updates:
       interval: "weekly"
     allow:
       - dependency-type: "development"
+    ignore:
+      - dependency-name: "pyqt*"
     groups:
       dev-dependencies:
         patterns: ["*"]
+        dependency-type: "development"
   - package-ecosystem: "pip"
     directory: "/export"
     schedule:
@@ -24,6 +27,7 @@ updates:
     groups:
       dev-dependencies:
         patterns: ["*"]
+        dependency-type: "development"
   - package-ecosystem: "pip"
     directory: "/log"
     schedule:
@@ -33,6 +37,7 @@ updates:
     groups:
       dev-dependencies:
         patterns: ["*"]
+        dependency-type: "development"
   - package-ecosystem: "pip"
     directory: "/proxy"
     schedule:
@@ -42,3 +47,4 @@ updates:
     groups:
       dev-dependencies:
         patterns: ["*"]
+        dependency-type: "development"
