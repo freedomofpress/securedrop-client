@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "securedrop-client"
-version = "0.1.0"
+version = "0.0.0"
 description = "SecureDrop Workstation client application"
 authors = ["SecureDrop Team"]
 license = "AGPLv3+"

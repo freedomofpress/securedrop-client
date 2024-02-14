@@ -33,7 +33,7 @@ from PyQt5.QtWidgets import (
     QWidget,
 )
 
-from securedrop_client import __version__ as sd_version
+from securedrop_client import __version__
 from securedrop_client.gui.auth.sign_in import LoginErrorBar, SignInButton
 from securedrop_client.gui.auth.use_offline import LoginOfflineLink
 from securedrop_client.gui.base import PasswordEdit
@@ -127,7 +127,7 @@ class LoginDialog(QDialog):
         form_layout.addWidget(buttons)
 
         # Create widget to display application name and version
-        application_version = QLabel(_("SecureDrop Client v{}").format(sd_version))
+        application_version = QLabel(_("SecureDrop Client v{}").format(__version__))
         application_version.setAlignment(Qt.AlignHCenter)
         application_version.setObjectName("LoginDialog_app_version_label")
 
