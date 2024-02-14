@@ -86,34 +86,38 @@ For all device types (described in detail below), the following standard error t
 
 The supported device types for export are as follows, including the possible errors specific to that device type:
 
-1. `disk-test` : Preflight check that probes for USB connected devices, that returns:
-    - `DEVICE_WRITABLE` if a supported USB device is attached and unlocked
-    - `DEVICE_LOCKED` if a supported drive is inserted but locked (a LUKS drive, since locked Veracrypt detection is not supported)
+1. `disk-test`: Preflight check that probes for USB connected devices, that returns:
     - `NO_DEVICE_DETECTED`, `MULTI_DEVICE_DETECTED`: wrong number of inserted USB drives
-    - `INVALID_DEVICE_DETECTED`: Wrong number of partitions, unsupported encryption scheme, etc
-    - `UNKNOWN_DEVICE_DETECTED`: (Future use) this is what a locked drive that could be Veracrypt would return
+    - `INVALID_DEVICE_DETECTED`: Wrong number of partitions, unsupported encryption scheme, etc.
+       Note: locked VeraCrypt drives also return this status, and a hint is shown to the user that they must
+       manually unlock such drives before proceeding.
+    - `DEVICE_LOCKED` if a supported drive is inserted but locked (a LUKS drive, since locked Veracrypt detection is not supported)
+    - `DEVICE_WRITABLE` if a supported USB device is attached and unlocked. (Only used for Preflight check)
     - `DEVICE_ERROR`: A problem was encountered and device state cannot be reported.
 
-2. `printer-test`: prints a test page that returns:
+2. `disk`: Attempts to send files to disk. Can return any Preflight status except `DEVICE_WRITABLE`, as well as
+    the following status results below, which replace `DEVICE_WRITABLE` since they attempt the export action.
+    Because export is a linear process, a status such as `ERROR_EXPORT_CLEANUP` indicates that the file export
+    succeeded and the problem occurred after that point in the process.
+    - `ERROR_UNLOCK_LUKS` if LUKS decryption failed due to bad passphrase
+    - `ERROR_UNLOCK_GENERIC` if unlocking failed due to some other reason
+    - `ERROR_MOUNT` if there was an error mounting the volume
+    - `ERROR_UNMOUT_VOLUME_BUSY` if there was an error unmounting the drive after export
+    - `ERROR_EXPORT_CLEANUP` if there was an error removing temporary directories after export
+    - `SUCCESS_EXPORT`: Entire routine, including export and cleanup, was successful
+
+3. `printer-preflight`, `printer-test`: test the printer and ensure it is ready.
     - `ERROR_PRINTER_NOT_FOUND` if no printer is connected
     - `ERROR_PRINTER_NOT_SUPPORTED` if the printer is not currently supported by the export script
     - `ERROR_PRINTER_DRIVER_UNAVAILABLE` if the printer driver is not available
+    - `ERROR_PRINTER_URI` if `lpinfo` fails to retrieve printer information
     - `ERROR_PRINTER_INSTALL` If there is an error installing the printer
     - `ERROR_PRINT` if there is an error printing
+    - `PRINT_PREFLIGHT_SUCCESS` if preflight checks were successful (Preflight only)
 
-3. `printer`: sends files to printer that returns:
-    - `ERROR_PRINTER_NOT_FOUND` if no printer is connected
-    - `ERROR_PRINTER_NOT_SUPPORTED` if the printer is not currently supported by the export script
-    - `ERROR_PRINTER_DRIVER_UNAVAILABLE` if the printer driver is not available
-    - `ERROR_PRINTER_INSTALL` If there is an error installing the printer
-    - `ERROR_PRINT` if there is an error printing
-
-4. `disk`: sends files to disk that returns:
-    - `SUCCESS_EXPORT`: Successful
-    - `ERROR_CLEANUP`: Export was successful but files could not be cleaned up or drive was not properly unmounted
-    - `ERROR_UNLOCK_LUKS` if the luks decryption failed (likely due to bad passphrase)
-    - `ERROR_MOUNT` if there was an error mounting the volume (after unlocking the luks volume)
-    - `ERROR_WRITE` if there was an error writing to disk (e.g., no space left on device)
+4. `printer`: sends files to printer that returns any of the `printer-preflight` statuses except
+    `PRINT_PREFLIGHT_SUCCESS`, as well as:
+    - `PRINT_SUCCESS` if the job is dispatched successfully
 
 ### Export Folder Structure
 

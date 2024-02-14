@@ -334,6 +334,8 @@ class InsertUSBPage(ExportWizardPage):
         body = _(
             "Please insert one of the export drives provisioned specifically "
             "for the SecureDrop Workstation."
+            "<br />"
+            "If you're using a VeraCrypt drive, unlock it manually before proceeding."
         )
         super().__init__(export, header=header, body=body)
 
