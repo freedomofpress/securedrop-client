@@ -24,6 +24,15 @@ safety:  ## Run safety dependency checks on build dependencies
 		--ignore 62044 \
  		-r
 
+.PHONY: rust-lint
+rust-lint: ## Lint Rust code
+	cargo fmt --check
+	cargo clippy
+
+.PHONY: rust-test
+rust-test: ## Run Rust tests
+	cargo test
+
 # Explanation of the below shell command should it ever break.
 # 1. Set the field separator to ": ##" and any make targets that might appear between : and ##
 # 2. Use sed-like syntax to remove the make targets
