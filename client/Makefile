@@ -109,12 +109,15 @@ test-functional: ## Run the functional tests
 test-sdk: ## Run just the sdk tests
 	@poetry run pytest -v $(STESTS)
 
-.PHONY: lint
-lint: ## Run the linters
+.PHONY: flake8
+flake8: ## Run flake8 linting
 	@poetry run flake8 securedrop_client tests
 
+.PHONY: lint
+lint: check-black check-isort flake8 mypy semgrep ## Run all linters
+
 .PHONY: check
-check: clean check-black check-isort semgrep lint mypy test-random test-integration test-functional ## Run the full CI test suite
+check: clean lint test-random test-integration test-functional ## Run the full CI test suite
 
 # Explanation of the below shell command should it ever break.
 # 1. Set the field separator to ": ##" and any make targets that might appear between : and ##

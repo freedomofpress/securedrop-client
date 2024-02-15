@@ -2,7 +2,10 @@ DEFAULT_GOAL: help
 SHELL := /bin/bash
 
 .PHONY: check
-check: flake8 mypy test
+check: lint test
+
+.PHONY: lint
+lint: flake8 mypy ## Run all linters
 
 .PHONY: flake8
 flake8: ## Run flake8 to lint Python files

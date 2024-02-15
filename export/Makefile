@@ -1,8 +1,12 @@
 .PHONY: all
 all: help
 
+.PHONY: lint
+lint: check-black flake8 mypy semgrep  ## Run all linters
+
+
 .PHONY: check
-check: lint mypy semgrep test check-black ## Run linter and tests
+check: lint test ## Run linter and tests
 
 .PHONY: check-black
 check-black: ## Check Python source code formatting with black
@@ -13,8 +17,8 @@ TESTS ?= tests
 test:  ## Run tests
 	poetry run pytest -v --cov-report html --cov-report term-missing --cov=securedrop_export $$TESTS
 
-.PHONY: lint
-lint:  ## Run linter
+.PHONY: flake8
+flake8:  ## Run flake8 linter
 	poetry run flake8 securedrop_export/ tests/
 
 .PHONY: mypy
