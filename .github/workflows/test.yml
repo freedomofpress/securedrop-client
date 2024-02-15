@@ -1,0 +1,124 @@
+name: Tests
+on: [push, pull_request]
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  # Run `make test` against all components but client, which is special
+  component:
+    strategy:
+      fail-fast: false
+      matrix:
+        component:
+          - export
+          - log
+          - proxy
+        debian_version:
+          - bullseye
+          - bookworm
+        # bookworm jobs are failing and will be
+        # replaced with proxy v2 shortly, so skip
+        # https://github.com/freedomofpress/securedrop-client/issues/1681
+        exclude:
+          - component: proxy
+            debian_version: bookworm
+    runs-on: ubuntu-latest
+    container: debian:${{ matrix.debian_version }}
+    steps:
+      - run: |
+          apt-get update && apt-get install --yes git make gnupg
+      - uses: actions/checkout@v4
+      - name: Install dependencies
+        run: |
+          source /etc/os-release
+          if [[ "$VERSION_CODENAME" == "bullseye" ]]; then
+              # Install Poetry via PyPI
+              apt-get install --yes --no-install-recommends python3-pip
+              pip install poetry==1.6.1
+          elif [[ "$VERSION_CODENAME" == "bookworm" ]]; then
+              # Install Poetry via system package
+              apt-get install --yes --no-install-recommends python3-poetry
+          else
+              echo "Unsupported Debian version: $VERSION_CODENAME"
+              exit 1
+          fi
+          poetry -C ${{ matrix.component }} install
+      - name: Run test
+        run: |
+          make -C ${{ matrix.component }} test
+
+  # Run the various `make test-...` commands for the client.
+  # TODO: these should be consolidated into one when feasible
+  client:
+    strategy:
+      fail-fast: false
+      matrix:
+        command:
+          - test-functional
+          - test-integration
+          - test-random
+        debian_version:
+          - bullseye
+          - bookworm
+    runs-on: ubuntu-latest
+    container: debian:${{ matrix.debian_version }}
+    steps:
+      - run: |
+          apt-get update && apt-get install --yes git make gnupg
+      - uses: actions/checkout@v4
+      - name: Install dependencies
+        run: |
+          source /etc/os-release
+          if [[ "$VERSION_CODENAME" == "bullseye" ]]; then
+              # Install Poetry via PyPI
+              apt-get install --yes --no-install-recommends python3-pip
+              pip install poetry==1.6.1
+          elif [[ "$VERSION_CODENAME" == "bookworm" ]]; then
+              # Install Poetry via system package
+              apt-get install --yes --no-install-recommends python3-poetry
+          else
+              echo "Unsupported Debian version: $VERSION_CODENAME"
+              exit 1
+          fi
+          poetry -C client install
+          make -C client ci-install-deps
+      - name: Run test
+        run: |
+          make -C client ${{ matrix.command }}
+
+  # Run the client i18n/l10n checks.
+  internationalization:
+    strategy:
+      matrix:
+        debian_version:
+          - bullseye
+          - bookworm
+    runs-on: ubuntu-latest
+    container: debian:${{ matrix.debian_version }}
+    steps:
+      - run: |
+          apt-get update && apt-get install --yes git make
+      - uses: actions/checkout@v4
+      - name: Install dependencies
+        run: |
+          source /etc/os-release
+          if [[ "$VERSION_CODENAME" == "bullseye" ]]; then
+              # Install Poetry via PyPI
+              apt-get install --yes --no-install-recommends python3-pip
+              pip install poetry==1.6.1
+          elif [[ "$VERSION_CODENAME" == "bookworm" ]]; then
+              # Install Poetry via system package
+              apt-get install --yes --no-install-recommends python3-poetry
+          else
+              echo "Unsupported Debian version: $VERSION_CODENAME"
+              exit 1
+          fi
+          poetry -C client install
+          make -C client ci-install-deps
+          git config --global --add safe.directory '*'
+      - name: Check that source strings are updated
+        run: make -C client check-strings
+      - name: Check that translation machine objects are reproducible
+        run: make -C client verify-mo

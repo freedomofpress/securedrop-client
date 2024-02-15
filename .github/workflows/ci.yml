@@ -52,6 +52,52 @@ jobs:
       - name: Run lint
         run: make lint
 
+  # Run `make lint` across all components
+  component-lint:
+    strategy:
+      fail-fast: false
+      matrix:
+        component:
+          - client
+          - export
+          - log
+          - proxy
+        debian_version:
+          - bullseye
+          - bookworm
+        # bookworm jobs are failing and will be
+        # replaced with proxy v2 shortly, so skip
+        # https://github.com/freedomofpress/securedrop-client/issues/1681
+        exclude:
+          - component: proxy
+            debian_version: bookworm
+    runs-on: ubuntu-latest
+    container: debian:${{ matrix.debian_version }}
+    steps:
+      - run: |
+          apt-get update && apt-get install --yes git make gnupg
+      - uses: actions/checkout@v4
+      - name: Install dependencies
+        run: |
+          source /etc/os-release
+          if [[ "$VERSION_CODENAME" == "bullseye" ]]; then
+              # Install Poetry via PyPI
+              apt-get install --yes --no-install-recommends python3-pip
+              pip install poetry==1.6.1
+          elif [[ "$VERSION_CODENAME" == "bookworm" ]]; then
+              # Install Poetry via system package
+              apt-get install --yes --no-install-recommends python3-poetry
+          else
+              echo "Unsupported Debian version: $VERSION_CODENAME"
+              exit 1
+          fi
+          poetry -C ${{ matrix.component }} install
+          if [[ "${{ matrix.component }}" == "client" ]]; then
+            make -C ${{ matrix.component }} ci-install-deps
+          fi
+      - name: Run lint
+        run: make -C ${{ matrix.component }} lint
+
   safety:
     runs-on: ubuntu-latest
     container: debian:bookworm

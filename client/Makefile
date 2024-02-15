@@ -189,3 +189,12 @@ verify-mo: ## Verify that all gettext machine objects (.mo) are reproducible fro
 	@TERM=dumb poetry run scripts/verify-mo.py ${LOCALE_DIR}/*
 	@# All good; now clean up.
 	@git restore "${LOCALE_DIR}/**/*.po"
+
+# Install dependencies in CI
+# Note, we don't actually need libqt5x11extras5, but it pulls in all
+# the correct dependencies for the PyQt5 wheels.
+ci-install-deps:
+	apt-get install --yes xvfb sqlite3 locales libqt5x11extras5 python3-tk
+	echo "en_US ISO-8859-1" >> /etc/locale.gen
+	echo "en_US UTF-8" >> /etc/locale.gen
+	locale-gen
