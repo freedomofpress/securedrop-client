@@ -77,7 +77,7 @@ def safe_extractall(archive_file_path: str, dest_path: str) -> None:
                 if Path(file_info.linkname).is_absolute():
                     relative_filepath(file_info.linkname, dest_path)
 
-        tar.extractall(dest_path)
+        tar.extractall(dest_path)  # nosec B202
 
 
 def relative_filepath(filepath: Union[str, Path], base_dir: Union[str, Path]) -> Path:

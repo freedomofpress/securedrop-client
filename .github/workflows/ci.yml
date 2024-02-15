@@ -21,3 +21,46 @@ jobs:
       - name: Lint .desktop files
         run: |
           make lint-desktop
+
+  lint:
+    strategy:
+      matrix:
+        debian_version:
+          - bullseye
+          - bookworm
+    runs-on: ubuntu-latest
+    container: debian:${{ matrix.debian_version }}
+    steps:
+      - run: |
+          apt-get update && apt-get install --yes git make
+      - uses: actions/checkout@v4
+      - name: Install dependencies
+        run: |
+          source /etc/os-release
+          if [[ "$VERSION_CODENAME" == "bullseye" ]]; then
+              # Install Poetry via PyPI
+              apt-get install --yes --no-install-recommends python3-pip
+              pip install poetry==1.6.1
+          elif [[ "$VERSION_CODENAME" == "bookworm" ]]; then
+              # Install Poetry via system package
+              apt-get install --yes --no-install-recommends python3-poetry
+          else
+              echo "Unsupported Debian version: $VERSION_CODENAME"
+              exit 1
+          fi
+          poetry install
+      - name: Run lint
+        run: make lint
+
+  safety:
+    runs-on: ubuntu-latest
+    container: debian:bookworm
+    steps:
+      - run: |
+          apt-get update && apt-get install --yes git make python3-poetry
+      - uses: actions/checkout@v4
+      - name: Run safety
+        run: |
+          poetry install
+          poetry update safety
+          make safety

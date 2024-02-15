@@ -1,11 +1,6 @@
 .PHONY: all
 all: help
 
-.PHONY: safety
-safety: ## Runs `safety check` to check python dependencies for vulnerabilities
-	@echo "Running safety against build requirements…"
-	@poetry run safety check --full-report -r build-requirements.txt
-
 .PHONY: check
 check: lint mypy semgrep test check-black ## Run linter and tests
 
