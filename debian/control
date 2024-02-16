@@ -40,7 +40,7 @@ Description: This is securedrop Qubes proxy service
 
 Package: securedrop-workstation-config
 Architecture: all
-Depends: nautilus, gvfs-bin, securedrop-keyring
+Depends: nautilus, securedrop-keyring
 Description: This is the SecureDrop workstation template configuration package.
  This package provides dependencies and configuration for the Qubes SecureDrop workstation VM Templates.
 
