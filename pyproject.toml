@@ -1,3 +1,6 @@
+[project]
+requires-python = ">=3.9"
+
 [tool.poetry]
 name = "client-tools"
 version = "0.0.0"
@@ -9,29 +12,109 @@ license = "AGPLv3+"
 python = "^3.9"
 
 [tool.poetry.group.dev.dependencies]
-bandit = "*"
-black = "*"
-isort = "*"
+ruff = "^0.3.0"
 safety = "*"
 shellcheck-py = "*"
 
-[tool.bandit]
-exclude_dirs = ["client/tests", "export/tests", "log/tests", "proxy/tests", ".venv/"]
-
-[tool.black]
+[tool.ruff]
 line-length = 100
-# lowest Python version we need to support
-target-version = ["py39"]
+extend-include = ["log/securedrop-{log,log-saver,redis-log}"]
+# temporarily ignore until proxy v2
+extend-exclude = ["proxy/"]
 
-[tool.isort]
-line_length = 100
-profile = "black"
+[tool.ruff.lint]
+select = [
+    # pycodestyle errors
+    "E",
+    # pyflakes
+    "F",
+    # isort
+    "I",
+    # flake8-gettext
+    "INT",
+    # flake8-pie
+    "PIE",
+    # pylint
+    "PL",
+    # flake8-pytest-style
+    "PT",
+    # flake8-pyi
+    "PYI",
+    # flake8-return
+    "RET",
+    # flake8-bandit
+    "S",
+    # flake8-simplify
+    "SIM",
+    # pyupgrade
+    "UP",
+    # pycodestyle warnings
+    "W",
+    # Unused noqa directive
+    "RUF100",
+]
+ignore = [
+    # code complexity checks that we fail
+    "PLR0912", "PLR0913", "PLR0915",
+    # magic-value-comparison, too many violations for now
+    "PLR2004",
+    # loop assignment target being overwritten, not a big deal
+    "PLW2901",
+    # too broad exception type
+    "PT011",
+    # usefixtures() isn't as user-friendly
+    "PT019",
+    # superflous-else- rules, find they hurt readability
+    "RET505", "RET506", "RET507", "RET508",
+    # hardcoded passwords, lots of false positives
+    "S105",
+    # we intentionally don't log stuff sometimes
+    "S110",
+    # flags every instance of subprocess
+    "S603",
+    # we trust $PATH isn't hijacked
+    "S607",
+    # Find contextlib.suppress() is harder to read
+    "SIM105",
+    # Find ternary statements harder to read
+    "SIM108",
+    # Using any()/all() can be harder to read
+    "SIM110",
+]
+
+[tool.ruff.lint.isort]
 # because we're running from the root, isort doesn't know that these
 # are our packages, so tell it explicitly.
-known_first_party = [
+known-first-party = [
     "securedrop_client",
     "securedrop_export",
     "securedrop_log",
     "securedrop_proxy",
     "tests",
+]
+
+[tool.ruff.lint.per-file-ignores]
+"client/securedrop_client/gui/widgets.py" = [
+    # FIXME: shouldn't be using assert
+    "S101",
+    # Switching Optional[X] hints to X | None
+    "UP007",
+]
+"log/tests/**.py" = [
+    # TODO: switch to pytest
+    "PT009", "PT027"
+]
+"**/test**.py" = [
+    # use of `assert`
+    "S101",
+    # insecure temporary file/directory
+    "S108",
+    # we use global variables for some tests, sorry
+    "PLW0603",
+    # TODO: switch to typing.NamedTuple
+    "PYI024",
+    # fine to skip context handler for files in tests
+    "SIM115",
+    # TODO: rename fixtures to start with leading _ if they don't return anything
+    "PT004",
 ]

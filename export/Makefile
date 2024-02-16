@@ -2,7 +2,7 @@
 all: help
 
 .PHONY: lint
-lint: flake8 mypy semgrep  ## Run all linters
+lint: mypy semgrep  ## Run all linters
 
 
 .PHONY: check
@@ -13,10 +13,6 @@ TESTS ?= tests
 test:  ## Run tests
 	poetry run pytest -v --cov-report html --cov-report term-missing \
 		--cov=securedrop_export --log-disable=securedrop_export.main $$TESTS
-
-.PHONY: flake8
-flake8:  ## Run flake8 linter
-	poetry run flake8 securedrop_export/ tests/
 
 .PHONY: mypy
 mypy:  ## Type check Python files
