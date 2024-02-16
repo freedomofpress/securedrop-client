@@ -11,7 +11,7 @@ lint-desktop: ## Lint .desktop files
 	find . -name *.desktop -type f -not -path '*/\.git/*' | xargs desktop-file-validate
 
 .PHONY: lint
-lint: check-black check-isort bandit ## Run linters and formatters
+lint: check-black check-isort bandit shellcheck ## Run linters and formatters
 
 .PHONY: fix
 fix: black isort ## Fix lint and formatting issues
@@ -42,6 +42,10 @@ safety:  ## Run safety dependency checks on build dependencies
 		--ignore 61893 \
 		--ignore 62044 \
  		-r
+
+.PHONY: shellcheck
+shellcheck:  ## Lint shell scripts
+	@poetry run ./scripts/shellcheck.sh
 
 .PHONY: rust-lint
 rust-lint: ## Lint Rust code

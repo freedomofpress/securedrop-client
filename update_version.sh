@@ -18,7 +18,7 @@ sed -i'' -r -e "s/^__version__ = \"(.*?)\"/__version__ = \"${NEW_VERSION}\"/" cl
 sed -i'' -r -e "s/^__version__ = \"(.*?)\"/__version__ = \"${NEW_VERSION}\"/" export/securedrop_export/__init__.py
 
 # Normalize version, convert any - to ~, e.g. 0.9.0-rc1 to 0.9.0~rc1
-DEB_VERSION=$(echo $NEW_VERSION | sed 's/-/~/g')
+DEB_VERSION=$(echo "$NEW_VERSION" | sed 's/-/~/g')
 
 export DEBEMAIL="securedrop@freedom.press"
 export DEBFULLNAME="SecureDrop Team"

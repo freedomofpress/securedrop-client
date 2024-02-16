@@ -13,6 +13,7 @@ bandit = "*"
 black = "*"
 isort = "*"
 safety = "*"
+shellcheck-py = "*"
 
 [tool.bandit]
 exclude_dirs = ["client/tests", "export/tests", "log/tests", "proxy/tests"]

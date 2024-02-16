@@ -32,7 +32,7 @@ jobs:
     container: debian:${{ matrix.debian_version }}
     steps:
       - run: |
-          apt-get update && apt-get install --yes git make
+          apt-get update && apt-get install --yes git make file
       - uses: actions/checkout@v4
       - name: Install dependencies
         run: |
