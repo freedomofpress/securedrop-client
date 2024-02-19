@@ -2,3 +2,9 @@
 compression = "gzip"
 # ignore the build/ directory, that contains our artifacts
 tar-ignore = "build"
+# ignore all dotfiles + hidden directories
+tar-ignore = ".*"
+# and some more generated directories
+tar-ignore = "__pycache__"
+tar-ignore = "htmlcov"
+tar-ignore = "target"

@@ -1,0 +1,11 @@
+# FIXME
+securedrop-workstation-viewer: extended-description-is-empty
+
+# FIXME: section shouldn't be "unknown"
+securedrop-workstation-viewer: section-is-dh_make-template
+
+# FIXME: Needs "metapackage" in the description
+securedrop-workstation-viewer: empty-binary-package
+
+# FIXME: abbreviate
+securedrop-workstation-viewer: synopsis-too-long

@@ -60,7 +60,7 @@ jobs:
           lfs: true
       - name: Build packages
         run: |
-          DEBIAN_VERSION=${{ matrix.debian_version }} BUILDER=securedrop-builder ./scripts/build-debs.sh
+          DEBIAN_VERSION=${{ matrix.debian_version }} BUILDER=securedrop-builder FAST=1 ./scripts/build-debs.sh
       - uses: actions/upload-artifact@v4
         id: upload
         with:
@@ -68,8 +68,9 @@ jobs:
           path: build
           if-no-files-found: error
 
-  # Second round of builds (in parallel) for diffoscoping
-  build-debs2:
+  # Another set of builds for lintian checks and also so we can diffoscope
+  # for reproducibility issues with the first set
+  lintian:
     strategy:
       matrix:
         debian_version:
@@ -105,7 +106,7 @@ jobs:
     container: debian:bookworm
     needs:
       - build-debs
-      - build-debs2
+      - lintian
     steps:
       - name: Install dependencies
         run: |
