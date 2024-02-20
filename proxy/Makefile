@@ -8,19 +8,14 @@ build: # Build Rust binary
 	cargo build
 
 .PHONY: lint
-lint: mypy ## Run flake8 and mypy
-	@poetry run flake8 securedrop_proxy tests
-
-.PHONY: mypy
-mypy: ## Run mypy static type checker
-	@poetry run mypy --ignore-missing-imports securedrop_proxy
+lint: ## Nothing (Rust code is linted from the root)
 
 .PHONY: test
 test: build ## Runs tests with pytest
 	@poetry run pytest
 
 .PHONY: check
-check: lint test mypy ## Runs all tests and code checkers
+check: lint test ## Runs all tests and code checkers
 
 # Explanation of the below shell command should it ever break.
 # 1. Set the field separator to ": ##" and any make targets that might appear between : and ##
