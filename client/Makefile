@@ -109,12 +109,15 @@ test-functional: ## Run the functional tests
 test-sdk: ## Run just the sdk tests
 	@poetry run pytest -v $(STESTS)
 
-.PHONY: lint
-lint: ## Run the linters
+.PHONY: flake8
+flake8: ## Run flake8 linting
 	@poetry run flake8 securedrop_client tests
 
+.PHONY: lint
+lint: check-black check-isort flake8 mypy semgrep ## Run all linters
+
 .PHONY: check
-check: clean check-black check-isort semgrep lint mypy test-random test-integration test-functional ## Run the full CI test suite
+check: clean lint test-random test-integration test-functional ## Run the full CI test suite
 
 # Explanation of the below shell command should it ever break.
 # 1. Set the field separator to ": ##" and any make targets that might appear between : and ##
@@ -186,3 +189,12 @@ verify-mo: ## Verify that all gettext machine objects (.mo) are reproducible fro
 	@TERM=dumb poetry run scripts/verify-mo.py ${LOCALE_DIR}/*
 	@# All good; now clean up.
 	@git restore "${LOCALE_DIR}/**/*.po"
+
+# Install dependencies in CI
+# Note, we don't actually need libqt5x11extras5, but it pulls in all
+# the correct dependencies for the PyQt5 wheels.
+ci-install-deps:
+	apt-get install --yes xvfb sqlite3 locales libqt5x11extras5 python3-tk
+	echo "en_US ISO-8859-1" >> /etc/locale.gen
+	echo "en_US UTF-8" >> /etc/locale.gen
+	locale-gen
