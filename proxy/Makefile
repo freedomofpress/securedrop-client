@@ -3,6 +3,10 @@
 .PHONY: all
 all: help
 
+.PHONY: build
+build: # Build Rust binary
+	cargo build
+
 .PHONY: lint
 lint: mypy ## Run flake8 and mypy
 	@poetry run flake8 securedrop_proxy tests
@@ -12,7 +16,7 @@ mypy: ## Run mypy static type checker
 	@poetry run mypy --ignore-missing-imports securedrop_proxy
 
 .PHONY: test
-test: ## Runs tests with pytest
+test: build ## Runs tests with pytest
 	@poetry run pytest
 
 .PHONY: check

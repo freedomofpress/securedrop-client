@@ -25,12 +25,6 @@ jobs:
           - proxy
         debian_version:
           - bookworm
-        # bookworm jobs are failing and will be
-        # replaced with proxy v2 shortly, so skip
-        # https://github.com/freedomofpress/securedrop-client/issues/1681
-        exclude:
-          - component: proxy
-            debian_version: bookworm
     runs-on: ubuntu-latest
     container: debian:${{ matrix.debian_version }}
     steps:
@@ -41,13 +35,20 @@ jobs:
         run: |
           # We want to run tests as a regular user, similar to Qubes VMs
           useradd --create-home --shell /bin/bash user
+      - name: Install Rust-specific dependencies
+        run: apt-get install --yes build-essential curl libssl-dev pkg-config
+        if: ${{ matrix.component == 'proxy' }}
+      - uses: actions/checkout@v4
+      # Install Rust 1.74.1, keep in sync with rust-toolchain.toml
+      - uses: dtolnay/rust-toolchain@1.74.1
+        if: ${{ matrix.component == 'proxy' }}
       - name: Install dependencies
         run: |
           sudo -u user poetry -C ${{ matrix.component }} install
       - name: Run test
         run: |
           sudo chown -R user:user .
-          sudo -u user make -C ${{ matrix.component }} test
+          sudo -u user PATH=$PATH:$HOME/.cargo/bin make -C ${{ matrix.component }} test
 
   # Run the various `make test-...` commands for the client.
   # TODO: these should be consolidated into one when feasible
