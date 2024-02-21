@@ -1,6 +1,8 @@
 [Unit]
 Description=securedrop logging Service
 After=network.target redis.service
+Requires=redis.service
+ConditionalHost=sd-log
 
 [Service]
 Type=simple
