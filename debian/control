@@ -2,14 +2,14 @@ Source: securedrop-client
 Section: unknown
 Priority: optional
 Maintainer: SecureDrop Team <securedrop@freedom.press>
-Build-Depends: debhelper-compat (= 11), python3-virtualenv
+Build-Depends: debhelper-compat (= 11), dh-apparmor, python3-virtualenv
 Standards-Version: 3.9.8
 Homepage: https://github.com/freedomofpress/securedrop-client
 X-Python3-Version: >= 3.5
 
 Package: securedrop-client
 Architecture: all
-Depends: ${python3:Depends},${misc:Depends}, python3-pyqt5, python3-pyqt5.qtsvg, apparmor-utils, desktop-file-utils
+Depends: ${python3:Depends},${misc:Depends}, python3-pyqt5, python3-pyqt5.qtsvg, desktop-file-utils
 Description: securedrop client for qubes workstation
 
 Package: securedrop-export

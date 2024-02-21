@@ -22,7 +22,6 @@ case "$1" in
     configure)
 
     update-desktop-database /usr/share/applications
-    aa-enforce /usr/bin/securedrop-client
     ;;
 
     abort-upgrade|abort-remove|abort-deconfigure)
