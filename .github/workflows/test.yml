@@ -22,18 +22,18 @@ jobs:
         debian_version:
           - bullseye
           - bookworm
-        # bookworm jobs are failing and will be
-        # replaced with proxy v2 shortly, so skip
-        # https://github.com/freedomofpress/securedrop-client/issues/1681
-        exclude:
-          - component: proxy
-            debian_version: bookworm
     runs-on: ubuntu-latest
     container: debian:${{ matrix.debian_version }}
     steps:
       - run: |
           apt-get update && apt-get install --yes git make gnupg
+      - name: Install Rust-specific dependencies
+        run: apt-get install --yes build-essential curl libssl-dev pkg-config
+        if: ${{ matrix.component == 'proxy' }}
       - uses: actions/checkout@v4
+      # Install Rust 1.74.1, keep in sync with rust-toolchain.toml
+      - uses: dtolnay/rust-toolchain@aec8960fc037f3ba5dd7773fd5b938a0ab22c50f
+        if: ${{ matrix.component == 'proxy' }}
       - name: Install dependencies
         run: |
           source /etc/os-release
