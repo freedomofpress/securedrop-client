@@ -28,30 +28,6 @@ semgrep-local:
 	@echo "Running semgrep with local rules..."
 	@poetry run semgrep $(SEMGREP_FLAGS) --config ".semgrep"
 
-.PHONY: black
-black: ## Format Python source code with black
-	@poetry run black \
-		./ \
-		scripts/*.py
-
-.PHONY: check-black
-check-black: ## Check Python source code formatting with black
-	@poetry run black --check --diff \
-		./ \
-		scripts/*.py
-
-.PHONY: isort
-isort: ## Run isort to organize Python imports
-	@poetry run isort --skip-glob .venv \
-		./ \
-		scripts/*.py
-
-.PHONY: check-isort
-check-isort: ## Check Python import organization with isort
-	@poetry run isort --skip-glob .venv --check-only --diff \
-		./ scripts \
-		/*.py
-
 .PHONY: mypy
 mypy: ## Run static type checker
 	@poetry run mypy --ignore-missing-imports \
@@ -114,7 +90,7 @@ flake8: ## Run flake8 linting
 	@poetry run flake8 securedrop_client tests
 
 .PHONY: lint
-lint: check-black check-isort flake8 mypy semgrep ## Run all linters
+lint: flake8 mypy semgrep ## Run all linters
 
 .PHONY: check
 check: clean lint test-random test-integration test-functional ## Run the full CI test suite
