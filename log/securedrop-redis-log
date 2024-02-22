@@ -2,15 +2,16 @@
 
 from __future__ import print_function
 
-import tempfile
-import io
-import sys
-import os
 import errno
+import io
+import os
 import shutil
 import subprocess
-import redis
+import sys
+import tempfile
 from datetime import datetime
+
+import redis
 
 
 def sanitize_line(untrusted_line):

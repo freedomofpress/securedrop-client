@@ -2,15 +2,11 @@
 all: help
 
 .PHONY: lint
-lint: check-black flake8 mypy semgrep  ## Run all linters
+lint: flake8 mypy semgrep  ## Run all linters
 
 
 .PHONY: check
 check: lint test ## Run linter and tests
-
-.PHONY: check-black
-check-black: ## Check Python source code formatting with black
-	@poetry run black --check --diff ./
 
 TESTS ?= tests
 .PHONY: test
@@ -25,10 +21,6 @@ flake8:  ## Run flake8 linter
 .PHONY: mypy
 mypy:  ## Type check Python files
 	poetry run mypy .
-
-.PHONY: black
-black: ## Format Python source code with black
-	@poetry run black ./
 
 SEMGREP_FLAGS := --exclude "tests/" --error --strict --verbose
 

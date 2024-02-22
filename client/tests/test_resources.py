@@ -1,6 +1,7 @@
 """
 Tests for the resources sub-module.
 """
+
 from PyQt5.QtGui import QIcon, QMovie, QPixmap
 from PyQt5.QtSvg import QSvgWidget
 

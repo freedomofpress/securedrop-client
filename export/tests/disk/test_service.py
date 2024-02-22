@@ -76,9 +76,7 @@ class TestExportService:
         assert status == Status.DEVICE_LOCKED
 
     def test_scan_all_no_devices_connected(self):
-        self.mock_cli.get_volume.side_effect = ExportException(
-            sdstatus=Status.NO_DEVICE_DETECTED
-        )
+        self.mock_cli.get_volume.side_effect = ExportException(sdstatus=Status.NO_DEVICE_DETECTED)
 
         assert self.service.scan_all_devices() == Status.NO_DEVICE_DETECTED
 
@@ -121,9 +119,7 @@ class TestExportService:
 
     def test_export_unlock_error(self):
         self.mock_cli.get_volume.return_value = self.mock_luks_volume_unmounted
-        self.mock_cli.unlock_volume.side_effect = ExportException(
-            sdstatus=Status.ERROR_UNLOCK_LUKS
-        )
+        self.mock_cli.unlock_volume.side_effect = ExportException(sdstatus=Status.ERROR_UNLOCK_LUKS)
 
         assert self.service.export() == Status.ERROR_UNLOCK_LUKS
 

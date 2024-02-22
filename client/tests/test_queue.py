@@ -1,6 +1,7 @@
 """
 Testing for the ApiJobQueue and related classes.
 """
+
 from queue import Queue
 
 import pytest

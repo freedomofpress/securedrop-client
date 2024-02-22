@@ -69,9 +69,7 @@ class Archive(object):
         Extract tarball, checking for path traversal, and return Archive object.
         """
         try:
-            logger.info(
-                "Extracting tarball {} into {}".format(self.archive, self.tmpdir)
-            )
+            logger.info("Extracting tarball {} into {}".format(self.archive, self.tmpdir))
             safe_extractall(self.archive, self.tmpdir)
             return self
         except Exception as ex:

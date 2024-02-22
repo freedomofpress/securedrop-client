@@ -10,7 +10,27 @@ python = "^3.9"
 
 [tool.poetry.group.dev.dependencies]
 bandit = "*"
+black = "*"
+isort = "*"
 safety = "*"
 
 [tool.bandit]
 exclude_dirs = ["client/tests", "export/tests", "log/tests", "proxy/tests"]
+
+[tool.black]
+line-length = 100
+# lowest Python version we need to support
+target-version = ["py39"]
+
+[tool.isort]
+line_length = 100
+profile = "black"
+# because we're running from the root, isort doesn't know that these
+# are our packages, so tell it explicitly.
+known_first_party = [
+    "securedrop_client",
+    "securedrop_export",
+    "securedrop_log",
+    "securedrop_proxy",
+    "tests",
+]

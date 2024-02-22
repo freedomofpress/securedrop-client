@@ -1,7 +1,9 @@
 import logging
-from securedrop_log import SecureDropLog
-from systemd import journal  # type: ignore[import]
 import select
+
+from systemd import journal  # type: ignore[import]
+
+from securedrop_log import SecureDropLog
 
 
 def main():

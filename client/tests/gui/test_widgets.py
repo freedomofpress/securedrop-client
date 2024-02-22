@@ -1,6 +1,7 @@
 """
 Make sure the UI widgets are configured correctly and work as expected.
 """
+
 import math
 import random
 from datetime import datetime

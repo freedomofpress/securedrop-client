@@ -4,6 +4,7 @@ The actions available to the journalist.
 Over time, this module could become the interface between
 the GUI and the controller.
 """
+
 from contextlib import ExitStack
 from gettext import gettext as _
 from pathlib import Path

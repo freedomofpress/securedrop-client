@@ -138,9 +138,7 @@ class CLI:
         except subprocess.CalledProcessError as ex:
             raise ExportException(sdstatus=Status.DEVICE_ERROR) from ex
 
-    def _get_supported_volume(
-        self, device: dict
-    ) -> Optional[Union[Volume, MountedVolume]]:
+    def _get_supported_volume(self, device: dict) -> Optional[Union[Volume, MountedVolume]]:
         """
         Given JSON-formatted lsblk output for one device, determine if it
         is suitably partitioned and return it to be used for export,
@@ -196,9 +194,7 @@ class CLI:
                         EncryptionScheme.LUKS,
                         EncryptionScheme.VERACRYPT,
                     ):
-                        logger.debug(
-                            f"{device_name} is unlocked but unmounted; attempting mount"
-                        )
+                        logger.debug(f"{device_name} is unlocked but unmounted; attempting mount")
                         return self._mount_volume(vol, mapped_name)
 
         # Locked VeraCrypt drives are rejected here (EncryptionScheme.UNKNOWN)

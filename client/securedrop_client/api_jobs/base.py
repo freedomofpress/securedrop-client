@@ -53,7 +53,6 @@ class PauseQueueJob(QueueJob):
 
 
 class ApiJob(QueueJob):
-
     """
     Signal that is emitted after an job finishes successfully.
     """

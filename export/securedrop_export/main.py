@@ -99,10 +99,7 @@ def _configure_logging():
         log_file = os.path.join(DEFAULT_HOME, LOG_DIR_NAME, EXPORT_LOG_FILENAME)
 
         # set logging format
-        log_fmt = (
-            "%(asctime)s - %(name)s:%(lineno)d(%(funcName)s) "
-            "%(levelname)s: %(message)s"
-        )
+        log_fmt = "%(asctime)s - %(name)s:%(lineno)d(%(funcName)s) " "%(levelname)s: %(message)s"
         formatter = logging.Formatter(log_fmt)
 
         handler = TimedRotatingFileHandler(log_file)
@@ -143,15 +140,11 @@ def _start_service(archive: Archive) -> BaseStatus:
     # Export routines
     elif archive.command is Command.EXPORT:
         return ExportService(archive).export()
-    elif (
-        archive.command is Command.CHECK_USBS or archive.command is Command.CHECK_VOLUME
-    ):
+    elif archive.command is Command.CHECK_USBS or archive.command is Command.CHECK_VOLUME:
         return ExportService(archive).scan_all_devices()
 
     # Unreachable
-    raise ExportException(
-        f"unreachable: unknown submission.command value: {archive.command}"
-    )
+    raise ExportException(f"unreachable: unknown submission.command value: {archive.command}")
 
 
 def _exit_gracefully(archive: Archive, status: BaseStatus):
@@ -185,9 +178,7 @@ def _write_status(status: BaseStatus):
         # First we will log errors from stderr elsewhere
         tmp_stderr = io.StringIO()
         tmp_stdout = io.StringIO()
-        with contextlib.redirect_stderr(tmp_stderr), contextlib.redirect_stdout(
-            tmp_stdout
-        ):
+        with contextlib.redirect_stderr(tmp_stderr), contextlib.redirect_stdout(tmp_stdout):
             sys.stderr.flush()
             sys.stdout.flush()
             if len(tmp_stderr.getvalue()) > 0:

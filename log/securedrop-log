@@ -2,13 +2,13 @@
 
 from __future__ import print_function
 
-import tempfile
-import io
-import sys
-import os
 import errno
+import io
+import os
 import shutil
 import subprocess
+import sys
+import tempfile
 from datetime import datetime
 
 

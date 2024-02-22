@@ -6,11 +6,11 @@ import subprocess
 from os import path
 
 import pytest
+from alembic.config import Config as AlembicConfig
+from alembic.script import ScriptDirectory
 from sqlalchemy import create_engine, text
 from sqlalchemy.orm import scoped_session, sessionmaker
 
-from alembic.config import Config as AlembicConfig
-from alembic.script import ScriptDirectory
 from securedrop_client.db import Base, convention
 
 from . import conftest

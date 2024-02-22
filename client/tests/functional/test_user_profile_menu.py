@@ -4,6 +4,7 @@ Functional test for logging out of the SecureDrop client.
 The test is based upon the client testing descriptions here:
 https://github.com/freedomofpress/securedrop-client/wiki/Test-plan#basic-client-testing
 """
+
 import pyautogui
 import pytest
 from flaky import flaky

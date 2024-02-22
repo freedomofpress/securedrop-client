@@ -69,27 +69,27 @@ class TestMain:
         side_effect=FileNotFoundError("oh no", 0),
     )
     def test__exit_gracefully_even_with_cleanup_exception(self, mock_rm, capsys):
-        with mock.patch(
-            "sys.argv", ["qvm-send-to-usb", self.export_archive_path]
-        ), mock.patch(
-            "securedrop_export.main._start_service",
-            return_value=ExportStatus.SUCCESS_EXPORT,
-        ), pytest.raises(
-            SystemExit
-        ) as sysexit:
+        with (
+            mock.patch("sys.argv", ["qvm-send-to-usb", self.export_archive_path]),
+            mock.patch(
+                "securedrop_export.main._start_service",
+                return_value=ExportStatus.SUCCESS_EXPORT,
+            ),
+            pytest.raises(SystemExit) as sysexit,
+        ):
             entrypoint()
 
         assert self._did_exit_gracefully(sysexit, capsys, Status.ERROR_GENERIC)
 
     def test_entrypoint_success(self, capsys):
-        with mock.patch(
-            "sys.argv", ["qvm-send-to-usb", self.export_archive_path]
-        ), mock.patch(
-            "securedrop_export.main._start_service",
-            return_value=ExportStatus.SUCCESS_EXPORT,
-        ), pytest.raises(
-            SystemExit
-        ) as sysexit:
+        with (
+            mock.patch("sys.argv", ["qvm-send-to-usb", self.export_archive_path]),
+            mock.patch(
+                "securedrop_export.main._start_service",
+                return_value=ExportStatus.SUCCESS_EXPORT,
+            ),
+            pytest.raises(SystemExit) as sysexit,
+        ):
             entrypoint()
 
         assert self._did_exit_gracefully(sysexit, capsys, ExportStatus.SUCCESS_EXPORT)
@@ -110,12 +110,10 @@ class TestMain:
         assert captured.out == ""
 
     def test_entrypoint_success_start_service(self):
-        with mock.patch(
-            "sys.argv", ["qvm-send-to-usb", self.export_archive_path]
-        ), mock.patch(
-            "securedrop_export.main._start_service"
-        ) as mock_service, pytest.raises(
-            SystemExit
+        with (
+            mock.patch("sys.argv", ["qvm-send-to-usb", self.export_archive_path]),
+            mock.patch("securedrop_export.main._start_service") as mock_service,
+            pytest.raises(SystemExit),
         ):
             entrypoint()
 
@@ -134,14 +132,13 @@ class TestMain:
         side_effect=ValueError("A tarball problem!"),
     )
     def test_entrypoint_failure_extraction(self, mock_extract, capsys):
-        with mock.patch(
-            "sys.argv", ["qvm-send-to-usb", self.export_archive_path]
-        ), pytest.raises(SystemExit) as sysexit:
+        with (
+            mock.patch("sys.argv", ["qvm-send-to-usb", self.export_archive_path]),
+            pytest.raises(SystemExit) as sysexit,
+        ):
             entrypoint()
 
-        assert self._did_exit_gracefully(
-            sysexit, capsys, ArchiveStatus.ERROR_EXTRACTION
-        )
+        assert self._did_exit_gracefully(sysexit, capsys, ArchiveStatus.ERROR_EXTRACTION)
 
     @mock.patch(
         "securedrop_export.main._configure_logging",
@@ -167,9 +164,10 @@ class TestMain:
         assert self._did_exit_gracefully(sysexit, capsys, Status.ERROR_GENERIC)
 
     def test_entrypoint_archive_path_fails(self, capsys):
-        with mock.patch(
-            "sys.argv", ["qvm-send-to-usb", "THIS_FILE_DOES_NOT_EXIST.sd-export"]
-        ), pytest.raises(SystemExit) as sysexit:
+        with (
+            mock.patch("sys.argv", ["qvm-send-to-usb", "THIS_FILE_DOES_NOT_EXIST.sd-export"]),
+            pytest.raises(SystemExit) as sysexit,
+        ):
             entrypoint()
 
         assert self._did_exit_gracefully(sysexit, capsys, Status.ERROR_FILE_NOT_FOUND)
@@ -192,9 +190,10 @@ class TestMain:
         mock_submission = Archive("mock_submission.sd-export")
         mock_submission.command = command
 
-        with mock.patch("securedrop_export.main.PrintService") as ps, mock.patch(
-            "securedrop_export.main.ExportService"
-        ) as es:
+        with (
+            mock.patch("securedrop_export.main.PrintService") as ps,
+            mock.patch("securedrop_export.main.ExportService") as es,
+        ):
             _start_service(mock_submission)
 
         if command in [Command.PRINT, Command.PRINTER_TEST, Command.PRINTER_PREFLIGHT]:

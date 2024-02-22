@@ -163,9 +163,11 @@ class GpgHelper:
     def _import(self, key_data: str) -> None:
         """Imports a key to the client GnuPG keyring."""
 
-        with tempfile.NamedTemporaryFile("w+") as temp_key, tempfile.NamedTemporaryFile(
-            "w+"
-        ) as stdout, tempfile.NamedTemporaryFile("w+") as stderr:
+        with (
+            tempfile.NamedTemporaryFile("w+") as temp_key,
+            tempfile.NamedTemporaryFile("w+") as stdout,
+            tempfile.NamedTemporaryFile("w+") as stderr,
+        ):
             temp_key.write(key_data)
             temp_key.seek(0)
             if self.is_qubes:  # pragma: no cover
@@ -204,9 +206,11 @@ class GpgHelper:
 
         cmd = self._gpg_cmd_base()
 
-        with tempfile.NamedTemporaryFile("w+") as content, tempfile.NamedTemporaryFile(
-            "w+"
-        ) as stdout, tempfile.NamedTemporaryFile("w+") as stderr:
+        with (
+            tempfile.NamedTemporaryFile("w+") as content,
+            tempfile.NamedTemporaryFile("w+") as stdout,
+            tempfile.NamedTemporaryFile("w+") as stderr,
+        ):
             content.write(data)
             content.seek(0)
 

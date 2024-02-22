@@ -4,32 +4,12 @@
 all: help
 
 .PHONY: lint
-lint: check-isort check-black mypy ## Run isort, black and flake8 and mypy
+lint: mypy ## Run flake8 and mypy
 	@poetry run flake8 securedrop_proxy tests
 
 .PHONY: mypy
 mypy: ## Run mypy static type checker
 	@poetry run mypy --ignore-missing-imports securedrop_proxy
-
-.PHONY: black
-black: ## Run black for file formatting
-	@echo "Running black (may result in changes in your working directory)…"
-	@poetry run black securedrop_proxy tests
-
-.PHONY: check-black
-check-black: ## Check Python source code formatting with black
-	@echo "Running black formatting check…"
-	@poetry run black --check --diff securedrop_proxy tests
-
-.PHONY: isort
-isort: ## Run isort for file formatting
-	@echo "Running isort (may result in changes in your working directory)…"
-	@poetry run isort securedrop_proxy/*.py tests/*.py
-
-.PHONY: check-isort
-check-isort: ## Check isort for file formatting
-	@echo "Running isort module ordering check…"
-	@poetry run isort --check-only --diff securedrop_proxy/*.py tests/*.py
 
 .PHONY: test
 test: clean .coverage ## Runs tests with coverage

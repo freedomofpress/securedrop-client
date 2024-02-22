@@ -1,6 +1,6 @@
-from logging import StreamHandler
-from subprocess import Popen, PIPE
 import threading
+from logging import StreamHandler
+from subprocess import PIPE, Popen
 from typing import Dict
 
 

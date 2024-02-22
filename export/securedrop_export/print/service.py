@@ -81,9 +81,7 @@ class Service:
         printer_idle_string = "printer {} is idle".format(self.printer_name)
         while True:
             try:
-                logger.info(
-                    "Running lpstat waiting for printer {}".format(self.printer_name)
-                )
+                logger.info("Running lpstat waiting for printer {}".format(self.printer_name))
                 output = subprocess.check_output(["lpstat", "-p", self.printer_name])
                 if printer_idle_string in output.decode("utf-8"):
                     logger.info("Print completed")
@@ -162,9 +160,7 @@ class Service:
 
     def _install_printer_ppd(self, uri):
         if not any(x in uri for x in self.SUPPORTED_PRINTERS):
-            logger.error(
-                "Cannot install printer ppd for unsupported printer: {}".format(uri)
-            )
+            logger.error("Cannot install printer ppd for unsupported printer: {}".format(uri))
             raise ExportException(sdstatus=Status.ERROR_PRINTER_NOT_SUPPORTED)
 
         if self.BROTHER in uri:
@@ -269,9 +265,7 @@ class Service:
         # will see an error message.
         self._wait_for_print()
 
-    def safe_check_call(
-        self, command: str, error_status: Status, ignore_stderr_startswith=None
-    ):
+    def safe_check_call(self, command: str, error_status: Status, ignore_stderr_startswith=None):
         """
         Wrap subprocess.check_output to ensure we wrap CalledProcessError and return
         our own exception, and log the error messages.

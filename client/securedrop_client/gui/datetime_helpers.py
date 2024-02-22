@@ -2,6 +2,7 @@
 Helper functions for formatting information in the UI
 
 """
+
 import datetime
 
 import arrow
