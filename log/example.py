@@ -1,8 +1,9 @@
 import logging
-from securedrop_log import SecureDropLog
 
-import ex2
 import ex1
+import ex2
+
+from securedrop_log import SecureDropLog
 
 
 def main():

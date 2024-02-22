@@ -3,6 +3,7 @@ Wrapper around Python's json to catch duplicate keys (potential JSON injection)
 
 This was informational finding TOB-SDW-014 in the 2020 audit.
 """
+
 import json
 
 dumps = json.dumps

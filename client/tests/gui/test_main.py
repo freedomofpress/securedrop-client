@@ -1,6 +1,7 @@
 """
 Check the core Window UI class works as expected.
 """
+
 import unittest
 
 from PyQt5.QtWidgets import QHBoxLayout

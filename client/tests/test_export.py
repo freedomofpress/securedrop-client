@@ -61,12 +61,14 @@ class TestDevice:
         cls.device._create_archive = None
 
     def test_Device_run_printer_preflight_checks(self):
-        with mock.patch(
-            "securedrop_client.export.mkdtemp",
-            return_value=self.mock_tmpdir,
-        ), mock.patch("securedrop_client.export.QProcess") as mock_qprocess, mock.patch.object(
-            self.device, "_create_archive"
-        ) as mock_archive:
+        with (
+            mock.patch(
+                "securedrop_client.export.mkdtemp",
+                return_value=self.mock_tmpdir,
+            ),
+            mock.patch("securedrop_client.export.QProcess") as mock_qprocess,
+            mock.patch.object(self.device, "_create_archive") as mock_archive,
+        ):
             mock_archive.return_value = _PATH_TO_PRETEND_ARCHIVE
             mock_qproc = mock_qprocess.return_value
             mock_qproc.start = mock.MagicMock()
@@ -82,14 +84,15 @@ class TestDevice:
 
     def test_Device_run_print_preflight_checks_with_error(self):
         spy = QSignalSpy(self.device.print_preflight_check_failed)
-        with mock.patch(
-            "securedrop_client.export.mkdtemp",
-            return_value=self.mock_tmpdir,
-        ), mock.patch("securedrop_client.export.QProcess") as mock_qprocess, mock.patch.object(
-            self.device, "_create_archive"
-        ) as mock_archive, mock.patch(
-            "shutil.rmtree"
-        ) as mock_rmtree:
+        with (
+            mock.patch(
+                "securedrop_client.export.mkdtemp",
+                return_value=self.mock_tmpdir,
+            ),
+            mock.patch("securedrop_client.export.QProcess") as mock_qprocess,
+            mock.patch.object(self.device, "_create_archive") as mock_archive,
+            mock.patch("shutil.rmtree") as mock_rmtree,
+        ):
             mock_archive.return_value = _PATH_TO_PRETEND_ARCHIVE
             mock_qproc = mock_qprocess.return_value
             mock_qproc.start = mock.MagicMock()
@@ -111,9 +114,12 @@ class TestDevice:
         )
 
     def test_Device_print(self):
-        with mock.patch("securedrop_client.export.QProcess") as mock_qprocess, mock.patch(
-            "securedrop_client.export.mkdtemp",
-            return_value=self.mock_tmpdir,
+        with (
+            mock.patch("securedrop_client.export.QProcess") as mock_qprocess,
+            mock.patch(
+                "securedrop_client.export.mkdtemp",
+                return_value=self.mock_tmpdir,
+            ),
         ):
             mock_qproc = mock_qprocess.return_value
             mock_qproc.start = mock.MagicMock()
@@ -135,10 +141,13 @@ class TestDevice:
         device = Export()
         spy = QSignalSpy(device.print_failed)
 
-        with mock.patch(
-            "securedrop_client.export.mkdtemp",
-            return_value=self.mock_tmpdir,
-        ), mock.patch("securedrop_client.export.QProcess") as mock_qprocess:
+        with (
+            mock.patch(
+                "securedrop_client.export.mkdtemp",
+                return_value=self.mock_tmpdir,
+            ),
+            mock.patch("securedrop_client.export.QProcess") as mock_qprocess,
+        ):
             mock_qproc = mock_qprocess.return_value
             mock_qproc.start = mock.MagicMock()
 
@@ -154,10 +163,13 @@ class TestDevice:
         )
 
     def test_Device_run_export_preflight_checks(self):
-        with mock.patch(
-            "securedrop_client.export.mkdtemp",
-            return_value=self.mock_tmpdir,
-        ), mock.patch("securedrop_client.export.QProcess") as mock_qprocess:
+        with (
+            mock.patch(
+                "securedrop_client.export.mkdtemp",
+                return_value=self.mock_tmpdir,
+            ),
+            mock.patch("securedrop_client.export.QProcess") as mock_qprocess,
+        ):
             mock_qproc = mock_qprocess.return_value
             mock_qproc.start = mock.MagicMock()
 
@@ -176,14 +188,15 @@ class TestDevice:
     def test_Device_run_export_preflight_checks_with_error(self, mock_shutil):
         spy = QSignalSpy(self.device.export_state_changed)
 
-        with mock.patch(
-            "securedrop_client.export.mkdtemp",
-            return_value=self.mock_tmpdir,
-        ), mock.patch.object(self.device, "_create_archive"), mock.patch(
-            "securedrop_client.export.QProcess"
-        ) as mock_qprocess, mock.patch.object(
-            self.device, "_create_archive"
-        ) as mock_archive:
+        with (
+            mock.patch(
+                "securedrop_client.export.mkdtemp",
+                return_value=self.mock_tmpdir,
+            ),
+            mock.patch.object(self.device, "_create_archive"),
+            mock.patch("securedrop_client.export.QProcess") as mock_qprocess,
+            mock.patch.object(self.device, "_create_archive") as mock_archive,
+        ):
             mock_archive.return_value = _PATH_TO_PRETEND_ARCHIVE
             mock_qproc = mock_qprocess.return_value
             mock_qproc.start = mock.MagicMock()
@@ -201,15 +214,17 @@ class TestDevice:
         device = Export()
 
         warning_logger = mocker.patch("securedrop_client.export.logger.warning")
-        with mock.patch(
-            "securedrop_client.export.tarfile.open",
-            return_value=mock.MagicMock(),
-        ), mock.patch(
-            "securedrop_client.export.mkdtemp",
-            return_value=self.mock_tmpdir,
-        ), mock.patch(
-            "securedrop_client.export.QProcess"
-        ) as mock_qprocess:
+        with (
+            mock.patch(
+                "securedrop_client.export.tarfile.open",
+                return_value=mock.MagicMock(),
+            ),
+            mock.patch(
+                "securedrop_client.export.mkdtemp",
+                return_value=self.mock_tmpdir,
+            ),
+            mock.patch("securedrop_client.export.QProcess") as mock_qprocess,
+        ):
             device.export(["/not/a/real/location"], "mock passphrase")
 
             mock_qprocess.assert_not_called()
@@ -224,10 +239,13 @@ class TestDevice:
         expected_metadata = self.device._DISK_METADATA.copy()
         expected_metadata[self.device._DISK_ENCRYPTION_KEY_NAME] = passphrase
 
-        with mock.patch(
-            "securedrop_client.export.mkdtemp",
-            return_value=self.mock_tmpdir,
-        ), mock.patch("securedrop_client.export.QProcess") as mock_qprocess:
+        with (
+            mock.patch(
+                "securedrop_client.export.mkdtemp",
+                return_value=self.mock_tmpdir,
+            ),
+            mock.patch("securedrop_client.export.QProcess") as mock_qprocess,
+        ):
             mock_qproc = mock_qprocess.return_value
             mock_qproc.start = mock.MagicMock()
             self.device.export([filepath], passphrase)
@@ -354,11 +372,11 @@ class TestDevice:
         Sanity check. If we encounter an error after archive has been built,
         ensure the tmpdir directory cleanup happens.
         """
-        with mock.patch(
-            "securedrop_client.export.mkdtemp", return_value=self.mock_tmpdir
-        ), mock.patch("securedrop_client.export.QProcess") as qprocess, mock.patch.object(
-            self.device, "_cleanup_tmpdir"
-        ) as mock_cleanup:
+        with (
+            mock.patch("securedrop_client.export.mkdtemp", return_value=self.mock_tmpdir),
+            mock.patch("securedrop_client.export.QProcess") as qprocess,
+            mock.patch.object(self.device, "_cleanup_tmpdir") as mock_cleanup,
+        ):
             mock_qproc = qprocess.return_value
             mock_qproc.readAllStandardError.data.return_value = b"Something awful happened!\n"
             mock_qproc.start = lambda proc, args: self.device._on_export_process_error()

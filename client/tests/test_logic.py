@@ -2,6 +2,7 @@
 Make sure the Controller object, containing the application logic, behaves as
 expected.
 """
+
 import datetime
 import logging
 import os

@@ -155,9 +155,7 @@ class TestCli:
     @mock.patch("subprocess.check_output")
     def test__get_supported_volume_success_no_mount(self, mock_sp, input):
         # mock subprocess results on the _is_it_veracrypt method
-        mock_sp.return_value = "IdType:                     crypto_TCRYPT\n".encode(
-            "utf-8"
-        )
+        mock_sp.return_value = "IdType:                     crypto_TCRYPT\n".encode("utf-8")
         vol = self.cli._get_supported_volume(input)
 
         assert vol
@@ -381,9 +379,7 @@ class TestCli:
         submission = Archive("testfile")
 
         with pytest.raises(ExportException):
-            self.cli.write_data_to_device(
-                vol, submission.tmpdir, submission.target_dirname
-            )
+            self.cli.write_data_to_device(vol, submission.tmpdir, submission.target_dirname)
             self.cli.cleanup.assert_called_once()
 
         patch.stop()

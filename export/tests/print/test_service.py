@@ -167,9 +167,7 @@ class TestPrint:
         mocker.patch("subprocess.run", side_effect=CalledProcessError(1, "run"))
 
         with pytest.raises(ExportException) as ex:
-            self.service._install_printer_ppd(
-                "usb://Not/Supported?serial=A00000A000000"
-            )
+            self.service._install_printer_ppd("usb://Not/Supported?serial=A00000A000000")
 
         assert ex.value.sdstatus is Status.ERROR_PRINTER_NOT_SUPPORTED
 
@@ -234,9 +232,7 @@ class TestPrint:
 
         assert ex.value.sdstatus is Status.ERROR_PRINT
 
-    @mock.patch(
-        "subprocess.check_output", return_value=b"printer sdw-printer is busy\n"
-    )
+    @mock.patch("subprocess.check_output", return_value=b"printer sdw-printer is busy\n")
     def test__wait_for_print_timeout_exception(self, mock_output):
         self.service.printer_wait_timeout = 1
 
@@ -270,18 +266,14 @@ class TestPrint:
 
     @mock.patch(
         "subprocess.check_output",
-        return_value=SAMPLE_OUTPUT_BROTHER_PRINTER
-        + b"\n"
-        + SAMPLE_OUTPUT_LASERJET_PRINTER,
+        return_value=SAMPLE_OUTPUT_BROTHER_PRINTER + b"\n" + SAMPLE_OUTPUT_LASERJET_PRINTER,
     )
     def test__check_printer_setup_error_too_many_printers(self, mock_output):
         with pytest.raises(ExportException) as ex:
             self.service._check_printer_setup()
         assert ex.value.sdstatus is Status.ERROR_MULTIPLE_PRINTERS_FOUND
 
-    @mock.patch(
-        "subprocess.check_output", return_value=SAMPLE_OUTPUT_UNSUPPORTED_PRINTER
-    )
+    @mock.patch("subprocess.check_output", return_value=SAMPLE_OUTPUT_UNSUPPORTED_PRINTER)
     def test__check_printer_setup_error_unsupported_printer(self, mock_output):
         with pytest.raises(ExportException) as ex:
             self.service._check_printer_setup()
@@ -305,9 +297,7 @@ class TestPrint:
             self.service._get_printer_uri()
         assert ex.value.sdstatus is Status.ERROR_PRINTER_URI
 
-    @mock.patch(
-        "subprocess.check_output", return_value=SAMPLE_OUTPUT_UNSUPPORTED_PRINTER
-    )
+    @mock.patch("subprocess.check_output", return_value=SAMPLE_OUTPUT_UNSUPPORTED_PRINTER)
     def test__get_printer_uri_error_unsupported(self, mocked_subprocess):
         with pytest.raises(ExportException) as ex:
             self.service._get_printer_uri()
@@ -315,9 +305,7 @@ class TestPrint:
 
     def test__install_printer_ppd_error_unsupported_uri(self):
         with pytest.raises(ExportException) as ex:
-            self.service._install_printer_ppd(
-                "usb://YOURE_NOT_MY_REAL_PRINTER/A00000A000000"
-            )
+            self.service._install_printer_ppd("usb://YOURE_NOT_MY_REAL_PRINTER/A00000A000000")
         assert ex.value.sdstatus is Status.ERROR_PRINTER_NOT_SUPPORTED
 
     @mock.patch("securedrop_export.print.service.Service._wait_for_print")
@@ -349,9 +337,10 @@ class TestPrint:
     def test_open_office_file_convert_to_pdf(self, mock_wait):
         file = "/tmp/definitely-an-office-file.odt"
 
-        with mock.patch.object(self.service, "safe_check_call") as scc, mock.patch(
-            "securedrop_export.print.service.logger.info"
-        ) as log:
+        with (
+            mock.patch.object(self.service, "safe_check_call") as scc,
+            mock.patch("securedrop_export.print.service.logger.info") as log,
+        ):
             self.service._print_file(file)
 
         assert scc.call_count == 2
@@ -389,9 +378,7 @@ class TestPrint:
         mock.patch("subprocess.run")
 
         with mock.patch("subprocess.run"), pytest.raises(ExportException) as ex:
-            self.service.safe_check_call(
-                command="ls", error_status=Status.PRINT_TEST_PAGE_SUCCESS
-            )
+            self.service.safe_check_call(command="ls", error_status=Status.PRINT_TEST_PAGE_SUCCESS)
 
         assert ex.value.sdstatus is Status.PRINT_TEST_PAGE_SUCCESS
 
@@ -406,9 +393,10 @@ class TestPrint:
     def test__wait_for_print_waits_correctly(self, mock_subprocess, mock_time):
         file = "/tmp/happy-to-print-you.pdf"
 
-        with mock.patch.object(self.service, "safe_check_call") as scc, mock.patch(
-            "securedrop_export.print.service.logger.info"
-        ) as log:
+        with (
+            mock.patch.object(self.service, "safe_check_call") as scc,
+            mock.patch("securedrop_export.print.service.logger.info") as log,
+        ):
             self.service._print_file(file)
 
         assert scc.call_count == 1

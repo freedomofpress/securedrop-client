@@ -33,11 +33,12 @@ class TestEntrypoint(unittest.TestCase):
         self.assertFalse(os.path.exists(config_path))
 
         output = None
-        with patch(
-            "sys.argv", new_callable=lambda: ["sd-proxy", config_path]
-        ) as mock_argv, patch(  # noqa: F841
-            "sys.stdout", new_callable=io.StringIO
-        ) as mock_stdout:
+        with (
+            patch(
+                "sys.argv", new_callable=lambda: ["sd-proxy", config_path]
+            ) as mock_argv,  # noqa: F841
+            patch("sys.stdout", new_callable=io.StringIO) as mock_stdout,
+        ):
             with self.assertRaises(SystemExit), sdhome():
                 entrypoint.start()
             output = mock_stdout.getvalue()
@@ -85,11 +86,10 @@ class TestEntrypoint(unittest.TestCase):
 
     def test_wrong_number_of_arguments(self):
         with sdhome() as home:  # noqa: F841
-            with patch(
-                "sys.argv", new_callable=lambda: ["sd-proxy"]
-            ) as mock_argv, patch(  # noqa: F841
-                "sys.stdout", new_callable=io.StringIO
-            ) as mock_stdout:
+            with (
+                patch("sys.argv", new_callable=lambda: ["sd-proxy"]) as mock_argv,  # noqa: F841
+                patch("sys.stdout", new_callable=io.StringIO) as mock_stdout,
+            ):
                 with self.assertRaises(SystemExit):
                     entrypoint.start()
                 output = mock_stdout.getvalue()
@@ -106,13 +106,15 @@ class TestEntrypoint(unittest.TestCase):
         self.assertTrue(os.path.exists(config_path))
 
         with sdhome() as home:  # noqa: F841
-            with patch(
-                "sys.stdin", new_callable=lambda: io.StringIO("")
-            ) as mock_stdin, patch(  # noqa: F841
-                "sys.stdout", new_callable=io.StringIO
-            ) as mock_stdout, patch(
-                "sys.argv", new_callable=lambda: ["sd-proxy", config_path]
-            ) as mock_argv:  # noqa: F841
+            with (
+                patch(
+                    "sys.stdin", new_callable=lambda: io.StringIO("")
+                ) as mock_stdin,  # noqa: F841
+                patch("sys.stdout", new_callable=io.StringIO) as mock_stdout,
+                patch(
+                    "sys.argv", new_callable=lambda: ["sd-proxy", config_path]
+                ) as mock_argv,  # noqa: F841
+            ):
                 entrypoint.start()
                 output = mock_stdout.getvalue()
 
@@ -132,13 +134,16 @@ class TestEntrypoint(unittest.TestCase):
         }
 
         output = None
-        with sdhome() as home, patch(  # noqa: F841
-            "sys.stdin", new_callable=lambda: io.StringIO(json.dumps(test_input))
-        ) as mock_stding, patch(  # noqa: F841
-            "sys.stdout", new_callable=io.StringIO
-        ) as mock_stdout, patch(
-            "sys.argv", new_callable=lambda: ["sd-proxy", config_path]
-        ) as mock_argv:  # noqa: F841
+        with (
+            sdhome() as home,  # noqa: F841
+            patch(
+                "sys.stdin", new_callable=lambda: io.StringIO(json.dumps(test_input))
+            ) as mock_stding,  # noqa: F841
+            patch("sys.stdout", new_callable=io.StringIO) as mock_stdout,
+            patch(
+                "sys.argv", new_callable=lambda: ["sd-proxy", config_path]
+            ) as mock_argv,  # noqa: F841
+        ):
             entrypoint.start()
             output = mock_stdout.getvalue()
 

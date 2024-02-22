@@ -68,9 +68,10 @@ def safe_gzip_extract(
     safe_mkdir(base_path, str(dest_dir))
 
     dest_path_with_original_filename = dest_dir.joinpath(original_filename)
-    with gzip.open(gzip_file_path, "rb") as src_file, open(
-        dest_path_with_original_filename, "wb"
-    ) as dest_file:
+    with (
+        gzip.open(gzip_file_path, "rb") as src_file,
+        open(dest_path_with_original_filename, "wb") as dest_file,
+    ):
         safe_copyfileobj(src_file, dest_file, base_path)
 
 

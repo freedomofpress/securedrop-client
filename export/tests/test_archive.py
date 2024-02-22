@@ -44,22 +44,15 @@ def test_extract_tarball():
         submission = Archive(archive_path).extract_tarball()
         assert oct(os.stat(submission.tmpdir).st_mode) == "0o40700"
 
-        extracted_file_path = os.path.join(
-            submission.tmpdir, "some", "dirs", "file.txt"
-        )
+        extracted_file_path = os.path.join(submission.tmpdir, "some", "dirs", "file.txt")
         assert os.path.exists(extracted_file_path)
         assert oct(os.stat(extracted_file_path).st_mode) == "0o100600"
 
         # Subdirectories that are added as members are extracted with 700 permissions
-        assert (
-            oct(os.stat(os.path.join(submission.tmpdir, "some")).st_mode) == "0o40700"
-        )
+        assert oct(os.stat(os.path.join(submission.tmpdir, "some")).st_mode) == "0o40700"
         # Subdirectories that are not added as members are extracted with 700 permissions
         # because os.umask(0o077) is set in the Archive constructor.
-        assert (
-            oct(os.stat(os.path.join(submission.tmpdir, "some", "dirs")).st_mode)
-            == "0o40700"
-        )
+        assert oct(os.stat(os.path.join(submission.tmpdir, "some", "dirs")).st_mode) == "0o40700"
 
 
 def test_extract_tarball_with_symlink():
@@ -113,9 +106,7 @@ def test_extract_tarball_raises_if_doing_path_traversal():
             metadata_file_info.size = len(metadata_str)
             archive.addfile(metadata_file_info, metadata_bytes)
             content = b"test"
-            traversed_file_info = tarfile.TarInfo(
-                "../../../../../../../../../tmp/traversed"
-            )
+            traversed_file_info = tarfile.TarInfo("../../../../../../../../../tmp/traversed")
             traversed_file_info.size = len(content)
             archive.addfile(traversed_file_info, BytesIO(content))
             archive.close()
@@ -288,9 +279,7 @@ def test_extract_tarball_raises_if_name_has_unsafe_absolute_path_with_symlink():
         archive_path = os.path.join(temp_dir, "archive.sd-export")
         symlink_path = os.path.join(temp_dir, "symlink")
 
-        os.system(
-            f"ln -s {tmp}/unsafe {symlink_path}"
-        )  # create symlink to "/tmp/unsafe"
+        os.system(f"ln -s {tmp}/unsafe {symlink_path}")  # create symlink to "/tmp/unsafe"
 
         with tarfile.open(archive_path, "w:gz") as archive:
             metadata = {

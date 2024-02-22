@@ -1,6 +1,7 @@
 """
 Functional tests for testing seen/unseen feature in the SecureDrop client.
 """
+
 import pytest
 from flaky import flaky
 from PyQt5.QtCore import Qt

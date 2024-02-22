@@ -1,9 +1,10 @@
 #!/opt/venvs/securedrop-log/bin/python3
 
+import errno
 import os
 import sys
+
 import redis
-import errno
 
 
 def main():

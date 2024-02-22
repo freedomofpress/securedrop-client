@@ -1,6 +1,7 @@
 """Create models with a set of default valid properties, to avoid
 changes forcing an update of all test code.
 """
+
 import os
 import uuid
 from datetime import datetime

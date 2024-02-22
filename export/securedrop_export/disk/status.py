@@ -8,9 +8,7 @@ class Status(BaseStatus):
         "INVALID_DEVICE_DETECTED"  # Not encrypted, or partitions too many/too nested
     )
 
-    MULTI_DEVICE_DETECTED = (
-        "MULTI_DEVICE_DETECTED"  # Multiple devices are not currently supported
-    )
+    MULTI_DEVICE_DETECTED = "MULTI_DEVICE_DETECTED"  # Multiple devices are not currently supported
 
     DEVICE_LOCKED = "DEVICE_LOCKED"  # One valid device detected, and it's locked
     DEVICE_WRITABLE = (
@@ -31,6 +29,4 @@ class Status(BaseStatus):
     # Export succeeds but drives were not properly unmounted (generic)
     ERROR_EXPORT_CLEANUP = "ERROR_EXPORT_CLEANUP"
 
-    DEVICE_ERROR = (
-        "DEVICE_ERROR"  # Something went wrong while trying to check the device
-    )
+    DEVICE_ERROR = "DEVICE_ERROR"  # Something went wrong while trying to check the device

@@ -435,7 +435,7 @@ def source(session) -> dict:
         is_starred=False,
         last_updated=datetime.now(),
         document_count=0,
-        **args
+        **args,
     )
     args["fingerprint"] = source.fingerprint = "B2FF7FB28EED8CABEBC5FB6C6179D97BCFA52E5F"
     session.add(source)

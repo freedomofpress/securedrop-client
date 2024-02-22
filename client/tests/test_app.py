@@ -1,6 +1,7 @@
 """
 Tests for the app module, which sets things up and runs the application.
 """
+
 import os
 import platform
 import sys

@@ -5,6 +5,7 @@ A checkbox control created to toggle with hiding and showing PasswordEdit passph
 Consists of a QCheckBox and a QLabel positioned horizontally within a QFrame.
 Present in the Sign-in and Export Dialog.
 """
+
 from gettext import gettext as _
 
 from pkg_resources import resource_string
