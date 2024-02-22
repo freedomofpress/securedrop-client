@@ -1,9 +1,0 @@
-include LICENSE
-include README.md
-include changelog.md
-include build-requirements.txt
-include securedrop-log*
-include securedrop-redis-log
-include securedrop.Log
-include sd-rsyslog*
-include sdlog.conf
