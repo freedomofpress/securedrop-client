@@ -10,7 +10,7 @@ import pytest
 from PyQt5.QtCore import Qt
 from PyQt5.QtWidgets import QMainWindow
 
-from securedrop_client import export, state
+from securedrop_client import state
 from securedrop_client.app import configure_locale_and_language
 from securedrop_client.config import Config
 from securedrop_client.db import (
@@ -22,6 +22,8 @@ from securedrop_client.db import (
     Source,
     make_session_maker,
 )
+from securedrop_client.export import Export
+from securedrop_client.export_status import ExportStatus
 from securedrop_client.gui import conversation
 from securedrop_client.gui.main import Window
 from securedrop_client.logic import Controller
@@ -47,8 +49,9 @@ TIME_SYNC = 10000
 TIME_CLICK_ACTION = 1000
 TIME_RENDER_SOURCE_LIST = 20000
 TIME_RENDER_CONV_VIEW = 1000
-TIME_RENDER_EXPORT_DIALOG = 1000
+TIME_RENDER_EXPORT_WIZARD = 1000
 TIME_FILE_DOWNLOAD = 5000
+TIME_KEYCLICK_ACTION = 5000
 
 
 @pytest.fixture(scope="function")
@@ -76,9 +79,9 @@ def lang(request):
 def print_dialog(mocker, homedir):
     mocker.patch("PyQt5.QtWidgets.QApplication.activeWindow", return_value=QMainWindow())
 
-    export_device = mocker.MagicMock(spec=conversation.ExportDevice)
+    export_device = mocker.MagicMock(spec=Export)
 
-    dialog = conversation.PrintFileDialog(export_device, "file_UUID", "file123.jpg")
+    dialog = conversation.PrintDialog(export_device, "file123.jpg", ["/mock/path/to/file"])
 
     yield dialog
 
@@ -87,49 +90,49 @@ def print_dialog(mocker, homedir):
 def print_transcript_dialog(mocker, homedir):
     mocker.patch("PyQt5.QtWidgets.QApplication.activeWindow", return_value=QMainWindow())
 
-    export_device = mocker.MagicMock(spec=conversation.ExportDevice)
+    export_device = mocker.MagicMock(spec=Export)
 
     dialog = conversation.PrintTranscriptDialog(
-        export_device, "transcript.txt", "some/path/transcript.txt"
+        export_device, "transcript.txt", ["some/path/transcript.txt"]
     )
 
     yield dialog
 
 
 @pytest.fixture(scope="function")
-def export_dialog(mocker, homedir):
+def export_wizard_multifile(mocker, homedir):
     mocker.patch("PyQt5.QtWidgets.QApplication.activeWindow", return_value=QMainWindow())
 
-    export_device = mocker.MagicMock(spec=conversation.ExportDevice)
+    export_device = mocker.MagicMock(spec=Export)
 
-    dialog = conversation.ExportDialog(
+    wizard = conversation.ExportWizard(
         export_device,
         "3 files",
         ["/some/path/file123.jpg", "/some/path/memo.txt", "/some/path/transcript.txt"],
     )
 
+    yield wizard
+
+
+@pytest.fixture(scope="function")
+def export_wizard(mocker, homedir):
+    mocker.patch("PyQt5.QtWidgets.QApplication.activeWindow", return_value=QMainWindow())
+
+    export_device = mocker.MagicMock(spec=Export)
+
+    dialog = conversation.ExportWizard(export_device, "file123.jpg", ["/mock/path/to/file"])
+
     yield dialog
 
 
 @pytest.fixture(scope="function")
-def export_file_dialog(mocker, homedir):
+def export_transcript_wizard(mocker, homedir):
     mocker.patch("PyQt5.QtWidgets.QApplication.activeWindow", return_value=QMainWindow())
 
-    export_device = mocker.MagicMock(spec=conversation.ExportDevice)
+    export_device = mocker.MagicMock(spec=Export)
 
-    dialog = conversation.ExportFileDialog(export_device, "file_UUID", "file123.jpg")
-
-    yield dialog
-
-
-@pytest.fixture(scope="function")
-def export_transcript_dialog(mocker, homedir):
-    mocker.patch("PyQt5.QtWidgets.QApplication.activeWindow", return_value=QMainWindow())
-
-    export_device = mocker.MagicMock(spec=conversation.ExportDevice)
-
-    dialog = conversation.ExportTranscriptDialog(
-        export_device, "transcript.txt", "/some/path/transcript.txt"
+    dialog = conversation.ExportWizard(
+        export_device, "transcript.txt", ["/some/path/transcript.txt"]
     )
 
     yield dialog
@@ -168,16 +171,122 @@ def homedir(i18n):
 
 
 @pytest.fixture(scope="function")
-def mock_export_service():
-    """An export service that assumes the Qubes RPC calls are successful and skips them."""
-    export_service = export.Service()
-    # Ensure the export_service doesn't rely on Qubes OS:
-    export_service._run_disk_test = lambda dir: None
-    export_service._run_usb_test = lambda dir: None
-    export_service._run_disk_export = lambda dir, paths, passphrase: None
-    export_service._run_printer_preflight = lambda dir: None
-    export_service._run_print = lambda dir, paths: None
-    return export_service
+def mock_export_locked():
+    """
+    Represents the following scenario:
+        * No USB
+        * Export wizard launched
+        * USB inserted
+        * Passphrase successfully entered on first attempt (and export suceeeds)
+    """
+    device = Export()
+    status = iter(
+        [
+            ExportStatus.NO_DEVICE_DETECTED,
+            ExportStatus.DEVICE_LOCKED,
+            ExportStatus.SUCCESS_EXPORT,
+        ]
+    )
+
+    def get_status() -> ExportStatus:
+        return next(status)
+
+    device.run_export_preflight_checks = lambda: device.export_state_changed.emit(
+        ExportStatus.NO_DEVICE_DETECTED
+    )
+    device.run_printer_preflight_checks = lambda: None
+    device.print = lambda filepaths: None
+    device.export = lambda filepaths, passphrase: device.export_state_changed.emit(get_status())
+
+    return device
+
+
+@pytest.fixture(scope="function")
+def mock_export_unlocked():
+    """
+    Represents the following scenario:
+        * USB already inserted and unlocked by the user
+        * Export wizard launched
+        * Export succeeds
+    """
+    device = Export()
+
+    device.run_export_preflight_checks = lambda: device.export_state_changed.emit(
+        ExportStatus.DEVICE_WRITABLE
+    )
+    device.run_printer_preflight_checks = lambda: None
+    device.print = lambda filepaths: None
+    device.export = lambda filepaths, passphrase: device.export_state_changed.emit(
+        ExportStatus.SUCCESS_EXPORT
+    )
+
+    return device
+
+
+@pytest.fixture(scope="function")
+def mock_export_no_usb_then_bad_passphrase():
+    """
+    Represents the following scenario:
+        * Export wizard launched
+        * Locked USB detected
+        * Mistyped Passphrase
+        * Correct passphrase
+        * Export succeeds
+    """
+    device = Export()
+    status = iter(
+        [
+            ExportStatus.NO_DEVICE_DETECTED,
+            ExportStatus.DEVICE_LOCKED,
+            ExportStatus.ERROR_UNLOCK_LUKS,
+            ExportStatus.SUCCESS_EXPORT,
+        ]
+    )
+
+    def get_status() -> ExportStatus:
+        return next(status)
+
+    device.run_export_preflight_checks = lambda: device.export_state_changed.emit(
+        ExportStatus.NO_DEVICE_DETECTED
+    )
+    device.run_printer_preflight_checks = lambda: None
+    device.print = lambda filepaths: None
+    device.export = lambda filepaths, passphrase: device.export_state_changed.emit(get_status())
+
+    return device
+
+
+@pytest.fixture(scope="function")
+def mock_export_fail_early():
+    """
+    Represents the following scenario:
+        * No USB inserted
+        * Export wizard launched
+        * Locked USB inserted
+        * Unrecoverable error before export happens
+          (eg, mount error)
+    """
+    device = Export()
+    # why does it need an extra ERROR_MOUNT report?
+    status = iter(
+        [
+            ExportStatus.NO_DEVICE_DETECTED,
+            ExportStatus.DEVICE_LOCKED,
+            ExportStatus.ERROR_MOUNT,
+        ]
+    )
+
+    def get_status() -> ExportStatus:
+        return next(status)
+
+    device.run_export_preflight_checks = lambda: device.export_state_changed.emit(
+        ExportStatus.NO_DEVICE_DETECTED
+    )
+    device.run_printer_preflight_checks = lambda: None
+    device.print = lambda filepaths: None
+    device.export = lambda filepaths, passphrase: device.export_state_changed.emit(get_status())
+
+    return device
 
 
 @pytest.fixture(scope="function")

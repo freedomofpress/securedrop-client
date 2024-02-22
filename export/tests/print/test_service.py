@@ -1,14 +1,13 @@
-import pytest
-
-from unittest import mock
 import os
 import subprocess
 from subprocess import CalledProcessError
+from unittest import mock
 
-from securedrop_export.directory import safe_mkdir
+import pytest
 
-from securedrop_export.exceptions import ExportException
 from securedrop_export.archive import Archive
+from securedrop_export.directory import safe_mkdir
+from securedrop_export.exceptions import ExportException
 from securedrop_export.print.service import Service
 from securedrop_export.print.status import Status
 
@@ -187,7 +186,7 @@ class TestPrint:
 
     def test_safe_check_call(self):
         # This works, since `ls` is a valid comand
-        self.service.safe_check_call(["ls"], Status.TEST_SUCCESS)
+        self.service.safe_check_call(["ls"], Status.PRINT_TEST_PAGE_SUCCESS)
 
     def test_safe_check_call_invalid_call(self):
         with pytest.raises(ExportException) as ex:
@@ -198,7 +197,7 @@ class TestPrint:
     def test_safe_check_call_write_to_stderr_and_ignore_error(self):
         self.service.safe_check_call(
             ["python3", "-c", "import sys;sys.stderr.write('hello')"],
-            error_status=Status.TEST_SUCCESS,
+            error_status=Status.PRINT_TEST_PAGE_SUCCESS,
             ignore_stderr_startswith=b"hello",
         )
 
@@ -390,9 +389,11 @@ class TestPrint:
         mock.patch("subprocess.run")
 
         with mock.patch("subprocess.run"), pytest.raises(ExportException) as ex:
-            self.service.safe_check_call(command="ls", error_status=Status.TEST_SUCCESS)
+            self.service.safe_check_call(
+                command="ls", error_status=Status.PRINT_TEST_PAGE_SUCCESS
+            )
 
-        assert ex.value.sdstatus is Status.TEST_SUCCESS
+        assert ex.value.sdstatus is Status.PRINT_TEST_PAGE_SUCCESS
 
     @mock.patch("securedrop_export.print.service.time.sleep", return_value=None)
     @mock.patch(

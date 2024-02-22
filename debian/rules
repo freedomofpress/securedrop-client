@@ -19,7 +19,10 @@ override_dh_strip_nondeterminism:
 
 # Override debhelper's auto-generated files in `/etc/`
 # to force an exact replacement of the files we are modifying
-# there (specifically, `/etc/apt/trusted.gpg.d/securedrop-keyring.gpg`).
+# there (specifically, `/etc/apt/trusted.gpg.d/securedrop-keyring.gpg`
+# for the keyring package and `/etc/udisks2/tcrypt.conf` for the
+# securedrop-export package).
 override_dh_installdeb:
 	dh_installdeb
 	cat /dev/null > ${CURDIR}/debian/securedrop-keyring/DEBIAN/conffiles
+	cat /dev/null > ${CURDIR}/debian/securedrop-export/DEBIAN/conffiles

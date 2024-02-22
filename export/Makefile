@@ -15,7 +15,8 @@ check-black: ## Check Python source code formatting with black
 TESTS ?= tests
 .PHONY: test
 test:  ## Run tests
-	poetry run pytest -v --cov-report html --cov-report term-missing --cov=securedrop_export $$TESTS
+	poetry run pytest -v --cov-report html --cov-report term-missing \
+		--cov=securedrop_export --log-disable=securedrop_export.main $$TESTS
 
 .PHONY: flake8
 flake8:  ## Run flake8 linter

@@ -3587,7 +3587,7 @@ def test_FileWidget__on_export_clicked(mocker, session, source):
 
     get_file = mocker.MagicMock(return_value=file)
     controller = mocker.MagicMock(get_file=get_file)
-    export_device = mocker.patch("securedrop_client.gui.conversation.ExportDevice")
+    file_location = file.location(controller.data_dir)
 
     fw = FileWidget(
         file.uuid, controller, mocker.MagicMock(), mocker.MagicMock(), mocker.MagicMock(), 0, 123
@@ -3597,10 +3597,14 @@ def test_FileWidget__on_export_clicked(mocker, session, source):
     controller.run_export_preflight_checks = mocker.MagicMock()
     controller.downloaded_file_exists = mocker.MagicMock(return_value=True)
 
-    dialog = mocker.patch("securedrop_client.gui.conversation.ExportFileDialog")
+    export_device = mocker.patch("securedrop_client.gui.widgets.Export")
+    wizard = mocker.patch("securedrop_client.gui.conversation.ExportWizard")
 
     fw._on_export_clicked()
-    dialog.assert_called_once_with(export_device(), file.uuid, file.filename)
+    wizard.assert_called_once()
+    wizard.assert_called_once_with(
+        export_device(), file.filename, [file_location]
+    ), f"{wizard.call_args}"
 
 
 def test_FileWidget__on_export_clicked_missing_file(mocker, session, source):
@@ -3627,17 +3631,17 @@ def test_FileWidget__on_export_clicked_missing_file(mocker, session, source):
     mocker.patch("PyQt5.QtWidgets.QDialog.exec")
     controller.run_export_preflight_checks = mocker.MagicMock()
     controller.downloaded_file_exists = mocker.MagicMock(return_value=False)
-    dialog = mocker.patch("securedrop_client.gui.conversation.ExportFileDialog")
+    wizard = mocker.patch("securedrop_client.gui.conversation.ExportWizard")
 
     fw._on_export_clicked()
 
     controller.run_export_preflight_checks.assert_not_called()
-    dialog.assert_not_called()
+    wizard.assert_not_called()
 
 
 def test_FileWidget__on_print_clicked(mocker, session, source):
     """
-    Ensure print_file is called when the PRINT button is clicked
+    Ensure print() is called when the PRINT button is clicked
     """
     file = factory.File(source=source["source"], is_downloaded=True)
     session.add(file)
@@ -3645,7 +3649,7 @@ def test_FileWidget__on_print_clicked(mocker, session, source):
 
     get_file = mocker.MagicMock(return_value=file)
     controller = mocker.MagicMock(get_file=get_file)
-    export_device = mocker.patch("securedrop_client.gui.conversation.ExportDevice")
+    file_location = file.location(controller.data_dir)
 
     fw = FileWidget(
         file.uuid,
@@ -3661,11 +3665,13 @@ def test_FileWidget__on_print_clicked(mocker, session, source):
     controller.print_file = mocker.MagicMock()
     controller.downloaded_file_exists = mocker.MagicMock(return_value=True)
 
-    dialog = mocker.patch("securedrop_client.gui.conversation.PrintFileDialog")
+    export_device = mocker.patch("securedrop_client.gui.widgets.Export")
+    dialog = mocker.patch("securedrop_client.gui.conversation.PrintDialog")
 
     fw._on_print_clicked()
 
-    dialog.assert_called_once_with(export_device(), file.uuid, file.filename)
+    dialog.assert_called_once()
+    dialog.assert_called_once_with(export_device(), file.filename, [file_location])
 
 
 def test_FileWidget__on_print_clicked_missing_file(mocker, session, source):
@@ -3692,7 +3698,7 @@ def test_FileWidget__on_print_clicked_missing_file(mocker, session, source):
     mocker.patch("PyQt5.QtWidgets.QDialog.exec")
     controller.print_file = mocker.MagicMock()
     controller.downloaded_file_exists = mocker.MagicMock(return_value=False)
-    dialog = mocker.patch("securedrop_client.gui.conversation.PrintFileDialog")
+    dialog = mocker.patch("securedrop_client.gui.conversation.PrintDialog")
 
     fw._on_print_clicked()
 

@@ -1,8 +1,9 @@
 import pytest
 from PyQt5.QtWidgets import QApplication
 
-from securedrop_client import export
 from securedrop_client.app import threads
+from securedrop_client.export import Export
+from securedrop_client.export_status import ExportStatus
 from securedrop_client.gui import conversation
 from securedrop_client.gui.base import ModalDialog
 from securedrop_client.gui.main import Window
@@ -11,11 +12,7 @@ from tests import factory
 
 
 @pytest.fixture(scope="function")
-def main_window(mocker, homedir, mock_export_service):
-    mocker.patch(
-        "securedrop_client.gui.conversation.export.device.export.getService",
-        return_value=mock_export_service,
-    )
+def main_window(mocker, homedir):
     # Setup
     app = QApplication([])
     gui = Window()
@@ -67,11 +64,7 @@ def main_window(mocker, homedir, mock_export_service):
 
 
 @pytest.fixture(scope="function")
-def main_window_no_key(mocker, homedir, mock_export_service):
-    mocker.patch(
-        "securedrop_client.gui.conversation.export.device.export.getService",
-        return_value=mock_export_service,
-    )
+def main_window_no_key(mocker, homedir):
     # Setup
     app = QApplication([])
     gui = Window()
@@ -154,24 +147,25 @@ def modal_dialog(mocker, homedir):
 
 
 @pytest.fixture(scope="function")
-def mock_export_service():
-    """An export service that assumes the Qubes RPC calls are successful and skips them."""
-    export_service = export.Service()
-    # Ensure the export_service doesn't rely on Qubes OS:
-    export_service._run_disk_test = lambda dir: None
-    export_service._run_usb_test = lambda dir: None
-    export_service._run_disk_export = lambda dir, paths, passphrase: None
-    export_service._run_printer_preflight = lambda dir: None
-    export_service._run_print = lambda dir, paths: None
-    return export_service
+def mock_export(mocker):
+    export = Export()
+
+    """An export that assumes the Qubes RPC calls are successful and skips them."""
+    export.run_export_preflight_checks = lambda: export.export_state_changed.emit(
+        ExportStatus.DEVICE_LOCKED
+    )
+    export.export = lambda paths, passphrase: export.export_state_changed.emit(
+        ExportStatus.SUCCESS_EXPORT
+    )
+    export.run_printer_preflight_checks = lambda: export.export_state_changed.emit(
+        ExportStatus.PRINT_PREFLIGHT_SUCCESS
+    )
+    export.print = lambda paths: export.export_state_changed.emit(ExportStatus.PRINT_SUCCESS)
+    return export
 
 
 @pytest.fixture(scope="function")
-def print_dialog(mocker, homedir, mock_export_service):
-    mocker.patch(
-        "securedrop_client.gui.conversation.export.device.export.getService",
-        return_value=mock_export_service,
-    )
+def print_dialog(mocker, homedir, mock_export):
     app = QApplication([])
     gui = Window()
     app.setActiveWindow(gui)
@@ -193,10 +187,9 @@ def print_dialog(mocker, homedir, mock_export_service):
         )
         controller.authenticated_user = factory.User()
         controller.qubes = False
-        export_device = conversation.ExportDevice(controller)
         gui.setup(controller)
         gui.login_dialog.close()
-        dialog = conversation.PrintFileDialog(export_device, "file_uuid", "file_name")
+        dialog = conversation.PrintDialog(mock_export, "file_name", ["/mock/export/file"])
 
         yield dialog
 
@@ -206,11 +199,7 @@ def print_dialog(mocker, homedir, mock_export_service):
 
 
 @pytest.fixture(scope="function")
-def export_file_dialog(mocker, homedir, mock_export_service):
-    mocker.patch(
-        "securedrop_client.gui.conversation.export.device.export.getService",
-        return_value=mock_export_service,
-    )
+def export_file_wizard(mocker, homedir, mock_export):
     app = QApplication([])
     gui = Window()
     app.setActiveWindow(gui)
@@ -229,10 +218,9 @@ def export_file_dialog(mocker, homedir, mock_export_service):
         )
         controller.authenticated_user = factory.User()
         controller.qubes = False
-        export_device = conversation.ExportDevice(controller)
         gui.setup(controller)
         gui.login_dialog.close()
-        dialog = conversation.ExportFileDialog(export_device, "file_uuid", "file_name")
+        dialog = conversation.ExportWizard(mock_export, "file_name", ["/mock/export/filepath"])
         dialog.show()
 
         yield dialog

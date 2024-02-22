@@ -60,9 +60,6 @@ Metadata contains three possible keys which may contain several possible values:
 `device`
 : specifies the method used for export, and can be either a device or a preflight check. See the Devices section below for possible values. It is a required key.
 
-`encryption_method`
-: used exclusively when exporting to USB storage. It is an optional key. Possible values are:
-luks
 
 `encryption_passphrase`
 : used exclusively when exporting to USB storage. It is an optional key. It contains an arbitrary string that contains the disk encryption passphrase of the device.
@@ -72,7 +69,6 @@ Example archive metadata (`metadata.json`):
 ```
 {
   "device": "disk"
-  "encryption-method": "luks"
   "encryption-key": "Your encryption passphrase goes here"
 }
 ```
@@ -90,34 +86,38 @@ For all device types (described in detail below), the following standard error t
 
 The supported device types for export are as follows, including the possible errors specific to that device type:
 
-1. `usb-test` : Preflight check that probes for USB connected devices, that returns:
-    - `USB_CONNECTED` if a USB device is attached to the dedicated slot
-    - `USB_NOT_CONNECTED` if no USB is attached
-    - `USB_CHECK_ERROR` if an error occurred during pre-flight
+1. `disk-test`: Preflight check that probes for USB connected devices, that returns:
+    - `NO_DEVICE_DETECTED`, `MULTI_DEVICE_DETECTED`: wrong number of inserted USB drives
+    - `INVALID_DEVICE_DETECTED`: Wrong number of partitions, unsupported encryption scheme, etc.
+       Note: locked VeraCrypt drives also return this status, and a hint is shown to the user that they must
+       manually unlock such drives before proceeding.
+    - `DEVICE_LOCKED` if a supported drive is inserted but locked (a LUKS drive, since locked Veracrypt detection is not supported)
+    - `DEVICE_WRITABLE` if a supported USB device is attached and unlocked. (Only used for Preflight check)
+    - `DEVICE_ERROR`: A problem was encountered and device state cannot be reported.
 
-2. `disk-test`: Preflight check that checks for LUKS-encrypted volume that returns:
-    - `USB_ENCRYPTED` if a LUKS volume is attached to sd-devices
-    - `USB_ENCRYPTION_NOT_SUPPORTED` if a LUKS volume is not attached or there was any other error
-    - `USB_DISK_ERROR`
+2. `disk`: Attempts to send files to disk. Can return any Preflight status except `DEVICE_WRITABLE`, as well as
+    the following status results below, which replace `DEVICE_WRITABLE` since they attempt the export action.
+    Because export is a linear process, a status such as `ERROR_EXPORT_CLEANUP` indicates that the file export
+    succeeded and the problem occurred after that point in the process.
+    - `ERROR_UNLOCK_LUKS` if LUKS decryption failed due to bad passphrase
+    - `ERROR_UNLOCK_GENERIC` if unlocking failed due to some other reason
+    - `ERROR_MOUNT` if there was an error mounting the volume
+    - `ERROR_UNMOUT_VOLUME_BUSY` if there was an error unmounting the drive after export
+    - `ERROR_EXPORT_CLEANUP` if there was an error removing temporary directories after export
+    - `SUCCESS_EXPORT`: Entire routine, including export and cleanup, was successful
 
-3. `printer-test`: prints a test page that returns:
+3. `printer-preflight`, `printer-test`: test the printer and ensure it is ready.
     - `ERROR_PRINTER_NOT_FOUND` if no printer is connected
     - `ERROR_PRINTER_NOT_SUPPORTED` if the printer is not currently supported by the export script
     - `ERROR_PRINTER_DRIVER_UNAVAILABLE` if the printer driver is not available
+    - `ERROR_PRINTER_URI` if `lpinfo` fails to retrieve printer information
     - `ERROR_PRINTER_INSTALL` If there is an error installing the printer
     - `ERROR_PRINT` if there is an error printing
+    - `PRINT_PREFLIGHT_SUCCESS` if preflight checks were successful (Preflight only)
 
-4. `printer`: sends files to printer that returns:
-    - `ERROR_PRINTER_NOT_FOUND` if no printer is connected
-    - `ERROR_PRINTER_NOT_SUPPORTED` if the printer is not currently supported by the export script
-    - `ERROR_PRINTER_DRIVER_UNAVAILABLE` if the printer driver is not available
-    - `ERROR_PRINTER_INSTALL` If there is an error installing the printer
-    - `ERROR_PRINT` if there is an error printing
-
-5. `disk`: sends files to disk that returns:
-    - `USB_BAD_PASSPHRASE` if the luks decryption failed (likely due to bad passphrase)
-    - `ERROR_USB_MOUNT` if there was an error mounting the volume (after unlocking the luks volume)
-    - `ERROR_USB_WRITE` if there was an error writing to disk (e.g., no space left on device)
+4. `printer`: sends files to printer that returns any of the `printer-preflight` statuses except
+    `PRINT_PREFLIGHT_SUCCESS`, as well as:
+    - `PRINT_SUCCESS` if the job is dispatched successfully
 
 ### Export Folder Structure
 
@@ -128,6 +128,7 @@ When exporting to a USB drive, the files will be placed on the drive as follows:
 
 └── sd-export-20200116-003153
     └── export_data
+        └── transcript.txt
         └── secret_memo.pdf
 ```
 

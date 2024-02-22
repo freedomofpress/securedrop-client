@@ -1,22 +1,20 @@
-import os
-import shutil
-import platform
+import contextlib
+import io
 import logging
+import os
+import platform
+import shutil
 import sys
-from typing import Optional
+from logging.handlers import SysLogHandler, TimedRotatingFileHandler
 
+from securedrop_export import __version__
 from securedrop_export.archive import Archive, Metadata
 from securedrop_export.command import Command
-from securedrop_export.status import BaseStatus
 from securedrop_export.directory import safe_mkdir
+from securedrop_export.disk import Service as ExportService
 from securedrop_export.exceptions import ExportException
-
-from securedrop_export.disk import LegacyService as ExportService
-from securedrop_export.disk import LegacyStatus
 from securedrop_export.print import Service as PrintService
-
-from logging.handlers import TimedRotatingFileHandler, SysLogHandler
-from securedrop_export import __version__
+from securedrop_export.status import BaseStatus
 
 DEFAULT_HOME = os.path.join(os.path.expanduser("~"), ".securedrop_export")
 LOG_DIR_NAME = "logs"
@@ -43,8 +41,10 @@ def entrypoint():
 
     Non-zero exit values will cause the system to try alternative
     solutions for mimetype handling, which we want to avoid.
+
+    The program is called with the archive name as the first argument.
     """
-    status, submission = None, None
+    status, archive = None, None
 
     try:
         _configure_logging()
@@ -54,35 +54,38 @@ def entrypoint():
 
         # Halt if target file is absent
         if not os.path.exists(data_path):
-            logger.info("Archive is not found {}.".format(data_path))
+            logger.error("Archive not found at provided path.")
+            logger.debug("Archive missing, path: {}".format(data_path))
             status = Status.ERROR_FILE_NOT_FOUND
 
         else:
             logger.debug("Extract tarball")
-            submission = Archive(data_path).extract_tarball()
+            archive = Archive(data_path).extract_tarball()
             logger.debug("Validate metadata")
-            metadata = Metadata(submission.tmpdir).validate()
+            metadata = Metadata(archive.tmpdir).validate()
             logger.info("Archive extraction and metadata validation successful")
 
             # If all we're doing is starting the vm, we're done; otherwise,
             # run the appropriate print or export routine
             if metadata.command is not Command.START_VM:
-                submission.set_metadata(metadata)
+                archive.set_metadata(metadata)
                 logger.info(f"Start {metadata.command.value} service")
-                status = _start_service(submission)
+                status = _start_service(archive)
+                logger.info(f"Status: {status.value}")
 
-    except ExportException as ex:
-        logger.error(f"Encountered exception {ex.sdstatus.value}, exiting")
+    # A nonzero exit status will cause other programs
+    # to try to handle the files, which we don't want.
+    except Exception as ex:
         logger.error(ex)
-        status = ex.sdstatus
-
-    except Exception as exc:
-        logger.error("Encountered exception during export, exiting")
-        logger.error(exc)
-        status = Status.ERROR_GENERIC
+        if isinstance(ex, ExportException):
+            logger.error(f"Encountered exception {ex.sdstatus.value}, exiting")
+            status = ex.sdstatus
+        else:
+            logger.error("Encountered exception during export, exiting")
+            status = Status.ERROR_GENERIC
 
     finally:
-        _exit_gracefully(submission, status)
+        _exit_gracefully(archive, status)
 
 
 def _configure_logging():
@@ -125,46 +128,42 @@ def _configure_logging():
         raise ExportException(sdstatus=Status.ERROR_LOGGING) from ex
 
 
-def _start_service(submission: Archive) -> LegacyStatus:
+def _start_service(archive: Archive) -> BaseStatus:
     """
     Start print or export service.
     """
     # Print Routines
-    if submission.command is Command.PRINT:
-        return PrintService(submission).print()
-    elif submission.command is Command.PRINTER_PREFLIGHT:
-        return PrintService(submission).printer_preflight()
-    elif submission.command is Command.PRINTER_TEST:
-        return PrintService(submission).printer_test()
+    if archive.command is Command.PRINT:
+        return PrintService(archive).print()
+    elif archive.command is Command.PRINTER_PREFLIGHT:
+        return PrintService(archive).printer_preflight()
+    elif archive.command is Command.PRINTER_TEST:
+        return PrintService(archive).printer_test()
 
     # Export routines
-    elif submission.command is Command.EXPORT:
-        return ExportService(submission).export()
-    elif submission.command is Command.CHECK_USBS:
-        return ExportService(submission).check_connected_devices()
-    elif submission.command is Command.CHECK_VOLUME:
-        return ExportService(submission).check_disk_format()
+    elif archive.command is Command.EXPORT:
+        return ExportService(archive).export()
+    elif (
+        archive.command is Command.CHECK_USBS or archive.command is Command.CHECK_VOLUME
+    ):
+        return ExportService(archive).scan_all_devices()
 
     # Unreachable
     raise ExportException(
-        f"unreachable: unknown submission.command value: {submission.command}"
+        f"unreachable: unknown submission.command value: {archive.command}"
     )
 
 
-def _exit_gracefully(submission: Archive, status: Optional[BaseStatus] = None):
+def _exit_gracefully(archive: Archive, status: BaseStatus):
     """
     Write status code, ensure file cleanup, and exit with return code 0.
     Non-zero exit values will cause the system to try alternative
     solutions for mimetype handling, which we want to avoid.
     """
-    if status:
-        logger.info(f"Exit gracefully with status: {status.value}")
-    else:
-        logger.info("Exit gracefully (no status code supplied)")
     try:
         # If the file archive was extracted, delete before returning
-        if submission and os.path.isdir(submission.tmpdir):
-            shutil.rmtree(submission.tmpdir)
+        if archive and os.path.isdir(archive.tmpdir):
+            shutil.rmtree(archive.tmpdir)
         # Do this after deletion to avoid giving the client two error messages in case of the
         # block above failing
         _write_status(status)
@@ -177,13 +176,30 @@ def _exit_gracefully(submission: Archive, status: Optional[BaseStatus] = None):
         sys.exit(0)
 
 
-def _write_status(status: Optional[BaseStatus]):
+def _write_status(status: BaseStatus):
     """
-    Write string to stderr.
+    Write status string to stderr. Flush stderr and stdout before we exit.
     """
-    if status:
-        logger.info(f"Write status {status.value}")
+    logger.info(f"Write status {status.value}")
+    try:
+        # First we will log errors from stderr elsewhere
+        tmp_stderr = io.StringIO()
+        tmp_stdout = io.StringIO()
+        with contextlib.redirect_stderr(tmp_stderr), contextlib.redirect_stdout(
+            tmp_stdout
+        ):
+            sys.stderr.flush()
+            sys.stdout.flush()
+            if len(tmp_stderr.getvalue()) > 0:
+                logger.error(f"Error capture: {tmp_stderr.getvalue()}")
+            if len(tmp_stdout.getvalue()) > 0:
+                logger.info(f"stdout capture: {tmp_stderr.getvalue()}")
+
         sys.stderr.write(status.value)
         sys.stderr.write("\n")
-    else:
-        logger.info("No status value supplied")
+        sys.stderr.flush()
+        sys.stdout.flush()
+    except BrokenPipeError:
+        devnull = os.open(os.devnull, os.O_WRONLY)
+        os.dup2(devnull, sys.stdout.fileno())
+        os.dup2(devnull, sys.stderr.fileno())

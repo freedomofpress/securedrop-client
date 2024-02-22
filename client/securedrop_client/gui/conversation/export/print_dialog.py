@@ -1,22 +1,22 @@
 from gettext import gettext as _
-from typing import Optional
+from typing import List, Optional
 
 from PyQt5.QtCore import QSize, pyqtSlot
 
-from securedrop_client.export import ExportError, ExportStatus
+from securedrop_client.export_status import ExportError, ExportStatus
 from securedrop_client.gui.base import ModalDialog, SecureQLabel
 
-from .device import Device
+from ....export import Export
 
 
 class PrintDialog(ModalDialog):
     FILENAME_WIDTH_PX = 260
 
-    def __init__(self, device: Device, file_uuid: str, file_name: str) -> None:
+    def __init__(self, device: Export, file_name: str, filepaths: List[str]) -> None:
         super().__init__()
 
         self._device = device
-        self.file_uuid = file_uuid
+        self.filepaths = filepaths
         self.file_name = SecureQLabel(
             file_name, wordwrap=False, max_length=self.FILENAME_WIDTH_PX
         ).text()
@@ -28,6 +28,10 @@ class PrintDialog(ModalDialog):
             self._on_print_preflight_check_succeeded
         )
         self._device.print_preflight_check_failed.connect(self._on_print_preflight_check_failed)
+
+        # For now, connect both success and error signals to close the print dialog.
+        self._device.print_succeeded.connect(self._on_print_complete)
+        self._device.print_failed.connect(self._on_print_complete)
 
         # Connect parent signals to slots
         self.continue_button.setEnabled(False)
@@ -94,11 +98,20 @@ class PrintDialog(ModalDialog):
 
     @pyqtSlot()
     def _print_file(self) -> None:
-        self._device.print_file(self.file_uuid)
-        self.close()
+        self._device.print(self.filepaths)
 
     @pyqtSlot()
-    def _on_print_preflight_check_succeeded(self) -> None:
+    def _on_print_complete(self) -> None:
+        """
+        Send a signal to close the print dialog.
+        """
+        self.close()
+
+    @pyqtSlot(object)
+    def _on_print_preflight_check_succeeded(self, status: ExportStatus) -> None:
+        # We don't use the ExportStatus for now for "success" status,
+        # but in future work we will migrate towards a wizard-style dialog, where
+        # success and intermediate status values all use the same PyQt slot.
         # If the continue button is disabled then this is the result of a background preflight check
         self.stop_animate_header()
         self.header_icon.update_image("printer.svg", svg_size=QSize(64, 64))
@@ -120,7 +133,7 @@ class PrintDialog(ModalDialog):
         # If the continue button is disabled then this is the result of a background preflight check
         if not self.continue_button.isEnabled():
             self.continue_button.clicked.disconnect()
-            if error.status == ExportStatus.PRINTER_NOT_FOUND:
+            if error.status == ExportStatus.ERROR_PRINTER_NOT_FOUND:
                 self.continue_button.clicked.connect(self._show_insert_usb_message)
             else:
                 self.continue_button.clicked.connect(self._show_generic_error_message)
@@ -128,7 +141,7 @@ class PrintDialog(ModalDialog):
             self.continue_button.setEnabled(True)
             self.continue_button.setFocus()
         else:
-            if error.status == ExportStatus.PRINTER_NOT_FOUND:
+            if error.status == ExportStatus.ERROR_PRINTER_NOT_FOUND:
                 self._show_insert_usb_message()
             else:
                 self._show_generic_error_message()

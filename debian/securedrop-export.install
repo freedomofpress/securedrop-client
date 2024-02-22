@@ -1,3 +1,4 @@
 export/files/application-x-sd-export.xml usr/share/mime/packages
 export/files/send-to-usb.desktop usr/share/applications
 export/files/sd-logo.png usr/share/securedrop/icons
+export/files/tcrypt.conf etc/udisks2

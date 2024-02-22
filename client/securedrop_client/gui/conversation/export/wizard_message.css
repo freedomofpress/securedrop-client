@@ -1,0 +1,13 @@
+#QWizard_error_details {
+    margin: 0px 40px 0px 36px;
+    font-family: 'Montserrat';
+    font-size: 16px;
+    color: #ff0064;
+}
+
+#QWizard_error_details:active {
+    margin: 0px 40px 0px 36px;
+    font-family: 'Montserrat';
+    font-size: 16px;
+    color: #ff66c4;
+}

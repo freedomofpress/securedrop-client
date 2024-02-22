@@ -1,5 +1,4 @@
 from enum import Enum
-import os
 
 
 class EncryptionScheme(Enum):
@@ -9,25 +8,21 @@ class EncryptionScheme(Enum):
 
     UNKNOWN = 0
     LUKS = 1
+    VERACRYPT = 2
 
 
 class Volume:
-    MAPPED_VOLUME_PREFIX = "/dev/mapper/"
-
     """
     A volume on a removable device.
-    Volumes have a device name ("/dev/sdX"), a mapped name ("/dev/mapper/xxx"), an encryption
-    scheme, and a mountpoint if they are mounted.
+    Volumes have a device name ("/dev/sdX") and an encryption scheme.
     """
 
     def __init__(
         self,
         device_name: str,
-        mapped_name: str,
         encryption: EncryptionScheme,
     ):
         self.device_name = device_name
-        self.mapped_name = mapped_name
         self.encryption = encryption
 
     @property
@@ -41,39 +36,22 @@ class Volume:
         else:
             self._encryption = EncryptionScheme.UNKNOWN
 
-    @property
-    def unlocked(self) -> bool:
-        return (
-            self.mapped_name is not None
-            and self.encryption is not EncryptionScheme.UNKNOWN
-            and os.path.exists(
-                os.path.join(self.MAPPED_VOLUME_PREFIX, self.mapped_name)
-            )
-        )
-
 
 class MountedVolume(Volume):
     """
     An unlocked and mounted Volume.
+
+    Device name (from Volume) and unlocked name
+    are full paths (/dev/sdX, /dev/dm-X, /dev/mapper/idx).
     """
 
     def __init__(
         self,
         device_name: str,
-        mapped_name: str,
+        unlocked_name: str,
         encryption: EncryptionScheme,
         mountpoint: str,
     ):
-        super().__init__(
-            device_name=device_name, mapped_name=mapped_name, encryption=encryption
-        )
+        super().__init__(device_name=device_name, encryption=encryption)
+        self.unlocked_name = unlocked_name
         self.mountpoint = mountpoint
-
-    @classmethod
-    def from_volume(cls, vol: Volume, mountpoint: str):
-        return cls(
-            device_name=vol.device_name,
-            mapped_name=vol.mapped_name,
-            encryption=vol.encryption,
-            mountpoint=mountpoint,
-        )

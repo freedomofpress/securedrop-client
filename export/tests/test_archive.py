@@ -1,16 +1,15 @@
+import json
 import os
 import subprocess  # noqa: F401
+import tarfile
 import tempfile
-
+from io import BytesIO
 from unittest import mock
 
-import json
 import pytest
-import tarfile
-from io import BytesIO
 
-from securedrop_export.exceptions import ExportException
 from securedrop_export.archive import Archive, Metadata, Status
+from securedrop_export.exceptions import ExportException
 
 
 def test_extract_tarball():
@@ -22,7 +21,6 @@ def test_extract_tarball():
         with tarfile.open(archive_path, "w:gz") as archive:
             metadata = {
                 "device": "disk",
-                "encryption_method": "luks",
                 "encryption_key": "test",
             }
             metadata_str = json.dumps(metadata)
@@ -73,7 +71,6 @@ def test_extract_tarball_with_symlink():
         with tarfile.open(archive_path, "w:gz") as archive:
             metadata = {
                 "device": "disk",
-                "encryption_method": "luks",
                 "encryption_key": "test",
             }
             metadata_str = json.dumps(metadata)
@@ -108,7 +105,6 @@ def test_extract_tarball_raises_if_doing_path_traversal():
         with tarfile.open(archive_path, "w:gz") as archive:
             metadata = {
                 "device": "disk",
-                "encryption_method": "luks",
                 "encryption_key": "test",
             }
             metadata_str = json.dumps(metadata)
@@ -147,7 +143,6 @@ def test_extract_tarball_raises_if_doing_path_traversal_with_dir():
         with tarfile.open(archive_path, "w:gz") as archive:
             metadata = {
                 "device": "disk",
-                "encryption_method": "luks",
                 "encryption_key": "test",
             }
             metadata_str = json.dumps(metadata)
@@ -184,7 +179,6 @@ def test_extract_tarball_raises_if_doing_path_traversal_with_symlink():
         with tarfile.open(archive_path, "w:gz") as archive:
             metadata = {
                 "device": "disk",
-                "encryption_method": "luks",
                 "encryption_key": "test",
             }
             metadata_str = json.dumps(metadata)
@@ -223,7 +217,6 @@ def test_extract_tarball_raises_if_doing_path_traversal_with_symlink_linkname():
         with tarfile.open(archive_path, "w:gz") as archive:
             metadata = {
                 "device": "disk",
-                "encryption_method": "luks",
                 "encryption_key": "test",
             }
             metadata_str = json.dumps(metadata)
@@ -260,7 +253,6 @@ def test_extract_tarball_raises_if_name_has_unsafe_absolute_path():
         with tarfile.open(archive_path, "w:gz") as archive:
             metadata = {
                 "device": "disk",
-                "encryption_method": "luks",
                 "encryption_key": "test",
             }
             metadata_str = json.dumps(metadata)
@@ -303,7 +295,6 @@ def test_extract_tarball_raises_if_name_has_unsafe_absolute_path_with_symlink():
         with tarfile.open(archive_path, "w:gz") as archive:
             metadata = {
                 "device": "disk",
-                "encryption_method": "luks",
                 "encryption_key": "test",
             }
             metadata_str = json.dumps(metadata)
@@ -347,7 +338,6 @@ def test_extract_tarball_raises_if_name_has_unsafe_absolute_path_with_symlink_to
         with tarfile.open(archive_path, "w:gz") as archive:
             metadata = {
                 "device": "disk",
-                "encryption_method": "luks",
                 "encryption_key": "test",
             }
             metadata_str = json.dumps(metadata)
@@ -380,7 +370,6 @@ def test_extract_tarball_raises_if_linkname_has_unsafe_absolute_path():
         with tarfile.open(archive_path, "w:gz") as archive:
             metadata = {
                 "device": "disk",
-                "encryption_method": "luks",
                 "encryption_key": "test",
             }
             metadata_str = json.dumps(metadata)
@@ -426,7 +415,6 @@ def test_valid_printer_test_config(capsys):
     config = Metadata(temp_folder).validate()
 
     assert config.encryption_key is None
-    assert config.encryption_method is None
 
 
 def test_valid_printer_config(capsys):
@@ -439,23 +427,6 @@ def test_valid_printer_config(capsys):
     config = Metadata(temp_folder).validate()
 
     assert config.encryption_key is None
-    assert config.encryption_method is None
-
-
-def test_invalid_encryption_config(capsys):
-    Archive("testfile")
-
-    temp_folder = tempfile.mkdtemp()
-    metadata = os.path.join(temp_folder, Metadata.METADATA_FILE)
-    with open(metadata, "w") as f:
-        f.write(
-            '{"device": "disk", "encryption_method": "base64", "encryption_key": "hunter1"}'
-        )
-
-    with pytest.raises(ExportException) as ex:
-        Metadata(temp_folder).validate()
-
-    assert ex.value.sdstatus is Status.ERROR_ARCHIVE_METADATA
 
 
 def test_invalid_config(capsys):
@@ -464,7 +435,7 @@ def test_invalid_config(capsys):
     temp_folder = tempfile.mkdtemp()
     metadata = os.path.join(temp_folder, Metadata.METADATA_FILE)
     with open(metadata, "w") as f:
-        f.write('{"device": "asdf", "encryption_method": "OHNO"}')
+        f.write('{"device": "asdf"}')
 
     with pytest.raises(ExportException) as ex:
         Metadata(temp_folder).validate()
@@ -478,7 +449,7 @@ def test_malformed_config(capsys):
     temp_folder = tempfile.mkdtemp()
     metadata = os.path.join(temp_folder, Metadata.METADATA_FILE)
     with open(metadata, "w") as f:
-        f.write('{"device": "asdf", "encryption_method": {"OHNO", "MALFORMED"}')
+        f.write('{"device": {"OHNO", "MALFORMED"}')
 
     with pytest.raises(ExportException) as ex:
         Metadata(temp_folder).validate()
@@ -491,14 +462,11 @@ def test_valid_encryption_config(capsys):
     temp_folder = tempfile.mkdtemp()
     metadata = os.path.join(temp_folder, Metadata.METADATA_FILE)
     with open(metadata, "w") as f:
-        f.write(
-            '{"device": "disk", "encryption_method": "luks", "encryption_key": "hunter1"}'
-        )
+        f.write('{"device": "disk", "encryption_key": "hunter1"}')
 
     config = Metadata(temp_folder).validate()
 
     assert config.encryption_key == "hunter1"
-    assert config.encryption_method == "luks"
 
 
 @mock.patch("json.loads", side_effect=json.decoder.JSONDecodeError("ugh", "badjson", 0))

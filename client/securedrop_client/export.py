@@ -1,170 +1,334 @@
 import json
 import logging
 import os
-import subprocess
+import shutil
 import tarfile
-import threading
-from enum import Enum
 from io import BytesIO
 from shlex import quote
-from tempfile import TemporaryDirectory
-from typing import List, Optional
+from tempfile import mkdtemp
+from typing import Callable, List, Optional
 
-from PyQt5.QtCore import QObject, pyqtBoundSignal, pyqtSignal, pyqtSlot
+from PyQt5.QtCore import QObject, QProcess, pyqtSignal
+
+from securedrop_client.export_status import ExportError, ExportStatus
 
 logger = logging.getLogger(__name__)
 
 
-class ExportError(Exception):
-    def __init__(self, status: "ExportStatus"):
-        self.status: "ExportStatus" = status
-
-
-class ExportStatus(Enum):
-    # On the way to success
-    USB_CONNECTED = "USB_CONNECTED"
-    DISK_ENCRYPTED = "USB_ENCRYPTED"
-
-    # Not too far from success
-    USB_NOT_CONNECTED = "USB_NOT_CONNECTED"
-    BAD_PASSPHRASE = "USB_BAD_PASSPHRASE"
-
-    # Failure
-    CALLED_PROCESS_ERROR = "CALLED_PROCESS_ERROR"
-    DISK_ENCRYPTION_NOT_SUPPORTED_ERROR = "USB_ENCRYPTION_NOT_SUPPORTED"
-    ERROR_USB_CONFIGURATION = "ERROR_USB_CONFIGURATION"
-    UNEXPECTED_RETURN_STATUS = "UNEXPECTED_RETURN_STATUS"
-    PRINTER_NOT_FOUND = "ERROR_PRINTER_NOT_FOUND"
-    MISSING_PRINTER_URI = "ERROR_MISSING_PRINTER_URI"
-
-
 class Export(QObject):
     """
-    This class sends files over to the Export VM so that they can be copied to a luks-encrypted USB
+    Interface for sending files to Export VM for transfer to a
     disk drive or printed by a USB-connected printer.
 
-    Files are archived in a specified format, which you can learn more about in the README for the
-    securedrop-export repository.
+    Files are archived in a specified format, (see `export` README).
+
+    A list of valid filepaths must be supplied.
     """
 
-    METADATA_FN = "metadata.json"
+    _METADATA_FN = "metadata.json"
 
-    USB_TEST_FN = "usb-test.sd-export"
-    USB_TEST_METADATA = {"device": "usb-test"}
+    _USB_TEST_FN = "usb-test.sd-export"
+    _USB_TEST_METADATA = {"device": "usb-test"}
 
-    PRINTER_PREFLIGHT_FN = "printer-preflight.sd-export"
-    PRINTER_PREFLIGHT_METADATA = {"device": "printer-preflight"}
+    _PRINTER_PREFLIGHT_FN = "printer-preflight.sd-export"
+    _PRINTER_PREFLIGHT_METADATA = {"device": "printer-preflight"}
 
-    DISK_TEST_FN = "disk-test.sd-export"
-    DISK_TEST_METADATA = {"device": "disk-test"}
+    _PRINT_FN = "print_archive.sd-export"
+    _PRINT_METADATA = {"device": "printer"}
 
-    PRINT_FN = "print_archive.sd-export"
-    PRINT_METADATA = {"device": "printer"}
+    _DISK_FN = "archive.sd-export"
+    _DISK_METADATA = {"device": "disk"}
+    _DISK_ENCRYPTION_KEY_NAME = "encryption_key"
+    _DISK_EXPORT_DIR = "export_data"
 
-    DISK_FN = "archive.sd-export"
-    DISK_METADATA = {"device": "disk", "encryption_method": "luks"}
-    DISK_ENCRYPTION_KEY_NAME = "encryption_key"
-    DISK_EXPORT_DIR = "export_data"
+    # Emit export states
+    export_state_changed = pyqtSignal(object)
 
-    # Set up signals for communication with the controller
-    preflight_check_call_failure = pyqtSignal(object)
-    preflight_check_call_success = pyqtSignal()
-    export_usb_call_failure = pyqtSignal(object)
-    export_usb_call_success = pyqtSignal()
-    export_completed = pyqtSignal(list)
+    # Emit print states
+    print_preflight_check_succeeded = pyqtSignal(object)
+    print_succeeded = pyqtSignal(object)
 
-    printer_preflight_success = pyqtSignal()
-    printer_preflight_failure = pyqtSignal(object)
-    print_call_failure = pyqtSignal(object)
-    print_call_success = pyqtSignal()
+    export_completed = pyqtSignal(object)
 
-    def __init__(
-        self,
-        export_preflight_check_requested: Optional[pyqtBoundSignal] = None,
-        export_requested: Optional[pyqtBoundSignal] = None,
-        print_preflight_check_requested: Optional[pyqtBoundSignal] = None,
-        print_requested: Optional[pyqtBoundSignal] = None,
-    ) -> None:
-        super().__init__()
+    print_preflight_check_failed = pyqtSignal(object)
+    print_failed = pyqtSignal(object)
 
-        self.connect_signals(
-            export_preflight_check_requested,
-            export_requested,
-            print_preflight_check_requested,
-            print_requested,
-        )
+    process = None  # Optional[QProcess]
+    tmpdir = None  # mkdtemp directory must be cleaned up when QProcess completes
 
-    def connect_signals(
-        self,
-        export_preflight_check_requested: Optional[pyqtBoundSignal] = None,
-        export_requested: Optional[pyqtBoundSignal] = None,
-        print_preflight_check_requested: Optional[pyqtBoundSignal] = None,
-        print_requested: Optional[pyqtBoundSignal] = None,
-    ) -> None:
-        # This instance can optionally react to events to prevent
-        # coupling it to dependent code.
-        if export_preflight_check_requested is not None:
-            export_preflight_check_requested.connect(self.run_preflight_checks)
-        if export_requested is not None:
-            export_requested.connect(self.send_file_to_usb_device)
-        if print_requested is not None:
-            print_requested.connect(self.print)
-        if print_preflight_check_requested is not None:
-            print_preflight_check_requested.connect(self.run_printer_preflight)
-
-    def _export_archive(cls, archive_path: str) -> Optional[ExportStatus]:
+    def run_printer_preflight_checks(self) -> None:
         """
-        Make the subprocess call to send the archive to the Export VM, where the archive will be
-        processed.
+        Make sure the Export VM is started.
+        """
+        logger.info("Beginning printer preflight check")
+        self.tmpdir = mkdtemp()
+        os.chmod(self.tmpdir, 0o700)
+
+        try:
+            archive_path = self._create_archive(
+                archive_dir=self.tmpdir,
+                archive_fn=self._PRINTER_PREFLIGHT_FN,
+                metadata=self._PRINTER_PREFLIGHT_METADATA,
+            )
+            self._run_qrexec_export(
+                archive_path, self._on_print_preflight_complete, self._on_print_prefight_error
+            )
+        except ExportError as e:
+            logger.error(f"Error creating archive: {e}")
+            self._on_print_prefight_error()
+
+    def run_export_preflight_checks(self) -> None:
+        """
+        Run preflight check to verify that a valid USB device is connected.
+        """
+        logger.debug("Beginning export preflight check")
+
+        try:
+            self.tmpdir = mkdtemp()
+            os.chmod(self.tmpdir, 0o700)
+
+            archive_path = self._create_archive(
+                archive_dir=self.tmpdir,
+                archive_fn=self._USB_TEST_FN,
+                metadata=self._USB_TEST_METADATA,
+            )
+            # Emits status via on_process_completed()
+            self._run_qrexec_export(
+                archive_path, self._on_export_process_complete, self._on_export_process_error
+            )
+        except ExportError:
+            logger.error("Export preflight check failed during archive creation")
+            self._on_export_process_error()
+
+    def export(self, filepaths: List[str], passphrase: Optional[str]) -> None:
+        """
+        Bundle filepaths into a tarball and send to encrypted USB via qrexec,
+        optionally supplying a passphrase to unlock encrypted drives.
+        """
+        try:
+            logger.debug(f"Begin exporting {len(filepaths)} item(s)")
+
+            # Edit metadata template to include passphrase
+            metadata = self._DISK_METADATA.copy()
+            if passphrase:
+                metadata[self._DISK_ENCRYPTION_KEY_NAME] = passphrase
+
+            self.tmpdir = mkdtemp()
+            os.chmod(self.tmpdir, 0o700)
+
+            archive_path = self._create_archive(
+                archive_dir=self.tmpdir,
+                archive_fn=self._DISK_FN,
+                metadata=metadata,
+                filepaths=filepaths,
+            )
+
+            # Emits status through callbacks
+            self._run_qrexec_export(
+                archive_path, self._on_export_process_complete, self._on_export_process_error
+            )
+
+        except IOError as e:
+            logger.error("Export failed")
+            logger.debug(f"Export failed: {e}")
+            self.export_state_changed.emit(ExportStatus.ERROR_EXPORT)
+
+        # ExportStatus.ERROR_MISSING_FILES
+        except ExportError as err:
+            if err.status:
+                logger.error("Export failed while creating archive")
+                self.export_state_changed.emit(ExportError(err.status))
+            else:
+                logger.error("Export failed while creating archive (no status supplied)")
+                self.export_state_changed.emit(ExportError(ExportStatus.ERROR_EXPORT))
+
+    def _run_qrexec_export(
+        self, archive_path: str, success_callback: Callable, error_callback: Callable
+    ) -> None:
+        """
+        Send the archive to the Export VM, where the archive will be processed.
+        Uses qrexec-client-vm (via QProcess). Results are emitted via the
+        `finished` signal; errors are reported via `onError`. User-defined callback
+        functions must be connected to those signals.
 
         Args:
             archive_path (str): The path to the archive to be processed.
+            success_callback, err_callback: Callback functions to connect to the success and
+            error signals of QProcess. They are included to accommodate the print functions,
+            which still use separate signals for print preflight, print, and error states, but
+            can be removed in favour of a generic success callback and error callback when the
+            print code is updated.
+            Any callbacks must call _cleanup_tmpdir() to remove the temporary directory that held
+            the files to be exported.
+        """
+        # There are already talks of switching to a QVM-RPC implementation for unlocking devices
+        # and exporting files, so it's important to remember to shell-escape what we pass to the
+        # shell, even if for the time being we're already protected against shell injection via
+        # Python's implementation of subprocess, see
+        # https://docs.python.org/3/library/subprocess.html#security-considerations
+        qrexec = "/usr/bin/qrexec-client-vm"
+        args = [
+            quote("--"),
+            quote("sd-devices"),
+            quote("qubes.OpenInVM"),
+            quote("/usr/lib/qubes/qopen-in-vm"),
+            quote("--view-only"),
+            quote("--"),
+            quote(archive_path),
+        ]
 
-        Returns:
-            str: The export status returned from the Export VM processing script.
+        self.process = QProcess()
 
-        Raises:
-            ExportError: Raised if (1) CalledProcessError is encountered, which can occur when
-                trying to start the Export VM when the USB device is not attached, or (2) when
-                the return code from `check_output` is not 0.
+        self.process.finished.connect(success_callback)
+        self.process.errorOccurred.connect(error_callback)
+
+        self.process.start(qrexec, args)
+
+    def _cleanup_tmpdir(self) -> None:
+        """
+        Should be called in all qrexec completion callbacks.
+        """
+        if self.tmpdir and os.path.exists(self.tmpdir):
+            shutil.rmtree(self.tmpdir)
+
+    def _on_export_process_complete(self) -> None:
+        """
+        Callback, handle and emit results from QProcess. Information
+        can be read from stdout/err. This callback will be triggered
+        if the QProcess exits with return code 0.
+        """
+        self._cleanup_tmpdir()
+        # securedrop-export writes status to stderr
+        if self.process:
+            err = self.process.readAllStandardError()
+
+            logger.debug(f"stderr: {err}")
+
+            try:
+                result = err.data().decode("utf-8").strip()
+                if result:
+                    logger.debug(f"Result is {result}")
+                    # This is a bit messy, but make sure we are just taking the last line
+                    # (no-op if no newline, since we already stripped whitespace above)
+                    status_string = result.split("\n")[-1]
+                    self.export_state_changed.emit(ExportStatus(status_string))
+
+                else:
+                    logger.error("Export preflight returned empty result")
+                    self.export_state_changed.emit(ExportStatus.UNEXPECTED_RETURN_STATUS)
+
+            except ValueError as e:
+                logger.debug(f"Export preflight returned unexpected value: {e}")
+                logger.error("Export preflight returned unexpected value")
+                self.export_state_changed.emit(ExportStatus.UNEXPECTED_RETURN_STATUS)
+
+    def _on_export_process_error(self) -> None:
+        """
+        Callback, called if QProcess cannot complete export. As with all such, the method
+        signature cannot change.
+        """
+        self._cleanup_tmpdir()
+        if self.process:
+            err = self.process.readAllStandardError().data().decode("utf-8").strip()
+
+            logger.error(f"Export process error: {err}")
+        self.export_state_changed.emit(ExportStatus.CALLED_PROCESS_ERROR)
+
+    def _on_print_preflight_complete(self) -> None:
+        """
+        Print preflight completion callback.
+        """
+        self._cleanup_tmpdir()
+        if self.process:
+            output = self.process.readAllStandardError().data().decode("utf-8").strip()
+            try:
+                status = ExportStatus(output)
+                if status == ExportStatus.PRINT_PREFLIGHT_SUCCESS:
+                    self.print_preflight_check_succeeded.emit(status)
+                    logger.debug("Print preflight success")
+                else:
+                    logger.debug(f"Print preflight failure ({status.value})")
+                    self.print_preflight_check_failed.emit(ExportError(status))
+
+            except ValueError as error:
+                logger.debug(f"Print preflight check failed: {error}")
+                logger.error("Print preflight check failed")
+                self.print_preflight_check_failed.emit(ExportError(ExportStatus.ERROR_PRINT))
+
+    def _on_print_prefight_error(self) -> None:
+        """
+        Print Preflight error callback. Occurs when the QProcess itself fails.
+        """
+        self._cleanup_tmpdir()
+        if self.process:
+            err = self.process.readAllStandardError().data().decode("utf-8").strip()
+            logger.debug(f"Print preflight error: {err}")
+        self.print_preflight_check_failed.emit(ExportError(ExportStatus.ERROR_PRINT))
+
+    # Todo: not sure if we need to connect here, since the print dialog is managed by sd-devices.
+    # We can probably use the export callback.
+    def _on_print_success(self) -> None:
+        self._cleanup_tmpdir()
+        logger.debug("Print success")
+        self.print_succeeded.emit(ExportStatus.PRINT_SUCCESS)
+
+    def end_process(self) -> None:
+        """
+        Tell QProcess to quit if it hasn't already.
+        Connected to the ExportWizard's `finished` signal, which fires
+        when the dialog is closed, cancelled, or finished.
+        """
+        self._cleanup_tmpdir()
+        logger.debug("Terminate process")
+        if self.process is not None and not self.process.waitForFinished(50):
+            self.process.terminate()
+
+    def _on_print_error(self) -> None:
+        """
+        Error callback for print qrexec.
+        """
+        self._cleanup_tmpdir()
+        if self.process:
+            err = self.process.readAllStandardError()
+            logger.debug(f"Print error: {err}")
+        else:
+            logger.error("Print error (stderr unavailable)")
+        self.print_failed.emit(ExportError(ExportStatus.ERROR_PRINT))
+
+    def print(self, filepaths: List[str]) -> None:
+        """
+        Bundle files at filepaths into tarball and send for
+        printing via qrexec.
         """
         try:
-            # There are already talks of switching to a QVM-RPC implementation for unlocking devices
-            # and exporting files, so it's important to remember to shell-escape what we pass to the
-            # shell, even if for the time being we're already protected against shell injection via
-            # Python's implementation of subprocess, see
-            # https://docs.python.org/3/library/subprocess.html#security-considerations
-            output = subprocess.check_output(
-                [
-                    quote("qrexec-client-vm"),
-                    quote("--"),
-                    quote("sd-devices"),
-                    quote("qubes.OpenInVM"),
-                    quote("/usr/lib/qubes/qopen-in-vm"),
-                    quote("--view-only"),
-                    quote("--"),
-                    quote(archive_path),
-                ],
-                stderr=subprocess.STDOUT,
-            )
-            result = output.decode("utf-8").strip()
+            logger.debug("Beginning print")
 
-            # No status is returned for successful `disk`, `printer-test`, and `print` calls.
-            # This will change in a future release of sd-export.
-            if result:
-                return ExportStatus(result)
+            self.tmpdir = mkdtemp()
+            os.chmod(self.tmpdir, 0o700)
+            archive_path = self._create_archive(
+                archive_dir=self.tmpdir,
+                archive_fn=self._PRINT_FN,
+                metadata=self._PRINT_METADATA,
+                filepaths=filepaths,
+            )
+            self._run_qrexec_export(archive_path, self._on_print_success, self._on_print_error)
+
+        except IOError as e:
+            logger.error("Export failed")
+            logger.debug(f"Export failed: {e}")
+            self.print_failed.emit(ExportError(ExportStatus.ERROR_PRINT))
+
+        # ExportStatus.ERROR_MISSING_FILES
+        except ExportError as err:
+            if err.status:
+                logger.error("Print failed while creating archive")
+                self.print_failed.emit(ExportError(err.status))
             else:
-                return None
-        except ValueError as e:
-            logger.debug(f"Export subprocess returned unexpected value: {e}")
-            raise ExportError(ExportStatus.UNEXPECTED_RETURN_STATUS)
-        except subprocess.CalledProcessError as e:
-            logger.error("Subprocess failed")
-            logger.debug(f"Subprocess failed: {e}")
-            raise ExportError(ExportStatus.CALLED_PROCESS_ERROR)
+                logger.error("Print failed while creating archive (no status supplied)")
+                self.print_failed.emit(ExportError(ExportStatus.ERROR_PRINT))
 
     def _create_archive(
-        cls, archive_dir: str, archive_fn: str, metadata: dict, filepaths: List[str] = []
+        self, archive_dir: str, archive_fn: str, metadata: dict, filepaths: List[str] = []
     ) -> str:
         """
         Create the archive to be sent to the Export VM.
@@ -181,20 +345,35 @@ class Export(QObject):
         archive_path = os.path.join(archive_dir, archive_fn)
 
         with tarfile.open(archive_path, "w:gz") as archive:
-            cls._add_virtual_file_to_archive(archive, cls.METADATA_FN, metadata)
+            self._add_virtual_file_to_archive(archive, self._METADATA_FN, metadata)
 
             # When more than one file is added to the archive,
             # extra care must be taken to prevent name collisions.
             is_one_of_multiple_files = len(filepaths) > 1
+            missing_count = 0
             for filepath in filepaths:
-                cls._add_file_to_archive(
-                    archive, filepath, prevent_name_collisions=is_one_of_multiple_files
-                )
+                if not (os.path.exists(filepath)):
+                    missing_count += 1
+                    logger.debug(
+                        f"'{filepath}' does not exist, and will not be included in archive"
+                    )
+                    # Controller checks files and keeps a reference open during export,
+                    # so this shouldn't be reachable
+                    logger.warning("File not found at specified filepath, skipping")
+                else:
+                    self._add_file_to_archive(
+                        archive, filepath, prevent_name_collisions=is_one_of_multiple_files
+                    )
+            if missing_count == len(filepaths) and missing_count > 0:
+                # Context manager will delete archive even if an exception occurs
+                # since the archive is in a TemporaryDirectory
+                logger.error("Files were moved or missing")
+                raise ExportError(ExportStatus.ERROR_MISSING_FILES)
 
         return archive_path
 
     def _add_virtual_file_to_archive(
-        cls, archive: tarfile.TarFile, filename: str, filedata: dict
+        self, archive: tarfile.TarFile, filename: str, filedata: dict
     ) -> None:
         """
         Add filedata to a stream of in-memory bytes and add these bytes to the archive.
@@ -212,7 +391,7 @@ class Export(QObject):
         archive.addfile(tarinfo, filedata_bytes)
 
     def _add_file_to_archive(
-        cls, archive: tarfile.TarFile, filepath: str, prevent_name_collisions: bool = False
+        self, archive: tarfile.TarFile, filepath: str, prevent_name_collisions: bool = False
     ) -> None:
         """
         Add the file to the archive. When the archive is extracted, the file should exist in a
@@ -223,7 +402,7 @@ class Export(QObject):
             filepath: The path to the file that will be added to the supplied archive.
         """
         filename = os.path.basename(filepath)
-        arcname = os.path.join(cls.DISK_EXPORT_DIR, filename)
+        arcname = os.path.join(self._DISK_EXPORT_DIR, filename)
         if prevent_name_collisions:
             (parent_path, _) = os.path.split(filepath)
             grand_parent_path, parent_name = os.path.split(parent_path)
@@ -233,181 +412,3 @@ class Export(QObject):
                 arcname = os.path.join("export_data", parent_name, filename)
 
         archive.add(filepath, arcname=arcname, recursive=False)
-
-    def _run_printer_preflight(self, archive_dir: str) -> None:
-        """
-        Make sure printer is ready.
-        """
-        archive_path = self._create_archive(
-            archive_dir, self.PRINTER_PREFLIGHT_FN, self.PRINTER_PREFLIGHT_METADATA
-        )
-
-        status = self._export_archive(archive_path)
-        if status:
-            raise ExportError(status)
-
-    def _run_usb_test(self, archive_dir: str) -> None:
-        """
-        Run usb-test.
-
-        Args:
-            archive_dir (str): The path to the directory in which to create the archive.
-
-        Raises:
-            ExportError: Raised if the usb-test does not return a USB_CONNECTED status.
-        """
-        archive_path = self._create_archive(archive_dir, self.USB_TEST_FN, self.USB_TEST_METADATA)
-        status = self._export_archive(archive_path)
-        if status and status != ExportStatus.USB_CONNECTED:
-            raise ExportError(status)
-
-    def _run_disk_test(self, archive_dir: str) -> None:
-        """
-        Run disk-test.
-
-        Args:
-            archive_dir (str): The path to the directory in which to create the archive.
-
-        Raises:
-            ExportError: Raised if the usb-test does not return a DISK_ENCRYPTED status.
-        """
-        archive_path = self._create_archive(archive_dir, self.DISK_TEST_FN, self.DISK_TEST_METADATA)
-
-        status = self._export_archive(archive_path)
-        if status and status != ExportStatus.DISK_ENCRYPTED:
-            raise ExportError(status)
-
-    def _run_disk_export(self, archive_dir: str, filepaths: List[str], passphrase: str) -> None:
-        """
-        Run disk-test.
-
-        Args:
-            archive_dir (str): The path to the directory in which to create the archive.
-
-        Raises:
-            ExportError: Raised if the usb-test does not return a DISK_ENCRYPTED status.
-        """
-        metadata = self.DISK_METADATA.copy()
-        metadata[self.DISK_ENCRYPTION_KEY_NAME] = passphrase
-        archive_path = self._create_archive(archive_dir, self.DISK_FN, metadata, filepaths)
-
-        status = self._export_archive(archive_path)
-        if status:
-            raise ExportError(status)
-
-    def _run_print(self, archive_dir: str, filepaths: List[str]) -> None:
-        """
-        Create "printer" archive to send to Export VM.
-
-        Args:
-            archive_dir (str): The path to the directory in which to create the archive.
-
-        """
-        metadata = self.PRINT_METADATA.copy()
-        archive_path = self._create_archive(archive_dir, self.PRINT_FN, metadata, filepaths)
-        status = self._export_archive(archive_path)
-        if status:
-            raise ExportError(status)
-
-    @pyqtSlot()
-    def run_preflight_checks(self) -> None:
-        """
-        Run preflight checks to verify that the usb device is connected and luks-encrypted.
-        """
-        with TemporaryDirectory() as temp_dir:
-            try:
-                logger.debug(
-                    "beginning preflight checks in thread {}".format(
-                        threading.current_thread().ident
-                    )
-                )
-                self._run_usb_test(temp_dir)
-                self._run_disk_test(temp_dir)
-                logger.debug("completed preflight checks: success")
-                self.preflight_check_call_success.emit()
-            except ExportError as e:
-                logger.debug("completed preflight checks: failure")
-                self.preflight_check_call_failure.emit(e)
-
-    @pyqtSlot()
-    def run_printer_preflight(self) -> None:
-        """
-        Make sure the Export VM is started.
-        """
-        with TemporaryDirectory() as temp_dir:
-            try:
-                self._run_printer_preflight(temp_dir)
-                self.printer_preflight_success.emit()
-            except ExportError as e:
-                logger.error("Export failed")
-                logger.debug(f"Export failed: {e}")
-                self.printer_preflight_failure.emit(e)
-
-    @pyqtSlot(list, str)
-    def send_file_to_usb_device(self, filepaths: List[str], passphrase: str) -> None:
-        """
-        Export the file to the luks-encrypted usb disk drive attached to the Export VM.
-
-        Args:
-            filepath: The path of file to export.
-            passphrase: The passphrase to unlock the luks-encrypted usb disk drive.
-        """
-        with TemporaryDirectory() as temp_dir:
-            try:
-                logger.debug(
-                    "beginning export from thread {}".format(threading.current_thread().ident)
-                )
-                self._run_disk_export(temp_dir, filepaths, passphrase)
-                self.export_usb_call_success.emit()
-                logger.debug("Export successful")
-            except ExportError as e:
-                logger.error("Export failed")
-                logger.debug(f"Export failed: {e}")
-                self.export_usb_call_failure.emit(e)
-
-        self.export_completed.emit(filepaths)
-
-    @pyqtSlot(list)
-    def print(self, filepaths: List[str]) -> None:
-        """
-        Print the file to the printer attached to the Export VM.
-
-        Args:
-            filepath: The path of file to export.
-        """
-        with TemporaryDirectory() as temp_dir:
-            try:
-                logger.debug(
-                    "beginning printer from thread {}".format(threading.current_thread().ident)
-                )
-                self._run_print(temp_dir, filepaths)
-                self.print_call_success.emit()
-                logger.debug("Print successful")
-            except ExportError as e:
-                logger.error("Export failed")
-                logger.debug(f"Export failed: {e}")
-                self.print_call_failure.emit(e)
-
-        self.export_completed.emit(filepaths)
-
-
-Service = Export
-
-# Store a singleton service instance.
-_service = Service()
-
-
-def resetService() -> None:
-    """Replaces the existing sngleton service instance by a new one.
-
-    Get the instance by using getService().
-    """
-    global _service
-    _service = Service()
-
-
-def getService() -> Service:
-    """All calls to this function return the same singleton service instance.
-
-    Use resetService() to replace it by a new one."""
-    return _service
