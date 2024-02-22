@@ -19,10 +19,11 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 from gettext import gettext as _
 
-from pkg_resources import resource_string
 from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QColor, QCursor
 from PyQt5.QtWidgets import QGraphicsDropShadowEffect, QPushButton
+
+from securedrop_client.resources import load_relative_css
 
 
 class SignInButton(QPushButton):
@@ -36,8 +37,7 @@ class SignInButton(QPushButton):
 
         # Set css id
         self.setObjectName("SignInButton")
-        styles = resource_string(__name__, "button.css").decode("utf-8")
-        self.setStyleSheet(styles)
+        self.setStyleSheet(load_relative_css(__file__, "button.css"))
 
         self.setFixedHeight(40)
         self.setFixedWidth(140)

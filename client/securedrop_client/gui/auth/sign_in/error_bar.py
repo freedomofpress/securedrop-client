@@ -17,11 +17,11 @@ You should have received a copy of the GNU Affero General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
-from pkg_resources import resource_string
 from PyQt5.QtCore import QSize
 from PyQt5.QtWidgets import QHBoxLayout, QWidget
 
 from securedrop_client.gui.base import SecureQLabel, SvgLabel
+from securedrop_client.resources import load_relative_css
 
 
 class LoginErrorBar(QWidget):
@@ -33,8 +33,7 @@ class LoginErrorBar(QWidget):
         super().__init__()
 
         self.setObjectName("LoginErrorBar")
-        styles = resource_string(__name__, "error_bar.css").decode("utf-8")
-        self.setStyleSheet(styles)
+        self.setStyleSheet(load_relative_css(__file__, "error_bar.css"))
 
         # Set layout
         layout = QHBoxLayout(self)

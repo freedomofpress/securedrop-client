@@ -32,7 +32,7 @@ from securedrop_client.db import Source, User
 from securedrop_client.gui.auth import LoginDialog
 from securedrop_client.gui.widgets import LeftPane, MainView, TopPane
 from securedrop_client.logic import Controller
-from securedrop_client.resources import load_css, load_font, load_icon
+from securedrop_client.resources import load_all_fonts, load_css, load_icon
 
 logger = logging.getLogger(__name__)
 
@@ -59,8 +59,7 @@ class Window(QMainWindow):
           place for details / message contents / forms.
         """
         super().__init__()
-        load_font("Montserrat")
-        load_font("Source_Sans_Pro")
+        load_all_fonts()
         self.setStyleSheet(load_css("sdclient.css"))
         self.setWindowTitle(_("SecureDrop Client {}").format(__version__))
         self.setWindowIcon(load_icon(self.icon))

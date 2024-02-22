@@ -2,7 +2,6 @@ import logging
 from gettext import gettext as _
 from typing import Optional
 
-from pkg_resources import resource_string
 from PyQt5.QtCore import QSize, Qt, pyqtSlot
 from PyQt5.QtGui import QColor, QFont, QPixmap
 from PyQt5.QtWidgets import (
@@ -21,7 +20,7 @@ from securedrop_client.gui.base import PasswordEdit, SecureQLabel
 from securedrop_client.gui.base.checkbox import SDCheckBox
 from securedrop_client.gui.base.misc import SvgLabel
 from securedrop_client.gui.conversation.export.export_wizard_constants import STATUS_MESSAGES, Pages
-from securedrop_client.resources import load_movie
+from securedrop_client.resources import load_movie, load_relative_css
 
 logger = logging.getLogger(__name__)
 
@@ -46,9 +45,6 @@ class ExportWizardPage(QWizardPage):
         * Optional error_instructions (Additional text that is hidden but
           appears on recoverable error to help the user advance to the next stage)
     """
-
-    WIZARD_CSS = resource_string(__name__, "wizard.css").decode("utf-8")
-    ERROR_DETAILS_CSS = resource_string(__name__, "wizard_message.css").decode("utf-8")
 
     MARGIN = 40
     PASSPHRASE_LABEL_SPACING = 0.5
@@ -94,7 +90,8 @@ class ExportWizardPage(QWizardPage):
         Create parent layout, draw elements, return parent layout
         """
         self.setObjectName("QWizard_export_page")
-        self.setStyleSheet(self.WIZARD_CSS)
+        self.setStyleSheet(load_relative_css(__file__, "wizard.css"))
+
         parent_layout = QVBoxLayout(self)
         parent_layout.setContentsMargins(self.MARGIN, self.MARGIN, self.MARGIN, self.MARGIN)
 
@@ -139,7 +136,7 @@ class ExportWizardPage(QWizardPage):
         # Widget for displaying error messages (hidden by default)
         self.error_details = QLabel()
         self.error_details.setObjectName("QWizard_error_details")
-        self.error_details.setStyleSheet(self.ERROR_DETAILS_CSS)
+        self.error_details.setStyleSheet(load_relative_css(__file__, "wizard_message.css"))
         self.error_details.setContentsMargins(
             self.NO_MARGIN, self.NO_MARGIN, self.NO_MARGIN, self.NO_MARGIN
         )
