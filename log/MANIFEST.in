@@ -7,4 +7,3 @@ include securedrop-redis-log
 include securedrop.Log
 include sd-rsyslog*
 include sdlog.conf
-include VERSION

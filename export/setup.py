@@ -3,12 +3,9 @@ import setuptools
 with open("README.md", "r") as fh:
     long_description = fh.read()
 
-with open("securedrop_export/VERSION") as f:
-    version = f.read().strip()
-
 setuptools.setup(
     name="securedrop-export",
-    version=version,
+    version="0.0.0",
     author="Freedom of the Press Foundation",
     author_email="securedrop@freedom.press",
     description="SecureDrop Qubes export scripts",
@@ -19,9 +16,6 @@ setuptools.setup(
     python_requires=">=3.5",
     url="https://github.com/freedomofpress/securedrop-export",
     packages=setuptools.find_packages(exclude=["docs", "tests"]),
-    package_data={
-        "securedrop_export": ["VERSION"],
-    },
     classifiers=[
         "Development Status :: 3 - Alpha",
         "Programming Language :: Python :: 3",

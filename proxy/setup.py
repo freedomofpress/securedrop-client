@@ -4,12 +4,9 @@ import setuptools
 with open("README.md", "r") as fh:
     long_description = fh.read()
 
-version = pkgutil.get_data("securedrop_proxy", "VERSION").decode("utf-8")
-version = version.strip()
-
 setuptools.setup(
     name="securedrop-proxy",
-    version=version,
+    version="0.0.0",
     author="Freedom of the Press Foundation",
     author_email="securedrop@freedom.press",
     description="SecureDrop Qubes proxy service",
@@ -20,9 +17,6 @@ setuptools.setup(
     python_requires=">=3.7",
     url="https://github.com/freedomofpress/securedrop-proxy",
     packages=setuptools.find_packages(exclude=["docs", "tests"]),
-    package_data={
-            'securedrop_proxy': ['VERSION'],
-    },
     classifiers=(
         "Development Status :: 3 - Alpha",
         "Programming Language :: Python :: 3",

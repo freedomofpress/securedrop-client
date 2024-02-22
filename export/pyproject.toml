@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "securedrop-export"
-version = "0.1.0"
+version = "0.0.0"
 description = "SecureDrop Qubes export scripts"
 authors = ["SecureDrop Team"]
 license = "GPLv3+"

@@ -1,6 +1,5 @@
 include LICENSE
 include README.md
-include securedrop_export/VERSION
 include changelog.md
 include build-requirements.txt
 include securedrop_export/*.py
