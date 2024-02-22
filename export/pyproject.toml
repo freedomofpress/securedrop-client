@@ -11,14 +11,14 @@ python = "^3.9"
 pexpect = "^4.9.0"
 
 [tool.poetry.group.dev.dependencies]
-black = "^23.7.0"
-flake8 = "^6.0.0"
-mypy = "^1.4.1"
-types-setuptools = "^68.0.0"
-pytest = "^7.4.0"
+black = "^24.2.0"
+flake8 = "^7.0.0"
+mypy = "^1.8.0"
+types-setuptools = "^69.1.0"
+pytest = "^8.0.1"
 pytest-cov = "^4.1.0"
 pytest-mock = "^3.11.1"
-semgrep = "^1.31.2"
+semgrep = "^1.61.1"
 types-pexpect = "^4.9.0.20240207"
 
 [tool.mypy]
