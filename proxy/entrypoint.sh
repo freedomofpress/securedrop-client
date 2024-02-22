@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 
 cd /home/user/projects/securedrop-proxy
 virtualenv .venv

@@ -1,5 +1,5 @@
 #!/bin/bash
-
+# shellcheck disable=SC2064
 set -e
 
 # Solution adapted from DKG's work on `deb.torproject.org-keyring` and
@@ -31,4 +31,3 @@ if [ -e /etc/apt/trusted.gpg ] && which gpg >/dev/null; then
 fi
 
 #DEBHELPER#
-

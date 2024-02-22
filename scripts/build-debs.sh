@@ -29,13 +29,14 @@ if test -t 0; then
 fi
 
 # Look for the builder repo with our local wheels
-export BUILDER=$(realpath "${BUILDER:-../securedrop-builder}")
+BUILDER=$(realpath "${BUILDER:-../securedrop-builder}")
 if [[ ! -d $BUILDER ]]; then
     echo "Cannot find securedrop-builder repository, please check it out \
 to ${BUILDER} or set the BUILDER variable"
     exit 1
 fi
 
+export BUILDER
 export DEBIAN_VERSION="${DEBIAN_VERSION:-bullseye}"
 export OCI_RUN_ARGUMENTS
 export OCI_BIN
