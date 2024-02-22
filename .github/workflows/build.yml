@@ -1,5 +1,9 @@
 name: Package builds
 on: [push, pull_request]
+# Only build for latest push/PR unless it's main or release/
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' && !startsWith( github.ref, 'refs/heads/release/' ) }}
 
 defaults:
   run:
@@ -36,7 +40,7 @@ jobs:
           PKG_DIR=../proxy make -C securedrop-builder requirements
           git config --global --add safe.directory "$GITHUB_WORKSPACE"
           git diff --ignore-matching-lines=# --exit-code
-          
+
 
   build-debs:
     strategy:
