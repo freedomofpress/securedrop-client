@@ -2,6 +2,7 @@
 # postrm script for securedrop-export
 #
 # see: dh_installdeb(1)
+# shellcheck disable=SC3010
 
 set -e
 
