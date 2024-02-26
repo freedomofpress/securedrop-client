@@ -402,6 +402,10 @@ class FinalPage(ExportWizardPage):
             header = _("Export sucessful, but drive was not locked")
             body = STATUS_MESSAGES.get(status)
 
+        elif status in self.UNRECOVERABLE_ERRORS:
+            header = _("Export Failed")
+            body = STATUS_MESSAGES.get(status)
+
         else:
             header = _("Working...")
 
@@ -411,9 +415,9 @@ class FinalPage(ExportWizardPage):
 
     def isComplete(self) -> bool:
         """
-        Override the default isComplete() implementation in order to disable the "Finish"
+        Override the default isComplete() implementation in order to disable the "Done"
         button while an export is taking place. (If the "Working...." header is being shown,
-        the export is still in progress and "Finish" should not be clickable.)
+        the export is still in progress and "Done" should not be clickable.)
         """
         if self.status:
             return self.status not in (
