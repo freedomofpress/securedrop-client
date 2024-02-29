@@ -24,7 +24,7 @@ setuptools.setup(
     install_requires=["SQLAlchemy", "alembic", "securedrop-sdk", "python-dateutil", "arrow"],
     python_requires=">=3.5",
     url="https://github.com/freedomofpress/securedrop-client",
-    packages=["securedrop_client", "securedrop_client.gui", "securedrop_client.resources"],
+    packages=setuptools.find_packages(include=["securedrop_client", "securedrop_client.*"]),
     include_package_data=True,
     classifiers=[
         "Development Status :: 3 - Alpha",
