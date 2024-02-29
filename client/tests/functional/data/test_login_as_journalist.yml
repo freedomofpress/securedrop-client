@@ -1,0 +1,1030 @@
+interactions:
+- request:
+    body: '{"username": "journalist", "passphrase": "correct horse battery staple
+      profanity oil chewy", "one_time_code": "479131"}'
+    headers: {}
+    method: POST
+    uri: api/v1/token
+  response: !!python/object:securedrop_client.sdk.JSONResponse
+    data:
+      expiration: '2024-03-01T00:07:35.221119Z'
+      journalist_first_name: null
+      journalist_last_name: null
+      journalist_uuid: 6f13c184-de9a-4fab-86af-2c94344ac497
+      token: ImgwWUQzdVJIZlFwQl9TUlYycHVKdEw3elpfemNubzhpTUJnbEQ0QUR6REki.ZeEAJw.Jb7X34LyzcgEbcDM7OAkqOTxJuc
+    headers:
+      connection: close
+      content-length: '290'
+      content-type: application/json
+      date: Thu, 29 Feb 2024 22:07:35 GMT
+      server: Werkzeug/2.2.3 Python/3.8.10
+    status: 200
+- request:
+    body: null
+    headers:
+      Accept:
+      - application/json
+      Authorization:
+      - Token ImgwWUQzdVJIZlFwQl9TUlYycHVKdEw3elpfemNubzhpTUJnbEQ0QUR6REki.ZeEAJw.Jb7X34LyzcgEbcDM7OAkqOTxJuc
+      Content-Type:
+      - application/json
+    method: GET
+    uri: api/v1/users
+  response: !!python/object:securedrop_client.sdk.JSONResponse
+    data:
+      users:
+      - first_name: null
+        last_name: null
+        username: journalist
+        uuid: 6f13c184-de9a-4fab-86af-2c94344ac497
+      - first_name: null
+        last_name: null
+        username: dellsberg
+        uuid: e222f72e-f811-4192-851b-1304c07b1137
+      - first_name: null
+        last_name: null
+        username: deleted
+        uuid: ad1e13ed-022d-4afb-ae9d-25c95a66e027
+    headers:
+      connection: close
+      content-length: '474'
+      content-type: application/json
+      date: Thu, 29 Feb 2024 22:07:35 GMT
+      server: Werkzeug/2.2.3 Python/3.8.10
+    status: 200
+- request:
+    body: null
+    headers:
+      Accept:
+      - application/json
+      Authorization:
+      - Token ImgwWUQzdVJIZlFwQl9TUlYycHVKdEw3elpfemNubzhpTUJnbEQ0QUR6REki.ZeEAJw.Jb7X34LyzcgEbcDM7OAkqOTxJuc
+      Content-Type:
+      - application/json
+    method: GET
+    uri: api/v1/sources
+  response: !!python/object:securedrop_client.sdk.JSONResponse
+    data:
+      sources:
+      - add_star_url: /api/v1/sources/5db8b687-a952-4f48-b2b8-3345f6aab79a/add_star
+        interaction_count: 6
+        is_flagged: false
+        is_starred: false
+        journalist_designation: bronze lining
+        key:
+          fingerprint: C5CEF059FE2BA1F48DAF97CFC3CAA97B625DF7E9
+          public: '-----BEGIN PGP PUBLIC KEY BLOCK-----
+
+            Comment: C5CE F059 FE2B A1F4 8DAF  97CF C3CA A97B 625D F7E9
+
+            Comment: Source Key <KL6ESNHJGTJFOAASZVECQ7NXW66LR3MSFXQHXGXXYCJ
+
+
+            xsFNBFGRxNABEADavIhNBiXf4gcjG7hL8LATKiGhzL0FY5P24bXQE3yF32wlVi2P
+
+            5a32cVqAx5Mcwo8aYxO5TpfzoVqyvfpnbBYE57N+Hfj4R6sOY6lsr2EQBSWlRBQZ
+
+            u5B81BpttY1gUIT9OkNS0mX2aixg6iC4M/iLMJCBsLitmF0SZBwPNwLJaALm9BMn
+
+            Oku6DKIq9R9AG8x9E0FD+dHSmNaa7CTcWWib0/3Y7KXzmHcPl/kBkMKpDW7ar9bT
+
+            WQ+XRV+JaPnYIfoSA8DjPAwr9g//0tA11HuUhlXuJMMIYLmmZ096O7UNtiks4d91
+
+            KhRXYYjZ6Qut1llOL6rL0jfD1EpULgViHoASKWpHqk+bkv6BvmoAUKz7vDcbW9xX
+
+            khK/M3DZ0od4HgVyn5Es3dzkDv3dJDlaMpfJWpLs4HaZjc7/8vpoHBIDc3AP715H
+
+            IOq0Ax0aAKLyXl/Sa6cP07eWWWcARbxT9GBwdwua5ba/YQi+5S9k3WlMqRpPA2Ds
+
+            Jz2LSMOI/XO196zwdljiHUhrEDQN8DtavMJvOf/+/dvPhpaIHVqjmcE+FJfQJNkG
+
+            /8DlPQN2yx16VDm6KU/jG8f6YCU21oHNzJ0zBHKDQcKiBlON1IJMooGKdmN38ZMd
+
+            +rRL2ic4mWzfnWgK5pNQqKVph/t5KJ0NtH5uW4EUgt8XvwD3IrA95hHM+wARAQAB
+
+            wsHJBB8BCgB9BYJRkcTQAwsJBwkQw8qpe2Jd9+lHFAAAAAAAHgAgc2FsdEBub3Rh
+
+            dGlvbnMuc2VxdW9pYS1wZ3Aub3JnNSSggkSbkZp7TJxTtRFxzqto5vrTTRt8JrIA
+
+            Srw9IdoDFQoIApsBAh4BFiEExc7wWf4rofSNr5fPw8qpe2Jd9+kAAMadEAC5mdeb
+
+            S6lBquFkAVAZVT8oS1X7IJw+CBIzYdxL4rQ7CbtSDGiyBNxXD8FhNU1saT7hGkbF
+
+            TmwADG/Ok4eoUCQzT/jtM9/3imO7xG/PId5+yDUpMTpUAfBPK2Tkj66hvBnFE+gj
+
+            mG6NCT3Oc7MCysLvVA/g3YuNjSWRZmRpu8LkPnqPXWXFMuvIDTIkk+kXmtbgT+Q8
+
+            QYm1GToKIT8mj6ktupUdovT17tBxNeokaKZcJvCioIwgFJ3vkm9//pV2mFG49jRW
+
+            H98UHZ8GKoHjW7AYf0Zt6ZZzyzPpq0pWtYhYhZRpMDqWhdz1pUNzRk/eAf8JWrP0
+
+            suFKbPjTEB9T5ZASLBbKKJ2E6zCW2r1NoizXTsEDBgWfoCdKaJ1qp9GW0w0p3+jS
+
+            r/WZUFEd4QriGV8ytFOJvvfNX1+PzIV+C5jaKUPPLkijbNdFgAarUSijUzDwrp7T
+
+            LQNpvYSTIGaOD7lJHxhSOfCM2XPrjJ+mTTBLVJeVls2se+rvvrjIoqJZjv59pmzM
+
+            /ZDU1CWhCc6nSzBikjD8nQMDAuAKBrvp//JL2mp8nj813cu7x6Tjfx8umojex7cQ
+
+            veRf4nZVfB2YW0fIHNlIVziu8lB9yJdEMQ4KjRMptPfdaw3/af6VSS2XUxlmt7B8
+
+            hYDSfWj9OIfiPvdloJGW39YL9FbKiPw1N8f6T811U291cmNlIEtleSA8S0w2RVNO
+
+            SEpHVEpGT0FBU1pWRUNRN05YVzY2TFIzTVNGWFFIWEdYWFlDSk9JM0lESkhTMzZF
+
+            V1hHNk1XN0JDTFFFUE5aRUE2VkFIVVVYQlJaMkdCTVFUVUJITjZTRzNKVkVDVUhO
+
+            UT0+wsHMBBMBCgCABYJRkcTQAwsJBwkQw8qpe2Jd9+lHFAAAAAAAHgAgc2FsdEBu
+
+            b3RhdGlvbnMuc2VxdW9pYS1wZ3Aub3JnJCCiC2vKbPg/ua0eDU2hPrKjbarPosj0
+
+            IdBG/IdoOvEDFQoIApkBApsBAh4BFiEExc7wWf4rofSNr5fPw8qpe2Jd9+kAAKLs
+
+            EACBuypQKc6o6KILUYOtZnL4pFW93a3Jeahx0aaQETU8YQMurpmu5gPtoWfAxEEd
+
+            LIKNWZPktb6LgM1JWzJN+XJ/u7pYATqOuEZHYGODCkkC92SBg2tjSFj3kg2kW8G3
+
+            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
+
+            r2Yg
+
+            =3akh
+
+            -----END PGP PUBLIC KEY BLOCK-----
+
+            '
+          type: PGP
+        last_updated: '2024-02-29T22:05:09.060323Z'
+        number_of_documents: 2
+        number_of_messages: 2
+        remove_star_url: /api/v1/sources/5db8b687-a952-4f48-b2b8-3345f6aab79a/remove_star
+        replies_url: /api/v1/sources/5db8b687-a952-4f48-b2b8-3345f6aab79a/replies
+        submissions_url: /api/v1/sources/5db8b687-a952-4f48-b2b8-3345f6aab79a/submissions
+        url: /api/v1/sources/5db8b687-a952-4f48-b2b8-3345f6aab79a
+        uuid: 5db8b687-a952-4f48-b2b8-3345f6aab79a
+      - add_star_url: /api/v1/sources/d57e53c6-6c7f-48da-9020-3ecbc7fb7d00/add_star
+        interaction_count: 6
+        is_flagged: false
+        is_starred: false
+        journalist_designation: varicose leather
+        key:
+          fingerprint: 5EBF89758C7BA1600C020F46CD202B52241FD87D
+          public: '-----BEGIN PGP PUBLIC KEY BLOCK-----
+
+            Comment: 5EBF 8975 8C7B A160 0C02  0F46 CD20 2B52 241F D87D
+
+            Comment: Source Key <CSZWN5UNKX3UR5F7HJA2LMVFG3NR3OKZ3XEGZ3LJDRA
+
+
+            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
+
+            cabI
+
+            =ARNI
+
+            -----END PGP PUBLIC KEY BLOCK-----
+
+            '
+          type: PGP
+        last_updated: '2024-02-29T22:05:12.987407Z'
+        number_of_documents: 2
+        number_of_messages: 2
+        remove_star_url: /api/v1/sources/d57e53c6-6c7f-48da-9020-3ecbc7fb7d00/remove_star
+        replies_url: /api/v1/sources/d57e53c6-6c7f-48da-9020-3ecbc7fb7d00/replies
+        submissions_url: /api/v1/sources/d57e53c6-6c7f-48da-9020-3ecbc7fb7d00/submissions
+        url: /api/v1/sources/d57e53c6-6c7f-48da-9020-3ecbc7fb7d00
+        uuid: d57e53c6-6c7f-48da-9020-3ecbc7fb7d00
+      - add_star_url: /api/v1/sources/fe5bc25a-8bd7-43b8-8002-e84dc06c58d6/add_star
+        interaction_count: 6
+        is_flagged: false
+        is_starred: false
+        journalist_designation: unbranched familiarization
+        key:
+          fingerprint: 999526EDEF5DC2A21CD85651308B2E4F1C5DBF33
+          public: '-----BEGIN PGP PUBLIC KEY BLOCK-----
+
+            Comment: 9995 26ED EF5D C2A2 1CD8  5651 308B 2E4F 1C5D BF33
+
+            Comment: Source Key <RGV76CTN7PZOYK5HWPQNCEAJ2AYCLKKRKA3ANASDDB3
+
+
+            xsFNBFGRxNABEACrHlI5rxaQYLUZtjdn0D1cQeKsY4f+XFH7tRoDnfFFu13k3Qsr
+
+            EPjWLxN5fn5y6MN6MoN/CjB8Fa+FT2/m4J82SZTJcZSinG9lm6h+WjUknKDQezkp
+
+            nZ/PZAmqzrUzmtkOM0nKV3k4xhFbN/e6c92MJbOE+Q4UCUA3um55e0K6hL3RPcUk
+
+            YxtmEMQeYLRhRHC/nt+nbgdFnnf8K+TUm6qj1oQfrhNaJaxtB+YZwfJmRxn1tfOD
+
+            12hZunbXG+u110rE0wlfNUCAzfrTeD0w4Ty05OfQs4Dp7JDZ382iOw8YqlvgEOns
+
+            q0pbHRo+KUgAW8EL8IJFY4yX+Kooi6RtUQml4kwyUgkyh29L19+wCDE6QMgWC0vC
+
+            ySKMY86frG48/pNotxKPDkyuHnYAtasqFwwE6djUjONCE8nb1w2/53CVq33QlKUV
+
+            td82693dK/mSvElcc3l+s2WWtdGLckoNTmA0nt3Capdn3NuH7ickm793IyfHfG/l
+
+            gCEzQTRNz1zfFes6iuRObB6hVIvK6ocrYgpxGwSn7VZoHc2tVmIgyodHPd2HkCW8
+
+            sNhpY5DutLQiUiELWJv3b82gBKgSILy56p4xETzerd8zwMQuMeXRvOuWUiGL2Cvj
+
+            Ao6Zp0lj9BSlzS1q9HyQTvQoNul/eLaIXaXQQj5hiqWCVFxGCPY+ChV+fwARAQAB
+
+            wsHJBB8BCgB9BYJRkcTQAwsJBwkQMIsuTxxdvzNHFAAAAAAAHgAgc2FsdEBub3Rh
+
+            dGlvbnMuc2VxdW9pYS1wZ3Aub3JnIXN7PsHiSIFnmLo2GK38SB5kIGd7f7nHfKLe
+
+            vmWmQBsDFQoIApsBAh4BFiEEmZUm7e9dwqIc2FZRMIsuTxxdvzMAALIbEACTXOOi
+
+            Y9/Rg4QdFsLLdt08nP8G9cN/L7ruYubT/vNkmDNskV53SHev+rZ0BV3RTrIsfKoq
+
+            7jeDOt1Hu/HA2ZN47VNsceI2n3SmV/5Mw/HEwck7xyq21jHRJadjcPdXqFFEA1GW
+
+            Fa/x9LX8OxNAbVONLEpYhjDV8yeblv6eaUeZoHfZe0mURfyvl2yYWWExzIEWkZ+P
+
+            INdN6tXpHmm0/Uh7bI89aBrFyOXZBw1wHozCf9dBA6zXlE5zxzth0hDR/2WqKqDg
+
+            b6NFDqL74Q3Cw2matTMDaRo2n+6SNdHEFqIA/8wWWNr+nYB/BFk0nVtEcJ6fOtcz
+
+            VNi3vxISW5L3NYxVImDXbZ934VArOE+XkMt676R7ON05fP6TyqWmuDhqBNVZV1Sy
+
+            eRDC7xwoVq7USTLa6RKQDThBGvyeD/6bHLidqTawC3O/tDIvr/Iy4qeGvOy9mPxp
+
+            CFSqebw6RHFLWcQAOmNYkXNWLEKFRmmf/+vf16SclDWd3ro/DxO91Kfg07EnoGhp
+
+            1cbPf9S2edheZzkMkQagTQg5Ewq3ZEBUmGXHbzzFK5LO3lc1kLY1q0Sj45RfUCt6
+
+            TqvBZ3PMY5BTVCXKRWFNZ9toVnCAdSy0n5u41ryO/TRxZyXT78Tfa/e5DX3KXEQn
+
+            NSszbCVs14zkDAj+AGLwiXIzvMdSWVs8ajk5Oc11U291cmNlIEtleSA8UkdWNzZD
+
+            VE43UFpPWUs1SFdQUU5DRUFKMkFZQ0xLS1JLQTNBTkFTRERCMzJCTUxXTFlCTURK
+
+            N1pPVlhaUFhYNVEzRFdESE4zR1pNM1VBQkVTWkJaUVBPWEszSDZSRVYzVDU2VDJW
+
+            UT0+wsHMBBMBCgCABYJRkcTQAwsJBwkQMIsuTxxdvzNHFAAAAAAAHgAgc2FsdEBu
+
+            b3RhdGlvbnMuc2VxdW9pYS1wZ3Aub3Jn0ACRUsK/VJAMGfDWa719bkqKj2F3hvEl
+
+            ZrOqjDzPcLkDFQoIApkBApsBAh4BFiEEmZUm7e9dwqIc2FZRMIsuTxxdvzMAAGbG
+
+            D/wOCIiai9XJZVpHmxVgU9TkD6JDBLEIHZ8xQYree+Nv4b+U6Vib/XzvkglGdzCo
+
+            aIEgbLPnkZbciuWOerzkw7R4G2RP+GhurMFVMzXJMt73QcCM88qO8v0b+f08PC5z
+
+            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
+
+            xU+w
+
+            =QbWr
+
+            -----END PGP PUBLIC KEY BLOCK-----
+
+            '
+          type: PGP
+        last_updated: '2024-02-29T22:05:14.477721Z'
+        number_of_documents: 2
+        number_of_messages: 2
+        remove_star_url: /api/v1/sources/fe5bc25a-8bd7-43b8-8002-e84dc06c58d6/remove_star
+        replies_url: /api/v1/sources/fe5bc25a-8bd7-43b8-8002-e84dc06c58d6/replies
+        submissions_url: /api/v1/sources/fe5bc25a-8bd7-43b8-8002-e84dc06c58d6/submissions
+        url: /api/v1/sources/fe5bc25a-8bd7-43b8-8002-e84dc06c58d6
+        uuid: fe5bc25a-8bd7-43b8-8002-e84dc06c58d6
+    headers:
+      connection: close
+      content-length: '16234'
+      content-type: application/json
+      date: Thu, 29 Feb 2024 22:11:59 GMT
+      server: Werkzeug/2.2.3 Python/3.8.10
+    status: 200
+- request:
+    body: null
+    headers:
+      Accept:
+      - application/json
+      Authorization:
+      - Token ImgwWUQzdVJIZlFwQl9TUlYycHVKdEw3elpfemNubzhpTUJnbEQ0QUR6REki.ZeEAJw.Jb7X34LyzcgEbcDM7OAkqOTxJuc
+      Content-Type:
+      - application/json
+    method: GET
+    uri: api/v1/submissions
+  response: !!python/object:securedrop_client.sdk.JSONResponse
+    data:
+      submissions:
+      - download_url: /api/v1/sources/5db8b687-a952-4f48-b2b8-3345f6aab79a/submissions/2138ad0a-55c8-4f51-972f-cf025a177bdd/download
+        filename: 1-bronze_lining-msg.gpg
+        is_file: false
+        is_message: true
+        is_read: true
+        seen_by:
+        - ad1e13ed-022d-4afb-ae9d-25c95a66e027
+        size: 616
+        source_url: /api/v1/sources/5db8b687-a952-4f48-b2b8-3345f6aab79a
+        submission_url: /api/v1/sources/5db8b687-a952-4f48-b2b8-3345f6aab79a/submissions/2138ad0a-55c8-4f51-972f-cf025a177bdd
+        uuid: 2138ad0a-55c8-4f51-972f-cf025a177bdd
+      - download_url: /api/v1/sources/5db8b687-a952-4f48-b2b8-3345f6aab79a/submissions/fa049063-9b35-45d4-ba2a-929bd393ff85/download
+        filename: 2-bronze_lining-msg.gpg
+        is_file: false
+        is_message: true
+        is_read: true
+        seen_by:
+        - e222f72e-f811-4192-851b-1304c07b1137
+        size: 700
+        source_url: /api/v1/sources/5db8b687-a952-4f48-b2b8-3345f6aab79a
+        submission_url: /api/v1/sources/5db8b687-a952-4f48-b2b8-3345f6aab79a/submissions/fa049063-9b35-45d4-ba2a-929bd393ff85
+        uuid: fa049063-9b35-45d4-ba2a-929bd393ff85
+      - download_url: /api/v1/sources/5db8b687-a952-4f48-b2b8-3345f6aab79a/submissions/92f6bc70-eeb0-4f17-91bb-d571b63c0bf4/download
+        filename: 3-bronze_lining-doc.gz.gpg
+        is_file: true
+        is_message: false
+        is_read: true
+        seen_by:
+        - ad1e13ed-022d-4afb-ae9d-25c95a66e027
+        size: 651
+        source_url: /api/v1/sources/5db8b687-a952-4f48-b2b8-3345f6aab79a
+        submission_url: /api/v1/sources/5db8b687-a952-4f48-b2b8-3345f6aab79a/submissions/92f6bc70-eeb0-4f17-91bb-d571b63c0bf4
+        uuid: 92f6bc70-eeb0-4f17-91bb-d571b63c0bf4
+      - download_url: /api/v1/sources/5db8b687-a952-4f48-b2b8-3345f6aab79a/submissions/1ce4c5a8-1c11-40b8-8b65-c14960dbb29e/download
+        filename: 4-bronze_lining-doc.gz.gpg
+        is_file: true
+        is_message: false
+        is_read: true
+        seen_by:
+        - 6f13c184-de9a-4fab-86af-2c94344ac497
+        size: 651
+        source_url: /api/v1/sources/5db8b687-a952-4f48-b2b8-3345f6aab79a
+        submission_url: /api/v1/sources/5db8b687-a952-4f48-b2b8-3345f6aab79a/submissions/1ce4c5a8-1c11-40b8-8b65-c14960dbb29e
+        uuid: 1ce4c5a8-1c11-40b8-8b65-c14960dbb29e
+      - download_url: /api/v1/sources/d57e53c6-6c7f-48da-9020-3ecbc7fb7d00/submissions/07bdcb3e-c703-4514-bd09-d7136c3ecfa6/download
+        filename: 1-varicose_leather-msg.gpg
+        is_file: false
+        is_message: true
+        is_read: true
+        seen_by:
+        - ad1e13ed-022d-4afb-ae9d-25c95a66e027
+        size: 647
+        source_url: /api/v1/sources/d57e53c6-6c7f-48da-9020-3ecbc7fb7d00
+        submission_url: /api/v1/sources/d57e53c6-6c7f-48da-9020-3ecbc7fb7d00/submissions/07bdcb3e-c703-4514-bd09-d7136c3ecfa6
+        uuid: 07bdcb3e-c703-4514-bd09-d7136c3ecfa6
+      - download_url: /api/v1/sources/d57e53c6-6c7f-48da-9020-3ecbc7fb7d00/submissions/44c5d90b-73f8-4db0-9461-a594b7024885/download
+        filename: 2-varicose_leather-msg.gpg
+        is_file: false
+        is_message: true
+        is_read: true
+        seen_by:
+        - 6f13c184-de9a-4fab-86af-2c94344ac497
+        size: 766
+        source_url: /api/v1/sources/d57e53c6-6c7f-48da-9020-3ecbc7fb7d00
+        submission_url: /api/v1/sources/d57e53c6-6c7f-48da-9020-3ecbc7fb7d00/submissions/44c5d90b-73f8-4db0-9461-a594b7024885
+        uuid: 44c5d90b-73f8-4db0-9461-a594b7024885
+      - download_url: /api/v1/sources/d57e53c6-6c7f-48da-9020-3ecbc7fb7d00/submissions/308f0ac4-626b-49d4-aa2a-d52f31424d1a/download
+        filename: 3-varicose_leather-doc.gz.gpg
+        is_file: true
+        is_message: false
+        is_read: true
+        seen_by:
+        - 6f13c184-de9a-4fab-86af-2c94344ac497
+        size: 651
+        source_url: /api/v1/sources/d57e53c6-6c7f-48da-9020-3ecbc7fb7d00
+        submission_url: /api/v1/sources/d57e53c6-6c7f-48da-9020-3ecbc7fb7d00/submissions/308f0ac4-626b-49d4-aa2a-d52f31424d1a
+        uuid: 308f0ac4-626b-49d4-aa2a-d52f31424d1a
+      - download_url: /api/v1/sources/d57e53c6-6c7f-48da-9020-3ecbc7fb7d00/submissions/71b7a77d-c8db-44ee-8ead-16350b3398e2/download
+        filename: 4-varicose_leather-doc.gz.gpg
+        is_file: true
+        is_message: false
+        is_read: true
+        seen_by:
+        - e222f72e-f811-4192-851b-1304c07b1137
+        size: 651
+        source_url: /api/v1/sources/d57e53c6-6c7f-48da-9020-3ecbc7fb7d00
+        submission_url: /api/v1/sources/d57e53c6-6c7f-48da-9020-3ecbc7fb7d00/submissions/71b7a77d-c8db-44ee-8ead-16350b3398e2
+        uuid: 71b7a77d-c8db-44ee-8ead-16350b3398e2
+      - download_url: /api/v1/sources/fe5bc25a-8bd7-43b8-8002-e84dc06c58d6/submissions/ccc9874e-60d3-4597-868a-4588ddef4116/download
+        filename: 1-unbranched_familiarization-msg.gpg
+        is_file: false
+        is_message: true
+        is_read: false
+        seen_by: []
+        size: 804
+        source_url: /api/v1/sources/fe5bc25a-8bd7-43b8-8002-e84dc06c58d6
+        submission_url: /api/v1/sources/fe5bc25a-8bd7-43b8-8002-e84dc06c58d6/submissions/ccc9874e-60d3-4597-868a-4588ddef4116
+        uuid: ccc9874e-60d3-4597-868a-4588ddef4116
+      - download_url: /api/v1/sources/fe5bc25a-8bd7-43b8-8002-e84dc06c58d6/submissions/0e21bb21-4bcd-456a-836a-b5bde02c6711/download
+        filename: 2-unbranched_familiarization-msg.gpg
+        is_file: false
+        is_message: true
+        is_read: false
+        seen_by: []
+        size: 710
+        source_url: /api/v1/sources/fe5bc25a-8bd7-43b8-8002-e84dc06c58d6
+        submission_url: /api/v1/sources/fe5bc25a-8bd7-43b8-8002-e84dc06c58d6/submissions/0e21bb21-4bcd-456a-836a-b5bde02c6711
+        uuid: 0e21bb21-4bcd-456a-836a-b5bde02c6711
+      - download_url: /api/v1/sources/fe5bc25a-8bd7-43b8-8002-e84dc06c58d6/submissions/9e83a1f9-60a7-430a-8e87-4528cd369907/download
+        filename: 3-unbranched_familiarization-doc.gz.gpg
+        is_file: true
+        is_message: false
+        is_read: false
+        seen_by: []
+        size: 651
+        source_url: /api/v1/sources/fe5bc25a-8bd7-43b8-8002-e84dc06c58d6
+        submission_url: /api/v1/sources/fe5bc25a-8bd7-43b8-8002-e84dc06c58d6/submissions/9e83a1f9-60a7-430a-8e87-4528cd369907
+        uuid: 9e83a1f9-60a7-430a-8e87-4528cd369907
+      - download_url: /api/v1/sources/fe5bc25a-8bd7-43b8-8002-e84dc06c58d6/submissions/47af9b71-3970-4712-b2e9-ffacc0e787f1/download
+        filename: 4-unbranched_familiarization-doc.gz.gpg
+        is_file: true
+        is_message: false
+        is_read: false
+        seen_by: []
+        size: 651
+        source_url: /api/v1/sources/fe5bc25a-8bd7-43b8-8002-e84dc06c58d6
+        submission_url: /api/v1/sources/fe5bc25a-8bd7-43b8-8002-e84dc06c58d6/submissions/47af9b71-3970-4712-b2e9-ffacc0e787f1
+        uuid: 47af9b71-3970-4712-b2e9-ffacc0e787f1
+    headers:
+      connection: close
+      content-length: '7443'
+      content-type: application/json
+      date: Thu, 29 Feb 2024 22:11:59 GMT
+      server: Werkzeug/2.2.3 Python/3.8.10
+    status: 200
+- request:
+    body: null
+    headers:
+      Accept:
+      - application/json
+      Authorization:
+      - Token ImgwWUQzdVJIZlFwQl9TUlYycHVKdEw3elpfemNubzhpTUJnbEQ0QUR6REki.ZeEAJw.Jb7X34LyzcgEbcDM7OAkqOTxJuc
+      Content-Type:
+      - application/json
+    method: GET
+    uri: api/v1/replies
+  response: !!python/object:securedrop_client.sdk.JSONResponse
+    data:
+      replies:
+      - filename: 5-bronze_lining-reply.gpg
+        is_deleted_by_source: false
+        journalist_first_name: ''
+        journalist_last_name: ''
+        journalist_username: deleted
+        journalist_uuid: ad1e13ed-022d-4afb-ae9d-25c95a66e027
+        reply_url: /api/v1/sources/5db8b687-a952-4f48-b2b8-3345f6aab79a/replies/437e8be5-1a80-4aa8-9f26-ccc6be08ac59
+        seen_by:
+        - 6f13c184-de9a-4fab-86af-2c94344ac497
+        - ad1e13ed-022d-4afb-ae9d-25c95a66e027
+        size: 1143
+        source_url: /api/v1/sources/5db8b687-a952-4f48-b2b8-3345f6aab79a
+        uuid: 437e8be5-1a80-4aa8-9f26-ccc6be08ac59
+      - filename: 6-bronze_lining-reply.gpg
+        is_deleted_by_source: false
+        journalist_first_name: ''
+        journalist_last_name: ''
+        journalist_username: dellsberg
+        journalist_uuid: e222f72e-f811-4192-851b-1304c07b1137
+        reply_url: /api/v1/sources/5db8b687-a952-4f48-b2b8-3345f6aab79a/replies/a3a791c6-8a70-4fbe-ada2-db726041eb2c
+        seen_by:
+        - e222f72e-f811-4192-851b-1304c07b1137
+        size: 1227
+        source_url: /api/v1/sources/5db8b687-a952-4f48-b2b8-3345f6aab79a
+        uuid: a3a791c6-8a70-4fbe-ada2-db726041eb2c
+      - filename: 5-varicose_leather-reply.gpg
+        is_deleted_by_source: false
+        journalist_first_name: ''
+        journalist_last_name: ''
+        journalist_username: dellsberg
+        journalist_uuid: e222f72e-f811-4192-851b-1304c07b1137
+        reply_url: /api/v1/sources/d57e53c6-6c7f-48da-9020-3ecbc7fb7d00/replies/7d5ad77f-29fe-41c7-901f-45c384633b94
+        seen_by:
+        - e222f72e-f811-4192-851b-1304c07b1137
+        size: 1174
+        source_url: /api/v1/sources/d57e53c6-6c7f-48da-9020-3ecbc7fb7d00
+        uuid: 7d5ad77f-29fe-41c7-901f-45c384633b94
+      - filename: 6-varicose_leather-reply.gpg
+        is_deleted_by_source: false
+        journalist_first_name: ''
+        journalist_last_name: ''
+        journalist_username: deleted
+        journalist_uuid: ad1e13ed-022d-4afb-ae9d-25c95a66e027
+        reply_url: /api/v1/sources/d57e53c6-6c7f-48da-9020-3ecbc7fb7d00/replies/44a1a7cc-2303-44ef-91a6-e1e3bc13b388
+        seen_by:
+        - 6f13c184-de9a-4fab-86af-2c94344ac497
+        - ad1e13ed-022d-4afb-ae9d-25c95a66e027
+        size: 1293
+        source_url: /api/v1/sources/d57e53c6-6c7f-48da-9020-3ecbc7fb7d00
+        uuid: 44a1a7cc-2303-44ef-91a6-e1e3bc13b388
+      - filename: 5-unbranched_familiarization-reply.gpg
+        is_deleted_by_source: false
+        journalist_first_name: ''
+        journalist_last_name: ''
+        journalist_username: dellsberg
+        journalist_uuid: e222f72e-f811-4192-851b-1304c07b1137
+        reply_url: /api/v1/sources/fe5bc25a-8bd7-43b8-8002-e84dc06c58d6/replies/83f134f2-7bc8-4e68-9198-3df375f69434
+        seen_by:
+        - e222f72e-f811-4192-851b-1304c07b1137
+        size: 1331
+        source_url: /api/v1/sources/fe5bc25a-8bd7-43b8-8002-e84dc06c58d6
+        uuid: 83f134f2-7bc8-4e68-9198-3df375f69434
+      - filename: 6-unbranched_familiarization-reply.gpg
+        is_deleted_by_source: false
+        journalist_first_name: ''
+        journalist_last_name: ''
+        journalist_username: deleted
+        journalist_uuid: ad1e13ed-022d-4afb-ae9d-25c95a66e027
+        reply_url: /api/v1/sources/fe5bc25a-8bd7-43b8-8002-e84dc06c58d6/replies/94fe3b42-b424-4e35-bd4d-f90eb4e54cd5
+        seen_by:
+        - 6f13c184-de9a-4fab-86af-2c94344ac497
+        - ad1e13ed-022d-4afb-ae9d-25c95a66e027
+        size: 1237
+        source_url: /api/v1/sources/fe5bc25a-8bd7-43b8-8002-e84dc06c58d6
+        uuid: 94fe3b42-b424-4e35-bd4d-f90eb4e54cd5
+    headers:
+      connection: close
+      content-length: '3962'
+      content-type: application/json
+      date: Thu, 29 Feb 2024 22:11:59 GMT
+      server: Werkzeug/2.2.3 Python/3.8.10
+    status: 200
+- request:
+    body: null
+    headers:
+      Accept:
+      - application/json
+      Authorization:
+      - Token ImgwWUQzdVJIZlFwQl9TUlYycHVKdEw3elpfemNubzhpTUJnbEQ0QUR6REki.ZeEAJw.Jb7X34LyzcgEbcDM7OAkqOTxJuc
+      Content-Type:
+      - application/json
+    method: GET
+    uri: api/v1/sources/fe5bc25a-8bd7-43b8-8002-e84dc06c58d6/submissions/ccc9874e-60d3-4597-868a-4588ddef4116/download
+  response: !!python/object:securedrop_client.sdk.StreamedResponse
+    contents: !!binary |
+      wcFMA8PnxMCiIBsqARAAgghqWcsZQptpZwKvVYgQ7Xe7BhkbfSyNvf4zxdDwPFv+8XO5eKMDDwhc
+      3XCQVvSi7DUlJld2IZLP7nfZ3QiUSVgd+ektNvwcST7k/J6HP2qYDAnwBMqG3sN1Zgbqs+nlu6UQ
+      6P+RDg9eRzti1rKVVuLvaes90n+JEkzKAciZFc/kginGop8D/UUqNk1c/kcDxxWoYqWXCQ4czi/X
+      SEkXdeNmCTd9YRjrixK43X6RCqH9FIAtiddiYO1+kKHgnoTmYhW7k2Pn4bV1CplkA4wIVgG+1++U
+      KHQZiDxA6g7+xNobZaDNoD1mL5/a23QaF8nTLM1ndxxKet7D8oIlc+miZ9DWeOHRrBAh8+s5Anb3
+      Yz1x6Hi5TYwN2Hl9OsAFqt/h4eXfZM+SunfmbKG7TYZ7hd/eAt50EMmxaXcN19jBoV+C6fFo7vLv
+      WnvsExdpo/AXFfxqgCToLml5swlBrNtQST/vfFRcWSLO3HfX+faJev/mkCTO0Ex1d7/J58ihCawg
+      t0C+zxbBgcwcVHBDjlsT8SgMoUhlVO+e0Z1p7FeaNuskrLUHGRRRt79mZ7gCtGdiV38ceRZn3r+M
+      cDoqOMYv6eh8FzTiMqmI7etpdt6vqS1UgXssfiMUlhHHFl4KKezMR0KHd9hXS1/EZocOKToe7/NE
+      uEX+T25QULZnumqwSiPSwFIBoMHK9vAjXX38EPPzcYMTKCQ0DEcXpFLSFSQfBxnRLeF0N48XE34u
+      iOd8dM26OSakcPs+7YbfQE+gIqNBtdgFXWEttAx5IDJepBuy14YNDCKjhvlcG0uLf/bWKOozduDQ
+      K08nLdw/Fe6eA31kO9rXx/Cp7/ODPq1H4s6I3IKnnsiKl9CK4MYg02clFJjQyJX+OTz9N33Sqhm6
+      eFhebWELClbOKLfcqEBQiqpKQNEEONCHAfNNgmGijLC95puGad4WL5QdjInmAxTN7Oh9/ZwbDjHY
+      uC5bYbDTUz3wipvb4Z1Erg+zrsHtRzgLhycrLemb1CD/sldIn0LiWxjacIcn4GuzVafaJk0tum9R
+      TXlvqThD
+    filename: attachment; filename=1-unbranched_familiarization-msg.gpg
+    sha256sum: sha256:4134c912f04a3b4d489bae4f68c2f8009ebc57d475b558069807639783a45dbc
+- request:
+    body: null
+    headers:
+      Accept:
+      - application/json
+      Authorization:
+      - Token ImgwWUQzdVJIZlFwQl9TUlYycHVKdEw3elpfemNubzhpTUJnbEQ0QUR6REki.ZeEAJw.Jb7X34LyzcgEbcDM7OAkqOTxJuc
+      Content-Type:
+      - application/json
+    method: GET
+    uri: api/v1/sources/fe5bc25a-8bd7-43b8-8002-e84dc06c58d6/submissions/0e21bb21-4bcd-456a-836a-b5bde02c6711/download
+  response: !!python/object:securedrop_client.sdk.StreamedResponse
+    contents: !!binary |
+      wcFMA8PnxMCiIBsqARAAvWhg+SXiboBLZWu9z03mVm35NCOXUQ0e54VJL/MDrCTc/rVAKgFTXGFg
+      U7OaMPHcN/mUrG02uNP4QHX8oSJk8/qRDSRsb5Kb2ri/AQf8dyxr+BUpH4Z+gwYsVNcA5M/25Kxd
+      z7pbHYkw0o31XMBY2wGyZ2/oxrvfvlKhQLbwE/E4h4zWm8EONKsvqCltJ1ioz4kb6F2lcRvxX+7T
+      isG8ZfUkQu46cu4j6fspGhKZ9pWYE/h5nsGEVKrZg7hG3JJrOI38jFwibJNcJIVpvHPGTClwii4U
+      3AUxMXBNvA+rJ3FtJgtfGlERty/ubPAlIKlkbRYB8SkPeYRr8RS7G+BhxQQzboK8Y+73qPUNgInN
+      yYrQ3gbqxeIQ03EezgYxuWZxsUll9/05AO8l5QLS0qK/eLXQBm/MjQcnQd7adVIKgnneLR5seUnB
+      JEWo6vHAhuUH/gqFQqcPC+WLvGnKf9t5DyFygjt1ueSUTHkbF4sPnZC5g2aWzJD/yfvCTw3RdMul
+      8M9ZfVlcApNImLtJrw3QMP9y1AXgQki81QveJVx2kcABSsHSIArHiqHPPuvaxohvX074qkvUCSrt
+      mqvuAxJ9OZBO6CRr8HN0lHCH4vh1AynuQyR39P7Jgdrsmwg/aPVi7yOQp32HcFEA4vAM7x2pAVSw
+      4gnuFqd1ovIIJGztP2DStQEgGrjMkUlAp26mCc6p2zMuXFoRsZhzm2BbQiazBOUY/BL6UKMIgp0r
+      pPVrltPneUInt+68Lau6O6iLUoys07AyYcFOsNDA4+ZxXLlkw8lgM2jxbKcMH3lZ3p0NcZ6iNcik
+      x1QrH1Lk4kL3JoxJMwHaDzSRrgIQe9X16DNHtU82c06Bx6VFr5/x/F2mAitNaK52FqziclEIhz7r
+      iUMvpQT1Gsrrjpx0Ri5tMrhCOPxp51imNR8=
+    filename: attachment; filename=2-unbranched_familiarization-msg.gpg
+    sha256sum: sha256:6d6016e3d526c625a7a46b284d9207721d63dbc74377597c516b9d0a732107c6
+- request:
+    body: null
+    headers:
+      Accept:
+      - application/json
+      Authorization:
+      - Token ImgwWUQzdVJIZlFwQl9TUlYycHVKdEw3elpfemNubzhpTUJnbEQ0QUR6REki.ZeEAJw.Jb7X34LyzcgEbcDM7OAkqOTxJuc
+      Content-Type:
+      - application/json
+    method: GET
+    uri: api/v1/sources/d57e53c6-6c7f-48da-9020-3ecbc7fb7d00/submissions/07bdcb3e-c703-4514-bd09-d7136c3ecfa6/download
+  response: !!python/object:securedrop_client.sdk.StreamedResponse
+    contents: !!binary |
+      wcFMA8PnxMCiIBsqARAA1eiu3Yd0a9ZIJxzpA0UlfRC5OF5sKbhFHl4wI7/wbdeIuO1nLkPwlb+g
+      ZU9FF90pKdXv0KYFhbMu+oQmQ2VPBbmm+8cq50PN5XhrG0m6cESQzuel6XCNfsTeuDpk8Z1KE1ll
+      +WQp+cbGAik5ZEAHez5Cr2vVowXNRTeG7wIaL8k4TxX/chupQtM4WzkasuuOxKPz0AuGJ2T8h+aS
+      Vn+EPJCiy/fI3BIwi5+oXZsb1zW6D+PZ/9S18aoIy0TTpHGiIdi1gY0lERJeomQwhicaN21XP5nE
+      tfmy5s0bZ6gEGQPtqF7OEA3hEVa9Cb8xpgTWzS+otBhihcoFD+a+rMs8UEnOHK0VQ+uuWFYLxf+I
+      Ib1Hs01j+QIaVHZhd3A0wrFC10I0nHX+LoSrcBUTMqv4FnGR+ClxYGsWuEnW/aU8g+SSvMESrIIy
+      AGqeqxaXeI4se0M4Sobre/815ekFB4YS9dpH4jwhklIUFPI0QSEL99eRcjfb29JgByo7u5Dd/wUb
+      go1Yg8Pk3TNa2tLbzkNBVGuArDDLCAMv4XfHW0RaUJPRGxtlwX0jsup5ldSBbfAMyXVTu+a4mtjt
+      SOS/9Wo4SIRE4LyX5/k9e7k4umCFIUUJBQe3uKowvlqwQGpwcyRvkJ0HPTMwY7JFNCyQzxU7nj2N
+      vomkQmlfPWa1QuSAH2XSdgGv/tMJUYtJEqbpIXP886LNOPbvtEtXkQtQ2tSGtn54Clg1SkClW1Ie
+      Eg+kd5arE3nauklSWiRnf1ozhopCBrH31ekzSsjxA1nM5hEXFrg3Bt7N14OkFswCNL/LseBh9iyJ
+      Npm9p+fmwBuhFEIsrRAi7BDnEs4=
+    filename: attachment; filename=1-varicose_leather-msg.gpg
+    sha256sum: sha256:3251d573191d6f0d01e0198f90ede2d39c4c33a440fac1da4cb741bfb78525a8
+- request:
+    body: null
+    headers:
+      Accept:
+      - application/json
+      Authorization:
+      - Token ImgwWUQzdVJIZlFwQl9TUlYycHVKdEw3elpfemNubzhpTUJnbEQ0QUR6REki.ZeEAJw.Jb7X34LyzcgEbcDM7OAkqOTxJuc
+      Content-Type:
+      - application/json
+    method: GET
+    uri: api/v1/sources/d57e53c6-6c7f-48da-9020-3ecbc7fb7d00/submissions/44c5d90b-73f8-4db0-9461-a594b7024885/download
+  response: !!python/object/apply:securedrop_client.sdk.sdlocalobjects.BaseError
+    args:
+    - Unable to parse header metadata from response
+    state:
+      msg: Unable to parse header metadata from response
+- request:
+    body: null
+    headers:
+      Accept:
+      - application/json
+      Authorization:
+      - Token ImgwWUQzdVJIZlFwQl9TUlYycHVKdEw3elpfemNubzhpTUJnbEQ0QUR6REki.ZeEAJw.Jb7X34LyzcgEbcDM7OAkqOTxJuc
+      Content-Type:
+      - application/json
+    method: GET
+    uri: api/v1/sources/5db8b687-a952-4f48-b2b8-3345f6aab79a/submissions/2138ad0a-55c8-4f51-972f-cf025a177bdd/download
+  response: !!python/object/apply:securedrop_client.sdk.sdlocalobjects.BaseError
+    args:
+    - Unable to parse header metadata from response
+    state:
+      msg: Unable to parse header metadata from response
+- request:
+    body: null
+    headers:
+      Accept:
+      - application/json
+      Authorization:
+      - Token ImgwWUQzdVJIZlFwQl9TUlYycHVKdEw3elpfemNubzhpTUJnbEQ0QUR6REki.ZeEAJw.Jb7X34LyzcgEbcDM7OAkqOTxJuc
+      Content-Type:
+      - application/json
+    method: GET
+    uri: api/v1/sources/5db8b687-a952-4f48-b2b8-3345f6aab79a/submissions/fa049063-9b35-45d4-ba2a-929bd393ff85/download
+  response: !!python/object/apply:securedrop_client.sdk.sdlocalobjects.BaseError
+    args:
+    - Unable to parse header metadata from response
+    state:
+      msg: Unable to parse header metadata from response
+- request:
+    body: null
+    headers:
+      Accept:
+      - application/json
+      Authorization:
+      - Token ImgwWUQzdVJIZlFwQl9TUlYycHVKdEw3elpfemNubzhpTUJnbEQ0QUR6REki.ZeEAJw.Jb7X34LyzcgEbcDM7OAkqOTxJuc
+      Content-Type:
+      - application/json
+    method: GET
+    uri: api/v1/sources/fe5bc25a-8bd7-43b8-8002-e84dc06c58d6/replies/83f134f2-7bc8-4e68-9198-3df375f69434/download
+  response: !!python/object/apply:securedrop_client.sdk.sdlocalobjects.BaseError
+    args:
+    - Unable to parse header metadata from response
+    state:
+      msg: Unable to parse header metadata from response
+- request:
+    body: null
+    headers:
+      Accept:
+      - application/json
+      Authorization:
+      - Token ImgwWUQzdVJIZlFwQl9TUlYycHVKdEw3elpfemNubzhpTUJnbEQ0QUR6REki.ZeEAJw.Jb7X34LyzcgEbcDM7OAkqOTxJuc
+      Content-Type:
+      - application/json
+    method: GET
+    uri: api/v1/sources/fe5bc25a-8bd7-43b8-8002-e84dc06c58d6/replies/94fe3b42-b424-4e35-bd4d-f90eb4e54cd5/download
+  response: !!python/object/apply:securedrop_client.sdk.sdlocalobjects.BaseError
+    args:
+    - Unable to parse header metadata from response
+    state:
+      msg: Unable to parse header metadata from response
+- request:
+    body: null
+    headers:
+      Accept:
+      - application/json
+      Authorization:
+      - Token ImgwWUQzdVJIZlFwQl9TUlYycHVKdEw3elpfemNubzhpTUJnbEQ0QUR6REki.ZeEAJw.Jb7X34LyzcgEbcDM7OAkqOTxJuc
+      Content-Type:
+      - application/json
+    method: GET
+    uri: api/v1/sources/d57e53c6-6c7f-48da-9020-3ecbc7fb7d00/replies/7d5ad77f-29fe-41c7-901f-45c384633b94/download
+  response: !!python/object/apply:securedrop_client.sdk.sdlocalobjects.BaseError
+    args:
+    - Unable to parse header metadata from response
+    state:
+      msg: Unable to parse header metadata from response
+- request:
+    body: null
+    headers:
+      Accept:
+      - application/json
+      Authorization:
+      - Token ImgwWUQzdVJIZlFwQl9TUlYycHVKdEw3elpfemNubzhpTUJnbEQ0QUR6REki.ZeEAJw.Jb7X34LyzcgEbcDM7OAkqOTxJuc
+      Content-Type:
+      - application/json
+    method: GET
+    uri: api/v1/sources/d57e53c6-6c7f-48da-9020-3ecbc7fb7d00/replies/44a1a7cc-2303-44ef-91a6-e1e3bc13b388/download
+  response: !!python/object/apply:securedrop_client.sdk.sdlocalobjects.BaseError
+    args:
+    - Unable to parse header metadata from response
+    state:
+      msg: Unable to parse header metadata from response
+- request:
+    body: null
+    headers:
+      Accept:
+      - application/json
+      Authorization:
+      - Token ImgwWUQzdVJIZlFwQl9TUlYycHVKdEw3elpfemNubzhpTUJnbEQ0QUR6REki.ZeEAJw.Jb7X34LyzcgEbcDM7OAkqOTxJuc
+      Content-Type:
+      - application/json
+    method: GET
+    uri: api/v1/sources/5db8b687-a952-4f48-b2b8-3345f6aab79a/replies/437e8be5-1a80-4aa8-9f26-ccc6be08ac59/download
+  response: !!python/object/apply:securedrop_client.sdk.sdlocalobjects.BaseError
+    args:
+    - Unable to parse header metadata from response
+    state:
+      msg: Unable to parse header metadata from response
+- request:
+    body: null
+    headers:
+      Accept:
+      - application/json
+      Authorization:
+      - Token ImgwWUQzdVJIZlFwQl9TUlYycHVKdEw3elpfemNubzhpTUJnbEQ0QUR6REki.ZeEAJw.Jb7X34LyzcgEbcDM7OAkqOTxJuc
+      Content-Type:
+      - application/json
+    method: GET
+    uri: api/v1/sources/5db8b687-a952-4f48-b2b8-3345f6aab79a/replies/a3a791c6-8a70-4fbe-ada2-db726041eb2c/download
+  response: !!python/object/apply:securedrop_client.sdk.sdlocalobjects.BaseError
+    args:
+    - Unable to parse header metadata from response
+    state:
+      msg: Unable to parse header metadata from response
+version: 1

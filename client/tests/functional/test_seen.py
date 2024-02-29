@@ -2,7 +2,6 @@
 Functional tests for testing seen/unseen feature in the SecureDrop client.
 """
 
-import pytest
 from flaky import flaky
 from PyQt5.QtCore import Qt
 
@@ -10,7 +9,6 @@ from tests.conftest import TIME_CLICK_ACTION, TIME_RENDER_SOURCE_LIST
 
 
 @flaky
-@pytest.mark.vcr()
 def test_unseen_source_becomes_seen_on_click(functional_test_logged_in_context, qtbot, mocker):
     """
     Verify that a new message with the expected text shows up in the conversation view.
@@ -38,7 +36,6 @@ def test_unseen_source_becomes_seen_on_click(functional_test_logged_in_context, 
 
 
 @flaky
-@pytest.mark.vcr()
 def test_seen_and_unseen(functional_test_logged_in_context, qtbot, mocker):
     """
     Verify that a new message with the expected text shows up in the conversation view.

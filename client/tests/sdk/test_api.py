@@ -1,16 +1,14 @@
 import hashlib
 import shutil
 import tempfile
-import time
 
 import pyotp
 import pytest
-import vcr
 from test_shared import TestShared
 from utils import VCRAPI
 
 from securedrop_client.sdk import API, RequestTimeoutError, ServerConnectionError
-from securedrop_client.sdk.sdlocalobjects import AuthError, Reply, Submission
+from securedrop_client.sdk.sdlocalobjects import AuthError, BaseError, Reply, Submission
 
 NUM_REPLIES_PER_SOURCE = 2
 
