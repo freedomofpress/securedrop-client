@@ -1,0 +1,33 @@
+include requirements/build-requirements.txt
+include requirements/requirements.txt
+include README.md
+include LICENSE
+include changelog.md
+include setup.py
+include files/alembic.ini
+include files/client.ini
+include files/securedrop-client
+include files/securedrop-client.desktop
+include files/sd-app-qubes-gpg-domain.sh
+include files/usr.bin.securedrop-client
+
+recursive-include alembic *
+recursive-include securedrop_client *
+
+recursive-exclude alembic *.pyc
+recursive-exclude securedrop_client *.pyc
+
+
+# --- LOCALIZATION ---
+
+# Translations may appear in the tree before we consider them supported, so
+# don't include any by default.
+prune securedrop_client/locale
+
+# Explicitly include only supported translations, one line for each $LANG, like:
+#
+#     graft securedrop_client/locale/$LANG
+#
+# Please keep this list alphabetized.
+graft securedrop_client/locale/pt_PT
+graft securedrop_client/locale/zh_Hans
