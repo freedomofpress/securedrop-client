@@ -19,7 +19,7 @@ requests = "^2.31.0"
 # In production these two are installed using a system package
 # so match those versions exactly
 PyQt5 = [
-    {version = "=5.15.8", python = ">=3.10"}, # bookworm
+    {version = "=5.15.9", python = ">=3.10"}, # bookworm
     {version = "=5.15.2", python = "< 3.10"}, # bullseye
 ]
 PyQt5-sip = [
