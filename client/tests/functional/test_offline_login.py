@@ -5,7 +5,6 @@ The tests are based upon the client testing descriptions here:
 https://github.com/freedomofpress/securedrop-client/wiki/Test-plan#basic-client-testing
 """
 
-import pytest
 from flaky import flaky
 from PyQt5.QtCore import Qt
 
@@ -13,7 +12,6 @@ from tests.conftest import PASSWORD, TIME_RENDER_CONV_VIEW, TOTP, USERNAME
 
 
 @flaky
-@pytest.mark.vcr()
 def test_login_from_offline(functional_test_offline_context, qtbot, mocker):
     """
     First log in in offline mode, then log in from the main window with credentials, next verify
@@ -31,7 +29,7 @@ def test_login_from_offline(functional_test_offline_context, qtbot, mocker):
     qtbot.waitUntil(check_login_dialog, timeout=TIME_RENDER_CONV_VIEW)
     qtbot.keyClicks(gui.login_dialog.username_field, USERNAME)
     qtbot.keyClicks(gui.login_dialog.password_field, PASSWORD)
-    qtbot.keyClicks(gui.login_dialog.tfa_field, TOTP)
+    qtbot.keyClicks(gui.login_dialog.tfa_field, str(TOTP.now()))
     qtbot.mouseClick(gui.login_dialog.submit, Qt.LeftButton)
 
     # When the login dialog is closed then we know login is complete.

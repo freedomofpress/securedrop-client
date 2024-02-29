@@ -368,9 +368,9 @@ We use `qtbot`, bundled with the [pytest-qt](https://pytest-qt.readthedocs.io/en
 
 #### Generating new cassettes
 
-We use [vcrpy](https://vcrpy.readthedocs.io/en/latest/) to record and replay API calls. Each request made from a test and response from the server is stored in a "cassette" yaml file in the `tests/functional/cassettes` directory.
+We use [vcrpy](https://vcrpy.readthedocs.io/en/latest/) to record and replay API calls. Each request made from a test and response from the server is stored in a "cassette" yaml file in the `tests/functional/data` directory.
 
-If the SDK changes its API, then you'll see the following warning indicating that a request failed to be found in an existing cassette and that you'll need to regenerate cassettes:
+If the server changes its API, then you'll see the following warning indicating that a request failed to be found in an existing cassette and that you'll need to regenerate cassettes:
 
 ```
 Can't overwrite existing cassette ('<path-to-cassette-for-a-functional-test>') in your current record mode ('once').
@@ -378,9 +378,23 @@ Can't overwrite existing cassette ('<path-to-cassette-for-a-functional-test>') i
 
 To set up a local dev server and generate cassettes, follow these steps:
 
-1. Bypass TOTP verification so that we can use the TOTP value of `123456` hard-coded in `tests/conftest.py`. You can do this by applying the following patch to the server code:
+1. Disable one TOTP check so that we can re-use the same one-time-code. You can do this by applying the following patch to the server code:
 
-https://gist.github.com/creviera/8793d5ec4d28f034f2c1e8320a93866a
+    ```
+    diff --git a/securedrop/models.py b/securedrop/models.py
+    index e70e492fc..bdbc55a06 100644
+    --- a/securedrop/models.py
+    +++ b/securedrop/models.py
+    @@ -645,7 +645,7 @@ class Journalist(db.Model):
+
+            # Reject OTP tokens that have already been used
+            if self.last_token is not None and self.last_token == sanitized_token:
+    -            raise two_factor.OtpTokenInvalid("Token already used")
+    +            pass
+
+            if self.is_totp:
+                # TOTP
+    ```
 
 2. Start the server in a docker container and add 5 sources with messages, files, and replies by running:
 
@@ -391,7 +405,7 @@ https://gist.github.com/creviera/8793d5ec4d28f034f2c1e8320a93866a
 3. Delete the cassettes you wish to regenerate or just delete the entire directory by running:
 
     ```bash
-    rm -r tests/functional/cassettes
+    rm -r tests/functional/data
     ```
 
 4. Regenerate cassettes by running:

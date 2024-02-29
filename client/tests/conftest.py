@@ -4,9 +4,12 @@ import subprocess
 import tempfile
 from configparser import ConfigParser
 from datetime import datetime
+from unittest import mock
 from uuid import uuid4
 
+import pyotp
 import pytest
+import vcr
 from PyQt5.QtCore import Qt
 from PyQt5.QtWidgets import QMainWindow
 
@@ -27,6 +30,7 @@ from securedrop_client.export_status import ExportStatus
 from securedrop_client.gui import conversation
 from securedrop_client.gui.main import Window
 from securedrop_client.logic import Controller
+from tests.sdk.utils import VCRAPI, Cassette
 
 with open(os.path.join(os.path.dirname(__file__), "files", "test-key.gpg.pub.asc")) as f:
     PUB_KEY = f.read()
@@ -35,11 +39,7 @@ with open(os.path.join(os.path.dirname(__file__), "files", "test-key.gpg.pub.asc
 HOSTNAME = "http://localhost:8081/"
 USERNAME = "journalist"
 PASSWORD = "correct horse battery staple profanity oil chewy"
-
-# Modify cassettes to use the following TOTP code. For developing new tests,
-# you can modify this so you don't need to keep editing cassettes during
-# development.
-TOTP = "123456"
+TOTP = pyotp.TOTP("JHCOGO7VCER3EJ4L")
 
 # Time (in milliseconds) to wait for these GUI elements to render.
 TIME_APP_START = 1000
@@ -290,7 +290,9 @@ def mock_export_fail_early():
 
 
 @pytest.fixture(scope="function")
-def functional_test_app_started_context(homedir, reply_status_codes, session, config, qtbot):
+def functional_test_app_started_context(
+    vcr_api, homedir, reply_status_codes, session, config, qtbot
+):
     """
     Returns a tuple containing the gui window and controller of a configured client. This should be
     used to for tests that need to start from the login dialog before the main application window
@@ -323,7 +325,7 @@ def functional_test_logged_in_context(functional_test_app_started_context, qtbot
     qtbot.keyClicks(gui.login_dialog.username_field, USERNAME)
     qtbot.wait(TIME_CLICK_ACTION)
     qtbot.keyClicks(gui.login_dialog.password_field, PASSWORD)
-    qtbot.keyClicks(gui.login_dialog.tfa_field, TOTP)
+    qtbot.keyClicks(gui.login_dialog.tfa_field, str(TOTP.now()))
     qtbot.mouseClick(gui.login_dialog.submit, Qt.LeftButton)
     qtbot.wait(TIME_CLICK_ACTION)
 
@@ -468,3 +470,22 @@ def create_gpg_test_context(sdc_home):
                 result.stdout, result.stderr
             )
         )
+
+
+@pytest.fixture
+def vcr_api(request):
+    module_group = request.module.__name__.split(".")[1]
+    library = vcr.VCR(cassette_library_dir=f"tests/{module_group}/data/")
+    context = library.use_cassette(f"{request.function.__name__}.yml")
+    # Override `Cassette` to use our subclass before we enter the
+    # context manager.
+    context.cls = Cassette
+    with context as cassette:
+
+        def create(*args, **kwargs):
+            api = VCRAPI(*args, **kwargs)
+            api._cassette = cassette
+            return api
+
+        with mock.patch("securedrop_client.sdk.API", new=create):
+            yield

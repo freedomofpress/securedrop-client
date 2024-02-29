@@ -116,7 +116,7 @@ class TestShared:
                 new_subs = self.api.get_all_submissions()
                 # We now should have 1 less submission
                 assert len(new_subs) == number_of_submissions_before - 1
-            except:
+            except:  # noqa: E722
                 if attempts == 0:
                     raise
                 else:

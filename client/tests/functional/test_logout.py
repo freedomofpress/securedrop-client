@@ -5,14 +5,12 @@ The tests are based upon the client testing descriptions here:
 https://github.com/freedomofpress/securedrop-client/wiki/Test-plan#basic-client-testing
 """
 
-import pytest
 from flaky import flaky
 
 from tests.conftest import TIME_LOGOUT
 
 
 @flaky
-@pytest.mark.vcr()
 def test_logout_as_journalist(functional_test_logged_in_context, qtbot, mocker):
     """
     Verify that the login button appears after logging out.

@@ -5,7 +5,6 @@ The tests are based upon the client testing descriptions here:
 https://github.com/freedomofpress/securedrop-client/wiki/Test-plan#basic-client-testing
 """
 
-import pytest
 from flaky import flaky
 from PyQt5.QtCore import Qt
 
@@ -79,7 +78,6 @@ def _setup_export(functional_test_logged_in_context, qtbot, mocker, mock_export)
 
 
 @flaky
-@pytest.mark.vcr()
 def test_export_wizard_device_locked(
     functional_test_logged_in_context, qtbot, mocker, mock_export_locked
 ):
@@ -149,7 +147,6 @@ def test_export_wizard_device_locked(
 
 
 @flaky
-@pytest.mark.vcr()
 def test_export_wizard_device_already_unlocked(
     functional_test_logged_in_context, qtbot, mocker, mock_export_unlocked
 ):
@@ -180,7 +177,6 @@ def test_export_wizard_device_already_unlocked(
 
 
 @flaky
-@pytest.mark.vcr()
 def test_export_wizard_no_device_then_bad_passphrase(
     functional_test_logged_in_context,
     qtbot,
@@ -276,7 +272,6 @@ def test_export_wizard_no_device_then_bad_passphrase(
 
 
 @flaky
-@pytest.mark.vcr()
 def test_export_wizard_error(
     functional_test_logged_in_context, qtbot, mocker, mock_export_fail_early
 ):
