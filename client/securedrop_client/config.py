@@ -2,29 +2,47 @@ import json
 import logging
 import os
 
+try:
+    from qubesdb import QubesDB
+except ImportError:
+    QubesDB = False
+
+
 logger = logging.getLogger(__name__)
 
 
 class Config:
-    CONFIG_NAME = "config.json"
+    """Configuration loaded at runtime from QubesDB (if available) or
+    environment variables."""
 
-    def __init__(self, journalist_key_fingerprint: str) -> None:
-        self.journalist_key_fingerprint = journalist_key_fingerprint
+    # Mapping of `Config` attributes (keys) to how to look them up (values)
+    # from either QubesDB or the environment.
+    mapping = {
+        "gpg_domain": "QUBES_GPG_DOMAIN",
+        "journalist_key_fingerprint": "SD_SUBMISSION_KEY_FPR",
+    }
 
-    @classmethod
-    def from_home_dir(cls, sdc_home: str) -> "Config":
-        full_path = os.path.join(sdc_home, Config.CONFIG_NAME)
+    def __init__(self) -> None:
+        """For each attribute, look it up from either QubesDB or the environment
+        and save it to the internal `config` dictionary."""
+        self.config = {}
 
-        try:
-            with open(full_path) as f:
-                json_config = json.loads(f.read())
-        except Exception as e:
-            logger.error(f"Error opening config file at {full_path}: {e}")
-            json_config = {}
+        for store, lookup in self.mapping.items():
+            if QubesDB:
+                db = QubesDB()
+                logger.debug(f"Reading {lookup} from QubesDB")
+                value = db.read(f"/vm-config/{lookup}")
 
-        return Config(
-            journalist_key_fingerprint=json_config.get("journalist_key_fingerprint", None)
-        )
+            else:
+                logger.debug(f"Reading {lookup} from environment")
+                value = os.environ.get(lookup)
+
+            # Handle `None` values explicitly, since QubesDB.read() has no
+            # equivalent of dict.get()'s default value.
+            if value is not None and len(value) > 0:
+                setattr(self, store, value)
+            else:
+                setattr(self, store, None)
 
     @property
     def is_valid(self) -> bool:

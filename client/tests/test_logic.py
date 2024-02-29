@@ -1118,13 +1118,6 @@ def test_create_client_dir_permissions(tmpdir, mocker, session_maker):
     permissions on the various directories needed for it to function.
     """
     mock_gui = mocker.MagicMock()
-
-    # we can't rely on the config fixture, and because of the order of execution,
-    # we can't create the config at the right time, we we have to mock both
-    # `open` and `json.loads`
-    mock_open = mocker.patch("securedrop_client.config.open")
-    mock_json = mocker.patch("securedrop_client.config.json.loads")
-
     permission_cases = [
         {"should_pass": True, "home_perms": None},
         {"should_pass": True, "home_perms": 0o0700},
@@ -1148,10 +1141,6 @@ def test_create_client_dir_permissions(tmpdir, mocker, session_maker):
         else:
             with pytest.raises(RuntimeError):
                 func()
-
-    # check that both mocks were called to ensure they aren't "dead code"
-    assert mock_open.called
-    assert mock_json.called
 
 
 def test_Controller_download_conversation(homedir, config, session, mocker, session_maker):
