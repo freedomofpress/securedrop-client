@@ -86,7 +86,7 @@ class GpgHelper:
         self.is_qubes = is_qubes
         self.session_maker = session_maker
 
-        config = Config.from_home_dir(self.sdc_home)
+        config = Config()
         self.journalist_key_fingerprint = config.journalist_key_fingerprint
 
     def decrypt_submission_or_reply(
