@@ -1,30 +1,39 @@
 import os
+from unittest.mock import MagicMock, patch
+
+import pytest
 
 from securedrop_client.config import Config
 
 
-def test_missing_file(homedir):
-    """
-    If a file doesn't exist, the config can still be created, but is "invalid".
-    """
-    # precondition
-    assert not os.path.exists(os.path.join(homedir, Config.CONFIG_NAME))
+@patch.dict(os.environ, {"SD_SUBMISSION_KEY_FPR": "foobar"})
+def test_config_from_env():
+    config = Config.load()
 
-    config = Config.from_home_dir(homedir)
-
-    assert config.journalist_key_fingerprint is None
-    assert config.is_valid is False
+    assert config.journalist_key_fingerprint == "foobar"
+    assert config.gpg_domain is None
 
 
-def test_missing_journalist_key_fpr(homedir):
-    """
-    If a key is missing, the config can still be created, but is "invalid".
-    """
-    config_path = os.path.join(homedir, Config.CONFIG_NAME)
-    with open(config_path, "w") as f:
-        f.write("{}")
+def test_config_from_qubesdb():
+    qubesdb = MagicMock()
+    QubesDB = MagicMock()
+    QubesDB.read = MagicMock(return_value="foobar")
+    qubesdb.QubesDB = MagicMock(return_value=QubesDB)
 
-    config = Config.from_home_dir(homedir)
+    with patch.dict("sys.modules", qubesdb=qubesdb):
+        config = Config.load()
 
-    assert config.journalist_key_fingerprint is None
-    assert config.is_valid is False
+    assert config.journalist_key_fingerprint == "foobar"
+
+
+def test_config_from_qubesdb_key_missing():
+    qubesdb = MagicMock()
+    QubesDB = MagicMock()
+    QubesDB.read = MagicMock(return_value="")
+    qubesdb.QubesDB = MagicMock(return_value=QubesDB)
+
+    with (
+        patch.dict("sys.modules", qubesdb=qubesdb),
+        pytest.raises(KeyError, match=r"Could not read from QubesDB"),
+    ):
+        Config.load()
