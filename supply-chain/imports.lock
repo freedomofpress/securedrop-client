@@ -211,6 +211,15 @@ who = "Pat Hickey <phickey@fastly.com>"
 criteria = "safe-to-deploy"
 version = "0.1.1"
 
+[[audits.bytecode-alliance.audits.gimli]]
+who = "Alex Crichton <alex@alexcrichton.com>"
+criteria = "safe-to-deploy"
+delta = "0.27.3 -> 0.28.0"
+notes = """
+Still looks like a good DWARF-parsing crate, nothing major was added or deleted
+and no `unsafe` code to review here.
+"""
+
 [[audits.bytecode-alliance.audits.http]]
 who = "Alex Crichton <alex@alexcrichton.com>"
 criteria = "safe-to-deploy"
@@ -226,6 +235,20 @@ This is a crate without unsafe code or usage of the standard library. The large
 size of this crate comes from the large generated unicode tables file. This
 crate is broadly used throughout the ecosystem and does not contain anything
 suspicious.
+"""
+
+[[audits.bytecode-alliance.audits.miniz_oxide]]
+who = "Alex Crichton <alex@alexcrichton.com>"
+criteria = "safe-to-deploy"
+version = "0.7.1"
+notes = """
+This crate is a Rust implementation of zlib compression/decompression and has
+been used by default by the Rust standard library for quite some time. It's also
+a default dependency of the popular `backtrace` crate for decompressing debug
+information. This crate forbids unsafe code and does not otherwise access system
+resources. It's originally a port of the `miniz.c` library as well, and given
+its own longevity should be relatively hardened against some of the more common
+compression-related issues.
 """
 
 [[audits.bytecode-alliance.audits.native-tls]]
@@ -274,6 +297,12 @@ who = "Alex Crichton <alex@alexcrichton.com>"
 criteria = "safe-to-deploy"
 version = "0.1.21"
 notes = "I am the author of this crate."
+
+[[audits.bytecode-alliance.audits.tempfile]]
+who = "Alex Crichton <alex@alexcrichton.com>"
+criteria = "safe-to-deploy"
+delta = "3.5.0 -> 3.6.0"
+notes = "Dependency updates and new optimized trait implementations, but otherwise everything looks normal."
 
 [[audits.bytecode-alliance.audits.tinyvec]]
 who = "Alex Crichton <alex@alexcrichton.com>"
@@ -415,6 +444,12 @@ crypto.
 """
 aggregated-from = "https://chromium.googlesource.com/chromiumos/third_party/rust_crates/+/refs/heads/main/cargo-vet/audits.toml?format=TEXT"
 
+[[audits.google.audits.gimli]]
+who = "George Burgess IV <gbiv@google.com>"
+criteria = "safe-to-run"
+version = "0.27.3"
+aggregated-from = "https://chromium.googlesource.com/chromiumos/third_party/rust_crates/+/refs/heads/main/cargo-vet/audits.toml?format=TEXT"
+
 [[audits.google.audits.h2]]
 who = "George Burgess IV <gbiv@google.com>"
 criteria = "safe-to-run"
@@ -529,6 +564,12 @@ criteria = "safe-to-run"
 version = "2.6.3"
 aggregated-from = "https://chromium.googlesource.com/chromiumos/third_party/rust_crates/+/refs/heads/main/cargo-vet/audits.toml?format=TEXT"
 
+[[audits.google.audits.mime]]
+who = "ChromeOS"
+criteria = "safe-to-run"
+version = "0.3.16"
+aggregated-from = "https://chromium.googlesource.com/chromiumos/third_party/rust_crates/+/refs/heads/main/cargo-vet/audits.toml?format=TEXT"
+
 [[audits.google.audits.once_cell]]
 who = "crosvm"
 criteria = "safe-to-run"
@@ -600,6 +641,37 @@ aggregated-from = "https://chromium.googlesource.com/chromiumos/third_party/rust
 who = "ChromeOS"
 criteria = "safe-to-run"
 version = "0.7.1"
+aggregated-from = "https://chromium.googlesource.com/chromiumos/third_party/rust_crates/+/refs/heads/main/cargo-vet/audits.toml?format=TEXT"
+
+[[audits.google.audits.slab]]
+who = "Android Legacy"
+criteria = "safe-to-run"
+version = "0.4.7"
+aggregated-from = "https://chromium.googlesource.com/chromiumos/third_party/rust_crates/+/refs/heads/main/cargo-vet/audits.toml?format=TEXT"
+
+[[audits.google.audits.socket2]]
+who = "Vovo Yang <vovoy@google.com>"
+criteria = "safe-to-run"
+version = "0.4.9"
+aggregated-from = "https://chromium.googlesource.com/chromiumos/third_party/rust_crates/+/refs/heads/main/cargo-vet/audits.toml?format=TEXT"
+
+[[audits.google.audits.socket2]]
+who = "David Koloski <dkoloski@google.com>"
+criteria = "safe-to-deploy"
+delta = "0.4.4 -> 0.5.5"
+notes = "Reviewed at https://fxrev.dev/946307"
+aggregated-from = "https://fuchsia.googlesource.com/fuchsia/+/refs/heads/main/third_party/rust_crates/supply-chain/audits.toml?format=TEXT"
+
+[[audits.google.audits.sync_wrapper]]
+who = "ChromeOS"
+criteria = "safe-to-run"
+version = "0.1.1"
+aggregated-from = "https://chromium.googlesource.com/chromiumos/third_party/rust_crates/+/refs/heads/main/cargo-vet/audits.toml?format=TEXT"
+
+[[audits.google.audits.tempfile]]
+who = "George Burgess IV <gbiv@google.com>"
+criteria = "safe-to-run"
+version = "3.4.0"
 aggregated-from = "https://chromium.googlesource.com/chromiumos/third_party/rust_crates/+/refs/heads/main/cargo-vet/audits.toml?format=TEXT"
 
 [[audits.google.audits.tower-service]]
@@ -736,6 +808,30 @@ criteria = "safe-to-deploy"
 delta = "2.3.0 -> 2.3.1"
 aggregated-from = "https://hg.mozilla.org/mozilla-central/raw-file/tip/supply-chain/audits.toml"
 
+[[audits.mozilla.audits.slab]]
+who = "Mike Hommey <mh+mozilla@glandium.org>"
+criteria = "safe-to-deploy"
+delta = "0.4.7 -> 0.4.8"
+aggregated-from = "https://hg.mozilla.org/mozilla-central/raw-file/tip/supply-chain/audits.toml"
+
+[[audits.mozilla.audits.tempfile]]
+who = "Jan-Erik Rediger <jrediger@mozilla.com>"
+criteria = "safe-to-deploy"
+delta = "3.4.0 -> 3.5.0"
+aggregated-from = "https://raw.githubusercontent.com/mozilla/glean/main/supply-chain/audits.toml"
+
+[[audits.mozilla.audits.tempfile]]
+who = "Mike Hommey <mh+mozilla@glandium.org>"
+criteria = "safe-to-deploy"
+delta = "3.6.0 -> 3.8.0"
+aggregated-from = "https://hg.mozilla.org/mozilla-central/raw-file/tip/supply-chain/audits.toml"
+
+[[audits.mozilla.audits.tempfile]]
+who = "Mike Hommey <mh+mozilla@glandium.org>"
+criteria = "safe-to-deploy"
+delta = "3.8.0 -> 3.9.0"
+aggregated-from = "https://hg.mozilla.org/mozilla-central/raw-file/tip/supply-chain/audits.toml"
+
 [[audits.mozilla.audits.tracing-core]]
 who = "Mike Hommey <mh+mozilla@glandium.org>"
 criteria = "safe-to-run"
@@ -790,6 +886,12 @@ aggregated-from = "https://hg.mozilla.org/mozilla-central/raw-file/tip/supply-ch
 who = "Cory Francis Myers <cory@freedom.press>"
 criteria = "safe-to-run"
 delta = "1.0.73 -> 1.0.83"
+aggregated-from = "https://raw.githubusercontent.com/freedomofpress/securedrop/develop/supply-chain/audits.toml"
+
+[[audits.securedrop.audits.crc32fast]]
+who = "Cory Francis Myers <cory@freedom.press>"
+criteria = "safe-to-run"
+version = "1.3.2"
 aggregated-from = "https://raw.githubusercontent.com/freedomofpress/securedrop/develop/supply-chain/audits.toml"
 
 [[audits.securedrop.audits.idna]]
