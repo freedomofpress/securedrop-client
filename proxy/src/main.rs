@@ -7,12 +7,22 @@ use reqwest::Method;
 use reqwest::{Client, Response};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
+use std::io;
 use std::io::Write;
 use std::process::ExitCode;
 use std::str::FromStr;
 use std::time::Duration;
-use std::{env, io};
 use url::Url;
+
+#[cfg(feature = "qubesdb")]
+mod config_qubesdb;
+#[cfg(feature = "qubesdb")]
+use config_qubesdb as config;
+
+#[cfg(not(feature = "qubesdb"))]
+mod config_env;
+#[cfg(not(feature = "qubesdb"))]
+use config_env as config;
 
 const ENV_CONFIG: &str = "SD_PROXY_ORIGIN";
 
@@ -94,8 +104,8 @@ async fn handle_stream_response(resp: Response) -> Result<()> {
 }
 
 async fn proxy() -> Result<()> {
-    // Get the hostname from the environment
-    let origin = env::var(ENV_CONFIG)?;
+    // Get the hostname from the environment or QubesDB
+    let origin = config::read(ENV_CONFIG)?;
     // Read incoming request from stdin (must be on single line)
     let mut buffer = String::new();
     io::stdin().read_line(&mut buffer)?;
