@@ -16,6 +16,16 @@ use url::Url;
 
 const ENV_CONFIG: &str = "SD_PROXY_ORIGIN";
 
+#[cfg(feature = "qubesdb")]
+fn read(name: &str) -> Option<String> {
+    todo!("FFI wrapper around libqubesdb")
+}
+
+#[cfg(not(feature = "qubesdb"))]
+fn read(name: &str) -> Option<String> {
+    env::var(name).ok()
+}
+
 /// Incoming requests (as JSON) received over stdin
 #[derive(Deserialize, Debug)]
 #[serde(deny_unknown_fields)]
@@ -95,7 +105,7 @@ async fn handle_stream_response(resp: Response) -> Result<()> {
 
 async fn proxy() -> Result<()> {
     // Get the hostname from the environment
-    let origin = env::var(ENV_CONFIG)?;
+    let origin = read(ENV_CONFIG);
     // Read incoming request from stdin (must be on single line)
     let mut buffer = String::new();
     io::stdin().read_line(&mut buffer)?;
