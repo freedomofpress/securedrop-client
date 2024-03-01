@@ -1,5 +1,10 @@
 #![deny(clippy::all)]
 
+#![allow(non_upper_case_globals)]
+#![allow(non_camel_case_types)]
+#![allow(non_snake_case)]
+include!(concat!(env!("OUT_DIR"), "/bindings.rs"));
+
 use anyhow::{bail, Result};
 use futures_util::StreamExt;
 use reqwest::header::HeaderMap;
@@ -105,7 +110,7 @@ async fn handle_stream_response(resp: Response) -> Result<()> {
 
 async fn proxy() -> Result<()> {
     // Get the hostname from the environment
-    let origin = read(ENV_CONFIG);
+    let origin = read(ENV_CONFIG).expect("No origin");
     // Read incoming request from stdin (must be on single line)
     let mut buffer = String::new();
     io::stdin().read_line(&mut buffer)?;
