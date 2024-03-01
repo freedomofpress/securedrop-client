@@ -3,11 +3,11 @@ Make sure the UI widgets are configured correctly and work as expected.
 """
 
 import math
-import random
 from datetime import datetime
 from gettext import gettext as _
 from unittest.mock import Mock, PropertyMock
 
+import pytest
 import sqlalchemy
 import sqlalchemy.orm.exc
 from PyQt5.QtCore import QEvent, QPointF, QSize, Qt
@@ -2863,12 +2863,14 @@ def test_ReplyBoxWidget__on_authentication_changed_updates_badge_when_switched_t
     reply_widget._update_styles.assert_called_once_with()
 
 
-def test_ReplyBoxWidget__on_authentication_changed_does_nothing_when_authenticated(mocker):
+@pytest.mark.parametrize("sender_is_current_user", [True, False])
+def test_ReplyBoxWidget__on_authentication_changed_does_nothing_when_authenticated(
+    mocker, sender_is_current_user
+):
     authenticated_user = factory.User()
     controller = mocker.MagicMock(authenticated_user=authenticated_user)
 
     sender = factory.User()
-    sender_is_current_user = random.choice([True, False])
     reply_widget = ReplyWidget(
         controller=controller,
         message_uuid="mock_uuid",
