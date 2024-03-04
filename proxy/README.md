@@ -18,7 +18,7 @@ running [Qubes OS](https://qubes-os.org).
 
 ### Isolation
 
-The SecureDrop Client/SDK can talk only to the proxy.  The proxy talks only to
+The SecureDrop Client/SDK can talk only to the proxy. The proxy talks only to
 the (onion) origin it's configured with.
 
 **Mitigates against:** A compromised Client/VM tries to contact or exfiltrate
@@ -26,54 +26,54 @@ data to an arbitrary origin.
 
 ### Sanitization
 
-The SDK in "Qubes mode" talks JSON.  The proxy translates JSON to HTTP and back
-again.  (But it could just reconstruct a sanitized HTTP request and do the same
-for the response.)
+The SDK talks JSON. The proxy translates JSON to HTTP and back again. (In v3, it
+will just construct a sanitized HTTP request and do the same for the response.)
 
 **Mitigates against:** A compromised Client/VM constructs a malicious HTTP
-request.  (The server returning a malicious HTTP response is already game over.)
+request. (The server returning a malicious HTTP response is already game over.)
 
 ## How It Works
 
 ```mermaid
-graph TD
-subgraph dom0
+sequenceDiagram
 
-qrexec((qrexec))
+participant c as securedrop-client
+participant sdk as securedrop-sdk
+participant p as securedrop-proxy
+participant w as sd-whonix
+participant server as SecureDrop
 
-subgraph sd-app
-stdin1>stdin] --req--- qrexec-client-vm(("qrexec-client-vm<br>securedrop-proxy<br>securedrop.Proxy")) --- stdout1>stdout]
-linkStyle 0 stroke:#F00
-linkStyle 1 stroke:#00F
-end
-qrexec-client-vm --> qrexec
-linkStyle 2 stroke:#F00
-qrexec --- stdin2
-linkStyle 3 stroke:#F00
-qrexec --> qrexec-client-vm
-linkStyle 4 stroke:#00F
+c ->> sdk: job
+activate sdk
+sdk -->> p: JSON over qrexec
+activate p
+p -->> w: HTTP
+w -->> server: HTTP over Tor
 
-subgraph sd-proxy
-stdin2>stdin] --- proxy((proxy)) --res--- stdout2>stdout]
-linkStyle 5 stroke:#F00
-linkStyle 6 stroke:#00F
+server -->> w: HTTP over Tor
+w -->> p: HTTP
+
+alt stream: false
+p -->> sdk: JSON over qrexec
+sdk ->> c: response
+else stream: true
+p -->> sdk: HTTP over qrexec
+sdk ->> c: stream
+else error
+p ->> sdk: JSON over qrexec
+sdk ->> c: error
 end
-stdout2 --> qrexec
-linkStyle 7 stroke:#00F
-end
+
+deactivate p
+deactivate sdk
 ```
 
-**Notes:**
-- The attachment-downloading flow is not depicted here.
-- With `--v2`, we will:
-    - stream attachments just like any other request; and
-    - have a download-progress signal.
-
-The proxy works by reading a JSON object from STDIN, generating an
-HTTP request from that JSON, making that request against the remote
-server, then writing a JSON object which represents the remote
-server's response to STDOUT. For discussion about the shape of the
-request and response objects, see
+The proxy works by reading a JSON object from the standard input, generating an
+HTTP request from that JSON, making that request against the remote server, and
+then either (a) writing to the standard output a JSON object which represents
+the remote server's response or (b) streaming the response directly to the
+standard output. For discussion about the shape of the request and response
+objects, see
 https://github.com/freedomofpress/securedrop-workstation/issues/107.
 
 ## Quick Start
