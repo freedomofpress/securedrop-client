@@ -128,10 +128,10 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        # TODO: client sets up apparmor, which doesn't work in our CI setup
         # TODO: workstation-config pulls in systemd, which doesn't work
         # TODO: workstation-viewer pulls in grsec and qubes packages
         package:
+          - client
           - export
           - keyring
           - log
