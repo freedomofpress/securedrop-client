@@ -9,13 +9,25 @@ Code for exporting and printing files from the SecureDrop Qubes Workstation.
 
 ## Supported Printers
 
-TBD
+Printer support is currently limited to a subset of Brother and HP printers that offer USB
+(non-wireless) connectivity, such as:
+
+- HP LaserJet Pro 4001dn
+- Brother HL-L2320D
 
 ## Supported Export Devices
 
-We support luks-encrypted drives that are either MBR/DOS partitioned or GPT partitioned. If you use `Disks` in Linux to partition your drive, you can [follow these instructions](https://docs.securedrop.org/en/stable/set_up_transfer_and_export_device.html#create-usb-transfer-device) to create a new export device. You can also use [cryptsetup](https://linux.die.net/man/8/cryptsetup) to create a luks-encrypted device with full-disk encryption, for example:
+Export to LUKS-encrypted or VeraCrypt-encrypted USB devices is supported.
 
-1. `sudo cryptsetup luksFormat --hash=sha512 --key-size=512 DEVICE` where `DEVICE` is the name of your removable drive, which you can find via `lsblk -p`.
+### LUKS
+Partition a drive (either the MBR/DOS or the GPT partition scheme is fine)
+and encrypt exactly one partition with LUKS.  On Linux, you can
+[follow these instructions](https://docs.securedrop.org/en/stable/set_up_transfer_and_export_device.html#create-usb-transfer-device)
+to use GNOME Disks to set up your drive.  You can also use
+[cryptsetup](https://linux.die.net/man/8/cryptsetup):
+
+1. `sudo cryptsetup luksFormat --hash=sha512 --key-size=512 DEVICE` where `DEVICE`
+   is the name of your removable drive, which you can find via `lsblk -p`.
 
    Make sure `DEVICE` is correct because you will be overwriting its data irrevocably.
 
@@ -25,7 +37,17 @@ We support luks-encrypted drives that are either MBR/DOS partitioned or GPT part
 
 4. `sudo cryptsetup luksClose /dev/mapper/encrypted_device`
 
-We do not yet support drives that use full-disk encryption with VeraCrypt.
+### VeraCrypt
+[Download and verify](https://www.veracrypt.fr/) VeraCrypt or VeraCrypt CLI and follow the
+documentation to provision a USB drive. When provisioning VeraCrypt drives, ensure that the
+filesystem is Linux-compatible. (FAT32 is suggested for cross-platform compatibility).
+
+VeraCrypt devices must be manually unlocked in order to be detected for export. Users
+will be prompted during the export workflow.
+
+Unlock a VeraCrypt device using the commandline in `sd-devices` by typing
+`udisksctl unlock -b /dev/sdXX`, where `/dev/sdXX` is the device as identified in
+the Devices widget (for example, `/dev/sda1`) or as identified by `lsblk -p`.
 
 ## Export Archive Format
 

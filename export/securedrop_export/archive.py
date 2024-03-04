@@ -38,7 +38,6 @@ class Metadata(object):
                 json_config = json.loads(f.read())
                 self.export_method = json_config.get("device", None)
                 self.encryption_key = json_config.get("encryption_key", None)
-                self.encryption_method = json_config.get("encryption_method", None)
                 logger.info("Command: {}".format(self.export_method))
 
         except Exception as ex:
