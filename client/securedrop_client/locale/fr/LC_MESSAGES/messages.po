@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: SecureDrop Client 0.8.1\n"
 "Report-Msgid-Bugs-To: securedrop@freedom.press\n"
-"PO-Revision-Date: 2023-10-15 19:30+0000\n"
+"PO-Revision-Date: 2024-01-13 23:30+0000\n"
 "Last-Translator: AO Localization Lab <ao@localizationlab.org>\n"
 "Language-Team: French <https://weblate.securedrop.org/projects/securedrop/securedrop-client/fr/>\n"
 "Language: fr\n"
@@ -15,7 +15,7 @@ msgstr ""
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=n > 1;\n"
-"X-Generator: Weblate 4.18.2\n"
+"X-Generator: Weblate 5.3.1\n"
 "Generated-By: Babel 2.10.3\n"
 
 msgid "{application_name} is already running"
@@ -284,50 +284,80 @@ msgid_plural "{message_count} messages"
 msgstr[0] "un message"
 msgstr[1] "{message_count} messages"
 
-msgid "SUBMIT"
-msgstr "ENVOYER"
+msgid "DONE"
+msgstr "TERMINÉ"
 
-msgid "Preparing to export:<br /><span style=\"font-weight:normal\">{}</span>"
-msgstr "Préparation à l’exportation : <br /><span style=\"font-weight:normal\">{}</span>"
+msgid "BACK"
+msgstr ""
 
-msgid "Ready to export:<br /><span style=\"font-weight:normal\">{}</span>"
-msgstr "Prêt à exporter : <br /><span style=\"font-weight:normal\">{}</span>"
+msgid "No device detected"
+msgstr ""
 
-msgid "Insert encrypted USB drive"
-msgstr "Insérer la clé USB chiffrée"
+msgid "Too many USB devices detected; please insert one supported device."
+msgstr ""
 
-msgid "Enter passphrase for USB drive"
-msgstr "Saisir la phrase de passe de la clé USB"
+msgid "Either the drive is not encrypted or there is something else wrong with it.<br />If this is a VeraCrypt drive, please unlock it from within `sd-devices`, then try again."
+msgstr ""
 
-msgid "Export successful"
-msgstr "L’exportation est réussie"
+msgid "The device is ready for export."
+msgstr ""
 
-msgid "Export failed"
-msgstr "Échec d’exportation"
-
-msgid "<h2>Understand the risks before exporting files</h2><b>Malware</b><br />This workstation lets you open files securely. If you open files on another computer, any embedded malware may spread to your computer or network. If you are unsure how to manage this risk, please print the file, or contact your administrator.<br /><br /><b>Anonymity</b><br />Files submitted by sources may contain information or hidden metadata that identifies who they are. To protect your sources, please consider redacting files before working with them on network-connected computers."
-msgstr "<h2>Comprenez les risques avant d’exporter des fichiers</h2><b>Logiciels malveillants</b><br />Ce poste de travail vous permet d’ouvrir des fichiers en toute sécurité. Si vous ouvrez les fichiers sur un autre ordinateur, tout logiciel malveillant qu’ils comporteraient pourrait se propager sur votre ordinateur ou votre réseau. Si vous ne savez pas comment gérer ce risque, veuillez imprimer ce fichier ou contacter votre administrateur.<br /><br /><b>Anonymat</b><br />Les fichiers envoyés par les sources peuvent contenir de l’information ou des métadonnées cachées qui identifient ces sources. Pour les protéger, veuillez envisager de caviarder les fichiers avant de les traiter sur des ordinateurs connectés à un réseau."
-
-msgid "Exporting: {}"
-msgstr "Exportation : {}"
-
-msgid "Please insert one of the export drives provisioned specifically for the SecureDrop Workstation."
-msgstr "Veuillez insérer une des clés d’exportation réservées au poste de travail SecureDrop."
-
-msgid "Either the drive is not encrypted or there is something else wrong with it."
-msgstr "Soit la clé n’est pas chiffrée soit elle présente un autre problème."
+msgid "The device is locked."
+msgstr ""
 
 msgid "The passphrase provided did not work. Please try again."
 msgstr "La phrase de passe est erronée. Veuillez recommencer."
 
-msgid "See your administrator for help."
-msgstr "Consultez votre administrateur pour obtenir de l’aide."
+msgid "Error mounting drive"
+msgstr ""
+
+msgid "Error during export"
+msgstr ""
+
+msgid "Files were exported succesfully, but the USB device could not be unmounted."
+msgstr ""
+
+msgid "Files were exported succesfully, but some temporary files remain on disk.Reboot to remove them."
+msgstr ""
+
+msgid "Export successful"
+msgstr "L’exportation est réussie"
+
+msgid "Error encountered with this device. See your administrator for help."
+msgstr ""
+
+msgid "Files were moved or missing and could not be exported."
+msgstr ""
+
+msgid "Error encountered. Please contact support."
+msgstr ""
+
+msgid "Preparing to export:<br /><span style=\"font-weight:normal\">{}</span>"
+msgstr "Préparation à l’exportation : <br /><span style=\"font-weight:normal\">{}</span>"
+
+msgid "<h2>Understand the risks before exporting files</h2><b>Malware</b><br />This workstation lets you open files securely. If you open files on another computer, any embedded malware may spread to your computer or network. If you are unsure how to manage this risk, please print the file, or contact your administrator.<br /><br /><b>Anonymity</b><br />Files submitted by sources may contain information or hidden metadata that identifies who they are. To protect your sources, please consider redacting files before working with them on network-connected computers."
+msgstr "<h2>Comprenez les risques avant d’exporter des fichiers</h2><b>Logiciels malveillants</b><br />Ce poste de travail vous permet d’ouvrir des fichiers en toute sécurité. Si vous ouvrez les fichiers sur un autre ordinateur, tout logiciel malveillant qu’ils comporteraient pourrait se propager sur votre ordinateur ou votre réseau. Si vous ne savez pas comment gérer ce risque, veuillez imprimer ce fichier ou contacter votre administrateur.<br /><br /><b>Anonymat</b><br />Les fichiers envoyés par les sources peuvent contenir de l’information ou des métadonnées cachées qui identifient ces sources. Pour les protéger, veuillez envisager de caviarder les fichiers avant de les traiter sur des ordinateurs connectés à un réseau."
+
+msgid "Ready to export:<br /><span style=\"font-weight:normal\">{}</span>"
+msgstr "Prêt à exporter : <br /><span style=\"font-weight:normal\">{}</span>"
+
+msgid "Export Failed"
+msgstr ""
+
+msgid "Please insert one of the export drives provisioned specifically for the SecureDrop Workstation.<br />If you're using a VeraCrypt drive, unlock it manually before proceeding."
+msgstr ""
 
 msgid "Remember to be careful when working with files outside of your Workstation machine."
 msgstr "Veuillez faire preuve de prudence en traitant les fichiers sur un ordinateur autre que votre poste de travail."
 
-msgid "DONE"
-msgstr "TERMINÉ"
+msgid "Export sucessful, but drive was not locked"
+msgstr ""
+
+msgid "Working..."
+msgstr ""
+
+msgid "Enter passphrase for USB drive"
+msgstr "Saisir la phrase de passe de la clé USB"
 
 msgid "Preparing to print:<br /><span style=\"font-weight:normal\">{}</span>"
 msgstr "Préparation à l’impression : <br /><span style=\"font-weight:normal\">{}</span>"
@@ -347,6 +377,9 @@ msgstr "<h2>Gérer les risques d’impression</h2><b>Codes QR et adresses Web</b
 msgid "Please connect your printer to a USB port."
 msgstr "Veuillez connecter votre imprimante à un port USB."
 
+msgid "See your administrator for help."
+msgstr "Consultez votre administrateur pour obtenir de l’aide."
+
 msgid "YES, DELETE ENTIRE SOURCE ACCOUNT"
 msgstr "OUI, SUPPRIMER COMPLÈTEMENT LE COMPTE DE LA SOURCE"
 
@@ -364,6 +397,24 @@ msgstr "Votre organisme ne pourra plus lui envoyer de réponse."
 
 msgid "All files and messages from that source will also be destroyed."
 msgstr "Tout les fichiers et messages de cette source seront détruits."
+
+#~ msgid "SUBMIT"
+#~ msgstr "ENVOYER"
+
+#~ msgid "Insert encrypted USB drive"
+#~ msgstr "Insérer la clé USB chiffrée"
+
+#~ msgid "Export failed"
+#~ msgstr "Échec d’exportation"
+
+#~ msgid "Exporting: {}"
+#~ msgstr "Exportation : {}"
+
+#~ msgid "Please insert one of the export drives provisioned specifically for the SecureDrop Workstation."
+#~ msgstr "Veuillez insérer une des clés d’exportation réservées au poste de travail SecureDrop."
+
+#~ msgid "Either the drive is not encrypted or there is something else wrong with it."
+#~ msgstr "Soit la clé n’est pas chiffrée soit elle présente un autre problème."
 
 #~ msgid "You would like to delete {files_to_delete}, {replies_to_delete}, {messages_to_delete} from the source account for {source}?"
 #~ msgstr "Vous voulez supprimer {files_to_delete}, {replies_to_delete}, {messages_to_delete} du compte de la source pour {source} ?"
