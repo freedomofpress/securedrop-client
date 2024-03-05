@@ -56,8 +56,8 @@ TESTOPTS ?= -v --cov-config .coveragerc --cov-report html --cov-report term-miss
 RANDOM_SEED ?= $(shell bash -c 'echo $$RANDOM')
 
 .PHONY: test
-test: ## Run the application tests in parallel (for rapid development)
-	@TEST_CMD="poetry run pytest -v -n 4 --ignore=$(FTESTS) --ignore=$(ITESTS) $(TESTOPTS) $(TESTS)" ; \
+test: ## Run the application tests (for rapid development)
+	@TEST_CMD="poetry run pytest -v --ignore=$(FTESTS) --ignore=$(ITESTS) $(TESTOPTS) $(TESTS)" ; \
 		source scripts/setup-tmp-directories.sh; \
 		if command -v xvfb-run > /dev/null; then \
 		xvfb-run -a $$TEST_CMD ; else \
@@ -72,7 +72,7 @@ test-random: ## Run the application tests in random order
 
 .PHONY: test-integration
 test-integration: ## Run the integration tests
-	@TEST_CMD="poetry run pytest -v -n 4 $(ITESTS)" ; \
+	@TEST_CMD="poetry run pytest -v $(ITESTS)" ; \
 		if command -v xvfb-run > /dev/null; then \
 		xvfb-run -a $$TEST_CMD ; else \
 		$$TEST_CMD ; fi
