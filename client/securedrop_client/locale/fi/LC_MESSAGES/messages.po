@@ -284,50 +284,80 @@ msgid_plural "{message_count} messages"
 msgstr[0] "yksi viesti"
 msgstr[1] "{message_count} viestiä"
 
-msgid "SUBMIT"
-msgstr "LÄHETÄ"
+msgid "DONE"
+msgstr "VALMIS"
 
-msgid "Preparing to export:<br /><span style=\"font-weight:normal\">{}</span>"
-msgstr "Valmistellaan vientiä:<br /><span style=\"font-weight:normal\">{}</span>"
+msgid "BACK"
+msgstr ""
 
-msgid "Ready to export:<br /><span style=\"font-weight:normal\">{}</span>"
-msgstr "Valmis vientiin:<br /><span style=\"font-weight:normal\">{}</span>"
+msgid "No device detected"
+msgstr ""
 
-msgid "Insert encrypted USB drive"
-msgstr "Liitä salattu USB-asema"
+msgid "Too many USB devices detected; please insert one supported device."
+msgstr ""
 
-msgid "Enter passphrase for USB drive"
-msgstr "Kirjoita USB-aseman tunnuslause"
+msgid "Either the drive is not encrypted or there is something else wrong with it.<br />If this is a VeraCrypt drive, please unlock it from within `sd-devices`, then try again."
+msgstr ""
 
-msgid "Export successful"
-msgstr "Vienti onnistui"
+msgid "The device is ready for export."
+msgstr ""
 
-msgid "Export failed"
-msgstr "Vienti epäonnistui"
-
-msgid "<h2>Understand the risks before exporting files</h2><b>Malware</b><br />This workstation lets you open files securely. If you open files on another computer, any embedded malware may spread to your computer or network. If you are unsure how to manage this risk, please print the file, or contact your administrator.<br /><br /><b>Anonymity</b><br />Files submitted by sources may contain information or hidden metadata that identifies who they are. To protect your sources, please consider redacting files before working with them on network-connected computers."
-msgstr "<h2>Ymmärrä riskit ennen kuin viet tiedostoja</h2><b>Haittaohjelmat</b><br />Tämä työasema mahdollistaa tiedostojen avaamisen turvallisesti. Jos avaat tiedostoja jollain muulla tietokoneella, mikä tahansa upotettu haittaohjelma voi levitä tietokoneellesi tai verkkoon. Jos olet epävarma, miten hallita tätä riskiä, tulosta tiedosto tai ole yhteydessä ylläpitoon.<br /><br /><b>Anonymiteetti</b><br />Lähteiden toimittamat tiedostot saattavat sisältää piilotettua metatietoa, jonka pohjalta on mahdollista tunnistaa lähde. Suojaa lähteitä sensuroimalla, muokkaamalla ja rajaamalla tiedostoja, jos olet aikeissa käyttää näitä tiedostoja verkkoon yhdistetyillä tietokoneilla."
-
-msgid "Exporting: {}"
-msgstr "Viedään: {}"
-
-msgid "Please insert one of the export drives provisioned specifically for the SecureDrop Workstation."
-msgstr "Liitä yksi SecureDrop Workstation -tietokoneelle tarkoitetusta viemiseen pyhitetyistä levyistä."
-
-msgid "Either the drive is not encrypted or there is something else wrong with it."
-msgstr "Asema ei ole salattu tai siinä on jotain muuta vialla."
+msgid "The device is locked."
+msgstr ""
 
 msgid "The passphrase provided did not work. Please try again."
 msgstr "Annettu tunnuslause ei kelpaa. Yritä uudelleen."
 
-msgid "See your administrator for help."
-msgstr "Pyydä tukea ylläpitäjältä."
+msgid "Error mounting drive"
+msgstr ""
+
+msgid "Error during export"
+msgstr ""
+
+msgid "Files were exported succesfully, but the USB device could not be unmounted."
+msgstr ""
+
+msgid "Files were exported succesfully, but some temporary files remain on disk.Reboot to remove them."
+msgstr ""
+
+msgid "Export successful"
+msgstr "Vienti onnistui"
+
+msgid "Error encountered with this device. See your administrator for help."
+msgstr ""
+
+msgid "Files were moved or missing and could not be exported."
+msgstr ""
+
+msgid "Error encountered. Please contact support."
+msgstr ""
+
+msgid "Preparing to export:<br /><span style=\"font-weight:normal\">{}</span>"
+msgstr "Valmistellaan vientiä:<br /><span style=\"font-weight:normal\">{}</span>"
+
+msgid "<h2>Understand the risks before exporting files</h2><b>Malware</b><br />This workstation lets you open files securely. If you open files on another computer, any embedded malware may spread to your computer or network. If you are unsure how to manage this risk, please print the file, or contact your administrator.<br /><br /><b>Anonymity</b><br />Files submitted by sources may contain information or hidden metadata that identifies who they are. To protect your sources, please consider redacting files before working with them on network-connected computers."
+msgstr "<h2>Ymmärrä riskit ennen kuin viet tiedostoja</h2><b>Haittaohjelmat</b><br />Tämä työasema mahdollistaa tiedostojen avaamisen turvallisesti. Jos avaat tiedostoja jollain muulla tietokoneella, mikä tahansa upotettu haittaohjelma voi levitä tietokoneellesi tai verkkoon. Jos olet epävarma, miten hallita tätä riskiä, tulosta tiedosto tai ole yhteydessä ylläpitoon.<br /><br /><b>Anonymiteetti</b><br />Lähteiden toimittamat tiedostot saattavat sisältää piilotettua metatietoa, jonka pohjalta on mahdollista tunnistaa lähde. Suojaa lähteitä sensuroimalla, muokkaamalla ja rajaamalla tiedostoja, jos olet aikeissa käyttää näitä tiedostoja verkkoon yhdistetyillä tietokoneilla."
+
+msgid "Ready to export:<br /><span style=\"font-weight:normal\">{}</span>"
+msgstr "Valmis vientiin:<br /><span style=\"font-weight:normal\">{}</span>"
+
+msgid "Export Failed"
+msgstr ""
+
+msgid "Please insert one of the export drives provisioned specifically for the SecureDrop Workstation.<br />If you're using a VeraCrypt drive, unlock it manually before proceeding."
+msgstr ""
 
 msgid "Remember to be careful when working with files outside of your Workstation machine."
 msgstr "Käsittele tiedostoja varoen Workstation-tietokoneen ulkopuolella."
 
-msgid "DONE"
-msgstr "VALMIS"
+msgid "Export sucessful, but drive was not locked"
+msgstr ""
+
+msgid "Working..."
+msgstr ""
+
+msgid "Enter passphrase for USB drive"
+msgstr "Kirjoita USB-aseman tunnuslause"
 
 msgid "Preparing to print:<br /><span style=\"font-weight:normal\">{}</span>"
 msgstr "Valmistellaan tulostusta:<br /><span style=\"font-weight:normal\">{}</span>"
@@ -347,6 +377,9 @@ msgstr "<h2>Tulostukseen liittyvien riskien hallinta</h2><b>QR-koodit ja verkko-
 msgid "Please connect your printer to a USB port."
 msgstr "Yhdistä tulostin USB-porttiin."
 
+msgid "See your administrator for help."
+msgstr "Pyydä tukea ylläpitäjältä."
+
 msgid "YES, DELETE ENTIRE SOURCE ACCOUNT"
 msgstr "KYLLÄ, POISTA KOKO LÄHDETILI"
 
@@ -364,6 +397,24 @@ msgstr "Organisaatiosi ei voi lähettää lähteelle vastauksia."
 
 msgid "All files and messages from that source will also be destroyed."
 msgstr "Kaikki lähteeltä vastaanotetut tiedostot ja viestit tuhotaan."
+
+#~ msgid "SUBMIT"
+#~ msgstr "LÄHETÄ"
+
+#~ msgid "Insert encrypted USB drive"
+#~ msgstr "Liitä salattu USB-asema"
+
+#~ msgid "Export failed"
+#~ msgstr "Vienti epäonnistui"
+
+#~ msgid "Exporting: {}"
+#~ msgstr "Viedään: {}"
+
+#~ msgid "Please insert one of the export drives provisioned specifically for the SecureDrop Workstation."
+#~ msgstr "Liitä yksi SecureDrop Workstation -tietokoneelle tarkoitetusta viemiseen pyhitetyistä levyistä."
+
+#~ msgid "Either the drive is not encrypted or there is something else wrong with it."
+#~ msgstr "Asema ei ole salattu tai siinä on jotain muuta vialla."
 
 #~ msgid "Deleting files and messages..."
 #~ msgstr "Poistetaan tiedostoja ja viestejä..."
