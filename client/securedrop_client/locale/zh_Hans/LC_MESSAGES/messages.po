@@ -280,50 +280,80 @@ msgid "one message"
 msgid_plural "{message_count} messages"
 msgstr[0] "{message_count} 条消息"
 
-msgid "SUBMIT"
-msgstr "提交"
+msgid "DONE"
+msgstr "完成"
 
-msgid "Preparing to export:<br /><span style=\"font-weight:normal\">{}</span>"
-msgstr "正准备导出：<br /><span style=\"font-weight:normal\">{}</span>"
+msgid "BACK"
+msgstr ""
 
-msgid "Ready to export:<br /><span style=\"font-weight:normal\">{}</span>"
-msgstr "已准备好导出：<br /><span style=\"font-weight:normal\">{}</span>"
+msgid "No device detected"
+msgstr ""
 
-msgid "Insert encrypted USB drive"
-msgstr "插入加密的 USB 驱动器"
+msgid "Too many USB devices detected; please insert one supported device."
+msgstr ""
 
-msgid "Enter passphrase for USB drive"
-msgstr "输入 USB 驱动器的密码"
+msgid "Either the drive is not encrypted or there is something else wrong with it.<br />If this is a VeraCrypt drive, please unlock it from within `sd-devices`, then try again."
+msgstr ""
 
-msgid "Export successful"
-msgstr "导出成功"
+msgid "The device is ready for export."
+msgstr ""
 
-msgid "Export failed"
-msgstr "导出失败"
-
-msgid "<h2>Understand the risks before exporting files</h2><b>Malware</b><br />This workstation lets you open files securely. If you open files on another computer, any embedded malware may spread to your computer or network. If you are unsure how to manage this risk, please print the file, or contact your administrator.<br /><br /><b>Anonymity</b><br />Files submitted by sources may contain information or hidden metadata that identifies who they are. To protect your sources, please consider redacting files before working with them on network-connected computers."
-msgstr "<h2>在导出文件之前，请先了解风险</h2><b>恶意软件</b><br/>此工作站允许您安全地打开文件。如果您在另一台计算机上打开文件，任何嵌入的恶意软件都可能会传播到您的计算机或网络。如果您不确定如何预防此风险，请打印文件，或与管理员联系<br/><br/><b>匿名性</b><br/>来源提交的文件可能包含识别其身份的信息或隐藏元数据。为了保护您的资源，请考虑在与网络连接的计算机上工作之前对其进行匿名化。"
-
-msgid "Exporting: {}"
-msgstr "正在导出：{}"
-
-msgid "Please insert one of the export drives provisioned specifically for the SecureDrop Workstation."
-msgstr "请插入一个为 SecureDrop 工作站导出用的专用驱动器。"
-
-msgid "Either the drive is not encrypted or there is something else wrong with it."
-msgstr "驱动器未加密，或者出现了别的问题。"
+msgid "The device is locked."
+msgstr ""
 
 msgid "The passphrase provided did not work. Please try again."
 msgstr "密码无效，请重试。"
 
-msgid "See your administrator for help."
-msgstr "请寻求管理员的帮助。"
+msgid "Error mounting drive"
+msgstr ""
+
+msgid "Error during export"
+msgstr ""
+
+msgid "Files were exported succesfully, but the USB device could not be unmounted."
+msgstr ""
+
+msgid "Files were exported succesfully, but some temporary files remain on disk.Reboot to remove them."
+msgstr ""
+
+msgid "Export successful"
+msgstr "导出成功"
+
+msgid "Error encountered with this device. See your administrator for help."
+msgstr ""
+
+msgid "Files were moved or missing and could not be exported."
+msgstr ""
+
+msgid "Error encountered. Please contact support."
+msgstr ""
+
+msgid "Preparing to export:<br /><span style=\"font-weight:normal\">{}</span>"
+msgstr "正准备导出：<br /><span style=\"font-weight:normal\">{}</span>"
+
+msgid "<h2>Understand the risks before exporting files</h2><b>Malware</b><br />This workstation lets you open files securely. If you open files on another computer, any embedded malware may spread to your computer or network. If you are unsure how to manage this risk, please print the file, or contact your administrator.<br /><br /><b>Anonymity</b><br />Files submitted by sources may contain information or hidden metadata that identifies who they are. To protect your sources, please consider redacting files before working with them on network-connected computers."
+msgstr "<h2>在导出文件之前，请先了解风险</h2><b>恶意软件</b><br/>此工作站允许您安全地打开文件。如果您在另一台计算机上打开文件，任何嵌入的恶意软件都可能会传播到您的计算机或网络。如果您不确定如何预防此风险，请打印文件，或与管理员联系<br/><br/><b>匿名性</b><br/>来源提交的文件可能包含识别其身份的信息或隐藏元数据。为了保护您的资源，请考虑在与网络连接的计算机上工作之前对其进行匿名化。"
+
+msgid "Ready to export:<br /><span style=\"font-weight:normal\">{}</span>"
+msgstr "已准备好导出：<br /><span style=\"font-weight:normal\">{}</span>"
+
+msgid "Export Failed"
+msgstr ""
+
+msgid "Please insert one of the export drives provisioned specifically for the SecureDrop Workstation.<br />If you're using a VeraCrypt drive, unlock it manually before proceeding."
+msgstr ""
 
 msgid "Remember to be careful when working with files outside of your Workstation machine."
 msgstr "在工作机在外的地方处理文件时请小心。"
 
-msgid "DONE"
-msgstr "完成"
+msgid "Export sucessful, but drive was not locked"
+msgstr ""
+
+msgid "Working..."
+msgstr ""
+
+msgid "Enter passphrase for USB drive"
+msgstr "输入 USB 驱动器的密码"
 
 msgid "Preparing to print:<br /><span style=\"font-weight:normal\">{}</span>"
 msgstr "正准备打印：<br /><span style=\"font-weight:normal\">{}</span>"
@@ -343,6 +373,9 @@ msgstr "<h2>管理打印输出风险</h2><b>二维码和网址</b><br/>在未采
 msgid "Please connect your printer to a USB port."
 msgstr "请将打印机连接到 USB 接口。"
 
+msgid "See your administrator for help."
+msgstr "请寻求管理员的帮助。"
+
 msgid "YES, DELETE ENTIRE SOURCE ACCOUNT"
 msgstr "是的，我想删除整个线人账号"
 
@@ -360,6 +393,24 @@ msgstr "你的组织无法再向他们发送回复。"
 
 msgid "All files and messages from that source will also be destroyed."
 msgstr "此线人的所有文件和消息都将被删除。"
+
+#~ msgid "SUBMIT"
+#~ msgstr "提交"
+
+#~ msgid "Insert encrypted USB drive"
+#~ msgstr "插入加密的 USB 驱动器"
+
+#~ msgid "Export failed"
+#~ msgstr "导出失败"
+
+#~ msgid "Exporting: {}"
+#~ msgstr "正在导出：{}"
+
+#~ msgid "Please insert one of the export drives provisioned specifically for the SecureDrop Workstation."
+#~ msgstr "请插入一个为 SecureDrop 工作站导出用的专用驱动器。"
+
+#~ msgid "Either the drive is not encrypted or there is something else wrong with it."
+#~ msgstr "驱动器未加密，或者出现了别的问题。"
 
 #~ msgid "You would like to delete {files_to_delete}, {replies_to_delete}, {messages_to_delete} from the source account for {source}?"
 #~ msgstr "你想为 {source} 的线人账号删除 {files_to_delete}、{replies_to_delete}、{messages_to_delete}吗？"
