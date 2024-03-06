@@ -1,0 +1,32 @@
+securedrop-client: arch-independent-package-contains-binary-or-object
+
+# This is intentional
+securedrop-client: dir-or-file-in-opt
+
+# FIXME
+securedrop-client: extended-description-is-empty
+
+# FIXME: fix by switching to arch: any
+securedrop-client: missing-dependency-on-libc
+
+# FIXME: remove __pycache__ directories
+securedrop-client: package-installs-python-pycache-dir
+
+# FIXME: section shouldn't be "unknown"
+securedrop-client: section-is-dh_make-template
+
+# FIXME: fix by switching to arch: any
+securedrop-client: unstripped-binary-or-object [opt/venvs/securedrop-client/lib/python3.*/site-packages/markupsafe/*]
+securedrop-client: unstripped-binary-or-object [opt/venvs/securedrop-client/lib/python3.*/site-packages/sqlalchemy/*]
+
+# We don't care
+securedrop-client: no-manual-page
+
+# FIXME
+securedrop-client: package-contains-vcs-control-file [opt/venvs/securedrop-client/.gitignore]
+
+# We don't care about these
+securedrop-client: script-not-executable
+
+# This is our virtualenv's interpreter
+securedrop-client: unusual-interpreter

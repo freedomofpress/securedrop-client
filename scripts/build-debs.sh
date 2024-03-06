@@ -44,8 +44,34 @@ export CONTAINER="fpf.local/sd-client-builder-${DEBIAN_VERSION}"
 
 . ./scripts/image_prep.sh
 
+# We're going to store artifacts in a temp directory
+BUILD_DEST=$(mktemp -d)
+
 $OCI_BIN run --rm $OCI_RUN_ARGUMENTS \
     -v "${BUILDER}:/builder:Z" \
+    -v "${BUILD_DEST}:/build:Z" \
     --env NIGHTLY="${NIGHTLY:-}" \
     --entrypoint "/src/scripts/build-debs-real.sh" \
     $CONTAINER
+
+ls "$BUILD_DEST"
+# Copy the build artifacts to our project's /build
+mkdir -p build
+cp ${BUILD_DEST}/* build/
+
+FAST="${FAST:-}"
+if [[ -z $FAST ]]; then
+    CONTAINER2="fpf.local/sd-client-lintian"
+    $OCI_BIN build scripts/lintian -t $CONTAINER2
+    # Display verbose info, and fail on warnings and errors.
+    $OCI_BIN run --rm $OCI_RUN_ARGUMENTS -v "${BUILD_DEST}:/build:Z" $CONTAINER2 \
+        bash -c \
+            "lintian --version && lintian \
+            --info --tag-display-limit 0 \
+            --fail-on warning --fail-on error \
+            /build/*.changes \
+            && echo OK"
+fi
+
+# Clean up temp stuff now that lintian is done (or skipped)
+rm -rf "${BUILD_DEST}"

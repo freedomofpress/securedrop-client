@@ -22,7 +22,6 @@ apt-get build-dep . --yes
 dpkg-buildpackage --no-sign
 ls ../
 # Copy the built artifacts back and print checksums
-mkdir -p /src/build/
-mv -v ../*.{buildinfo,changes,deb,dsc,tar.gz} /src/build/
-cd /src/build/
+mv -v ../*.{buildinfo,changes,deb,dsc,tar.gz} /build/
+cd /build/
 sha256sum ./*

@@ -1,0 +1,11 @@
+# This is intentional
+securedrop-workstation-config: dir-or-file-in-opt
+
+# FIXME: section shouldn't be "unknown"
+securedrop-workstation-config: section-is-dh_make-template
+
+# FIXME: abbreviate
+securedrop-workstation-config: extended-description-line-too-long
+
+# We're just restarting paxctld, it's fine
+securedrop-workstation-config: maintainer-script-calls-systemctl [postinst:28]
