@@ -1,5 +1,4 @@
 #![deny(clippy::all)]
-
 #![allow(non_upper_case_globals)]
 #![allow(non_camel_case_types)]
 #![allow(non_snake_case)]
@@ -12,8 +11,8 @@ use reqwest::Method;
 use reqwest::{Client, Response};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
-use std::io::Write;
 use std::ffi::{CStr, CString};
+use std::io::Write;
 use std::process::ExitCode;
 use std::str::FromStr;
 use std::time::Duration;
@@ -38,7 +37,10 @@ fn read(name: &str) -> Option<String> {
         let _ = CString::from_raw(_path);
         CStr::from_ptr(value)
     };
-    let value = _value.to_owned().into_string().expect("QubesDB returned invalid value");
+    let value = _value
+        .to_owned()
+        .into_string()
+        .expect("QubesDB value should be a valid string");
 
     Some(value)
 }
@@ -126,8 +128,9 @@ async fn handle_stream_response(resp: Response) -> Result<()> {
 }
 
 async fn proxy() -> Result<()> {
-    // Get the hostname from the environment
-    let origin = read(ENV_CONFIG).expect("No origin");
+    // Get the hostname from the environment or QubesDB
+    let origin = read(ENV_CONFIG)
+        .expect("origin should be configured in the environment or QubesDB");
     // Read incoming request from stdin (must be on single line)
     let mut buffer = String::new();
     io::stdin().read_line(&mut buffer)?;
