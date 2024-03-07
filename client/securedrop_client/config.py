@@ -22,12 +22,12 @@ class Config:
         "journalist_key_fingerprint": "SD_SUBMISSION_KEY_FPR",
     }
 
-    def __init__(self) -> None:
-        """For each attribute, look it up from either QubesDB or the environment
-        and save it to the internal `config` dictionary."""
-        self.config = {}
-
+    @classmethod
+    def load(self) -> "Config":
+        """For each attribute, look it up from either QubesDB or the environment."""
         db = QubesDB() if QubesDB else False
+        config = Config()
+
         for store, lookup in self.mapping.items():
             if db:
                 logger.debug(f"Reading {lookup} from QubesDB")
@@ -39,7 +39,9 @@ class Config:
                 logger.debug(f"Reading {lookup} from environment")
                 value = os.environ.get(lookup)
 
-            setattr(self, store, value)
+            setattr(config, store, value)
+
+        return config
 
     @property
     def is_valid(self) -> bool:
