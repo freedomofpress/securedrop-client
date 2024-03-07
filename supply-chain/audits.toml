@@ -21,6 +21,18 @@ who = "Kunal Mehta <legoktm@debian.org>"
 criteria = "safe-to-run"
 delta = "0.7.1 -> 0.7.2"
 
+[[audits.mio]]
+who = "Kunal Mehta <legoktm@debian.org>"
+criteria = "safe-to-run"
+delta = "0.8.8 -> 0.8.10"
+notes = "mostly adding more platform support, the added unsafe code was pre-existing and just relocated"
+
+[[audits.rustls-pemfile]]
+who = "Kunal Mehta <legoktm@debian.org>"
+criteria = "safe-to-run"
+version = "1.0.4"
+notes = "code is fine, cannot vouch for correctness though"
+
 [[audits.slab]]
 who = "Kunal Mehta <legoktm@debian.org>"
 criteria = "safe-to-run"
