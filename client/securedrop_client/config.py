@@ -27,9 +27,9 @@ class Config:
         and save it to the internal `config` dictionary."""
         self.config = {}
 
+        db = QubesDB() if QubesDB else False
         for store, lookup in self.mapping.items():
-            if QubesDB:
-                db = QubesDB()
+            if db:
                 logger.debug(f"Reading {lookup} from QubesDB")
                 value = db.read(f"/vm-config/{lookup}")
 
