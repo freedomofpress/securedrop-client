@@ -32,17 +32,14 @@ class Config:
             if db:
                 logger.debug(f"Reading {lookup} from QubesDB")
                 value = db.read(f"/vm-config/{lookup}")
+                if len(value) > 0:
+                    value = None
 
             else:
                 logger.debug(f"Reading {lookup} from environment")
                 value = os.environ.get(lookup)
 
-            # Handle `None` values explicitly, since QubesDB.read() has no
-            # equivalent of dict.get()'s default value.
-            if value is not None and len(value) > 0:
-                setattr(self, store, value)
-            else:
-                setattr(self, store, None)
+            setattr(self, store, value)
 
     @property
     def is_valid(self) -> bool:
