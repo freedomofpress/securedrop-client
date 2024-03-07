@@ -7,12 +7,6 @@ all: help
 PYTHON := $(if $(shell bash -c "command -v python3.9"), python3.9, python3)
 VERSION_CODENAME ?= bullseye
 
-HOOKS_DIR=.githooks
-
-.PHONY: hooks
-hooks:  ## Configure Git to use the hooks provided by this repository.
-	git config core.hooksPath "$(HOOKS_DIR)"
-
 SEMGREP_FLAGS := --exclude "tests/" --error --strict --verbose
 
 .PHONY: semgrep
