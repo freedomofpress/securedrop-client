@@ -7,15 +7,15 @@ msgid ""
 msgstr ""
 "Project-Id-Version: SecureDrop Client 0.9.0\n"
 "Report-Msgid-Bugs-To: securedrop@freedom.press\n"
-"PO-Revision-Date: 2023-10-26 02:30+0000\n"
-"Last-Translator: Chi-Hsun Tsai <chihsun.tsai@gmail.com>\n"
+"PO-Revision-Date: 2023-12-19 08:33+0000\n"
+"Last-Translator: Meng Pang Wang <mengpangwang@gmail.com>\n"
 "Language-Team: Chinese (Traditional) <https://weblate.securedrop.org/projects/securedrop/securedrop-client/zh_Hant/>\n"
 "Language: zh_Hant\n"
 "MIME-Version: 1.0\n"
-"Content-Type: text/plain; charset=utf-8\n"
+"Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=1; plural=0;\n"
-"X-Generator: Weblate 4.18.2\n"
+"X-Generator: Weblate 5.2.1\n"
 "Generated-By: Babel 2.12.1\n"
 
 msgid "{application_name} is already running"
@@ -71,15 +71,15 @@ msgstr "無訊息。"
 
 #, python-format
 msgid "%(sender)s wrote:"
-msgstr "%(sender) 寫道:"
+msgstr "%(sender)s 寫道："
 
 #, python-format
 msgid "%(sender)s sent:"
-msgstr "%(發訊者) 送出:"
+msgstr "%(sender)s 送出："
 
 #, python-format
 msgid "File: %(filename)s"
-msgstr "檔案: %%(filename)"
+msgstr "檔案：%(filename)s"
 
 msgid "Download All"
 msgstr "全部下載"
@@ -280,50 +280,80 @@ msgid "one message"
 msgid_plural "{message_count} messages"
 msgstr[0] "{message_count}訊息"
 
-msgid "SUBMIT"
-msgstr "提交"
+msgid "DONE"
+msgstr "完成"
 
-msgid "Preparing to export:<br /><span style=\"font-weight:normal\">{}</span>"
-msgstr "準備滙出:<br /><span style=\"font-weight:normal\">{}</span>"
+msgid "BACK"
+msgstr ""
 
-msgid "Ready to export:<br /><span style=\"font-weight:normal\">{}</span>"
-msgstr "已滙出:<br /><span style=\"font-weight:normal\">{}</span>"
+msgid "No device detected"
+msgstr ""
 
-msgid "Insert encrypted USB drive"
-msgstr "插入加密的 USB 隨身碟"
+msgid "Too many USB devices detected; please insert one supported device."
+msgstr ""
 
-msgid "Enter passphrase for USB drive"
-msgstr "輸入 USB 隨身碟 的密語"
+msgid "Either the drive is not encrypted or there is something else wrong with it.<br />If this is a VeraCrypt drive, please unlock it from within `sd-devices`, then try again."
+msgstr ""
 
-msgid "Export successful"
-msgstr "成功滙出"
+msgid "The device is ready for export."
+msgstr ""
 
-msgid "Export failed"
-msgstr "滙出失敗"
-
-msgid "<h2>Understand the risks before exporting files</h2><b>Malware</b><br />This workstation lets you open files securely. If you open files on another computer, any embedded malware may spread to your computer or network. If you are unsure how to manage this risk, please print the file, or contact your administrator.<br /><br /><b>Anonymity</b><br />Files submitted by sources may contain information or hidden metadata that identifies who they are. To protect your sources, please consider redacting files before working with them on network-connected computers."
-msgstr "<h2>匯出檔案前了解相關風險</h2><b>惡意軟體</b><br />此工作站可讓您安全地開啟檔案。 如果在另一台電腦上打開檔案，任何嵌入的惡意軟體都可能傳播到電腦或網路。 如果不確定如何管理此風險，請列印該文件，或聯絡管理員。<br /><br /><b>匿名性</b><br />線人提交的檔案可能有足以識別出他們是誰的資訊或隱藏元數據。 為了保護消息來源，請考慮在連網的電腦上使用檔案之前先對其進行編輯。"
-
-msgid "Exporting: {}"
-msgstr "滙出中: {}"
-
-msgid "Please insert one of the export drives provisioned specifically for the SecureDrop Workstation."
-msgstr "請接上專為 SecureDrop 工作站配置的匯出磁碟。"
-
-msgid "Either the drive is not encrypted or there is something else wrong with it."
-msgstr "該磁碟可能未加密，或存在其他問題。"
+msgid "The device is locked."
+msgstr ""
 
 msgid "The passphrase provided did not work. Please try again."
 msgstr "所提供的密語無效，請重試。"
 
-msgid "See your administrator for help."
-msgstr "聯絡求助管理員。"
+msgid "Error mounting drive"
+msgstr ""
+
+msgid "Error during export"
+msgstr ""
+
+msgid "Files were exported succesfully, but the USB device could not be unmounted."
+msgstr ""
+
+msgid "Files were exported succesfully, but some temporary files remain on disk.Reboot to remove them."
+msgstr ""
+
+msgid "Export successful"
+msgstr "成功滙出"
+
+msgid "Error encountered with this device. See your administrator for help."
+msgstr ""
+
+msgid "Files were moved or missing and could not be exported."
+msgstr ""
+
+msgid "Error encountered. Please contact support."
+msgstr ""
+
+msgid "Preparing to export:<br /><span style=\"font-weight:normal\">{}</span>"
+msgstr "準備滙出:<br /><span style=\"font-weight:normal\">{}</span>"
+
+msgid "<h2>Understand the risks before exporting files</h2><b>Malware</b><br />This workstation lets you open files securely. If you open files on another computer, any embedded malware may spread to your computer or network. If you are unsure how to manage this risk, please print the file, or contact your administrator.<br /><br /><b>Anonymity</b><br />Files submitted by sources may contain information or hidden metadata that identifies who they are. To protect your sources, please consider redacting files before working with them on network-connected computers."
+msgstr "<h2>匯出檔案前了解相關風險</h2><b>惡意軟體</b><br />此工作站可讓您安全地開啟檔案。 如果在另一台電腦上打開檔案，任何嵌入的惡意軟體都可能傳播到電腦或網路。 如果不確定如何管理此風險，請列印該文件，或聯絡管理員。<br /><br /><b>匿名性</b><br />線人提交的檔案可能有足以識別出他們是誰的資訊或隱藏元數據。 為了保護消息來源，請考慮在連網的電腦上使用檔案之前先對其進行編輯。"
+
+msgid "Ready to export:<br /><span style=\"font-weight:normal\">{}</span>"
+msgstr "已滙出:<br /><span style=\"font-weight:normal\">{}</span>"
+
+msgid "Export Failed"
+msgstr ""
+
+msgid "Please insert one of the export drives provisioned specifically for the SecureDrop Workstation.<br />If you're using a VeraCrypt drive, unlock it manually before proceeding."
+msgstr ""
 
 msgid "Remember to be careful when working with files outside of your Workstation machine."
 msgstr "記住在工作站以外的電腦上處理檔案時要小心。"
 
-msgid "DONE"
-msgstr "完成"
+msgid "Export sucessful, but drive was not locked"
+msgstr ""
+
+msgid "Working..."
+msgstr ""
+
+msgid "Enter passphrase for USB drive"
+msgstr "輸入 USB 隨身碟 的密語"
 
 msgid "Preparing to print:<br /><span style=\"font-weight:normal\">{}</span>"
 msgstr "準備列印:<br /><span style=\"font-weight:normal\">{}</span>"
@@ -343,6 +373,9 @@ msgstr "<h2>管理列印輸出風險</h2><b>二維碼和網址</b><br />在未�
 msgid "Please connect your printer to a USB port."
 msgstr "請將印表機接入 USB 端口。"
 
+msgid "See your administrator for help."
+msgstr "聯絡求助管理員。"
+
 msgid "YES, DELETE ENTIRE SOURCE ACCOUNT"
 msgstr "確認刪除全部的線人帳戶"
 
@@ -360,3 +393,21 @@ msgstr "您的組織將無法向他們發送回覆。"
 
 msgid "All files and messages from that source will also be destroyed."
 msgstr "即將刪除此線人全部的檔案與訊息。"
+
+#~ msgid "SUBMIT"
+#~ msgstr "提交"
+
+#~ msgid "Insert encrypted USB drive"
+#~ msgstr "插入加密的 USB 隨身碟"
+
+#~ msgid "Export failed"
+#~ msgstr "滙出失敗"
+
+#~ msgid "Exporting: {}"
+#~ msgstr "滙出中: {}"
+
+#~ msgid "Please insert one of the export drives provisioned specifically for the SecureDrop Workstation."
+#~ msgstr "請接上專為 SecureDrop 工作站配置的匯出磁碟。"
+
+#~ msgid "Either the drive is not encrypted or there is something else wrong with it."
+#~ msgstr "該磁碟可能未加密，或存在其他問題。"

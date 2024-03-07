@@ -7,15 +7,15 @@ msgid ""
 msgstr ""
 "Project-Id-Version: SecureDrop Client 0.8.1\n"
 "Report-Msgid-Bugs-To: securedrop@freedom.press\n"
-"PO-Revision-Date: 2023-03-15 23:17+0000\n"
-"Last-Translator: Cory Francis Myers <cory@freedom.press>\n"
+"PO-Revision-Date: 2023-12-29 18:30+0000\n"
+"Last-Translator: Dimitris Maroulidis <dmaroulidis@dimitrismaroulidis.com>\n"
 "Language-Team: Greek <https://weblate.securedrop.org/projects/securedrop/securedrop-client/el/>\n"
 "Language: el\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=n != 1;\n"
-"X-Generator: Weblate 4.14.1\n"
+"X-Generator: Weblate 5.2.1\n"
 "Generated-By: Babel 2.10.3\n"
 
 msgid "{application_name} is already running"
@@ -284,50 +284,80 @@ msgid_plural "{message_count} messages"
 msgstr[0] "ένα μήνυμα"
 msgstr[1] "{message_count} μηνύματα"
 
-msgid "SUBMIT"
-msgstr "ΥΠΟΒΟΛΗ"
+msgid "DONE"
+msgstr "ΤΕΛΟΣ"
 
-msgid "Preparing to export:<br /><span style=\"font-weight:normal\">{}</span>"
-msgstr "Προετοιμασία εξαγωγής:<br /><span style=\"font-weight:normal\">{}</span>"
+msgid "BACK"
+msgstr ""
 
-msgid "Ready to export:<br /><span style=\"font-weight:normal\">{}</span>"
-msgstr "Έτοιμο για εξαγωγή:<br /><span style=\"font-weight:normal\">{}</span>"
+msgid "No device detected"
+msgstr ""
 
-msgid "Insert encrypted USB drive"
-msgstr "Εισάγετε το κρυπτογραφημένο στικάκι USB"
+msgid "Too many USB devices detected; please insert one supported device."
+msgstr ""
 
-msgid "Enter passphrase for USB drive"
-msgstr "Εισάγετε τη κωδική φράση για το στικάκι USB"
+msgid "Either the drive is not encrypted or there is something else wrong with it.<br />If this is a VeraCrypt drive, please unlock it from within `sd-devices`, then try again."
+msgstr ""
 
-msgid "Export successful"
-msgstr "Επιτυχής εξαγωγή"
+msgid "The device is ready for export."
+msgstr ""
 
-msgid "Export failed"
-msgstr "Αποτυχία εξαγωγής"
-
-msgid "<h2>Understand the risks before exporting files</h2><b>Malware</b><br />This workstation lets you open files securely. If you open files on another computer, any embedded malware may spread to your computer or network. If you are unsure how to manage this risk, please print the file, or contact your administrator.<br /><br /><b>Anonymity</b><br />Files submitted by sources may contain information or hidden metadata that identifies who they are. To protect your sources, please consider redacting files before working with them on network-connected computers."
-msgstr "<h2>Έχετε επίγνωση των κινδύνων πριν εξάγετε τα αρχεία</h2><b>Malware</b><br />Αυτός ο σταθμός εργασίας σας επιτρέπει να ανοίξετε τα αρχεία με ασφάλεια. Αν ανοίξετε τα αρχεία σε άλλο υπολογιστή, οποιοδήποτε κακόβουλο λογισμικό (malware) που τυχόν υπάρχει εκεί μπορεί να μεταδοθεί στον υπολογιστή σας ή στο δίκτυο. Αν δεν είστε σίγουροι πως να αντιμετωπίσετε αυτό το ρίσκο, παρακαλούμε εκτυπώστε το αρχείο, ή επικοινωνήστε με τον διαχειριστή σας.<br /><br /><b>Ανωνυμία</b><br />Τα αρχεία που υποβάλλονται από τις πηγές σας μπορεί να περιέχουν πληροφορίες ή κρυμμένα μεταδεδομένα που να τους ταυτοποιούν. Για να προστατέψετε τις πηγές σας, σκεφτείτε να επεξεργαστείτε τα αρχεία και να σβήσετε ευαίσθητες πληροφορίες, πριν τα χρησιμοποιήσετε σε υπολογιστές που είναι συνδεδεμένοι στο δίκτυο."
-
-msgid "Exporting: {}"
-msgstr "Εξάγεται: {}"
-
-msgid "Please insert one of the export drives provisioned specifically for the SecureDrop Workstation."
-msgstr "Παρακαλούμε εισάγετε ένα από τα μέσα εξαγωγής που προορίζονται συγκεκριμένα για τον σταθμό εργασίας SecureDrop Workstation."
-
-msgid "Either the drive is not encrypted or there is something else wrong with it."
-msgstr "Είτε το συγκεκριμένο μέσο δεν είναι κρυπτογραφημένο, είτε κάτι άλλο πάει στραβά με αυτό."
+msgid "The device is locked."
+msgstr ""
 
 msgid "The passphrase provided did not work. Please try again."
 msgstr "Η κωδική φράση που εισάγατε δεν λειτούργησε. Παρακαλούμε προσπαθήστε ξανά."
 
-msgid "See your administrator for help."
-msgstr "Μιλήστε με τον διαχειριστή σας για βοήθεια."
+msgid "Error mounting drive"
+msgstr ""
+
+msgid "Error during export"
+msgstr ""
+
+msgid "Files were exported succesfully, but the USB device could not be unmounted."
+msgstr ""
+
+msgid "Files were exported succesfully, but some temporary files remain on disk.Reboot to remove them."
+msgstr ""
+
+msgid "Export successful"
+msgstr "Επιτυχής εξαγωγή"
+
+msgid "Error encountered with this device. See your administrator for help."
+msgstr ""
+
+msgid "Files were moved or missing and could not be exported."
+msgstr ""
+
+msgid "Error encountered. Please contact support."
+msgstr ""
+
+msgid "Preparing to export:<br /><span style=\"font-weight:normal\">{}</span>"
+msgstr "Προετοιμασία εξαγωγής:<br /><span style=\"font-weight:normal\">{}</span>"
+
+msgid "<h2>Understand the risks before exporting files</h2><b>Malware</b><br />This workstation lets you open files securely. If you open files on another computer, any embedded malware may spread to your computer or network. If you are unsure how to manage this risk, please print the file, or contact your administrator.<br /><br /><b>Anonymity</b><br />Files submitted by sources may contain information or hidden metadata that identifies who they are. To protect your sources, please consider redacting files before working with them on network-connected computers."
+msgstr "<h2>Έχετε επίγνωση των κινδύνων πριν εξάγετε τα αρχεία</h2><b>Malware</b><br />Αυτός ο σταθμός εργασίας σας επιτρέπει να ανοίξετε τα αρχεία με ασφάλεια. Αν ανοίξετε τα αρχεία σε άλλο υπολογιστή, οποιοδήποτε κακόβουλο λογισμικό (malware) που τυχόν υπάρχει εκεί μπορεί να μεταδοθεί στον υπολογιστή σας ή στο δίκτυο. Αν δεν είστε σίγουροι πως να αντιμετωπίσετε αυτό το ρίσκο, παρακαλούμε εκτυπώστε το αρχείο, ή επικοινωνήστε με τον διαχειριστή σας.<br /><br /><b>Ανωνυμία</b><br />Τα αρχεία που υποβάλλονται από τις πηγές σας μπορεί να περιέχουν πληροφορίες ή κρυμμένα μεταδεδομένα που να τους ταυτοποιούν. Για να προστατέψετε τις πηγές σας, σκεφτείτε να επεξεργαστείτε τα αρχεία και να σβήσετε ευαίσθητες πληροφορίες, πριν τα χρησιμοποιήσετε σε υπολογιστές που είναι συνδεδεμένοι στο δίκτυο."
+
+msgid "Ready to export:<br /><span style=\"font-weight:normal\">{}</span>"
+msgstr "Έτοιμο για εξαγωγή:<br /><span style=\"font-weight:normal\">{}</span>"
+
+msgid "Export Failed"
+msgstr ""
+
+msgid "Please insert one of the export drives provisioned specifically for the SecureDrop Workstation.<br />If you're using a VeraCrypt drive, unlock it manually before proceeding."
+msgstr ""
 
 msgid "Remember to be careful when working with files outside of your Workstation machine."
 msgstr "Θυμηθείτε να είστε προσεκτικοί όταν χρησιμοποιείτε τα αρχεία εκτός του σταθμού εργασίας σας."
 
-msgid "DONE"
-msgstr "ΤΕΛΟΣ"
+msgid "Export sucessful, but drive was not locked"
+msgstr ""
+
+msgid "Working..."
+msgstr ""
+
+msgid "Enter passphrase for USB drive"
+msgstr "Εισάγετε τη κωδική φράση για το στικάκι USB"
 
 msgid "Preparing to print:<br /><span style=\"font-weight:normal\">{}</span>"
 msgstr "Προετοιμασία για εκτύπωση:<br /><span style=\"font-weight:normal\">{}</span>"
@@ -347,11 +377,14 @@ msgstr "<h2>Διαχείριση κινδύνων εκτύπωσης</h2><b>Κώ
 msgid "Please connect your printer to a USB port."
 msgstr "Παρακαλούμε συνδέστε τον εκτυπωτή σας μέσω μιας θύρας USB."
 
+msgid "See your administrator for help."
+msgstr "Μιλήστε με τον διαχειριστή σας για βοήθεια."
+
 msgid "YES, DELETE ENTIRE SOURCE ACCOUNT"
 msgstr "ΝΑΙ, ΔΙΑΓΡΑΦΗ ΟΛΟΚΛΗΡΟΥ ΤΟΥ ΛΟΓΑΡΙΑΣΜΟΥ ΠΗΓΗΣ"
 
 msgid "Are you sure this is what you want?"
-msgstr "Σίγουρα θέλετε να κάνετε αυτή την ενέργεια;"
+msgstr "Είστε σίγουρος/η πως επιθυμείτε να γίνουν αυτές οι ενέργειες;"
 
 msgid "When the entire account for a source is deleted:"
 msgstr "Όταν διαγράφεται ολόκληρος ο λογαριασμός μιας πηγής:"
@@ -363,7 +396,25 @@ msgid "Your organization will not be able to send them replies."
 msgstr "Ο οργανισμός σας δεν θα μπορεί να του/της στείλει απαντήσεις."
 
 msgid "All files and messages from that source will also be destroyed."
-msgstr "Επίσης, όλα τα αρχεία και τα μηνύματα αυτής της πηγής θα καταστραφούν."
+msgstr "Όλα τα αρχεία και τα μηνύματα από αυτήν την πηγή θα καταστραφούν."
+
+#~ msgid "SUBMIT"
+#~ msgstr "ΥΠΟΒΟΛΗ"
+
+#~ msgid "Insert encrypted USB drive"
+#~ msgstr "Εισάγετε το κρυπτογραφημένο στικάκι USB"
+
+#~ msgid "Export failed"
+#~ msgstr "Αποτυχία εξαγωγής"
+
+#~ msgid "Exporting: {}"
+#~ msgstr "Εξάγεται: {}"
+
+#~ msgid "Please insert one of the export drives provisioned specifically for the SecureDrop Workstation."
+#~ msgstr "Παρακαλούμε εισάγετε ένα από τα μέσα εξαγωγής που προορίζονται συγκεκριμένα για τον σταθμό εργασίας SecureDrop Workstation."
+
+#~ msgid "Either the drive is not encrypted or there is something else wrong with it."
+#~ msgstr "Είτε το συγκεκριμένο μέσο δεν είναι κρυπτογραφημένο, είτε κάτι άλλο πάει στραβά με αυτό."
 
 #~ msgid "You would like to delete {files_to_delete}, {replies_to_delete}, {messages_to_delete} from the source account for {source}?"
 #~ msgstr "Θέλετε να διαγράψετε τα {files_to_delete}, {replies_to_delete}, {messages_to_delete} από το λογαριασμό πηγής του/της {source}?"

@@ -288,50 +288,80 @@ msgstr[0] "{message_count} сообщение"
 msgstr[1] "{message_count} сообщения"
 msgstr[2] "{message_count} сообщений"
 
-msgid "SUBMIT"
-msgstr "ОТПРАВИТЬ"
+msgid "DONE"
+msgstr "ГОТОВО"
 
-msgid "Preparing to export:<br /><span style=\"font-weight:normal\">{}</span>"
-msgstr "Подготовка к экспорту:<br /><span style=\"font-weight:normal\">{}</span>"
+msgid "BACK"
+msgstr ""
 
-msgid "Ready to export:<br /><span style=\"font-weight:normal\">{}</span>"
-msgstr "Готовность к экспорту:<br /><span style=\"font-weight:normal\">{}</span>"
+msgid "No device detected"
+msgstr ""
 
-msgid "Insert encrypted USB drive"
-msgstr "Вставьте зашифрованный USB-накопитель"
+msgid "Too many USB devices detected; please insert one supported device."
+msgstr ""
 
-msgid "Enter passphrase for USB drive"
-msgstr "Введите пароль для USB-накопителя"
+msgid "Either the drive is not encrypted or there is something else wrong with it.<br />If this is a VeraCrypt drive, please unlock it from within `sd-devices`, then try again."
+msgstr ""
 
-msgid "Export successful"
-msgstr "Экспорт выполнен успешно"
+msgid "The device is ready for export."
+msgstr ""
 
-msgid "Export failed"
-msgstr "Не удалось экспортировать"
-
-msgid "<h2>Understand the risks before exporting files</h2><b>Malware</b><br />This workstation lets you open files securely. If you open files on another computer, any embedded malware may spread to your computer or network. If you are unsure how to manage this risk, please print the file, or contact your administrator.<br /><br /><b>Anonymity</b><br />Files submitted by sources may contain information or hidden metadata that identifies who they are. To protect your sources, please consider redacting files before working with them on network-connected computers."
-msgstr "<h2>Поймите риски перед экспортом файлов</h2><b>Вредоносное ПО</b><br />Эта рабочая станция позволяет безопасно открывать файлы. Если вы открываете файлы на другом компьютере, любое встроенное вредоносное ПО может распространиться на ваш компьютер или сеть. Если вы не знаете, как управлять этим риском, распечатайте файл или обратитесь к вашему администратору.<br /><br /><b>Анонимность</b><br />Файлы, предоставленные источниками, могут содержать информацию или скрытые метаданные, позволяющие определить, чьи это источники. Для защиты источников просим вас отредактировать файлы перед работой с ними на компьютерах, подключенных к сети."
-
-msgid "Exporting: {}"
-msgstr "Экспорт: {}"
-
-msgid "Please insert one of the export drives provisioned specifically for the SecureDrop Workstation."
-msgstr "Вставьте один из дисков для экспорта, специально предназначенных для рабочей станции SecureDrop."
-
-msgid "Either the drive is not encrypted or there is something else wrong with it."
-msgstr "Либо диск не зашифрован, либо с ним что-то не так."
+msgid "The device is locked."
+msgstr ""
 
 msgid "The passphrase provided did not work. Please try again."
 msgstr "Введенный пароль не сработал. Пожалуйста, попробуйте еще раз."
 
-msgid "See your administrator for help."
-msgstr "Обратитесь за помощью к вашему администратору."
+msgid "Error mounting drive"
+msgstr ""
+
+msgid "Error during export"
+msgstr ""
+
+msgid "Files were exported succesfully, but the USB device could not be unmounted."
+msgstr ""
+
+msgid "Files were exported succesfully, but some temporary files remain on disk.Reboot to remove them."
+msgstr ""
+
+msgid "Export successful"
+msgstr "Экспорт выполнен успешно"
+
+msgid "Error encountered with this device. See your administrator for help."
+msgstr ""
+
+msgid "Files were moved or missing and could not be exported."
+msgstr ""
+
+msgid "Error encountered. Please contact support."
+msgstr ""
+
+msgid "Preparing to export:<br /><span style=\"font-weight:normal\">{}</span>"
+msgstr "Подготовка к экспорту:<br /><span style=\"font-weight:normal\">{}</span>"
+
+msgid "<h2>Understand the risks before exporting files</h2><b>Malware</b><br />This workstation lets you open files securely. If you open files on another computer, any embedded malware may spread to your computer or network. If you are unsure how to manage this risk, please print the file, or contact your administrator.<br /><br /><b>Anonymity</b><br />Files submitted by sources may contain information or hidden metadata that identifies who they are. To protect your sources, please consider redacting files before working with them on network-connected computers."
+msgstr "<h2>Поймите риски перед экспортом файлов</h2><b>Вредоносное ПО</b><br />Эта рабочая станция позволяет безопасно открывать файлы. Если вы открываете файлы на другом компьютере, любое встроенное вредоносное ПО может распространиться на ваш компьютер или сеть. Если вы не знаете, как управлять этим риском, распечатайте файл или обратитесь к вашему администратору.<br /><br /><b>Анонимность</b><br />Файлы, предоставленные источниками, могут содержать информацию или скрытые метаданные, позволяющие определить, чьи это источники. Для защиты источников просим вас отредактировать файлы перед работой с ними на компьютерах, подключенных к сети."
+
+msgid "Ready to export:<br /><span style=\"font-weight:normal\">{}</span>"
+msgstr "Готовность к экспорту:<br /><span style=\"font-weight:normal\">{}</span>"
+
+msgid "Export Failed"
+msgstr ""
+
+msgid "Please insert one of the export drives provisioned specifically for the SecureDrop Workstation.<br />If you're using a VeraCrypt drive, unlock it manually before proceeding."
+msgstr ""
 
 msgid "Remember to be careful when working with files outside of your Workstation machine."
 msgstr "Помните, что нужно проявлять осторожность при работе с файлами за пределами вашей рабочей станции."
 
-msgid "DONE"
-msgstr "ГОТОВО"
+msgid "Export sucessful, but drive was not locked"
+msgstr ""
+
+msgid "Working..."
+msgstr ""
+
+msgid "Enter passphrase for USB drive"
+msgstr "Введите пароль для USB-накопителя"
 
 msgid "Preparing to print:<br /><span style=\"font-weight:normal\">{}</span>"
 msgstr "Подготовка к печати:<br /><span style=\"font-weight:normal\">{}</span>"
@@ -351,6 +381,9 @@ msgstr "<h2>Управление рисками распечатки</h2><b>QR-�
 msgid "Please connect your printer to a USB port."
 msgstr "Пожалуйста, подключите принтер к порту USB."
 
+msgid "See your administrator for help."
+msgstr "Обратитесь за помощью к вашему администратору."
+
 msgid "YES, DELETE ENTIRE SOURCE ACCOUNT"
 msgstr "ДА, УДАЛИТЬ ВЕСЬ ИСХОДНЫЙ АККАУНТ"
 
@@ -368,6 +401,24 @@ msgstr "Ваша организация не сможет отправлять �
 
 msgid "All files and messages from that source will also be destroyed."
 msgstr "Все файлы и сообщения источника будут очищены."
+
+#~ msgid "SUBMIT"
+#~ msgstr "ОТПРАВИТЬ"
+
+#~ msgid "Insert encrypted USB drive"
+#~ msgstr "Вставьте зашифрованный USB-накопитель"
+
+#~ msgid "Export failed"
+#~ msgstr "Не удалось экспортировать"
+
+#~ msgid "Exporting: {}"
+#~ msgstr "Экспорт: {}"
+
+#~ msgid "Please insert one of the export drives provisioned specifically for the SecureDrop Workstation."
+#~ msgstr "Вставьте один из дисков для экспорта, специально предназначенных для рабочей станции SecureDrop."
+
+#~ msgid "Either the drive is not encrypted or there is something else wrong with it."
+#~ msgstr "Либо диск не зашифрован, либо с ним что-то не так."
 
 #~ msgid "You would like to delete {files_to_delete}, {replies_to_delete}, {messages_to_delete} from the source account for {source}?"
 #~ msgstr "Вы хотите удалить {files_to_delete}, {replies_to_delete}, {messages_to_delete} из учетной записи источника для {source}?"
