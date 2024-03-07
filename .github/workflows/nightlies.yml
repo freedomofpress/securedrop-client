@@ -10,6 +10,7 @@ defaults:
 jobs:
   build-debs:
     strategy:
+      fail-fast: false
       matrix:
         debian_version:
           - bullseye
