@@ -13,17 +13,34 @@ use reqwest::{Client, Response};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::io::Write;
+use std::ffi::{CStr, CString};
 use std::process::ExitCode;
 use std::str::FromStr;
 use std::time::Duration;
-use std::{env, io};
+use std::{env, io, ptr};
 use url::Url;
 
 const ENV_CONFIG: &str = "SD_PROXY_ORIGIN";
 
 #[cfg(feature = "qubesdb")]
 fn read(name: &str) -> Option<String> {
-    todo!("FFI wrapper around libqubesdb")
+    let mut path = String::from("/vm-config/");
+    path.push_str(name);
+
+    let _value = unsafe {
+        let _path = CString::new(path).unwrap().into_raw();
+        let mut len: u32 = 0;
+
+        let db = qdb_open(ptr::null_mut());
+        let value = qdb_read(db, _path, &mut len);
+        qdb_close(db);
+
+        let _ = CString::from_raw(_path);
+        CStr::from_ptr(value)
+    };
+    let value = _value.to_owned().into_string().expect("QubesDB returned invalid value");
+
+    Some(value)
 }
 
 #[cfg(not(feature = "qubesdb"))]
