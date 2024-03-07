@@ -39,10 +39,10 @@ STATUS_MESSAGES = {
     ExportStatus.ERROR_MOUNT: _("Error mounting drive"),
     ExportStatus.ERROR_EXPORT: _("Error during export"),
     ExportStatus.ERROR_UNMOUNT_VOLUME_BUSY: _(
-        "Files were exported succesfully, but the USB device could not be unmounted."
+        "Files were exported successfully, but the USB device could not be unmounted."
     ),
     ExportStatus.ERROR_EXPORT_CLEANUP: _(
-        "Files were exported succesfully, but some temporary files remain on disk."
+        "Files were exported successfully, but some temporary files remain on disk. "
         "Reboot to remove them."
     ),
     ExportStatus.SUCCESS_EXPORT: _("Export successful"),
