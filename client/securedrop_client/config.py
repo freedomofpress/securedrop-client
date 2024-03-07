@@ -42,7 +42,3 @@ class Config:
             setattr(config, store, value)
 
         return config
-
-    @property
-    def is_valid(self) -> bool:
-        return self.journalist_key_fingerprint is not None
