@@ -53,6 +53,12 @@ who = "Kunal Mehta <legoktm@debian.org>"
 criteria = "safe-to-run"
 delta = "3.9.0 -> 3.10.0"
 
+[[audits.tracing]]
+who = "Kunal Mehta <legoktm@debian.org>"
+criteria = "safe-to-run"
+delta = "0.1.37 -> 0.1.40"
+notes = "new unsafe usages are all documented"
+
 [[trusted.flate2]]
 criteria = "safe-to-deploy"
 user-id = 4333
