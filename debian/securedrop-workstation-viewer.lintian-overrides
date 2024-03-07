@@ -9,3 +9,6 @@ securedrop-workstation-viewer: empty-binary-package
 
 # FIXME: abbreviate
 securedrop-workstation-viewer: synopsis-too-long
+
+# We're not shipping CDs, so this is fine
+securedrop-workstation-viewer: package-has-long-file-name
