@@ -75,3 +75,5 @@ fi
 
 # Clean up temp stuff now that lintian is done (or skipped)
 rm -rf "${BUILD_DEST}"
+echo "Build completed successfully. Artifacts and their checksums are:"
+sha256sum build/*.deb
