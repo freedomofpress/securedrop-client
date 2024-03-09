@@ -302,10 +302,10 @@ msgstr ""
 msgid "Error during export"
 msgstr ""
 
-msgid "Files were exported succesfully, but the USB device could not be unmounted."
+msgid "Files were exported successfully, but the USB device could not be unmounted."
 msgstr ""
 
-msgid "Files were exported succesfully, but some temporary files remain on disk.Reboot to remove them."
+msgid "Files were exported successfully, but some temporary files remain on disk. Reboot to remove them."
 msgstr ""
 
 msgid "Export successful"
