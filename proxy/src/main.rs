@@ -1,8 +1,4 @@
 #![deny(clippy::all)]
-#![allow(non_upper_case_globals)]
-#![allow(non_camel_case_types)]
-#![allow(non_snake_case)]
-include!(concat!(env!("OUT_DIR"), "/bindings.rs"));
 
 use anyhow::{bail, Result};
 use futures_util::StreamExt;
@@ -11,45 +7,24 @@ use reqwest::Method;
 use reqwest::{Client, Response};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
-use std::ffi::{CStr, CString};
+use std::io;
 use std::io::Write;
 use std::process::ExitCode;
 use std::str::FromStr;
 use std::time::Duration;
-use std::{env, io, ptr};
 use url::Url;
 
-const ENV_CONFIG: &str = "SD_PROXY_ORIGIN";
-
 #[cfg(feature = "qubesdb")]
-fn read(name: &str) -> Result<String> {
-    let path = format!("/vm-config/{name}");
-
-    let path_raw = CString::new(path.clone()).unwrap().into_raw();
-    let mut len: u32 = 0;
-    // SAFETY: path_raw will owned by the C caller and MUST be retaken.  When
-    // len == 0, value_unsafe = NUL and MUST NOT be passed to CStr::from_ptr().
-    let value_raw = unsafe {
-        let db = qdb_open(ptr::null_mut());
-        let value_unsafe = qdb_read(db, path_raw, &mut len);
-        qdb_close(db);
-        let _ = CString::from_raw(path_raw); // retake
-
-        if len > 0 {
-            CStr::from_ptr(value_unsafe)
-        } else {
-            bail!("Could not read from QubesDB: {}", path);
-        }
-    };
-
-    let value = value_raw.to_owned().into_string()?;
-    Ok(value)
-}
+mod config_qubesdb;
+#[cfg(feature = "qubesdb")]
+use config_qubesdb as config;
 
 #[cfg(not(feature = "qubesdb"))]
-pub fn read(name: &str) -> Result<String> {
-    Ok(env::var(name)?)
-}
+mod config_env;
+#[cfg(not(feature = "qubesdb"))]
+use config_env as config;
+
+const ENV_CONFIG: &str = "SD_PROXY_ORIGIN";
 
 /// Incoming requests (as JSON) received over stdin
 #[derive(Deserialize, Debug)]
@@ -130,7 +105,7 @@ async fn handle_stream_response(resp: Response) -> Result<()> {
 
 async fn proxy() -> Result<()> {
     // Get the hostname from the environment or QubesDB
-    let origin = read(ENV_CONFIG)?;
+    let origin = config::read(ENV_CONFIG)?;
     // Read incoming request from stdin (must be on single line)
     let mut buffer = String::new();
     io::stdin().read_line(&mut buffer)?;
