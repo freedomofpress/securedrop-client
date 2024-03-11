@@ -1,14 +1,30 @@
 import json
 import logging
 import os
-
-try:
-    from qubesdb import QubesDB
-except ImportError:
-    QubesDB = False
+from contextlib import contextmanager
 
 
 logger = logging.getLogger(__name__)
+
+
+@contextmanager
+def try_qubesdb():
+    """Minimal context manager around QubesDB() → QubesDB.close() when
+    available."""
+    db = False
+
+    try:
+        from qubesdb import QubesDB
+
+        db = QubesDB()
+        yield db
+
+    except ImportError:
+        yield db
+
+    finally:
+        if db:
+            db.close()
 
 
 class Config:
@@ -25,20 +41,20 @@ class Config:
     @classmethod
     def load(self) -> "Config":
         """For each attribute, look it up from either QubesDB or the environment."""
-        db = QubesDB() if QubesDB else False
         config = Config()
 
-        for store, lookup in self.mapping.items():
-            if db:
-                logger.debug(f"Reading {lookup} from QubesDB")
-                value = db.read(f"/vm-config/{lookup}")
-                if len(value) > 0:
-                    value = None
+        with try_qubesdb() as db:
+            for store, lookup in self.mapping.items():
+                if db:
+                    logger.debug(f"Reading {lookup} from QubesDB")
+                    value = db.read(f"/vm-config/{lookup}")
+                    if len(value) > 0:
+                        value = None
 
-            else:
-                logger.debug(f"Reading {lookup} from environment")
-                value = os.environ.get(lookup)
+                else:
+                    logger.debug(f"Reading {lookup} from environment")
+                    value = os.environ.get(lookup)
 
-            setattr(config, store, value)
+                setattr(config, store, value)
 
         return config
