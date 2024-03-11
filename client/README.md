@@ -78,7 +78,6 @@ poetry install
 ```
 
    * You will need Python 3.9 to run the client. If it's not the default `python3` on your installation, you can set `poetry env use python3.9`.
-   * You may also want to run `make hooks`, which will configure Git to use the hooks found in `.githooks/` to check certain code-quality standards on new commits in this repository.  These checks are also enforced in CI.
 
 4. Run SecureDrop Client
 
@@ -113,8 +112,6 @@ git clone git@github.com:freedomofpress/securedrop-client.git
 cd securedrop-client
 poetry install
 ```
-
-   * You may also want to run `make hooks`, which will configure Git to use the hooks found in `.githooks/` to check certain code-quality standards on new commits in this repository.  These checks are also enforced in CI.
 
 4. Run SecureDrop Client
 
@@ -169,7 +166,6 @@ socat TCP4-LISTEN:8081,fork,reuseaddr TCP4:A.B.C.D:8081
    cd securedrop-client
    poetry install
    ```
-   * You may also want to run `make hooks`, which will configure Git to use the hooks found in `.githooks/` to check certain code-quality standards on new commits in this repository.  These checks are also enforced in CI.
 
 5. Run SecureDrop Client
    ```
