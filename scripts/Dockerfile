@@ -1,12 +1,18 @@
 ARG DISTRO=bullseye
 FROM debian:$DISTRO
 
+# ARGs must be repeated for every different build stage
+ARG DISTRO
+
 ENV PIP_DISABLE_PIP_VERSION_CHECK=1
 ENV PIP_PROGRESS_BAR=off
 ENV CARGO_TERM_COLOR=never
 ENV CARGO_TERM_PROGRESS_WHEN=never
 
 RUN apt-get update && apt-get --yes upgrade && apt-get install --yes build-essential curl
+
+RUN echo "deb [arch=amd64] https://deb.qubes-os.org/r4.1/vm ${DISTRO} main" > /etc/apt/sources.list.d/qubes.list
+COPY qubes-archive-keyring.gpg /etc/apt/trusted.gpg.d/
 
 # Keep in sync with rust-toolchain.toml
 ENV RUST_VERSION 1.74.1
