@@ -35,7 +35,11 @@ fn read(name: &str) -> Option<String> {
         qdb_close(db);
 
         let _ = CString::from_raw(_path);
-        CStr::from_ptr(value)
+        if len > 0 {
+            CStr::from_ptr(value_unsafe)
+        } else {
+            bail!("Could not read from QubesDB: {}", path);
+        }
     };
     let value = _value
         .to_owned()
