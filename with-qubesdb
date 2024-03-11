@@ -10,11 +10,15 @@ if __name__ == "__main__":
     args = parser.parse_known_args()
 
     env = {}
-    db = QubesDB()
-    for key in args[0].key or []:
-        value = db.read(f"/vm-config/{key}")
-        env[key] = value or ''
+    try:
+        db = QubesDB()
+        for key in args[0].key or []:
+            value = db.read(f"/vm-config/{key}")
+            env[key] = value or ''
 
-    if len(args[1]) > 0:
-        cmd = subprocess.Popen(args[1], env=env)
-        cmd.wait()
+        if len(args[1]) > 0:
+            cmd = subprocess.Popen(args[1], env=env)
+            cmd.wait()
+
+    finally:
+        db.close()
