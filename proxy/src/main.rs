@@ -22,36 +22,31 @@ use url::Url;
 const ENV_CONFIG: &str = "SD_PROXY_ORIGIN";
 
 #[cfg(feature = "qubesdb")]
-fn read(name: &str) -> Option<String> {
-    let mut path = String::from("/vm-config/");
-    path.push_str(name);
+fn read(name: &str) -> Result<String> {
+    let path = format!("/vm-config/{name}");
 
-    let _value = unsafe {
-        let _path = CString::new(path).unwrap().into_raw();
-        let mut len: u32 = 0;
-
+    let path_raw = CString::new(path.clone()).unwrap().into_raw();
+    let mut len: u32 = 0;
+    let value_raw = unsafe {
         let db = qdb_open(ptr::null_mut());
-        let value = qdb_read(db, _path, &mut len);
+        let value_unsafe = qdb_read(db, path_raw, &mut len);
         qdb_close(db);
+        let _ = CString::from_raw(path_raw); // retake
 
-        let _ = CString::from_raw(_path);
         if len > 0 {
             CStr::from_ptr(value_unsafe)
         } else {
             bail!("Could not read from QubesDB: {}", path);
         }
     };
-    let value = _value
-        .to_owned()
-        .into_string()
-        .expect("QubesDB value should be a valid string");
 
-    Some(value)
+    let value = value_raw.to_owned().into_string()?;
+    Ok(value)
 }
 
 #[cfg(not(feature = "qubesdb"))]
-fn read(name: &str) -> Option<String> {
-    env::var(name).ok()
+pub fn read(name: &str) -> Result<String> {
+    Ok(env::var(name)?)
 }
 
 /// Incoming requests (as JSON) received over stdin
@@ -133,8 +128,7 @@ async fn handle_stream_response(resp: Response) -> Result<()> {
 
 async fn proxy() -> Result<()> {
     // Get the hostname from the environment or QubesDB
-    let origin = read(ENV_CONFIG)
-        .expect("origin should be configured in the environment or QubesDB");
+    let origin = read(ENV_CONFIG)?;
     // Read incoming request from stdin (must be on single line)
     let mut buffer = String::new();
     io::stdin().read_line(&mut buffer)?;
