@@ -23,7 +23,7 @@ semgrep-local:
 
 .PHONY: mypy
 mypy: ## Run static type checker
-	@poetry run mypy --ignore-missing-imports \
+	@MYPYPATH="stubs" poetry run mypy --ignore-missing-imports \
 		--disallow-incomplete-defs \
 		--disallow-untyped-defs \
 		--show-error-codes \
