@@ -94,6 +94,20 @@ start = "2020-10-05"
 end = "2024-08-29"
 notes = "Rust Project member"
 
+[[trusted.home]]
+criteria = "safe-to-deploy"
+user-id = 6202 # Eric Huss (ehuss)
+start = "2023-04-25"
+end = "2024-09-12"
+notes = "Rust Project member"
+
+[[trusted.hyper-tls]]
+criteria = "safe-to-deploy"
+user-id = 359 # Sean McArthur (seanmonstar)
+start = "2019-03-19"
+end = "2024-09-12"
+notes = "per https://github.com/freedomofpress/securedrop-engineering/pull/87"
+
 [[trusted.indexmap]]
 criteria = "safe-to-deploy"
 user-id = 539 # Josh Stone (cuviper)
@@ -106,6 +120,13 @@ criteria = "safe-to-deploy"
 user-id = 51017 # Yuki Okushi (JohnTitor)
 start = "2020-03-17"
 end = "2024-08-12"
+notes = "Rust Project member"
+
+[[trusted.libloading]]
+criteria = "safe-to-deploy"
+user-id = 726 # Simonas Kazlauskas (nagisa)
+start = "2019-06-01"
+end = "2024-09-12"
 notes = "Rust Project member"
 
 [[trusted.linux-raw-sys]]
@@ -136,12 +157,26 @@ start = "2023-03-24"
 end = "2024-08-12"
 notes = "Rust Project member"
 
+[[trusted.prettyplease]]
+criteria = "safe-to-deploy"
+user-id = 3618 # David Tolnay (dtolnay)
+start = "2022-01-04"
+end = "2024-09-12"
+notes = "Rust Project member"
+
 [[trusted.proc-macro2]]
 criteria = "safe-to-deploy"
 user-id = 3618 # David Tolnay (dtolnay)
 start = "2019-04-23"
 end = "2024-08-12"
 notes = "Rust Project member"
+
+[[trusted.reqwest]]
+criteria = "safe-to-deploy"
+user-id = 359 # Sean McArthur (seanmonstar)
+start = "2019-03-04"
+end = "2024-09-12"
+notes = "per https://github.com/freedomofpress/securedrop-engineering/pull/87"
 
 [[trusted.rustix]]
 criteria = "safe-to-deploy"
@@ -199,12 +234,26 @@ start = "2019-03-01"
 end = "2024-08-12"
 notes = "Rust Project member"
 
+[[trusted.tokio]]
+criteria = "safe-to-deploy"
+user-id = 6741 # Alice Ryhl (Darksonn)
+start = "2020-12-25"
+end = "2024-09-12"
+notes = "per https://github.com/freedomofpress/securedrop-engineering/pull/87"
+
 [[trusted.tokio-macros]]
 criteria = "safe-to-deploy"
 user-id = 10 # Carl Lerche (carllerche)
 start = "2019-04-24"
 end = "2024-08-12"
 notes = "Rust Project member"
+
+[[trusted.tokio-util]]
+criteria = "safe-to-deploy"
+user-id = 6741 # Alice Ryhl (Darksonn)
+start = "2021-01-12"
+end = "2024-09-12"
+notes = "per https://github.com/freedomofpress/securedrop-engineering/pull/87"
 
 [[trusted.wasm-bindgen-futures]]
 criteria = "safe-to-deploy"
