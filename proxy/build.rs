@@ -1,6 +1,7 @@
 use std::env;
 use std::path::PathBuf;
 
+#[cfg(feature = "qubesdb")]
 fn main() {
     // Tell cargo to look for shared libraries in the specified directory
     println!("cargo:rustc-link-search=/usr/lib");
@@ -30,3 +31,6 @@ fn main() {
         .write_to_file(out_path.join("bindings.rs"))
         .expect("Couldn't write bindings!");
 }
+
+#[cfg(not(feature = "qubesdb"))]
+fn main() {}
