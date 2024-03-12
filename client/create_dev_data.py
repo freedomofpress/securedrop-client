@@ -12,8 +12,7 @@ sdc_home = sys.argv[1]
 session = db.make_session_maker(sdc_home)()
 db.Base.metadata.create_all(bind=session.get_bind())
 
-with open(os.path.join(sdc_home, Config.CONFIG_NAME), "w") as f:
-    f.write(json.dumps({"journalist_key_fingerprint": "65A1B5FF195B56353CC63DFFCC40EF1228271441"}))
+os.environ["SD_SUBMISSION_KEY_FPR"] = "65A1B5FF195B56353CC63DFFCC40EF1228271441"
 
 for reply_send_status in db.ReplySendStatusCodes:
     try:

@@ -1,30 +1,15 @@
 import os
+from unittest.mock import patch
 
 from securedrop_client.config import Config
 
 
-def test_missing_file(homedir):
+@patch.dict(os.environ, {"SD_SUBMISSION_KEY_FPR": "foobar"})
+def test_config():
     """
-    If a file doesn't exist, the config can still be created, but is "invalid".
+    If a key is missing, the config can still be loaded, but is "invalid".
     """
-    # precondition
-    assert not os.path.exists(os.path.join(homedir, Config.CONFIG_NAME))
+    config = Config.load()
 
-    config = Config.from_home_dir(homedir)
-
-    assert config.journalist_key_fingerprint is None
-    assert config.is_valid is False
-
-
-def test_missing_journalist_key_fpr(homedir):
-    """
-    If a key is missing, the config can still be created, but is "invalid".
-    """
-    config_path = os.path.join(homedir, Config.CONFIG_NAME)
-    with open(config_path, "w") as f:
-        f.write("{}")
-
-    config = Config.from_home_dir(homedir)
-
-    assert config.journalist_key_fingerprint is None
-    assert config.is_valid is False
+    assert config.journalist_key_fingerprint == "foobar"
+    assert config.gpg_domain is None
