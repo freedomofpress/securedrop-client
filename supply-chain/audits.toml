@@ -17,6 +17,11 @@ who = "Kunal Mehta <legoktm@debian.org>"
 criteria = "safe-to-run"
 delta = "0.28.0 -> 0.28.1"
 
+[[audits.ipnet]]
+who = "Kunal Mehta <legoktm@debian.org>"
+criteria = "safe-to-run"
+version = "2.5.0"
+
 [[audits.mime]]
 who = "Kunal Mehta <legoktm@debian.org>"
 criteria = "safe-to-run"
@@ -32,6 +37,11 @@ who = "Kunal Mehta <legoktm@debian.org>"
 criteria = "safe-to-run"
 delta = "0.8.8 -> 0.8.10"
 notes = "mostly adding more platform support, the added unsafe code was pre-existing and just relocated"
+
+[[audits.object]]
+who = "Kunal Mehta <legoktm@debian.org>"
+criteria = "safe-to-run"
+delta = "0.32.1 -> 0.32.2"
 
 [[audits.rustls-pemfile]]
 who = "Kunal Mehta <legoktm@debian.org>"
