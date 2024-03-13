@@ -282,7 +282,7 @@ msgstr ""
 msgid "Too many USB devices detected; please insert one supported device."
 msgstr ""
 
-msgid "Either the drive is not encrypted or there is something else wrong with it.<br />If this is a VeraCrypt drive, please unlock it from within `sd-devices`, then try again."
+msgid "Either the drive is not encrypted or there is something else wrong with it.<br />If this is a VeraCrypt drive, please unlock it from within the sd-devices VM, then try again."
 msgstr ""
 
 msgid "The device is ready for export."

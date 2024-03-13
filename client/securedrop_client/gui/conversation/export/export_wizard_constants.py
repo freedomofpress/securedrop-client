@@ -31,7 +31,8 @@ STATUS_MESSAGES = {
     ExportStatus.INVALID_DEVICE_DETECTED: _(
         "Either the drive is not encrypted or there is something else wrong with it."
         "<br />"
-        "If this is a VeraCrypt drive, please unlock it from within `sd-devices`, then try again."
+        "If this is a VeraCrypt drive, please unlock it from within "
+        "the sd-devices VM, then try again."
     ),
     ExportStatus.DEVICE_WRITABLE: _("The device is ready for export."),
     ExportStatus.DEVICE_LOCKED: _("The device is locked."),

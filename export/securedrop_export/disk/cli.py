@@ -113,12 +113,20 @@ class CLI:
                     # Inspect partitions or whole volume.
                     # For sanity, we will only support encrypted partitions one level deep.
                     if "children" in device:
-                        for partition in device.get("children"):
-                            # /dev/sdX1, /dev/sdX2 etc
-                            item = self._get_supported_volume(partition)  # type: ignore
-                            if item:
-                                volumes.append(item)  # type: ignore
-                    # /dev/sdX
+                        for child in device.get("children"):
+                            # Whole block device is encrypted (and unlocked)
+                            if child.get("type") == "crypt" and device.get("type") == "disk":
+                                logger.debug("Checking device {device}")
+                                item = self._get_supported_volume(device)  # type: ignore
+                                if item:
+                                    volumes.append(item)
+                            else:
+                                # /dev/sdX1, /dev/sdX2
+                                logger.debug("Checking partition {child}")
+                                item = self._get_supported_volume(child)  # type: ignore
+                                if item:
+                                    volumes.append(item)  # type: ignore
+                    # /dev/sdX and it's locked
                     else:
                         item = self._get_supported_volume(device)  # type: ignore
                         if item:
@@ -178,22 +186,21 @@ class CLI:
                 if vol.encryption == EncryptionScheme.UNKNOWN:
                     vol.encryption = self._is_it_veracrypt(vol)
 
-                if children[0].get("mountpoint"):
-                    logger.debug(f"{vol.device_name} is mounted")
+                # To opportunistically mount any unlocked encrypted partition
+                # (i.e. third-party devices such as IronKeys), remove this condition.
+                if vol.encryption in (EncryptionScheme.LUKS, EncryptionScheme.VERACRYPT):
+                    logger.debug(f"{vol.device_name} encryption scheme is supported")
 
-                    return MountedVolume(
-                        device_name=vol.device_name,
-                        unlocked_name=mapped_name,
-                        encryption=vol.encryption,
-                        mountpoint=children[0].get("mountpoint"),
-                    )
-                else:
-                    # To opportunistically mount any unlocked encrypted partition
-                    # (i.e. third-party devices such as IronKeys), remove this condition.
-                    if vol.encryption in (
-                        EncryptionScheme.LUKS,
-                        EncryptionScheme.VERACRYPT,
-                    ):
+                    if children[0].get("mountpoint"):
+                        logger.debug(f"{vol.device_name} is mounted")
+
+                        return MountedVolume(
+                            device_name=vol.device_name,
+                            unlocked_name=mapped_name,
+                            encryption=vol.encryption,
+                            mountpoint=children[0].get("mountpoint"),
+                        )
+                    else:
                         logger.debug(f"{device_name} is unlocked but unmounted; attempting mount")
                         return self._mount_volume(vol, mapped_name)
 
@@ -212,6 +219,7 @@ class CLI:
         enable VeraCrypt drive detection, which we ship with this package.
         """
         try:
+            logger.debug(f"Check if {volume.device_name} is an unlocked VeraCrypt device")
             info = subprocess.check_output(
                 [
                     "udisksctl",
