@@ -84,6 +84,25 @@ SINGLE_PART_VC_WRITABLE = {
     ],
 }
 
+WHOLE_DEVICE_VC_WRITABLE = {
+    "name": "sda",
+    "rm": True,
+    "ro": False,
+    "type": "disk",
+    "mountpoint": None,
+    "fstype": None,
+    "children": [
+        {
+            "name": "tcrypt-2049",
+            "rm": False,
+            "ro": False,
+            "type": "crypt",
+            "mountpoint": "/media/usb/tcrypt-1234",
+            "fstype": "vfat",
+        }
+    ],
+}
+
 SINGLE_PART_LUKS_UNLOCKED_UNMOUNTED = {
     "name": "sda1",
     "type": "part",

@@ -28,6 +28,7 @@ from ..lsblk_sample import (
     UDISKS_STATUS_MULTI_CONNECTED,
     UDISKS_STATUS_NOTHING_CONNECTED,
     UDISKS_STATUS_ONE_DEVICE_CONNECTED,
+    WHOLE_DEVICE_VC_WRITABLE,
 )
 
 _PRETEND_LUKS_ID = "/dev/mapper/luks-dbfb85f2-77c4-4b1f-99a9-2dd3c6789094"
@@ -41,6 +42,7 @@ supported_volumes_no_mount_required = [
     SINGLE_DEVICE_LOCKED,
     SINGLE_PART_LUKS_WRITABLE,
     SINGLE_PART_VC_WRITABLE,
+    WHOLE_DEVICE_VC_WRITABLE,
 ]
 
 # Volume, expected device name, expected mapped device name
