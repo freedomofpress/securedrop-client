@@ -13,6 +13,7 @@ override_dh_auto_install:
 
 override_dh_strip_nondeterminism:
 	find ./debian/ -type f -name '*.pyc' -delete
+	find ./debian/ -type d -name '__pycache__' -delete
 	find ./debian/ -type f -name 'pip-selfcheck.json' -delete
 	find ./debian/ -type f -name 'direct_url.json' -delete
 	find ./debian/ -type f -name 'RECORD' -delete
