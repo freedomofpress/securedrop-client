@@ -2,13 +2,11 @@ import configparser
 import http
 import json
 import os
+import subprocess
+from dataclasses import dataclass
 from datetime import datetime  # noqa: F401
-from subprocess import PIPE, Popen, TimeoutExpired
-from typing import Any, Dict, List, Optional, Tuple
-from urllib.parse import urljoin
-
-import requests
-from requests.exceptions import ConnectionError, ConnectTimeout, ReadTimeout, TooManyRedirects
+from pathlib import Path
+from typing import Any, Dict, List, Optional, Tuple, Union
 
 from .sdlocalobjects import (
     AuthError,
@@ -45,31 +43,18 @@ class ServerConnectionError(Exception):
         super().__init__("Cannot connect to the server.")
 
 
-def json_query(proxy_vm_name: str, data: str, timeout: Optional[int] = None) -> str:
-    """
-    Takes a JSON based query and passes it to the network proxy.
-    Returns the JSON output from the proxy.
-    """
-    p = Popen(
-        ["/usr/lib/qubes/qrexec-client-vm", proxy_vm_name, "securedrop.Proxy"],
-        stdin=PIPE,
-        stdout=PIPE,
-        stderr=PIPE,
-    )
-    if p.stdin is not None:
-        p.stdin.write(data.encode("utf-8"))
+@dataclass(frozen=True)
+class StreamedResponse:
+    contents: bytes
+    sha256sum: str
+    filename: str
 
-    try:
-        stdout, _ = p.communicate(timeout=timeout)  # type: (bytes, bytes)
-    except TimeoutExpired:
-        try:
-            p.terminate()
-        except Exception:
-            pass
-        raise RequestTimeoutError
-    else:
-        output = stdout.decode("utf-8")
-        return output.strip()
+
+@dataclass(frozen=True)
+class JSONResponse:
+    data: dict
+    status: int
+    headers: Dict[str, str]
 
 
 class API:
@@ -109,7 +94,7 @@ class API:
         self.first_name = None  # type: Optional[str]
         self.last_name = None  # type: Optional[str]
         self.req_headers = dict()  # type: Dict[str, str]
-        self.proxy = proxy  # type: bool
+        self.development_mode = not proxy  # type: bool
         self.default_request_timeout = default_request_timeout or DEFAULT_REQUEST_TIMEOUT
         self.default_download_timeout = default_download_timeout or DEFAULT_DOWNLOAD_TIMEOUT
 
@@ -122,102 +107,96 @@ class API:
         except Exception:
             pass  # We already have a default name
 
+    def _rpc_target(self) -> List:
+        if not self.development_mode:
+            return ["/usr/lib/qubes/qrexec-client-vm", self.proxy_vm_name, "securedrop.Proxy"]
+        # Development mode, find the target directory and look for a debug securedrop-proxy
+        # binary. We assume that `cargo build` has already been run. We don't use `cargo run`
+        # because it adds its own output that would interfere with ours.
+        target_directory = json.loads(
+            subprocess.check_output(["cargo", "metadata", "--format-version", "1"], text=True)
+        )["target_directory"]
+        return [f"{target_directory}/debug/securedrop-proxy"]
+
     def _send_json_request(
         self,
         method: str,
         path_query: str,
+        stream: bool = False,
         body: Optional[str] = None,
         headers: Optional[Dict[str, str]] = None,
         timeout: Optional[int] = None,
-    ) -> Tuple[Any, int, Dict[str, str]]:
-        if self.proxy:  # We are using the Qubes securedrop-proxy
-            func = self._send_rpc_json_request
-        else:  # We are not using the Qubes securedrop-proxy
-            func = self._send_http_json_request
+    ) -> Union[StreamedResponse, JSONResponse]:
+        data: Dict[str, Any] = {"method": method, "path_query": path_query, "stream": stream}
 
-        return func(method, path_query, body, headers, timeout)
-
-    def _send_http_json_request(
-        self,
-        method: str,
-        path_query: str,
-        body: Optional[str] = None,
-        headers: Optional[Dict[str, str]] = None,
-        timeout: Optional[int] = None,
-    ) -> Tuple[Any, int, Dict[str, str]]:
-        url = urljoin(self.server, path_query)
-        kwargs = {"headers": headers}  # type: Dict[str, Any]
-
-        if timeout:
-            kwargs["timeout"] = timeout
-
-        if method == "POST":
-            kwargs["data"] = body
-
-        try:
-            result = requests.request(method, url, **kwargs)
-        except (ConnectTimeout, ReadTimeout):
-            raise RequestTimeoutError
-        except (TooManyRedirects, ConnectionError):
-            raise ServerConnectionError
-
-        if result.status_code == http.HTTPStatus.FORBIDDEN:
-            raise AuthError("forbidden")
-
-        # Because when we download a file there is no JSON in the body
-        if path_query.endswith("/download"):
-            return result, result.status_code, dict(result.headers)
-
-        return result.json(), result.status_code, dict(result.headers)
-
-    def _send_rpc_json_request(
-        self,
-        method: str,
-        path_query: str,
-        body: Optional[str] = None,
-        headers: Optional[Dict[str, str]] = None,
-        timeout: Optional[int] = None,
-    ) -> Tuple[Any, int, Dict[str, str]]:
-        data = {"method": method, "path_query": path_query}  # type: Dict[str, Any]
-
-        if method == "POST":
+        if method == "POST" and body:
             data["body"] = body
 
-        if headers is not None and headers:
+        if headers:
             data["headers"] = headers
 
         if timeout:
             data["timeout"] = timeout
 
-        data_str = json.dumps(data)
-
-        json_result = json_query(self.proxy_vm_name, data_str, timeout)
-        if not json_result:
-            raise BaseError("No response from proxy")
+        data_str = json.dumps(data).encode()
 
         try:
-            result = json.loads(json_result)
-        except json.decoder.JSONDecodeError:
-            raise BaseError("Error in parsing JSON")
+            env = {}
+            if self.development_mode:
+                env["SD_PROXY_ORIGIN"] = self.server
+            response = subprocess.run(
+                self._rpc_target(), capture_output=True, timeout=timeout, input=data_str, env=env
+            )
+        except subprocess.TimeoutExpired as err:
+            raise RequestTimeoutError from err
 
-        data = json.loads(result["body"])
+        # error handling
+        if response.returncode != 0:
+            try:
+                error = json.loads(response.stderr.decode())
+            except json.decoder.JSONDecodeError as err:
+                raise BaseError("Unable to parse stderr JSON") from err
+            raise BaseError("Internal proxy error: " + error.get("error", "unknown error"))
 
-        if "error" in data and result["status"] == http.HTTPStatus.GATEWAY_TIMEOUT:
+        # We need to peek at the content to see if we got a streaming response,
+        # which only happens for stream=True and non-error response
+        if stream and response.stdout[0] != b"{":
+            try:
+                stderr = json.loads(response.stderr.decode())
+                sha256sum = stderr["headers"]["etag"]
+                filename = stderr["headers"]["content-disposition"]
+            except (json.decoder.JSONDecodeError, KeyError) as err:
+                raise BaseError("Unable to parse header metadata from response") from err
+            # Get the checksum out of stderr
+            return StreamedResponse(
+                contents=response.stdout, sha256sum=sha256sum, filename=filename
+            )
+
+        try:
+            result = json.loads(response.stdout.decode())
+        except json.decoder.JSONDecodeError as err:
+            raise BaseError("Unable to parse stdout JSON") from err
+
+        if result["status"] == http.HTTPStatus.GATEWAY_TIMEOUT:
             raise RequestTimeoutError
-        elif "error" in data and result["status"] == http.HTTPStatus.BAD_GATEWAY:
+        elif result["status"] == http.HTTPStatus.BAD_GATEWAY:
             raise ServerConnectionError
-        elif "error" in data and result["status"] == http.HTTPStatus.FORBIDDEN:
-            raise AuthError(data["error"])
-        elif "error" in data and result["status"] == http.HTTPStatus.BAD_REQUEST:
-            raise ReplyError(data["error"])
-        elif "error" in data and result["status"] != http.HTTPStatus.NOT_FOUND:
+        elif result["status"] == http.HTTPStatus.FORBIDDEN:
+            raise AuthError("Forbidden")
+        elif result["status"] == http.HTTPStatus.BAD_REQUEST:
+            raise ReplyError("Bad request")
+        elif (
+            str(result["status"]).startswith(("4", "5"))
+            and result["status"] != http.HTTPStatus.NOT_FOUND
+        ):
             # We exclude 404 since if we encounter a 404, it means that an
             # item is missing. In that case we return to the caller to
             # handle that with an appropriate message. However, if the error
             # is not a 404, then we raise.
-            raise BaseError(data["error"])
+            raise BaseError("Unknown error")
 
-        return data, result["status"], result["headers"]
+        data = json.loads(result["body"])
+        return JSONResponse(data=data, status=result["status"], headers=result["headers"])
 
     def authenticate(self, totp: Optional[str] = None) -> bool:
         """
@@ -238,25 +217,23 @@ class API:
         path_query = "api/v1/token"
         body = json.dumps(user_data)
 
-        try:
-            token_data, status_code, headers = self._send_json_request(
-                method, path_query, body=body, timeout=self.default_request_timeout
-            )
-        except json.decoder.JSONDecodeError:
-            raise BaseError("Error in parsing JSON")
+        response = self._send_json_request(
+            method, path_query, body=body, timeout=self.default_request_timeout
+        )
+        assert isinstance(response, JSONResponse)
 
-        if "expiration" not in token_data:
+        if "expiration" not in response.data:
             raise AuthError("Authentication error")
 
-        token_expiration = parse_datetime(token_data["expiration"])
+        token_expiration = parse_datetime(response.data["expiration"])
         if token_expiration is None:
             raise BaseError("Error in parsing token expiration time")
 
-        self.token = token_data["token"]
+        self.token = response.data["token"]
         self.token_expiration = token_expiration
-        self.token_journalist_uuid = token_data["journalist_uuid"]
-        self.first_name = token_data["journalist_first_name"]
-        self.last_name = token_data["journalist_last_name"]
+        self.token_journalist_uuid = response.data["journalist_uuid"]
+        self.first_name = response.data["journalist_first_name"]
+        self.last_name = response.data["journalist_last_name"]
 
         self.update_auth_header()
 
@@ -279,14 +256,15 @@ class API:
         path_query = "api/v1/sources"
         method = "GET"
 
-        data, status_code, headers = self._send_json_request(
+        response = self._send_json_request(
             method,
             path_query,
             headers=self.req_headers,
             timeout=self.default_request_timeout,
         )
+        assert isinstance(response, JSONResponse)
 
-        sources = data["sources"]
+        sources = response.data["sources"]
         result = []  # type: List[Source]
 
         for source in sources:
@@ -305,17 +283,18 @@ class API:
         path_query = "api/v1/sources/{}".format(source.uuid)
         method = "GET"
 
-        data, status_code, headers = self._send_json_request(
+        response = self._send_json_request(
             method,
             path_query,
             headers=self.req_headers,
             timeout=self.default_request_timeout,
         )
+        assert isinstance(response, JSONResponse)
 
-        if status_code == 404:
+        if response.status == 404:
             raise WrongUUIDError("Missing source {}".format(source.uuid))
 
-        return Source(**data)
+        return Source(**response.data)
 
     def get_source_from_string(self, uuid: str) -> Source:
         """
@@ -339,17 +318,18 @@ class API:
         path_query = "api/v1/sources/{}".format(source.uuid)
         method = "DELETE"
 
-        data, status_code, headers = self._send_json_request(
+        response = self._send_json_request(
             method,
             path_query,
             headers=self.req_headers,
             timeout=self.default_request_timeout,
         )
+        assert isinstance(response, JSONResponse)
 
-        if status_code == 404:
+        if response.status == 404:
             raise WrongUUIDError("Missing source {}".format(source.uuid))
 
-        if "message" in data and data["message"] == "Source and submissions deleted":
+        if response.data.get("message") == "Source and submissions deleted":
             return True
 
         # We should never reach here
@@ -368,17 +348,18 @@ class API:
         path_query = "api/v1/sources/{}/conversation".format(uuid)
         method = "DELETE"
 
-        data, status_code, headers = self._send_json_request(
+        response = self._send_json_request(
             method,
             path_query,
             headers=self.req_headers,
             timeout=self.default_request_timeout,
         )
+        assert isinstance(response, JSONResponse)
 
-        if status_code == 404:
+        if response.status == 404:
             raise WrongUUIDError("Missing source {}".format(uuid))
 
-        if "message" in data and data["message"] == "Source data deleted":
+        if response.data.get("message") == "Source data deleted":
             return True
 
         return False
@@ -405,16 +386,18 @@ class API:
         path_query = "api/v1/sources/{}/add_star".format(source.uuid)
         method = "POST"
 
-        data, status_code, headers = self._send_json_request(
+        response = self._send_json_request(
             method,
             path_query,
             headers=self.req_headers,
             timeout=self.default_request_timeout,
         )
-        if status_code == 404:
+        assert isinstance(response, JSONResponse)
+
+        if response.status == 404:
             raise WrongUUIDError("Missing source {}".format(source.uuid))
 
-        if "message" in data and data["message"] == "Star added":
+        if response.data.get("message") == "Star added":
             return True
 
         return False
@@ -428,16 +411,18 @@ class API:
         path_query = "api/v1/sources/{}/remove_star".format(source.uuid)
         method = "DELETE"
 
-        data, status_code, headers = self._send_json_request(
+        response = self._send_json_request(
             method,
             path_query,
             headers=self.req_headers,
             timeout=self.default_request_timeout,
         )
-        if status_code == 404:
+        assert isinstance(response, JSONResponse)
+
+        if response.status == 404:
             raise WrongUUIDError("Missing source {}".format(source.uuid))
 
-        if "message" in data and data["message"] == "Star removed":
+        if response.data.get("message") == "Star removed":
             return True
 
         return False
@@ -452,18 +437,19 @@ class API:
         path_query = "api/v1/sources/{}/submissions".format(source.uuid)
         method = "GET"
 
-        data, status_code, headers = self._send_json_request(
+        response = self._send_json_request(
             method,
             path_query,
             headers=self.req_headers,
             timeout=self.default_request_timeout,
         )
+        assert isinstance(response, JSONResponse)
 
-        if status_code == 404:
+        if response.status == 404:
             raise WrongUUIDError("Missing submission {}".format(source.uuid))
 
         result = []  # type: List[Submission]
-        values = data["submissions"]
+        values = response.data["submissions"]
 
         for val in values:
             s = Submission(**val)
@@ -484,17 +470,21 @@ class API:
             )
             method = "GET"
 
-            data, status_code, headers = self._send_json_request(
+            response = self._send_json_request(
                 method,
                 path_query,
                 headers=self.req_headers,
                 timeout=self.default_request_timeout,
             )
+            assert isinstance(response, JSONResponse)
 
-        if status_code == 404:
-            raise WrongUUIDError("Missing submission {}".format(submission.uuid))
+            if response.status == 404:
+                raise WrongUUIDError("Missing submission {}".format(submission.uuid))
 
-        return Submission(**data)
+            return Submission(**response.data)
+        else:
+            # XXX: is this the correct behavior
+            return submission
 
     def get_submission_from_string(self, uuid: str, source_uuid: str) -> Submission:
         """
@@ -517,15 +507,16 @@ class API:
         path_query = "api/v1/submissions"
         method = "GET"
 
-        data, status_code, headers = self._send_json_request(
+        response = self._send_json_request(
             method,
             path_query,
             headers=self.req_headers,
             timeout=self.default_request_timeout,
         )
+        assert isinstance(response, JSONResponse)
 
         result = []  # type: List[Submission]
-        values = data["submissions"]
+        values = response.data["submissions"]
 
         for val in values:
             s = Submission(**val)
@@ -548,17 +539,18 @@ class API:
         )
         method = "DELETE"
 
-        data, status_code, headers = self._send_json_request(
+        response = self._send_json_request(
             method,
             path_query,
             headers=self.req_headers,
             timeout=self.default_request_timeout,
         )
+        assert isinstance(response, JSONResponse)
 
-        if status_code == 404:
+        if response.status == 404:
             raise WrongUUIDError("Missing submission {}".format(submission.uuid))
 
-        if "message" in data and data["message"] == "Submission deleted":
+        if response.data.get("message") == "Submission deleted":
             return True
         # We should never reach here
         return False
@@ -597,33 +589,24 @@ class API:
             if os.path.exists(path) and not os.path.isdir(path):
                 raise BaseError("Please provide a valid directory to save.")
 
-        data, status_code, headers = self._send_json_request(
+        response = self._send_json_request(
             method,
             path_query,
+            stream=True,
             headers=self.req_headers,
             timeout=timeout or self.default_download_timeout,
         )
 
-        if status_code == 404:
-            raise WrongUUIDError("Missing submission {}".format(submission.uuid))
+        if isinstance(response, JSONResponse):
+            if response.status == 404:
+                raise WrongUUIDError("Missing submission {}".format(submission.uuid))
+            else:
+                raise BaseError(f"Unknown error, status code: {response.status}")
 
-        # Get the headers
-        headers = headers
+        filepath = os.path.join(path, submission.filename)
+        Path(filepath).write_bytes(response.contents)
 
-        if not self.proxy:
-            # This is where we will save our downloaded file
-            filepath = os.path.join(path, submission.filename)
-            with open(filepath, "wb") as fobj:
-                for chunk in data.iter_content(chunk_size=1024):  # Getting 1024 in each chunk
-                    if chunk:
-                        fobj.write(chunk)
-
-        else:
-            filepath = os.path.join(
-                "/home/user/QubesIncoming/", self.proxy_vm_name, data["filename"]
-            )
-
-        return headers["Etag"].strip('"'), filepath
+        return response.sha256sum.strip('"'), filepath
 
     def flag_source(self, source: Source) -> bool:
         """
@@ -635,19 +618,20 @@ class API:
         path_query = "api/v1/sources/{}/flag".format(source.uuid)
         method = "POST"
 
-        data, status_code, headers = self._send_json_request(
+        response = self._send_json_request(
             method,
             path_query,
             headers=self.req_headers,
             timeout=self.default_request_timeout,
         )
+        assert isinstance(response, JSONResponse)
 
-        if status_code == 404:
+        if response.status == 404:
             raise WrongUUIDError("Missing source {}".format(source.uuid))
 
         return True
 
-    def get_current_user(self) -> Any:
+    def get_current_user(self) -> dict:
         """
         Returns a dictionary of the current user data.
 
@@ -662,14 +646,15 @@ class API:
         path_query = "api/v1/user"
         method = "GET"
 
-        data, status_code, headers = self._send_json_request(
+        response = self._send_json_request(
             method,
             path_query,
             headers=self.req_headers,
             timeout=self.default_request_timeout,
         )
+        assert isinstance(response, JSONResponse)
 
-        return data
+        return response.data
 
     def get_users(self) -> List[User]:
         """
@@ -681,14 +666,15 @@ class API:
         path_query = "api/v1/users"
         method = "GET"
 
-        data, status_code, headers = self._send_json_request(
+        response = self._send_json_request(
             method,
             path_query,
             headers=self.req_headers,
             timeout=self.default_request_timeout,
         )
+        assert isinstance(response, JSONResponse)
 
-        users = data["users"]
+        users = response.data["users"]
         result = []  # type: List[User]
 
         for user in users:
@@ -713,16 +699,17 @@ class API:
         if reply_uuid:
             reply["uuid"] = reply_uuid
 
-        data, status_code, headers = self._send_json_request(
+        response = self._send_json_request(
             method,
             path_query,
             body=json.dumps(reply),
             headers=self.req_headers,
             timeout=self.default_request_timeout,
         )
+        assert isinstance(response, JSONResponse)
 
-        if "message" in data and data["message"] == "Your reply has been stored":
-            return Reply(uuid=data["uuid"], filename=data["filename"])
+        if response.data.get("message") == "Your reply has been stored":
+            return Reply(uuid=response.data["uuid"], filename=response.data["filename"])
 
         raise ReplyError("bad request")
 
@@ -736,18 +723,19 @@ class API:
         path_query = "api/v1/sources/{}/replies".format(source.uuid)
         method = "GET"
 
-        data, status_code, headers = self._send_json_request(
+        response = self._send_json_request(
             method,
             path_query,
             headers=self.req_headers,
             timeout=self.default_request_timeout,
         )
+        assert isinstance(response, JSONResponse)
 
-        if status_code == 404:
+        if response.status == 404:
             raise WrongUUIDError("Missing source {}".format(source.uuid))
 
         result = []
-        for datum in data["replies"]:
+        for datum in response.data["replies"]:
             reply = Reply(**datum)
             result.append(reply)
 
@@ -765,17 +753,18 @@ class API:
             path_query = "api/v1/sources/{}/replies/{}".format(source.uuid, reply_uuid)
             method = "GET"
 
-            data, status_code, headers = self._send_json_request(
+            response = self._send_json_request(
                 method,
                 path_query,
                 headers=self.req_headers,
                 timeout=self.default_request_timeout,
             )
+            assert isinstance(response, JSONResponse)
 
-            if status_code == 404:
+            if response.status == 404:
                 raise WrongUUIDError("Missing source {}".format(source.uuid))
 
-            reply = Reply(**data)
+            reply = Reply(**response.data)
 
         return reply
 
@@ -788,15 +777,16 @@ class API:
         path_query = "api/v1/replies"
         method = "GET"
 
-        data, status_code, headers = self._send_json_request(
+        response = self._send_json_request(
             method,
             path_query,
             headers=self.req_headers,
             timeout=self.default_request_timeout,
         )
+        assert isinstance(response, JSONResponse)
 
         result = []
-        for datum in data["replies"]:
+        for datum in response.data["replies"]:
             reply = Reply(**datum)
             result.append(reply)
 
@@ -821,35 +811,25 @@ class API:
             if os.path.exists(path) and not os.path.isdir(path):
                 raise BaseError("Please provide a valid directory to save.")
 
-        data, status_code, headers = self._send_json_request(
+        response = self._send_json_request(
             method,
             path_query,
+            stream=True,
             headers=self.req_headers,
             timeout=self.default_request_timeout,
         )
 
-        if status_code == 404:
-            raise WrongUUIDError("Missing reply {}".format(reply.uuid))
+        if isinstance(response, JSONResponse):
+            if response.status == 404:
+                raise WrongUUIDError("Missing reply {}".format(reply.uuid))
+            else:
+                raise BaseError(f"Unknown error, status code: {response.status}")
 
-        # Get the headers
-        headers = headers
+        # This is where we will save our downloaded file
+        filepath = os.path.join(path, response.filename.split("attachment; filename=")[1])
+        Path(filepath).write_bytes(response.contents)
 
-        if not self.proxy:
-            # This is where we will save our downloaded file
-            filepath = os.path.join(
-                path, headers["Content-Disposition"].split("attachment; filename=")[1]
-            )
-            with open(filepath, "wb") as fobj:
-                for chunk in data.iter_content(chunk_size=1024):  # Getting 1024 in each chunk
-                    if chunk:
-                        fobj.write(chunk)
-
-        else:
-            filepath = os.path.join(
-                "/home/user/QubesIncoming/", self.proxy_vm_name, data["filename"]
-            )
-
-        return headers["Etag"].strip('"'), filepath
+        return response.sha256sum.strip('"'), filepath
 
     def delete_reply(self, reply: Reply) -> bool:
         """
@@ -865,17 +845,18 @@ class API:
 
         method = "DELETE"
 
-        data, status_code, headers = self._send_json_request(
+        response = self._send_json_request(
             method,
             path_query,
             headers=self.req_headers,
             timeout=self.default_request_timeout,
         )
+        assert isinstance(response, JSONResponse)
 
-        if status_code == 404:
+        if response.status == 404:
             raise WrongUUIDError("Missing reply {}".format(reply.uuid))
 
-        if "message" in data and data["message"] == "Reply deleted":
+        if response.data.get("message") == "Reply deleted":
             return True
         # We should never reach here
         return False
@@ -887,14 +868,15 @@ class API:
         path_query = "api/v1/logout"
         method = "POST"
 
-        data, status_code, headers = self._send_json_request(
+        response = self._send_json_request(
             method,
             path_query,
             headers=self.req_headers,
             timeout=self.default_request_timeout,
         )
+        assert isinstance(response, JSONResponse)
 
-        if "message" in data and data["message"] == "Your token has been revoked.":
+        if response.data.get("message") == "Your token has been revoked.":
             return True
         else:
             return False
@@ -914,17 +896,19 @@ class API:
         path_query = "api/v1/seen"
         body = json.dumps({"files": files, "messages": messages, "replies": replies})
 
-        data, status_code, headers = self._send_json_request(
+        response = self._send_json_request(
             method,
             path_query,
             headers=self.req_headers,
             body=body,
             timeout=self.default_request_timeout,
         )
+        assert isinstance(response, JSONResponse)
 
-        data_str = json.dumps(data)
+        data_str = json.dumps(response.data)
 
-        if status_code == 404:
+        if response.status == 404:
             raise WrongUUIDError("{}".format(data_str))
 
+        # FIXME: why are we returning a string with a JSON-encoded blob???
         return data_str

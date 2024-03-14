@@ -5,7 +5,6 @@ The tests are based upon the client testing descriptions here:
 https://github.com/freedomofpress/securedrop-client/wiki/Test-plan#basic-client-testing
 """
 
-import pytest
 from flaky import flaky
 from PyQt5.QtCore import Qt
 
@@ -13,7 +12,6 @@ from tests.conftest import TIME_CLICK_ACTION, TIME_RENDER_CONV_VIEW, TIME_RENDER
 
 
 @flaky
-@pytest.mark.vcr()
 def test_offline_star_source(functional_test_offline_context, qtbot):
     """
     Verify that starring while in offline mode results in no state change with the star and that

@@ -1,5 +1,0 @@
-host: sdproxytest.local
-scheme: https
-port: 8000
-target_vm: compost
-dev: False

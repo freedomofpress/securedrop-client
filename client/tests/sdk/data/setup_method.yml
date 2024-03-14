@@ -1,0 +1,22 @@
+interactions:
+- request:
+    body: '{"username": "journalist", "passphrase": "correct horse battery staple
+      profanity oil chewy", "one_time_code": "112097"}'
+    headers: {}
+    method: POST
+    uri: api/v1/token
+  response: !!python/object:securedrop_client.sdk.JSONResponse
+    data:
+      expiration: '2024-02-29T23:13:01.444028Z'
+      journalist_first_name: null
+      journalist_last_name: null
+      journalist_uuid: ed64b0fa-0565-4b12-9c48-6cfe27a73fd9
+      token: Ilhha2ZHZWpVcFZQVmpKdWJOUzJYRG1YVUc4QXZWS0JiOGVNQXJycE5GUFUi.ZeDzXQ.10ODTj49yF7kxKbeMm9eaayR3Xo
+    headers:
+      connection: close
+      content-length: '290'
+      content-type: application/json
+      date: Thu, 29 Feb 2024 21:13:01 GMT
+      server: Werkzeug/2.2.3 Python/3.8.10
+    status: 200
+version: 1

@@ -1,0 +1,13 @@
+interactions:
+- request:
+    body: '{"username": "no", "passphrase": "correct horse battery staple profanity
+      oil chewy", "one_time_code": "112097"}'
+    headers: {}
+    method: POST
+    uri: api/v1/token
+  response: !!python/object/apply:securedrop_client.sdk.sdlocalobjects.AuthError
+    args:
+    - Forbidden
+    state:
+      msg: Forbidden
+version: 1

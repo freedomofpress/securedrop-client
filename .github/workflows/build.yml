@@ -37,7 +37,6 @@ jobs:
           PKG_DIR=../client make -C securedrop-builder requirements
           PKG_DIR=../export make -C securedrop-builder requirements
           PKG_DIR=../log make -C securedrop-builder requirements
-          PKG_DIR=../proxy make -C securedrop-builder requirements
           git config --global --add safe.directory "$GITHUB_WORKSPACE"
           git diff --ignore-matching-lines=# --exit-code
 

@@ -1,2 +1,0 @@
-{ "method": "GET",
-  "path_query": "/posts?userId=1" }
