@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.10.0-rc2
+
+* Support unpartitioned VeraCrypt drives. (#1908)
+* Adjust wording referring to "sd-devices" VM. (#1908)
+* Remove __pycache__ folders from packages. (#1909)
+* Remove specific version from .pot files. (#1915)
+
 ## 0.10.0-rc1
 
 This is the first release from the merged securedrop-client repository, which now
