@@ -1,6 +1,12 @@
 
 # cargo-vet audits file
 
+[[audits.async-compression]]
+who = "Kunal Mehta <legoktm@debian.org>"
+criteria = "safe-to-run"
+version = "0.4.6"
+notes = "only usage of unsafe is in zstd support, via Unshared, which we're not enabling"
+
 [[audits.clang-sys]]
 who = "Kunal Mehta <legoktm@debian.org>"
 criteria = "safe-to-run"
