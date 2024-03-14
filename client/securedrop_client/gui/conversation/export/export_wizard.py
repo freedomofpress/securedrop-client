@@ -5,7 +5,7 @@ from typing import List, Optional
 from PyQt5.QtCore import QSize, Qt, pyqtSlot
 from PyQt5.QtGui import QIcon, QKeyEvent
 from PyQt5.QtWidgets import QAbstractButton  # noqa: F401
-from PyQt5.QtWidgets import QApplication, QWidget, QWizard, QWizardPage
+from PyQt5.QtWidgets import QApplication, QSizePolicy, QWidget, QWizard, QWizardPage
 
 from securedrop_client.export import Export
 from securedrop_client.export_status import ExportStatus
@@ -23,6 +23,21 @@ from securedrop_client.resources import load_movie, load_relative_css
 
 logger = logging.getLogger(__name__)
 
+# class ExportWizardButton():
+#     """
+#     Customized buttons for export wizard.
+#     """
+#     BUTTON_SIZE = QSize(142, 40)
+#     SIZE_POLICY = QSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed)
+
+#     def __init__(self):
+#         super().__init__()
+#         self.setMinimumSize(self.BUTTON_SIZE)
+#         self.setMaximumSize(self.BUTTON_SIZE)
+#         self.setSizePolicy(self.SIZE_POLICY)
+
+#     def sizeHint(self) -> QSize:
+#         return self.BUTTON_SIZE
 
 class ExportWizard(QWizard):
     """
@@ -45,12 +60,6 @@ class ExportWizard(QWizard):
         filepaths: List[str],
         parent: Optional[QWidget] = None,
     ) -> None:
-        # Normally, the active window is the right parent, but if the wizard is launched
-        # via another element (a modal dialog, such as the "Some files may not be exported"
-        # modal), the parent will be the modal dialog and the wizard layout will be affected.
-        # In those cases we want to be able to specify a different parent.
-        if not parent:
-            parent = QApplication.activeWindow()
         super().__init__(parent)
         self.export = export
         self.summary_text = SecureQLabel(
@@ -102,31 +111,39 @@ class ExportWizard(QWizard):
         self.back_button = self.button(QWizard.WizardButton.BackButton)  # type: QAbstractButton
         self.finish_button = self.button(QWizard.WizardButton.FinishButton)  # type: QAbstractButton
 
+        button_size = QSize(142, 40)
+        size_policy = QSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed)
+ 
         self.next_button.setObjectName("QWizardButton_PrimaryButton")
         self.next_button.setStyleSheet(button_stylesheet)
-        self.next_button.setMinimumSize(QSize(142, 40))
-        self.next_button.setMaximumHeight(40)
+        self.next_button.setMinimumSize(button_size)
+        self.next_button.setMaximumSize(button_size)
+        self.next_button.setSizePolicy(size_policy)
         self.next_button.setIconSize(QSize(21, 21))
+        self.next_button.setFixedSize(button_size)
         self.next_button.clicked.connect(self.request_export)
-        self.next_button.setFixedSize(QSize(142, 40))
+        # assert self.next_button.sizeHint() == button_size, f"{self.next_button.sizeHint()}"
 
         self.cancel_button.setObjectName("QWizardButton_GenericButton")
         self.cancel_button.setStyleSheet(button_stylesheet)
-        self.cancel_button.setMinimumSize(QSize(142, 40))
-        self.cancel_button.setMaximumHeight(40)
-        self.cancel_button.setFixedSize(QSize(142, 40))
+        self.cancel_button.setMinimumSize(button_size)
+        self.cancel_button.setMaximumSize(button_size)
+        self.cancel_button.setSizePolicy(size_policy)
+        self.cancel_button.setFixedSize(button_size)
 
         self.back_button.setObjectName("QWizardButton_GenericButton")
         self.back_button.setStyleSheet(button_stylesheet)
-        self.back_button.setMinimumSize(QSize(142, 40))
-        self.back_button.setMaximumHeight(40)
-        self.back_button.setFixedSize(QSize(142, 40))
+        self.back_button.setMinimumSize(button_size)
+        self.back_button.setMaximumSize(button_size)
+        self.back_button.setSizePolicy(size_policy)
+        self.back_button.setFixedSize(button_size)
 
         self.finish_button.setObjectName("QWizardButton_GenericButton")
         self.finish_button.setStyleSheet(button_stylesheet)
-        self.finish_button.setMinimumSize(QSize(142, 40))
-        self.finish_button.setMaximumHeight(40)
-        self.finish_button.setFixedSize(QSize(142, 40))
+        self.finish_button.setMinimumSize(button_size)
+        self.finish_button.setMaximumSize(button_size)
+        self.finish_button.setSizePolicy(size_policy)
+        self.finish_button.setFixedSize(button_size)
 
         self.setButtonText(QWizard.WizardButton.NextButton, _("CONTINUE"))
         self.setButtonText(QWizard.WizardButton.CancelButton, _("CANCEL"))
@@ -164,7 +181,6 @@ class ExportWizard(QWizard):
             (Pages.EXPORT_DONE, self._create_done()),
         ]:
             self.setPage(id, page)
-            self.adjustSize()
 
     @pyqtSlot()
     def request_export(self) -> None:

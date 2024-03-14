@@ -11,7 +11,7 @@ from pathlib import Path
 from typing import Callable, Optional
 
 from PyQt5.QtCore import Qt, pyqtSlot
-from PyQt5.QtWidgets import QAction, QApplication, QDialog, QMenu
+from PyQt5.QtWidgets import QAction, QApplication, QDialog, QMainWindow, QMenu
 
 from securedrop_client import state
 from securedrop_client.conversation import Transcript as ConversationTranscript
@@ -336,7 +336,7 @@ class ExportConversationAction(QAction):  # pragma: nocover
                 export_device,
                 summary,
                 [str(file_location) for file_location in file_locations],
-                QApplication.activeWindow(),
+                parent = self._get_main_window()
             )
             wizard.exec()
 
@@ -345,3 +345,12 @@ class ExportConversationAction(QAction):  # pragma: nocover
 
     def _on_confirmation_dialog_rejected(self) -> None:
         pass
+
+    def _get_main_window(self) -> Optional[QMainWindow]:
+        """
+        Helper. Return reference to main window.
+        """
+        for window in QApplication.topLevelWindows():
+            if isinstance(window, QMainWindow):
+                return window
+        return None

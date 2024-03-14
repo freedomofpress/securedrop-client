@@ -127,6 +127,7 @@ class ExportWizardPage(QWizardPage):
 
         body_container = QWidget()
         self.body_layout = QVBoxLayout()
+        self.body_layout.addStretch(1)
         self.body_layout.setContentsMargins(
             self.NO_MARGIN, self.NO_MARGIN, self.NO_MARGIN, self.NO_MARGIN
         )
