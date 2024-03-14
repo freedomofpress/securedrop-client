@@ -124,7 +124,6 @@ docs:  ## Generate browsable documentation and call/caller graphs (requires Doxy
 
 LOCALE_DIR=securedrop_client/locale
 POT=${LOCALE_DIR}/messages.pot
-VERSION=$(shell poetry run python -c "import securedrop_client; print(securedrop_client.__version__)")
 
 .PHONY: check-strings
 check-strings: ## Check that the translation catalog is up to date with source code
@@ -144,7 +143,6 @@ $(POT): securedrop_client
 		--charset=utf-8 \
 		--output=${POT} \
 		--project="SecureDrop Client" \
-		--version=${VERSION} \
 		--msgid-bugs-address=securedrop@freedom.press \
 		--copyright-holder="Freedom of the Press Foundation" \
 		--add-comments="Translators:" \
