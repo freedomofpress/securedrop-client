@@ -32,8 +32,12 @@ jobs:
     container: debian:${{ matrix.debian_version }}
     steps:
       - run: |
-          apt-get update && apt-get install --yes git make gnupg
+          apt-get update && apt-get install --yes git make gnupg sudo
       - uses: actions/checkout@v4
+      - name: Setup user
+        run: |
+          # We want to run tests as a regular user, similar to Qubes VMs
+          useradd --create-home --shell /bin/bash user
       - name: Install dependencies
         run: |
           source /etc/os-release
@@ -48,10 +52,11 @@ jobs:
               echo "Unsupported Debian version: $VERSION_CODENAME"
               exit 1
           fi
-          poetry -C ${{ matrix.component }} install
+          sudo -u user poetry -C ${{ matrix.component }} install
       - name: Run test
         run: |
-          make -C ${{ matrix.component }} test
+          sudo chown -R user:user .
+          sudo -u user make -C ${{ matrix.component }} test
 
   # Run the various `make test-...` commands for the client.
   # TODO: these should be consolidated into one when feasible
@@ -70,8 +75,12 @@ jobs:
     container: debian:${{ matrix.debian_version }}
     steps:
       - run: |
-          apt-get update && apt-get install --yes git make gnupg
+          apt-get update && apt-get install --yes git make gnupg sudo
       - uses: actions/checkout@v4
+      - name: Setup user
+        run: |
+          # We want to run tests as a regular user, similar to Qubes VMs
+          useradd --create-home --shell /bin/bash user
       - name: Install dependencies
         run: |
           source /etc/os-release
@@ -86,11 +95,12 @@ jobs:
               echo "Unsupported Debian version: $VERSION_CODENAME"
               exit 1
           fi
-          poetry -C client install
           make -C client ci-install-deps
+          sudo -u user poetry -C client install
       - name: Run test
         run: |
-          make -C client ${{ matrix.command }}
+          sudo chown -R user:user .
+          sudo -u user make -C client ${{ matrix.command }}
 
   # Run the client i18n/l10n checks.
   internationalization:
