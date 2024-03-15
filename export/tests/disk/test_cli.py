@@ -1,10 +1,14 @@
+import os
 import re
+import stat
 import subprocess
+from tempfile import TemporaryDirectory
 from unittest import mock
 
 import pytest
 
 from securedrop_export.archive import Archive
+from securedrop_export.directory import safe_mkdir
 from securedrop_export.disk.cli import CLI
 from securedrop_export.disk.status import Status
 from securedrop_export.disk.volume import EncryptionScheme, MountedVolume, Volume
@@ -454,3 +458,42 @@ class TestCli:
         )
         assert mv.unlocked_name == "/dev/dm-0"
         assert mv.mountpoint == "/media/usb"
+
+    def test__write_data_correct_permissions(self):
+        # This is the permission set when extracting the archive
+        old_umask = os.umask(0o77)
+
+        try:
+            with (
+                mock.patch.object(self.cli, "cleanup"),
+                TemporaryDirectory() as archive_dir,
+                TemporaryDirectory() as mock_mountpoint,
+            ):
+                safe_mkdir(archive_dir, "export_data")
+                export_dir = os.path.join(archive_dir, "export_data")
+                export_filepath = os.path.join(export_dir, "export_file.txt")
+                export_file = open(export_filepath, "w+")
+                export_file.write("Export me!")
+                export_file.close()
+
+                # Sanity
+                stat_result = oct(stat.S_IMODE(os.stat(export_filepath).st_mode))
+                assert stat_result == "0o600"
+
+                fake_volume = MountedVolume(
+                    "fake", "fake", EncryptionScheme.LUKS, mountpoint=mock_mountpoint
+                )
+                self.cli.write_data_to_device(fake_volume, archive_dir, "sd-export")
+
+                export_dir = os.path.join(mock_mountpoint, "sd-export")
+                export_datadir = os.path.join(export_dir, "export_data")
+                export_file = os.path.join(export_datadir, "export_file.txt")
+
+                assert os.path.exists(export_dir)
+                assert os.path.exists(export_file)
+
+                stat_result = oct(stat.S_IMODE(os.stat(export_file).st_mode))
+                assert stat_result == "0o644"
+
+        finally:
+            os.umask(old_umask)
