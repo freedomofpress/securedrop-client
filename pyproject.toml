@@ -16,7 +16,7 @@ safety = "*"
 shellcheck-py = "*"
 
 [tool.bandit]
-exclude_dirs = ["client/tests", "export/tests", "log/tests", "proxy/tests"]
+exclude_dirs = ["client/tests", "export/tests", "log/tests", "proxy/tests", ".venv/"]
 
 [tool.black]
 line-length = 100
