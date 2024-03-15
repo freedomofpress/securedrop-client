@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.10.0-rc3
+
+* Ensure files on USB have read permissions, not just enclosing directory. (#1917)
+* Run CI as a non-root user. (#1919)
+
 ## 0.10.0-rc2
 
 * Support unpartitioned VeraCrypt drives. (#1908)
