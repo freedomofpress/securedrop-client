@@ -424,13 +424,16 @@ class CLI:
             is_error = False
 
             target_path = os.path.join(device.mountpoint, archive_target_dirname)
-            subprocess.check_call(["mkdir", target_path], preexec_fn=self._set_umask_usb)
+            subprocess.check_call(["mkdir", target_path])
 
             export_data = os.path.join(archive_tmpdir, "export_data/")
             logger.debug("Copying file to {}".format(archive_target_dirname))
 
             subprocess.check_call(["cp", "-r", export_data, target_path])
-            logger.info("File copied successfully to {}".format(archive_target_dirname))
+            logger.info("File copied successfully to {}".format(target_path))
+
+            subprocess.check_call(["chmod", "-R", "ugo+r", target_path])
+            logger.info("Read permissions granted on {}".format(target_path))
 
         except (subprocess.CalledProcessError, OSError) as ex:
             logger.error(ex)
@@ -441,14 +444,6 @@ class CLI:
 
         finally:
             self.cleanup(device, archive_tmpdir, is_error)
-
-    def _set_umask_usb(self) -> None:
-        """
-        Set umask to 0o22 before writing to USB, to facilitate reading exported
-        files on other computers.
-        """
-        os.setpgrp()
-        os.umask(0o22)
 
     def cleanup(
         self,
