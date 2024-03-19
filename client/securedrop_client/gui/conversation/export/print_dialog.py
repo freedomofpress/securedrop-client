@@ -1,5 +1,5 @@
 from gettext import gettext as _
-from typing import List, Optional
+from typing import Optional
 
 from PyQt5.QtCore import QSize, pyqtSlot
 
@@ -12,7 +12,7 @@ from ....export import Export
 class PrintDialog(ModalDialog):
     FILENAME_WIDTH_PX = 260
 
-    def __init__(self, device: Export, file_name: str, filepaths: List[str]) -> None:
+    def __init__(self, device: Export, file_name: str, filepaths: list[str]) -> None:
         super().__init__()
 
         self._device = device

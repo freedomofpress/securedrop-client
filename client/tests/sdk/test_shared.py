@@ -142,7 +142,7 @@ class TestShared:
         s = self.api.get_sources()[0]
         with pytest.raises(ReplyError) as err:
             self.api.reply_source(s, "hello")
-            assert err.exception.msg == "bad request"
+        assert str(err.value) == "'bad request'"
 
     def delete_reply(self):
         r = self.api.get_all_replies()[0]

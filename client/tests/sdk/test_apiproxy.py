@@ -222,8 +222,8 @@ def test_download_reply_timeout(mocker):
 
     api = API("mock", "mock", "mock", "mock", proxy=True)
     mocker.patch("securedrop_client.sdk.Popen", MockedPopen)
+    r = Reply(uuid="humanproblem", filename="secret.txt")
     with pytest.raises(RequestTimeoutError):
-        r = Reply(uuid="humanproblem", filename="secret.txt")
         api.download_reply(r)
 
 
@@ -237,8 +237,8 @@ def test_download_submission_timeout(mocker):
 
     api = API("mock", "mock", "mock", "mock", proxy=True)
     mocker.patch("securedrop_client.sdk.Popen", MockedPopen)
+    s = Submission(uuid="climateproblem")
     with pytest.raises(RequestTimeoutError):
-        s = Submission(uuid="climateproblem")
         api.download_submission(s)
 
 

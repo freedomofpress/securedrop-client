@@ -5,7 +5,6 @@ Tests for the gui helper functions in __init__.py
 from PyQt5.QtCore import QSize, Qt
 
 from securedrop_client.gui.base import SecureQLabel, SvgLabel, SvgPushButton, SvgToggleButton
-from tests.helper import app  # noqa: F401
 
 
 def test_SvgToggleButton_init(mocker):

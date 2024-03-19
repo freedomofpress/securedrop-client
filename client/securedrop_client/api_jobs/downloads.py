@@ -4,7 +4,7 @@ import logging
 import math
 import os
 from tempfile import NamedTemporaryFile
-from typing import Any, Optional, Tuple, Type, Union
+from typing import Any, Optional, Union
 
 from sqlalchemy.orm.session import Session
 
@@ -26,7 +26,7 @@ logger = logging.getLogger(__name__)
 
 class DownloadException(Exception):
     def __init__(
-        self, message: str, object_type: Union[Type[Reply], Type[Message], Type[File]], uuid: str
+        self, message: str, object_type: Union[type[Reply], type[Message], type[File]], uuid: str
     ):
         super().__init__(message)
         self.object_type = object_type
@@ -91,7 +91,7 @@ class DownloadJob(SingleObjectApiJob):
 
     def call_download_api(
         self, api: API, db_object: Union[File, Message, Reply]
-    ) -> Tuple[str, str]:
+    ) -> tuple[str, str]:
         """
         Method for making the actual API call to download the file and handling the result.
 
@@ -250,7 +250,7 @@ class ReplyDownloadJob(DownloadJob):
         """
         return session.query(Reply).filter_by(uuid=self.uuid).one()
 
-    def call_download_api(self, api: API, db_object: Reply) -> Tuple[str, str]:
+    def call_download_api(self, api: API, db_object: Reply) -> tuple[str, str]:
         """
         Override DownloadJob.
         """
@@ -306,7 +306,7 @@ class MessageDownloadJob(DownloadJob):
         """
         return session.query(Message).filter_by(uuid=self.uuid).one()
 
-    def call_download_api(self, api: API, db_object: Message) -> Tuple[str, str]:
+    def call_download_api(self, api: API, db_object: Message) -> tuple[str, str]:
         """
         Override DownloadJob.
         """
@@ -362,7 +362,7 @@ class FileDownloadJob(DownloadJob):
         """
         return session.query(File).filter_by(uuid=self.uuid).one()
 
-    def call_download_api(self, api: API, db_object: File) -> Tuple[str, str]:
+    def call_download_api(self, api: API, db_object: File) -> tuple[str, str]:
         """
         Override DownloadJob.
         """
@@ -385,7 +385,4 @@ class FileDownloadJob(DownloadJob):
         """
         fn_no_ext, _ = os.path.splitext(os.path.splitext(os.path.basename(filepath))[0])
         plaintext_filepath = os.path.join(os.path.dirname(filepath), fn_no_ext)
-        original_filename = self.gpg.decrypt_submission_or_reply(
-            filepath, plaintext_filepath, is_doc=True
-        )
-        return original_filename
+        return self.gpg.decrypt_submission_or_reply(filepath, plaintext_filepath, is_doc=True)

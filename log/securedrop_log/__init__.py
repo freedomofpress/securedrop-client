@@ -1,22 +1,20 @@
 import threading
 from logging import StreamHandler
 from subprocess import PIPE, Popen
-from typing import Dict
 
 
 class Singleton(type):
     # TODO: Add a better typehint here
-    _ins: Dict = {}
+    _ins: dict = {}
     _lock = threading.Lock()
 
     def __call__(cls, *args, **kwargs):
         with cls._lock:  # First thread that gets here creates the instance
             if cls not in cls._ins:
-                cls._ins[cls] = (super(Singleton, cls).__call__(*args, **kwargs), args)
+                cls._ins[cls] = (super().__call__(*args, **kwargs), args)
 
-        if len(args) > 1:
-            if args != cls._ins[cls][1]:
-                raise Exception("Arguments not matching for logvm name and Qubes VM name")
+        if len(args) > 1 and args != cls._ins[cls][1]:
+            raise Exception("Arguments not matching for logvm name and Qubes VM name")
         return cls._ins[cls][0]
 
 

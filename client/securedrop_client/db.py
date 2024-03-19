@@ -2,7 +2,7 @@ import datetime
 import os
 from enum import Enum
 from pathlib import Path
-from typing import Any, Dict, List, Union  # noqa: F401
+from typing import Any
 from uuid import uuid4
 
 from sqlalchemy import (
@@ -110,10 +110,10 @@ class Source(Base):
         return f"<Source {self.uuid}: {self.journalist_designation}>"
 
     @property
-    def collection(self) -> List:
+    def collection(self) -> list:
         """Return the list of submissions, replies, messages, and drafts for this
         source, sorted in ascending order by the filename/interaction count."""
-        collection = []  # type: List
+        collection = []
         collection.extend(self.messages)
         collection.extend(self.files)
         collection.extend(self.replies)
@@ -130,11 +130,11 @@ class Source(Base):
         return collection
 
     @property
-    def server_collection(self) -> List:
+    def server_collection(self) -> list:
         """Return the list of submissions, replies, and messages for this source.
         These are the items that have been either successfully sent to the server,
         or they have been retrieved from the server."""
-        collection = []  # type: List
+        collection = []
         collection.extend(self.messages)
         collection.extend(self.files)
         collection.extend(self.replies)
@@ -304,13 +304,13 @@ class Message(Base):
         return False
 
     @property
-    def seen_by_list(self) -> Dict[str, User]:
+    def seen_by_list(self) -> dict[str, User]:
         """
         For each message retrieve a dictionary of users who have seen it.
         Each dictionary item consists of the user's username as its key and the user
         object as its value.
         """
-        usernames = {}  # type: Dict[str, User]
+        usernames = {}  # type: dict[str, User]
         for seen_message in self.seen_messages:
             if seen_message.journalist:
                 usernames[seen_message.journalist.username] = seen_message.journalist
@@ -519,13 +519,13 @@ class Reply(Base):
         return False
 
     @property
-    def seen_by_list(self) -> Dict[str, User]:
+    def seen_by_list(self) -> dict[str, User]:
         """
         For each reply retrieve a dictionary of users who have seen it.
         Each dictionary item consists of the user's username as its key and the user
         object as its value.
         """
-        usernames = {}  # type: Dict[str, User]
+        usernames = {}  # type: dict[str, User]
         for seen_reply in self.seen_replies:
             if seen_reply.journalist:
                 usernames[seen_reply.journalist.username] = seen_reply.journalist
@@ -630,13 +630,12 @@ class DraftReply(Base):
         return True
 
     @property
-    def seen_by_list(self) -> Dict[str, User]:
+    def seen_by_list(self) -> dict[str, User]:
         """
         A draft reply is considered seen by everyone (we don't track who sees draft replies).
         Return an empty dictionary.
         """
-        usernames = {}  # type: Dict[str, User]
-        return usernames
+        return {}
 
 
 class ReplySendStatus(Base):

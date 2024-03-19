@@ -1,5 +1,3 @@
-from typing import List
-
 from PyQt5.QtCore import QSize, pyqtSlot
 
 from securedrop_client.gui.conversation.export import PrintDialog
@@ -15,7 +13,7 @@ class PrintTranscriptDialog(PrintDialog):
     - Overrides the slot that handles the printing action to call said method.
     """
 
-    def __init__(self, device: Export, file_name: str, filepath: List[str]) -> None:
+    def __init__(self, device: Export, file_name: str, filepath: list[str]) -> None:
         super().__init__(device, file_name, filepath)
 
         # List might seem like an odd choice for this, but this is on the

@@ -1,5 +1,3 @@
-from typing import List
-
 from sqlalchemy.orm.session import Session
 
 from securedrop_client.api_jobs.base import ApiJob
@@ -7,7 +5,7 @@ from securedrop_client.sdk import API
 
 
 class SeenJob(ApiJob):
-    def __init__(self, files: List[str], messages: List[str], replies: List[str]) -> None:
+    def __init__(self, files: list[str], messages: list[str], replies: list[str]) -> None:
         super().__init__()
         self.files = files
         self.messages = messages

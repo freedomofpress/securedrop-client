@@ -389,6 +389,7 @@ def test_sync_delete_race(homedir, mocker, session_maker, session):
     assert source_exists(session, source.uuid) is False
     with pytest.raises(NoResultFound):
         get_message(session, message1.uuid)
+    with pytest.raises(NoResultFound):
         get_message(session, message2.uuid)
 
 

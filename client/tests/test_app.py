@@ -21,7 +21,6 @@ from securedrop_client.app import (
     run,
     start_app,
 )
-from tests.helper import app  # noqa: F401
 
 
 def test_application_sets_en_as_default_language_code(mocker):
@@ -124,8 +123,8 @@ class TestSecondInstancePrevention:
         mock_socket = self.socket_mock_generator(mocker, 131)  # crazy unexpected error
         mock_app = self.mock_app(mocker)
         mocker.patch("securedrop_client.app.socket", new=mock_socket)
+        prevent_second_instance(mock_app, "name1")
         with pytest.raises(OSError):
-            prevent_second_instance(mock_app, "name1")
             prevent_second_instance(mock_app, "name1")
 
 

@@ -121,9 +121,10 @@ class SendReplyJob(SingleObjectApiJob):
             raise SendReplyJobTimeoutError(message, self.reply_uuid)
         except Exception as e:
             # Continue to store the draft reply
-            message = f"""
-                Failed to send reply {self.reply_uuid} for source {self.source_uuid} due to Exception: {e}
-            """
+            message = (
+                f"Failed to send reply {self.reply_uuid} for source {self.source_uuid} "
+                f"due to Exception: {e}"
+            )
             self._set_status_to_failed(session)
             raise SendReplyJobError(message, self.reply_uuid)
 

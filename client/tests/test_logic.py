@@ -7,7 +7,6 @@ import datetime
 import logging
 import os
 from gettext import gettext as _
-from typing import Type
 from unittest.mock import Mock, call
 
 import arrow
@@ -873,7 +872,7 @@ def test_Controller_mark_seen_skips_op_if_user_offline(
 
 class DeletedFile(Mock):
     def __class__(self):
-        return Type(db.File)
+        return type(db.File)
 
     def seen_by(self, journalist_id):
         raise sqlalchemy.exc.InvalidRequestError()

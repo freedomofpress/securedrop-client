@@ -6,7 +6,7 @@ import tarfile
 from io import BytesIO
 from shlex import quote
 from tempfile import mkdtemp
-from typing import Callable, List, Optional
+from typing import Callable, Optional
 
 from PyQt5.QtCore import QObject, QProcess, pyqtSignal
 
@@ -100,7 +100,7 @@ class Export(QObject):
             logger.error("Export preflight check failed during archive creation")
             self._on_export_process_error()
 
-    def export(self, filepaths: List[str], passphrase: Optional[str]) -> None:
+    def export(self, filepaths: list[str], passphrase: Optional[str]) -> None:
         """
         Bundle filepaths into a tarball and send to encrypted USB via qrexec,
         optionally supplying a passphrase to unlock encrypted drives.
@@ -295,7 +295,7 @@ class Export(QObject):
             logger.error("Print error (stderr unavailable)")
         self.print_failed.emit(ExportError(ExportStatus.ERROR_PRINT))
 
-    def print(self, filepaths: List[str]) -> None:
+    def print(self, filepaths: list[str]) -> None:
         """
         Bundle files at filepaths into tarball and send for
         printing via qrexec.
@@ -328,7 +328,7 @@ class Export(QObject):
                 self.print_failed.emit(ExportError(ExportStatus.ERROR_PRINT))
 
     def _create_archive(
-        self, archive_dir: str, archive_fn: str, metadata: dict, filepaths: List[str] = []
+        self, archive_dir: str, archive_fn: str, metadata: dict, filepaths: list[str] = []
     ) -> str:
         """
         Create the archive to be sent to the Export VM.
@@ -337,7 +337,7 @@ class Export(QObject):
             archive_dir (str): The path to the directory in which to create the archive.
             archive_fn (str): The name of the archive file.
             metadata (dict): The dictionary containing metadata to add to the archive.
-            filepaths (List[str]): The list of files to add to the archive.
+            filepaths (list[str]): The list of files to add to the archive.
 
         Returns:
             str: The path to newly-created archive file.

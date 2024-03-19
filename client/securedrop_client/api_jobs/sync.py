@@ -1,6 +1,6 @@
 import logging
 import os
-from typing import Any, List, Optional
+from typing import Any, Optional
 
 from sqlalchemy.orm.session import Session
 
@@ -58,7 +58,7 @@ class MetadataSyncJob(ApiJob):
         if self._state is not None:
             _update_state(self._state, submissions)
 
-    def _update_users(session: Session, remote_users: List[SDKUser]) -> None:
+    def _update_users(session: Session, remote_users: list[SDKUser]) -> None:
         """
         1. Create local user accounts for each remote user that doesn't already exist
         2. Update existing local users
@@ -138,7 +138,7 @@ class MetadataSyncJob(ApiJob):
         session.commit()
 
 
-def _update_state(app_state: state.State, submissions: List) -> None:
+def _update_state(app_state: state.State, submissions: list) -> None:
     for submission in submissions:
         if submission.is_file():
             app_state.add_file(

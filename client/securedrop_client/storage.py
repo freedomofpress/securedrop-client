@@ -26,7 +26,7 @@ import re
 import shutil
 from datetime import datetime
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Tuple, Type, TypeVar, Union
+from typing import Any, Optional, TypeVar, Union
 
 from dateutil.parser import parse
 from sqlalchemy import and_, desc, or_
@@ -66,7 +66,7 @@ VALID_FILENAME = re.compile(
 ).match
 
 
-def get_local_sources(session: Session) -> List[Source]:
+def get_local_sources(session: Session) -> list[Source]:
     """
     Return all source objects from the local database, newest first.
     """
@@ -88,28 +88,28 @@ def delete_local_source_by_uuid(session: Session, uuid: str, data_dir: str) -> N
         session.commit()
 
 
-def get_local_messages(session: Session) -> List[Message]:
+def get_local_messages(session: Session) -> list[Message]:
     """
     Return all submission objects from the local database.
     """
     return session.query(Message).all()
 
 
-def get_local_files(session: Session) -> List[File]:
+def get_local_files(session: Session) -> list[File]:
     """
     Return all file (a submitted file) objects from the local database.
     """
     return session.query(File).all()
 
 
-def get_local_replies(session: Session) -> List[Reply]:
+def get_local_replies(session: Session) -> list[Reply]:
     """
     Return all reply objects from the local database that are successful.
     """
     return session.query(Reply).all()
 
 
-def get_remote_data(api: API) -> Tuple[List[SDKSource], List[SDKSubmission], List[SDKReply]]:
+def get_remote_data(api: API) -> tuple[list[SDKSource], list[SDKSubmission], list[SDKReply]]:
     """
     Given an authenticated connection to the SecureDrop API, get sources,
     submissions and replies from the remote server and return a tuple
@@ -129,8 +129,8 @@ def get_remote_data(api: API) -> Tuple[List[SDKSource], List[SDKSubmission], Lis
 
 
 def sanitize_submissions_or_replies(
-    remote_sdk_objects: List[SubmissionOrReply],
-) -> List[SubmissionOrReply]:
+    remote_sdk_objects: list[SubmissionOrReply],
+) -> list[SubmissionOrReply]:
     """
     Return submissions or replies that contain invalid strings, e.g. '1-../../traversed-msg'.
     """
@@ -144,7 +144,7 @@ def sanitize_submissions_or_replies(
     return sanitized_sdk_objects
 
 
-def sanitize_sources(remote_sdk_objects: List[SDKSource]) -> List[SDKSource]:
+def sanitize_sources(remote_sdk_objects: list[SDKSource]) -> list[SDKSource]:
     """
     Return sources that contain invalid strings, e.g. '1-../../traversed-msg'.
     """
@@ -160,9 +160,9 @@ def sanitize_sources(remote_sdk_objects: List[SDKSource]) -> List[SDKSource]:
 
 def update_local_storage(
     session: Session,
-    remote_sources: List[SDKSource],
-    remote_submissions: List[SDKSubmission],
-    remote_replies: List[SDKReply],
+    remote_sources: list[SDKSource],
+    remote_submissions: list[SDKSubmission],
+    remote_replies: list[SDKReply],
     data_dir: str,
 ) -> None:
     """
@@ -244,7 +244,7 @@ def update_local_storage(
 
 def _get_flagged_locally_deleted(
     session: Session,
-) -> Tuple[List[DeletedConversation], List[DeletedSource]]:
+) -> tuple[list[DeletedConversation], list[DeletedSource]]:
     """
     Helper function that returns two lists of source UUIDs, corresponding to
     locally-deleted conversations and sources, respectively.
@@ -263,8 +263,8 @@ def _get_flagged_locally_deleted(
 
 def _cleanup_flagged_locally_deleted(
     session: Session,
-    deleted_conversations: List[DeletedConversation],
-    deleted_sources: List[DeletedSource],
+    deleted_conversations: list[DeletedConversation],
+    deleted_sources: list[DeletedSource],
 ) -> None:
     """
     Helper function that removes a list of DeletedConversation and DeletedSource
@@ -296,10 +296,10 @@ def lazy_setattr(o: Any, a: str, v: Any) -> None:
 
 
 def update_sources(
-    remote_sources: List[SDKSource],
-    local_sources: List[Source],
-    skip_uuids_deleted_conversation: List[str],
-    skip_uuids_deleted_source: List[str],
+    remote_sources: list[SDKSource],
+    local_sources: list[Source],
+    skip_uuids_deleted_conversation: list[str],
+    skip_uuids_deleted_source: list[str],
     session: Session,
     data_dir: str,
 ) -> None:
@@ -380,10 +380,10 @@ def update_sources(
 
 
 def update_files(
-    remote_submissions: List[SDKSubmission],
-    local_submissions: List[File],
-    skip_uuids_deleted_conversation: List[str],
-    skip_uuids_deleted_source: List[str],
+    remote_submissions: list[SDKSubmission],
+    local_submissions: list[File],
+    skip_uuids_deleted_conversation: list[str],
+    skip_uuids_deleted_source: list[str],
     session: Session,
     data_dir: str,
 ) -> None:
@@ -399,10 +399,10 @@ def update_files(
 
 
 def update_messages(
-    remote_submissions: List[SDKSubmission],
-    local_submissions: List[Message],
-    skip_uuids_deleted_conversation: List[str],
-    skip_uuids_deleted_source: List[str],
+    remote_submissions: list[SDKSubmission],
+    local_submissions: list[Message],
+    skip_uuids_deleted_conversation: list[str],
+    skip_uuids_deleted_source: list[str],
     session: Session,
     data_dir: str,
 ) -> None:
@@ -418,11 +418,11 @@ def update_messages(
 
 
 def __update_submissions(
-    model: Union[Type[File], Type[Message]],
-    remote_submissions: List[SDKSubmission],
-    local_submissions: Union[List[Message], List[File]],
-    skip_uuids_deleted_conversation: List[str],
-    skip_uuids_deleted_source: List[str],
+    model: Union[type[File], type[Message]],
+    remote_submissions: list[SDKSubmission],
+    local_submissions: Union[list[Message], list[File]],
+    skip_uuids_deleted_conversation: list[str],
+    skip_uuids_deleted_source: list[str],
     session: Session,
     data_dir: str,
 ) -> None:
@@ -463,7 +463,8 @@ def __update_submissions(
             logger.debug(f"Updated {model.__name__} {submission.uuid}")
         elif submission.source_uuid in skip_uuids_deleted_conversation:
             logger.debug(
-                f"Skip update for submission {submission.uuid} (source {submission.source_uuid}) (this sync only)"
+                f"Skip update for submission {submission.uuid} "
+                "(source {submission.source_uuid}) (this sync only)"
             )
             continue
         else:
@@ -516,7 +517,7 @@ def __update_submissions(
                 logger.error(f"Could not check {directory_name}")
 
 
-def add_seen_file_records(file_id: int, journalist_uuids: List[str], session: Session) -> None:
+def add_seen_file_records(file_id: int, journalist_uuids: list[str], session: Session) -> None:
     """
     Add a seen record for each journalist that saw the file.
     """
@@ -538,7 +539,7 @@ def add_seen_file_records(file_id: int, journalist_uuids: List[str], session: Se
             session.add(seen_file)
 
 
-def add_seen_message_records(msg_id: int, journalist_uuids: List[str], session: Session) -> None:
+def add_seen_message_records(msg_id: int, journalist_uuids: list[str], session: Session) -> None:
     """
     Add a seen record for each journalist that saw the message.
     """
@@ -560,7 +561,7 @@ def add_seen_message_records(msg_id: int, journalist_uuids: List[str], session: 
             session.add(seen_message)
 
 
-def add_seen_reply_records(reply_id: int, journalist_uuids: List[str], session: Session) -> None:
+def add_seen_reply_records(reply_id: int, journalist_uuids: list[str], session: Session) -> None:
     """
     Add a seen record for each journalist that saw the reply.
     """
@@ -583,10 +584,10 @@ def add_seen_reply_records(reply_id: int, journalist_uuids: List[str], session: 
 
 
 def update_replies(
-    remote_replies: List[SDKReply],
-    local_replies: List[Reply],
-    skip_uuids_deleted_conversation: List[str],
-    skip_uuids_deleted_source: List[str],
+    remote_replies: list[SDKReply],
+    local_replies: list[Reply],
+    skip_uuids_deleted_conversation: list[str],
+    skip_uuids_deleted_source: list[str],
     session: Session,
     data_dir: str,
 ) -> None:
@@ -600,7 +601,7 @@ def update_replies(
     """
     local_replies_by_uuid = {r.uuid: r for r in local_replies}
     deleted_user = session.query(User).filter_by(username="deleted").one_or_none()
-    user_cache: Dict[str, User] = {}
+    user_cache: dict[str, User] = {}
     source_cache = SourceCache(session)
     for reply in remote_replies:
         # If the source account was just deleted locally (and is either deleted or scheduled
@@ -699,7 +700,8 @@ def update_replies(
             logger.debug(f"Deleted reply {deleted_reply.uuid}")
         except NoResultFound:
             logger.debug(
-                f"Tried to delete submission {deleted_reply.uuid}, but it was already deleted locally"
+                f"Tried to delete submission {deleted_reply.uuid}, "
+                "but it was already deleted locally"
             )
     session.commit()
 
@@ -734,7 +736,7 @@ def create_or_update_user(
     return user
 
 
-def update_missing_files(data_dir: str, session: Session) -> List[File]:
+def update_missing_files(data_dir: str, session: Session) -> list[File]:
     """
     Update files that are marked as downloaded yet missing from the filesystem.
     """
@@ -798,13 +800,13 @@ def update_draft_replies(
         session.commit()
 
 
-def find_new_files(session: Session) -> List[File]:
+def find_new_files(session: Session) -> list[File]:
     q = session.query(File).join(Source).filter_by(is_downloaded=False)
     q = q.order_by(desc(Source.last_updated))
     return q.all()
 
 
-def find_new_messages(session: Session) -> List[Message]:
+def find_new_messages(session: Session) -> list[Message]:
     """
     Find messages to process. Those messages are those where one of the following
     conditions is true:
@@ -828,7 +830,7 @@ def find_new_messages(session: Session) -> List[Message]:
     return q.all()
 
 
-def find_new_replies(session: Session) -> List[Reply]:
+def find_new_replies(session: Session) -> list[Reply]:
     """
     Find replies to process. Those replies are those where one of the following
     conditions is true:
@@ -864,7 +866,7 @@ def mark_as_not_downloaded(uuid: str, session: Session) -> None:
 
 
 def mark_as_downloaded(
-    model_type: Union[Type[File], Type[Message], Type[Reply]], uuid: str, session: Session
+    model_type: Union[type[File], type[Message], type[Reply]], uuid: str, session: Session
 ) -> None:
     """
     Mark object as downloaded in the database.
@@ -887,7 +889,7 @@ def update_file_size(uuid: str, path: str, session: Session) -> None:
 
 
 def mark_as_decrypted(
-    model_type: Union[Type[File], Type[Message], Type[Reply]],
+    model_type: Union[type[File], type[Message], type[Reply]],
     uuid: str,
     session: Session,
     is_decrypted: bool = True,
@@ -907,7 +909,7 @@ def mark_as_decrypted(
 
 
 def set_message_or_reply_content(
-    model_type: Union[Type[Message], Type[Reply]], uuid: str, content: str, session: Session
+    model_type: Union[type[Message], type[Reply]], uuid: str, content: str, session: Session
 ) -> None:
     """
     Mark whether or not the object is decrypted. If it's not decrypted, do not set content. If the
@@ -1065,7 +1067,7 @@ def get_reply(session: Session, uuid: str) -> Reply:
     return session.query(Reply).filter_by(uuid=uuid).one()
 
 
-def mark_all_pending_drafts_as_failed(session: Session) -> List[DraftReply]:
+def mark_all_pending_drafts_as_failed(session: Session) -> list[DraftReply]:
     """
     Mark as failed those pending replies that originate from other sessions (PIDs).
     """

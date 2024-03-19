@@ -1,11 +1,11 @@
 import logging
 from gettext import gettext as _
-from typing import List, Optional
+from typing import Optional
 
 from PyQt5.QtCore import QSize, Qt, pyqtSlot
 from PyQt5.QtGui import QIcon, QKeyEvent
 from PyQt5.QtWidgets import (
-    QAbstractButton,  # noqa: F401
+    QAbstractButton,
     QApplication,
     QWidget,
     QWizard,
@@ -47,7 +47,7 @@ class ExportWizard(QWizard):
         self,
         export: Export,
         summary_text: str,
-        filepaths: List[str],
+        filepaths: list[str],
         parent: Optional[QWidget] = None,
     ) -> None:
         # Normally, the active window is the right parent, but if the wizard is launched
@@ -102,10 +102,10 @@ class ExportWizard(QWizard):
         button_stylesheet = load_relative_css(__file__, "wizard_button.css")
 
         # Buttons
-        self.next_button = self.button(QWizard.WizardButton.NextButton)  # type: QAbstractButton
-        self.cancel_button = self.button(QWizard.WizardButton.CancelButton)  # type: QAbstractButton
-        self.back_button = self.button(QWizard.WizardButton.BackButton)  # type: QAbstractButton
-        self.finish_button = self.button(QWizard.WizardButton.FinishButton)  # type: QAbstractButton
+        self.next_button: QAbstractButton = self.button(QWizard.WizardButton.NextButton)
+        self.cancel_button: QAbstractButton = self.button(QWizard.WizardButton.CancelButton)
+        self.back_button: QAbstractButton = self.button(QWizard.WizardButton.BackButton)
+        self.finish_button: QAbstractButton = self.button(QWizard.WizardButton.FinishButton)
 
         self.next_button.setObjectName("QWizardButton_PrimaryButton")
         self.next_button.setStyleSheet(button_stylesheet)
@@ -149,7 +149,7 @@ class ExportWizard(QWizard):
         self.button_animation.stop()
 
     def _set_layout(self) -> None:
-        title = ("Export %(summary)s") % {"summary": self.summary_text}
+        title = f"Export {self.summary_text}"
         self.setWindowTitle(title)
         self.setObjectName("QWizard_export")
         self.setStyleSheet(load_relative_css(__file__, "wizard.css"))

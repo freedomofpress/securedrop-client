@@ -6,7 +6,7 @@ Stores and provides read/write access to the internal state of the SecureDrop Cl
 Note: the Graphical User Interface MUST NOT write state, except in QActions.
 """
 
-from typing import Dict, List, Optional
+from typing import Optional
 
 from PyQt5.QtCore import QObject, pyqtSignal, pyqtSlot
 
@@ -25,8 +25,8 @@ class State(QObject):
 
     def __init__(self, database: Optional[Database] = None) -> None:
         super().__init__()
-        self._files: Dict[FileId, File] = {}
-        self._conversation_files: Dict[ConversationId, List[File]] = {}
+        self._files: dict[FileId, File] = {}
+        self._conversation_files: dict[ConversationId, list[File]] = {}
         self._selected_conversation: Optional[ConversationId] = None
 
         if database is not None:
@@ -45,10 +45,10 @@ class State(QObject):
 
     def add_file(self, cid: ConversationId, fid: FileId) -> None:
         file = File(fid)  # store references to the same object
-        if fid not in self._files.keys():
+        if fid not in self._files:
             self._files[fid] = file
 
-        if cid not in self._conversation_files.keys():
+        if cid not in self._conversation_files:
             self._conversation_files[cid] = []
 
         file_is_known = False
@@ -65,15 +65,15 @@ class State(QObject):
         if id == self._selected_conversation:
             self.selected_conversation_files_changed.emit()
 
-    def conversation_files(self, id: ConversationId) -> List[File]:
-        default: List[File] = []
+    def conversation_files(self, id: ConversationId) -> list[File]:
+        default: list[File] = []
         return self._conversation_files.get(id, default)
 
     def file(self, id: FileId) -> Optional[File]:
         return self._files.get(id, None)
 
     def record_file_download(self, id: FileId) -> None:
-        if id not in self._files.keys():
+        if id not in self._files:
             pass
         else:
             self._files[id].is_downloaded = True
@@ -96,7 +96,7 @@ class State(QObject):
         if selected_conversation_id is None:
             return False
 
-        default: List[File] = []
+        default: list[File] = []
         for f in self._conversation_files.get(selected_conversation_id, default):
             if not f.is_downloaded:
                 return True

@@ -53,7 +53,6 @@ from securedrop_client.gui.widgets import (
     UserProfile,
 )
 from tests import factory
-from tests.helper import app  # noqa: F401
 
 
 def test_TopPane_init(mocker):

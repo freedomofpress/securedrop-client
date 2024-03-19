@@ -25,7 +25,7 @@ import uuid
 from datetime import datetime
 from gettext import gettext as _
 from gettext import ngettext
-from typing import Dict, List, Optional, Type, Union  # noqa: F401
+from typing import Optional, Union
 
 import arrow
 import sqlalchemy.orm.exc
@@ -388,7 +388,7 @@ class Controller(QObject):
         self.add_job.connect(self.api_job_queue.enqueue)
 
         # Contains active threads calling the API.
-        self.api_threads = {}  # type: Dict[str, Dict]
+        self.api_threads = {}  # type: dict[str, dict]
 
         self.gpg = GpgHelper(home, self.session_maker, proxy)
 
@@ -731,9 +731,9 @@ class Controller(QObject):
             # user or if it no longer exists (individual conversation items can be deleted via the
             # web journalist interface).
             current_user_id = self.authenticated_user.id
-            files = []  # type: List[str]
-            messages = []  # type: List[str]
-            replies = []  # type: List[str]
+            files = []  # type: list[str]
+            messages = []  # type: list[str]
+            replies = []  # type: list[str]
             source_items = source.collection
             for item in source_items:
                 try:
@@ -822,7 +822,7 @@ class Controller(QObject):
 
     @login_required
     def _submit_download_job(
-        self, object_type: Union[Type[db.Reply], Type[db.Message], Type[db.File]], uuid: str
+        self, object_type: Union[type[db.Reply], type[db.Message], type[db.File]], uuid: str
     ) -> None:
         if object_type == db.Reply:
             job = ReplyDownloadJob(uuid, self.data_dir, self.gpg)  # type: Union[ReplyDownloadJob, MessageDownloadJob, FileDownloadJob]
@@ -952,7 +952,7 @@ class Controller(QObject):
 
     @login_required
     def on_submission_download(
-        self, submission_type: Union[Type[db.File], Type[db.Message]], submission_uuid: str
+        self, submission_type: Union[type[db.File], type[db.Message]], submission_uuid: str
     ) -> None:
         """
         Download the file associated with the Submission (which may be a File or Message).

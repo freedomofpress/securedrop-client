@@ -167,14 +167,14 @@ class SecureQLabel(QLabel):
         self.setWordWrap(wordwrap)  # If True, wraps text at default of 70 characters
         self.with_tooltip = with_tooltip
         self.setText(text)
-        self.elided = True if self.text() != text else False
+        self.elided = self.text() != text
 
     def setText(self, text: str) -> None:
         text = text.strip()
         self.setTextFormat(Qt.PlainText)
         self.preview_text = text[: self.MAX_PREVIEW_LENGTH]
         elided_text = self.get_elided_text(text)
-        self.elided = True if elided_text != text else False
+        self.elided = elided_text != text
         if self.elided and self.with_tooltip:
             tooltip_label = SecureQLabel(text)
             self.setToolTip(tooltip_label.text())
@@ -197,8 +197,7 @@ class SecureQLabel(QLabel):
             elided_text = ""
             for c in full_text:
                 if fm.horizontalAdvance(elided_text) > self.max_length:
-                    elided_text = elided_text[:-3] + "…"
-                    return elided_text
+                    return elided_text[:-3] + "…"
                 elided_text = elided_text + c
 
         return full_text

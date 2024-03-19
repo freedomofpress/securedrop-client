@@ -1,13 +1,10 @@
-import typing
-
-if typing.TYPE_CHECKING:
-    from typing import Dict  # noqa: F401
+from typing import Optional
 
 
 class BaseError(Exception):
     """For generic errors not covered by other exceptions"""
 
-    def __init__(self, message: typing.Optional[str] = None) -> None:
+    def __init__(self, message: Optional[str] = None) -> None:
         self.msg = message
 
     def __str__(self) -> str:
@@ -155,7 +152,7 @@ class Source:
         self.is_flagged = False  # type: bool
         self.is_starred = False  # type: bool
         self.journalist_designation = ""  # type: str
-        self.key = {}  # type: Dict
+        self.key: dict = {}
         self.last_updated = ""  # type: str
         self.number_of_documents = 0  # type: int
         self.number_of_messages = 0  # type: int

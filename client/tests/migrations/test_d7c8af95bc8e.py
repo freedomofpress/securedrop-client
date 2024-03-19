@@ -26,7 +26,7 @@ class UpgradeTester:
         for table, values in ENUMS.items():
             for value in values:
                 result = self.session.execute(
-                    text(f"SELECT * FROM {table} WHERE name = '{value}'")
+                    text(f"SELECT * FROM {table} WHERE name = '{value}'")  # noqa: S608
                 ).fetchone()
                 assert result is not None
 
@@ -44,4 +44,4 @@ class DowngradeTester:
     def check_downgrade(self):
         for table in ENUMS:
             with pytest.raises(OperationalError):
-                self.session.execute(text(f"SELECT name FROM {table}"))
+                self.session.execute(text(f"SELECT name FROM {table}"))  # noqa: S608

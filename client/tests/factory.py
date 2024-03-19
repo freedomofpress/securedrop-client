@@ -6,7 +6,6 @@ import os
 import uuid
 from datetime import datetime
 from itertools import cycle
-from typing import List
 
 from securedrop_client import db
 from securedrop_client.api_jobs.base import ApiJob
@@ -153,7 +152,7 @@ def dummy_job_factory(mocker, return_value, **kwargs):
 
         def __init__(self, *nargs, **kwargs):
             super().__init__(*nargs, **kwargs)
-            if isinstance(return_value, List):
+            if isinstance(return_value, list):
                 self.return_value = iter(return_value)
             else:
                 self.return_value = cycle([return_value])

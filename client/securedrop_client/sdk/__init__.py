@@ -2,9 +2,9 @@ import configparser
 import http
 import json
 import os
-from datetime import datetime  # noqa: F401
+from datetime import datetime
 from subprocess import PIPE, Popen, TimeoutExpired
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Optional
 from urllib.parse import urljoin
 
 import requests
@@ -104,11 +104,11 @@ class API:
         self.passphrase = passphrase
         self.totp = totp
         self.token = None  # type: Optional[str]
-        self.token_expiration = None  # type: Optional[datetime]
+        self.token_expiration: Optional[datetime] = None
         self.token_journalist_uuid = None  # type: Optional[str]
         self.first_name = None  # type: Optional[str]
         self.last_name = None  # type: Optional[str]
-        self.req_headers = dict()  # type: Dict[str, str]
+        self.req_headers = dict()  # type: dict[str, str]
         self.proxy = proxy  # type: bool
         self.default_request_timeout = default_request_timeout or DEFAULT_REQUEST_TIMEOUT
         self.default_download_timeout = default_download_timeout or DEFAULT_DOWNLOAD_TIMEOUT
@@ -127,9 +127,9 @@ class API:
         method: str,
         path_query: str,
         body: Optional[str] = None,
-        headers: Optional[Dict[str, str]] = None,
+        headers: Optional[dict[str, str]] = None,
         timeout: Optional[int] = None,
-    ) -> Tuple[Any, int, Dict[str, str]]:
+    ) -> tuple[Any, int, dict[str, str]]:
         if self.proxy:  # We are using the Qubes securedrop-proxy
             func = self._send_rpc_json_request
         else:  # We are not using the Qubes securedrop-proxy
@@ -142,11 +142,11 @@ class API:
         method: str,
         path_query: str,
         body: Optional[str] = None,
-        headers: Optional[Dict[str, str]] = None,
+        headers: Optional[dict[str, str]] = None,
         timeout: Optional[int] = None,
-    ) -> Tuple[Any, int, Dict[str, str]]:
+    ) -> tuple[Any, int, dict[str, str]]:
         url = urljoin(self.server, path_query)
-        kwargs = {"headers": headers}  # type: Dict[str, Any]
+        kwargs = {"headers": headers}  # type: dict[str, Any]
 
         if timeout:
             kwargs["timeout"] = timeout
@@ -175,10 +175,10 @@ class API:
         method: str,
         path_query: str,
         body: Optional[str] = None,
-        headers: Optional[Dict[str, str]] = None,
+        headers: Optional[dict[str, str]] = None,
         timeout: Optional[int] = None,
-    ) -> Tuple[Any, int, Dict[str, str]]:
-        data = {"method": method, "path_query": path_query}  # type: Dict[str, Any]
+    ) -> tuple[Any, int, dict[str, str]]:
+        data = {"method": method, "path_query": path_query}  # type: dict[str, Any]
 
         if method == "POST":
             data["body"] = body
@@ -270,7 +270,7 @@ class API:
                 "Accept": "application/json",
             }
 
-    def get_sources(self) -> List[Source]:
+    def get_sources(self) -> list[Source]:
         """
         Returns a list of all the sources from the Server.
 
@@ -287,7 +287,7 @@ class API:
         )
 
         sources = data["sources"]
-        result = []  # type: List[Source]
+        result = []  # type: list[Source]
 
         for source in sources:
             s = Source(**source)
@@ -442,7 +442,7 @@ class API:
 
         return False
 
-    def get_submissions(self, source: Source) -> List[Submission]:
+    def get_submissions(self, source: Source) -> list[Submission]:
         """
         Returns a list of Submission objects from the server for a given source.
 
@@ -462,7 +462,7 @@ class API:
         if status_code == 404:
             raise WrongUUIDError(f"Missing submission {source.uuid}")
 
-        result = []  # type: List[Submission]
+        result = []  # type: list[Submission]
         values = data["submissions"]
 
         for val in values:
@@ -506,7 +506,7 @@ class API:
         s.source_uuid = source_uuid
         return self.get_submission(s)
 
-    def get_all_submissions(self) -> List[Submission]:
+    def get_all_submissions(self) -> list[Submission]:
         """
         Returns a list of Submission objects from the server.
 
@@ -522,7 +522,7 @@ class API:
             timeout=self.default_request_timeout,
         )
 
-        result = []  # type: List[Submission]
+        result = []  # type: list[Submission]
         values = data["submissions"]
 
         for val in values:
@@ -573,7 +573,7 @@ class API:
 
     def download_submission(
         self, submission: Submission, path: str = "", timeout: Optional[int] = None
-    ) -> Tuple[str, str]:
+    ) -> tuple[str, str]:
         """
         Returns a tuple of etag (format is algorithm:checksum) and file path for
         a given Submission object. This method requires a directory path
@@ -589,9 +589,8 @@ class API:
         )
         method = "GET"
 
-        if path:
-            if os.path.exists(path) and not os.path.isdir(path):
-                raise BaseError("Please provide a valid directory to save.")
+        if path and os.path.exists(path) and not os.path.isdir(path):
+            raise BaseError("Please provide a valid directory to save.")
 
         data, status_code, headers = self._send_json_request(
             method,
@@ -602,9 +601,6 @@ class API:
 
         if status_code == 404:
             raise WrongUUIDError(f"Missing submission {submission.uuid}")
-
-        # Get the headers
-        headers = headers
 
         if not self.proxy:
             # This is where we will save our downloaded file
@@ -667,7 +663,7 @@ class API:
 
         return data
 
-    def get_users(self) -> List[User]:
+    def get_users(self) -> list[User]:
         """
         Returns a list of all the journalist and admin users registered on the
         server.
@@ -685,7 +681,7 @@ class API:
         )
 
         users = data["users"]
-        result = []  # type: List[User]
+        result = []  # type: list[User]
 
         for user in users:
             u = User(**user)
@@ -722,7 +718,7 @@ class API:
 
         raise ReplyError("bad request")
 
-    def get_replies_from_source(self, source: Source) -> List[Reply]:
+    def get_replies_from_source(self, source: Source) -> list[Reply]:
         """
         This will return a list of replies associated with a source.
 
@@ -775,7 +771,7 @@ class API:
 
         return reply
 
-    def get_all_replies(self) -> List[Reply]:
+    def get_all_replies(self) -> list[Reply]:
         """
         This will return a list of all replies from the server.
 
@@ -798,7 +794,7 @@ class API:
 
         return result
 
-    def download_reply(self, reply: Reply, path: str = "") -> Tuple[str, str]:
+    def download_reply(self, reply: Reply, path: str = "") -> tuple[str, str]:
         """
         Returns a tuple of etag (format is algorithm:checksum) and file path for
         a given Reply object. This method requires a directory path
@@ -813,9 +809,8 @@ class API:
 
         method = "GET"
 
-        if path:
-            if os.path.exists(path) and not os.path.isdir(path):
-                raise BaseError("Please provide a valid directory to save.")
+        if path and os.path.exists(path) and not os.path.isdir(path):
+            raise BaseError("Please provide a valid directory to save.")
 
         data, status_code, headers = self._send_json_request(
             method,
@@ -826,9 +821,6 @@ class API:
 
         if status_code == 404:
             raise WrongUUIDError(f"Missing reply {reply.uuid}")
-
-        # Get the headers
-        headers = headers
 
         if not self.proxy:
             # This is where we will save our downloaded file
@@ -890,12 +882,9 @@ class API:
             timeout=self.default_request_timeout,
         )
 
-        if "message" in data and data["message"] == "Your token has been revoked.":
-            return True
-        else:
-            return False
+        return "message" in data and data["message"] == "Your token has been revoked."
 
-    def seen(self, files: List[str], messages: List[str], replies: List[str]) -> str:
+    def seen(self, files: list[str], messages: list[str], replies: list[str]) -> str:
         """
         Mark supplied files, messages, and replies as seen by the current user. The current user
         will be retrieved from the auth header on the server.

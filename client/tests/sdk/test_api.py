@@ -84,7 +84,7 @@ class TestAPI(TestShared):
                 break
 
         if not unread_submission:
-            assert False, "There must be an unread submission in the db for this test to work."
+            pytest.fail("There must be an unread submission in the db for this test to work.")
 
         assert not unread_submission.is_read
 
@@ -262,14 +262,14 @@ def test_request_read_timeout(mocker):
 def test_download_reply_timeout(mocker):
     api = API("mock", "mock", "mock", "mock", proxy=False)
     mocker.patch("securedrop_client.sdk.requests.request", side_effect=RequestTimeoutError)
+    r = Reply(uuid="humanproblem", filename="secret.txt")
     with pytest.raises(RequestTimeoutError):
-        r = Reply(uuid="humanproblem", filename="secret.txt")
         api.download_reply(r)
 
 
 def test_download_submission_timeout(mocker):
     api = API("mock", "mock", "mock", "mock", proxy=False)
     mocker.patch("securedrop_client.sdk.requests.request", side_effect=RequestTimeoutError)
+    s = Submission(uuid="climateproblem")
     with pytest.raises(RequestTimeoutError):
-        s = Submission(uuid="climateproblem")
         api.download_submission(s)

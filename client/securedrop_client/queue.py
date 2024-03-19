@@ -2,7 +2,7 @@ import itertools
 import logging
 import threading
 from queue import PriorityQueue
-from typing import Any, Optional, Tuple
+from typing import Any, Optional
 
 from PyQt5.QtCore import QObject, QThread, pyqtBoundSignal, pyqtSignal, pyqtSlot
 from sqlalchemy.orm import scoped_session
@@ -41,7 +41,7 @@ class RunnablePriorityQueue(PriorityQueue):
         self.queue_updated_signal = queue_updated_signal
         super().__init__(*args, **kwargs)
 
-    def get(self, *args: Any, **kwargs: Any) -> Tuple[int, QueueJob]:
+    def get(self, *args: Any, **kwargs: Any) -> tuple[int, QueueJob]:
         item = super().get(*args, **kwargs)
         if self.queue_updated_signal:
             self.queue_updated_signal.emit(self._get_num_message_or_reply_download_jobs())
@@ -116,7 +116,7 @@ class RunnableQueue(QObject):
         super().__init__()
         self.api_client = api_client
         self.session_maker = session_maker
-        self.queue = RunnablePriorityQueue(queue_updated_signal=queue_updated_signal)  # type: PriorityQueue[Tuple[int, QueueJob]]
+        self.queue = RunnablePriorityQueue(queue_updated_signal=queue_updated_signal)  # type: PriorityQueue[tuple[int, QueueJob]]
         # `order_number` ensures jobs with equal priority are retrieved in FIFO order. This is
         # needed because PriorityQueue is implemented using heapq which does not have sort
         # stability. For more info, see : https://bugs.python.org/issue17794

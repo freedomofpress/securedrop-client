@@ -287,7 +287,7 @@ class CLI:
             logger.debug("Passing key")
             child.sendline(encryption_key)
             index = child.expect(expected)
-            if index == 0 or index == 1:
+            if index in (0, 1):
                 # Pexpect includes a re.Match object at `child.match`, but this freaks mypy out:
                 # see https://pexpect.readthedocs.io/en/stable/api/pexpect.html#pexpect.spawn.expect
                 # We know what format the results are in

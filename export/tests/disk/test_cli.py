@@ -172,7 +172,7 @@ class TestCli:
         assert vol.device_name == "/dev/sda"
 
     @pytest.mark.parametrize(
-        "input,expected_device,expected_devmapper", supported_volumes_mount_required
+        ("input", "expected_device", "expected_devmapper"), supported_volumes_mount_required
     )
     @mock.patch("securedrop_export.disk.cli.CLI._mount_volume")
     @mock.patch(
@@ -386,7 +386,7 @@ class TestCli:
 
         with pytest.raises(ExportException):
             self.cli.write_data_to_device(vol, submission.tmpdir, submission.target_dirname)
-            self.cli.cleanup.assert_called_once()
+        self.cli.cleanup.assert_called_once()
 
         patch.stop()
 
@@ -472,9 +472,8 @@ class TestCli:
                 safe_mkdir(archive_dir, "export_data")
                 export_dir = os.path.join(archive_dir, "export_data")
                 export_filepath = os.path.join(export_dir, "export_file.txt")
-                export_file = open(export_filepath, "w+")
-                export_file.write("Export me!")
-                export_file.close()
+                with open(export_filepath, "w+") as export_file:
+                    export_file.write("Export me!")
 
                 # Sanity
                 stat_result = oct(stat.S_IMODE(os.stat(export_filepath).st_mode))

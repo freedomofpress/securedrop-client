@@ -1,5 +1,4 @@
 from securedrop_client.gui.auth.sign_in import LoginErrorBar
-from tests.helper import app  # noqa: F401
 
 
 def test_LoginErrorBar_set_message(mocker):

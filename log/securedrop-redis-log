@@ -23,7 +23,6 @@ rd = redis.Redis()
 
 
 def log(msg, vmname="remote"):
-    global rd
     redis_msg = f"{vmname}::{msg}"
     rd.rpush("syslogmsg", redis_msg)
 

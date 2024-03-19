@@ -7,7 +7,7 @@ import time
 from collections.abc import Generator
 from contextlib import contextmanager
 from pathlib import Path
-from typing import BinaryIO, Dict, Optional, Union
+from typing import BinaryIO, Optional, Union
 
 from sqlalchemy.orm.session import Session
 
@@ -214,7 +214,7 @@ class SourceCache:
 
     def __init__(self, session: Session) -> None:
         super().__init__()
-        self.cache: Dict[str, db.Source] = {}
+        self.cache: dict[str, db.Source] = {}
         self.session = session
 
     def get(self, source_uuid: str) -> Optional[db.Source]:

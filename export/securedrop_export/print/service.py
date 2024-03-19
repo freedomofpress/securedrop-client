@@ -215,11 +215,9 @@ class Service:
     def _print_all_files(self):
         files_path = os.path.join(self.submission.tmpdir, "export_data/")
         files = os.listdir(files_path)
-        print_count = 0
-        for f in files:
+        for print_count, f in enumerate(files):
             file_path = os.path.join(files_path, f)
             self._print_file(file_path)
-            print_count += 1
             logger.info(f"Printing document {print_count} of {len(files)}")
 
     def _is_open_office_file(self, filename):
