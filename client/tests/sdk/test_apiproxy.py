@@ -32,7 +32,7 @@ class TestAPIProxy(TestShared):
             raise AuthError(
                 "Could not obtain API token during test setup. "
                 "TOTP code may have expired or proxy may not be reachable. "
-                "Error was: {}".format(err.msg)
+                f"Error was: {err.msg}"
             )
 
     @qrexec_datasaver

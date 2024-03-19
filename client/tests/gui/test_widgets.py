@@ -4399,7 +4399,7 @@ def test_ReplyBoxWidget_placeholder_show_currently_selected_source(mocker):
     rb = ReplyBoxWidget(source, controller)
 
     source_name = rb.text_edit.placeholder.signed_in.layout().itemAt(1).widget()
-    assert -1 != source_name.text()
+    assert source_name.text() != -1
 
 
 def test_ReplyBoxWidget_send_reply(mocker):
@@ -4767,7 +4767,7 @@ def test_ReplyTextEdit_set_logged_out(mocker):
     sign_in = rt.placeholder.signed_out.layout().itemAt(0).widget()
     to_compose_reply = rt.placeholder.signed_out.layout().itemAt(1).widget()
 
-    assert "Sign in" == sign_in.text()
+    assert sign_in.text() == "Sign in"
     assert " to compose or send a reply" in to_compose_reply.text()
 
 
@@ -4783,7 +4783,7 @@ def test_ReplyTextEdit_set_logged_in(mocker):
 
     compose_a_reply_to = rt.placeholder.signed_in.layout().itemAt(0).widget()
     source_name = rt.placeholder.signed_in.layout().itemAt(1).widget()
-    assert "Compose a reply to " == compose_a_reply_to.text()
+    assert compose_a_reply_to.text() == "Compose a reply to "
     assert source.journalist_designation == source_name.text()
 
 
@@ -4802,8 +4802,8 @@ def test_ReplyBox_set_logged_in_no_public_key(mocker):
     awaiting_key = rb.text_edit.placeholder.signed_in_no_key.layout().itemAt(0).widget()
     from_server = rb.text_edit.placeholder.signed_in_no_key.layout().itemAt(1).widget()
 
-    assert "Awaiting encryption key" == awaiting_key.text()
-    assert " from server to enable replies" == from_server.text()
+    assert awaiting_key.text() == "Awaiting encryption key"
+    assert from_server.text() == " from server to enable replies"
 
     # Both the reply box and the text editor must be disabled for the widget
     # to be rendered correctly.

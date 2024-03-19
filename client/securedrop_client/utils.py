@@ -4,9 +4,10 @@ import math
 import os
 import shutil
 import time
+from collections.abc import Generator
 from contextlib import contextmanager
 from pathlib import Path
-from typing import BinaryIO, Dict, Generator, Optional, Union
+from typing import BinaryIO, Dict, Optional, Union
 
 from sqlalchemy.orm.session import Session
 
@@ -177,7 +178,7 @@ def check_dir_permissions(dir_path: Union[str, Path]) -> None:
         stat_res = os.stat(dir_path).st_mode
         masked = stat_res & 0o777
         if masked & 0o077:
-            raise RuntimeError("Unsafe permissions ({}) on {}".format(oct(stat_res), dir_path))
+            raise RuntimeError(f"Unsafe permissions ({oct(stat_res)}) on {dir_path}")
 
 
 def humanize_filesize(filesize: int) -> str:
@@ -186,11 +187,11 @@ def humanize_filesize(filesize: int) -> str:
     (with an input unit of bytes)
     """
     if filesize < 1024:
-        return "{}B".format(str(filesize))
+        return f"{str(filesize)}B"
     elif filesize < 1024 * 1024:
-        return "{}KB".format(math.floor(filesize / 1024))
+        return f"{math.floor(filesize / 1024)}KB"
     else:
-        return "{}MB".format(math.floor(filesize / 1024**2))
+        return f"{math.floor(filesize / 1024**2)}MB"
 
 
 @contextmanager
@@ -206,7 +207,7 @@ def chronometer(logger: logging.Logger, description: str) -> Generator:
         logger.info(f"{description} duration: {elapsed:.4f}s")
 
 
-class SourceCache(object):
+class SourceCache:
     """
     Caches Sources by UUID.
     """

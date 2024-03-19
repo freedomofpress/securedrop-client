@@ -81,7 +81,7 @@ def delete_local_source_by_uuid(session: Session, uuid: str, data_dir: str) -> N
     """
     source = session.query(Source).filter_by(uuid=uuid).one_or_none()
     if source:
-        logger.debug("Delete source {} from local database.".format(uuid))
+        logger.debug(f"Delete source {uuid} from local database.")
         delete_source_collection(source.journalist_filename, data_dir)
         session.delete(source)
         session.add(DeletedSource(uuid=uuid))
@@ -121,9 +121,9 @@ def get_remote_data(api: API) -> Tuple[List[SDKSource], List[SDKSubmission], Lis
     remote_submissions = api.get_all_submissions()
     remote_replies = api.get_all_replies()
 
-    logger.info("Fetched {} remote sources.".format(len(remote_sources)))
-    logger.info("Fetched {} remote submissions.".format(len(remote_submissions)))
-    logger.info("Fetched {} remote replies.".format(len(remote_replies)))
+    logger.info(f"Fetched {len(remote_sources)} remote sources.")
+    logger.info(f"Fetched {len(remote_submissions)} remote submissions.")
+    logger.info(f"Fetched {len(remote_replies)} remote replies.")
 
     return (remote_sources, remote_submissions, remote_replies)
 
@@ -272,13 +272,13 @@ def _cleanup_flagged_locally_deleted(
     """
     for item in deleted_conversations:
         logger.debug(
-            "Removing conversation with {} from deletedconversation "
-            "table (will not be skipped next sync)".format(item.uuid)
+            f"Removing conversation with {item.uuid} from deletedconversation "
+            "table (will not be skipped next sync)"
         )
         session.delete(item)
 
     for item in deleted_sources:
-        logger.debug("Removing source {} from deletedsource table".format(item.uuid))
+        logger.debug(f"Removing source {item.uuid} from deletedsource table")
         session.delete(item)
 
     session.commit()
@@ -320,12 +320,12 @@ def update_sources(
     for source in remote_sources:
         if source.uuid in skip_uuids_deleted_source:
             # Source was locally deleted and sync data is stale
-            logger.debug("Do not add locally-deleted source {}".format(source.uuid))
+            logger.debug(f"Do not add locally-deleted source {source.uuid}")
             continue
 
         elif source.uuid in local_sources_by_uuid:
             # Update an existing record.
-            logger.debug("Update source {}".format(source.uuid))
+            logger.debug(f"Update source {source.uuid}")
             local_source = local_sources_by_uuid[source.uuid]
 
             lazy_setattr(local_source, "journalist_designation", source.journalist_designation)
@@ -340,9 +340,7 @@ def update_sources(
             # to 0. Otherwise, populate with document count.
             if skip_uuids_deleted_conversation and source.uuid in skip_uuids_deleted_conversation:
                 logger.debug(
-                    "Local deletion: override document_count for {} (this sync only)".format(
-                        source.uuid
-                    )
+                    f"Local deletion: override document_count for {source.uuid} (this sync only)"
                 )
                 lazy_setattr(local_source, "document_count", 0)
 
@@ -353,7 +351,7 @@ def update_sources(
             # this record won't be deleted at the end of this
             # function.
             del local_sources_by_uuid[source.uuid]
-            logger.debug("Updated source {}".format(source.uuid))
+            logger.debug(f"Updated source {source.uuid}")
         else:
             # A new source to be added to the database.
             ns = Source(
@@ -369,12 +367,12 @@ def update_sources(
             )
             session.add(ns)
 
-            logger.debug("Added new source {}".format(source.uuid))
+            logger.debug(f"Added new source {source.uuid}")
 
     # The uuids remaining in local_uuids do not exist on the remote server, so
     # delete the related records.
     for deleted_source in local_sources_by_uuid.values():
-        logger.debug("Delete source {}".format(deleted_source.uuid))
+        logger.debug(f"Delete source {deleted_source.uuid}")
         delete_source_collection(deleted_source.journalist_filename, data_dir)
         session.delete(deleted_source)
 
@@ -445,9 +443,7 @@ def __update_submissions(
     for submission in remote_submissions:
         # If submission belongs to a locally-deleted source, skip it
         if submission.source_uuid in skip_uuids_deleted_source:
-            logger.debug(
-                "Skip submission from locally-deleted source {}".format(submission.source_uuid)
-            )
+            logger.debug(f"Skip submission from locally-deleted source {submission.source_uuid}")
             continue
 
         local_submission = local_submissions_by_uuid.get(submission.uuid)
@@ -467,9 +463,7 @@ def __update_submissions(
             logger.debug(f"Updated {model.__name__} {submission.uuid}")
         elif submission.source_uuid in skip_uuids_deleted_conversation:
             logger.debug(
-                "Skip update for submission {} (source {}) (this sync only)".format(
-                    submission.uuid, submission.source_uuid
-                )
+                f"Skip update for submission {submission.uuid} (source {submission.source_uuid}) (this sync only)"
             )
             continue
         else:
@@ -516,10 +510,10 @@ def __update_submissions(
     if model.__name__ == File.__name__:
         for directory_name in deleted_submission_directory_names:
             try:
-                logger.debug("Cleanup {} if empty".format(os.path.join(data_dir, directory_name)))
+                logger.debug(f"Cleanup {os.path.join(data_dir, directory_name)} if empty")
                 _cleanup_directory_if_empty(os.path.join(data_dir, directory_name))
             except OSError:
-                logger.error("Could not check {}".format(directory_name))
+                logger.error(f"Could not check {directory_name}")
 
 
 def add_seen_file_records(file_id: int, journalist_uuids: List[str], session: Session) -> None:
@@ -613,9 +607,7 @@ def update_replies(
         # for deletion on the server), we don't want this reply
         if reply.source_uuid in skip_uuids_deleted_source:
             logger.debug(
-                "Skipping stale remote reply for locally-deleted source {}".format(
-                    reply.source_uuid
-                )
+                f"Skipping stale remote reply for locally-deleted source {reply.source_uuid}"
             )
             continue
 
@@ -651,12 +643,12 @@ def update_replies(
             add_seen_reply_records(local_reply.id, reply.seen_by, session)
 
             del local_replies_by_uuid[reply.uuid]
-            logger.debug("Updated reply {}".format(reply.uuid))
+            logger.debug(f"Updated reply {reply.uuid}")
 
         elif reply.source_uuid in skip_uuids_deleted_conversation:
             logger.debug(
-                "Conversation deleted locally; skip remote reply {} "
-                "for source {} for one sync".format(reply.uuid, reply.source_uuid)
+                f"Conversation deleted locally; skip remote reply {reply.uuid} "
+                f"for source {reply.source_uuid} for one sync"
             )
 
         else:
@@ -696,7 +688,7 @@ def update_replies(
             except NoResultFound:
                 pass  # No draft locally stored corresponding to this reply.
 
-            logger.debug("Added new reply {}".format(reply.uuid))
+            logger.debug(f"Added new reply {reply.uuid}")
 
     # The uuids remaining in local_uuids do not exist on the remote server, so
     # delete the related records.
@@ -704,12 +696,10 @@ def update_replies(
         try:
             delete_single_submission_or_reply_on_disk(deleted_reply, data_dir)
             session.delete(deleted_reply)
-            logger.debug("Deleted reply {}".format(deleted_reply.uuid))
+            logger.debug(f"Deleted reply {deleted_reply.uuid}")
         except NoResultFound:
             logger.debug(
-                "Tried to delete submission {}, but it was already deleted locally".format(
-                    deleted_reply.uuid
-                )
+                f"Tried to delete submission {deleted_reply.uuid}, but it was already deleted locally"
             )
     session.commit()
 
@@ -933,9 +923,9 @@ def delete_source_collection(journalist_filename: str, data_dir: str) -> None:
     source_folder = os.path.join(data_dir, journalist_filename)
     try:
         shutil.rmtree(source_folder)
-        logging.info("Source documents for {} deleted".format(journalist_filename))
+        logging.info(f"Source documents for {journalist_filename} deleted")
     except FileNotFoundError:
-        logging.info("No source documents for {} to delete".format(journalist_filename))
+        logging.info(f"No source documents for {journalist_filename} to delete")
 
 
 def delete_single_submission_or_reply_on_disk(
@@ -968,12 +958,12 @@ def _cleanup_directory_if_empty(target_dir: str) -> None:
         if os.path.isdir(target_dir):
             if not next(os.scandir(target_dir), None):
                 # It's an empty directory; remove it
-                logger.debug("Remove empty directory {}".format(target_dir))
+                logger.debug(f"Remove empty directory {target_dir}")
                 shutil.rmtree(target_dir)
         else:
             logger.error("Error: method called on missing or malformed directory")
     except FileNotFoundError as e:
-        logger.error("Could not clean up directory: {}".format(e))
+        logger.error(f"Could not clean up directory: {e}")
 
 
 def delete_local_conversation_by_source_uuid(session: Session, uuid: str, data_dir: str) -> None:
@@ -991,17 +981,17 @@ def delete_local_conversation_by_source_uuid(session: Session, uuid: str, data_d
     source = session.query(Source).filter_by(uuid=uuid).one_or_none()
     if source:
         # Delete all source files on disk
-        logger.debug("Delete files on disk for source {} from local database.".format(uuid))
+        logger.debug(f"Delete files on disk for source {uuid} from local database.")
         delete_source_collection(source.journalist_filename, data_dir)
 
         # Find all associated replies and messages and delete them. Add
         # a record to the DeletedConversation table, which flags the
         # conversation as having been deleted locally
-        logger.debug("Delete records for source {} from local database.".format(uuid))
+        logger.debug(f"Delete records for source {uuid} from local database.")
         _delete_source_collection_from_db(session, source)
 
     else:
-        logger.error("Tried to delete source {}, but UUID was not found".format(uuid))
+        logger.error(f"Tried to delete source {uuid}, but UUID was not found")
 
 
 def _delete_source_collection_from_db(session: Session, source: Source) -> None:
@@ -1018,22 +1008,20 @@ def _delete_source_collection_from_db(session: Session, source: Source) -> None:
 
     is_local_db_modified = False
 
-    for table in {DraftReply, File, Message, Reply}:
+    for table in (DraftReply, File, Message, Reply):
         try:
             query = session.query(table).filter_by(source_id=source.id)
             if len(query.all()) > 0:
                 logger.debug(
-                    "Locally delete {} records associated with source {}".format(
-                        table.__name__, source.uuid
-                    )
+                    f"Locally delete {table.__name__} records associated with source {source.uuid}"
                 )
                 query.delete()
                 is_local_db_modified = True
         except NoResultFound:
             #  Sync logic has deleted the records
             logger.debug(
-                "Tried to locally delete {} records associated with "
-                "source {}, but none were found".format(table.__name__, source.uuid)
+                f"Tried to locally delete {table.__name__} records associated with "
+                f"source {source.uuid}, but none were found"
             )
 
     # Add source UUID to deletedconversation table, but only if we actually made
@@ -1042,7 +1030,7 @@ def _delete_source_collection_from_db(session: Session, source: Source) -> None:
         flagged_conversation = DeletedConversation(uuid=source.uuid)
         try:
             if not session.query(DeletedConversation).filter_by(uuid=source.uuid).one_or_none():
-                logger.debug("Add source {} to deletedconversation table".format(source.uuid))
+                logger.debug(f"Add source {source.uuid} to deletedconversation table")
                 session.add(flagged_conversation)
         except SQLAlchemyError as e:
             logger.error(f"Could not add source {source.uuid} to deletedconversation table")

@@ -13,7 +13,7 @@ def modal_dialog(mocker, homedir):
 
     dialog = ModalDialog()
 
-    yield dialog
+    return dialog
 
 
 @pytest.mark.parametrize("key", [Qt.Key_Enter, Qt.Key_Return])

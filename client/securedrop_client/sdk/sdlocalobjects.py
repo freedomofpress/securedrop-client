@@ -94,7 +94,7 @@ class Reply:
             self.uuid = kwargs["uuid"]
             self.seen_by = kwargs["seen_by"]
         except KeyError as err:
-            raise AttributeError("Missing key {}".format(err.args[0])) from err
+            raise AttributeError(f"Missing key {err.args[0]}") from err
 
         # Now let us set source uuid
         values = self.source_url.split("/")
@@ -136,7 +136,7 @@ class Submission:
             self.uuid = kwargs["uuid"]
             self.seen_by = kwargs["seen_by"]
         except KeyError as err:
-            raise AttributeError("Missing key {}".format(err.args[0])) from err
+            raise AttributeError(f"Missing key {err.args[0]}") from err
 
         _, self.source_uuid = self.source_url.rsplit("/", 1)
 
@@ -187,7 +187,7 @@ class Source:
             "uuid",
         ]:
             if key not in kwargs:
-                AttributeError("Missing key {}".format(key))
+                AttributeError(f"Missing key {key}")
             setattr(self, key, kwargs[key])
 
 
@@ -210,5 +210,5 @@ class User:
             "uuid",
         ]:
             if key not in kwargs:
-                AttributeError("Missing key {}".format(key))
+                AttributeError(f"Missing key {key}")
             setattr(self, key, kwargs[key])

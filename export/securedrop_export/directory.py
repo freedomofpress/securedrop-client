@@ -143,4 +143,4 @@ def _check_dir_permissions(dir_path: Union[str, Path]) -> None:
         stat_res = os.stat(dir_path).st_mode
         masked = stat_res & 0o777
         if masked & 0o077:
-            raise RuntimeError("Unsafe permissions ({}) on {}".format(oct(stat_res), dir_path))
+            raise RuntimeError(f"Unsafe permissions ({oct(stat_res)}) on {dir_path}")

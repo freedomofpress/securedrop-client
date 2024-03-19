@@ -43,7 +43,7 @@ class SendReplyJob(SingleObjectApiJob):
             # then a reply with self.reply_uuid will exist in the replies table.
             reply_db_object = session.query(Reply).filter_by(uuid=self.reply_uuid).one_or_none()
             if reply_db_object:
-                logger.debug("Reply {} has already been sent successfully".format(self.reply_uuid))
+                logger.debug(f"Reply {self.reply_uuid} has already been sent successfully")
                 return reply_db_object.uuid
 
             # If the draft does not exist because it was deleted locally then do not send the
@@ -52,7 +52,7 @@ class SendReplyJob(SingleObjectApiJob):
                 session.query(DraftReply).filter_by(uuid=self.reply_uuid).one_or_none()
             )
             if not draft_reply_db_object:
-                raise Exception("Draft reply {} does not exist".format(self.reply_uuid))
+                raise Exception(f"Draft reply {self.reply_uuid} does not exist")
             draft_reply_db_object.sending_pid = os.getpid()
             session.commit()
 
@@ -61,7 +61,7 @@ class SendReplyJob(SingleObjectApiJob):
             if not source:
                 session.delete(draft_reply_db_object)
                 session.commit()
-                raise Exception("Source {} does not exists".format(self.source_uuid))
+                raise Exception(f"Source {self.source_uuid} does not exists")
 
             # If the account of the sender no longer exists then do not send the reply. Keep the
             # draft reply so that the failed reply associated with the deleted account can be
@@ -70,7 +70,7 @@ class SendReplyJob(SingleObjectApiJob):
                 session.query(User).filter_by(uuid=api_client.token_journalist_uuid).one_or_none()
             )
             if not sender:
-                raise Exception("Sender of reply {} has been deleted".format(self.reply_uuid))
+                raise Exception(f"Sender of reply {self.reply_uuid} has been deleted")
 
             # Send the draft reply to the source
             encrypted_reply = self.gpg.encrypt_to_source(self.source_uuid, self.message)
@@ -78,7 +78,7 @@ class SendReplyJob(SingleObjectApiJob):
 
             # Create a new reply object with an updated filename and file counter
             interaction_count = source.interaction_count + 1
-            filename = "{}-{}-reply.gpg".format(interaction_count, source.journalist_designation)
+            filename = f"{interaction_count}-{source.journalist_designation}-reply.gpg"
 
             reply_db_object = Reply(
                 uuid=self.reply_uuid,
@@ -117,15 +117,13 @@ class SendReplyJob(SingleObjectApiJob):
 
             return reply_db_object.uuid
         except (RequestTimeoutError, ServerConnectionError) as e:
-            message = "Failed to send reply for source {id} due to Exception: {error}".format(
-                id=self.source_uuid, error=e
-            )
+            message = f"Failed to send reply for source {self.source_uuid} due to Exception: {e}"
             raise SendReplyJobTimeoutError(message, self.reply_uuid)
         except Exception as e:
             # Continue to store the draft reply
-            message = """
-                Failed to send reply {uuid} for source {id} due to Exception: {error}
-            """.format(uuid=self.reply_uuid, id=self.source_uuid, error=e)
+            message = f"""
+                Failed to send reply {self.reply_uuid} for source {self.source_uuid} due to Exception: {e}
+            """
             self._set_status_to_failed(session)
             raise SendReplyJobError(message, self.reply_uuid)
 

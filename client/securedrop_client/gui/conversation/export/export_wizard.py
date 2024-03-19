@@ -4,8 +4,13 @@ from typing import List, Optional
 
 from PyQt5.QtCore import QSize, Qt, pyqtSlot
 from PyQt5.QtGui import QIcon, QKeyEvent
-from PyQt5.QtWidgets import QAbstractButton  # noqa: F401
-from PyQt5.QtWidgets import QApplication, QWidget, QWizard, QWizardPage
+from PyQt5.QtWidgets import (
+    QAbstractButton,  # noqa: F401
+    QApplication,
+    QWidget,
+    QWizard,
+    QWizardPage,
+)
 
 from securedrop_client.export import Export
 from securedrop_client.export_status import ExportStatus

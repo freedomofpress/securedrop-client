@@ -128,7 +128,7 @@ class Export(QObject):
                 archive_path, self._on_export_process_complete, self._on_export_process_error
             )
 
-        except IOError as e:
+        except OSError as e:
             logger.error("Export failed")
             logger.debug(f"Export failed: {e}")
             self.export_state_changed.emit(ExportStatus.ERROR_EXPORT)
@@ -313,7 +313,7 @@ class Export(QObject):
             )
             self._run_qrexec_export(archive_path, self._on_print_success, self._on_print_error)
 
-        except IOError as e:
+        except OSError as e:
             logger.error("Export failed")
             logger.debug(f"Export failed: {e}")
             self.print_failed.emit(ExportError(ExportStatus.ERROR_PRINT))

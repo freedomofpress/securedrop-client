@@ -87,7 +87,7 @@ class PrintDialog(ModalDialog):
         self.continue_button.setText(_("DONE"))
         self.header.setText(self.error_header)
         self.body.setText(  # nosemgrep: semgrep.untranslated-gui-string
-            "{}: {}".format(self.error_status, self.generic_error_message)
+            f"{self.error_status}: {self.generic_error_message}"
         )
         self.error_details.hide()
         self.adjustSize()
@@ -140,8 +140,7 @@ class PrintDialog(ModalDialog):
 
             self.continue_button.setEnabled(True)
             self.continue_button.setFocus()
+        elif error.status == ExportStatus.ERROR_PRINTER_NOT_FOUND:
+            self._show_insert_usb_message()
         else:
-            if error.status == ExportStatus.ERROR_PRINTER_NOT_FOUND:
-                self._show_insert_usb_message()
-            else:
-                self._show_generic_error_message()
+            self._show_generic_error_message()

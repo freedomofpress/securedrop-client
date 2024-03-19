@@ -73,7 +73,7 @@ def mocked_json_query(*args, **kwargs):
     arguments = (newargs,)
 
     key = arguments[0] + "+" + str(CALLNUMBER)
-    print("\nKEY:   {}".format(key))
+    print(f"\nKEY:   {key}")
     answer = RES.get(key, None)
     if not answer:
         # Means it is not in cache.

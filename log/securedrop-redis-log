@@ -1,15 +1,7 @@
 #!/opt/venvs/securedrop-log/bin/python3
 
-from __future__ import print_function
 
-import errno
-import io
-import os
-import shutil
-import subprocess
 import sys
-import tempfile
-from datetime import datetime
 
 import redis
 

@@ -28,8 +28,8 @@ def User(**attrs):
     global USER_COUNT
     USER_COUNT += 1
     defaults = dict(
-        uuid="user-uuid-{}".format(USER_COUNT),
-        username="test-user-id-{}".format(USER_COUNT),
+        uuid=f"user-uuid-{USER_COUNT}",
+        username=f"test-user-id-{USER_COUNT}",
         firstname="slim",
         lastname="shady",
     )
@@ -46,7 +46,7 @@ def Source(**attrs):
     global SOURCE_COUNT
     SOURCE_COUNT += 1
     defaults = dict(
-        uuid="source-uuid-{}".format(SOURCE_COUNT),
+        uuid=f"source-uuid-{SOURCE_COUNT}",
         journalist_designation="testy-mctestface",
         is_flagged=False,
         public_key=pub_key,
@@ -66,8 +66,8 @@ def Message(**attrs):
     global MESSAGE_COUNT
     MESSAGE_COUNT += 1
     defaults = dict(
-        uuid="msg-uuid-{}".format(MESSAGE_COUNT),
-        filename="{}-msg.gpg".format(MESSAGE_COUNT),
+        uuid=f"msg-uuid-{MESSAGE_COUNT}",
+        filename=f"{MESSAGE_COUNT}-msg.gpg",
         size=123,
         download_url="http://wat.onion/abc",
         is_decrypted=True,
@@ -84,8 +84,8 @@ def Reply(**attrs):
     global REPLY_COUNT
     REPLY_COUNT += 1
     defaults = dict(
-        uuid="reply-uuid-{}".format(REPLY_COUNT),
-        filename="{}-reply.gpg".format(REPLY_COUNT),
+        uuid=f"reply-uuid-{REPLY_COUNT}",
+        filename=f"{REPLY_COUNT}-reply.gpg",
         size=123,
         is_decrypted=True,
         is_downloaded=True,
@@ -101,7 +101,7 @@ def DraftReply(**attrs):
     global DRAFT_REPLY_COUNT
     DRAFT_REPLY_COUNT += 1
     defaults = dict(
-        uuid="draft-reply-uuid-{}".format(DRAFT_REPLY_COUNT),
+        uuid=f"draft-reply-uuid-{DRAFT_REPLY_COUNT}",
         timestamp=datetime.utcnow(),
         source_id=1,
         journalist_id=1,
@@ -129,8 +129,8 @@ def File(**attrs):
     global FILE_COUNT
     FILE_COUNT += 1
     defaults = dict(
-        uuid="file-uuid-{}".format(FILE_COUNT),
-        filename="{}-doc.gz.gpg".format(FILE_COUNT),
+        uuid=f"file-uuid-{FILE_COUNT}",
+        filename=f"{FILE_COUNT}-doc.gz.gpg",
         size=123,
         download_url="http://wat.onion/abc",
         is_decrypted=True,
@@ -204,7 +204,7 @@ def RemoteSource(**attrs):
 
 
 def RemoteReply(**attrs):
-    source_url = "/api/v1/sources/{}".format(str(uuid.uuid4()))
+    source_url = f"/api/v1/sources/{str(uuid.uuid4())}"
     defaults = dict(
         filename="1-reply.filename",
         journalist_uuid=str(uuid.uuid4()),
@@ -230,8 +230,8 @@ def RemoteFile(**attrs):
     FILE_COUNT += 1
     src_uuid = str(uuid.uuid4())
     defaults = dict(
-        uuid="file-uuid-{}".format(FILE_COUNT),
-        filename="{}-doc.gz.gpg".format(FILE_COUNT),
+        uuid=f"file-uuid-{FILE_COUNT}",
+        filename=f"{FILE_COUNT}-doc.gz.gpg",
         source_uuid=src_uuid,
         download_url="test",
         submission_url="test",
@@ -256,8 +256,8 @@ def RemoteMessage(**attrs):
     MESSAGE_COUNT += 1
     src_uuid = str(uuid.uuid4())
     defaults = dict(
-        uuid="msg-uuid-{}".format(MESSAGE_COUNT),
-        filename="{}-msg.gpg".format(MESSAGE_COUNT),
+        uuid=f"msg-uuid-{MESSAGE_COUNT}",
+        filename=f"{MESSAGE_COUNT}-msg.gpg",
         source_uuid=src_uuid,
         download_url="test",
         submission_url="test",

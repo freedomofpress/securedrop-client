@@ -76,7 +76,7 @@ def login_required(f):  # type: ignore[no-untyped-def]
     def decorated_function(self, *args, **kwargs):  # type: ignore[no-untyped-def]
         if not self.api:
             self.on_action_requiring_login()
-            return
+            return None
         else:
             return f(self, *args, **kwargs)
 
@@ -556,7 +556,7 @@ class Controller(QObject):
         # since the GUI has to check authentication state in several places.
         self.is_authenticated = True
 
-        logger.info("{} successfully logged in".format(self.api.username))
+        logger.info(f"{self.api.username} successfully logged in")
         self.gui.hide_login()
         user = storage.create_or_update_user(
             self.api.token_journalist_uuid,
@@ -864,7 +864,7 @@ class Controller(QObject):
         """
         if isinstance(exception, DownloadChecksumMismatchException):
             # Keep resubmitting the job if the download is corrupted.
-            logger.warning("Failure due to checksum mismatch, retrying {}".format(exception.uuid))
+            logger.warning(f"Failure due to checksum mismatch, retrying {exception.uuid}")
             self._submit_download_job(exception.object_type, exception.uuid)
 
         self.session.commit()
@@ -899,7 +899,7 @@ class Controller(QObject):
         """
         if isinstance(exception, DownloadChecksumMismatchException):
             # Keep resubmitting the job if the download is corrupted.
-            logger.warning("Failure due to checksum mismatch, retrying {}".format(exception.uuid))
+            logger.warning(f"Failure due to checksum mismatch, retrying {exception.uuid}")
             self._submit_download_job(exception.object_type, exception.uuid)
 
         self.session.commit()
@@ -924,9 +924,7 @@ class Controller(QObject):
                     _("File does not exist in the data directory. Please try re-downloading.")
                 )
                 logger.warning(
-                    "Cannot find file in {}. File does not exist.".format(
-                        os.path.dirname(file.filename)
-                    )
+                    f"Cannot find file in {os.path.dirname(file.filename)}. File does not exist."
                 )
             missing_files = storage.update_missing_files(self.data_dir, self.session)
             for f in missing_files:
@@ -939,7 +937,7 @@ class Controller(QObject):
         Open the file specified by file_uuid. If the file is missing, update the db so that
         is_downloaded is set to False.
         """
-        logger.info('Opening file in "{}".'.format(os.path.dirname(file.location(self.data_dir))))
+        logger.info(f'Opening file in "{os.path.dirname(file.location(self.data_dir))}".')
 
         if not self.downloaded_file_exists(file):
             return
@@ -979,7 +977,7 @@ class Controller(QObject):
         """
         # Keep resubmitting the job if the download is corrupted.
         if isinstance(exception, DownloadChecksumMismatchException):
-            logger.warning("Failure due to checksum mismatch, retrying {}".format(exception.uuid))
+            logger.warning(f"Failure due to checksum mismatch, retrying {exception.uuid}")
             self._submit_download_job(exception.object_type, exception.uuid)
         else:
             if isinstance(exception, DownloadDecryptionException):
@@ -1079,7 +1077,7 @@ class Controller(QObject):
         """
         # If the user account no longer exists, do not send
         if not self.authenticated_user:
-            logger.error("Sender of reply {} has been deleted".format(reply_uuid))
+            logger.error(f"Sender of reply {reply_uuid} has been deleted")
             return
 
         source = self.session.query(db.Source).filter_by(uuid=source_uuid).one_or_none()
@@ -1122,7 +1120,7 @@ class Controller(QObject):
     def on_reply_failure(
         self, exception: Union[SendReplyJobError, SendReplyJobTimeoutError]
     ) -> None:
-        logger.debug("{} failed to send".format(exception.reply_uuid))
+        logger.debug(f"{exception.reply_uuid} failed to send")
 
         # only emit failure signal for non-timeout errors
         if isinstance(exception, SendReplyJobError):

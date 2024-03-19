@@ -30,18 +30,18 @@ class TestShared:
         s = self.api.get_sources()[0]
 
         submissions = self.api.get_submissions(s)
-        assert 0 < len(submissions)
+        assert len(submissions) > 0
 
         replies = self.api.get_replies_from_source(s)
-        assert 0 < len(replies)
+        assert len(replies) > 0
 
         self.api.delete_conversation(s.uuid)
 
         submissions = self.api.get_submissions(s)
-        assert 0 == len(submissions)
+        assert len(submissions) == 0
 
         replies = self.api.get_replies_from_source(s)
-        assert 0 == len(replies)
+        assert len(replies) == 0
 
     def delete_source(self, from_string=False):
         number_of_sources_before = len(self.api.get_sources())

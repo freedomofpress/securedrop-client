@@ -164,7 +164,7 @@ class DownloadJob(SingleObjectApiJob):
             safe_move(download_path, destination, self.data_dir)
             db_object.download_error = None
             mark_as_downloaded(type(db_object), db_object.uuid, session)
-            logger.info("File downloaded to {}".format(destination))
+            logger.info(f"File downloaded to {destination}")
             return destination
         except BaseError as e:
             raise e
@@ -211,7 +211,7 @@ class DownloadJob(SingleObjectApiJob):
         Return True if file checksum is valid or unknown, otherwise return False.
         """
         if not etag:
-            logger.debug("No ETag. Skipping integrity check for file at {}".format(file_path))
+            logger.debug(f"No ETag. Skipping integrity check for file at {file_path}")
             return True
 
         alg, checksum = etag.split(":")
@@ -220,9 +220,7 @@ class DownloadJob(SingleObjectApiJob):
             hasher = hashlib.sha256()
         else:
             logger.debug(
-                "Unknown hash algorithm ({}). Skipping integrity check for file at {}".format(
-                    alg, file_path
-                )
+                f"Unknown hash algorithm ({alg}). Skipping integrity check for file at {file_path}"
             )
             return True
 

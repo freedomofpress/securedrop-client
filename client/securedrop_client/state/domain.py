@@ -10,16 +10,12 @@ from typing import NewType
 class SourceId(str):
     """Identifies a source."""
 
-    pass
-
 
 ConversationId = NewType("ConversationId", str)
 
 
 class FileId(str):
     """Identifies a file."""
-
-    pass
 
 
 class File:

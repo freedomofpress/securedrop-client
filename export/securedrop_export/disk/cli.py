@@ -254,7 +254,7 @@ class CLI:
         in the list of results to check for. (See
         https://pexpect.readthedocs.io/en/stable/api/pexpect.html#pexpect.spawn.expect)
         """
-        logger.debug("Unlocking volume {}".format(quote(volume.device_name)))
+        logger.debug(f"Unlocking volume {quote(volume.device_name)}")
 
         command = "udisksctl"
         args = ["unlock", "--block-device", quote(volume.device_name)]
@@ -427,13 +427,13 @@ class CLI:
             subprocess.check_call(["mkdir", target_path])
 
             export_data = os.path.join(archive_tmpdir, "export_data/")
-            logger.debug("Copying file to {}".format(archive_target_dirname))
+            logger.debug(f"Copying file to {archive_target_dirname}")
 
             subprocess.check_call(["cp", "-r", export_data, target_path])
-            logger.info("File copied successfully to {}".format(target_path))
+            logger.info(f"File copied successfully to {target_path}")
 
             subprocess.check_call(["chmod", "-R", "ugo+r", target_path])
-            logger.info("Read permissions granted on {}".format(target_path))
+            logger.info(f"Read permissions granted on {target_path}")
 
         except (subprocess.CalledProcessError, OSError) as ex:
             logger.error(ex)

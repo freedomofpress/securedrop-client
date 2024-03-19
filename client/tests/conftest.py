@@ -83,7 +83,7 @@ def print_dialog(mocker, homedir):
 
     dialog = conversation.PrintDialog(export_device, "file123.jpg", ["/mock/path/to/file"])
 
-    yield dialog
+    return dialog
 
 
 @pytest.fixture(scope="function")
@@ -96,7 +96,7 @@ def print_transcript_dialog(mocker, homedir):
         export_device, "transcript.txt", ["some/path/transcript.txt"]
     )
 
-    yield dialog
+    return dialog
 
 
 @pytest.fixture(scope="function")
@@ -111,7 +111,7 @@ def export_wizard_multifile(mocker, homedir):
         ["/some/path/file123.jpg", "/some/path/memo.txt", "/some/path/transcript.txt"],
     )
 
-    yield wizard
+    return wizard
 
 
 @pytest.fixture(scope="function")
@@ -122,7 +122,7 @@ def export_wizard(mocker, homedir):
 
     dialog = conversation.ExportWizard(export_device, "file123.jpg", ["/mock/path/to/file"])
 
-    yield dialog
+    return dialog
 
 
 @pytest.fixture(scope="function")
@@ -135,7 +135,7 @@ def export_transcript_wizard(mocker, homedir):
         export_device, "transcript.txt", ["/some/path/transcript.txt"]
     )
 
-    yield dialog
+    return dialog
 
 
 @pytest.fixture(scope="function")
@@ -167,7 +167,7 @@ def homedir(i18n):
         os.mkdir(dir_)
         os.chmod(dir_, 0o0700)
 
-    yield tmpdir
+    return tmpdir
 
 
 @pytest.fixture(scope="function")
@@ -413,7 +413,6 @@ def reply_status_codes(session) -> None:
         reply_status = ReplySendStatus(reply_send_status.value)
         session.add(reply_status)
         session.commit()
-    return
 
 
 @pytest.fixture(scope="function")
@@ -422,7 +421,6 @@ def download_error_codes(session) -> None:
         download_error = DownloadError(download_error_code.name)
         session.add(download_error)
         session.commit()
-    return
 
 
 @pytest.fixture(scope="function")
@@ -461,10 +459,8 @@ def create_gpg_test_context(sdc_home):
         "--import",
         os.path.abspath(key_file),
     ]
-    result = subprocess.run(cmd)
+    result = subprocess.run(cmd, check=False)
     if result.returncode != 0:
         raise RuntimeError(
-            "Unable to import test GPG key. STDOUT: {} STDERR: {}".format(
-                result.stdout, result.stderr
-            )
+            f"Unable to import test GPG key. STDOUT: {result.stdout} STDERR: {result.stderr}"
         )

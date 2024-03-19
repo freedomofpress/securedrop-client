@@ -112,7 +112,7 @@ class GpgHelper:
                 err.close()
 
                 with open(err.name) as e:
-                    msg = "GPG Error: {}".format(e.read())
+                    msg = f"GPG Error: {e.read()}"
 
                 os.unlink(err.name)
 
@@ -182,7 +182,7 @@ class GpgHelper:
                 subprocess.check_call(cmd, stdout=stdout, stderr=stderr)
             except subprocess.CalledProcessError as e:
                 stderr.seek(0)
-                raise CryptoError("Could not import key: {}\n{}".format(e, stderr.read()))
+                raise CryptoError(f"Could not import key: {e}\n{stderr.read()}")
 
     def encrypt_to_source(self, source_uuid: str, data: str) -> str:
         """

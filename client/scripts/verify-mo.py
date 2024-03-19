@@ -20,8 +20,9 @@ import argparse
 import os
 import shlex
 import subprocess
+from collections.abc import Iterator
 from pathlib import Path
-from typing import Any, Iterator, Optional, Set
+from typing import Any, Optional, Set
 
 import polib
 from translate.tools.pocompile import convertmo
@@ -118,6 +119,7 @@ class CatalogVerifier:
             capture_output=True,
             env=os.environ,
             shell=True,
+            check=False,
         )
 
     def reproduce(self) -> None:

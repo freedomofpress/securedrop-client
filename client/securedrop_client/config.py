@@ -19,7 +19,7 @@ class Config:
             with open(full_path) as f:
                 json_config = json.loads(f.read())
         except Exception as e:
-            logger.error("Error opening config file at {}: {}".format(full_path, e))
+            logger.error(f"Error opening config file at {full_path}: {e}")
             json_config = {}
 
         return Config(

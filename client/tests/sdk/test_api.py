@@ -100,7 +100,7 @@ class TestAPI(TestShared):
         hasher = hashlib.sha256()
         hasher.update(content)
 
-        assert etag == "sha256:{}".format(hasher.hexdigest())
+        assert etag == f"sha256:{hasher.hexdigest()}"
 
         # is_read should still be False as of SecureDrop 1.6.0 or later
         submission = self.api.get_submission(unread_submission)
@@ -198,7 +198,7 @@ class TestAPI(TestShared):
         hasher = hashlib.sha256()
         hasher.update(content)
 
-        assert etag == "sha256:{}".format(hasher.hexdigest())
+        assert etag == f"sha256:{hasher.hexdigest()}"
 
         # Let us remove the temporary directory
         shutil.rmtree(tmpdir)

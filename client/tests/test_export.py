@@ -271,9 +271,7 @@ class TestDevice:
             mock_qproc.start.side_effect = (
                 lambda proc, args: self.device._on_export_process_complete()
             )
-            mock_qproc.readAllStandardError.return_value.data.return_value = f"{status}\n".encode(
-                "utf-8"
-            )
+            mock_qproc.readAllStandardError.return_value.data.return_value = f"{status}\n".encode()
 
             self.device._run_qrexec_export(
                 _PATH_TO_PRETEND_ARCHIVE,
@@ -295,9 +293,7 @@ class TestDevice:
             mock_qproc.start.side_effect = (
                 lambda proc, args: self.device._on_print_preflight_complete()
             )
-            mock_qproc.readAllStandardError.return_value.data.return_value = f"{status}\n".encode(
-                "utf-8"
-            )
+            mock_qproc.readAllStandardError.return_value.data.return_value = f"{status}\n".encode()
 
             self.device._run_qrexec_export(
                 _PATH_TO_PRETEND_ARCHIVE,

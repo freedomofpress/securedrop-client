@@ -75,7 +75,7 @@ def test_configure_logging(homedir, mocker):
 @pytest.mark.skipif(
     platform.system() != "Linux", reason="concurrent app prevention skipped on non Linux"
 )
-class TestSecondInstancePrevention(object):
+class TestSecondInstancePrevention:
     @staticmethod
     def mock_app(mocker):
         mock_app = mocker.MagicMock()
@@ -182,7 +182,7 @@ def test_create_app_dir_permissions(tmpdir, mocker):
     for idx, case in enumerate(PERMISSIONS_CASES):
         mock_session_maker = mocker.MagicMock()
         mock_args = mocker.MagicMock()
-        sdc_home = os.path.join(str(tmpdir), "case-{}".format(idx))
+        sdc_home = os.path.join(str(tmpdir), f"case-{idx}")
         mock_args.sdc_home = sdc_home
         mock_qt_args = mocker.MagicMock()
 

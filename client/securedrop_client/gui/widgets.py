@@ -23,7 +23,7 @@ import html
 import logging
 from datetime import datetime
 from gettext import gettext as _
-from typing import Dict, List, Optional, Union  # noqa: F401
+from typing import Dict, List, Optional, Union
 from uuid import uuid4
 
 import arrow
@@ -709,7 +709,7 @@ class MainView(QWidget):
             # Get or create the SourceConversationWrapper
             if source.uuid in self.source_conversations:
                 conversation_wrapper = self.source_conversations[source.uuid]
-                conversation_wrapper.conversation_view.update_conversation(  # type: ignore[has-type]  # noqa: E501
+                conversation_wrapper.conversation_view.update_conversation(  # type: ignore[has-type]
                     source.collection
                 )
             else:
@@ -719,9 +719,7 @@ class MainView(QWidget):
                 self.source_conversations[source.uuid] = conversation_wrapper
 
             self.set_conversation(conversation_wrapper)
-            logger.debug(
-                "Set conversation to the selected source with uuid: {}".format(source.uuid)
-            )
+            logger.debug(f"Set conversation to the selected source with uuid: {source.uuid}")
 
         except sqlalchemy.exc.InvalidRequestError as e:
             logger.debug(e)
@@ -749,12 +747,12 @@ class MainView(QWidget):
         and remove the reference to it in self.source_conversations
         """
         try:
-            logger.debug("Deleting SourceConversationWrapper for {}".format(source_uuid))
+            logger.debug(f"Deleting SourceConversationWrapper for {source_uuid}")
             conversation_wrapper = self.source_conversations[source_uuid]
             conversation_wrapper.deleteLater()
             del self.source_conversations[source_uuid]
         except KeyError:
-            logger.debug("No SourceConversationWrapper for {} to delete".format(source_uuid))
+            logger.debug(f"No SourceConversationWrapper for {source_uuid} to delete")
 
     def set_conversation(self, widget: QWidget) -> None:
         """
@@ -861,7 +859,7 @@ class EmptyConversationView(QWidget):
 
 
 class SourceListWidgetItem(QListWidgetItem):
-    def __lt__(self, other: "SourceListWidgetItem") -> bool:
+    def __lt__(self, other: SourceListWidgetItem) -> bool:
         """
         Used for ordering widgets by timestamp of last interaction.
         """
@@ -2388,7 +2386,7 @@ class FileWidget(QWidget):
 
     def _set_file_state(self) -> None:
         if self.file.is_decrypted:
-            logger.debug("Changing file {} state to decrypted/downloaded".format(self.uuid))
+            logger.debug(f"Changing file {self.uuid} state to decrypted/downloaded")
             self._set_file_name()
             self.download_button.hide()
             self.no_file_name.hide()
@@ -2398,7 +2396,7 @@ class FileWidget(QWidget):
             self.file_name.show()
             self.update_file_size()
         else:
-            logger.debug("Changing file {} state to not downloaded".format(self.uuid))
+            logger.debug(f"Changing file {self.uuid} state to not downloaded")
             self.download_button.setText(_("DOWNLOAD"))
 
             # Ensure correct icon depending on mouse hover state.
@@ -2831,14 +2829,12 @@ class ConversationView(QWidget):
                     self.controller.session.refresh(conversation_item)
                     self.controller.session.refresh(conversation_item.journalist)
                     item_widget.sender = conversation_item.journalist
+            elif isinstance(conversation_item, Message):
+                self.add_message(conversation_item, index)
+            elif isinstance(conversation_item, (DraftReply, Reply)):
+                self.add_reply(conversation_item, conversation_item.journalist, index)
             else:
-                # add a new item to be displayed.
-                if isinstance(conversation_item, Message):
-                    self.add_message(conversation_item, index)
-                elif isinstance(conversation_item, (DraftReply, Reply)):
-                    self.add_reply(conversation_item, conversation_item.journalist, index)
-                else:
-                    self.add_file(conversation_item, index)
+                self.add_file(conversation_item, index)
 
         # If any items remain in current_conversation, they are no longer in the
         # source collection and should be removed from both the layout and the conversation
@@ -2846,7 +2842,7 @@ class ConversationView(QWidget):
         # by another user (a journalist using the Web UI is able to delete individual
         # submissions).
         for item_widget in current_conversation.values():
-            logger.debug("Deleting item: {}".format(item_widget.uuid))
+            logger.debug(f"Deleting item: {item_widget.uuid}")
             self.current_messages.pop(item_widget.uuid)
             item_widget.deleteLater()
             self._scroll.remove_widget_from_conversation(item_widget)
@@ -2858,7 +2854,7 @@ class ConversationView(QWidget):
         """
         Add a file from the source.
         """
-        logger.debug("Adding file for {}".format(file.uuid))
+        logger.debug(f"Adding file for {file.uuid}")
         conversation_item = FileWidget(
             file.uuid,
             self.controller,

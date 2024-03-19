@@ -8,7 +8,7 @@ from .message import Message
 
 
 def transcribe(record: database.Base) -> Optional[Item]:
-    if isinstance(record, database.Message) or isinstance(record, database.Reply):
+    if isinstance(record, (database.Message, database.Reply)):
         return Message(record)
     if isinstance(record, database.File):
         return File(record)

@@ -137,7 +137,7 @@ class RunnableQueue(QObject):
         if self.current_job is not None:
             in_progress_jobs.append(self.current_job)
         if job in in_progress_jobs:
-            logger.debug("Duplicate job {}, skipping".format(job))
+            logger.debug(f"Duplicate job {job}, skipping")
             return True
         return False
 
@@ -161,7 +161,7 @@ class RunnableQueue(QObject):
             if self._check_for_duplicate_jobs(job):
                 return
 
-            logger.debug("Added {} to queue".format(job))
+            logger.debug(f"Added {job} to queue")
             current_order_number = next(self.order_number)
             job.order_number = current_order_number
             priority = self.JOB_PRIORITIES[type(job)]
@@ -178,7 +178,7 @@ class RunnableQueue(QObject):
         if self._check_for_duplicate_jobs(job):
             return
 
-        logger.debug("Added {} to queue".format(job))
+        logger.debug(f"Added {job} to queue")
         job.remaining_attempts = DEFAULT_NUM_ATTEMPTS
         priority = self.JOB_PRIORITIES[type(job)]
         self.queue.put_nowait((priority, job))
@@ -229,13 +229,13 @@ class RunnableQueue(QObject):
                     session = self.session_maker()
                     self.current_job._do_call_api(self.api_client, session)
             except ApiInaccessibleError as e:
-                logger.debug("{}: {}".format(type(e).__name__, e))
+                logger.debug(f"{type(e).__name__}: {e}")
                 self.api_client = None
                 with self.condition_add_or_remove_job:
                     self.current_job = None
                 return
             except (RequestTimeoutError, ServerConnectionError) as e:
-                logger.debug("{}: {}".format(type(e).__name__, e))
+                logger.debug(f"{type(e).__name__}: {e}")
                 self.add_job(PauseQueueJob())
                 with self.condition_add_or_remove_job:
                     job, self.current_job = self.current_job, None
