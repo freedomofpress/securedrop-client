@@ -467,8 +467,9 @@ def __update_submissions(
             logger.debug(f"Updated {model.__name__} {submission.uuid}")
         elif submission.source_uuid in skip_uuids_deleted_conversation:
             logger.debug(
-                "Skip update for submission {} (source {}) "
-                "(this sync only)".format(submission.uuid, submission.source_uuid)
+                "Skip update for submission {} (source {}) (this sync only)".format(
+                    submission.uuid, submission.source_uuid
+                )
             )
             continue
         else:
@@ -1022,8 +1023,9 @@ def _delete_source_collection_from_db(session: Session, source: Source) -> None:
             query = session.query(table).filter_by(source_id=source.id)
             if len(query.all()) > 0:
                 logger.debug(
-                    "Locally delete {} records associated with "
-                    "source {}".format(table.__name__, source.uuid)
+                    "Locally delete {} records associated with source {}".format(
+                        table.__name__, source.uuid
+                    )
                 )
                 query.delete()
                 is_local_db_modified = True

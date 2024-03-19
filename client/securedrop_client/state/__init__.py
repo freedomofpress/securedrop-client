@@ -3,6 +3,7 @@
 """
 The internal state of the SecureDrop Client.
 """
+
 # Import classes here to make possible to import them from securedrop_client.state
 from .domain import ConversationId, File, FileId, SourceId  # noqa: F401
 from .state import State  # noqa: F401

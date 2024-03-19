@@ -3,6 +3,7 @@
 """
 The types relevant to the internal state of the SecureDrop Client.
 """
+
 from typing import NewType
 
 

@@ -1,7 +1,7 @@
 """Initial schema, squashed from old head 9ba8d7524871 (per #1500).
 
 Revision ID: d7c8af95bc8e
-Revises: 
+Revises:
 Create Date: 2022-06-09 16:41:11.913336
 
 """

@@ -5,6 +5,7 @@ Stores and provides read/write access to the internal state of the SecureDrop Cl
 
 Note: the Graphical User Interface MUST NOT write state, except in QActions.
 """
+
 from typing import Dict, List, Optional
 
 from PyQt5.QtCore import QObject, pyqtSignal, pyqtSlot

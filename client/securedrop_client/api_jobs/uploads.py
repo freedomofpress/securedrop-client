@@ -125,9 +125,7 @@ class SendReplyJob(SingleObjectApiJob):
             # Continue to store the draft reply
             message = """
                 Failed to send reply {uuid} for source {id} due to Exception: {error}
-            """.format(
-                uuid=self.reply_uuid, id=self.source_uuid, error=e
-            )
+            """.format(uuid=self.reply_uuid, id=self.source_uuid, error=e)
             self._set_status_to_failed(session)
             raise SendReplyJobError(message, self.reply_uuid)
 

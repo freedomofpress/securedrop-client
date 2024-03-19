@@ -3605,9 +3605,10 @@ def test_FileWidget__on_export_clicked(mocker, session, source):
 
     fw._on_export_clicked()
     wizard.assert_called_once()
-    wizard.assert_called_once_with(
-        export_device(), file.filename, [file_location]
-    ), f"{wizard.call_args}"
+    (
+        wizard.assert_called_once_with(export_device(), file.filename, [file_location]),
+        f"{wizard.call_args}",
+    )
 
 
 def test_FileWidget__on_export_clicked_missing_file(mocker, session, source):
