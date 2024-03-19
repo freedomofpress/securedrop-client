@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: SecureDrop Client 0.8.1\n"
 "Report-Msgid-Bugs-To: securedrop@freedom.press\n"
-"PO-Revision-Date: 2024-03-05 09:30+0000\n"
+"PO-Revision-Date: 2024-03-09 07:30+0000\n"
 "Last-Translator: Adam Rak <kitynska@gmail.com>\n"
 "Language-Team: Polish <https://weblate.securedrop.org/projects/securedrop/securedrop-client/pl/>\n"
 "Language: pl\n"
@@ -318,11 +318,11 @@ msgstr "Błąd podczas montowania napędu"
 msgid "Error during export"
 msgstr "Błąd podczas eksportu"
 
-msgid "Files were exported succesfully, but the USB device could not be unmounted."
+msgid "Files were exported successfully, but the USB device could not be unmounted."
 msgstr "Pliki zostały wyeksportowane pomyślnie, ale nie można odmontować urządzenia USB."
 
-msgid "Files were exported succesfully, but some temporary files remain on disk.Reboot to remove them."
-msgstr "Pliki zostały wyeksportowane pomyślnie, ale na dysku pozostały niektóre pliki tymczasowe. Uruchom ponownie system, aby je usunąć."
+msgid "Files were exported successfully, but some temporary files remain on disk. Reboot to remove them."
+msgstr "Pliki zostały wyeksportowane pomyślnie, ale niektóre pliki tymczasowe pozostają na dysku. Uruchom ponownie system, aby je usunąć."
 
 msgid "Export successful"
 msgstr "Eksport udany"
@@ -401,6 +401,12 @@ msgstr "Twoja organizacja nie będzie mogła wysyłać im odpowiedzi."
 
 msgid "All files and messages from that source will also be destroyed."
 msgstr "Wszystkie pliki i wiadomośc od tego źródła również zostaną zniszczone."
+
+#~ msgid "Files were exported succesfully, but the USB device could not be unmounted."
+#~ msgstr "Pliki zostały wyeksportowane pomyślnie, ale nie można odmontować urządzenia USB."
+
+#~ msgid "Files were exported succesfully, but some temporary files remain on disk.Reboot to remove them."
+#~ msgstr "Pliki zostały wyeksportowane pomyślnie, ale na dysku pozostały niektóre pliki tymczasowe. Uruchom ponownie system, aby je usunąć."
 
 #~ msgid "SUBMIT"
 #~ msgstr "PRZEŚLIJ"
