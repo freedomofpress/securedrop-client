@@ -1,5 +1,8 @@
 # Changelog
 
+## 0.10.1
+* Fix printing of transcripts. (#1936)
+
 ## 0.10.0
 
 This is the first release from the merged securedrop-client repository, which now
