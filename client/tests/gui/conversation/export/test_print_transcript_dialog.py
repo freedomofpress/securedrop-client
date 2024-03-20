@@ -90,7 +90,9 @@ def test_PrintTranscriptDialog__print_transcript(mocker, print_transcript_dialog
 
     print_transcript_dialog._print_transcript()
 
-    print_transcript_dialog.close.assert_called_once_with()
+    # Dialog.close() should not be called directly; it is closed only
+    # after receiving the completed signal from the QProcess
+    print_transcript_dialog.close.assert_not_called()
 
 
 def test_PrintTranscriptDialog__on_print_preflight_check_succeeded(mocker, print_transcript_dialog):

@@ -24,7 +24,6 @@ class PrintTranscriptDialog(PrintDialog):
 
     def _print_transcript(self) -> None:
         self._device.print(self.transcript_location)
-        self.close()
 
     @pyqtSlot()
     def _on_print_preflight_check_succeeded(self) -> None:
@@ -35,7 +34,6 @@ class PrintTranscriptDialog(PrintDialog):
         if not self.continue_button.isEnabled():
             self.continue_button.clicked.disconnect()
             self.continue_button.clicked.connect(self._print_transcript)
-
             self.continue_button.setEnabled(True)
             self.continue_button.setFocus()
             return
