@@ -1,7 +1,6 @@
 import pytest
 
 from securedrop_client.gui.auth import LoginDialog
-from tests.helper import app  # noqa: F401
 
 
 @pytest.mark.parametrize("lang", ["es"], indirect=True)

@@ -2,7 +2,6 @@ import unittest
 
 from securedrop_client.gui.source.delete import DeleteSourceDialog as Dialog
 from tests import factory
-from tests.helper import app  # noqa: F401
 
 
 class DeleteSourceDialogTest(unittest.TestCase):

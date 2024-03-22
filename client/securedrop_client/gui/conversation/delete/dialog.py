@@ -79,7 +79,7 @@ class DeleteConversationDialog(ModalDialog):
             message_count=messages
         )
 
-        source = "<b>{}</b>".format(self.source.journalist_designation)
+        source = f"<b>{self.source.journalist_designation}</b>"
 
         return "".join(message_tuple).format(
             files_to_delete=files_to_delete,

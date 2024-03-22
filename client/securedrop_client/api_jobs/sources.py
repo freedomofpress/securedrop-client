@@ -28,9 +28,7 @@ class DeleteSourceJob(ApiJob):
         except (RequestTimeoutError, ServerConnectionError):
             raise
         except Exception as e:
-            error_message = "Failed to delete source {uuid} due to {exception}".format(
-                uuid=self.uuid, exception=repr(e)
-            )
+            error_message = f"Failed to delete source {self.uuid} due to {repr(e)}"
             raise DeleteSourceJobException(error_message, self.uuid)
 
 
@@ -51,9 +49,7 @@ class DeleteConversationJob(ApiJob):
         except (RequestTimeoutError, ServerConnectionError):
             raise
         except Exception as e:
-            error_message = "Failed to delete conversation for source {uuid}: {exception}".format(
-                uuid=self.uuid, exception=repr(e)
-            )
+            error_message = f"Failed to delete conversation for source {self.uuid}: {repr(e)}"
             raise DeleteConversationJobException(error_message, self.uuid)
 
 

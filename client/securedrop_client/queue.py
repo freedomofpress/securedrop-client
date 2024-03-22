@@ -2,7 +2,7 @@ import itertools
 import logging
 import threading
 from queue import PriorityQueue
-from typing import Any, Optional, Tuple
+from typing import Any, Optional
 
 from PyQt5.QtCore import QObject, QThread, pyqtBoundSignal, pyqtSignal, pyqtSlot
 from sqlalchemy.orm import scoped_session
@@ -41,7 +41,7 @@ class RunnablePriorityQueue(PriorityQueue):
         self.queue_updated_signal = queue_updated_signal
         super().__init__(*args, **kwargs)
 
-    def get(self, *args: Any, **kwargs: Any) -> Tuple[int, QueueJob]:
+    def get(self, *args: Any, **kwargs: Any) -> tuple[int, QueueJob]:
         item = super().get(*args, **kwargs)
         if self.queue_updated_signal:
             self.queue_updated_signal.emit(self._get_num_message_or_reply_download_jobs())
@@ -116,9 +116,7 @@ class RunnableQueue(QObject):
         super().__init__()
         self.api_client = api_client
         self.session_maker = session_maker
-        self.queue = RunnablePriorityQueue(
-            queue_updated_signal=queue_updated_signal
-        )  # type: PriorityQueue[Tuple[int, QueueJob]]
+        self.queue = RunnablePriorityQueue(queue_updated_signal=queue_updated_signal)  # type: PriorityQueue[tuple[int, QueueJob]]
         # `order_number` ensures jobs with equal priority are retrieved in FIFO order. This is
         # needed because PriorityQueue is implemented using heapq which does not have sort
         # stability. For more info, see : https://bugs.python.org/issue17794
@@ -139,7 +137,7 @@ class RunnableQueue(QObject):
         if self.current_job is not None:
             in_progress_jobs.append(self.current_job)
         if job in in_progress_jobs:
-            logger.debug("Duplicate job {}, skipping".format(job))
+            logger.debug(f"Duplicate job {job}, skipping")
             return True
         return False
 
@@ -163,7 +161,7 @@ class RunnableQueue(QObject):
             if self._check_for_duplicate_jobs(job):
                 return
 
-            logger.debug("Added {} to queue".format(job))
+            logger.debug(f"Added {job} to queue")
             current_order_number = next(self.order_number)
             job.order_number = current_order_number
             priority = self.JOB_PRIORITIES[type(job)]
@@ -180,7 +178,7 @@ class RunnableQueue(QObject):
         if self._check_for_duplicate_jobs(job):
             return
 
-        logger.debug("Added {} to queue".format(job))
+        logger.debug(f"Added {job} to queue")
         job.remaining_attempts = DEFAULT_NUM_ATTEMPTS
         priority = self.JOB_PRIORITIES[type(job)]
         self.queue.put_nowait((priority, job))
@@ -231,13 +229,13 @@ class RunnableQueue(QObject):
                     session = self.session_maker()
                     self.current_job._do_call_api(self.api_client, session)
             except ApiInaccessibleError as e:
-                logger.debug("{}: {}".format(type(e).__name__, e))
+                logger.debug(f"{type(e).__name__}: {e}")
                 self.api_client = None
                 with self.condition_add_or_remove_job:
                     self.current_job = None
                 return
             except (RequestTimeoutError, ServerConnectionError) as e:
-                logger.debug("{}: {}".format(type(e).__name__, e))
+                logger.debug(f"{type(e).__name__}: {e}")
                 self.add_job(PauseQueueJob())
                 with self.condition_add_or_remove_job:
                     job, self.current_job = self.current_job, None

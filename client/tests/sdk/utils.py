@@ -27,7 +27,6 @@ real_json_query = json_query
 # otherwise  performs a real query.
 def mocked_json_query(*args, **kwargs):
     global CALLNUMBER
-    global RES
     CALLNUMBER += 1
     arguments = tuple(args)
     # Now remove the one time code
@@ -73,8 +72,8 @@ def mocked_json_query(*args, **kwargs):
     arguments = (newargs,)
 
     key = arguments[0] + "+" + str(CALLNUMBER)
-    print("\nKEY:   {}".format(key))
-    answer = RES.get(key, None)
+    print(f"\nKEY:   {key}")
+    answer = RES.get(key)
     if not answer:
         # Means it is not in cache.
         # So, execute the real function and store in cache

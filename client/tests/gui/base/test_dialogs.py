@@ -4,16 +4,13 @@ from PyQt5.QtGui import QKeyEvent
 from PyQt5.QtWidgets import QMainWindow
 
 from securedrop_client.gui.base import ModalDialog
-from tests.helper import app  # noqa: F401
 
 
-@pytest.fixture(scope="function")
+@pytest.fixture()
 def modal_dialog(mocker, homedir):
     mocker.patch("PyQt5.QtWidgets.QApplication.activeWindow", return_value=QMainWindow())
 
-    dialog = ModalDialog()
-
-    yield dialog
+    return ModalDialog()
 
 
 @pytest.mark.parametrize("key", [Qt.Key_Enter, Qt.Key_Return])

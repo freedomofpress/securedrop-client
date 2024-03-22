@@ -1,13 +1,10 @@
-import typing
-
-if typing.TYPE_CHECKING:
-    from typing import Dict  # noqa: F401
+from typing import Optional
 
 
 class BaseError(Exception):
     """For generic errors not covered by other exceptions"""
 
-    def __init__(self, message: typing.Optional[str] = None) -> None:
+    def __init__(self, message: Optional[str] = None) -> None:
         self.msg = message
 
     def __str__(self) -> str:
@@ -94,7 +91,7 @@ class Reply:
             self.uuid = kwargs["uuid"]
             self.seen_by = kwargs["seen_by"]
         except KeyError as err:
-            raise AttributeError("Missing key {}".format(err.args[0])) from err
+            raise AttributeError(f"Missing key {err.args[0]}") from err
 
         # Now let us set source uuid
         values = self.source_url.split("/")
@@ -136,7 +133,7 @@ class Submission:
             self.uuid = kwargs["uuid"]
             self.seen_by = kwargs["seen_by"]
         except KeyError as err:
-            raise AttributeError("Missing key {}".format(err.args[0])) from err
+            raise AttributeError(f"Missing key {err.args[0]}") from err
 
         _, self.source_uuid = self.source_url.rsplit("/", 1)
 
@@ -155,7 +152,7 @@ class Source:
         self.is_flagged = False  # type: bool
         self.is_starred = False  # type: bool
         self.journalist_designation = ""  # type: str
-        self.key = {}  # type: Dict
+        self.key: dict = {}
         self.last_updated = ""  # type: str
         self.number_of_documents = 0  # type: int
         self.number_of_messages = 0  # type: int
@@ -187,7 +184,7 @@ class Source:
             "uuid",
         ]:
             if key not in kwargs:
-                AttributeError("Missing key {}".format(key))
+                AttributeError(f"Missing key {key}")
             setattr(self, key, kwargs[key])
 
 
@@ -210,5 +207,5 @@ class User:
             "uuid",
         ]:
             if key not in kwargs:
-                AttributeError("Missing key {}".format(key))
+                AttributeError(f"Missing key {key}")
             setattr(self, key, kwargs[key])

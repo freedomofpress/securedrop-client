@@ -378,7 +378,7 @@ def test_deletedconversation_creation(session):
         DeletedConversation()  # must initialize with a UUID
 
     dc = DeletedConversation(uuid="test-uuid")
-    assert str(dc) == "DeletedConversation (source {})".format(dc.uuid)
+    assert str(dc) == f"DeletedConversation (source {dc.uuid})"
 
 
 def test_deletedsource_creation(session):
@@ -386,4 +386,4 @@ def test_deletedsource_creation(session):
         DeletedSource()  # must initialize with a UUID
 
     ds = DeletedSource(uuid="test-uuid")
-    assert str(ds) == "DeletedSource ({})".format(ds.uuid)
+    assert str(ds) == f"DeletedSource ({ds.uuid})"

@@ -10,7 +10,7 @@ from securedrop_client import state
 from securedrop_client.gui.main import Window
 from securedrop_client.logic import Controller
 from securedrop_client.resources import load_icon
-from tests.helper import app  # noqa: F401
+from tests.helper import app
 
 
 class WindowTest(unittest.TestCase):
@@ -332,7 +332,7 @@ def test_show_last_sync(mocker):
     w.update_sync_status = mocker.MagicMock()
     updated_on = mocker.MagicMock()
     w.show_last_sync(updated_on)
-    w.update_sync_status.assert_called_once_with("Last Refresh: {}".format(updated_on.humanize()))
+    w.update_sync_status.assert_called_once_with(f"Last Refresh: {updated_on.humanize()}")
 
 
 def test_show_last_sync_no_sync(mocker):

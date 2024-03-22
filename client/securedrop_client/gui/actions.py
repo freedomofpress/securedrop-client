@@ -49,12 +49,11 @@ class DownloadConversation(QAction):
     def on_triggered(self) -> None:
         if self._controller.api is None:
             self._controller.on_action_requiring_login()
-        else:
-            if self._state is not None:
-                id = self._state.selected_conversation
-                if id is None:
-                    return
-                self._controller.download_conversation(id)
+        elif self._state is not None:
+            id = self._state.selected_conversation
+            if id is None:
+                return
+            self._controller.download_conversation(id)
 
     def _connect_enabled_to_conversation_changes(self) -> None:
         if self._state is not None:
@@ -184,7 +183,7 @@ class PrintConversationAction(QAction):  # pragma: nocover
         # the archive is being created. Once the file object goes
         # out of scope, any pending file removal will be performed
         # by the operating system.
-        with open(file_path, "r") as f:
+        with open(file_path) as f:
             export = Export()
             dialog = PrintConversationTranscriptDialog(
                 export, TRANSCRIPT_FILENAME, [str(file_path)]
@@ -234,7 +233,7 @@ class ExportConversationTranscriptAction(QAction):  # pragma: nocover
         # the archive is being created. Once the file object goes
         # out of scope, any pending file removal will be performed
         # by the operating system.
-        with open(file_path, "r") as f:
+        with open(file_path) as f:
             export_device = Export()
             wizard = ExportWizard(export_device, TRANSCRIPT_FILENAME, [str(file_path)])
             wizard.exec()
@@ -322,9 +321,7 @@ class ExportConversationAction(QAction):  # pragma: nocover
         # by the operating system.
         with ExitStack() as stack:
             export_device = Export()
-            files = [
-                stack.enter_context(open(file_location, "r")) for file_location in file_locations
-            ]
+            files = [stack.enter_context(open(file_location)) for file_location in file_locations]
 
             file_count = len(files)
             if file_count == 1:

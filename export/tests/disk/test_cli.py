@@ -161,7 +161,7 @@ class TestCli:
     @mock.patch("subprocess.check_output")
     def test__get_supported_volume_success_no_mount(self, mock_sp, input):
         # mock subprocess results on the _is_it_veracrypt method
-        mock_sp.return_value = "IdType:                     crypto_TCRYPT\n".encode("utf-8")
+        mock_sp.return_value = b"IdType:                     crypto_TCRYPT\n"
         vol = self.cli._get_supported_volume(input)
 
         assert vol
@@ -172,7 +172,7 @@ class TestCli:
         assert vol.device_name == "/dev/sda"
 
     @pytest.mark.parametrize(
-        "input,expected_device,expected_devmapper", supported_volumes_mount_required
+        ("input", "expected_device", "expected_devmapper"), supported_volumes_mount_required
     )
     @mock.patch("securedrop_export.disk.cli.CLI._mount_volume")
     @mock.patch(
@@ -205,7 +205,7 @@ class TestCli:
         # unlock_volume method (list item with index 0 is success)
         child.expect.side_effect = [0, 0]
         child.match = mock.MagicMock(spec=re.Match)
-        child.match.group.return_value = "/dev/dm-0".encode("utf-8")
+        child.match.group.return_value = b"/dev/dm-0"
 
         mv = mock.MagicMock(spec=MountedVolume)
 
@@ -222,7 +222,7 @@ class TestCli:
         child = mock_p()
         child.expect.side_effect = [0, 1]
         child.match = mock.MagicMock(spec=re.Match)
-        error_msg = "/dev/dm-0".encode("utf-8")
+        error_msg = b"/dev/dm-0"
         child.match.group.return_value = error_msg
         mv = mock.MagicMock(spec=MountedVolume)
 
@@ -386,7 +386,7 @@ class TestCli:
 
         with pytest.raises(ExportException):
             self.cli.write_data_to_device(vol, submission.tmpdir, submission.target_dirname)
-            self.cli.cleanup.assert_called_once()
+        self.cli.cleanup.assert_called_once()
 
         patch.stop()
 
@@ -449,8 +449,8 @@ class TestCli:
         child.expect.return_value = 1
         child.match = mock.MagicMock()
         child.match.group.side_effect = [
-            "/dev/dm-0".encode("utf-8"),
-            "/media/usb".encode("utf-8"),
+            b"/dev/dm-0",
+            b"/media/usb",
         ]
 
         mv = self.cli._mount_volume(
@@ -472,9 +472,8 @@ class TestCli:
                 safe_mkdir(archive_dir, "export_data")
                 export_dir = os.path.join(archive_dir, "export_data")
                 export_filepath = os.path.join(export_dir, "export_file.txt")
-                export_file = open(export_filepath, "w+")
-                export_file.write("Export me!")
-                export_file.close()
+                with open(export_filepath, "w+") as export_file:
+                    export_file.write("Export me!")
 
                 # Sanity
                 stat_result = oct(stat.S_IMODE(os.stat(export_filepath).st_mode))

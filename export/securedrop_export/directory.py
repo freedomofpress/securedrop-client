@@ -77,7 +77,7 @@ def safe_extractall(archive_file_path: str, dest_path: str) -> None:
                 if Path(file_info.linkname).is_absolute():
                     relative_filepath(file_info.linkname, dest_path)
 
-        tar.extractall(dest_path)  # nosec B202
+        tar.extractall(dest_path)  # noqa: S202
 
 
 def relative_filepath(filepath: Union[str, Path], base_dir: Union[str, Path]) -> Path:
@@ -143,4 +143,4 @@ def _check_dir_permissions(dir_path: Union[str, Path]) -> None:
         stat_res = os.stat(dir_path).st_mode
         masked = stat_res & 0o777
         if masked & 0o077:
-            raise RuntimeError("Unsafe permissions ({}) on {}".format(oct(stat_res), dir_path))
+            raise RuntimeError(f"Unsafe permissions ({oct(stat_res)}) on {dir_path}")

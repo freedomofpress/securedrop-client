@@ -78,10 +78,10 @@ class Service:
         """
         signal.signal(signal.SIGALRM, handler)
         signal.alarm(self.printer_wait_timeout)
-        printer_idle_string = "printer {} is idle".format(self.printer_name)
+        printer_idle_string = f"printer {self.printer_name} is idle"
         while True:
             try:
-                logger.info("Running lpstat waiting for printer {}".format(self.printer_name))
+                logger.info(f"Running lpstat waiting for printer {self.printer_name}")
                 output = subprocess.check_output(["lpstat", "-p", self.printer_name])
                 if printer_idle_string in output.decode("utf-8"):
                     logger.info("Print completed")
@@ -91,7 +91,7 @@ class Service:
             except subprocess.CalledProcessError:
                 raise ExportException(sdstatus=Status.ERROR_PRINT)
             except TimeoutException:
-                logger.error("Timeout waiting for printer {}".format(self.printer_name))
+                logger.error(f"Timeout waiting for printer {self.printer_name}")
                 raise ExportException(sdstatus=Status.ERROR_PRINT)
         return True
 
@@ -112,7 +112,7 @@ class Service:
                 p for p in printers if any(sub in p for sub in self.SUPPORTED_PRINTERS)
             ]
             if not supported_printers:
-                logger.info("{} are unsupported printers".format(printers))
+                logger.info(f"{printers} are unsupported printers")
                 raise ExportException(sdstatus=Status.ERROR_PRINTER_NOT_SUPPORTED)
 
             if len(supported_printers) > 1:
@@ -143,7 +143,7 @@ class Service:
         for line in output.split():
             if "usb://" in line.decode("utf-8"):
                 printer_uri = line.decode("utf-8")
-                logger.info("lpinfo usb printer: {}".format(printer_uri))
+                logger.info(f"lpinfo usb printer: {printer_uri}")
 
         # verify that the printer is supported, else throw
         if printer_uri == "":
@@ -152,15 +152,15 @@ class Service:
             raise ExportException(sdstatus=Status.ERROR_PRINTER_NOT_FOUND)
         elif not any(x in printer_uri for x in self.SUPPORTED_PRINTERS):
             # printer url is a make that is unsupported
-            logger.info("Printer {} is unsupported".format(printer_uri))
+            logger.info(f"Printer {printer_uri} is unsupported")
             raise ExportException(sdstatus=Status.ERROR_PRINTER_NOT_SUPPORTED)
 
-        logger.info("Printer {} is supported".format(printer_uri))
+        logger.info(f"Printer {printer_uri} is supported")
         return printer_uri
 
     def _install_printer_ppd(self, uri):
         if not any(x in uri for x in self.SUPPORTED_PRINTERS):
-            logger.error("Cannot install printer ppd for unsupported printer: {}".format(uri))
+            logger.error(f"Cannot install printer ppd for unsupported printer: {uri}")
             raise ExportException(sdstatus=Status.ERROR_PRINTER_NOT_SUPPORTED)
 
         if self.BROTHER in uri:
@@ -189,7 +189,7 @@ class Service:
 
     def _setup_printer(self, printer_uri, printer_ppd):
         # Add the printer using lpadmin
-        logger.info("Setting up printer {}".format(self.printer_name))
+        logger.info(f"Setting up printer {self.printer_name}")
         self.safe_check_call(
             command=[
                 "sudo",
@@ -215,12 +215,10 @@ class Service:
     def _print_all_files(self):
         files_path = os.path.join(self.submission.tmpdir, "export_data/")
         files = os.listdir(files_path)
-        print_count = 0
-        for f in files:
+        for print_count, f in enumerate(files):
             file_path = os.path.join(files_path, f)
             self._print_file(file_path)
-            print_count += 1
-            logger.info("Printing document {} of {}".format(print_count, len(files)))
+            logger.info(f"Printing document {print_count} of {len(files)}")
 
     def _is_open_office_file(self, filename):
         OPEN_OFFICE_FORMATS = [
@@ -254,7 +252,7 @@ class Service:
             )
             file_to_print = converted_path
 
-        logger.info("Sending file to printer {}".format(self.printer_name))
+        logger.info(f"Sending file to printer {self.printer_name}")
 
         self.safe_check_call(
             command=["xpp", "-P", self.printer_name, file_to_print],

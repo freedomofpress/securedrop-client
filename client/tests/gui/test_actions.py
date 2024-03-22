@@ -20,7 +20,6 @@ from securedrop_client.gui.actions import (
 )
 from securedrop_client.logic import Controller
 from tests import factory
-from tests.helper import app  # noqa: F401
 
 
 class DeleteConversationActionTest(unittest.TestCase):

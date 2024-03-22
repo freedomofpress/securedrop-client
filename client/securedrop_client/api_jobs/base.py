@@ -112,11 +112,8 @@ class SingleObjectApiJob(ApiJob):
         self.uuid = uuid
 
     def __repr__(self) -> str:
-        return "{}('{}', {})".format(self.__class__.__name__, self.uuid, self.remaining_attempts)
+        return f"{self.__class__.__name__}('{self.uuid}', {self.remaining_attempts})"
 
-    def __eq__(self, other: Any) -> bool:
+    def __eq__(self, other: object) -> bool:
         # https://github.com/python/mypy/issues/2783
-        if self.uuid == getattr(other, "uuid", None) and type(self) is type(other):
-            return True
-        else:
-            return False
+        return self.uuid == getattr(other, "uuid", None) and type(self) is type(other)

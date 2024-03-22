@@ -1,12 +1,9 @@
 #!/usr/bin/env python3
 
-from __future__ import print_function
 
 import errno
-import io
 import os
 import shutil
-import subprocess
 import sys
 import tempfile
 from datetime import datetime
@@ -15,11 +12,11 @@ from datetime import datetime
 def sanitize_line(untrusted_line):
     line = bytearray(untrusted_line)
     for i, c in enumerate(line):
-        if c >= 0x20 and c <= 0x7e:
+        if c >= 0x20 and c <= 0x7E:
             pass
         else:
-            line[i] = 0x2e
-    return bytearray(line).decode('ascii')
+            line[i] = 0x2E
+    return bytearray(line).decode("ascii")
 
 
 stdin = sys.stdin.buffer  # python3
@@ -36,38 +33,35 @@ def log(msg, remote=True, now=None):
     if now is None:
         now = datetime.utcnow()
     if remote:
-        remote_str = '{}:'.format(qrexec_remote)
+        remote_str = f"{qrexec_remote}:"
     else:
-        remote_str = '>'
+        remote_str = ">"
 
-    line = '{:%F %T.%f} +0000 {} {}\n'.format(now, remote_str, msg)
+    line = f"{now:%F %T.%f} +0000 {remote_str} {msg}\n"
 
-    tmp_log.write(line.encode('utf-8'))
+    tmp_log.write(line.encode("utf-8"))
     tmp_log.flush()
 
-log('starting log', now=start, remote=False)
+
+log("starting log", now=start, remote=False)
 
 # the first line is always the remote vm name
 untrusted_line = stdin.readline()
-qrexec_remote = untrusted_line.rstrip(b'\n').decode('utf-8')
+qrexec_remote = untrusted_line.rstrip(b"\n").decode("utf-8")
 while True:
     untrusted_line = stdin.readline()
-    if untrusted_line == b'':
+    if untrusted_line == b"":
         break
 
-    log(sanitize_line(untrusted_line.rstrip(b'\n')))
+    log(sanitize_line(untrusted_line.rstrip(b"\n")))
 
 
-log('closing log', remote=False)
+log("closing log", remote=False)
 tmp_log.close()
 
 file_name_base = os.path.join(
-    os.getenv('HOME', '/'),
-    'QubesIncomingLogs',
-    '{remote}',
-    'log_{time:%Y-%m-%d_%H-%M-%S}').format(
-        remote=qrexec_remote,
-        time=start)
+    os.getenv("HOME", "/"), "QubesIncomingLogs", "{remote}", "log_{time:%Y-%m-%d_%H-%M-%S}"
+).format(remote=qrexec_remote, time=start)
 
 try:
     os.makedirs(os.path.dirname(file_name_base))
@@ -79,7 +73,7 @@ try_no = 0
 file_name = file_name_base
 while True:
     if try_no > 0:
-        file_name = '{}.{}'.format(file_name_base, try_no)
+        file_name = f"{file_name_base}.{try_no}"
 
     try:
         fd = os.open(file_name, os.O_CREAT | os.O_EXCL, 0o664)

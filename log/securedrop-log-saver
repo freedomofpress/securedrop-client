@@ -34,7 +34,7 @@ def main():
                 except OSError as err:
                     if err.errno != errno.EEXIST:
                         raise
-                fh = open(filepath, "a")
+                fh = open(filepath, "a")  # noqa: SIM115
 
                 # cache it for the next call
                 openfiles[vmname] = fh

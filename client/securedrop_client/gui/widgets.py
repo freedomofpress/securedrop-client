@@ -23,7 +23,7 @@ import html
 import logging
 from datetime import datetime
 from gettext import gettext as _
-from typing import Dict, List, Optional, Union  # noqa: F401
+from typing import Optional, Union
 from uuid import uuid4
 
 import arrow
@@ -652,7 +652,7 @@ class MainView(QWidget):
 
         # Note: We should not delete SourceConversationWrapper when its source is unselected. This
         # is a temporary solution to keep copies of our objects since we do delete them.
-        self.source_conversations = {}  # type: Dict[str, SourceConversationWrapper]
+        self.source_conversations = {}  # type: dict[str, SourceConversationWrapper]
 
     def setup(self, controller: Controller) -> None:
         """
@@ -661,7 +661,7 @@ class MainView(QWidget):
         self.controller = controller
         self.source_list.setup(controller)
 
-    def show_sources(self, sources: List[Source]) -> None:
+    def show_sources(self, sources: list[Source]) -> None:
         """
         Update the sources list in the GUI with the supplied list of sources.
         """
@@ -709,7 +709,7 @@ class MainView(QWidget):
             # Get or create the SourceConversationWrapper
             if source.uuid in self.source_conversations:
                 conversation_wrapper = self.source_conversations[source.uuid]
-                conversation_wrapper.conversation_view.update_conversation(  # type: ignore[has-type]  # noqa: E501
+                conversation_wrapper.conversation_view.update_conversation(  # type: ignore[has-type]
                     source.collection
                 )
             else:
@@ -719,9 +719,7 @@ class MainView(QWidget):
                 self.source_conversations[source.uuid] = conversation_wrapper
 
             self.set_conversation(conversation_wrapper)
-            logger.debug(
-                "Set conversation to the selected source with uuid: {}".format(source.uuid)
-            )
+            logger.debug(f"Set conversation to the selected source with uuid: {source.uuid}")
 
         except sqlalchemy.exc.InvalidRequestError as e:
             logger.debug(e)
@@ -749,12 +747,12 @@ class MainView(QWidget):
         and remove the reference to it in self.source_conversations
         """
         try:
-            logger.debug("Deleting SourceConversationWrapper for {}".format(source_uuid))
+            logger.debug(f"Deleting SourceConversationWrapper for {source_uuid}")
             conversation_wrapper = self.source_conversations[source_uuid]
             conversation_wrapper.deleteLater()
             del self.source_conversations[source_uuid]
         except KeyError:
-            logger.debug("No SourceConversationWrapper for {} to delete".format(source_uuid))
+            logger.debug(f"No SourceConversationWrapper for {source_uuid} to delete")
 
     def set_conversation(self, widget: QWidget) -> None:
         """
@@ -861,7 +859,7 @@ class EmptyConversationView(QWidget):
 
 
 class SourceListWidgetItem(QListWidgetItem):
-    def __lt__(self, other: "SourceListWidgetItem") -> bool:
+    def __lt__(self, other: SourceListWidgetItem) -> bool:
         """
         Used for ordering widgets by timestamp of last interaction.
         """
@@ -908,7 +906,7 @@ class SourceList(QListWidget):
         self.setSortingEnabled(True)
 
         # To hold references to SourceListWidgetItem instances indexed by source UUID.
-        self.source_items: Dict[str, SourceListWidgetItem] = {}
+        self.source_items: dict[str, SourceListWidgetItem] = {}
 
         self.itemSelectionChanged.connect(self._on_item_selection_changed)
 
@@ -926,7 +924,7 @@ class SourceList(QListWidget):
         self.controller.message_download_failed.connect(self.set_snippet)
         self.controller.reply_download_failed.connect(self.set_snippet)
 
-    def update_sources(self, sources: List[Source]) -> List[str]:
+    def update_sources(self, sources: list[Source]) -> list[str]:
         """
         Update the list with the passed in list of sources.
         """
@@ -989,13 +987,13 @@ class SourceList(QListWidget):
         # conversation widgets
         return deleted_uuids
 
-    def initial_update(self, sources: List[Source]) -> None:
+    def initial_update(self, sources: list[Source]) -> None:
         """
         Initialise the list with the passed in list of sources.
         """
         self.add_source(sources)
 
-    def add_source(self, sources: List[Source], slice_size: int = 1) -> None:
+    def add_source(self, sources: list[Source], slice_size: int = 1) -> None:
         """
         Add a slice of sources, and if necessary, reschedule the addition of
         more sources.
@@ -1625,7 +1623,7 @@ class StarToggleButton(SvgToggleButton):
         t = event.type()
         if t == QEvent.HoverEnter:
             self.setIcon(load_icon("star_hover.svg"))
-        elif t == QEvent.HoverLeave or t == QEvent.MouseButtonPress:
+        elif t in (QEvent.HoverLeave, QEvent.MouseButtonPress):
             self.set_icon(on="star_on.svg", off="star_off.svg")
 
         return QObject.event(obj, event)
@@ -1809,7 +1807,7 @@ class SpeechBubble(QWidget):
         self.uuid = message_uuid
         self.index = index
         self.authenticated_user = authenticated_user
-        self.seen_by: Dict[str, User] = {}
+        self.seen_by: dict[str, User] = {}
 
         # Add the authenticated user as the default value of the dictionary
         # that will initialize the tooltip.
@@ -1942,7 +1940,7 @@ class SpeechBubble(QWidget):
         self.color_bar.setStyleSheet(self.STATUS_BAR_CSS)
         self.sender_icon.set_failed_to_decrypt_styles()
 
-    def update_seen_by_list(self, usernames: Dict[str, User]) -> None:
+    def update_seen_by_list(self, usernames: dict[str, User]) -> None:
         # Update the dictionary for the new usernames to be shown in the tooltip.
         self.seen_by.update(usernames)
 
@@ -1958,7 +1956,7 @@ class SpeechBubble(QWidget):
                 del self.seen_by[self.authenticated_user.username]
             self.seen_by[self.authenticated_user.username] = self.authenticated_user
 
-        self.check_mark.setToolTip(",\n".join(username for username in self.seen_by.keys()))
+        self.check_mark.setToolTip(",\n".join(username for username in self.seen_by))
 
     def eventFilter(self, obj: QObject, event: QEvent) -> bool:
         t = event.type()
@@ -2388,7 +2386,7 @@ class FileWidget(QWidget):
 
     def _set_file_state(self) -> None:
         if self.file.is_decrypted:
-            logger.debug("Changing file {} state to decrypted/downloaded".format(self.uuid))
+            logger.debug(f"Changing file {self.uuid} state to decrypted/downloaded")
             self._set_file_name()
             self.download_button.hide()
             self.no_file_name.hide()
@@ -2398,7 +2396,7 @@ class FileWidget(QWidget):
             self.file_name.show()
             self.update_file_size()
         else:
-            logger.debug("Changing file {} state to not downloaded".format(self.uuid))
+            logger.debug(f"Changing file {self.uuid} state to not downloaded")
             self.download_button.setText(_("DOWNLOAD"))
 
             # Ensure correct icon depending on mouse hover state.
@@ -2689,7 +2687,7 @@ class ConversationView(QWidget):
         )
 
         # To hold currently displayed messages.
-        self.current_messages = {}  # type: Dict[str, Union[FileWidget, MessageWidget, ReplyWidget]]
+        self.current_messages = {}  # type: dict[str, Union[FileWidget, MessageWidget, ReplyWidget]]
 
         self.deletion_scheduled_timestamp = datetime.utcnow()
         self.sync_started_timestamp = datetime.utcnow()
@@ -2831,14 +2829,12 @@ class ConversationView(QWidget):
                     self.controller.session.refresh(conversation_item)
                     self.controller.session.refresh(conversation_item.journalist)
                     item_widget.sender = conversation_item.journalist
+            elif isinstance(conversation_item, Message):
+                self.add_message(conversation_item, index)
+            elif isinstance(conversation_item, (DraftReply, Reply)):
+                self.add_reply(conversation_item, conversation_item.journalist, index)
             else:
-                # add a new item to be displayed.
-                if isinstance(conversation_item, Message):
-                    self.add_message(conversation_item, index)
-                elif isinstance(conversation_item, (DraftReply, Reply)):
-                    self.add_reply(conversation_item, conversation_item.journalist, index)
-                else:
-                    self.add_file(conversation_item, index)
+                self.add_file(conversation_item, index)
 
         # If any items remain in current_conversation, they are no longer in the
         # source collection and should be removed from both the layout and the conversation
@@ -2846,7 +2842,7 @@ class ConversationView(QWidget):
         # by another user (a journalist using the Web UI is able to delete individual
         # submissions).
         for item_widget in current_conversation.values():
-            logger.debug("Deleting item: {}".format(item_widget.uuid))
+            logger.debug(f"Deleting item: {item_widget.uuid}")
             self.current_messages.pop(item_widget.uuid)
             item_widget.deleteLater()
             self._scroll.remove_widget_from_conversation(item_widget)
@@ -2858,7 +2854,7 @@ class ConversationView(QWidget):
         """
         Add a file from the source.
         """
-        logger.debug("Adding file for {}".format(file.uuid))
+        logger.debug(f"Adding file for {file.uuid}")
         conversation_item = FileWidget(
             file.uuid,
             self.controller,
@@ -3279,12 +3275,12 @@ class ReplyTextEdit(QPlainTextEdit):
         # disappears instead of only doing so when text is typed
         if self.toPlainText() == "":
             self.placeholder.hide()
-        super(ReplyTextEdit, self).focusInEvent(e)
+        super().focusInEvent(e)
 
     def focusOutEvent(self, e: QFocusEvent) -> None:
         if self.toPlainText() == "":
             self.placeholder.show()
-        super(ReplyTextEdit, self).focusOutEvent(e)
+        super().focusOutEvent(e)
 
     def set_logged_in(self) -> None:
         if self.source.public_key:
@@ -3303,7 +3299,7 @@ class ReplyTextEdit(QPlainTextEdit):
             self.placeholder.show()
         else:
             self.placeholder.hide()
-        super(ReplyTextEdit, self).setPlainText(text)
+        super().setPlainText(text)
 
     def resizeEvent(self, event: QResizeEvent) -> None:
         # Adjust available source label width to elide text when necessary

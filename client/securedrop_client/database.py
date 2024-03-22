@@ -1,6 +1,5 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
 # Copyright © 2022‒2023 The Freedom of the Press Foundation.
-from typing import List
 
 from sqlalchemy.orm.session import Session
 
@@ -15,5 +14,5 @@ class Database:
         super().__init__()
         self.session = session
 
-    def get_files(self) -> List[File]:
+    def get_files(self) -> list[File]:
         return get_local_files(self.session)

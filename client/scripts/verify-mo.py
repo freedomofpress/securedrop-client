@@ -20,8 +20,8 @@ import argparse
 import os
 import shlex
 import subprocess
+from collections.abc import Iterator
 from pathlib import Path
-from typing import Any, Iterator, Optional, Set
 
 import polib
 from translate.tools.pocompile import convertmo
@@ -59,16 +59,16 @@ class CatalogVerifier:
 
     def __exit__(
         self,
-        exc_type: Optional[Any],
-        exc_value: Optional[Any],
-        traceback: Optional[Any],
+        exc_type: object,
+        exc_value: object,
+        traceback: object,
     ) -> None:
         """Clean up."""
 
         self.mo_target.unlink(missing_ok=True)
 
     @property
-    def strays(self) -> Set[str]:
+    def strays(self) -> set[str]:
         """Return the set of stray (fuzzy or obsolete) entries to mask when
         diffing this catalog."""
 
@@ -113,11 +113,12 @@ class CatalogVerifier:
         # because we want to inherit the Python virtual environment
         # in which we're invoked.
         # nosemgrep: python.lang.security.audit.subprocess-shell-true.subprocess-shell-true
-        return subprocess.run(  # nosec B602
+        return subprocess.run(
             cmd,
             capture_output=True,
             env=os.environ,
-            shell=True,
+            shell=True,  # noqa: S602
+            check=False,
         )
 
     def reproduce(self) -> None:

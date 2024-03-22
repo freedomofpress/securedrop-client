@@ -7,7 +7,6 @@ import datetime
 import logging
 import os
 from gettext import gettext as _
-from typing import Type
 from unittest.mock import Mock, call
 
 import arrow
@@ -873,7 +872,7 @@ def test_Controller_mark_seen_skips_op_if_user_offline(
 
 class DeletedFile(Mock):
     def __class__(self):
-        return Type(db.File)
+        return type(db.File)
 
     def seen_by(self, journalist_id):
         raise sqlalchemy.exc.InvalidRequestError()
@@ -1134,7 +1133,7 @@ def test_create_client_dir_permissions(tmpdir, mocker, session_maker):
     ]
 
     for idx, case in enumerate(permission_cases):
-        sdc_home = os.path.join(str(tmpdir), "case-{}".format(idx))
+        sdc_home = os.path.join(str(tmpdir), f"case-{idx}")
 
         # optionally create the dir
         if case["home_perms"] is not None:
@@ -1405,7 +1404,7 @@ def test_Controller_on_file_downloaded_checksum_failure(homedir, config, mocker,
     assert co._submit_download_job.call_count == 1
     warning_logger.call_args_list[0][0][
         0
-    ] == "Failure due to checksum mismatch, retrying {}".format(file_.uuid)
+    ] == f"Failure due to checksum mismatch, retrying {file_.uuid}"
 
     # No status will be set if it's a file corruption issue, the file just gets
     # re-downloaded.
@@ -1437,7 +1436,7 @@ def test_Controller_on_file_decryption_failure(homedir, config, mocker, session,
     mock_update_error_status.assert_called_once_with("The file download failed. Please try again.")
 
     assert co._submit_download_job.call_count == 0
-    error_logger.call_args_list[0][0][0] == "Failed to decrypt {}".format(file_.uuid)
+    error_logger.call_args_list[0][0][0] == f"Failed to decrypt {file_.uuid}"
 
     mock_set_status.assert_not_called()
 
@@ -1551,7 +1550,7 @@ def test_Controller_on_file_open_file_missing(mocker, homedir, session_maker, se
 
     co.on_file_open(file)
 
-    log_msg = "Cannot find file in {}. File does not exist.".format(os.path.dirname(file.filename))
+    log_msg = f"Cannot find file in {os.path.dirname(file.filename)}. File does not exist."
     warning_logger.assert_called_once_with(log_msg)
 
 
@@ -1571,7 +1570,7 @@ def test_Controller_on_file_open_file_missing_not_qubes(
 
     co.on_file_open(file)
 
-    log_msg = "Cannot find file in {}. File does not exist.".format(os.path.dirname(file.filename))
+    log_msg = f"Cannot find file in {os.path.dirname(file.filename)}. File does not exist."
     warning_logger.assert_called_once_with(log_msg)
 
 
@@ -1674,7 +1673,7 @@ def test_Controller_on_reply_downloaded_checksum_failure(mocker, homedir, sessio
     assert co._submit_download_job.call_count == 1
     warning_logger.call_args_list[0][0][
         0
-    ] == "Failure due to checksum mismatch, retrying {}".format(reply.uuid)
+    ] == f"Failure due to checksum mismatch, retrying {reply.uuid}"
 
 
 def test_Controller_on_reply_downloaded_decryption_failure(mocker, homedir, session_maker):
@@ -2172,7 +2171,7 @@ def test_Controller_on_reply_success(homedir, mocker, session_maker, session):
     mocker.patch("securedrop_client.logic.storage", mock_storage)
     co.on_reply_success(reply.uuid)
 
-    assert info_logger.call_args_list[0][0][0] == "{} sent successfully".format(reply.uuid)
+    assert info_logger.call_args_list[0][0][0] == f"{reply.uuid} sent successfully"
     assert len(reply_succeeded_emissions) == 1
     assert reply_succeeded_emissions[0] == ["source_uuid", reply.uuid, "reply_message_mock"]
     assert len(reply_failed_emissions) == 0

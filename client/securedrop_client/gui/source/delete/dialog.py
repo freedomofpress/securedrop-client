@@ -58,6 +58,4 @@ class DeleteSourceDialog(ModalDialog):
             "<p>&nbsp;</p>",
         )
 
-        return "".join(message_tuple).format(
-            source="<b>{}</b>".format(self.source.journalist_designation)
-        )
+        return "".join(message_tuple).format(source=f"<b>{self.source.journalist_designation}</b>")

@@ -2,7 +2,7 @@ import datetime
 import os
 from enum import Enum
 from pathlib import Path
-from typing import Any, Dict, List, Union  # noqa: F401
+from typing import Any
 from uuid import uuid4
 
 from sqlalchemy import (
@@ -37,7 +37,7 @@ Base = declarative_base(metadata=metadata)  # type: Any
 
 def make_session_maker(home: str) -> scoped_session:
     db_path = os.path.join(home, "svs.sqlite")
-    engine = create_engine("sqlite:///{}".format(db_path))
+    engine = create_engine(f"sqlite:///{db_path}")
     if os.path.exists(db_path) and oct(os.stat(db_path).st_mode) != "0o100600":
         os.chmod(db_path, 0o600)
     maker = sessionmaker(bind=engine)
@@ -54,7 +54,7 @@ class User(Base):
     lastname = Column(String(64))
 
     def __repr__(self) -> str:
-        return "<Journalist {}: {}>".format(self.uuid, self.username)
+        return f"<Journalist {self.uuid}: {self.username}>"
 
     @property
     def deleted(self) -> bool:
@@ -107,13 +107,13 @@ class Source(Base):
     last_updated = Column(DateTime)
 
     def __repr__(self) -> str:
-        return "<Source {}: {}>".format(self.uuid, self.journalist_designation)
+        return f"<Source {self.uuid}: {self.journalist_designation}>"
 
     @property
-    def collection(self) -> List:
+    def collection(self) -> list:
         """Return the list of submissions, replies, messages, and drafts for this
         source, sorted in ascending order by the filename/interaction count."""
-        collection = []  # type: List
+        collection = []
         collection.extend(self.messages)
         collection.extend(self.files)
         collection.extend(self.replies)
@@ -130,11 +130,11 @@ class Source(Base):
         return collection
 
     @property
-    def server_collection(self) -> List:
+    def server_collection(self) -> list:
         """Return the list of submissions, replies, and messages for this source.
         These are the items that have been either successfully sent to the server,
         or they have been retrieved from the server."""
-        collection = []  # type: List
+        collection = []
         collection.extend(self.messages)
         collection.extend(self.files)
         collection.extend(self.replies)
@@ -169,7 +169,7 @@ class DeletedConversation(Base):
     uuid = Column(String(36), primary_key=True, nullable=False)
 
     def __repr__(self) -> str:
-        return "DeletedConversation (source {})".format(self.uuid)
+        return f"DeletedConversation (source {self.uuid})"
 
     def __init__(self, **kwargs: Any) -> None:
         if "uuid" not in kwargs:
@@ -189,7 +189,7 @@ class DeletedSource(Base):
     uuid = Column(String(36), primary_key=True, nullable=False)
 
     def __repr__(self) -> str:
-        return "DeletedSource ({})".format(self.uuid)
+        return f"DeletedSource ({self.uuid})"
 
     def __init__(self, **kwargs: Any) -> None:
         if "uuid" not in kwargs:
@@ -269,7 +269,7 @@ class Message(Base):
             return "<Message not yet available>"
 
     def __repr__(self) -> str:
-        return "<Message {}: {}>".format(self.uuid, self.filename)
+        return f"<Message {self.uuid}: {self.filename}>"
 
     def location(self, data_dir: str) -> str:
         """
@@ -304,13 +304,13 @@ class Message(Base):
         return False
 
     @property
-    def seen_by_list(self) -> Dict[str, User]:
+    def seen_by_list(self) -> dict[str, User]:
         """
         For each message retrieve a dictionary of users who have seen it.
         Each dictionary item consists of the user's username as its key and the user
         object as its value.
         """
-        usernames = {}  # type: Dict[str, User]
+        usernames = {}  # type: dict[str, User]
         for seen_message in self.seen_messages:
             if seen_message.journalist:
                 usernames[seen_message.journalist.username] = seen_message.journalist
@@ -376,12 +376,12 @@ class File(Base):
         if self.is_downloaded:
             if self.download_error is not None:
                 return self.download_error.explain(self.__class__.__name__)
-            return "File: {}".format(self.filename)
+            return f"File: {self.filename}"
         else:
             return "<Encrypted file on server>"
 
     def __repr__(self) -> str:
-        return "<File {}>".format(self.uuid)
+        return f"<File {self.uuid}>"
 
     def location(self, data_dir: str) -> str:
         """
@@ -392,7 +392,7 @@ class File(Base):
             .joinpath(
                 Path(
                     self.source.journalist_filename,
-                    "{}-{}-doc".format(self.file_counter, self.source.journalist_filename),
+                    f"{self.file_counter}-{self.source.journalist_filename}-doc",
                     self.filename,
                 )
             )
@@ -490,7 +490,7 @@ class Reply(Base):
             return "<Reply not yet available>"
 
     def __repr__(self) -> str:
-        return "<Reply {}: {}>".format(self.uuid, self.filename)
+        return f"<Reply {self.uuid}: {self.filename}>"
 
     def location(self, data_dir: str) -> str:
         """
@@ -519,13 +519,13 @@ class Reply(Base):
         return False
 
     @property
-    def seen_by_list(self) -> Dict[str, User]:
+    def seen_by_list(self) -> dict[str, User]:
         """
         For each reply retrieve a dictionary of users who have seen it.
         Each dictionary item consists of the user's username as its key and the user
         object as its value.
         """
-        usernames = {}  # type: Dict[str, User]
+        usernames = {}  # type: dict[str, User]
         for seen_reply in self.seen_replies:
             if seen_reply.journalist:
                 usernames[seen_reply.journalist.username] = seen_reply.journalist
@@ -559,7 +559,7 @@ class DownloadError(Base):
         self.name = name
 
     def __repr__(self) -> str:
-        return "<Download error {}>".format(self.name)
+        return f"<Download error {self.name}>"
 
     def explain(self, classname: str) -> str:
         """
@@ -604,7 +604,7 @@ class DraftReply(Base):
             return "<Reply not yet available>"
 
     def __repr__(self) -> str:
-        return "<DraftReply {}>".format(self.uuid)
+        return f"<DraftReply {self.uuid}>"
 
     @property
     def is_pending(self) -> bool:
@@ -630,13 +630,12 @@ class DraftReply(Base):
         return True
 
     @property
-    def seen_by_list(self) -> Dict[str, User]:
+    def seen_by_list(self) -> dict[str, User]:
         """
         A draft reply is considered seen by everyone (we don't track who sees draft replies).
         Return an empty dictionary.
         """
-        usernames = {}  # type: Dict[str, User]
-        return usernames
+        return {}
 
 
 class ReplySendStatus(Base):
@@ -650,7 +649,7 @@ class ReplySendStatus(Base):
         self.name = name
 
     def __repr__(self) -> str:
-        return "<Reply status {}>".format(self.name)
+        return f"<Reply status {self.name}>"
 
 
 class ReplySendStatusCodes(Enum):

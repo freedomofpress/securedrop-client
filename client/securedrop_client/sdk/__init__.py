@@ -2,9 +2,9 @@ import configparser
 import http
 import json
 import os
-from datetime import datetime  # noqa: F401
+from datetime import datetime
 from subprocess import PIPE, Popen, TimeoutExpired
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Optional
 from urllib.parse import urljoin
 
 import requests
@@ -104,11 +104,11 @@ class API:
         self.passphrase = passphrase
         self.totp = totp
         self.token = None  # type: Optional[str]
-        self.token_expiration = None  # type: Optional[datetime]
+        self.token_expiration: Optional[datetime] = None
         self.token_journalist_uuid = None  # type: Optional[str]
         self.first_name = None  # type: Optional[str]
         self.last_name = None  # type: Optional[str]
-        self.req_headers = dict()  # type: Dict[str, str]
+        self.req_headers = dict()  # type: dict[str, str]
         self.proxy = proxy  # type: bool
         self.default_request_timeout = default_request_timeout or DEFAULT_REQUEST_TIMEOUT
         self.default_download_timeout = default_download_timeout or DEFAULT_DOWNLOAD_TIMEOUT
@@ -127,9 +127,9 @@ class API:
         method: str,
         path_query: str,
         body: Optional[str] = None,
-        headers: Optional[Dict[str, str]] = None,
+        headers: Optional[dict[str, str]] = None,
         timeout: Optional[int] = None,
-    ) -> Tuple[Any, int, Dict[str, str]]:
+    ) -> tuple[Any, int, dict[str, str]]:
         if self.proxy:  # We are using the Qubes securedrop-proxy
             func = self._send_rpc_json_request
         else:  # We are not using the Qubes securedrop-proxy
@@ -142,11 +142,11 @@ class API:
         method: str,
         path_query: str,
         body: Optional[str] = None,
-        headers: Optional[Dict[str, str]] = None,
+        headers: Optional[dict[str, str]] = None,
         timeout: Optional[int] = None,
-    ) -> Tuple[Any, int, Dict[str, str]]:
+    ) -> tuple[Any, int, dict[str, str]]:
         url = urljoin(self.server, path_query)
-        kwargs = {"headers": headers}  # type: Dict[str, Any]
+        kwargs = {"headers": headers}  # type: dict[str, Any]
 
         if timeout:
             kwargs["timeout"] = timeout
@@ -175,10 +175,10 @@ class API:
         method: str,
         path_query: str,
         body: Optional[str] = None,
-        headers: Optional[Dict[str, str]] = None,
+        headers: Optional[dict[str, str]] = None,
         timeout: Optional[int] = None,
-    ) -> Tuple[Any, int, Dict[str, str]]:
-        data = {"method": method, "path_query": path_query}  # type: Dict[str, Any]
+    ) -> tuple[Any, int, dict[str, str]]:
+        data = {"method": method, "path_query": path_query}  # type: dict[str, Any]
 
         if method == "POST":
             data["body"] = body
@@ -270,7 +270,7 @@ class API:
                 "Accept": "application/json",
             }
 
-    def get_sources(self) -> List[Source]:
+    def get_sources(self) -> list[Source]:
         """
         Returns a list of all the sources from the Server.
 
@@ -287,7 +287,7 @@ class API:
         )
 
         sources = data["sources"]
-        result = []  # type: List[Source]
+        result = []  # type: list[Source]
 
         for source in sources:
             s = Source(**source)
@@ -302,7 +302,7 @@ class API:
         :param source: Source object containing only source's UUID value.
         :returns: Source object fetched from server for the given UUID value.
         """
-        path_query = "api/v1/sources/{}".format(source.uuid)
+        path_query = f"api/v1/sources/{source.uuid}"
         method = "GET"
 
         data, status_code, headers = self._send_json_request(
@@ -313,7 +313,7 @@ class API:
         )
 
         if status_code == 404:
-            raise WrongUUIDError("Missing source {}".format(source.uuid))
+            raise WrongUUIDError(f"Missing source {source.uuid}")
 
         return Source(**data)
 
@@ -336,7 +336,7 @@ class API:
         :param source: Source object containing only source's UUID value.
         :returns: True if successful, raises Errors in case of wrong values.
         """
-        path_query = "api/v1/sources/{}".format(source.uuid)
+        path_query = f"api/v1/sources/{source.uuid}"
         method = "DELETE"
 
         data, status_code, headers = self._send_json_request(
@@ -347,7 +347,7 @@ class API:
         )
 
         if status_code == 404:
-            raise WrongUUIDError("Missing source {}".format(source.uuid))
+            raise WrongUUIDError(f"Missing source {source.uuid}")
 
         if "message" in data and data["message"] == "Source and submissions deleted":
             return True
@@ -365,7 +365,7 @@ class API:
         :returns: True if the operation is successful.
         """
 
-        path_query = "api/v1/sources/{}/conversation".format(uuid)
+        path_query = f"api/v1/sources/{uuid}/conversation"
         method = "DELETE"
 
         data, status_code, headers = self._send_json_request(
@@ -376,7 +376,7 @@ class API:
         )
 
         if status_code == 404:
-            raise WrongUUIDError("Missing source {}".format(uuid))
+            raise WrongUUIDError(f"Missing source {uuid}")
 
         if "message" in data and data["message"] == "Source data deleted":
             return True
@@ -402,7 +402,7 @@ class API:
         :param source: The source object to whom we want add a star.
         :returns: True if successful, raises Error otherwise.
         """
-        path_query = "api/v1/sources/{}/add_star".format(source.uuid)
+        path_query = f"api/v1/sources/{source.uuid}/add_star"
         method = "POST"
 
         data, status_code, headers = self._send_json_request(
@@ -412,7 +412,7 @@ class API:
             timeout=self.default_request_timeout,
         )
         if status_code == 404:
-            raise WrongUUIDError("Missing source {}".format(source.uuid))
+            raise WrongUUIDError(f"Missing source {source.uuid}")
 
         if "message" in data and data["message"] == "Star added":
             return True
@@ -425,7 +425,7 @@ class API:
         :param source: Source object to remove the star from.
         :returns: True if successful, raises Error otherwise.
         """
-        path_query = "api/v1/sources/{}/remove_star".format(source.uuid)
+        path_query = f"api/v1/sources/{source.uuid}/remove_star"
         method = "DELETE"
 
         data, status_code, headers = self._send_json_request(
@@ -435,21 +435,21 @@ class API:
             timeout=self.default_request_timeout,
         )
         if status_code == 404:
-            raise WrongUUIDError("Missing source {}".format(source.uuid))
+            raise WrongUUIDError(f"Missing source {source.uuid}")
 
         if "message" in data and data["message"] == "Star removed":
             return True
 
         return False
 
-    def get_submissions(self, source: Source) -> List[Submission]:
+    def get_submissions(self, source: Source) -> list[Submission]:
         """
         Returns a list of Submission objects from the server for a given source.
 
         :param source: Source object for whom we want to find all the submissions.
         :returns: List of Submission objects.
         """
-        path_query = "api/v1/sources/{}/submissions".format(source.uuid)
+        path_query = f"api/v1/sources/{source.uuid}/submissions"
         method = "GET"
 
         data, status_code, headers = self._send_json_request(
@@ -460,9 +460,9 @@ class API:
         )
 
         if status_code == 404:
-            raise WrongUUIDError("Missing submission {}".format(source.uuid))
+            raise WrongUUIDError(f"Missing submission {source.uuid}")
 
-        result = []  # type: List[Submission]
+        result = []  # type: list[Submission]
         values = data["submissions"]
 
         for val in values:
@@ -479,9 +479,7 @@ class API:
         :returns: Updated submission object from the server.
         """
         if submission.source_uuid and submission.uuid is not None:
-            path_query = "api/v1/sources/{}/submissions/{}".format(
-                submission.source_uuid, submission.uuid
-            )
+            path_query = f"api/v1/sources/{submission.source_uuid}/submissions/{submission.uuid}"
             method = "GET"
 
             data, status_code, headers = self._send_json_request(
@@ -492,7 +490,7 @@ class API:
             )
 
         if status_code == 404:
-            raise WrongUUIDError("Missing submission {}".format(submission.uuid))
+            raise WrongUUIDError(f"Missing submission {submission.uuid}")
 
         return Submission(**data)
 
@@ -508,7 +506,7 @@ class API:
         s.source_uuid = source_uuid
         return self.get_submission(s)
 
-    def get_all_submissions(self) -> List[Submission]:
+    def get_all_submissions(self) -> list[Submission]:
         """
         Returns a list of Submission objects from the server.
 
@@ -524,7 +522,7 @@ class API:
             timeout=self.default_request_timeout,
         )
 
-        result = []  # type: List[Submission]
+        result = []  # type: list[Submission]
         values = data["submissions"]
 
         for val in values:
@@ -543,9 +541,7 @@ class API:
         # Not using direct URL because this helps to use the same method
         # from local submission (not fetched from server) objects.
         # See the *from_string for an example.
-        path_query = "api/v1/sources/{}/submissions/{}".format(
-            submission.source_uuid, submission.uuid
-        )
+        path_query = f"api/v1/sources/{submission.source_uuid}/submissions/{submission.uuid}"
         method = "DELETE"
 
         data, status_code, headers = self._send_json_request(
@@ -556,7 +552,7 @@ class API:
         )
 
         if status_code == 404:
-            raise WrongUUIDError("Missing submission {}".format(submission.uuid))
+            raise WrongUUIDError(f"Missing submission {submission.uuid}")
 
         if "message" in data and data["message"] == "Submission deleted":
             return True
@@ -572,12 +568,12 @@ class API:
         :returns: Updated submission object from the server.
         """
         s = Submission(uuid=uuid)
-        s.source_url = "/api/v1/sources/{}".format(source_uuid)
+        s.source_url = f"/api/v1/sources/{source_uuid}"
         return self.delete_submission(s)
 
     def download_submission(
         self, submission: Submission, path: str = "", timeout: Optional[int] = None
-    ) -> Tuple[str, str]:
+    ) -> tuple[str, str]:
         """
         Returns a tuple of etag (format is algorithm:checksum) and file path for
         a given Submission object. This method requires a directory path
@@ -588,14 +584,13 @@ class API:
 
         :returns: Tuple of etag and path of the saved submission.
         """
-        path_query = "api/v1/sources/{}/submissions/{}/download".format(
-            submission.source_uuid, submission.uuid
+        path_query = (
+            f"api/v1/sources/{submission.source_uuid}/submissions/{submission.uuid}/download"
         )
         method = "GET"
 
-        if path:
-            if os.path.exists(path) and not os.path.isdir(path):
-                raise BaseError("Please provide a valid directory to save.")
+        if path and os.path.exists(path) and not os.path.isdir(path):
+            raise BaseError("Please provide a valid directory to save.")
 
         data, status_code, headers = self._send_json_request(
             method,
@@ -605,10 +600,7 @@ class API:
         )
 
         if status_code == 404:
-            raise WrongUUIDError("Missing submission {}".format(submission.uuid))
-
-        # Get the headers
-        headers = headers
+            raise WrongUUIDError(f"Missing submission {submission.uuid}")
 
         if not self.proxy:
             # This is where we will save our downloaded file
@@ -632,7 +624,7 @@ class API:
         :param source: Source object we want to flag.
         :returns: True if successful, raises Error otherwise.
         """
-        path_query = "api/v1/sources/{}/flag".format(source.uuid)
+        path_query = f"api/v1/sources/{source.uuid}/flag"
         method = "POST"
 
         data, status_code, headers = self._send_json_request(
@@ -643,7 +635,7 @@ class API:
         )
 
         if status_code == 404:
-            raise WrongUUIDError("Missing source {}".format(source.uuid))
+            raise WrongUUIDError(f"Missing source {source.uuid}")
 
         return True
 
@@ -671,7 +663,7 @@ class API:
 
         return data
 
-    def get_users(self) -> List[User]:
+    def get_users(self) -> list[User]:
         """
         Returns a list of all the journalist and admin users registered on the
         server.
@@ -689,7 +681,7 @@ class API:
         )
 
         users = data["users"]
-        result = []  # type: List[User]
+        result = []  # type: list[User]
 
         for user in users:
             u = User(**user)
@@ -706,7 +698,7 @@ class API:
         :param msg: Encrypted message with Source's GPG public key.
         :param reply_uuid: The UUID that will be used to identify the reply on the server.
         """
-        path_query = "api/v1/sources/{}/replies".format(source.uuid)
+        path_query = f"api/v1/sources/{source.uuid}/replies"
         method = "POST"
         reply = {"reply": msg}
 
@@ -726,14 +718,14 @@ class API:
 
         raise ReplyError("bad request")
 
-    def get_replies_from_source(self, source: Source) -> List[Reply]:
+    def get_replies_from_source(self, source: Source) -> list[Reply]:
         """
         This will return a list of replies associated with a source.
 
         :param source: Source object containing only source's UUID value.
         :returns: List of Reply objects.
         """
-        path_query = "api/v1/sources/{}/replies".format(source.uuid)
+        path_query = f"api/v1/sources/{source.uuid}/replies"
         method = "GET"
 
         data, status_code, headers = self._send_json_request(
@@ -744,7 +736,7 @@ class API:
         )
 
         if status_code == 404:
-            raise WrongUUIDError("Missing source {}".format(source.uuid))
+            raise WrongUUIDError(f"Missing source {source.uuid}")
 
         result = []
         for datum in data["replies"]:
@@ -762,7 +754,7 @@ class API:
         :returns: A reply object
         """
         if source.uuid and reply_uuid is not None:
-            path_query = "api/v1/sources/{}/replies/{}".format(source.uuid, reply_uuid)
+            path_query = f"api/v1/sources/{source.uuid}/replies/{reply_uuid}"
             method = "GET"
 
             data, status_code, headers = self._send_json_request(
@@ -773,13 +765,13 @@ class API:
             )
 
             if status_code == 404:
-                raise WrongUUIDError("Missing source {}".format(source.uuid))
+                raise WrongUUIDError(f"Missing source {source.uuid}")
 
             reply = Reply(**data)
 
         return reply
 
-    def get_all_replies(self) -> List[Reply]:
+    def get_all_replies(self) -> list[Reply]:
         """
         This will return a list of all replies from the server.
 
@@ -802,7 +794,7 @@ class API:
 
         return result
 
-    def download_reply(self, reply: Reply, path: str = "") -> Tuple[str, str]:
+    def download_reply(self, reply: Reply, path: str = "") -> tuple[str, str]:
         """
         Returns a tuple of etag (format is algorithm:checksum) and file path for
         a given Reply object. This method requires a directory path
@@ -813,13 +805,12 @@ class API:
 
         :returns: Tuple of etag and path of the saved Reply.
         """
-        path_query = "api/v1/sources/{}/replies/{}/download".format(reply.source_uuid, reply.uuid)
+        path_query = f"api/v1/sources/{reply.source_uuid}/replies/{reply.uuid}/download"
 
         method = "GET"
 
-        if path:
-            if os.path.exists(path) and not os.path.isdir(path):
-                raise BaseError("Please provide a valid directory to save.")
+        if path and os.path.exists(path) and not os.path.isdir(path):
+            raise BaseError("Please provide a valid directory to save.")
 
         data, status_code, headers = self._send_json_request(
             method,
@@ -829,10 +820,7 @@ class API:
         )
 
         if status_code == 404:
-            raise WrongUUIDError("Missing reply {}".format(reply.uuid))
-
-        # Get the headers
-        headers = headers
+            raise WrongUUIDError(f"Missing reply {reply.uuid}")
 
         if not self.proxy:
             # This is where we will save our downloaded file
@@ -861,7 +849,7 @@ class API:
         # Not using direct URL because this helps to use the same method
         # from local reply (not fetched from server) objects.
         # See the *from_string for an example.
-        path_query = "api/v1/sources/{}/replies/{}".format(reply.source_uuid, reply.uuid)
+        path_query = f"api/v1/sources/{reply.source_uuid}/replies/{reply.uuid}"
 
         method = "DELETE"
 
@@ -873,7 +861,7 @@ class API:
         )
 
         if status_code == 404:
-            raise WrongUUIDError("Missing reply {}".format(reply.uuid))
+            raise WrongUUIDError(f"Missing reply {reply.uuid}")
 
         if "message" in data and data["message"] == "Reply deleted":
             return True
@@ -894,12 +882,9 @@ class API:
             timeout=self.default_request_timeout,
         )
 
-        if "message" in data and data["message"] == "Your token has been revoked.":
-            return True
-        else:
-            return False
+        return "message" in data and data["message"] == "Your token has been revoked."
 
-    def seen(self, files: List[str], messages: List[str], replies: List[str]) -> str:
+    def seen(self, files: list[str], messages: list[str], replies: list[str]) -> str:
         """
         Mark supplied files, messages, and replies as seen by the current user. The current user
         will be retrieved from the auth header on the server.
@@ -925,6 +910,6 @@ class API:
         data_str = json.dumps(data)
 
         if status_code == 404:
-            raise WrongUUIDError("{}".format(data_str))
+            raise WrongUUIDError(f"{data_str}")
 
         return data_str

@@ -29,7 +29,6 @@ PyQt5-sip = [
 PyAutoGUI = "*"
 babel = "^2.12.1"
 diffoscope = "*"
-flake8 = "^6.0.0"
 flaky = "*"
 mypy = "^1.4.1"
 polib = "*"
