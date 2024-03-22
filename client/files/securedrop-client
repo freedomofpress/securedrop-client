@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 
 mkdir -p ~/.securedrop_client
 chmod 0700 ~/.securedrop_client
