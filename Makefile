@@ -2,8 +2,16 @@
 all: help
 
 .PHONY: build-debs
+build-debs: OUT:=build/securedrop-client-$(shell date +%Y%m%d).log
 build-debs: ## Build Debian packages
-	./scripts/build-debs.sh
+	@echo "Building SecureDrop Client Debian packages..."
+	@export TERM=dumb
+	@script \
+		--command scripts/build-debs.sh --return \
+		$(OUT)
+	@echo
+	@echo "You can now examine or commit the log at:"
+	@echo "$(OUT)"
 
 .PHONY: lint-desktop
 lint-desktop: ## Lint .desktop files
