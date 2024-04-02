@@ -2,10 +2,10 @@
 securedrop-keyring: extended-description-is-empty
 
 # This is intentional
-securedrop-keyring: file-in-etc-not-marked-as-conffile [etc/apt/trusted.gpg.d/securedrop-keyring.gpg]
+securedrop-keyring: file-in-etc-not-marked-as-conffile [etc/apt/sources.list.d/apt_freedom_press.sources]
 
 # This is intentional
-securedrop-keyring: package-installs-apt-keyring [etc/apt/trusted.gpg.d/securedrop-keyring.gpg]
+securedrop-keyring: package-installs-apt-sources [etc/apt/sources.list.d/apt_freedom_press.sources]
 
 # FIXME: section shouldn't be "unknown"
 securedrop-keyring: section-is-dh_make-template

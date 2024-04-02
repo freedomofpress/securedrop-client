@@ -23,7 +23,6 @@ Description: Submission export scripts for SecureDrop Workstation
 
 Package: securedrop-keyring
 Architecture: all
-Depends: gnupg
 Description: Provides an apt keyring for SecureDrop-related packages, so the master signing key used for SecureDrop packages can be updated via apt.
 
 Package: securedrop-log
