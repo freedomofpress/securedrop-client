@@ -2,16 +2,17 @@ import json
 import logging
 import os
 from contextlib import contextmanager
+from typing import Generator, Union
 
 
 logger = logging.getLogger(__name__)
 
 
 @contextmanager
-def try_qubesdb():
+def try_qubesdb() -> Generator:
     """Minimal context manager around QubesDB() → QubesDB.close() when
     available."""
-    db = False
+    db: Union[bool, "QubesDB"]  = False
 
     try:
         from qubesdb import QubesDB
@@ -24,7 +25,7 @@ def try_qubesdb():
 
     finally:
         if db:
-            db.close()
+            db.close()  # type: ignore[union-attr]
 
 
 class Config:
