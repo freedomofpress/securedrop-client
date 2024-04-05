@@ -13,6 +13,32 @@ To learn more about architecture and our rationale behind our Qubes OS approach,
 
 **IMPORTANT:** This project is currently undergoing a pilot study and should not be used in production environments.
 
+## Index
+
+* [Getting Started](#getting-started)
+    * [Running against a test server](#running-against-a-test-server)
+    * [Developer environment](#developer-environment)
+    * [Developer environment on a Linux-based non-Qubes OS](#developer-environment-on-a-linux-based-non-qubes-os)
+    * [Developer environment on macOS](#developer-environment-on-macos)
+        * [Set up the server](#set-up-the-server)
+        * [Set up the SecureDrop Client](#set-up-the-securedrop-client)
+    * [Staging environment](#staging-environment)
+    * [Production environment](#production-environment)
+* [Updating dependencies](#updating-dependencies)
+    * [Production](#production)
+    * [Development](#development)
+    * [Build dependencies](#build-dependencies)
+* [Generating and running database migrations](#generating-and-running-database-migrations)
+* [AppArmor support](#apparmor-support)
+    * [Requirements](#Requirements)
+    * [Enabling AppArmor](#enabling-apparmor)
+    * [Testing and updating the AppArmor profile](#testing-and-updating-the-apparmor-profile)
+* [Running tests and checks](#running-tests-and-checks)
+    * [Functional Tests](#functional-tests)
+        * [Generating new cassettes](#generating-new-cassettes)
+* [Making a Release](#making-a-release)
+* [Debugging](#debugging)
+
 ## Getting Started
 
 The quickest way to get started with running the client is to use the [developer environment](#developer-environment) that [runs against a test server running in a local docker container](#running-against-a-test-server). This differs from a staging or production environment where the client receives and sends requests over Tor. Things are a lot snappier in the developer environment and can sometimes lead to a much different user experience, which is why it is important to do end-to-end testing in Qubes using the [staging environment](#staging-environment), especially if you are modifying code paths involving how we handle server requests and responses.
@@ -262,27 +288,29 @@ securedrop-client
 If you're adding or updating a production dependency, you need to:
 
 1. Modify `requirements.in`
-1. Activate a Python 3.9 virtual environment (default version on Debian Bullseye, used in production)
-1. Run `make requirements`. This will generate `requirements.txt`. Review and commit the changes.
+2. Activate a Python 3.9 virtual environment (default version on Debian Bullseye, used in production)
+3. Run `make requirements`. This will generate `requirements.txt`. Review and commit the changes.
 
 ### Development
 
 In addition to supporting Debian Bullseye, we keep track of changes in the next version of Debian (Bookworm). In order to do that we need to maintain requirement files for both. If you're adding or updating a development dependency, you need to:
 
 1. Modify `dev-sdw-requirements.in` when possible. If needed modify `dev-bullseye-requirements.in` or `dev-bookworm-requirements.in`.
-1. Activate a Python 3.9 virtual environment (default version on Debian Bullseye, used in production)
-1. Run `make dev-requirements`. This will generate `dev-*-requirements.txt`. Only commit `dev-bullseye-requirements.txt` and `dev-sdw-requirements.txt`.
-1. Discard the other changes.
-1. Activate a Python 3.10 virtual environment (default version on Debian Bookworm).
+2. Activate a Python 3.9 virtual environment (default version on Debian Bullseye, used in production)
+3. Run `make dev-requirements`. This will generate `dev-*-requirements.txt`. Only commit `dev-bullseye-requirements.txt` and `dev-sdw-requirements.txt`.
+4. Discard the other changes.
+5. Activate a Python 3.10 virtual environment (default version on Debian Bookworm).
    If needed you can create one and activate it by running `python3.10 -m venv .venv310 && source .venv310/bin/activate`.
-1. Run `make dev-requirements`. This will generate `dev-*-requirements.txt`. Only commit `dev-bookworm-requirements.txt`.
-1. Discard the other changes.
+6. Run `make dev-requirements`. This will generate `dev-*-requirements.txt`. Only commit `dev-bookworm-requirements.txt`.
+7. Discard the other changes.
 
 ### Build dependencies
 
-For building a debian package from this project, we use the requirements in
+1. For building a debian package from this project, we use the requirements in
 `build-requirements.txt` which uses our pip mirror, i.e. the hashes in that file point to
-wheels on our pip mirror. A maintainer will need to add
+wheels on our pip mirror. 
+
+2. A maintainer will need to add
 the updated dependency to our pip mirror (you can request this in the PR).
 
 3. Once the pip mirror is updated, you should checkout the [securedrop-builder repo](https://github.com/freedomofpress/securedrop-builder) and run `make requirements`. Commit the `build-requirements.txt` that results and add it to your PR.
