@@ -21,7 +21,6 @@ jobs:
       fail-fast: false
       matrix:
         debian_version:
-          - bullseye
           - bookworm
     runs-on: ubuntu-latest
     outputs:
@@ -81,7 +80,6 @@ jobs:
           git push origin main
           # Now the packages themselves
           cd ../securedrop-apt-test
-          cp -v ../build-bullseye/*.deb workstation/bullseye-nightlies/
           cp -v ../build-bookworm/*.deb workstation/bookworm-nightlies/
           git add .
           git diff-index --quiet HEAD || git commit -m "Automated SecureDrop workstation build"

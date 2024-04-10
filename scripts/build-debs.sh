@@ -3,7 +3,7 @@
 # Build packages! This script is configured by environment variables:
 # `BUILDER`: relative path to the securedrop-builder repository,
 #            defaults to "../securedrop-builder"
-# `DEBIAN_VERSION`: codename to build for, defaults to "bullseye"
+# `DEBIAN_VERSION`: codename to build for, defaults to "bookworm"
 # `NIGHTLY`: if set, add current time to the version number
 
 # This script runs *outside* the container.
@@ -37,7 +37,7 @@ to ${BUILDER} or set the BUILDER variable"
 fi
 
 export BUILDER
-export DEBIAN_VERSION="${DEBIAN_VERSION:-bullseye}"
+export DEBIAN_VERSION="${DEBIAN_VERSION:-bookworm}"
 export OCI_RUN_ARGUMENTS
 export OCI_BIN
 export CONTAINER="fpf.local/sd-client-builder-${DEBIAN_VERSION}"
