@@ -6,8 +6,6 @@ Stores and provides read/write access to the internal state of the SecureDrop Cl
 Note: the Graphical User Interface MUST NOT write state, except in QActions.
 """
 
-from typing import Optional
-
 from PyQt5.QtCore import QObject, pyqtSignal, pyqtSlot
 
 from securedrop_client.database import Database
@@ -23,11 +21,11 @@ class State(QObject):
 
     selected_conversation_files_changed = pyqtSignal()
 
-    def __init__(self, database: Optional[Database] = None) -> None:
+    def __init__(self, database: Database | None = None) -> None:
         super().__init__()
         self._files: dict[FileId, File] = {}
         self._conversation_files: dict[ConversationId, list[File]] = {}
-        self._selected_conversation: Optional[ConversationId] = None
+        self._selected_conversation: ConversationId | None = None
 
         if database is not None:
             self._initialize_from_database(database)
@@ -69,7 +67,7 @@ class State(QObject):
         default: list[File] = []
         return self._conversation_files.get(id, default)
 
-    def file(self, id: FileId) -> Optional[File]:
+    def file(self, id: FileId) -> File | None:
         return self._files.get(id, None)
 
     def record_file_download(self, id: FileId) -> None:
@@ -80,12 +78,12 @@ class State(QObject):
             self.selected_conversation_files_changed.emit()
 
     @property
-    def selected_conversation(self) -> Optional[ConversationId]:
+    def selected_conversation(self) -> ConversationId | None:
         """The identifier of the currently selected conversation, or None"""
         return self._selected_conversation
 
     @selected_conversation.setter
-    def selected_conversation(self, id: Optional[ConversationId]) -> None:
+    def selected_conversation(self, id: ConversationId | None) -> None:
         self._selected_conversation = id
         self.selected_conversation_files_changed.emit()
 

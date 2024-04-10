@@ -1,6 +1,5 @@
 import logging
 from gettext import gettext as _
-from typing import Optional
 
 from PyQt5.QtCore import QSize, Qt, pyqtSlot
 from PyQt5.QtGui import QColor, QFont, QPixmap
@@ -61,12 +60,12 @@ class ExportWizardPage(QWizardPage):
         ExportStatus.UNEXPECTED_RETURN_STATUS,
     ]
 
-    def __init__(self, export: Export, header: str, body: Optional[str]) -> None:
+    def __init__(self, export: Export, header: str, body: str | None) -> None:
         super().__init__()
         self.export = export
         self.header_text = header
         self.body_text = body
-        self.status: Optional[ExportStatus] = None
+        self.status: ExportStatus | None = None
         self._is_complete = True  # Won't override parent method unless explicitly set to False
 
         self.setLayout(self._build_layout())

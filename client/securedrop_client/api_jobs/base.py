@@ -1,5 +1,5 @@
 import logging
-from typing import Any, Optional, TypeVar
+from typing import Any, TypeVar
 
 from PyQt5.QtCore import QObject, pyqtSignal
 from sqlalchemy.orm.session import Session
@@ -14,7 +14,7 @@ QueueJobType = TypeVar("QueueJobType", bound="QueueJob")
 
 
 class ApiInaccessibleError(Exception):
-    def __init__(self, message: Optional[str] = None) -> None:
+    def __init__(self, message: str | None = None) -> None:
         if not message:
             message = (
                 "API is inaccessible either because there is no client or because the "
@@ -26,7 +26,7 @@ class ApiInaccessibleError(Exception):
 class QueueJob(QObject):
     def __init__(self, remaining_attempts: int = DEFAULT_NUM_ATTEMPTS) -> None:
         super().__init__()
-        self.order_number = None  # type: Optional[int]
+        self.order_number: int | None = None
         self.remaining_attempts = remaining_attempts
 
     def __lt__(self, other: QueueJobType) -> bool:
@@ -67,7 +67,7 @@ class ApiJob(QueueJob):
     def __init__(self, remaining_attempts: int = DEFAULT_NUM_ATTEMPTS) -> None:
         super().__init__(remaining_attempts)
 
-    def _do_call_api(self, api_client: Optional[API], session: Session) -> None:
+    def _do_call_api(self, api_client: API | None, session: Session) -> None:
         if not api_client:
             raise ApiInaccessibleError()
 

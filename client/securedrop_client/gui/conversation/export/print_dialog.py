@@ -1,5 +1,4 @@
 from gettext import gettext as _
-from typing import Optional
 
 from PyQt5.QtCore import QSize, pyqtSlot
 
@@ -21,7 +20,7 @@ class PrintDialog(ModalDialog):
             file_name, wordwrap=False, max_length=self.FILENAME_WIDTH_PX
         ).text()
         # Hold onto the error status we receive from the Export VM
-        self.error_status: Optional[ExportStatus] = None
+        self.error_status: ExportStatus | None = None
 
         # Connect device signals to slots
         self._device.print_preflight_check_succeeded.connect(

@@ -1,5 +1,4 @@
 import gettext
-from typing import Optional
 
 from jinja2 import Environment, PackageLoader, select_autoescape
 
@@ -19,7 +18,7 @@ env = Environment(
 env.install_gettext_translations(gettext)  # type: ignore[attr-defined]
 
 
-def transcribe(record: database.Base) -> Optional[Item]:
+def transcribe(record: database.Base) -> Item | None:
     return transcribe_item(record)
 
 

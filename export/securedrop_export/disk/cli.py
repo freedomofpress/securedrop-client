@@ -5,7 +5,6 @@ import subprocess
 import time
 from re import Pattern
 from shlex import quote
-from typing import Optional, Union
 
 import pexpect
 
@@ -27,20 +26,8 @@ _UDISKS_PREFIX = (
 # that includes regular expressions, byte or string patterns, *or* pexpect.EOF and pexpect.TIMEOUT,
 # but mypy needs a little help with it, so the below alias is used as a typehint.
 # See https://pexpect.readthedocs.io/en/stable/api/pexpect.html#pexpect.spawn.expect
-PexpectList = Union[
-    Pattern[str],
-    Pattern[bytes],
-    str,
-    bytes,
-    type[pexpect.EOF],
-    type[pexpect.TIMEOUT],
-    list[
-        Union[
-            Pattern[str],
-            Pattern[bytes],
-            Union[str, bytes, Union[type[pexpect.EOF], type[pexpect.TIMEOUT]]],
-        ]
-    ],
+PexpectList = list[
+    Pattern[str] | Pattern[bytes] | str | bytes | type[pexpect.EOF] | type[pexpect.TIMEOUT]
 ]
 
 
@@ -52,7 +39,7 @@ class CLI:
     CLI callers must handle ExportException.
     """
 
-    def get_volume(self) -> Union[Volume, MountedVolume]:
+    def get_volume(self) -> Volume | MountedVolume:
         """
         Search for valid connected device.
         Raise ExportException on error.
@@ -146,7 +133,7 @@ class CLI:
         except subprocess.CalledProcessError as ex:
             raise ExportException(sdstatus=Status.DEVICE_ERROR) from ex
 
-    def _get_supported_volume(self, device: dict) -> Optional[Union[Volume, MountedVolume]]:
+    def _get_supported_volume(self, device: dict) -> Volume | MountedVolume | None:
         """
         Given JSON-formatted lsblk output for one device, determine if it
         is suitably partitioned and return it to be used for export,
@@ -262,12 +249,12 @@ class CLI:
         # pexpect allows for a match list that contains pexpect.EOF and pexpect.TIMEOUT
         # as well as string/regex matches:
         # https://pexpect.readthedocs.io/en/stable/api/pexpect.html#pexpect.spawn.expect
-        prompt = [
+        prompt: PexpectList = [
             "Passphrase: ",
             pexpect.EOF,
             pexpect.TIMEOUT,
-        ]  # type: PexpectList
-        expected = [
+        ]
+        expected: PexpectList = [
             f"Unlocked {volume.device_name} as (.*)[^\r\n].",
             "GDBus.Error:org.freedesktop.UDisks2.Error.Failed: Device "  # string continues
             f"{volume.device_name} is already unlocked as (.*)[^\r\n].",
@@ -275,7 +262,7 @@ class CLI:
             f"unlocking {volume.device_name}: Failed to activate device: Incorrect passphrase",
             pexpect.EOF,
             pexpect.TIMEOUT,
-        ]  # type: PexpectList
+        ]
         unlock_error = Status.ERROR_UNLOCK_GENERIC
 
         child = pexpect.spawn(command, args)
@@ -332,12 +319,12 @@ class CLI:
         # The terminal output has colours and other formatting. A match is anything
         # that includes our device identified as PreferredDevice on one line
         # \x1b[37mPreferredDevice:\x1b[0m            /dev/sdaX\r\n
-        expected_info = [
+        expected_info: PexpectList = [
             f"PreferredDevice:.*[^\r\n]{volume.device_name}",
             "Error looking up object for device",
             pexpect.EOF,
             pexpect.TIMEOUT,
-        ]  # type: PexpectList
+        ]
         max_retries = 3
 
         mount_cmd = "udisksctl"
@@ -345,14 +332,14 @@ class CLI:
 
         # We can't pass {full_unlocked_name} in the match statement since even if we
         # pass in /dev/mapper/xxx, udisks2 may refer to the disk as /dev/dm-X.
-        expected_mount = [
+        expected_mount: PexpectList = [
             "Mounted .* at (.*)",
             "Error mounting .*: GDBus.Error:org.freedesktop.UDisks2.Error.AlreadyMounted: "
             "Device (.*) is already mounted at `(.*)'.",
             "Error looking up object for device",
             pexpect.EOF,
             pexpect.TIMEOUT,
-        ]  # type: PexpectList
+        ]
         mountpoint = None
 
         logger.debug(

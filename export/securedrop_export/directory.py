@@ -1,12 +1,11 @@
 import os
 import tarfile
 from pathlib import Path
-from typing import Optional, Union
 
 
 def safe_mkdir(
-    base_path: Union[Path, str],
-    relative_path: Union[Optional[Path], Optional[str]] = None,
+    base_path: Path | str,
+    relative_path: Path | None | str = None,
 ) -> None:
     """
     Safely create directories with restricted 700 permissions inside the base_path directory. The
@@ -80,7 +79,7 @@ def safe_extractall(archive_file_path: str, dest_path: str) -> None:
         tar.extractall(dest_path)  # noqa: S202
 
 
-def relative_filepath(filepath: Union[str, Path], base_dir: Union[str, Path]) -> Path:
+def relative_filepath(filepath: str | Path, base_dir: str | Path) -> Path:
     """
     Raise ValueError if the filepath is not relative to the supplied base_dir or if base_dir is not
     an absolute path.
@@ -92,7 +91,7 @@ def relative_filepath(filepath: Union[str, Path], base_dir: Union[str, Path]) ->
     return Path(filepath).resolve().relative_to(base_dir)
 
 
-def _check_path_traversal(filename_or_filepath: Union[str, Path]) -> None:
+def _check_path_traversal(filename_or_filepath: str | Path) -> None:
     """
     Raise ValueError if filename_or_filepath does any path traversal. This works on filenames,
     relative paths, and absolute paths.
@@ -116,7 +115,7 @@ def _check_path_traversal(filename_or_filepath: Union[str, Path]) -> None:
         raise ValueError(f"Unsafe file or directory name: '{filename_or_filepath}'")
 
 
-def _check_all_permissions(path: Union[str, Path], base_path: Union[str, Path]) -> None:
+def _check_all_permissions(path: str | Path, base_path: str | Path) -> None:
     """
     Check that the permissions of each directory between base_path and path are set to 700.
     """
@@ -135,7 +134,7 @@ def _check_all_permissions(path: Union[str, Path], base_path: Union[str, Path]) 
         _check_dir_permissions(str(full_path))
 
 
-def _check_dir_permissions(dir_path: Union[str, Path]) -> None:
+def _check_dir_permissions(dir_path: str | Path) -> None:
     """
     Check that a directory has ``700`` as the final 3 bytes. Raises a ``RuntimeError`` otherwise.
     """

@@ -2,7 +2,7 @@ import itertools
 import logging
 import threading
 from queue import PriorityQueue
-from typing import Any, Optional
+from typing import Any
 
 from PyQt5.QtCore import QObject, QThread, pyqtBoundSignal, pyqtSignal, pyqtSlot
 from sqlalchemy.orm import scoped_session
@@ -36,7 +36,7 @@ class RunnablePriorityQueue(PriorityQueue):
     """
 
     def __init__(
-        self, *args: Any, queue_updated_signal: Optional[pyqtBoundSignal] = None, **kwargs: Any
+        self, *args: Any, queue_updated_signal: pyqtBoundSignal | None = None, **kwargs: Any
     ):
         self.queue_updated_signal = queue_updated_signal
         super().__init__(*args, **kwargs)
@@ -109,9 +109,9 @@ class RunnableQueue(QObject):
 
     def __init__(
         self,
-        api_client: Optional[API],
+        api_client: API | None,
         session_maker: scoped_session,
-        queue_updated_signal: Optional[pyqtBoundSignal] = None,
+        queue_updated_signal: pyqtBoundSignal | None = None,
     ) -> None:
         super().__init__()
         self.api_client = api_client
@@ -121,7 +121,7 @@ class RunnableQueue(QObject):
         # needed because PriorityQueue is implemented using heapq which does not have sort
         # stability. For more info, see : https://bugs.python.org/issue17794
         self.order_number = itertools.count()
-        self.current_job = None  # type: Optional[QueueJob]
+        self.current_job: QueueJob | None = None
 
         # Hold when reading/writing self.current_job or mutating queue state
         self.condition_add_or_remove_job = threading.Condition()
@@ -271,7 +271,7 @@ class ApiJobQueue(QObject):
 
     def __init__(
         self,
-        api_client: Optional[API],
+        api_client: API | None,
         session_maker: scoped_session,
         main_thread: QThread,
         download_file_thread: QThread,

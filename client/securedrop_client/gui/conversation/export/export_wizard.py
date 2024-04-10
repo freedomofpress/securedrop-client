@@ -1,6 +1,5 @@
 import logging
 from gettext import gettext as _
-from typing import Optional
 
 from PyQt5.QtCore import QSize, Qt, pyqtSlot
 from PyQt5.QtGui import QIcon, QKeyEvent
@@ -48,7 +47,7 @@ class ExportWizard(QWizard):
         export: Export,
         summary_text: str,
         filepaths: list[str],
-        parent: Optional[QWidget] = None,
+        parent: QWidget | None = None,
     ) -> None:
         # Normally, the active window is the right parent, but if the wizard is launched
         # via another element (a modal dialog, such as the "Some files may not be exported"
@@ -62,7 +61,7 @@ class ExportWizard(QWizard):
             summary_text, wordwrap=False, max_length=self.FILENAME_WIDTH_PX
         ).text()
         self.filepaths = filepaths
-        self.current_status: Optional[ExportStatus] = None
+        self.current_status: ExportStatus | None = None
 
         # Signal from qrexec command runner
         self.export.export_state_changed.connect(self.on_status_received)

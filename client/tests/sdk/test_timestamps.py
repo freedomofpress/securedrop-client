@@ -1,7 +1,7 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
 # Copyright © 2022 The Freedom of the Press Foundation.
 import unittest
-from datetime import timedelta, timezone
+from datetime import UTC, timedelta, timezone
 
 from securedrop_client.sdk.timestamps import parse as parse_datetime
 
@@ -17,7 +17,7 @@ class TestTimestamps(unittest.TestCase):
 
         date_string = "2022-02-09T07:45:26.082728+00:00"
         dt = parse_datetime(date_string)
-        assert dt.tzinfo is timezone.utc
+        assert dt.tzinfo is UTC
 
         date_string = "2022-02-09T07:45:26.082728+02:00"
         dt = parse_datetime(date_string)
@@ -29,11 +29,11 @@ class TestTimestamps(unittest.TestCase):
 
         date_string = "2022-02-09T07:45:26.082728Z"
         dt = parse_datetime(date_string)
-        assert dt.tzinfo is timezone.utc
+        assert dt.tzinfo is UTC
 
     def test_parse_known_invalid_format_suceeds(self):
         date_string = "2022-02-09T07:45:26.082728+00:00Z"
         assert parse_datetime(date_string) is not None
 
         dt = parse_datetime(date_string)
-        assert dt.tzinfo is timezone.utc
+        assert dt.tzinfo is UTC

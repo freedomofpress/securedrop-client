@@ -4,7 +4,7 @@ import logging
 import math
 import os
 from tempfile import NamedTemporaryFile
-from typing import Any, Optional, Union
+from typing import Any
 
 from sqlalchemy.orm.session import Session
 
@@ -26,7 +26,7 @@ logger = logging.getLogger(__name__)
 
 class DownloadException(Exception):
     def __init__(
-        self, message: str, object_type: Union[type[Reply], type[Message], type[File]], uuid: str
+        self, message: str, object_type: type[Reply] | type[Message] | type[File], uuid: str
     ):
         super().__init__(message)
         self.object_type = object_type
@@ -89,9 +89,7 @@ class DownloadJob(SingleObjectApiJob):
         timeout = math.ceil((size_in_bytes / TIMEOUT_BYTES_PER_SECOND) * TIMEOUT_ADJUSTMENT_FACTOR)
         return timeout + TIMEOUT_BASE
 
-    def call_download_api(
-        self, api: API, db_object: Union[File, Message, Reply]
-    ) -> tuple[str, str]:
+    def call_download_api(self, api: API, db_object: File | Message | Reply) -> tuple[str, str]:
         """
         Method for making the actual API call to download the file and handling the result.
 
@@ -100,7 +98,7 @@ class DownloadJob(SingleObjectApiJob):
         """
         raise NotImplementedError
 
-    def call_decrypt(self, filepath: str, session: Optional[Session] = None) -> str:
+    def call_decrypt(self, filepath: str, session: Session | None = None) -> str:
         """
         Method for decrypting the file and storing the plaintext result.
 
@@ -110,7 +108,7 @@ class DownloadJob(SingleObjectApiJob):
         """
         raise NotImplementedError
 
-    def get_db_object(self, session: Session) -> Union[File, Message]:
+    def get_db_object(self, session: Session) -> File | Message:
         """
         Get the database object associated with this job.
         """
@@ -137,7 +135,7 @@ class DownloadJob(SingleObjectApiJob):
         self._decrypt(destination, db_object, session)
         return db_object.uuid
 
-    def _download(self, api: API, db_object: Union[File, Message, Reply], session: Session) -> str:
+    def _download(self, api: API, db_object: File | Message | Reply, session: Session) -> str:
         """
         Download the encrypted file. Check file integrity and move it to the data directory before
         marking it as downloaded.
@@ -175,9 +173,7 @@ class DownloadJob(SingleObjectApiJob):
                 f"Failed to download {db_object.uuid}", type(db_object), db_object.uuid
             ) from e
 
-    def _decrypt(
-        self, filepath: str, db_object: Union[File, Message, Reply], session: Session
-    ) -> None:
+    def _decrypt(self, filepath: str, db_object: File | Message | Reply, session: Session) -> None:
         """
         Decrypt the file located at the given filepath and mark it as decrypted.
         """
@@ -263,7 +259,7 @@ class ReplyDownloadJob(DownloadJob):
         api.default_request_timeout = 20
         return api.download_reply(sdk_object)
 
-    def call_decrypt(self, filepath: str, session: Optional[Session] = None) -> str:
+    def call_decrypt(self, filepath: str, session: Session | None = None) -> str:
         """
         Override DownloadJob.
 
@@ -317,7 +313,7 @@ class MessageDownloadJob(DownloadJob):
             sdk_object, timeout=self._get_realistic_timeout(db_object.size)
         )
 
-    def call_decrypt(self, filepath: str, session: Optional[Session] = None) -> str:
+    def call_decrypt(self, filepath: str, session: Session | None = None) -> str:
         """
         Override DownloadJob.
 
@@ -373,7 +369,7 @@ class FileDownloadJob(DownloadJob):
             sdk_object, timeout=self._get_realistic_timeout(db_object.size)
         )
 
-    def call_decrypt(self, filepath: str, session: Optional[Session] = None) -> str:
+    def call_decrypt(self, filepath: str, session: Session | None = None) -> str:
         """
         Override DownloadJob.
 

@@ -26,7 +26,7 @@ import re
 import shutil
 from datetime import datetime
 from pathlib import Path
-from typing import Any, Optional, TypeVar, Union
+from typing import Any, TypeVar
 
 from dateutil.parser import parse
 from sqlalchemy import and_, desc, or_
@@ -418,9 +418,9 @@ def update_messages(
 
 
 def __update_submissions(
-    model: Union[type[File], type[Message]],
+    model: type[File] | type[Message],
     remote_submissions: list[SDKSubmission],
-    local_submissions: Union[list[Message], list[File]],
+    local_submissions: list[Message] | list[File],
     skip_uuids_deleted_conversation: list[str],
     skip_uuids_deleted_source: list[str],
     session: Session,
@@ -866,7 +866,7 @@ def mark_as_not_downloaded(uuid: str, session: Session) -> None:
 
 
 def mark_as_downloaded(
-    model_type: Union[type[File], type[Message], type[Reply]], uuid: str, session: Session
+    model_type: type[File] | type[Message] | type[Reply], uuid: str, session: Session
 ) -> None:
     """
     Mark object as downloaded in the database.
@@ -889,11 +889,11 @@ def update_file_size(uuid: str, path: str, session: Session) -> None:
 
 
 def mark_as_decrypted(
-    model_type: Union[type[File], type[Message], type[Reply]],
+    model_type: type[File] | type[Message] | type[Reply],
     uuid: str,
     session: Session,
     is_decrypted: bool = True,
-    original_filename: Optional[str] = None,
+    original_filename: str | None = None,
 ) -> None:
     """
     Mark object as downloaded in the database.
@@ -909,7 +909,7 @@ def mark_as_decrypted(
 
 
 def set_message_or_reply_content(
-    model_type: Union[type[Message], type[Reply]], uuid: str, content: str, session: Session
+    model_type: type[Message] | type[Reply], uuid: str, content: str, session: Session
 ) -> None:
     """
     Mark whether or not the object is decrypted. If it's not decrypted, do not set content. If the
@@ -931,7 +931,7 @@ def delete_source_collection(journalist_filename: str, data_dir: str) -> None:
 
 
 def delete_single_submission_or_reply_on_disk(
-    obj_db: Union[File, Message, Reply], data_dir: str
+    obj_db: File | Message | Reply, data_dir: str
 ) -> None:
     """
     Delete on disk any files associated with a single submission or reply.
