@@ -2,6 +2,14 @@ name: Nightlies
 on:
   schedule:
     - cron: "0 6 * * *"
+  push:
+    branches:
+      - main
+
+# Only allow one job to run at a time because we're pushing to git repos;
+# the string value doesn't matter, just that it's a fixed string.
+concurrency:
+  group: "just-one-please"
 
 defaults:
   run:
