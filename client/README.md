@@ -77,7 +77,7 @@ cd securedrop-client
 poetry install
 ```
 
-   * You will need Python 3.9 to run the client. If it's not the default `python3` on your installation, you can set `poetry env use python3.9`.
+   * You will need Python 3.11 to run the client. If it's not the default `python3` on your installation, you can set `poetry env use python3.11`.
 
 4. Run SecureDrop Client
 
@@ -159,7 +159,7 @@ socat TCP4-LISTEN:8081,fork,reuseaddr TCP4:A.B.C.D:8081
     3. Enter a shell in `x86_64` mode with `arch -x86_64 bash`
     4. Install Homebrew via the instructions at https://brew.sh/
     5. Install the dependencies below in the same `x86_64` shell session
-3. Install dependencies via Homebrew: `brew install python@3.9 gnupg oath-toolkit`
+3. Install dependencies via Homebrew: `brew install python@3.11 gnupg oath-toolkit`
 4. clone the SecureDrop Client repo and install its dependencies
    ```
    git clone git@github.com:freedomofpress/securedrop-client.git
@@ -420,7 +420,7 @@ import pdb; pdb.set_trace()
 Then you can use [`pdb` commands](https://docs.python.org/3/library/pdb.html#debugger-commands) as normal.
 
 Logs can be found in the `{sdc-home}/logs`. If you are debugging a version of this application installed from a deb package in Qubes, you can debug issues by looking at the log file in `~/.securedrop_client/logs/client.log`. You can also add additional log lines in the running code in
-`/opt/venvs/securedrop-client/lib/python3.9/site-packages/securedrop_client/`.
+`/opt/venvs/securedrop-client/lib/python3.11/site-packages/securedrop_client/`.
 
 
 [MAY]: https://datatracker.ietf.org/doc/html/rfc2119#section-5
