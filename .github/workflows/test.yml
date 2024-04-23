@@ -24,7 +24,6 @@ jobs:
           - log
           - proxy
         debian_version:
-          - bullseye
           - bookworm
         # bookworm jobs are failing and will be
         # replaced with proxy v2 shortly, so skip
@@ -36,7 +35,7 @@ jobs:
     container: debian:${{ matrix.debian_version }}
     steps:
       - run: |
-          apt-get update && apt-get install --yes git make gnupg sudo
+          apt-get update && apt-get install --yes git make gnupg sudo python3-poetry
       - uses: actions/checkout@v4
       - name: Setup user
         run: |
@@ -44,18 +43,6 @@ jobs:
           useradd --create-home --shell /bin/bash user
       - name: Install dependencies
         run: |
-          source /etc/os-release
-          if [[ "$VERSION_CODENAME" == "bullseye" ]]; then
-              # Install Poetry via PyPI
-              apt-get install --yes --no-install-recommends python3-pip
-              pip install poetry==1.6.1
-          elif [[ "$VERSION_CODENAME" == "bookworm" ]]; then
-              # Install Poetry via system package
-              apt-get install --yes --no-install-recommends python3-poetry
-          else
-              echo "Unsupported Debian version: $VERSION_CODENAME"
-              exit 1
-          fi
           sudo -u user poetry -C ${{ matrix.component }} install
       - name: Run test
         run: |
@@ -73,13 +60,12 @@ jobs:
           - test-integration
           - test-random
         debian_version:
-          - bullseye
           - bookworm
     runs-on: ubuntu-latest
     container: debian:${{ matrix.debian_version }}
     steps:
       - run: |
-          apt-get update && apt-get install --yes git make gnupg sudo
+          apt-get update && apt-get install --yes git make gnupg sudo python3-poetry
       - uses: actions/checkout@v4
       - name: Setup user
         run: |
@@ -87,18 +73,6 @@ jobs:
           useradd --create-home --shell /bin/bash user
       - name: Install dependencies
         run: |
-          source /etc/os-release
-          if [[ "$VERSION_CODENAME" == "bullseye" ]]; then
-              # Install Poetry via PyPI
-              apt-get install --yes --no-install-recommends python3-pip
-              pip install poetry==1.6.1
-          elif [[ "$VERSION_CODENAME" == "bookworm" ]]; then
-              # Install Poetry via system package
-              apt-get install --yes --no-install-recommends python3-poetry
-          else
-              echo "Unsupported Debian version: $VERSION_CODENAME"
-              exit 1
-          fi
           make -C client ci-install-deps
           sudo -u user poetry -C client install
       - name: Run test
@@ -111,28 +85,15 @@ jobs:
     strategy:
       matrix:
         debian_version:
-          - bullseye
           - bookworm
     runs-on: ubuntu-latest
     container: debian:${{ matrix.debian_version }}
     steps:
       - run: |
-          apt-get update && apt-get install --yes git make
+          apt-get update && apt-get install --yes git make python3-poetry
       - uses: actions/checkout@v4
       - name: Install dependencies
         run: |
-          source /etc/os-release
-          if [[ "$VERSION_CODENAME" == "bullseye" ]]; then
-              # Install Poetry via PyPI
-              apt-get install --yes --no-install-recommends python3-pip
-              pip install poetry==1.6.1
-          elif [[ "$VERSION_CODENAME" == "bookworm" ]]; then
-              # Install Poetry via system package
-              apt-get install --yes --no-install-recommends python3-poetry
-          else
-              echo "Unsupported Debian version: $VERSION_CODENAME"
-              exit 1
-          fi
           poetry -C client install
           make -C client ci-install-deps
           git config --global --add safe.directory '*'

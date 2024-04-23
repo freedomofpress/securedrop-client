@@ -3,10 +3,10 @@ import logging
 import os
 import shutil
 import tarfile
+from collections.abc import Callable
 from io import BytesIO
 from shlex import quote
 from tempfile import mkdtemp
-from typing import Callable, Optional
 
 from PyQt5.QtCore import QObject, QProcess, pyqtSignal
 
@@ -100,7 +100,7 @@ class Export(QObject):
             logger.error("Export preflight check failed during archive creation")
             self._on_export_process_error()
 
-    def export(self, filepaths: list[str], passphrase: Optional[str]) -> None:
+    def export(self, filepaths: list[str], passphrase: str | None) -> None:
         """
         Bundle filepaths into a tarball and send to encrypted USB via qrexec,
         optionally supplying a passphrase to unlock encrypted drives.

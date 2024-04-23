@@ -25,7 +25,6 @@ import uuid
 from datetime import datetime
 from gettext import gettext as _
 from gettext import ngettext
-from typing import Optional, Union
 
 import arrow
 import sqlalchemy.orm.exc
@@ -120,7 +119,7 @@ class APICallRunner(QObject):
         try:
             self.result = self.api_call(*self.args, **self.kwargs)
         except Exception as ex:
-            if isinstance(ex, (RequestTimeoutError, ServerConnectionError)):
+            if isinstance(ex, RequestTimeoutError | ServerConnectionError):
                 self.call_timed_out.emit()
 
             logger.error("Call failed")
@@ -320,9 +319,9 @@ class Controller(QObject):
         state: state.State,
         proxy: bool = True,
         qubes: bool = True,
-        sync_thread: Optional[QThread] = None,
-        main_queue_thread: Optional[QThread] = None,
-        file_download_queue_thread: Optional[QThread] = None,
+        sync_thread: QThread | None = None,
+        main_queue_thread: QThread | None = None,
+        file_download_queue_thread: QThread | None = None,
     ) -> None:
         """
         The hostname, gui and session objects are used to coordinate with the
@@ -369,10 +368,10 @@ class Controller(QObject):
         self.gui = gui
 
         # Reference to the API for secure drop proxy.
-        self.api: Optional[sdk.API] = None
+        self.api: sdk.API | None = None
 
         # Store authenticated user
-        self.authenticated_user: Union[db.User, None] = None
+        self.authenticated_user: db.User | None = None
 
         # Reference to the SqlAlchemy `sessionmaker` and `session`
         self.session_maker = session_maker
@@ -580,7 +579,7 @@ class Controller(QObject):
         # Failed to authenticate. Reset state with failure message.
         self.invalidate_token()
 
-        if isinstance(result, (RequestTimeoutError, ServerConnectionError)):
+        if isinstance(result, RequestTimeoutError | ServerConnectionError):
             error = _(
                 "Could not reach the SecureDrop server. Please check your \n"
                 "Internet and Tor connection and try again."
@@ -693,7 +692,7 @@ class Controller(QObject):
                 return
 
             self._close_client_session()
-        elif isinstance(result, (RequestTimeoutError, ServerConnectionError)):
+        elif isinstance(result, RequestTimeoutError | ServerConnectionError):
             self.gui.update_error_status(
                 _("The SecureDrop server cannot be reached. Trying to reconnect..."), duration=0
             )
@@ -770,9 +769,7 @@ class Controller(QObject):
     def on_update_star_success(self, source_uuid: str) -> None:
         self.star_update_successful.emit(source_uuid)
 
-    def on_update_star_failure(
-        self, error: Union[UpdateStarJobError, UpdateStarJobTimeoutError]
-    ) -> None:
+    def on_update_star_failure(self, error: UpdateStarJobError | UpdateStarJobTimeoutError) -> None:
         if isinstance(error, UpdateStarJobError):
             self.gui.update_error_status(_("Failed to update star."))
             source = self.session.query(db.Source).filter_by(uuid=error.source_uuid).one()
@@ -822,10 +819,12 @@ class Controller(QObject):
 
     @login_required
     def _submit_download_job(
-        self, object_type: Union[type[db.Reply], type[db.Message], type[db.File]], uuid: str
+        self, object_type: type[db.Reply] | type[db.Message] | type[db.File], uuid: str
     ) -> None:
         if object_type == db.Reply:
-            job = ReplyDownloadJob(uuid, self.data_dir, self.gpg)  # type: Union[ReplyDownloadJob, MessageDownloadJob, FileDownloadJob]
+            job: ReplyDownloadJob | MessageDownloadJob | FileDownloadJob = ReplyDownloadJob(
+                uuid, self.data_dir, self.gpg
+            )
             job.success_signal.connect(self.on_reply_download_success)
             job.failure_signal.connect(self.on_reply_download_failure)
         elif object_type == db.Message:
@@ -952,7 +951,7 @@ class Controller(QObject):
 
     @login_required
     def on_submission_download(
-        self, submission_type: Union[type[db.File], type[db.Message]], submission_uuid: str
+        self, submission_type: type[db.File] | type[db.Message], submission_uuid: str
     ) -> None:
         """
         Download the file associated with the Submission (which may be a File or Message).
@@ -1117,9 +1116,7 @@ class Controller(QObject):
         reply = storage.get_reply(self.session, reply_uuid)
         self.reply_succeeded.emit(reply.source.uuid, reply_uuid, reply.content)
 
-    def on_reply_failure(
-        self, exception: Union[SendReplyJobError, SendReplyJobTimeoutError]
-    ) -> None:
+    def on_reply_failure(self, exception: SendReplyJobError | SendReplyJobTimeoutError) -> None:
         logger.debug(f"{exception.reply_uuid} failed to send")
 
         # only emit failure signal for non-timeout errors

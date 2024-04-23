@@ -1,4 +1,4 @@
-ARG DISTRO=bullseye
+ARG DISTRO=bookworm
 FROM debian:$DISTRO
 
 RUN apt-get update && apt-get upgrade --yes && apt-get install -y ca-certificates

@@ -218,7 +218,7 @@ def test_Controller_on_authenticate_failure(homedir, config, mocker, session_mak
     co.api_sync.stop = mocker.MagicMock()
     co.on_authenticate_failure(exception)
 
-    if isinstance(exception, (RequestTimeoutError, ServerConnectionError)):
+    if isinstance(exception, RequestTimeoutError | ServerConnectionError):
         error = _(
             "Could not reach the SecureDrop server. Please check your \n"
             "Internet and Tor connection and try again."

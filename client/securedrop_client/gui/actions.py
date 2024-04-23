@@ -5,10 +5,10 @@ Over time, this module could become the interface between
 the GUI and the controller.
 """
 
+from collections.abc import Callable
 from contextlib import ExitStack
 from gettext import gettext as _
 from pathlib import Path
-from typing import Callable, Optional
 
 from PyQt5.QtCore import Qt, pyqtSlot
 from PyQt5.QtWidgets import QAction, QApplication, QDialog, QMenu
@@ -32,7 +32,7 @@ class DownloadConversation(QAction):
     """Download all files and messages of the currently selected conversation."""
 
     def __init__(
-        self, parent: QMenu, controller: Controller, app_state: Optional[state.State] = None
+        self, parent: QMenu, controller: Controller, app_state: state.State | None = None
     ) -> None:
         self._controller = controller
         self._state = app_state
@@ -112,7 +112,7 @@ class DeleteConversationAction(QAction):
         parent: QMenu,
         controller: Controller,
         confirmation_dialog: Callable[[Source], QDialog],
-        app_state: Optional[state.State] = None,
+        app_state: state.State | None = None,
     ) -> None:
         self.source = source
         self.controller = controller
@@ -245,7 +245,7 @@ class ExportConversationAction(QAction):  # pragma: nocover
         parent: QMenu,
         controller: Controller,
         source: Source,
-        app_state: Optional[state.State] = None,
+        app_state: state.State | None = None,
     ) -> None:
         """
         Allows export of a conversation transcript and all is files. Will download any file

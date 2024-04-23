@@ -2800,7 +2800,7 @@ class ConversationView(QWidget):
             if item_widget:
                 # FIXME: Item types cannot be defines as (FileWidget, MessageWidget, ReplyWidget)
                 # because one test mocks MessageWidget.
-                assert isinstance(item_widget, (FileWidget, SpeechBubble))
+                assert isinstance(item_widget, FileWidget | SpeechBubble)
                 current_conversation.pop(conversation_item.uuid)
                 if item_widget.index != index:
                     # The existing widget is out of order.
@@ -2831,7 +2831,7 @@ class ConversationView(QWidget):
                     item_widget.sender = conversation_item.journalist
             elif isinstance(conversation_item, Message):
                 self.add_message(conversation_item, index)
-            elif isinstance(conversation_item, (DraftReply, Reply)):
+            elif isinstance(conversation_item, DraftReply | Reply):
                 self.add_reply(conversation_item, conversation_item.journalist, index)
             else:
                 self.add_file(conversation_item, index)

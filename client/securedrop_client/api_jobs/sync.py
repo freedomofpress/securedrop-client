@@ -1,6 +1,6 @@
 import logging
 import os
-from typing import Any, Optional
+from typing import Any
 
 from sqlalchemy.orm.session import Session
 
@@ -22,7 +22,7 @@ class MetadataSyncJob(ApiJob):
     DEFAULT_REQUEST_TIMEOUT = 60  # sec
     NUMBER_OF_TIMES_TO_RETRY_AN_API_CALL = 2
 
-    def __init__(self, data_dir: str, app_state: Optional[state.State] = None) -> None:
+    def __init__(self, data_dir: str, app_state: state.State | None = None) -> None:
         super().__init__(remaining_attempts=self.NUMBER_OF_TIMES_TO_RETRY_AN_API_CALL)
         self.data_dir = data_dir
         self._state = app_state
@@ -65,7 +65,7 @@ class MetadataSyncJob(ApiJob):
         3. Re-associate any draft replies sent by a user that is about to be deleted
         4. Delete all remaining local user accounts that no longer exist on the server
         """
-        deleted_user_id = None  # type: Optional[int]
+        deleted_user_id: int | None = None
         local_users = {user.uuid: user for user in session.query(User).all()}
         for remote_user in remote_users:
             local_user = local_users.get(remote_user.uuid)

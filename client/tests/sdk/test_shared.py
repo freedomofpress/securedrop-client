@@ -21,8 +21,8 @@ class TestShared:
         assert isinstance(self.api.token, str)
         assert isinstance(self.api.token_expiration, datetime.datetime)
         assert isinstance(self.api.token_journalist_uuid, str)
-        assert isinstance(self.api.first_name, (str, type(None)))
-        assert isinstance(self.api.last_name, (str, type(None)))
+        assert isinstance(self.api.first_name, str | None)
+        assert isinstance(self.api.last_name, str | None)
 
     # ---------------- SOURCES ----------------
 

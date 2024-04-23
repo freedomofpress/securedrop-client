@@ -20,7 +20,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import logging
 from gettext import gettext as _
-from typing import Optional
 
 from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QClipboard, QGuiApplication, QIcon, QKeySequence
@@ -46,7 +45,7 @@ class Window(QMainWindow):
 
     def __init__(
         self,
-        app_state: Optional[state.State] = None,
+        app_state: state.State | None = None,
     ) -> None:
         """
         Create the default start state. The window contains a root widget into
@@ -89,7 +88,7 @@ class Window(QMainWindow):
         central_widget_layout.addWidget(self.main_pane)
 
         # Dialogs
-        self.login_dialog: Optional[LoginDialog] = None
+        self.login_dialog: LoginDialog | None = None
 
         # Actions
         quit = QAction(_("Quit"), self)
@@ -109,7 +108,7 @@ class Window(QMainWindow):
         self.main_view.setup(self.controller)
         self.show_login()
 
-    def show_main_window(self, db_user: Optional[User] = None) -> None:
+    def show_main_window(self, db_user: User | None = None) -> None:
         """
         Show main application window.
         """

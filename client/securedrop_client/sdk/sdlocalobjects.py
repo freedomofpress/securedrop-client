@@ -1,10 +1,7 @@
-from typing import Optional
-
-
 class BaseError(Exception):
     """For generic errors not covered by other exceptions"""
 
-    def __init__(self, message: Optional[str] = None) -> None:
+    def __init__(self, message: str | None = None) -> None:
         self.msg = message
 
     def __str__(self) -> str:

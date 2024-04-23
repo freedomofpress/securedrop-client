@@ -4,7 +4,7 @@ import json
 import os
 from datetime import datetime
 from subprocess import PIPE, Popen, TimeoutExpired
-from typing import Any, Optional
+from typing import Any
 from urllib.parse import urljoin
 
 import requests
@@ -45,7 +45,7 @@ class ServerConnectionError(Exception):
         super().__init__("Cannot connect to the server.")
 
 
-def json_query(proxy_vm_name: str, data: str, timeout: Optional[int] = None) -> str:
+def json_query(proxy_vm_name: str, data: str, timeout: int | None = None) -> str:
     """
     Takes a JSON based query and passes it to the network proxy.
     Returns the JSON output from the proxy.
@@ -93,8 +93,8 @@ class API:
         passphrase: str,
         totp: str,
         proxy: bool = False,
-        default_request_timeout: Optional[int] = None,
-        default_download_timeout: Optional[int] = None,
+        default_request_timeout: int | None = None,
+        default_download_timeout: int | None = None,
     ) -> None:
         """
         Primary API class, this is the only thing which will make network call.
@@ -103,13 +103,13 @@ class API:
         self.username = username
         self.passphrase = passphrase
         self.totp = totp
-        self.token = None  # type: Optional[str]
-        self.token_expiration: Optional[datetime] = None
-        self.token_journalist_uuid = None  # type: Optional[str]
-        self.first_name = None  # type: Optional[str]
-        self.last_name = None  # type: Optional[str]
-        self.req_headers = dict()  # type: dict[str, str]
-        self.proxy = proxy  # type: bool
+        self.token: str | None = None
+        self.token_expiration: datetime | None = None
+        self.token_journalist_uuid: str | None = None
+        self.first_name: str | None = None
+        self.last_name: str | None = None
+        self.req_headers: dict[str, str] = dict()
+        self.proxy: bool = proxy
         self.default_request_timeout = default_request_timeout or DEFAULT_REQUEST_TIMEOUT
         self.default_download_timeout = default_download_timeout or DEFAULT_DOWNLOAD_TIMEOUT
 
@@ -126,9 +126,9 @@ class API:
         self,
         method: str,
         path_query: str,
-        body: Optional[str] = None,
-        headers: Optional[dict[str, str]] = None,
-        timeout: Optional[int] = None,
+        body: str | None = None,
+        headers: dict[str, str] | None = None,
+        timeout: int | None = None,
     ) -> tuple[Any, int, dict[str, str]]:
         if self.proxy:  # We are using the Qubes securedrop-proxy
             func = self._send_rpc_json_request
@@ -141,9 +141,9 @@ class API:
         self,
         method: str,
         path_query: str,
-        body: Optional[str] = None,
-        headers: Optional[dict[str, str]] = None,
-        timeout: Optional[int] = None,
+        body: str | None = None,
+        headers: dict[str, str] | None = None,
+        timeout: int | None = None,
     ) -> tuple[Any, int, dict[str, str]]:
         url = urljoin(self.server, path_query)
         kwargs = {"headers": headers}  # type: dict[str, Any]
@@ -174,9 +174,9 @@ class API:
         self,
         method: str,
         path_query: str,
-        body: Optional[str] = None,
-        headers: Optional[dict[str, str]] = None,
-        timeout: Optional[int] = None,
+        body: str | None = None,
+        headers: dict[str, str] | None = None,
+        timeout: int | None = None,
     ) -> tuple[Any, int, dict[str, str]]:
         data = {"method": method, "path_query": path_query}  # type: dict[str, Any]
 
@@ -219,7 +219,7 @@ class API:
 
         return data, result["status"], result["headers"]
 
-    def authenticate(self, totp: Optional[str] = None) -> bool:
+    def authenticate(self, totp: str | None = None) -> bool:
         """
         Authenticates the user and fetches the token from the server.
 
@@ -572,7 +572,7 @@ class API:
         return self.delete_submission(s)
 
     def download_submission(
-        self, submission: Submission, path: str = "", timeout: Optional[int] = None
+        self, submission: Submission, path: str = "", timeout: int | None = None
     ) -> tuple[str, str]:
         """
         Returns a tuple of etag (format is algorithm:checksum) and file path for
@@ -689,7 +689,7 @@ class API:
 
         return result
 
-    def reply_source(self, source: Source, msg: str, reply_uuid: Optional[str] = None) -> Reply:
+    def reply_source(self, source: Source, msg: str, reply_uuid: str | None = None) -> Reply:
         """
         This method is used to reply to a given source. The message should be preencrypted with the
         source's GPG public key.
