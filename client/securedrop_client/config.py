@@ -1,9 +1,7 @@
-import json
 import logging
 import os
+from collections.abc import Generator
 from contextlib import contextmanager
-from typing import Generator, Union
-
 
 logger = logging.getLogger(__name__)
 
@@ -12,7 +10,7 @@ logger = logging.getLogger(__name__)
 def try_qubesdb() -> Generator:
     """Minimal context manager around QubesDB() → QubesDB.close() when
     available."""
-    db: Union[bool, "QubesDB"]  = False
+    db: bool | "QubesDB" = False
 
     try:
         from qubesdb import QubesDB

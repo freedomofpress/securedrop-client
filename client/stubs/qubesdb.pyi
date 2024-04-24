@@ -1,7 +1,6 @@
 # See <https://github.com/QubesOS/qubes-core-qubesdb/blob/main/python/qubesdb.c>,
 # generated using stubgen <https://mypy.readthedocs.io/en/stable/stubs.html>
 class Error(RuntimeError): ...
-
 class DisconnectedError(Error): ...
 
 class QubesDB:

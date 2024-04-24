@@ -1,12 +1,10 @@
 #!/usr/bin/env python3
-import json
 import os
 import sys
 
 from sqlalchemy.orm.exc import NoResultFound
 
 from securedrop_client import db
-from securedrop_client.config import Config
 
 sdc_home = sys.argv[1]
 session = db.make_session_maker(sdc_home)()

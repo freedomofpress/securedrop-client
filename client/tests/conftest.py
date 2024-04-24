@@ -1,4 +1,3 @@
-import json
 import os
 import subprocess
 import tempfile
@@ -15,7 +14,6 @@ from PyQt5.QtWidgets import QMainWindow
 
 from securedrop_client import state
 from securedrop_client.app import configure_locale_and_language
-from securedrop_client.config import Config
 from securedrop_client.db import (
     Base,
     DownloadError,
