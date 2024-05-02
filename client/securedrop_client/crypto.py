@@ -50,7 +50,7 @@ def read_gzip_header_filename(filename: str) -> str:
     with open(filename, "rb") as f:
         gzip_header_identification = f.read(2)
         if gzip_header_identification != GZIP_FILE_IDENTIFICATION:
-            raise OSError("Not a gzipped file (%r)" % gzip_header_identification)
+            raise OSError(f"Not a gzipped file ({gzip_header_identification!r})")
 
         (gzip_header_compression_method, gzip_header_flags, _) = struct.unpack("<BBIxx", f.read(8))
         if gzip_header_compression_method != 8:
