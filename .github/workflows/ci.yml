@@ -113,6 +113,12 @@ jobs:
     container: rust:1.74.1
     steps:
       - uses: actions/checkout@v4
+      - name: Configure Qubes repository
+        run: |
+          cp scripts/qubes_42.sources /etc/apt/sources.list.d/
+          source /etc/os-release
+          sed -i s/##VERSION_CODENAME##/${VERSION_CODENAME}/ /etc/apt/sources.list.d/qubes_42.sources
+          apt-get update && apt-get install --yes libclang-dev qubesdb-dev
       - name: Install dependencies
         run: |
           rustup component add rustfmt
