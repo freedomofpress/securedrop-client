@@ -12,7 +12,7 @@ license = "AGPLv3+"
 python = "^3.11"
 
 [tool.poetry.group.dev.dependencies]
-ruff = "^0.4.2"
+ruff = "^0.4.3"
 safety = "*"
 shellcheck-py = "*"
 
