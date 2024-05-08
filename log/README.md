@@ -5,10 +5,41 @@ Workstation](https://github.com/freedomofpress/securedrop-workstation) project.
 
 This is a Python module and qrexec service for logging in Qubes.
 
-#### Quick Start
+## Quick Start
 
 1. [Install Poetry](https://python-poetry.org/docs/#installing-with-the-official-installer)
 2. Run `make test` to verify the installation
+
+## Architecture
+
+```mermaid
+graph TD
+
+subgraph sd-log
+subgraph systemd
+redis.service --before--- securedrop-log.service
+end
+subgraph qrexec
+securedrop.Log
+end
+
+redis.service --> Redis((Redis))
+securedrop.Log>securedrop.Log] --> securedrop-redis-log --"writes to"--> Redis
+Redis -.blocking read-loop.-> securedrop-log-saver
+securedrop-log.service --> securedrop-log-saver --> QubesIncomingLogs/
+end
+
+subgraph sd-app
+subgraph rsyslog
+sd-rsyslog --activated by--- /etc/rsyslog.d/sdlog.conf
+sd-rsyslog --configured by--- /etc/sd-rsyslog.conf
+sd-rsyslog -.qrexec.-> securedrop.Log
+end
+end
+
+securedrop-log???
+securedrop_log??? -.qrexec.-> securedrop.Log
+```
 
 ## How to use/try this?
 
