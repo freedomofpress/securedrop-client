@@ -15,7 +15,7 @@ This is a Python module and qrexec service for logging in Qubes.
 ```mermaid
 graph TD
 
-subgraph sd-log
+subgraph "sink VM (e.g., sd-log)"
 subgraph systemd
 redis.service --before--- securedrop-log.service
 end
@@ -29,7 +29,7 @@ Redis -.blocking read-loop.-> securedrop-log-saver
 securedrop-log.service --> securedrop-log-saver --> QubesIncomingLogs/
 end
 
-subgraph sd-app
+subgraph "source VM (e.g., sd-app)"
 subgraph rsyslog
 sd-rsyslog --activated by--- /etc/rsyslog.d/sdlog.conf
 sd-rsyslog --configured by--- /etc/sd-rsyslog.conf
