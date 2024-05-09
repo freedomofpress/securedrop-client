@@ -1,3 +1,5 @@
+"""Test `securedrop-proxy`'s handling of errors from generic HTTP endpoints, not tied to the SecureDrop SDK."""
+
 import os
 import subprocess
 

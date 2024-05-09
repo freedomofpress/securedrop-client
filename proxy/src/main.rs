@@ -14,6 +14,7 @@ use std::str::FromStr;
 use std::time::Duration;
 use url::Url;
 
+// Expose a different `config` implementation depending on whether the `qubesdb` feature is enabled or not.
 #[cfg(feature = "qubesdb")]
 mod config_qubesdb;
 #[cfg(feature = "qubesdb")]
@@ -24,9 +25,10 @@ mod config_env;
 #[cfg(not(feature = "qubesdb"))]
 use config_env as config;
 
+// This is the only setting we need to read via `config`.  We should refactor this more extensibly if we ever need multiple.
 const ENV_CONFIG: &str = "SD_PROXY_ORIGIN";
 
-/// Incoming requests (as JSON) received over stdin
+/// Incoming HTTP requests (as JSON) received over stdin
 #[derive(Deserialize, Debug)]
 #[serde(deny_unknown_fields)]
 struct IncomingRequest {
@@ -45,7 +47,7 @@ fn default_timeout() -> u64 {
     10
 }
 
-/// Serialization format for non-streamed requests
+/// Serialization format for non-streamed HTTP responses
 #[derive(Serialize, Debug)]
 struct OutgoingResponse {
     status: u16,
@@ -53,7 +55,7 @@ struct OutgoingResponse {
     body: String,
 }
 
-/// In a streamed response, we emit the checksum after the streaming finishes
+/// Serialization format for streamed HTTP responses
 #[derive(Serialize, Debug)]
 struct StreamMetadataResponse {
     headers: HashMap<String, String>,
@@ -65,6 +67,9 @@ struct ErrorResponse {
     error: String,
 }
 
+/// Convert `request::header::HeaderMap` to a `HashMap` that can be serialized to JSON on stdout.
+///
+/// TODO(#1780): support duplicate HTTP headers
 fn headers_to_map(resp: &Response) -> Result<HashMap<String, String>> {
     let mut headers = HashMap::new();
     for (name, value) in resp.headers() {
@@ -73,6 +78,7 @@ fn headers_to_map(resp: &Response) -> Result<HashMap<String, String>> {
     Ok(headers)
 }
 
+/// Given a `Response` that doesn't require stream processing, convert it to our `OutgoingResponse` and serialize to JSON on stdout.
 async fn handle_json_response(resp: Response) -> Result<()> {
     let headers = headers_to_map(&resp)?;
     let outgoing_response = OutgoingResponse {
@@ -84,6 +90,7 @@ async fn handle_json_response(resp: Response) -> Result<()> {
     Ok(())
 }
 
+/// Given a `Response` that does require stream processing, forward it to stdout as we receive it, and then write the headers to stderr when we're done.
 async fn handle_stream_response(resp: Response) -> Result<()> {
     // Get the headers, will be output later but we want to fail early if it's missing/invalid
     let headers = headers_to_map(&resp)?;
@@ -103,6 +110,7 @@ async fn handle_stream_response(resp: Response) -> Result<()> {
     Ok(())
 }
 
+/// Read a single JSON-serialized HTTP request from a single line from stdin and reconstruct it, including its URL.  Make the request, and stream the response if requested; otherwise, or in an error condition, return it as JSON.
 async fn proxy() -> Result<()> {
     // Get the hostname from the environment or QubesDB
     let origin = config::read(ENV_CONFIG)?;
@@ -152,6 +160,7 @@ async fn proxy() -> Result<()> {
 }
 
 #[tokio::main(flavor = "current_thread")]
+/// Entry-point: Every invocation handles a single request via `proxy()` and exits according to its success or failure.
 async fn main() -> ExitCode {
     match proxy().await {
         Ok(()) => ExitCode::SUCCESS,

@@ -9,6 +9,12 @@ from securedrop_client.sdk.sdlocalobjects import Reply, ReplyError, Source, Wron
 NUM_REPLIES_PER_SOURCE = 2
 
 
+# Deletion operations are both non-blocking and slow, so subsequent operations
+# should wait (i.e., retry their requests) to get the response they expect.
+DELETION_ATTEMPTS = 3
+DELETION_ATTEMPT_SLEEP = 5  # sec
+
+
 class TestShared:
     """
     Base class for tests against the SDK.  Methods in this file should not be
@@ -38,7 +44,7 @@ class TestShared:
 
         self.api.delete_conversation(s.uuid)
 
-        attempts = 3
+        attempts = DELETION_ATTEMPTS
         while attempts >= 0:  # Deletion is both non-blocking and slow.
             attempts = attempts - 1
             try:
@@ -51,7 +57,7 @@ class TestShared:
                 if attempts == 0:
                     raise
                 else:
-                    time.sleep(5)
+                    time.sleep(DELETION_ATTEMPT_SLEEP)
 
     def delete_source(self, from_string=False):
         number_of_sources_before = len(self.api.get_sources())
@@ -109,7 +115,7 @@ class TestShared:
             subs = self.api.get_all_submissions()
         assert self.api.delete_submission(subs[0])
 
-        attempts = 3
+        attempts = DELETION_ATTEMPTS
         while attempts >= 0:  # Deletion is both non-blocking and slow.
             attempts = attempts - 1
             try:
@@ -120,7 +126,7 @@ class TestShared:
                 if attempts == 0:
                     raise
                 else:
-                    time.sleep(5)
+                    time.sleep(DELETION_ATTEMPT_SLEEP)
 
         # Let us make sure that sub[0] is not there
         for s in new_subs:

@@ -8,6 +8,7 @@ use anyhow::{bail, Result};
 use std::ffi::{CStr, CString};
 use std::ptr;
 
+/// Read the named key from QubesDB and return its value if set; otherwise error out.
 pub fn read(name: &str) -> Result<String> {
     let path = format!("/vm-config/{name}");
 

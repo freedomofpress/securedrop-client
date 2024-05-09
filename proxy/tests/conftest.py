@@ -1,3 +1,5 @@
+"""Setup for tests of fundamental `securedrop-proxy` behavior not tied to the SecureDrop SDK."""
+
 import json
 import os
 import subprocess

@@ -45,6 +45,8 @@ class ServerConnectionError(Exception):
 
 @dataclass(frozen=True)
 class StreamedResponse:
+    """Container for streamed data along with the filename and ETag checksum sent by the server."""
+
     contents: bytes
     sha256sum: str
     filename: str
@@ -52,6 +54,8 @@ class StreamedResponse:
 
 @dataclass(frozen=True)
 class JSONResponse:
+    """Deserialization of the proxy's `OutgoingResponse`."""
+
     data: dict
     status: int
     headers: dict[str, str]
@@ -108,6 +112,8 @@ class API:
             pass  # We already have a default name
 
     def _rpc_target(self) -> list:
+        """In `development_mode`, check `cargo` for a locally-built proxy binary.
+        Otherwise, call `securedrop.Proxy` via qrexec."""
         if not self.development_mode:
             return ["/usr/lib/qubes/qrexec-client-vm", self.proxy_vm_name, "securedrop.Proxy"]
         # Development mode, find the target directory and look for a debug securedrop-proxy
@@ -127,6 +133,9 @@ class API:
         headers: dict[str, str] | None = None,
         timeout: int | None = None,
     ) -> StreamedResponse | JSONResponse:
+        """Build a JSON-serialized request to pass to the proxy.
+        Handle the JSON or streamed response back, plus translate HTTP error statuses
+        to our exceptions."""
         data: dict[str, Any] = {"method": method, "path_query": path_query, "stream": stream}
 
         if method == "POST" and body:
@@ -172,7 +181,6 @@ class API:
                 filename = stderr["headers"]["content-disposition"]
             except (json.decoder.JSONDecodeError, KeyError) as err:
                 raise BaseError("Unable to parse header metadata from response") from err
-            # Get the checksum out of stderr
             return StreamedResponse(
                 contents=response.stdout, sha256sum=sha256sum, filename=filename
             )

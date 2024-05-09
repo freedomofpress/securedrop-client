@@ -1,12 +1,12 @@
 #[cfg(feature = "qubesdb")]
+/// When building with the `qubesdb` feature, link against libqubesdb.
 fn main() {
     use std::env;
     use std::path::PathBuf;
     // Tell cargo to look for shared libraries in the specified directory
     println!("cargo:rustc-link-search=/usr/lib");
 
-    // Tell cargo to tell rustc to link the system bzip2
-    // shared library.
+    // Tell cargo to tell rustc to link the system libqubesdb.
     println!("cargo:rustc-link-lib=qubesdb");
 
     // The bindgen::Builder is the main entry point
@@ -32,4 +32,5 @@ fn main() {
 }
 
 #[cfg(not(feature = "qubesdb"))]
+/// When building *without* the `qubesdb` feature, this build-script is a no-op.
 fn main() {}
