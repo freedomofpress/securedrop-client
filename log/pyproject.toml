@@ -21,6 +21,6 @@ scripts_are_modules = true
 files = [
     "*.py",
     "securedrop-log",
-    "securedrop-log-saver",
-    "securedrop-redis-log",
+    "log_server/log_saver.py",
+    "log_server/redis_log.py",
 ]
