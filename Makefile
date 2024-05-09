@@ -4,6 +4,9 @@ all: help
 .PHONY: build-debs
 build-debs: OUT:=build/securedrop-client-$(shell date +%Y%m%d).log
 build-debs: ## Build Debian packages
+	# "build-debs.sh" will create this directory, but we need it to exist
+	# before we call "script".
+	@mkdir -p build
 	@echo "Building SecureDrop Client Debian packages..."
 	@export TERM=dumb
 	@script \
