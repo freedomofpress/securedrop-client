@@ -7,15 +7,12 @@ all: help
 build: # Build Rust binary
 	cargo build
 
-.PHONY: lint
-lint: ## Nothing (Rust code is linted from the root)
-
 .PHONY: test
 test: build ## Runs tests with pytest
 	@poetry run pytest
 
 .PHONY: check
-check: lint test ## Runs all tests and code checkers
+check: test ## Runs all tests and code checkers
 
 # Explanation of the below shell command should it ever break.
 # 1. Set the field separator to ": ##" and any make targets that might appear between : and ##

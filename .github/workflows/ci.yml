@@ -66,19 +66,13 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
+        # proxy has no `make lint` because it is covered by `rust-lint`.
         component:
           - client
           - export
           - log
-          - proxy
         debian_version:
           - bookworm
-        # bookworm jobs are failing and will be
-        # replaced with proxy v2 shortly, so skip
-        # https://github.com/freedomofpress/securedrop-client/issues/1681
-        exclude:
-          - component: proxy
-            debian_version: bookworm
     runs-on: ubuntu-latest
     container: debian:${{ matrix.debian_version }}
     steps:
