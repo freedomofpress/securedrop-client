@@ -1,0 +1,13 @@
+[Unit]
+Description=securedrop logging client Service
+After=qubes-qrexec-agent.service
+Before=rsyslog.service
+ConditionPathExists=/var/run/qubes-service/securedrop-logging-disabled
+
+[Service]
+Type=oneshot
+User=root
+ExecStart=rm -f /etc/rsyslog.d/sdlog.conf && systemctl restart rsyslog
+
+[Install]
+WantedBy=multi-user.target

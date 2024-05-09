@@ -28,3 +28,7 @@ override_dh_installdeb:
 	dh_installdeb
 	cat /dev/null > ${CURDIR}/debian/securedrop-keyring/DEBIAN/conffiles
 	cat /dev/null > ${CURDIR}/debian/securedrop-export/DEBIAN/conffiles
+
+override_dh_installsystemd:
+	dh_installsystemd --name securedrop-log-server
+	dh_installsystemd --name securedrop-logging-disabled
