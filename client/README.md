@@ -47,6 +47,43 @@ We support running the [developer environment on a non-Qubes OS](#developer-envi
 * network (via the RPC service) traffic
 * fine tuning of the graphical user interface
 
+### Comparing the development and staging/production environments
+
+```mermaid
+graph TD
+
+subgraph "development environment"
+subgraph "your development VM"
+direction TB
+dData(("temporary<br>directory")) --- dClient
+dKeychain(("temporary<br>keychain")) --- dClient
+dClient["securedrop-client<br>(./run.sh)"] --stdin/stdout/stderr--> dProxy
+dProxy["securedrop-proxy<br>(built via cargo)"] --HTTP-->
+dServer["SecureDrop Server<br>(make dev)"]
+end
+end
+
+subgraph "staging/production environment"
+spKeychain --- spClient
+subgraph sd-app
+spData(("~/.securedrop_client")) --- spClient
+spClient["securedrop-client"]
+end
+spClient --stdin/stdout/stderr over qrexec--> spProxy
+subgraph sd-gpg
+spKeychain(("~/.gnupg"))
+end
+subgraph sd-proxy
+spProxy["securedrop-proxy"]
+end
+spProxy --HTTP--> spTor
+subgraph sd-whonix
+spTor["Tor"]
+end
+spTor --> spServer["SecureDrop Server"]
+end
+```
+
 ### Running against a test server
 
 In order to login, or take other actions involving network access, you will need to run the client against a SecureDrop server. If you don't have a production server or want to test against a test server, you can install a SecureDrop server inside a dev container by following the instructions [in the SecureDrop documentation](https://docs.securedrop.org/en/latest/development/setup_development.html#quick-start).
