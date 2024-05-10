@@ -174,7 +174,7 @@ class API:
 
         # We need to peek at the content to see if we got a streaming response,
         # which only happens for stream=True and non-error response
-        if stream and response.stdout[0] != b"{":
+        if stream and (not response.stdout or response.stdout[0] != b"{"):
             try:
                 stderr = json.loads(response.stderr.decode())
                 sha256sum = stderr["headers"]["etag"]
