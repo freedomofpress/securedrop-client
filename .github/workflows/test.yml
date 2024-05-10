@@ -72,6 +72,7 @@ jobs:
         run: |
           # We want to run tests as a regular user, similar to Qubes VMs
           useradd --create-home --shell /bin/bash user
+          sudo -u user bash -c "mkdir ~/Downloads"
       - name: Install dependencies
         run: |
           make -C client ci-install-deps

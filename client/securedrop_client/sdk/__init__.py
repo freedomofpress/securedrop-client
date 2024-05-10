@@ -578,7 +578,7 @@ class API:
         return self.delete_submission(s)
 
     def download_submission(
-        self, submission: Submission, path: str = "", timeout: int | None = None
+        self, submission: Submission, path: str | None = None, timeout: int | None = None
     ) -> tuple[str, str]:
         """
         Returns a tuple of etag (format is algorithm:checksum) and file path for
@@ -586,7 +586,7 @@ class API:
         at which to save the submission file.
 
         :param submission: Submission object
-        :param path: Local directory path to save the submission
+        :param path: Local directory path to save the submission, if None, use ~/Downloads
 
         :returns: Tuple of etag and path of the saved submission.
         """
@@ -595,8 +595,11 @@ class API:
         )
         method = "GET"
 
-        if path and os.path.exists(path) and not os.path.isdir(path):
-            raise BaseError("Please provide a valid directory to save.")
+        if not path:
+            path = os.path.expanduser("~/Downloads")
+
+        if not os.path.isdir(path):
+            raise BaseError(f"Specified path isn't a directory: {path}")
 
         response = self._send_json_request(
             method,
@@ -801,7 +804,7 @@ class API:
 
         return result
 
-    def download_reply(self, reply: Reply, path: str = "") -> tuple[str, str]:
+    def download_reply(self, reply: Reply, path: str | None = None) -> tuple[str, str]:
         """
         Returns a tuple of etag (format is algorithm:checksum) and file path for
         a given Reply object. This method requires a directory path
@@ -816,8 +819,11 @@ class API:
 
         method = "GET"
 
-        if path and os.path.exists(path) and not os.path.isdir(path):
-            raise BaseError("Please provide a valid directory to save.")
+        if not path:
+            path = os.path.expanduser("~/Downloads")
+
+        if not os.path.isdir(path):
+            raise BaseError(f"Specified path isn't a directory: {path}")
 
         response = self._send_json_request(
             method,
