@@ -135,11 +135,11 @@ $ export SD_PROXY_ORIGIN=http://${JOURNALIST_INTERFACE}.onion
 
 In a production build with the `qubesdb` feature, the same value is expected in
 the Qubes feature `vm-config.SD_PROXY_ORIGIN`, exposed in QubesDB at
-`/vm-config/SD_PROXY_ORIGIN`. Yo can simulate this, including on Qubes 4.1,
+`/vm-config/SD_PROXY_ORIGIN`. You can simulate this, including on Qubes 4.1+,
 with:
 
 ```sh-session
-[user@dom0 ~] qubesdb-write sd-proxy -c write /vm-config/SD_PROXY_ORIGIN $JOURNALIST_INTERFACE
+[user@dom0 ~] qubesdb-write sd-proxy -c write /vm-config/SD_PROXY_ORIGIN "http://${JOURNALIST_INTERFACE}.onion"
 ```
 
 ## Tests
