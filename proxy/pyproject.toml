@@ -10,6 +10,6 @@ readme = "README.md"
 python = "^3.11"
 
 [tool.poetry.group.dev.dependencies]
-pytest = "^7.4.3"
+pytest = "^8.2.0"
 pytest-httpbin = "^2.0.0"
 # needed for httpbin, see https://github.com/psf/httpbin/issues/36
