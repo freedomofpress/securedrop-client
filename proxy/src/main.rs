@@ -165,10 +165,12 @@ async fn main() -> ExitCode {
     match proxy().await {
         Ok(()) => ExitCode::SUCCESS,
         Err(err) => {
+            let mut error = err.to_string();
+            if let Some(source) = err.source() {
+                error = format!("{}: {}", error, source);
+            }
             // Try to serialize into our error format
-            let resp = ErrorResponse {
-                error: err.to_string(),
-            };
+            let resp = ErrorResponse { error };
             match serde_json::to_string(&resp) {
                 Ok(json) => {
                     // Print the error to stderr

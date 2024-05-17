@@ -67,6 +67,5 @@ def test_cannot_connect(proxy_request):
     assert (
         result.stderr.decode().strip()
         == '{"error":"error sending request for url (http://missing.test/): '
-        + "error trying to connect: dns error: failed to lookup address information: "
-        + 'Name or service not known"}'
+        + 'client error (Connect)"}'
     )

@@ -93,6 +93,13 @@ criteria = "safe-to-run"
 delta = "4.0.2 -> 4.3.0"
 notes = "Windows-specific code was not reviewed."
 
+[[trusted.atomic-waker]]
+criteria = "safe-to-deploy"
+user-id = 33035 # Taiki Endo (taiki-e)
+start = "2023-01-15"
+end = "2024-11-17"
+notes = "Rust Project member"
+
 [[trusted.flate2]]
 criteria = "safe-to-deploy"
 user-id = 4333
@@ -128,6 +135,13 @@ start = "2020-10-05"
 end = "2024-08-29"
 notes = "Rust Project member"
 
+[[trusted.h2]]
+criteria = "safe-to-deploy"
+user-id = 359 # Sean McArthur (seanmonstar)
+start = "2019-03-13"
+end = "2024-11-17"
+notes = "see https://github.com/freedomofpress/securedrop-engineering/pull/87"
+
 [[trusted.home]]
 criteria = "safe-to-deploy"
 user-id = 6202 # Eric Huss (ehuss)
@@ -135,12 +149,40 @@ start = "2023-04-25"
 end = "2024-09-12"
 notes = "Rust Project member"
 
+[[trusted.http]]
+criteria = "safe-to-deploy"
+user-id = 359 # Sean McArthur (seanmonstar)
+start = "2019-04-05"
+end = "2024-11-17"
+notes = "see https://github.com/freedomofpress/securedrop-engineering/pull/87"
+
+[[trusted.http-body-util]]
+criteria = "safe-to-deploy"
+user-id = 359 # Sean McArthur (seanmonstar)
+start = "2022-10-25"
+end = "2024-11-17"
+notes = "see https://github.com/freedomofpress/securedrop-engineering/pull/87"
+
+[[trusted.hyper]]
+criteria = "safe-to-deploy"
+user-id = 359 # Sean McArthur (seanmonstar)
+start = "2019-03-01"
+end = "2024-11-17"
+notes = "see https://github.com/freedomofpress/securedrop-engineering/pull/87"
+
 [[trusted.hyper-tls]]
 criteria = "safe-to-deploy"
 user-id = 359 # Sean McArthur (seanmonstar)
 start = "2019-03-19"
 end = "2024-09-12"
 notes = "per https://github.com/freedomofpress/securedrop-engineering/pull/87"
+
+[[trusted.hyper-util]]
+criteria = "safe-to-deploy"
+user-id = 359 # Sean McArthur (seanmonstar)
+start = "2022-01-15"
+end = "2024-11-17"
+notes = "see https://github.com/freedomofpress/securedrop-engineering/pull/87"
 
 [[trusted.indexmap]]
 criteria = "safe-to-deploy"
@@ -189,6 +231,20 @@ criteria = "safe-to-deploy"
 user-id = 163 # Alex Gaynor (alex)
 start = "2023-03-24"
 end = "2024-08-12"
+notes = "Rust Project member"
+
+[[trusted.pin-project]]
+criteria = "safe-to-deploy"
+user-id = 33035 # Taiki Endo (taiki-e)
+start = "2019-03-02"
+end = "2024-11-17"
+notes = "Rust Project member"
+
+[[trusted.pin-project-internal]]
+criteria = "safe-to-deploy"
+user-id = 33035 # Taiki Endo (taiki-e)
+start = "2019-08-11"
+end = "2024-11-17"
 notes = "Rust Project member"
 
 [[trusted.prettyplease]]
@@ -288,6 +344,13 @@ user-id = 6741 # Alice Ryhl (Darksonn)
 start = "2021-01-12"
 end = "2024-09-12"
 notes = "per https://github.com/freedomofpress/securedrop-engineering/pull/87"
+
+[[trusted.tower-layer]]
+criteria = "safe-to-deploy"
+user-id = 10 # Carl Lerche (carllerche)
+start = "2019-04-27"
+end = "2024-11-17"
+notes = "Rust Project member"
 
 [[trusted.wasm-bindgen-futures]]
 criteria = "safe-to-deploy"
