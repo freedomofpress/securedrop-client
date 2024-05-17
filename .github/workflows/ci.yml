@@ -14,6 +14,21 @@ defaults:
     shell: bash
 
 jobs:
+  lint-apparmor:
+    strategy:
+      matrix:
+        debian_version:
+          - bookworm
+    runs-on: ubuntu-latest
+    container: debian:${{ matrix.debian_version }}
+    steps:
+      - run: |
+          apt-get update && apt-get install --yes git make apparmor
+      - uses: actions/checkout@v4
+      - name: Lint AppArmor profiles
+        run: |
+          make lint-apparmor
+
   lint-desktop:
     strategy:
       matrix:
