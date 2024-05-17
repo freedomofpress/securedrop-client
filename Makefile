@@ -16,6 +16,11 @@ build-debs: ## Build Debian packages
 	@echo "You can now examine or commit the log at:"
 	@echo "$(OUT)"
 
+.PHONY: lint-apparmor
+lint-apparmor: ## Lint AppArmor profiles
+	# See apparmor_parser(8)
+	apparmor_parser --preprocess --abort-on-error --Werror=all client/files/usr.bin.securedrop-client
+
 .PHONY: lint-desktop
 lint-desktop: ## Lint .desktop files
 	# See: https://www.freedesktop.org/wiki/Software/desktop-file-utils/
