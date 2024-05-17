@@ -66,19 +66,13 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
+        # proxy has no `make lint` because it is covered by `rust-lint`.
         component:
           - client
           - export
           - log
-          - proxy
         debian_version:
           - bookworm
-        # bookworm jobs are failing and will be
-        # replaced with proxy v2 shortly, so skip
-        # https://github.com/freedomofpress/securedrop-client/issues/1681
-        exclude:
-          - component: proxy
-            debian_version: bookworm
     runs-on: ubuntu-latest
     container: debian:${{ matrix.debian_version }}
     steps:
@@ -113,6 +107,12 @@ jobs:
     container: rust:1.74.1
     steps:
       - uses: actions/checkout@v4
+      - name: Configure Qubes repository
+        run: |
+          cp scripts/qubes_42.sources /etc/apt/sources.list.d/
+          source /etc/os-release
+          sed -i s/##VERSION_CODENAME##/${VERSION_CODENAME}/ /etc/apt/sources.list.d/qubes_42.sources
+          apt-get update && apt-get install --yes libclang-dev qubesdb-dev
       - name: Install dependencies
         run: |
           rustup component add rustfmt

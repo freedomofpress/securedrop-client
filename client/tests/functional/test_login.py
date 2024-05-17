@@ -5,7 +5,6 @@ The tests are based upon the client testing descriptions here:
 https://github.com/freedomofpress/securedrop-client/wiki/Test-plan#basic-client-testing
 """
 
-import pytest
 from flaky import flaky
 from PyQt5.QtCore import Qt
 
@@ -30,7 +29,6 @@ def test_login_ensure_errors_displayed(functional_test_app_started_context, qtbo
 
 
 @flaky
-@pytest.mark.vcr()
 def test_login_as_journalist(functional_test_app_started_context, qtbot, mocker):
     """
     Log in from the login dialog with credentials and verify that the login was successful by
@@ -42,7 +40,7 @@ def test_login_as_journalist(functional_test_app_started_context, qtbot, mocker)
     # to be emitted, which indicates the user authentication state has changed successfully
     qtbot.keyClicks(gui.login_dialog.username_field, USERNAME)
     qtbot.keyClicks(gui.login_dialog.password_field, PASSWORD)
-    qtbot.keyClicks(gui.login_dialog.tfa_field, TOTP)
+    qtbot.keyClicks(gui.login_dialog.tfa_field, str(TOTP.now()))
     with qtbot.waitSignal(controller.authentication_state, timeout=TIME_RENDER_CONV_VIEW):
         qtbot.mouseClick(gui.login_dialog.submit, Qt.LeftButton)
         qtbot.wait(TIME_CLICK_ACTION)

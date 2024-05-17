@@ -78,6 +78,16 @@ test-functional: ## Run the functional tests
 test-sdk: ## Run just the sdk tests
 	@poetry run pytest -v $(STESTS)
 
+.PHONY: regenerate-sdk-cassettes
+regenerate-sdk-cassettes:
+	@echo "Building securedrop-proxy (if not already done)..."
+	@$(MAKE) -C ../proxy build
+	@echo "Checking if a development server is available to regenerate cassettes..."
+	@echo "NB. It should be a fresh development server via \"make dev\", with no other data!  HTTP requests and responses will be recorded unredacted, including credentials and tokens."
+	@curl http://localhost:8080/metadata
+	@rm -fr tests/sdk/data/
+	@make test-sdk
+
 .PHONY: lint
 lint: mypy semgrep ## Run all linters
 

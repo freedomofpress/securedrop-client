@@ -1,0 +1,26 @@
+interactions:
+- request:
+    body: null
+    headers:
+      Accept:
+      - application/json
+      Authorization:
+      - Token Ilhha2ZHZWpVcFZQVmpKdWJOUzJYRG1YVUc4QXZWS0JiOGVNQXJycE5GUFUi.ZeDzXQ.10ODTj49yF7kxKbeMm9eaayR3Xo
+      Content-Type:
+      - application/json
+    method: POST
+    uri: api/v1/logout
+  response: !!python/object:securedrop_client.sdk.JSONResponse
+    data:
+      message: Your token has been revoked.
+    headers:
+      connection: close
+      content-length: '48'
+      content-type: application/json
+      date: Thu, 29 Feb 2024 21:13:15 GMT
+      server: Werkzeug/2.2.3 Python/3.8.10
+      set-cookie: js=IlB5SjVMQjhnNHhmT0VlV2ZvZzF2Y1pQMFk4c1ZkNXdFUWdKTzg1ZkI0YW8i.ZeDzaw.pqKi4IBPjgmrQPTxfvG9jZkXiDk;
+        HttpOnly; Path=/
+      vary: Cookie
+    status: 200
+version: 1

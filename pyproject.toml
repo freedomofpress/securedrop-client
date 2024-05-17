@@ -94,6 +94,10 @@ known-first-party = [
 ]
 
 [tool.ruff.lint.per-file-ignores]
+"client/securedrop_client/sdk/__init__.py" = [
+    # significant assert use for mypy
+    "S101",
+]
 "client/securedrop_client/gui/widgets.py" = [
     # FIXME: shouldn't be using assert
     "S101",

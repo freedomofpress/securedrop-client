@@ -70,7 +70,7 @@
   owner /home/user/.securedrop_client/logs/* rw,
   owner /home/user/.securedrop_client/svs.sqlite rwk,
   owner /home/user/.securedrop_client/svs.sqlite-journal rw,
-  owner /home/user/QubesIncoming/sd-proxy/* rw,
+  owner /home/user/Downloads/* rw,
   owner /opt/venvs/securedrop-client/lib/python3.11/**/__pycache__/ rw,
   owner /opt/venvs/securedrop-client/lib/python3.11/**/__pycache__/* rw,
   owner /opt/venvs/securedrop-client/lib/python3.11/__pycache__/ rw,

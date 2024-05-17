@@ -56,10 +56,12 @@ shellcheck:  ## Lint shell scripts
 rust-lint: ## Lint Rust code
 	cargo fmt --check
 	cargo clippy
+	cargo clippy --features qubesdb
 
 .PHONY: rust-test
 rust-test: ## Run Rust tests
 	cargo test
+	cargo test --features qubesdb
 
 # Explanation of the below shell command should it ever break.
 # 1. Set the field separator to ": ##" and any make targets that might appear between : and ##
