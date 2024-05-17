@@ -20,7 +20,6 @@ python_version = "3.11"
 scripts_are_modules = true
 files = [
     "*.py",
-    "securedrop-log",
     "log_server/log_saver.py",
     "log_server/redis_log.py",
 ]
