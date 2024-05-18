@@ -1,12 +1,16 @@
 import configparser
 import http
 import json
+import logging
 import os
 import subprocess
+import tempfile
 from dataclasses import dataclass
 from datetime import datetime
 from pathlib import Path
 from typing import Any
+
+from securedrop_client.config import Config
 
 from .sdlocalobjects import (
     AuthError,
@@ -19,6 +23,8 @@ from .sdlocalobjects import (
     WrongUUIDError,
 )
 from .timestamps import parse as parse_datetime
+
+logger = logging.getLogger(__name__)
 
 DEFAULT_PROXY_VM_NAME = "sd-proxy"
 DEFAULT_REQUEST_TIMEOUT = 20  # 20 seconds
@@ -33,6 +39,9 @@ class RequestTimeoutError(Exception):
     def __init__(self) -> None:
         super().__init__("The request timed out.")
 
+    def __reduce__(self) -> tuple[type, tuple]:
+        return (self.__class__, ())
+
 
 class ServerConnectionError(Exception):
     """
@@ -41,6 +50,9 @@ class ServerConnectionError(Exception):
 
     def __init__(self) -> None:
         super().__init__("Cannot connect to the server.")
+
+    def __reduce__(self) -> tuple[type, tuple]:
+        return (self.__class__, ())
 
 
 @dataclass(frozen=True)
@@ -103,13 +115,19 @@ class API:
         self.default_download_timeout = default_download_timeout or DEFAULT_DOWNLOAD_TIMEOUT
 
         self.proxy_vm_name = DEFAULT_PROXY_VM_NAME
-        config = configparser.ConfigParser()
+        config_parser = configparser.ConfigParser()
         try:
             if os.path.exists("/etc/sd-sdk.conf"):
-                config.read("/etc/sd-sdk.conf")
-                self.proxy_vm_name = config["proxy"]["name"]
+                config_parser.read("/etc/sd-sdk.conf")
+                self.proxy_vm_name = config_parser["proxy"]["name"]
         except Exception:
             pass  # We already have a default name
+
+        # Load download retry limit from the config
+        self.download_retry_limit: int = 3
+        config = Config.load()
+        if config.download_retry_limit is not None:
+            self.download_retry_limit = int(config.download_retry_limit)
 
     def _rpc_target(self) -> list:
         """In `development_mode`, check `cargo` for a locally-built proxy binary.
@@ -124,69 +142,125 @@ class API:
         )["target_directory"]
         return [f"{target_directory}/debug/securedrop-proxy"]
 
-    def _send_json_request(
-        self,
-        method: str,
-        path_query: str,
-        stream: bool = False,
-        body: str | None = None,
-        headers: dict[str, str] | None = None,
-        timeout: int | None = None,
+    def _streaming_download(
+        self, data: dict[str, Any], env: dict
     ) -> StreamedResponse | JSONResponse:
-        """Build a JSON-serialized request to pass to the proxy.
-        Handle the JSON or streamed response back, plus translate HTTP error statuses
-        to our exceptions."""
-        data: dict[str, Any] = {"method": method, "path_query": path_query, "stream": stream}
+        fobj = tempfile.TemporaryFile("w+b")
 
-        if method == "POST" and body:
-            data["body"] = body
+        retry = 0
+        bytes_written = 0
+        download_finished = False
 
-        if headers:
-            data["headers"] = headers
+        while not download_finished and retry < self.download_retry_limit:
+            logger.debug(f"Streaming download, retry {retry}")
 
-        if timeout:
-            data["timeout"] = timeout
-
-        data_str = json.dumps(data).encode()
-
-        try:
-            env = {}
-            if self.development_mode:
-                env["SD_PROXY_ORIGIN"] = self.server
-            response = subprocess.run(
-                self._rpc_target(),
-                capture_output=True,
-                timeout=timeout,
-                input=data_str,
-                env=env,
-                check=False,
-            )
-        except subprocess.TimeoutExpired as err:
-            raise RequestTimeoutError from err
-
-        # error handling
-        if response.returncode != 0:
             try:
-                error = json.loads(response.stderr.decode())
-            except json.decoder.JSONDecodeError as err:
-                raise BaseError("Unable to parse stderr JSON") from err
-            raise BaseError("Internal proxy error: " + error.get("error", "unknown error"))
+                # Update the range request if we're retrying
+                if retry > 0:
+                    data["headers"]["Range"] = f"bytes={bytes_written}-"
+                    logger.debug(f"Retry {retry}, range: {bytes_written}-")
 
-        # We need to peek at the content to see if we got a streaming response,
-        # which only happens for stream=True and non-error response
-        if stream and (not response.stdout or response.stdout[0] != b"{"):
-            try:
-                stderr = json.loads(response.stderr.decode())
-                sha256sum = stderr["headers"]["etag"]
-                filename = stderr["headers"]["content-disposition"]
-            except (json.decoder.JSONDecodeError, KeyError) as err:
-                raise BaseError("Unable to parse header metadata from response") from err
-            return StreamedResponse(
-                contents=response.stdout, sha256sum=sha256sum, filename=filename
-            )
+                # Serialize the data to send
+                data_bytes = json.dumps(data).encode()
 
+                # Open the process
+                logger.debug(f"Retry {retry}, opening process")
+                proc = subprocess.Popen(
+                    self._rpc_target(),
+                    stdin=subprocess.PIPE,
+                    stdout=subprocess.PIPE,
+                    stderr=subprocess.PIPE,
+                    env=env,
+                )
+
+                # Send the input data
+                if proc.stdin is not None:
+                    logger.debug(f"Retry {retry}, sending data")
+                    proc.stdin.write(data_bytes)
+                    proc.stdin.close()
+
+                # Write the contents to disk
+                chunk_size = 1024
+                while not download_finished:
+                    if proc.stdout is not None:
+                        chunk = proc.stdout.read(chunk_size)
+                        if not chunk:
+                            logger.debug(f"Retry {retry}, download finished")
+                            download_finished = True
+                            break
+
+                    fobj.write(chunk)
+                    bytes_written += len(chunk)
+                    logger.debug(f"Retry {retry}, bytes written: {bytes_written:,}")
+
+                # Wait for the process to end
+                returncode = proc.wait()
+                logger.debug(f"Retry {retry}, process ended with return code {returncode}")
+
+                # Check for errors
+                if returncode != 0:
+                    # Actually, the download did not finish after all
+                    download_finished = False
+
+                    try:
+                        if proc.stderr is not None:
+                            error = json.loads(proc.stderr.read().decode())
+                    except json.decoder.JSONDecodeError as err:
+                        raise BaseError("Unable to parse stderr JSON") from err
+                    raise BaseError("Internal proxy error: " + error.get("error", "unknown error"))
+
+                # FIXME: For now, store the contents as bytes
+                logger.debug(f"Retry {retry}, reading contents from disk")
+                fobj.seek(0)
+                contents = fobj.read()
+                fobj.close()
+
+                # Check for an error response
+                if contents[0:1] == b"{":
+                    return self._handle_json_response(contents)
+
+                # Get the headers
+                if proc.stderr is not None:
+                    try:
+                        stderr = json.loads(proc.stderr.read().decode())
+                    except json.decoder.JSONDecodeError as err:
+                        raise BaseError("Unable to parse stderr JSON") from err
+
+                    sha256sum = stderr["headers"]["etag"]
+                    filename = stderr["headers"]["content-disposition"]
+                else:
+                    # This should never happen because we should always have an stderr
+                    sha256sum = ""
+                    filename = ""
+
+                return StreamedResponse(
+                    contents=contents,
+                    sha256sum=sha256sum,
+                    filename=filename,
+                )
+
+            except subprocess.TimeoutExpired as err:
+                logger.debug(f"Retry {retry}, timeout expired")
+                retry += 1
+                if retry >= self.download_retry_limit:
+                    logger.debug("Retry limit reached, raising RequestTimeoutError")
+                    raise RequestTimeoutError from err
+            except BaseError as err:
+                logger.debug(f"Retry {retry}, base error: {err}")
+                retry += 1
+                if retry >= self.download_retry_limit:
+                    logger.debug("Retry limit reached, raising BaseError")
+                    raise err
+
+        # We will never reach this code because we'll have already returned or raised
+        # an exception by now, but it's required to make the linter happy
+        raise RuntimeError(
+            "This should be unreachable, we should've already returned or raised a different exception"  # noqa: E501
+        )
+
+    def _handle_json_response(self, stdout_bytes: bytes) -> JSONResponse:
         try:
-            result = json.loads(response.stdout.decode())
+            result = json.loads(stdout_bytes.decode())
         except json.decoder.JSONDecodeError as err:
             raise BaseError("Unable to parse stdout JSON") from err
 
@@ -211,6 +285,63 @@ class API:
 
         data = json.loads(result["body"])
         return JSONResponse(data=data, status=result["status"], headers=result["headers"])
+
+    def _send_json_request(
+        self,
+        method: str,
+        path_query: str,
+        stream: bool = False,
+        body: str | None = None,
+        headers: dict[str, str] | None = None,
+        timeout: int | None = None,
+    ) -> StreamedResponse | JSONResponse:
+        """Build a JSON-serialized request to pass to the proxy.
+        Handle the JSON or streamed response back, plus translate HTTP error statuses
+        to our exceptions."""
+        logger.debug(f"Sending request to proxy: {method} {path_query}")
+
+        data: dict[str, Any] = {"method": method, "path_query": path_query, "stream": stream}
+
+        if method == "POST" and body:
+            data["body"] = body
+
+        if headers:
+            data["headers"] = headers
+
+        if timeout:
+            data["timeout"] = timeout
+
+        env = {}
+        if self.development_mode:
+            env["SD_PROXY_ORIGIN"] = self.server
+
+        # Streaming
+        if stream:
+            return self._streaming_download(data, env)
+
+        # Not streaming
+        data_str = json.dumps(data).encode()
+        try:
+            response = subprocess.run(
+                self._rpc_target(),
+                capture_output=True,
+                timeout=timeout,
+                input=data_str,
+                env=env,
+                check=False,
+            )
+        except subprocess.TimeoutExpired as err:
+            raise RequestTimeoutError from err
+
+        # Error handling
+        if response.returncode != 0:
+            try:
+                error = json.loads(response.stderr.decode())
+            except json.decoder.JSONDecodeError as err:
+                raise BaseError("Unable to parse stderr JSON") from err
+            raise BaseError("Internal proxy error: " + error.get("error", "unknown error"))
+
+        return self._handle_json_response(response.stdout)
 
     def authenticate(self, totp: str | None = None) -> bool:
         """

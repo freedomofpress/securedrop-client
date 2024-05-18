@@ -20,6 +20,7 @@ def try_qubesdb() -> Generator:
         yield db
 
     except ImportError:
+        logger.debug("QubesDB not available")
         yield db
 
     finally:
@@ -37,10 +38,12 @@ class Config:
     mapping = {
         "gpg_domain": "QUBES_GPG_DOMAIN",
         "journalist_key_fingerprint": "SD_SUBMISSION_KEY_FPR",
+        "download_retry_limit": "SD_DOWNLOAD_RETRY_LIMIT",
     }
 
     gpg_domain: str
     journalist_key_fingerprint: str
+    download_retry_limit: str
 
     @classmethod
     def load(self) -> "Config":

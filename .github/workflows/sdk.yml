@@ -33,7 +33,7 @@ jobs:
       - name: Run tests without VCR cassettes
         run: |
           # Start the server in the background
-          NUM_SOURCES=5 make -C securedrop-server dev &
+          NUM_SOURCES=5 LOADDATA_ARGS="--random-file-size 3" make -C securedrop-server dev &
           # And install deps
           poetry -C client install --no-ansi
           # Wait for server to come up

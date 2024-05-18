@@ -88,7 +88,7 @@ The steps to generate new cassettes are split into two sections based on communi
 1. Start the server in a docker container by running:
 
     ```bash
-    NUM_SOURCES=5 make dev
+    NUM_SOURCES=5 LOADDATA_ARGS="--random-file-size 3" make dev
     ```
 
 2. Delete the cassettes you wish to regenerate or just delete all yaml files by running:
@@ -124,7 +124,7 @@ Once your proxy VM is set up, follow these steps:
 1. Start the server in a docker container on `sd-dev-proxy` by running:
 
     ```bash
-    NUM_SOURCES=5 make dev
+    NUM_SOURCES=5 LOADDATA_ARGS="--random-file-size 3" make dev
     ```
 
 2. Delete the cassettes you wish to regenerate or just delete all JSON files by running:

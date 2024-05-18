@@ -1,0 +1,278 @@
+interactions:
+- request:
+    body: null
+    headers:
+      Accept:
+      - application/json
+      Authorization:
+      - Token Ik45WE1oNjFuVzdVc0V0VWZaSjJYemJTNmhiTnFseGpsLVNSc1hKYlV0Nm8i.Zldt-A.w3azL6o7YBKDKHb7INCMmotAAyE
+      Content-Type:
+      - application/json
+    method: GET
+    uri: api/v1/submissions
+  response: !!python/object:securedrop_client.sdk.JSONResponse
+    data:
+      submissions:
+      - download_url: /api/v1/sources/13d40630-1880-4b2c-9378-194761ad743b/submissions/cc37508f-6e44-48b4-af17-5d5fa4f2b144/download
+        filename: 1-dun_washcloth-msg.gpg
+        is_file: false
+        is_message: true
+        is_read: true
+        seen_by:
+        - a7a4b9dc-6d1c-4696-ac85-97bab7bc3dfd
+        - 98ea9950-cc67-434a-9708-8452dfee162e
+        size: 616
+        source_url: /api/v1/sources/13d40630-1880-4b2c-9378-194761ad743b
+        submission_url: /api/v1/sources/13d40630-1880-4b2c-9378-194761ad743b/submissions/cc37508f-6e44-48b4-af17-5d5fa4f2b144
+        uuid: cc37508f-6e44-48b4-af17-5d5fa4f2b144
+      - download_url: /api/v1/sources/13d40630-1880-4b2c-9378-194761ad743b/submissions/3c130c08-a0d4-4dee-af0f-68546231632b/download
+        filename: 2-dun_washcloth-msg.gpg
+        is_file: false
+        is_message: true
+        is_read: true
+        seen_by:
+        - a7a4b9dc-6d1c-4696-ac85-97bab7bc3dfd
+        - 98ea9950-cc67-434a-9708-8452dfee162e
+        size: 700
+        source_url: /api/v1/sources/13d40630-1880-4b2c-9378-194761ad743b
+        submission_url: /api/v1/sources/13d40630-1880-4b2c-9378-194761ad743b/submissions/3c130c08-a0d4-4dee-af0f-68546231632b
+        uuid: 3c130c08-a0d4-4dee-af0f-68546231632b
+      - download_url: /api/v1/sources/13d40630-1880-4b2c-9378-194761ad743b/submissions/fc4b1821-fedc-4a33-b676-52b9211edf46/download
+        filename: 3-dun_washcloth-doc.gz.gpg
+        is_file: true
+        is_message: false
+        is_read: true
+        seen_by:
+        - 98ea9950-cc67-434a-9708-8452dfee162e
+        size: 3684
+        source_url: /api/v1/sources/13d40630-1880-4b2c-9378-194761ad743b
+        submission_url: /api/v1/sources/13d40630-1880-4b2c-9378-194761ad743b/submissions/fc4b1821-fedc-4a33-b676-52b9211edf46
+        uuid: fc4b1821-fedc-4a33-b676-52b9211edf46
+      - download_url: /api/v1/sources/13d40630-1880-4b2c-9378-194761ad743b/submissions/b190a081-da3d-4138-bb75-b69214297138/download
+        filename: 4-dun_washcloth-doc.gz.gpg
+        is_file: true
+        is_message: false
+        is_read: true
+        seen_by:
+        - 6e558b5e-313d-4488-9dcb-183b37b659d7
+        - 98ea9950-cc67-434a-9708-8452dfee162e
+        size: 3684
+        source_url: /api/v1/sources/13d40630-1880-4b2c-9378-194761ad743b
+        submission_url: /api/v1/sources/13d40630-1880-4b2c-9378-194761ad743b/submissions/b190a081-da3d-4138-bb75-b69214297138
+        uuid: b190a081-da3d-4138-bb75-b69214297138
+      - download_url: /api/v1/sources/ea57100b-4803-4349-991c-8363e9b0b9a9/submissions/f3b671cb-9edd-4e9f-b9e3-82f7681f8582/download
+        filename: 1-worth_finale-msg.gpg
+        is_file: false
+        is_message: true
+        is_read: true
+        seen_by:
+        - 98ea9950-cc67-434a-9708-8452dfee162e
+        size: 647
+        source_url: /api/v1/sources/ea57100b-4803-4349-991c-8363e9b0b9a9
+        submission_url: /api/v1/sources/ea57100b-4803-4349-991c-8363e9b0b9a9/submissions/f3b671cb-9edd-4e9f-b9e3-82f7681f8582
+        uuid: f3b671cb-9edd-4e9f-b9e3-82f7681f8582
+      - download_url: /api/v1/sources/ea57100b-4803-4349-991c-8363e9b0b9a9/submissions/3ae48557-d960-4b40-ace5-847afad6a398/download
+        filename: 2-worth_finale-msg.gpg
+        is_file: false
+        is_message: true
+        is_read: true
+        seen_by:
+        - 6e558b5e-313d-4488-9dcb-183b37b659d7
+        - 98ea9950-cc67-434a-9708-8452dfee162e
+        size: 766
+        source_url: /api/v1/sources/ea57100b-4803-4349-991c-8363e9b0b9a9
+        submission_url: /api/v1/sources/ea57100b-4803-4349-991c-8363e9b0b9a9/submissions/3ae48557-d960-4b40-ace5-847afad6a398
+        uuid: 3ae48557-d960-4b40-ace5-847afad6a398
+      - download_url: /api/v1/sources/ea57100b-4803-4349-991c-8363e9b0b9a9/submissions/78f9b152-4f7c-43c7-8764-4bfab366ec73/download
+        filename: 3-worth_finale-doc.gz.gpg
+        is_file: true
+        is_message: false
+        is_read: true
+        seen_by:
+        - a7a4b9dc-6d1c-4696-ac85-97bab7bc3dfd
+        - 98ea9950-cc67-434a-9708-8452dfee162e
+        size: 3684
+        source_url: /api/v1/sources/ea57100b-4803-4349-991c-8363e9b0b9a9
+        submission_url: /api/v1/sources/ea57100b-4803-4349-991c-8363e9b0b9a9/submissions/78f9b152-4f7c-43c7-8764-4bfab366ec73
+        uuid: 78f9b152-4f7c-43c7-8764-4bfab366ec73
+      - download_url: /api/v1/sources/ea57100b-4803-4349-991c-8363e9b0b9a9/submissions/5bedf02f-7b90-45c9-acda-dd6298c9a3ca/download
+        filename: 4-worth_finale-doc.gz.gpg
+        is_file: true
+        is_message: false
+        is_read: true
+        seen_by:
+        - 6e558b5e-313d-4488-9dcb-183b37b659d7
+        - 98ea9950-cc67-434a-9708-8452dfee162e
+        size: 3684
+        source_url: /api/v1/sources/ea57100b-4803-4349-991c-8363e9b0b9a9
+        submission_url: /api/v1/sources/ea57100b-4803-4349-991c-8363e9b0b9a9/submissions/5bedf02f-7b90-45c9-acda-dd6298c9a3ca
+        uuid: 5bedf02f-7b90-45c9-acda-dd6298c9a3ca
+      - download_url: /api/v1/sources/8873d8ba-9d1c-4f21-a022-93d9ef4b5027/submissions/0214c9fc-3894-45a4-afe5-8b62f07b6632/download
+        filename: 1-absurd_tranquillity-msg.gpg
+        is_file: false
+        is_message: true
+        is_read: true
+        seen_by:
+        - 6e558b5e-313d-4488-9dcb-183b37b659d7
+        - 98ea9950-cc67-434a-9708-8452dfee162e
+        size: 804
+        source_url: /api/v1/sources/8873d8ba-9d1c-4f21-a022-93d9ef4b5027
+        submission_url: /api/v1/sources/8873d8ba-9d1c-4f21-a022-93d9ef4b5027/submissions/0214c9fc-3894-45a4-afe5-8b62f07b6632
+        uuid: 0214c9fc-3894-45a4-afe5-8b62f07b6632
+      - download_url: /api/v1/sources/8873d8ba-9d1c-4f21-a022-93d9ef4b5027/submissions/06593305-2da0-4b97-86b4-15fe453eeb41/download
+        filename: 2-absurd_tranquillity-msg.gpg
+        is_file: false
+        is_message: true
+        is_read: true
+        seen_by:
+        - a7a4b9dc-6d1c-4696-ac85-97bab7bc3dfd
+        - 98ea9950-cc67-434a-9708-8452dfee162e
+        size: 710
+        source_url: /api/v1/sources/8873d8ba-9d1c-4f21-a022-93d9ef4b5027
+        submission_url: /api/v1/sources/8873d8ba-9d1c-4f21-a022-93d9ef4b5027/submissions/06593305-2da0-4b97-86b4-15fe453eeb41
+        uuid: 06593305-2da0-4b97-86b4-15fe453eeb41
+      - download_url: /api/v1/sources/8873d8ba-9d1c-4f21-a022-93d9ef4b5027/submissions/44beb9f0-463e-4057-9841-f4929480e790/download
+        filename: 3-absurd_tranquillity-doc.gz.gpg
+        is_file: true
+        is_message: false
+        is_read: true
+        seen_by:
+        - 6e558b5e-313d-4488-9dcb-183b37b659d7
+        - 98ea9950-cc67-434a-9708-8452dfee162e
+        size: 3684
+        source_url: /api/v1/sources/8873d8ba-9d1c-4f21-a022-93d9ef4b5027
+        submission_url: /api/v1/sources/8873d8ba-9d1c-4f21-a022-93d9ef4b5027/submissions/44beb9f0-463e-4057-9841-f4929480e790
+        uuid: 44beb9f0-463e-4057-9841-f4929480e790
+      - download_url: /api/v1/sources/8873d8ba-9d1c-4f21-a022-93d9ef4b5027/submissions/a2cba210-ad3b-4db9-945c-4ec39e6b42e9/download
+        filename: 4-absurd_tranquillity-doc.gz.gpg
+        is_file: true
+        is_message: false
+        is_read: true
+        seen_by:
+        - 6e558b5e-313d-4488-9dcb-183b37b659d7
+        - 98ea9950-cc67-434a-9708-8452dfee162e
+        size: 3684
+        source_url: /api/v1/sources/8873d8ba-9d1c-4f21-a022-93d9ef4b5027
+        submission_url: /api/v1/sources/8873d8ba-9d1c-4f21-a022-93d9ef4b5027/submissions/a2cba210-ad3b-4db9-945c-4ec39e6b42e9
+        uuid: a2cba210-ad3b-4db9-945c-4ec39e6b42e9
+      - download_url: /api/v1/sources/65f05a67-14b3-4575-bd25-28f2be3b91de/submissions/6f3f8533-f8ac-4e7c-b233-e816ed53f811/download
+        filename: 1-safe_scaffolding-msg.gpg
+        is_file: false
+        is_message: true
+        is_read: true
+        seen_by:
+        - a7a4b9dc-6d1c-4696-ac85-97bab7bc3dfd
+        - 98ea9950-cc67-434a-9708-8452dfee162e
+        size: 1124
+        source_url: /api/v1/sources/65f05a67-14b3-4575-bd25-28f2be3b91de
+        submission_url: /api/v1/sources/65f05a67-14b3-4575-bd25-28f2be3b91de/submissions/6f3f8533-f8ac-4e7c-b233-e816ed53f811
+        uuid: 6f3f8533-f8ac-4e7c-b233-e816ed53f811
+      - download_url: /api/v1/sources/65f05a67-14b3-4575-bd25-28f2be3b91de/submissions/566f916c-ac63-4806-b432-2d1b35d206a0/download
+        filename: 2-safe_scaffolding-msg.gpg
+        is_file: false
+        is_message: true
+        is_read: true
+        seen_by:
+        - 98ea9950-cc67-434a-9708-8452dfee162e
+        size: 687
+        source_url: /api/v1/sources/65f05a67-14b3-4575-bd25-28f2be3b91de
+        submission_url: /api/v1/sources/65f05a67-14b3-4575-bd25-28f2be3b91de/submissions/566f916c-ac63-4806-b432-2d1b35d206a0
+        uuid: 566f916c-ac63-4806-b432-2d1b35d206a0
+      - download_url: /api/v1/sources/65f05a67-14b3-4575-bd25-28f2be3b91de/submissions/6330ad50-b5b8-4c20-83b5-9bc13021c943/download
+        filename: 3-safe_scaffolding-doc.gz.gpg
+        is_file: true
+        is_message: false
+        is_read: true
+        seen_by:
+        - a7a4b9dc-6d1c-4696-ac85-97bab7bc3dfd
+        - 98ea9950-cc67-434a-9708-8452dfee162e
+        size: 3684
+        source_url: /api/v1/sources/65f05a67-14b3-4575-bd25-28f2be3b91de
+        submission_url: /api/v1/sources/65f05a67-14b3-4575-bd25-28f2be3b91de/submissions/6330ad50-b5b8-4c20-83b5-9bc13021c943
+        uuid: 6330ad50-b5b8-4c20-83b5-9bc13021c943
+      - download_url: /api/v1/sources/65f05a67-14b3-4575-bd25-28f2be3b91de/submissions/e88c3b93-d833-4775-af72-a459be849557/download
+        filename: 4-safe_scaffolding-doc.gz.gpg
+        is_file: true
+        is_message: false
+        is_read: true
+        seen_by:
+        - 98ea9950-cc67-434a-9708-8452dfee162e
+        size: 3684
+        source_url: /api/v1/sources/65f05a67-14b3-4575-bd25-28f2be3b91de
+        submission_url: /api/v1/sources/65f05a67-14b3-4575-bd25-28f2be3b91de/submissions/e88c3b93-d833-4775-af72-a459be849557
+        uuid: e88c3b93-d833-4775-af72-a459be849557
+      - download_url: /api/v1/sources/28d72c1b-d505-4ab1-ba04-928c1f8c614a/submissions/c73b889f-771b-4eef-8233-fbec2d1d888c/download
+        filename: 1-lapidary_phlegm-msg.gpg
+        is_file: false
+        is_message: true
+        is_read: true
+        seen_by:
+        - 98ea9950-cc67-434a-9708-8452dfee162e
+        size: 619
+        source_url: /api/v1/sources/28d72c1b-d505-4ab1-ba04-928c1f8c614a
+        submission_url: /api/v1/sources/28d72c1b-d505-4ab1-ba04-928c1f8c614a/submissions/c73b889f-771b-4eef-8233-fbec2d1d888c
+        uuid: c73b889f-771b-4eef-8233-fbec2d1d888c
+      - download_url: /api/v1/sources/28d72c1b-d505-4ab1-ba04-928c1f8c614a/submissions/1da67bc0-833c-49d9-9ca7-a1d67a13945f/download
+        filename: 2-lapidary_phlegm-msg.gpg
+        is_file: false
+        is_message: true
+        is_read: true
+        seen_by:
+        - 98ea9950-cc67-434a-9708-8452dfee162e
+        size: 707
+        source_url: /api/v1/sources/28d72c1b-d505-4ab1-ba04-928c1f8c614a
+        submission_url: /api/v1/sources/28d72c1b-d505-4ab1-ba04-928c1f8c614a/submissions/1da67bc0-833c-49d9-9ca7-a1d67a13945f
+        uuid: 1da67bc0-833c-49d9-9ca7-a1d67a13945f
+      - download_url: /api/v1/sources/28d72c1b-d505-4ab1-ba04-928c1f8c614a/submissions/ffa040c0-53fd-4526-bf3f-a1e15ae1bb74/download
+        filename: 3-lapidary_phlegm-doc.gz.gpg
+        is_file: true
+        is_message: false
+        is_read: true
+        seen_by:
+        - 98ea9950-cc67-434a-9708-8452dfee162e
+        size: 3684
+        source_url: /api/v1/sources/28d72c1b-d505-4ab1-ba04-928c1f8c614a
+        submission_url: /api/v1/sources/28d72c1b-d505-4ab1-ba04-928c1f8c614a/submissions/ffa040c0-53fd-4526-bf3f-a1e15ae1bb74
+        uuid: ffa040c0-53fd-4526-bf3f-a1e15ae1bb74
+      - download_url: /api/v1/sources/28d72c1b-d505-4ab1-ba04-928c1f8c614a/submissions/2c36f04d-b683-45d4-96af-2f70e69a7f74/download
+        filename: 4-lapidary_phlegm-doc.gz.gpg
+        is_file: true
+        is_message: false
+        is_read: true
+        seen_by:
+        - 98ea9950-cc67-434a-9708-8452dfee162e
+        size: 3684
+        source_url: /api/v1/sources/28d72c1b-d505-4ab1-ba04-928c1f8c614a
+        submission_url: /api/v1/sources/28d72c1b-d505-4ab1-ba04-928c1f8c614a/submissions/2c36f04d-b683-45d4-96af-2f70e69a7f74
+        uuid: 2c36f04d-b683-45d4-96af-2f70e69a7f74
+    headers:
+      connection: close
+      content-length: '13274'
+      content-type: application/json
+      date: Wed, 29 May 2024 18:03:46 GMT
+      server: Werkzeug/2.2.3 Python/3.8.10
+    status: 200
+- request:
+    body: null
+    headers:
+      Accept:
+      - application/json
+      Authorization:
+      - Token Ik45WE1oNjFuVzdVc0V0VWZaSjJYemJTNmhiTnFseGpsLVNSc1hKYlV0Nm8i.Zldt-A.w3azL6o7YBKDKHb7INCMmotAAyE
+      Content-Type:
+      - application/json
+    method: GET
+    uri: api/v1/sources/13d40630-1880-4b2c-9378-194761ad743b/submissions/fc4b1821-fedc-4a33-b676-52b9211edf46404/download
+  response: !!python/object:securedrop_client.sdk.JSONResponse
+    data:
+      error: Not Found
+      message: The requested URL was not found on the server. If you entered the URL
+        manually please check your spelling and try again.
+    headers:
+      connection: close
+      content-length: '165'
+      content-type: application/json
+      date: Wed, 29 May 2024 18:03:46 GMT
+      server: Werkzeug/2.2.3 Python/3.8.10
+    status: 404
+version: 1

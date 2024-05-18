@@ -1,5 +1,9 @@
 import hashlib
+import json
+import os
+import shlex
 import shutil
+import subprocess
 import tempfile
 
 import pyotp
@@ -8,7 +12,13 @@ from test_shared import TestShared
 from utils import VCRAPI
 
 from securedrop_client.sdk import API, RequestTimeoutError, ServerConnectionError
-from securedrop_client.sdk.sdlocalobjects import AuthError, BaseError, Reply, Submission
+from securedrop_client.sdk.sdlocalobjects import (
+    AuthError,
+    BaseError,
+    Reply,
+    Submission,
+    WrongUUIDError,
+)
 
 NUM_REPLIES_PER_SOURCE = 2
 
@@ -191,6 +201,148 @@ class TestAPI(TestShared):
         # Let us remove the temporary directory
         shutil.rmtree(tmpdir)
 
+    @VCRAPI.use_cassette
+    def test_download_submission_autoresume(self, mocker):
+        # Get a submision
+        submissions = self.api.get_all_submissions()
+        for s in submissions:
+            if s.is_file():
+                submission = s
+                break
+
+        # Get the submission's content
+        with tempfile.TemporaryDirectory() as tmpdir:
+            _, filepath = self.api.download_submission(submission, tmpdir)
+            with open(filepath, "rb") as fobj:
+                content = fobj.read()
+
+        # Stub subprocess.Popen to raise a subprocess.TimeoutExpired, to simulate an interrupted
+        # download after 200 bytes
+        class StubbedStdout:
+            def __init__(self):
+                self.counter = 0
+                self.closed = False
+
+            def read(self, n=-1):
+                if self.counter >= 200:
+                    # Restore the original Popen before raising the exception
+                    mocker.stopall()
+                    raise subprocess.TimeoutExpired(
+                        cmd=None, timeout=None, output=None, stderr=None
+                    )
+                chunk = content[self.counter : self.counter + n]
+                self.counter += len(chunk)
+                return chunk
+
+            def close(self):
+                self.closed = True
+
+            def fileno(self):
+                return 1
+
+        class StubbedStderr:
+            def __init__(self):
+                self.closed = False
+
+            def read(self, n=-1):
+                return json.dumps(
+                    {
+                        "headers": {
+                            "content-type": "application/pgp-encrypted",
+                            "etag": "sha256:3aa5ec3fe60b235a76bfc2c3a5c5d525687f04c1670060632a21b6a77c131f65",  # noqa: E501
+                            "content-disposition": "attachment; filename=3-assessable_firmness-doc.gz.gpg",  # noqa: E501
+                            "content-length": "651",
+                            "accept-ranges": "bytes",
+                        }
+                    }
+                ).encode()
+
+            def close(self):
+                self.closed = True
+
+            def fileno(self):
+                return 2
+
+        class StubbedPopen(subprocess.Popen):
+            def __init__(self, *args, content="", **kwargs):
+                super().__init__(*args, **kwargs)
+
+                # Only stub if the command contains "securedrop.Proxy" or "securedrop-proxy"
+                cmd = shlex.join(args[0])
+                if "securedrop.Proxy" in cmd or "securedrop-proxy" in cmd:
+                    self._is_securedrop_proxy = True
+                    self.stdout = StubbedStdout()
+                    self.stderr = StubbedStderr()
+                else:
+                    self._is_securedrop_proxy = False
+
+            def wait(self, timeout=None):
+                if self._is_securedrop_proxy:
+                    return 0
+                else:
+                    return super().wait()
+
+        # Download again, with the stubbed Popen
+        mocker.patch("subprocess.Popen", new=StubbedPopen)
+        with tempfile.TemporaryDirectory() as tmpdir:
+            etag, filepath = self.api.download_submission(submission, tmpdir)
+            with open(filepath, "rb") as fobj:
+                new_content = fobj.read()
+
+        # Verify the content is the same
+        assert content == new_content
+
+        mocker.stopall()
+
+    @VCRAPI.use_cassette
+    def test_download_submission_autoresume_fail(self, mocker):
+        # Get a submision
+        submissions = self.api.get_all_submissions()
+        for s in submissions:
+            if s.is_file():
+                submission = s
+                break
+
+        # Stub subprocess.Popen to raise a subprocess.TimeoutExpired every time
+        class StubbedPopen(subprocess.Popen):
+            def __init__(self, *args, content="", **kwargs):
+                super().__init__(*args, **kwargs)
+
+                # Only stub if the command contains "securedrop.Proxy" or "securedrop-proxy"
+                cmd = shlex.join(args[0])
+                if "securedrop.Proxy" in cmd or "securedrop-proxy" in cmd:
+                    raise subprocess.TimeoutExpired(
+                        cmd=None, timeout=None, output=None, stderr=None
+                    )
+
+        mocker.patch("subprocess.Popen", new=StubbedPopen)
+
+        # Download with the stubbed Popen
+        tmpdir = tempfile.TemporaryDirectory()
+        with pytest.raises(RequestTimeoutError):
+            self.api.download_submission(submission, tmpdir.name)
+        tmpdir.cleanup()
+
+        mocker.stopall()
+
+    @VCRAPI.use_cassette
+    def test_download_submission_stream_404(self):
+        # Get a submision
+        submissions = self.api.get_all_submissions()
+        for s in submissions:
+            if s.is_file():
+                submission = s
+                break
+
+        # Modify it so that it will return a 404 error
+        submission.uuid += "404"
+
+        # Download it
+        tmpdir = tempfile.TemporaryDirectory()
+        with pytest.raises(WrongUUIDError):
+            self.api.download_submission(submission, tmpdir.name)
+        tmpdir.cleanup()
+
     # ORDER MATTERS: The following tests add or delete data, and should
     # not be run before other tests, which may rely on the original fixture
     # state.
@@ -259,7 +411,23 @@ def test_download_reply_timeout(mocker):
 def test_download_submission_timeout(mocker):
     api = API("mock", "mock", "mock", "mock", proxy=False)
     mocker.patch("securedrop_client.sdk.API._send_json_request", side_effect=RequestTimeoutError)
-    s = Submission(uuid="climateproblem")
-    tmpdir = tempfile.mkdtemp()
+    tmpdir = tempfile.TemporaryDirectory()
+    s = Submission(
+        uuid="climateproblem",
+        filename="secret.txt",
+        download_url="http://mock",
+        is_read=False,
+        size=1000,
+        source_url="http://mock",
+        submission_url="http://mock",
+        seen_by=False,
+    )
     with pytest.raises(RequestTimeoutError):
-        api.download_submission(s, tmpdir)
+        api.download_submission(s, tmpdir.name)
+    tmpdir.cleanup()
+
+    # Delete secret.txt, if it exists
+    try:
+        os.remove("secret.txt")
+    except FileNotFoundError:
+        pass
