@@ -7,50 +7,15 @@ updates:
 
   # Python development dependencies
   - package-ecosystem: "pip"
-    directory: "/"
-    schedule:
-      interval: "weekly"
-    allow:
-      - dependency-type: "development"
-  - package-ecosystem: "pip"
-    directory: "/client"
+    directories:
+      - "/"
+      - "/client"
+      - "/export"
+      - "/log"
+      - "/proxy"
     schedule:
       interval: "weekly"
     allow:
       - dependency-type: "development"
     ignore:
       - dependency-name: "pyqt*"
-    groups:
-      dev-dependencies:
-        patterns: ["*"]
-        dependency-type: "development"
-  - package-ecosystem: "pip"
-    directory: "/export"
-    schedule:
-      interval: "weekly"
-    allow:
-      - dependency-type: "development"
-    groups:
-      dev-dependencies:
-        patterns: ["*"]
-        dependency-type: "development"
-  - package-ecosystem: "pip"
-    directory: "/log"
-    schedule:
-      interval: "weekly"
-    allow:
-      - dependency-type: "development"
-    groups:
-      dev-dependencies:
-        patterns: ["*"]
-        dependency-type: "development"
-  - package-ecosystem: "pip"
-    directory: "/proxy"
-    schedule:
-      interval: "weekly"
-    allow:
-      - dependency-type: "development"
-    groups:
-      dev-dependencies:
-        patterns: ["*"]
-        dependency-type: "development"
