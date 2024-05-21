@@ -2,6 +2,7 @@ import logging
 import os
 from collections.abc import Generator
 from contextlib import contextmanager
+from dataclasses import dataclass
 
 logger = logging.getLogger(__name__)
 
@@ -26,6 +27,7 @@ def try_qubesdb() -> Generator:
             db.close()  # type: ignore[union-attr]
 
 
+@dataclass
 class Config:
     """Configuration loaded at runtime from QubesDB (if available) or
     environment variables."""
@@ -37,10 +39,13 @@ class Config:
         "journalist_key_fingerprint": "SD_SUBMISSION_KEY_FPR",
     }
 
+    gpg_domain: str
+    journalist_key_fingerprint: str
+
     @classmethod
     def load(self) -> "Config":
         """For each attribute, look it up from either QubesDB or the environment."""
-        config = Config()
+        config = {}
 
         with try_qubesdb() as db:
             for store, lookup in self.mapping.items():
@@ -54,6 +59,6 @@ class Config:
                     logger.debug(f"Reading {lookup} from environment")
                     value = os.environ.get(lookup)
 
-                setattr(config, store, value)
+                config[store] = value
 
-        return config
+        return Config(**config)

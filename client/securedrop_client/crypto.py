@@ -21,7 +21,6 @@ import struct
 import subprocess
 import tempfile
 from pathlib import Path
-from typing import Any
 
 from sqlalchemy.orm import scoped_session
 
@@ -87,7 +86,7 @@ class GpgHelper:
         self.is_qubes = is_qubes
         self.session_maker = session_maker
 
-        config: Any = Config.load()
+        config = Config.load()
         self.journalist_key_fingerprint = config.journalist_key_fingerprint
 
     def decrypt_submission_or_reply(
