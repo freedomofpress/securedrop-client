@@ -52,8 +52,8 @@ class Config:
                 if db:
                     logger.debug(f"Reading {lookup} from QubesDB")
                     value = db.read(f"/vm-config/{lookup}")
-                    if len(value) > 0:
-                        value = None
+                    if not value or len(value) == 0:
+                        raise KeyError(f"Could not read from QubesDB: {lookup}")
 
                 else:
                     logger.debug(f"Reading {lookup} from environment")
