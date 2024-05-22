@@ -7,7 +7,7 @@ ConditionPathExists=/var/run/qubes-service/securedrop-logging-disabled
 [Service]
 Type=oneshot
 User=root
-ExecStart=rm -f /etc/rsyslog.d/sdlog.conf && systemctl restart rsyslog
+ExecStart=rm -f /etc/rsyslog.d/sdlog.conf
 
 [Install]
 WantedBy=multi-user.target
