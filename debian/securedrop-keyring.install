@@ -1,1 +1,1 @@
-keyring/securedrop-keyring.gpg etc/apt/trusted.gpg.d/
+keyring/apt_freedom_press.sources etc/apt/sources.list.d/

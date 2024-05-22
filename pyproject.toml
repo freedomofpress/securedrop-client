@@ -92,6 +92,10 @@ known-first-party = [
     "securedrop_proxy",
     "tests",
 ]
+# gets confused by our debian/ folder and the python-debian module
+known-third-party = [
+    "debian",
+]
 
 [tool.ruff.lint.per-file-ignores]
 "client/securedrop_client/sdk/__init__.py" = [

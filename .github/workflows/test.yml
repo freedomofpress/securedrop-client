@@ -21,6 +21,7 @@ jobs:
       matrix:
         component:
           - export
+          - keyring
           - log
           - proxy
         debian_version:

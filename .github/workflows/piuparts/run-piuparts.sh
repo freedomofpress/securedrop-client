@@ -5,7 +5,6 @@ apt-get update && apt-get install --yes piuparts docker.io
 
 cd /piuparts
 
-cp /keyring/securedrop-keyring.gpg .
 docker build . --build-arg DISTRO="$DISTRO" -t ourimage
 
 # TODO: Our currently released packages don't install with piuparts, so we pass
@@ -14,7 +13,7 @@ docker build . --build-arg DISTRO="$DISTRO" -t ourimage
 # FIXME: switch --extra-repo to bookworm once it exists
 piuparts --docker-image ourimage \
     --distribution "$DISTRO" \
-    --extra-repo "deb [signed-by=/usr/share/keyrings/securedrop-keyring.gpg] https://apt.freedom.press bullseye main" \
+    --extra-repo "deb [signed-by=/usr/share/keyrings/securedrop-keyring.asc] https://apt.freedom.press bullseye main" \
     --warn-on-leftovers-after-purge \
     --no-upgrade-test \
     /build/securedrop-"${PACKAGE}"*.deb
