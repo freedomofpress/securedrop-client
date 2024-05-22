@@ -1,4 +1,3 @@
-import json
 import os
 import subprocess
 import tempfile
@@ -15,7 +14,6 @@ from PyQt5.QtWidgets import QMainWindow
 
 from securedrop_client import state
 from securedrop_client.app import configure_locale_and_language
-from securedrop_client.config import Config
 from securedrop_client.db import (
     Base,
     DownloadError,
@@ -354,12 +352,7 @@ def functional_test_offline_context(functional_test_logged_in_context, qtbot):
 
 @pytest.fixture()
 def config(homedir) -> str:
-    full_path = os.path.join(homedir, Config.CONFIG_NAME)
-    with open(full_path, "w") as f:
-        f.write(
-            json.dumps({"journalist_key_fingerprint": "65A1B5FF195B56353CC63DFFCC40EF1228271441"})
-        )
-    return full_path
+    os.environ["SD_SUBMISSION_KEY_FPR"] = "65A1B5FF195B56353CC63DFFCC40EF1228271441"
 
 
 @pytest.fixture()

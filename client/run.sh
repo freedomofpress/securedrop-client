@@ -39,7 +39,10 @@ echo ""
 
 cleanup
 
+# Import the test key for decryption of submissions and encryption of replies...
 gpg --allow-secret-key-import --import tests/files/securedrop.gpg.asc
+# ...and specify what key should be used to encrypt replies.
+export SD_SUBMISSION_KEY_FPR="65A1B5FF195B56353CC63DFFCC40EF1228271441"
 
 echo "Building proxy..."
 make -C ../proxy build
