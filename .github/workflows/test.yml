@@ -40,8 +40,8 @@ jobs:
         run: apt-get install --yes build-essential curl libssl-dev pkg-config
         if: ${{ matrix.component == 'proxy' }}
       - uses: actions/checkout@v4
-      # Install Rust 1.74.1, keep in sync with rust-toolchain.toml
-      - uses: dtolnay/rust-toolchain@1.74.1
+      # Install Rust, keep in sync with rust-toolchain.toml
+      - uses: dtolnay/rust-toolchain@1.78.0
         if: ${{ matrix.component == 'proxy' }}
       - name: Install dependencies
         run: |
