@@ -24,5 +24,10 @@ setuptools.setup(
         "Intended Audience :: Developers",
         "Operating System :: POSIX :: Linux",
     ],
-    data_files=[("sbin", ["securedrop-log", "securedrop-log-saver", "securedrop-redis-log"])],
+    entry_points={
+        "console_scripts": [
+            "securedrop-log-saver = log_server.log_saver:main",
+            "securedrop-redis-log = log_server.redis_log:main",
+        ]
+    },
 )

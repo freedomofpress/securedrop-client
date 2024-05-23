@@ -1,6 +1,7 @@
 [Unit]
 Description=securedrop logging Service
-After=network.target redis.service
+After=network.target redis.service qubes-qrexec-agent.service securedrop-logging-disabled.service
+ConditionPathExists=/var/run/qubes-service/securedrop-log-server
 
 [Service]
 Type=simple
