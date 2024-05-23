@@ -67,6 +67,7 @@ jobs:
       fail-fast: false
       matrix:
         # proxy has no `make lint` because it is covered by `rust-lint`.
+        # qubesdb has no `make lint` because it is covered by `lint`.
         component:
           - client
           - export

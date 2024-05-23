@@ -136,6 +136,7 @@ jobs:
           - keyring
           - log
           - proxy
+          - qubesdb
         debian_version:
           - bookworm
     runs-on: ubuntu-latest
