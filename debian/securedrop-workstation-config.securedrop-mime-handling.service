@@ -1,0 +1,14 @@
+[Unit]
+Description=Securedrop Mimetype Handling Override
+ConditionPathExists=/var/run/qubes-service/securedrop-mime-handling
+OnFailure=systemd-halt.service
+After=rsyslog.service
+
+[Service]
+Type=oneshot
+User=user
+ExecStart=/usr/bin/securedrop-mime-handling
+RemainAfterExit=yes
+
+[Install]
+WantedBy=multi-user.target

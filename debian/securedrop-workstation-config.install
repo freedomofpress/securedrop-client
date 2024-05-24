@@ -1,6 +1,8 @@
+#!/usr/bin/dh-exec --with=install
 workstation-config/mailcap.default opt/sdw/
 workstation-config/mimeapps.list.sd-viewer opt/sdw/
 workstation-config/mimeapps.list.sd-app opt/sdw/
-workstation-config/mimeapps.list.sd-devices-dvm opt/sdw/
+workstation-config/mimeapps.list.sd-devices opt/sdw/
 workstation-config/open-in-dvm.desktop opt/sdw/
 workstation-config/paxctld.conf opt/sdw/
+workstation-config/securedrop-mime-handling.py => usr/bin/securedrop-mime-handling
