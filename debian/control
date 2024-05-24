@@ -45,6 +45,13 @@ Depends: ${misc:Depends}, python3, python3-qubesdb
 Description: Tools for configuring non-Qubes-aware applications from QubesDB.
  This package provides tools for configuring non-Qubes-aware applications from
  QubesDB.
+
+Package: securedrop-whonix-config
+Section: admin
+Architecture: all
+Depends: ${misc:Depends}, securedrop-qubesdb, tor
+Description: Whonix configuration for SecureDrop.
+ This package configures Whonix/Tor for SecureDrop.
  
 Package: securedrop-workstation-config
 Architecture: all
