@@ -16,3 +16,4 @@ def test_pgp_fingerprint_count():
         str(key.user_ids[0])
         == "SecureDrop Release Signing Key <securedrop-release-key-2021@freedom.press>"
     )
+    assert key.expiration.year == 2027
