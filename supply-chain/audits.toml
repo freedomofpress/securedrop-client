@@ -7,6 +7,11 @@ criteria = "safe-to-run"
 version = "0.4.6"
 notes = "only usage of unsafe is in zstd support, via Unshared, which we're not enabling"
 
+[[audits.atomic-waker]]
+who = "Kunal Mehta <legoktm@debian.org>"
+criteria = "safe-to-run"
+delta = "1.1.0 -> 1.1.2"
+
 [[audits.clang-sys]]
 who = "Kunal Mehta <legoktm@debian.org>"
 criteria = "safe-to-run"
@@ -61,10 +66,26 @@ criteria = "safe-to-run"
 version = "1.0.4"
 notes = "code is fine, cannot vouch for correctness though"
 
+[[audits.rustls-pemfile]]
+who = "Kunal Mehta <legoktm@debian.org>"
+criteria = "safe-to-run"
+delta = "1.0.4 -> 2.1.2"
+
+[[audits.rustls-pki-types]]
+who = "Kunal Mehta <legoktm@debian.org>"
+criteria = "safe-to-run"
+version = "1.7.0"
+notes = "Code is reasonable, none of the business logic related to PKI/TLS was verified"
+
 [[audits.slab]]
 who = "Kunal Mehta <legoktm@debian.org>"
 criteria = "safe-to-run"
 delta = "0.4.8 -> 0.4.9"
+
+[[audits.smallvec]]
+who = "Kunal Mehta <legoktm@debian.org>"
+criteria = "safe-to-run"
+delta = "1.11.1 -> 1.13.2"
 
 [[audits.socket2]]
 who = "Kunal Mehta <legoktm@debian.org>"
@@ -80,6 +101,11 @@ delta = "0.1.1 -> 0.1.2"
 who = "Kunal Mehta <legoktm@debian.org>"
 criteria = "safe-to-run"
 delta = "3.9.0 -> 3.10.0"
+
+[[audits.tower-layer]]
+who = "Kunal Mehta <legoktm@debian.org>"
+criteria = "safe-to-run"
+delta = "0.3.1 -> 0.3.2"
 
 [[audits.tracing]]
 who = "Kunal Mehta <legoktm@debian.org>"
