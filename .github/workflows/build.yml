@@ -153,6 +153,7 @@ jobs:
             -v "/var/lib/docker:/var/lib/docker" \
             -v "/var/run/docker.sock:/var/run/docker.sock" \
             -v "/$(pwd)/keyring:/keyring" \
+            -v "/$(pwd)/scripts:/scripts" \
             -v "/$(pwd)/build-${{ matrix.debian_version }}:/build" \
             -v "/$(pwd)/.github/workflows/piuparts:/piuparts" \
             -e DISTRO=${{ matrix.debian_version }} \

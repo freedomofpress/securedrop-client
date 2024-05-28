@@ -9,7 +9,7 @@ X-Python3-Version: >= 3.5
 
 Package: securedrop-client
 Architecture: all
-Depends: ${python3:Depends},${misc:Depends}, python3-pyqt5, python3-pyqt5.qtsvg, desktop-file-utils
+Depends: ${python3:Depends},${misc:Depends}, python3-pyqt5, python3-pyqt5.qtsvg, python3-qubesdb, desktop-file-utils
 Description: securedrop client for qubes workstation
 
 Package: securedrop-export
@@ -34,7 +34,7 @@ Description: Python module and qrexec service to store logs for SecureDrop Works
 
 Package: securedrop-proxy
 Architecture: any
-Depends: ${misc:Depends}, ${shlibs:Depends}
+Depends: ${misc:Depends}, ${shlibs:Depends}, libqubesdb
 Description: This is securedrop Qubes proxy service
  This package provides the network proxy on Qubes to talk to the SecureDrop server.
 

@@ -3,6 +3,10 @@ set -euxo pipefail
 # Runs inside the container
 apt-get update && apt-get install --yes piuparts docker.io
 
+# Move things in this folder so the docker build can find them
+cp /keyring/apt_freedom_press.sources /piuparts
+cp /scripts/qubes_42.sources /piuparts
+
 cd /piuparts
 
 docker build . --build-arg DISTRO="$DISTRO" -t ourimage
@@ -10,10 +14,8 @@ docker build . --build-arg DISTRO="$DISTRO" -t ourimage
 # TODO: Our currently released packages don't install with piuparts, so we pass
 # --no-upgrade-test to avoid installing them and testing the upgrade path. Once
 # they do we can remove that line.
-# FIXME: switch --extra-repo to bookworm once it exists
 piuparts --docker-image ourimage \
     --distribution "$DISTRO" \
-    --extra-repo "deb [signed-by=/usr/share/keyrings/securedrop-keyring.asc] https://apt.freedom.press bullseye main" \
     --warn-on-leftovers-after-purge \
     --no-upgrade-test \
     /build/securedrop-"${PACKAGE}"*.deb
