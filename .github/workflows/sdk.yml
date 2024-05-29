@@ -30,9 +30,6 @@ jobs:
       - name: Install dependencies
         run: |
           pip install poetry==1.6.1
-          wget https://github.com/jwilder/dockerize/releases/download/$DOCKERIZE_VERSION/dockerize-linux-amd64-$DOCKERIZE_VERSION.tar.gz &&
-          tar -C /usr/local/bin -xzvf dockerize-linux-amd64-$DOCKERIZE_VERSION.tar.gz &&
-          rm dockerize-linux-amd64-$DOCKERIZE_VERSION.tar.gz
       - name: Run tests without VCR cassettes
         run: |
           # Start the server in the background
@@ -40,6 +37,7 @@ jobs:
           # And install deps
           poetry -C client install --no-ansi
           # Wait for server to come up
-          dockerize -wait http://127.0.0.1:8080 -timeout 5m
+          echo "Polling with curl --silent until the server is up..."
+          while ! curl --silent --fail --output /dev/null http://127.0.0.1:8080; do sleep 5; done
           # Run tests
           make -C client regenerate-sdk-cassettes
