@@ -36,9 +36,6 @@ sd-rsyslog --configured by--- /etc/sd-rsyslog.conf
 sd-rsyslog -.qrexec.-> securedrop.Log
 end
 end
-
-securedrop-log???
-securedrop_log??? -.qrexec.-> securedrop.Log
 ```
 
 ## How to use/try this?
