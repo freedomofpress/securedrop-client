@@ -1,0 +1,15 @@
+[Unit]
+Description=SecureDrop Whonix configuration
+ConditionPathExists=/var/run/qubes-service/securedrop-whonix-config
+After=qubes-qrexec-agent.service
+Before=tor.service
+
+[Service]
+Type=oneshot
+User=root
+ExecStart=/usr/bin/template-from-qubesdb /usr/share/securedrop-whonix-config/app_journalist.auth_private.tmpl /var/lib/tor/authdir/app-journalist.auth_private
+ExecStartPost=chown debian-tor:debian-tor /var/lib/tor/authdir/app-journalist.auth_private && chmod 0600 /var/lib/tor/authdir/app-journalist.auth_private
+RemainAfterExit=yes
+
+[Install]
+WantedBy=multi-user.target

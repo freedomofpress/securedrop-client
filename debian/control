@@ -38,6 +38,21 @@ Depends: ${misc:Depends}, ${shlibs:Depends}, libqubesdb
 Description: This is securedrop Qubes proxy service
  This package provides the network proxy on Qubes to talk to the SecureDrop server.
 
+Package: securedrop-qubesdb
+Section: admin
+Architecture: all
+Depends: ${misc:Depends}, python3, python3-qubesdb
+Description: Tools for configuring non-Qubes-aware applications from QubesDB.
+ This package provides tools for configuring non-Qubes-aware applications from
+ QubesDB.
+
+Package: securedrop-whonix-config
+Section: admin
+Architecture: all
+Depends: ${misc:Depends}, securedrop-qubesdb, tor
+Description: Whonix configuration for SecureDrop.
+ This package configures Whonix/Tor for SecureDrop.
+ 
 Package: securedrop-workstation-config
 Architecture: all
 Depends: rsyslog, mailcap, apparmor, nautilus, securedrop-keyring, xfce4-terminal
