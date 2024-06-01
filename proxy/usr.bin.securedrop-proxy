@@ -1,0 +1,12 @@
+abi <abi/3.0>,
+
+include <tunables/global>
+
+/usr/bin/securedrop-proxy {
+  include <abstractions/base>
+  include <abstractions/nameservice>
+  include <abstractions/openssl>
+  include <abstractions/ssl_certs>
+
+  /usr/bin/securedrop-proxy mr,
+}
