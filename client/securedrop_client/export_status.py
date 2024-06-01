@@ -3,7 +3,7 @@ from enum import Enum
 
 class ExportError(Exception):
     def __init__(self, status: "ExportStatus"):
-        self.status: "ExportStatus" = status
+        self.status: ExportStatus = status
 
 
 class ExportStatus(Enum):

@@ -11,7 +11,7 @@ logger = logging.getLogger(__name__)
 def try_qubesdb() -> Generator:
     """Minimal context manager around QubesDB() → QubesDB.close() when
     available."""
-    db: bool | "QubesDB" = False
+    db: bool | "QubesDB" = False  # noqa: UP037
 
     try:
         from qubesdb import QubesDB
