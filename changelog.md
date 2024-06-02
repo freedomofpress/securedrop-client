@@ -1,5 +1,8 @@
 # Changelog
 
+## 0.10.2-rc1
+* Update signing key expiry date (#2049)
+
 ## 0.10.1
 * Fix printing of transcripts. (#1936)
 
