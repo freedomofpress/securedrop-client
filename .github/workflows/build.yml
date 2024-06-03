@@ -136,7 +136,7 @@ jobs:
           - keyring
           - log
           - proxy
-          - qubesdb
+          - qubesdb-tools
           - whonix-config
         debian_version:
           - bookworm
