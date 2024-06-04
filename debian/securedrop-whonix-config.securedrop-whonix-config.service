@@ -8,7 +8,7 @@ Before=tor.service
 Type=oneshot
 User=root
 ExecStart=/usr/bin/template-from-qubesdb /usr/share/securedrop-whonix-config/app_journalist.auth_private.tmpl /var/lib/tor/authdir/app-journalist.auth_private
-ExecStartPost=chown debian-tor:debian-tor /var/lib/tor/authdir/app-journalist.auth_private && chmod 0600 /var/lib/tor/authdir/app-journalist.auth_private
+ExecStartPost=bash -c "chown debian-tor:debian-tor /var/lib/tor/authdir/app-journalist.auth_private && chmod 0600 /var/lib/tor/authdir/app-journalist.auth_private"
 RemainAfterExit=yes
 
 [Install]
