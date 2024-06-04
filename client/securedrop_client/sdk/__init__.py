@@ -124,10 +124,7 @@ class API:
             pass  # We already have a default name
 
         # Load download retry limit from the config
-        self.download_retry_limit: int = 3
-        config = Config.load()
-        if config.download_retry_limit is not None:
-            self.download_retry_limit = int(config.download_retry_limit)
+        self.download_retry_limit = Config.load().download_retry_limit
 
     def _rpc_target(self) -> list:
         """In `development_mode`, check `cargo` for a locally-built proxy binary.
