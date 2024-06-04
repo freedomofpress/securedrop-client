@@ -1,3 +1,4 @@
+import functools
 from unittest.mock import patch
 
 import vcr
@@ -78,6 +79,7 @@ class VCRAPI(API):
         cassette patched into place.
         """
 
+        @functools.wraps(func)
         def wrapper(self, *args, **kwargs):
             # We have to specify an explicit path for each cassette because
             # we're not using vcr.use_cassette() directly as a decorator.

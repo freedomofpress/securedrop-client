@@ -2,7 +2,7 @@ import logging
 import os
 from collections.abc import Generator
 from contextlib import contextmanager
-from dataclasses import dataclass
+from dataclasses import MISSING, dataclass, fields
 
 logger = logging.getLogger(__name__)
 
@@ -20,6 +20,7 @@ def try_qubesdb() -> Generator:
         yield db
 
     except ImportError:
+        logger.debug("QubesDB not available")
         yield db
 
     finally:
@@ -37,28 +38,45 @@ class Config:
     mapping = {
         "gpg_domain": "QUBES_GPG_DOMAIN",
         "journalist_key_fingerprint": "SD_SUBMISSION_KEY_FPR",
+        "download_retry_limit": "SD_DOWNLOAD_RETRY_LIMIT",
     }
 
-    gpg_domain: str
     journalist_key_fingerprint: str
+    gpg_domain: str | None = None
+    download_retry_limit: int = 3
 
     @classmethod
-    def load(self) -> "Config":
+    def load(cls) -> "Config":
         """For each attribute, look it up from either QubesDB or the environment."""
         config = {}
 
         with try_qubesdb() as db:
-            for store, lookup in self.mapping.items():
+            for field in fields(cls):
+                lookup = cls.mapping[field.name]
                 if db:
                     logger.debug(f"Reading {lookup} from QubesDB")
                     value = db.read(f"/vm-config/{lookup}")
                     if not value or len(value) == 0:
-                        raise KeyError(f"Could not read from QubesDB: {lookup}")
-
+                        if field.default == MISSING:
+                            raise KeyError(f"Could not read {lookup} from QubesDB")
+                        # Normalize for parity with the case where os.environ.get() is None
+                        value = None
                 else:
                     logger.debug(f"Reading {lookup} from environment")
                     value = os.environ.get(lookup)
+                    if not value or len(value) == 0:
+                        # Same normalization used for QubesDB
+                        value = None
 
-                config[store] = value
+                if value is None and field.default != MISSING:
+                    logger.debug(f"Using default value for {lookup}")
+                    value = field.default
 
-        return Config(**config)
+                # Cast to int if needed (might raise if value is invalid)
+                # TODO: in theory we could `field.type(value)` but that doesn't
+                # handle union types
+                if field.type == int:
+                    value = int(value)
+                config[field.name] = value
+
+        return cls(**config)
