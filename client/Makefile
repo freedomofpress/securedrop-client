@@ -133,7 +133,7 @@ POT=${LOCALE_DIR}/messages.pot
 .PHONY: check-strings
 check-strings: ## Check that the translation catalog is up to date with source code
 	@make extract-strings
-	@git diff --ignore-matching-lines="^Generated-By: Babel" --exit-code ${LOCALE_DIR} || { echo "Translation catalog is out of date. Please run \"make extract-strings\" and commit the changes."; exit 1; }
+	@git diff --ignore-matching-lines='^"Generated-By: Babel' --exit-code ${LOCALE_DIR} || { echo "Translation catalog is out of date. Please run \"make extract-strings\" and commit the changes."; exit 1; }
 
 .PHONY: extract-strings
 extract-strings: ## Extract translatable strings from source code
