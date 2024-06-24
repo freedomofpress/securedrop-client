@@ -1,5 +1,41 @@
 # Changelog
 
+## 0.11.0
+
+This is the first release solely targeting Debian Bookworm. New features in the securedrop-client codebases will be available on Bookworm and Qubes 4.2 only.
+
+* Install debian package requirements via sdw-config metapackage (#1957, #1967)
+* Drop Bullseye support (#1958)
+* Update AppArmor __pycache__ rules for Python 3.11 (#2000, #2010)
+* Implement proxy v2 in Rust (#1718, #2017, #2031, #2039, #2015)
+* Provision deb822-style apt sources list (#1952)
+* Use QubesDB to configure VM-specific settings (#1883, #2034)
+* Use systemd and qubes services to conditionally provision VMs (#1677)
+* Update release signing key expiry date (#2036)
+* Clean up securedrop-log code (#2014, #2042)
+* Add securedrop-qubesdb and securedrop-whonix-config packages (#2032, #2051, #2056, #2058)
+* Move MIME handling to systemd services, make sd-proxy disposable (#2033)
+* Add support for automatically resuming failed downloads (#2006)
+
+* Dependencies:
+  * Pillow from 10.2.0 to 10.3.0 (#1953)
+  * authlib from 1.3.0 to 1.3.1 (#2063)
+
+* Internal and development:
+  * Remove the pre-commit hook for make check-strings (#1896)
+  * Display package hashes after successful build (#1898)
+  * Exclude client version string from Project-Id-Version of .pot files (#1915)
+  * Exclude root project .venv from bandit (#1918)
+  * Run tests as not-root (#1919)
+  * Automatically collect package build log (#1923)
+  * Use bash for all Debian packaging scripts (#1927)
+  * Use ruff for formatting checks (#1885, #1944)
+  * Push "nightly" after each merged PR (#1960)
+  * Update readme to reference python3.11 (#1969)
+  * Install xfce4-terminal in all VMs for debugging (#2013)
+  * Exclude Babel header from i18n diff in make check-strings (#2054)
+
+
 ## 0.10.1
 * Fix printing of transcripts. (#1936)
 
