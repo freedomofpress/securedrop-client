@@ -26,6 +26,7 @@ jobs:
         with:
           repository: "freedomofpress/securedrop-builder"
           path: "securedrop-builder"
+          ref: "securedrop-client-0.10.2"
           lfs: true
       - name: Install dependencies
         run: |
@@ -57,6 +58,7 @@ jobs:
         with:
           repository: "freedomofpress/securedrop-builder"
           path: "securedrop-builder"
+          ref: "securedrop-client-0.10.2"
           lfs: true
       - name: Build packages
         run: |
@@ -85,6 +87,7 @@ jobs:
         with:
           repository: "freedomofpress/securedrop-builder"
           path: "securedrop-builder"
+          ref: "securedrop-client-0.10.2"
           lfs: true
       - name: Build packages
         run: |

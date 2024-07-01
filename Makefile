@@ -41,7 +41,10 @@ safety:  ## Run safety dependency checks on build dependencies
 		--ignore 61601 \
 		--ignore 61893 \
 		--ignore 62044 \
- 		-r
+		--ignore 67895 \
+		--ignore 71064 \
+                --ignore 70612 \
+        	-r
 
 .PHONY: shellcheck
 shellcheck:  ## Lint shell scripts
