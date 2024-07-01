@@ -2,6 +2,7 @@
 
 ## 0.10.2-rc1
 * Update signing key expiry date (#2049)
+* Build dependencies from signed tag in securedrop-builder repo (#2050)
 
 ## 0.10.1
 * Fix printing of transcripts. (#1936)
