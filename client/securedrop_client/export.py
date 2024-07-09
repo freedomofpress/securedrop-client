@@ -240,19 +240,28 @@ class Export(QObject):
         """
         self._cleanup_tmpdir()
         if self.process:
-            output = self.process.readAllStandardError().data().decode("utf-8").strip()
+            output_untrusted = self.process.readAllStandardError().data().decode("utf-8").strip()
             try:
-                status = ExportStatus(output)
-                if status == ExportStatus.PRINT_PREFLIGHT_SUCCESS:
-                    self.print_preflight_check_succeeded.emit(status)
-                    logger.debug("Print preflight success")
-                else:
-                    logger.debug(f"Print preflight failure ({status.value})")
-                    self.print_preflight_check_failed.emit(ExportError(status))
+                if output_untrusted:
+                    logger.debug(f"Result is {output_untrusted}")
 
-            except ValueError as error:
-                logger.debug(f"Print preflight check failed: {error}")
-                logger.error("Print preflight check failed")
+                    # The final line of stderr is the status.
+                    status_string_untrusted = output_untrusted.split("\n")[-1]
+                    status = ExportStatus(status_string_untrusted)
+
+                    if status == ExportStatus.PRINT_PREFLIGHT_SUCCESS:
+                        logger.debug("Print preflight success")
+                        self.print_preflight_check_succeeded.emit(status)
+                    else:
+                        logger.debug(f"Print preflight failure ({status.value})")
+                        self.print_preflight_check_failed.emit(ExportError(status))
+                else:
+                    logger.error("Export preflight returned empty result")
+                    self.print_preflight_check_failed.emit(ExportError(ExportStatus.ERROR_PRINT))
+
+            except ValueError as e:
+                logger.debug(f"Export preflight returned unexpected value: {e}")
+                logger.error("Export preflight returned unexpected value")
                 self.print_preflight_check_failed.emit(ExportError(ExportStatus.ERROR_PRINT))
 
     def _on_print_prefight_error(self) -> None:
