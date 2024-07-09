@@ -318,6 +318,8 @@ class ErrorPage(ExportWizardPage):
     @pyqtSlot(object)
     def on_status_received(self, status: ExportStatus) -> None:
         self.status = status
+        if self.wizard() and isinstance(self.wizard().currentPage(), ErrorPage):
+            self.update_content(status=status, should_show_hint=True)
 
 
 class InsertUSBPage(ExportWizardPage):
