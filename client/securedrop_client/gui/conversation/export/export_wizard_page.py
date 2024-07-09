@@ -369,7 +369,7 @@ class InsertUSBPage(ExportWizardPage):
                 ExportStatus.MULTI_DEVICE_DETECTED,
             )
         else:
-            return super().isComplete()
+            return self.isComplete()
 
 
 class FinalPage(ExportWizardPage):
