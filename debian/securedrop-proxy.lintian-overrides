@@ -1,0 +1,35 @@
+# FIXME: fix by switching to arch: any
+securedrop-proxy: arch-independent-package-contains-binary-or-object
+
+# This is intentional
+securedrop-proxy: dir-or-file-in-opt
+
+# FIXME: fix by switching to arch: any
+securedrop-proxy: missing-dependency-on-libc
+
+# FIXME: remove __pycache__ directories
+securedrop-proxy: package-installs-python-pycache-dir
+
+# FIXME: section shouldn't be "unknown"
+securedrop-proxy: section-is-dh_make-template
+
+# FIXME: fix by switching to arch: any
+securedrop-proxy: unstripped-binary-or-object [opt/venvs/securedrop-proxy/lib/python3.*/site-packages/yaml/*]
+
+# This is fine
+securedrop-proxy: executable-not-elf-or-script [etc/qubes-rpc/*]
+
+# FIXME: abbreviate
+securedrop-proxy: extended-description-line-too-long
+
+# We don't care
+securedrop-proxy: no-manual-page
+
+# FIXME
+securedrop-proxy: package-contains-vcs-control-file [opt/venvs/securedrop-proxy/.gitignore]
+
+# We don't care about these
+securedrop-proxy: script-not-executable
+
+# This is our virtualenv's interpreter
+securedrop-proxy: unusual-interpreter

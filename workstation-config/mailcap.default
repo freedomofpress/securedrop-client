@@ -1,0 +1,7 @@
+# Mailcap acts as a fallback mechanism if MIME type lookup fails in tools like
+# xdg-open. Because the Mailcap MIME type definitions do not match the
+# ones used by the SecureDrop Workstation, we disable Mailcap for the default
+# user using a wildcard rule. Lookup attempts are logged to /var/log/syslog
+# and sd-log.
+
+*/*; logger "Mailcap is disabled."

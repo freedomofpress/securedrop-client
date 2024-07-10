@@ -1,3 +1,0 @@
--r dev-sdw-requirements.in
-PyQt5==5.15.8
-PyQt5.sip==12.11.1

@@ -1,0 +1,4 @@
+host: jsonplaceholder.typicode.com
+scheme: https
+port: 443
+dev: False

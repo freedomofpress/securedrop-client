@@ -1,0 +1,3 @@
+opt/venvs/securedrop-log/sbin/securedrop-log usr/sbin/securedrop-log
+opt/venvs/securedrop-log/sbin/securedrop-log-saver usr/sbin/securedrop-log-saver
+opt/venvs/securedrop-log/sbin/securedrop-redis-log usr/sbin/securedrop-redis-log

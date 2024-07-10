@@ -1,0 +1,29 @@
+# Yes, we ship stuff in /opt
+securedrop-export: dir-or-file-in-opt [opt/venvs/*]
+
+# FIXME: don't install __pycache__
+securedrop-export: package-installs-python-pycache-dir
+
+# FIXME: section shouldn't be "unknown"
+securedrop-export: section-is-dh_make-template
+
+# TODO: "does not provide a code like %f, %F, %u or %U in the Exec key."
+securedrop-export: desktop-mime-but-no-exec-code [usr/share/applications/send-to-usb.desktop]
+
+# We don't care about man pages
+securedrop-export: no-manual-page
+
+# FIXME: don't ship gitignore
+securedrop-export: package-contains-vcs-control-file [opt/venvs/securedrop-export/.gitignore]
+
+# Doesn't matter
+securedrop-export: script-not-executable
+
+# This is our virtualenv's interpreter
+securedrop-export: unusual-interpreter
+
+# This is intentional
+securedrop-export: file-in-etc-not-marked-as-conffile [etc/udisks2/tcrypt.conf]
+
+# This is intentional
+securedrop-export: control-file-is-empty [conffiles]

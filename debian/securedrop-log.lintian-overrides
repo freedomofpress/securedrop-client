@@ -1,0 +1,33 @@
+# This is intentional
+securedrop-log: dir-or-file-in-opt
+
+# FIXME: remove __pycache__ directories
+securedrop-log: package-installs-python-pycache-dir
+
+# FIXME: missing a python3 dependency
+securedrop-log: python3-script-but-no-python3-dep
+
+# FIXME: section shouldn't be "unknown"
+securedrop-log: section-is-dh_make-template
+
+# TODO: we should ship this in /lib instead
+securedrop-log: systemd-service-in-odd-location [etc/systemd/system/securedrop-log.service]
+
+# This is fine
+securedrop-log: executable-not-elf-or-script [etc/qubes-rpc/*]
+
+# FIXME: abbreviate
+securedrop-log: extended-description-line-too-long
+
+# We don't care
+securedrop-log: no-manual-page
+
+# FIXME
+securedrop-log: package-contains-vcs-control-file [opt/venvs/securedrop-log/.gitignore]
+
+# We don't care about these
+securedrop-log: script-not-executable
+
+# This is our virtualenv's interpreter
+securedrop-log: unusual-interpreter
+securedrop-log: wrong-path-for-interpreter

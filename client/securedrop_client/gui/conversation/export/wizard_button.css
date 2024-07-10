@@ -1,0 +1,47 @@
+#QWizardButton_PrimaryButton {
+    background-color: #2a319d;
+    color: #ffffff;
+    border: 2px solid #2a319d;
+    font-family: 'Montserrat';
+    font-weight: 500;
+    margin: 0px;
+	font-size: 15px;
+	padding: 11px 18px;
+    max-height: 40px;
+    min-height: 40px;
+}
+
+#QWizardButton_PrimaryButton:hover {
+    background-color: #05a6fe;
+    border: 2px solid #05a6fe;
+}
+
+#QWizardButton_PrimaryButton:disabled {
+    border: 2px solid rgba(42, 49, 157, 0.4);
+    background-color: 2px solid rgba(42, 49, 157, 0.4);
+    color: #c2c4e3;
+}
+
+#QWizardButton_GenericButton {
+    background-color: #ffffff;
+    color: #2a319d;
+    border: 2px solid #2a319d;
+    margin: 0;
+    font-family: 'Montserrat';
+    font-weight: 500;
+	font-size: 15px;
+	padding: 11px 18px;
+    max-height: 40px;
+    min-height: 40px;
+}
+
+#QWizardButton_GenericButton:hover {
+    color: #05a6fe;
+    border: 2px solid #05a6fe;
+}
+
+#QWizardButton_GenericButton:disabled {
+    border: 2px solid #c2c4e3;
+    background-color: #c2c4e3;
+    color: #e1e2f1;
+}
