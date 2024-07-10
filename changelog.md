@@ -3,6 +3,7 @@
 ## 0.11.0-rc2
 
 * Fix how print_preflight status is interpreted by the client
+* Open `.webm` videos in Totem
 
 ## 0.11.0-rc1
 
