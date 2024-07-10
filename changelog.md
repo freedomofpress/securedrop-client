@@ -1,6 +1,10 @@
 # Changelog
 
-## 0.11.0
+## 0.11.0-rc2
+
+* Fix how print_preflight status is interpreted by the client
+
+## 0.11.0-rc1
 
 This is the first release solely targeting Debian Bookworm. New features in the securedrop-client codebases will be available on Bookworm and Qubes 4.2 only.
 
