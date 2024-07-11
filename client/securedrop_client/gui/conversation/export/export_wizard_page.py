@@ -353,7 +353,7 @@ class InsertUSBPage(ExportWizardPage):
                     self.update_content(status)
                 self.no_device_hint += 1
             else:
-                # Hide the error hint, it visible, so that if the user navigates
+                # Hide the error hint, if visible, so that if the user navigates
                 # forward then back they don't see an unneeded hint
                 self.error_details.hide()
                 self.wizard().next()
