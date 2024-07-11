@@ -1,11 +1,6 @@
 # Changelog
 
-## 0.11.0-rc2
-
-* Fix how print_preflight status is interpreted by the client
-* Open `.webm` videos in Totem
-
-## 0.11.0-rc1
+## 0.11.0
 
 This is the first release solely targeting Debian Bookworm. New features in the securedrop-client codebases will be available on Bookworm and Qubes 4.2 only.
 
@@ -16,6 +11,8 @@ This is the first release solely targeting Debian Bookworm. New features in the 
 * Make sd-proxy VM disposable (#2033)
 * Update release signing key expiry date to May 2027 (#2036)
 * Allow nautilus to have RWX memory (#2060)
+* Fix print preflight status check (#2102)
+* Open `.webm` videos in Totem (#2106)
 
 * Provisioning:
   * Install debian package requirements via sdw-config metapackage (#1957, #1967)
