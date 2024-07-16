@@ -112,11 +112,11 @@ class CatalogVerifier:
         # We silence Bandit and Semgrep warnings on `shell=True`
         # because we want to inherit the Python virtual environment
         # in which we're invoked.
-        # nosemgrep: python.lang.security.audit.subprocess-shell-true.subprocess-shell-true
         return subprocess.run(
             cmd,
             capture_output=True,
             env=os.environ,
+            # nosemgrep: python.lang.security.audit.subprocess-shell-true.subprocess-shell-true
             shell=True,  # noqa: S602
             check=False,
         )
