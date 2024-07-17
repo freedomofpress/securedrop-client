@@ -173,7 +173,7 @@ class Service:
         # Compile and install drivers that are not already installed
         if not os.path.exists(printer_ppd):
             logger.info("Installing printer drivers")
-            self.safe_check_call(
+            self.check_output_and_stderr(
                 command=[
                     "sudo",
                     "ppdc",
@@ -190,7 +190,7 @@ class Service:
     def _setup_printer(self, printer_uri, printer_ppd):
         # Add the printer using lpadmin
         logger.info(f"Setting up printer {self.printer_name}")
-        self.safe_check_call(
+        self.check_output_and_stderr(
             command=[
                 "sudo",
                 "lpadmin",
@@ -243,7 +243,6 @@ class Service:
         # convert the file to pdf as printer drivers do not support this format
 
         if self._is_open_office_file(file_to_print):
-
             try:
                 logger.info("Converting Office document to pdf")
                 folder = os.path.dirname(file_to_print)
@@ -269,7 +268,9 @@ class Service:
         except subprocess.CalledProcessError as e:
             raise ExportException(sdstatus=Status.ERROR_PRINT, sderror=e.output)
 
-    def safe_check_call(self, command: str, error_status: Status, ignore_stderr_startswith=None):
+    def check_output_and_stderr(
+        self, command: str, error_status: Status, ignore_stderr_startswith=None
+    ):
         """
         Wrap subprocess.check_output to ensure we wrap CalledProcessError and return
         our own exception, and log the error messages.
