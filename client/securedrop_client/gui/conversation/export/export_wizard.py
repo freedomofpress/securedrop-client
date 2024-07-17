@@ -191,6 +191,9 @@ class ExportWizard(QWizard):
             page.set_complete(False)
         self._start_animate_activestate()
 
+        # Disable the continue button until the qProcess completes
+        self.next_button.setEnabled(False)
+
         # Registered fields let us access the passphrase field
         # of the PassphraseRequestPage from the wizard parent
         passphrase_untrusted = self.field("passphrase")
@@ -214,6 +217,9 @@ class ExportWizard(QWizard):
             page.set_complete(True)
         self._stop_animate_activestate()
         self.current_status = status
+
+        # Button was disabled when the previous request was made; re-enable it
+        self.next_button.setEnabled(True)
 
     def _create_preflight(self) -> QWizardPage:
         return PreflightPage(self.export, self.summary_text)

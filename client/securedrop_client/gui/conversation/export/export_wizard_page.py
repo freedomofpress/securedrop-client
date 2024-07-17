@@ -207,7 +207,7 @@ class ExportWizardPage(QWizardPage):
 
         return super().nextId()
 
-    def update_content(self, status: ExportStatus, should_show_hint: bool = False) -> None:
+    def update_content(self, status: ExportStatus, should_show_hint: bool = True) -> None:
         """
         Update page's content based on new status.
         """
@@ -318,6 +318,8 @@ class ErrorPage(ExportWizardPage):
     @pyqtSlot(object)
     def on_status_received(self, status: ExportStatus) -> None:
         self.status = status
+        if self.wizard() and isinstance(self.wizard().currentPage(), ErrorPage):
+            self.update_content(status)
 
 
 class InsertUSBPage(ExportWizardPage):
@@ -345,13 +347,13 @@ class InsertUSBPage(ExportWizardPage):
                 ExportStatus.INVALID_DEVICE_DETECTED,
                 ExportStatus.DEVICE_WRITABLE,
             ):
-                self.update_content(status, should_show_hint=True)
+                self.update_content(status)
             elif status == ExportStatus.NO_DEVICE_DETECTED:
                 if self.no_device_hint > 0:
-                    self.update_content(status, should_show_hint=True)
+                    self.update_content(status)
                 self.no_device_hint += 1
             else:
-                # Hide the error hint, it visible, so that if the user navigates
+                # Hide the error hint, if visible, so that if the user navigates
                 # forward then back they don't see an unneeded hint
                 self.error_details.hide()
                 self.wizard().next()
@@ -367,7 +369,7 @@ class InsertUSBPage(ExportWizardPage):
                 ExportStatus.MULTI_DEVICE_DETECTED,
             )
         else:
-            return super().isComplete()
+            return self.isComplete()
 
 
 class FinalPage(ExportWizardPage):
@@ -381,14 +383,14 @@ class FinalPage(ExportWizardPage):
     @pyqtSlot(object)
     def on_status_received(self, status: ExportStatus) -> None:
         self.status = status
-        self.update_content(status)
+        self.update_content(status, should_show_hint=False)
 
         # The completeChanged signal alerts the page to recheck its completion status,
         # which we need to signal since we have custom isComplete() logic
         if self.wizard() and isinstance(self.wizard().currentPage(), FinalPage):
             self.completeChanged.emit()
 
-    def update_content(self, status: ExportStatus, should_show_hint: bool = False) -> None:
+    def update_content(self, status: ExportStatus, should_show_hint: bool = True) -> None:
         header = None
         body = None
         if status == ExportStatus.SUCCESS_EXPORT:
@@ -489,7 +491,7 @@ class PassphraseWizardPage(ExportWizardPage):
                 ExportStatus.ERROR_UNLOCK_LUKS,
                 ExportStatus.ERROR_UNLOCK_GENERIC,
             ):
-                self.update_content(status, should_show_hint=True)
+                self.update_content(status)
             else:
                 self.wizard().next()
 
