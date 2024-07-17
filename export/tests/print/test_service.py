@@ -338,31 +338,29 @@ class TestPrint:
         file = "/tmp/definitely-an-office-file.odt"
 
         with (
-            mock.patch.object(self.service, "safe_check_call") as scc,
+            mock.patch("subprocess.check_call") as sp,
             mock.patch("securedrop_export.print.service.logger.info") as log,
         ):
             self.service._print_file(file)
 
-        assert scc.call_count == 2
-        scc.assert_has_calls(
+        assert sp.call_count == 2
+        sp.assert_has_calls(
             [
                 mock.call(
-                    command=[
+                    [
                         "unoconv",
                         "-o",
                         "/tmp/definitely-an-office-file.odt.pdf",
                         "/tmp/definitely-an-office-file.odt",
                     ],
-                    error_status=Status.ERROR_PRINT,
                 ),
                 mock.call(
-                    command=[
+                    [
                         "xpp",
                         "-P",
                         "sdw-printer",
                         "/tmp/definitely-an-office-file.odt.pdf",
                     ],
-                    error_status=Status.ERROR_PRINT,
                 ),
             ]
         )
@@ -390,26 +388,24 @@ class TestPrint:
             b"printer sdw-printer is idle\n",
         ],
     )
-    def test__wait_for_print_waits_correctly(self, mock_subprocess, mock_time):
+    def test__wait_for_print_waits_correctly(self, mock_sp, mock_time):
         file = "/tmp/happy-to-print-you.pdf"
 
-        with (
-            mock.patch.object(self.service, "safe_check_call") as scc,
+        with (mock.patch("subprocess.check_call") as mock_subprocess,
             mock.patch("securedrop_export.print.service.logger.info") as log,
         ):
             self.service._print_file(file)
 
-        assert scc.call_count == 1
-        scc.assert_has_calls(
+        assert mock_subprocess.call_count == 1
+        mock_subprocess.assert_has_calls(
             [
                 mock.call(
-                    command=[
+                    [
                         "xpp",
                         "-P",
                         "sdw-printer",
                         "/tmp/happy-to-print-you.pdf",
                     ],
-                    error_status=Status.ERROR_PRINT,
                 ),
             ]
         )

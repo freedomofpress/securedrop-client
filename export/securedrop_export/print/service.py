@@ -241,27 +241,33 @@ class Service:
     def _print_file(self, file_to_print):
         # If the file to print is an (open)office document, we need to call unoconf to
         # convert the file to pdf as printer drivers do not support this format
+
         if self._is_open_office_file(file_to_print):
-            logger.info("Converting Office document to pdf")
-            folder = os.path.dirname(file_to_print)
-            converted_filename = file_to_print + ".pdf"
-            converted_path = os.path.join(folder, converted_filename)
-            self.safe_check_call(
-                command=["unoconv", "-o", converted_path, file_to_print],
-                error_status=Status.ERROR_PRINT,
-            )
-            file_to_print = converted_path
+
+            try:
+                logger.info("Converting Office document to pdf")
+                folder = os.path.dirname(file_to_print)
+                converted_filename = file_to_print + ".pdf"
+                converted_path = os.path.join(folder, converted_filename)
+                subprocess.check_call(["unoconv", "-o", converted_path, file_to_print])
+                file_to_print = converted_path
+
+            except subprocess.CalledProcessError as e:
+                raise ExportException(sdstatus=Status.ERROR_PRINT, sderror=e.output)
 
         logger.info(f"Sending file to printer {self.printer_name}")
 
-        self.safe_check_call(
-            command=["xpp", "-P", self.printer_name, file_to_print],
-            error_status=Status.ERROR_PRINT,
-        )
-        # This is an addition to ensure that the entire print job is transferred over.
-        # If the job is not fully transferred within the timeout window, the user
-        # will see an error message.
-        self._wait_for_print()
+        try:
+            subprocess.check_call(
+                ["xpp", "-P", self.printer_name, file_to_print],
+            )
+            # This is an addition to ensure that the entire print job is transferred over.
+            # If the job is not fully transferred within the timeout window, the user
+            # will see an error message.
+            self._wait_for_print()
+
+        except subprocess.CalledProcessError as e:
+            raise ExportException(sdstatus=Status.ERROR_PRINT, sderror=e.output)
 
     def safe_check_call(self, command: str, error_status: Status, ignore_stderr_startswith=None):
         """
