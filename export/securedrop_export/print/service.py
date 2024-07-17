@@ -173,7 +173,7 @@ class Service:
         # Compile and install drivers that are not already installed
         if not os.path.exists(printer_ppd):
             logger.info("Installing printer drivers")
-            self.safe_check_call(
+            self.check_output_and_stderr(
                 command=[
                     "sudo",
                     "ppdc",
@@ -190,7 +190,7 @@ class Service:
     def _setup_printer(self, printer_uri, printer_ppd):
         # Add the printer using lpadmin
         logger.info(f"Setting up printer {self.printer_name}")
-        self.safe_check_call(
+        self.check_output_and_stderr(
             command=[
                 "sudo",
                 "lpadmin",
@@ -241,29 +241,36 @@ class Service:
     def _print_file(self, file_to_print):
         # If the file to print is an (open)office document, we need to call unoconf to
         # convert the file to pdf as printer drivers do not support this format
+
         if self._is_open_office_file(file_to_print):
             logger.info("Converting Office document to pdf")
             folder = os.path.dirname(file_to_print)
             converted_filename = file_to_print + ".pdf"
             converted_path = os.path.join(folder, converted_filename)
-            self.safe_check_call(
-                command=["unoconv", "-o", converted_path, file_to_print],
-                error_status=Status.ERROR_PRINT,
-            )
-            file_to_print = converted_path
+
+            try:
+                subprocess.check_call(["unoconv", "-o", converted_path, file_to_print])
+                file_to_print = converted_path
+            except subprocess.CalledProcessError as e:
+                raise ExportException(sdstatus=Status.ERROR_PRINT, sderror=e.output)
 
         logger.info(f"Sending file to printer {self.printer_name}")
 
-        self.safe_check_call(
-            command=["xpp", "-P", self.printer_name, file_to_print],
-            error_status=Status.ERROR_PRINT,
-        )
+        try:
+            subprocess.check_call(
+                ["xpp", "-P", self.printer_name, file_to_print],
+            )
+        except subprocess.CalledProcessError as e:
+            raise ExportException(sdstatus=Status.ERROR_PRINT, sderror=e.output)
+
         # This is an addition to ensure that the entire print job is transferred over.
         # If the job is not fully transferred within the timeout window, the user
         # will see an error message.
         self._wait_for_print()
 
-    def safe_check_call(self, command: str, error_status: Status, ignore_stderr_startswith=None):
+    def check_output_and_stderr(
+        self, command: str, error_status: Status, ignore_stderr_startswith=None
+    ):
         """
         Wrap subprocess.check_output to ensure we wrap CalledProcessError and return
         our own exception, and log the error messages.

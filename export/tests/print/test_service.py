@@ -182,27 +182,27 @@ class TestPrint:
 
         assert ex.value.sdstatus is Status.ERROR_PRINTER_INSTALL
 
-    def test_safe_check_call(self):
+    def test_check_output_and_stderr(self):
         # This works, since `ls` is a valid comand
-        self.service.safe_check_call(["ls"], Status.PRINT_TEST_PAGE_SUCCESS)
+        self.service.check_output_and_stderr(["ls"], Status.PRINT_TEST_PAGE_SUCCESS)
 
-    def test_safe_check_call_invalid_call(self):
+    def test_safe_check_output_invalid_call(self):
         with pytest.raises(ExportException) as ex:
-            self.service.safe_check_call(["ls", "kjdsfhkdjfh"], Status.ERROR_PRINT)
+            self.service.check_output_and_stderr(["ls", "kjdsfhkdjfh"], Status.ERROR_PRINT)
 
         assert ex.value.sdstatus is Status.ERROR_PRINT
 
-    def test_safe_check_call_write_to_stderr_and_ignore_error(self):
-        self.service.safe_check_call(
+    def test_safe_check_output_write_to_stderr_and_ignore_error(self):
+        self.service.check_output_and_stderr(
             ["python3", "-c", "import sys;sys.stderr.write('hello')"],
             error_status=Status.PRINT_TEST_PAGE_SUCCESS,
             ignore_stderr_startswith=b"hello",
         )
 
-    def test_safe_check_call_write_to_stderr_wrong_ignore_param(self):
+    def test_safe_check_output_write_to_stderr_wrong_ignore_param(self):
         # This one writes to stderr and ignores the wrong string, so we expect an exception
         with pytest.raises(ExportException) as ex:
-            self.service.safe_check_call(
+            self.service.check_output_and_stderr(
                 ["python3", "-c", "import sys;sys.stderr.write('hello\n')"],
                 error_status=Status.ERROR_PRINT,
                 ignore_stderr_startswith=b"world",
@@ -338,31 +338,29 @@ class TestPrint:
         file = "/tmp/definitely-an-office-file.odt"
 
         with (
-            mock.patch.object(self.service, "safe_check_call") as scc,
+            mock.patch("subprocess.check_call") as sp,
             mock.patch("securedrop_export.print.service.logger.info") as log,
         ):
             self.service._print_file(file)
 
-        assert scc.call_count == 2
-        scc.assert_has_calls(
+        assert sp.call_count == 2
+        sp.assert_has_calls(
             [
                 mock.call(
-                    command=[
+                    [
                         "unoconv",
                         "-o",
                         "/tmp/definitely-an-office-file.odt.pdf",
                         "/tmp/definitely-an-office-file.odt",
                     ],
-                    error_status=Status.ERROR_PRINT,
                 ),
                 mock.call(
-                    command=[
+                    [
                         "xpp",
                         "-P",
                         "sdw-printer",
                         "/tmp/definitely-an-office-file.odt.pdf",
                     ],
-                    error_status=Status.ERROR_PRINT,
                 ),
             ]
         )
@@ -374,11 +372,13 @@ class TestPrint:
             ]
         )
 
-    def test_safe_check_call_has_error_in_stderr(self):
+    def test_safe_check_output_has_error_in_stderr(self):
         mock.patch("subprocess.run")
 
         with mock.patch("subprocess.run"), pytest.raises(ExportException) as ex:
-            self.service.safe_check_call(command="ls", error_status=Status.PRINT_TEST_PAGE_SUCCESS)
+            self.service.check_output_and_stderr(
+                command="ls", error_status=Status.PRINT_TEST_PAGE_SUCCESS
+            )
 
         assert ex.value.sdstatus is Status.PRINT_TEST_PAGE_SUCCESS
 
@@ -390,26 +390,25 @@ class TestPrint:
             b"printer sdw-printer is idle\n",
         ],
     )
-    def test__wait_for_print_waits_correctly(self, mock_subprocess, mock_time):
+    def test__wait_for_print_waits_correctly(self, mock_sp, mock_time):
         file = "/tmp/happy-to-print-you.pdf"
 
         with (
-            mock.patch.object(self.service, "safe_check_call") as scc,
+            mock.patch("subprocess.check_call") as mock_subprocess,
             mock.patch("securedrop_export.print.service.logger.info") as log,
         ):
             self.service._print_file(file)
 
-        assert scc.call_count == 1
-        scc.assert_has_calls(
+        assert mock_subprocess.call_count == 1
+        mock_subprocess.assert_has_calls(
             [
                 mock.call(
-                    command=[
+                    [
                         "xpp",
                         "-P",
                         "sdw-printer",
                         "/tmp/happy-to-print-you.pdf",
                     ],
-                    error_status=Status.ERROR_PRINT,
                 ),
             ]
         )
