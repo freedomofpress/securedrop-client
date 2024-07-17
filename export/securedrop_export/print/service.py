@@ -243,14 +243,14 @@ class Service:
         # convert the file to pdf as printer drivers do not support this format
 
         if self._is_open_office_file(file_to_print):
+            logger.info("Converting Office document to pdf")
+            folder = os.path.dirname(file_to_print)
+            converted_filename = file_to_print + ".pdf"
+            converted_path = os.path.join(folder, converted_filename)
+
             try:
-                logger.info("Converting Office document to pdf")
-                folder = os.path.dirname(file_to_print)
-                converted_filename = file_to_print + ".pdf"
-                converted_path = os.path.join(folder, converted_filename)
                 subprocess.check_call(["unoconv", "-o", converted_path, file_to_print])
                 file_to_print = converted_path
-
             except subprocess.CalledProcessError as e:
                 raise ExportException(sdstatus=Status.ERROR_PRINT, sderror=e.output)
 
@@ -260,13 +260,13 @@ class Service:
             subprocess.check_call(
                 ["xpp", "-P", self.printer_name, file_to_print],
             )
-            # This is an addition to ensure that the entire print job is transferred over.
-            # If the job is not fully transferred within the timeout window, the user
-            # will see an error message.
-            self._wait_for_print()
-
         except subprocess.CalledProcessError as e:
             raise ExportException(sdstatus=Status.ERROR_PRINT, sderror=e.output)
+
+        # This is an addition to ensure that the entire print job is transferred over.
+        # If the job is not fully transferred within the timeout window, the user
+        # will see an error message.
+        self._wait_for_print()
 
     def check_output_and_stderr(
         self, command: str, error_status: Status, ignore_stderr_startswith=None
