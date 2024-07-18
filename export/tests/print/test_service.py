@@ -125,7 +125,7 @@ class TestPrint:
         ],
     )
     def test_is_open_office_file(self, capsys, open_office_paths):
-        assert self.service._is_open_office_file(open_office_paths)
+        assert self.service._needs_pdf_conversion(open_office_paths)
 
     @pytest.mark.parametrize(
         "open_office_paths",
@@ -137,7 +137,7 @@ class TestPrint:
         ],
     )
     def test_is_not_open_office_file(self, capsys, open_office_paths):
-        assert not self.service._is_open_office_file(open_office_paths)
+        assert not self.service._needs_pdf_conversion(open_office_paths)
 
     @mock.patch("subprocess.run")
     def test_install_printer_ppd_laserjet(self, mocker):
