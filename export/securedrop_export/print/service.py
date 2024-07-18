@@ -1,3 +1,5 @@
+from pathlib import Path
+
 import logging
 import os
 import signal
@@ -5,7 +7,6 @@ import subprocess
 import time
 
 from securedrop_export.exceptions import ExportException, TimeoutException, handler
-from libreoffice_supported_mimetypes import LIBREOFFICE_SUPPORTED_MIMETYPES
 
 from .status import Status
 
@@ -33,7 +34,7 @@ MIMETYPE_UNPRINTABLE = [
     "application/x-7z-compressed",
 ]
 
-MIMETYPE_PRINT_WITHOUT_CONVERSION = ["application/pdf", "image/jpeg", "image/png", "text/plain"]
+MIMETYPE_PRINT_WITHOUT_CONVERSION = ["application/pdf", "text/plain"]
 
 
 class Service:
@@ -245,8 +246,28 @@ class Service:
 
     def _get_supported_mimetypes_libreoffice(self):
         """
-        Return a list of mimetypes supported by Libreoffice.
+        Return a list of mimetypes supported by Libreoffice programs.
         """
+        supported_mimetypes = []
+        prefix = "/usr/share/applications/"
+        libreoffice = [
+            "libreoffice-base",
+            "libreoffice-calc",
+            "libreoffice-draw",
+            "libreoffice-impress",
+            "libreoffice-math",
+            "libreoffice-writer",
+        ]
+        for item in libreoffice:
+            desktop_file = Path(prefix, item, ".desktop")
+            if desktop_file.exists():
+                with open(desktop_file) as f:
+                    l = f.readline()
+                    if l.startswith("MimeType"):
+                        # Semicolon-separated list, don't leave an empty element at the end
+                        supported_mimetypes.append(l.strip("MimeType=").split(";")[:-1])
+
+        return supported_mimetypes
 
     def _needs_pdf_conversion(self, filename):
         """
@@ -270,12 +291,11 @@ class Service:
         if mimetype in [MIMETYPE_PRINT_WITHOUT_CONVERSION]:
             # Print directly, no need to convert
             return False
-
         elif mimetype in self._get_supported_mimetypes_libreoffice():
             return True
-
-        logger.error("Mimetype is not on list of supported types.")
-        raise ExportException(sdstatus=Status.ERROR_UNKNOWN)
+        else:
+            logger.error("Mimetype is not on list of supported types.")
+            raise ExportException(sdstatus=Status.ERROR_UNKNOWN)
 
     def _print_file(self, file_to_print):
         """
