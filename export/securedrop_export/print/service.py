@@ -5,6 +5,7 @@ import subprocess
 import time
 
 from securedrop_export.exceptions import ExportException, TimeoutException, handler
+from libreoffice_supported_mimetypes import LIBREOFFICE_SUPPORTED_MIMETYPES
 
 from .status import Status
 
@@ -65,8 +66,6 @@ class Service:
         logger.info("Printing all files from archive")
         self._check_printer_setup()
         self._print_all_files()
-        # When client can accept new print statuses, we will return
-        # a success status here
         return Status.PRINT_SUCCESS
 
     def printer_preflight(self) -> Status:
@@ -264,12 +263,14 @@ class Service:
             logger.error(f"Could not process mimetype of {filename}")
 
         if mimetype in [MIMETYPE_PRINT_WITHOUT_CONVERSION]:
+            # Print directly, no need to convert
             return False
 
-        # TODO: We should allowlist or get the list of files supported
-        # by libreoffice headless, rather than throwing caution to the winds
-        else:
+        elif mimetype in LIBREOFFICE_SUPPORTED_MIMETYPES:
             return True
+
+        logger.error("Mimetype is not on list of supported types.")
+        raise ExportException(sdstatus=Status.ERROR_UNKNOWN)
 
     def _print_file(self, file_to_print):
         """
