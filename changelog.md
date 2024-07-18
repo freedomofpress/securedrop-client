@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.12.0
+
+* Support viewing .heic and .avif files (#2110)
+* Fix printing of Office documents requiring conversion to PDF (#2119)
+* Show error details on Error screen of Export Wizard (#2098)
+* Improve Export Wizard handling of button presses (#1926)
+* Add hover state and animation to Print dialog buttons (#2125)
+* Upgrade `openssl` Rust crate to 0.10.66 for RUSTSEC-2024-0357 (#2131)
+
+
 ## 0.11.0
 
 This is the first release solely targeting Debian Bookworm. New features in the securedrop-client codebases will be available on Bookworm and Qubes 4.2 only.
