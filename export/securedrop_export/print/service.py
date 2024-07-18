@@ -243,6 +243,11 @@ class Service:
             self._print_file(file_path)
             logger.info(f"Printing document {print_count} of {len(files)}")
 
+    def _get_supported_mimetypes_libreoffice(self):
+        """
+        Return a list of mimetypes supported by Libreoffice.
+        """
+
     def _needs_pdf_conversion(self, filename):
         """
         Checks mimetype of a file and returns True if file must be converted
@@ -266,7 +271,7 @@ class Service:
             # Print directly, no need to convert
             return False
 
-        elif mimetype in LIBREOFFICE_SUPPORTED_MIMETYPES:
+        elif mimetype in self._get_supported_mimetypes_libreoffice():
             return True
 
         logger.error("Mimetype is not on list of supported types.")
