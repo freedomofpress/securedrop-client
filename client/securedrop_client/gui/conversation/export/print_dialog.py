@@ -99,12 +99,22 @@ class PrintDialog(ModalDialog):
     def _print_file(self) -> None:
         self._device.print(self.filepaths)
 
-    @pyqtSlot()
-    def _on_print_complete(self) -> None:
+    @pyqtSlot(object)
+    def _on_print_complete(self, status: ExportStatus) -> None:
         """
         Send a signal to close the print dialog.
         """
-        self.close()
+        if status == ExportStatus.PRINT_SUCCESS:
+            self.close()
+        elif status == ExportStatus.ERROR_UNPRINTABLE_TYPE:
+            # Todo: we can improve on this
+            self._show_generic_error_message()
+        elif status in [
+            ExportStatus.ERROR_PRINT,
+            ExportStatus.ERROR_PRINTER_NOT_FOUND,
+            ExportStatus.ERROR_UNKNOWN,
+        ]:
+            self._show_generic_error_message()
 
     @pyqtSlot(object)
     def _on_print_preflight_check_succeeded(self, status: ExportStatus) -> None:

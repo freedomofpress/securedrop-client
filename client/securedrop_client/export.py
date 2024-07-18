@@ -7,6 +7,7 @@ from collections.abc import Callable
 from io import BytesIO
 from shlex import quote
 from tempfile import mkdtemp
+from typing import Optional
 
 from PyQt5.QtCore import QObject, QProcess, pyqtSignal
 
@@ -234,34 +235,41 @@ class Export(QObject):
             logger.error(f"Export process error: {err}")
         self.export_state_changed.emit(ExportStatus.CALLED_PROCESS_ERROR)
 
+    def _parse_output(self, process: QProcess) -> Optional[ExportStatus]:
+        """
+        Parse output from stderr and return ExportStatus, if valid.
+        """
+        if process:
+            output_untrusted = process.readAllStandardError().data().decode("utf-8").strip()
+            if output_untrusted:
+                logger.debug(f"Result is {output_untrusted}")
+
+                # The final line of stderr is the status.
+                status_string_untrusted = output_untrusted.split("\n")[-1]
+                try:
+                    return ExportStatus(status_string_untrusted)
+                except ValueError as e:
+                    logger.debug(f"Export preflight returned unexpected value: {e}")
+                    logger.error("Export preflight returned unexpected value")
+        return None
+
     def _on_print_preflight_complete(self) -> None:
         """
         Print preflight completion callback.
         """
         self._cleanup_tmpdir()
         if self.process:
-            output_untrusted = self.process.readAllStandardError().data().decode("utf-8").strip()
-            try:
-                if output_untrusted:
-                    logger.debug(f"Result is {output_untrusted}")
+            status = self._parse_output(self.process)
 
-                    # The final line of stderr is the status.
-                    status_string_untrusted = output_untrusted.split("\n")[-1]
-                    status = ExportStatus(status_string_untrusted)
-
-                    if status == ExportStatus.PRINT_PREFLIGHT_SUCCESS:
-                        logger.debug("Print preflight success")
-                        self.print_preflight_check_succeeded.emit(status)
-                    else:
-                        logger.debug(f"Print preflight failure ({status.value})")
-                        self.print_preflight_check_failed.emit(ExportError(status))
-                else:
-                    logger.error("Export preflight returned empty result")
-                    self.print_preflight_check_failed.emit(ExportError(ExportStatus.ERROR_PRINT))
-
-            except ValueError as e:
-                logger.debug(f"Export preflight returned unexpected value: {e}")
-                logger.error("Export preflight returned unexpected value")
+            if status == ExportStatus.PRINT_PREFLIGHT_SUCCESS:
+                logger.debug("Print preflight success")
+                self.print_preflight_check_succeeded.emit(status)
+            elif status:
+                logger.debug(f"Print preflight failure ({status.value})")
+                self.print_preflight_check_failed.emit(ExportError(status))
+                self.print_preflight_check_failed.emit(ExportError(ExportStatus.ERROR_PRINT))
+            else:
+                logger.error("Export preflight returned empty result")
                 self.print_preflight_check_failed.emit(ExportError(ExportStatus.ERROR_PRINT))
 
     def _on_print_prefight_error(self) -> None:
@@ -274,12 +282,20 @@ class Export(QObject):
             logger.debug(f"Print preflight error: {err}")
         self.print_preflight_check_failed.emit(ExportError(ExportStatus.ERROR_PRINT))
 
-    # Todo: not sure if we need to connect here, since the print dialog is managed by sd-devices.
-    # We can probably use the export callback.
-    def _on_print_success(self) -> None:
+    def _on_print_complete(self) -> None:
+        if self.process:
+            status = self._parse_output(self.process)
+            if status == ExportStatus.PRINT_SUCCESS:
+                logger.debug("Print success")
+                self.print_succeeded.emit(ExportStatus.PRINT_SUCCESS)
+            # Unprintable type, printer error, or other print problem
+            elif status:
+                logger.info(f"Problem printing: {status.value}")
+                self.print_failed.emit(status)
+            else:
+                logger.debug("Empty status value")
+                self.print_failed.emit(ExportStatus.ERROR_UNKNOWN)
         self._cleanup_tmpdir()
-        logger.debug("Print success")
-        self.print_succeeded.emit(ExportStatus.PRINT_SUCCESS)
 
     def end_process(self) -> None:
         """
@@ -320,7 +336,7 @@ class Export(QObject):
                 metadata=self._PRINT_METADATA,
                 filepaths=filepaths,
             )
-            self._run_qrexec_export(archive_path, self._on_print_success, self._on_print_error)
+            self._run_qrexec_export(archive_path, self._on_print_complete, self._on_print_error)
 
         except OSError as e:
             logger.error("Export failed")
