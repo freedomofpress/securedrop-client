@@ -8,6 +8,12 @@
     border: 2px solid #05a6fe;
 }
 
+
+#ModalDialog_button_box QPushButton#ModalDialog_cancel_button::hover {
+    color: #05a6fe;
+    border: 2px solid #05a6fe;
+}
+
 #ModalDialog.dangerous #ModalDialog_button_box QPushButton {
     border-color: #ff3366;
     color: #ff3366;
