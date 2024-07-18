@@ -2,10 +2,12 @@ import json
 import logging
 import os
 import shutil
+import subprocess
 import tarfile
+from enum import Enum
 from io import BytesIO
 from shlex import quote
-from tempfile import mkdtemp
+from tempfile import TemporaryDirectory, mkdtemp
 from typing import Callable, List, Optional
 
 from PyQt5.QtCore import QObject, QProcess, pyqtSignal
@@ -41,6 +43,9 @@ class Export(QObject):
     _DISK_ENCRYPTION_KEY_NAME = "encryption_key"
     _DISK_EXPORT_DIR = "export_data"
 
+    _WHISTLEFLOW_METADATA = {}
+    _WHISTLEFLOW_PREFLIGHT_FN = "whistleflow-preflight.sd-export"
+
     # Emit export states
     export_state_changed = pyqtSignal(object)
 
@@ -52,6 +57,11 @@ class Export(QObject):
 
     print_preflight_check_failed = pyqtSignal(object)
     print_failed = pyqtSignal(object)
+
+    whistleflow_preflight_check_failed = pyqtSignal(object)
+    whistleflow_preflight_check_succeeded = pyqtSignal()
+    whistleflow_call_failure = pyqtSignal(object)
+    whistleflow_call_success = pyqtSignal()
 
     process = None  # Optional[QProcess]
     tmpdir = None  # mkdtemp directory must be cleaned up when QProcess completes
@@ -328,7 +338,12 @@ class Export(QObject):
                 self.print_failed.emit(ExportError(ExportStatus.ERROR_PRINT))
 
     def _create_archive(
-        self, archive_dir: str, archive_fn: str, metadata: dict, filepaths: List[str] = []
+        self,
+        archive_dir: str,
+        archive_fn: str,
+        metadata: dict,
+        filepaths: List[str] = [],
+        whistleflow: bool = False,
     ) -> str:
         """
         Create the archive to be sent to the Export VM.
@@ -338,6 +353,7 @@ class Export(QObject):
             archive_fn (str): The name of the archive file.
             metadata (dict): The dictionary containing metadata to add to the archive.
             filepaths (List[str]): The list of files to add to the archive.
+            whistleflow (bool): Indicates if this is a whistleflow export
 
         Returns:
             str: The path to newly-created archive file.
@@ -351,6 +367,11 @@ class Export(QObject):
             # extra care must be taken to prevent name collisions.
             is_one_of_multiple_files = len(filepaths) > 1
             missing_count = 0
+            # If this is an export to Whistleflow, we want to create a directory
+            # called source_name even if it only contains a single file.
+            # whistleflow-view relies on this directory to pre-populate the
+            # source name field in the send-to-giant form.
+            prevent_name_collisions = is_one_of_multiple_files or whistleflow
             for filepath in filepaths:
                 if not (os.path.exists(filepath)):
                     missing_count += 1
@@ -361,9 +382,7 @@ class Export(QObject):
                     # so this shouldn't be reachable
                     logger.warning("File not found at specified filepath, skipping")
                 else:
-                    self._add_file_to_archive(
-                        archive, filepath, prevent_name_collisions=is_one_of_multiple_files
-                    )
+                    self._add_file_to_archive(archive, filepath, prevent_name_collisions)
             if missing_count == len(filepaths) and missing_count > 0:
                 # Context manager will delete archive even if an exception occurs
                 # since the archive is in a TemporaryDirectory
@@ -412,3 +431,98 @@ class Export(QObject):
                 arcname = os.path.join("export_data", parent_name, filename)
 
         archive.add(filepath, arcname=arcname, recursive=False)
+
+    # below whistleflow functions rescued from the old export file
+
+    def _export_archive_to_whistleflow(cls, archive_path: str) -> Optional[ExportStatus]:
+        """
+        Clone of _export_archive which sends the archive to the Whistleflow VM.
+        """
+        try:
+            output = subprocess.check_output(
+                [
+                    quote("qrexec-client-vm"),
+                    quote("--"),
+                    quote("whistleflow-view"),
+                    quote("qubes.Filecopy"),
+                    quote("/usr/lib/qubes/qfile-agent"),
+                    quote(archive_path),
+                ],
+                stderr=subprocess.STDOUT,
+            )
+            result = output.decode("utf-8").strip()
+
+            # No status is returned for successful `disk`, `printer-test`, and `print` calls.
+            # This will change in a future release of sd-export.
+            if result:
+                return ExportStatus(result)
+            else:
+                return None
+        except ValueError as e:
+            logger.debug(f"Export subprocess returned unexpected value: {e}")
+            raise ExportError(ExportStatus.UNEXPECTED_RETURN_STATUS)
+        except subprocess.CalledProcessError as e:
+            logger.error("Subprocess failed")
+            logger.debug(f"Subprocess failed: {e}")
+            raise ExportError(ExportStatus.CALLED_PROCESS_ERROR)
+
+    def send_files_to_whistleflow(self, filename: str, filepaths: List[str]) -> None:
+        """
+        Clone of send_file_to_usb_device, but for Whistleflow.
+        """
+        with TemporaryDirectory() as temp_dir:
+            try:
+                logger.debug("beginning export")
+                self._run_whistleflow_export(temp_dir, filename, filepaths)
+                self.whistleflow_call_success.emit()
+                logger.debug("Export successful")
+            except ExportError as e:
+                logger.error("Export failed")
+                logger.debug(f"Export failed: {e}")
+                self.whistleflow_call_failure.emit(e)
+
+        self.export_completed.emit(filepaths)
+
+    def _run_whistleflow_view_test(self) -> None:
+        # TODO fill this in
+        logger.info("Running dummy whistleflow view test")
+
+    def _run_whistleflow_export(
+        self, archive_dir: str, filename: str, filepaths: List[str]
+    ) -> None:
+        """
+        Run disk-test.
+
+        Args:
+            archive_dir (str): The path to the directory in which to create the archive.
+
+        Raises:
+            ExportError: Raised if the usb-test does not return a DISK_ENCRYPTED status.
+        """
+        metadata = self._WHISTLEFLOW_METADATA.copy()
+        archive_path = self._create_archive(
+            archive_dir, filename, metadata, filepaths, whistleflow=True
+        )
+
+        status = self._export_archive_to_whistleflow(archive_path)
+        if status:
+            raise ExportError(status)
+
+    def run_whistleflow_preflight_checks(self) -> None:
+        """
+        Run dummy preflight test
+        """
+        try:
+            logger.debug("beginning whistleflow preflight checks")
+            self._run_whistleflow_view_test()
+
+            logger.debug("completed preflight checks: success")
+            self.whistleflow_preflight_check_succeeded.emit()
+        except ExportError as e:
+            logger.debug("completed preflight checks: failure")
+            self.whistleflow_preflight_check_failed.emit(e)
+
+
+class ExportDestination(Enum):
+    USB = "USB"
+    WHISTLEFLOW = "WHISTLEFLOW"

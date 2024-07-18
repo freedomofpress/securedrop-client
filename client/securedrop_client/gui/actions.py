@@ -16,14 +16,13 @@ from PyQt5.QtWidgets import QAction, QApplication, QDialog, QMenu
 from securedrop_client import state
 from securedrop_client.conversation import Transcript as ConversationTranscript
 from securedrop_client.db import Source
-from securedrop_client.export import ExportDestination
-from securedrop_client.export import Export
+from securedrop_client.export import Export, ExportDestination
 from securedrop_client.gui.base import ModalDialog
 from securedrop_client.gui.conversation import (
     PrintTranscriptDialog as PrintConversationTranscriptDialog,
 )
-from securedrop_client.gui.conversation.export.whistleflow_dialog import WhistleflowDialog
 from securedrop_client.gui.conversation.export import ExportWizard
+from securedrop_client.gui.conversation.export.whistleflow_dialog import WhistleflowDialog
 from securedrop_client.logic import Controller
 from securedrop_client.utils import safe_mkdir
 
@@ -111,7 +110,7 @@ class DeleteSourcesAction(QAction):
 
     def __init__(
         self,
-        parent: 'SourceListToolbar',
+        parent: "SourceListToolbar",
         controller: Controller,
         confirmation_dialog: Callable[[List[str]], QDialog],
     ) -> None:
@@ -387,7 +386,7 @@ class ExportConversationAction(QAction):  # pragma: nocover
 
             if self._destination == ExportDestination.WHISTLEFLOW:
                 whistleflow_dialog = WhistleflowDialog(
-                    self._export_device,
+                    export_device,
                     summary,
                     [str(file_location) for file_location in file_locations],
                 )
@@ -400,7 +399,6 @@ class ExportConversationAction(QAction):  # pragma: nocover
                     QApplication.activeWindow(),
                 )
                 wizard.exec()
-
 
     def _on_confirmation_dialog_accepted(self) -> None:
         self._prepare_to_export()

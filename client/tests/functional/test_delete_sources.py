@@ -1,6 +1,7 @@
 """
 Functional tests for deleting multiple sources in the SecureDrop client.
 """
+
 import pytest
 from flaky import flaky
 from PyQt5.QtWidgets import QCheckBox

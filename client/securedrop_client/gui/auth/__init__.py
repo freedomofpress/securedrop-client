@@ -17,5 +17,6 @@ You should have received a copy of the GNU Affero General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
-# Import classes here to make possible to import them from securedrop_client.gui.auth
-from securedrop_client.gui.auth.dialog import LoginDialog  # noqa: F401
+from securedrop_client.gui.auth.dialog import LoginDialog
+
+__all__ = ["LoginDialog"]

@@ -2,6 +2,7 @@
 A dialog that allows journalists to export conversations or transcripts to the
 Whistleflow View VM. This is a clone of FileDialog.
 """
+
 import datetime
 import logging
 from gettext import gettext as _
@@ -13,19 +14,18 @@ from PyQt5.QtCore import QSize, pyqtSlot
 from securedrop_client.export import ExportError, ExportStatus
 from securedrop_client.gui.base import ModalDialog, SecureQLabel
 
-from .device import Device
+from ....export import Export
 
 logger = logging.getLogger(__name__)
 
 
 class WhistleflowDialog(ModalDialog):
-    DIALOG_CSS = resource_string(__name__, "dialog.css").decode("utf-8")
 
     PASSPHRASE_LABEL_SPACING = 0.5
     NO_MARGIN = 0
     FILENAME_WIDTH_PX = 260
 
-    def __init__(self, device: Device, summary: str, file_locations: List[str]) -> None:
+    def __init__(self, device: Export, summary: str, file_locations: List[str]) -> None:
         super().__init__()
         self.setStyleSheet(self.DIALOG_CSS)
 
@@ -38,15 +38,17 @@ class WhistleflowDialog(ModalDialog):
         self.error_status: Optional[ExportStatus] = None
 
         # Connect device signals to slots
-        self._device.whistleflow_export_preflight_check_succeeded.connect(
+        self._device.whistleflow_preflight_check_succeeded.connect(
             self._on_export_preflight_check_succeeded
         )
-        self._device.whistleflow_export_preflight_check_failed.connect(
+        self._device.whistleflow_preflight_check_failed.connect(
             self._on_export_preflight_check_failed
         )
         self._device.export_completed.connect(self._on_export_succeeded)
-        self._device.whistleflow_export_failed.connect(self._on_export_failed)
-        self._device.whistleflow_export_succeeded.connect(self._on_export_succeeded)
+
+        # # For now, connect both success and error signals to close the print dialog.
+        self._device.whistleflow_call_failure.connect(self._on_export_failed)
+        self._device.whistleflow_call_success.connect(self._on_export_succeeded)
 
         # Connect parent signals to slots
         self.continue_button.setEnabled(False)
@@ -92,7 +94,7 @@ class WhistleflowDialog(ModalDialog):
 
     def _send_to_whistleflow(self) -> None:
         timestamp = datetime.datetime.now().isoformat()
-        self._device.whistleflow_export_requested.emit(
+        self._device.send_files_to_whistleflow(
             "export-{}.tar".format(timestamp), self._file_locations
         )
 

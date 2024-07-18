@@ -31,7 +31,6 @@ import arrow
 import sqlalchemy.orm.exc
 from PyQt5.QtCore import QObject, QProcess, QThread, QTimer, pyqtSignal, pyqtSlot
 from PyQt5.QtWidgets import QCheckBox
-from sdclientapi import AuthError, RequestTimeoutError, ServerConnectionError
 from sqlalchemy.orm.session import sessionmaker
 
 from securedrop_client import db, sdk, state, storage

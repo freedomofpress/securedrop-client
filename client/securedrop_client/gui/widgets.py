@@ -73,8 +73,7 @@ from securedrop_client.db import (
     Source,
     User,
 )
-from securedrop_client.export import ExportDestination
-from securedrop_client.export import Export
+from securedrop_client.export import Export, ExportDestination
 from securedrop_client.gui import conversation
 from securedrop_client.gui.actions import (
     DeleteConversationAction,
