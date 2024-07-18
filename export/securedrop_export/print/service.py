@@ -10,6 +10,30 @@ from .status import Status
 
 logger = logging.getLogger(__name__)
 
+# We support viewing, but not printing, these.
+# In future we should consolidate all our mimetype
+# controls into one place.
+# See https://github.com/freedomofpress/securedrop-workstation/issues/842,
+# https://github.com/freedomofpress/securedrop-workstation/issues/1139
+MIMETYPE_UNPRINTABLE = [
+    "audio/mp4",
+    "audio/mpeg",
+    "audio/x-vorbis",
+    "audio/x-wav",
+    "video/quicktime",
+    "video/x-theora",
+    "video/mp4",
+    "video/webm",
+    "video/x-msvideo",
+    "video/x-ms-wmv",
+    "application/vnd.djvu",
+    "application/vnd.rar",
+    "application/zip",
+    "application/x-7z-compressed",
+]
+
+MIMETYPE_PRINT_WITHOUT_CONVERSION = ["application/pdf", "image/jpeg", "image/png", "text/plain"]
+
 
 class Service:
     """
@@ -220,30 +244,40 @@ class Service:
             self._print_file(file_path)
             logger.info(f"Printing document {print_count} of {len(files)}")
 
-    def _is_open_office_file(self, filename):
-        OPEN_OFFICE_FORMATS = [
-            ".doc",
-            ".docx",
-            ".xls",
-            ".xlsx",
-            ".ppt",
-            ".pptx",
-            ".odt",
-            ".ods",
-            ".odp",
-            ".rtf",
-        ]
-        for extension in OPEN_OFFICE_FORMATS:
-            if os.path.basename(filename).endswith(extension):
-                return True
-        return False
+    def _needs_pdf_conversion(self, filename):
+        """
+        Checks mimetype of a file and returns True if file must be converted
+        to PDF before attempting to print.
+
+        Raises ExportException for unprintable mimetypes.
+        """
+        mimetype = None
+        try:
+            # b'filename: application/bla\n'
+            mimetype = (
+                subprocess.check_output(["mimetype", filename]).decode().split()[0].strip(":")
+            )
+            if mimetype in MIMETYPE_UNPRINTABLE:
+                logger.info(f"Unprintable file {filename}")
+                raise ExportException(sdstatus=Status.ERROR_UNPRINTABLE_TYPE)
+        except subprocess.CalledProcessError as e:
+            logger.error(f"Could not process mimetype of {filename}")
+
+        if mimetype in [MIMETYPE_PRINT_WITHOUT_CONVERSION]:
+            return False
+
+        # TODO: We should allowlist or get the list of files supported
+        # by libreoffice headless, rather than throwing caution to the winds
+        else:
+            return True
 
     def _print_file(self, file_to_print):
-        # If the file to print is an (open)office document, we need to call unoconf to
-        # convert the file to pdf as printer drivers do not support this format
-
-        if self._is_open_office_file(file_to_print):
-            logger.info("Converting Office document to pdf")
+        """
+        Print a file, attempting to convert to a printable format (PDF)
+        if the mimetype is not directly printable.
+        """
+        if self._needs_pdf_conversion(file_to_print):
+            logger.info("Attempting to convert to pdf for printing")
             folder = os.path.dirname(file_to_print)
             converted_filename = file_to_print + ".pdf"
             converted_path = os.path.join(folder, converted_filename)
