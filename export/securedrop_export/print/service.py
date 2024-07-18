@@ -304,13 +304,35 @@ class Service:
         """
         if self._needs_pdf_conversion(file_to_print):
             logger.info("Attempting to convert to pdf for printing")
-            folder = os.path.dirname(file_to_print)
-            converted_filename = file_to_print + ".pdf"
-            converted_path = os.path.join(folder, converted_filename)
+            original = Path(file_to_print)
+
+            # libreoffice will overwrite existing files, so if we ever
+            # move to batch mode and `myfile.odt` and `myfile.pptx` are sent
+            # to print together, we don't want to overwrite one with the other.
+            # To minimize the risk of this, keep original file extension
+            # and put all converted files in subdirectory
+            printable_folder = Path(original.parent, "print-pdf")
+            printable_folder.mkdir()
+            converted_filename = Path(printable_folder, Path(original.name + ".pdf"))
+            if converted_filename.exists():
+                logger.error("Another file by that name exists already.")
+                raise ExportException(sdstatus=Status.ERROR_PRINT)
+
+            args = [
+                "libreoffice",
+                "--headless",
+                "--safe-mode",
+                "--convert-to",
+                "pdf",
+                "--outdir",
+                printable_folder,
+                file_to_print]
 
             try:
-                subprocess.check_call(["unoconv", "-o", converted_path, file_to_print])
-                file_to_print = converted_path
+                logger.debug(f"Convert {file_to_print} to {converted_filename} for printing")
+                subprocess.check_call(args)
+                file_to_print = converted_filename
+
             except subprocess.CalledProcessError as e:
                 raise ExportException(sdstatus=Status.ERROR_PRINT, sderror=e.output)
 
