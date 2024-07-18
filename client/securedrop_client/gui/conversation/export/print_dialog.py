@@ -19,8 +19,12 @@ class PrintDialog(ModalDialog):
         self.file_name = SecureQLabel(
             file_name, wordwrap=False, max_length=self.FILENAME_WIDTH_PX
         ).text()
-        # Hold onto the error status we receive from the Export VM
-        self.error_status: ExportStatus | None = None
+
+        # Hold onto the error status we receive from the Export VM. Only required
+        # because we're reusing the same modal dialog with different text depending
+        # on conditions, and need to pass methods to Qt handlers with a predefined
+        # message signature.
+        self.status: ExportStatus | None = None
 
         # Connect device signals to slots
         self._device.print_preflight_check_succeeded.connect(
@@ -61,6 +65,7 @@ class PrintDialog(ModalDialog):
         )
         self.insert_usb_message = _("Please connect your printer to a USB port.")
         self.generic_error_message = _("See your administrator for help.")
+        self.unprintable_type_error_message = _("This file type cannot be printed.")
 
         self._show_starting_instructions()
         self.start_animate_header()
@@ -80,14 +85,38 @@ class PrintDialog(ModalDialog):
         self.error_details.hide()
         self.adjustSize()
 
+    def _show_unprintable_message(self) -> None:
+        self.continue_button.clicked.disconnect()
+        self.continue_button.clicked.connect(self.close)
+        self.header.setText(self.error_header)
+        self.body.setText(self.unprintable_type_error_message)
+        self.error_details.hide()
+        self.adjustSize()
+
     def _show_generic_error_message(self) -> None:
+        self._show_error_message()
+
+    def _show_error_message(self) -> None:
+        """
+        Show error message based on ExportStatus returned.
+        """
         self.continue_button.clicked.disconnect()
         self.continue_button.clicked.connect(self.close)
         self.continue_button.setText(_("DONE"))
         self.header.setText(self.error_header)
-        self.body.setText(  # nosemgrep: semgrep.untranslated-gui-string
-            f"{self.error_status}: {self.generic_error_message}"
+        text = (
+            self.unprintable_type_error_message
+            if self.status == ExportStatus.ERROR_UNPRINTABLE_TYPE
+            else self.generic_error_message
         )
+        if self.status:
+            self.body.setText(  # nosemgrep: semgrep.untranslated-gui-string
+                f"{self.status.value}: {text}"
+            )
+        else:
+            self.body.setText(  # nosemgrep: semgrep.untranslated-gui-string
+                f"{text}"
+            )
         self.error_details.hide()
         self.adjustSize()
 
@@ -100,13 +129,22 @@ class PrintDialog(ModalDialog):
         self.start_animate_activestate()
         self._device.print(self.filepaths)
 
-    @pyqtSlot()
-    def _on_print_complete(self) -> None:
+    @pyqtSlot(object)
+    def _on_print_complete(self, status: ExportStatus) -> None:
         """
-        Send a signal to close the print dialog.
+        Send a signal to close the print dialog or display
+        an appropriate error message.
         """
+        self.status = status
         self.stop_animate_activestate()
-        self.close()
+        if status == ExportStatus.PRINT_SUCCESS:
+            self.close()
+        elif self.status == ExportStatus.ERROR_PRINTER_NOT_FOUND:
+            self._show_insert_usb_message()
+        elif self.status == ExportStatus.ERROR_UNPRINTABLE_TYPE:
+            self._show_unprintable_message()
+        else:
+            self._show_error_message()
 
     @pyqtSlot(object)
     def _on_print_preflight_check_succeeded(self, status: ExportStatus) -> None:
@@ -114,6 +152,7 @@ class PrintDialog(ModalDialog):
         # but in future work we will migrate towards a wizard-style dialog, where
         # success and intermediate status values all use the same PyQt slot.
         # If the continue button is disabled then this is the result of a background preflight check
+        self.status = status
         self.stop_animate_header()
         self.header_icon.update_image("printer.svg", svg_size=QSize(64, 64))
         self.header.setText(self.ready_header)
@@ -128,20 +167,20 @@ class PrintDialog(ModalDialog):
 
     @pyqtSlot(object)
     def _on_print_preflight_check_failed(self, status: ExportStatus) -> None:
+        self.status = status
         self.stop_animate_header()
         self.header_icon.update_image("printer.svg", svg_size=QSize(64, 64))
-        self.error_status = status
         # If the continue button is disabled then this is the result of a background preflight check
         if not self.continue_button.isEnabled():
             self.continue_button.clicked.disconnect()
             if status == ExportStatus.ERROR_PRINTER_NOT_FOUND:
                 self.continue_button.clicked.connect(self._show_insert_usb_message)
             else:
-                self.continue_button.clicked.connect(self._show_generic_error_message)
+                self.continue_button.clicked.connect(self._show_error_message)
 
             self.continue_button.setEnabled(True)
             self.continue_button.setFocus()
         elif status == ExportStatus.ERROR_PRINTER_NOT_FOUND:
             self._show_insert_usb_message()
         else:
-            self._show_generic_error_message()
+            self._show_error_message()
