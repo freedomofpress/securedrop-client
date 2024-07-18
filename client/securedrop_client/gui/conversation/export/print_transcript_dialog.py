@@ -21,6 +21,7 @@ class PrintTranscriptDialog(PrintDialog):
         self.transcript_location = filepath
 
     def _print_transcript(self) -> None:
+        self.start_animate_activestate()
         self._device.print(self.transcript_location)
 
     @pyqtSlot()
