@@ -137,10 +137,10 @@ class Export(QObject):
         except ExportError as err:
             if err.status:
                 logger.error("Export failed while creating archive")
-                self.export_state_changed.emit(ExportError(err.status))
+                self.export_state_changed.emit(err.status)
             else:
                 logger.error("Export failed while creating archive (no status supplied)")
-                self.export_state_changed.emit(ExportError(ExportStatus.ERROR_EXPORT))
+                self.export_state_changed.emit(ExportStatus.ERROR_EXPORT)
 
     def _run_qrexec_export(
         self, archive_path: str, success_callback: Callable, error_callback: Callable
@@ -191,6 +191,27 @@ class Export(QObject):
         if self.tmpdir and os.path.exists(self.tmpdir):
             shutil.rmtree(self.tmpdir)
 
+    def _parse_status_from_qprocess(self, process: QProcess | None) -> ExportStatus:
+        """
+        Parse stderr and for ExportStatus and return status
+        or raise ExportError. `securedrop-export` writes to stderr,
+        which is passed to the calling qProcess using qrexec.
+        """
+        if process:
+            output_untrusted = process.readAllStandardError().data().decode("utf-8").strip()
+            if output_untrusted:
+                logger.debug(f"Result is {output_untrusted}")
+                try:
+                    # The final line of stderr is the status.
+                    status_string_untrusted = output_untrusted.split("\n")[-1]
+                    return ExportStatus(status_string_untrusted)
+                except ValueError as e:
+                    logger.debug(f"Export preflight returned unexpected value: {e}")
+                    raise ExportError(ExportStatus.UNEXPECTED_RETURN_STATUS)
+
+        logger.error("Empty status result from QProcess")
+        raise ExportError(ExportStatus.UNEXPECTED_RETURN_STATUS)
+
     def _on_export_process_complete(self) -> None:
         """
         Callback, handle and emit results from QProcess. Information
@@ -198,29 +219,12 @@ class Export(QObject):
         if the QProcess exits with return code 0.
         """
         self._cleanup_tmpdir()
-        # securedrop-export writes status to stderr
-        if self.process:
-            err = self.process.readAllStandardError()
-
-            logger.debug(f"stderr: {err}")
-
-            try:
-                result = err.data().decode("utf-8").strip()
-                if result:
-                    logger.debug(f"Result is {result}")
-                    # This is a bit messy, but make sure we are just taking the last line
-                    # (no-op if no newline, since we already stripped whitespace above)
-                    status_string = result.split("\n")[-1]
-                    self.export_state_changed.emit(ExportStatus(status_string))
-
-                else:
-                    logger.error("Export preflight returned empty result")
-                    self.export_state_changed.emit(ExportStatus.UNEXPECTED_RETURN_STATUS)
-
-            except ValueError as e:
-                logger.debug(f"Export preflight returned unexpected value: {e}")
-                logger.error("Export preflight returned unexpected value")
-                self.export_state_changed.emit(ExportStatus.UNEXPECTED_RETURN_STATUS)
+        try:
+            status = self._parse_status_from_qprocess(self.process)
+            self.export_state_changed.emit(status)
+        except ExportError:
+            logger.error("Export preflight returned unexpected value")
+            self.export_state_changed.emit(ExportStatus.UNEXPECTED_RETURN_STATUS)
 
     def _on_export_process_error(self) -> None:
         """
@@ -239,30 +243,22 @@ class Export(QObject):
         Print preflight completion callback.
         """
         self._cleanup_tmpdir()
-        if self.process:
-            output_untrusted = self.process.readAllStandardError().data().decode("utf-8").strip()
-            try:
-                if output_untrusted:
-                    logger.debug(f"Result is {output_untrusted}")
+        status = None
+        try:
+            status = self._parse_status_from_qprocess(self.process)
+            # We aren't using export_state_changed yet for print, so
+            # parse the status and send either the `failed` or `succeeded` signal
+        except ExportError:
+            logger.error("Export preflight returned unexpected value")
+            self.print_preflight_check_failed.emit(ExportStatus.UNEXPECTED_RETURN_STATUS)
+            return
 
-                    # The final line of stderr is the status.
-                    status_string_untrusted = output_untrusted.split("\n")[-1]
-                    status = ExportStatus(status_string_untrusted)
-
-                    if status == ExportStatus.PRINT_PREFLIGHT_SUCCESS:
-                        logger.debug("Print preflight success")
-                        self.print_preflight_check_succeeded.emit(status)
-                    else:
-                        logger.debug(f"Print preflight failure ({status.value})")
-                        self.print_preflight_check_failed.emit(ExportError(status))
-                else:
-                    logger.error("Export preflight returned empty result")
-                    self.print_preflight_check_failed.emit(ExportError(ExportStatus.ERROR_PRINT))
-
-            except ValueError as e:
-                logger.debug(f"Export preflight returned unexpected value: {e}")
-                logger.error("Export preflight returned unexpected value")
-                self.print_preflight_check_failed.emit(ExportError(ExportStatus.ERROR_PRINT))
+        if status == ExportStatus.PRINT_PREFLIGHT_SUCCESS:
+            logger.debug("Print preflight success")
+            self.print_preflight_check_succeeded.emit(status)
+        else:
+            logger.debug(f"Print preflight failure ({status.value})")
+            self.print_preflight_check_failed.emit(status)
 
     def _on_print_prefight_error(self) -> None:
         """
@@ -272,14 +268,27 @@ class Export(QObject):
         if self.process:
             err = self.process.readAllStandardError().data().decode("utf-8").strip()
             logger.debug(f"Print preflight error: {err}")
-        self.print_preflight_check_failed.emit(ExportError(ExportStatus.ERROR_PRINT))
+        self.print_preflight_check_failed.emit(ExportStatus.ERROR_PRINT)
 
-    # Todo: not sure if we need to connect here, since the print dialog is managed by sd-devices.
-    # We can probably use the export callback.
-    def _on_print_success(self) -> None:
+    def _on_print_complete(self) -> None:
+        """
+        Read output from QProcess and parse status, then emit status.
+        """
         self._cleanup_tmpdir()
-        logger.debug("Print success")
-        self.print_succeeded.emit(ExportStatus.PRINT_SUCCESS)
+        status = None
+        try:
+            status = self._parse_status_from_qprocess(self.process)
+        except ExportError:
+            logger.error("Export preflight returned unexpected value")
+            self.print_preflight_check_failed.emit(ExportStatus.UNEXPECTED_RETURN_STATUS)
+            return
+
+        if status == ExportStatus.PRINT_SUCCESS:
+            logger.debug("Print success")
+            self.print_succeeded.emit(ExportStatus.PRINT_SUCCESS)
+        else:
+            logger.info(f"Problem printing: {status.value}")
+            self.print_failed.emit(status)
 
     def end_process(self) -> None:
         """
@@ -302,7 +311,7 @@ class Export(QObject):
             logger.debug(f"Print error: {err}")
         else:
             logger.error("Print error (stderr unavailable)")
-        self.print_failed.emit(ExportError(ExportStatus.ERROR_PRINT))
+        self.print_failed.emit(ExportStatus.ERROR_PRINT)
 
     def print(self, filepaths: list[str]) -> None:
         """
@@ -320,21 +329,21 @@ class Export(QObject):
                 metadata=self._PRINT_METADATA,
                 filepaths=filepaths,
             )
-            self._run_qrexec_export(archive_path, self._on_print_success, self._on_print_error)
+            self._run_qrexec_export(archive_path, self._on_print_complete, self._on_print_error)
 
         except OSError as e:
             logger.error("Export failed")
             logger.debug(f"Export failed: {e}")
-            self.print_failed.emit(ExportError(ExportStatus.ERROR_PRINT))
+            self.print_failed.emit(ExportStatus.ERROR_PRINT)
 
         # ExportStatus.ERROR_MISSING_FILES
         except ExportError as err:
             if err.status:
                 logger.error("Print failed while creating archive")
-                self.print_failed.emit(ExportError(err.status))
+                self.print_failed.emit(err.status)
             else:
                 logger.error("Print failed while creating archive (no status supplied)")
-                self.print_failed.emit(ExportError(ExportStatus.ERROR_PRINT))
+                self.print_failed.emit(ExportStatus.ERROR_PRINT)
 
     def _create_archive(
         self, archive_dir: str, archive_fn: str, metadata: dict, filepaths: list[str] = []

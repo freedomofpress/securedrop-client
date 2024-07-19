@@ -259,7 +259,7 @@ def managed_locale():
 
 
 class TestPrintConversationAction(unittest.TestCase):
-    @patch("securedrop_client.gui.actions.PrintConversationTranscriptDialog")
+    @patch("securedrop_client.gui.actions.PrintDialog")
     def test_trigger(self, _):
         with managed_locale():
             locale.setlocale(locale.LC_ALL, ("en_US", "latin-1"))

@@ -1,4 +1,4 @@
-from securedrop_client.export_status import ExportError, ExportStatus
+from securedrop_client.export_status import ExportStatus
 from securedrop_client.gui.conversation import PrintDialog
 
 
@@ -138,14 +138,14 @@ def test_PrintDialog__on_print_preflight_check_failed_when_status_is_PRINTER_NOT
     mocker.patch.object(print_dialog.continue_button, "isEnabled", return_value=False)
 
     # When the continue button is enabled, ensure clicking continue will show next instructions
-    print_dialog._on_print_preflight_check_failed(ExportError(ExportStatus.ERROR_PRINTER_NOT_FOUND))
+    print_dialog._device.print_preflight_check_failed.emit(ExportStatus.ERROR_PRINTER_NOT_FOUND)
     print_dialog.continue_button.clicked.connect.assert_called_once_with(
         print_dialog._show_insert_usb_message
     )
 
     # When the continue button is enabled, ensure next instructions are shown
     mocker.patch.object(print_dialog.continue_button, "isEnabled", return_value=True)
-    print_dialog._on_print_preflight_check_failed(ExportError(ExportStatus.ERROR_PRINTER_NOT_FOUND))
+    print_dialog._device.print_preflight_check_failed.emit(ExportStatus.ERROR_PRINTER_NOT_FOUND)
     print_dialog._show_insert_usb_message.assert_called_once_with()
 
 
@@ -158,7 +158,11 @@ def test_PrintDialog__on_print_preflight_check_failed_when_status_is_ERROR_PRINT
     mocker.patch.object(print_dialog.continue_button, "isEnabled", return_value=False)
 
     # When the continue button is enabled, ensure clicking continue will show next instructions
-    print_dialog._on_print_preflight_check_failed(ExportError(ExportStatus.ERROR_PRINTER_URI))
+    print_dialog.print_preflight_check_failed.emit(ExportStatus.ERROR_PRINTER_URI)
+
+    # "show_error_message" is triggered with no arguments in the background preflight check
+    # and reads the status from an internal variable, and with an argument otherwise.
+    # This is a bit of a workaround due to reusing a modal dialog.
     print_dialog.continue_button.clicked.connect.assert_called_once_with(
         print_dialog._show_generic_error_message
     )
@@ -180,7 +184,7 @@ def test_PrintDialog__on_print_preflight_check_failed_when_status_is_CALLED_PROC
     mocker.patch.object(print_dialog.continue_button, "isEnabled", return_value=False)
 
     # When the continue button is enabled, ensure clicking continue will show next instructions
-    print_dialog._on_print_preflight_check_failed(ExportError(ExportStatus.CALLED_PROCESS_ERROR))
+    print_dialog._device.print_preflight_check_failed.emit(ExportStatus.CALLED_PROCESS_ERROR)
     print_dialog.continue_button.clicked.connect.assert_called_once_with(
         print_dialog._show_generic_error_message
     )
@@ -200,7 +204,7 @@ def test_PrintDialog__on_print_preflight_check_failed_when_status_is_unknown(moc
     mocker.patch.object(print_dialog.continue_button, "isEnabled", return_value=False)
 
     # When the continue button is enabled, ensure clicking continue will show next instructions
-    print_dialog._on_print_preflight_check_failed(ExportError("Some Unknown Error Status"))
+    print_dialog._device._on_print_preflight_complete.emit(ExportStatus("Some Unknown Error Status"))
     print_dialog.continue_button.clicked.connect.assert_called_once_with(
         print_dialog._show_generic_error_message
     )
