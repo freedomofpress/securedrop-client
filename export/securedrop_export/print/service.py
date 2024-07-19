@@ -313,6 +313,9 @@ class Service:
             # and put all converted files in subdirectory
             printable_folder = Path(original.parent, "print-pdf")
             printable_folder.mkdir()
+
+            # The filename is deterined by LibreOffice - it's the original name
+            # plus the new extension
             converted_filename = Path(printable_folder, Path(original.name + ".pdf"))
             if converted_filename.exists():
                 logger.error("Another file by that name exists already.")
@@ -326,7 +329,8 @@ class Service:
                 "pdf",
                 "--outdir",
                 printable_folder,
-                file_to_print]
+                file_to_print,
+            ]
 
             try:
                 logger.debug(f"Convert {file_to_print} to {converted_filename} for printing")
