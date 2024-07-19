@@ -8,7 +8,6 @@ import logging
 from gettext import gettext as _
 from typing import List, Optional
 
-from pkg_resources import resource_string
 from PyQt5.QtCore import QSize, pyqtSlot
 
 from securedrop_client.export import ExportError, ExportStatus

@@ -43,7 +43,6 @@ class Export(QObject):
     _DISK_ENCRYPTION_KEY_NAME = "encryption_key"
     _DISK_EXPORT_DIR = "export_data"
 
-    _WHISTLEFLOW_METADATA = {}
     _WHISTLEFLOW_PREFLIGHT_FN = "whistleflow-preflight.sd-export"
 
     # Emit export states
@@ -499,7 +498,7 @@ class Export(QObject):
         Raises:
             ExportError: Raised if the usb-test does not return a DISK_ENCRYPTED status.
         """
-        metadata = self._WHISTLEFLOW_METADATA.copy()
+        metadata = {}
         archive_path = self._create_archive(
             archive_dir, filename, metadata, filepaths, whistleflow=True
         )
