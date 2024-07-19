@@ -1,5 +1,8 @@
 # Changelog
 
+## 100.10.2
+* Guardian release of 0.10.2
+
 ## 0.10.2
 * Update signing key expiry date (#2049)
 * Build dependencies from signed tag in securedrop-builder repo (#2050)

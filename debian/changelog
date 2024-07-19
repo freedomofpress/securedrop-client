@@ -1,3 +1,7 @@
+securedrop-client (100.10.2) unstable; urgency=medium
+
+  * guardian release of 0.10.2
+
 securedrop-client (0.10.2) unstable; urgency=medium
 
   * see changelog.md
