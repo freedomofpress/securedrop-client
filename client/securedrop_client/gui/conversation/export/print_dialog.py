@@ -19,8 +19,6 @@ class PrintDialog(ModalDialog):
         self.file_name = SecureQLabel(
             file_name, wordwrap=False, max_length=self.FILENAME_WIDTH_PX
         ).text()
-        # Hold onto the error status we receive from the Export VM
-        self.error_status: ExportStatus | None = None
 
         # Connect device signals to slots
         self._device.print_preflight_check_succeeded.connect(
@@ -94,7 +92,7 @@ class PrintDialog(ModalDialog):
         else:
             text = self.generic_error_message
         self.body.setText(  # nosemgrep: semgrep.untranslated-gui-string
-            f"{self.error_status}: {text}"
+            f"{error}: {text}"
         )
         self.error_details.hide()
         self.adjustSize()
@@ -140,7 +138,6 @@ class PrintDialog(ModalDialog):
     def _on_print_preflight_check_failed(self, error: ExportError) -> None:
         self.stop_animate_header()
         self.header_icon.update_image("printer.svg", svg_size=QSize(64, 64))
-        self.error_status = error.status
         # If the continue button is disabled then this is the result of a background preflight check
         if not self.continue_button.isEnabled():
             self.continue_button.clicked.disconnect()
@@ -154,4 +151,4 @@ class PrintDialog(ModalDialog):
         elif error.status == ExportStatus.ERROR_PRINTER_NOT_FOUND:
             self._show_insert_usb_message()
         else:
-            self._show_error_message()
+            self._show_error_message(error)
