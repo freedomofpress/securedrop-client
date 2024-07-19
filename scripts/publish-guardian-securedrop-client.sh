@@ -44,27 +44,27 @@ KEYRING="temp-keyring.gpg"
 # Rather than keep this in sync between different developer machines, here we drop everything local before publishing
 
 # Note - aptly needs a configuration file in order to e.g. know which s3 bucket to publish to. This should be preloaded
-# onto the server automatically in /home/admin/.aptly.conf
+# onto the server automatically in /home/ubuntu/.aptly.conf
 
 # Remove any local aptly stuff - || true is there because we don't want this script to fail if there's not existing stuff
 aptly repo drop -force "$REPO_NAME" || true
-aptly publish drop bullseye s3:guardian-securedrop-repo: || true
+aptly publish drop bookworm s3:s3-endpoint: || true
 aptly snapshot drop "$SNAPSHOT_NAME" || true
 
 # Fetch signing key
-aws secretsmanager get-secret-value --region eu-west-1 --secret-id "$SIGNING_KEY_SECRET_ID" | jq .SecretString -r > /home/admin/private.asc
+aws secretsmanager get-secret-value --region eu-west-1 --secret-id "$SIGNING_KEY_SECRET_ID" | jq .SecretString -r > /home/ubuntu/private.asc
 
 # Import key into temporary keyring
-gpg --no-default-keyring --pinentry loopback --keyring "$KEYRING" --import /home/admin/private.asc
+gpg --no-default-keyring --pinentry loopback --keyring "$KEYRING" --import /home/ubuntu/private.asc
 
-rm /home/admin/private.asc
+rm /home/ubuntu/private.asc
 
 # Publish debs to S3
-aptly repo create -distribution=bullseye -component=main "$REPO_NAME"
+aptly repo create -distribution=bookworm -component=main "$REPO_NAME"
 aptly repo add "$REPO_NAME" "$DEB_LOCATION"
 aptly snapshot create "$SNAPSHOT_NAME" from repo "$REPO_NAME"
 
-aptly publish snapshot -keyring="$KEYRING" "$SNAPSHOT_NAME" s3:guardian-securedrop-repo:
+aptly publish snapshot -keyring="$KEYRING" "$SNAPSHOT_NAME" s3:s3-endpoint:
 
 # Remove temporary keyring
 rm ~/.gnupg/$KEYRING
