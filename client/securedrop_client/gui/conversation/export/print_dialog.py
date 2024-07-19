@@ -81,24 +81,20 @@ class PrintDialog(ModalDialog):
         self.error_details.hide()
         self.adjustSize()
 
-    def _show_generic_error_message(self) -> None:
+    def _show_error_message(self, error: ExportStatus) -> None:
+        """
+        Show error message based on ExportStatus returned.
+        """
         self.continue_button.clicked.disconnect()
         self.continue_button.clicked.connect(self.close)
         self.continue_button.setText(_("DONE"))
         self.header.setText(self.error_header)
+        if error == ExportStatus.ERROR_UNPRINTABLE_TYPE:
+            text = self.unprintable_type_error_message
+        else:
+            text = self.generic_error_message
         self.body.setText(  # nosemgrep: semgrep.untranslated-gui-string
-            f"{self.error_status}: {self.generic_error_message}"
-        )
-        self.error_details.hide()
-        self.adjustSize()
-
-    def _show_unprintable_error_message(self) -> None:
-        self.continue_button.clicked.disconnect()
-        self.continue_button.clicked.connect(self.close)
-        self.continue_button.setText(_("DONE"))
-        self.header.setText(self.error_header)
-        self.body.setText(  # nosemgrep: semgrep.untranslated-gui-string
-            f"{self.error_status}: {self.unprintable_type_error_message}"
+            f"{self.error_status}: {text}"
         )
         self.error_details.hide()
         self.adjustSize()
@@ -116,17 +112,11 @@ class PrintDialog(ModalDialog):
         """
         Send a signal to close the print dialog.
         """
+        self.stop_animate_activestate()
         if status == ExportStatus.PRINT_SUCCESS:
             self.close()
-        elif status == ExportStatus.ERROR_UNPRINTABLE_TYPE:
-            # Todo: we can improve on this
-            self._show_generic_error_message()
-        elif status in [
-            ExportStatus.ERROR_PRINT,
-            ExportStatus.ERROR_PRINTER_NOT_FOUND,
-            ExportStatus.ERROR_UNKNOWN,
-        ]:
-            self._show_generic_error_message()
+        else:
+            self._show_error_message(status)
 
     @pyqtSlot(object)
     def _on_print_preflight_check_succeeded(self, status: ExportStatus) -> None:
@@ -157,11 +147,11 @@ class PrintDialog(ModalDialog):
             if error.status == ExportStatus.ERROR_PRINTER_NOT_FOUND:
                 self.continue_button.clicked.connect(self._show_insert_usb_message)
             else:
-                self.continue_button.clicked.connect(self._show_generic_error_message)
+                self.continue_button.clicked.connect(self._show_error_message)
 
             self.continue_button.setEnabled(True)
             self.continue_button.setFocus()
         elif error.status == ExportStatus.ERROR_PRINTER_NOT_FOUND:
             self._show_insert_usb_message()
         else:
-            self._show_generic_error_message()
+            self._show_error_message()

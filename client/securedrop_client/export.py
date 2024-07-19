@@ -283,6 +283,9 @@ class Export(QObject):
         self.print_preflight_check_failed.emit(ExportError(ExportStatus.ERROR_PRINT))
 
     def _on_print_complete(self) -> None:
+        """
+        Read output from QProcess and parse status, then emit status.
+        """
         if self.process:
             status = self._parse_output(self.process)
             if status == ExportStatus.PRINT_SUCCESS:
@@ -310,7 +313,7 @@ class Export(QObject):
 
     def _on_print_error(self) -> None:
         """
-        Error callback for print qrexec.
+        Error callback for print qrexec. Called if QProcess fails.
         """
         self._cleanup_tmpdir()
         if self.process:
