@@ -130,7 +130,7 @@ class WhistleflowDialog(ModalDialog):
     def _export_file(self, checked: bool = False) -> None:
         self.start_animate_activestate()
         self.cancel_button.setEnabled(False)
-        self._device.export_files_to_whistleflow(self.file_name, self._file_locations)
+        self._device.send_files_to_whistleflow(self.file_name, self._file_locations)
 
     @pyqtSlot()
     def _on_export_preflight_check_succeeded(self) -> None:

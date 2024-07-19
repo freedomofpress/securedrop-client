@@ -110,7 +110,8 @@ class DeleteSourcesAction(QAction):
 
     def __init__(
         self,
-        parent: "SourceListToolbar",
+        # ignored F821 - SourceListToolbar deliberately not imported to avoid circular dependency
+        parent: "SourceListToolbar",  # type: ignore[name-defined] # noqa: F821
         controller: Controller,
         confirmation_dialog: Callable[[List[str]], QDialog],
     ) -> None:
@@ -278,7 +279,7 @@ class ExportConversationTranscriptAction(QAction):  # pragma: nocover
                 wizard.exec()
             else:
                 whistleflow_dialog = WhistleflowDialog(
-                    self._export_device,
+                    Export(),
                     "transcript.txt",
                     [str(file_path)],
                 )

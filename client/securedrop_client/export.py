@@ -8,7 +8,7 @@ from enum import Enum
 from io import BytesIO
 from shlex import quote
 from tempfile import TemporaryDirectory, mkdtemp
-from typing import Callable, List, Optional
+from typing import Callable, Dict, List, Optional  # noqa: F401
 
 from PyQt5.QtCore import QObject, QProcess, pyqtSignal
 
@@ -498,7 +498,7 @@ class Export(QObject):
         Raises:
             ExportError: Raised if the usb-test does not return a DISK_ENCRYPTED status.
         """
-        metadata = {}
+        metadata = {}  # type: Dict[str, str]
         archive_path = self._create_archive(
             archive_dir, filename, metadata, filepaths, whistleflow=True
         )
