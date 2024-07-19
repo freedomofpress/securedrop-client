@@ -67,14 +67,12 @@ def test_PrintTranscriptDialog__show_insert_usb_message(mocker, print_transcript
     assert not print_transcript_dialog.cancel_button.isHidden()
 
 
-def test_PrintTranscriptDialog__show_generic_error_message(mocker, print_transcript_dialog):
-    print_transcript_dialog.error_status = "mock_error_status"
-
-    print_transcript_dialog._show_generic_error_message()
+def test_PrintTranscriptDialog__show_error_message(mocker, print_transcript_dialog):
+    print_transcript_dialog._show_error_message(ExportStatus.ERROR_PRINT)
 
     assert print_transcript_dialog.header.text() == "Printing failed"
     assert (
-        print_transcript_dialog.body.text() == "mock_error_status: See your administrator for help."
+        print_transcript_dialog.body.text() == f"{ExportStatus.ERROR_PRINT.value}: See your administrator for help."
     )
     assert not print_transcript_dialog.header.isHidden()
     assert not print_transcript_dialog.header_line.isHidden()
@@ -162,7 +160,7 @@ def test_PrintTranscriptDialog__on_print_preflight_check_failed_when_status_is_P
 def test_PrintTranscriptDialog__on_print_preflight_check_failed_when_status_is_ERROR_PRINTER_URI(
     mocker, print_transcript_dialog
 ):
-    print_transcript_dialog._show_generic_error_message = mocker.MagicMock()
+    print_transcript_dialog._show_error_message = mocker.MagicMock()
     print_transcript_dialog.continue_button = mocker.MagicMock()
     print_transcript_dialog.continue_button.clicked = mocker.MagicMock()
     mocker.patch.object(print_transcript_dialog.continue_button, "isEnabled", return_value=False)
@@ -172,7 +170,7 @@ def test_PrintTranscriptDialog__on_print_preflight_check_failed_when_status_is_E
         ExportError(ExportStatus.ERROR_PRINTER_URI)
     )
     print_transcript_dialog.continue_button.clicked.connect.assert_called_once_with(
-        print_transcript_dialog._show_generic_error_message
+        print_transcript_dialog._show_error_message
     )
     assert print_transcript_dialog.error_status == ExportStatus.ERROR_PRINTER_URI
 
@@ -181,14 +179,14 @@ def test_PrintTranscriptDialog__on_print_preflight_check_failed_when_status_is_E
     print_transcript_dialog._on_print_preflight_check_failed(
         ExportError(ExportStatus.ERROR_PRINTER_URI)
     )
-    print_transcript_dialog._show_generic_error_message.assert_called_once_with()
+    print_transcript_dialog._show_error_message.assert_called_once_with()
     assert print_transcript_dialog.error_status == ExportStatus.ERROR_PRINTER_URI
 
 
 def test_PrintTranscriptDialog__on_print_preflight_check_failed_when_status_is_CALLED_PROCESS_ERROR(
     mocker, print_transcript_dialog
 ):
-    print_transcript_dialog._show_generic_error_message = mocker.MagicMock()
+    print_transcript_dialog._show_error_message = mocker.MagicMock()
     print_transcript_dialog.continue_button = mocker.MagicMock()
     print_transcript_dialog.continue_button.clicked = mocker.MagicMock()
     mocker.patch.object(print_transcript_dialog.continue_button, "isEnabled", return_value=False)
@@ -198,7 +196,7 @@ def test_PrintTranscriptDialog__on_print_preflight_check_failed_when_status_is_C
         ExportError(ExportStatus.CALLED_PROCESS_ERROR)
     )
     print_transcript_dialog.continue_button.clicked.connect.assert_called_once_with(
-        print_transcript_dialog._show_generic_error_message
+        print_transcript_dialog._show_error_message
     )
     assert print_transcript_dialog.error_status == ExportStatus.CALLED_PROCESS_ERROR
 
@@ -207,14 +205,14 @@ def test_PrintTranscriptDialog__on_print_preflight_check_failed_when_status_is_C
     print_transcript_dialog._on_print_preflight_check_failed(
         ExportError(ExportStatus.CALLED_PROCESS_ERROR)
     )
-    print_transcript_dialog._show_generic_error_message.assert_called_once_with()
+    print_transcript_dialog._show_error_message.assert_called_once_with()
     assert print_transcript_dialog.error_status == ExportStatus.CALLED_PROCESS_ERROR
 
 
 def test_PrintTranscriptDialog__on_print_preflight_check_failed_when_status_is_unknown(
     mocker, print_transcript_dialog
 ):
-    print_transcript_dialog._show_generic_error_message = mocker.MagicMock()
+    print_transcript_dialog._show_error_message = mocker.MagicMock()
     print_transcript_dialog.continue_button = mocker.MagicMock()
     print_transcript_dialog.continue_button.clicked = mocker.MagicMock()
     mocker.patch.object(print_transcript_dialog.continue_button, "isEnabled", return_value=False)
@@ -224,7 +222,7 @@ def test_PrintTranscriptDialog__on_print_preflight_check_failed_when_status_is_u
         ExportError("Some Unknown Error Status")
     )
     print_transcript_dialog.continue_button.clicked.connect.assert_called_once_with(
-        print_transcript_dialog._show_generic_error_message
+        print_transcript_dialog._show_error_message
     )
     assert print_transcript_dialog.error_status == "Some Unknown Error Status"
 
@@ -233,5 +231,5 @@ def test_PrintTranscriptDialog__on_print_preflight_check_failed_when_status_is_u
     print_transcript_dialog._on_print_preflight_check_failed(
         ExportError("Some Unknown Error Status")
     )
-    print_transcript_dialog._show_generic_error_message.assert_called_once_with()
+    print_transcript_dialog._show_error_message.assert_called_once_with()
     assert print_transcript_dialog.error_status == "Some Unknown Error Status"
