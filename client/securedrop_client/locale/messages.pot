@@ -375,6 +375,9 @@ msgstr ""
 msgid "See your administrator for help."
 msgstr ""
 
+msgid "Export failed"
+msgstr ""
+
 msgid "YES, DELETE ENTIRE SOURCE ACCOUNT"
 msgstr ""
 
