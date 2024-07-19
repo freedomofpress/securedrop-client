@@ -88,9 +88,7 @@ def print_transcript_dialog(mocker, homedir):
 
     export_device = mocker.MagicMock(spec=Export)
 
-    return conversation.PrintTranscriptDialog(
-        export_device, "transcript.txt", ["some/path/transcript.txt"]
-    )
+    return conversation.PrintDialog(export_device, "transcript.txt", ["some/path/transcript.txt"])
 
 
 @pytest.fixture()
