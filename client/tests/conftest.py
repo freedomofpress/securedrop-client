@@ -88,7 +88,7 @@ def print_transcript_dialog(mocker, homedir):
 
     export_device = mocker.MagicMock(spec=Export)
 
-    return conversation.PrintTranscriptDialog(
+    return conversation.PrintDialog(
         export_device, "transcript.txt", ["some/path/transcript.txt"]
     )
 
