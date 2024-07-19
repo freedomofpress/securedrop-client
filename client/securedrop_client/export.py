@@ -297,7 +297,7 @@ class Export(QObject):
                 self.print_failed.emit(status)
             else:
                 logger.debug("Empty status value")
-                self.print_failed.emit(ExportStatus.ERROR_UNKNOWN)
+                self.print_failed.emit(ExportError(ExportStatus.ERROR_UNKNOWN))
         self._cleanup_tmpdir()
 
     def end_process(self) -> None:
