@@ -183,9 +183,7 @@ class PrintConversationAction(QAction):  # pragma: nocover
         # by the operating system.
         with open(file_path) as f:
             export = Export()
-            dialog = PrintDialog(
-                export, TRANSCRIPT_FILENAME, [str(file_path)]
-            )
+            dialog = PrintDialog(export, TRANSCRIPT_FILENAME, [str(file_path)])
             dialog.exec()
 
 
