@@ -97,6 +97,7 @@ class PrintDialog(ModalDialog):
 
     @pyqtSlot()
     def _print_file(self) -> None:
+        self.start_animate_activestate()
         self._device.print(self.filepaths)
 
     @pyqtSlot()
@@ -104,6 +105,7 @@ class PrintDialog(ModalDialog):
         """
         Send a signal to close the print dialog.
         """
+        self.stop_animate_activestate()
         self.close()
 
     @pyqtSlot(object)
