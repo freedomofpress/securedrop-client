@@ -5,7 +5,7 @@ set -e
 
 VERSION=$1
 DEB_LOCATION=$2
-SIGNING_KEY_SECRET_ID=$3
+SIGNING_KEY_SECRET_ID_OR_STAGE=$3
 
 SCRIPT_PATH=$( cd $(dirname $0) ; pwd -P )
 
@@ -30,9 +30,20 @@ if [ -z "$DEB_LOCATION" ]; then
     exit 1
 fi
 
+# check if signing key secret id code or prod
+
+if [ "$SIGNING_KEY_SECRET_ID_OR_STAGE" == "CODE" ] ||  [ "$SIGNING_KEY_SECRET_ID_OR_STAGE" == "PROD" ]; then
+  SECRET_NAME="securedrop-workstation-repository-private-$SIGNING_KEY_SECRET_ID_OR_STAGE"
+  SECRET_ID=$(aws secretsmanager list-secrets --filter Key=name,Values=$SECRET_NAME  --region eu-west-1 --query "SecretList[?Name=='$SECRET_NAME'].ARN" --output text)
+  echo $SECRET_ID
+  SIGNING_KEY_SECRET_ID=$SECRET_ID
+else
+  SIGNING_KEY_SECRET_ID=$SIGNING_KEY_SECRET_ID_OR_STAGE
+fi
+
 if [ -z "$SIGNING_KEY_SECRET_ID" ]; then
   echo "You must provide the secret name for the signing key."
-   echo "(If calling this via make securedrop-client you may need to set SIGNING_KEY_SECRET_ID)"
+
   print_usage_and_exit
 fi
 
@@ -52,12 +63,12 @@ aptly publish drop bookworm s3:s3-endpoint: || true
 aptly snapshot drop "$SNAPSHOT_NAME" || true
 
 # Fetch signing key
-aws secretsmanager get-secret-value --region eu-west-1 --secret-id "$SIGNING_KEY_SECRET_ID" | jq .SecretString -r > /home/ubuntu/private.asc
+aws secretsmanager get-secret-value --region eu-west-1 --secret-id "$SIGNING_KEY_SECRET_ID" | jq .SecretString -r > /tmp/private.asc
 
 # Import key into temporary keyring
-gpg --no-default-keyring --pinentry loopback --keyring "$KEYRING" --import /home/ubuntu/private.asc
+gpg2 --no-default-keyring --pinentry loopback --keyring "$KEYRING" --import /tmp/private.asc
 
-rm /home/ubuntu/private.asc
+rm /tmp/private.asc
 
 # Publish debs to S3
 aptly repo create -distribution=bookworm -component=main "$REPO_NAME"
