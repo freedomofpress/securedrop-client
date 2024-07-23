@@ -10,7 +10,7 @@ from typing import List, Optional
 
 from PyQt5.QtCore import QSize, pyqtSlot
 
-from securedrop_client.export import ExportError, ExportStatus
+from securedrop_client.export_status import ExportError, ExportStatus
 from securedrop_client.gui.base import ModalDialog, SecureQLabel
 
 from ....export import Export
