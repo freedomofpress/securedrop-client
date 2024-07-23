@@ -1,5 +1,4 @@
 from gettext import gettext as _
-from typing import List, Optional
 
 from PyQt5.QtCore import QSize, pyqtSlot
 
@@ -12,7 +11,7 @@ from ....export import Export
 class PrintDialog(ModalDialog):
     FILENAME_WIDTH_PX = 260
 
-    def __init__(self, device: Export, file_name: str, filepaths: List[str]) -> None:
+    def __init__(self, device: Export, file_name: str, filepaths: list[str]) -> None:
         super().__init__()
 
         self._device = device
@@ -21,7 +20,7 @@ class PrintDialog(ModalDialog):
             file_name, wordwrap=False, max_length=self.FILENAME_WIDTH_PX
         ).text()
         # Hold onto the error status we receive from the Export VM
-        self.error_status: Optional[ExportStatus] = None
+        self.error_status: ExportStatus | None = None
 
         # Connect device signals to slots
         self._device.print_preflight_check_succeeded.connect(
@@ -87,7 +86,7 @@ class PrintDialog(ModalDialog):
         self.continue_button.setText(_("DONE"))
         self.header.setText(self.error_header)
         self.body.setText(  # nosemgrep: semgrep.untranslated-gui-string
-            "{}: {}".format(self.error_status, self.generic_error_message)
+            f"{self.error_status}: {self.generic_error_message}"
         )
         self.error_details.hide()
         self.adjustSize()
@@ -98,6 +97,7 @@ class PrintDialog(ModalDialog):
 
     @pyqtSlot()
     def _print_file(self) -> None:
+        self.start_animate_activestate()
         self._device.print(self.filepaths)
 
     @pyqtSlot()
@@ -105,6 +105,7 @@ class PrintDialog(ModalDialog):
         """
         Send a signal to close the print dialog.
         """
+        self.stop_animate_activestate()
         self.close()
 
     @pyqtSlot(object)
@@ -140,8 +141,7 @@ class PrintDialog(ModalDialog):
 
             self.continue_button.setEnabled(True)
             self.continue_button.setFocus()
+        elif error.status == ExportStatus.ERROR_PRINTER_NOT_FOUND:
+            self._show_insert_usb_message()
         else:
-            if error.status == ExportStatus.ERROR_PRINTER_NOT_FOUND:
-                self._show_insert_usb_message()
-            else:
-                self._show_generic_error_message()
+            self._show_generic_error_message()

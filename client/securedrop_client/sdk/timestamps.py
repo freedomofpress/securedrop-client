@@ -1,8 +1,7 @@
 from datetime import datetime
-from typing import Optional
 
 
-def parse(date_string: str) -> Optional[datetime]:
+def parse(date_string: str) -> datetime | None:
     """Parse date strings in a few historical formats."""
     try:
         # ISO8061 and RFC3339

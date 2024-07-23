@@ -48,14 +48,14 @@ def entrypoint():
 
     try:
         _configure_logging()
-        logger.info("Starting SecureDrop Export {}".format(__version__))
+        logger.info(f"Starting SecureDrop Export {__version__}")
 
         data_path = sys.argv[1]
 
         # Halt if target file is absent
         if not os.path.exists(data_path):
             logger.error("Archive not found at provided path.")
-            logger.debug("Archive missing, path: {}".format(data_path))
+            logger.debug(f"Archive missing, path: {data_path}")
             status = Status.ERROR_FILE_NOT_FOUND
 
         else:
@@ -161,7 +161,7 @@ def _exit_gracefully(archive: Archive, status: BaseStatus):
         # block above failing
         _write_status(status)
     except Exception as ex:
-        logger.error("Unhandled exception: {}".format(ex))
+        logger.error(f"Unhandled exception: {ex}")
         _write_status(Status.ERROR_GENERIC)
     finally:
         # exit with 0 return code otherwise the os will attempt to open

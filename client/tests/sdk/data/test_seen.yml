@@ -1,0 +1,278 @@
+interactions:
+- request:
+    body: null
+    headers:
+      Accept:
+      - application/json
+      Authorization:
+      - Token Ilhha2ZHZWpVcFZQVmpKdWJOUzJYRG1YVUc4QXZWS0JiOGVNQXJycE5GUFUi.ZeDzXQ.10ODTj49yF7kxKbeMm9eaayR3Xo
+      Content-Type:
+      - application/json
+    method: GET
+    uri: api/v1/submissions
+  response: !!python/object:securedrop_client.sdk.JSONResponse
+    data:
+      submissions:
+      - download_url: /api/v1/sources/286347a8-7d7b-4ace-8982-d5db927ed246/submissions/69db191c-0548-4e71-8ca1-fc567bcb34f9/download
+        filename: 1-conclusive_musk-msg.gpg
+        is_file: false
+        is_message: true
+        is_read: true
+        seen_by:
+        - e101e4e2-230e-4e27-9f58-ad094079c230
+        size: 616
+        source_url: /api/v1/sources/286347a8-7d7b-4ace-8982-d5db927ed246
+        submission_url: /api/v1/sources/286347a8-7d7b-4ace-8982-d5db927ed246/submissions/69db191c-0548-4e71-8ca1-fc567bcb34f9
+        uuid: 69db191c-0548-4e71-8ca1-fc567bcb34f9
+      - download_url: /api/v1/sources/286347a8-7d7b-4ace-8982-d5db927ed246/submissions/ba5f561c-f888-410b-b345-802d32a82f40/download
+        filename: 2-conclusive_musk-msg.gpg
+        is_file: false
+        is_message: true
+        is_read: true
+        seen_by:
+        - ed64b0fa-0565-4b12-9c48-6cfe27a73fd9
+        size: 700
+        source_url: /api/v1/sources/286347a8-7d7b-4ace-8982-d5db927ed246
+        submission_url: /api/v1/sources/286347a8-7d7b-4ace-8982-d5db927ed246/submissions/ba5f561c-f888-410b-b345-802d32a82f40
+        uuid: ba5f561c-f888-410b-b345-802d32a82f40
+      - download_url: /api/v1/sources/286347a8-7d7b-4ace-8982-d5db927ed246/submissions/06066c50-621c-402b-bd8b-80b20203e803/download
+        filename: 3-conclusive_musk-doc.gz.gpg
+        is_file: true
+        is_message: false
+        is_read: true
+        seen_by:
+        - ed64b0fa-0565-4b12-9c48-6cfe27a73fd9
+        size: 651
+        source_url: /api/v1/sources/286347a8-7d7b-4ace-8982-d5db927ed246
+        submission_url: /api/v1/sources/286347a8-7d7b-4ace-8982-d5db927ed246/submissions/06066c50-621c-402b-bd8b-80b20203e803
+        uuid: 06066c50-621c-402b-bd8b-80b20203e803
+      - download_url: /api/v1/sources/286347a8-7d7b-4ace-8982-d5db927ed246/submissions/62f59814-8bac-42f3-a449-df4b6465ae14/download
+        filename: 4-conclusive_musk-doc.gz.gpg
+        is_file: true
+        is_message: false
+        is_read: true
+        seen_by:
+        - e101e4e2-230e-4e27-9f58-ad094079c230
+        size: 651
+        source_url: /api/v1/sources/286347a8-7d7b-4ace-8982-d5db927ed246
+        submission_url: /api/v1/sources/286347a8-7d7b-4ace-8982-d5db927ed246/submissions/62f59814-8bac-42f3-a449-df4b6465ae14
+        uuid: 62f59814-8bac-42f3-a449-df4b6465ae14
+      - download_url: /api/v1/sources/74241930-15f1-4eaf-9425-eb4e73c57a58/submissions/61264469-0228-4d2c-a9f9-bc5e66406b4b/download
+        filename: 1-blue-eyed_parallelogram-msg.gpg
+        is_file: false
+        is_message: true
+        is_read: true
+        seen_by:
+        - b2857ac1-3765-4a3e-95d2-528209ef9525
+        size: 647
+        source_url: /api/v1/sources/74241930-15f1-4eaf-9425-eb4e73c57a58
+        submission_url: /api/v1/sources/74241930-15f1-4eaf-9425-eb4e73c57a58/submissions/61264469-0228-4d2c-a9f9-bc5e66406b4b
+        uuid: 61264469-0228-4d2c-a9f9-bc5e66406b4b
+      - download_url: /api/v1/sources/74241930-15f1-4eaf-9425-eb4e73c57a58/submissions/9258f8a9-35c0-4ad5-b7c3-84426abd7216/download
+        filename: 2-blue-eyed_parallelogram-msg.gpg
+        is_file: false
+        is_message: true
+        is_read: true
+        seen_by:
+        - e101e4e2-230e-4e27-9f58-ad094079c230
+        size: 766
+        source_url: /api/v1/sources/74241930-15f1-4eaf-9425-eb4e73c57a58
+        submission_url: /api/v1/sources/74241930-15f1-4eaf-9425-eb4e73c57a58/submissions/9258f8a9-35c0-4ad5-b7c3-84426abd7216
+        uuid: 9258f8a9-35c0-4ad5-b7c3-84426abd7216
+      - download_url: /api/v1/sources/74241930-15f1-4eaf-9425-eb4e73c57a58/submissions/6b442837-8d46-4dd8-9c42-01eb6b26baa6/download
+        filename: 3-blue-eyed_parallelogram-doc.gz.gpg
+        is_file: true
+        is_message: false
+        is_read: true
+        seen_by:
+        - b2857ac1-3765-4a3e-95d2-528209ef9525
+        size: 651
+        source_url: /api/v1/sources/74241930-15f1-4eaf-9425-eb4e73c57a58
+        submission_url: /api/v1/sources/74241930-15f1-4eaf-9425-eb4e73c57a58/submissions/6b442837-8d46-4dd8-9c42-01eb6b26baa6
+        uuid: 6b442837-8d46-4dd8-9c42-01eb6b26baa6
+      - download_url: /api/v1/sources/74241930-15f1-4eaf-9425-eb4e73c57a58/submissions/ea890d9b-cbec-4524-a7c6-1d8cf1b42aa5/download
+        filename: 4-blue-eyed_parallelogram-doc.gz.gpg
+        is_file: true
+        is_message: false
+        is_read: true
+        seen_by:
+        - e101e4e2-230e-4e27-9f58-ad094079c230
+        size: 651
+        source_url: /api/v1/sources/74241930-15f1-4eaf-9425-eb4e73c57a58
+        submission_url: /api/v1/sources/74241930-15f1-4eaf-9425-eb4e73c57a58/submissions/ea890d9b-cbec-4524-a7c6-1d8cf1b42aa5
+        uuid: ea890d9b-cbec-4524-a7c6-1d8cf1b42aa5
+      - download_url: /api/v1/sources/127ce85b-2c3e-4f06-a46f-89882ecb82d0/submissions/dbcfad7b-628d-46d9-8af3-d3cfbb01e04c/download
+        filename: 1-hand-to-mouth_greasewood-msg.gpg
+        is_file: false
+        is_message: true
+        is_read: false
+        seen_by: []
+        size: 804
+        source_url: /api/v1/sources/127ce85b-2c3e-4f06-a46f-89882ecb82d0
+        submission_url: /api/v1/sources/127ce85b-2c3e-4f06-a46f-89882ecb82d0/submissions/dbcfad7b-628d-46d9-8af3-d3cfbb01e04c
+        uuid: dbcfad7b-628d-46d9-8af3-d3cfbb01e04c
+      - download_url: /api/v1/sources/127ce85b-2c3e-4f06-a46f-89882ecb82d0/submissions/2da18dee-ddfc-4727-aa0b-a872b2e2f1be/download
+        filename: 2-hand-to-mouth_greasewood-msg.gpg
+        is_file: false
+        is_message: true
+        is_read: false
+        seen_by: []
+        size: 710
+        source_url: /api/v1/sources/127ce85b-2c3e-4f06-a46f-89882ecb82d0
+        submission_url: /api/v1/sources/127ce85b-2c3e-4f06-a46f-89882ecb82d0/submissions/2da18dee-ddfc-4727-aa0b-a872b2e2f1be
+        uuid: 2da18dee-ddfc-4727-aa0b-a872b2e2f1be
+      - download_url: /api/v1/sources/127ce85b-2c3e-4f06-a46f-89882ecb82d0/submissions/29e2a718-6530-43c5-9948-95b50905db18/download
+        filename: 3-hand-to-mouth_greasewood-doc.gz.gpg
+        is_file: true
+        is_message: false
+        is_read: false
+        seen_by: []
+        size: 651
+        source_url: /api/v1/sources/127ce85b-2c3e-4f06-a46f-89882ecb82d0
+        submission_url: /api/v1/sources/127ce85b-2c3e-4f06-a46f-89882ecb82d0/submissions/29e2a718-6530-43c5-9948-95b50905db18
+        uuid: 29e2a718-6530-43c5-9948-95b50905db18
+      - download_url: /api/v1/sources/127ce85b-2c3e-4f06-a46f-89882ecb82d0/submissions/3189e62c-fd9a-4a59-aa86-b157d4f45bc6/download
+        filename: 4-hand-to-mouth_greasewood-doc.gz.gpg
+        is_file: true
+        is_message: false
+        is_read: false
+        seen_by: []
+        size: 651
+        source_url: /api/v1/sources/127ce85b-2c3e-4f06-a46f-89882ecb82d0
+        submission_url: /api/v1/sources/127ce85b-2c3e-4f06-a46f-89882ecb82d0/submissions/3189e62c-fd9a-4a59-aa86-b157d4f45bc6
+        uuid: 3189e62c-fd9a-4a59-aa86-b157d4f45bc6
+    headers:
+      connection: close
+      content-length: '7471'
+      content-type: application/json
+      date: Thu, 29 Feb 2024 21:13:02 GMT
+      server: Werkzeug/2.2.3 Python/3.8.10
+    status: 200
+- request:
+    body: null
+    headers:
+      Accept:
+      - application/json
+      Authorization:
+      - Token Ilhha2ZHZWpVcFZQVmpKdWJOUzJYRG1YVUc4QXZWS0JiOGVNQXJycE5GUFUi.ZeDzXQ.10ODTj49yF7kxKbeMm9eaayR3Xo
+      Content-Type:
+      - application/json
+    method: GET
+    uri: api/v1/replies
+  response: !!python/object:securedrop_client.sdk.JSONResponse
+    data:
+      replies:
+      - filename: 5-conclusive_musk-reply.gpg
+        is_deleted_by_source: false
+        journalist_first_name: ''
+        journalist_last_name: ''
+        journalist_username: dellsberg
+        journalist_uuid: e101e4e2-230e-4e27-9f58-ad094079c230
+        reply_url: /api/v1/sources/286347a8-7d7b-4ace-8982-d5db927ed246/replies/60077f28-eedf-42ff-b08f-39dff29ac92c
+        seen_by:
+        - ed64b0fa-0565-4b12-9c48-6cfe27a73fd9
+        - e101e4e2-230e-4e27-9f58-ad094079c230
+        size: 1143
+        source_url: /api/v1/sources/286347a8-7d7b-4ace-8982-d5db927ed246
+        uuid: 60077f28-eedf-42ff-b08f-39dff29ac92c
+      - filename: 6-conclusive_musk-reply.gpg
+        is_deleted_by_source: false
+        journalist_first_name: ''
+        journalist_last_name: ''
+        journalist_username: deleted
+        journalist_uuid: b2857ac1-3765-4a3e-95d2-528209ef9525
+        reply_url: /api/v1/sources/286347a8-7d7b-4ace-8982-d5db927ed246/replies/247ae51f-7834-4db8-ac8c-72ea2a9a4bb2
+        seen_by:
+        - ed64b0fa-0565-4b12-9c48-6cfe27a73fd9
+        - b2857ac1-3765-4a3e-95d2-528209ef9525
+        size: 1227
+        source_url: /api/v1/sources/286347a8-7d7b-4ace-8982-d5db927ed246
+        uuid: 247ae51f-7834-4db8-ac8c-72ea2a9a4bb2
+      - filename: 5-blue-eyed_parallelogram-reply.gpg
+        is_deleted_by_source: false
+        journalist_first_name: ''
+        journalist_last_name: ''
+        journalist_username: dellsberg
+        journalist_uuid: e101e4e2-230e-4e27-9f58-ad094079c230
+        reply_url: /api/v1/sources/74241930-15f1-4eaf-9425-eb4e73c57a58/replies/84c8a69b-6273-482c-a430-b5aeac627838
+        seen_by:
+        - ed64b0fa-0565-4b12-9c48-6cfe27a73fd9
+        - e101e4e2-230e-4e27-9f58-ad094079c230
+        size: 1174
+        source_url: /api/v1/sources/74241930-15f1-4eaf-9425-eb4e73c57a58
+        uuid: 84c8a69b-6273-482c-a430-b5aeac627838
+      - filename: 6-blue-eyed_parallelogram-reply.gpg
+        is_deleted_by_source: false
+        journalist_first_name: ''
+        journalist_last_name: ''
+        journalist_username: deleted
+        journalist_uuid: b2857ac1-3765-4a3e-95d2-528209ef9525
+        reply_url: /api/v1/sources/74241930-15f1-4eaf-9425-eb4e73c57a58/replies/8ee6dd43-db6d-4b80-9f7f-acfe819908f2
+        seen_by:
+        - ed64b0fa-0565-4b12-9c48-6cfe27a73fd9
+        - b2857ac1-3765-4a3e-95d2-528209ef9525
+        size: 1293
+        source_url: /api/v1/sources/74241930-15f1-4eaf-9425-eb4e73c57a58
+        uuid: 8ee6dd43-db6d-4b80-9f7f-acfe819908f2
+      - filename: 5-hand-to-mouth_greasewood-reply.gpg
+        is_deleted_by_source: false
+        journalist_first_name: ''
+        journalist_last_name: ''
+        journalist_username: dellsberg
+        journalist_uuid: e101e4e2-230e-4e27-9f58-ad094079c230
+        reply_url: /api/v1/sources/127ce85b-2c3e-4f06-a46f-89882ecb82d0/replies/8d0b333a-082f-4c01-a4c4-5763795af7f7
+        seen_by:
+        - e101e4e2-230e-4e27-9f58-ad094079c230
+        size: 1331
+        source_url: /api/v1/sources/127ce85b-2c3e-4f06-a46f-89882ecb82d0
+        uuid: 8d0b333a-082f-4c01-a4c4-5763795af7f7
+      - filename: 6-hand-to-mouth_greasewood-reply.gpg
+        is_deleted_by_source: false
+        journalist_first_name: ''
+        journalist_last_name: ''
+        journalist_username: deleted
+        journalist_uuid: b2857ac1-3765-4a3e-95d2-528209ef9525
+        reply_url: /api/v1/sources/127ce85b-2c3e-4f06-a46f-89882ecb82d0/replies/40460ca9-8d80-40d6-8181-c5175ad961cc
+        seen_by:
+        - ed64b0fa-0565-4b12-9c48-6cfe27a73fd9
+        - b2857ac1-3765-4a3e-95d2-528209ef9525
+        size: 1237
+        source_url: /api/v1/sources/127ce85b-2c3e-4f06-a46f-89882ecb82d0
+        uuid: 40460ca9-8d80-40d6-8181-c5175ad961cc
+    headers:
+      connection: close
+      content-length: '4074'
+      content-type: application/json
+      date: Thu, 29 Feb 2024 21:13:02 GMT
+      server: Werkzeug/2.2.3 Python/3.8.10
+    status: 200
+- request:
+    body: '{"files": ["06066c50-621c-402b-bd8b-80b20203e803", "62f59814-8bac-42f3-a449-df4b6465ae14",
+      "6b442837-8d46-4dd8-9c42-01eb6b26baa6", "ea890d9b-cbec-4524-a7c6-1d8cf1b42aa5",
+      "29e2a718-6530-43c5-9948-95b50905db18", "3189e62c-fd9a-4a59-aa86-b157d4f45bc6"],
+      "messages": ["69db191c-0548-4e71-8ca1-fc567bcb34f9", "ba5f561c-f888-410b-b345-802d32a82f40",
+      "61264469-0228-4d2c-a9f9-bc5e66406b4b", "9258f8a9-35c0-4ad5-b7c3-84426abd7216",
+      "dbcfad7b-628d-46d9-8af3-d3cfbb01e04c", "2da18dee-ddfc-4727-aa0b-a872b2e2f1be"],
+      "replies": ["60077f28-eedf-42ff-b08f-39dff29ac92c", "247ae51f-7834-4db8-ac8c-72ea2a9a4bb2",
+      "84c8a69b-6273-482c-a430-b5aeac627838", "8ee6dd43-db6d-4b80-9f7f-acfe819908f2",
+      "8d0b333a-082f-4c01-a4c4-5763795af7f7", "40460ca9-8d80-40d6-8181-c5175ad961cc"]}'
+    headers:
+      Accept:
+      - application/json
+      Authorization:
+      - Token Ilhha2ZHZWpVcFZQVmpKdWJOUzJYRG1YVUc4QXZWS0JiOGVNQXJycE5GUFUi.ZeDzXQ.10ODTj49yF7kxKbeMm9eaayR3Xo
+      Content-Type:
+      - application/json
+    method: POST
+    uri: api/v1/seen
+  response: !!python/object:securedrop_client.sdk.JSONResponse
+    data:
+      message: resources marked seen
+    headers:
+      connection: close
+      content-length: '41'
+      content-type: application/json
+      date: Thu, 29 Feb 2024 21:13:03 GMT
+      server: Werkzeug/2.2.3 Python/3.8.10
+    status: 200
+version: 1

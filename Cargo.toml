@@ -3,3 +3,8 @@ members = [
     "proxy"
 ]
 resolver = "2"
+
+[profile.release]
+# Let packaging take care of stripping debug symbols
+debug = "full"
+strip = "none"

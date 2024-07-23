@@ -1,7 +1,6 @@
 from PyQt5.QtWidgets import QCheckBox, QLineEdit
 
 from securedrop_client.gui.base import PasswordEdit
-from tests.helper import app  # noqa: F401
 
 
 def test_PasswordEdit(mocker):

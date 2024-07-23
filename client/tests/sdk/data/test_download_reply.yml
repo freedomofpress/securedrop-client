@@ -1,0 +1,137 @@
+interactions:
+- request:
+    body: null
+    headers:
+      Accept:
+      - application/json
+      Authorization:
+      - Token Ilhha2ZHZWpVcFZQVmpKdWJOUzJYRG1YVUc4QXZWS0JiOGVNQXJycE5GUFUi.ZeDzXQ.10ODTj49yF7kxKbeMm9eaayR3Xo
+      Content-Type:
+      - application/json
+    method: GET
+    uri: api/v1/replies
+  response: !!python/object:securedrop_client.sdk.JSONResponse
+    data:
+      replies:
+      - filename: 5-conclusive_musk-reply.gpg
+        is_deleted_by_source: false
+        journalist_first_name: ''
+        journalist_last_name: ''
+        journalist_username: dellsberg
+        journalist_uuid: e101e4e2-230e-4e27-9f58-ad094079c230
+        reply_url: /api/v1/sources/286347a8-7d7b-4ace-8982-d5db927ed246/replies/60077f28-eedf-42ff-b08f-39dff29ac92c
+        seen_by:
+        - ed64b0fa-0565-4b12-9c48-6cfe27a73fd9
+        - e101e4e2-230e-4e27-9f58-ad094079c230
+        size: 1143
+        source_url: /api/v1/sources/286347a8-7d7b-4ace-8982-d5db927ed246
+        uuid: 60077f28-eedf-42ff-b08f-39dff29ac92c
+      - filename: 6-conclusive_musk-reply.gpg
+        is_deleted_by_source: false
+        journalist_first_name: ''
+        journalist_last_name: ''
+        journalist_username: deleted
+        journalist_uuid: b2857ac1-3765-4a3e-95d2-528209ef9525
+        reply_url: /api/v1/sources/286347a8-7d7b-4ace-8982-d5db927ed246/replies/247ae51f-7834-4db8-ac8c-72ea2a9a4bb2
+        seen_by:
+        - ed64b0fa-0565-4b12-9c48-6cfe27a73fd9
+        - b2857ac1-3765-4a3e-95d2-528209ef9525
+        size: 1227
+        source_url: /api/v1/sources/286347a8-7d7b-4ace-8982-d5db927ed246
+        uuid: 247ae51f-7834-4db8-ac8c-72ea2a9a4bb2
+      - filename: 5-blue-eyed_parallelogram-reply.gpg
+        is_deleted_by_source: false
+        journalist_first_name: ''
+        journalist_last_name: ''
+        journalist_username: dellsberg
+        journalist_uuid: e101e4e2-230e-4e27-9f58-ad094079c230
+        reply_url: /api/v1/sources/74241930-15f1-4eaf-9425-eb4e73c57a58/replies/84c8a69b-6273-482c-a430-b5aeac627838
+        seen_by:
+        - ed64b0fa-0565-4b12-9c48-6cfe27a73fd9
+        - e101e4e2-230e-4e27-9f58-ad094079c230
+        size: 1174
+        source_url: /api/v1/sources/74241930-15f1-4eaf-9425-eb4e73c57a58
+        uuid: 84c8a69b-6273-482c-a430-b5aeac627838
+      - filename: 6-blue-eyed_parallelogram-reply.gpg
+        is_deleted_by_source: false
+        journalist_first_name: ''
+        journalist_last_name: ''
+        journalist_username: deleted
+        journalist_uuid: b2857ac1-3765-4a3e-95d2-528209ef9525
+        reply_url: /api/v1/sources/74241930-15f1-4eaf-9425-eb4e73c57a58/replies/8ee6dd43-db6d-4b80-9f7f-acfe819908f2
+        seen_by:
+        - ed64b0fa-0565-4b12-9c48-6cfe27a73fd9
+        - b2857ac1-3765-4a3e-95d2-528209ef9525
+        size: 1293
+        source_url: /api/v1/sources/74241930-15f1-4eaf-9425-eb4e73c57a58
+        uuid: 8ee6dd43-db6d-4b80-9f7f-acfe819908f2
+      - filename: 5-hand-to-mouth_greasewood-reply.gpg
+        is_deleted_by_source: false
+        journalist_first_name: ''
+        journalist_last_name: ''
+        journalist_username: dellsberg
+        journalist_uuid: e101e4e2-230e-4e27-9f58-ad094079c230
+        reply_url: /api/v1/sources/127ce85b-2c3e-4f06-a46f-89882ecb82d0/replies/8d0b333a-082f-4c01-a4c4-5763795af7f7
+        seen_by:
+        - ed64b0fa-0565-4b12-9c48-6cfe27a73fd9
+        - e101e4e2-230e-4e27-9f58-ad094079c230
+        size: 1331
+        source_url: /api/v1/sources/127ce85b-2c3e-4f06-a46f-89882ecb82d0
+        uuid: 8d0b333a-082f-4c01-a4c4-5763795af7f7
+      - filename: 6-hand-to-mouth_greasewood-reply.gpg
+        is_deleted_by_source: false
+        journalist_first_name: ''
+        journalist_last_name: ''
+        journalist_username: deleted
+        journalist_uuid: b2857ac1-3765-4a3e-95d2-528209ef9525
+        reply_url: /api/v1/sources/127ce85b-2c3e-4f06-a46f-89882ecb82d0/replies/40460ca9-8d80-40d6-8181-c5175ad961cc
+        seen_by:
+        - ed64b0fa-0565-4b12-9c48-6cfe27a73fd9
+        - b2857ac1-3765-4a3e-95d2-528209ef9525
+        size: 1237
+        source_url: /api/v1/sources/127ce85b-2c3e-4f06-a46f-89882ecb82d0
+        uuid: 40460ca9-8d80-40d6-8181-c5175ad961cc
+    headers:
+      connection: close
+      content-length: '4123'
+      content-type: application/json
+      date: Thu, 29 Feb 2024 21:13:09 GMT
+      server: Werkzeug/2.2.3 Python/3.8.10
+    status: 200
+- request:
+    body: null
+    headers:
+      Accept:
+      - application/json
+      Authorization:
+      - Token Ilhha2ZHZWpVcFZQVmpKdWJOUzJYRG1YVUc4QXZWS0JiOGVNQXJycE5GUFUi.ZeDzXQ.10ODTj49yF7kxKbeMm9eaayR3Xo
+      Content-Type:
+      - application/json
+    method: GET
+    uri: api/v1/sources/286347a8-7d7b-4ace-8982-d5db927ed246/replies/60077f28-eedf-42ff-b08f-39dff29ac92c/download
+  response: !!python/object:securedrop_client.sdk.StreamedResponse
+    contents: !!binary |
+      wcFMA9IEM7c3AYBaAQ/+LYfYfDzpsk+zoBH/5Yd7aUhTRLKMRNnw38AvLSJMDWqX28NZ2gHn/xNc
+      XdaTe2k6+QLaAeNfBvhvILY5XEZ19DpakUYnIGRGPqhwtbGh28OwhtfGVyu/36L9169JOhTidtQc
+      RwIrSIfb/yg9aVPvL+uMOHkxfsOQHQbTsseQATLjv46+ODwL6XAUx4EaUriOKGV5qysuhRun1lan
+      31+qF/guSyE64opmXFBE+tSY1Rxg03udpiDaUyPq/l6r5YYQLNpgsTnqN9JTw4lrZj9On53f4vAP
+      W4K/Hyx0x1YXkB8x7jBRqEEvqWf/5jAkUVHYGZwTFT2z/+WpLd6c0PXgcUWeVJR8JPMxPgonF0Jg
+      X3DmoRVpT4jZBO0Aj/IwTvon/T7SjKpXywfmy56/vGATaXfcPEj8ptIDrGDzewNwd2nZzPp7gKuI
+      djcKa9VITlkL19ZASWWk5lg2QTmifmvO0QTKT48mSSF/F0QfjI5GZnVOo1ho6g06s75ZB4zaumd1
+      b02ZUMq4/Eq1zBjf2U6WDKMv53UzgUfpA9CicRQU26asUYURQ4mhWWBUaNRBuPEKmuC94p3RJM+1
+      GgdZv4SJ75fl2Ttb3l/CfS8cS5+m9/o5kyUwHhe4equdCLtzLlhOcHd9A9z5Y6NBs/ZelwLxJyXk
+      u+T7TTY74DUJ4BwoWn7BwUwDw+fEwKIgGyoBD/0bDV8h1RsBdTVRvSWYsIWDdzUnb5QrcdvwQikR
+      3gmSqcSwJOvqOFBDeAR58J97vH0ijbnQfKw10EeE4VrrxiQ9ITlioIHTly/Ag219kwLrM630zavM
+      tZdbffh0RPY/80taikEWaN+i+gTc1EMrWsrXXBu5fczDgJLa0jxKxa3+/949mLsTyOn9/IHbcqfn
+      +TqF/iy98p4NLFHNsLmMkjz5V6YzrCfRWgawfPVWqosCzCBFm3IV4VE1L5eYCjKRB+yvzLsGgoxY
+      B/QoT+X1Pj5r2/96R0YA616ukomSIoC/OosWSFtD7VxSoNMVUuDssrTwVJUQ7XgMt4YB4+HsUtbM
+      k31+5H7F4OTUWd7M25S984QHAl/W3p0kkRWxfxQoO0kFqvl/FPkKGGFJF6aA5kXUJD9HNoU1Je8O
+      zQcUd+mf74mRsXxvuu9aHfBqZTpF7hKMKEz26fe9kARxXeZHDu7Vw6qDo6jCFDEynNIbfHCr+7VK
+      iImN7FqXltm03KA+sKnzef7rqI0/lkMU2rbJUpIaeN3JmpaZ/ip20GqqGsKEh+cVjplQMTjkjCsu
+      AvTRDW2GLdzENAUM4ZmlP/Xk9E4V7s4zmx25tZrELm84nvqIxT46wu6w/4qpAaTPMDHvuHxuGPih
+      Pc36AHD2DBiyGoXbrroaDd8iseOqtTeFv3jy09JXAS8QqUM0RB9JDjqpRjiSjxgfTVMrm7JSGTGl
+      Ds2aCua9fIbiaHDQ7gmkWmaJe98GEVvPDmYX3quN82S2J/D2cqdBhEsOOtUgYScYmHo2QaW503Na
+      eVl1
+    filename: attachment; filename=5-conclusive_musk-reply.gpg
+    sha256sum: sha256:d4ca33eb6b2aa0c111cf75a01d41ca7817f9fe808168b0e2ba80d3c386b375c2
+version: 1

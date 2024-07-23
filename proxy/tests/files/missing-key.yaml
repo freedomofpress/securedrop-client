@@ -1,4 +1,0 @@
-host: jsonplaceholder.typicode.com
-scheme: https
-target_vm: compost
-dev: False

@@ -25,7 +25,6 @@ import uuid
 from datetime import datetime
 from gettext import gettext as _
 from gettext import ngettext
-from typing import Dict, List, Optional, Type, Union  # noqa: F401
 
 import arrow
 import sqlalchemy.orm.exc
@@ -77,7 +76,7 @@ def login_required(f):  # type: ignore[no-untyped-def]
     def decorated_function(self, *args, **kwargs):  # type: ignore[no-untyped-def]
         if not self.api:
             self.on_action_requiring_login()
-            return
+            return None
         else:
             return f(self, *args, **kwargs)
 
@@ -121,7 +120,7 @@ class APICallRunner(QObject):
         try:
             self.result = self.api_call(*self.args, **self.kwargs)
         except Exception as ex:
-            if isinstance(ex, (RequestTimeoutError, ServerConnectionError)):
+            if isinstance(ex, RequestTimeoutError | ServerConnectionError):
                 self.call_timed_out.emit()
 
             logger.error("Call failed")
@@ -321,9 +320,9 @@ class Controller(QObject):
         state: state.State,
         proxy: bool = True,
         qubes: bool = True,
-        sync_thread: Optional[QThread] = None,
-        main_queue_thread: Optional[QThread] = None,
-        file_download_queue_thread: Optional[QThread] = None,
+        sync_thread: QThread | None = None,
+        main_queue_thread: QThread | None = None,
+        file_download_queue_thread: QThread | None = None,
     ) -> None:
         """
         The hostname, gui and session objects are used to coordinate with the
@@ -370,10 +369,10 @@ class Controller(QObject):
         self.gui = gui
 
         # Reference to the API for secure drop proxy.
-        self.api: Optional[sdk.API] = None
+        self.api: sdk.API | None = None
 
         # Store authenticated user
-        self.authenticated_user: Union[db.User, None] = None
+        self.authenticated_user: db.User | None = None
 
         # Reference to the SqlAlchemy `sessionmaker` and `session`
         self.session_maker = session_maker
@@ -389,7 +388,7 @@ class Controller(QObject):
         self.add_job.connect(self.api_job_queue.enqueue)
 
         # Contains active threads calling the API.
-        self.api_threads = {}  # type: Dict[str, Dict]
+        self.api_threads = {}  # type: dict[str, dict]
 
         self.gpg = GpgHelper(home, self.session_maker, proxy)
 
@@ -573,7 +572,7 @@ class Controller(QObject):
         # since the GUI has to check authentication state in several places.
         self.is_authenticated = True
 
-        logger.info("{} successfully logged in".format(self.api.username))
+        logger.info(f"{self.api.username} successfully logged in")
         self.gui.hide_login()
         user = storage.create_or_update_user(
             self.api.token_journalist_uuid,
@@ -597,7 +596,7 @@ class Controller(QObject):
         # Failed to authenticate. Reset state with failure message.
         self.invalidate_token()
 
-        if isinstance(result, (RequestTimeoutError, ServerConnectionError)):
+        if isinstance(result, RequestTimeoutError | ServerConnectionError):
             error = _(
                 "Could not reach the SecureDrop server. Please check your \n"
                 "Internet and Tor connection and try again."
@@ -710,7 +709,7 @@ class Controller(QObject):
                 return
 
             self._close_client_session()
-        elif isinstance(result, (RequestTimeoutError, ServerConnectionError)):
+        elif isinstance(result, RequestTimeoutError | ServerConnectionError):
             self.gui.update_error_status(
                 _("The SecureDrop server cannot be reached. Trying to reconnect..."), duration=0
             )
@@ -748,9 +747,9 @@ class Controller(QObject):
             # user or if it no longer exists (individual conversation items can be deleted via the
             # web journalist interface).
             current_user_id = self.authenticated_user.id
-            files = []  # type: List[str]
-            messages = []  # type: List[str]
-            replies = []  # type: List[str]
+            files = []  # type: list[str]
+            messages = []  # type: list[str]
+            replies = []  # type: list[str]
             source_items = source.collection
             for item in source_items:
                 try:
@@ -787,9 +786,7 @@ class Controller(QObject):
     def on_update_star_success(self, source_uuid: str) -> None:
         self.star_update_successful.emit(source_uuid)
 
-    def on_update_star_failure(
-        self, error: Union[UpdateStarJobError, UpdateStarJobTimeoutError]
-    ) -> None:
+    def on_update_star_failure(self, error: UpdateStarJobError | UpdateStarJobTimeoutError) -> None:
         if isinstance(error, UpdateStarJobError):
             self.gui.update_error_status(_("Failed to update star."))
             source = self.session.query(db.Source).filter_by(uuid=error.source_uuid).one()
@@ -839,12 +836,12 @@ class Controller(QObject):
 
     @login_required
     def _submit_download_job(
-        self, object_type: Union[Type[db.Reply], Type[db.Message], Type[db.File]], uuid: str
+        self, object_type: type[db.Reply] | type[db.Message] | type[db.File], uuid: str
     ) -> None:
         if object_type == db.Reply:
-            job = ReplyDownloadJob(
+            job: ReplyDownloadJob | MessageDownloadJob | FileDownloadJob = ReplyDownloadJob(
                 uuid, self.data_dir, self.gpg
-            )  # type: Union[ReplyDownloadJob, MessageDownloadJob, FileDownloadJob]
+            )
             job.success_signal.connect(self.on_reply_download_success)
             job.failure_signal.connect(self.on_reply_download_failure)
         elif object_type == db.Message:
@@ -883,7 +880,7 @@ class Controller(QObject):
         """
         if isinstance(exception, DownloadChecksumMismatchException):
             # Keep resubmitting the job if the download is corrupted.
-            logger.warning("Failure due to checksum mismatch, retrying {}".format(exception.uuid))
+            logger.warning(f"Failure due to checksum mismatch, retrying {exception.uuid}")
             self._submit_download_job(exception.object_type, exception.uuid)
 
         self.session.commit()
@@ -918,7 +915,7 @@ class Controller(QObject):
         """
         if isinstance(exception, DownloadChecksumMismatchException):
             # Keep resubmitting the job if the download is corrupted.
-            logger.warning("Failure due to checksum mismatch, retrying {}".format(exception.uuid))
+            logger.warning(f"Failure due to checksum mismatch, retrying {exception.uuid}")
             self._submit_download_job(exception.object_type, exception.uuid)
 
         self.session.commit()
@@ -943,9 +940,7 @@ class Controller(QObject):
                     _("File does not exist in the data directory. Please try re-downloading.")
                 )
                 logger.warning(
-                    "Cannot find file in {}. File does not exist.".format(
-                        os.path.dirname(file.filename)
-                    )
+                    f"Cannot find file in {os.path.dirname(file.filename)}. File does not exist."
                 )
             missing_files = storage.update_missing_files(self.data_dir, self.session)
             for f in missing_files:
@@ -958,7 +953,7 @@ class Controller(QObject):
         Open the file specified by file_uuid. If the file is missing, update the db so that
         is_downloaded is set to False.
         """
-        logger.info('Opening file in "{}".'.format(os.path.dirname(file.location(self.data_dir))))
+        logger.info(f'Opening file in "{os.path.dirname(file.location(self.data_dir))}".')
 
         if not self.downloaded_file_exists(file):
             return
@@ -973,7 +968,7 @@ class Controller(QObject):
 
     @login_required
     def on_submission_download(
-        self, submission_type: Union[Type[db.File], Type[db.Message]], submission_uuid: str
+        self, submission_type: type[db.File] | type[db.Message], submission_uuid: str
     ) -> None:
         """
         Download the file associated with the Submission (which may be a File or Message).
@@ -998,7 +993,7 @@ class Controller(QObject):
         """
         # Keep resubmitting the job if the download is corrupted.
         if isinstance(exception, DownloadChecksumMismatchException):
-            logger.warning("Failure due to checksum mismatch, retrying {}".format(exception.uuid))
+            logger.warning(f"Failure due to checksum mismatch, retrying {exception.uuid}")
             self._submit_download_job(exception.object_type, exception.uuid)
         else:
             if isinstance(exception, DownloadDecryptionException):
@@ -1116,7 +1111,7 @@ class Controller(QObject):
         """
         # If the user account no longer exists, do not send
         if not self.authenticated_user:
-            logger.error("Sender of reply {} has been deleted".format(reply_uuid))
+            logger.error(f"Sender of reply {reply_uuid} has been deleted")
             return
 
         source = self.session.query(db.Source).filter_by(uuid=source_uuid).one_or_none()
@@ -1156,10 +1151,8 @@ class Controller(QObject):
         reply = storage.get_reply(self.session, reply_uuid)
         self.reply_succeeded.emit(reply.source.uuid, reply_uuid, reply.content)
 
-    def on_reply_failure(
-        self, exception: Union[SendReplyJobError, SendReplyJobTimeoutError]
-    ) -> None:
-        logger.debug("{} failed to send".format(exception.reply_uuid))
+    def on_reply_failure(self, exception: SendReplyJobError | SendReplyJobTimeoutError) -> None:
+        logger.debug(f"{exception.reply_uuid} failed to send")
 
         # only emit failure signal for non-timeout errors
         if isinstance(exception, SendReplyJobError):

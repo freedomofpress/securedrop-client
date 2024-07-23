@@ -1,5 +1,3 @@
-from __future__ import with_statement
-
 import sys
 from logging.config import fileConfig
 from os import path

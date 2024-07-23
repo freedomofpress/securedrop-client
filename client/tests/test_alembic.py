@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 import os
 import re
 import subprocess
@@ -32,7 +30,7 @@ def make_session_maker(home: str) -> scoped_session:
     from that implementation.
     """
     db_path = os.path.join(home, "svs.sqlite")
-    engine = create_engine("sqlite:///{}".format(db_path))
+    engine = create_engine(f"sqlite:///{db_path}")
     maker = sessionmaker(bind=engine)
     return scoped_session(maker)
 
@@ -72,15 +70,13 @@ def get_schema(session):
 def assert_schemas_equal(left, right):
     for k, v in left.items():
         if k not in right:
-            raise AssertionError("Left contained {} but right did not".format(k))
+            raise AssertionError(f"Left contained {k} but right did not")
         if not ddl_equal(v, right[k]):
-            raise AssertionError(
-                "Schema for {} did not match:\nLeft:\n{}\nRight:\n{}".format(k, v, right[k])
-            )
+            raise AssertionError(f"Schema for {k} did not match:\nLeft:\n{v}\nRight:\n{right[k]}")
         right.pop(k)
 
     if right:
-        raise AssertionError("Right had additional tables: {}".format(right.keys()))
+        raise AssertionError(f"Right had additional tables: {right.keys()}")
 
 
 def ddl_equal(left, right):
@@ -159,7 +155,7 @@ def test_alembic_migration_upgrade_with_data(alembic_config, config, migration, 
     migrations = list_migrations(alembic_config, migration)
     if len(migrations) > 1:
         upgrade(alembic_config, migrations[-2])
-    mod_name = "tests.migrations.test_{}".format(migration)
+    mod_name = f"tests.migrations.test_{migration}"
     mod = __import__(mod_name, fromlist=["UpgradeTester"])
     session = make_session_maker(homedir)
     upgrade_tester = mod.UpgradeTester(homedir, session)
@@ -188,7 +184,7 @@ def test_alembic_migration_downgrade_with_data(alembic_config, config, migration
     is successful when there is data.
     """
     upgrade(alembic_config, migration)
-    mod_name = "tests.migrations.test_{}".format(migration)
+    mod_name = f"tests.migrations.test_{migration}"
     mod = __import__(mod_name, fromlist=["DowngradeTester"])
     session = make_session_maker(homedir)
     downgrade_tester = mod.DowngradeTester(homedir, session)

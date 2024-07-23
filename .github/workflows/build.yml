@@ -1,5 +1,9 @@
 name: Package builds
-on: [push, pull_request]
+on:
+  - merge_group
+  - push
+  - pull_request
+
 # Only build for latest push/PR unless it's main or release/
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -14,7 +18,6 @@ jobs:
     strategy:
       matrix:
         debian_version:
-          - bullseye
           - bookworm
     runs-on: ubuntu-latest
     container: debian:${{ matrix.debian_version }}
@@ -38,7 +41,6 @@ jobs:
           PKG_DIR=../client make -C securedrop-builder requirements
           PKG_DIR=../export make -C securedrop-builder requirements
           PKG_DIR=../log make -C securedrop-builder requirements
-          PKG_DIR=../proxy make -C securedrop-builder requirements
           git config --global --add safe.directory "$GITHUB_WORKSPACE"
           git diff --ignore-matching-lines=# --exit-code
 
@@ -47,7 +49,6 @@ jobs:
     strategy:
       matrix:
         debian_version:
-          - bullseye
           - bookworm
     runs-on: ubuntu-latest
     outputs:
@@ -76,7 +77,6 @@ jobs:
     strategy:
       matrix:
         debian_version:
-          - bullseye
           - bookworm
     runs-on: ubuntu-latest
     outputs:
@@ -103,7 +103,6 @@ jobs:
     strategy:
       matrix:
         debian_version:
-          - bullseye
           - bookworm
     runs-on: ubuntu-latest
     container: debian:bookworm
@@ -140,8 +139,9 @@ jobs:
           - keyring
           - log
           - proxy
+          - qubesdb-tools
+          - whonix-config
         debian_version:
-          - bullseye
           - bookworm
     runs-on: ubuntu-latest
     needs:
@@ -158,6 +158,7 @@ jobs:
             -v "/var/lib/docker:/var/lib/docker" \
             -v "/var/run/docker.sock:/var/run/docker.sock" \
             -v "/$(pwd)/keyring:/keyring" \
+            -v "/$(pwd)/scripts:/scripts" \
             -v "/$(pwd)/build-${{ matrix.debian_version }}:/build" \
             -v "/$(pwd)/.github/workflows/piuparts:/piuparts" \
             -e DISTRO=${{ matrix.debian_version }} \

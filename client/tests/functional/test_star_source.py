@@ -5,7 +5,6 @@ The tests are based upon the client testing descriptions here:
 https://github.com/freedomofpress/securedrop-client/wiki/Test-plan#basic-client-testing
 """
 
-import pytest
 from flaky import flaky
 from PyQt5.QtCore import Qt
 
@@ -13,7 +12,6 @@ from tests.conftest import TIME_CLICK_ACTION, TIME_RENDER_SOURCE_LIST
 
 
 @flaky
-@pytest.mark.vcr()
 def test_star_source(functional_test_logged_in_context, qtbot, mocker):
     """
     Verify that the source is starred after clicking on the star widget and unstarred after clicking

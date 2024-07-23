@@ -1,5 +1,9 @@
 name: CI
-on: [push, pull_request]
+on:
+  - merge_group
+  - push
+  - pull_request
+
 # Only build for latest push/PR unless it's main or release/
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -10,11 +14,25 @@ defaults:
     shell: bash
 
 jobs:
+  lint-apparmor:
+    strategy:
+      matrix:
+        debian_version:
+          - bookworm
+    runs-on: ubuntu-latest
+    container: debian:${{ matrix.debian_version }}
+    steps:
+      - run: |
+          apt-get update && apt-get install --yes git make apparmor
+      - uses: actions/checkout@v4
+      - name: Lint AppArmor profiles
+        run: |
+          make lint-apparmor
+
   lint-desktop:
     strategy:
       matrix:
         debian_version:
-          - bullseye
           - bookworm
     runs-on: ubuntu-latest
     container: debian:${{ matrix.debian_version }}
@@ -30,28 +48,15 @@ jobs:
     strategy:
       matrix:
         debian_version:
-          - bullseye
           - bookworm
     runs-on: ubuntu-latest
     container: debian:${{ matrix.debian_version }}
     steps:
       - run: |
-          apt-get update && apt-get install --yes git make file
+          apt-get update && apt-get install --yes git make file python3-poetry
       - uses: actions/checkout@v4
       - name: Install dependencies
         run: |
-          source /etc/os-release
-          if [[ "$VERSION_CODENAME" == "bullseye" ]]; then
-              # Install Poetry via PyPI
-              apt-get install --yes --no-install-recommends python3-pip
-              pip install poetry==1.6.1
-          elif [[ "$VERSION_CODENAME" == "bookworm" ]]; then
-              # Install Poetry via system package
-              apt-get install --yes --no-install-recommends python3-poetry
-          else
-              echo "Unsupported Debian version: $VERSION_CODENAME"
-              exit 1
-          fi
           poetry install
       - name: Run lint
         run: make lint
@@ -61,40 +66,22 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
+        # proxy has no `make lint` because it is covered by `rust-lint`.
+        # qubesdb-tools has no `make lint` because it is covered by `lint`.
         component:
           - client
           - export
           - log
-          - proxy
         debian_version:
-          - bullseye
           - bookworm
-        # bookworm jobs are failing and will be
-        # replaced with proxy v2 shortly, so skip
-        # https://github.com/freedomofpress/securedrop-client/issues/1681
-        exclude:
-          - component: proxy
-            debian_version: bookworm
     runs-on: ubuntu-latest
     container: debian:${{ matrix.debian_version }}
     steps:
       - run: |
-          apt-get update && apt-get install --yes git make gnupg
+          apt-get update && apt-get install --yes git make gnupg python3-poetry
       - uses: actions/checkout@v4
       - name: Install dependencies
         run: |
-          source /etc/os-release
-          if [[ "$VERSION_CODENAME" == "bullseye" ]]; then
-              # Install Poetry via PyPI
-              apt-get install --yes --no-install-recommends python3-pip
-              pip install poetry==1.6.1
-          elif [[ "$VERSION_CODENAME" == "bookworm" ]]; then
-              # Install Poetry via system package
-              apt-get install --yes --no-install-recommends python3-poetry
-          else
-              echo "Unsupported Debian version: $VERSION_CODENAME"
-              exit 1
-          fi
           poetry -C ${{ matrix.component }} install
           if [[ "${{ matrix.component }}" == "client" ]]; then
             make -C ${{ matrix.component }} ci-install-deps
@@ -118,9 +105,15 @@ jobs:
   rust:
     runs-on: ubuntu-latest
     # Keep version in sync with rust-toolchain.toml
-    container: rust:1.74.1
+    container: rust:1.78.0
     steps:
       - uses: actions/checkout@v4
+      - name: Configure Qubes repository
+        run: |
+          cp scripts/qubes_42.sources /etc/apt/sources.list.d/
+          source /etc/os-release
+          sed -i s/##VERSION_CODENAME##/${VERSION_CODENAME}/ /etc/apt/sources.list.d/qubes_42.sources
+          apt-get update && apt-get install --yes libclang-dev qubesdb-dev
       - name: Install dependencies
         run: |
           rustup component add rustfmt

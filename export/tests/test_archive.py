@@ -1,6 +1,6 @@
 import json
 import os
-import subprocess  # noqa: F401
+import subprocess
 import tarfile
 import tempfile
 from io import BytesIO
@@ -279,7 +279,8 @@ def test_extract_tarball_raises_if_name_has_unsafe_absolute_path_with_symlink():
         archive_path = os.path.join(temp_dir, "archive.sd-export")
         symlink_path = os.path.join(temp_dir, "symlink")
 
-        os.system(f"ln -s {tmp}/unsafe {symlink_path}")  # create symlink to "/tmp/unsafe"
+        # create symlink to "/tmp/unsafe"
+        subprocess.check_call(["ln", "-s", f"{tmp}/unsafe", symlink_path])
 
         with tarfile.open(archive_path, "w:gz") as archive:
             metadata = {
@@ -322,7 +323,8 @@ def test_extract_tarball_raises_if_name_has_unsafe_absolute_path_with_symlink_to
         with open(file_path, "w") as file:
             file.write("some-content")
 
-        os.system(f"ln -s {tmp} {symlink_path}")  # create symlink to "/tmp"
+        # create symlink to "/tmp"
+        subprocess.check_call(["ln", "-s", tmp, symlink_path])
 
         with tarfile.open(archive_path, "w:gz") as archive:
             metadata = {

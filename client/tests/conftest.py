@@ -1,18 +1,19 @@
-import json
 import os
 import subprocess
 import tempfile
 from configparser import ConfigParser
 from datetime import datetime
+from unittest import mock
 from uuid import uuid4
 
+import pyotp
 import pytest
+import vcr
 from PyQt5.QtCore import Qt
 from PyQt5.QtWidgets import QMainWindow
 
 from securedrop_client import state
 from securedrop_client.app import configure_locale_and_language
-from securedrop_client.config import Config
 from securedrop_client.db import (
     Base,
     DownloadError,
@@ -27,6 +28,7 @@ from securedrop_client.export_status import ExportStatus
 from securedrop_client.gui import conversation
 from securedrop_client.gui.main import Window
 from securedrop_client.logic import Controller
+from tests.sdk.utils import VCRAPI, Cassette
 
 with open(os.path.join(os.path.dirname(__file__), "files", "test-key.gpg.pub.asc")) as f:
     PUB_KEY = f.read()
@@ -35,11 +37,7 @@ with open(os.path.join(os.path.dirname(__file__), "files", "test-key.gpg.pub.asc
 HOSTNAME = "http://localhost:8081/"
 USERNAME = "journalist"
 PASSWORD = "correct horse battery staple profanity oil chewy"
-
-# Modify cassettes to use the following TOTP code. For developing new tests,
-# you can modify this so you don't need to keep editing cassettes during
-# development.
-TOTP = "123456"
+TOTP = pyotp.TOTP("JHCOGO7VCER3EJ4L")
 
 # Time (in milliseconds) to wait for these GUI elements to render.
 TIME_APP_START = 1000
@@ -54,7 +52,7 @@ TIME_FILE_DOWNLOAD = 5000
 TIME_KEYCLICK_ACTION = 5000
 
 
-@pytest.fixture(scope="function")
+@pytest.fixture()
 def lang(request):
     """
     Setup:  Override $LANG as parameterized and configure locale accordingly.
@@ -75,70 +73,58 @@ def lang(request):
     configure_locale_and_language()
 
 
-@pytest.fixture(scope="function")
+@pytest.fixture()
 def print_dialog(mocker, homedir):
     mocker.patch("PyQt5.QtWidgets.QApplication.activeWindow", return_value=QMainWindow())
 
     export_device = mocker.MagicMock(spec=Export)
 
-    dialog = conversation.PrintDialog(export_device, "file123.jpg", ["/mock/path/to/file"])
-
-    yield dialog
+    return conversation.PrintDialog(export_device, "file123.jpg", ["/mock/path/to/file"])
 
 
-@pytest.fixture(scope="function")
+@pytest.fixture()
 def print_transcript_dialog(mocker, homedir):
     mocker.patch("PyQt5.QtWidgets.QApplication.activeWindow", return_value=QMainWindow())
 
     export_device = mocker.MagicMock(spec=Export)
 
-    dialog = conversation.PrintTranscriptDialog(
+    return conversation.PrintTranscriptDialog(
         export_device, "transcript.txt", ["some/path/transcript.txt"]
     )
 
-    yield dialog
 
-
-@pytest.fixture(scope="function")
+@pytest.fixture()
 def export_wizard_multifile(mocker, homedir):
     mocker.patch("PyQt5.QtWidgets.QApplication.activeWindow", return_value=QMainWindow())
 
     export_device = mocker.MagicMock(spec=Export)
 
-    wizard = conversation.ExportWizard(
+    return conversation.ExportWizard(
         export_device,
         "3 files",
         ["/some/path/file123.jpg", "/some/path/memo.txt", "/some/path/transcript.txt"],
     )
 
-    yield wizard
 
-
-@pytest.fixture(scope="function")
+@pytest.fixture()
 def export_wizard(mocker, homedir):
     mocker.patch("PyQt5.QtWidgets.QApplication.activeWindow", return_value=QMainWindow())
 
     export_device = mocker.MagicMock(spec=Export)
 
-    dialog = conversation.ExportWizard(export_device, "file123.jpg", ["/mock/path/to/file"])
-
-    yield dialog
+    return conversation.ExportWizard(export_device, "file123.jpg", ["/mock/path/to/file"])
 
 
-@pytest.fixture(scope="function")
+@pytest.fixture()
 def export_transcript_wizard(mocker, homedir):
     mocker.patch("PyQt5.QtWidgets.QApplication.activeWindow", return_value=QMainWindow())
 
     export_device = mocker.MagicMock(spec=Export)
 
-    dialog = conversation.ExportWizard(
-        export_device, "transcript.txt", ["/some/path/transcript.txt"]
-    )
-
-    yield dialog
+    return conversation.ExportWizard(export_device, "transcript.txt", ["/some/path/transcript.txt"])
 
 
-@pytest.fixture(scope="function")
+@pytest.fixture()
 def i18n():
     """
     Set up locale/language/gettext functions. This enables the use of _().
@@ -146,7 +132,7 @@ def i18n():
     configure_locale_and_language()
 
 
-@pytest.fixture(scope="function")
+@pytest.fixture()
 def homedir(i18n):
     """
     Create a "homedir" for a client.
@@ -167,10 +153,10 @@ def homedir(i18n):
         os.mkdir(dir_)
         os.chmod(dir_, 0o0700)
 
-    yield tmpdir
+    return tmpdir
 
 
-@pytest.fixture(scope="function")
+@pytest.fixture()
 def mock_export_locked():
     """
     Represents the following scenario:
@@ -201,7 +187,7 @@ def mock_export_locked():
     return device
 
 
-@pytest.fixture(scope="function")
+@pytest.fixture()
 def mock_export_unlocked():
     """
     Represents the following scenario:
@@ -223,7 +209,7 @@ def mock_export_unlocked():
     return device
 
 
-@pytest.fixture(scope="function")
+@pytest.fixture()
 def mock_export_no_usb_then_bad_passphrase():
     """
     Represents the following scenario:
@@ -256,7 +242,7 @@ def mock_export_no_usb_then_bad_passphrase():
     return device
 
 
-@pytest.fixture(scope="function")
+@pytest.fixture()
 def mock_export_fail_early():
     """
     Represents the following scenario:
@@ -289,8 +275,10 @@ def mock_export_fail_early():
     return device
 
 
-@pytest.fixture(scope="function")
-def functional_test_app_started_context(homedir, reply_status_codes, session, config, qtbot):
+@pytest.fixture()
+def functional_test_app_started_context(
+    vcr_api, homedir, reply_status_codes, session, config, qtbot
+):
     """
     Returns a tuple containing the gui window and controller of a configured client. This should be
     used to for tests that need to start from the login dialog before the main application window
@@ -311,7 +299,7 @@ def functional_test_app_started_context(homedir, reply_status_codes, session, co
     return (gui, controller)
 
 
-@pytest.fixture(scope="function")
+@pytest.fixture()
 def functional_test_logged_in_context(functional_test_app_started_context, qtbot):
     """
     Returns a tuple containing the gui window and controller of a configured client after logging in
@@ -323,7 +311,7 @@ def functional_test_logged_in_context(functional_test_app_started_context, qtbot
     qtbot.keyClicks(gui.login_dialog.username_field, USERNAME)
     qtbot.wait(TIME_CLICK_ACTION)
     qtbot.keyClicks(gui.login_dialog.password_field, PASSWORD)
-    qtbot.keyClicks(gui.login_dialog.tfa_field, TOTP)
+    qtbot.keyClicks(gui.login_dialog.tfa_field, str(TOTP.now()))
     qtbot.mouseClick(gui.login_dialog.submit, Qt.LeftButton)
     qtbot.wait(TIME_CLICK_ACTION)
 
@@ -336,7 +324,7 @@ def functional_test_logged_in_context(functional_test_app_started_context, qtbot
     return (gui, controller)
 
 
-@pytest.fixture(scope="function")
+@pytest.fixture()
 def functional_test_offline_context(functional_test_logged_in_context, qtbot):
     """
     Returns a tuple containing the gui window and controller of a configured client after making
@@ -362,17 +350,12 @@ def functional_test_offline_context(functional_test_logged_in_context, qtbot):
     return (gui, controller)
 
 
-@pytest.fixture(scope="function")
+@pytest.fixture()
 def config(homedir) -> str:
-    full_path = os.path.join(homedir, Config.CONFIG_NAME)
-    with open(full_path, "w") as f:
-        f.write(
-            json.dumps({"journalist_key_fingerprint": "65A1B5FF195B56353CC63DFFCC40EF1228271441"})
-        )
-    return full_path
+    os.environ["SD_SUBMISSION_KEY_FPR"] = "65A1B5FF195B56353CC63DFFCC40EF1228271441"
 
 
-@pytest.fixture(scope="function")
+@pytest.fixture()
 def alembic_config(homedir):
     return _alembic_config(homedir)
 
@@ -394,12 +377,12 @@ def _alembic_config(homedir):
     return alembic_path
 
 
-@pytest.fixture(scope="function")
+@pytest.fixture()
 def session_maker(homedir):
     return make_session_maker(homedir)
 
 
-@pytest.fixture(scope="function")
+@pytest.fixture()
 def session(session_maker):
     sess = session_maker
     Base.metadata.create_all(bind=sess.get_bind(), checkfirst=False)
@@ -407,25 +390,23 @@ def session(session_maker):
     sess.close()
 
 
-@pytest.fixture(scope="function")
+@pytest.fixture()
 def reply_status_codes(session) -> None:
     for reply_send_status in ReplySendStatusCodes:
         reply_status = ReplySendStatus(reply_send_status.value)
         session.add(reply_status)
         session.commit()
-    return
 
 
-@pytest.fixture(scope="function")
+@pytest.fixture()
 def download_error_codes(session) -> None:
     for download_error_code in DownloadErrorCodes:
         download_error = DownloadError(download_error_code.name)
         session.add(download_error)
         session.commit()
-    return
 
 
-@pytest.fixture(scope="function")
+@pytest.fixture()
 def source(session) -> dict:
     args = {"uuid": str(uuid4()), "public_key": PUB_KEY}
     source = Source(
@@ -461,10 +442,27 @@ def create_gpg_test_context(sdc_home):
         "--import",
         os.path.abspath(key_file),
     ]
-    result = subprocess.run(cmd)
+    result = subprocess.run(cmd, check=False)
     if result.returncode != 0:
         raise RuntimeError(
-            "Unable to import test GPG key. STDOUT: {} STDERR: {}".format(
-                result.stdout, result.stderr
-            )
+            f"Unable to import test GPG key. STDOUT: {result.stdout} STDERR: {result.stderr}"
         )
+
+
+@pytest.fixture()
+def vcr_api(request):
+    module_group = request.module.__name__.split(".")[1]
+    library = vcr.VCR(cassette_library_dir=f"tests/{module_group}/data/")
+    context = library.use_cassette(f"{request.function.__name__}.yml")
+    # Override `Cassette` to use our subclass before we enter the
+    # context manager.
+    context.cls = Cassette
+    with context as cassette:
+
+        def create(*args, **kwargs):
+            api = VCRAPI(*args, **kwargs)
+            api._cassette = cassette
+            return api
+
+        with mock.patch("securedrop_client.sdk.API", new=create):
+            yield

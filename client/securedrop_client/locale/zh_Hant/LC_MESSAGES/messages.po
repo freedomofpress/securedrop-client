@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: SecureDrop Client 0.9.0\n"
 "Report-Msgid-Bugs-To: securedrop@freedom.press\n"
-"PO-Revision-Date: 2024-03-08 20:30+0000\n"
+"PO-Revision-Date: 2024-06-12 17:30+0000\n"
 "Last-Translator: Meng Pang Wang <mengpangwang@gmail.com>\n"
 "Language-Team: Chinese (Traditional) <https://weblate.securedrop.org/projects/securedrop/securedrop-client/zh_Hant/>\n"
 "Language: zh_Hant\n"
@@ -15,41 +15,41 @@ msgstr ""
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=1; plural=0;\n"
-"X-Generator: Weblate 5.3.1\n"
+"X-Generator: Weblate 5.5.3\n"
 "Generated-By: Babel 2.12.1\n"
 
 msgid "{application_name} is already running"
-msgstr "{application_name} 已在運行"
+msgstr "{application_name} 已在執行"
 
 msgid "Retrieving 1 message"
 msgid_plural "Retrieving {message_count} messages"
-msgstr[0] "接收{message_count} 訊息"
+msgstr[0] "正在接收 {message_count} 則訊息"
 
 msgid "The SecureDrop server cannot be reached. Trying to reconnect..."
-msgstr "無法連接 SecureDrop 伺服器，嘗試重新連接...."
+msgstr "無法連線到 SecureDrop 伺服器，正在嘗試重新連線..."
 
 msgid ""
 "Could not reach the SecureDrop server. Please check your \n"
 "Internet and Tor connection and try again."
 msgstr ""
-"無法連上 SecureDrop 伺服器，請檢查網際網路\n"
-"與 Tor 連線狀態後再試試。"
+"無法連線到 SecureDrop 伺服器，請檢查您的\n"
+"網際網路與 Tor 連線狀態後再試一次。"
 
 msgid ""
 "Those credentials didn't work. Please try again, and \n"
 "make sure to use a new two-factor code."
 msgstr ""
-"這些憑證無效，請重試一遍，\n"
-"並確認使用新的雙因素驗證碼。"
+"這些憑證無效，請再試一次，\n"
+"並使用新的雙因素驗證碼。"
 
 msgid "That didn't work. Please check everything and try again."
-msgstr "此為無效，請檢查後再重試。"
+msgstr "失敗，請檢查後再重試。"
 
 msgid "You must sign in to perform this action."
-msgstr "須先登錄方能進行此動作。"
+msgstr "您必須登入以執行此動作。"
 
 msgid "Your session expired. Please log in again."
-msgstr "期效已過，請重新登錄。"
+msgstr "您的會談已逾期。請重新登入。"
 
 msgid "Failed to update star."
 msgstr "更新失敗的星號。"
@@ -88,22 +88,22 @@ msgid "Delete Source Account"
 msgstr "刪除線人帳戶"
 
 msgid "Delete All Files and Messages"
-msgstr "刪除全部的檔案與訊息"
+msgstr "刪除所有檔案與訊息"
 
 msgid "Print Transcript"
-msgstr "列印記錄文本"
+msgstr "列印文字抄本"
 
 msgid "Export Transcript"
-msgstr "滙出記錄文"
+msgstr "匯出文字抄本"
 
 msgid "Export All"
-msgstr "滙出全部"
+msgstr "匯出全部"
 
 msgid "<h2>Some files will not be exported</h2>Some files from this source have not yet been downloaded, and will not be exported.<br /><br />To export the currently downloaded files, click \"Continue.\""
 msgstr "<h2>某些檔案不會匯出</h2>尚未完整下載這名線人的檔案，故不會匯出。<br /><br />欲匯出目前下載的檔案，請按“繼續”"
 
 msgid "all files and transcript"
-msgstr "所有的檔案與記錄"
+msgstr "所有檔案與文字抄本"
 
 msgid "SecureDrop Client {}"
 msgstr "SecureDrop 客戶端 {}"
@@ -130,7 +130,7 @@ msgid "Nothing to see just yet!"
 msgstr "尚無東西可看!"
 
 msgid "Source submissions will be listed to the left, once downloaded and decrypted."
-msgstr "一旦下載或解密線人提交，就會列入至左側。"
+msgstr "下載並解密完成後，來自線人的資料會顯示於左側。"
 
 msgid "This is where you will read messages, reply to sources, and work with files."
 msgstr "這處可讀取訊息、回覆與使用檔案。"
@@ -178,14 +178,14 @@ msgid " DOWNLOADING "
 msgstr " 下載 "
 
 msgid "Earlier files and messages deleted."
-msgstr "早先刪除的檔案與訊息。"
+msgstr "先前刪除的檔案與訊息。"
 
 msgid ""
 "Files and messages deleted\n"
 " for this source"
 msgstr ""
-"此名線人\n"
-"檔案與訊息已刪除"
+"這名線人的\n"
+" 檔案與訊息已刪除"
 
 msgid "Compose a reply to "
 msgstr "撰寫回覆給: "
@@ -292,11 +292,11 @@ msgstr "未偵測到裝置"
 msgid "Too many USB devices detected; please insert one supported device."
 msgstr "偵測到太多 USB 裝置；請僅插入一項裝置。"
 
-msgid "Either the drive is not encrypted or there is something else wrong with it.<br />If this is a VeraCrypt drive, please unlock it from within `sd-devices`, then try again."
-msgstr ""
+msgid "Either the drive is not encrypted or there is something else wrong with it.<br />If this is a VeraCrypt drive, please unlock it from within the sd-devices VM, then try again."
+msgstr "裝置可能未加密或發生其他錯誤。<br />如果是 VeraCrypt 加密磁碟，請先從 sd-devices 虛擬機器中解鎖，再試一次。"
 
 msgid "The device is ready for export."
-msgstr ""
+msgstr "裝置已準備好匯出。"
 
 msgid "The device is locked."
 msgstr "裝置已鎖定。"
@@ -305,28 +305,28 @@ msgid "The passphrase provided did not work. Please try again."
 msgstr "您輸入的助記詞無效，請再試一次。"
 
 msgid "Error mounting drive"
-msgstr ""
+msgstr "掛載磁碟時發生錯誤"
 
 msgid "Error during export"
-msgstr ""
+msgstr "匯出時發生錯誤"
 
 msgid "Files were exported successfully, but the USB device could not be unmounted."
-msgstr ""
+msgstr "已成功匯出檔案，但無法卸除 USB 裝置。"
 
 msgid "Files were exported successfully, but some temporary files remain on disk. Reboot to remove them."
-msgstr ""
+msgstr "已成功匯出檔案，但磁碟上仍有部分暫存檔案。請重新開機以移除這些暫存檔案。"
 
 msgid "Export successful"
 msgstr "成功滙出"
 
 msgid "Error encountered with this device. See your administrator for help."
-msgstr ""
+msgstr "本裝置發生錯誤。請聯繫您的系統管理員。"
 
 msgid "Files were moved or missing and could not be exported."
-msgstr ""
+msgstr "檔案已被移動或遺失，無法匯出。"
 
 msgid "Error encountered. Please contact support."
-msgstr ""
+msgstr "發生錯誤。請聯繫支援。"
 
 msgid "Preparing to export:<br /><span style=\"font-weight:normal\">{}</span>"
 msgstr "準備滙出:<br /><span style=\"font-weight:normal\">{}</span>"
@@ -338,22 +338,22 @@ msgid "Ready to export:<br /><span style=\"font-weight:normal\">{}</span>"
 msgstr "已滙出:<br /><span style=\"font-weight:normal\">{}</span>"
 
 msgid "Export Failed"
-msgstr ""
+msgstr "匯出失敗"
 
 msgid "Please insert one of the export drives provisioned specifically for the SecureDrop Workstation.<br />If you're using a VeraCrypt drive, unlock it manually before proceeding."
-msgstr ""
+msgstr "請插入專供 SecureDrop 工作站使用的匯出磁碟。<br />如果您使用 VeraCrypt 磁碟，請先解鎖再繼續。"
 
 msgid "Remember to be careful when working with files outside of your Workstation machine."
 msgstr "記住在工作站以外的電腦上處理檔案時要小心。"
 
 msgid "Export sucessful, but drive was not locked"
-msgstr ""
+msgstr "已成功匯出，但磁碟未鎖定"
 
 msgid "Working..."
-msgstr ""
+msgstr "正在處理..."
 
 msgid "Enter passphrase for USB drive"
-msgstr "輸入 USB 隨身碟 的密語"
+msgstr "輸入 USB 磁碟的密語"
 
 msgid "Preparing to print:<br /><span style=\"font-weight:normal\">{}</span>"
 msgstr "準備列印:<br /><span style=\"font-weight:normal\">{}</span>"
@@ -374,7 +374,7 @@ msgid "Please connect your printer to a USB port."
 msgstr "請將印表機接入 USB 端口。"
 
 msgid "See your administrator for help."
-msgstr "聯絡求助管理員。"
+msgstr "請聯繫您的系統管理員提供協助。"
 
 msgid "YES, DELETE ENTIRE SOURCE ACCOUNT"
 msgstr "確認刪除全部的線人帳戶"

@@ -5,11 +5,7 @@ SHELL := /bin/bash
 check: lint test
 
 .PHONY: lint
-lint: flake8 mypy ## Run all linters
-
-.PHONY: flake8
-flake8: ## Run flake8 to lint Python files
-	@poetry run flake8
+lint: mypy ## Run all linters
 
 mypy: ## Type check Python files
 	@poetry run mypy

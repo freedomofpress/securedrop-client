@@ -4,6 +4,7 @@ import os
 import shutil
 import subprocess
 import tarfile
+from collections.abc import Callable
 from enum import Enum
 from io import BytesIO
 from shlex import quote
@@ -109,7 +110,7 @@ class Export(QObject):
             logger.error("Export preflight check failed during archive creation")
             self._on_export_process_error()
 
-    def export(self, filepaths: List[str], passphrase: Optional[str]) -> None:
+    def export(self, filepaths: list[str], passphrase: str | None) -> None:
         """
         Bundle filepaths into a tarball and send to encrypted USB via qrexec,
         optionally supplying a passphrase to unlock encrypted drives.
@@ -137,7 +138,7 @@ class Export(QObject):
                 archive_path, self._on_export_process_complete, self._on_export_process_error
             )
 
-        except IOError as e:
+        except OSError as e:
             logger.error("Export failed")
             logger.debug(f"Export failed: {e}")
             self.export_state_changed.emit(ExportStatus.ERROR_EXPORT)
@@ -249,19 +250,28 @@ class Export(QObject):
         """
         self._cleanup_tmpdir()
         if self.process:
-            output = self.process.readAllStandardError().data().decode("utf-8").strip()
+            output_untrusted = self.process.readAllStandardError().data().decode("utf-8").strip()
             try:
-                status = ExportStatus(output)
-                if status == ExportStatus.PRINT_PREFLIGHT_SUCCESS:
-                    self.print_preflight_check_succeeded.emit(status)
-                    logger.debug("Print preflight success")
-                else:
-                    logger.debug(f"Print preflight failure ({status.value})")
-                    self.print_preflight_check_failed.emit(ExportError(status))
+                if output_untrusted:
+                    logger.debug(f"Result is {output_untrusted}")
 
-            except ValueError as error:
-                logger.debug(f"Print preflight check failed: {error}")
-                logger.error("Print preflight check failed")
+                    # The final line of stderr is the status.
+                    status_string_untrusted = output_untrusted.split("\n")[-1]
+                    status = ExportStatus(status_string_untrusted)
+
+                    if status == ExportStatus.PRINT_PREFLIGHT_SUCCESS:
+                        logger.debug("Print preflight success")
+                        self.print_preflight_check_succeeded.emit(status)
+                    else:
+                        logger.debug(f"Print preflight failure ({status.value})")
+                        self.print_preflight_check_failed.emit(ExportError(status))
+                else:
+                    logger.error("Export preflight returned empty result")
+                    self.print_preflight_check_failed.emit(ExportError(ExportStatus.ERROR_PRINT))
+
+            except ValueError as e:
+                logger.debug(f"Export preflight returned unexpected value: {e}")
+                logger.error("Export preflight returned unexpected value")
                 self.print_preflight_check_failed.emit(ExportError(ExportStatus.ERROR_PRINT))
 
     def _on_print_prefight_error(self) -> None:
@@ -304,7 +314,7 @@ class Export(QObject):
             logger.error("Print error (stderr unavailable)")
         self.print_failed.emit(ExportError(ExportStatus.ERROR_PRINT))
 
-    def print(self, filepaths: List[str]) -> None:
+    def print(self, filepaths: list[str]) -> None:
         """
         Bundle files at filepaths into tarball and send for
         printing via qrexec.
@@ -322,7 +332,7 @@ class Export(QObject):
             )
             self._run_qrexec_export(archive_path, self._on_print_success, self._on_print_error)
 
-        except IOError as e:
+        except OSError as e:
             logger.error("Export failed")
             logger.debug(f"Export failed: {e}")
             self.print_failed.emit(ExportError(ExportStatus.ERROR_PRINT))
@@ -341,7 +351,7 @@ class Export(QObject):
         archive_dir: str,
         archive_fn: str,
         metadata: dict,
-        filepaths: List[str] = [],
+        filepaths: list[str] = [],
         whistleflow: bool = False,
     ) -> str:
         """
@@ -351,7 +361,7 @@ class Export(QObject):
             archive_dir (str): The path to the directory in which to create the archive.
             archive_fn (str): The name of the archive file.
             metadata (dict): The dictionary containing metadata to add to the archive.
-            filepaths (List[str]): The list of files to add to the archive.
+            filepaths (list[str]): The list of files to add to the archive.
             whistleflow (bool): Indicates if this is a whistleflow export
 
         Returns:

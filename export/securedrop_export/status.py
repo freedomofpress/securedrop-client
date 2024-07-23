@@ -8,5 +8,3 @@ class BaseStatus(Enum):
     Status values are defined in subclasses in their respective packages. A full list is available
     in the project's README.
     """
-
-    pass

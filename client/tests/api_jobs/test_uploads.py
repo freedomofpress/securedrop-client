@@ -384,9 +384,7 @@ def test_send_reply_failure_when_repr_is_none(
     encrypt_fn = mocker.patch.object(gpg, "encrypt_to_source")
     job = SendReplyJob(source.uuid, "mock_reply_uuid", "mock_message", gpg)
 
-    error = "Failed to send reply mock_reply_uuid for source {} due to Exception: mock".format(
-        source.uuid
-    )
+    error = f"Failed to send reply mock_reply_uuid for source {source.uuid} due to Exception: mock"
     with pytest.raises(SendReplyJobError, match=error):
         job.call_api(api_client, session)
 

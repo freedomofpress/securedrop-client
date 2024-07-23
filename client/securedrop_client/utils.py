@@ -4,9 +4,10 @@ import math
 import os
 import shutil
 import time
+from collections.abc import Generator
 from contextlib import contextmanager
 from pathlib import Path
-from typing import BinaryIO, Dict, Generator, Optional, Union
+from typing import BinaryIO
 
 from sqlalchemy.orm.session import Session
 
@@ -14,8 +15,8 @@ from securedrop_client import db
 
 
 def safe_mkdir(
-    base_path: Union[Path, str],
-    relative_path: Optional[Union[Optional[Path], Optional[str]]] = None,
+    base_path: Path | str,
+    relative_path: Path | None | str = None,
 ) -> None:
     """
     Safely create directories with restricted 700 permissions inside the base_path directory. The
@@ -113,7 +114,7 @@ def safe_copyfileobj(src_file: gzip.GzipFile, dest_file: BinaryIO, dest_base_pat
     Path(dest_file.name).chmod(0o600)
 
 
-def relative_filepath(filepath: Union[str, Path], base_dir: Union[str, Path]) -> Path:
+def relative_filepath(filepath: str | Path, base_dir: str | Path) -> Path:
     """
     Raise ValueError if the filepath is not relative to the supplied base_dir or if base_dir is not
     an absolute path.
@@ -125,7 +126,7 @@ def relative_filepath(filepath: Union[str, Path], base_dir: Union[str, Path]) ->
     return Path(filepath).resolve().relative_to(base_dir)
 
 
-def check_path_traversal(filename_or_filepath: Union[str, Path]) -> None:
+def check_path_traversal(filename_or_filepath: str | Path) -> None:
     """
     Raise ValueError if filename_or_filepath does any path traversal. This works on filenames,
     relative paths, and absolute paths.
@@ -150,7 +151,7 @@ def check_path_traversal(filename_or_filepath: Union[str, Path]) -> None:
         raise ValueError(f"Unsafe file or directory name: '{filename_or_filepath}'")
 
 
-def check_all_permissions(path: Union[str, Path], base_path: Union[str, Path]) -> None:
+def check_all_permissions(path: str | Path, base_path: str | Path) -> None:
     """
     Check that the permissions of each directory between base_path and path are set to 700.
     """
@@ -169,7 +170,7 @@ def check_all_permissions(path: Union[str, Path], base_path: Union[str, Path]) -
         check_dir_permissions(str(full_path))
 
 
-def check_dir_permissions(dir_path: Union[str, Path]) -> None:
+def check_dir_permissions(dir_path: str | Path) -> None:
     """
     Check that a directory has ``700`` as the final 3 bytes. Raises a ``RuntimeError`` otherwise.
     """
@@ -177,7 +178,7 @@ def check_dir_permissions(dir_path: Union[str, Path]) -> None:
         stat_res = os.stat(dir_path).st_mode
         masked = stat_res & 0o777
         if masked & 0o077:
-            raise RuntimeError("Unsafe permissions ({}) on {}".format(oct(stat_res), dir_path))
+            raise RuntimeError(f"Unsafe permissions ({oct(stat_res)}) on {dir_path}")
 
 
 def humanize_filesize(filesize: int) -> str:
@@ -186,11 +187,11 @@ def humanize_filesize(filesize: int) -> str:
     (with an input unit of bytes)
     """
     if filesize < 1024:
-        return "{}B".format(str(filesize))
+        return f"{str(filesize)}B"
     elif filesize < 1024 * 1024:
-        return "{}KB".format(math.floor(filesize / 1024))
+        return f"{math.floor(filesize / 1024)}KB"
     else:
-        return "{}MB".format(math.floor(filesize / 1024**2))
+        return f"{math.floor(filesize / 1024**2)}MB"
 
 
 @contextmanager
@@ -206,17 +207,17 @@ def chronometer(logger: logging.Logger, description: str) -> Generator:
         logger.info(f"{description} duration: {elapsed:.4f}s")
 
 
-class SourceCache(object):
+class SourceCache:
     """
     Caches Sources by UUID.
     """
 
     def __init__(self, session: Session) -> None:
         super().__init__()
-        self.cache: Dict[str, db.Source] = {}
+        self.cache: dict[str, db.Source] = {}
         self.session = session
 
-    def get(self, source_uuid: str) -> Optional[db.Source]:
+    def get(self, source_uuid: str) -> db.Source | None:
         if source_uuid not in self.cache:
             source = self.session.query(db.Source).filter_by(uuid=source_uuid).first()
             self.cache[source_uuid] = source

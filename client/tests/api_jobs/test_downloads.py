@@ -1,6 +1,5 @@
 import math
 import os
-from typing import Tuple
 
 import pytest
 
@@ -352,7 +351,7 @@ def test_FileDownloadJob_happy_path_no_etag(mocker, homedir, session, session_ma
     gpg = GpgHelper(homedir, session_maker, is_qubes=False)
     mock_decrypt = patch_decrypt(mocker, homedir, gpg, file_.filename)
 
-    def fake_download(sdk_obj: SdkSubmission, timeout: int) -> Tuple[str, str]:
+    def fake_download(sdk_obj: SdkSubmission, timeout: int) -> tuple[str, str]:
         """
         :return: (etag, path_to_dl)
         """
@@ -390,7 +389,7 @@ def test_FileDownloadJob_happy_path_sha256_etag(
     gpg = GpgHelper(homedir, session_maker, is_qubes=False)
     mock_decrypt = patch_decrypt(mocker, homedir, gpg, file_.filename)
 
-    def fake_download(sdk_obj: SdkSubmission, timeout: int) -> Tuple[str, str]:
+    def fake_download(sdk_obj: SdkSubmission, timeout: int) -> tuple[str, str]:
         """
         :return: (etag, path_to_dl)
         """
@@ -427,7 +426,7 @@ def test_FileDownloadJob_bad_sha256_etag(
 
     gpg = GpgHelper(homedir, session_maker, is_qubes=False)
 
-    def fake_download(sdk_obj: SdkSubmission, timeout: int) -> Tuple[str, str]:
+    def fake_download(sdk_obj: SdkSubmission, timeout: int) -> tuple[str, str]:
         """
         :return: (etag, path_to_dl)
         """
@@ -456,7 +455,7 @@ def test_FileDownloadJob_happy_path_unknown_etag(mocker, homedir, session, sessi
 
     gpg = GpgHelper(homedir, session_maker, is_qubes=False)
 
-    def fake_download(sdk_obj: SdkSubmission, timeout: int) -> Tuple[str, str]:
+    def fake_download(sdk_obj: SdkSubmission, timeout: int) -> tuple[str, str]:
         """
         :return: (etag, path_to_dl)
         """
@@ -495,7 +494,7 @@ def test_FileDownloadJob_decryption_error(
     gpg = GpgHelper(homedir, session_maker, is_qubes=False)
     mock_decrypt = mocker.patch.object(gpg, "decrypt_submission_or_reply", side_effect=CryptoError)
 
-    def fake_download(sdk_obj: SdkSubmission, timeout: int) -> Tuple[str, str]:
+    def fake_download(sdk_obj: SdkSubmission, timeout: int) -> tuple[str, str]:
         """
         :return: (etag, path_to_dl)
         """
@@ -536,7 +535,7 @@ def test_FileDownloadJob_raises_on_path_traversal_attack(
     api_client = mocker.MagicMock()
     download_fn = mocker.patch.object(api_client, "download_reply")
 
-    def fake_download(sdk_obj: SdkSubmission, timeout: int) -> Tuple[str, str]:
+    def fake_download(sdk_obj: SdkSubmission, timeout: int) -> tuple[str, str]:
         """
         :return: (etag, path-to-download)
         """

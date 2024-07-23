@@ -2,6 +2,14 @@ name: Nightlies
 on:
   schedule:
     - cron: "0 6 * * *"
+  push:
+    branches:
+      - main
+
+# Only allow one job to run at a time because we're pushing to git repos;
+# the string value doesn't matter, just that it's a fixed string.
+concurrency:
+  group: "just-one-please"
 
 defaults:
   run:
@@ -13,7 +21,6 @@ jobs:
       fail-fast: false
       matrix:
         debian_version:
-          - bullseye
           - bookworm
     runs-on: ubuntu-latest
     outputs:
@@ -73,7 +80,6 @@ jobs:
           git push origin main
           # Now the packages themselves
           cd ../securedrop-apt-test
-          cp -v ../build-bullseye/*.deb workstation/bullseye-nightlies/
           cp -v ../build-bookworm/*.deb workstation/bookworm-nightlies/
           git add .
           git diff-index --quiet HEAD || git commit -m "Automated SecureDrop workstation build"
