@@ -418,7 +418,7 @@ class Controller(QObject):
         ):
             os.chmod(self.last_sync_filepath, 0o600)
 
-    def get_checked_sources(self) -> List[str]:
+    def get_checked_sources(self) -> list[str]:
         """
         Returns the list of sources that are checked in the UI.
         """
@@ -1053,7 +1053,7 @@ class Controller(QObject):
         self.source_deleted.emit(source.uuid)
 
     @login_required
-    def delete_sources(self, sources: List[str]) -> None:
+    def delete_sources(self, sources: list[str]) -> None:
         """
         Performs a delete operation on multiple source records.
 
