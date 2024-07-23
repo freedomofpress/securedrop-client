@@ -9,7 +9,6 @@ from enum import Enum
 from io import BytesIO
 from shlex import quote
 from tempfile import TemporaryDirectory, mkdtemp
-from typing import Callable, Dict, List, Optional  # noqa: F401
 
 from PyQt5.QtCore import QObject, QProcess, pyqtSignal
 
@@ -443,7 +442,7 @@ class Export(QObject):
 
     # below whistleflow functions rescued from the old export file
 
-    def _export_archive_to_whistleflow(cls, archive_path: str) -> Optional[ExportStatus]:
+    def _export_archive_to_whistleflow(cls, archive_path: str) -> ExportStatus | None:
         """
         Clone of _export_archive which sends the archive to the Whistleflow VM.
         """
@@ -475,7 +474,7 @@ class Export(QObject):
             logger.debug(f"Subprocess failed: {e}")
             raise ExportError(ExportStatus.CALLED_PROCESS_ERROR)
 
-    def send_files_to_whistleflow(self, filename: str, filepaths: List[str]) -> None:
+    def send_files_to_whistleflow(self, filename: str, filepaths: list[str]) -> None:
         """
         Clone of send_file_to_usb_device, but for Whistleflow.
         """
@@ -497,7 +496,7 @@ class Export(QObject):
         logger.info("Running dummy whistleflow view test")
 
     def _run_whistleflow_export(
-        self, archive_dir: str, filename: str, filepaths: List[str]
+        self, archive_dir: str, filename: str, filepaths: list[str]
     ) -> None:
         """
         Run disk-test.

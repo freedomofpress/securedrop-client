@@ -9,7 +9,6 @@ from collections.abc import Callable
 from contextlib import ExitStack
 from gettext import gettext as _
 from pathlib import Path
-from typing import Callable, List, Optional
 
 from PyQt5.QtCore import Qt, pyqtSlot
 from PyQt5.QtWidgets import QAction, QApplication, QDialog, QMenu
@@ -113,7 +112,7 @@ class DeleteSourcesAction(QAction):
         # ignored F821 - SourceListToolbar deliberately not imported to avoid circular dependency
         parent: "SourceListToolbar",  # type: ignore[name-defined] # noqa: F821
         controller: Controller,
-        confirmation_dialog: Callable[[List[str]], QDialog],
+        confirmation_dialog: Callable[[list[str]], QDialog],
     ) -> None:
         self.controller = controller
         self._confirmation_dialog = confirmation_dialog
@@ -230,7 +229,7 @@ class ExportConversationTranscriptAction(QAction):  # pragma: nocover
         parent: QMenu,
         controller: Controller,
         source: Source,
-        destination: Optional[ExportDestination] = ExportDestination.USB,
+        destination: ExportDestination | None = ExportDestination.USB,
     ) -> None:
         """
         Allows export of a conversation transcript.
@@ -293,7 +292,7 @@ class ExportConversationAction(QAction):  # pragma: nocover
         controller: Controller,
         source: Source,
         app_state: state.State | None = None,
-        destination: Optional[ExportDestination] = ExportDestination.USB,
+        destination: ExportDestination | None = ExportDestination.USB,
     ) -> None:
         """
         Allows export of a conversation transcript and all is files. Will download any file
