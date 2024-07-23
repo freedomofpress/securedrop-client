@@ -5,15 +5,15 @@ set -e
 
 VERSION=$1
 DEB_LOCATION=$2
-SIGNING_KEY_SECRET_ID_OR_STAGE=$3
+STAGE=$3
 
 SCRIPT_PATH=$( cd $(dirname $0) ; pwd -P )
 
 print_usage_and_exit () {
   cat << EOF
-Usage: publish-securedrop.sh VERSION DEB_LOCATION
+Usage: publish-securedrop.sh VERSION DEB_LOCATION STAGE
 
-e.g. ./publish-securedrop.sh 100.8.1 securedrop.deb mysecret-id
+e.g. ./publish-securedrop.sh 100.8.1 securedrop.deb CODE
 EOF
   exit 1
 }
@@ -32,21 +32,22 @@ fi
 
 # check if signing key secret id code or prod
 
-if [ "$SIGNING_KEY_SECRET_ID_OR_STAGE" == "CODE" ] ||  [ "$SIGNING_KEY_SECRET_ID_OR_STAGE" == "PROD" ]; then
-  SECRET_NAME="securedrop-workstation-repository-private-$SIGNING_KEY_SECRET_ID_OR_STAGE"
-  SECRET_ID=$(aws secretsmanager list-secrets --filter Key=name,Values=$SECRET_NAME  --region eu-west-1 --query "SecretList[?Name=='$SECRET_NAME'].ARN" --output text)
-  echo $SECRET_ID
-  SIGNING_KEY_SECRET_ID=$SECRET_ID
+if [ "$STAGE" == "CODE" ] ||  [ "$STAGE" == "PROD" ]; then
+  SECRET_NAME="securedrop-workstation-repository-private-$STAGE"
+  SIGNING_KEY_SECRET_ID=$(aws secretsmanager list-secrets --filter Key=name,Values=$SECRET_NAME  --region eu-west-1 --query "SecretList[?Name=='$SECRET_NAME'].ARN" --output text)
 else
-  SIGNING_KEY_SECRET_ID=$SIGNING_KEY_SECRET_ID_OR_STAGE
+  echo "STAGE must be provided as CODE or PROD"
+  exit 1
 fi
 
-if [ -z "$SIGNING_KEY_SECRET_ID" ]; then
-  echo "You must provide the secret name for the signing key."
+LOWER_STAGE=$(echo $STAGE | tr '[:upper:]' '[:lower:]')
 
-  print_usage_and_exit
-fi
-
+echo "Updating aptly config"
+S3_ENDPOINTS=$(aws ssm get-parameter --name /investigations/aptly-s3-publish-endpoints --region eu-west-1 | jq -r .Parameter.Value)
+echo "Updating aptly config file $HOME/.aptly.conf"
+aptly config show | jq ".architectures = [\"amd64\"] | .S3PublishEndpoints = ${S3_ENDPOINTS}" > /tmp/aptly.conf
+cat /tmp/aptly.conf
+mv /tmp/aptly.conf $HOME/.aptly.conf
 
 REPO_NAME="gu-securedrop"
 SNAPSHOT_NAME="$REPO_NAME-$VERSION"
@@ -59,7 +60,7 @@ KEYRING="temp-keyring.gpg"
 
 # Remove any local aptly stuff - || true is there because we don't want this script to fail if there's not existing stuff
 aptly repo drop -force "$REPO_NAME" || true
-aptly publish drop bookworm s3:s3-endpoint: || true
+aptly publish drop bookworm s3:guardian-securedrop-repo-$LOWER_STAGE: || true
 aptly snapshot drop "$SNAPSHOT_NAME" || true
 
 # Fetch signing key
@@ -75,7 +76,7 @@ aptly repo create -distribution=bookworm -component=main "$REPO_NAME"
 aptly repo add "$REPO_NAME" "$DEB_LOCATION"
 aptly snapshot create "$SNAPSHOT_NAME" from repo "$REPO_NAME"
 
-aptly publish snapshot -keyring="$KEYRING" "$SNAPSHOT_NAME" s3:s3-endpoint:
+aptly publish snapshot -keyring="$KEYRING" "$SNAPSHOT_NAME" s3:guardian-securedrop-repo-$LOWER_STAGE:
 
 # Remove temporary keyring
 rm ~/.gnupg/$KEYRING
