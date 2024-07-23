@@ -1,11 +1,15 @@
-# Description
+## Status
+
+Ready for review / Work in progress
+
+## Description
 
 Fixes #issue.
 
-# Test Plan
+## Test Plan
 
 
-# Checklist
+## Checklist
 
 If these changes modify code paths involving cryptography, the opening of files in VMs or network (via the RPC service) traffic, Qubes testing in the staging environment is required. For fine tuning of the graphical user interface, testing in any environment in Qubes is required. Please check as applicable:
 

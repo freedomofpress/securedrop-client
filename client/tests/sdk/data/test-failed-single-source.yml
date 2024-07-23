@@ -1,0 +1,36 @@
+interactions:
+- request:
+    body: null
+    headers:
+      Accept:
+      - application/json
+      Accept-Encoding:
+      - gzip, deflate
+      Authorization:
+      - Token eyJhbGciOiJIUzI1NiIsImlhdCI6MTYyMzk0MjczOCwiZXhwIjoxNjIzOTcxNTM4fQ.eyJpZCI6MX0.xNE1oOw5qVbJjX3qZB4dYJW1pnhWHu1pEJ6j7Xoy0do
+      Connection:
+      - keep-alive
+      Content-Type:
+      - application/json
+      User-Agent:
+      - python-requests/2.22.0
+    method: GET
+    uri: http://127.0.0.1:8081/api/v1/sources/not%20there
+  response:
+    body:
+      string: "{\n  \"error\": \"Not Found\", \n  \"message\": \"The requested URL
+        was not found on the server. If you entered the URL manually please check
+        your spelling and try again.\"\n}\n"
+    headers:
+      Content-Length:
+      - '165'
+      Content-Type:
+      - application/json
+      Date:
+      - Thu, 17 Jun 2021 15:12:19 GMT
+      Server:
+      - Werkzeug/0.16.0 Python/3.8.5
+    status:
+      code: 404
+      message: NOT FOUND
+version: 1

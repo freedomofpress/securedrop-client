@@ -1,0 +1,165 @@
+name: Package builds
+on: [push, pull_request]
+# Only build for latest push/PR unless it's main or release/
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' && !startsWith( github.ref, 'refs/heads/release/' ) }}
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  verify-builder-sync:
+    strategy:
+      matrix:
+        debian_version:
+          - bullseye
+          - bookworm
+    runs-on: ubuntu-latest
+    container: debian:${{ matrix.debian_version }}
+    steps:
+      - run: |
+          apt-get update && apt-get install --yes git git-lfs sudo make
+      - uses: actions/checkout@v4
+      - uses: actions/checkout@v4
+        with:
+          repository: "freedomofpress/securedrop-builder"
+          path: "securedrop-builder"
+          ref: "securedrop-client-0.10.2"
+          lfs: true
+      - name: Install dependencies
+        run: |
+          cd securedrop-builder
+          make install-deps
+      - name: Check differences
+        run: |
+          source ./securedrop-builder/.venv/bin/activate
+          PKG_DIR=../client make -C securedrop-builder requirements
+          PKG_DIR=../export make -C securedrop-builder requirements
+          PKG_DIR=../log make -C securedrop-builder requirements
+          PKG_DIR=../proxy make -C securedrop-builder requirements
+          git config --global --add safe.directory "$GITHUB_WORKSPACE"
+          git diff --ignore-matching-lines=# --exit-code
+
+
+  build-debs:
+    strategy:
+      matrix:
+        debian_version:
+          - bullseye
+          - bookworm
+    runs-on: ubuntu-latest
+    outputs:
+      artifact_id: ${{ steps.upload.outputs.artifact-id }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/checkout@v4
+        with:
+          repository: "freedomofpress/securedrop-builder"
+          path: "securedrop-builder"
+          ref: "securedrop-client-0.10.2"
+          lfs: true
+      - name: Build packages
+        run: |
+          DEBIAN_VERSION=${{ matrix.debian_version }} BUILDER=securedrop-builder FAST=1 ./scripts/build-debs.sh
+      - uses: actions/upload-artifact@v4
+        id: upload
+        with:
+          name: build-${{ matrix.debian_version }}
+          path: build
+          if-no-files-found: error
+
+  # Another set of builds for lintian checks and also so we can diffoscope
+  # for reproducibility issues with the first set
+  lintian:
+    strategy:
+      matrix:
+        debian_version:
+          - bullseye
+          - bookworm
+    runs-on: ubuntu-latest
+    outputs:
+      artifact_id: ${{ steps.upload.outputs.artifact-id }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/checkout@v4
+        with:
+          repository: "freedomofpress/securedrop-builder"
+          path: "securedrop-builder"
+          ref: "securedrop-client-0.10.2"
+          lfs: true
+      - name: Build packages
+        run: |
+          DEBIAN_VERSION=${{ matrix.debian_version }} BUILDER=securedrop-builder ./scripts/build-debs.sh
+      - uses: actions/upload-artifact@v4
+        id: upload
+        with:
+          name: build2-${{ matrix.debian_version }}
+          path: build
+          if-no-files-found: error
+
+  reproducible-debs:
+    strategy:
+      matrix:
+        debian_version:
+          - bullseye
+          - bookworm
+    runs-on: ubuntu-latest
+    container: debian:bookworm
+    needs:
+      - build-debs
+      - lintian
+    steps:
+      - name: Install dependencies
+        run: |
+          apt-get update && apt-get install --yes diffoscope-minimal \
+            --no-install-recommends
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: "*${{ matrix.debian_version }}"
+      - name: diffoscope
+        run: |
+          find . -name '*.deb' -exec sha256sum {} \;
+          # TODO: Ideally we'd just be able to diff the .changes files and let diffoscope find
+          # all the individual debs, but the source packages are not identical. When they are,
+          for deb in `find build-${{ matrix.debian_version }} -name '*.deb' -exec basename {} \;`; do
+            echo "Diffoscoping $deb"
+            diffoscope build-${{ matrix.debian_version }}/$deb build2-${{ matrix.debian_version }}/$deb
+          done;
+
+  piuparts:
+    strategy:
+      fail-fast: false
+      matrix:
+        # TODO: workstation-config pulls in systemd, which doesn't work
+        # TODO: workstation-viewer pulls in grsec and qubes packages
+        package:
+          - client
+          - export
+          - keyring
+          - log
+          - proxy
+        debian_version:
+          - bullseye
+          - bookworm
+    runs-on: ubuntu-latest
+    needs:
+      - build-debs
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: "build-${{ matrix.debian_version }}"
+      - name: Run piuparts
+        run: |
+          # We need to run it as docker-in-docker
+          docker run \
+            -v "/var/lib/docker:/var/lib/docker" \
+            -v "/var/run/docker.sock:/var/run/docker.sock" \
+            -v "/$(pwd)/keyring:/keyring" \
+            -v "/$(pwd)/build-${{ matrix.debian_version }}:/build" \
+            -v "/$(pwd)/.github/workflows/piuparts:/piuparts" \
+            -e DISTRO=${{ matrix.debian_version }} \
+            -e PACKAGE=${{ matrix.package }} \
+            debian:${{ matrix.debian_version }} bash /piuparts/run-piuparts.sh

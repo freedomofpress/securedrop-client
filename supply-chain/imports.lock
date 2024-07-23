@@ -1,0 +1,14 @@
+
+# cargo-vet imports lock
+
+[audits.bytecode-alliance.audits]
+
+[audits.google.audits]
+
+[audits.isrg.audits]
+
+[audits.mozilla.audits]
+
+[audits.securedrop.audits]
+
+[audits.zcash.audits]

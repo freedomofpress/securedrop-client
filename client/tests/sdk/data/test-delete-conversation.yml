@@ -1,0 +1,271 @@
+interactions:
+- request:
+    body: null
+    headers:
+      Accept:
+      - application/json
+      Accept-Encoding:
+      - gzip, deflate
+      Authorization:
+      - Token eyJhbGciOiJIUzI1NiIsImlhdCI6MTYyMzY5NjMwOCwiZXhwIjoxNjIzNzI1MTA4fQ.eyJpZCI6MX0.nxhSbGPxX_UAFmfWQoKpZjMa274B6Oxld8t2T504ElU
+      Connection:
+      - keep-alive
+      Content-Type:
+      - application/json
+      User-Agent:
+      - python-requests/2.22.0
+    method: GET
+    uri: http://127.0.0.1:8081/api/v1/sources
+  response:
+    body:
+      string: "{\n  \"sources\": [\n    {\n      \"add_star_url\": \"/api/v1/sources/b7cd5c45-c790-46f2-8a24-2660c088daad/add_star\",
+        \n      \"interaction_count\": 6, \n      \"is_flagged\": false, \n      \"is_starred\":
+        false, \n      \"journalist_designation\": \"local deletion\", \n      \"key\":
+        {\n        \"fingerprint\": \"59BBCF63ABC005932BB1D9A59D436C5EA0AC24FD\",
+        \n        \"public\": \"-----BEGIN PGP PUBLIC KEY BLOCK-----\\n\\nmI0EUZF+gAEEAMoP+RjJSfzDOUyQ+OeJgAntHdaOThkheSx4g9MUFlj3oDJgxJkx\\nMWIQ9pWG3gKqznpOCXFT/dm4qz93chbqyKbtOUeyh/h24RAGV43hTGC8QvyiGTks\\n71n2u3oHr2LAbJIL0Q2+p9EkmcEYsKt1i79iO+yYJuvQnXpHeT+ElM/NABEBAAG0\\ndVNvdXJjZSBLZXkgPEhaS1pXVjRSSERYTlYzMlVTWjZEQlpMREk2SEVPWEVNVVJZ\\nNDREN1lVMzNKQ1Y1VzQ2V0YzVE5UNUI1SzRLQlpJUEY1NVFSUzNaWktOSVBFWVNE\\nNlRDWEdSN1NUMk1ITlROQVVWRkE9PojOBBMBCgA4FiEEWbvPY6vABZMrsdmlnUNs\\nXqCsJP0FAlGRfoACGy8FCwkIBwIGFQoJCAsCBBYCAwECHgECF4AACgkQnUNsXqCs\\nJP24HAQAsLeaTSFRYEUz79J+W6MEqC9DsDUNkHlfscAvyczjE1M9t704tP1ndO6v\\naBjzlJ1CpS2/8w8YrC45SwRO+Lx/dS+aItR6VHnQdC5n1bThyEo2t1MMFTyhrPT6\\nq/YwiK4b1CJEuM5W2CNogUl2DV2oNgztC5dJtsQDYpRhYBRr6wk=\\n=RT3l\\n-----END
+        PGP PUBLIC KEY BLOCK-----\\n\", \n        \"type\": \"PGP\"\n      }, \n      \"last_updated\":
+        \"2021-06-14T18:31:12.626589Z\", \n      \"number_of_documents\": 2, \n      \"number_of_messages\":
+        2, \n      \"remove_star_url\": \"/api/v1/sources/b7cd5c45-c790-46f2-8a24-2660c088daad/remove_star\",
+        \n      \"replies_url\": \"/api/v1/sources/b7cd5c45-c790-46f2-8a24-2660c088daad/replies\",
+        \n      \"submissions_url\": \"/api/v1/sources/b7cd5c45-c790-46f2-8a24-2660c088daad/submissions\",
+        \n      \"url\": \"/api/v1/sources/b7cd5c45-c790-46f2-8a24-2660c088daad\",
+        \n      \"uuid\": \"b7cd5c45-c790-46f2-8a24-2660c088daad\"\n    }, \n    {\n
+        \     \"add_star_url\": \"/api/v1/sources/d72c720d-e80d-4ffe-af85-8c11f43ce6d2/add_star\",
+        \n      \"interaction_count\": 6, \n      \"is_flagged\": false, \n      \"is_starred\":
+        false, \n      \"journalist_designation\": \"ninety-five moonlight\", \n      \"key\":
+        {\n        \"fingerprint\": \"520A1D9A186C82F3420BFC5DDFA8A14CA5D8AB22\",
+        \n        \"public\": \"-----BEGIN PGP PUBLIC KEY BLOCK-----\\n\\nmI0EUZF+gAEEAL1rw9HOVvlzsRY0LtcZhVTWGgnudShQ1S5qi+uoJFIBRoFevr5N\\nL/M7QpP8XO4QK0BXNyJ+iXHmU8g48tJwws6gaxOYIcVFsvsp7k06RSnHyXBHTgRP\\nZ5wA6bxiFGHMy/U71mvguU1WoGfj4Sha/74xNtFV9XcypHi6mzdrN/4xABEBAAG0\\ndVNvdXJjZSBLZXkgPEZWTEdUM1VRWEdETFM0WklFRzNaSEZIRjRVSE9aQlI2TDRJ\\nWlUzVzJOUTY0SENLSjNLWkFHUkRYVDNLWU9YTlhHSEtORDRNQlVGNUpFRVhUNlVZ\\nRUZIV0NJUlRUWU5FQU5XVklVWUk9PojOBBMBCgA4FiEEUgodmhhsgvNCC/xd36ih\\nTKXYqyIFAlGRfoACGy8FCwkIBwIGFQoJCAsCBBYCAwECHgECF4AACgkQ36ihTKXY\\nqyJ8JgP/XC+MjAcseVejJnUzRLSjKf5rcZCGSATv8K9h9p7ypc5qPclcOrLyZH16\\niamvZ7VchsrSA8IaY5cQ/Vux39DJrdu22DBBblWjYBYRv7b5IUbt0WV6FFbJ8bZf\\n+D9iso8Z7dSZ6HdMM6PvxzXR+aRlxe4SWYBnD+cHzxB1ct3vfy4=\\n=rcqH\\n-----END
+        PGP PUBLIC KEY BLOCK-----\\n\", \n        \"type\": \"PGP\"\n      }, \n      \"last_updated\":
+        \"2021-06-14T18:31:13.422932Z\", \n      \"number_of_documents\": 2, \n      \"number_of_messages\":
+        2, \n      \"remove_star_url\": \"/api/v1/sources/d72c720d-e80d-4ffe-af85-8c11f43ce6d2/remove_star\",
+        \n      \"replies_url\": \"/api/v1/sources/d72c720d-e80d-4ffe-af85-8c11f43ce6d2/replies\",
+        \n      \"submissions_url\": \"/api/v1/sources/d72c720d-e80d-4ffe-af85-8c11f43ce6d2/submissions\",
+        \n      \"url\": \"/api/v1/sources/d72c720d-e80d-4ffe-af85-8c11f43ce6d2\",
+        \n      \"uuid\": \"d72c720d-e80d-4ffe-af85-8c11f43ce6d2\"\n    }, \n    {\n
+        \     \"add_star_url\": \"/api/v1/sources/73edf52d-92b5-4cc8-9dea-a002aeb87ac8/add_star\",
+        \n      \"interaction_count\": 6, \n      \"is_flagged\": false, \n      \"is_starred\":
+        false, \n      \"journalist_designation\": \"graven armada\", \n      \"key\":
+        {\n        \"fingerprint\": \"0835F4207BA7D157D8BD49A01971F630FC46C20A\",
+        \n        \"public\": \"-----BEGIN PGP PUBLIC KEY BLOCK-----\\n\\nmI0EUZF+gAEEAN50bcT6I5zCdc1OWyvICkTspTZMhg6Hk5jU4E9uINB2jJarBM/B\\nrwWRtVB1HA++zCv57guSIEJXyFCzN6eBdlpwcOSs9Oa8TnB8ZVa1/QB89SN/+lXr\\niPLnqRVKq+GI9RGn0Q43PmhqTTOKGPCUIHi4KskRyZykyb4/2DResCjfABEBAAG0\\ndVNvdXJjZSBLZXkgPE1KWURTRk9GTkpDVzVMWkxJWFFUTFFVVEhKTVZOVlVSUUFY\\nSlJOTVdKU0dRSVhLQVVZQlVPQlpNM0VVWDdUV0REUTJEWlY2TzJXQlZPSlYzQjRN\\nSVZUTkZDNVpLN0NPV0xVTU9LWkE9PojOBBMBCgA4FiEECDX0IHun0VfYvUmgGXH2\\nMPxGwgoFAlGRfoACGy8FCwkIBwIGFQoJCAsCBBYCAwECHgECF4AACgkQGXH2MPxG\\nwgqmAAP8DPMSjywKPVjR5kaqm77D2qNQl7oiLvEEbz3m1JDVwbtte4sty5dG7m/I\\nZdk0E0yPjupBrg5yphUEwFoPIoD0QuHx6nsay7xJ8U95Bl2RM88wL1IXlekQYtAl\\nizPiudmwHkdWTK+oQfnRl2beFzfaTSB9mpvNdnfmb8lxm8Il+p0=\\n=PBfq\\n-----END
+        PGP PUBLIC KEY BLOCK-----\\n\", \n        \"type\": \"PGP\"\n      }, \n      \"last_updated\":
+        \"2021-06-14T18:31:14.238397Z\", \n      \"number_of_documents\": 2, \n      \"number_of_messages\":
+        2, \n      \"remove_star_url\": \"/api/v1/sources/73edf52d-92b5-4cc8-9dea-a002aeb87ac8/remove_star\",
+        \n      \"replies_url\": \"/api/v1/sources/73edf52d-92b5-4cc8-9dea-a002aeb87ac8/replies\",
+        \n      \"submissions_url\": \"/api/v1/sources/73edf52d-92b5-4cc8-9dea-a002aeb87ac8/submissions\",
+        \n      \"url\": \"/api/v1/sources/73edf52d-92b5-4cc8-9dea-a002aeb87ac8\",
+        \n      \"uuid\": \"73edf52d-92b5-4cc8-9dea-a002aeb87ac8\"\n    }\n  ]\n}\n"
+    headers:
+      Content-Length:
+      - '4902'
+      Content-Type:
+      - application/json
+      Date:
+      - Mon, 14 Jun 2021 18:45:09 GMT
+      Server:
+      - Werkzeug/0.16.0 Python/3.8.5
+    status:
+      code: 200
+      message: OK
+- request:
+    body: null
+    headers:
+      Accept:
+      - application/json
+      Accept-Encoding:
+      - gzip, deflate
+      Authorization:
+      - Token eyJhbGciOiJIUzI1NiIsImlhdCI6MTYyMzY5NjMwOCwiZXhwIjoxNjIzNzI1MTA4fQ.eyJpZCI6MX0.nxhSbGPxX_UAFmfWQoKpZjMa274B6Oxld8t2T504ElU
+      Connection:
+      - keep-alive
+      Content-Type:
+      - application/json
+      User-Agent:
+      - python-requests/2.22.0
+    method: GET
+    uri: http://127.0.0.1:8081/api/v1/sources/b7cd5c45-c790-46f2-8a24-2660c088daad/submissions
+  response:
+    body:
+      string: "{\n  \"submissions\": [\n    {\n      \"download_url\": \"/api/v1/sources/b7cd5c45-c790-46f2-8a24-2660c088daad/submissions/36d29a84-b799-4e7e-875a-9ab6918bf7bc/download\",
+        \n      \"filename\": \"1-local_deletion-msg.gpg\", \n      \"is_file\": false,
+        \n      \"is_message\": true, \n      \"is_read\": true, \n      \"seen_by\":
+        [\n        \"de80fcd8-fde8-4bdd-a7bf-e32ccb06dc0c\"\n      ], \n      \"size\":
+        623, \n      \"source_url\": \"/api/v1/sources/b7cd5c45-c790-46f2-8a24-2660c088daad\",
+        \n      \"submission_url\": \"/api/v1/sources/b7cd5c45-c790-46f2-8a24-2660c088daad/submissions/36d29a84-b799-4e7e-875a-9ab6918bf7bc\",
+        \n      \"uuid\": \"36d29a84-b799-4e7e-875a-9ab6918bf7bc\"\n    }, \n    {\n
+        \     \"download_url\": \"/api/v1/sources/b7cd5c45-c790-46f2-8a24-2660c088daad/submissions/83ee8a60-368a-4c86-b74d-0dc301d44180/download\",
+        \n      \"filename\": \"2-local_deletion-msg.gpg\", \n      \"is_file\": false,
+        \n      \"is_message\": true, \n      \"is_read\": true, \n      \"seen_by\":
+        [], \n      \"size\": 691, \n      \"source_url\": \"/api/v1/sources/b7cd5c45-c790-46f2-8a24-2660c088daad\",
+        \n      \"submission_url\": \"/api/v1/sources/b7cd5c45-c790-46f2-8a24-2660c088daad/submissions/83ee8a60-368a-4c86-b74d-0dc301d44180\",
+        \n      \"uuid\": \"83ee8a60-368a-4c86-b74d-0dc301d44180\"\n    }, \n    {\n
+        \     \"download_url\": \"/api/v1/sources/b7cd5c45-c790-46f2-8a24-2660c088daad/submissions/d5aa9638-20e7-46ed-b106-c9eb9b042c5d/download\",
+        \n      \"filename\": \"3-local_deletion-doc.gz.gpg\", \n      \"is_file\":
+        true, \n      \"is_message\": false, \n      \"is_read\": true, \n      \"seen_by\":
+        [\n        \"de80fcd8-fde8-4bdd-a7bf-e32ccb06dc0c\"\n      ], \n      \"size\":
+        661, \n      \"source_url\": \"/api/v1/sources/b7cd5c45-c790-46f2-8a24-2660c088daad\",
+        \n      \"submission_url\": \"/api/v1/sources/b7cd5c45-c790-46f2-8a24-2660c088daad/submissions/d5aa9638-20e7-46ed-b106-c9eb9b042c5d\",
+        \n      \"uuid\": \"d5aa9638-20e7-46ed-b106-c9eb9b042c5d\"\n    }, \n    {\n
+        \     \"download_url\": \"/api/v1/sources/b7cd5c45-c790-46f2-8a24-2660c088daad/submissions/d96989bb-c82f-4809-93e8-7a3cd1e1f64d/download\",
+        \n      \"filename\": \"4-local_deletion-doc.gz.gpg\", \n      \"is_file\":
+        true, \n      \"is_message\": false, \n      \"is_read\": true, \n      \"seen_by\":
+        [\n        \"25d57e95-c33e-43c2-9bda-d23b64721b75\"\n      ], \n      \"size\":
+        661, \n      \"source_url\": \"/api/v1/sources/b7cd5c45-c790-46f2-8a24-2660c088daad\",
+        \n      \"submission_url\": \"/api/v1/sources/b7cd5c45-c790-46f2-8a24-2660c088daad/submissions/d96989bb-c82f-4809-93e8-7a3cd1e1f64d\",
+        \n      \"uuid\": \"d96989bb-c82f-4809-93e8-7a3cd1e1f64d\"\n    }\n  ]\n}\n"
+    headers:
+      Content-Length:
+      - '2497'
+      Content-Type:
+      - application/json
+      Date:
+      - Mon, 14 Jun 2021 18:45:09 GMT
+      Server:
+      - Werkzeug/0.16.0 Python/3.8.5
+    status:
+      code: 200
+      message: OK
+- request:
+    body: null
+    headers:
+      Accept:
+      - application/json
+      Accept-Encoding:
+      - gzip, deflate
+      Authorization:
+      - Token eyJhbGciOiJIUzI1NiIsImlhdCI6MTYyMzY5NjMwOCwiZXhwIjoxNjIzNzI1MTA4fQ.eyJpZCI6MX0.nxhSbGPxX_UAFmfWQoKpZjMa274B6Oxld8t2T504ElU
+      Connection:
+      - keep-alive
+      Content-Type:
+      - application/json
+      User-Agent:
+      - python-requests/2.22.0
+    method: GET
+    uri: http://127.0.0.1:8081/api/v1/sources/b7cd5c45-c790-46f2-8a24-2660c088daad/replies
+  response:
+    body:
+      string: "{\n  \"replies\": [\n    {\n      \"filename\": \"5-local_deletion-reply.gpg\",
+        \n      \"is_deleted_by_source\": false, \n      \"journalist_first_name\":
+        null, \n      \"journalist_last_name\": null, \n      \"journalist_username\":
+        \"dellsberg\", \n      \"journalist_uuid\": \"25d57e95-c33e-43c2-9bda-d23b64721b75\",
+        \n      \"reply_url\": \"/api/v1/sources/b7cd5c45-c790-46f2-8a24-2660c088daad/replies/a92e9033-3b38-4a68-905a-9421b82ed8ea\",
+        \n      \"seen_by\": [\n        \"25d57e95-c33e-43c2-9bda-d23b64721b75\"\n
+        \     ], \n      \"size\": 765, \n      \"source_url\": \"/api/v1/sources/b7cd5c45-c790-46f2-8a24-2660c088daad\",
+        \n      \"uuid\": \"a92e9033-3b38-4a68-905a-9421b82ed8ea\"\n    }, \n    {\n
+        \     \"filename\": \"6-local_deletion-reply.gpg\", \n      \"is_deleted_by_source\":
+        false, \n      \"journalist_first_name\": null, \n      \"journalist_last_name\":
+        null, \n      \"journalist_username\": \"dellsberg\", \n      \"journalist_uuid\":
+        \"25d57e95-c33e-43c2-9bda-d23b64721b75\", \n      \"reply_url\": \"/api/v1/sources/b7cd5c45-c790-46f2-8a24-2660c088daad/replies/1309c317-186b-4e06-b9f8-7d631d181f5e\",
+        \n      \"seen_by\": [\n        \"25d57e95-c33e-43c2-9bda-d23b64721b75\"\n
+        \     ], \n      \"size\": 833, \n      \"source_url\": \"/api/v1/sources/b7cd5c45-c790-46f2-8a24-2660c088daad\",
+        \n      \"uuid\": \"1309c317-186b-4e06-b9f8-7d631d181f5e\"\n    }\n  ]\n}\n"
+    headers:
+      Content-Length:
+      - '1285'
+      Content-Type:
+      - application/json
+      Date:
+      - Mon, 14 Jun 2021 18:45:09 GMT
+      Server:
+      - Werkzeug/0.16.0 Python/3.8.5
+    status:
+      code: 200
+      message: OK
+- request:
+    body: null
+    headers:
+      Accept:
+      - application/json
+      Accept-Encoding:
+      - gzip, deflate
+      Authorization:
+      - Token eyJhbGciOiJIUzI1NiIsImlhdCI6MTYyMzY5NjMwOCwiZXhwIjoxNjIzNzI1MTA4fQ.eyJpZCI6MX0.nxhSbGPxX_UAFmfWQoKpZjMa274B6Oxld8t2T504ElU
+      Connection:
+      - keep-alive
+      Content-Length:
+      - '0'
+      Content-Type:
+      - application/json
+      User-Agent:
+      - python-requests/2.22.0
+    method: DELETE
+    uri: http://127.0.0.1:8081/api/v1/sources/b7cd5c45-c790-46f2-8a24-2660c088daad/conversation
+  response:
+    body:
+      string: "{\n  \"message\": \"Source data deleted\"\n}\n"
+    headers:
+      Content-Length:
+      - '39'
+      Content-Type:
+      - application/json
+      Date:
+      - Mon, 14 Jun 2021 18:45:09 GMT
+      Server:
+      - Werkzeug/0.16.0 Python/3.8.5
+    status:
+      code: 200
+      message: OK
+- request:
+    body: null
+    headers:
+      Accept:
+      - application/json
+      Accept-Encoding:
+      - gzip, deflate
+      Authorization:
+      - Token eyJhbGciOiJIUzI1NiIsImlhdCI6MTYyMzY5NjMwOCwiZXhwIjoxNjIzNzI1MTA4fQ.eyJpZCI6MX0.nxhSbGPxX_UAFmfWQoKpZjMa274B6Oxld8t2T504ElU
+      Connection:
+      - keep-alive
+      Content-Type:
+      - application/json
+      User-Agent:
+      - python-requests/2.22.0
+    method: GET
+    uri: http://127.0.0.1:8081/api/v1/sources/b7cd5c45-c790-46f2-8a24-2660c088daad/submissions
+  response:
+    body:
+      string: "{\n  \"submissions\": []\n}\n"
+    headers:
+      Content-Length:
+      - '24'
+      Content-Type:
+      - application/json
+      Date:
+      - Mon, 14 Jun 2021 18:45:09 GMT
+      Server:
+      - Werkzeug/0.16.0 Python/3.8.5
+    status:
+      code: 200
+      message: OK
+- request:
+    body: null
+    headers:
+      Accept:
+      - application/json
+      Accept-Encoding:
+      - gzip, deflate
+      Authorization:
+      - Token eyJhbGciOiJIUzI1NiIsImlhdCI6MTYyMzY5NjMwOCwiZXhwIjoxNjIzNzI1MTA4fQ.eyJpZCI6MX0.nxhSbGPxX_UAFmfWQoKpZjMa274B6Oxld8t2T504ElU
+      Connection:
+      - keep-alive
+      Content-Type:
+      - application/json
+      User-Agent:
+      - python-requests/2.22.0
+    method: GET
+    uri: http://127.0.0.1:8081/api/v1/sources/b7cd5c45-c790-46f2-8a24-2660c088daad/replies
+  response:
+    body:
+      string: "{\n  \"replies\": []\n}\n"
+    headers:
+      Content-Length:
+      - '20'
+      Content-Type:
+      - application/json
+      Date:
+      - Mon, 14 Jun 2021 18:45:09 GMT
+      Server:
+      - Werkzeug/0.16.0 Python/3.8.5
+    status:
+      code: 200
+      message: OK
+version: 1

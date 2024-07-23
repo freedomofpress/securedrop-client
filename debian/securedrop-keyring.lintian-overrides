@@ -1,0 +1,20 @@
+# FIXME
+securedrop-keyring: extended-description-is-empty
+
+# This is intentional
+securedrop-keyring: file-in-etc-not-marked-as-conffile [etc/apt/trusted.gpg.d/securedrop-keyring.gpg]
+
+# This is intentional
+securedrop-keyring: package-installs-apt-keyring [etc/apt/trusted.gpg.d/securedrop-keyring.gpg]
+
+# FIXME: section shouldn't be "unknown"
+securedrop-keyring: section-is-dh_make-template
+
+# This is intentional
+securedrop-keyring: control-file-is-empty [conffiles]
+
+# FIXME: abbreviate
+securedrop-keyring: synopsis-too-long
+
+# TODO: this probably isn't an issue, double check our kernels have fs.protected_hardlinks=1.
+securedrop-keyring: recursive-privilege-change

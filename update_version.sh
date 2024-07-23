@@ -1,31 +1,25 @@
 #!/bin/bash
-## Usage: ./update_version.sh <version>
+set -euxo pipefail
 
-set -e
-
-readonly NEW_VERSION=$1
+NEW_VERSION=${1:-""}
 
 if [ -z "$NEW_VERSION" ]; then
-  echo "You must specify the new version!"
+  echo "Usage: ./update_version.sh <version>";
   exit 1
 fi
 
-# Get the old version from securedrop_client/__init__.py
-old_version_regex='^__version__ = "(.*)"$'
-[[ "$(cat securedrop_client/__init__.py)" =~ $old_version_regex ]]
-OLD_VERSION=${BASH_REMATCH[1]}
 
-if [ -z "$OLD_VERSION" ]; then
-  echo "Couldn't find the old version: does this script need to be updated?"
-  exit 1
+if [[ $NEW_VERSION == *~rc* ]]; then
+    echo "RCs should use the versioning a.b.c-rcD, where a.b.c is the next version"
+    exit 1
 fi
 
-# Update the version in securedrop_client/__init__.py and setup.py
-if [[ "$OSTYPE" == "darwin"* ]]; then
-    # The empty '' after sed -i is required on macOS to indicate no backup file should be saved.
-    sed -i '' "s@$(echo "${OLD_VERSION}" | sed 's/\./\\./g')@$NEW_VERSION@g" securedrop_client/__init__.py
-    sed -i '' "s@$(echo "${OLD_VERSION}" | sed 's/\./\\./g')@$NEW_VERSION@g" setup.py
-else
-    sed -i "s@$(echo "${OLD_VERSION}" | sed 's/\./\\./g')@$NEW_VERSION@g" securedrop_client/__init__.py
-    sed -i "s@$(echo "${OLD_VERSION}" | sed 's/\./\\./g')@$NEW_VERSION@g" setup.py
-fi
+sed -i'' -r -e "s/^__version__ = \"(.*?)\"/__version__ = \"${NEW_VERSION}\"/" client/securedrop_client/__init__.py
+sed -i'' -r -e "s/^__version__ = \"(.*?)\"/__version__ = \"${NEW_VERSION}\"/" export/securedrop_export/__init__.py
+
+# Normalize version, convert any - to ~, e.g. 0.9.0-rc1 to 0.9.0~rc1
+DEB_VERSION=$(echo "$NEW_VERSION" | sed 's/-/~/g')
+
+export DEBEMAIL="securedrop@freedom.press"
+export DEBFULLNAME="SecureDrop Team"
+dch -b --newversion "${DEB_VERSION}" --distribution unstable "see changelog.md"

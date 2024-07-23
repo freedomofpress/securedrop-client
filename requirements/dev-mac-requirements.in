@@ -1,2 +1,0 @@
--r dev-bullseye-requirements.in
-rubicon-objc==0.4.2
