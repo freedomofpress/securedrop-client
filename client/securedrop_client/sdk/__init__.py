@@ -438,17 +438,6 @@ class API:
 
         return Source(**response.data)
 
-    def get_source_from_string(self, uuid: str) -> Source:
-        """
-        This will fetch a source from server and return it.
-
-        :param uuid: Source UUID as string.
-        :returns: Source object fetched from server for the given UUID value.
-        """
-
-        s = Source(uuid=uuid)
-        return self.get_source(s)
-
     def delete_source(self, source: Source) -> bool:
         """
         This method will delete the source and collection. If the UUID
@@ -505,18 +494,6 @@ class API:
             return True
 
         return False
-
-    def delete_source_from_string(self, uuid: str) -> bool:
-        """
-        This method will delete the source and collection. If the UUID
-        is not found in the server, it will raise WrongUUIDError.
-
-        :param uuid: Source UUID as string.
-        :returns: True if the operation is successful.
-        """
-
-        s = Source(uuid=uuid)
-        return self.delete_source(s)
 
     def add_star(self, source: Source) -> bool:
         """
@@ -626,18 +603,6 @@ class API:
             # XXX: is this the correct behavior
             return submission
 
-    def get_submission_from_string(self, uuid: str, source_uuid: str) -> Submission:
-        """
-        Returns the updated Submission object from the server.
-
-        :param uuid: UUID of the Submission object.
-        :param source_uuid: UUID of the source.
-        :returns: Updated submission object from the server.
-        """
-        s = Submission(uuid=uuid)
-        s.source_uuid = source_uuid
-        return self.get_submission(s)
-
     def get_all_submissions(self) -> list[Submission]:
         """
         Returns a list of Submission objects from the server.
@@ -673,7 +638,6 @@ class API:
         """
         # Not using direct URL because this helps to use the same method
         # from local submission (not fetched from server) objects.
-        # See the *from_string for an example.
         path_query = f"api/v1/sources/{submission.source_uuid}/submissions/{submission.uuid}"
         method = "DELETE"
 
@@ -692,18 +656,6 @@ class API:
             return True
         # We should never reach here
         return False
-
-    def delete_submission_from_string(self, uuid: str, source_uuid: str) -> bool:
-        """
-        Deletes a given Submission based on UUIDs from the server.
-
-        :param uuid: UUID of the Submission object.
-        :param source_uuid: UUID of the source.
-        :returns: Updated submission object from the server.
-        """
-        s = Submission(uuid=uuid)
-        s.source_url = f"/api/v1/sources/{source_uuid}"
-        return self.delete_submission(s)
 
     def download_submission(
         self, submission: Submission, path: str | None = None, timeout: int | None = None
@@ -982,7 +934,6 @@ class API:
         """
         # Not using direct URL because this helps to use the same method
         # from local reply (not fetched from server) objects.
-        # See the *from_string for an example.
         path_query = f"api/v1/sources/{reply.source_uuid}/replies/{reply.uuid}"
 
         method = "DELETE"
