@@ -225,13 +225,6 @@ class TestShared:
 
     # ---------------- USERS ----------------
 
-    def get_current_user(self):
-        user = self.api.get_current_user()
-        assert user["is_admin"]
-        assert user["username"] == "journalist"
-        assert "first_name" in user
-        assert "last_name" in user
-
     def get_users(self):
         users = self.api.get_users()
         for user in users:

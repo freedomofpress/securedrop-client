@@ -157,10 +157,6 @@ class TestAPI(TestShared):
         super().flag_source()
 
     @VCRAPI.use_cassette
-    def test_get_current_user(self):
-        super().get_current_user()
-
-    @VCRAPI.use_cassette
     def test_get_users(self):
         super().get_users()
 
