@@ -64,6 +64,3 @@ Package: securedrop-workstation-viewer
 Architecture: all
 Depends: securedrop-workstation-config,securedrop-workstation-grsec,apparmor-profiles,apparmor-profiles-extra,apparmor-utils,audacious,eog,evince,file-roller,gedit,totem,heif-gdk-pixbuf
 Description: This is the SecureDrop workstation SecureDrop Viewer Disposable VM template configuration package. This package provides dependencies and configuration for the Qubes SecureDrop workstation sd-viewer Template VM.
-Provides: securedrop-workstation-svs-disp
-Conflicts: securedrop-workstation-svs-disp
-Replaces: securedrop-workstation-svs-disp
