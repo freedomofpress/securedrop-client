@@ -39,6 +39,7 @@
   /usr/bin/expr ix,
   /usr/bin/mkdir mrix,
   /usr/bin/qrexec-client-vm mrix,
+  /usr/lib/qubes/qfile-agent ix,
   /usr/bin/qubes-gpg-client mrix,
   /usr/bin/qubes-gpg-import-key mrix,
   /usr/bin/qubesdb-cmd mrix,
