@@ -91,9 +91,7 @@ class WhistleflowDialog(ModalDialog):
 
     def _send_to_whistleflow(self) -> None:
         timestamp = datetime.datetime.now().isoformat()
-        self._device.send_files_to_whistleflow(
-            f"export-{timestamp}.tar", self._file_locations
-        )
+        self._device.send_files_to_whistleflow(f"export-{timestamp}.tar", self._file_locations)
 
     def _show_success_message(self) -> None:
         self.continue_button.clicked.disconnect()
