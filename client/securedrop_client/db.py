@@ -291,10 +291,7 @@ class Message(Base):
         The `is_read` boolean is used in order to recognize messages that have been downloaded
         before SecureDrop 1.6.0 (before the seen-by feature).
         """
-        if self.seen_messages.count() or self.is_read:
-            return True
-
-        return False
+        return bool(self.seen_messages.count() or self.is_read)
 
     def seen_by(self, journalist_id: int) -> bool:
         for seen_message in self.seen_messages:
@@ -407,10 +404,7 @@ class File(Base):
         The `is_read` boolean is used in order to recognize files that have been downloaded before
         SecureDrop 1.6.0 (before the seen-by feature).
         """
-        if self.seen_files.count() or self.is_read:
-            return True
-
-        return False
+        return bool(self.seen_files.count() or self.is_read)
 
     def seen_by(self, journalist_id: int) -> bool:
         for seen_file in self.seen_files:

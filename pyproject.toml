@@ -101,6 +101,9 @@ known-third-party = [
 "client/securedrop_client/sdk/__init__.py" = [
     # significant assert use for mypy
     "S101",
+    # a number of unchecked "We should never reach here" `return false` that
+    # need to be refactored away
+    "SIM103",
 ]
 "client/securedrop_client/gui/widgets.py" = [
     # FIXME: shouldn't be using assert

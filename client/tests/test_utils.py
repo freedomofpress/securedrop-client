@@ -92,7 +92,7 @@ def test_safe_mkdir_with_base_dir_with_parent_dirs_that_do_not_exist():
     with pytest.raises(FileNotFoundError) as e_info:
         safe_mkdir("/this/does/not/exist", "test")
 
-    assert e_info.type == FileNotFoundError
+    assert e_info.type is FileNotFoundError
     assert "No such file or directory: '/this/does/not/exist'" in str(e_info.value)
 
 
