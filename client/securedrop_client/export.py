@@ -9,6 +9,7 @@ from enum import Enum
 from io import BytesIO
 from shlex import quote
 from tempfile import TemporaryDirectory, mkdtemp
+from typing import Dict
 
 from PyQt5.QtCore import QObject, QProcess, pyqtSignal
 
