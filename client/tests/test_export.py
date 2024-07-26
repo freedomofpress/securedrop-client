@@ -7,7 +7,7 @@ import pytest
 from PyQt5.QtTest import QSignalSpy
 
 from securedrop_client.export import Export
-from securedrop_client.export_status import ExportError, ExportStatus
+from securedrop_client.export_status import ExportStatus
 from tests import factory
 
 _PATH_TO_PRETEND_ARCHIVE = "/tmp/archive-pretend"
@@ -106,10 +106,9 @@ class TestDevice:
             mock_qproc.start.assert_called_once()
             mock_rmtree.assert_called_once()
 
-        # Note: in future can return UNEXPECTED_RETURN_STATUS instead
         assert len(spy) == 1
-        assert isinstance(spy[0][0], ExportError)
-        assert spy[0][0].status == ExportStatus.ERROR_PRINT
+        assert isinstance(spy[0][0], ExportStatus)
+        assert spy[0][0] == ExportStatus.UNEXPECTED_RETURN_STATUS
 
     def test_Device_print(self):
         with (
@@ -155,8 +154,8 @@ class TestDevice:
 
         # Print doesn't use the new ERROR_MISSING_FILES status yet
         assert len(spy) == 1
-        assert isinstance(spy[0][0], ExportError)
-        assert spy[0][0].status == ExportStatus.ERROR_PRINT
+        assert isinstance(spy[0][0], ExportStatus)
+        assert spy[0][0] == ExportStatus.ERROR_PRINT
 
     def test_Device_run_export_preflight_checks(self):
         with (
@@ -301,8 +300,8 @@ class TestDevice:
 
             mock_qproc.start.assert_called_once()
             assert len(spy) == 1
-            assert isinstance(spy[0][0], ExportError)
-            assert spy[0][0].status == enum
+            assert isinstance(spy[0][0], ExportStatus)
+            assert spy[0][0] == enum
 
     @mock.patch("securedrop_client.export.tarfile")
     def test__add_virtual_file_to_archive(self, mock_tarfile):

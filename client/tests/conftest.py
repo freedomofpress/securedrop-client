@@ -74,23 +74,47 @@ def lang(request):
 
 
 @pytest.fixture()
-def print_dialog(mocker, homedir):
+def print_dialog(request, mocker):
+    """
+    Fixture that returns a print dialog. Tests using this fixture must
+    pass a parametrized string representing the result of the (simulated)
+    qrexec print command. Acceptable values are ExportStatus enum values
+    ("ExportStatus.SAMPLE.value"), but arbitrary strings can be supplied in
+    order to simulate unexpected/malformed results.
+    See tests/conversation/export/test_print_dialog.py.
+    """
     mocker.patch("PyQt5.QtWidgets.QApplication.activeWindow", return_value=QMainWindow())
+    export = _stub_export(mocker, status_string=request.param)
 
-    export_device = mocker.MagicMock(spec=Export)
-
-    return conversation.PrintDialog(export_device, "file123.jpg", ["/mock/path/to/file"])
+    return conversation.PrintDialog(export, "file123.jpg", ["/mock/path/to/file"])
 
 
-@pytest.fixture()
-def print_transcript_dialog(mocker, homedir):
-    mocker.patch("PyQt5.QtWidgets.QApplication.activeWindow", return_value=QMainWindow())
+def _stub_export(mocker, status_string=None):
+    """
+    Helper. Return an Export instance that mocks out QProcess calls to qrexec,
+    returning a string instead of executing the process.
 
-    export_device = mocker.MagicMock(spec=Export)
+    The string is supplied as an indirect parameter in the calling test method.
+    Under normal circumstances, it should be an ExportStatus value;
+    for testing purposes, allow any arbitrary string in order to test exception
+    handling between export.py and the print dialog on invalid input.
+    """
+    export = Export()
+    export.process = mocker.MagicMock()
 
-    return conversation.PrintTranscriptDialog(
-        export_device, "transcript.txt", ["some/path/transcript.txt"]
-    )
+    # Simulate qrexec return value, which is printed to stderr
+    # and then captured by QProcess. See export.py
+    export.process.readAllStandardError = mocker.MagicMock()
+    export.process.readAllStandardError.return_value.data = mocker.MagicMock()
+    if status_string:
+        export.process.readAllStandardError.return_value.data.return_value = status_string.encode(
+            "utf-8"
+        )
+
+    mocker.patch.object(export, "_run_qrexec_export")
+    mocker.patch.object(export, "_create_archive")
+
+    return export
 
 
 @pytest.fixture()

@@ -18,9 +18,7 @@ from securedrop_client.conversation import Transcript as ConversationTranscript
 from securedrop_client.db import Source
 from securedrop_client.export import Export
 from securedrop_client.gui.base import ModalDialog
-from securedrop_client.gui.conversation import (
-    PrintTranscriptDialog as PrintConversationTranscriptDialog,
-)
+from securedrop_client.gui.conversation import PrintDialog
 from securedrop_client.gui.conversation.export import ExportWizard
 from securedrop_client.logic import Controller
 from securedrop_client.utils import safe_mkdir
@@ -185,9 +183,7 @@ class PrintConversationAction(QAction):  # pragma: nocover
         # by the operating system.
         with open(file_path) as f:
             export = Export()
-            dialog = PrintConversationTranscriptDialog(
-                export, TRANSCRIPT_FILENAME, [str(file_path)]
-            )
+            dialog = PrintDialog(export, TRANSCRIPT_FILENAME, [str(file_path)])
             dialog.exec()
 
 

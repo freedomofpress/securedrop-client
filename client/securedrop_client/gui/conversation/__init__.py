@@ -6,7 +6,6 @@ from .delete import DeleteConversationDialog
 from .export import (
     ExportWizard,
     PrintDialog,
-    PrintTranscriptDialog,
 )
 
-__all__ = ["DeleteConversationDialog", "ExportWizard", "PrintDialog", "PrintTranscriptDialog"]
+__all__ = ["DeleteConversationDialog", "ExportWizard", "PrintDialog"]
