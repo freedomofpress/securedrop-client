@@ -1,17 +1,10 @@
 .PHONY: all
 all: help
 
-# We prefer to use python3.9 if it's availabe, especially on arm64 based Macs,
+# We prefer to use python3.11 if it's available, especially on arm64 based Macs,
 # which would not be able to install the virtual environment without an x86_64
-# Python 3.9, but we're also OK with just python3 if that's all we've got
-PYTHON := $(if $(shell bash -c "command -v python3.9"), python3.9, python3)
-VERSION_CODENAME ?= bullseye
-
-HOOKS_DIR=.githooks
-
-.PHONY: hooks
-hooks:  ## Configure Git to use the hooks provided by this repository.
-	git config core.hooksPath "$(HOOKS_DIR)"
+# Python 3.11, but we're also OK with just python3 if that's all we've got
+PYTHON := $(if $(shell bash -c "command -v python3.11"), python3.11, python3)
 
 SEMGREP_FLAGS := --exclude "tests/" --error --strict --verbose
 
@@ -30,7 +23,7 @@ semgrep-local:
 
 .PHONY: mypy
 mypy: ## Run static type checker
-	@poetry run mypy --ignore-missing-imports \
+	@MYPYPATH="stubs" poetry run mypy --ignore-missing-imports \
 		--disallow-incomplete-defs \
 		--disallow-untyped-defs \
 		--show-error-codes \
@@ -85,12 +78,18 @@ test-functional: ## Run the functional tests
 test-sdk: ## Run just the sdk tests
 	@poetry run pytest -v $(STESTS)
 
-.PHONY: flake8
-flake8: ## Run flake8 linting
-	@poetry run flake8 securedrop_client tests
+.PHONY: regenerate-sdk-cassettes
+regenerate-sdk-cassettes:
+	@echo "Building securedrop-proxy (if not already done)..."
+	@$(MAKE) -C ../proxy build
+	@echo "Checking if a development server is available to regenerate cassettes..."
+	@echo "NB. It should be a fresh development server via \"make dev\", with no other data!  HTTP requests and responses will be recorded unredacted, including credentials and tokens."
+	@curl http://localhost:8080/metadata
+	@rm -fr tests/sdk/data/
+	@make test-sdk
 
 .PHONY: lint
-lint: flake8 mypy semgrep ## Run all linters
+lint: mypy semgrep ## Run all linters
 
 .PHONY: check
 check: clean lint test-random test-integration test-functional ## Run the full CI test suite
@@ -134,7 +133,7 @@ POT=${LOCALE_DIR}/messages.pot
 .PHONY: check-strings
 check-strings: ## Check that the translation catalog is up to date with source code
 	@make extract-strings
-	@git diff --exit-code ${LOCALE_DIR} || { echo "Translation catalog is out of date. Please run \"make extract-strings\" and commit the changes."; exit 1; }
+	@git diff --ignore-matching-lines='^"Generated-By: Babel' --exit-code ${LOCALE_DIR} || { echo "Translation catalog is out of date. Please run \"make extract-strings\" and commit the changes."; exit 1; }
 
 .PHONY: extract-strings
 extract-strings: ## Extract translatable strings from source code

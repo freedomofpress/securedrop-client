@@ -21,7 +21,6 @@ from securedrop_client.app import (
     run,
     start_app,
 )
-from tests.helper import app  # noqa: F401
 
 
 def test_application_sets_en_as_default_language_code(mocker):
@@ -75,7 +74,7 @@ def test_configure_logging(homedir, mocker):
 @pytest.mark.skipif(
     platform.system() != "Linux", reason="concurrent app prevention skipped on non Linux"
 )
-class TestSecondInstancePrevention(object):
+class TestSecondInstancePrevention:
     @staticmethod
     def mock_app(mocker):
         mock_app = mocker.MagicMock()
@@ -124,8 +123,8 @@ class TestSecondInstancePrevention(object):
         mock_socket = self.socket_mock_generator(mocker, 131)  # crazy unexpected error
         mock_app = self.mock_app(mocker)
         mocker.patch("securedrop_client.app.socket", new=mock_socket)
+        prevent_second_instance(mock_app, "name1")
         with pytest.raises(OSError):
-            prevent_second_instance(mock_app, "name1")
             prevent_second_instance(mock_app, "name1")
 
 
@@ -182,7 +181,7 @@ def test_create_app_dir_permissions(tmpdir, mocker):
     for idx, case in enumerate(PERMISSIONS_CASES):
         mock_session_maker = mocker.MagicMock()
         mock_args = mocker.MagicMock()
-        sdc_home = os.path.join(str(tmpdir), "case-{}".format(idx))
+        sdc_home = os.path.join(str(tmpdir), f"case-{idx}")
         mock_args.sdc_home = sdc_home
         mock_qt_args = mocker.MagicMock()
 

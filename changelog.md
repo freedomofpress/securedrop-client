@@ -1,11 +1,55 @@
 # Changelog
 
-## 100.10.2
-* Guardian release of 0.10.2
+## 0.12.0
 
-## 0.10.2
-* Update signing key expiry date (#2049)
-* Build dependencies from signed tag in securedrop-builder repo (#2050)
+* Support viewing .heic and .avif files (#2110)
+* Fix printing of Office documents requiring conversion to PDF (#2119)
+* Show error details on Error screen of Export Wizard (#2098)
+* Improve Export Wizard handling of button presses (#1926)
+* Add hover state and animation to Print dialog buttons (#2125)
+* Upgrade `openssl` Rust crate to 0.10.66 for RUSTSEC-2024-0357 (#2131)
+
+
+## 0.11.0
+
+This is the first release solely targeting Debian Bookworm. New features in the securedrop-client codebases will be available on Bookworm and Qubes 4.2 only.
+
+* Support Qubes 4.2 and Debian Bookworm, drop 4.1 and Bullseye support (#1958)
+* Automatically resume failed downloads (#2006)
+* Update AppArmor `__pycache__` rules for Python 3.11 (#2000, #2010)
+* Implement proxy v2 in Rust (#1718, #2017, #2031, #2039, #2015)
+* Make sd-proxy VM disposable (#2033)
+* Update release signing key expiry date to May 2027 (#2036)
+* Allow nautilus to have RWX memory (#2060)
+* Fix print preflight status check (#2102)
+* Open `.webm` videos in Totem (#2106)
+
+* Provisioning:
+  * Install debian package requirements via sdw-config metapackage (#1957, #1967)
+  * Provision deb822-style apt sources list (#1952)
+  * Use QubesDB to configure VM-specific settings (#1883, #2034)
+  * Use systemd and Qubes services to conditionally provision VMs (#1677, #2033)
+  * Configure Journalist Interface auth credentials via QubesDB (#2032, #2051, #2056, #2058)
+  * Use bash for all Debian packaging scripts (#1927)
+
+* Internal and development:
+  * Remove the pre-commit hook for make check-strings (#1896)
+  * Display package hashes after successful build (#1898)
+  * Exclude client version string from Project-Id-Version of .pot files (#1915)
+  * Exclude root project .venv from bandit (#1918)
+  * Run tests as not-root (#1919)
+  * Automatically collect package build log (#1923)
+  * Use ruff for linting and formatting checks (#1885, #1944)
+  * Push "nightly" after each merged PR (#1960)
+  * Update readme to reference python3.11 (#1969)
+  * Install xfce4-terminal in all VMs for debugging (#2013)
+  * Exclude Babel header from i18n diff in make check-strings (#2054, #2065)
+  * Reorganize securedrop-log code to clearly split server and client (#1677)
+  * Clean up unused securedrop-log code (#2014, #2042)
+  * Document architecture of securedrop-log component (#1995)
+  * Update most development dependencies to their latest versions
+  * Add QubesDB and locally built packages to piuparts (#2032, #2034)
+
 
 ## 0.10.1
 * Fix printing of transcripts. (#1936)

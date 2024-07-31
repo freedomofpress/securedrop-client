@@ -1,1 +1,3 @@
 proxy/qubes/securedrop.Proxy etc/qubes-rpc/
+target/release/securedrop-proxy usr/bin/
+proxy/usr.bin.securedrop-proxy /etc/apparmor.d/

@@ -61,10 +61,10 @@ def make_remote_message(source_uuid, file_counter=1):
     upon in the following unit tests. The passed in source_uuid is used to
     generate a valid URL.
     """
-    source_url = "/api/v1/sources/{}".format(source_uuid)
+    source_url = f"/api/v1/sources/{source_uuid}"
     return Submission(
         download_url="test",
-        filename="{}-submission-msg.gpg".format(file_counter),
+        filename=f"{file_counter}-submission-msg.gpg",
         is_read=False,
         size=123,
         source_url=source_url,
@@ -80,7 +80,7 @@ def make_remote_submission(source_uuid):
     upon in the following unit tests. The passed in source_uuid is used to
     generate a valid URL.
     """
-    source_url = "/api/v1/sources/{}".format(source_uuid)
+    source_url = f"/api/v1/sources/{source_uuid}"
     return Submission(
         download_url="test",
         filename="1-submission.filename",
@@ -99,7 +99,7 @@ def make_remote_reply(source_uuid, journalist_uuid="testymctestface"):
     upon in the following unit tests. The passed in source_uuid is used to
     generate a valid URL.
     """
-    source_url = "/api/v1/sources/{}".format(source_uuid)
+    source_url = f"/api/v1/sources/{source_uuid}"
     return Reply(
         filename="1-reply.filename",
         journalist_uuid=journalist_uuid,
@@ -168,10 +168,10 @@ def test_delete_local_source_by_uuid(homedir, mocker):
 
     # Ensure both source folder and its containing file are gone.
     with pytest.raises(FileNotFoundError):
-        f = open(path_to_source_document, "r")
+        f = open(path_to_source_document)
 
     with pytest.raises(FileNotFoundError):
-        f = open(source_directory, "r")
+        f = open(source_directory)
 
 
 def test_delete_local_source_by_uuid_no_files(homedir, mocker):
@@ -389,6 +389,7 @@ def test_sync_delete_race(homedir, mocker, session_maker, session):
     assert source_exists(session, source.uuid) is False
     with pytest.raises(NoResultFound):
         get_message(session, message1.uuid)
+    with pytest.raises(NoResultFound):
         get_message(session, message2.uuid)
 
 
@@ -802,18 +803,18 @@ def test_update_files_adds_seen_record(homedir, mocker, session):
     # Create a remote file that will be used to create a new local file.
     remote_file_to_create = factory.RemoteFile(
         source_uuid=source.uuid,
-        source_url="/api/v1/sources/{}".format(source.uuid),
+        source_url=f"/api/v1/sources/{source.uuid}",
         file_counter=factory.FILE_COUNT + 1,
-        filename="{}-doc.gz.gpg".format(factory.FILE_COUNT + 1),
+        filename=f"{factory.FILE_COUNT + 1}-doc.gz.gpg",
         seen_by=[journalist_1.uuid, journalist_2.uuid],
     )
 
     # Create a remote file that was seen by a journalist without an account.
     remote_file_to_create_with_unknown_journalist = factory.RemoteFile(
         source_uuid=source.uuid,
-        source_url="/api/v1/sources/{}".format(source.uuid),
+        source_url=f"/api/v1/sources/{source.uuid}",
         file_counter=factory.FILE_COUNT + 2,
-        filename="{}-doc.gz.gpg".format(factory.FILE_COUNT + 2),
+        filename=f"{factory.FILE_COUNT + 2}-doc.gz.gpg",
         seen_by=["unknown-journalist-uuid"],
     )
 
@@ -892,9 +893,9 @@ def test_update_files_marks_read_files_as_seen_without_seen_records(homedir, moc
     # Create a remote file that will be used to create a new local file.
     remote_file_to_create = factory.RemoteFile(
         source_uuid=source.uuid,
-        source_url="/api/v1/sources/{}".format(source.uuid),
+        source_url=f"/api/v1/sources/{source.uuid}",
         file_counter=factory.FILE_COUNT + 1,
-        filename="{}-doc.gz.gpg".format(factory.FILE_COUNT + 1),
+        filename=f"{factory.FILE_COUNT + 1}-doc.gz.gpg",
         is_read=1,
     )
 
@@ -1003,13 +1004,13 @@ def test_update_messages_marks_read_messages_as_seen_without_seen_records(homedi
     remote_message_to_update = factory.RemoteMessage(
         uuid=local_message_to_update.uuid,
         source_uuid=source.uuid,
-        source_url="/api/v1/sources/{}".format(source.uuid),
+        source_url=f"/api/v1/sources/{source.uuid}",
         is_read=1,
     )
 
     # Create a remote file that will be used to create a new local file.
     remote_message_to_create = factory.RemoteMessage(
-        source_uuid=source.uuid, source_url="/api/v1/sources/{}".format(source.uuid), is_read=1
+        source_uuid=source.uuid, source_url=f"/api/v1/sources/{source.uuid}", is_read=1
     )
 
     remote_messages = [remote_message_to_update, remote_message_to_create]
@@ -1074,21 +1075,21 @@ def test_update_messages_adds_seen_record(homedir, mocker, session):
     remote_message_to_update = factory.RemoteMessage(
         uuid=local_message_to_update.uuid,
         source_uuid=source.uuid,
-        source_url="/api/v1/sources/{}".format(source.uuid),
+        source_url=f"/api/v1/sources/{source.uuid}",
         seen_by=[journalist_1.uuid, journalist_2.uuid],
     )
 
     # Create a remote message that will be used to create a new local message.
     remote_message_to_create = factory.RemoteMessage(
         source_uuid=source.uuid,
-        source_url="/api/v1/sources/{}".format(source.uuid),
+        source_url=f"/api/v1/sources/{source.uuid}",
         seen_by=[journalist_1.uuid, journalist_2.uuid],
     )
 
     # Create a remote message that was seen by a journalist without an account.
     remote_message_t0_create_with_unknown_journalist = factory.RemoteMessage(
         source_uuid=source.uuid,
-        source_url="/api/v1/sources/{}".format(source.uuid),
+        source_url=f"/api/v1/sources/{source.uuid}",
         seen_by=["unknown-journalist-uuid"],
     )
 
@@ -1185,7 +1186,7 @@ def test_update_replies(homedir, mocker, session):
         journalist_uuid=journalist.uuid,
         journalist_first_name="new_name",
         journalist_last_name="new_name",
-        source_url="/api/v1/sources/{}".format(source.uuid),
+        source_url=f"/api/v1/sources/{source.uuid}",
         file_counter=local_reply_update.file_counter,
         filename=local_reply_update.filename,
         seen_by=[],
@@ -1194,9 +1195,9 @@ def test_update_replies(homedir, mocker, session):
     # Create a remote reply that will be used to create a new local reply.
     remote_reply_create = factory.RemoteReply(
         journalist_uuid=journalist.uuid,
-        source_url="/api/v1/sources/{}".format(source.uuid),
+        source_url=f"/api/v1/sources/{source.uuid}",
         file_counter=factory.REPLY_COUNT + 1,
-        filename="{}-filename.gpg".format(factory.REPLY_COUNT + 1),
+        filename=f"{factory.REPLY_COUNT + 1}-filename.gpg",
         journalist_first_name="",
         journalist_last_name="",
         seen_by=[],
@@ -1270,18 +1271,18 @@ def test_update_replies_adds_seen_record(homedir, mocker, session):
     # Create a remote reply that will be used to create a new local reply.
     remote_reply_create = factory.RemoteReply(
         journalist_uuid=journalist_1.uuid,
-        source_url="/api/v1/sources/{}".format(source.uuid),
+        source_url=f"/api/v1/sources/{source.uuid}",
         file_counter=factory.REPLY_COUNT + 1,
-        filename="{}-reply.gpg".format(factory.REPLY_COUNT + 1),
+        filename=f"{factory.REPLY_COUNT + 1}-reply.gpg",
         seen_by=[journalist_1.uuid, journalist_2.uuid],
     )
 
     # Create a remote reply that was seen by a journalist without an account.
     remote_reply_to_create_with_unknown_journalist = factory.RemoteReply(
         journalist_uuid=journalist_1.uuid,
-        source_url="/api/v1/sources/{}".format(source.uuid),
+        source_url=f"/api/v1/sources/{source.uuid}",
         file_counter=factory.REPLY_COUNT + 2,
-        filename="{}-reply.gpg".format(factory.REPLY_COUNT + 2),
+        filename=f"{factory.REPLY_COUNT + 2}-reply.gpg",
         seen_by=["unknown-journalist-uuid"],
     )
 
@@ -1704,10 +1705,10 @@ def test_delete_single_submission_or_reply_single_file(homedir, mocker):
 
     # Ensure both file and its containing folder are gone.
     with pytest.raises(FileNotFoundError):
-        open(os.path.join(source_directory, file_server_filename), "r")
+        open(os.path.join(source_directory, file_server_filename))
 
     with pytest.raises(FileNotFoundError):
-        open(source_directory, "r")
+        open(source_directory)
 
 
 def test_delete_single_submission_or_reply_single_file_no_folder(homedir, mocker):
@@ -1734,7 +1735,7 @@ def test_delete_single_submission_or_reply_single_file_no_folder(homedir, mocker
     delete_single_submission_or_reply_on_disk(test_obj, homedir)
 
     with pytest.raises(FileNotFoundError):
-        open(os.path.join(homedir, file_server_filename), "r")
+        open(os.path.join(homedir, file_server_filename))
 
 
 def test_source_exists_true(homedir, mocker):
@@ -2121,7 +2122,7 @@ def test___update_submissions_cleanup_empty_folder_with_error(mocker, session, h
 
     update_files([], local_submissions, [], [], session, data_dir)
     mock_error.assert_called_once_with(
-        MatchingLogline(msg="Could not check {}".format(local_file.source.journalist_designation))
+        MatchingLogline(msg=f"Could not check {local_file.source.journalist_designation}")
     )
 
 
@@ -2185,7 +2186,7 @@ def test___update_replies_skip_uuids_successful(mocker, session, homedir):
         journalist_uuid=journalist.uuid,
         journalist_first_name="new_name",
         journalist_last_name="new_name",
-        source_url="/api/v1/sources/{}".format(source.uuid),
+        source_url=f"/api/v1/sources/{source.uuid}",
         file_counter=local_reply_update.file_counter,
         filename=local_reply_update.filename,
         seen_by=[],
@@ -2194,9 +2195,9 @@ def test___update_replies_skip_uuids_successful(mocker, session, homedir):
     # Create a remote reply that will be used to create a new local reply.
     remote_reply_create = factory.RemoteReply(
         journalist_uuid=journalist.uuid,
-        source_url="/api/v1/sources/{}".format(source.uuid),
+        source_url=f"/api/v1/sources/{source.uuid}",
         file_counter=factory.REPLY_COUNT + 1,
-        filename="{}-filename.gpg".format(factory.REPLY_COUNT + 1),
+        filename=f"{factory.REPLY_COUNT + 1}-filename.gpg",
         journalist_first_name="",
         journalist_last_name="",
         seen_by=[],
@@ -2209,9 +2210,9 @@ def test___update_replies_skip_uuids_successful(mocker, session, homedir):
         journalist_uuid=journalist.uuid,
         journalist_first_name="new_name",
         journalist_last_name="new_name",
-        source_url="/api/v1/sources/{}".format(skip_source.uuid),
+        source_url=f"/api/v1/sources/{skip_source.uuid}",
         file_counter=local_reply_update.file_counter,
-        filename="{}-filename.gpg".format(factory.REPLY_COUNT + 1),
+        filename=f"{factory.REPLY_COUNT + 1}-filename.gpg",
         seen_by=[],
     )
 
@@ -2219,7 +2220,7 @@ def test___update_replies_skip_uuids_successful(mocker, session, homedir):
     remote_reply_skip2 = factory.RemoteReply(
         uuid=local_reply_skip.uuid,
         journalist_uuid=journalist.uuid,
-        source_url="/api/v1/sources/{}".format(local_skip_source.uuid),
+        source_url=f"/api/v1/sources/{local_skip_source.uuid}",
         file_counter=local_reply_skip.file_counter,
         filename=local_reply_skip.filename,
         seen_by=[],
@@ -2229,7 +2230,7 @@ def test___update_replies_skip_uuids_successful(mocker, session, homedir):
     remote_reply_skip3 = factory.RemoteReply(
         uuid=locally_deleted_source.uuid,
         journalist_uuid=journalist.uuid,
-        source_url="/api/v1/sources/{}".format(locally_deleted_source.uuid),
+        source_url=f"/api/v1/sources/{locally_deleted_source.uuid}",
     )
 
     # Simulate a race condition for deletion where local database is modified
@@ -2374,7 +2375,7 @@ def test__delete_source_collection_from_db_uuid_not_found(mocker, homedir):
     source = factory.Source(journalist_designation="sourcer sourcington", uuid=str(uuid.uuid4()))
 
     _delete_source_collection_from_db(mock_session, source)
-    mock_debug.assert_called_with(MatchingLogline((source.uuid)))
+    mock_debug.assert_called_with(MatchingLogline(source.uuid))
 
 
 def test__delete_source_collection_from_db_query_error(mocker, session):
@@ -2389,9 +2390,7 @@ def test__delete_source_collection_from_db_query_error(mocker, session):
             self.uuid = uuid
 
         def __eq__(self, other):
-            return (
-                "Could not add source {} to deletedconversation table".format(source.uuid) in other
-            )
+            return f"Could not add source {source.uuid} to deletedconversation table" in other
 
     source = factory.Source(
         journalist_designation="sourcer sourcington", id=42, uuid=str(uuid.uuid4())
@@ -2413,9 +2412,7 @@ def test__delete_source_collection_from_db_commit_error(mocker, session):
             self.uuid = uuid
 
         def __eq__(self, other):
-            return (
-                "Could not locally delete conversation for source {}".format(source.uuid) in other
-            )
+            return f"Could not locally delete conversation for source {source.uuid}" in other
 
     source = factory.Source(
         journalist_designation="sourcer sourcington", id=42, uuid=str(uuid.uuid4())
@@ -2460,7 +2457,7 @@ def test_delete_local_conversation_by_uuid_nosuchuuid(homedir, mocker, session):
 
     delete_local_conversation_by_source_uuid(session, mock_uuid, data_dir)
     error_logger.assert_called_once_with(
-        "Tried to delete source {}, but UUID " "was not found".format(mock_uuid)
+        f"Tried to delete source {mock_uuid}, but UUID " "was not found"
     )
 
 

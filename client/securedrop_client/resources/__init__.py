@@ -19,7 +19,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
 from pathlib import Path
-from typing import Optional
 
 from PyQt5.QtCore import QDir
 from PyQt5.QtGui import QFontDatabase, QIcon, QMovie, QPixmap
@@ -49,13 +48,13 @@ def load_all_fonts() -> None:
 
 def load_icon(
     normal: str,
-    disabled: Optional[str] = None,
-    active: Optional[str] = None,
-    selected: Optional[str] = None,
-    normal_off: Optional[str] = None,
-    disabled_off: Optional[str] = None,
-    active_off: Optional[str] = None,
-    selected_off: Optional[str] = None,
+    disabled: str | None = None,
+    active: str | None = None,
+    selected: str | None = None,
+    normal_off: str | None = None,
+    disabled_off: str | None = None,
+    active_off: str | None = None,
+    selected_off: str | None = None,
 ) -> QIcon:
     """
     Add the contents of Scalable Vector Graphics (SVG) files provided for associated icon modes and

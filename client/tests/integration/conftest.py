@@ -11,7 +11,7 @@ from securedrop_client.logic import Controller
 from tests import factory
 
 
-@pytest.fixture(scope="function")
+@pytest.fixture()
 def main_window(mocker, homedir):
     # Setup
     app = QApplication([])
@@ -63,7 +63,7 @@ def main_window(mocker, homedir):
     app.exit()
 
 
-@pytest.fixture(scope="function")
+@pytest.fixture()
 def main_window_no_key(mocker, homedir):
     # Setup
     app = QApplication([])
@@ -115,7 +115,7 @@ def main_window_no_key(mocker, homedir):
     app.exit()
 
 
-@pytest.fixture(scope="function")
+@pytest.fixture()
 def modal_dialog(mocker, homedir):
     app = QApplication([])
     gui = Window()
@@ -146,7 +146,7 @@ def modal_dialog(mocker, homedir):
     app.exit()
 
 
-@pytest.fixture(scope="function")
+@pytest.fixture()
 def mock_export(mocker):
     export = Export()
 
@@ -164,7 +164,7 @@ def mock_export(mocker):
     return export
 
 
-@pytest.fixture(scope="function")
+@pytest.fixture()
 def print_dialog(mocker, homedir, mock_export):
     app = QApplication([])
     gui = Window()
@@ -198,7 +198,7 @@ def print_dialog(mocker, homedir, mock_export):
     app.exit()
 
 
-@pytest.fixture(scope="function")
+@pytest.fixture()
 def export_file_wizard(mocker, homedir, mock_export):
     app = QApplication([])
     gui = Window()

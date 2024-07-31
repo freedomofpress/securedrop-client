@@ -1,0 +1,1192 @@
+interactions:
+- request:
+    body: '{"username": "journalist", "passphrase": "correct horse battery staple
+      profanity oil chewy", "one_time_code": "668631"}'
+    headers: {}
+    method: POST
+    uri: api/v1/token
+  response: !!python/object:securedrop_client.sdk.JSONResponse
+    data:
+      expiration: '2024-02-29T23:51:33.301258Z'
+      journalist_first_name: null
+      journalist_last_name: null
+      journalist_uuid: d53edd4d-1802-40ce-9c69-86d9b6b75ac8
+      token: ImxEbER6d3I2enhzdE41d0dqbUpfR1QwdjRmQ0hMVDZ0ZldKQjlqZEJHeHci.ZeD8ZQ.4YCgvY1FDiEt7Rs7ashjW4AgPAs
+    headers:
+      connection: close
+      content-length: '290'
+      content-type: application/json
+      date: Thu, 29 Feb 2024 21:51:33 GMT
+      server: Werkzeug/2.2.3 Python/3.8.10
+    status: 200
+- request:
+    body: null
+    headers:
+      Accept:
+      - application/json
+      Authorization:
+      - Token ImxEbER6d3I2enhzdE41d0dqbUpfR1QwdjRmQ0hMVDZ0ZldKQjlqZEJHeHci.ZeD8ZQ.4YCgvY1FDiEt7Rs7ashjW4AgPAs
+      Content-Type:
+      - application/json
+    method: GET
+    uri: api/v1/users
+  response: !!python/object:securedrop_client.sdk.JSONResponse
+    data:
+      users:
+      - first_name: null
+        last_name: null
+        username: journalist
+        uuid: d53edd4d-1802-40ce-9c69-86d9b6b75ac8
+      - first_name: null
+        last_name: null
+        username: dellsberg
+        uuid: 16b3778d-28e5-48fe-afa5-abc2f1f99e62
+      - first_name: null
+        last_name: null
+        username: deleted
+        uuid: bfb91841-1eae-4d73-8e42-aa763de1f01b
+    headers:
+      connection: close
+      content-length: '474'
+      content-type: application/json
+      date: Thu, 29 Feb 2024 21:51:33 GMT
+      server: Werkzeug/2.2.3 Python/3.8.10
+    status: 200
+- request:
+    body: null
+    headers:
+      Accept:
+      - application/json
+      Authorization:
+      - Token ImxEbER6d3I2enhzdE41d0dqbUpfR1QwdjRmQ0hMVDZ0ZldKQjlqZEJHeHci.ZeD8ZQ.4YCgvY1FDiEt7Rs7ashjW4AgPAs
+      Content-Type:
+      - application/json
+    method: GET
+    uri: api/v1/sources
+  response: !!python/object:securedrop_client.sdk.JSONResponse
+    data:
+      sources:
+      - add_star_url: /api/v1/sources/71fb3b51-4ee6-4c37-bd13-a6d5a5df71f9/add_star
+        interaction_count: 6
+        is_flagged: false
+        is_starred: false
+        journalist_designation: mindless stevia
+        key:
+          fingerprint: 3565064B66EC1B1FFFF9F91E60C9B9DB9B742F40
+          public: '-----BEGIN PGP PUBLIC KEY BLOCK-----
+
+            Comment: 3565 064B 66EC 1B1F FFF9  F91E 60C9 B9DB 9B74 2F40
+
+            Comment: Source Key <Z7S343DKAVGMFUPPIIWNMQJTQEIFDRISOVHLTNJUSJZ
+
+
+            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
+
+            ohpx
+
+            =QPzx
+
+            -----END PGP PUBLIC KEY BLOCK-----
+
+            '
+          type: PGP
+        last_updated: '2024-02-29T21:49:45.302660Z'
+        number_of_documents: 2
+        number_of_messages: 2
+        remove_star_url: /api/v1/sources/71fb3b51-4ee6-4c37-bd13-a6d5a5df71f9/remove_star
+        replies_url: /api/v1/sources/71fb3b51-4ee6-4c37-bd13-a6d5a5df71f9/replies
+        submissions_url: /api/v1/sources/71fb3b51-4ee6-4c37-bd13-a6d5a5df71f9/submissions
+        url: /api/v1/sources/71fb3b51-4ee6-4c37-bd13-a6d5a5df71f9
+        uuid: 71fb3b51-4ee6-4c37-bd13-a6d5a5df71f9
+      - add_star_url: /api/v1/sources/6bcf6252-7e0e-4078-b688-4784e3f27875/add_star
+        interaction_count: 6
+        is_flagged: false
+        is_starred: false
+        journalist_designation: victorious newsroom
+        key:
+          fingerprint: 0D12306F44C00F3E8A2DB506F7EEF8E77403219D
+          public: '-----BEGIN PGP PUBLIC KEY BLOCK-----
+
+            Comment: 0D12 306F 44C0 0F3E 8A2D  B506 F7EE F8E7 7403 219D
+
+            Comment: Source Key <NADFDXADEHF6ZHF7AI6K6LCQLSDISG7UNFEMUL3GRAK
+
+
+            xsFNBFGRxNABEAC1EesfgzxH3YXAFCJBRJBC1Otv+EWpWpGPJJnY63lK67v1XaO7
+
+            CQHnWdFPOUYxhD8DjQMHOLYqFYeAJbrpSIsg5B4gb41Rck/9WKEVcgOGtZ8YSJOZ
+
+            Yjd2r7yWNo6PQspiTJbU6tPjcc8bCRVUxRh8WEqttOfJf0WKJ7i4DLrMsdATGpZH
+
+            1LrD+GWwVFe9XMhxaslrBanZgQ450fk0fAKkO6aZPJJFJhLEQdMQ4aaQLla1jIPl
+
+            PPtm9YImGwr6sggYE8MQz5K9ojI/ipKHolgmzFlXiGIv7UfCKjzS7OK3LV8SUwHm
+
+            RBV5ST7Dvk87TFd/bxSuMC87Vjt4t62P2EpisWsVmTEgNtkuRiFXrl9nxx+s1+xd
+
+            RdNibLATAfC/5Myg95o9gQh1GXGcdsUVPYRlBhSaYobuUBkFSRtX7jSlqtLFY43b
+
+            2f1zMivQI/WtHVFeMbWF3udwXnpzBiloWOLVsz4hliHAcnT39g2deU+sJ8FK8T9/
+
+            gYZowmCI9G06MBWAdIBJec5BdB8W1DCgq/xtoaFpotF0JzaHBEfFtdnUWsBLCYM8
+
+            4rt2WJFRNH/nnzVagoyCxnSTJerpKbL6j2OcCe9SBQaxNMI2s6FSUcj/wEQMs46Y
+
+            N6bGz6um/dqvjM9/5lSMKaF7x+e63+gsj8FDdHv4SBkSrE+Nd87QLVcqcQARAQAB
+
+            wsHJBB8BCgB9BYJRkcTQAwsJBwkQ9+7453QDIZ1HFAAAAAAAHgAgc2FsdEBub3Rh
+
+            dGlvbnMuc2VxdW9pYS1wZ3Aub3Jn/lai0BUG34hLKlnYiShI3YyAPpxX1FJrL7Js
+
+            5iqIMxMDFQoIApsBAh4BFiEEDRIwb0TADz6KLbUG9+7453QDIZ0AAJ7UD/4iC+0x
+
+            zLJlZOtPKMJ3GgOo8ZElOjG3P6l5eL73xzlwJRD3wYRb4YO4JOEOxP6QMnTYCjk8
+
+            NSTwbCaXeewLNsgzVLN0CP7NGQdQYCIMJI40ajadGgRpjrG5eStH5sGynCz742qu
+
+            WvyTYC8dIhqvcuxdsEikWc+6owaa5r7ejTblnDQ/hTxvKxdp+g7eyEXFMCWQQBCN
+
+            Zz9+30y30RRHyxcyIzFgsBUA4V/elCwCU/vt0M1FRp0zB08n9CJTqddYzQHKcnbK
+
+            gTtewLSIUaTf4CUT2n3rsiu8qvNIcAAZUSNyZtl+ZVpKsr3JwxVOOgtM/7D1WEdm
+
+            C+ur2cc0Bq6/CdkeAXWL7iTNBLXH6DN/1YXx0RmFPMkcmPHAGbySkojKPJjTS12K
+
+            gDjbm/tjAgP8lOCNnadVj+T1pPUcBMR+8pc3K7SiRsd5XMFcKjP/D6Oqhsuuaz90
+
+            oHcKxULAteN3xUwiNx3v1COHhYPRtb8USLgjvfDBOqgSKYnG+xwxfsxCjXlv55A5
+
+            1pRHlduPBgln5UX3QdkLe1oo/2ZMedyEMKbJeTxJUiHsjthmyVuveVjl1w/vLNKO
+
+            hi14DNC1Hc7J10uF8LhK7MI5F1ATO1nNchWZGxzl/MsH8NBekL01T1zUQxE1sMHM
+
+            LFYKwvkqbUTBP/vQ+pktccXnm0qFZ3Egn/BHgM11U291cmNlIEtleSA8TkFERkRY
+
+            QURFSEY2WkhGN0FJNks2TENRTFNESVNHN1VORkVNVUwzR1JBS1VMNEFaQkVYQjRD
+
+            RUwzS0tJTkVEUUhCRENBS1ozN1RSNEFOM1pBRlZNWk5RR0pIT0xLWkI0M0RCM0hZ
+
+            QT0+wsHMBBMBCgCABYJRkcTQAwsJBwkQ9+7453QDIZ1HFAAAAAAAHgAgc2FsdEBu
+
+            b3RhdGlvbnMuc2VxdW9pYS1wZ3Aub3Jn392j7XH+0YA7zhhwPluKxhQ0UXvRaNy7
+
+            QONgROasIf8DFQoIApkBApsBAh4BFiEEDRIwb0TADz6KLbUG9+7453QDIZ0AAAwH
+
+            D/91ANbq0ZF3bd4vuUNaAlsWVTcBLjY1mSHmkKYDQ29yktW/PXcR0ld0+juCJndf
+
+            qu5fV0a+U8yZ/3NRfOk4NG7UuPRrPBF3mvul8zdJVJPzCi3vUszsSArF7vQuojjw
+
+            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
+
+            JQfK
+
+            =duDi
+
+            -----END PGP PUBLIC KEY BLOCK-----
+
+            '
+          type: PGP
+        last_updated: '2024-02-29T21:49:46.105521Z'
+        number_of_documents: 2
+        number_of_messages: 2
+        remove_star_url: /api/v1/sources/6bcf6252-7e0e-4078-b688-4784e3f27875/remove_star
+        replies_url: /api/v1/sources/6bcf6252-7e0e-4078-b688-4784e3f27875/replies
+        submissions_url: /api/v1/sources/6bcf6252-7e0e-4078-b688-4784e3f27875/submissions
+        url: /api/v1/sources/6bcf6252-7e0e-4078-b688-4784e3f27875
+        uuid: 6bcf6252-7e0e-4078-b688-4784e3f27875
+      - add_star_url: /api/v1/sources/29661228-7771-4b4f-9551-1e6387d6fc63/add_star
+        interaction_count: 6
+        is_flagged: false
+        is_starred: false
+        journalist_designation: suppurative monolith
+        key:
+          fingerprint: 619CA3061BE1E09671799ECCF5E569656CCEFE95
+          public: '-----BEGIN PGP PUBLIC KEY BLOCK-----
+
+            Comment: 619C A306 1BE1 E096 7179  9ECC F5E5 6965 6CCE FE95
+
+            Comment: Source Key <44PLNEEID3NRMTRLDF2ICSQIG4GIHKWTGBFA6DGSLLI
+
+
+            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
+
+            vI9F
+
+            =J1XQ
+
+            -----END PGP PUBLIC KEY BLOCK-----
+
+            '
+          type: PGP
+        last_updated: '2024-02-29T21:49:49.439122Z'
+        number_of_documents: 2
+        number_of_messages: 2
+        remove_star_url: /api/v1/sources/29661228-7771-4b4f-9551-1e6387d6fc63/remove_star
+        replies_url: /api/v1/sources/29661228-7771-4b4f-9551-1e6387d6fc63/replies
+        submissions_url: /api/v1/sources/29661228-7771-4b4f-9551-1e6387d6fc63/submissions
+        url: /api/v1/sources/29661228-7771-4b4f-9551-1e6387d6fc63
+        uuid: 29661228-7771-4b4f-9551-1e6387d6fc63
+    headers:
+      connection: close
+      content-length: '16233'
+      content-type: application/json
+      date: Thu, 29 Feb 2024 21:51:33 GMT
+      server: Werkzeug/2.2.3 Python/3.8.10
+    status: 200
+- request:
+    body: null
+    headers:
+      Accept:
+      - application/json
+      Authorization:
+      - Token ImxEbER6d3I2enhzdE41d0dqbUpfR1QwdjRmQ0hMVDZ0ZldKQjlqZEJHeHci.ZeD8ZQ.4YCgvY1FDiEt7Rs7ashjW4AgPAs
+      Content-Type:
+      - application/json
+    method: GET
+    uri: api/v1/submissions
+  response: !!python/object:securedrop_client.sdk.JSONResponse
+    data:
+      submissions:
+      - download_url: /api/v1/sources/71fb3b51-4ee6-4c37-bd13-a6d5a5df71f9/submissions/af58ad0b-dcf2-4d8f-a4e8-e67341ec07b5/download
+        filename: 1-mindless_stevia-msg.gpg
+        is_file: false
+        is_message: true
+        is_read: true
+        seen_by:
+        - 16b3778d-28e5-48fe-afa5-abc2f1f99e62
+        size: 616
+        source_url: /api/v1/sources/71fb3b51-4ee6-4c37-bd13-a6d5a5df71f9
+        submission_url: /api/v1/sources/71fb3b51-4ee6-4c37-bd13-a6d5a5df71f9/submissions/af58ad0b-dcf2-4d8f-a4e8-e67341ec07b5
+        uuid: af58ad0b-dcf2-4d8f-a4e8-e67341ec07b5
+      - download_url: /api/v1/sources/71fb3b51-4ee6-4c37-bd13-a6d5a5df71f9/submissions/7fb1507a-c7d8-4861-a1fc-8c1401093a4a/download
+        filename: 2-mindless_stevia-msg.gpg
+        is_file: false
+        is_message: true
+        is_read: true
+        seen_by:
+        - bfb91841-1eae-4d73-8e42-aa763de1f01b
+        size: 700
+        source_url: /api/v1/sources/71fb3b51-4ee6-4c37-bd13-a6d5a5df71f9
+        submission_url: /api/v1/sources/71fb3b51-4ee6-4c37-bd13-a6d5a5df71f9/submissions/7fb1507a-c7d8-4861-a1fc-8c1401093a4a
+        uuid: 7fb1507a-c7d8-4861-a1fc-8c1401093a4a
+      - download_url: /api/v1/sources/71fb3b51-4ee6-4c37-bd13-a6d5a5df71f9/submissions/8be38e2b-258d-4088-9f36-d7eec4789fec/download
+        filename: 3-mindless_stevia-doc.gz.gpg
+        is_file: true
+        is_message: false
+        is_read: true
+        seen_by:
+        - 16b3778d-28e5-48fe-afa5-abc2f1f99e62
+        size: 651
+        source_url: /api/v1/sources/71fb3b51-4ee6-4c37-bd13-a6d5a5df71f9
+        submission_url: /api/v1/sources/71fb3b51-4ee6-4c37-bd13-a6d5a5df71f9/submissions/8be38e2b-258d-4088-9f36-d7eec4789fec
+        uuid: 8be38e2b-258d-4088-9f36-d7eec4789fec
+      - download_url: /api/v1/sources/71fb3b51-4ee6-4c37-bd13-a6d5a5df71f9/submissions/81430ec4-dd2a-4a15-b676-3effa8b2d723/download
+        filename: 4-mindless_stevia-doc.gz.gpg
+        is_file: true
+        is_message: false
+        is_read: true
+        seen_by:
+        - d53edd4d-1802-40ce-9c69-86d9b6b75ac8
+        size: 651
+        source_url: /api/v1/sources/71fb3b51-4ee6-4c37-bd13-a6d5a5df71f9
+        submission_url: /api/v1/sources/71fb3b51-4ee6-4c37-bd13-a6d5a5df71f9/submissions/81430ec4-dd2a-4a15-b676-3effa8b2d723
+        uuid: 81430ec4-dd2a-4a15-b676-3effa8b2d723
+      - download_url: /api/v1/sources/6bcf6252-7e0e-4078-b688-4784e3f27875/submissions/2a0cf1b6-7d44-4727-b683-c1bd53c68037/download
+        filename: 1-victorious_newsroom-msg.gpg
+        is_file: false
+        is_message: true
+        is_read: true
+        seen_by:
+        - 16b3778d-28e5-48fe-afa5-abc2f1f99e62
+        size: 647
+        source_url: /api/v1/sources/6bcf6252-7e0e-4078-b688-4784e3f27875
+        submission_url: /api/v1/sources/6bcf6252-7e0e-4078-b688-4784e3f27875/submissions/2a0cf1b6-7d44-4727-b683-c1bd53c68037
+        uuid: 2a0cf1b6-7d44-4727-b683-c1bd53c68037
+      - download_url: /api/v1/sources/6bcf6252-7e0e-4078-b688-4784e3f27875/submissions/d4cdca2f-7ff2-4d43-b0e0-0eb24dfa01ce/download
+        filename: 2-victorious_newsroom-msg.gpg
+        is_file: false
+        is_message: true
+        is_read: true
+        seen_by:
+        - d53edd4d-1802-40ce-9c69-86d9b6b75ac8
+        size: 766
+        source_url: /api/v1/sources/6bcf6252-7e0e-4078-b688-4784e3f27875
+        submission_url: /api/v1/sources/6bcf6252-7e0e-4078-b688-4784e3f27875/submissions/d4cdca2f-7ff2-4d43-b0e0-0eb24dfa01ce
+        uuid: d4cdca2f-7ff2-4d43-b0e0-0eb24dfa01ce
+      - download_url: /api/v1/sources/6bcf6252-7e0e-4078-b688-4784e3f27875/submissions/1101ddd3-8e46-4953-955d-9bb952a76fa5/download
+        filename: 3-victorious_newsroom-doc.gz.gpg
+        is_file: true
+        is_message: false
+        is_read: true
+        seen_by:
+        - 16b3778d-28e5-48fe-afa5-abc2f1f99e62
+        size: 651
+        source_url: /api/v1/sources/6bcf6252-7e0e-4078-b688-4784e3f27875
+        submission_url: /api/v1/sources/6bcf6252-7e0e-4078-b688-4784e3f27875/submissions/1101ddd3-8e46-4953-955d-9bb952a76fa5
+        uuid: 1101ddd3-8e46-4953-955d-9bb952a76fa5
+      - download_url: /api/v1/sources/6bcf6252-7e0e-4078-b688-4784e3f27875/submissions/bceeacc7-d12c-49cf-8993-fbd3bb850b90/download
+        filename: 4-victorious_newsroom-doc.gz.gpg
+        is_file: true
+        is_message: false
+        is_read: true
+        seen_by:
+        - 16b3778d-28e5-48fe-afa5-abc2f1f99e62
+        size: 651
+        source_url: /api/v1/sources/6bcf6252-7e0e-4078-b688-4784e3f27875
+        submission_url: /api/v1/sources/6bcf6252-7e0e-4078-b688-4784e3f27875/submissions/bceeacc7-d12c-49cf-8993-fbd3bb850b90
+        uuid: bceeacc7-d12c-49cf-8993-fbd3bb850b90
+      - download_url: /api/v1/sources/29661228-7771-4b4f-9551-1e6387d6fc63/submissions/bd8aadd1-94f7-45e5-9f9f-5e693a29fdff/download
+        filename: 1-suppurative_monolith-msg.gpg
+        is_file: false
+        is_message: true
+        is_read: false
+        seen_by: []
+        size: 804
+        source_url: /api/v1/sources/29661228-7771-4b4f-9551-1e6387d6fc63
+        submission_url: /api/v1/sources/29661228-7771-4b4f-9551-1e6387d6fc63/submissions/bd8aadd1-94f7-45e5-9f9f-5e693a29fdff
+        uuid: bd8aadd1-94f7-45e5-9f9f-5e693a29fdff
+      - download_url: /api/v1/sources/29661228-7771-4b4f-9551-1e6387d6fc63/submissions/ae887c2c-67d3-4264-95fb-149ba69eed77/download
+        filename: 2-suppurative_monolith-msg.gpg
+        is_file: false
+        is_message: true
+        is_read: false
+        seen_by: []
+        size: 710
+        source_url: /api/v1/sources/29661228-7771-4b4f-9551-1e6387d6fc63
+        submission_url: /api/v1/sources/29661228-7771-4b4f-9551-1e6387d6fc63/submissions/ae887c2c-67d3-4264-95fb-149ba69eed77
+        uuid: ae887c2c-67d3-4264-95fb-149ba69eed77
+      - download_url: /api/v1/sources/29661228-7771-4b4f-9551-1e6387d6fc63/submissions/e5f1c236-3b5f-4b75-8090-73b77267404a/download
+        filename: 3-suppurative_monolith-doc.gz.gpg
+        is_file: true
+        is_message: false
+        is_read: false
+        seen_by: []
+        size: 651
+        source_url: /api/v1/sources/29661228-7771-4b4f-9551-1e6387d6fc63
+        submission_url: /api/v1/sources/29661228-7771-4b4f-9551-1e6387d6fc63/submissions/e5f1c236-3b5f-4b75-8090-73b77267404a
+        uuid: e5f1c236-3b5f-4b75-8090-73b77267404a
+      - download_url: /api/v1/sources/29661228-7771-4b4f-9551-1e6387d6fc63/submissions/ba89fbd8-be51-48b7-b8a6-d01a17c83ae4/download
+        filename: 4-suppurative_monolith-doc.gz.gpg
+        is_file: true
+        is_message: false
+        is_read: false
+        seen_by: []
+        size: 651
+        source_url: /api/v1/sources/29661228-7771-4b4f-9551-1e6387d6fc63
+        submission_url: /api/v1/sources/29661228-7771-4b4f-9551-1e6387d6fc63/submissions/ba89fbd8-be51-48b7-b8a6-d01a17c83ae4
+        uuid: ba89fbd8-be51-48b7-b8a6-d01a17c83ae4
+    headers:
+      connection: close
+      content-length: '7439'
+      content-type: application/json
+      date: Thu, 29 Feb 2024 21:51:34 GMT
+      server: Werkzeug/2.2.3 Python/3.8.10
+    status: 200
+- request:
+    body: null
+    headers:
+      Accept:
+      - application/json
+      Authorization:
+      - Token ImxEbER6d3I2enhzdE41d0dqbUpfR1QwdjRmQ0hMVDZ0ZldKQjlqZEJHeHci.ZeD8ZQ.4YCgvY1FDiEt7Rs7ashjW4AgPAs
+      Content-Type:
+      - application/json
+    method: GET
+    uri: api/v1/replies
+  response: !!python/object:securedrop_client.sdk.JSONResponse
+    data:
+      replies:
+      - filename: 5-mindless_stevia-reply.gpg
+        is_deleted_by_source: false
+        journalist_first_name: ''
+        journalist_last_name: ''
+        journalist_username: dellsberg
+        journalist_uuid: 16b3778d-28e5-48fe-afa5-abc2f1f99e62
+        reply_url: /api/v1/sources/71fb3b51-4ee6-4c37-bd13-a6d5a5df71f9/replies/ec1f38f8-73e7-4303-ab6a-5e6e87f62f11
+        seen_by:
+        - d53edd4d-1802-40ce-9c69-86d9b6b75ac8
+        - 16b3778d-28e5-48fe-afa5-abc2f1f99e62
+        size: 1143
+        source_url: /api/v1/sources/71fb3b51-4ee6-4c37-bd13-a6d5a5df71f9
+        uuid: ec1f38f8-73e7-4303-ab6a-5e6e87f62f11
+      - filename: 6-mindless_stevia-reply.gpg
+        is_deleted_by_source: false
+        journalist_first_name: ''
+        journalist_last_name: ''
+        journalist_username: deleted
+        journalist_uuid: bfb91841-1eae-4d73-8e42-aa763de1f01b
+        reply_url: /api/v1/sources/71fb3b51-4ee6-4c37-bd13-a6d5a5df71f9/replies/ee702f60-1985-4f7b-9469-d17ee80d40f1
+        seen_by:
+        - bfb91841-1eae-4d73-8e42-aa763de1f01b
+        size: 1227
+        source_url: /api/v1/sources/71fb3b51-4ee6-4c37-bd13-a6d5a5df71f9
+        uuid: ee702f60-1985-4f7b-9469-d17ee80d40f1
+      - filename: 5-victorious_newsroom-reply.gpg
+        is_deleted_by_source: false
+        journalist_first_name: ''
+        journalist_last_name: ''
+        journalist_username: dellsberg
+        journalist_uuid: 16b3778d-28e5-48fe-afa5-abc2f1f99e62
+        reply_url: /api/v1/sources/6bcf6252-7e0e-4078-b688-4784e3f27875/replies/f50ed134-77c5-4de8-8d50-677f2a3e2267
+        seen_by:
+        - 16b3778d-28e5-48fe-afa5-abc2f1f99e62
+        size: 1174
+        source_url: /api/v1/sources/6bcf6252-7e0e-4078-b688-4784e3f27875
+        uuid: f50ed134-77c5-4de8-8d50-677f2a3e2267
+      - filename: 6-victorious_newsroom-reply.gpg
+        is_deleted_by_source: false
+        journalist_first_name: ''
+        journalist_last_name: ''
+        journalist_username: dellsberg
+        journalist_uuid: 16b3778d-28e5-48fe-afa5-abc2f1f99e62
+        reply_url: /api/v1/sources/6bcf6252-7e0e-4078-b688-4784e3f27875/replies/882e1479-5623-443b-909e-bc4e9b39f665
+        seen_by:
+        - d53edd4d-1802-40ce-9c69-86d9b6b75ac8
+        - 16b3778d-28e5-48fe-afa5-abc2f1f99e62
+        size: 1293
+        source_url: /api/v1/sources/6bcf6252-7e0e-4078-b688-4784e3f27875
+        uuid: 882e1479-5623-443b-909e-bc4e9b39f665
+      - filename: 5-suppurative_monolith-reply.gpg
+        is_deleted_by_source: false
+        journalist_first_name: ''
+        journalist_last_name: ''
+        journalist_username: dellsberg
+        journalist_uuid: 16b3778d-28e5-48fe-afa5-abc2f1f99e62
+        reply_url: /api/v1/sources/29661228-7771-4b4f-9551-1e6387d6fc63/replies/7f89ec25-9261-4c3e-8e53-2106483a90e7
+        seen_by:
+        - d53edd4d-1802-40ce-9c69-86d9b6b75ac8
+        - 16b3778d-28e5-48fe-afa5-abc2f1f99e62
+        size: 1331
+        source_url: /api/v1/sources/29661228-7771-4b4f-9551-1e6387d6fc63
+        uuid: 7f89ec25-9261-4c3e-8e53-2106483a90e7
+      - filename: 6-suppurative_monolith-reply.gpg
+        is_deleted_by_source: false
+        journalist_first_name: ''
+        journalist_last_name: ''
+        journalist_username: dellsberg
+        journalist_uuid: 16b3778d-28e5-48fe-afa5-abc2f1f99e62
+        reply_url: /api/v1/sources/29661228-7771-4b4f-9551-1e6387d6fc63/replies/2ff8844b-efe6-4460-88a3-c9cbaef86430
+        seen_by:
+        - 16b3778d-28e5-48fe-afa5-abc2f1f99e62
+        size: 1237
+        source_url: /api/v1/sources/29661228-7771-4b4f-9551-1e6387d6fc63
+        uuid: 2ff8844b-efe6-4460-88a3-c9cbaef86430
+    headers:
+      connection: close
+      content-length: '3964'
+      content-type: application/json
+      date: Thu, 29 Feb 2024 21:51:34 GMT
+      server: Werkzeug/2.2.3 Python/3.8.10
+    status: 200
+- request:
+    body: null
+    headers:
+      Accept:
+      - application/json
+      Authorization:
+      - Token ImxEbER6d3I2enhzdE41d0dqbUpfR1QwdjRmQ0hMVDZ0ZldKQjlqZEJHeHci.ZeD8ZQ.4YCgvY1FDiEt7Rs7ashjW4AgPAs
+      Content-Type:
+      - application/json
+    method: GET
+    uri: api/v1/sources/29661228-7771-4b4f-9551-1e6387d6fc63/submissions/bd8aadd1-94f7-45e5-9f9f-5e693a29fdff/download
+  response: !!python/object:securedrop_client.sdk.StreamedResponse
+    contents: !!binary |
+      wcFMA8PnxMCiIBsqARAA1ZvWGOQidi4FX0wa/tYyzeBJssmKAV3rHKEJsOjwDvy065pSN0B7CVtU
+      bYKG8lDZ00Ny/qUNtJHJiO0PymdLsKpx2yBMK7ho+2/jGmx21szF9n9zQ5fDF8ZTB3AK0cN3Fk1A
+      E0utdXfrpnknvBLOpvVxE8Y81C2J0TvoRD1I3wHjeHdKdc7Q7F+w5xDJof0nMbi7B5q82j3lB6Y/
+      JfBVeQz5OMYkJ8NVlDMcYdy/wqRknrpTjWmnZUt5fgHZmvVVvdIU99W7PwID7Ciy8r5xoyFGGvLk
+      jMooD5hlmfi2Bt1OqK5rTnvfb72Znv6i1VVNtrlGMz8A5yR65c5UJh9yItEH7twMvDh83vIfAD96
+      heCCQh1oo5YFTwq5QvlEENvGG/SU5WPfrUZzIHiilrI2ohWVF9DtlMVmso6OLRghvi7/5ldHWTGA
+      aoTQSuOExy8gJlnkgxT3BL6SpuCIr/+pha9vcv75bQ0MjBE3Y32Pt72c0OSGpeSsNJx/ZCjEJRbJ
+      C0tZ7njLg3PJ6IATfAByo3yYX7cOpMnYO8UtGlD3CM15WVYxhTD9KqtjfXNsQlfoYf3bmZy8WxZg
+      oH2yC0lk2cNsPq+wdsgpQH9TeRFc54CWi+VWpcnHxGwH8vj9wrQ7CbDcomnnJh67SOjP2Tletye3
+      bXRs48jVTI1w1rSserbSwFIBJ812OZvblzw+O7CAzLtsT7Tt7oidEYJgRZK8s/uPymg+W2pxqRJf
+      /8UShJNWpS26wLgsVMwGHlJVw32hQAwfFy2lclggYNcsOUN65ufLGNsIBl8iI1nEBu1E5p1FkoAA
+      afeVcyhuqlRcfY4BzA6EEjnBOvk4pfeOz/hIgSygnulv7J/UORVud2GpitzdMDu60Rcr96EtuRIp
+      WHbjV5KPTbAdz2+EA0ykQY+A0j73fiz63gllavRxu34fDvycvh9ab6mqohqFiRBSlg0BeiX8kWz6
+      mqLZImsgh0gKdWxryPGniZk3l6imKX8j6sUw+fy40YjhbleMamJ8sL5miBjD7N4vuXZXXHI83shP
+      4eEW6Gmb
+    filename: attachment; filename=1-suppurative_monolith-msg.gpg
+    sha256sum: sha256:4550af6949da8bff9edd28f25002d3dadc01d9cbd99e7d5955e1968049e2ad34
+- request:
+    body: null
+    headers:
+      Accept:
+      - application/json
+      Authorization:
+      - Token ImxEbER6d3I2enhzdE41d0dqbUpfR1QwdjRmQ0hMVDZ0ZldKQjlqZEJHeHci.ZeD8ZQ.4YCgvY1FDiEt7Rs7ashjW4AgPAs
+      Content-Type:
+      - application/json
+    method: GET
+    uri: api/v1/sources/29661228-7771-4b4f-9551-1e6387d6fc63/submissions/ae887c2c-67d3-4264-95fb-149ba69eed77/download
+  response: !!python/object:securedrop_client.sdk.StreamedResponse
+    contents: !!binary |
+      wcFMA8PnxMCiIBsqAQ/8CFtDi5JiaiLQ5o7uem9neGZXjJBwfvSdRgHSUtBxV+XCdfQ9zSVTdrAA
+      P62TbzfgpFQvo+zPOelXNKM9C3Dkgh+N/OzfsdAiwozVsdtIgeWK29FL2LVLYQnMFXcjPU1qL+pQ
+      iUbaFSiaa/LgvhGlHWOcJaCQv7VTw4V8KDYvbSLodEs7IALshqqN8+ikaGafLi6mYjvz9fL5VZTU
+      hzTuNPbJxAa3rmi7yw/fg19J6Gni6Yh2ogwy0fV6uM8yawUrWIozlT5NXBxWQqaVlLARY6I+I3EB
+      YE/dm1L8eC/4iiUBBUJaQ/yj49S9jMBymEAfKWLxuLyIStGNF4t68U0NqwyvtMOOFgtwXkz2j0iC
+      CQ0L4N98iOmWFYtn6Thb/YjctRUnrOtayPStH7C+4UnAhEzvxm9TYYuDl3NQf86dgQ/C72+mf2fU
+      lfabuTEKen9lnIAr7TR6hdMrJ+rVI449+THxjLc7QvAD5Becn6TDM3oQXeB+haW/jD7nQBlyWvy5
+      pbgrEfFljOKEFdDjlZDP15rxw8Ytat6C1q5DX2ys2BLWBQ9EupBLFqmKvq/FVsxAyV6i9wLcaOlP
+      dMq7cQy815v4Y1QHult6axZ9v2ss98bl6iUx4nj/Df/mD2koFk7IIFDBw4yRgWOmT0mh9id9FySo
+      B1yaHkhwnAydauYr6ZnStQFQQJUmlEeeNiUqozh+RihQ2TFzQ5Z0bCJeQrwpYtRvlJQmwCgJj+pn
+      36vT9vgtLIMzyp1ZCymUbz8TPb031/ecHpTqqYgV7rkEx30HRwG+HqXfkmK4n8K54xIGpt6WOjoU
+      iwZmX9ybRTVWdP0UT1nBTQ01EuaHJGnWdj60TAj+vFOfl1hC6jslJaUpxUxMNX8E+xA21x4hcLax
+      8v6DpsDCcnSswgOm2OeQqNU8pQR3H1d8KGE=
+    filename: attachment; filename=2-suppurative_monolith-msg.gpg
+    sha256sum: sha256:a65b41ecb5e38aefe6fdd64cc8d085c6b9beacf2595a917a3a7b479fe58454ea
+- request:
+    body: null
+    headers:
+      Accept:
+      - application/json
+      Authorization:
+      - Token ImxEbER6d3I2enhzdE41d0dqbUpfR1QwdjRmQ0hMVDZ0ZldKQjlqZEJHeHci.ZeD8ZQ.4YCgvY1FDiEt7Rs7ashjW4AgPAs
+      Content-Type:
+      - application/json
+    method: GET
+    uri: api/v1/sources/6bcf6252-7e0e-4078-b688-4784e3f27875/submissions/2a0cf1b6-7d44-4727-b683-c1bd53c68037/download
+  response: !!python/object:securedrop_client.sdk.StreamedResponse
+    contents: !!binary |
+      wcFMA8PnxMCiIBsqAQ//eVut+hhMJsl/TbZat2m2xtrhuctkKB7WkRXO1V6AWiPTNMSZhIUJuU04
+      jHHmxOpxOy3MZ4IKH2HEo9Lfh4+1lJM8TiAhignn/UyicyiEYUTtoxa7fJTTzGgtU1uzx50POFJc
+      mIqHX6AwjzBohuP4n9B5138HPnjGkBVNfQnh/1QIxtRuj5vjogB90nWP4Yv2LKkL7XtV6qM2qEwI
+      jxdH3i6RDCfxv8xEYnEQtAWWEieV/11H1nPLGSrkSDi0CxFjxYKRZvn/MrOp+9w6vzkXgupmM0G2
+      iWFyZPXEBjacgCtPTQ3XGwCpWS/GAxrUyiTSpK85zfW12e2xnaq8aZ0gCvzX96UcwGX/9zvEHxsQ
+      zH8fpd1TaIHDEyzGxelZnlnrv77RK2+4dB11vXW0y5wkxcxD3E15LeaU/zHNQkrcQjeK6MWIwgWg
+      YC8AEEr+Ukh08ZH7CK3PX9gnoZolY9rN8gkMYHlfoiDqpYqZieylPWwz5Z9J8uWQOYmy4J72hIZi
+      xTmg2Gr00SdGu5aeN6d7cLl9PD6hB7LHmQp2nUuVZjoOue/3WUHNgjdrJHwm/rW4sWIZnOBg6Q6B
+      ZfrnawdNM94md3NooRLmbrQFqR8FRQEbiYJmyCng1Ud6i1xaaoX0CakogwfEGZ9hU+Kj1mgfO33d
+      kraN1cSs6RZJdIztrALSdgEl6/cyWKXcoa3SFhxugMNAKiUAE8XkIvRjw/S21uyCCKKvR+mOf3XK
+      AnhZq4+SVOAFvoABXX8QDxbgpCA2mkDTI3oo8HhpbVkFMXRp/Ac7Gtn1UexnA2XGnDqhuQBqDxOr
+      9btmNrj7d9YEdmXNmNTkB0fEIds=
+    filename: attachment; filename=1-victorious_newsroom-msg.gpg
+    sha256sum: sha256:e85445020728ac61f713b80495dee6bb385b2ce089059675319bda86fb6b767b
+- request:
+    body: null
+    headers:
+      Accept:
+      - application/json
+      Authorization:
+      - Token ImxEbER6d3I2enhzdE41d0dqbUpfR1QwdjRmQ0hMVDZ0ZldKQjlqZEJHeHci.ZeD8ZQ.4YCgvY1FDiEt7Rs7ashjW4AgPAs
+      Content-Type:
+      - application/json
+    method: GET
+    uri: api/v1/sources/6bcf6252-7e0e-4078-b688-4784e3f27875/submissions/d4cdca2f-7ff2-4d43-b0e0-0eb24dfa01ce/download
+  response: !!python/object:securedrop_client.sdk.StreamedResponse
+    contents: !!binary |
+      wcFMA8PnxMCiIBsqAQ/+Kry5qTpJijDcYk/uZcxpAA+BPqte97+ETXHbgLqaayUUcJ9teA0KqsKT
+      Uf9tBCwTql7VNExSFoFBm8NJ7ZWOFHQBtM5ISZ71lzua3qCAqPk/NcYvn8FxkV2F1waPzBmdWvEz
+      Nb5Hnkvu/MFISrRtqo9rWIcMr9E0Jlg3P2mtqxNtA1go49K8i5E107OTJOOOHIQIIj7ia18f0wE2
+      Z+sHs0/e49kVzfAF+HGofjFCg28ddUyMP5NfyW8uHcAoj8ZfmykzVSNfoX13rtkGsvAjUVzvbHh2
+      6nWGZ1CobDGrPN6LHJXfJCxuX57HFg0srOQV3v95Jry1ISNFNLY1PXvsoM4Ak4ysTFo/wiEF1ijV
+      of6w0cSjhzQUKGOkqUl6HgwMVpT772mZimBqzqMgsMTY39ENa9FN9db9jGzaRkYWFCYQwBqDJin/
+      P/mXwnCovAUcB6+4xYC2GNF33cE4vsDSGNXvXO7qD4xzHYrr585jqE7//0SEkpeGeEmvggyMql75
+      iF35ePUl/c/06FqwoYZcATiVIbM+8hYLBU4Wspt8uCzXXtnSEvf5GEYylzLHh2AhyhwDio21Z3TC
+      B28DoJXXGC0YaXIOdRi/+z9LxYlTSXuzC4A+qZIayfKtEqTCU7ks7+VDAnPQNQuykxy1evOXOa7W
+      LaBtlb3aTzdcZVZizoLSwCwBf0r7Wm34FDoR9CDQvAgITiLphiPQSXSbkDNQbDMde2ef6gEVZYx7
+      Gc58VmW5NBlrRKvI2MoBSS4PpztugQ9LkeDsz81IHYmsQm65+4nh5jGIkUAH6x/kwTaangxt0HGy
+      Z02neb9bw/TO9LBvet6hCJwdb96UMS4wuKkSfh9UJhLf0ZZlPQERqKdcv0tkf892aLzyxY7nKLJr
+      FiVlTzSlY1XbshQZFC+qvXENFHVELJiIg4QddH3/L59rxuba3LXwAnC3WD8JGCH7SIzK4ZJx8w6q
+      aUVSZpktPjjqFvK97o1kABOdG8lu+RKr+A==
+    filename: attachment; filename=2-victorious_newsroom-msg.gpg
+    sha256sum: sha256:41757e182d056cc2803d2f6ba1b48393ff1cceaf8b9daff1c4d0099c0089da4b
+- request:
+    body: null
+    headers:
+      Accept:
+      - application/json
+      Authorization:
+      - Token ImxEbER6d3I2enhzdE41d0dqbUpfR1QwdjRmQ0hMVDZ0ZldKQjlqZEJHeHci.ZeD8ZQ.4YCgvY1FDiEt7Rs7ashjW4AgPAs
+      Content-Type:
+      - application/json
+    method: GET
+    uri: api/v1/sources/71fb3b51-4ee6-4c37-bd13-a6d5a5df71f9/submissions/af58ad0b-dcf2-4d8f-a4e8-e67341ec07b5/download
+  response: !!python/object:securedrop_client.sdk.StreamedResponse
+    contents: !!binary |
+      wcFMA8PnxMCiIBsqARAAlRI+s/TSyqEsQ0LUXSS0DCmY9FnZGahBBCTKoG9tbDwj1UluVNx9B9vM
+      ZqnLwU2nel9QcK39vQf4eH1KcWRsoZqYN4OjaUAh2GDYKLQT71yP0K0VqOSndOblvSzuWpSZC/c/
+      YdmVj88F9vXC6ADIfKjP29tXtRvQmrLA6CKUM341W0bFM8hM5kqoYy7XtTqn1BHvFjwy2HYtXeA6
+      7iBy7wyKAgBYgb25R5ctJ6sMnQBlpHwPT4hC1IZHpRGUKlvJf4hdrEmyHGK02z/pUK9dC4s7ubai
+      oiwtk/DBhAhI4Sfic4nwchRS16SEuukNb1hlP5wbLPWNFLKLQDoqdcJsCuAoCiPmS8Ie+cZDRGTm
+      wfUMz5q4qBRxSD2S7SHe02kQa/I14LoAuaAACk7avYfCJLs5s8UP8wbEk0LIvSuVT7CqXmTh/JOu
+      enXDRPgyKcYVZsfZv1R/SzU5LkNbKn/j1iGJssBFAegaid/BLjgnfwKo3SZ8ZEzJmPg0EnE0AvF2
+      RyqJm3M4ZAyW0rKHz1JbXetATFoOWEjTIZkb6lCQR3wT3SsQHcb7OqtBLOF9wg37z44Rnf0HxvPr
+      bbs4pH6OLYfOeHrH2Qz+0WySfjv/woJUNgMH1e2bldlVrrnRDYMW9x+C/L4aMqfIXGm/00ayIw1S
+      yadhIbwFvL1iUXKrCm/SVwFOb2CM/RPfijmRtm8Ej/SIFGdOak6dLoUc7lefbfv8wsbwKoxLYEtU
+      EbRzbxcv5yydAdiv6PiBYVre6NS6iOhXE39MYHMzyaVJRFIw/kyMOKhj28493A==
+    filename: attachment; filename=1-mindless_stevia-msg.gpg
+    sha256sum: sha256:0baa4882c10074480593e851c6471113ac46410c043668e338a84e369c56d973
+- request:
+    body: null
+    headers:
+      Accept:
+      - application/json
+      Authorization:
+      - Token ImxEbER6d3I2enhzdE41d0dqbUpfR1QwdjRmQ0hMVDZ0ZldKQjlqZEJHeHci.ZeD8ZQ.4YCgvY1FDiEt7Rs7ashjW4AgPAs
+      Content-Type:
+      - application/json
+    method: DELETE
+    uri: api/v1/sources/29661228-7771-4b4f-9551-1e6387d6fc63
+  response: !!python/object:securedrop_client.sdk.JSONResponse
+    data:
+      message: Source and submissions deleted
+    headers:
+      connection: close
+      content-length: '50'
+      content-type: application/json
+      date: Thu, 29 Feb 2024 21:51:35 GMT
+      server: Werkzeug/2.2.3 Python/3.8.10
+    status: 200
+- request:
+    body: null
+    headers:
+      Accept:
+      - application/json
+      Authorization:
+      - Token ImxEbER6d3I2enhzdE41d0dqbUpfR1QwdjRmQ0hMVDZ0ZldKQjlqZEJHeHci.ZeD8ZQ.4YCgvY1FDiEt7Rs7ashjW4AgPAs
+      Content-Type:
+      - application/json
+    method: GET
+    uri: api/v1/sources/71fb3b51-4ee6-4c37-bd13-a6d5a5df71f9/submissions/7fb1507a-c7d8-4861-a1fc-8c1401093a4a/download
+  response: !!python/object:securedrop_client.sdk.StreamedResponse
+    contents: !!binary |
+      wcFMA8PnxMCiIBsqAQ//SZHjuSmzwFbll0/9V4JwiZfg6J3/U7y7EXVaZL9bk3Ju7pTUxlSk4j3x
+      px4GnnGGTfAqT3sVZnfUlGo4Snz3htXJv3wRkQVZD5z1MJxfaN96qY5oR+2MZPvkol1nUS/vueCT
+      K4IWeUOqQyYE5xUEcL89O/3wImyjQtZuo7Jrk4Mlo4Hfulk4c8muce1gMEqqigU0L/HDpuOz/eeu
+      /WT8fVk+NAGyPscv3ytvzubGE37VmxSR+wJz8bb8jLrSjpVeVUyW8rpegI6WCbx5Zl8JGoYr/FFF
+      U/zEmMkjOOLiC6aQIFo1Y+jsGV60SCebVA4j4O0xrB7XGA2FPqv/fOsmhUpEZlqK4VZ83WHf95ld
+      MbtPHHTBsFoyBw8W3jVyn7O0YG5adbGb9W854V9DFb/u3s/k4hRl1LrZAP5yRmQYnxtkg9DdYH5r
+      34ehg/HCo6WPo571D7Qjne3BTEgvCdLP0KLhVjt+B+jjlYtSvWaYYVvC1Kzx8QN9QVcrxOgl5X6D
+      wNHRq63fUZ/NsGWI/vi15NqZ3zmYoRJ++JXqkw1g9AuGNfYQDjVyTaGroXRgTqOxWmjE3/cB6Ba6
+      TbFQYWPbtQ/0y4Iciv6kCHlazIuL792sVEWcogOVYrwNcIWlj3USI6WPh88tN8bpynneCNmZnI6s
+      35TcWx4nX+t4s2/vdS/SqwELzwjLJNL10F7DwIh5gIm1vaNHfCIQ9anSxVdze1XVUTqgY1ZnNSjb
+      tFjOxR9AWQNZyH20vh35+NGPCmB3tgnuQEeTdmZ9Ae9VarQmhDiqpdByEtIR683WCMNjqPZENgju
+      ofM0g4psGIODagsjfyINMF0qAqiXr3lhXWDNuhqVIw45Gfr5wspk0cv1NAcTZ348YQcqfivxGUIm
+      MdsBfDl4WVUmp3ZWDd4bBg==
+    filename: attachment; filename=2-mindless_stevia-msg.gpg
+    sha256sum: sha256:23bfc6d77ab6cf99d93d747b87ee87ce77a0e245c152dc02ba20f32e5767b396
+- request:
+    body: null
+    headers:
+      Accept:
+      - application/json
+      Authorization:
+      - Token ImxEbER6d3I2enhzdE41d0dqbUpfR1QwdjRmQ0hMVDZ0ZldKQjlqZEJHeHci.ZeD8ZQ.4YCgvY1FDiEt7Rs7ashjW4AgPAs
+      Content-Type:
+      - application/json
+    method: GET
+    uri: api/v1/sources/29661228-7771-4b4f-9551-1e6387d6fc63/replies/7f89ec25-9261-4c3e-8e53-2106483a90e7/download
+  response: !!python/object/apply:securedrop_client.sdk.sdlocalobjects.BaseError
+    args:
+    - Unable to parse header metadata from response
+    state:
+      msg: Unable to parse header metadata from response
+- request:
+    body: null
+    headers:
+      Accept:
+      - application/json
+      Authorization:
+      - Token ImxEbER6d3I2enhzdE41d0dqbUpfR1QwdjRmQ0hMVDZ0ZldKQjlqZEJHeHci.ZeD8ZQ.4YCgvY1FDiEt7Rs7ashjW4AgPAs
+      Content-Type:
+      - application/json
+    method: GET
+    uri: api/v1/sources/29661228-7771-4b4f-9551-1e6387d6fc63/replies/2ff8844b-efe6-4460-88a3-c9cbaef86430/download
+  response: !!python/object/apply:securedrop_client.sdk.sdlocalobjects.BaseError
+    args:
+    - Unable to parse header metadata from response
+    state:
+      msg: Unable to parse header metadata from response
+- request:
+    body: null
+    headers:
+      Accept:
+      - application/json
+      Authorization:
+      - Token ImxEbER6d3I2enhzdE41d0dqbUpfR1QwdjRmQ0hMVDZ0ZldKQjlqZEJHeHci.ZeD8ZQ.4YCgvY1FDiEt7Rs7ashjW4AgPAs
+      Content-Type:
+      - application/json
+    method: GET
+    uri: api/v1/sources/6bcf6252-7e0e-4078-b688-4784e3f27875/replies/f50ed134-77c5-4de8-8d50-677f2a3e2267/download
+  response: !!python/object:securedrop_client.sdk.StreamedResponse
+    contents: !!binary |
+      wcFMA8iDy7sHvnp+AQ/+LGkB3Zdog+x+sq2fS/sOq7Nu20xtlWf0grc+6FvFlbx9n7nMl/us2jfp
+      9fydA+ptETAaR3fWJ+dpP6X4pOemGLDK5eFdE3SMF88Y+c3CSwC9tIlWXdnxyIvuZr2erXTriCGJ
+      3hbiHUPeCdkzMabdsK8d69iMy7lsPKm6+GxK2vKtFQMr1ZZDA9w0zsZBqtxvUGDROt2J3qJQVojE
+      PxjxCBLbg3/zZ8XZ1t2lEqvw0xefVnkZNlooYvfZbT42JEzmeys3YOAk97DttUn9erVbfpX4PTqt
+      LR6Umsb4PjLMWDJ1z2o3w0mX30UgRMHlN4TLnQVPKrEMOAPAVP6ob9oI8ePpbBHjD4eH1OIaM6hZ
+      3i0JAsN4tEff4dwbBDxrvAkiBu+1+VUKm/3YcjRPdx7CFX579nSIioeuitQmhABz4+I/yjn7Q6h7
+      ZSJucGNPjXiSs14aeFXXCpf8vQZkS7VTIscaG9r1ZRBWFS4ovIzS0UWLGl7X3fvbfyp7KFz96igx
+      KWKcDkwrPV7MvznPwPNm3rsttauBcsdhFKlfFZmkuSdj9UTfBGy9tg2IZrx5Sp/czLE9m+9K0nH4
+      ibjl2r8g0ZDha1JdjlOFed9Gr25qaFYSZiBR0Kv2qcp+tacM45+tbiPxYyIVxLXxifURPMp+d3IV
+      SI+ETjphdDnFRDVOO43BwUwDw+fEwKIgGyoBEAClzLqYB8uQ2Bq3/MG0sp4Cv6uDvILxc7GH/z+v
+      ayF8WtqZW9UgeFKzyfHHmuzokwMXI1gue9Fgv/jN+oWoWJbiaDFxOOT5V32YDlDKsUXkXVdJJU7u
+      ziJUQ9/pXUEXzZPHRzBZRwWRmBCEzdPWljyQCn5JjhMfqGbUDpHlNNgIha5TDoKso3gEqDZ60tN+
+      WKd7Zl3E5YujQcGRAgNINLreJZpaVcp6NX9f1R+tVOwEoK1ftXlRB1IDYRm9hfYBdrIS/jmKMi9x
+      N1JLWN4bh7yteE/mi04qYt/0i/77dYs7/PfOJcAPWRffoPbuIBhN3Th4heSMgRFqeiLQXanHxE3K
+      mnZUerQKdcxU7L6ajqzWW651dEXPOsIeQFUXk46CyaaYjStNhmoxVeLtlMkONvc0KKQB60fFlqJo
+      obELadT+3T/69+VcWKTa+q6Sws5WD9HLnD39QAHzyKfPOkZ73UgXlM3gn7b9tKTl8pboZAxQC5R2
+      zdh7IYh5fDPAaIBzJLAY050dJJlJJOoFrCO3J8xPJDEjk6q63RgvmHX2wmJlOIGe/QIr5QopEvXh
+      x/5Tq1ZRVbIFcIcKrtLh+TldN80FbP5tmH0gpagvFcZIQLEZFE4SKWa0Spy03XthhJvJicKcifC1
+      bNvfyvAX9gkOCB+YffYt2hOiBiDYRrQcIvF6/9J2AcGJAK0v5JMJq84HyYGqjOwjD1kpM6zMrE4f
+      mzglQ9zJTrVaGHGLP/0hrCj5FlMs2x51/79z2wQo8cipDTfNQ5Rdl3BBayT3cPnYiiyeSeBZdOXh
+      NLLUkWpRHcV3CICpLk3B8trH9efLpRpqFZGR1eGvI7rgYQ==
+    filename: attachment; filename=5-victorious_newsroom-reply.gpg
+    sha256sum: sha256:7ca024f66bf99f17210d82009275be107e1488412ebabd2d9efdeac36a92b655
+- request:
+    body: null
+    headers:
+      Accept:
+      - application/json
+      Authorization:
+      - Token ImxEbER6d3I2enhzdE41d0dqbUpfR1QwdjRmQ0hMVDZ0ZldKQjlqZEJHeHci.ZeD8ZQ.4YCgvY1FDiEt7Rs7ashjW4AgPAs
+      Content-Type:
+      - application/json
+    method: GET
+    uri: api/v1/sources/6bcf6252-7e0e-4078-b688-4784e3f27875/replies/882e1479-5623-443b-909e-bc4e9b39f665/download
+  response: !!python/object:securedrop_client.sdk.StreamedResponse
+    contents: !!binary |
+      wcFMA8iDy7sHvnp+AQ/+NRhKEXn72ex8wEgeMN43fd0hxKke76lHGbEdT55PAdBL7Uv5Hs2USzEC
+      iGZN/DhEev0aAABbVIj/Zb2efbwa8/KFJcS00I9aie3MZIk/NJ+See8fukZi8DYAkPmBXZn5Rgx9
+      f+DF1IENeyqR8i2L4yV8sXPyYQrMPRj4WFw5XWOUSUWvYTbJ+xuSOIJt8V376r8bGtoiKH4o3I7R
+      xPWp9SHcnNbbAUKKxVZNTAYZpD8qibpau1+v1TVzZVnPQ8QQG/6eo6eekEdnpXkG9SRBgaTBdh1I
+      ShqbcJYTMtXLjm/w6H2w4oU386z/QFZSFiIB4jVbUQkLa00RccTZoXpGuoCpCG4NHjFwHCLREZuw
+      8gzLBB+uHn+1ZCicTGJw0LEGPUDAostrmDs+sR1RLV8AxvBhh6UfyV+oXFc27A4cd80RYIsmQvSm
+      DxUGZA4u3m9bZCO64DIH4SxuchM3sChdmnP+BIODt+wEEkkXaSr3ULYrPoFckJVxC0H9kzk1fG+1
+      xtR6OZ3yjBEQFv5JDm78m+3MeLSpUvWIX5Ph7Hdz5PQ8GEQIzgOLOJXNLWGmXrT49Rsy3N4XdK2E
+      tsUK06aEKlTf6ScCxlJBMi/S6y4PMX52ggPaPql+FU7A0HmhQ+fO9HVSfsDTsjjWrLiAqXZ8K/L7
+      LOlI5ezvEV5KT6a21azBwUwDw+fEwKIgGyoBD/9gvsX1WVauBoLPBqzWuicIkRXQtntATya82E6B
+      +A8zSkDoDp8w5l+9kx9LQA8XTeBws5kXOFLOU6WtRKc3tXdkP00KTCqzbvGPwCnEFjJwuGCMnnxn
+      1qvXEJboo96tCSZjef0oyEd1rRFfzxCrDOPBLeDBqm3tq2jHxul9xiHuQbCeqSg/MKqWwnsrGVk3
+      v79yX08gHfDb42B0gLBwvBL4a9CHbtdrbXWD34SsOEnruzVES/jSfbhfmvsnqFZ1/vJ8pwuO9sn5
+      gA56J2MXJ8M8e8FDc4v0Ixv5JMlIAp9uL8CG0xQsFZ0VR/OkA5zlP951YCo9h4LawKSO+nlEYr89
+      rtBN4pZYx6lboUC1JsYGuGoLR6YUzu4dEHYf/DAdyEITTZr7C2oG7rZ+oXdaUuEmP2QLGEX1Yby5
+      ghTi9vYo8a8aoDZ2fU5aDzOgDNIpnNLxuPP/1hW+rAP3+c/xa8tJQ4Hv4inl/QS3n0W7FxN/p5EK
+      in5QFAuUurEpToSLxI/aDTfOCAnH7IiG/h5KJJHzF7jPEAKayk0Tu/IWDBMVklA1kDVLFJrWke2Y
+      gEZmTeYkFbyluRBV5edOOyngmHTRUIWsIz6w0DfUiBDjUsfmfqPfUo8Q+fQlJkelb0dkN3blFoL1
+      4U0dIUd7F1lBadKf2Ge6WcOsvP91vA001W2uZtLALAEqruOcu3evc8V2IItbsdnA3UwgwaZqlVzD
+      dku/ehvv32ivQyGYEgblmB5C35itUE9wbQ4jJyPjttftXDe9S5b4mBB/Rnzy2kbF3IBU6p2oOb53
+      AL5QPsFjN1B1kULDtubSC27cUwA4Hg3t4eeM/G13f6Hpa0TXBejtEGXWNw6JF23C7cALm6w4Jovl
+      NC0pjX6krrfrDpzV4F2Nknxn64QBG+H8pZLuXFN3TvyPfk0iwnJCu7KopsqhggoXxjsiIebgNRpD
+      rusFNPfeVgW4fJ/sCzFAwNDo6dE76im2LT+DY/vUGqSGoA0REj+Z
+    filename: attachment; filename=6-victorious_newsroom-reply.gpg
+    sha256sum: sha256:ac0df645bfa4a26fde0bfcde351f302a5a7e078ab47d287249cc4c6bc3a98982
+- request:
+    body: null
+    headers:
+      Accept:
+      - application/json
+      Authorization:
+      - Token ImxEbER6d3I2enhzdE41d0dqbUpfR1QwdjRmQ0hMVDZ0ZldKQjlqZEJHeHci.ZeD8ZQ.4YCgvY1FDiEt7Rs7ashjW4AgPAs
+      Content-Type:
+      - application/json
+    method: GET
+    uri: api/v1/sources/71fb3b51-4ee6-4c37-bd13-a6d5a5df71f9/replies/ec1f38f8-73e7-4303-ab6a-5e6e87f62f11/download
+  response: !!python/object:securedrop_client.sdk.StreamedResponse
+    contents: !!binary |
+      wcFMA/tAjIaR95VlAQ//cW9Eq3bO/gV9Q1Nm9FdhHWH48Du0Yk3iffsOM0I/8AIkAmu8LovHRQR/
+      OmSt3WRYp9PhtkTi1tnC+xfuVjb9PwUxtofKOWSyLADRNgCWd9uD1geHGujIjb4fhB2FSL0CPCz0
+      MugJtLWvELhMGveQKNPnXYxPmvVIr+gZoH0zF4AD/+0plek80uelgbePrTaCQvJwzKwUZdD2NVE7
+      +kqhemxdyeepDRZKBGGeRPDVa3V8Ri2N24Y9+tH9424tL5KqLu/dcapd6eYZHlPEvmKpA7TJn0cK
+      QsE8fM0XWp4P7m4CidX4Q1Oc3MRTIOEkrghFiIvvxcbdp9k3fbMuYWDjQQ3PSHqjxMgfhyFMx7AM
+      qySX9SG9rjHDlBm0Lt+qSbMotqOemPKpD4fTxZGuXq0d3YysPgHGfSxN3Dhdelgo6ki+YsqBFDMg
+      K9w95aRU+RK9O0zOTAKFNHMM8fEUt0MekawYQLd50B+8KJESECq/3HXRVEwhwiTuM1TzlzjFCLaE
+      CoIBuHSHlUJhEUfH33cMop8Hv1X9TKcsqGLiDy+3qLmmO/Umu3YKdfDn4NWUeTovLRW/tiiTrOox
+      W2i2VGFFIAyYtgR1Xrkh94iUeDHMyNn0Qb5sL2xqTu0ifft6qXhSKmPqTPOmwglvP6zoNJgH3us8
+      LvMXrcPlx4tehdB1jH/BwUwDw+fEwKIgGyoBEADnkoRArI1cA4VlUPDYOZrPoyZ77ZPGC9jnC9IJ
+      6wAgoV+VHTTqsjfDdETaqcpqQf4pQmmXdQ0HfHuRsNR9GjSs15gv4SqTKWLXzqyK9IW0BV0LeJAJ
+      uw5Xjf7f79CLdYg70W28gm5iMDWy8uHMSnMJCqvucRem2PpOs8OPnvlyIFzIDx4it1szgZSbYnmK
+      S81ewr66JoDuEGaNoEoxcbUTwPbux3W/zTTVkGZ7dKn4iKCB1YkzSyZmdou/Vz1k1LBPsRJvIVM7
+      zV6RJuXipo4XzpxqZM6hiO7wqEvolYr4N582uRzTfIqzDLqzq7spMha1fJ7vgISI21N6LkHQPu9b
+      B3OdhEaqe5pgYTB7cybKxLBdPRGyLAGadxztpQsu5Nn3GQceNKHnCe+eB5xeqXTiwQmAkbZ8ogfB
+      CPj36deFrXdc3WbAOt7nGtmoqEqDcSElllug1QmS8UF8rOxWwtjKVwC5JHqGTOqYBEctbcPX3RMi
+      ppoC8A9i1pBFLNO1shyR9Zn9wX7RQwADUmEech8DegYg03vvxUtq3lTwr7oHC01wkMbYkJrABUE6
+      u+GnAL3Q+bzf+hv0rkgNst8uKuULj1EF4lET3AQGdh2OvKg1PBgfqAUUg0og1GXoxoljHnF/gsFq
+      5a5pW6alHMaOcCynbpfjC4Hk7hyIgDf1SOjqndJXAQZ5RcvdJXXQXT83WWNylPL2/vT9U2rvsCnl
+      OQgm69OP9LRKnP+c5uGR15rzGG14dxg1wYqU10z+JOpOMQyk6D4hda1u1oOdVFLUEe2WfLW+wNc5
+      6Hw+
+    filename: attachment; filename=5-mindless_stevia-reply.gpg
+    sha256sum: sha256:f16651d1fd5c5861c3da5be1769cfbd56defa65dbda7ecbefbb30458147e0f80
+- request:
+    body: null
+    headers:
+      Accept:
+      - application/json
+      Authorization:
+      - Token ImxEbER6d3I2enhzdE41d0dqbUpfR1QwdjRmQ0hMVDZ0ZldKQjlqZEJHeHci.ZeD8ZQ.4YCgvY1FDiEt7Rs7ashjW4AgPAs
+      Content-Type:
+      - application/json
+    method: DELETE
+    uri: api/v1/sources/71fb3b51-4ee6-4c37-bd13-a6d5a5df71f9
+  response: !!python/object:securedrop_client.sdk.JSONResponse
+    data:
+      message: Source and submissions deleted
+    headers:
+      connection: close
+      content-length: '50'
+      content-type: application/json
+      date: Thu, 29 Feb 2024 21:53:09 GMT
+      server: Werkzeug/2.2.3 Python/3.8.10
+    status: 200
+- request:
+    body: null
+    headers:
+      Accept:
+      - application/json
+      Authorization:
+      - Token ImxEbER6d3I2enhzdE41d0dqbUpfR1QwdjRmQ0hMVDZ0ZldKQjlqZEJHeHci.ZeD8ZQ.4YCgvY1FDiEt7Rs7ashjW4AgPAs
+      Content-Type:
+      - application/json
+    method: GET
+    uri: api/v1/sources/71fb3b51-4ee6-4c37-bd13-a6d5a5df71f9/replies/ee702f60-1985-4f7b-9469-d17ee80d40f1/download
+  response: !!python/object/apply:securedrop_client.sdk.sdlocalobjects.BaseError
+    args:
+    - Unable to parse header metadata from response
+    state:
+      msg: Unable to parse header metadata from response
+- request:
+    body: '{"files": ["8be38e2b-258d-4088-9f36-d7eec4789fec"], "messages": ["af58ad0b-dcf2-4d8f-a4e8-e67341ec07b5",
+      "7fb1507a-c7d8-4861-a1fc-8c1401093a4a"], "replies": ["ee702f60-1985-4f7b-9469-d17ee80d40f1"]}'
+    headers:
+      Accept:
+      - application/json
+      Authorization:
+      - Token ImxEbER6d3I2enhzdE41d0dqbUpfR1QwdjRmQ0hMVDZ0ZldKQjlqZEJHeHci.ZeD8ZQ.4YCgvY1FDiEt7Rs7ashjW4AgPAs
+      Content-Type:
+      - application/json
+    method: POST
+    uri: api/v1/seen
+  response: !!python/object:securedrop_client.sdk.JSONResponse
+    data:
+      error: Not Found
+      message: 'file not found: 8be38e2b-258d-4088-9f36-d7eec4789fec'
+    headers:
+      connection: close
+      content-length: '97'
+      content-type: application/json
+      date: Thu, 29 Feb 2024 21:56:09 GMT
+      server: Werkzeug/2.2.3 Python/3.8.10
+    status: 404
+version: 1

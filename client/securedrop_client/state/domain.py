@@ -3,13 +3,12 @@
 """
 The types relevant to the internal state of the SecureDrop Client.
 """
+
 from typing import NewType
 
 
 class SourceId(str):
     """Identifies a source."""
-
-    pass
 
 
 ConversationId = NewType("ConversationId", str)
@@ -17,8 +16,6 @@ ConversationId = NewType("ConversationId", str)
 
 class FileId(str):
     """Identifies a file."""
-
-    pass
 
 
 class File:

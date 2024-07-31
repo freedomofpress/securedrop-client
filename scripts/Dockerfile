@@ -1,5 +1,8 @@
-ARG DISTRO=bullseye
+ARG DISTRO=bookworm
 FROM debian:$DISTRO
+
+# ARGs must be repeated for every different build stage
+ARG DISTRO
 
 ENV PIP_DISABLE_PIP_VERSION_CHECK=1
 ENV PIP_PROGRESS_BAR=off
@@ -8,8 +11,11 @@ ENV CARGO_TERM_PROGRESS_WHEN=never
 
 RUN apt-get update && apt-get --yes upgrade && apt-get install --yes build-essential curl
 
+COPY qubes_42.sources /etc/apt/sources.list.d/
+RUN sed -i s/##VERSION_CODENAME##/${DISTRO}/ /etc/apt/sources.list.d/qubes_42.sources
+
 # Keep in sync with rust-toolchain.toml
-ENV RUST_VERSION 1.74.1
+ENV RUST_VERSION 1.78.0
 ENV RUSTUP_VERSION 1.24.3
 ENV RUSTUP_INIT_SHA256 3dc5ef50861ee18657f9db2eeb7392f9c2a6c95c90ab41e45ab4ca71476b4338
 ENV RUSTUP_HOME /opt/rustup

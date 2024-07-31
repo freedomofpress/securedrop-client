@@ -17,8 +17,6 @@ You should have received a copy of the GNU Affero General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
-from typing import Optional, Union
-
 from PyQt5.QtCore import QSize, Qt
 from PyQt5.QtGui import QIcon
 from PyQt5.QtWidgets import QHBoxLayout, QLabel, QPushButton, QWidget
@@ -41,7 +39,7 @@ class SvgToggleButton(QPushButton):
         The display size of the SVG, defaults to filling the entire size of the widget.
     """
 
-    def __init__(self, on: str, off: str, svg_size: Optional[QSize] = None):
+    def __init__(self, on: str, off: str, svg_size: QSize | None = None):
         super().__init__()
 
         # Set layout
@@ -87,10 +85,10 @@ class SvgPushButton(QPushButton):
     def __init__(
         self,
         normal: str,
-        disabled: Optional[str] = None,
-        active: Optional[str] = None,
-        selected: Optional[str] = None,
-        svg_size: Optional[QSize] = None,
+        disabled: str | None = None,
+        active: str | None = None,
+        selected: str | None = None,
+        svg_size: QSize | None = None,
     ) -> None:
         super().__init__()
 
@@ -126,7 +124,7 @@ class SvgLabel(QLabel):
         The display size of the SVG, defaults to filling the entire size of the widget.
     """
 
-    def __init__(self, filename: str, svg_size: Optional[QSize] = None) -> None:
+    def __init__(self, filename: str, svg_size: QSize | None = None) -> None:
         super().__init__()
 
         # Remove margins and spacing
@@ -140,7 +138,7 @@ class SvgLabel(QLabel):
         self.svg.setFixedSize(svg_size) if svg_size else self.svg.setFixedSize(QSize())
         layout.addWidget(self.svg)
 
-    def update_image(self, filename: str, svg_size: Optional[QSize] = None) -> None:
+    def update_image(self, filename: str, svg_size: QSize | None = None) -> None:
         self.svg = load_svg(filename)
         self.svg.setFixedSize(svg_size) if svg_size else self.svg.setFixedSize(QSize())
         child = self.layout().takeAt(0)
@@ -155,8 +153,8 @@ class SecureQLabel(QLabel):
     def __init__(
         self,
         text: str = "",
-        parent: Optional[QWidget] = None,
-        flags: Union[Qt.WindowFlags, Qt.WindowType] = Qt.WindowFlags(),
+        parent: QWidget | None = None,
+        flags: Qt.WindowFlags | Qt.WindowType = Qt.WindowFlags(),
         wordwrap: bool = True,
         max_length: int = 0,
         with_tooltip: bool = False,
@@ -167,14 +165,14 @@ class SecureQLabel(QLabel):
         self.setWordWrap(wordwrap)  # If True, wraps text at default of 70 characters
         self.with_tooltip = with_tooltip
         self.setText(text)
-        self.elided = True if self.text() != text else False
+        self.elided = self.text() != text
 
     def setText(self, text: str) -> None:
         text = text.strip()
         self.setTextFormat(Qt.PlainText)
         self.preview_text = text[: self.MAX_PREVIEW_LENGTH]
         elided_text = self.get_elided_text(text)
-        self.elided = True if elided_text != text else False
+        self.elided = elided_text != text
         if self.elided and self.with_tooltip:
             tooltip_label = SecureQLabel(text)
             self.setToolTip(tooltip_label.text())
@@ -197,8 +195,7 @@ class SecureQLabel(QLabel):
             elided_text = ""
             for c in full_text:
                 if fm.horizontalAdvance(elided_text) > self.max_length:
-                    elided_text = elided_text[:-3] + "…"
-                    return elided_text
+                    return elided_text[:-3] + "…"
                 elided_text = elided_text + c
 
         return full_text

@@ -17,13 +17,22 @@ You should have received a copy of the GNU Affero General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
-# Import classes here to make possible to import them from securedrop_client.gui.base
-from securedrop_client.gui.base.buttons import SDPushButton  # noqa: F401
-from securedrop_client.gui.base.dialogs import ModalDialog  # noqa: F401
-from securedrop_client.gui.base.inputs import PasswordEdit  # noqa: F401
-from securedrop_client.gui.base.misc import (  # noqa: F401
+from securedrop_client.gui.base.buttons import SDPushButton
+from securedrop_client.gui.base.dialogs import ModalDialog
+from securedrop_client.gui.base.inputs import PasswordEdit
+from securedrop_client.gui.base.misc import (
     SecureQLabel,
     SvgLabel,
     SvgPushButton,
     SvgToggleButton,
 )
+
+__all__ = [
+    "ModalDialog",
+    "PasswordEdit",
+    "SDPushButton",
+    "SecureQLabel",
+    "SvgLabel",
+    "SvgPushButton",
+    "SvgToggleButton",
+]

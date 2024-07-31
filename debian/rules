@@ -1,15 +1,22 @@
 #!/usr/bin/make -f
 
+include /usr/share/dpkg/pkg-info.mk
+
+# Get the codename by splitting the version and taking the part after +
+VERSION_CODENAME := $(shell echo $(DEB_VERSION) | cut -d '+' -f 2)
+
 %:
 	dh $@
 
 override_dh_auto_install:
+	sed -i s/##VERSION_CODENAME##/$(VERSION_CODENAME)/ keyring/apt_freedom_press.sources
 	bash ./debian/setup-venv.sh client
 	bash ./debian/setup-venv.sh export
 	bash ./debian/setup-venv.sh log
-	bash ./debian/setup-venv.sh proxy
+	cargo build --release --locked --features qubesdb
 	dh_auto_install
 	dh_apparmor --profile-name=usr.bin.securedrop-client -psecuredrop-client
+	dh_apparmor --profile-name=usr.bin.securedrop-proxy -psecuredrop-proxy
 
 override_dh_strip_nondeterminism:
 	find ./debian/ -type f -name '*.pyc' -delete
@@ -21,10 +28,16 @@ override_dh_strip_nondeterminism:
 
 # Override debhelper's auto-generated files in `/etc/`
 # to force an exact replacement of the files we are modifying
-# there (specifically, `/etc/apt/trusted.gpg.d/securedrop-keyring.gpg`
+# there (specifically, `/etc/apt/sources.list.d/apt_freedom_press.sources`
 # for the keyring package and `/etc/udisks2/tcrypt.conf` for the
 # securedrop-export package).
 override_dh_installdeb:
 	dh_installdeb
-	cat /dev/null > ${CURDIR}/debian/securedrop-keyring/DEBIAN/conffiles
 	cat /dev/null > ${CURDIR}/debian/securedrop-export/DEBIAN/conffiles
+	cat /dev/null > ${CURDIR}/debian/securedrop-keyring/DEBIAN/conffiles
+
+override_dh_installsystemd:
+	dh_installsystemd --name securedrop-log-server
+	dh_installsystemd --name securedrop-logging-disabled
+	dh_installsystemd --name securedrop-whonix-config
+	dh_installsystemd --name securedrop-mime-handling

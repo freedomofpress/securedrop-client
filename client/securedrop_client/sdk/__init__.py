@@ -1,14 +1,16 @@
 import configparser
 import http
 import json
+import logging
 import os
-from datetime import datetime  # noqa: F401
-from subprocess import PIPE, Popen, TimeoutExpired
-from typing import Any, Dict, List, Optional, Tuple
-from urllib.parse import urljoin
+import subprocess
+import tempfile
+from dataclasses import dataclass
+from datetime import datetime
+from pathlib import Path
+from typing import Any
 
-import requests
-from requests.exceptions import ConnectionError, ConnectTimeout, ReadTimeout, TooManyRedirects
+from securedrop_client.config import Config
 
 from .sdlocalobjects import (
     AuthError,
@@ -21,6 +23,8 @@ from .sdlocalobjects import (
     WrongUUIDError,
 )
 from .timestamps import parse as parse_datetime
+
+logger = logging.getLogger(__name__)
 
 DEFAULT_PROXY_VM_NAME = "sd-proxy"
 DEFAULT_REQUEST_TIMEOUT = 20  # 20 seconds
@@ -35,6 +39,9 @@ class RequestTimeoutError(Exception):
     def __init__(self) -> None:
         super().__init__("The request timed out.")
 
+    def __reduce__(self) -> tuple[type, tuple]:
+        return (self.__class__, ())
+
 
 class ServerConnectionError(Exception):
     """
@@ -44,32 +51,26 @@ class ServerConnectionError(Exception):
     def __init__(self) -> None:
         super().__init__("Cannot connect to the server.")
 
+    def __reduce__(self) -> tuple[type, tuple]:
+        return (self.__class__, ())
 
-def json_query(proxy_vm_name: str, data: str, timeout: Optional[int] = None) -> str:
-    """
-    Takes a JSON based query and passes it to the network proxy.
-    Returns the JSON output from the proxy.
-    """
-    p = Popen(
-        ["/usr/lib/qubes/qrexec-client-vm", proxy_vm_name, "securedrop.Proxy"],
-        stdin=PIPE,
-        stdout=PIPE,
-        stderr=PIPE,
-    )
-    if p.stdin is not None:
-        p.stdin.write(data.encode("utf-8"))
 
-    try:
-        stdout, _ = p.communicate(timeout=timeout)  # type: (bytes, bytes)
-    except TimeoutExpired:
-        try:
-            p.terminate()
-        except Exception:
-            pass
-        raise RequestTimeoutError
-    else:
-        output = stdout.decode("utf-8")
-        return output.strip()
+@dataclass(frozen=True)
+class StreamedResponse:
+    """Container for streamed data along with the filename and ETag checksum sent by the server."""
+
+    contents: bytes
+    sha256sum: str
+    filename: str
+
+
+@dataclass(frozen=True)
+class JSONResponse:
+    """Deserialization of the proxy's `OutgoingResponse`."""
+
+    data: dict
+    status: int
+    headers: dict[str, str]
 
 
 class API:
@@ -93,8 +94,8 @@ class API:
         passphrase: str,
         totp: str,
         proxy: bool = False,
-        default_request_timeout: Optional[int] = None,
-        default_download_timeout: Optional[int] = None,
+        default_request_timeout: int | None = None,
+        default_download_timeout: int | None = None,
     ) -> None:
         """
         Primary API class, this is the only thing which will make network call.
@@ -103,123 +104,243 @@ class API:
         self.username = username
         self.passphrase = passphrase
         self.totp = totp
-        self.token = None  # type: Optional[str]
-        self.token_expiration = None  # type: Optional[datetime]
-        self.token_journalist_uuid = None  # type: Optional[str]
-        self.first_name = None  # type: Optional[str]
-        self.last_name = None  # type: Optional[str]
-        self.req_headers = dict()  # type: Dict[str, str]
-        self.proxy = proxy  # type: bool
+        self.token: str | None = None
+        self.token_expiration: datetime | None = None
+        self.token_journalist_uuid: str | None = None
+        self.first_name: str | None = None
+        self.last_name: str | None = None
+        self.req_headers: dict[str, str] = dict()
+        self.development_mode: bool = not proxy
         self.default_request_timeout = default_request_timeout or DEFAULT_REQUEST_TIMEOUT
         self.default_download_timeout = default_download_timeout or DEFAULT_DOWNLOAD_TIMEOUT
 
         self.proxy_vm_name = DEFAULT_PROXY_VM_NAME
-        config = configparser.ConfigParser()
+        config_parser = configparser.ConfigParser()
         try:
             if os.path.exists("/etc/sd-sdk.conf"):
-                config.read("/etc/sd-sdk.conf")
-                self.proxy_vm_name = config["proxy"]["name"]
+                config_parser.read("/etc/sd-sdk.conf")
+                self.proxy_vm_name = config_parser["proxy"]["name"]
         except Exception:
             pass  # We already have a default name
+
+        # Load download retry limit from the config
+        self.download_retry_limit = Config.load().download_retry_limit
+
+    def _rpc_target(self) -> list:
+        """In `development_mode`, check `cargo` for a locally-built proxy binary.
+        Otherwise, call `securedrop.Proxy` via qrexec."""
+        if not self.development_mode:
+            return ["/usr/lib/qubes/qrexec-client-vm", self.proxy_vm_name, "securedrop.Proxy"]
+        # Development mode, find the target directory and look for a debug securedrop-proxy
+        # binary. We assume that `cargo build` has already been run. We don't use `cargo run`
+        # because it adds its own output that would interfere with ours.
+        target_directory = json.loads(
+            subprocess.check_output(["cargo", "metadata", "--format-version", "1"], text=True)
+        )["target_directory"]
+        return [f"{target_directory}/debug/securedrop-proxy"]
+
+    def _streaming_download(
+        self, data: dict[str, Any], env: dict
+    ) -> StreamedResponse | JSONResponse:
+        fobj = tempfile.TemporaryFile("w+b")
+
+        retry = 0
+        bytes_written = 0
+        download_finished = False
+
+        while not download_finished and retry < self.download_retry_limit:
+            logger.debug(f"Streaming download, retry {retry}")
+
+            try:
+                # Update the range request if we're retrying
+                if retry > 0:
+                    data["headers"]["Range"] = f"bytes={bytes_written}-"
+                    logger.debug(f"Retry {retry}, range: {bytes_written}-")
+
+                # Serialize the data to send
+                data_bytes = json.dumps(data).encode()
+
+                # Open the process
+                logger.debug(f"Retry {retry}, opening process")
+                proc = subprocess.Popen(
+                    self._rpc_target(),
+                    stdin=subprocess.PIPE,
+                    stdout=subprocess.PIPE,
+                    stderr=subprocess.PIPE,
+                    env=env,
+                )
+
+                # Send the input data
+                if proc.stdin is not None:
+                    logger.debug(f"Retry {retry}, sending data")
+                    proc.stdin.write(data_bytes)
+                    proc.stdin.close()
+
+                # Write the contents to disk
+                chunk_size = 1024
+                while not download_finished:
+                    if proc.stdout is not None:
+                        chunk = proc.stdout.read(chunk_size)
+                        if not chunk:
+                            logger.debug(f"Retry {retry}, download finished")
+                            download_finished = True
+                            break
+
+                    fobj.write(chunk)
+                    bytes_written += len(chunk)
+                    logger.debug(f"Retry {retry}, bytes written: {bytes_written:,}")
+
+                # Wait for the process to end
+                returncode = proc.wait()
+                logger.debug(f"Retry {retry}, process ended with return code {returncode}")
+
+                # Check for errors
+                if returncode != 0:
+                    # Actually, the download did not finish after all
+                    download_finished = False
+
+                    try:
+                        if proc.stderr is not None:
+                            error = json.loads(proc.stderr.read().decode())
+                    except json.decoder.JSONDecodeError as err:
+                        raise BaseError("Unable to parse stderr JSON") from err
+                    raise BaseError("Internal proxy error: " + error.get("error", "unknown error"))
+
+                # FIXME: For now, store the contents as bytes
+                logger.debug(f"Retry {retry}, reading contents from disk")
+                fobj.seek(0)
+                contents = fobj.read()
+                fobj.close()
+
+                # Check for an error response
+                if contents[0:1] == b"{":
+                    return self._handle_json_response(contents)
+
+                # Get the headers
+                if proc.stderr is not None:
+                    try:
+                        stderr = json.loads(proc.stderr.read().decode())
+                    except json.decoder.JSONDecodeError as err:
+                        raise BaseError("Unable to parse stderr JSON") from err
+
+                    sha256sum = stderr["headers"]["etag"]
+                    filename = stderr["headers"]["content-disposition"]
+                else:
+                    # This should never happen because we should always have an stderr
+                    sha256sum = ""
+                    filename = ""
+
+                return StreamedResponse(
+                    contents=contents,
+                    sha256sum=sha256sum,
+                    filename=filename,
+                )
+
+            except subprocess.TimeoutExpired as err:
+                logger.debug(f"Retry {retry}, timeout expired")
+                retry += 1
+                if retry >= self.download_retry_limit:
+                    logger.debug("Retry limit reached, raising RequestTimeoutError")
+                    raise RequestTimeoutError from err
+            except BaseError as err:
+                logger.debug(f"Retry {retry}, base error: {err}")
+                retry += 1
+                if retry >= self.download_retry_limit:
+                    logger.debug("Retry limit reached, raising BaseError")
+                    raise err
+
+        # We will never reach this code because we'll have already returned or raised
+        # an exception by now, but it's required to make the linter happy
+        raise RuntimeError(
+            "This should be unreachable, we should've already returned or raised a different exception"  # noqa: E501
+        )
+
+    def _handle_json_response(self, stdout_bytes: bytes) -> JSONResponse:
+        try:
+            result = json.loads(stdout_bytes.decode())
+        except json.decoder.JSONDecodeError as err:
+            raise BaseError("Unable to parse stdout JSON") from err
+
+        if result["status"] == http.HTTPStatus.GATEWAY_TIMEOUT:
+            raise RequestTimeoutError
+        elif result["status"] == http.HTTPStatus.BAD_GATEWAY:
+            raise ServerConnectionError
+        elif result["status"] == http.HTTPStatus.FORBIDDEN:
+            raise AuthError("Forbidden")
+        elif result["status"] == http.HTTPStatus.BAD_REQUEST:
+            # FIXME: return a more generic error
+            raise ReplyError("bad request")
+        elif (
+            str(result["status"]).startswith(("4", "5"))
+            and result["status"] != http.HTTPStatus.NOT_FOUND
+        ):
+            # We exclude 404 since if we encounter a 404, it means that an
+            # item is missing. In that case we return to the caller to
+            # handle that with an appropriate message. However, if the error
+            # is not a 404, then we raise.
+            raise BaseError("Unknown error")
+
+        data = json.loads(result["body"])
+        return JSONResponse(data=data, status=result["status"], headers=result["headers"])
 
     def _send_json_request(
         self,
         method: str,
         path_query: str,
-        body: Optional[str] = None,
-        headers: Optional[Dict[str, str]] = None,
-        timeout: Optional[int] = None,
-    ) -> Tuple[Any, int, Dict[str, str]]:
-        if self.proxy:  # We are using the Qubes securedrop-proxy
-            func = self._send_rpc_json_request
-        else:  # We are not using the Qubes securedrop-proxy
-            func = self._send_http_json_request
+        stream: bool = False,
+        body: str | None = None,
+        headers: dict[str, str] | None = None,
+        timeout: int | None = None,
+    ) -> StreamedResponse | JSONResponse:
+        """Build a JSON-serialized request to pass to the proxy.
+        Handle the JSON or streamed response back, plus translate HTTP error statuses
+        to our exceptions."""
+        logger.debug(f"Sending request to proxy: {method} {path_query}")
 
-        return func(method, path_query, body, headers, timeout)
+        data: dict[str, Any] = {"method": method, "path_query": path_query, "stream": stream}
 
-    def _send_http_json_request(
-        self,
-        method: str,
-        path_query: str,
-        body: Optional[str] = None,
-        headers: Optional[Dict[str, str]] = None,
-        timeout: Optional[int] = None,
-    ) -> Tuple[Any, int, Dict[str, str]]:
-        url = urljoin(self.server, path_query)
-        kwargs = {"headers": headers}  # type: Dict[str, Any]
-
-        if timeout:
-            kwargs["timeout"] = timeout
-
-        if method == "POST":
-            kwargs["data"] = body
-
-        try:
-            result = requests.request(method, url, **kwargs)
-        except (ConnectTimeout, ReadTimeout):
-            raise RequestTimeoutError
-        except (TooManyRedirects, ConnectionError):
-            raise ServerConnectionError
-
-        if result.status_code == http.HTTPStatus.FORBIDDEN:
-            raise AuthError("forbidden")
-
-        # Because when we download a file there is no JSON in the body
-        if path_query.endswith("/download"):
-            return result, result.status_code, dict(result.headers)
-
-        return result.json(), result.status_code, dict(result.headers)
-
-    def _send_rpc_json_request(
-        self,
-        method: str,
-        path_query: str,
-        body: Optional[str] = None,
-        headers: Optional[Dict[str, str]] = None,
-        timeout: Optional[int] = None,
-    ) -> Tuple[Any, int, Dict[str, str]]:
-        data = {"method": method, "path_query": path_query}  # type: Dict[str, Any]
-
-        if method == "POST":
+        if method == "POST" and body:
             data["body"] = body
 
-        if headers is not None and headers:
+        if headers:
             data["headers"] = headers
 
         if timeout:
             data["timeout"] = timeout
 
-        data_str = json.dumps(data)
+        env = {}
+        if self.development_mode:
+            env["SD_PROXY_ORIGIN"] = self.server
 
-        json_result = json_query(self.proxy_vm_name, data_str, timeout)
-        if not json_result:
-            raise BaseError("No response from proxy")
+        # Streaming
+        if stream:
+            return self._streaming_download(data, env)
 
+        # Not streaming
+        data_str = json.dumps(data).encode()
         try:
-            result = json.loads(json_result)
-        except json.decoder.JSONDecodeError:
-            raise BaseError("Error in parsing JSON")
+            response = subprocess.run(
+                self._rpc_target(),
+                capture_output=True,
+                timeout=timeout,
+                input=data_str,
+                env=env,
+                check=False,
+            )
+        except subprocess.TimeoutExpired as err:
+            raise RequestTimeoutError from err
 
-        data = json.loads(result["body"])
+        # Error handling
+        if response.returncode != 0:
+            try:
+                error = json.loads(response.stderr.decode())
+            except json.decoder.JSONDecodeError as err:
+                raise BaseError("Unable to parse stderr JSON") from err
+            raise BaseError("Internal proxy error: " + error.get("error", "unknown error"))
 
-        if "error" in data and result["status"] == http.HTTPStatus.GATEWAY_TIMEOUT:
-            raise RequestTimeoutError
-        elif "error" in data and result["status"] == http.HTTPStatus.BAD_GATEWAY:
-            raise ServerConnectionError
-        elif "error" in data and result["status"] == http.HTTPStatus.FORBIDDEN:
-            raise AuthError(data["error"])
-        elif "error" in data and result["status"] == http.HTTPStatus.BAD_REQUEST:
-            raise ReplyError(data["error"])
-        elif "error" in data and result["status"] != http.HTTPStatus.NOT_FOUND:
-            # We exclude 404 since if we encounter a 404, it means that an
-            # item is missing. In that case we return to the caller to
-            # handle that with an appropriate message. However, if the error
-            # is not a 404, then we raise.
-            raise BaseError(data["error"])
+        return self._handle_json_response(response.stdout)
 
-        return data, result["status"], result["headers"]
-
-    def authenticate(self, totp: Optional[str] = None) -> bool:
+    def authenticate(self, totp: str | None = None) -> bool:
         """
         Authenticates the user and fetches the token from the server.
 
@@ -238,25 +359,23 @@ class API:
         path_query = "api/v1/token"
         body = json.dumps(user_data)
 
-        try:
-            token_data, status_code, headers = self._send_json_request(
-                method, path_query, body=body, timeout=self.default_request_timeout
-            )
-        except json.decoder.JSONDecodeError:
-            raise BaseError("Error in parsing JSON")
+        response = self._send_json_request(
+            method, path_query, body=body, timeout=self.default_request_timeout
+        )
+        assert isinstance(response, JSONResponse)
 
-        if "expiration" not in token_data:
+        if "expiration" not in response.data:
             raise AuthError("Authentication error")
 
-        token_expiration = parse_datetime(token_data["expiration"])
+        token_expiration = parse_datetime(response.data["expiration"])
         if token_expiration is None:
             raise BaseError("Error in parsing token expiration time")
 
-        self.token = token_data["token"]
+        self.token = response.data["token"]
         self.token_expiration = token_expiration
-        self.token_journalist_uuid = token_data["journalist_uuid"]
-        self.first_name = token_data["journalist_first_name"]
-        self.last_name = token_data["journalist_last_name"]
+        self.token_journalist_uuid = response.data["journalist_uuid"]
+        self.first_name = response.data["journalist_first_name"]
+        self.last_name = response.data["journalist_last_name"]
 
         self.update_auth_header()
 
@@ -270,7 +389,7 @@ class API:
                 "Accept": "application/json",
             }
 
-    def get_sources(self) -> List[Source]:
+    def get_sources(self) -> list[Source]:
         """
         Returns a list of all the sources from the Server.
 
@@ -279,15 +398,16 @@ class API:
         path_query = "api/v1/sources"
         method = "GET"
 
-        data, status_code, headers = self._send_json_request(
+        response = self._send_json_request(
             method,
             path_query,
             headers=self.req_headers,
             timeout=self.default_request_timeout,
         )
+        assert isinstance(response, JSONResponse)
 
-        sources = data["sources"]
-        result = []  # type: List[Source]
+        sources = response.data["sources"]
+        result: list[Source] = []
 
         for source in sources:
             s = Source(**source)
@@ -302,20 +422,21 @@ class API:
         :param source: Source object containing only source's UUID value.
         :returns: Source object fetched from server for the given UUID value.
         """
-        path_query = "api/v1/sources/{}".format(source.uuid)
+        path_query = f"api/v1/sources/{source.uuid}"
         method = "GET"
 
-        data, status_code, headers = self._send_json_request(
+        response = self._send_json_request(
             method,
             path_query,
             headers=self.req_headers,
             timeout=self.default_request_timeout,
         )
+        assert isinstance(response, JSONResponse)
 
-        if status_code == 404:
-            raise WrongUUIDError("Missing source {}".format(source.uuid))
+        if response.status == 404:
+            raise WrongUUIDError(f"Missing source {source.uuid}")
 
-        return Source(**data)
+        return Source(**response.data)
 
     def get_source_from_string(self, uuid: str) -> Source:
         """
@@ -336,20 +457,21 @@ class API:
         :param source: Source object containing only source's UUID value.
         :returns: True if successful, raises Errors in case of wrong values.
         """
-        path_query = "api/v1/sources/{}".format(source.uuid)
+        path_query = f"api/v1/sources/{source.uuid}"
         method = "DELETE"
 
-        data, status_code, headers = self._send_json_request(
+        response = self._send_json_request(
             method,
             path_query,
             headers=self.req_headers,
             timeout=self.default_request_timeout,
         )
+        assert isinstance(response, JSONResponse)
 
-        if status_code == 404:
-            raise WrongUUIDError("Missing source {}".format(source.uuid))
+        if response.status == 404:
+            raise WrongUUIDError(f"Missing source {source.uuid}")
 
-        if "message" in data and data["message"] == "Source and submissions deleted":
+        if response.data.get("message") == "Source and submissions deleted":
             return True
 
         # We should never reach here
@@ -365,20 +487,21 @@ class API:
         :returns: True if the operation is successful.
         """
 
-        path_query = "api/v1/sources/{}/conversation".format(uuid)
+        path_query = f"api/v1/sources/{uuid}/conversation"
         method = "DELETE"
 
-        data, status_code, headers = self._send_json_request(
+        response = self._send_json_request(
             method,
             path_query,
             headers=self.req_headers,
             timeout=self.default_request_timeout,
         )
+        assert isinstance(response, JSONResponse)
 
-        if status_code == 404:
-            raise WrongUUIDError("Missing source {}".format(uuid))
+        if response.status == 404:
+            raise WrongUUIDError(f"Missing source {uuid}")
 
-        if "message" in data and data["message"] == "Source data deleted":
+        if response.data.get("message") == "Source data deleted":
             return True
 
         return False
@@ -402,19 +525,21 @@ class API:
         :param source: The source object to whom we want add a star.
         :returns: True if successful, raises Error otherwise.
         """
-        path_query = "api/v1/sources/{}/add_star".format(source.uuid)
+        path_query = f"api/v1/sources/{source.uuid}/add_star"
         method = "POST"
 
-        data, status_code, headers = self._send_json_request(
+        response = self._send_json_request(
             method,
             path_query,
             headers=self.req_headers,
             timeout=self.default_request_timeout,
         )
-        if status_code == 404:
-            raise WrongUUIDError("Missing source {}".format(source.uuid))
+        assert isinstance(response, JSONResponse)
 
-        if "message" in data and data["message"] == "Star added":
+        if response.status == 404:
+            raise WrongUUIDError(f"Missing source {source.uuid}")
+
+        if response.data.get("message") == "Star added":
             return True
 
         return False
@@ -425,45 +550,48 @@ class API:
         :param source: Source object to remove the star from.
         :returns: True if successful, raises Error otherwise.
         """
-        path_query = "api/v1/sources/{}/remove_star".format(source.uuid)
+        path_query = f"api/v1/sources/{source.uuid}/remove_star"
         method = "DELETE"
 
-        data, status_code, headers = self._send_json_request(
+        response = self._send_json_request(
             method,
             path_query,
             headers=self.req_headers,
             timeout=self.default_request_timeout,
         )
-        if status_code == 404:
-            raise WrongUUIDError("Missing source {}".format(source.uuid))
+        assert isinstance(response, JSONResponse)
 
-        if "message" in data and data["message"] == "Star removed":
+        if response.status == 404:
+            raise WrongUUIDError(f"Missing source {source.uuid}")
+
+        if response.data.get("message") == "Star removed":
             return True
 
         return False
 
-    def get_submissions(self, source: Source) -> List[Submission]:
+    def get_submissions(self, source: Source) -> list[Submission]:
         """
         Returns a list of Submission objects from the server for a given source.
 
         :param source: Source object for whom we want to find all the submissions.
         :returns: List of Submission objects.
         """
-        path_query = "api/v1/sources/{}/submissions".format(source.uuid)
+        path_query = f"api/v1/sources/{source.uuid}/submissions"
         method = "GET"
 
-        data, status_code, headers = self._send_json_request(
+        response = self._send_json_request(
             method,
             path_query,
             headers=self.req_headers,
             timeout=self.default_request_timeout,
         )
+        assert isinstance(response, JSONResponse)
 
-        if status_code == 404:
-            raise WrongUUIDError("Missing submission {}".format(source.uuid))
+        if response.status == 404:
+            raise WrongUUIDError(f"Missing submission {source.uuid}")
 
-        result = []  # type: List[Submission]
-        values = data["submissions"]
+        result: list[Submission] = []
+        values = response.data["submissions"]
 
         for val in values:
             s = Submission(**val)
@@ -479,22 +607,24 @@ class API:
         :returns: Updated submission object from the server.
         """
         if submission.source_uuid and submission.uuid is not None:
-            path_query = "api/v1/sources/{}/submissions/{}".format(
-                submission.source_uuid, submission.uuid
-            )
+            path_query = f"api/v1/sources/{submission.source_uuid}/submissions/{submission.uuid}"
             method = "GET"
 
-            data, status_code, headers = self._send_json_request(
+            response = self._send_json_request(
                 method,
                 path_query,
                 headers=self.req_headers,
                 timeout=self.default_request_timeout,
             )
+            assert isinstance(response, JSONResponse)
 
-        if status_code == 404:
-            raise WrongUUIDError("Missing submission {}".format(submission.uuid))
+            if response.status == 404:
+                raise WrongUUIDError(f"Missing submission {submission.uuid}")
 
-        return Submission(**data)
+            return Submission(**response.data)
+        else:
+            # XXX: is this the correct behavior
+            return submission
 
     def get_submission_from_string(self, uuid: str, source_uuid: str) -> Submission:
         """
@@ -508,7 +638,7 @@ class API:
         s.source_uuid = source_uuid
         return self.get_submission(s)
 
-    def get_all_submissions(self) -> List[Submission]:
+    def get_all_submissions(self) -> list[Submission]:
         """
         Returns a list of Submission objects from the server.
 
@@ -517,15 +647,16 @@ class API:
         path_query = "api/v1/submissions"
         method = "GET"
 
-        data, status_code, headers = self._send_json_request(
+        response = self._send_json_request(
             method,
             path_query,
             headers=self.req_headers,
             timeout=self.default_request_timeout,
         )
+        assert isinstance(response, JSONResponse)
 
-        result = []  # type: List[Submission]
-        values = data["submissions"]
+        result: list[Submission] = []
+        values = response.data["submissions"]
 
         for val in values:
             s = Submission(**val)
@@ -543,22 +674,21 @@ class API:
         # Not using direct URL because this helps to use the same method
         # from local submission (not fetched from server) objects.
         # See the *from_string for an example.
-        path_query = "api/v1/sources/{}/submissions/{}".format(
-            submission.source_uuid, submission.uuid
-        )
+        path_query = f"api/v1/sources/{submission.source_uuid}/submissions/{submission.uuid}"
         method = "DELETE"
 
-        data, status_code, headers = self._send_json_request(
+        response = self._send_json_request(
             method,
             path_query,
             headers=self.req_headers,
             timeout=self.default_request_timeout,
         )
+        assert isinstance(response, JSONResponse)
 
-        if status_code == 404:
-            raise WrongUUIDError("Missing submission {}".format(submission.uuid))
+        if response.status == 404:
+            raise WrongUUIDError(f"Missing submission {submission.uuid}")
 
-        if "message" in data and data["message"] == "Submission deleted":
+        if response.data.get("message") == "Submission deleted":
             return True
         # We should never reach here
         return False
@@ -572,58 +702,51 @@ class API:
         :returns: Updated submission object from the server.
         """
         s = Submission(uuid=uuid)
-        s.source_url = "/api/v1/sources/{}".format(source_uuid)
+        s.source_url = f"/api/v1/sources/{source_uuid}"
         return self.delete_submission(s)
 
     def download_submission(
-        self, submission: Submission, path: str = "", timeout: Optional[int] = None
-    ) -> Tuple[str, str]:
+        self, submission: Submission, path: str | None = None, timeout: int | None = None
+    ) -> tuple[str, str]:
         """
         Returns a tuple of etag (format is algorithm:checksum) and file path for
         a given Submission object. This method requires a directory path
         at which to save the submission file.
 
         :param submission: Submission object
-        :param path: Local directory path to save the submission
+        :param path: Local directory path to save the submission, if None, use ~/Downloads
 
         :returns: Tuple of etag and path of the saved submission.
         """
-        path_query = "api/v1/sources/{}/submissions/{}/download".format(
-            submission.source_uuid, submission.uuid
+        path_query = (
+            f"api/v1/sources/{submission.source_uuid}/submissions/{submission.uuid}/download"
         )
         method = "GET"
 
-        if path:
-            if os.path.exists(path) and not os.path.isdir(path):
-                raise BaseError("Please provide a valid directory to save.")
+        if not path:
+            path = os.path.expanduser("~/Downloads")
 
-        data, status_code, headers = self._send_json_request(
+        if not os.path.isdir(path):
+            raise BaseError(f"Specified path isn't a directory: {path}")
+
+        response = self._send_json_request(
             method,
             path_query,
+            stream=True,
             headers=self.req_headers,
             timeout=timeout or self.default_download_timeout,
         )
 
-        if status_code == 404:
-            raise WrongUUIDError("Missing submission {}".format(submission.uuid))
+        if isinstance(response, JSONResponse):
+            if response.status == 404:
+                raise WrongUUIDError(f"Missing submission {submission.uuid}")
+            else:
+                raise BaseError(f"Unknown error, status code: {response.status}")
 
-        # Get the headers
-        headers = headers
+        filepath = os.path.join(path, submission.filename)
+        Path(filepath).write_bytes(response.contents)
 
-        if not self.proxy:
-            # This is where we will save our downloaded file
-            filepath = os.path.join(path, submission.filename)
-            with open(filepath, "wb") as fobj:
-                for chunk in data.iter_content(chunk_size=1024):  # Getting 1024 in each chunk
-                    if chunk:
-                        fobj.write(chunk)
-
-        else:
-            filepath = os.path.join(
-                "/home/user/QubesIncoming/", self.proxy_vm_name, data["filename"]
-            )
-
-        return headers["Etag"].strip('"'), filepath
+        return response.sha256sum.strip('"'), filepath
 
     def flag_source(self, source: Source) -> bool:
         """
@@ -632,22 +755,23 @@ class API:
         :param source: Source object we want to flag.
         :returns: True if successful, raises Error otherwise.
         """
-        path_query = "api/v1/sources/{}/flag".format(source.uuid)
+        path_query = f"api/v1/sources/{source.uuid}/flag"
         method = "POST"
 
-        data, status_code, headers = self._send_json_request(
+        response = self._send_json_request(
             method,
             path_query,
             headers=self.req_headers,
             timeout=self.default_request_timeout,
         )
+        assert isinstance(response, JSONResponse)
 
-        if status_code == 404:
-            raise WrongUUIDError("Missing source {}".format(source.uuid))
+        if response.status == 404:
+            raise WrongUUIDError(f"Missing source {source.uuid}")
 
         return True
 
-    def get_current_user(self) -> Any:
+    def get_current_user(self) -> dict:
         """
         Returns a dictionary of the current user data.
 
@@ -662,16 +786,17 @@ class API:
         path_query = "api/v1/user"
         method = "GET"
 
-        data, status_code, headers = self._send_json_request(
+        response = self._send_json_request(
             method,
             path_query,
             headers=self.req_headers,
             timeout=self.default_request_timeout,
         )
+        assert isinstance(response, JSONResponse)
 
-        return data
+        return response.data
 
-    def get_users(self) -> List[User]:
+    def get_users(self) -> list[User]:
         """
         Returns a list of all the journalist and admin users registered on the
         server.
@@ -681,15 +806,16 @@ class API:
         path_query = "api/v1/users"
         method = "GET"
 
-        data, status_code, headers = self._send_json_request(
+        response = self._send_json_request(
             method,
             path_query,
             headers=self.req_headers,
             timeout=self.default_request_timeout,
         )
+        assert isinstance(response, JSONResponse)
 
-        users = data["users"]
-        result = []  # type: List[User]
+        users = response.data["users"]
+        result: list[User] = []
 
         for user in users:
             u = User(**user)
@@ -697,7 +823,7 @@ class API:
 
         return result
 
-    def reply_source(self, source: Source, msg: str, reply_uuid: Optional[str] = None) -> Reply:
+    def reply_source(self, source: Source, msg: str, reply_uuid: str | None = None) -> Reply:
         """
         This method is used to reply to a given source. The message should be preencrypted with the
         source's GPG public key.
@@ -706,48 +832,50 @@ class API:
         :param msg: Encrypted message with Source's GPG public key.
         :param reply_uuid: The UUID that will be used to identify the reply on the server.
         """
-        path_query = "api/v1/sources/{}/replies".format(source.uuid)
+        path_query = f"api/v1/sources/{source.uuid}/replies"
         method = "POST"
         reply = {"reply": msg}
 
         if reply_uuid:
             reply["uuid"] = reply_uuid
 
-        data, status_code, headers = self._send_json_request(
+        response = self._send_json_request(
             method,
             path_query,
             body=json.dumps(reply),
             headers=self.req_headers,
             timeout=self.default_request_timeout,
         )
+        assert isinstance(response, JSONResponse)
 
-        if "message" in data and data["message"] == "Your reply has been stored":
-            return Reply(uuid=data["uuid"], filename=data["filename"])
+        if response.data.get("message") == "Your reply has been stored":
+            return Reply(uuid=response.data["uuid"], filename=response.data["filename"])
 
         raise ReplyError("bad request")
 
-    def get_replies_from_source(self, source: Source) -> List[Reply]:
+    def get_replies_from_source(self, source: Source) -> list[Reply]:
         """
         This will return a list of replies associated with a source.
 
         :param source: Source object containing only source's UUID value.
         :returns: List of Reply objects.
         """
-        path_query = "api/v1/sources/{}/replies".format(source.uuid)
+        path_query = f"api/v1/sources/{source.uuid}/replies"
         method = "GET"
 
-        data, status_code, headers = self._send_json_request(
+        response = self._send_json_request(
             method,
             path_query,
             headers=self.req_headers,
             timeout=self.default_request_timeout,
         )
+        assert isinstance(response, JSONResponse)
 
-        if status_code == 404:
-            raise WrongUUIDError("Missing source {}".format(source.uuid))
+        if response.status == 404:
+            raise WrongUUIDError(f"Missing source {source.uuid}")
 
         result = []
-        for datum in data["replies"]:
+        for datum in response.data["replies"]:
             reply = Reply(**datum)
             result.append(reply)
 
@@ -762,24 +890,25 @@ class API:
         :returns: A reply object
         """
         if source.uuid and reply_uuid is not None:
-            path_query = "api/v1/sources/{}/replies/{}".format(source.uuid, reply_uuid)
+            path_query = f"api/v1/sources/{source.uuid}/replies/{reply_uuid}"
             method = "GET"
 
-            data, status_code, headers = self._send_json_request(
+            response = self._send_json_request(
                 method,
                 path_query,
                 headers=self.req_headers,
                 timeout=self.default_request_timeout,
             )
+            assert isinstance(response, JSONResponse)
 
-            if status_code == 404:
-                raise WrongUUIDError("Missing source {}".format(source.uuid))
+            if response.status == 404:
+                raise WrongUUIDError(f"Missing source {source.uuid}")
 
-            reply = Reply(**data)
+            reply = Reply(**response.data)
 
         return reply
 
-    def get_all_replies(self) -> List[Reply]:
+    def get_all_replies(self) -> list[Reply]:
         """
         This will return a list of all replies from the server.
 
@@ -788,21 +917,22 @@ class API:
         path_query = "api/v1/replies"
         method = "GET"
 
-        data, status_code, headers = self._send_json_request(
+        response = self._send_json_request(
             method,
             path_query,
             headers=self.req_headers,
             timeout=self.default_request_timeout,
         )
+        assert isinstance(response, JSONResponse)
 
         result = []
-        for datum in data["replies"]:
+        for datum in response.data["replies"]:
             reply = Reply(**datum)
             result.append(reply)
 
         return result
 
-    def download_reply(self, reply: Reply, path: str = "") -> Tuple[str, str]:
+    def download_reply(self, reply: Reply, path: str | None = None) -> tuple[str, str]:
         """
         Returns a tuple of etag (format is algorithm:checksum) and file path for
         a given Reply object. This method requires a directory path
@@ -813,43 +943,35 @@ class API:
 
         :returns: Tuple of etag and path of the saved Reply.
         """
-        path_query = "api/v1/sources/{}/replies/{}/download".format(reply.source_uuid, reply.uuid)
+        path_query = f"api/v1/sources/{reply.source_uuid}/replies/{reply.uuid}/download"
 
         method = "GET"
 
-        if path:
-            if os.path.exists(path) and not os.path.isdir(path):
-                raise BaseError("Please provide a valid directory to save.")
+        if not path:
+            path = os.path.expanduser("~/Downloads")
 
-        data, status_code, headers = self._send_json_request(
+        if not os.path.isdir(path):
+            raise BaseError(f"Specified path isn't a directory: {path}")
+
+        response = self._send_json_request(
             method,
             path_query,
+            stream=True,
             headers=self.req_headers,
             timeout=self.default_request_timeout,
         )
 
-        if status_code == 404:
-            raise WrongUUIDError("Missing reply {}".format(reply.uuid))
+        if isinstance(response, JSONResponse):
+            if response.status == 404:
+                raise WrongUUIDError(f"Missing reply {reply.uuid}")
+            else:
+                raise BaseError(f"Unknown error, status code: {response.status}")
 
-        # Get the headers
-        headers = headers
+        # This is where we will save our downloaded file
+        filepath = os.path.join(path, response.filename.split("attachment; filename=")[1])
+        Path(filepath).write_bytes(response.contents)
 
-        if not self.proxy:
-            # This is where we will save our downloaded file
-            filepath = os.path.join(
-                path, headers["Content-Disposition"].split("attachment; filename=")[1]
-            )
-            with open(filepath, "wb") as fobj:
-                for chunk in data.iter_content(chunk_size=1024):  # Getting 1024 in each chunk
-                    if chunk:
-                        fobj.write(chunk)
-
-        else:
-            filepath = os.path.join(
-                "/home/user/QubesIncoming/", self.proxy_vm_name, data["filename"]
-            )
-
-        return headers["Etag"].strip('"'), filepath
+        return response.sha256sum.strip('"'), filepath
 
     def delete_reply(self, reply: Reply) -> bool:
         """
@@ -861,21 +983,22 @@ class API:
         # Not using direct URL because this helps to use the same method
         # from local reply (not fetched from server) objects.
         # See the *from_string for an example.
-        path_query = "api/v1/sources/{}/replies/{}".format(reply.source_uuid, reply.uuid)
+        path_query = f"api/v1/sources/{reply.source_uuid}/replies/{reply.uuid}"
 
         method = "DELETE"
 
-        data, status_code, headers = self._send_json_request(
+        response = self._send_json_request(
             method,
             path_query,
             headers=self.req_headers,
             timeout=self.default_request_timeout,
         )
+        assert isinstance(response, JSONResponse)
 
-        if status_code == 404:
-            raise WrongUUIDError("Missing reply {}".format(reply.uuid))
+        if response.status == 404:
+            raise WrongUUIDError(f"Missing reply {reply.uuid}")
 
-        if "message" in data and data["message"] == "Reply deleted":
+        if response.data.get("message") == "Reply deleted":
             return True
         # We should never reach here
         return False
@@ -887,19 +1010,17 @@ class API:
         path_query = "api/v1/logout"
         method = "POST"
 
-        data, status_code, headers = self._send_json_request(
+        response = self._send_json_request(
             method,
             path_query,
             headers=self.req_headers,
             timeout=self.default_request_timeout,
         )
+        assert isinstance(response, JSONResponse)
 
-        if "message" in data and data["message"] == "Your token has been revoked.":
-            return True
-        else:
-            return False
+        return response.data.get("message") == "Your token has been revoked."
 
-    def seen(self, files: List[str], messages: List[str], replies: List[str]) -> str:
+    def seen(self, files: list[str], messages: list[str], replies: list[str]) -> str:
         """
         Mark supplied files, messages, and replies as seen by the current user. The current user
         will be retrieved from the auth header on the server.
@@ -914,17 +1035,19 @@ class API:
         path_query = "api/v1/seen"
         body = json.dumps({"files": files, "messages": messages, "replies": replies})
 
-        data, status_code, headers = self._send_json_request(
+        response = self._send_json_request(
             method,
             path_query,
             headers=self.req_headers,
             body=body,
             timeout=self.default_request_timeout,
         )
+        assert isinstance(response, JSONResponse)
 
-        data_str = json.dumps(data)
+        data_str = json.dumps(response.data)
 
-        if status_code == 404:
-            raise WrongUUIDError("{}".format(data_str))
+        if response.status == 404:
+            raise WrongUUIDError(f"{data_str}")
 
+        # FIXME: why are we returning a string with a JSON-encoded blob???
         return data_str

@@ -1,0 +1,3 @@
+# We don't care
+securedrop-qubesdb-tools: no-manual-page
+securedrop-qubesdb-tools: package-has-long-file-name

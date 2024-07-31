@@ -19,7 +19,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 from gettext import gettext as _
 from gettext import ngettext
-from typing import List
 
 from securedrop_client.db import Source
 from securedrop_client.gui.base import ModalDialog
@@ -60,15 +59,13 @@ class DeleteSourceDialog(ModalDialog):
             "<p>&nbsp;</p>",
         )
 
-        return "".join(message_tuple).format(
-            source="<b>{}</b>".format(self.source.journalist_designation)
-        )
+        return "".join(message_tuple).format(source=f"<b>{self.source.journalist_designation}</b>")
 
 
 class DeleteSourcesDialog(ModalDialog):
     """Used to confirm deletion of multiple source accounts."""
 
-    def __init__(self, sources: List[str]) -> None:
+    def __init__(self, sources: list[str]) -> None:
         super().__init__(show_header=False, dangerous=True)
 
         self.sources = sources

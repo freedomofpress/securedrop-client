@@ -6,7 +6,6 @@ Whistleflow View VM. This is a clone of FileDialog.
 import datetime
 import logging
 from gettext import gettext as _
-from typing import List, Optional
 
 from PyQt5.QtCore import QSize, pyqtSlot
 
@@ -19,12 +18,11 @@ logger = logging.getLogger(__name__)
 
 
 class WhistleflowDialog(ModalDialog):
-
     PASSPHRASE_LABEL_SPACING = 0.5
     NO_MARGIN = 0
     FILENAME_WIDTH_PX = 260
 
-    def __init__(self, device: Export, summary: str, file_locations: List[str]) -> None:
+    def __init__(self, device: Export, summary: str, file_locations: list[str]) -> None:
         super().__init__()
         self.setStyleSheet(self.DIALOG_CSS)
 
@@ -34,7 +32,7 @@ class WhistleflowDialog(ModalDialog):
             summary, wordwrap=False, max_length=self.FILENAME_WIDTH_PX
         ).text()
         # Hold onto the error status we receive from the Export VM
-        self.error_status: Optional[ExportStatus] = None
+        self.error_status: ExportStatus | None = None
 
         # Connect device signals to slots
         self._device.whistleflow_preflight_check_succeeded.connect(
@@ -93,9 +91,7 @@ class WhistleflowDialog(ModalDialog):
 
     def _send_to_whistleflow(self) -> None:
         timestamp = datetime.datetime.now().isoformat()
-        self._device.send_files_to_whistleflow(
-            "export-{}.tar".format(timestamp), self._file_locations
-        )
+        self._device.send_files_to_whistleflow(f"export-{timestamp}.tar", self._file_locations)
 
     def _show_success_message(self) -> None:
         self.continue_button.clicked.disconnect()
@@ -115,7 +111,7 @@ class WhistleflowDialog(ModalDialog):
         self.continue_button.setText(_("DONE"))
         self.header.setText(self.error_header)
         self.body.setText(  # nosemgrep: semgrep.untranslated-gui-string
-            "{}: {}".format(self.error_status, self.generic_error_message)
+            f"{self.error_status}: {self.generic_error_message}"
         )
         self.error_details.hide()
         self.header_line.show()

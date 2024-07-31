@@ -1,5 +1,3 @@
-# coding: utf-8
-
 """
 Contains the core UI class for the application. All interactions with the UI
 go through an instance of this class.
@@ -19,9 +17,9 @@ GNU Affero General Public License for more details.
 You should have received a copy of the GNU Affero General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
+
 import logging
 from gettext import gettext as _
-from typing import List, Optional
 
 from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QClipboard, QGuiApplication, QIcon, QKeySequence
@@ -47,7 +45,7 @@ class Window(QMainWindow):
 
     def __init__(
         self,
-        app_state: Optional[state.State] = None,
+        app_state: state.State | None = None,
     ) -> None:
         """
         Create the default start state. The window contains a root widget into
@@ -90,7 +88,7 @@ class Window(QMainWindow):
         central_widget_layout.addWidget(self.main_pane)
 
         # Dialogs
-        self.login_dialog: Optional[LoginDialog] = None
+        self.login_dialog: LoginDialog | None = None
 
         # Actions
         quit = QAction(_("Quit"), self)
@@ -110,7 +108,7 @@ class Window(QMainWindow):
         self.main_view.setup(self.controller)
         self.show_login()
 
-    def show_main_window(self, db_user: Optional[User] = None) -> None:
+    def show_main_window(self, db_user: User | None = None) -> None:
         """
         Show main application window.
         """
@@ -163,7 +161,7 @@ class Window(QMainWindow):
         """
         self.main_view.refresh_source_conversations()
 
-    def show_sources(self, sources: List[Source]) -> None:
+    def show_sources(self, sources: list[Source]) -> None:
         """
         Update the left hand sources list in the UI with the passed in list of
         sources.

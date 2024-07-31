@@ -12,3 +12,9 @@ securedrop-workstation-config: maintainer-script-calls-systemctl [postinst:28]
 
 # We're not shipping CDs, so this is fine
 securedrop-workstation-config: package-has-long-file-name
+
+# We don't care
+securedrop-workstation-config: no-manual-page
+
+# FIXME: missing a python3 dependency
+securedrop-workstation-config: python3-script-but-no-python3-dep

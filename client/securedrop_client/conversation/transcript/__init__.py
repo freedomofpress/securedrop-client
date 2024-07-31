@@ -1,1 +1,3 @@
-from .transcript import Transcript  # noqa: F401
+from .transcript import Transcript
+
+__all__ = ["Transcript"]

@@ -73,3 +73,8 @@
     border: 2px solid rgba(42, 49, 157, 0.4);
     color: rgba(42, 49, 157, 0.4);
 }
+
+#ModalDialog_button_box QPushButton::hover {
+    color: #05a6fe;
+    border: 2px solid #05a6fe;
+}

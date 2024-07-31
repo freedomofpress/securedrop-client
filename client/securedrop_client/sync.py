@@ -1,5 +1,4 @@
 import logging
-from typing import Optional
 
 from PyQt5.QtCore import QObject, QThread, QTimer, pyqtBoundSignal, pyqtSignal
 from sqlalchemy.orm import scoped_session
@@ -26,12 +25,12 @@ class ApiSync(QObject):
 
     def __init__(
         self,
-        api_client: Optional[API],
+        api_client: API | None,
         session_maker: scoped_session,
         gpg: GpgHelper,
         data_dir: str,
         sync_thread: QThread,
-        app_state: Optional[state.State] = None,
+        app_state: state.State | None = None,
     ):
         super().__init__()
         self.api_client = api_client
@@ -106,14 +105,14 @@ class ApiSyncBackgroundTask(QObject):
 
     def __init__(  # type: ignore[no-untyped-def]
         self,
-        api_client: Optional[API],
+        api_client: API | None,
         session_maker: scoped_session,
         gpg: GpgHelper,
         data_dir: str,
         sync_started: pyqtBoundSignal,
         on_sync_success,
         on_sync_failure,
-        app_state: Optional[state.State] = None,
+        app_state: state.State | None = None,
     ):
         super().__init__()
 

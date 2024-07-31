@@ -2,8 +2,24 @@
 all: help
 
 .PHONY: build-debs
+build-debs: OUT:=build/securedrop-client-$(shell date +%Y%m%d).log
 build-debs: ## Build Debian packages
-	./scripts/build-debs.sh
+	# "build-debs.sh" will create this directory, but we need it to exist
+	# before we call "script".
+	@mkdir -p build
+	@echo "Building SecureDrop Client Debian packages..."
+	@export TERM=dumb
+	@script \
+		--command scripts/build-debs.sh --return \
+		$(OUT)
+	@echo
+	@echo "You can now examine or commit the log at:"
+	@echo "$(OUT)"
+
+.PHONY: lint-apparmor
+lint-apparmor: ## Lint AppArmor profiles
+	# See apparmor_parser(8)
+	apparmor_parser --preprocess --abort-on-error --Werror=all client/files/usr.bin.securedrop-client
 
 .PHONY: lint-desktop
 lint-desktop: ## Lint .desktop files
@@ -11,29 +27,17 @@ lint-desktop: ## Lint .desktop files
 	find . -name *.desktop -type f -not -path '*/\.git/*' | xargs desktop-file-validate
 
 .PHONY: lint
-lint: check-black check-isort bandit shellcheck ## Run linters and formatters
+lint: check-ruff shellcheck ## Run linters and formatters
 
 .PHONY: fix
-fix: black isort ## Fix lint and formatting issues
+fix: ## Fix lint and formatting issues
+	poetry run ruff format .
+	poetry run ruff check . --fix
 
-bandit: ## Run bandit security checks
-	@poetry run bandit -c pyproject.toml -r . --severity-level medium
-
-.PHONY: black
-black: ## Update Python source code formatting with black
-	@poetry run black .
-
-.PHONY: check-black
-check-black: ## Check Python source code formatting with black
-	@poetry run black --check --diff .
-
-.PHONY: isort
-isort: ## Update Python import organization with isort
-	@poetry run isort .
-
-.PHONY: check-isort
-check-isort: ## Check Python import organization with isort
-	@poetry run isort --check-only --diff .
+.PHONY: check-ruff
+check-ruff:
+	poetry run ruff format . --diff
+	poetry run ruff check . --output-format=full
 
 safety:  ## Run safety dependency checks on build dependencies
 	find . -name build-requirements.txt | xargs -n1 poetry run safety check --full-report \
@@ -42,9 +46,9 @@ safety:  ## Run safety dependency checks on build dependencies
 		--ignore 61893 \
 		--ignore 62044 \
 		--ignore 67895 \
-		--ignore 71064 \
-                --ignore 70612 \
-        	-r
+		--ignore 70612 \
+		--ignore 71591 \
+ 		-r
 
 .PHONY: shellcheck
 shellcheck:  ## Lint shell scripts
@@ -54,10 +58,12 @@ shellcheck:  ## Lint shell scripts
 rust-lint: ## Lint Rust code
 	cargo fmt --check
 	cargo clippy
+	cargo clippy --features qubesdb
 
 .PHONY: rust-test
 rust-test: ## Run Rust tests
 	cargo test
+	cargo test --features qubesdb
 
 # Explanation of the below shell command should it ever break.
 # 1. Set the field separator to ": ##" and any make targets that might appear between : and ##

@@ -5,10 +5,10 @@ Over time, this module could become the interface between
 the GUI and the controller.
 """
 
+from collections.abc import Callable
 from contextlib import ExitStack
 from gettext import gettext as _
 from pathlib import Path
-from typing import Callable, List, Optional
 
 from PyQt5.QtCore import Qt, pyqtSlot
 from PyQt5.QtWidgets import QAction, QApplication, QDialog, QMenu
@@ -33,7 +33,7 @@ class DownloadConversation(QAction):
     """Download all files and messages of the currently selected conversation."""
 
     def __init__(
-        self, parent: QMenu, controller: Controller, app_state: Optional[state.State] = None
+        self, parent: QMenu, controller: Controller, app_state: state.State | None = None
     ) -> None:
         self._controller = controller
         self._state = app_state
@@ -50,12 +50,11 @@ class DownloadConversation(QAction):
     def on_triggered(self) -> None:
         if self._controller.api is None:
             self._controller.on_action_requiring_login()
-        else:
-            if self._state is not None:
-                id = self._state.selected_conversation
-                if id is None:
-                    return
-                self._controller.download_conversation(id)
+        elif self._state is not None:
+            id = self._state.selected_conversation
+            if id is None:
+                return
+            self._controller.download_conversation(id)
 
     def _connect_enabled_to_conversation_changes(self) -> None:
         if self._state is not None:
@@ -113,7 +112,7 @@ class DeleteSourcesAction(QAction):
         # ignored F821 - SourceListToolbar deliberately not imported to avoid circular dependency
         parent: "SourceListToolbar",  # type: ignore[name-defined] # noqa: F821
         controller: Controller,
-        confirmation_dialog: Callable[[List[str]], QDialog],
+        confirmation_dialog: Callable[[list[str]], QDialog],
     ) -> None:
         self.controller = controller
         self._confirmation_dialog = confirmation_dialog
@@ -145,7 +144,7 @@ class DeleteConversationAction(QAction):
         parent: QMenu,
         controller: Controller,
         confirmation_dialog: Callable[[Source], QDialog],
-        app_state: Optional[state.State] = None,
+        app_state: state.State | None = None,
     ) -> None:
         self.source = source
         self.controller = controller
@@ -216,7 +215,7 @@ class PrintConversationAction(QAction):  # pragma: nocover
         # the archive is being created. Once the file object goes
         # out of scope, any pending file removal will be performed
         # by the operating system.
-        with open(file_path, "r") as f:
+        with open(file_path) as f:
             export = Export()
             dialog = PrintConversationTranscriptDialog(
                 export, TRANSCRIPT_FILENAME, [str(file_path)]
@@ -230,7 +229,7 @@ class ExportConversationTranscriptAction(QAction):  # pragma: nocover
         parent: QMenu,
         controller: Controller,
         source: Source,
-        destination: Optional[ExportDestination] = ExportDestination.USB,
+        destination: ExportDestination | None = ExportDestination.USB,
     ) -> None:
         """
         Allows export of a conversation transcript.
@@ -272,7 +271,7 @@ class ExportConversationTranscriptAction(QAction):  # pragma: nocover
         # the archive is being created. Once the file object goes
         # out of scope, any pending file removal will be performed
         # by the operating system.
-        with open(file_path, "r") as f:
+        with open(file_path) as f:
             if self._destination == ExportDestination.USB:
                 export_device = Export()
                 wizard = ExportWizard(export_device, TRANSCRIPT_FILENAME, [str(file_path)])
@@ -292,8 +291,8 @@ class ExportConversationAction(QAction):  # pragma: nocover
         parent: QMenu,
         controller: Controller,
         source: Source,
-        app_state: Optional[state.State] = None,
-        destination: Optional[ExportDestination] = ExportDestination.USB,
+        app_state: state.State | None = None,
+        destination: ExportDestination | None = ExportDestination.USB,
     ) -> None:
         """
         Allows export of a conversation transcript and all is files. Will download any file
@@ -375,9 +374,7 @@ class ExportConversationAction(QAction):  # pragma: nocover
         # by the operating system.
         with ExitStack() as stack:
             export_device = Export()
-            files = [
-                stack.enter_context(open(file_location, "r")) for file_location in file_locations
-            ]
+            files = [stack.enter_context(open(file_location)) for file_location in file_locations]
 
             file_count = len(files)
             if file_count == 1:

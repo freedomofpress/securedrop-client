@@ -112,7 +112,7 @@ def test_read_gzip_header_filename(homedir):
     with tempfile.NamedTemporaryFile() as tf:
         tf.write(header)
         tf.seek(0)
-        assert "abc" == read_gzip_header_filename(tf.name)
+        assert read_gzip_header_filename(tf.name) == "abc"
 
 
 def test_subprocess_raises_exception(homedir, config, mocker, session_maker):

@@ -6,7 +6,6 @@ from PyQt5.QtGui import QIcon, QMovie, QPixmap
 from PyQt5.QtSvg import QSvgWidget
 
 import securedrop_client.resources
-from tests.helper import app  # noqa: F401
 
 
 def test_load_icon():

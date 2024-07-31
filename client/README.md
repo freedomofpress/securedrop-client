@@ -47,6 +47,43 @@ We support running the [developer environment on a non-Qubes OS](#developer-envi
 * network (via the RPC service) traffic
 * fine tuning of the graphical user interface
 
+### Comparing the development and staging/production environments
+
+```mermaid
+graph TD
+
+subgraph "development environment"
+subgraph "your development VM"
+direction TB
+dData(("temporary<br>directory")) --- dClient
+dKeychain(("temporary<br>keychain")) --- dClient
+dClient["securedrop-client<br>(./run.sh)"] --stdin/stdout/stderr--> dProxy
+dProxy["securedrop-proxy<br>(built via cargo)"] --HTTP-->
+dServer["SecureDrop Server<br>(make dev)"]
+end
+end
+
+subgraph "staging/production environment"
+spKeychain --- spClient
+subgraph sd-app
+spData(("~/.securedrop_client")) --- spClient
+spClient["securedrop-client"]
+end
+spClient --stdin/stdout/stderr over qrexec--> spProxy
+subgraph sd-gpg
+spKeychain(("~/.gnupg"))
+end
+subgraph sd-proxy
+spProxy["securedrop-proxy"]
+end
+spProxy --HTTP--> spTor
+subgraph sd-whonix
+spTor["Tor"]
+end
+spTor --> spServer["SecureDrop Server"]
+end
+```
+
 ### Running against a test server
 
 In order to login, or take other actions involving network access, you will need to run the client against a SecureDrop server. If you don't have a production server or want to test against a test server, you can install a SecureDrop server inside a dev container by following the instructions [in the SecureDrop documentation](https://docs.securedrop.org/en/latest/development/setup_development.html#quick-start).
@@ -77,8 +114,7 @@ cd securedrop-client
 poetry install
 ```
 
-   * You will need Python 3.9 to run the client. If it's not the default `python3` on your installation, you can set `poetry env use python3.9`.
-   * You may also want to run `make hooks`, which will configure Git to use the hooks found in `.githooks/` to check certain code-quality standards on new commits in this repository.  These checks are also enforced in CI.
+   * You will need Python 3.11 to run the client. If it's not the default `python3` on your installation, you can set `poetry env use python3.11`.
 
 4. Run SecureDrop Client
 
@@ -113,8 +149,6 @@ git clone git@github.com:freedomofpress/securedrop-client.git
 cd securedrop-client
 poetry install
 ```
-
-   * You may also want to run `make hooks`, which will configure Git to use the hooks found in `.githooks/` to check certain code-quality standards on new commits in this repository.  These checks are also enforced in CI.
 
 4. Run SecureDrop Client
 
@@ -162,14 +196,13 @@ socat TCP4-LISTEN:8081,fork,reuseaddr TCP4:A.B.C.D:8081
     3. Enter a shell in `x86_64` mode with `arch -x86_64 bash`
     4. Install Homebrew via the instructions at https://brew.sh/
     5. Install the dependencies below in the same `x86_64` shell session
-3. Install dependencies via Homebrew: `brew install python@3.9 gnupg oath-toolkit`
+3. Install dependencies via Homebrew: `brew install python@3.11 gnupg oath-toolkit`
 4. clone the SecureDrop Client repo and install its dependencies
    ```
    git clone git@github.com:freedomofpress/securedrop-client.git
    cd securedrop-client
    poetry install
    ```
-   * You may also want to run `make hooks`, which will configure Git to use the hooks found in `.githooks/` to check certain code-quality standards on new commits in this repository.  These checks are also enforced in CI.
 
 5. Run SecureDrop Client
    ```
@@ -368,9 +401,9 @@ We use `qtbot`, bundled with the [pytest-qt](https://pytest-qt.readthedocs.io/en
 
 #### Generating new cassettes
 
-We use [vcrpy](https://vcrpy.readthedocs.io/en/latest/) to record and replay API calls. Each request made from a test and response from the server is stored in a "cassette" yaml file in the `tests/functional/cassettes` directory.
+We use [vcrpy](https://vcrpy.readthedocs.io/en/latest/) to record and replay API calls. Each request made from a test and response from the server is stored in a "cassette" yaml file in the `tests/functional/data` directory.
 
-If the SDK changes its API, then you'll see the following warning indicating that a request failed to be found in an existing cassette and that you'll need to regenerate cassettes:
+If the server changes its API, then you'll see the following warning indicating that a request failed to be found in an existing cassette and that you'll need to regenerate cassettes:
 
 ```
 Can't overwrite existing cassette ('<path-to-cassette-for-a-functional-test>') in your current record mode ('once').
@@ -378,9 +411,23 @@ Can't overwrite existing cassette ('<path-to-cassette-for-a-functional-test>') i
 
 To set up a local dev server and generate cassettes, follow these steps:
 
-1. Bypass TOTP verification so that we can use the TOTP value of `123456` hard-coded in `tests/conftest.py`. You can do this by applying the following patch to the server code:
+1. Disable one TOTP check so that we can re-use the same one-time-code. You can do this by applying the following patch to the server code:
 
-https://gist.github.com/creviera/8793d5ec4d28f034f2c1e8320a93866a
+    ```
+    diff --git a/securedrop/models.py b/securedrop/models.py
+    index e70e492fc..bdbc55a06 100644
+    --- a/securedrop/models.py
+    +++ b/securedrop/models.py
+    @@ -645,7 +645,7 @@ class Journalist(db.Model):
+
+            # Reject OTP tokens that have already been used
+            if self.last_token is not None and self.last_token == sanitized_token:
+    -            raise two_factor.OtpTokenInvalid("Token already used")
+    +            pass
+
+            if self.is_totp:
+                # TOTP
+    ```
 
 2. Start the server in a docker container and add 5 sources with messages, files, and replies by running:
 
@@ -391,7 +438,7 @@ https://gist.github.com/creviera/8793d5ec4d28f034f2c1e8320a93866a
 3. Delete the cassettes you wish to regenerate or just delete the entire directory by running:
 
     ```bash
-    rm -r tests/functional/cassettes
+    rm -r tests/functional/data
     ```
 
 4. Regenerate cassettes by running:
@@ -424,7 +471,7 @@ import pdb; pdb.set_trace()
 Then you can use [`pdb` commands](https://docs.python.org/3/library/pdb.html#debugger-commands) as normal.
 
 Logs can be found in the `{sdc-home}/logs`. If you are debugging a version of this application installed from a deb package in Qubes, you can debug issues by looking at the log file in `~/.securedrop_client/logs/client.log`. You can also add additional log lines in the running code in
-`/opt/venvs/securedrop-client/lib/python3.9/site-packages/securedrop_client/`.
+`/opt/venvs/securedrop-client/lib/python3.11/site-packages/securedrop_client/`.
 
 
 [MAY]: https://datatracker.ietf.org/doc/html/rfc2119#section-5

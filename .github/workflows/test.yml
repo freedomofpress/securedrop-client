@@ -1,5 +1,9 @@
 name: Tests
-on: [push, pull_request]
+on:
+  - merge_group
+  - push
+  - pull_request
+
 # Only build for latest push/PR unless it's main or release/
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -15,48 +19,39 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
+        # qubesdb-tools has no test suite because it can only usefully be tested
+        # in `securedrop-workstation`'s CI.
         component:
           - export
+          - keyring
           - log
           - proxy
         debian_version:
-          - bullseye
           - bookworm
-        # bookworm jobs are failing and will be
-        # replaced with proxy v2 shortly, so skip
-        # https://github.com/freedomofpress/securedrop-client/issues/1681
-        exclude:
-          - component: proxy
-            debian_version: bookworm
     runs-on: ubuntu-latest
     container: debian:${{ matrix.debian_version }}
     steps:
       - run: |
-          apt-get update && apt-get install --yes git make gnupg sudo
+          apt-get update && apt-get install --yes git make gnupg sudo python3-poetry
       - uses: actions/checkout@v4
       - name: Setup user
         run: |
           # We want to run tests as a regular user, similar to Qubes VMs
           useradd --create-home --shell /bin/bash user
+      - name: Install Rust-specific dependencies
+        run: apt-get install --yes build-essential curl libssl-dev pkg-config
+        if: ${{ matrix.component == 'proxy' }}
+      - uses: actions/checkout@v4
+      # Install Rust, keep in sync with rust-toolchain.toml
+      - uses: dtolnay/rust-toolchain@1.78.0
+        if: ${{ matrix.component == 'proxy' }}
       - name: Install dependencies
         run: |
-          source /etc/os-release
-          if [[ "$VERSION_CODENAME" == "bullseye" ]]; then
-              # Install Poetry via PyPI
-              apt-get install --yes --no-install-recommends python3-pip
-              pip install poetry==1.6.1
-          elif [[ "$VERSION_CODENAME" == "bookworm" ]]; then
-              # Install Poetry via system package
-              apt-get install --yes --no-install-recommends python3-poetry
-          else
-              echo "Unsupported Debian version: $VERSION_CODENAME"
-              exit 1
-          fi
           sudo -u user poetry -C ${{ matrix.component }} install
       - name: Run test
         run: |
           sudo chown -R user:user .
-          sudo -u user make -C ${{ matrix.component }} test
+          sudo -u user PATH=$PATH:$HOME/.cargo/bin make -C ${{ matrix.component }} test
 
   # Run the various `make test-...` commands for the client.
   # TODO: these should be consolidated into one when feasible
@@ -69,32 +64,20 @@ jobs:
           - test-integration
           - test-random
         debian_version:
-          - bullseye
           - bookworm
     runs-on: ubuntu-latest
     container: debian:${{ matrix.debian_version }}
     steps:
       - run: |
-          apt-get update && apt-get install --yes git make gnupg sudo
+          apt-get update && apt-get install --yes git make gnupg sudo python3-poetry
       - uses: actions/checkout@v4
       - name: Setup user
         run: |
           # We want to run tests as a regular user, similar to Qubes VMs
           useradd --create-home --shell /bin/bash user
+          sudo -u user bash -c "mkdir ~/Downloads"
       - name: Install dependencies
         run: |
-          source /etc/os-release
-          if [[ "$VERSION_CODENAME" == "bullseye" ]]; then
-              # Install Poetry via PyPI
-              apt-get install --yes --no-install-recommends python3-pip
-              pip install poetry==1.6.1
-          elif [[ "$VERSION_CODENAME" == "bookworm" ]]; then
-              # Install Poetry via system package
-              apt-get install --yes --no-install-recommends python3-poetry
-          else
-              echo "Unsupported Debian version: $VERSION_CODENAME"
-              exit 1
-          fi
           make -C client ci-install-deps
           sudo -u user poetry -C client install
       - name: Run test
@@ -107,28 +90,15 @@ jobs:
     strategy:
       matrix:
         debian_version:
-          - bullseye
           - bookworm
     runs-on: ubuntu-latest
     container: debian:${{ matrix.debian_version }}
     steps:
       - run: |
-          apt-get update && apt-get install --yes git make
+          apt-get update && apt-get install --yes git make python3-poetry
       - uses: actions/checkout@v4
       - name: Install dependencies
         run: |
-          source /etc/os-release
-          if [[ "$VERSION_CODENAME" == "bullseye" ]]; then
-              # Install Poetry via PyPI
-              apt-get install --yes --no-install-recommends python3-pip
-              pip install poetry==1.6.1
-          elif [[ "$VERSION_CODENAME" == "bookworm" ]]; then
-              # Install Poetry via system package
-              apt-get install --yes --no-install-recommends python3-poetry
-          else
-              echo "Unsupported Debian version: $VERSION_CODENAME"
-              exit 1
-          fi
           poetry -C client install
           make -C client ci-install-deps
           git config --global --add safe.directory '*'

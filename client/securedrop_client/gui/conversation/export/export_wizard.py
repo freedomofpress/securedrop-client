@@ -1,11 +1,15 @@
 import logging
 from gettext import gettext as _
-from typing import List, Optional
 
 from PyQt5.QtCore import QSize, Qt, pyqtSlot
 from PyQt5.QtGui import QIcon, QKeyEvent
-from PyQt5.QtWidgets import QAbstractButton  # noqa: F401
-from PyQt5.QtWidgets import QApplication, QWidget, QWizard, QWizardPage
+from PyQt5.QtWidgets import (
+    QAbstractButton,
+    QApplication,
+    QWidget,
+    QWizard,
+    QWizardPage,
+)
 
 from securedrop_client.export import Export
 from securedrop_client.export_status import ExportStatus
@@ -42,8 +46,8 @@ class ExportWizard(QWizard):
         self,
         export: Export,
         summary_text: str,
-        filepaths: List[str],
-        parent: Optional[QWidget] = None,
+        filepaths: list[str],
+        parent: QWidget | None = None,
     ) -> None:
         # Normally, the active window is the right parent, but if the wizard is launched
         # via another element (a modal dialog, such as the "Some files may not be exported"
@@ -57,7 +61,7 @@ class ExportWizard(QWizard):
             summary_text, wordwrap=False, max_length=self.FILENAME_WIDTH_PX
         ).text()
         self.filepaths = filepaths
-        self.current_status: Optional[ExportStatus] = None
+        self.current_status: ExportStatus | None = None
 
         # Signal from qrexec command runner
         self.export.export_state_changed.connect(self.on_status_received)
@@ -97,10 +101,10 @@ class ExportWizard(QWizard):
         button_stylesheet = load_relative_css(__file__, "wizard_button.css")
 
         # Buttons
-        self.next_button = self.button(QWizard.WizardButton.NextButton)  # type: QAbstractButton
-        self.cancel_button = self.button(QWizard.WizardButton.CancelButton)  # type: QAbstractButton
-        self.back_button = self.button(QWizard.WizardButton.BackButton)  # type: QAbstractButton
-        self.finish_button = self.button(QWizard.WizardButton.FinishButton)  # type: QAbstractButton
+        self.next_button: QAbstractButton = self.button(QWizard.WizardButton.NextButton)
+        self.cancel_button: QAbstractButton = self.button(QWizard.WizardButton.CancelButton)
+        self.back_button: QAbstractButton = self.button(QWizard.WizardButton.BackButton)
+        self.finish_button: QAbstractButton = self.button(QWizard.WizardButton.FinishButton)
 
         self.next_button.setObjectName("QWizardButton_PrimaryButton")
         self.next_button.setStyleSheet(button_stylesheet)
@@ -144,7 +148,7 @@ class ExportWizard(QWizard):
         self.button_animation.stop()
 
     def _set_layout(self) -> None:
-        title = ("Export %(summary)s") % {"summary": self.summary_text}
+        title = f"Export {self.summary_text}"
         self.setWindowTitle(title)
         self.setObjectName("QWizard_export")
         self.setStyleSheet(load_relative_css(__file__, "wizard.css"))
@@ -187,6 +191,9 @@ class ExportWizard(QWizard):
             page.set_complete(False)
         self._start_animate_activestate()
 
+        # Disable the continue button until the qProcess completes
+        self.next_button.setEnabled(False)
+
         # Registered fields let us access the passphrase field
         # of the PassphraseRequestPage from the wizard parent
         passphrase_untrusted = self.field("passphrase")
@@ -210,6 +217,9 @@ class ExportWizard(QWizard):
             page.set_complete(True)
         self._stop_animate_activestate()
         self.current_status = status
+
+        # Button was disabled when the previous request was made; re-enable it
+        self.next_button.setEnabled(True)
 
     def _create_preflight(self) -> QWizardPage:
         return PreflightPage(self.export, self.summary_text)

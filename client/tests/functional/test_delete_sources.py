@@ -2,7 +2,6 @@
 Functional tests for deleting multiple sources in the SecureDrop client.
 """
 
-import pytest
 from flaky import flaky
 from PyQt5.QtWidgets import QCheckBox
 
@@ -10,7 +9,6 @@ from tests.conftest import TIME_CLICK_ACTION, TIME_RENDER_SOURCE_LIST
 
 
 @flaky
-@pytest.mark.vcr()
 def test_delete_sources(functional_test_logged_in_context, qtbot, mocker):
     """
     Verify that the source list's size is reduced by two when two sources are deleted.

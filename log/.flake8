@@ -1,8 +1,0 @@
-[flake8]
-max-line-length = 100
-extend-exclude = .venv
-filename =
-    *.py
-    securedrop-log
-    securedrop-log-saver
-    securedrop-redis-log

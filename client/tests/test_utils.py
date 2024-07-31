@@ -58,7 +58,7 @@ def test_safe_mkdir_with_first_param_containing_path_traversal_attack():
     """
     with pytest.raises(ValueError) as e:
         safe_mkdir("../../../../../../traversed")
-        assert "traversed is not an absolute path" in str(e.value)
+    assert str(e.value) == "Base directory '../../../../../../traversed' must be an absolute path"
 
 
 def test_safe_mkdir_with_second_param_containing_path_traversal_attack():
@@ -68,7 +68,7 @@ def test_safe_mkdir_with_second_param_containing_path_traversal_attack():
     with tempfile.TemporaryDirectory() as temp_dir:
         with pytest.raises(ValueError) as e:
             safe_mkdir(temp_dir, "../../../../../../traversed")
-            assert f"'/traversed' does not start with '{temp_dir}'" in str(e.value)
+        assert str(e.value) == "Unsafe file or directory name: '../../../../../../traversed'"
 
 
 def test_safe_mkdir_with_second_param_containing_path_traversal_attack_with_preexisting_dirs():
@@ -82,9 +82,7 @@ def test_safe_mkdir_with_second_param_containing_path_traversal_attack_with_pree
 
         with pytest.raises(ValueError) as e:
             safe_mkdir(homedir, "../traversed")
-            assert f"'{should_not_traverse_here}/traversed' does not start with '{homedir}'" in str(
-                e.value
-            )
+        assert str(e.value) == "Unsafe file or directory name: '../traversed'"
 
 
 def test_safe_mkdir_with_base_dir_with_parent_dirs_that_do_not_exist():
@@ -155,7 +153,7 @@ def test_safe_mkdir_leaves_parent_dir_permissions_alone_on_base_path(homedir):
     Test that safe_mkdir leaves base_dir parent permissions alone.
     """
     with tempfile.TemporaryDirectory() as temp_dir:
-        os.chmod(temp_dir, 0o777)
+        os.chmod(temp_dir, 0o777)  # noqa: S103
 
         base_path = os.path.join(temp_dir, "base_dir")
         safe_mkdir(base_path)
@@ -221,34 +219,44 @@ def test_safe_mkdir_fixes_insecure_permissions_on_last_parent_dir(homedir):
         assert oct(os.stat(fixed_dir).st_mode) == "0o40700"
 
 
-def test_relative_filepath():
-    p = relative_filepath("/good/path", "/good")
-    assert str(p) == "path"
+@pytest.mark.parametrize(
+    ("args", "expected"),
+    [
+        (("/good/path", "/good"), "path"),
+        (("/good/path", "/good/path"), "."),
+        (("/good", "/"), "good"),
+        (("/", "/"), "."),
+    ],
+)
+def test_relative_filepath(args, expected):
+    p = relative_filepath(*args)
+    assert str(p) == expected
 
-    p = relative_filepath("/good/path", "/good/path")
-    assert str(p) == "."
 
-    p = relative_filepath("/good", "/")
-    assert str(p) == "good"
-
-    p = relative_filepath("/", "/")
-    assert str(p) == "."
-
+@pytest.mark.parametrize(
+    ("args", "expected"),
+    [
+        (
+            ("", ""),
+            f"'{os.getcwd()}' is not in the subpath of '' OR one path is"
+            " relative and the other is absolute.",
+        ),
+        (
+            ("/base_dir", "../base_dir/must/be/absolute"),
+            "'/base_dir' is not in the subpath of '../base_dir/must/be/absolute' OR one path is"
+            " relative and the other is absolute.",
+        ),
+        (
+            ("/bad/path", "/basedir"),
+            "'/bad/path' is not in the subpath of '/basedir' OR one path is"
+            " relative and the other is absolute.",
+        ),
+    ],
+)
+def test_relative_filepath_error(args, expected):
     with pytest.raises(ValueError) as e:
-        relative_filepath("", "")
-        assert "'' does not start with ''" in str(e.value)  # base dir must be absolute
-
-    with pytest.raises(ValueError) as e:
-        relative_filepath("/base_dir", "../base_dir/must/be/absolute")
-        assert "'/base/dir' does not start with '../base/dir/must/be/absolute'" in str(e.value)
-
-    with pytest.raises(ValueError) as e:
-        relative_filepath("/bad/path", "/basedir")
-        assert "Unsafe file or directory name" in str(e.value)
-
-    with pytest.raises(ValueError) as e:
-        relative_filepath("/bad/path", "/basedir")
-        assert "Unsafe file or directory name" in str(e.value)
+        relative_filepath(*args)
+    assert expected == str(e.value)
 
 
 def test_check_path_traversal():
@@ -257,26 +265,26 @@ def test_check_path_traversal():
 
     with pytest.raises(ValueError) as e:
         check_path_traversal("../traversed")
-        assert "Unsafe file or directory name" in str(e.value)
+    assert "Unsafe file or directory name" in str(e.value)
 
     with pytest.raises(ValueError) as e:
         check_path_traversal("x/../../traversed")
-        assert "Unsafe file or directory name" in str(e.value)
+    assert "Unsafe file or directory name" in str(e.value)
 
     with pytest.raises(ValueError) as e:
         check_path_traversal("/x/../../traversed")
-        assert "Unsafe file or directory name" in str(e.value)
+    assert "Unsafe file or directory name" in str(e.value)
 
     # Ultimately this traversal is safe but check_path_traversal only returns
     # successfully if there are no traversal attempts. See check_path_traversal
     # to understand behavior and reasoning behind design decision.
     with pytest.raises(ValueError) as e:
         check_path_traversal("x/../traversed")
-        assert "Unsafe file or directory name" in str(e.value)
+    assert "Unsafe file or directory name" in str(e.value)
 
     with pytest.raises(ValueError) as e:
         check_path_traversal("/x/../traversed")
-        assert "Unsafe file or directory name" in str(e.value)
+    assert "Unsafe file or directory name" in str(e.value)
 
 
 def test_check_all_permissions():
@@ -305,7 +313,7 @@ def test_check_dir_permissions_unsafe(mocker):
 
     with tempfile.TemporaryDirectory() as temp_dir:
         os.mkdir(os.path.join(temp_dir, "bad"))
-        os.chmod(os.path.join(temp_dir, "bad"), 0o0777)
+        os.chmod(os.path.join(temp_dir, "bad"), 0o0777)  # noqa: S103
 
         with pytest.raises(RuntimeError):
             check_dir_permissions(os.path.join(temp_dir, "bad"))

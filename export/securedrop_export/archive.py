@@ -20,7 +20,7 @@ class Status(BaseStatus):
     ERROR_EXTRACTION = "ERROR_EXTRACTION"
 
 
-class Metadata(object):
+class Metadata:
     """
     Object to parse, validate and store json metadata from the sd-export archive.
     """
@@ -38,7 +38,7 @@ class Metadata(object):
                 json_config = json.loads(f.read())
                 self.export_method = json_config.get("device", None)
                 self.encryption_key = json_config.get("encryption_key", None)
-                logger.info("Command: {}".format(self.export_method))
+                logger.info(f"Command: {self.export_method}")
 
         except Exception as ex:
             logger.error("Metadata parsing failure")
@@ -54,7 +54,7 @@ class Metadata(object):
         return self
 
 
-class Archive(object):
+class Archive:
     def __init__(self, archive_path: str):
         os.umask(0o077)
         self.archive = archive_path
@@ -68,11 +68,11 @@ class Archive(object):
         Extract tarball, checking for path traversal, and return Archive object.
         """
         try:
-            logger.info("Extracting tarball {} into {}".format(self.archive, self.tmpdir))
+            logger.info(f"Extracting tarball {self.archive} into {self.tmpdir}")
             safe_extractall(self.archive, self.tmpdir)
             return self
         except Exception as ex:
-            logger.error("Unable to extract tarball: {}".format(ex))
+            logger.error(f"Unable to extract tarball: {ex}")
             raise ExportException(sdstatus=Status.ERROR_EXTRACTION) from ex
 
     def set_metadata(self, metadata: Metadata) -> "Archive":
