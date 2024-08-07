@@ -320,9 +320,6 @@ def test_MetadataSyncJob_success(mocker, homedir, session, session_maker):
 
     api_client = mocker.patch("securedrop_client.sdk.API")
 
-    user = {"uuid": "mock1", "username": "mock1", "first_name": "mock1", "last_name": "mock1"}
-    mocker.patch.object(api_client, "get_current_user", return_value=user)
-
     job.call_api(api_client, session)
 
     assert mock_get_remote_data.call_count == 1
@@ -343,9 +340,6 @@ def test_MetadataSyncJob_success_current_user_name_change(mocker, homedir, sessi
     session.add(user)
 
     api_client = mocker.patch("securedrop_client.sdk.API")
-
-    user = {"uuid": "mock2", "username": "mock2", "first_name": "mock2", "last_name": "mock2"}
-    mocker.patch.object(api_client, "get_current_user", return_value=user)
 
     job.call_api(api_client, session)
 

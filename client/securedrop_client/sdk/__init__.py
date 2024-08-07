@@ -771,31 +771,6 @@ class API:
 
         return True
 
-    def get_current_user(self) -> dict:
-        """
-        Returns a dictionary of the current user data.
-
-        Example:
-
-        {
-            'is_admin': True,
-            'last_login': '2018-08-01T19:10:38.199429Z',
-            'username': 'journalist'
-        }
-        """
-        path_query = "api/v1/user"
-        method = "GET"
-
-        response = self._send_json_request(
-            method,
-            path_query,
-            headers=self.req_headers,
-            timeout=self.default_request_timeout,
-        )
-        assert isinstance(response, JSONResponse)
-
-        return response.data
-
     def get_users(self) -> list[User]:
         """
         Returns a list of all the journalist and admin users registered on the
