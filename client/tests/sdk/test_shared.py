@@ -59,14 +59,11 @@ class TestShared:
                 else:
                     time.sleep(DELETION_ATTEMPT_SLEEP)
 
-    def delete_source(self, from_string=False):
+    def delete_source(self):
         number_of_sources_before = len(self.api.get_sources())
 
         s = self.api.get_sources()[0]
-        if from_string:
-            assert self.api.delete_source_from_string(s.uuid)
-        else:
-            assert self.api.delete_source(s)
+        assert self.api.delete_source(s)
 
         # Now there should be one less source
         sources = self.api.get_sources()
@@ -83,14 +80,11 @@ class TestShared:
         s2 = self.api.get_source(s)
         assert not s2.is_flagged
 
-    def get_single_source(self, from_string=False):
+    def get_single_source(self):
         s = self.api.get_sources()[0]
         # Now we will try to get the same source again
 
-        if from_string:
-            s2 = self.api.get_source_from_string(s.uuid)
-        else:
-            s2 = self.api.get_source(s)
+        s2 = self.api.get_source(s)
 
         assert s.journalist_designation == s2.journalist_designation
         assert s.uuid == s2.uuid
@@ -105,14 +99,10 @@ class TestShared:
 
     # ---------------- SUBMISSIONS ----------------
 
-    def delete_submission(self, from_string=False):
+    def delete_submission(self):
         number_of_submissions_before = len(self.api.get_all_submissions())
 
-        if from_string:
-            s = self.api.get_sources()[0]
-            subs = self.api.get_submissions(s)
-        else:
-            subs = self.api.get_all_submissions()
+        subs = self.api.get_all_submissions()
         assert self.api.delete_submission(subs[0])
 
         attempts = DELETION_ATTEMPTS
@@ -132,16 +122,13 @@ class TestShared:
         for s in new_subs:
             assert s.uuid != subs[0].uuid
 
-    def get_submission(self, from_string=False):
+    def get_submission(self):
         # Get a source with submissions
         source_uuid = self.api.get_all_submissions()[0].source_uuid
         s = self.api.get_source(Source(uuid=source_uuid))
 
         subs = self.api.get_submissions(s)
-        if from_string:
-            sub = self.api.get_submission_from_string(subs[0].uuid, s.uuid)
-        else:
-            sub = self.api.get_submission(subs[0])
+        sub = self.api.get_submission(subs[0])
 
         assert sub.filename == subs[0].filename
 
