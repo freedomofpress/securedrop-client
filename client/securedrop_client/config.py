@@ -75,7 +75,7 @@ class Config:
                 # Cast to int if needed (might raise if value is invalid)
                 # TODO: in theory we could `field.type(value)` but that doesn't
                 # handle union types
-                if field.type == int:
+                if field.type is int:
                     value = int(value)
                 config[field.name] = value
 

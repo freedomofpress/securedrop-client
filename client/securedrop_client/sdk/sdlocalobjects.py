@@ -110,12 +110,12 @@ class Submission:
         self.submission_url = ""  # type: str
         self.uuid = ""  # type: str
 
-        if ["uuid"] == list(kwargs.keys()):
+        if list(kwargs.keys()) == ["uuid"]:
             # Means we are creating an object only for fetching from server.
             self.uuid = kwargs["uuid"]
             return
 
-        elif ["uuid", "source_uuid"] == list(kwargs.keys()):
+        elif list(kwargs.keys()) == ["uuid", "source_uuid"]:
             self.uuid = kwargs["uuid"]
             self.source_uuid = kwargs["source_uuid"]
             return
@@ -159,7 +159,7 @@ class Source:
         self.url = ""  # type: str
         self.uuid = ""  # type: str
 
-        if ["uuid"] == list(kwargs.keys()):
+        if list(kwargs.keys()) == ["uuid"]:
             # Means we are creating an object only for fetching from server.
             self.uuid = kwargs["uuid"]
             return

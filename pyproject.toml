@@ -12,7 +12,7 @@ license = "AGPLv3+"
 python = "^3.11"
 
 [tool.poetry.group.dev.dependencies]
-ruff = "^0.4.9"
+ruff = "^0.5.4"
 safety = "*"
 shellcheck-py = "*"
 
@@ -101,6 +101,9 @@ known-third-party = [
 "client/securedrop_client/sdk/__init__.py" = [
     # significant assert use for mypy
     "S101",
+    # a number of unchecked "We should never reach here" `return false` that
+    # need to be refactored away
+    "SIM103",
 ]
 "client/securedrop_client/gui/widgets.py" = [
     # FIXME: shouldn't be using assert
