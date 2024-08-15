@@ -125,10 +125,6 @@ class TestAPI(TestShared):
         super().get_single_source()
 
     @VCRAPI.use_cassette
-    def test_get_single_source_from_string(self):
-        super().get_single_source(from_string=True)
-
-    @VCRAPI.use_cassette
     def test_failed_single_source(self):
         super().failed_single_source()
 
@@ -139,10 +135,6 @@ class TestAPI(TestShared):
     @VCRAPI.use_cassette
     def test_get_submission(self):
         super().get_submission()
-
-    @VCRAPI.use_cassette
-    def test_get_submission_from_string(self):
-        super().get_submission(from_string=True)
 
     @VCRAPI.use_cassette
     def test_get_wrong_submissions(self):
@@ -364,16 +356,8 @@ class TestAPI(TestShared):
         super().delete_source()
 
     @VCRAPI.use_cassette
-    def test_delete_source_from_string(self):
-        super().delete_source(from_string=True)
-
-    @VCRAPI.use_cassette
     def test_delete_submission(self):
         super().delete_submission()
-
-    @VCRAPI.use_cassette
-    def test_delete_submission_from_string(self):
-        super().delete_submission(from_string=True)
 
     @VCRAPI.use_cassette
     def test_delete_reply(self):
