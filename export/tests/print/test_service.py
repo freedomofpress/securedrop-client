@@ -1,5 +1,7 @@
 import os
 import subprocess
+import tempfile
+from pathlib import Path
 from subprocess import CalledProcessError
 from unittest import mock
 
@@ -115,29 +117,31 @@ class TestPrint:
 
         assert ex.value.sdstatus is Status.ERROR_PRINTER_NOT_FOUND
 
-    @pytest.mark.parametrize(
-        "open_office_paths",
-        [
-            "/tmp/whatver/thisisadoc.doc"
-            "/home/user/Downloads/thisisadoc.xlsx"
-            "/home/user/Downloads/file.odt"
-            "/tmp/tmpJf83j9/secret.pptx"
-        ],
+    @mock.patch(
+        "subprocess.check_output",
+        return_value=b"/path/to/I Have Spaces.odg: application/vnd.oasis.opendocument.graphics\n",
     )
-    def test_is_open_office_file(self, capsys, open_office_paths):
-        assert self.service._needs_pdf_conversion(open_office_paths)
+    def test_needs_pdf_conversion(self, capsys):
+        file = tempfile.NamedTemporaryFile()
 
-    @pytest.mark.parametrize(
-        "open_office_paths",
-        [
-            "/tmp/whatver/thisisadoc.doccc"
-            "/home/user/Downloads/thisisa.xlsx.zip"
-            "/home/user/Downloads/file.odz"
-            "/tmp/tmpJf83j9/secret.gpg"
-        ],
-    )
-    def test_is_not_open_office_file(self, capsys, open_office_paths):
-        assert not self.service._needs_pdf_conversion(open_office_paths)
+        assert self.service._needs_pdf_conversion(file)
+
+    def test__get_supported_mimetypes_libreoffice(self, capsys):
+        """
+        Given well-formatted libreoffice sample .desktop files, assert correctly parsed.
+        """
+        # sample .desktop files in test directory, but the service checks /usr/share/applications
+        testdir_libreoffice_desktop = Path(Path.cwd(), "tests", "files")
+        supported = self.service._get_supported_mimetypes_libreoffice(testdir_libreoffice_desktop)
+        assert len(supported) > 0, len(supported)
+
+    def test__get_supported_mimetypes_libreoffice_handles_error(self, capsys):
+        """
+        Given missing libreoffice sample .desktop files, assert error-handling.
+        """
+        with tempfile.TemporaryDirectory() as tmpdir_no_libreoffice_files:
+            result = self.service._get_supported_mimetypes_libreoffice(tmpdir_no_libreoffice_files)
+            assert len(result) == 0
 
     @mock.patch("subprocess.run")
     def test_install_printer_ppd_laserjet(self, mocker):
@@ -314,7 +318,7 @@ class TestPrint:
         mock_print = p.start()
 
         self.service._print_test_page()
-        mock_print.assert_called_once_with("/usr/share/cups/data/testprint")
+        mock_print.assert_called_once_with(Path("/usr/share/cups/data/testprint"))
         p.stop()
 
     @mock.patch("securedrop_export.print.service.Service._wait_for_print")
@@ -325,41 +329,58 @@ class TestPrint:
         self.service._print_all_files()
         mock_print.assert_has_calls(
             [
-                mock.call(f"{self.submission.tmpdir}/export_data/file1.txt"),
-                mock.call(f"{self.submission.tmpdir}/export_data/file2.txt"),
-                mock.call(f"{self.submission.tmpdir}/export_data/file3.txt"),
+                mock.call(Path(self.submission.tmpdir, "export_data/file1.txt")),
+                mock.call(Path(self.submission.tmpdir, "export_data/file2.txt")),
+                mock.call(Path(self.submission.tmpdir, "export_data/file3.txt")),
             ],
             any_order=True,
         )
         p.stop()
 
     @mock.patch("securedrop_export.print.service.Service._wait_for_print")
-    def test_open_office_file_convert_to_pdf(self, mock_wait):
-        file = "/tmp/definitely-an-office-file.odt"
+    def test__print_file_odt_calls_libreoffice_conversion_then_print(self, mock_wait):
+        file = Path("/tmp/export-data/office-file.odt")
 
         with (
-            mock.patch("subprocess.check_call") as sp,
+            mock.patch("subprocess.check_call") as check_call,
             mock.patch("securedrop_export.print.service.logger.info") as log,
+            mock.patch(
+                "subprocess.check_output",
+                side_effect=[
+                    b"/tmp/export-data/office-file.odt: application/vnd.oasis.opendocument.text\n",
+                    b"Convert office-file.odt -> office-file.pdf\n",
+                ],
+            ) as check_output,
+            mock.patch("Path.exists", return_value=True),
         ):
             self.service._print_file(file)
 
-        assert sp.call_count == 2
-        sp.assert_has_calls(
+        assert check_output.call_count == 1
+        check_output.assert_has_calls(
             [
                 mock.call(
                     [
-                        "unoconv",
-                        "-o",
-                        "/tmp/definitely-an-office-file.odt.pdf",
-                        "/tmp/definitely-an-office-file.odt",
+                        "libreoffice",
+                        "--headless",
+                        "--safe-mode",
+                        "--convert-to",
+                        "pdf",
+                        "--outdir",
+                        "",
+                        file,
                     ],
-                ),
+                )
+            ]
+        )
+        assert check_call.call_count == 1
+        check_call.assert_has_calls(
+            [
                 mock.call(
                     [
                         "xpp",
                         "-P",
                         "sdw-printer",
-                        "/tmp/definitely-an-office-file.odt.pdf",
+                        "/tmp/export-data/print-pdf/office-file.pdf",
                     ],
                 ),
             ]
@@ -369,6 +390,51 @@ class TestPrint:
             [
                 mock.call("Converting Office document to pdf"),
                 mock.call("Sending file to printer sdw-printer"),
+            ]
+        )
+
+    @mock.patch("securedrop_export.print.service.Service._wait_for_print")
+    def test__print_file_raises_if_file_not_found(self, mock_wait):
+        file = Path("/tmp/export-data/office-file.odt")
+        expected_conversion_file = Path("/tmp/export-data/print-pdf/office-file.pdf")
+
+        with (
+            mock.patch("securedrop_export.print.service.logger.error") as log,
+            mock.patch.object(self.service, "_needs_pdf_conversion", return_value=True),
+            mock.patch(
+                "subprocess.check_output",
+                side_effect=[
+                    b"/tmp/export-data/office-file.odt: application/vnd.oasis.opendocument.text\n",
+                    b"Convert office-file.odt -> office-file.pdf\n",
+                ],
+            ) as check_output,
+            pytest.raises(ExportException) as ex,
+        ):
+            self.service._print_file(file)
+
+        assert ex.sdstatus == Status.ERROR_PRINT
+
+        assert check_output.call_count == 1
+        check_output.assert_has_calls(
+            [
+                mock.call(
+                    [
+                        "libreoffice",
+                        "--headless",
+                        "--safe-mode",
+                        "--convert-to",
+                        "pdf",
+                        "--outdir",
+                        Path("/tmp/export-data/print-pdf"),
+                        file,
+                    ],
+                )
+            ]
+        )
+        assert log.call_count == 1
+        log.assert_has_calls(
+            [
+                mock.call(f"Something went wrong: {expected_conversion_file} not found"),
             ]
         )
 
@@ -391,13 +457,15 @@ class TestPrint:
         ],
     )
     def test__wait_for_print_waits_correctly(self, mock_sp, mock_time):
-        file = "/tmp/happy-to-print-you.pdf"
+        file = tempfile.NamedTemporaryFile()
+        filepath = Path(file.name)
 
         with (
             mock.patch("subprocess.check_call") as mock_subprocess,
             mock.patch("securedrop_export.print.service.logger.info") as log,
+            mock.patch.object(self.service, "_needs_pdf_conversion", return_value=False),
         ):
-            self.service._print_file(file)
+            self.service._print_file(filepath)
 
         assert mock_subprocess.call_count == 1
         mock_subprocess.assert_has_calls(
@@ -407,7 +475,7 @@ class TestPrint:
                         "xpp",
                         "-P",
                         "sdw-printer",
-                        "/tmp/happy-to-print-you.pdf",
+                        filepath,
                     ],
                 ),
             ]
