@@ -408,11 +408,11 @@ class TestPrint:
                     b"Convert office-file.odt -> office-file.pdf\n",
                 ],
             ) as check_output,
-            pytest.raises(ExportException) as ex,
+            pytest.raises(ExportException) as ex_info,
         ):
             self.service._print_file(file)
 
-        assert ex.sdstatus == Status.ERROR_PRINT
+        assert ex_info.value.sdstatus == Status.ERROR_PRINT
 
         assert check_output.call_count == 1
         check_output.assert_has_calls(
@@ -425,8 +425,8 @@ class TestPrint:
                         "--convert-to",
                         "pdf",
                         "--outdir",
-                        Path("/tmp/export-data/print-pdf"),
-                        file,
+                        "/tmp/export-data/print-pdf",
+                        str(file),
                     ],
                 )
             ]
