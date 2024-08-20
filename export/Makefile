@@ -33,6 +33,10 @@ semgrep-local:
 	@echo "Running semgrep with local rules..."
 	@poetry run semgrep $(SEMGREP_FLAGS) --config ".semgrep"
 
+# Install dependencies in CI
+ci-install-deps:
+	apt-get install --yes libreoffice
+
 # Explanation of the below shell command should it ever break.
 # 1. Set the field separator to ": ##" and any make targets that might appear between : and ##
 # 2. Use sed-like syntax to remove the make targets

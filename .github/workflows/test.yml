@@ -47,6 +47,9 @@ jobs:
         if: ${{ matrix.component == 'proxy' }}
       - name: Install dependencies
         run: |
+          if [[ "${{ matrix.component }}" == "export" ]]; then
+            make -C ${{ matrix.component }} ci-install-deps
+          fi
           sudo -u user poetry -C ${{ matrix.component }} install
       - name: Run test
         run: |

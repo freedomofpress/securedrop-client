@@ -150,6 +150,17 @@ class TestPrint:
             result = self.service._get_supported_mimetypes_libreoffice(tmpdir_no_libreoffice_files)
             assert len(result) == 0
 
+    def test__get_supported_mimetypes_libreoffice_integration(self, capsys):
+        """If LibreOffice is installed for real, test against it"""
+        apps = Path("/usr/share/applications")
+        if not (apps / "libreoffice-writer.desktop").exists():
+            pytest.skip("libreoffice doesn't appear to be installed")
+
+        mimes = self.service._get_supported_mimetypes_libreoffice(apps)
+        # Check some basic formats (odt and docx)
+        assert "application/vnd.oasis.opendocument.text" in mimes
+        assert "application/vnd.openxmlformats-officedocument.wordprocessingml.document" in mimes
+
     @mock.patch("subprocess.run")
     def test_install_printer_ppd_laserjet(self, mocker):
         ppd = self.service._install_printer_ppd(
