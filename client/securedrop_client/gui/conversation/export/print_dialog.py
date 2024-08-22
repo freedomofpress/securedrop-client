@@ -104,18 +104,18 @@ class PrintDialog(ModalDialog):
         self.continue_button.clicked.connect(self.close)
         self.continue_button.setText(_("DONE"))
         self.header.setText(self.error_header)
-        text = (
-            self.unprintable_type_error_message
-            if self.status == ExportStatus.ERROR_UNPRINTABLE_TYPE
-            else self.generic_error_message
-        )
+        if self.status == ExportStatus.ERROR_UNPRINTABLE_TYPE:
+            body_text = self.unprintable_type_error_message
+        else:
+            body_text = self.generic_error_message
+
         if self.status:
             self.body.setText(  # nosemgrep: semgrep.untranslated-gui-string
-                f"{self.status.value}: {text}"
+                f"{self.status.value}: {body_text}"
             )
         else:
             self.body.setText(  # nosemgrep: semgrep.untranslated-gui-string
-                f"{text}"
+                body_text
             )
         self.error_details.hide()
         self.adjustSize()
