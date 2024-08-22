@@ -268,7 +268,7 @@ class Export(QObject):
         if self.process:
             err = self.process.readAllStandardError().data().decode("utf-8").strip()
             logger.debug(f"Print preflight error: {err}")
-        self.print_preflight_check_failed.emit(ExportStatus.ERROR_PRINT)
+        self.print_preflight_check_failed.emit(ExportStatus.CALLED_PROCESS_ERROR)
 
     def _on_print_complete(self) -> None:
         """
@@ -303,7 +303,7 @@ class Export(QObject):
 
     def _on_print_error(self) -> None:
         """
-        Error callback for print qrexec.
+        Error callback for print qrexec. Called if QProcess fails.
         """
         self._cleanup_tmpdir()
         if self.process:
@@ -311,7 +311,7 @@ class Export(QObject):
             logger.debug(f"Print error: {err}")
         else:
             logger.error("Print error (stderr unavailable)")
-        self.print_failed.emit(ExportStatus.ERROR_PRINT)
+        self.print_failed.emit(ExportStatus.CALLED_PROCESS_ERROR)
 
     def print(self, filepaths: list[str]) -> None:
         """
@@ -332,8 +332,8 @@ class Export(QObject):
             self._run_qrexec_export(archive_path, self._on_print_complete, self._on_print_error)
 
         except OSError as e:
-            logger.error("Export failed")
-            logger.debug(f"Export failed: {e}")
+            logger.error("Print failed")
+            logger.debug(f"Print failed: {e}")
             self.print_failed.emit(ExportStatus.ERROR_PRINT)
 
         # ExportStatus.ERROR_MISSING_FILES

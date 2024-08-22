@@ -83,7 +83,7 @@ jobs:
       - name: Install dependencies
         run: |
           poetry -C ${{ matrix.component }} install
-          if [[ "${{ matrix.component }}" == "client" ]]; then
+          if [[ "${{ matrix.component }}" == "client" || "${{ matrix.component }}" == "export" ]]; then
             make -C ${{ matrix.component }} ci-install-deps
           fi
       - name: Run lint

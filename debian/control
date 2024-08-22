@@ -14,8 +14,8 @@ Description: securedrop client for qubes workstation
 
 Package: securedrop-export
 Architecture: all
-Depends: ${python3:Depends}, ${misc:Depends}, udisks2, cups, printer-driver-brlaser, printer-driver-hpcups, system-config-printer, xpp, libcups2, unoconv, gnome-disk-utility,
- desktop-file-utils, shared-mime-info
+Depends: ${python3:Depends}, ${misc:Depends}, udisks2, cups, printer-driver-brlaser, printer-driver-hpcups, system-config-printer, xpp, libcups2, gnome-disk-utility, libreoffice,
+ desktop-file-utils, shared-mime-info, libfile-mimeinfo-perl
 Description: Submission export scripts for SecureDrop Workstation
  This package provides scripts used by the SecureDrop Qubes Workstation to
  export submissions from the client to external storage, via the sd-export
@@ -62,5 +62,5 @@ Description: This is the SecureDrop workstation template configuration package.
 
 Package: securedrop-workstation-viewer
 Architecture: all
-Depends: securedrop-workstation-config,securedrop-workstation-grsec,apparmor-profiles,apparmor-profiles-extra,apparmor-utils,audacious,eog,evince,file-roller,gedit,totem,heif-gdk-pixbuf
+Depends: securedrop-workstation-config,securedrop-workstation-grsec,apparmor-profiles,apparmor-profiles-extra,apparmor-utils,audacious,eog,evince,file-roller,gedit,totem,heif-gdk-pixbuf,libreoffice
 Description: This is the SecureDrop workstation SecureDrop Viewer Disposable VM template configuration package. This package provides dependencies and configuration for the Qubes SecureDrop workstation sd-viewer Template VM.

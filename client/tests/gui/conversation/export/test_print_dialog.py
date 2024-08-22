@@ -4,6 +4,31 @@ from securedrop_client.export_status import ExportStatus
 from securedrop_client.gui.conversation import PrintDialog
 
 
+def _assert_is_ready_continue_state(print_dialog):
+    """
+    Helper. Asserts dialog displays "ready to continue"
+    state attributes after successful preflight call.
+    """
+    assert not print_dialog.header.isHidden()
+    assert not print_dialog.header_line.isHidden()
+    assert print_dialog.error_details.isHidden()
+    assert not print_dialog.body.isHidden()
+    assert not print_dialog.continue_button.isHidden()
+    assert not print_dialog.cancel_button.isHidden()
+
+
+def _assert_is_error_state(print_dialog):
+    """
+    Helper. Assert dialog displays error state attributes.
+    """
+    assert not print_dialog.header.isHidden()
+    assert not print_dialog.header_line.isHidden()
+    assert print_dialog.error_details.isHidden()
+    assert not print_dialog.body.isHidden()
+    assert not print_dialog.continue_button.isHidden()
+    assert not print_dialog.cancel_button.isHidden()
+
+
 def test_PrintDialog_init(mocker):
     _show_starting_instructions_fn = mocker.patch(
         "securedrop_client.gui.conversation.PrintDialog._show_starting_instructions"
@@ -55,12 +80,7 @@ def test_PrintDialog__show_starting_instructions(mocker, print_dialog):
         "invisible to the naked eye, such as printer dots. Please carefully "
         "consider this risk when working with or publishing scanned printouts."
     )
-    assert not print_dialog.header.isHidden()
-    assert not print_dialog.header_line.isHidden()
-    assert print_dialog.error_details.isHidden()
-    assert not print_dialog.body.isHidden()
-    assert not print_dialog.continue_button.isHidden()
-    assert not print_dialog.cancel_button.isHidden()
+    _assert_is_ready_continue_state(print_dialog)
 
 
 @pytest.mark.parametrize("print_dialog", [None], indirect=True)
@@ -69,28 +89,21 @@ def test_PrintDialog__show_insert_usb_message(mocker, print_dialog):
 
     assert print_dialog.header.text() == "Connect USB printer"
     assert print_dialog.body.text() == "Please connect your printer to a USB port."
-    assert not print_dialog.header.isHidden()
-    assert not print_dialog.header_line.isHidden()
-    assert print_dialog.error_details.isHidden()
-    assert not print_dialog.body.isHidden()
-    assert not print_dialog.continue_button.isHidden()
-    assert not print_dialog.cancel_button.isHidden()
+
+    _assert_is_ready_continue_state(print_dialog)
 
 
 @pytest.mark.parametrize("print_dialog", [None], indirect=True)
-def test_PrintDialog__show_generic_error_message(mocker, print_dialog):
-    print_dialog.error_status = "mock_error_status"
-
-    print_dialog._show_generic_error_message()
+def test_PrintDialog__show_error_message(mocker, print_dialog):
+    print_dialog.status = ExportStatus.ERROR_UNPRINTABLE_TYPE
+    print_dialog._show_error_message()
 
     assert print_dialog.header.text() == "Printing failed"
-    assert print_dialog.body.text() == "mock_error_status: See your administrator for help."
-    assert not print_dialog.header.isHidden()
-    assert not print_dialog.header_line.isHidden()
-    assert print_dialog.error_details.isHidden()
-    assert not print_dialog.body.isHidden()
-    assert not print_dialog.continue_button.isHidden()
-    assert not print_dialog.cancel_button.isHidden()
+    assert print_dialog.body.text() == (
+        f"{ExportStatus.ERROR_UNPRINTABLE_TYPE.value}: "
+        f"{print_dialog.unprintable_type_error_message}"
+    )
+    _assert_is_error_state(print_dialog)
 
 
 @pytest.mark.parametrize("print_dialog", [None], indirect=True)
@@ -169,23 +182,22 @@ def test_PrintDialog__on_print_preflight_check_failed_shows_error(mocker, print_
     a helpful message. Parametrized argument is
     passed to print_dialog fixture; see conftest.py.
     """
-    print_dialog._show_generic_error_message = mocker.MagicMock()
-    print_dialog.continue_button = mocker.MagicMock()
+    print_dialog._show_error_message = mocker.MagicMock()
+    print_dialog.continue_button.setEnabled(False)
     print_dialog.continue_button.clicked = mocker.MagicMock()
-    mocker.patch.object(print_dialog.continue_button, "isEnabled", return_value=False)
 
     # When the Continue button is disabled, finishing a preflight check will
     # enable the Continue button and connect the click handler to an error message,
     # but will not yet display the message (user has to click).
     print_dialog._device._on_print_preflight_complete()
     print_dialog.continue_button.clicked.connect.assert_called_once_with(
-        print_dialog._show_generic_error_message
+        print_dialog._show_error_message
     )
 
     # When the continue button is enabled, ensure clicking it displays the error message
-    mocker.patch.object(print_dialog.continue_button, "isEnabled", return_value=True)
+    print_dialog.continue_button.setEnabled(True)
     print_dialog._device._on_print_preflight_complete()
-    print_dialog._show_generic_error_message.assert_called_once_with()
+    print_dialog._show_error_message.assert_called_once_with()
 
 
 @pytest.mark.parametrize(
@@ -195,9 +207,8 @@ def test_PrintDialog__on_print_preflight_check_failed_no_printer_shows_connect_p
     mocker, print_dialog
 ):
     print_dialog._show_insert_usb_message = mocker.MagicMock()
-    print_dialog.continue_button = mocker.MagicMock()
+    print_dialog.continue_button.setEnabled(False)
     print_dialog.continue_button.clicked = mocker.MagicMock()
-    mocker.patch.object(print_dialog.continue_button, "isEnabled", return_value=False)
 
     # When the Continue button is disabled, finishing a preflight check will
     # enable the Continue button and connect the click handler to an error message,
@@ -206,52 +217,56 @@ def test_PrintDialog__on_print_preflight_check_failed_no_printer_shows_connect_p
     print_dialog.continue_button.clicked.connect.assert_called_once_with(
         print_dialog._show_insert_usb_message
     )
+    assert print_dialog.status == ExportStatus.ERROR_PRINTER_NOT_FOUND
 
     # When the continue button is enabled, ensure clicking it shows next instructions
-    mocker.patch.object(print_dialog.continue_button, "isEnabled", return_value=True)
+    print_dialog.continue_button.setEnabled(True)
     print_dialog._device._on_print_preflight_complete()
     print_dialog._show_insert_usb_message.assert_called_once_with()
+
+    _assert_is_ready_continue_state(print_dialog)
 
 
 @pytest.mark.parametrize("print_dialog", [ExportStatus.CALLED_PROCESS_ERROR.value], indirect=True)
 def test_PrintDialog__on_print_preflight_check_failed_when_status_is_CALLED_PROCESS_ERROR(
     mocker, print_dialog
 ):
-    print_dialog._show_generic_error_message = mocker.MagicMock()
-    print_dialog.continue_button = mocker.MagicMock()
+    print_dialog._show_error_message = mocker.MagicMock()
+    print_dialog.continue_button.setEnabled(False)
     print_dialog.continue_button.clicked = mocker.MagicMock()
-    mocker.patch.object(print_dialog.continue_button, "isEnabled", return_value=False)
 
     # When the continue button is enabled, ensure clicking continue will show next instructions
     print_dialog._device._on_print_preflight_complete()
     print_dialog.continue_button.clicked.connect.assert_called_once_with(
-        print_dialog._show_generic_error_message
+        print_dialog._show_error_message
     )
-    assert print_dialog.error_status == ExportStatus.CALLED_PROCESS_ERROR
 
     # When the continue button is enabled, ensure next instructions are shown
-    mocker.patch.object(print_dialog.continue_button, "isEnabled", return_value=True)
+    print_dialog.continue_button.setEnabled(True)
     print_dialog._device._on_print_preflight_complete()
-    print_dialog._show_generic_error_message.assert_called_once_with()
-    assert print_dialog.error_status == ExportStatus.CALLED_PROCESS_ERROR
+    print_dialog._show_error_message.assert_called_once_with()
+    assert print_dialog.status == ExportStatus.CALLED_PROCESS_ERROR
+
+    _assert_is_error_state(print_dialog)
 
 
 @pytest.mark.parametrize("print_dialog", ["Some Unknown Error Status"], indirect=True)
 def test_PrintDialog__on_print_preflight_check_failed_when_status_is_unknown(mocker, print_dialog):
-    print_dialog._show_generic_error_message = mocker.MagicMock()
-    print_dialog.continue_button = mocker.MagicMock()
+    print_dialog._show_error_message = mocker.MagicMock()
+    print_dialog.continue_button.setEnabled(False)
     print_dialog.continue_button.clicked = mocker.MagicMock()
-    mocker.patch.object(print_dialog.continue_button, "isEnabled", return_value=False)
 
     # When the continue button is enabled, ensure clicking continue will show next instructions
     print_dialog._device._on_print_preflight_complete()
     print_dialog.continue_button.clicked.connect.assert_called_once_with(
-        print_dialog._show_generic_error_message
+        print_dialog._show_error_message
     )
-    assert print_dialog.error_status == ExportStatus.UNEXPECTED_RETURN_STATUS
+    assert print_dialog.status == ExportStatus.UNEXPECTED_RETURN_STATUS
 
     # When the continue button is enabled, ensure next instructions are shown
-    mocker.patch.object(print_dialog.continue_button, "isEnabled", return_value=True)
+    print_dialog.continue_button.setEnabled(True)
     print_dialog._device._on_print_preflight_complete()
-    print_dialog._show_generic_error_message.assert_called_once_with()
-    assert print_dialog.error_status == ExportStatus.UNEXPECTED_RETURN_STATUS
+    print_dialog._show_error_message.assert_called_once_with()
+    assert print_dialog.status == ExportStatus.UNEXPECTED_RETURN_STATUS
+
+    _assert_is_error_state(print_dialog)

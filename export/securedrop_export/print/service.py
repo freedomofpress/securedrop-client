@@ -3,12 +3,36 @@ import os
 import signal
 import subprocess
 import time
+from pathlib import Path
 
+from securedrop_export.directory import safe_mkdir
 from securedrop_export.exceptions import ExportException, TimeoutException, handler
 
 from .status import Status
 
 logger = logging.getLogger(__name__)
+
+
+# We support viewing, but not printing, these mimetypes.
+# In future we should consolidate all our mimetype
+# controls into one place.
+# See https://github.com/freedomofpress/securedrop-workstation/issues/842,
+# https://github.com/freedomofpress/securedrop-workstation/issues/1139
+MIMETYPE_UNPRINTABLE = (
+    "audio/",
+    "video/",
+)
+
+# Not unprintable (could print individual files in the archive), just not yet implemented
+MIMETYPE_ARCHIVE = [
+    "application/vnd.djvu",
+    "application/vnd.rar",
+    "application/zip",
+    "application/x-7z-compressed",
+]
+
+MIMETYPE_PRINT_WITHOUT_CONVERSION = ["application/pdf", "text/plain"]
+LIBREOFFICE_DESKTOP_DIR = Path("/usr/share/applications/")
 
 
 class Service:
@@ -41,8 +65,6 @@ class Service:
         logger.info("Printing all files from archive")
         self._check_printer_setup()
         self._print_all_files()
-        # When client can accept new print statuses, we will return
-        # a success status here
         return Status.PRINT_SUCCESS
 
     def printer_preflight(self) -> Status:
@@ -210,53 +232,150 @@ class Service:
 
     def _print_test_page(self):
         logger.info("Printing test page")
-        self._print_file("/usr/share/cups/data/testprint")
+        testprint = Path("/usr/share/cups/data/testprint")
+        self._print_file(testprint)
 
     def _print_all_files(self):
-        files_path = os.path.join(self.submission.tmpdir, "export_data/")
-        files = os.listdir(files_path)
+        print_directory = Path(Path(self.submission.tmpdir, "export_data"))
+        files = os.listdir(print_directory)
         for print_count, f in enumerate(files):
-            file_path = os.path.join(files_path, f)
+            file_path = Path(print_directory, f)
             self._print_file(file_path)
-            logger.info(f"Printing document {print_count} of {len(files)}")
+            logger.info(f"Printing document {print_count + 1} of {len(files)}")
 
-    def _is_open_office_file(self, filename):
-        OPEN_OFFICE_FORMATS = [
-            ".doc",
-            ".docx",
-            ".xls",
-            ".xlsx",
-            ".ppt",
-            ".pptx",
-            ".odt",
-            ".ods",
-            ".odp",
-            ".rtf",
+    def _get_supported_mimetypes_libreoffice(self, desktop_dir: Path):
+        """
+        Return a list of mimetypes supported by Libreoffice programs.
+
+        desktop_dir is a path, such as /usr/share/applications/, specified
+        by the constant LIBREOFFICE_DESKTOP_FILES.
+        """
+        supported_mimetypes: set[str] = set()
+        libreoffice_programs = [
+            "libreoffice-base",
+            "libreoffice-calc",
+            "libreoffice-draw",
+            "libreoffice-impress",
+            "libreoffice-math",
+            "libreoffice-writer",
         ]
-        for extension in OPEN_OFFICE_FORMATS:
-            if os.path.basename(filename).endswith(extension):
-                return True
-        return False
+        for item in libreoffice_programs:
+            desktop_file = Path(desktop_dir, f"{item}.desktop")
+            if desktop_file.exists():
+                with open(desktop_file) as f:
+                    for line in f.readlines():
+                        if line.startswith("MimeType="):
+                            # Semicolon-separated list; don't leave empty element at the end
+                            supported_mimetypes.update(line.strip("MimeType=").split(";")[:-1])
 
-    def _print_file(self, file_to_print):
-        # If the file to print is an (open)office document, we need to call unoconf to
-        # convert the file to pdf as printer drivers do not support this format
+        return supported_mimetypes
 
-        if self._is_open_office_file(file_to_print):
-            logger.info("Converting Office document to pdf")
-            folder = os.path.dirname(file_to_print)
-            converted_filename = file_to_print + ".pdf"
-            converted_path = os.path.join(folder, converted_filename)
+    def _needs_pdf_conversion(self, filename: Path):
+        """
+        Checks mimetype of a file and returns True if file must be converted
+        to PDF before attempting to print.
+
+        Raises ExportException for unprintable mimetypes or on mimetype
+        discovery error.
+        """
+        mimetype = None
+        supported_types: set[str] = set()
+
+        try:
+            supported_types = self._get_supported_mimetypes_libreoffice(LIBREOFFICE_DESKTOP_DIR)
+        except OSError as e:
+            logger.error(f"Could not get supported mimetypes list: {e}")
+            raise ExportException(sdstatus=Status.ERROR_MIMETYPE_DISCOVERY)
+        if len(supported_types) == 0:
+            raise ExportException(sdstatus=Status.ERROR_MIMETYPE_DISCOVERY)
+
+        try:
+            # b'filename that may have spaces.docx: application/bla\n'
+            # use magic bytes (-M) for filetype detection
+            mimetype = (
+                subprocess.check_output(["mimetype", "-M", filename])
+                .decode()
+                .split(":")[-1]
+                .strip()
+            )
+        except subprocess.CalledProcessError:
+            logger.error(f"Could not process mimetype of {filename}")
+            raise ExportException(sdstatus=Status.ERROR_MIMETYPE_UNKNOWN)
+        # Don't print "audio/*", "video/*", or archive mimetypes
+        if mimetype.startswith(MIMETYPE_UNPRINTABLE) or mimetype in MIMETYPE_ARCHIVE:
+            logger.info(f"Unprintable file {filename}")
+            raise ExportException(sdstatus=Status.ERROR_UNPRINTABLE_TYPE)
+        elif mimetype in MIMETYPE_PRINT_WITHOUT_CONVERSION:
+            # Print directly, no need to convert
+            logger.debug(f"{filename} can skip PDF conversion")
+            return False
+        elif mimetype in supported_types:
+            logger.debug(f"{filename} will be converted to PDF")
+            return True
+        else:
+            logger.error("Mimetype is unknown or unsupported.")
+            raise ExportException(sdstatus=Status.ERROR_MIMETYPE_UNKNOWN)
+
+    def _print_file(self, file_to_print: Path):
+        """
+        Print a file, attempting to convert to a printable format (PDF)
+        if the mimetype is not directly printable.
+
+        file_to_print: Path representing absolute path to target file.
+        """
+        if self._needs_pdf_conversion(file_to_print):
+            logger.info("Convert to pdf for printing")
+
+            # Put converted files in a subdirectory out of an abundance
+            # of caution. Libreoffice conversion uses a fixed name and will
+            # overwrite existing files of the same name. Right now we
+            # only send one file at a time, but if we ever batch these files
+            # we don't want to overwrite (eg) memo.pdf with memo.docx
+            safe_mkdir(file_to_print.parent, "print-pdf")
+            printable_folder = file_to_print.parent / "print-pdf"
+
+            # The filename is deterined by LibreOffice - it's the original stem
+            # (name minus extension) plus the new extension (.pdf).
+            converted_filename = printable_folder / (file_to_print.stem + ".pdf")
+            if converted_filename.exists():
+                logger.error("Another file by that name exists already.")
+                logger.debug(f"{converted_filename} would be overwritten")
+                raise ExportException(sdstatus=Status.ERROR_PRINT)
+
+            args: list[str | Path] = [
+                "libreoffice",
+                "--headless",
+                "--safe-mode",
+                "--convert-to",
+                "pdf",
+                "--outdir",
+                printable_folder,
+                file_to_print,
+            ]
 
             try:
-                subprocess.check_call(["unoconv", "-o", converted_path, file_to_print])
-                file_to_print = converted_path
+                logger.debug(f"Convert {file_to_print} to {converted_filename} for printing")
+                output = subprocess.check_output(args).decode()
+                if "Error" in output:
+                    # Even on error, libreoffice returns 0, so we need to check
+                    # the output, as well as check that the file exists
+                    logger.error("Libreoffice headless conversion error")
+                    logger.debug(output)
+                    raise ExportException(sdstatus=Status.ERROR_PRINT)
+
             except subprocess.CalledProcessError as e:
                 raise ExportException(sdstatus=Status.ERROR_PRINT, sderror=e.output)
 
-        logger.info(f"Sending file to printer {self.printer_name}")
+            file_to_print = converted_filename
 
+        if not file_to_print.exists():
+            logger.error(f"Something went wrong: {file_to_print} not found")
+            raise ExportException(sdstatus=Status.ERROR_PRINT)
+
+        logger.info(f"Sending file to printer {self.printer_name}")
         try:
+            # We can switch to using libreoffice --pt $printer_cups_name
+            # here, and either print directly (headless) or use the GUI
             subprocess.check_call(
                 ["xpp", "-P", self.printer_name, file_to_print],
             )
