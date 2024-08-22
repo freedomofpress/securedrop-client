@@ -1,4 +1,5 @@
 import os
+import shutil
 import subprocess
 import tempfile
 from pathlib import Path
@@ -19,6 +20,7 @@ SAMPLE_OUTPUT_LASERJET_PRINTER = b"network beh\nnetwork https\nnetwork ipp\nnetw
 SAMPLE_OUTPUT_UNSUPPORTED_PRINTER = b"network beh\nnetwork https\nnetwork ipp\nnetwork ipps\nnetwork http\nnetwork\nnetwork ipp14\ndirect usb://Canon/QL-700%?serial=A00000A000000\nnetwork lpd"  # noqa
 
 SUPPORTED_MIMETYPE_COUNT = 107  # Mimetypes in the sample LibreOffice .desktop files
+SAMPLE_ODT_FILENAME = "Sample_Print.odt"  # see export/tests/files
 
 
 class TestPrint:
@@ -160,6 +162,49 @@ class TestPrint:
         # Check some basic formats (odt and docx)
         assert "application/vnd.oasis.opendocument.text" in mimes
         assert "application/vnd.openxmlformats-officedocument.wordprocessingml.document" in mimes
+
+    def test__print_file_with_libreoffice_conversion_integration(self, capsys):
+        apps = Path("/usr/share/applications")
+        if not (apps / "libreoffice-writer.desktop").exists():
+            pytest.skip("libreoffice doesn't appear to be installed")
+
+        # Set up a sample print directory with a real .odt file
+        print_dir = tempfile.TemporaryDirectory()
+        filepath = Path.cwd() / "tests" / "files" / SAMPLE_ODT_FILENAME
+        shutil.copy(filepath, print_dir.name)
+
+        target = Path(print_dir.name, SAMPLE_ODT_FILENAME)
+        expected_conversion_file = target.parent / "print-pdf" / (target.stem + ".pdf")
+
+        with (
+            mock.patch("subprocess.check_call") as mock_print_xpp,
+            mock.patch("securedrop_export.print.service.logger.info") as log,
+            mock.patch.object(self.service, "_wait_for_print") as mock_wait_for_print,
+        ):
+            self.service._print_file(target)
+
+        assert expected_conversion_file.exists()
+        assert mock_wait_for_print.call_count == 1
+        assert mock_print_xpp.call_count == 1
+        mock_print_xpp.assert_has_calls(
+            [
+                mock.call(
+                    [
+                        "xpp",
+                        "-P",
+                        "sdw-printer",
+                        expected_conversion_file,
+                    ],
+                ),
+            ]
+        )
+        assert log.call_count == 2
+        log.assert_has_calls(
+            [
+                mock.call("Convert to pdf for printing"),
+                mock.call("Sending file to printer sdw-printer"),
+            ]
+        )
 
     @mock.patch("subprocess.run")
     def test_install_printer_ppd_laserjet(self, mocker):
@@ -379,6 +424,7 @@ class TestPrint:
             self.service._print_file(filepath)
 
         assert check_output.call_count == 1
+
         check_output.assert_has_calls(
             [
                 mock.call(
