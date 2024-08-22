@@ -1,8 +1,8 @@
-securedrop-client (0.13.0~rc1) unstable; urgency=medium
+securedrop-client (0.13.0) unstable; urgency=medium
 
   * see changelog.md
 
- -- SecureDrop Team <securedrop@freedom.press>  Thu, 25 Jul 2024 20:45:40 -0400
+ -- SecureDrop Team <securedrop@freedom.press>  Thu, 22 Aug 2024 18:41:50 -0400
 
 securedrop-client (0.12.0) unstable; urgency=medium
 
