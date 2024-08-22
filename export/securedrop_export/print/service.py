@@ -12,22 +12,19 @@ from .status import Status
 
 logger = logging.getLogger(__name__)
 
+
 # We support viewing, but not printing, these mimetypes.
 # In future we should consolidate all our mimetype
 # controls into one place.
 # See https://github.com/freedomofpress/securedrop-workstation/issues/842,
 # https://github.com/freedomofpress/securedrop-workstation/issues/1139
-MIMETYPE_UNPRINTABLE = [
-    "audio/mp4",
-    "audio/mpeg",
-    "audio/x-vorbis",
-    "audio/x-wav",
-    "video/quicktime",
-    "video/x-theora",
-    "video/mp4",
-    "video/webm",
-    "video/x-msvideo",
-    "video/x-ms-wmv",
+MIMETYPE_UNPRINTABLE = (
+    "audio/",
+    "video/",
+)
+
+# Not unprintable (could print individual files in the archive), just not yet implemented
+MIMETYPE_ARCHIVE = [
     "application/vnd.djvu",
     "application/vnd.rar",
     "application/zip",
@@ -266,8 +263,7 @@ class Service:
             desktop_file = Path(desktop_dir, f"{item}.desktop")
             if desktop_file.exists():
                 with open(desktop_file) as f:
-                    lines = f.readlines()
-                    for line in lines:
+                    for line in f.readlines():
                         if line.startswith("MimeType="):
                             # Semicolon-separated list; don't leave empty element at the end
                             supported_mimetypes.update(line.strip("MimeType=").split(";")[:-1])
@@ -305,8 +301,8 @@ class Service:
         except subprocess.CalledProcessError:
             logger.error(f"Could not process mimetype of {filename}")
             raise ExportException(sdstatus=Status.ERROR_MIMETYPE_UNKNOWN)
-
-        if mimetype in MIMETYPE_UNPRINTABLE:
+        # Don't print "audio/*", "video/*", or archive mimetypes
+        if mimetype.startswith(MIMETYPE_UNPRINTABLE) or mimetype in MIMETYPE_ARCHIVE:
             logger.info(f"Unprintable file {filename}")
             raise ExportException(sdstatus=Status.ERROR_UNPRINTABLE_TYPE)
         elif mimetype in MIMETYPE_PRINT_WITHOUT_CONVERSION:
@@ -328,7 +324,7 @@ class Service:
         file_to_print: Path representing absolute path to target file.
         """
         if self._needs_pdf_conversion(file_to_print):
-            logger.debug("Attempting to convert to pdf for printing")
+            logger.info("Convert to pdf for printing")
 
             # Put converted files in a subdirectory out of an abundance
             # of caution. Libreoffice conversion uses a fixed name and will
@@ -336,24 +332,25 @@ class Service:
             # only send one file at a time, but if we ever batch these files
             # we don't want to overwrite (eg) memo.pdf with memo.docx
             safe_mkdir(file_to_print.parent, "print-pdf")
-            printable_folder = Path(file_to_print.parent, "print-pdf")
+            printable_folder = file_to_print.parent / "print-pdf"
 
             # The filename is deterined by LibreOffice - it's the original stem
             # (name minus extension) plus the new extension (.pdf).
-            converted_filename = Path(printable_folder, Path(file_to_print.stem + ".pdf"))
+            converted_filename = printable_folder / (file_to_print.stem + ".pdf")
             if converted_filename.exists():
                 logger.error("Another file by that name exists already.")
+                logger.debug(f"{converted_filename} would be overwritten")
                 raise ExportException(sdstatus=Status.ERROR_PRINT)
 
-            args = [
+            args: list[str | Path] = [
                 "libreoffice",
                 "--headless",
                 "--safe-mode",
                 "--convert-to",
                 "pdf",
                 "--outdir",
-                str(printable_folder),
-                str(file_to_print),
+                printable_folder,
+                file_to_print,
             ]
 
             try:
@@ -363,7 +360,7 @@ class Service:
                     # Even on error, libreoffice returns 0, so we need to check
                     # the output, as well as check that the file exists
                     logger.error("Libreoffice headless conversion error")
-                    logger.debug(f"{output}")
+                    logger.debug(output)
                     raise ExportException(sdstatus=Status.ERROR_PRINT)
 
             except subprocess.CalledProcessError as e:
@@ -377,7 +374,7 @@ class Service:
 
         logger.info(f"Sending file to printer {self.printer_name}")
         try:
-            # We can switch to useing libreoffice --pt $printer_cups_name
+            # We can switch to using libreoffice --pt $printer_cups_name
             # here, and either print directly (headless) or use the GUI
             subprocess.check_call(
                 ["xpp", "-P", self.printer_name, file_to_print],
