@@ -2,6 +2,7 @@
 
 ## 0.13.0
 
+* Support direct printing of image types supported by `cups` (#2174)
 * Broaden printing support to all filetypes supported by LibreOffice (#2166)
 * Display an error message if user tries to print an unprintable file type (#2166)
 * Use magic bytes to detect file type in print workflow (#2166)
