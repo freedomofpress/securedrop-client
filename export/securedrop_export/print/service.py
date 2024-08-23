@@ -321,7 +321,7 @@ class Service:
             )
         except subprocess.CalledProcessError:
             logger.error(f"Could not process mimetype of {filename}")
-            raise ExportException(sdstatus=Status.ERROR_MIMETYPE_UNKNOWN)
+            raise ExportException(sdstatus=Status.ERROR_MIMETYPE_DISCOVERY)
         # Don't print "audio/*", "video/*", or archive mimetypes
         if mimetype.startswith(MIMETYPE_UNPRINTABLE) or mimetype in MIMETYPE_ARCHIVE:
             logger.info(f"Unprintable file {filename}")
@@ -335,7 +335,7 @@ class Service:
             return True
         else:
             logger.error("Mimetype is unknown or unsupported.")
-            raise ExportException(sdstatus=Status.ERROR_MIMETYPE_UNKNOWN)
+            raise ExportException(sdstatus=Status.ERROR_MIMETYPE_UNSUPPORTED)
 
     def _print_file(self, file_to_print: Path):
         """
