@@ -31,7 +31,28 @@ MIMETYPE_ARCHIVE = [
     "application/x-7z-compressed",
 ]
 
-MIMETYPE_PRINT_WITHOUT_CONVERSION = ["application/pdf", "text/plain"]
+# These are a subset of mimetypes that cups supports for direct printing:
+# see /usr/share/cups/mime/mime.types
+MIMETYPE_PRINT_WITHOUT_CONVERSION = [
+    "application/pdf",
+    "text/plain",
+    "image/gif",
+    "image/png",
+    "image/jpeg",
+    "image/pwg-raster",
+    "image/tiff",
+    "image/x-photocd",
+    "image/x-portable-anymap",
+    "image/x-portable-bitmap",
+    "image/x-portable-graymap",
+    "image/x-portable-pixmap",
+    "image/x-sgi-rgb",
+    "image/x-xbitmap",
+    "image/x-xpixmap",
+    "image/x-sun-raster",
+    "image/x-bitmap",
+    "image/x-icon",
+]
 LIBREOFFICE_DESKTOP_DIR = Path("/usr/share/applications/")
 
 
