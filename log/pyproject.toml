@@ -13,7 +13,7 @@ redis = "=3.3.11"
 [tool.poetry.group.dev.dependencies]
 mypy = "^1.4.1"
 types-redis = "<5"
-types-setuptools = ">=68,<72"
+types-setuptools = ">=68,<74"
 
 [tool.mypy]
 python_version = "3.11"
