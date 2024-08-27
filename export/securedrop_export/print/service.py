@@ -314,10 +314,7 @@ class Service:
             # b'filename that may have spaces.docx: application/bla\n'
             # use magic bytes (-M) for filetype detection
             mimetype = (
-                subprocess.check_output(["mimetype", filename])
-                .decode()
-                .split(":")[-1]
-                .strip()
+                subprocess.check_output(["mimetype", filename]).decode().split(":")[-1].strip()
             )
         except subprocess.CalledProcessError:
             logger.error(f"Could not process mimetype of {filename}")
