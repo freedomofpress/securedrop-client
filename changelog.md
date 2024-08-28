@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.13.1
+
+* Ensure accurate mimetype detection of Office files, add additional sample files to integration tests (#2184)
+* Support direct printing of image types supported by `cups` (#2174)
+* Broaden printing support to all filetypes supported by LibreOffice (#2166)
+* Display an error message if user tries to print an unprintable file type (#2166)
+* Use single PrintDialog GUI element for all print actions (#2143)
+* Remove unused _from_string methods from SDK (#2144)
+* Update build toolchain and `setuptools` for CVE-2024-6345 (#2136, [securedrop-builder#501](https://github.com/freedomofpress/securedrop-builder/pull/501))
+* Update `ruff` to 0.5.4 (#2138)
+
 ## 0.12.0
 
 * Support viewing .heic and .avif files (#2110)
