@@ -4353,7 +4353,7 @@ def test_ConversationView_add_not_downloaded_file(mocker, homedir, source, sessi
 def test_DeleteSource_from_source_menu_when_user_is_loggedout(mocker):
     mock_controller = mocker.MagicMock()
     mock_controller.api = None
-    mock_source = mocker.MagicMock()
+    mock_source = factory.Source()
     mock_delete_source_dialog_instance = mocker.MagicMock(DeleteSourceDialog)
     mock_delete_source_dialog = mocker.MagicMock()
     mock_delete_source_dialog.return_value = mock_delete_source_dialog_instance

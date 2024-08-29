@@ -18,6 +18,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
 from gettext import gettext as _
+from gettext import ngettext
 
 from securedrop_client.db import Source
 from securedrop_client.gui.base import ModalDialog
@@ -26,23 +27,34 @@ from securedrop_client.gui.base import ModalDialog
 class DeleteSourceDialog(ModalDialog):
     """Used to confirm deletion of source accounts."""
 
-    def __init__(self, source: Source) -> None:
+    def __init__(self, sources: set[Source]) -> None:
         super().__init__(show_header=False, dangerous=True)
+        self.sources = sources
 
-        self.source = source
+        # If the dialog is constructed with no sources, show a warning; otherwise,
+        # confirm the number and designation of the sources to be deleted
+        num_sources = len(sources)
+        if num_sources == 0:
+            self._show_warning_nothing_selected()
+        else:
+            continue_text = ngettext(
+                "YES, DELETE ENTIRE SOURCE ACCOUNT",
+                "YES, DELETE {number} SOURCE ACCOUNTS",
+                num_sources,
+            ).format(number=num_sources)
 
-        self.body.setText(self.make_body_text())
-        self.continue_button.setText(_("YES, DELETE ENTIRE SOURCE ACCOUNT"))
-        self.cancel_button.setDefault(True)
-        self.cancel_button.setFocus()
-        self.confirmation_label.setText(_("Are you sure this is what you want?"))
-        self.adjustSize()
+            self.body.setText(self.make_body_text(self.sources))
+            self.continue_button.setText(continue_text)
+            self.cancel_button.setDefault(True)
+            self.cancel_button.setFocus()
+            self.confirmation_label.setText(_("Are you sure this is what you want?"))
+            self.adjustSize()
 
-    def make_body_text(self) -> str:
+    def make_body_text(self, sources: set[Source]) -> str:
         message_tuple = (
-            "<style>",
-            "p {{white-space: nowrap;}}",
-            "</style>",
+            "<p>",
+            _("Delete entire account for: {source_or_sources}?"),
+            "</p>",
             "<p><b>",
             _("When the entire account for a source is deleted:"),
             "</b></p>",
@@ -58,4 +70,23 @@ class DeleteSourceDialog(ModalDialog):
             "<p>&nbsp;</p>",
         )
 
-        return "".join(message_tuple).format(source=f"<b>{self.source.journalist_designation}</b>")
+        return "".join(message_tuple).format(
+            source_or_sources=f"<b>{self._get_source_names(sources)}</b>"
+        )
+
+    def _get_source_names(self, sources: set[Source]) -> str:
+        """
+        Helper. Return a comma-separated list of journalist designations.
+        """
+        return ", ".join([s.journalist_designation for s in sources])
+
+    def _show_warning_nothing_selected(self) -> None:
+        """
+        Helper. Display warning if no sources are selected for deletion.
+        Disables "Continue" button so user must close or cancel dialog.
+        """
+        self.continue_button.setEnabled(False)
+        self.cancel_button.setFocus()
+        self.cancel_button.setDefault(True)
+        self.body.setText(_("No sources have been selected."))
+        self.adjustSize()

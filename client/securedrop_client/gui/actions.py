@@ -80,7 +80,7 @@ class DeleteSourceAction(QAction):
         source: Source,
         parent: QMenu,
         controller: Controller,
-        confirmation_dialog: Callable[[Source], QDialog],
+        confirmation_dialog: Callable[[set[Source]], QDialog],
     ) -> None:
         self.source = source
         self.controller = controller
@@ -88,7 +88,9 @@ class DeleteSourceAction(QAction):
 
         super().__init__(text, parent)
 
-        self._confirmation_dialog = confirmation_dialog(self.source)
+        # DeleteSource Dialog can accept more than one source (bulk delete),
+        # but when triggered from this menu, only applies to one source
+        self._confirmation_dialog = confirmation_dialog(set([self.source]))
         self._confirmation_dialog.accepted.connect(
             lambda: self.controller.delete_source(self.source)
         )
@@ -119,6 +121,7 @@ class DeleteConversationAction(QAction):
 
         super().__init__(text, parent)
 
+        # DeleteConversationDialog accepts only one source
         self._confirmation_dialog = confirmation_dialog(self.source)
         self._confirmation_dialog.accepted.connect(lambda: self._on_confirmation_dialog_accepted())
         self.triggered.connect(self.trigger)
