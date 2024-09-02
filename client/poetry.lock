@@ -229,12 +229,12 @@ files = [
 
 [[package]]
 name = "diffoscope"
-version = "276"
+version = "277"
 description = "in-depth comparison of files, archives, and directories"
 optional = false
 python-versions = ">=3.7"
 files = [
-    {file = "diffoscope-276.tar.gz", hash = "sha256:094d1f8c312ef9e776247c5f7653b7953dc9c41a037683a1a5937d63a232584a"},
+    {file = "diffoscope-277.tar.gz", hash = "sha256:d2d4236d7b72be8344b0c7a19506350a7b17d316bcd79d7bfc113e10400b0e10"},
 ]
 
 [package.dependencies]
@@ -1794,13 +1794,13 @@ files = [
 
 [[package]]
 name = "types-setuptools"
-version = "73.0.0.20240822"
+version = "74.0.0.20240831"
 description = "Typing stubs for setuptools"
 optional = false
 python-versions = ">=3.8"
 files = [
-    {file = "types-setuptools-73.0.0.20240822.tar.gz", hash = "sha256:3a060681098eb3fbc2fea0a86f7f6af6aa1ca71906039d88d891ea2cecdd4dbf"},
-    {file = "types_setuptools-73.0.0.20240822-py3-none-any.whl", hash = "sha256:b9eba9b68546031317a0fa506d4973641d987d74f79e7dd8369ad4f7a93dea17"},
+    {file = "types-setuptools-74.0.0.20240831.tar.gz", hash = "sha256:8b4a544cc91d42a019dc1e41fd397608b4bc7e20c7d7d5bc326589ffd9e8f8a1"},
+    {file = "types_setuptools-74.0.0.20240831-py3-none-any.whl", hash = "sha256:4d9d18ea9214828d695a384633130009f5dee2681a157ee873d3680b62931590"},
 ]
 
 [[package]]
@@ -2049,4 +2049,4 @@ multidict = ">=4.0"
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.11"
-content-hash = "4e5d8c3715272d1c8f7b16858776870c91ef6555b10f92a2e37125c81da88577"
+content-hash = "50e1992514629d1c946acb22e580ded3f4c5ffb7dcc7fc0e04c4a3a00d3a3cf9"
