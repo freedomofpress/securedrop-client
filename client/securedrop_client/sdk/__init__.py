@@ -109,7 +109,6 @@ class API:
         self.token_journalist_uuid: str | None = None
         self.first_name: str | None = None
         self.last_name: str | None = None
-        self.req_headers: dict[str, str] = dict()
         self.development_mode: bool = not proxy
         self.default_request_timeout = default_request_timeout or DEFAULT_REQUEST_TIMEOUT
         self.default_download_timeout = default_download_timeout or DEFAULT_DOWNLOAD_TIMEOUT
@@ -214,6 +213,7 @@ class API:
 
                 # Check for an error response
                 if contents[0:1] == b"{":
+                    logger.debug(f"Retry {retry}, received JSON error response")
                     return self._handle_json_response(contents)
 
                 # Get the headers
@@ -278,7 +278,7 @@ class API:
             # item is missing. In that case we return to the caller to
             # handle that with an appropriate message. However, if the error
             # is not a 404, then we raise.
-            raise BaseError("Unknown error")
+            raise BaseError(f"Unknown error, status: {result['status']}")
 
         data = json.loads(result["body"])
         return JSONResponse(data=data, status=result["status"], headers=result["headers"])
@@ -377,17 +377,20 @@ class API:
         self.first_name = response.data["journalist_first_name"]
         self.last_name = response.data["journalist_last_name"]
 
-        self.update_auth_header()
-
         return True
 
-    def update_auth_header(self) -> None:
+    def build_headers(self) -> dict[str, str]:
+        # Build headers dynamically each time to make sure
+        # the dict is safe to mutate.
+        headers = {
+            "Content-Type": "application/json",
+            "Accept": "application/json",
+        }
+
         if self.token is not None:
-            self.req_headers = {
-                "Authorization": "Token " + self.token,
-                "Content-Type": "application/json",
-                "Accept": "application/json",
-            }
+            headers["Authorization"] = "Token " + self.token
+
+        return headers
 
     def get_sources(self) -> list[Source]:
         """
@@ -401,7 +404,7 @@ class API:
         response = self._send_json_request(
             method,
             path_query,
-            headers=self.req_headers,
+            headers=self.build_headers(),
             timeout=self.default_request_timeout,
         )
         assert isinstance(response, JSONResponse)
@@ -428,7 +431,7 @@ class API:
         response = self._send_json_request(
             method,
             path_query,
-            headers=self.req_headers,
+            headers=self.build_headers(),
             timeout=self.default_request_timeout,
         )
         assert isinstance(response, JSONResponse)
@@ -452,7 +455,7 @@ class API:
         response = self._send_json_request(
             method,
             path_query,
-            headers=self.req_headers,
+            headers=self.build_headers(),
             timeout=self.default_request_timeout,
         )
         assert isinstance(response, JSONResponse)
@@ -482,7 +485,7 @@ class API:
         response = self._send_json_request(
             method,
             path_query,
-            headers=self.req_headers,
+            headers=self.build_headers(),
             timeout=self.default_request_timeout,
         )
         assert isinstance(response, JSONResponse)
@@ -508,7 +511,7 @@ class API:
         response = self._send_json_request(
             method,
             path_query,
-            headers=self.req_headers,
+            headers=self.build_headers(),
             timeout=self.default_request_timeout,
         )
         assert isinstance(response, JSONResponse)
@@ -533,7 +536,7 @@ class API:
         response = self._send_json_request(
             method,
             path_query,
-            headers=self.req_headers,
+            headers=self.build_headers(),
             timeout=self.default_request_timeout,
         )
         assert isinstance(response, JSONResponse)
@@ -559,7 +562,7 @@ class API:
         response = self._send_json_request(
             method,
             path_query,
-            headers=self.req_headers,
+            headers=self.build_headers(),
             timeout=self.default_request_timeout,
         )
         assert isinstance(response, JSONResponse)
@@ -590,7 +593,7 @@ class API:
             response = self._send_json_request(
                 method,
                 path_query,
-                headers=self.req_headers,
+                headers=self.build_headers(),
                 timeout=self.default_request_timeout,
             )
             assert isinstance(response, JSONResponse)
@@ -615,7 +618,7 @@ class API:
         response = self._send_json_request(
             method,
             path_query,
-            headers=self.req_headers,
+            headers=self.build_headers(),
             timeout=self.default_request_timeout,
         )
         assert isinstance(response, JSONResponse)
@@ -644,7 +647,7 @@ class API:
         response = self._send_json_request(
             method,
             path_query,
-            headers=self.req_headers,
+            headers=self.build_headers(),
             timeout=self.default_request_timeout,
         )
         assert isinstance(response, JSONResponse)
@@ -685,7 +688,7 @@ class API:
             method,
             path_query,
             stream=True,
-            headers=self.req_headers,
+            headers=self.build_headers(),
             timeout=timeout or self.default_download_timeout,
         )
 
@@ -713,7 +716,7 @@ class API:
         response = self._send_json_request(
             method,
             path_query,
-            headers=self.req_headers,
+            headers=self.build_headers(),
             timeout=self.default_request_timeout,
         )
         assert isinstance(response, JSONResponse)
@@ -741,7 +744,7 @@ class API:
         response = self._send_json_request(
             method,
             path_query,
-            headers=self.req_headers,
+            headers=self.build_headers(),
             timeout=self.default_request_timeout,
         )
         assert isinstance(response, JSONResponse)
@@ -761,7 +764,7 @@ class API:
         response = self._send_json_request(
             method,
             path_query,
-            headers=self.req_headers,
+            headers=self.build_headers(),
             timeout=self.default_request_timeout,
         )
         assert isinstance(response, JSONResponse)
@@ -795,7 +798,7 @@ class API:
             method,
             path_query,
             body=json.dumps(reply),
-            headers=self.req_headers,
+            headers=self.build_headers(),
             timeout=self.default_request_timeout,
         )
         assert isinstance(response, JSONResponse)
@@ -818,7 +821,7 @@ class API:
         response = self._send_json_request(
             method,
             path_query,
-            headers=self.req_headers,
+            headers=self.build_headers(),
             timeout=self.default_request_timeout,
         )
         assert isinstance(response, JSONResponse)
@@ -848,7 +851,7 @@ class API:
             response = self._send_json_request(
                 method,
                 path_query,
-                headers=self.req_headers,
+                headers=self.build_headers(),
                 timeout=self.default_request_timeout,
             )
             assert isinstance(response, JSONResponse)
@@ -872,7 +875,7 @@ class API:
         response = self._send_json_request(
             method,
             path_query,
-            headers=self.req_headers,
+            headers=self.build_headers(),
             timeout=self.default_request_timeout,
         )
         assert isinstance(response, JSONResponse)
@@ -909,7 +912,7 @@ class API:
             method,
             path_query,
             stream=True,
-            headers=self.req_headers,
+            headers=self.build_headers(),
             timeout=self.default_request_timeout,
         )
 
@@ -941,7 +944,7 @@ class API:
         response = self._send_json_request(
             method,
             path_query,
-            headers=self.req_headers,
+            headers=self.build_headers(),
             timeout=self.default_request_timeout,
         )
         assert isinstance(response, JSONResponse)
@@ -964,7 +967,7 @@ class API:
         response = self._send_json_request(
             method,
             path_query,
-            headers=self.req_headers,
+            headers=self.build_headers(),
             timeout=self.default_request_timeout,
         )
         assert isinstance(response, JSONResponse)
@@ -989,7 +992,7 @@ class API:
         response = self._send_json_request(
             method,
             path_query,
-            headers=self.req_headers,
+            headers=self.build_headers(),
             body=body,
             timeout=self.default_request_timeout,
         )
