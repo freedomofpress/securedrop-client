@@ -46,7 +46,7 @@ class MetadataSyncJob(ApiJob):
             os.environ.get("SDEXTENDEDTIMEOUT", self.DEFAULT_REQUEST_TIMEOUT)
         )
         if api_client.default_request_timeout != self.DEFAULT_REQUEST_TIMEOUT:
-            logger.warn(
+            logger.warning(
                 f"{self.__class__.__name__} will use "
                 f"default_request_timeout={api_client.default_request_timeout}"
             )
