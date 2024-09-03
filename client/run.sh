@@ -71,5 +71,9 @@ fi
 
 wait
 
-echo "Starting client, log available at: $SDC_HOME/logs/client.log"
-$PYTHON -m securedrop_client --sdc-home "$SDC_HOME" --no-proxy "$qubes_flag" "$@"
+echo "Starting client, home directory: $SDC_HOME"
+# Create the log file ahead of time so we can tail it before the client launches
+mkdir -p "$SDC_HOME/logs"
+touch "$SDC_HOME/logs/client.log"
+tail -f "$SDC_HOME/logs/client.log" &
+LOGLEVEL=debug $PYTHON -m securedrop_client --sdc-home "$SDC_HOME" --no-proxy "$qubes_flag" "$@"
