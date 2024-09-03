@@ -164,9 +164,7 @@ class DownloadJob(SingleObjectApiJob):
             mark_as_downloaded(type(db_object), db_object.uuid, session)
             logger.info(f"File downloaded to {destination}")
             return destination
-        except BaseError as e:
-            raise e
-        except (ValueError, FileNotFoundError, RuntimeError) as e:
+        except (ValueError, FileNotFoundError, RuntimeError, BaseError) as e:
             logger.error("Download failed")
             logger.debug(f"Download failed: {e}")
             raise DownloadDecryptionException(
