@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.13.2
+
+* Don't let Range header persist into other requests (#2195)
+* Have BaseErrors trigger DownloadDecryptionException in download flow (#2196)
+
 ## 0.13.1
 
 * Ensure accurate mimetype detection of Office files, add additional sample files to integration tests (#2184)
