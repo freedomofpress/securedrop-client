@@ -262,7 +262,7 @@ def test_MessageDownloadJob_with_base_error(mocker, homedir, session, session_ma
     mocker.patch.object(api_client, "download_submission", side_effect=BaseError)
     decrypt_fn = mocker.patch.object(job.gpg, "decrypt_submission_or_reply")
 
-    with pytest.raises(BaseError):
+    with pytest.raises(DownloadDecryptionException):
         job.call_api(api_client, session)
 
     assert message.content is None

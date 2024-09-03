@@ -2434,6 +2434,9 @@ class FileWidget(QWidget):
 
     @pyqtSlot(str, str, str)
     def _on_file_downloaded(self, source_uuid: str, file_uuid: str, filename: str) -> None:
+        logger.debug(
+            f"_on_file_downloaded: {source_uuid} / {file_uuid} ({filename}), expected {self.uuid}"
+        )
         if file_uuid == self.uuid:
             self.downloading = False
             QTimer.singleShot(
@@ -2442,6 +2445,9 @@ class FileWidget(QWidget):
 
     @pyqtSlot(str, str, str)
     def _on_file_missing(self, source_uuid: str, file_uuid: str, filename: str) -> None:
+        logger.debug(
+            f"_on_file_missing: {source_uuid} / {file_uuid} ({filename}), expected {self.uuid}"
+        )
         if file_uuid == self.uuid:
             self.downloading = False
             QTimer.singleShot(
