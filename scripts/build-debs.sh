@@ -11,6 +11,9 @@
 set -euxo pipefail
 
 git --no-pager log -1 --oneline --show-signature --no-color
+# We intentionally want the git tag list to be word-split
+# shellcheck disable=SC2046
+git --no-pager tag -v $(git tag --points-at HEAD)
 
 OCI_RUN_ARGUMENTS="--user=root -v $(pwd):/src:Z"
 
