@@ -36,7 +36,6 @@ from PyQt5.QtGui import (
     QFocusEvent,
     QFont,
     QIcon,
-    QKeySequence,
     QLinearGradient,
     QMouseEvent,
     QPalette,
@@ -84,6 +83,7 @@ from securedrop_client.gui.actions import (
 from securedrop_client.gui.base import SecureQLabel, SvgLabel, SvgPushButton, SvgToggleButton
 from securedrop_client.gui.conversation import DeleteConversationDialog
 from securedrop_client.gui.datetime_helpers import format_datetime_local
+from securedrop_client.gui.shortcuts import Shortcuts
 from securedrop_client.gui.source import DeleteSourceDialog
 from securedrop_client.logic import Controller
 from securedrop_client.resources import load_css, load_icon, load_image, load_movie
@@ -3149,7 +3149,7 @@ class ReplyBoxWidget(QWidget):
         send_button_icon.addPixmap(load_image("send-disabled.svg"), QIcon.Disabled)
         self.send_button.setIcon(send_button_icon)
         self.send_button.setIconSize(QSize(56, 47))
-        self.send_button.setShortcut(QKeySequence("Ctrl+Return"))
+        self.send_button.setShortcut(Shortcuts.SEND.value)
         self.send_button.setDefault(True)
 
         # Set cursor.
