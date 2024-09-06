@@ -6,7 +6,7 @@ from PyQt5.QtWidgets import QMainWindow
 from securedrop_client.gui.base import ModalDialog
 
 
-@pytest.fixture()
+@pytest.fixture
 def modal_dialog(mocker, homedir):
     mocker.patch("PyQt5.QtWidgets.QApplication.activeWindow", return_value=QMainWindow())
 
