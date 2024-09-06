@@ -52,7 +52,7 @@ TIME_FILE_DOWNLOAD = 5000
 TIME_KEYCLICK_ACTION = 5000
 
 
-@pytest.fixture()
+@pytest.fixture
 def lang(request):
     """
     Setup:  Override $LANG as parameterized and configure locale accordingly.
@@ -73,7 +73,7 @@ def lang(request):
     configure_locale_and_language()
 
 
-@pytest.fixture()
+@pytest.fixture
 def print_dialog(request, mocker):
     """
     Fixture that returns a print dialog. Tests using this fixture must
@@ -117,7 +117,7 @@ def _stub_export(mocker, status_string=None):
     return export
 
 
-@pytest.fixture()
+@pytest.fixture
 def export_wizard_multifile(mocker, homedir):
     mocker.patch("PyQt5.QtWidgets.QApplication.activeWindow", return_value=QMainWindow())
 
@@ -130,7 +130,7 @@ def export_wizard_multifile(mocker, homedir):
     )
 
 
-@pytest.fixture()
+@pytest.fixture
 def export_wizard(mocker, homedir):
     mocker.patch("PyQt5.QtWidgets.QApplication.activeWindow", return_value=QMainWindow())
 
@@ -139,7 +139,7 @@ def export_wizard(mocker, homedir):
     return conversation.ExportWizard(export_device, "file123.jpg", ["/mock/path/to/file"])
 
 
-@pytest.fixture()
+@pytest.fixture
 def export_transcript_wizard(mocker, homedir):
     mocker.patch("PyQt5.QtWidgets.QApplication.activeWindow", return_value=QMainWindow())
 
@@ -148,7 +148,7 @@ def export_transcript_wizard(mocker, homedir):
     return conversation.ExportWizard(export_device, "transcript.txt", ["/some/path/transcript.txt"])
 
 
-@pytest.fixture()
+@pytest.fixture
 def i18n():
     """
     Set up locale/language/gettext functions. This enables the use of _().
@@ -156,7 +156,7 @@ def i18n():
     configure_locale_and_language()
 
 
-@pytest.fixture()
+@pytest.fixture
 def homedir(i18n):
     """
     Create a "homedir" for a client.
@@ -180,7 +180,7 @@ def homedir(i18n):
     return tmpdir
 
 
-@pytest.fixture()
+@pytest.fixture
 def mock_export_locked():
     """
     Represents the following scenario:
@@ -211,7 +211,7 @@ def mock_export_locked():
     return device
 
 
-@pytest.fixture()
+@pytest.fixture
 def mock_export_unlocked():
     """
     Represents the following scenario:
@@ -233,7 +233,7 @@ def mock_export_unlocked():
     return device
 
 
-@pytest.fixture()
+@pytest.fixture
 def mock_export_no_usb_then_bad_passphrase():
     """
     Represents the following scenario:
@@ -266,7 +266,7 @@ def mock_export_no_usb_then_bad_passphrase():
     return device
 
 
-@pytest.fixture()
+@pytest.fixture
 def mock_export_fail_early():
     """
     Represents the following scenario:
@@ -299,7 +299,7 @@ def mock_export_fail_early():
     return device
 
 
-@pytest.fixture()
+@pytest.fixture
 def functional_test_app_started_context(
     vcr_api, homedir, reply_status_codes, session, config, qtbot
 ):
@@ -323,7 +323,7 @@ def functional_test_app_started_context(
     return (gui, controller)
 
 
-@pytest.fixture()
+@pytest.fixture
 def functional_test_logged_in_context(functional_test_app_started_context, qtbot):
     """
     Returns a tuple containing the gui window and controller of a configured client after logging in
@@ -348,7 +348,7 @@ def functional_test_logged_in_context(functional_test_app_started_context, qtbot
     return (gui, controller)
 
 
-@pytest.fixture()
+@pytest.fixture
 def functional_test_offline_context(functional_test_logged_in_context, qtbot):
     """
     Returns a tuple containing the gui window and controller of a configured client after making
@@ -374,12 +374,12 @@ def functional_test_offline_context(functional_test_logged_in_context, qtbot):
     return (gui, controller)
 
 
-@pytest.fixture()
+@pytest.fixture
 def config(homedir) -> str:
     os.environ["SD_SUBMISSION_KEY_FPR"] = "65A1B5FF195B56353CC63DFFCC40EF1228271441"
 
 
-@pytest.fixture()
+@pytest.fixture
 def alembic_config(homedir):
     return _alembic_config(homedir)
 
@@ -401,12 +401,12 @@ def _alembic_config(homedir):
     return alembic_path
 
 
-@pytest.fixture()
+@pytest.fixture
 def session_maker(homedir):
     return make_session_maker(homedir)
 
 
-@pytest.fixture()
+@pytest.fixture
 def session(session_maker):
     sess = session_maker
     Base.metadata.create_all(bind=sess.get_bind(), checkfirst=False)
@@ -414,7 +414,7 @@ def session(session_maker):
     sess.close()
 
 
-@pytest.fixture()
+@pytest.fixture
 def reply_status_codes(session) -> None:
     for reply_send_status in ReplySendStatusCodes:
         reply_status = ReplySendStatus(reply_send_status.value)
@@ -422,7 +422,7 @@ def reply_status_codes(session) -> None:
         session.commit()
 
 
-@pytest.fixture()
+@pytest.fixture
 def download_error_codes(session) -> None:
     for download_error_code in DownloadErrorCodes:
         download_error = DownloadError(download_error_code.name)
@@ -430,7 +430,7 @@ def download_error_codes(session) -> None:
         session.commit()
 
 
-@pytest.fixture()
+@pytest.fixture
 def source(session) -> dict:
     args = {"uuid": str(uuid4()), "public_key": PUB_KEY}
     source = Source(
@@ -473,7 +473,7 @@ def create_gpg_test_context(sdc_home):
         )
 
 
-@pytest.fixture()
+@pytest.fixture
 def vcr_api(request):
     module_group = request.module.__name__.split(".")[1]
     library = vcr.VCR(cassette_library_dir=f"tests/{module_group}/data/")
