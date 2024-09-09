@@ -14,7 +14,7 @@ msgstr ""
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"Generated-By: Babel 2.15.0\n"
+"Generated-By: Babel 2.16.0\n"
 
 msgid "{application_name} is already running"
 msgstr ""
@@ -370,9 +370,14 @@ msgid "This file type cannot be printed."
 msgstr ""
 
 msgid "YES, DELETE ENTIRE SOURCE ACCOUNT"
-msgstr ""
+msgid_plural "YES, DELETE {number} SOURCE ACCOUNTS"
+msgstr[0] ""
+msgstr[1] ""
 
 msgid "Are you sure this is what you want?"
+msgstr ""
+
+msgid "Delete entire account for: {source_or_sources}?"
 msgstr ""
 
 msgid "When the entire account for a source is deleted:"
@@ -385,5 +390,8 @@ msgid "Your organization will not be able to send them replies."
 msgstr ""
 
 msgid "All files and messages from that source will also be destroyed."
+msgstr ""
+
+msgid "No sources have been selected."
 msgstr ""
 
