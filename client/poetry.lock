@@ -229,12 +229,12 @@ files = [
 
 [[package]]
 name = "diffoscope"
-version = "276"
+version = "277"
 description = "in-depth comparison of files, archives, and directories"
 optional = false
 python-versions = ">=3.7"
 files = [
-    {file = "diffoscope-276.tar.gz", hash = "sha256:094d1f8c312ef9e776247c5f7653b7953dc9c41a037683a1a5937d63a232584a"},
+    {file = "diffoscope-277.tar.gz", hash = "sha256:d2d4236d7b72be8344b0c7a19506350a7b17d316bcd79d7bfc113e10400b0e10"},
 ]
 
 [package.dependencies]
@@ -1783,24 +1783,24 @@ files = [
 
 [[package]]
 name = "types-python-dateutil"
-version = "2.9.0.20240821"
+version = "2.9.0.20240906"
 description = "Typing stubs for python-dateutil"
 optional = false
 python-versions = ">=3.8"
 files = [
-    {file = "types-python-dateutil-2.9.0.20240821.tar.gz", hash = "sha256:9649d1dcb6fef1046fb18bebe9ea2aa0028b160918518c34589a46045f6ebd98"},
-    {file = "types_python_dateutil-2.9.0.20240821-py3-none-any.whl", hash = "sha256:f5889fcb4e63ed4aaa379b44f93c32593d50b9a94c9a60a0c854d8cc3511cd57"},
+    {file = "types-python-dateutil-2.9.0.20240906.tar.gz", hash = "sha256:9706c3b68284c25adffc47319ecc7947e5bb86b3773f843c73906fd598bc176e"},
+    {file = "types_python_dateutil-2.9.0.20240906-py3-none-any.whl", hash = "sha256:27c8cc2d058ccb14946eebcaaa503088f4f6dbc4fb6093d3d456a49aef2753f6"},
 ]
 
 [[package]]
 name = "types-setuptools"
-version = "73.0.0.20240822"
+version = "74.1.0.20240907"
 description = "Typing stubs for setuptools"
 optional = false
 python-versions = ">=3.8"
 files = [
-    {file = "types-setuptools-73.0.0.20240822.tar.gz", hash = "sha256:3a060681098eb3fbc2fea0a86f7f6af6aa1ca71906039d88d891ea2cecdd4dbf"},
-    {file = "types_setuptools-73.0.0.20240822-py3-none-any.whl", hash = "sha256:b9eba9b68546031317a0fa506d4973641d987d74f79e7dd8369ad4f7a93dea17"},
+    {file = "types-setuptools-74.1.0.20240907.tar.gz", hash = "sha256:0abdb082552ca966c1e5fc244e4853adc62971f6cd724fb1d8a3713b580e5a65"},
+    {file = "types_setuptools-74.1.0.20240907-py3-none-any.whl", hash = "sha256:15b38c8e63ca34f42f6063ff4b1dd662ea20086166d5ad6a102e670a52574120"},
 ]
 
 [[package]]
@@ -2049,4 +2049,4 @@ multidict = ">=4.0"
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.11"
-content-hash = "4e5d8c3715272d1c8f7b16858776870c91ef6555b10f92a2e37125c81da88577"
+content-hash = "5c46b17932a0525244597f7ac243b0bb3fe74da300c6971399d6aa1aeb060d32"
