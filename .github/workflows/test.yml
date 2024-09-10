@@ -43,7 +43,7 @@ jobs:
         if: ${{ matrix.component == 'proxy' }}
       - uses: actions/checkout@v4
       # Install Rust, keep in sync with rust-toolchain.toml
-      - uses: dtolnay/rust-toolchain@1.78.0
+      - uses: dtolnay/rust-toolchain@1.81.0
         if: ${{ matrix.component == 'proxy' }}
       - name: Install dependencies
         run: |
