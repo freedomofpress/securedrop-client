@@ -18,6 +18,7 @@ import securedrop_client.db
 from securedrop_client import db, utils
 from securedrop_client.sdk import Reply, Submission
 from securedrop_client.storage import (
+    SDDatabaseError,
     __update_submissions,
     _cleanup_directory_if_empty,
     _cleanup_flagged_locally_deleted,
@@ -383,13 +384,13 @@ def test_sync_delete_race(homedir, mocker, session_maker, session):
     update_local_storage(session, sources, [message1, message2], [], homedir)
 
     assert source_exists(session, source.uuid) is False
-    with pytest.raises(NoResultFound):
+    with pytest.raises(SDDatabaseError):
         get_message(session, message1.uuid)
 
     assert source_exists(session, source.uuid) is False
-    with pytest.raises(NoResultFound):
+    with pytest.raises(SDDatabaseError):
         get_message(session, message1.uuid)
-    with pytest.raises(NoResultFound):
+    with pytest.raises(SDDatabaseError):
         get_message(session, message2.uuid)
 
 
