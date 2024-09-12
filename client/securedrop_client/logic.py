@@ -855,7 +855,11 @@ class Controller(QObject):
         """
         self.session.commit()  # Needed to flush stale data.
         message = storage.get_message(self.session, uuid)
-        self.message_ready.emit(message.source.uuid, message.uuid, message.content)
+        if message:
+            self.message_ready.emit(message.source.uuid, message.uuid, message.content)
+        else:
+            logger.error("Failed to find message uuid in database")
+            logger.debug(f"Message {uuid} missing from database but download successful")
 
     def on_message_download_failure(self, exception: DownloadException) -> None:
         """
@@ -867,12 +871,12 @@ class Controller(QObject):
             self._submit_download_job(exception.object_type, exception.uuid)
 
         self.session.commit()
-        try:
-            message = storage.get_message(self.session, exception.uuid)
+        message = storage.get_message(self.session, exception.uuid)
+        if message:
             self.message_download_failed.emit(message.source.uuid, message.uuid, str(message))
-        except Exception as e:
-            logger.error("Could not emit message_download_failed")
-            logger.debug(f"Could not emit message_download_failed: {e}")
+        else:
+            logger.warning("Message download failure for uuid not in database.")
+            logger.debug(f"Message {exception.uuid} missing from database, was it deleted?")
 
     def download_new_replies(self) -> None:
         replies = storage.find_new_replies(self.session)
@@ -890,7 +894,11 @@ class Controller(QObject):
         """
         self.session.commit()  # Needed to flush stale data.
         reply = storage.get_reply(self.session, uuid)
-        self.reply_ready.emit(reply.source.uuid, reply.uuid, reply.content)
+        if reply:
+            self.reply_ready.emit(reply.source.uuid, reply.uuid, reply.content)
+        else:
+            logger.error("Reply downloaded but reply uuid missing from database")
+            logger.debug(f"Reply {uuid} downloaded but uuid missing from database")
 
     def on_reply_download_failure(self, exception: DownloadException) -> None:
         """
@@ -902,12 +910,13 @@ class Controller(QObject):
             self._submit_download_job(exception.object_type, exception.uuid)
 
         self.session.commit()
-        try:
-            reply = storage.get_reply(self.session, exception.uuid)
+        reply = storage.get_reply(self.session, exception.uuid)
+        if reply:
             self.reply_download_failed.emit(reply.source.uuid, reply.uuid, str(reply))
-        except Exception as e:
-            logger.error("Could not emit reply_download_failed")
-            logger.debug(f"Could not emit reply_download_failed: {e}")
+        else:
+            # Not necessarily an error, it may have been deleted. Warn.
+            logger.warning("Reply download failure for uuid not in database")
+            logger.debug(f"Reply {exception.uuid} not found in database")
 
     def downloaded_file_exists(self, file: db.File, silence_errors: bool = False) -> bool:
         """
@@ -964,6 +973,12 @@ class Controller(QObject):
         """
         self.session.commit()
         file_obj = storage.get_file(self.session, uuid)
+        if not file_obj:
+            # This shouldn't happen
+            logger.error("File downloaded but uuid missing from database")
+            logger.debug(f"File {uuid} downloaded but uuid missing from database")
+            return
+
         file_obj.download_error = None
         storage.update_file_size(uuid, self.data_dir, self.session)
         self._state.record_file_download(state.FileId(uuid))
@@ -981,7 +996,17 @@ class Controller(QObject):
         else:
             if isinstance(exception, DownloadDecryptionException):
                 logger.error("Failed to decrypt %s", exception.uuid)
-                f = self.get_file(exception.uuid)
+                f = storage.get_file(self.session, exception.uuid)
+                if not f:
+                    # This isn't necessarily an error; the file may have been deleted
+                    # at the server and has been removed from the database.
+                    logger.warning("File download failure for uuid not in database.")
+                    logger.debug(
+                        f"File download failure but uuid {exception.uuid} uuid not in database, "
+                        "was it deleted?"
+                    )
+                    return
+
                 self.file_missing.emit(f.source.uuid, f.uuid, str(f))
             self.gui.update_error_status(_("The file download failed. Please try again."))
 
@@ -1114,7 +1139,11 @@ class Controller(QObject):
         logger.info(f"{reply_uuid} sent successfully")
         self.session.commit()
         reply = storage.get_reply(self.session, reply_uuid)
-        self.reply_succeeded.emit(reply.source.uuid, reply_uuid, reply.content)
+        if reply:
+            self.reply_succeeded.emit(reply.source.uuid, reply_uuid, reply.content)
+        else:
+            logger.error("Reply uuid not found in database")
+            logger.debug(f"Reply {reply_uuid} uuid not found in database")
 
     def on_reply_failure(self, exception: SendReplyJobError | SendReplyJobTimeoutError) -> None:
         logger.debug(f"{exception.reply_uuid} failed to send")
@@ -1123,8 +1152,18 @@ class Controller(QObject):
         if isinstance(exception, SendReplyJobError):
             self.reply_failed.emit(exception.reply_uuid)
 
-    def get_file(self, file_uuid: str) -> db.File:
+    def get_file(self, file_uuid: str) -> db.File | None:
+        """
+        Wraps storage.py. GUI caller can use this method; internally, prioritize
+        storage.get_file.
+        """
         file = storage.get_file(self.session, file_uuid)
+        if not file:
+            # Not necessarily an error
+            logger.warning("get_file for uuid not in database")
+            logger.debug(f"File {file_uuid} not found in database")
+            return None
+
         self.session.refresh(file)
         return file
 
