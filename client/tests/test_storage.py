@@ -1795,6 +1795,31 @@ def test_get_reply(mocker, session):
     assert result == reply
 
 
+def test_get_object_does_not_exist_raises_SDDatabaseError(mocker, session):
+    source = factory.Source()
+    # Add the source, but not the items
+    session.add(source)
+
+    items = [
+        factory.File(source=source),
+        factory.Message(source=source),
+        factory.Reply(source=source),
+    ]
+
+    def get_object(item) -> callable:
+        if isinstance(item, db.File):
+            return get_file
+        elif isinstance(item, db.Reply):
+            return get_reply
+        else:  # db.Message
+            return get_message
+
+    for item in items:
+        get_item = get_object(item)
+        with pytest.raises(SDDatabaseError):
+            get_item(session, item.uuid)
+
+
 def test_mark_pending_replies_as_failed(mocker, session, reply_status_codes):
     source = factory.Source()
     pending_status = (

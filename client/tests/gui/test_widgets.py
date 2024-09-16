@@ -3571,6 +3571,34 @@ def test_FileWidget_on_file_missing_does_not_show_download_button_when_uuid_does
     fw.download_button.show.assert_not_called()
 
 
+def test_FileWidget_deleted_db_record(mocker, session, source):
+    """
+    If the db record for a File use to construct a FileWidget is not in the database, the FileWidget
+    representing that record should be deleted.
+    """
+    file = factory.File(source=source["source"], is_downloaded=True)
+
+    controller = mocker.MagicMock()
+    controller.get_file.return_value = None  # Record deleted from database
+
+    fw = FileWidget(
+        file,
+        controller,
+        mocker.MagicMock(),
+        mocker.MagicMock(),
+        mocker.MagicMock(),
+        0,
+        123,
+    )
+
+    delete_self = mocker.patch.object(fw, "deleteLater")
+
+    # A method that calls controller.get_file, meaning the record returned could be None
+    fw.stop_button_animation()
+
+    delete_self.assert_called()
+
+
 def test_FileWidget__on_export_clicked(mocker, session, source):
     """
     Ensure preflight checks start when the EXPORT button is clicked and that password is requested
