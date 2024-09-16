@@ -233,7 +233,8 @@ class TestAPI(TestShared):
                 return 1
 
         class StubbedStderr:
-            def __init__(self):
+            def __init__(self, content_length):
+                self.content_length = content_length
                 self.closed = False
 
             def read(self, n=-1):
@@ -243,7 +244,7 @@ class TestAPI(TestShared):
                             "content-type": "application/pgp-encrypted",
                             "etag": "sha256:3aa5ec3fe60b235a76bfc2c3a5c5d525687f04c1670060632a21b6a77c131f65",  # noqa: E501
                             "content-disposition": "attachment; filename=3-assessable_firmness-doc.gz.gpg",  # noqa: E501
-                            "content-length": "651",
+                            "content-length": self.content_length,
                             "accept-ranges": "bytes",
                         }
                     }
@@ -264,7 +265,7 @@ class TestAPI(TestShared):
                 if "securedrop.Proxy" in cmd or "securedrop-proxy" in cmd:
                     self._is_securedrop_proxy = True
                     self.stdout = StubbedStdout()
-                    self.stderr = StubbedStderr()
+                    self.stderr = StubbedStderr(len(content))
                 else:
                     self._is_securedrop_proxy = False
 
