@@ -97,9 +97,9 @@ MINIMUM_ANIMATION_DURATION_IN_MILLISECONDS = 300
 NO_DELAY = 1
 
 
-class TopPane(QWidget):
+class BottomPane(QWidget):
     """
-    Top pane of the app window.
+    Bottom pane of the app window.
     """
 
     def __init__(self) -> None:
@@ -155,7 +155,7 @@ class TopPane(QWidget):
 
         activity_status_bar_spacer = QWidget()
 
-        # Set height of top pane to 42 pixels
+        # Set height of bottom pane to 42 pixels
         self.setFixedHeight(42)
         self.sync_icon.setFixedHeight(42)
         self.activity_status_bar.setFixedHeight(42)

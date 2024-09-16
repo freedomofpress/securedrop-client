@@ -55,7 +55,7 @@ def test_setup(mocker, homedir, session_maker):
     """
     w = Window()
     w.show_login = mocker.MagicMock()
-    w.top_pane = mocker.MagicMock()
+    w.bottom_pane = mocker.MagicMock()
     w.left_pane = mocker.MagicMock()
     w.main_view = mocker.MagicMock()
     controller = Controller("http://localhost", mocker.MagicMock(), session_maker, homedir, None)
@@ -63,7 +63,7 @@ def test_setup(mocker, homedir, session_maker):
     w.setup(controller)
 
     assert w.controller == controller
-    w.top_pane.setup.assert_called_once_with(controller)
+    w.bottom_pane.setup.assert_called_once_with(controller)
     w.left_pane.setup.assert_called_once_with(w, controller)
     w.main_view.setup.assert_called_once_with(controller)
     w.show_login.assert_called_once_with()
@@ -270,46 +270,46 @@ def test_show_sources(mocker):
 
 def test_update_error_status_default(mocker):
     """
-    Ensure that the error to be shown in the error status bar will be passed to the top pane with a
-    default duration of 10 seconds.
+    Ensure that the error to be shown in the error status bar will be passed
+    to the bottom pane with a default duration of 10 seconds.
     """
     w = Window()
-    w.top_pane = mocker.MagicMock()
+    w.bottom_pane = mocker.MagicMock()
     w.update_error_status(message="test error message")
-    w.top_pane.update_error_status.assert_called_once_with("test error message", 10000)
+    w.bottom_pane.update_error_status.assert_called_once_with("test error message", 10000)
 
 
 def test_update_error_status(mocker):
     """
-    Ensure that the error to be shown in the error status bar will be passed to the top pane with
-    the duration of seconds provided.
+    Ensure that the error to be shown in the error status bar will be passed to the
+    bottom pane with the duration of seconds provided.
     """
     w = Window()
-    w.top_pane = mocker.MagicMock()
+    w.bottom_pane = mocker.MagicMock()
     w.update_error_status(message="test error message", duration=123)
-    w.top_pane.update_error_status.assert_called_once_with("test error message", 123)
+    w.bottom_pane.update_error_status.assert_called_once_with("test error message", 123)
 
 
 def test_update_activity_status_default(mocker):
     """
-    Ensure that the activity to be shown in the activity status bar will be passed to the top pane
-    with a default duration of 0 seconds, i.e. forever.
+    Ensure that the activity to be shown in the activity status bar will be passed to the
+    bottom pane with a default duration of 0 seconds, i.e. forever.
     """
     w = Window()
-    w.top_pane = mocker.MagicMock()
+    w.bottom_pane = mocker.MagicMock()
     w.update_activity_status(message="test message")
-    w.top_pane.update_activity_status.assert_called_once_with("test message", 0)
+    w.bottom_pane.update_activity_status.assert_called_once_with("test message", 0)
 
 
 def test_update_activity_status(mocker):
     """
-    Ensure that the activity to be shown in the activity status bar will be passed to the top pane
-    with the duration of seconds provided.
+    Ensure that the activity to be shown in the activity status bar will be passed to the
+    bottom pane with the duration of seconds provided.
     """
     w = Window()
-    w.top_pane = mocker.MagicMock()
+    w.bottom_pane = mocker.MagicMock()
     w.update_activity_status(message="test message", duration=123)
-    w.top_pane.update_activity_status.assert_called_once_with("test message", 123)
+    w.bottom_pane.update_activity_status.assert_called_once_with("test message", 123)
 
 
 def test_clear_error_status(mocker):
@@ -317,11 +317,11 @@ def test_clear_error_status(mocker):
     Ensure clear_error_status is called.
     """
     w = Window()
-    w.top_pane = mocker.MagicMock()
+    w.bottom_pane = mocker.MagicMock()
 
     w.clear_error_status()
 
-    w.top_pane.clear_error_status.assert_called_once_with()
+    w.bottom_pane.clear_error_status.assert_called_once_with()
 
 
 def test_show_last_sync(mocker):
@@ -363,9 +363,9 @@ def test_logout(mocker):
     """
     w = Window()
     w.left_pane = mocker.MagicMock()
-    w.top_pane = mocker.MagicMock()
+    w.bottom_pane = mocker.MagicMock()
 
     w.logout()
 
     w.left_pane.set_logged_out.assert_called_once_with()
-    w.top_pane.set_logged_out.assert_called_once_with()
+    w.bottom_pane.set_logged_out.assert_called_once_with()

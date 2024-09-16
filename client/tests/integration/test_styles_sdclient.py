@@ -34,14 +34,14 @@ def test_class_name_matches_css_object_name(mocker, main_window):
     assert "LoginErrorBar" in login_error_bar.error_icon.objectName()
     assert "LoginErrorBar" in login_error_bar.error_status_bar.objectName()
 
-    # Top Pane
-    sync_icon = main_window.top_pane.sync_icon
+    # Bottom Pane
+    sync_icon = main_window.bottom_pane.sync_icon
     assert sync_icon.__class__.__name__ == "SyncIcon"
     assert sync_icon.objectName() == "SyncIcon"
-    activity_status_bar = main_window.top_pane.activity_status_bar
+    activity_status_bar = main_window.bottom_pane.activity_status_bar
     assert activity_status_bar.__class__.__name__ == "ActivityStatusBar"
     assert activity_status_bar.objectName() == "ActivityStatusBar"
-    error_status_bar = main_window.top_pane.error_status_bar
+    error_status_bar = main_window.bottom_pane.error_status_bar
     assert error_status_bar.__class__.__name__ == "ErrorStatusBar"
     assert "ErrorStatusBar" in error_status_bar.vertical_bar.objectName()
     assert "ErrorStatusBar" in error_status_bar.label.objectName()
@@ -188,16 +188,16 @@ def test_styles_for_login_dialog(mocker, main_window):
     assert login_error_bar.error_status_bar.palette().color(QPalette.Foreground).name() == "#ffffff"
 
 
-def test_styles_for_top_pane(mocker, main_window):
-    sync_icon = main_window.top_pane.sync_icon
+def test_styles_for_bottom_pane(mocker, main_window):
+    sync_icon = main_window.bottom_pane.sync_icon
     assert sync_icon.palette().color(QPalette.Base).name() == "#ffffff"
-    activity_status_bar = main_window.top_pane.activity_status_bar
+    activity_status_bar = main_window.bottom_pane.activity_status_bar
     assert activity_status_bar.font().family() == "Source Sans Pro"
     assert QFont.Bold == activity_status_bar.font().weight()
     assert activity_status_bar.font().pixelSize() == 12
     assert activity_status_bar.palette().color(QPalette.Base).name() == "#000000"
     assert activity_status_bar.palette().color(QPalette.Foreground).name() == "#d3d8ea"
-    error_status_bar = main_window.top_pane.error_status_bar
+    error_status_bar = main_window.bottom_pane.error_status_bar
     assert error_status_bar.vertical_bar.palette().color(QPalette.Background).name() == "#ff3366"
     assert error_status_bar.status_bar.font().family() == "Source Sans Pro"
     assert QFont.Normal == error_status_bar.status_bar.font().weight()
