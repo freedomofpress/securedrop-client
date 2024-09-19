@@ -18,7 +18,7 @@ def test_json_response(proxy_request):
     assert response["headers"]["content-type"] == "application/json"
 
 
-@pytest.mark.parametrize("status_code", (200, 404, 503))
+@pytest.mark.parametrize("status_code", [200, 404, 503])
 def test_status_codes(proxy_request, status_code):
     """HTTP errors are passed through cleanly"""
     test_input = {
@@ -53,7 +53,7 @@ def test_timeout(proxy_request, httpbin):
     assert result.returncode == 1
     assert (
         result.stderr.decode().strip()
-        == '{"error":"error sending request for url (http://127.0.0.1:%s/delay/10): ' % httpbin.port
+        == f'{{"error":"error sending request for url (http://127.0.0.1:{httpbin.port}/delay/10): '
         + 'operation timed out"}'
     )
     end = time.time()
@@ -72,7 +72,7 @@ def test_streaming(proxy_request):
     result = proxy_request(input=test_input)
     assert result.returncode == 0
     stderr = json.loads(result.stderr.decode())
-    assert "headers" in stderr.keys()
+    assert "headers" in stderr
     assert result.stdout.decode() == "*" * count
 
 
@@ -81,7 +81,7 @@ def test_non_json_response(proxy_request):
     result = proxy_request(input=test_input)
     assert result.returncode == 0
     stderr = json.loads(result.stderr.decode())
-    assert "headers" in stderr.keys()
+    assert "headers" in stderr
     assert result.stdout.decode().splitlines()[0] == "<!DOCTYPE html>"
 
 

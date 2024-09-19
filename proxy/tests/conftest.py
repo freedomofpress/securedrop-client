@@ -3,7 +3,6 @@
 import json
 import os
 import subprocess
-from typing import Optional, Union
 
 import pytest
 
@@ -20,15 +19,17 @@ def proxy_bin() -> str:
 
 @pytest.fixture
 def proxy_request(httpbin, proxy_bin):
-    def proxy_(
-        input: Union[bytes, dict], origin: Optional[str] = None
-    ) -> subprocess.CompletedProcess:
+    def proxy_(input: bytes | dict, origin: str | None = None) -> subprocess.CompletedProcess:
         if isinstance(input, dict):
             input = json.dumps(input).encode()
         if origin is None:
             origin = httpbin.url
         return subprocess.run(
-            [proxy_bin], env={"SD_PROXY_ORIGIN": origin}, input=input, capture_output=True
+            [proxy_bin],
+            env={"SD_PROXY_ORIGIN": origin},
+            input=input,
+            capture_output=True,
+            check=False,
         )
 
     return proxy_
