@@ -22,6 +22,7 @@ from securedrop_client.gui.datetime_helpers import format_datetime_local
 from securedrop_client.gui.source import DeleteSourceDialog
 from securedrop_client.gui.widgets import (
     ActivityStatusBar,
+    BottomPane,
     ConversationView,
     EmptyConversationView,
     ErrorStatusBar,
@@ -46,7 +47,6 @@ from securedrop_client.gui.widgets import (
     SpeechBubble,
     StarToggleButton,
     SyncIcon,
-    TopPane,
     UserButton,
     UserIconLabel,
     UserMenu,
@@ -55,87 +55,87 @@ from securedrop_client.gui.widgets import (
 from tests import factory
 
 
-def test_TopPane_init(mocker):
+def test_BottomPane_init(mocker):
     """
-    Ensure the TopPane instance is correctly set up.
+    Ensure the BottomPane instance is correctly set up.
     """
-    tp = TopPane()
-    file_path = tp.sync_icon.sync_animation.fileName()
+    bp = BottomPane()
+    file_path = bp.sync_icon.sync_animation.fileName()
     filename = file_path[file_path.rfind("/") + 1 :]
     assert filename == "sync_disabled.gif"
 
 
-def test_TopPane_setup(mocker):
+def test_BottomPane_setup(mocker):
     """
     Calling setup calls setup for SyncIcon.
     """
-    tp = TopPane()
-    tp.sync_icon = mocker.MagicMock()
+    bp = BottomPane()
+    bp.sync_icon = mocker.MagicMock()
     mock_controller = mocker.MagicMock()
 
-    tp.setup(mock_controller)
+    bp.setup(mock_controller)
 
-    tp.sync_icon.setup.assert_called_once_with(mock_controller)
+    bp.sync_icon.setup.assert_called_once_with(mock_controller)
 
 
-def test_TopPane_set_logged_in(mocker):
+def test_BottomPane_set_logged_in(mocker):
     """
-    Calling set_logged_in calls enable on TopPane.
+    Calling set_logged_in calls enable on BottomPane.
     """
-    tp = TopPane()
-    tp.sync_icon = mocker.MagicMock()
+    bp = BottomPane()
+    bp.sync_icon = mocker.MagicMock()
 
-    tp.set_logged_in()
+    bp.set_logged_in()
 
-    tp.sync_icon.enable.assert_called_once_with()
+    bp.sync_icon.enable.assert_called_once_with()
 
 
-def test_TopPane_set_logged_out(mocker):
+def test_BottomPane_set_logged_out(mocker):
     """
     Calling set_logged_out calls disable on SyncIcon.
     """
-    tp = TopPane()
-    tp.sync_icon = mocker.MagicMock()
+    bp = BottomPane()
+    bp.sync_icon = mocker.MagicMock()
 
-    tp.set_logged_out()
+    bp.set_logged_out()
 
-    tp.sync_icon.disable.assert_called_once_with()
+    bp.sync_icon.disable.assert_called_once_with()
 
 
-def test_TopPane_update_activity_status(mocker):
+def test_BottomPane_update_activity_status(mocker):
     """
     Calling update_activity_status calls update_message on ActivityStatusBar.
     """
-    tp = TopPane()
-    tp.activity_status_bar = mocker.MagicMock()
+    bp = BottomPane()
+    bp.activity_status_bar = mocker.MagicMock()
 
-    tp.update_activity_status(message="test message", duration=5)
+    bp.update_activity_status(message="test message", duration=5)
 
-    tp.activity_status_bar.update_message.assert_called_once_with("test message", 5)
+    bp.activity_status_bar.update_message.assert_called_once_with("test message", 5)
 
 
-def test_TopPane_update_error_status(mocker):
+def test_BottomPane_update_error_status(mocker):
     """
     Calling update_error_status calls update_message on ErrorStatusBar.
     """
-    tp = TopPane()
-    tp.error_status_bar = mocker.MagicMock()
+    bp = BottomPane()
+    bp.error_status_bar = mocker.MagicMock()
 
-    tp.update_error_status(message="test message", duration=5)
+    bp.update_error_status(message="test message", duration=5)
 
-    tp.error_status_bar.update_message.assert_called_once_with("test message", 5)
+    bp.error_status_bar.update_message.assert_called_once_with("test message", 5)
 
 
-def test_TopPane_clear_error_status(mocker):
+def test_BottomPane_clear_error_status(mocker):
     """
     Calling clear_error_status calls clear_message.
     """
-    tp = TopPane()
-    tp.error_status_bar = mocker.MagicMock()
+    bp = BottomPane()
+    bp.error_status_bar = mocker.MagicMock()
 
-    tp.clear_error_status()
+    bp.clear_error_status()
 
-    tp.error_status_bar.clear_message.assert_called_once_with()
+    bp.error_status_bar.clear_message.assert_called_once_with()
 
 
 def test_LeftPane_init(mocker):
