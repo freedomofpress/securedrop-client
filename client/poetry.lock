@@ -229,12 +229,12 @@ files = [
 
 [[package]]
 name = "diffoscope"
-version = "276"
+version = "277"
 description = "in-depth comparison of files, archives, and directories"
 optional = false
 python-versions = ">=3.7"
 files = [
-    {file = "diffoscope-276.tar.gz", hash = "sha256:094d1f8c312ef9e776247c5f7653b7953dc9c41a037683a1a5937d63a232584a"},
+    {file = "diffoscope-277.tar.gz", hash = "sha256:d2d4236d7b72be8344b0c7a19506350a7b17d316bcd79d7bfc113e10400b0e10"},
 ]
 
 [package.dependencies]
@@ -1204,13 +1204,13 @@ pyscreenshot = "*"
 
 [[package]]
 name = "pytest"
-version = "8.3.2"
+version = "8.3.3"
 description = "pytest: simple powerful testing with Python"
 optional = false
 python-versions = ">=3.8"
 files = [
-    {file = "pytest-8.3.2-py3-none-any.whl", hash = "sha256:4ba08f9ae7dcf84ded419494d229b48d0903ea6407b030eaec46df5e6a73bba5"},
-    {file = "pytest-8.3.2.tar.gz", hash = "sha256:c132345d12ce551242c87269de812483f5bcc87cdbb4722e48487ba194f9fdce"},
+    {file = "pytest-8.3.3-py3-none-any.whl", hash = "sha256:a6853c7375b2663155079443d2e45de913a911a11d669df02a50814944db57b2"},
+    {file = "pytest-8.3.3.tar.gz", hash = "sha256:70b98107bd648308a7952b06e6ca9a50bc660be218d53c257cc1fc94fda10181"},
 ]
 
 [package.dependencies]
@@ -1741,13 +1741,13 @@ files = [
 
 [[package]]
 name = "translate-toolkit"
-version = "3.13.3"
+version = "3.13.4"
 description = "Tools and API for translation and localization engineering."
 optional = false
 python-versions = ">=3.8"
 files = [
-    {file = "translate_toolkit-3.13.3-py3-none-any.whl", hash = "sha256:efabe2b974243da53cfdc31082d81f536008607a4ad4e65a3098a85b44ae2d6e"},
-    {file = "translate_toolkit-3.13.3.tar.gz", hash = "sha256:5bd73841a0ae99dbb583489879a4fa742860b3faa75ef2bb9d4f06f9e3195d75"},
+    {file = "translate_toolkit-3.13.4-py3-none-any.whl", hash = "sha256:ccab2c14d8940a5c077e557d16a90b9196832bfc2066f0e9c29b28e261128987"},
+    {file = "translate_toolkit-3.13.4.tar.gz", hash = "sha256:774ab8c69377ef178b4a640c06b0c66651a3023e211df91acc6507ce5f3d5072"},
 ]
 
 [package.dependencies]
@@ -1755,7 +1755,7 @@ lxml = ">=4.6.3"
 wcwidth = ">=0.2.10"
 
 [package.extras]
-all = ["BeautifulSoup4 (>=4.3)", "aeidon (==1.15)", "charset-normalizer (==3.3.2)", "cheroot (==10.0.1)", "fluent.syntax (==0.19.0)", "iniparse (==0.5)", "mistletoe (==1.4.0)", "phply (==1.2.6)", "pyenchant (==3.2.2)", "pyparsing (==3.1.2)", "python-Levenshtein (>=0.12)", "ruamel.yaml (==0.18.6)", "vobject (==0.9.7)"]
+all = ["BeautifulSoup4 (>=4.3)", "aeidon (==1.15)", "charset-normalizer (==3.3.2)", "cheroot (==10.0.1)", "fluent.syntax (==0.19.0)", "iniparse (==0.5)", "mistletoe (==1.4.0)", "phply (==1.2.6)", "pyenchant (==3.2.2)", "pyparsing (==3.1.4)", "python-Levenshtein (>=0.12)", "ruamel.yaml (==0.18.6)", "vobject (==0.9.7)"]
 chardet = ["charset-normalizer (==3.3.2)"]
 fluent = ["fluent.syntax (==0.19.0)"]
 ical = ["vobject (==0.9.7)"]
@@ -1763,7 +1763,7 @@ ini = ["iniparse (==0.5)"]
 levenshtein = ["python-Levenshtein (>=0.12)"]
 markdown = ["mistletoe (==1.4.0)"]
 php = ["phply (==1.2.6)"]
-rc = ["pyparsing (==3.1.2)"]
+rc = ["pyparsing (==3.1.4)"]
 spellcheck = ["pyenchant (==3.2.2)"]
 subtitles = ["aeidon (==1.15)"]
 tmserver = ["cheroot (==10.0.1)"]
@@ -1783,24 +1783,24 @@ files = [
 
 [[package]]
 name = "types-python-dateutil"
-version = "2.9.0.20240821"
+version = "2.9.0.20240906"
 description = "Typing stubs for python-dateutil"
 optional = false
 python-versions = ">=3.8"
 files = [
-    {file = "types-python-dateutil-2.9.0.20240821.tar.gz", hash = "sha256:9649d1dcb6fef1046fb18bebe9ea2aa0028b160918518c34589a46045f6ebd98"},
-    {file = "types_python_dateutil-2.9.0.20240821-py3-none-any.whl", hash = "sha256:f5889fcb4e63ed4aaa379b44f93c32593d50b9a94c9a60a0c854d8cc3511cd57"},
+    {file = "types-python-dateutil-2.9.0.20240906.tar.gz", hash = "sha256:9706c3b68284c25adffc47319ecc7947e5bb86b3773f843c73906fd598bc176e"},
+    {file = "types_python_dateutil-2.9.0.20240906-py3-none-any.whl", hash = "sha256:27c8cc2d058ccb14946eebcaaa503088f4f6dbc4fb6093d3d456a49aef2753f6"},
 ]
 
 [[package]]
 name = "types-setuptools"
-version = "73.0.0.20240822"
+version = "75.1.0.20240917"
 description = "Typing stubs for setuptools"
 optional = false
 python-versions = ">=3.8"
 files = [
-    {file = "types-setuptools-73.0.0.20240822.tar.gz", hash = "sha256:3a060681098eb3fbc2fea0a86f7f6af6aa1ca71906039d88d891ea2cecdd4dbf"},
-    {file = "types_setuptools-73.0.0.20240822-py3-none-any.whl", hash = "sha256:b9eba9b68546031317a0fa506d4973641d987d74f79e7dd8369ad4f7a93dea17"},
+    {file = "types-setuptools-75.1.0.20240917.tar.gz", hash = "sha256:12f12a165e7ed383f31def705e5c0fa1c26215dd466b0af34bd042f7d5331f55"},
+    {file = "types_setuptools-75.1.0.20240917-py3-none-any.whl", hash = "sha256:06f78307e68d1bbde6938072c57b81cf8a99bc84bd6dc7e4c5014730b097dc0c"},
 ]
 
 [[package]]
@@ -2049,4 +2049,4 @@ multidict = ">=4.0"
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.11"
-content-hash = "4e5d8c3715272d1c8f7b16858776870c91ef6555b10f92a2e37125c81da88577"
+content-hash = "d89abed2d737bab1160c4139674725442abe653d66edc045b21b5e56db5ee385"
