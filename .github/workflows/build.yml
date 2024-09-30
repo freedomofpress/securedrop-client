@@ -7,7 +7,7 @@ on:
 # Only build for latest push/PR unless it's main or release/
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: ${{ github.ref != 'refs/heads/main' && !startsWith( github.ref, 'refs/heads/release/' ) }}
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' && !startsWith( github.ref, 'refs/heads/release/' ) && !startsWith( github.ref, 'refs/heads/gh-readonly-queue/' ) }}
 
 defaults:
   run:
