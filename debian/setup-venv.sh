@@ -11,7 +11,7 @@ fi
 WHEELS_DIR="/builder/securedrop-${NAME}/wheels"
 PIP_ARGS="--ignore-installed --no-index --find-links ${WHEELS_DIR} --no-deps --no-cache-dir --no-use-pep517"
 
-/usr/bin/python3 -m virtualenv $VENV_ARGS ./debian/securedrop-${NAME}/opt/venvs/securedrop-${NAME}
+/usr/bin/python3 -m venv $VENV_ARGS ./debian/securedrop-${NAME}/opt/venvs/securedrop-${NAME}
 ./debian/securedrop-${NAME}/opt/venvs/securedrop-${NAME}/bin/pip install $PIP_ARGS --require-hashes \
     -r ${NAME}/build-requirements.txt
 ./debian/securedrop-${NAME}/opt/venvs/securedrop-${NAME}/bin/pip install $PIP_ARGS ./${NAME}
