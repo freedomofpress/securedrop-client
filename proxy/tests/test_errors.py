@@ -1,4 +1,7 @@
-"""Test `securedrop-proxy`'s handling of errors from generic HTTP endpoints, not tied to the SecureDrop SDK."""
+"""
+Test `securedrop-proxy`'s handling of errors from generic HTTP endpoints,
+not tied to the SecureDrop SDK.
+"""
 
 import os
 import subprocess
@@ -8,7 +11,7 @@ def test_missing_config(proxy_bin):
     env = os.environ.copy()
     if "SD_PROXY_ORIGIN" in env:
         del env["SD_PROXY_ORIGIN"]
-    result = subprocess.run([proxy_bin], env=env, capture_output=True)
+    result = subprocess.run([proxy_bin], env=env, capture_output=True, check=False)
     assert result.returncode == 1
     assert result.stderr.decode().strip() == '{"error":"environment variable not found"}'
 

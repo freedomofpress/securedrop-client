@@ -19,8 +19,6 @@ shellcheck-py = "*"
 [tool.ruff]
 line-length = 100
 extend-include = ["log/securedrop-{log,log-saver,redis-log}"]
-# temporarily ignore until proxy v2
-extend-exclude = ["proxy/"]
 
 [tool.ruff.lint]
 select = [
