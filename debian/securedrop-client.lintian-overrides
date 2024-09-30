@@ -21,3 +21,4 @@ securedrop-client: script-not-executable
 
 # This is our virtualenv's interpreter
 securedrop-client: unusual-interpreter
+securedrop-client: wrong-path-for-interpreter

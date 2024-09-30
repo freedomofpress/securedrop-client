@@ -21,6 +21,7 @@ securedrop-export: script-not-executable
 
 # This is our virtualenv's interpreter
 securedrop-export: unusual-interpreter
+securedrop-export: wrong-path-for-interpreter
 
 # This is intentional
 securedrop-export: file-in-etc-not-marked-as-conffile [etc/udisks2/tcrypt.conf]
