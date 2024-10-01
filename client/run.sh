@@ -67,13 +67,46 @@ fi
 if [[ $XDG_SESSION_TYPE = "wayland" ]]; then
     echo "Detected Wayland, will run with QT_QPA_PLATFORM variable..."
     export QT_QPA_PLATFORM=wayland
+    if [[ "$1" == "--login" ]]; then
+        echo "--login is not yet supported on Wayland"
+        exit 1
+    fi
 fi
 
 wait
+
+function check_login() {
+    # error if xdotool and oathtool are not installed
+    if ! command -v xdotool &> /dev/null; then
+        echo "--login requires xdotool to be installed"
+        exit 1
+    fi
+    if ! command -v oathtool &> /dev/null; then
+        echo "--login requires oathtool to be installed"
+        exit 1
+    fi
+}
+
+function login() {
+    # Wait for the window to open before typing
+    # (this is bad but we need to run this after the client starts, which is blocking)
+    sleep 3
+    xdotool type "journalist"
+    xdotool key Tab
+    xdotool type "correct horse battery staple profanity oil chewy"
+    xdotool key Tab
+    xdotool key Tab
+    xdotool type "$(oathtool --totp --base32 JHCOGO7VCER3EJ4L)"
+    xdotool key Return
+}
 
 echo "Starting client, home directory: $SDC_HOME"
 # Create the log file ahead of time so we can tail it before the client launches
 mkdir -p "$SDC_HOME/logs"
 touch "$SDC_HOME/logs/client.log"
 tail -f "$SDC_HOME/logs/client.log" &
+if [[ $1 == "--login" ]]; then
+    check_login
+    login &
+fi
 LOGLEVEL=debug $PYTHON -m securedrop_client --sdc-home "$SDC_HOME" --no-proxy "$qubes_flag" "$@"
