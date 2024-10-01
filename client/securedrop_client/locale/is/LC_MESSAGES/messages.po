@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: SecureDrop Client 0.5.0\n"
 "Report-Msgid-Bugs-To: securedrop@freedom.press\n"
-"PO-Revision-Date: 2024-04-23 17:30+0000\n"
+"PO-Revision-Date: 2024-09-09 09:32+0000\n"
 "Last-Translator: Sveinn í Felli <sv1@fellsnet.is>\n"
 "Language-Team: Icelandic <https://weblate.securedrop.org/projects/securedrop/securedrop-client/is/>\n"
 "Language: is\n"
@@ -15,7 +15,7 @@ msgstr ""
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=n % 10 != 1 || n % 100 == 11;\n"
-"X-Generator: Weblate 5.3.1\n"
+"X-Generator: Weblate 5.6.2\n"
 "Generated-By: Babel 2.9.1\n"
 
 msgid "{application_name} is already running"
@@ -380,11 +380,21 @@ msgstr "Tengdu prentarann þinn við USB-tengi."
 msgid "See your administrator for help."
 msgstr "Hafðu samband við kerfisstjórann þinn til að fá frekari aðstoð."
 
+msgid "This file type cannot be printed."
+msgstr "Ekki er hægt að prenta þessa gerð skráar."
+
+#, fuzzy
+#| msgid "YES, DELETE ENTIRE SOURCE ACCOUNT"
 msgid "YES, DELETE ENTIRE SOURCE ACCOUNT"
-msgstr "JÁ, EYÐA ÖLLUM AÐGANGI HEIMILDARMANNS"
+msgid_plural "YES, DELETE {number} SOURCE ACCOUNTS"
+msgstr[0] "JÁ, EYÐA ÖLLUM AÐGANGI HEIMILDARMANNS"
+msgstr[1] "JÁ, EYÐA ÖLLUM AÐGANGI HEIMILDARMANNS"
 
 msgid "Are you sure this is what you want?"
 msgstr "Ertu viss um að þetta sé það sem þú viljir?"
+
+msgid "Delete entire account for: {source_or_sources}?"
+msgstr ""
 
 msgid "When the entire account for a source is deleted:"
 msgstr "Þegar öllum notandaaðgangi heimildarmanns er eytt:"
@@ -397,6 +407,9 @@ msgstr "Þið munið ekki geta sent þeim svör."
 
 msgid "All files and messages from that source will also be destroyed."
 msgstr "Öllum skilaboðum og skrám frá þessum heimildarmanni verður einnig eytt."
+
+msgid "No sources have been selected."
+msgstr ""
 
 #~ msgid "SUBMIT"
 #~ msgstr "SENDA INN"
