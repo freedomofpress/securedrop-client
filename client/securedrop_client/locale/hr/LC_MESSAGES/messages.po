@@ -384,11 +384,22 @@ msgstr "Molimo spojite pisač sa USB portom."
 msgid "See your administrator for help."
 msgstr "Obratite se administratoru za pomoć."
 
+msgid "This file type cannot be printed."
+msgstr ""
+
+#, fuzzy
+#| msgid "YES, DELETE ENTIRE SOURCE ACCOUNT"
 msgid "YES, DELETE ENTIRE SOURCE ACCOUNT"
-msgstr "Da, obriši cijeli račun izvora"
+msgid_plural "YES, DELETE {number} SOURCE ACCOUNTS"
+msgstr[0] "Da, obriši cijeli račun izvora"
+msgstr[1] "Da, obriši cijeli račun izvora"
+msgstr[2] "Da, obriši cijeli račun izvora"
 
 msgid "Are you sure this is what you want?"
 msgstr "Jeste li sigurni da to stvarno želite?"
+
+msgid "Delete entire account for: {source_or_sources}?"
+msgstr ""
 
 msgid "When the entire account for a source is deleted:"
 msgstr "Kad je cijeli račun izvora obrisan:"
@@ -401,6 +412,9 @@ msgstr "Vaša organizacija mu neće moći slati odgovore."
 
 msgid "All files and messages from that source will also be destroyed."
 msgstr "Sve datoteke i poruke tog izvora će također biti uništene."
+
+msgid "No sources have been selected."
+msgstr ""
 
 #~ msgid "SUBMIT"
 #~ msgstr "POŠALJI"

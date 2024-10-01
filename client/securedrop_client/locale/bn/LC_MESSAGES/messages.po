@@ -368,10 +368,18 @@ msgstr ""
 msgid "See your administrator for help."
 msgstr ""
 
-msgid "YES, DELETE ENTIRE SOURCE ACCOUNT"
+msgid "This file type cannot be printed."
 msgstr ""
 
+msgid "YES, DELETE ENTIRE SOURCE ACCOUNT"
+msgid_plural "YES, DELETE {number} SOURCE ACCOUNTS"
+msgstr[0] ""
+msgstr[1] ""
+
 msgid "Are you sure this is what you want?"
+msgstr ""
+
+msgid "Delete entire account for: {source_or_sources}?"
 msgstr ""
 
 msgid "When the entire account for a source is deleted:"
@@ -384,4 +392,7 @@ msgid "Your organization will not be able to send them replies."
 msgstr ""
 
 msgid "All files and messages from that source will also be destroyed."
+msgstr ""
+
+msgid "No sources have been selected."
 msgstr ""

@@ -376,11 +376,20 @@ msgstr "请将打印机连接到 USB 接口。"
 msgid "See your administrator for help."
 msgstr "请寻求管理员的帮助。"
 
+msgid "This file type cannot be printed."
+msgstr ""
+
+#, fuzzy
+#| msgid "YES, DELETE ENTIRE SOURCE ACCOUNT"
 msgid "YES, DELETE ENTIRE SOURCE ACCOUNT"
-msgstr "是的，我想删除整个线人账号"
+msgid_plural "YES, DELETE {number} SOURCE ACCOUNTS"
+msgstr[0] "是的，我想删除整个线人账号"
 
 msgid "Are you sure this is what you want?"
 msgstr "确认要这样做？"
+
+msgid "Delete entire account for: {source_or_sources}?"
+msgstr ""
 
 msgid "When the entire account for a source is deleted:"
 msgstr "删除整个线人账号后："
@@ -393,6 +402,9 @@ msgstr "你的组织无法再向他们发送回复。"
 
 msgid "All files and messages from that source will also be destroyed."
 msgstr "此线人的所有文件和消息都将被删除。"
+
+msgid "No sources have been selected."
+msgstr ""
 
 #~ msgid "SUBMIT"
 #~ msgstr "提交"

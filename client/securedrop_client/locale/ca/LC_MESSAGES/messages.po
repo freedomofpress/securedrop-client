@@ -380,11 +380,21 @@ msgstr "Connecteu la impressora a un port USB."
 msgid "See your administrator for help."
 msgstr "Contacteu amb l'administrador si us cal ajuda."
 
+msgid "This file type cannot be printed."
+msgstr ""
+
+#, fuzzy
+#| msgid "YES, DELETE ENTIRE SOURCE ACCOUNT"
 msgid "YES, DELETE ENTIRE SOURCE ACCOUNT"
-msgstr "SÍ, SUPRIMEIX EL COMPTE SENCER"
+msgid_plural "YES, DELETE {number} SOURCE ACCOUNTS"
+msgstr[0] "SÍ, SUPRIMEIX EL COMPTE SENCER"
+msgstr[1] "SÍ, SUPRIMEIX EL COMPTE SENCER"
 
 msgid "Are you sure this is what you want?"
 msgstr "Segur que això és el que voleu?"
+
+msgid "Delete entire account for: {source_or_sources}?"
+msgstr ""
 
 msgid "When the entire account for a source is deleted:"
 msgstr "En suprimir el compte font sencer:"
@@ -397,6 +407,9 @@ msgstr "La vostra organització no podrà enviar respostes."
 
 msgid "All files and messages from that source will also be destroyed."
 msgstr "També es destruiran tots els missatges de la font."
+
+msgid "No sources have been selected."
+msgstr ""
 
 #~ msgid "SUBMIT"
 #~ msgstr "ENVIA"
