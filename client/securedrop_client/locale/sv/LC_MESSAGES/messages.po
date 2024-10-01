@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: SecureDrop Client 0.7.0\n"
 "Report-Msgid-Bugs-To: securedrop@freedom.press\n"
-"PO-Revision-Date: 2023-04-24 08:13+0000\n"
+"PO-Revision-Date: 2024-09-13 09:32+0000\n"
 "Last-Translator: Jonas Waga <jonas.waga@schibsted.com>\n"
 "Language-Team: Swedish <https://weblate.securedrop.org/projects/securedrop/securedrop-client/sv/>\n"
 "Language: sv\n"
@@ -15,7 +15,7 @@ msgstr ""
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=n != 1;\n"
-"X-Generator: Weblate 4.14.1\n"
+"X-Generator: Weblate 5.7.1\n"
 "Generated-By: Babel 2.9.1\n"
 
 msgid "{application_name} is already running"
@@ -288,49 +288,49 @@ msgid "DONE"
 msgstr "KLAR"
 
 msgid "BACK"
-msgstr ""
+msgstr "TILLBAKA"
 
 msgid "No device detected"
-msgstr ""
+msgstr "Ingen enhet hittad"
 
 msgid "Too many USB devices detected; please insert one supported device."
-msgstr ""
+msgstr "För många USB-enheter upptäckta, sätt enbart i en enhet."
 
 msgid "Either the drive is not encrypted or there is something else wrong with it.<br />If this is a VeraCrypt drive, please unlock it from within the sd-devices VM, then try again."
-msgstr ""
+msgstr "Antingen är enheten inte krypterad eller så är något annat fel med den.<br />Om det är en VeraCrypt-enheten, vänligen lås upp den från sd-devices VM, och försök sedan igen."
 
 msgid "The device is ready for export."
-msgstr ""
+msgstr "Den här enheten är redo för export."
 
 msgid "The device is locked."
-msgstr ""
+msgstr "Den här enheten är låst."
 
 msgid "The passphrase provided did not work. Please try again."
 msgstr "Lösenordsfrasen som angavs fungerade inte. Vänligen försök igen."
 
 msgid "Error mounting drive"
-msgstr ""
+msgstr "Problem med montering av enhet"
 
 msgid "Error during export"
-msgstr ""
+msgstr "Fel under export"
 
 msgid "Files were exported successfully, but the USB device could not be unmounted."
-msgstr ""
+msgstr "Filerna exporterades, men USB-enheten kunde inte avmonteras."
 
 msgid "Files were exported successfully, but some temporary files remain on disk. Reboot to remove them."
-msgstr ""
+msgstr "Filerna exporterades, men några tillfälliga filer finns kvar på disken. Starta om för att radera dem."
 
 msgid "Export successful"
 msgstr "Export lyckades"
 
 msgid "Error encountered with this device. See your administrator for help."
-msgstr ""
+msgstr "Ett fel inträffade med den här enheten. Be din administratör om hjälp."
 
 msgid "Files were moved or missing and could not be exported."
-msgstr ""
+msgstr "Filerna har flyttats eller saknas och kan därför inte exporteras."
 
 msgid "Error encountered. Please contact support."
-msgstr ""
+msgstr "Ett fel inträffade. Vänligen kontakta supporten."
 
 msgid "Preparing to export:<br /><span style=\"font-weight:normal\">{}</span>"
 msgstr "Förbereder export: <br /><span style=\"font-weight:normal\">{}</span>"
@@ -342,19 +342,19 @@ msgid "Ready to export:<br /><span style=\"font-weight:normal\">{}</span>"
 msgstr "Redo att exportera:<br /><span style=\"font-weight:normal\">{}</span>"
 
 msgid "Export Failed"
-msgstr ""
+msgstr "Exporten misslyckades"
 
 msgid "Please insert one of the export drives provisioned specifically for the SecureDrop Workstation.<br />If you're using a VeraCrypt drive, unlock it manually before proceeding."
-msgstr ""
+msgstr "Vänligen sätt in en av export-enheterna som provisionerats till den här SecureDrop-datorn.<br />Om du använder en VeraCrypt-enehet, lås upp den manuellt innan du fortsätter."
 
 msgid "Remember to be careful when working with files outside of your Workstation machine."
 msgstr "Kom ihåg att vara försiktig när du arbetar med filer utanför den här arbetsstationen."
 
 msgid "Export sucessful, but drive was not locked"
-msgstr ""
+msgstr "Exporten lyckades, men enheten har inte låsts"
 
 msgid "Working..."
-msgstr ""
+msgstr "Jobbar…"
 
 msgid "Enter passphrase for USB drive"
 msgstr "Skriv in lösenordsfras för USB-minne"
@@ -380,11 +380,19 @@ msgstr "Vänligen anslut din skrivare till en USB-port."
 msgid "See your administrator for help."
 msgstr "Kontakta din administratör för hjälp."
 
+msgid "This file type cannot be printed."
+msgstr "Den här filtypen kan inte skrivas ut."
+
 msgid "YES, DELETE ENTIRE SOURCE ACCOUNT"
-msgstr "JA, RADERA HELA KÄLLANS KONTO"
+msgid_plural "YES, DELETE {number} SOURCE ACCOUNTS"
+msgstr[0] "JA, RADERA HELA KÄLLANS KONTO"
+msgstr[1] "JA, RADERA {number} KÄLLORS KONTON"
 
 msgid "Are you sure this is what you want?"
 msgstr "Är du säker på att detta är det du vill?"
+
+msgid "Delete entire account for: {source_or_sources}?"
+msgstr "Radera hela kontot för:{source_or_sources}?"
 
 msgid "When the entire account for a source is deleted:"
 msgstr "När hela kontot för källan raderas:"
@@ -397,6 +405,9 @@ msgstr "Din organisation kommer inte att kunna skicka svar till källan."
 
 msgid "All files and messages from that source will also be destroyed."
 msgstr "Alla filer och meddelanden från den källan kommer också att raderas."
+
+msgid "No sources have been selected."
+msgstr "Inga källor har valts."
 
 #~ msgid "SUBMIT"
 #~ msgstr "SKICKA IN"
