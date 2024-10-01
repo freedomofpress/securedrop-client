@@ -174,6 +174,10 @@ class API:
                     logger.debug(f"Retry {retry}, sending data")
                     proc.stdin.write(data_bytes)
                     proc.stdin.close()
+                else:
+                    logger.error(f"Retry {retry}, stdin is None")
+                    # TODO: should we raise an exception here? If we don't pass in stdin,
+                    # the request will end up failing
 
                 # Write the contents to disk
                 chunk_size = 1024
@@ -198,12 +202,18 @@ class API:
                     # Actually, the download did not finish after all
                     download_finished = False
 
-                    try:
-                        if proc.stderr is not None:
-                            error = json.loads(proc.stderr.read().decode())
-                    except json.decoder.JSONDecodeError as err:
-                        raise BaseError("Unable to parse stderr JSON") from err
-                    raise BaseError("Internal proxy error: " + error.get("error", "unknown error"))
+                    error = {}
+                    if proc.stderr is not None:
+                        error_json = proc.stderr.read().decode()
+                        try:
+                            error = json.loads(error_json)
+                        except json.decoder.JSONDecodeError as err:
+                            logger.debug(f"Retry {retry}, invalid error JSON: {error_json}")
+                            raise BaseError("Unable to parse stderr JSON") from err
+                    error_description = error.get("error", "unknown error")
+                    logger.debug(f"Retry {retry}, internal proxy error: {error_description}")
+                    logger.error(f"Retry {retry}, internal proxy error")
+                    raise BaseError(f"Internal proxy error: {error_description}")
 
                 # FIXME: For now, store the contents as bytes
                 logger.debug(f"Retry {retry}, reading contents from disk")
@@ -213,15 +223,19 @@ class API:
 
                 # Check for an error response
                 if contents[0:1] == b"{":
-                    logger.debug(f"Retry {retry}, received JSON error response")
+                    logger.error(f"Retry {retry}, received JSON error response.")
                     return self._handle_json_response(contents)
 
                 # Get the headers
                 if proc.stderr is not None:
+                    headers_json = proc.stderr.read().decode()
                     try:
-                        stderr = json.loads(proc.stderr.read().decode())
+                        stderr = json.loads(headers_json)
                     except json.decoder.JSONDecodeError as err:
-                        raise BaseError("Unable to parse stderr JSON") from err
+                        logger.debug(
+                            f"Retry {retry}, invalid headers (stderr) JSON: {headers_json}"
+                        )
+                        raise BaseError("Unable to parse headers (stderr) JSON") from err
 
                     sha256sum = stderr["headers"]["etag"]
                     filename = stderr["headers"]["content-disposition"]
@@ -237,20 +251,25 @@ class API:
                 )
 
             except subprocess.TimeoutExpired as err:
-                logger.debug(f"Retry {retry}, timeout expired")
+                logger.error(f"Retry {retry}, timeout expired")
                 retry += 1
                 if retry >= self.download_retry_limit:
-                    logger.debug("Retry limit reached, raising RequestTimeoutError")
+                    logger.error("Retry limit reached after subprocess.TimeoutExpired")
                     raise RequestTimeoutError from err
             except BaseError as err:
                 logger.debug(f"Retry {retry}, base error: {err}")
+                logger.error(f"Retry {retry}, base error")
                 retry += 1
                 if retry >= self.download_retry_limit:
-                    logger.debug("Retry limit reached, raising BaseError")
+                    logger.error("Retry limit reached after BaseError")
                     raise err
 
         # We will never reach this code because we'll have already returned or raised
         # an exception by now, but it's required to make the linter happy
+        logger.error(
+            f"Reached unreachable exception. retry={retry}, "
+            f"bytes_written={bytes_written}, download_finished={download_finished}"
+        )
         raise RuntimeError(
             "This should be unreachable, we should've already returned or raised a different exception"  # noqa: E501
         )
@@ -278,6 +297,7 @@ class API:
             # item is missing. In that case we return to the caller to
             # handle that with an appropriate message. However, if the error
             # is not a 404, then we raise.
+            logger.error(f"API error: status={result['status']}")
             raise BaseError(f"Unknown error, status: {result['status']}")
 
         data = json.loads(result["body"])
@@ -295,7 +315,6 @@ class API:
         """Build a JSON-serialized request to pass to the proxy.
         Handle the JSON or streamed response back, plus translate HTTP error statuses
         to our exceptions."""
-        logger.debug(f"Sending request to proxy: {method} {path_query}")
 
         data: dict[str, Any] = {"method": method, "path_query": path_query, "stream": stream}
 
@@ -307,6 +326,11 @@ class API:
 
         if timeout:
             data["timeout"] = timeout
+
+        logger.debug(
+            f"Sending request to proxy: {method} {path_query} (body={'body' in data}, "
+            f"stream={stream}, timeout={timeout})"
+        )
 
         env = {}
         if self.development_mode:
@@ -328,15 +352,21 @@ class API:
                 check=False,
             )
         except subprocess.TimeoutExpired as err:
+            logger.error(f"Non-streaming reqest timed out (path_query={path_query})")
             raise RequestTimeoutError from err
 
         # Error handling
         if response.returncode != 0:
+            error_json = response.stderr.decode()
             try:
-                error = json.loads(response.stderr.decode())
+                error = json.loads(error_json)
             except json.decoder.JSONDecodeError as err:
+                logger.debug(f"Unable to parse stderr JSON: {error_json}")
                 raise BaseError("Unable to parse stderr JSON") from err
-            raise BaseError("Internal proxy error: " + error.get("error", "unknown error"))
+            error_desc = error.get("error", "unknown error")
+            logger.debug(f"Internal proxy error: {error_desc}")
+            logger.error("Internal proxy error (non-streaming)")
+            raise BaseError(f"Internal proxy error: {error_desc}")
 
         return self._handle_json_response(response.stdout)
 
