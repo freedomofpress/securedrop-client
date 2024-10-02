@@ -180,3 +180,11 @@ rules:
     # Forbid any other use of assert
     - pattern-regex: |
         assert.*
+
+- id: enforce-setshortcut-style
+  patterns:
+    - pattern-not-regex: setShortcut\(Shortcuts\.(.*?)\)
+    - pattern-regex: setShortcut\((.*?)\)
+  message: "Use Shortcuts enum to register shortcuts"
+  languages: [python]
+  severity: WARNING

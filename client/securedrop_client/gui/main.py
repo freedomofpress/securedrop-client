@@ -22,12 +22,13 @@ import logging
 from gettext import gettext as _
 
 from PyQt5.QtCore import Qt
-from PyQt5.QtGui import QClipboard, QGuiApplication, QIcon, QKeySequence
+from PyQt5.QtGui import QClipboard, QGuiApplication, QIcon
 from PyQt5.QtWidgets import QAction, QApplication, QHBoxLayout, QMainWindow, QVBoxLayout, QWidget
 
 from securedrop_client import __version__, state
 from securedrop_client.db import Source, User
 from securedrop_client.gui.auth import LoginDialog
+from securedrop_client.gui.shortcuts import Shortcuts
 from securedrop_client.gui.widgets import BottomPane, LeftPane, MainView
 from securedrop_client.logic import Controller
 from securedrop_client.resources import load_all_fonts, load_css, load_icon
@@ -93,7 +94,7 @@ class Window(QMainWindow):
         # Actions
         quit = QAction(_("Quit"), self)
         quit.setIcon(QIcon.fromTheme("application-exit"))
-        quit.setShortcut(QKeySequence.Quit)
+        quit.setShortcut(Shortcuts.QUIT.value)
         quit.triggered.connect(self.close)
         self.addAction(quit)
 

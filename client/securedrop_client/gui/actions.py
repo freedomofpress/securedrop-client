@@ -10,7 +10,7 @@ from contextlib import ExitStack
 from gettext import gettext as _
 from pathlib import Path
 
-from PyQt5.QtCore import Qt, pyqtSlot
+from PyQt5.QtCore import pyqtSlot
 from PyQt5.QtWidgets import QAction, QApplication, QDialog, QMenu
 
 from securedrop_client import state
@@ -20,6 +20,7 @@ from securedrop_client.export import Export
 from securedrop_client.gui.base import ModalDialog
 from securedrop_client.gui.conversation import PrintDialog
 from securedrop_client.gui.conversation.export import ExportWizard
+from securedrop_client.gui.shortcuts import Shortcuts
 from securedrop_client.logic import Controller
 from securedrop_client.utils import safe_mkdir
 
@@ -36,7 +37,7 @@ class DownloadConversation(QAction):
         self._state = app_state
         self._text = _("Download All")
         super().__init__(self._text, parent)
-        self.setShortcut(Qt.CTRL + Qt.Key_D)
+        self.setShortcut(Shortcuts.DOWNLOAD_CONVERSATION.value)
         self.triggered.connect(self.on_triggered)
         self.setShortcutVisibleInContextMenu(True)
 
