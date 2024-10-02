@@ -19,6 +19,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
 import logging
+from datetime import datetime
 from gettext import gettext as _
 
 from PyQt5.QtCore import Qt
@@ -28,6 +29,7 @@ from PyQt5.QtWidgets import QAction, QApplication, QHBoxLayout, QMainWindow, QVB
 from securedrop_client import __version__, state
 from securedrop_client.db import Source, User
 from securedrop_client.gui.auth import LoginDialog
+from securedrop_client.gui.datetime_helpers import format_relative_time
 from securedrop_client.gui.shortcuts import Shortcuts
 from securedrop_client.gui.widgets import BottomPane, LeftPane, MainView
 from securedrop_client.logic import Controller
@@ -176,12 +178,12 @@ class Window(QMainWindow):
         """
         self.main_view.show_sources(sources)
 
-    def show_last_sync(self, updated_on):  # type: ignore[no-untyped-def]
+    def show_last_sync(self, updated_on: datetime) -> None:
         """
         Display a message indicating the time of last sync with the server.
         """
         if updated_on:
-            self.update_sync_status(_("Last Refresh: {}").format(updated_on.humanize()))
+            self.update_sync_status(_("Last Refresh: {}").format(format_relative_time(updated_on)))
         else:
             self.update_sync_status(_("Last Refresh: never"))
 

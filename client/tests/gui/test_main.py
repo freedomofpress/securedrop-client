@@ -3,6 +3,7 @@ Check the core Window UI class works as expected.
 """
 
 import unittest
+from datetime import UTC, datetime, timedelta
 
 from PyQt5.QtWidgets import QHBoxLayout
 
@@ -326,13 +327,13 @@ def test_clear_error_status(mocker):
 
 def test_show_last_sync(mocker):
     """
-    If there's a value display the result of its "humanize" method.humanize
+    If there's a value display the formatted version of the timestamp.
     """
     w = Window()
     w.update_sync_status = mocker.MagicMock()
-    updated_on = mocker.MagicMock()
+    updated_on = datetime.now(UTC) - timedelta(seconds=5)
     w.show_last_sync(updated_on)
-    w.update_sync_status.assert_called_once_with(f"Last Refresh: {updated_on.humanize()}")
+    w.update_sync_status.assert_called_once_with("Last Refresh: 5 seconds")
 
 
 def test_show_last_sync_no_sync(mocker):

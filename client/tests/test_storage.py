@@ -9,7 +9,6 @@ import uuid
 from tempfile import TemporaryDirectory
 
 import pytest
-from dateutil.parser import parse
 from PyQt5.QtCore import QThread
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm.exc import NoResultFound
@@ -403,7 +402,8 @@ def _is_equivalent_source(source, remote_source) -> bool:
         and source.fingerprint == remote_source.key["fingerprint"]
         and source.interaction_count == remote_source.interaction_count
         and source.is_starred == remote_source.is_starred
-        and source.last_updated == parse(remote_source.last_updated)
+        and source.last_updated
+        == datetime.datetime.fromisoformat(remote_source.last_updated.replace("Z", "+00:00"))
     )
 
 

@@ -1,6 +1,6 @@
 import datetime
+from zoneinfo import ZoneInfo
 
-from dateutil import tz
 from PyQt5.QtCore import QByteArray
 
 from securedrop_client.gui.datetime_helpers import (
@@ -25,7 +25,7 @@ def test_localise_datetime(mocker):
     )
     evening_january_1_london = datetime.datetime(2023, 1, 1, 18, 0, 0, tzinfo=datetime.UTC)
     morning_january_2_auckland = datetime.datetime(
-        2023, 1, 2, 7, 0, 0, tzinfo=tz.gettz("Pacific/Auckland")
+        2023, 1, 2, 7, 0, 0, tzinfo=ZoneInfo("Pacific/Auckland")
     )
     assert localise_datetime(evening_january_1_london) == morning_january_2_auckland
 

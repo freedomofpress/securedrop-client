@@ -28,7 +28,6 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any, TypeVar
 
-from dateutil.parser import parse
 from sqlalchemy import and_, desc, or_
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm.exc import NoResultFound
@@ -332,7 +331,11 @@ def update_sources(
             lazy_setattr(local_source, "is_flagged", source.is_flagged)
             lazy_setattr(local_source, "interaction_count", source.interaction_count)
             lazy_setattr(local_source, "is_starred", source.is_starred)
-            lazy_setattr(local_source, "last_updated", parse(source.last_updated))
+            lazy_setattr(
+                local_source,
+                "last_updated",
+                datetime.fromisoformat(source.last_updated.replace("Z", "+00:00")),
+            )
             lazy_setattr(local_source, "public_key", source.key["public"])
             lazy_setattr(local_source, "fingerprint", source.key["fingerprint"])
 
@@ -360,7 +363,7 @@ def update_sources(
                 is_flagged=source.is_flagged,
                 interaction_count=source.interaction_count,
                 is_starred=source.is_starred,
-                last_updated=parse(source.last_updated),
+                last_updated=datetime.fromisoformat(source.last_updated.replace("Z", "+00:00")),
                 document_count=source.number_of_documents,
                 public_key=source.key["public"],
                 fingerprint=source.key["fingerprint"],

@@ -17,19 +17,6 @@ python-editor = ">=0.3"
 SQLAlchemy = ">=1.1.0"
 
 [[package]]
-name = "arrow"
-version = "0.12.1"
-description = "Better dates and times for Python"
-optional = false
-python-versions = "*"
-files = [
-    {file = "arrow-0.12.1.tar.gz", hash = "sha256:a558d3b7b6ce7ffc74206a86c147052de23d3d4ef0e17c210dd478c53575c4cd"},
-]
-
-[package.dependencies]
-python-dateutil = "*"
-
-[[package]]
 name = "attrs"
 version = "23.1.0"
 description = "Classes Without Boilerplate"
@@ -1904,17 +1891,6 @@ files = [
 ]
 
 [[package]]
-name = "types-python-dateutil"
-version = "2.9.0.20241206"
-description = "Typing stubs for python-dateutil"
-optional = false
-python-versions = ">=3.8"
-files = [
-    {file = "types_python_dateutil-2.9.0.20241206-py3-none-any.whl", hash = "sha256:e248a4bc70a486d3e3ec84d0dc30eec3a5f979d6e7ee4123ae043eedbb987f53"},
-    {file = "types_python_dateutil-2.9.0.20241206.tar.gz", hash = "sha256:18f493414c26ffba692a72369fea7a154c502646301ebfe3d56a04b3767284cb"},
-]
-
-[[package]]
 name = "types-setuptools"
 version = "75.6.0.20241126"
 description = "Typing stubs for setuptools"
@@ -2163,4 +2139,4 @@ multidict = ">=4.0"
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.11"
-content-hash = "04ad35e614ab24b0a2a27bfe981567a1af32c18db7561201bbf61adc0ea6ecd4"
+content-hash = "4f18f2b9eb7dabd0dba1896f47bc5afa14afffd93ee8e02c2f4b6d5c26e94592"
