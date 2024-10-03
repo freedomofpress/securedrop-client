@@ -200,8 +200,7 @@ class BottomPane(QWidget):
 
 class LeftPane(QWidget):
     """
-    Represents the left side pane that contains user authentication actions and, information,
-    and batch actions.
+    Represents the left side pane that contains user authentication actions and information.
     """
 
     def __init__(self) -> None:
