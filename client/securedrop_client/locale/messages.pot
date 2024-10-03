@@ -148,6 +148,15 @@ msgstr ""
 msgid "Send a response"
 msgstr ""
 
+msgid "Multiple Sources Selected"
+msgstr ""
+
+msgid "Select or de-select sources using Ctrl+click, Shift+click, or by dragging the mouse."
+msgstr ""
+
+msgid "Use the top toolbar to delete multiple sources at once."
+msgstr ""
+
 msgid "Deleting files and messages…"
 msgstr ""
 
