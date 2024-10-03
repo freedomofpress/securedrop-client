@@ -417,6 +417,9 @@ class Controller(QObject):
         ):
             os.chmod(self.last_sync_filepath, 0o600)
 
+        # Store currently-selected sources
+        self._selected_sources: set[db.Source] | None = None
+
     @pyqtSlot(int)
     def _on_main_queue_updated(self, num_items: int) -> None:
         if num_items > 0:
@@ -607,6 +610,9 @@ class Controller(QObject):
         # may have attempted online mode login, then switched to offline)
         self.gui.clear_clipboard()
         self.gui.show_main_window()
+
+        # All child elements of main window should show logged_out state
+        self.gui.logout()
         self.update_sources()
 
     def on_action_requiring_login(self) -> None:
@@ -1044,21 +1050,22 @@ class Controller(QObject):
             self.source_deletion_failed.emit(e.source_uuid)
 
     @login_required
-    def delete_source(self, source: db.Source) -> None:
+    def delete_sources(self, sources: set[db.Source]) -> None:
         """
-        Performs a delete operation on source record.
+        Performs a delete operation on one or more source records.
 
-        This method will submit a job to delete the source record on
-        the server. If the job succeeds, the success handler will
+        This method will submit a job to delete each target source record on
+        the server. If a given job succeeds, the success handler will
         synchronize the server records with the local state. If not,
         the failure handler will display an error.
         """
-        job = DeleteSourceJob(source.uuid)
-        job.success_signal.connect(self.on_delete_source_success)
-        job.failure_signal.connect(self.on_delete_source_failure)
+        for source in sources:
+            job = DeleteSourceJob(source.uuid)
+            job.success_signal.connect(self.on_delete_source_success)
+            job.failure_signal.connect(self.on_delete_source_failure)
 
-        self.add_job.emit(job)
-        self.source_deleted.emit(source.uuid)
+            self.add_job.emit(job)
+            self.source_deleted.emit(source.uuid)
 
     @login_required
     def delete_conversation(self, source: db.Source) -> None:
@@ -1183,3 +1190,10 @@ class Controller(QObject):
         failed_replies = storage.mark_all_pending_drafts_as_failed(self.session)
         for failed_reply in failed_replies:
             self.reply_failed.emit(failed_reply.uuid)
+
+    @pyqtSlot(object)
+    def on_receive_selected_sources(self, sources: set[db.Source]) -> None:
+        self._selected_sources = sources
+
+    def get_selected_sources(self) -> set[db.Source] | None:
+        return self._selected_sources

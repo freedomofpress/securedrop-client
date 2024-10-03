@@ -2,7 +2,7 @@ from PyQt5.QtGui import QFont, QPalette
 
 
 def test_styles_for_placeholder(main_window):
-    wrapper = main_window.main_view.view_layout.itemAt(0).widget()
+    wrapper = main_window.main_view.view_layout.widget(main_window.main_view.CONVERSATION_INDEX)
     reply_box = wrapper.reply_box
     reply_text_edit = reply_box.text_edit
 
@@ -34,7 +34,9 @@ def test_styles_for_placeholder(main_window):
 
 
 def test_styles_for_placeholder_no_key(main_window_no_key):
-    wrapper = main_window_no_key.main_view.view_layout.itemAt(0).widget()
+    wrapper = main_window_no_key.main_view.view_layout.itemAt(
+        main_window_no_key.main_view.CONVERSATION_INDEX
+    ).widget()
     reply_box = wrapper.reply_box
     reply_text_edit = reply_box.text_edit
 
