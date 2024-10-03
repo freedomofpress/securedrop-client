@@ -115,6 +115,39 @@ QWidget {
     background-color: #85f6fe;
 }
 
+#InnerTopPane {
+    background-color: #f3f5f9;
+}
+
+#BatchActionWidget {
+    background-color: #fff;
+    min-height: 24px;
+    margin: 2px;
+}
+
+#BatchActionToolbar QToolButton {
+    font-family: 'Montserrat';
+    font-weight: 600;
+    font-size: 12px;
+    padding: 2px;
+    color: #2a319d;
+    background-color: #fff;
+    border: 2px solid #2a319d;
+}
+
+#BatchActionToolbar QToolButton:disabled {
+    color: #a5a8d8;
+    background-color: #9495b9;
+    border: 2px solid #a5a8d8;
+}
+
+#BatchActionToolbar QToolButton:hover,
+#BatchActionToolbar QToolButton:checked {
+    background-color: #05a6fe;
+    border: 2px solid #05a6fe;
+    color: #fff;
+}
+
 #MainView {
     min-height: 558;
 }
