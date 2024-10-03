@@ -17,7 +17,7 @@ Printer support is currently limited to a subset of Brother and HP printers that
 
 ## Supported Export Devices
 
-Export to LUKS-encrypted or VeraCrypt-encrypted USB devices is supported.
+Export to LUKS-encrypted or VeraCrypt-encrypted USB drives is supported.
 
 ### LUKS
 Partition a drive (either the MBR/DOS or the GPT partition scheme is fine)
@@ -114,7 +114,7 @@ The supported device types for export are as follows, including the possible err
        Note: locked VeraCrypt drives also return this status, and a hint is shown to the user that they must
        manually unlock such drives before proceeding.
     - `DEVICE_LOCKED` if a supported drive is inserted but locked (a LUKS drive, since locked Veracrypt detection is not supported)
-    - `DEVICE_WRITABLE` if a supported USB device is attached and unlocked. (Only used for Preflight check)
+    - `DEVICE_WRITABLE` if a supported USB drive is attached and unlocked. (Only used for Preflight check)
     - `DEVICE_ERROR`: A problem was encountered and device state cannot be reported.
 
 2. `disk`: Attempts to send files to disk. Can return any Preflight status except `DEVICE_WRITABLE`, as well as
