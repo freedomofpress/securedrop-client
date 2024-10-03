@@ -29,7 +29,7 @@ from securedrop_client import __version__, state
 from securedrop_client.db import Source, User
 from securedrop_client.gui.auth import LoginDialog
 from securedrop_client.gui.shortcuts import Shortcuts
-from securedrop_client.gui.widgets import BottomPane, InnerTopPane, LeftPane, MainView
+from securedrop_client.gui.widgets import BottomPane, LeftPane, MainView
 from securedrop_client.logic import Controller
 from securedrop_client.resources import load_all_fonts, load_css, load_icon
 
@@ -63,11 +63,6 @@ class Window(QMainWindow):
         self.setWindowTitle(_("SecureDrop Client {}").format(__version__))
         self.setWindowIcon(load_icon(self.icon))
 
-        # Top Pane to hold batch actions, eventually will also hold
-        # search bar for keyword filtering. The Top Pane is not a top-level
-        # layout element, but instead is nested inside the central widget view.
-        self.top_pane = InnerTopPane()
-
         # Bottom Pane to display activity and error messages
         self.bottom_pane = BottomPane()
 
@@ -80,6 +75,7 @@ class Window(QMainWindow):
         self.main_pane.setLayout(layout)
         self.left_pane = LeftPane()
         self.main_view = MainView(self.main_pane, app_state)
+
         layout.addWidget(self.left_pane)
         layout.addWidget(self.main_view)
 
@@ -109,10 +105,15 @@ class Window(QMainWindow):
         views used in the UI.
         """
         self.controller = controller
-        self.top_pane.setup(self.controller)
         self.bottom_pane.setup(self.controller)
         self.left_pane.setup(self, self.controller)
         self.main_view.setup(self.controller)
+
+        # Listen for changes to the selected sources in sourcelist
+        self.main_view.source_list.selected_sources.connect(
+            self.controller.on_receive_selected_sources
+        )
+
         self.show_login()
 
     def show_main_window(self, db_user: User | None = None) -> None:
@@ -190,6 +191,7 @@ class Window(QMainWindow):
         """
         self.left_pane.set_logged_in_as(db_user)
         self.bottom_pane.set_logged_in()
+        self.main_view.set_logged_in()
 
     def logout(self) -> None:
         """
@@ -197,6 +199,7 @@ class Window(QMainWindow):
         """
         self.left_pane.set_logged_out()
         self.bottom_pane.set_logged_out()
+        self.main_view.set_logged_out()
 
     def update_sync_status(self, message: str, duration: int = 0) -> None:
         """
