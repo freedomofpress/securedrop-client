@@ -39,11 +39,13 @@ class Config:
         "gpg_domain": "QUBES_GPG_DOMAIN",
         "journalist_key_fingerprint": "SD_SUBMISSION_KEY_FPR",
         "download_retry_limit": "SD_DOWNLOAD_RETRY_LIMIT",
+        "proxy_vm_name": "SD_PROXY_VM_NAME",
     }
 
     journalist_key_fingerprint: str
     gpg_domain: str | None = None
     download_retry_limit: int = 3
+    proxy_vm_name: str = "sd-proxy"
 
     @classmethod
     def load(cls) -> "Config":
