@@ -29,23 +29,51 @@ user-id = 980
 user-login = "Byron"
 user-name = "Sebastian Thiel"
 
+[[publisher.futures-channel]]
+version = "0.3.31"
+when = "2024-10-05"
+user-id = 33035
+user-login = "taiki-e"
+user-name = "Taiki Endo"
+
+[[publisher.futures-core]]
+version = "0.3.31"
+when = "2024-10-05"
+user-id = 33035
+user-login = "taiki-e"
+user-name = "Taiki Endo"
+
 [[publisher.futures-io]]
-version = "0.3.30"
-when = "2023-12-24"
+version = "0.3.31"
+when = "2024-10-05"
 user-id = 33035
 user-login = "taiki-e"
 user-name = "Taiki Endo"
 
 [[publisher.futures-macro]]
-version = "0.3.30"
-when = "2023-12-24"
+version = "0.3.31"
+when = "2024-10-05"
 user-id = 33035
 user-login = "taiki-e"
 user-name = "Taiki Endo"
 
 [[publisher.futures-sink]]
-version = "0.3.30"
-when = "2023-12-24"
+version = "0.3.31"
+when = "2024-10-05"
+user-id = 33035
+user-login = "taiki-e"
+user-name = "Taiki Endo"
+
+[[publisher.futures-task]]
+version = "0.3.31"
+when = "2024-10-05"
+user-id = 33035
+user-login = "taiki-e"
+user-name = "Taiki Endo"
+
+[[publisher.futures-util]]
+version = "0.3.31"
+when = "2024-10-05"
 user-id = 33035
 user-login = "taiki-e"
 user-name = "Taiki Endo"
@@ -207,13 +235,6 @@ user-name = "David Tolnay"
 [[publisher.serde_json]]
 version = "1.0.113"
 when = "2024-01-29"
-user-id = 3618
-user-login = "dtolnay"
-user-name = "David Tolnay"
-
-[[publisher.syn]]
-version = "2.0.48"
-when = "2024-01-04"
 user-id = 3618
 user-login = "dtolnay"
 user-name = "David Tolnay"
@@ -600,37 +621,6 @@ that the RNG here is not cryptographically secure.
 """
 aggregated-from = "https://chromium.googlesource.com/chromiumos/third_party/rust_crates/+/refs/heads/main/cargo-vet/audits.toml?format=TEXT"
 
-[[audits.google.audits.futures-channel]]
-who = "George Burgess IV <gbiv@google.com>"
-criteria = "safe-to-run"
-version = "0.3.28"
-aggregated-from = "https://chromium.googlesource.com/chromiumos/third_party/rust_crates/+/refs/heads/main/cargo-vet/audits.toml?format=TEXT"
-
-[[audits.google.audits.futures-core]]
-who = "George Burgess IV <gbiv@google.com>"
-criteria = "safe-to-run"
-version = "0.3.28"
-aggregated-from = "https://chromium.googlesource.com/chromiumos/third_party/rust_crates/+/refs/heads/main/cargo-vet/audits.toml?format=TEXT"
-
-[[audits.google.audits.futures-task]]
-who = "George Burgess IV <gbiv@google.com>"
-criteria = "safe-to-run"
-version = "0.3.28"
-aggregated-from = "https://chromium.googlesource.com/chromiumos/third_party/rust_crates/+/refs/heads/main/cargo-vet/audits.toml?format=TEXT"
-
-[[audits.google.audits.futures-util]]
-who = "George Burgess IV <gbiv@google.com>"
-criteria = "safe-to-run"
-version = "0.3.28"
-notes = """
-There's a custom xorshift-based `random::shuffle` implementation in
-src/async_await/random.rs. This is `doc(hidden)` and seems to exist just so
-that `futures-macro::select` can be unbiased. Sicne xorshift is explicitly not
-intended to be a cryptographically secure algorithm, it is not considered
-crypto.
-"""
-aggregated-from = "https://chromium.googlesource.com/chromiumos/third_party/rust_crates/+/refs/heads/main/cargo-vet/audits.toml?format=TEXT"
-
 [[audits.google.audits.gimli]]
 who = "George Burgess IV <gbiv@google.com>"
 criteria = "safe-to-run"
@@ -909,6 +899,12 @@ criteria = "safe-to-deploy"
 delta = "0.4.4 -> 0.5.5"
 notes = "Reviewed at https://fxrev.dev/946307"
 aggregated-from = "https://fuchsia.googlesource.com/fuchsia/+/refs/heads/main/third_party/rust_crates/supply-chain/audits.toml?format=TEXT"
+
+[[audits.google.audits.syn]]
+who = "Ying Hsu <yinghsu@chromium.org>"
+criteria = "safe-to-run"
+version = "2.0.58"
+aggregated-from = "https://chromium.googlesource.com/chromiumos/third_party/rust_crates/+/refs/heads/main/cargo-vet/audits.toml?format=TEXT"
 
 [[audits.google.audits.sync_wrapper]]
 who = "ChromeOS"
@@ -1257,70 +1253,6 @@ aggregated-from = "https://raw.githubusercontent.com/zcash/zcash/master/qa/suppl
 who = "Jack Grigg <jack@electriccoin.co>"
 criteria = "safe-to-deploy"
 delta = "0.3.3 -> 0.3.8"
-aggregated-from = "https://raw.githubusercontent.com/zcash/zcash/master/qa/supply-chain/audits.toml"
-
-[[audits.zcash.audits.futures-channel]]
-who = "Jack Grigg <jack@electriccoin.co>"
-criteria = "safe-to-deploy"
-delta = "0.3.28 -> 0.3.29"
-aggregated-from = "https://raw.githubusercontent.com/zcash/zcash/master/qa/supply-chain/audits.toml"
-
-[[audits.zcash.audits.futures-channel]]
-who = "Jack Grigg <jack@electriccoin.co>"
-criteria = "safe-to-deploy"
-delta = "0.3.29 -> 0.3.30"
-notes = "Removes `build.rs` now that it can rely on the `target_has_atomic` attribute."
-aggregated-from = "https://raw.githubusercontent.com/zcash/zcash/master/qa/supply-chain/audits.toml"
-
-[[audits.zcash.audits.futures-core]]
-who = "Jack Grigg <jack@electriccoin.co>"
-criteria = "safe-to-deploy"
-delta = "0.3.28 -> 0.3.29"
-aggregated-from = "https://raw.githubusercontent.com/zcash/zcash/master/qa/supply-chain/audits.toml"
-
-[[audits.zcash.audits.futures-core]]
-who = "Jack Grigg <jack@electriccoin.co>"
-criteria = "safe-to-deploy"
-delta = "0.3.29 -> 0.3.30"
-notes = "Removes `build.rs` now that it can rely on the `target_has_atomic` attribute."
-aggregated-from = "https://raw.githubusercontent.com/zcash/zcash/master/qa/supply-chain/audits.toml"
-
-[[audits.zcash.audits.futures-task]]
-who = "Jack Grigg <jack@electriccoin.co>"
-criteria = "safe-to-deploy"
-delta = "0.3.28 -> 0.3.29"
-aggregated-from = "https://raw.githubusercontent.com/zcash/zcash/master/qa/supply-chain/audits.toml"
-
-[[audits.zcash.audits.futures-task]]
-who = "Jack Grigg <jack@electriccoin.co>"
-criteria = "safe-to-deploy"
-delta = "0.3.29 -> 0.3.30"
-notes = "Removes `build.rs` now that it can rely on the `target_has_atomic` attribute."
-aggregated-from = "https://raw.githubusercontent.com/zcash/zcash/master/qa/supply-chain/audits.toml"
-
-[[audits.zcash.audits.futures-util]]
-who = "Jack Grigg <jack@electriccoin.co>"
-criteria = "safe-to-deploy"
-delta = "0.3.28 -> 0.3.29"
-notes = """
-Only change to `unsafe` code is to add a `Fut: Send` bound to the
-`unsafe impl Sync for FuturesUnordered<Fut>`.
-"""
-aggregated-from = "https://raw.githubusercontent.com/zcash/zcash/master/qa/supply-chain/audits.toml"
-
-[[audits.zcash.audits.futures-util]]
-who = "Jack Grigg <jack@electriccoin.co>"
-criteria = "safe-to-deploy"
-delta = "0.3.29 -> 0.3.30"
-notes = """
-- Removes `build.rs` now that it can rely on the `target_has_atomic` attribute.
-- Almost all changes to `unsafe` blocks are to either move them around, or
-  replace them with safe method calls.
-- One new `unsafe` block is added for a slice lifetime transmutation. The slice
-  reconstruction is obviously correct. AFAICT the lifetime transmutation is also
-  correct; the slice's lifetime logically comes from the `AsyncBufRead` reader
-  inside `FillBuf`, rather than the `Context`.
-"""
 aggregated-from = "https://raw.githubusercontent.com/zcash/zcash/master/qa/supply-chain/audits.toml"
 
 [[audits.zcash.audits.ipnet]]

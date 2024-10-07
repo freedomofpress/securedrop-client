@@ -140,7 +140,35 @@ start = "2023-08-15"
 end = "2024-08-29"
 notes = "Rust Project member"
 
+[[trusted.futures-channel]]
+criteria = "safe-to-deploy"
+user-id = 33035 # Taiki Endo (taiki-e)
+start = "2020-10-05"
+end = "2025-04-07"
+notes = "Rust Project member"
+
+[[trusted.futures-core]]
+criteria = "safe-to-deploy"
+user-id = 33035 # Taiki Endo (taiki-e)
+start = "2020-10-05"
+end = "2025-04-07"
+notes = "Rust Project member"
+
 [[trusted.futures-io]]
+criteria = "safe-to-deploy"
+user-id = 33035 # Taiki Endo (taiki-e)
+start = "2020-10-05"
+end = "2024-08-29"
+notes = "Rust Project member"
+
+[[trusted.futures-io]]
+criteria = "safe-to-deploy"
+user-id = 33035 # Taiki Endo (taiki-e)
+start = "2020-10-05"
+end = "2025-04-07"
+notes = "Rust Project member"
+
+[[trusted.futures-macro]]
 criteria = "safe-to-deploy"
 user-id = 33035 # Taiki Endo (taiki-e)
 start = "2020-10-05"
@@ -151,7 +179,7 @@ notes = "Rust Project member"
 criteria = "safe-to-deploy"
 user-id = 33035 # Taiki Endo (taiki-e)
 start = "2020-10-05"
-end = "2024-08-29"
+end = "2025-04-07"
 notes = "Rust Project member"
 
 [[trusted.futures-sink]]
@@ -159,6 +187,27 @@ criteria = "safe-to-deploy"
 user-id = 33035 # Taiki Endo (taiki-e)
 start = "2020-10-05"
 end = "2024-08-29"
+notes = "Rust Project member"
+
+[[trusted.futures-sink]]
+criteria = "safe-to-deploy"
+user-id = 33035 # Taiki Endo (taiki-e)
+start = "2020-10-05"
+end = "2025-04-07"
+notes = "Rust Project member"
+
+[[trusted.futures-task]]
+criteria = "safe-to-deploy"
+user-id = 33035 # Taiki Endo (taiki-e)
+start = "2019-07-29"
+end = "2025-04-07"
+notes = "Rust Project member"
+
+[[trusted.futures-util]]
+criteria = "safe-to-deploy"
+user-id = 33035 # Taiki Endo (taiki-e)
+start = "2020-10-05"
+end = "2025-04-07"
 notes = "Rust Project member"
 
 [[trusted.h2]]
