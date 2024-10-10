@@ -648,6 +648,41 @@ def test_MainView_on_source_changed(mocker):
     mv.set_conversation.assert_called_once_with(scw)
 
 
+def test_MainView_on_source_changed_shows_correct_context(mocker):
+    """
+    Ensure correct context presented based on number of sources selected.
+    """
+    # Build sourcelist
+    sources = [] 
+    for i in range(0, 10):
+        sources.append(factory.Source())
+    
+    mock_controller = mocker.MagicMock(spec=logic.Controller)
+    mock_controller.mark_seen = mocker.MagicMock()
+    mv = MainView(parent=None)
+    mv.setup(mock_controller)
+
+    mv.show_sources(sources)
+
+    # Sanity check - list is populated
+    assert len(mv.source_list.items()) == len(sources)
+
+    assert mv.empty_conversation_view.isVisible()
+    assert mv.empty_conversation_view.no_source_selected.isVisible()
+
+    # Now try selecting a source and ensure the correct view context is shown
+    mv.source_list.itemAt(1).setSelected()
+
+    assert mv.empty_conversation_view.isHidden()
+    mock_controller.mark_seen.assert_called_once_with(mv.source_list.itemAt(1).source)
+
+    # Now ensure the "multiple sources selected" view is shown
+    mv.source_list.selectAll()
+
+    assert mv.empty_conversation_view.isVisible()
+    assert mv.empty_conversation_view.multi_source_selected.isVisible()
+
+
 def test_MainView_on_source_changed_does_not_raise_InvalidRequestError(mocker):
     """
     If the source no longer exists in the local data store, ensure we just log and do not raise

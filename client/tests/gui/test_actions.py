@@ -102,7 +102,7 @@ class DeleteSourceActionTest(unittest.TestCase):
 
         self.action.trigger()
 
-        self._controller.delete_source.assert_called_once_with(self._source)
+        self._controller.delete_sources.assert_called_once_with(set([self._source]))
 
     def test_does_not_delete_source_when_dialog_rejected(self):
         # Reject the confirmation dialog from a separate thread.
@@ -110,7 +110,7 @@ class DeleteSourceActionTest(unittest.TestCase):
 
         self.action.trigger()
 
-        assert not self._controller.delete_source.called
+        assert not self._controller.delete_sources.called
 
     def test_requires_authenticated_journalist(self):
         controller = mock.MagicMock(Controller, api=None)  # no authenticated user
@@ -122,7 +122,7 @@ class DeleteSourceActionTest(unittest.TestCase):
         self.action.trigger()
 
         assert not confirmation_dialog.exec.called
-        assert not controller.delete_source.called
+        assert not controller.delete_sources.called
         controller.on_action_requiring_login.assert_called_once()
 
 
