@@ -18,6 +18,7 @@ import securedrop_client.db
 from securedrop_client import db, utils
 from securedrop_client.sdk import Reply, Submission
 from securedrop_client.storage import (
+    SDDatabaseError,
     __update_submissions,
     _cleanup_directory_if_empty,
     _cleanup_flagged_locally_deleted,
@@ -383,13 +384,13 @@ def test_sync_delete_race(homedir, mocker, session_maker, session):
     update_local_storage(session, sources, [message1, message2], [], homedir)
 
     assert source_exists(session, source.uuid) is False
-    with pytest.raises(NoResultFound):
+    with pytest.raises(SDDatabaseError):
         get_message(session, message1.uuid)
 
     assert source_exists(session, source.uuid) is False
-    with pytest.raises(NoResultFound):
+    with pytest.raises(SDDatabaseError):
         get_message(session, message1.uuid)
-    with pytest.raises(NoResultFound):
+    with pytest.raises(SDDatabaseError):
         get_message(session, message2.uuid)
 
 
@@ -1792,6 +1793,31 @@ def test_get_reply(mocker, session):
     result = get_reply(session, reply.uuid)
 
     assert result == reply
+
+
+def test_get_object_does_not_exist_raises_SDDatabaseError(mocker, session):
+    source = factory.Source()
+    # Add the source, but not the items
+    session.add(source)
+
+    items = [
+        factory.File(source=source),
+        factory.Message(source=source),
+        factory.Reply(source=source),
+    ]
+
+    def get_object(item) -> callable:
+        if isinstance(item, db.File):
+            return get_file
+        elif isinstance(item, db.Reply):
+            return get_reply
+        else:  # db.Message
+            return get_message
+
+    for item in items:
+        get_item = get_object(item)
+        with pytest.raises(SDDatabaseError):
+            get_item(session, item.uuid)
 
 
 def test_mark_pending_replies_as_failed(mocker, session, reply_status_codes):

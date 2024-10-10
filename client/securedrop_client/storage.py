@@ -66,6 +66,12 @@ VALID_FILENAME = re.compile(
 ).match
 
 
+class SDDatabaseError(Exception):
+    """
+    Handle SQLAlchemy exceptions and return relevant information to controller.
+    """
+
+
 def get_local_sources(session: Session) -> list[Source]:
     """
     Return all source objects from the local database, newest first.
@@ -505,6 +511,9 @@ def __update_submissions(
                 f"Tried to delete submission {deleted_submission.uuid}, but "
                 "it was already deleted locally."
             )
+        except SQLAlchemyError as e:
+            logger.error("Error deleting single record")
+            logger.debug(f"{e}")
     session.commit()
 
     # Check if we left any empty directories when deleting file submissions
@@ -1056,15 +1065,36 @@ def source_exists(session: Session, source_uuid: str) -> bool:
 
 
 def get_file(session: Session, uuid: str) -> File:
-    return session.query(File).filter_by(uuid=uuid).one()
+    """
+    Get File object by uuid. Raise SDDatabaseError if no match found.
+    """
+    try:
+        return session.query(File).filter_by(uuid=uuid).one()
+    except NoResultFound as e:
+        # May or may not be an error; it's up to the caller to decide
+        raise SDDatabaseError() from e
 
 
 def get_message(session: Session, uuid: str) -> Message:
-    return session.query(Message).filter_by(uuid=uuid).one()
+    """
+    Get Message object by uuid. Raise SDDatabaseError if no match found.
+    """
+    try:
+        return session.query(Message).filter_by(uuid=uuid).one()
+    except NoResultFound as e:
+        # May or may not be an error; it's up to the caller to decide
+        raise SDDatabaseError() from e
 
 
 def get_reply(session: Session, uuid: str) -> Reply:
-    return session.query(Reply).filter_by(uuid=uuid).one()
+    """
+    Get Reply object by uuid. Raise SDDatabaseError if no match found.
+    """
+    try:
+        return session.query(Reply).filter_by(uuid=uuid).one()
+    except NoResultFound as e:
+        # May or may not be an error; it's up to the caller to decide
+        raise SDDatabaseError() from e
 
 
 def mark_all_pending_drafts_as_failed(session: Session) -> list[DraftReply]:

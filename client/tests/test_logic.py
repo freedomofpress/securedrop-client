@@ -1633,7 +1633,7 @@ def test_Controller_on_reply_downloaded_failure(mocker, homedir, session_maker):
     mocker.patch("securedrop_client.storage.get_reply", return_value=reply)
     co._submit_download_job = mocker.MagicMock()
 
-    co.on_reply_download_failure(Exception("mock_exception"))
+    co.on_reply_download_failure(DownloadException("mock_exception", type(reply), uuid="d34db33f"))
 
     assert len(reply_ready_emissions) == 0
 
@@ -1837,7 +1837,9 @@ def test_Controller_on_message_downloaded_failure(mocker, homedir, session_maker
     mocker.patch("securedrop_client.storage.get_message", return_value=message)
     co._submit_download_job = mocker.MagicMock()
 
-    co.on_message_download_failure(Exception("mock_exception"))
+    co.on_message_download_failure(
+        DownloadException("mock_exception", type(message), uuid="d34db33f")
+    )
 
     assert len(message_ready_emissions) == 0
 

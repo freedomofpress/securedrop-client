@@ -854,8 +854,12 @@ class Controller(QObject):
         Called when a message has downloaded.
         """
         self.session.commit()  # Needed to flush stale data.
-        message = storage.get_message(self.session, uuid)
-        self.message_ready.emit(message.source.uuid, message.uuid, message.content)
+        try:
+            message = storage.get_message(self.session, uuid)
+            self.message_ready.emit(message.source.uuid, message.uuid, message.content)
+        except storage.SDDatabaseError as e:
+            logger.error("Failed to find message uuid in database")
+            logger.debug(f"Message {uuid} missing from database: {e}")
 
     def on_message_download_failure(self, exception: DownloadException) -> None:
         """
@@ -870,9 +874,12 @@ class Controller(QObject):
         try:
             message = storage.get_message(self.session, exception.uuid)
             self.message_download_failed.emit(message.source.uuid, message.uuid, str(message))
-        except Exception as e:
-            logger.error("Could not emit message_download_failed")
-            logger.debug(f"Could not emit message_download_failed: {e}")
+        except storage.SDDatabaseError as e:
+            # Not necessarily an error; the message may have been deleted
+            logger.warning(
+                "Message download failure for uuid not in database (likely deleted record)."
+            )
+            logger.debug(f"Message {exception.uuid} missing from database: {e}")
 
     def download_new_replies(self) -> None:
         replies = storage.find_new_replies(self.session)
@@ -889,8 +896,14 @@ class Controller(QObject):
         Called when a reply has downloaded.
         """
         self.session.commit()  # Needed to flush stale data.
-        reply = storage.get_reply(self.session, uuid)
-        self.reply_ready.emit(reply.source.uuid, reply.uuid, reply.content)
+        try:
+            reply = storage.get_reply(self.session, uuid)
+            self.reply_ready.emit(reply.source.uuid, reply.uuid, reply.content)
+        except storage.SDDatabaseError as e:
+            # This shouldn't happen; if it's been downloaded successfully it should
+            # be in the database.
+            logger.error("Failed to find reply uuid")
+            logger.debug(f"Reply {uuid} missing from database: {e}")
 
     def on_reply_download_failure(self, exception: DownloadException) -> None:
         """
@@ -905,9 +918,12 @@ class Controller(QObject):
         try:
             reply = storage.get_reply(self.session, exception.uuid)
             self.reply_download_failed.emit(reply.source.uuid, reply.uuid, str(reply))
-        except Exception as e:
-            logger.error("Could not emit reply_download_failed")
-            logger.debug(f"Could not emit reply_download_failed: {e}")
+        except storage.SDDatabaseError as e:
+            # If the reply was deleted from the database, this is not an error
+            logger.warning(
+                "Reply download failure for uuid not in database (likely deleted record)."
+            )
+            logger.debug(f"Reply {exception.uuid} not found in database: {e}")
 
     def downloaded_file_exists(self, file: db.File, silence_errors: bool = False) -> bool:
         """
@@ -963,7 +979,15 @@ class Controller(QObject):
         Called when a file has downloaded.
         """
         self.session.commit()
-        file_obj = storage.get_file(self.session, uuid)
+        try:
+            file_obj = storage.get_file(self.session, uuid)
+
+        except storage.SDDatabaseError as e:
+            # This shouldn't happen, it's been downloaded.
+            logger.error("Failed to find file uuid in database")
+            logger.debug(f"File {uuid} missing from database: {e}")
+            return
+
         file_obj.download_error = None
         storage.update_file_size(uuid, self.data_dir, self.session)
         self._state.record_file_download(state.FileId(uuid))
@@ -981,8 +1005,21 @@ class Controller(QObject):
         else:
             if isinstance(exception, DownloadDecryptionException):
                 logger.error("Failed to decrypt %s", exception.uuid)
-                f = self.get_file(exception.uuid)
+                try:
+                    f = storage.get_file(self.session, exception.uuid)
+                except storage.SDDatabaseError as e:
+                    # This isn't necessarily an error; the file may have been deleted
+                    # at the server and has been removed from the database.
+                    # Log it, but don't panic
+                    logger.warning(
+                        "File download failure for uuid not in database (likely deleted record)."
+                    )
+                    logger.debug(f"File {exception.uuid} not found in database: {e}")
+                    return
+
                 self.file_missing.emit(f.source.uuid, f.uuid, str(f))
+            # TODO: This is not a great status message. There could be multiple downloads
+            # happening at once (which one failed?) and trying again isn't always the right call.
             self.gui.update_error_status(_("The file download failed. Please try again."))
 
     def on_delete_conversation_success(self, uuid: str) -> None:
@@ -1123,8 +1160,20 @@ class Controller(QObject):
         if isinstance(exception, SendReplyJobError):
             self.reply_failed.emit(exception.reply_uuid)
 
-    def get_file(self, file_uuid: str) -> db.File:
-        file = storage.get_file(self.session, file_uuid)
+    def get_file(self, file_uuid: str) -> db.File | None:
+        """
+        Wraps storage.py get_file and returns None if no record
+        is available. GUI caller can use this method; internally, prioritize
+        storage.get_file.
+        """
+        try:
+            file = storage.get_file(self.session, file_uuid)
+        except storage.SDDatabaseError as e:
+            # Not necessarily an error
+            logger.warning("get_file for uuid not in database")
+            logger.debug(f"File {file_uuid} not found in database: {e}")
+            return None
+
         self.session.refresh(file)
         return file
 
