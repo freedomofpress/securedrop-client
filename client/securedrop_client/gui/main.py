@@ -29,7 +29,7 @@ from securedrop_client import __version__, state
 from securedrop_client.db import Source, User
 from securedrop_client.gui.auth import LoginDialog
 from securedrop_client.gui.shortcuts import Shortcuts
-from securedrop_client.gui.widgets import BottomPane, LeftPane, MainView
+from securedrop_client.gui.widgets import BottomPane, InnerTopPane, LeftPane, MainView
 from securedrop_client.logic import Controller
 from securedrop_client.resources import load_all_fonts, load_css, load_icon
 
@@ -62,6 +62,11 @@ class Window(QMainWindow):
         self.setStyleSheet(load_css("sdclient.css"))
         self.setWindowTitle(_("SecureDrop Client {}").format(__version__))
         self.setWindowIcon(load_icon(self.icon))
+
+        # Top Pane to hold batch actions, eventually will also hold
+        # search bar for keyword filtering. The Top Pane is not a top-level
+        # layout element, but instead is nested inside the central widget view.
+        self.top_pane = InnerTopPane()
 
         # Bottom Pane to display activity and error messages
         self.bottom_pane = BottomPane()
@@ -104,6 +109,7 @@ class Window(QMainWindow):
         views used in the UI.
         """
         self.controller = controller
+        self.top_pane.setup(self.controller)
         self.bottom_pane.setup(self.controller)
         self.left_pane.setup(self, self.controller)
         self.main_view.setup(self.controller)

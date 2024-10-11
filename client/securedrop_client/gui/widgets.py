@@ -55,6 +55,7 @@ from PyQt5.QtWidgets import (
     QSizePolicy,
     QSpacerItem,
     QStatusBar,
+    QToolBar,
     QToolButton,
     QVBoxLayout,
     QWidget,
@@ -215,14 +216,16 @@ class LeftPane(QWidget):
         layout.setContentsMargins(0, 0, 0, 0)
         layout.setSpacing(0)
 
+        self.user_profile = UserProfile()
         self.branding_barre = QLabel()
         self.branding_barre.setPixmap(load_image("left_pane.svg"))
-        self.user_profile = UserProfile()
 
         # Hide user profile widget until user logs in
         self.user_profile.hide()
 
-        # Add widgets to layout
+        # Add widgets to layout. An improvement
+        # to this layout could be to set the branding barre as a
+        # background layout for the other elements
         layout.addWidget(self.user_profile)
         layout.addWidget(self.branding_barre)
 
@@ -424,6 +427,113 @@ class ErrorStatusBar(QWidget):
         self._hide()
 
 
+class InnerTopPane(QWidget):
+    """
+    Top pane of the MainView window. This pane holds the Batch Action layout,
+    and eventually will hold the keyword search/filter by codename bar.
+    """
+
+    def __init__(self) -> None:
+        super().__init__()
+        self.setObjectName("InnerTopPane")
+
+        # Use a vertical layout so that the keyword search bar can be added later
+        layout = QVBoxLayout(self)
+        layout.setContentsMargins(0, 0, 0, 0)
+        layout.setSpacing(0)
+        layout.setAlignment(Qt.AlignVCenter)
+        self.setLayout(layout)
+        self.setAttribute(Qt.WA_StyledBackground, True)
+
+        self.batch_actions = BatchActionWidget()
+        layout.addWidget(self.batch_actions)
+
+    def setup(self, controller: Controller) -> None:
+        self.batch_actions.setup(controller)
+
+
+class BatchActionWidget(QWidget):
+    def __init__(self) -> None:
+        super().__init__()
+
+        # CSS style id
+        self.setObjectName("BatchActionWidget")
+
+        # Solid background colour
+        self.setAttribute(Qt.WA_StyledBackground, True)
+        layout = QHBoxLayout()
+        self.setLayout(layout)
+
+        self.toolbar = BatchActionToolbar()
+
+        layout.addWidget(self.toolbar)
+        layout.addStretch()
+
+    def setup(self, controller: Controller) -> None:
+        self.toolbar.setup(controller)
+
+
+class BatchActionToolbar(QToolBar):
+    """
+    A toolbar that contains batch actions (actions that target multiple
+    sources in the ConversationView, and therefore don't belong in the
+    individual conversation menu). Currently, this widget will hold the
+    "Delete Sources" (batch-delete) action.
+
+    For user-facing naming consistency, these items won't be called
+    "batch/bulk <delete>", but simply "<verb> <noun>s" (eg "Delete Sources"), where
+    the original nomenclature comes from the individual Source overflow QAction menu
+    items. Each item may have a tooltip, visible on hover, that provides a more
+    lengthy explanation (e.g., "Delete multiple source accounts").
+    """
+
+    def __init__(self) -> None:
+        super().__init__()
+        self.setObjectName("BatchActionToolbar")
+        self.setContentsMargins(0, 0, 0, 0)
+
+        palette = QPalette()
+        palette.setBrush(
+            QPalette.Background, QBrush(Qt.NoBrush)
+        )  # This makes the widget transparent
+        self.setPalette(palette)
+
+        # Style and attributes
+        self.setMovable(False)
+        self.setToolButtonStyle(Qt.ToolButtonStyle.ToolButtonTextBesideIcon)
+
+        # TODO: Icon needs changing?
+        # TODO: set keyboard shortcut
+        batch_delete_action = QAction(
+            QIcon(load_image("delete_close.svg")), _("DELETE SOURCES"), self
+        )
+        batch_delete_action.setObjectName("BatchActionButton")
+        batch_delete_action.setToolTip(_("Delete selected source accounts"))
+        batch_delete_action.triggered.connect(self.delete_multiple_sources)
+
+        # TODO: Enhancement: start with action disabled via setEnabled(False),
+        # enable when sources are selected
+        self.addAction(batch_delete_action)
+
+    def delete_multiple_sources(self) -> None:
+        """
+        Requires logged-in session. Delete currently-selected sources.
+        """
+        logger.debug("delete_multiple_sources triggered")
+        if self.controller.api is None:
+            self.controller.on_action_requiring_login()
+        else:
+            # TODO rm: this is a placeholder
+            logger.debug("Delete sources clicked")
+            # TODO in followup PR
+            # An in-memory set of Sources selected by the user to be queued for deletion will
+            # live in the main app. If logged in, pass those to delete confirmation dialog,
+            # and if the user accepts the dialog, the sources will be deleted.
+
+    def setup(self, controller: Controller) -> None:
+        self.controller = controller
+
+
 class UserProfile(QLabel):
     """
     A widget that contains user profile information and options.
@@ -603,8 +713,8 @@ class LoginButton(QPushButton):
 
 class MainView(QWidget):
     """
-    Represents the main content of the application (containing the source list
-    and main context view).
+    Represents the main content of the application (containing the source list,
+    main context view, and top actions pane).
     """
 
     def __init__(
@@ -620,12 +730,20 @@ class MainView(QWidget):
         self.setObjectName("MainView")
 
         # Set layout
-        self._layout = QHBoxLayout(self)
-        self.setLayout(self._layout)
-
-        # Set margins and spacing
+        self._layout = QVBoxLayout(self)
         self._layout.setContentsMargins(0, 0, 0, 0)
         self._layout.setSpacing(0)
+        self.setLayout(self._layout)
+
+        # Top pane layout (actions/eventual searchbar)
+        self.top_pane = InnerTopPane()
+
+        # Hold main conversation view and sourcelist
+        inner_container = QHBoxLayout(self)
+
+        # Set margins and spacing
+        inner_container.setContentsMargins(0, 0, 0, 0)
+        inner_container.setSpacing(0)
 
         # Create SourceList widget
         self.source_list = SourceList()
@@ -647,8 +765,11 @@ class MainView(QWidget):
         self.view_layout.addWidget(self.empty_conversation_view)
 
         # Add widgets to layout
-        self._layout.addWidget(self.source_list, stretch=1)
-        self._layout.addWidget(self.view_holder, stretch=2)
+        inner_container.addWidget(self.source_list, stretch=1)
+        inner_container.addWidget(self.view_holder, stretch=2)
+
+        self._layout.addWidget(self.top_pane)
+        self._layout.addLayout(inner_container, stretch=1)
 
         # Note: We should not delete SourceConversationWrapper when its source is unselected. This
         # is a temporary solution to keep copies of our objects since we do delete them.
@@ -660,6 +781,7 @@ class MainView(QWidget):
         """
         self.controller = controller
         self.source_list.setup(controller)
+        self.top_pane.setup(controller)
 
     def show_sources(self, sources: list[Source]) -> None:
         """
