@@ -1,4 +1,3 @@
-import configparser
 import http
 import json
 import logging
@@ -113,17 +112,10 @@ class API:
         self.default_request_timeout = default_request_timeout or DEFAULT_REQUEST_TIMEOUT
         self.default_download_timeout = default_download_timeout or DEFAULT_DOWNLOAD_TIMEOUT
 
-        self.proxy_vm_name = DEFAULT_PROXY_VM_NAME
-        config_parser = configparser.ConfigParser()
-        try:
-            if os.path.exists("/etc/sd-sdk.conf"):
-                config_parser.read("/etc/sd-sdk.conf")
-                self.proxy_vm_name = config_parser["proxy"]["name"]
-        except Exception:
-            pass  # We already have a default name
-
-        # Load download retry limit from the config
-        self.download_retry_limit = Config.load().download_retry_limit
+        # Load configurable settings
+        config = Config.load()
+        self.proxy_vm_name = config.proxy_vm_name
+        self.download_retry_limit = config.download_retry_limit
 
     def _rpc_target(self) -> list:
         """In `development_mode`, check `cargo` for a locally-built proxy binary.
