@@ -157,7 +157,7 @@ msgstr ""
 msgid "Select or de-select sources using Ctrl+click, Shift+click, or by dragging the mouse."
 msgstr ""
 
-msgid "Use the top toolbar to delete multiple sources at once."
+msgid "Use the top toolbar to delete multiple sources at once. You will be shown a confirmation dialog before anything is deleted."
 msgstr ""
 
 msgid "Deleting files and messages…"
