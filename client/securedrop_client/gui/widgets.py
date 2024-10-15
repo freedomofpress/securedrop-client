@@ -55,6 +55,7 @@ from PyQt5.QtWidgets import (
     QScrollArea,
     QSizePolicy,
     QSpacerItem,
+    QStackedLayout,
     QStatusBar,
     QToolBar,
     QToolButton,
@@ -437,7 +438,6 @@ class InnerTopPane(QWidget):
     def __init__(self) -> None:
         super().__init__()
         self.setObjectName("InnerTopPane")
-        logger.debug("Construct Inner Top pane")
 
         # Use a vertical layout so that the keyword search bar can be added later
         layout = QVBoxLayout(self)
@@ -743,6 +743,14 @@ class MainView(QWidget):
     main context view, and top actions pane).
     """
 
+    # Index items for StackedLayout. CONVERSATION_INDEX should remain the
+    # biggest int value, for future ease of caching and cleaning up additional
+    # optional pages (eg rendered conversations) in higher index positions
+    NO_SOURCES_INDEX = 0
+    NOTHING_SELECTED_INDEX = 1
+    MULTI_SELECTED_INDEX = 2
+    CONVERSATION_INDEX = 3
+
     def __init__(
         self,
         parent: Optional[QWidget],
@@ -785,12 +793,22 @@ class MainView(QWidget):
         # Create widgets
         self.view_holder = QWidget()
         self.view_holder.setObjectName("MainView_view_holder")
-        self.view_layout = QVBoxLayout()
+
+        # Layout where only one view shows at a time. Suitable for the case
+        # where we show either a conversation or a contextually-appropriate
+        # message ("Select a source...", "Nothing to see yet", etc)
+        self.view_layout = QStackedLayout()
         self.view_holder.setLayout(self.view_layout)
         self.view_layout.setContentsMargins(0, 0, 0, 0)
         self.view_layout.setSpacing(0)
-        self.empty_conversation_view = EmptyConversationView()
-        self.view_layout.addWidget(self.empty_conversation_view)
+
+        self.view_layout.insertWidget(self.NO_SOURCES_INDEX, EmptyConversationView())
+        self.view_layout.insertWidget(self.NOTHING_SELECTED_INDEX, NothingSelectedView())
+        self.view_layout.insertWidget(self.MULTI_SELECTED_INDEX, MultiSelectView())
+
+        # Placeholder widget at the CONVERSATION_INDEX, dynamically replaced by conversation view
+        # as soon as a source conversation is selected
+        self.view_layout.insertWidget(self.CONVERSATION_INDEX, NothingSelectedView())
 
         # Add widgets to layout
         inner_container.addWidget(self.source_list, stretch=1)
@@ -827,10 +845,6 @@ class MainView(QWidget):
         """
         Update the sources list in the GUI with the supplied list of sources.
         """
-        # Show the correct conversation pane gui element depending on
-        # the number of sources a) available and b) selected.
-        self._update_conversation_context(sources, is_redraw_event=True)
-
         # If the source list in the GUI is empty, then we will run the optimized initial update.
         # Otherwise, do a regular source list update.
         if not self.source_list.source_items:
@@ -841,13 +855,18 @@ class MainView(QWidget):
                 # Then call the function to remove the wrapper and its children.
                 self.delete_conversation(source_uuid)
 
-    def _update_conversation_context(
-        self, sources: list[Source] | None = None, is_redraw_event: bool = False
-    ) -> int:
+        # Show the correct conversation pane gui element depending on
+        # the number of sources a) available and b) selected.
+        # An improved approach will be to create an `on_source_context_update`
+        # pyQtSlot that subscribes/listens for storage updates and calls
+        # `show_sources` and `show_conversation_context`.
+        self._on_update_conversation_context()
+
+    def _on_update_conversation_context(self) -> None:
         """
         Show the correct view type based on the number of available and selected sources.
 
-        If there are no sources, show the EmptyConversationView.
+        If there are no sources, show the empty conversation view.
         If there are sources, but none are selected, show the "Select a source" view.
         If there are sources and exactly one has been selected, show the conversation
         with that source.
@@ -861,20 +880,15 @@ class MainView(QWidget):
         Return number of selected sources.
         """
         selected = len(self.source_list.selectedItems())
-        if is_redraw_event and not sources:
-            self.empty_conversation_view.show_no_sources_message()
-            self.empty_conversation_view.show()
+        if selected == 0 and self.source_list.count() == 0:
+            self.view_layout.setCurrentIndex(self.NO_SOURCES_INDEX)
         elif selected == 0:
-            self.empty_conversation_view.show_no_source_selected_message()
-            self.empty_conversation_view.show()
+            self.view_layout.setCurrentIndex(self.NOTHING_SELECTED_INDEX)
         elif selected > 1:
-            self.empty_conversation_view.show_multi_select_message()
-            self.empty_conversation_view.show()
+            self.view_layout.setCurrentIndex(self.MULTI_SELECTED_INDEX)
         else:
             # Exactly one source selected
-            self.empty_conversation_view.hide()
-
-        return selected
+            self.view_layout.setCurrentIndex(self.CONVERSATION_INDEX)
 
     @pyqtSlot()
     def on_source_changed(self) -> None:
@@ -883,12 +897,9 @@ class MainView(QWidget):
         show multi select view.
         """
 
-        selected = self._update_conversation_context()
-        if selected != 1:
-            # The expanded conversation view is shown when exactly one source is selected
-            self.hide_conversation_widget()
-            return
-        else:
+        selected = len(self.source_list.selectedItems())
+        if selected == 1:
+            # One source selected; prepare the conversation widget
             try:
                 source = self.source_list.get_selected_source()
                 if not source:
@@ -913,11 +924,15 @@ class MainView(QWidget):
                     )
                     self.source_conversations[source.uuid] = conversation_wrapper
 
+                # Put this widget into the QStackedLayout at the correct position
                 self.set_conversation(conversation_wrapper)
                 logger.debug(f"Set conversation to the selected source with uuid: {source.uuid}")
 
             except sqlalchemy.exc.InvalidRequestError as e:
                 logger.debug(e)
+
+        # Now show the right widget depending on the selection
+        self._on_update_conversation_context()
 
     def refresh_source_conversations(self) -> None:
         """
@@ -958,31 +973,26 @@ class MainView(QWidget):
         except KeyError:
             logger.debug(f"No SourceConversationWrapper for {source_uuid} to delete")
 
-    def set_conversation(self, widget: QWidget) -> None:
+    def set_conversation(self, conversation: SourceConversationWrapper) -> None:
         """
-        Update the view holder to contain the referenced widget.
+        Replace rendered conversation at CONVERSATION_INDEX. Does not change
+        QStackedLayout current index.
         """
-        old_widget = self.view_layout.takeAt(0)
+        self.view_layout.insertWidget(self.CONVERSATION_INDEX, conversation)
 
-        if old_widget and old_widget.widget():
-            old_widget.widget().hide()
-
-        self.empty_conversation_view.hide()
-        self.view_layout.addWidget(widget)
-        widget.show()
-
-    def hide_conversation_widget(self) -> None:
-        """
-        Hide the conversation widget and show the EmptyConversationView
-        (used if no sources or multiple sources are selected).
-        """
-        layout = self.view_layout.takeAt(0)
-        if layout and layout.widget() and isinstance(layout.widget(), SourceConversationWrapper):
-            layout.widget().hide()
-        self.empty_conversation_view.show()
+        # At the moment, we don't keep these widgets as pages in the stacked layout,
+        # and we store an in-memory dict of {uuids: widget}s to avoid recreating a widget every
+        # time a conversation is revisited. A fixed-size cache could be implemented here instead.
+        layoutitem = self.view_layout.itemAt(self.CONVERSATION_INDEX + 1)
+        if layoutitem:
+            self.view_layout.removeWidget(layoutitem.widget())
 
 
-class EmptyConversationView(QWidget):
+class ConversationPaneView(QWidget):
+    """
+    Base widget element for the ConversationPane.
+    """
+
     MARGIN = 30
     NEWLINE_HEIGHT_PX = 35
 
@@ -990,17 +1000,20 @@ class EmptyConversationView(QWidget):
         super().__init__()
 
         self.setObjectName("EmptyConversationView")
+        self._layout = QVBoxLayout()
+        self.setContentsMargins(self.MARGIN, self.MARGIN, self.MARGIN, self.MARGIN)
+        self._layout.setAlignment(Qt.AlignCenter)
+        self.setLayout(self._layout)
 
-        # Set layout
-        layout = QHBoxLayout()
-        layout.setContentsMargins(self.MARGIN, self.MARGIN, self.MARGIN, self.MARGIN)
-        self.setLayout(layout)
 
-        # Create widgets
-        self.no_sources = QWidget()
-        self.no_sources.setObjectName("EmptyConversationView_no_sources")
-        no_sources_layout = QVBoxLayout()
-        self.no_sources.setLayout(no_sources_layout)
+class EmptyConversationView(ConversationPaneView):
+    """
+    Displayed in conversation pane when sourcelist is empty.
+    """
+
+    def __init__(self) -> None:
+        super().__init__()
+
         no_sources_instructions = QLabel(_("Nothing to see just yet!"))
         no_sources_instructions.setObjectName("EmptyConversationView_instructions")
         no_sources_instructions.setWordWrap(True)
@@ -1012,16 +1025,21 @@ class EmptyConversationView(QWidget):
             _("This is where you will read messages, reply to sources, and work with files.")
         )
         no_sources_instruction_details2.setWordWrap(True)
-        no_sources_layout.addWidget(no_sources_instructions)
-        no_sources_layout.addSpacing(self.NEWLINE_HEIGHT_PX)
-        no_sources_layout.addWidget(no_sources_instruction_details1)
-        no_sources_layout.addSpacing(self.NEWLINE_HEIGHT_PX)
-        no_sources_layout.addWidget(no_sources_instruction_details2)
+        self._layout.addWidget(no_sources_instructions)
+        self._layout.addSpacing(self.NEWLINE_HEIGHT_PX)
+        self._layout.addWidget(no_sources_instruction_details1)
+        self._layout.addSpacing(self.NEWLINE_HEIGHT_PX)
+        self._layout.addWidget(no_sources_instruction_details2)
 
-        self.no_source_selected = QWidget()
-        self.no_source_selected.setObjectName("EmptyConversationView_no_source_selected")
-        no_source_selected_layout = QVBoxLayout()
-        self.no_source_selected.setLayout(no_source_selected_layout)
+
+class NothingSelectedView(ConversationPaneView):
+    """
+    Displayed in conversation pane when sources are present but none are selected.
+    """
+
+    def __init__(self) -> None:
+        super().__init__()
+
         no_source_selected_instructions = QLabel(_("Select a source from the list, to:"))
         no_source_selected_instructions.setObjectName("EmptyConversationView_instructions")
         no_source_selected_instructions.setWordWrap(True)
@@ -1057,20 +1075,23 @@ class EmptyConversationView(QWidget):
         )
         no_source_selected_end_instructions.setObjectName("EmptyConversationView_instructions")
         no_source_selected_end_instructions.setWordWrap(True)
-        no_source_selected_layout.addWidget(no_source_selected_instructions)
-        no_source_selected_layout.addSpacing(self.NEWLINE_HEIGHT_PX)
-        no_source_selected_layout.addWidget(bullet1)
-        no_source_selected_layout.addWidget(bullet2)
-        no_source_selected_layout.addWidget(bullet3)
-        no_source_selected_layout.addSpacing(self.NEWLINE_HEIGHT_PX * 4)
-        no_source_selected_layout.addWidget(no_source_selected_end_instructions)
-        no_source_selected_layout.addSpacing(self.NEWLINE_HEIGHT_PX * 4)
+        self._layout.addWidget(no_source_selected_instructions)
+        self._layout.addSpacing(self.NEWLINE_HEIGHT_PX)
+        self._layout.addWidget(bullet1)
+        self._layout.addWidget(bullet2)
+        self._layout.addWidget(bullet3)
+        self._layout.addSpacing(self.NEWLINE_HEIGHT_PX * 4)
+        self._layout.addWidget(no_source_selected_end_instructions)
+        self._layout.addSpacing(self.NEWLINE_HEIGHT_PX * 4)
 
-        # Multi-source selection widget, same css properties as Empty view
-        self.multi_source_selected = QWidget()
-        self.multi_source_selected.setObjectName("EmptyConversationView_no_sources")
-        multi_sources_layout = QVBoxLayout()
-        self.multi_source_selected.setLayout(multi_sources_layout)
+
+class MultiSelectView(ConversationPaneView):
+    """
+    Displayed in conversation pane when multiple sources are selected.
+    """
+
+    def __init__(self) -> None:
+        super().__init__()
         multi_sources_instructions = QLabel(_("Multiple Sources Selected"))
         multi_sources_instructions.setObjectName("EmptyConversationView_instructions")
         multi_sources_instructions.setWordWrap(True)
@@ -1084,31 +1105,11 @@ class EmptyConversationView(QWidget):
             _("Use the top toolbar to delete multiple sources at once.")
         )
         multi_sources_instruction_details2.setWordWrap(True)
-        multi_sources_layout.addWidget(multi_sources_instructions)
-        multi_sources_layout.addSpacing(self.NEWLINE_HEIGHT_PX)
-        multi_sources_layout.addWidget(multi_sources_instruction_details1)
-        multi_sources_layout.addSpacing(self.NEWLINE_HEIGHT_PX)
-        multi_sources_layout.addWidget(multi_sources_instruction_details2)
-
-        # Add widgets
-        layout.addWidget(self.no_sources, alignment=Qt.AlignCenter)
-        layout.addWidget(self.no_source_selected, alignment=Qt.AlignCenter)
-        layout.addWidget(self.multi_source_selected, alignment=Qt.AlignCenter)
-
-    def show_no_sources_message(self) -> None:
-        self.no_sources.show()
-        self.no_source_selected.hide()
-        self.multi_source_selected.hide()
-
-    def show_no_source_selected_message(self) -> None:
-        self.no_sources.hide()
-        self.multi_source_selected.hide()
-        self.no_source_selected.show()
-
-    def show_multi_select_message(self) -> None:
-        self.multi_source_selected.show()
-        self.no_sources.hide()
-        self.no_source_selected.hide()
+        self._layout.addWidget(multi_sources_instructions)
+        self._layout.addSpacing(self.NEWLINE_HEIGHT_PX)
+        self._layout.addWidget(multi_sources_instruction_details1)
+        self._layout.addSpacing(self.NEWLINE_HEIGHT_PX)
+        self._layout.addWidget(multi_sources_instruction_details2)
 
 
 class SourceListWidgetItem(QListWidgetItem):
