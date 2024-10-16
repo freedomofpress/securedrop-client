@@ -477,3 +477,11 @@ Logs can be found in the `{sdc-home}/logs`. If you are debugging a version of th
 [MAY]: https://datatracker.ietf.org/doc/html/rfc2119#section-5
 [MUST]: https://datatracker.ietf.org/doc/html/rfc2119#section-1
 [MUST NOT]: https://datatracker.ietf.org/doc/html/rfc2119#section-2
+
+
+## Memory Profiling
+
+Use [Scalene](https://github.com/plasma-umass/scalene) for memory profiling by running the client
+with the `--memprofile` flag. After a few seconds, a browser-based GUI will appear and allow you to
+inspect the CPU usage and memory usage of various calls over time, as well as point to code that may
+create memory leaks. It's also possible to profile specific components, or tune the parameters to profile only specific components, only certain thresholds, and so on.

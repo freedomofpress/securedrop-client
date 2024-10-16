@@ -11,6 +11,9 @@ while [ -n "$1" ]; do
         SDC_HOME="$value"
         shift
         ;;
+    --memprofile)
+        memprofile=true
+        ;;
     *)
     break
   esac
@@ -109,4 +112,10 @@ if [[ $1 == "--login" ]]; then
     check_login
     login &
 fi
-LOGLEVEL=debug $PYTHON -m securedrop_client --sdc-home "$SDC_HOME" --no-proxy "$qubes_flag" "$@"
+
+if [[ "$memprofile" == true ]]; then
+    echo "Starting client with memory profiling enabled..."
+    LOGLEVEL=debug poetry run "$PYTHON" -m scalene --- -m securedrop_client --sdc-home "$SDC_HOME" --no-proxy "$qubes_flag" "$@"
+else
+    LOGLEVEL=debug "$PYTHON" -m securedrop_client --sdc-home "$SDC_HOME" --no-proxy "$qubes_flag" "$@"
+fi
