@@ -64,11 +64,18 @@ def test_class_name_matches_css_object_name(mocker, main_window):
     assert main_view.__class__.__name__ == "MainView"
     assert main_view.objectName() == "MainView"
     assert "MainView" in main_view.view_holder.objectName()
-    empty_conversation_view = main_view.empty_conversation_view
-    empty_conversation_view.__class__.__name__ == "EmptyConversationView"
-    empty_conversation_view.objectName() == "EmptyConversationView"
-    "EmptyConversationView" in empty_conversation_view.no_sources.objectName()
-    "EmptyConversationView" in empty_conversation_view.no_source_selected.objectName()
+
+    # All views use the "EmptyConversationView" styling
+    for index in [
+        main_view.NO_SOURCES_INDEX,
+        main_view.NOTHING_SELECTED_INDEX,
+        main_view.MULTI_SELECT_INDEX,
+    ]:
+        view = main_view.view_holder.widget(index)
+        view.objectName() == "EmptyConversationView"
+        "EmptyConversationView" in view.objectName()
+        "EmptyConversationView" in view.objectName()
+
     source_list = main_view.source_list
 
     source_widget = source_list.itemWidget(source_list.item(0))
