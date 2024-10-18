@@ -8,6 +8,7 @@ https://github.com/freedomofpress/securedrop-client/wiki/Test-plan#basic-client-
 from flaky import flaky
 from PyQt5.QtCore import Qt
 
+from securedrop_client.gui.widgets import SourceConversationWrapper
 from tests.conftest import TIME_CLICK_ACTION, TIME_RENDER_CONV_VIEW, TIME_RENDER_SOURCE_LIST
 
 
@@ -30,18 +31,21 @@ def test_delete_source(functional_test_logged_in_context, qtbot, mocker):
     qtbot.wait(TIME_CLICK_ACTION)
 
     def check_for_conversation():
-        assert gui.main_view.view_layout.itemAt(0)
-        assert gui.main_view.view_layout.itemAt(0).widget()
+        assert gui.main_view.view_layout.currentIndex() == gui.main_view.CONVERSATION_INDEX
+        assert isinstance(
+            gui.main_view.view_layout.widget(gui.main_view.view_layout.currentIndex()),
+            SourceConversationWrapper,
+        )
 
     # Get the selected source conversation
     qtbot.waitUntil(check_for_conversation, timeout=TIME_RENDER_CONV_VIEW)
-    conversation = gui.main_view.view_layout.itemAt(0).widget()
+    conversation = gui.main_view.view_layout.widget(gui.main_view.view_layout.currentIndex())
 
     # Delete the selected source
     # Note: The qtbot object cannot interact with QAction items (as used in the delete button/menu)
     # so we programatically delete the source rather than using the GUI via qtbot
     source_count = gui.main_view.source_list.count()
-    controller.delete_source(conversation.conversation_title_bar.source)
+    controller.delete_sources(set([conversation.conversation_title_bar.source]))
 
     def check_source_list():
         assert gui.main_view.source_list.count() == source_count - 1

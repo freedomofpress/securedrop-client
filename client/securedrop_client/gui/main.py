@@ -75,6 +75,7 @@ class Window(QMainWindow):
         self.main_pane.setLayout(layout)
         self.left_pane = LeftPane()
         self.main_view = MainView(self.main_pane, app_state)
+
         layout.addWidget(self.left_pane)
         layout.addWidget(self.main_view)
 
@@ -107,6 +108,12 @@ class Window(QMainWindow):
         self.bottom_pane.setup(self.controller)
         self.left_pane.setup(self, self.controller)
         self.main_view.setup(self.controller)
+
+        # Listen for changes to the selected sources in sourcelist
+        self.main_view.source_list.selected_sources.connect(
+            self.controller.on_receive_selected_sources
+        )
+
         self.show_login()
 
     def show_main_window(self, db_user: User | None = None) -> None:
@@ -184,6 +191,7 @@ class Window(QMainWindow):
         """
         self.left_pane.set_logged_in_as(db_user)
         self.bottom_pane.set_logged_in()
+        self.main_view.set_logged_in()
 
     def logout(self) -> None:
         """
@@ -191,6 +199,7 @@ class Window(QMainWindow):
         """
         self.left_pane.set_logged_out()
         self.bottom_pane.set_logged_out()
+        self.main_view.set_logged_out()
 
     def update_sync_status(self, message: str, duration: int = 0) -> None:
         """
