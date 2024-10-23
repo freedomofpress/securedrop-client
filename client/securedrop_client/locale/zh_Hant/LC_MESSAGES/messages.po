@@ -376,11 +376,20 @@ msgstr "請將印表機接入 USB 端口。"
 msgid "See your administrator for help."
 msgstr "請聯繫您的系統管理員提供協助。"
 
+msgid "This file type cannot be printed."
+msgstr ""
+
+#, fuzzy
+#| msgid "YES, DELETE ENTIRE SOURCE ACCOUNT"
 msgid "YES, DELETE ENTIRE SOURCE ACCOUNT"
-msgstr "確認刪除全部的線人帳戶"
+msgid_plural "YES, DELETE {number} SOURCE ACCOUNTS"
+msgstr[0] "確認刪除全部的線人帳戶"
 
 msgid "Are you sure this is what you want?"
 msgstr "確認真要這麼做？"
+
+msgid "Delete entire account for: {source_or_sources}?"
+msgstr ""
 
 msgid "When the entire account for a source is deleted:"
 msgstr "若某名線人的帳戶被刪除："
@@ -393,6 +402,9 @@ msgstr "您的組織將無法向他們發送回覆。"
 
 msgid "All files and messages from that source will also be destroyed."
 msgstr "即將刪除此線人全部的檔案與訊息。"
+
+msgid "No sources have been selected."
+msgstr ""
 
 #~ msgid "SUBMIT"
 #~ msgstr "提交"
