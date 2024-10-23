@@ -384,11 +384,22 @@ msgstr "Пожалуйста, подключите принтер к порту 
 msgid "See your administrator for help."
 msgstr "Обратитесь за помощью к вашему администратору."
 
+msgid "This file type cannot be printed."
+msgstr ""
+
+#, fuzzy
+#| msgid "YES, DELETE ENTIRE SOURCE ACCOUNT"
 msgid "YES, DELETE ENTIRE SOURCE ACCOUNT"
-msgstr "ДА, УДАЛИТЬ ВЕСЬ АККАУНТ ИСТОЧНИКА"
+msgid_plural "YES, DELETE {number} SOURCE ACCOUNTS"
+msgstr[0] "ДА, УДАЛИТЬ ВЕСЬ АККАУНТ ИСТОЧНИКА"
+msgstr[1] "ДА, УДАЛИТЬ ВЕСЬ АККАУНТ ИСТОЧНИКА"
+msgstr[2] "ДА, УДАЛИТЬ ВЕСЬ АККАУНТ ИСТОЧНИКА"
 
 msgid "Are you sure this is what you want?"
 msgstr "Вы уверены в этом?"
+
+msgid "Delete entire account for: {source_or_sources}?"
+msgstr ""
 
 msgid "When the entire account for a source is deleted:"
 msgstr "Когда удаляется весь аккаунт для источника:"
@@ -401,6 +412,9 @@ msgstr "Ваша организация не сможет отправлять �
 
 msgid "All files and messages from that source will also be destroyed."
 msgstr "Все файлы и сообщения источника будут очищены."
+
+msgid "No sources have been selected."
+msgstr ""
 
 #~ msgid "SUBMIT"
 #~ msgstr "ОТПРАВИТЬ"
