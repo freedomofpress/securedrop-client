@@ -7,15 +7,15 @@ msgid ""
 msgstr ""
 "Project-Id-Version: SecureDrop Client 0.5.0\n"
 "Report-Msgid-Bugs-To: securedrop@freedom.press\n"
-"PO-Revision-Date: 2023-10-19 13:30+0000\n"
-"Last-Translator: \"Benet (BennyBeat) R. i Camps\" <bennybeat@gmail.com>\n"
+"PO-Revision-Date: 2024-10-23 20:33+0000\n"
+"Last-Translator: victor dargallo <victordargallo@disroot.org>\n"
 "Language-Team: Catalan <https://weblate.securedrop.org/projects/securedrop/securedrop-client/ca/>\n"
 "Language: ca\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=n != 1;\n"
-"X-Generator: Weblate 4.18.2\n"
+"X-Generator: Weblate 5.7.1\n"
 "Generated-By: Babel 2.9.1\n"
 
 msgid "{application_name} is already running"
@@ -243,7 +243,7 @@ msgstr ""
 "El codi ha de ser només numèric."
 
 msgid "SIGNING IN"
-msgstr "S'ESTÀ INICIANT..."
+msgstr "S'ESTÀ INICIANT…"
 
 msgid "Please enter a username, passphrase and two-factor code."
 msgstr "Inseriu un nom d'usuari, contrasenya i codi de factor doble."
@@ -288,49 +288,49 @@ msgid "DONE"
 msgstr "FET"
 
 msgid "BACK"
-msgstr ""
+msgstr "TORNA"
 
 msgid "No device detected"
-msgstr ""
+msgstr "No s'ha detectat cap dispositiu"
 
 msgid "Too many USB devices detected; please insert one supported device."
-msgstr ""
+msgstr "S'han detectat massa dispositius USB; inseriu un dispositiu compatible."
 
 msgid "Either the drive is not encrypted or there is something else wrong with it.<br />If this is a VeraCrypt drive, please unlock it from within the sd-devices VM, then try again."
-msgstr ""
+msgstr "O la unitat no està xifrada o hi ha alguna cosa més.<br />Si es tracta d'una unitat VeraCrypt, desbloquegeu-la des de la VM de dispositius SD i torneu-ho a provar."
 
 msgid "The device is ready for export."
-msgstr ""
+msgstr "El dispositiu està preparat per a l'exportació."
 
 msgid "The device is locked."
-msgstr ""
+msgstr "El dispositiu està bloquejat."
 
 msgid "The passphrase provided did not work. Please try again."
 msgstr "La contrasenya que he inserit no és vàlida. Torneu a provar."
 
 msgid "Error mounting drive"
-msgstr ""
+msgstr "S'ha produït un error en muntar la unitat"
 
 msgid "Error during export"
-msgstr ""
+msgstr "S'ha produït un error en exportar"
 
 msgid "Files were exported successfully, but the USB device could not be unmounted."
-msgstr ""
+msgstr "Els fitxers s'han exportat correctament, però el dispositiu USB no s'ha pogut desmuntar."
 
 msgid "Files were exported successfully, but some temporary files remain on disk. Reboot to remove them."
-msgstr ""
+msgstr "Els fitxers s'han exportat correctament, però alguns fitxers temporals romanen al disc. Reinicieu per eliminar-los."
 
 msgid "Export successful"
 msgstr "S'ha exportat correctament"
 
 msgid "Error encountered with this device. See your administrator for help."
-msgstr ""
+msgstr "S'ha trobat un error amb aquest dispositiu. Consulteu el vostre administrador per obtenir ajuda."
 
 msgid "Files were moved or missing and could not be exported."
-msgstr ""
+msgstr "Els fitxers s'han mogut o no s'han pogut exportar."
 
 msgid "Error encountered. Please contact support."
-msgstr ""
+msgstr "S'ha trobat un error. Poseu-vos en contacte amb el servei d'assistència."
 
 msgid "Preparing to export:<br /><span style=\"font-weight:normal\">{}</span>"
 msgstr "S'està preparant per a exportar: <br /><span style=\"font-weight:normal\">{}</span>"
@@ -342,19 +342,19 @@ msgid "Ready to export:<br /><span style=\"font-weight:normal\">{}</span>"
 msgstr "Preparat per a exportar: <br /><span style=\"font-weight:normal\">{}</span>"
 
 msgid "Export Failed"
-msgstr ""
+msgstr "Ha fallat l'exportació"
 
 msgid "Please insert one of the export drives provisioned specifically for the SecureDrop Workstation.<br />If you're using a VeraCrypt drive, unlock it manually before proceeding."
-msgstr ""
+msgstr "Inseriu una de les unitats d'exportació subministrades específicament per a l'estació de treball del SecureDrop.<br />Si feu servir una unitat VeraCrypt, desbloquegeu-la manualment abans de continuar."
 
 msgid "Remember to be careful when working with files outside of your Workstation machine."
 msgstr "Recordeu tenir cura quan treballeu amb informació fora del vostre equip."
 
 msgid "Export sucessful, but drive was not locked"
-msgstr ""
+msgstr "Exportació correcta, però la unitat no s'ha bloquejat"
 
 msgid "Working..."
-msgstr ""
+msgstr "Treballant…"
 
 msgid "Enter passphrase for USB drive"
 msgstr "Introduïu la contrasenya de la unitat USB"
@@ -380,11 +380,19 @@ msgstr "Connecteu la impressora a un port USB."
 msgid "See your administrator for help."
 msgstr "Contacteu amb l'administrador si us cal ajuda."
 
+msgid "This file type cannot be printed."
+msgstr "Aquest tipus de fitxer no es pot imprimir."
+
 msgid "YES, DELETE ENTIRE SOURCE ACCOUNT"
-msgstr "SÍ, SUPRIMEIX EL COMPTE SENCER"
+msgid_plural "YES, DELETE {number} SOURCE ACCOUNTS"
+msgstr[0] "SÍ, SUPRIMEIX EL COMPTE SENCER"
+msgstr[1] "SÍ, SUPRIMEIX ELS {number} COMPTES SENCERS"
 
 msgid "Are you sure this is what you want?"
 msgstr "Segur que això és el que voleu?"
+
+msgid "Delete entire account for: {source_or_sources}?"
+msgstr "Voleu suprimir el compte sencer per a: {source_or_sources}?"
 
 msgid "When the entire account for a source is deleted:"
 msgstr "En suprimir el compte font sencer:"
@@ -397,6 +405,9 @@ msgstr "La vostra organització no podrà enviar respostes."
 
 msgid "All files and messages from that source will also be destroyed."
 msgstr "També es destruiran tots els missatges de la font."
+
+msgid "No sources have been selected."
+msgstr "No s'ha seleccionat cap font."
 
 #~ msgid "SUBMIT"
 #~ msgstr "ENVIA"
