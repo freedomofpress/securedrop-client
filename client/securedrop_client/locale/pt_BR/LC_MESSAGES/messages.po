@@ -381,11 +381,21 @@ msgstr "Por favor, conecte sua impressora a uma porta USB."
 msgid "See your administrator for help."
 msgstr "Consulte seu administrador para ajuda."
 
+msgid "This file type cannot be printed."
+msgstr ""
+
+#, fuzzy
+#| msgid "YES, DELETE ENTIRE SOURCE ACCOUNT"
 msgid "YES, DELETE ENTIRE SOURCE ACCOUNT"
-msgstr "SIM, EXCLUIR TODA A CONTA DE FONTE"
+msgid_plural "YES, DELETE {number} SOURCE ACCOUNTS"
+msgstr[0] "SIM, EXCLUIR TODA A CONTA DE FONTE"
+msgstr[1] "SIM, EXCLUIR TODA A CONTA DE FONTE"
 
 msgid "Are you sure this is what you want?"
 msgstr "Tem certeza de que quer isto?"
+
+msgid "Delete entire account for: {source_or_sources}?"
+msgstr ""
 
 msgid "When the entire account for a source is deleted:"
 msgstr "Quando toda a conta de uma fonte é excluída:"
@@ -398,6 +408,9 @@ msgstr "Sua organização não poderá enviar respostas a eles."
 
 msgid "All files and messages from that source will also be destroyed."
 msgstr "Todos or arquivos e mensagens dessa fonte também serão destruídos."
+
+msgid "No sources have been selected."
+msgstr ""
 
 #~ msgid "SUBMIT"
 #~ msgstr "ENVIAR"
