@@ -7,15 +7,15 @@ msgid ""
 msgstr ""
 "Project-Id-Version: SecureDrop Client 0.8.1\n"
 "Report-Msgid-Bugs-To: securedrop@freedom.press\n"
-"PO-Revision-Date: 2023-10-13 16:30+0000\n"
-"Last-Translator: Oskari Lavinto <olavinto@protonmail.com>\n"
+"PO-Revision-Date: 2024-09-18 11:33+0000\n"
+"Last-Translator: Ricky Tigg <ricky.tigg@gmail.com>\n"
 "Language-Team: Finnish <https://weblate.securedrop.org/projects/securedrop/securedrop-client/fi/>\n"
 "Language: fi\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=n != 1;\n"
-"X-Generator: Weblate 4.18.2\n"
+"X-Generator: Weblate 5.7.1\n"
 "Generated-By: Babel 2.10.3\n"
 
 msgid "{application_name} is already running"
@@ -288,49 +288,49 @@ msgid "DONE"
 msgstr "VALMIS"
 
 msgid "BACK"
-msgstr ""
+msgstr "TAKAISIN"
 
 msgid "No device detected"
-msgstr ""
+msgstr "Laitetta ei havaittu"
 
 msgid "Too many USB devices detected; please insert one supported device."
-msgstr ""
+msgstr "Liian monta USB-laitetta havaittu; aseta yksi tuettu laite."
 
 msgid "Either the drive is not encrypted or there is something else wrong with it.<br />If this is a VeraCrypt drive, please unlock it from within the sd-devices VM, then try again."
-msgstr ""
+msgstr "Joko asemaa ei ole salattu tai siinä on jotain muuta vikaa.<br />Jos tämä on VeraCrypt-asema, poista sen lukitus sd-devices VM:stä ja yritä sitten uudelleen."
 
 msgid "The device is ready for export."
-msgstr ""
+msgstr "Laite on valmis vientiin."
 
 msgid "The device is locked."
-msgstr ""
+msgstr "Laite on lukittu."
 
 msgid "The passphrase provided did not work. Please try again."
 msgstr "Annettu tunnuslause ei kelpaa. Yritä uudelleen."
 
 msgid "Error mounting drive"
-msgstr ""
+msgstr "Virhe aseman liitäessä"
 
 msgid "Error during export"
-msgstr ""
+msgstr "Virhe viennin aikana"
 
 msgid "Files were exported successfully, but the USB device could not be unmounted."
-msgstr ""
+msgstr "Tiedostojen vienti onnistui, mutta USB-laitetta ei voitu irrottaa."
 
 msgid "Files were exported successfully, but some temporary files remain on disk. Reboot to remove them."
-msgstr ""
+msgstr "Tiedostot vietiin onnistuneesti, mutta jotkut väliaikaiset tiedostot jäävät levylle. Poista ne käynnistämällä uudelleen."
 
 msgid "Export successful"
 msgstr "Vienti onnistui"
 
 msgid "Error encountered with this device. See your administrator for help."
-msgstr ""
+msgstr "Virhe tämän laitteen kanssa. Pyydä apua järjestelmänvalvojaltasi."
 
 msgid "Files were moved or missing and could not be exported."
-msgstr ""
+msgstr "Tiedostoja on siirretty tai ne puuttuivat, eikä niitä voitu viedä."
 
 msgid "Error encountered. Please contact support."
-msgstr ""
+msgstr "Virhe kohdattu. Ota yhteyttä tukeen."
 
 msgid "Preparing to export:<br /><span style=\"font-weight:normal\">{}</span>"
 msgstr "Valmistellaan vientiä:<br /><span style=\"font-weight:normal\">{}</span>"
@@ -342,19 +342,19 @@ msgid "Ready to export:<br /><span style=\"font-weight:normal\">{}</span>"
 msgstr "Valmis vientiin:<br /><span style=\"font-weight:normal\">{}</span>"
 
 msgid "Export Failed"
-msgstr ""
+msgstr "Vienti epäonnistui"
 
 msgid "Please insert one of the export drives provisioned specifically for the SecureDrop Workstation.<br />If you're using a VeraCrypt drive, unlock it manually before proceeding."
-msgstr ""
+msgstr "Aseta yksi vientiasemista, joka on varustettu erityisesti SecureDrop Workstationille.<br /> Jos käytät VeraCrypt-asemaa, avaa sen lukitus manuaalisesti ennen kuin jatkat."
 
 msgid "Remember to be careful when working with files outside of your Workstation machine."
 msgstr "Käsittele tiedostoja varoen Workstation-tietokoneen ulkopuolella."
 
 msgid "Export sucessful, but drive was not locked"
-msgstr ""
+msgstr "Vienti onnistui, mutta asema ei ollut lukittu"
 
 msgid "Working..."
-msgstr ""
+msgstr "Työskentelemässä..."
 
 msgid "Enter passphrase for USB drive"
 msgstr "Kirjoita USB-aseman tunnuslause"
@@ -380,11 +380,19 @@ msgstr "Yhdistä tulostin USB-porttiin."
 msgid "See your administrator for help."
 msgstr "Pyydä tukea ylläpitäjältä."
 
+msgid "This file type cannot be printed."
+msgstr "Tätä tiedostotyyppiä ei voi tulostaa."
+
 msgid "YES, DELETE ENTIRE SOURCE ACCOUNT"
-msgstr "KYLLÄ, POISTA KOKO LÄHDETILI"
+msgid_plural "YES, DELETE {number} SOURCE ACCOUNTS"
+msgstr[0] "KYLLÄ, POISTA KOKO LÄHDETILI"
+msgstr[1] "KYLLÄ, POISTA{number}LÄHDETILIÄ"
 
 msgid "Are you sure this is what you want?"
 msgstr "Haluatko varmasti tätä?"
+
+msgid "Delete entire account for: {source_or_sources}?"
+msgstr "Poistetaanko koko tili: {source_or_sources}?"
 
 msgid "When the entire account for a source is deleted:"
 msgstr "Kun koko lähdetili on poistettu:"
@@ -397,6 +405,9 @@ msgstr "Organisaatiosi ei voi lähettää lähteelle vastauksia."
 
 msgid "All files and messages from that source will also be destroyed."
 msgstr "Kaikki lähteeltä vastaanotetut tiedostot ja viestit tuhotaan."
+
+msgid "No sources have been selected."
+msgstr "Mitään lähdettä ei ole valittu."
 
 #~ msgid "SUBMIT"
 #~ msgstr "LÄHETÄ"
