@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: SecureDrop Client 0.8.1\n"
 "Report-Msgid-Bugs-To: securedrop@freedom.press\n"
-"PO-Revision-Date: 2024-01-13 23:30+0000\n"
+"PO-Revision-Date: 2024-09-26 20:33+0000\n"
 "Last-Translator: AO Localization Lab <ao@localizationlab.org>\n"
 "Language-Team: French <https://weblate.securedrop.org/projects/securedrop/securedrop-client/fr/>\n"
 "Language: fr\n"
@@ -15,7 +15,7 @@ msgstr ""
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=n > 1;\n"
-"X-Generator: Weblate 5.3.1\n"
+"X-Generator: Weblate 5.7.1\n"
 "Generated-By: Babel 2.10.3\n"
 
 msgid "{application_name} is already running"
@@ -56,10 +56,10 @@ msgid "Failed to update star."
 msgstr "Échec de mise à jour de l’étoile."
 
 msgid "File does not exist in the data directory. Please try re-downloading."
-msgstr "Le fichier n’existe pas dans le répertoire des données. Veuillez tenter de retélécharger."
+msgstr "Le fichier n’existe pas dans le répertoire des données. Tentez de le télécharger de nouveau."
 
 msgid "The file download failed. Please try again."
-msgstr "Échec de téléchargement. Veuillez réessayer."
+msgstr "Échec de téléchargement. Réessayez."
 
 msgid "Failed to delete conversation at server"
 msgstr "Échec de suppression de la conversation sur le serveur"
@@ -89,7 +89,7 @@ msgid "Delete Source Account"
 msgstr "Supprimer le compte de la source"
 
 msgid "Delete All Files and Messages"
-msgstr "Supprimer tout les fichiers et messages"
+msgstr "Supprimer tous les fichiers et messages"
 
 msgid "Print Transcript"
 msgstr "Imprimer la transcription"
@@ -125,7 +125,7 @@ msgid "SIGN OUT"
 msgstr "DÉCONNEXION"
 
 msgid "SIGN IN"
-msgstr "SE CONNECTER"
+msgstr "CONNEXION"
 
 msgid "Nothing to see just yet!"
 msgstr "Rien à voir pour l’instant"
@@ -137,7 +137,7 @@ msgid "This is where you will read messages, reply to sources, and work with fil
 msgstr "Vous pourrez lire les messages ici, répondre aux sources et travailler sur les fichiers."
 
 msgid "Select a source from the list, to:"
-msgstr "Sélectionner une source de la liste, pour :"
+msgstr "Sélectionnez une source de la liste, pour :"
 
 msgid "Read a conversation"
 msgstr "Lire une conversation"
@@ -152,10 +152,10 @@ msgid "Deleting files and messages…"
 msgstr "Suppression des fichiers et des messages…"
 
 msgid "Deleting source account…"
-msgstr "Suppression du compte source…"
+msgstr "Suppression du compte de la source…"
 
 msgid "— All files and messages deleted for this source —"
-msgstr "— Tout les fichiers et messages ont été supprimés pour cette source —"
+msgstr "— Tous les fichiers et messages ont été supprimés pour cette source —"
 
 msgid "Failed to send"
 msgstr "Échec d’envoi"
@@ -195,7 +195,7 @@ msgid "Awaiting encryption key"
 msgstr "En attente de la clé de chiffrement"
 
 msgid " from server to enable replies"
-msgstr " du serveur pour permettre les réponses"
+msgstr " du serveur afin de permettre les réponses"
 
 msgid "Sign in"
 msgstr "Se connecter"
@@ -246,7 +246,7 @@ msgid "SIGNING IN"
 msgstr "CONNEXION"
 
 msgid "Please enter a username, passphrase and two-factor code."
-msgstr "Veuillez saisir un nom d’utilisateur, une phrase de passe et code d’authentification à deux facteurs."
+msgstr "Saisissez un nom d’utilisateur, une phrase de passe et un code d’authentification à deux facteurs."
 
 msgid "USE OFFLINE"
 msgstr "UTILISER HORS LIGNE"
@@ -272,89 +272,89 @@ msgstr "Préserver le compte conservera ces métadonnées et permettra à {sourc
 msgid "one file"
 msgid_plural "{file_count} files"
 msgstr[0] "un fichier"
-msgstr[1] "{file_count} fichiers"
+msgstr[1] "{file_count} fichiers"
 
 msgid "one reply"
 msgid_plural "{reply_count} replies"
 msgstr[0] "une réponse"
-msgstr[1] "{reply_count} réponses"
+msgstr[1] "{reply_count} réponses"
 
 msgid "one message"
 msgid_plural "{message_count} messages"
 msgstr[0] "un message"
-msgstr[1] "{message_count} messages"
+msgstr[1] "{message_count} messages"
 
 msgid "DONE"
 msgstr "TERMINÉ"
 
 msgid "BACK"
-msgstr ""
+msgstr "RETOUR"
 
 msgid "No device detected"
-msgstr ""
+msgstr "Aucun périphérique n’a été détecté"
 
 msgid "Too many USB devices detected; please insert one supported device."
-msgstr ""
+msgstr "Trop de périphériques USB ont été détectés ; insérez un seul périphérique pris en charge."
 
 msgid "Either the drive is not encrypted or there is something else wrong with it.<br />If this is a VeraCrypt drive, please unlock it from within the sd-devices VM, then try again."
-msgstr ""
+msgstr "Soit le lecteur n’est pas chiffré, soit il présente un autre problème.<br />S’il s’agit d’un lecteur VeraCrypt, déverrouillez-le dans la MV VM sd-devices, puis réessayez."
 
 msgid "The device is ready for export."
-msgstr ""
+msgstr "Le périphérique est prêt pour l’exportation."
 
 msgid "The device is locked."
-msgstr ""
+msgstr "Le périphérique est verrouillé."
 
 msgid "The passphrase provided did not work. Please try again."
-msgstr "La phrase de passe est erronée. Veuillez recommencer."
+msgstr "La phrase de passe est erronée. Réessayez."
 
 msgid "Error mounting drive"
-msgstr ""
+msgstr "Erreur de montage du lecteur"
 
 msgid "Error during export"
-msgstr ""
+msgstr "Erreur d’exportation"
 
 msgid "Files were exported successfully, but the USB device could not be unmounted."
-msgstr ""
+msgstr "Les fichiers ont été exportés, mais le périphérique USB n’a pas pu être démonté."
 
 msgid "Files were exported successfully, but some temporary files remain on disk. Reboot to remove them."
-msgstr ""
+msgstr "Les fichiers ont été exportés, mais certains fichiers temporaires restent sur le disque. Redémarrez l’ordinateur afin de les supprimer."
 
 msgid "Export successful"
 msgstr "L’exportation est réussie"
 
 msgid "Error encountered with this device. See your administrator for help."
-msgstr ""
+msgstr "Une erreur est survenue avec ce périphérique. Consultez votre administrateur pour obtenir de l’aide."
 
 msgid "Files were moved or missing and could not be exported."
-msgstr ""
+msgstr "Des fichiers ont été déplacés ou manquaient et n’ont pas pu être exportés."
 
 msgid "Error encountered. Please contact support."
-msgstr ""
+msgstr "Une erreur est survenue. Contactez l’assistance."
 
 msgid "Preparing to export:<br /><span style=\"font-weight:normal\">{}</span>"
 msgstr "Préparation à l’exportation : <br /><span style=\"font-weight:normal\">{}</span>"
 
 msgid "<h2>Understand the risks before exporting files</h2><b>Malware</b><br />This workstation lets you open files securely. If you open files on another computer, any embedded malware may spread to your computer or network. If you are unsure how to manage this risk, please print the file, or contact your administrator.<br /><br /><b>Anonymity</b><br />Files submitted by sources may contain information or hidden metadata that identifies who they are. To protect your sources, please consider redacting files before working with them on network-connected computers."
-msgstr "<h2>Comprenez les risques avant d’exporter des fichiers</h2><b>Logiciels malveillants</b><br />Ce poste de travail vous permet d’ouvrir des fichiers en toute sécurité. Si vous ouvrez les fichiers sur un autre ordinateur, tout logiciel malveillant qu’ils comporteraient pourrait se propager sur votre ordinateur ou votre réseau. Si vous ne savez pas comment gérer ce risque, veuillez imprimer ce fichier ou contacter votre administrateur.<br /><br /><b>Anonymat</b><br />Les fichiers envoyés par les sources peuvent contenir de l’information ou des métadonnées cachées qui identifient ces sources. Pour les protéger, veuillez envisager de caviarder les fichiers avant de les traiter sur des ordinateurs connectés à un réseau."
+msgstr "<h2>Comprenez les risques avant d’exporter des fichiers</h2><b>Logiciels malveillants</b><br />Ce poste de travail vous permet d’ouvrir des fichiers en toute sécurité. Si vous ouvrez les fichiers sur un autre ordinateur, tout logiciel malveillant qu’ils comporteraient pourrait se propager sur votre ordinateur ou votre réseau. Si vous ne savez pas comment gérer ce risque, imprimez ce fichier ou contactez votre administrateur.<br /><br /><b>Anonymat</b><br />Les fichiers envoyés par les sources peuvent contenir des renseignements ou des métadonnées cachées qui identifient ces sources. Pour les protéger, envisagez de caviarder les fichiers avant de les traiter sur des ordinateurs connectés à un réseau."
 
 msgid "Ready to export:<br /><span style=\"font-weight:normal\">{}</span>"
 msgstr "Prêt à exporter : <br /><span style=\"font-weight:normal\">{}</span>"
 
 msgid "Export Failed"
-msgstr ""
+msgstr "Échec d’exportation"
 
 msgid "Please insert one of the export drives provisioned specifically for the SecureDrop Workstation.<br />If you're using a VeraCrypt drive, unlock it manually before proceeding."
-msgstr ""
+msgstr "Insérez l'un des lecteurs d'exportation prévus spécifiquement pour la station de travail SecureDrop.<br />Si vous utilisez un lecteur VeraCrypt, déverrouillez-le manuellement avant de poursuivre."
 
 msgid "Remember to be careful when working with files outside of your Workstation machine."
-msgstr "Veuillez faire preuve de prudence en traitant les fichiers sur un ordinateur autre que votre poste de travail."
+msgstr "Faites preuve de prudence en traitant les fichiers sur un ordinateur autre que votre poste de travail."
 
 msgid "Export sucessful, but drive was not locked"
-msgstr ""
+msgstr "L’exportation est réussie, mais le lecteur n’a pas été verrouillé"
 
 msgid "Working..."
-msgstr ""
+msgstr "En traitement…"
 
 msgid "Enter passphrase for USB drive"
 msgstr "Saisir la phrase de passe de la clé USB"
@@ -372,19 +372,27 @@ msgid "Printing failed"
 msgstr "Échec d’impression"
 
 msgid "<h2>Managing printout risks</h2><b>QR codes and web addresses</b><br />Never type in and open web addresses or scan QR codes contained in printed documents without taking security precautions. If you are unsure how to manage this risk, please contact your administrator.<br /><br /><b>Printer dots</b><br />Any part of a printed page may contain identifying information invisible to the naked eye, such as printer dots. Please carefully consider this risk when working with or publishing scanned printouts."
-msgstr "<h2>Gérer les risques d’impression</h2><b>Codes QR et adresses Web</b><br />Ne saisissez jamais dans un navigateur les adresses Web qui apparaissent sur les documents imprimés. Ne balayez pas non plus les codes QR qui s’y trouvent sans prendre de mesures de sécurité. Si vous ne savez pas comment gérer ce risque, veuillez contacter votre administrateur.<br /><br /><b>Points d’imprimante</b><br />Une page imprimée peut comporter de l’information d’identification invisible à l’œil nu, telle que des points d’imprimante. Veuillez prendre ce risque en considération quand vous travaillez sur des impressions ou si vous les publiez après numérisation."
+msgstr "<h2>Gérer les risques d’impression</h2><b>Codes QR et adresses Web</b><br />Ne saisissez jamais dans un navigateur les adresses Web qui apparaissent sur les documents imprimés. Ne balayez pas non plus les codes QR qui s’y trouvent sans prendre de mesures de sécurité. Si vous ne savez pas comment gérer ce risque, contactez votre administrateur.<br /><br /><b>Points d’imprimante</b><br />Une page imprimée peut comporter de l’information d’identification invisible à l’œil nu, telle que des points d’imprimante. Prenez ce risque en considération si vous travaillez sur des impressions ou si vous les publiez après numérisation."
 
 msgid "Please connect your printer to a USB port."
-msgstr "Veuillez connecter votre imprimante à un port USB."
+msgstr "Connecter votre imprimante à un port USB."
 
 msgid "See your administrator for help."
 msgstr "Consultez votre administrateur pour obtenir de l’aide."
 
+msgid "This file type cannot be printed."
+msgstr "Ce type de fichier ne peut pas être imprimé."
+
 msgid "YES, DELETE ENTIRE SOURCE ACCOUNT"
-msgstr "OUI, SUPPRIMER COMPLÈTEMENT LE COMPTE DE LA SOURCE"
+msgid_plural "YES, DELETE {number} SOURCE ACCOUNTS"
+msgstr[0] "OUI, SUPPRIMER COMPLÈTEMENT LE COMPTE DE LA SOURCE"
+msgstr[1] "OUI, SUPPRIMER COMPLÈTEMENT LE COMPTE DE {number} SOURCES"
 
 msgid "Are you sure this is what you want?"
 msgstr "Confirmez-vous ?"
+
+msgid "Delete entire account for: {source_or_sources}?"
+msgstr "Supprimer complètement le compte de : {source_or_sources} ?"
 
 msgid "When the entire account for a source is deleted:"
 msgstr "Si le compte d’une source est complètement supprimé :"
@@ -396,7 +404,10 @@ msgid "Your organization will not be able to send them replies."
 msgstr "Votre organisme ne pourra plus lui envoyer de réponse."
 
 msgid "All files and messages from that source will also be destroyed."
-msgstr "Tout les fichiers et messages de cette source seront détruits."
+msgstr "Tous les fichiers et messages de cette source seront détruits."
+
+msgid "No sources have been selected."
+msgstr "Aucune source n’a été sélectionnée."
 
 #~ msgid "SUBMIT"
 #~ msgstr "ENVOYER"
