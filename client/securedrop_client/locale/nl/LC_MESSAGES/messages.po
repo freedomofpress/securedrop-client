@@ -1,425 +1,398 @@
 # Translations template for SecureDrop Client.
-# Copyright (C) 2023 Freedom of the Press Foundation
+# Copyright (C) 2024 Freedom of the Press Foundation
 # This file is distributed under the same license as the SecureDrop Client project.
-# FIRST AUTHOR <EMAIL@ADDRESS>, 2023.
+# FIRST AUTHOR <EMAIL@ADDRESS>, 2024.
 #
 msgid ""
 msgstr ""
-"Project-Id-Version: SecureDrop Client 0.9.0\n"
+"Project-Id-Version: SecureDrop Client VERSION\n"
 "Report-Msgid-Bugs-To: securedrop@freedom.press\n"
-"PO-Revision-Date: 2024-06-12 17:30+0000\n"
-"Last-Translator: Meng Pang Wang <mengpangwang@gmail.com>\n"
-"Language-Team: Chinese (Traditional) <https://weblate.securedrop.org/projects/securedrop/securedrop-client/zh_Hant/>\n"
-"Language: zh_Hant\n"
+"PO-Revision-Date: 2024-10-01 11:33+0000\n"
+"Last-Translator: kwadronaut <kwadronaut@autistici.org>\n"
+"Language-Team: Dutch <https://weblate.securedrop.org/projects/securedrop/securedrop-client/nl/>\n"
+"Language: nl\n"
 "MIME-Version: 1.0\n"
-"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"Plural-Forms: nplurals=1; plural=0;\n"
-"X-Generator: Weblate 5.5.3\n"
-"Generated-By: Babel 2.12.1\n"
+"Plural-Forms: nplurals=2; plural=n != 1;\n"
+"X-Generator: Weblate 5.7.1\n"
+"Generated-By: Babel 2.16.0\n"
 
 msgid "{application_name} is already running"
-msgstr "{application_name} 已在執行"
+msgstr "{application_name} is al actief"
 
 msgid "Retrieving 1 message"
 msgid_plural "Retrieving {message_count} messages"
-msgstr[0] "正在接收 {message_count} 則訊息"
+msgstr[0] ""
+msgstr[1] ""
 
 msgid "The SecureDrop server cannot be reached. Trying to reconnect..."
-msgstr "無法連線到 SecureDrop 伺服器，正在嘗試重新連線..."
+msgstr ""
 
 msgid ""
 "Could not reach the SecureDrop server. Please check your \n"
 "Internet and Tor connection and try again."
 msgstr ""
-"無法連線到 SecureDrop 伺服器，請檢查您的\n"
-"網際網路與 Tor 連線狀態後再試一次。"
 
 msgid ""
 "Those credentials didn't work. Please try again, and \n"
 "make sure to use a new two-factor code."
 msgstr ""
-"這些憑證無效，請再試一次，\n"
-"並使用新的雙因素驗證碼。"
 
 msgid "That didn't work. Please check everything and try again."
-msgstr "失敗，請檢查後再重試。"
+msgstr ""
 
 msgid "You must sign in to perform this action."
-msgstr "您必須登入以執行此動作。"
+msgstr ""
 
 msgid "Your session expired. Please log in again."
-msgstr "您的會談已逾期。請重新登入。"
+msgstr ""
 
 msgid "Failed to update star."
-msgstr "更新失敗的星號。"
+msgstr ""
 
 msgid "File does not exist in the data directory. Please try re-downloading."
-msgstr "資料目錄中無檔案，請試著重新下載。"
+msgstr ""
 
 msgid "The file download failed. Please try again."
-msgstr "檔案下載失敗，請重試。"
+msgstr ""
 
 msgid "Failed to delete conversation at server"
-msgstr "無法刪除伺服器上的對話"
+msgstr ""
 
 msgid "Failed to delete source at server"
-msgstr "無法刪除伺服器上的消息來源"
+msgstr ""
 
 msgid "No messages."
-msgstr "無訊息。"
+msgstr ""
 
 #, python-format
 msgid "%(sender)s wrote:"
-msgstr "%(sender)s 寫道："
+msgstr ""
 
 #, python-format
 msgid "%(sender)s sent:"
-msgstr "%(sender)s 送出："
+msgstr ""
 
 #, python-format
 msgid "File: %(filename)s"
-msgstr "檔案：%(filename)s"
+msgstr ""
 
 msgid "Download All"
-msgstr "全部下載"
+msgstr ""
 
 msgid "Delete Source Account"
-msgstr "刪除線人帳戶"
+msgstr ""
 
 msgid "Delete All Files and Messages"
-msgstr "刪除所有檔案與訊息"
+msgstr ""
 
 msgid "Print Transcript"
-msgstr "列印文字抄本"
+msgstr ""
 
 msgid "Export Transcript"
-msgstr "匯出文字抄本"
+msgstr ""
 
 msgid "Export All"
-msgstr "匯出全部"
+msgstr ""
 
 msgid "<h2>Some files will not be exported</h2>Some files from this source have not yet been downloaded, and will not be exported.<br /><br />To export the currently downloaded files, click \"Continue.\""
-msgstr "<h2>某些檔案不會匯出</h2>尚未完整下載這名線人的檔案，故不會匯出。<br /><br />欲匯出目前下載的檔案，請按“繼續”"
+msgstr ""
 
 msgid "all files and transcript"
-msgstr "所有檔案與文字抄本"
+msgstr ""
 
 msgid "SecureDrop Client {}"
-msgstr "SecureDrop 客戶端 {}"
+msgstr ""
 
 msgid "Quit"
-msgstr "停止"
+msgstr ""
 
 msgid "Last Refresh: {}"
-msgstr "近期重新整理: {}"
+msgstr ""
 
 msgid "Last Refresh: never"
-msgstr "上一回重新整理: 尚無"
+msgstr ""
 
 msgid "{}"
-msgstr "{}"
+msgstr ""
 
 msgid "SIGN OUT"
-msgstr "登出"
+msgstr ""
 
 msgid "SIGN IN"
-msgstr "登錄"
+msgstr ""
 
 msgid "Nothing to see just yet!"
-msgstr "尚無東西可看!"
+msgstr ""
 
 msgid "Source submissions will be listed to the left, once downloaded and decrypted."
-msgstr "下載並解密完成後，來自線人的資料會顯示於左側。"
+msgstr ""
 
 msgid "This is where you will read messages, reply to sources, and work with files."
-msgstr "這處可讀取訊息、回覆與使用檔案。"
+msgstr ""
 
 msgid "Select a source from the list, to:"
-msgstr "從列表中選取線人至:"
+msgstr ""
 
 msgid "Read a conversation"
-msgstr "讀取對話"
+msgstr ""
 
 msgid "View or retrieve files"
-msgstr "檢視或取回檔案"
+msgstr ""
 
 msgid "Send a response"
-msgstr "發送回應"
+msgstr ""
 
 msgid "Deleting files and messages…"
-msgstr "刪除檔案與訊息…"
+msgstr ""
 
 msgid "Deleting source account…"
-msgstr "刪除線人帳戶…"
+msgstr ""
 
 msgid "— All files and messages deleted for this source —"
-msgstr "— 刪除此名線人的全部檔案和訊息 —"
+msgstr ""
 
 msgid "Failed to send"
-msgstr "無法發送"
+msgstr ""
 
 msgid " DOWNLOAD"
-msgstr " 下載"
+msgstr ""
 
 msgid "EXPORT"
-msgstr "滙出"
+msgstr ""
 
 msgid "PRINT"
-msgstr "列印"
+msgstr ""
 
 msgid "ENCRYPTED FILE ON SERVER"
-msgstr "伺服器上的加密檔案"
+msgstr ""
 
 msgid "DOWNLOAD"
-msgstr "下載"
+msgstr ""
 
 msgid " DOWNLOADING "
-msgstr " 下載 "
+msgstr ""
 
 msgid "Earlier files and messages deleted."
-msgstr "先前刪除的檔案與訊息。"
+msgstr ""
 
 msgid ""
 "Files and messages deleted\n"
 " for this source"
 msgstr ""
-"這名線人的\n"
-" 檔案與訊息已刪除"
 
 msgid "Compose a reply to "
-msgstr "撰寫回覆給: "
+msgstr ""
 
 msgid "Awaiting encryption key"
-msgstr "等待加密密鑰"
+msgstr ""
 
 msgid " from server to enable replies"
-msgstr " 從伺服器上開啟回覆"
+msgstr ""
 
 msgid "Sign in"
-msgstr "登錄"
+msgstr ""
 
 msgid " to compose or send a reply"
-msgstr " 欲撰寫或發送回覆"
+msgstr ""
 
 msgid "FILES AND MESSAGES"
-msgstr "檔案與訊息"
+msgstr ""
 
 msgid "SOURCE ACCOUNT"
-msgstr "線人帳戶"
+msgstr ""
 
 msgid "Username"
-msgstr "用戶名"
+msgstr ""
 
 msgid "Passphrase"
-msgstr "密語"
+msgstr ""
 
 msgid "Two-Factor Code"
-msgstr "雙因素驗證碼"
+msgstr ""
 
 msgid "SecureDrop Client v{}"
-msgstr "SecureDrop 客戶端版本{}"
+msgstr ""
 
 msgid ""
 "That username won't work.\n"
 "It should be at least 3 characters long."
 msgstr ""
-"此用戶名無效。\n"
-"至少須 3 個字元。"
 
 msgid ""
 "That passphrase won't work.\n"
 "It should be between 14 and 128 characters long."
 msgstr ""
-"此密語無效\n"
-"密語須介於 14 ~ 128 字元長度。"
 
 msgid ""
 "That two-factor code won't work.\n"
 "It should only contain numerals."
 msgstr ""
-"雙因素驗證無效。\n"
-"其應該只有數字。"
 
 msgid "SIGNING IN"
-msgstr "登錄"
+msgstr ""
 
 msgid "Please enter a username, passphrase and two-factor code."
-msgstr "請輸入用名、密語與雙因素驗證碼。"
+msgstr ""
 
 msgid "USE OFFLINE"
-msgstr "離線使用"
+msgstr ""
 
 msgid "Show Passphrase"
-msgstr "顯示密語"
+msgstr ""
 
 msgid "CANCEL"
-msgstr "取消"
+msgstr ""
 
 msgid "CONTINUE"
-msgstr "繼續"
+msgstr ""
 
 msgid "YES, DELETE FILES AND MESSAGES"
-msgstr "確認刪除檔案與訊息"
+msgstr ""
 
 msgid "Would you like to delete {files_to_delete}, {replies_to_delete}, {messages_to_delete} from the source account for {source}?"
-msgstr "要刪除來自線人帳戶 {source}的全部{files_to_delete}, {replies_to_delete}, {messages_to_delete} 嗎？"
+msgstr ""
 
 msgid "Preserving the account will retain its metadata, and the ability for {source} to log in to your SecureDrop again."
-msgstr "保留帳戶將會留下中繼資料，也會讓{source}可再繼續登錄 SecureDrop。"
+msgstr ""
 
 msgid "one file"
 msgid_plural "{file_count} files"
-msgstr[0] "{file_count}檔案"
+msgstr[0] ""
+msgstr[1] ""
 
 msgid "one reply"
 msgid_plural "{reply_count} replies"
-msgstr[0] "{reply_count}回覆"
+msgstr[0] ""
+msgstr[1] ""
 
 msgid "one message"
 msgid_plural "{message_count} messages"
-msgstr[0] "{message_count}訊息"
+msgstr[0] ""
+msgstr[1] ""
 
 msgid "DONE"
-msgstr "完成"
+msgstr ""
 
 msgid "BACK"
-msgstr "返回"
+msgstr ""
 
 msgid "No device detected"
-msgstr "未偵測到裝置"
+msgstr ""
 
 msgid "Too many USB devices detected; please insert one supported device."
-msgstr "偵測到太多 USB 裝置；請僅插入一項裝置。"
+msgstr ""
 
 msgid "Either the drive is not encrypted or there is something else wrong with it.<br />If this is a VeraCrypt drive, please unlock it from within the sd-devices VM, then try again."
-msgstr "裝置可能未加密或發生其他錯誤。<br />如果是 VeraCrypt 加密磁碟，請先從 sd-devices 虛擬機器中解鎖，再試一次。"
+msgstr ""
 
 msgid "The device is ready for export."
-msgstr "裝置已準備好匯出。"
+msgstr ""
 
 msgid "The device is locked."
-msgstr "裝置已鎖定。"
+msgstr ""
 
 msgid "The passphrase provided did not work. Please try again."
-msgstr "您輸入的助記詞無效，請再試一次。"
+msgstr ""
 
 msgid "Error mounting drive"
-msgstr "掛載磁碟時發生錯誤"
+msgstr ""
 
 msgid "Error during export"
-msgstr "匯出時發生錯誤"
+msgstr ""
 
 msgid "Files were exported successfully, but the USB device could not be unmounted."
-msgstr "已成功匯出檔案，但無法卸除 USB 裝置。"
+msgstr ""
 
 msgid "Files were exported successfully, but some temporary files remain on disk. Reboot to remove them."
-msgstr "已成功匯出檔案，但磁碟上仍有部分暫存檔案。請重新開機以移除這些暫存檔案。"
+msgstr ""
 
 msgid "Export successful"
-msgstr "成功滙出"
+msgstr ""
 
 msgid "Error encountered with this device. See your administrator for help."
-msgstr "本裝置發生錯誤。請聯繫您的系統管理員。"
+msgstr ""
 
 msgid "Files were moved or missing and could not be exported."
-msgstr "檔案已被移動或遺失，無法匯出。"
+msgstr ""
 
 msgid "Error encountered. Please contact support."
-msgstr "發生錯誤。請聯繫支援。"
+msgstr ""
 
 msgid "Preparing to export:<br /><span style=\"font-weight:normal\">{}</span>"
-msgstr "準備滙出:<br /><span style=\"font-weight:normal\">{}</span>"
+msgstr ""
 
 msgid "<h2>Understand the risks before exporting files</h2><b>Malware</b><br />This workstation lets you open files securely. If you open files on another computer, any embedded malware may spread to your computer or network. If you are unsure how to manage this risk, please print the file, or contact your administrator.<br /><br /><b>Anonymity</b><br />Files submitted by sources may contain information or hidden metadata that identifies who they are. To protect your sources, please consider redacting files before working with them on network-connected computers."
-msgstr "<h2>匯出檔案前了解相關風險</h2><b>惡意軟體</b><br />此工作站可讓您安全地開啟檔案。 如果在另一台電腦上打開檔案，任何嵌入的惡意軟體都可能傳播到電腦或網路。 如果不確定如何管理此風險，請列印該文件，或聯絡管理員。<br /><br /><b>匿名性</b><br />線人提交的檔案可能有足以識別出他們是誰的資訊或隱藏元數據。 為了保護消息來源，請考慮在連網的電腦上使用檔案之前先對其進行編輯。"
+msgstr ""
 
 msgid "Ready to export:<br /><span style=\"font-weight:normal\">{}</span>"
-msgstr "已滙出:<br /><span style=\"font-weight:normal\">{}</span>"
+msgstr ""
 
 msgid "Export Failed"
-msgstr "匯出失敗"
+msgstr ""
 
 msgid "Please insert one of the export drives provisioned specifically for the SecureDrop Workstation.<br />If you're using a VeraCrypt drive, unlock it manually before proceeding."
-msgstr "請插入專供 SecureDrop 工作站使用的匯出磁碟。<br />如果您使用 VeraCrypt 磁碟，請先解鎖再繼續。"
+msgstr ""
 
 msgid "Remember to be careful when working with files outside of your Workstation machine."
-msgstr "記住在工作站以外的電腦上處理檔案時要小心。"
+msgstr ""
 
 msgid "Export sucessful, but drive was not locked"
-msgstr "已成功匯出，但磁碟未鎖定"
+msgstr ""
 
 msgid "Working..."
-msgstr "正在處理..."
+msgstr ""
 
 msgid "Enter passphrase for USB drive"
-msgstr "輸入 USB 磁碟的密語"
+msgstr ""
 
 msgid "Preparing to print:<br /><span style=\"font-weight:normal\">{}</span>"
-msgstr "準備列印:<br /><span style=\"font-weight:normal\">{}</span>"
+msgstr ""
 
 msgid "Ready to print:<br /><span style=\"font-weight:normal\">{}</span>"
-msgstr "已可列印:<br /><span style=\"font-weight:normal\">{}</span>"
+msgstr ""
 
 msgid "Connect USB printer"
-msgstr "連接 USB 印表機"
+msgstr ""
 
 msgid "Printing failed"
-msgstr "列印失敗"
+msgstr ""
 
 msgid "<h2>Managing printout risks</h2><b>QR codes and web addresses</b><br />Never type in and open web addresses or scan QR codes contained in printed documents without taking security precautions. If you are unsure how to manage this risk, please contact your administrator.<br /><br /><b>Printer dots</b><br />Any part of a printed page may contain identifying information invisible to the naked eye, such as printer dots. Please carefully consider this risk when working with or publishing scanned printouts."
-msgstr "<h2>管理列印輸出風險</h2><b>二維碼和網址</b><br />在未採取安全預防措施的情況下，切勿輸入並開啟網址或掃描列印文件中包含的QR 圖碼。如果不確定如何管理此風險，請聯絡管理員。<br /><br /><b>印表機隱寫技術</b><br />列印頁面的任何部分都可能包含肉眼看不見的識別資訊，例如印表機隱寫技術。 在使用或發布掃描的列印輸出時，請仔細考慮此風險。"
+msgstr ""
 
 msgid "Please connect your printer to a USB port."
-msgstr "請將印表機接入 USB 端口。"
+msgstr ""
 
 msgid "See your administrator for help."
-msgstr "請聯繫您的系統管理員提供協助。"
+msgstr ""
 
 msgid "This file type cannot be printed."
 msgstr ""
 
-#, fuzzy
-#| msgid "YES, DELETE ENTIRE SOURCE ACCOUNT"
 msgid "YES, DELETE ENTIRE SOURCE ACCOUNT"
 msgid_plural "YES, DELETE {number} SOURCE ACCOUNTS"
-msgstr[0] "確認刪除全部的線人帳戶"
+msgstr[0] ""
+msgstr[1] ""
 
 msgid "Are you sure this is what you want?"
-msgstr "確認真要這麼做？"
+msgstr ""
 
 msgid "Delete entire account for: {source_or_sources}?"
 msgstr ""
 
 msgid "When the entire account for a source is deleted:"
-msgstr "若某名線人的帳戶被刪除："
+msgstr ""
 
 msgid "The source will not be able to log in with their codename again."
-msgstr "此名線人將無法再利用其代碼名稱來登錄。"
+msgstr ""
 
 msgid "Your organization will not be able to send them replies."
-msgstr "您的組織將無法向他們發送回覆。"
+msgstr ""
 
 msgid "All files and messages from that source will also be destroyed."
-msgstr "即將刪除此線人全部的檔案與訊息。"
+msgstr ""
 
 msgid "No sources have been selected."
 msgstr ""
-
-#~ msgid "SUBMIT"
-#~ msgstr "提交"
-
-#~ msgid "Insert encrypted USB drive"
-#~ msgstr "插入加密的 USB 隨身碟"
-
-#~ msgid "Export failed"
-#~ msgstr "滙出失敗"
-
-#~ msgid "Exporting: {}"
-#~ msgstr "滙出中: {}"
-
-#~ msgid "Please insert one of the export drives provisioned specifically for the SecureDrop Workstation."
-#~ msgstr "請接上專為 SecureDrop 工作站配置的匯出磁碟。"
-
-#~ msgid "Either the drive is not encrypted or there is something else wrong with it."
-#~ msgstr "該磁碟可能未加密，或存在其他問題。"
