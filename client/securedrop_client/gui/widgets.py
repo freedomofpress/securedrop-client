@@ -2240,7 +2240,7 @@ class FileWidget(QWidget):
 
     def __init__(
         self,
-        file_uuid: str,
+        file: File,
         controller: Controller,
         file_download_started: pyqtBoundSignal,
         file_ready_signal: pyqtBoundSignal,
@@ -2255,8 +2255,8 @@ class FileWidget(QWidget):
 
         self.controller = controller
 
-        self.file = self.controller.get_file(file_uuid)
-        self.uuid = file_uuid
+        self.file = file
+        self.uuid = file.uuid
         self.index = index
         self.downloading = False
 
@@ -2494,16 +2494,20 @@ class FileWidget(QWidget):
         of the file distinguishes which function in the logic layer to call.
         """
         # update state
-        self.file = self.controller.get_file(self.uuid)
-
-        if self.file.is_decrypted:
-            # Open the already downloaded and decrypted file.
-            self.controller.on_file_open(self.file)
-        elif not self.downloading:
-            if self.controller.api:
-                self.start_button_animation()
-            # Download the file.
-            self.controller.on_submission_download(File, self.uuid)
+        file = self.controller.get_file(self.uuid)
+        if file is None:
+            # the record was deleted from the database, so delete the widget.
+            self.deleteLater()
+        else:
+            self.file = file
+            if self.file.is_decrypted:
+                # Open the already downloaded and decrypted file.
+                self.controller.on_file_open(self.file)
+            elif not self.downloading:
+                if self.controller.api:
+                    self.start_button_animation()
+                # Download the file.
+                self.controller.on_submission_download(File, self.uuid)
 
     def start_button_animation(self) -> None:
         """
@@ -2531,8 +2535,12 @@ class FileWidget(QWidget):
         Stops the download animation and restores the button to its default state.
         """
         self.download_animation.stop()
-        self.file = self.controller.get_file(self.file.uuid)
-        self._set_file_state()
+        file = self.controller.get_file(self.file.uuid)
+        if file is None:
+            self.deleteLater()
+        else:
+            self.file = file
+            self._set_file_state()
 
 
 class ConversationScrollArea(QScrollArea):
@@ -2860,9 +2868,11 @@ class ConversationView(QWidget):
         """
         Add a file from the source.
         """
+        # If we encounter any issues with FileWidget rendering updated information, the
+        # reference can be refreshed here before the widget is created.
         logger.debug(f"Adding file for {file.uuid}")
         conversation_item = FileWidget(
-            file.uuid,
+            file,
             self.controller,
             self.controller.file_download_started,
             self.controller.file_ready,

@@ -1055,16 +1055,25 @@ def source_exists(session: Session, source_uuid: str) -> bool:
         return False
 
 
-def get_file(session: Session, uuid: str) -> File:
-    return session.query(File).filter_by(uuid=uuid).one()
+def get_file(session: Session, uuid: str) -> File | None:
+    """
+    Get File object by uuid.
+    """
+    return session.query(File).filter_by(uuid=uuid).one_or_none()
 
 
-def get_message(session: Session, uuid: str) -> Message:
-    return session.query(Message).filter_by(uuid=uuid).one()
+def get_message(session: Session, uuid: str) -> Message | None:
+    """
+    Get Message object by uuid.
+    """
+    return session.query(Message).filter_by(uuid=uuid).one_or_none()
 
 
-def get_reply(session: Session, uuid: str) -> Reply:
-    return session.query(Reply).filter_by(uuid=uuid).one()
+def get_reply(session: Session, uuid: str) -> Reply | None:
+    """
+    Get Reply object by uuid.
+    """
+    return session.query(Reply).filter_by(uuid=uuid).one_or_none()
 
 
 def mark_all_pending_drafts_as_failed(session: Session) -> list[DraftReply]:

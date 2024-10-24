@@ -383,14 +383,11 @@ def test_sync_delete_race(homedir, mocker, session_maker, session):
     update_local_storage(session, sources, [message1, message2], [], homedir)
 
     assert source_exists(session, source.uuid) is False
-    with pytest.raises(NoResultFound):
-        get_message(session, message1.uuid)
+    assert get_message(session, message1.uuid) is None
 
     assert source_exists(session, source.uuid) is False
-    with pytest.raises(NoResultFound):
-        get_message(session, message1.uuid)
-    with pytest.raises(NoResultFound):
-        get_message(session, message2.uuid)
+    assert get_message(session, message1.uuid) is None
+    assert get_message(session, message2.uuid) is None
 
 
 def _is_equivalent_source(source, remote_source) -> bool:
@@ -1792,6 +1789,30 @@ def test_get_reply(mocker, session):
     result = get_reply(session, reply.uuid)
 
     assert result == reply
+
+
+def test_get_object_does_not_exist_returns_None(mocker, session):
+    source = factory.Source()
+    # Add the source, but not the items
+    session.add(source)
+
+    items = [
+        factory.File(source=source),
+        factory.Message(source=source),
+        factory.Reply(source=source),
+    ]
+
+    def get_object(item) -> callable:
+        if isinstance(item, db.File):
+            return get_file
+        elif isinstance(item, db.Reply):
+            return get_reply
+        else:  # db.Message
+            return get_message
+
+    for item in items:
+        get_item = get_object(item)
+        assert get_item(session, item.uuid) is None
 
 
 def test_mark_pending_replies_as_failed(mocker, session, reply_status_codes):
