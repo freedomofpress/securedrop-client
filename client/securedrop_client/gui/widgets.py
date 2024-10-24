@@ -517,13 +517,15 @@ class BatchActionToolbar(QToolBar):
         self.setToolButtonStyle(Qt.ToolButtonStyle.ToolButtonTextBesideIcon)
         self.setSizePolicy(QSizePolicy.Preferred, QSizePolicy.Fixed)
 
-        # TODO: set keyboard shortcut?
         self.delete_sources_action = QAction(
             QIcon(load_image("delete_sources_toolbar_icon.svg")), _("DELETE SOURCES"), self
         )
         self.delete_sources_action.setObjectName("BatchActionButton")
         self.delete_sources_action.setToolTip(
-            _("Delete selected source accounts. Ctrl+click to select multiple sources.")
+            _(
+                "Delete selected source accounts. "
+                "Ctrl+click sources below to select multiple sources."
+            )
         )
         self.delete_sources_action.triggered.connect(self.on_action_triggered)
         self.button = self.widgetForAction(self.delete_sources_action)

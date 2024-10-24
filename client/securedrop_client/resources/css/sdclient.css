@@ -170,7 +170,7 @@ QWidget {
 #EmptyConversationView QLabel {
     font-family: Montserrat;
     font-weight: 400;
-    font-size: 35px;
+    font-size: 30px;
     color: #a5b3e9;
 }
 
@@ -180,7 +180,7 @@ QWidget {
 
 #EmptyConversationView QLabel#EmptyConversationView_bullet {
     margin: 4px 0px 0px 0px;
-    font-size: 35px;
+    font-size: 30px;
     font-weight: 600;
 }
 

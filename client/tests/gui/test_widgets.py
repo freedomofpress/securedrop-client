@@ -542,11 +542,9 @@ def test_MainView_show_sources_with_none_selected(mocker):
     source_item = SourceListWidgetItem(mv.source_list)
     mv.source_list.setItemWidget(source_item, source_widget)
     mv.source_list.source_items["stub_uuid"] = source_item
-    # mocker.patch.object(mv.source_list, "update_sources")
 
     mv.show_sources([factory.Source(), factory.Source(), factory.Source()])
 
-    # mv.source_list.update_sources.assert_called_once_with([1, 2, 3])
     assert mv.view_layout.currentIndex() == mv.NOTHING_SELECTED_INDEX
 
 
@@ -647,9 +645,6 @@ def test_MainView_on_source_changed(mocker):
     mv.source_list.count = mocker.MagicMock(return_value=3)
     mv.controller = mocker.MagicMock(is_authenticated=True)
     mocker.patch("securedrop_client.gui.widgets.source_exists", return_value=True)
-    # scw = SourceConversationWrapper(source, mv.controller)
-    # mocker.patch("securedrop_client.gui.widgets.SourceConversationWrapper", return_value=scw)
-    # TODO
     mv.on_source_changed()
 
     mv.source_list.get_selected_source.assert_called_once_with()
@@ -769,9 +764,6 @@ def test_MainView_on_source_changed_updates_conversation_view(mocker, session):
     session.add(reply)
     session.commit()
     source_selected = mocker.patch("securedrop_client.gui.widgets.SourceList.source_selected")
-    # mocker.patch(
-    #     "securedrop_client.gui.widgets.SourceList.get_selected_source", return_value=source
-    # )
     add_message_fn = mocker.patch(
         "securedrop_client.gui.widgets.ConversationView.add_message", new=mocker.Mock()
     )

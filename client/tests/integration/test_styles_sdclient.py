@@ -241,7 +241,7 @@ def test_styles_for_main_view(mocker, main_window):
     no_sources_instructions = no_sources.layout().itemAt(0).widget()
     assert no_sources_instructions.font().family() == "Montserrat"
     assert QFont.DemiBold - 1 == no_sources_instructions.font().weight()
-    assert no_sources_instructions.font().pixelSize() == 35
+    assert no_sources_instructions.font().pixelSize() == 30
     assert no_sources_instructions.palette().color(QPalette.Foreground).name() == "#a5b3e9"
     no_sources_spacer1 = no_sources.layout().itemAt(1)
     assert no_sources_spacer1.minimumSize().height() == 35
@@ -249,7 +249,7 @@ def test_styles_for_main_view(mocker, main_window):
     no_sources_instruction_details1 = no_sources.layout().itemAt(2).widget()
     assert no_sources_instruction_details1.font().family() == "Montserrat"
     assert QFont.Normal == no_sources_instruction_details1.font().weight()
-    assert no_sources_instruction_details1.font().pixelSize() == 35
+    assert no_sources_instruction_details1.font().pixelSize() == 30
     assert no_sources_instruction_details1.palette().color(QPalette.Foreground).name() == "#a5b3e9"
     no_sources_spacer2 = no_sources.layout().itemAt(3)
     assert no_sources_spacer2.minimumSize().height() == 35
@@ -257,7 +257,7 @@ def test_styles_for_main_view(mocker, main_window):
     no_sources_instruction_details2 = no_sources.layout().itemAt(4).widget()
     assert no_sources_instruction_details2.font().family() == "Montserrat"
     assert QFont.Normal == no_sources_instruction_details2.font().weight()
-    assert no_sources_instruction_details2.font().pixelSize() == 35
+    assert no_sources_instruction_details2.font().pixelSize() == 30
     assert no_sources_instruction_details2.palette().color(QPalette.Foreground).name() == "#a5b3e9"
 
     no_source_selected = main_view.view_layout.widget(1)
@@ -265,26 +265,26 @@ def test_styles_for_main_view(mocker, main_window):
     no_source_selected_instructions = no_source_selected.layout().itemAt(0).widget()
     assert no_source_selected_instructions.font().family() == "Montserrat"
     assert QFont.DemiBold - 1 == no_source_selected_instructions.font().weight()
-    assert no_source_selected_instructions.font().pixelSize() == 35
+    assert no_source_selected_instructions.font().pixelSize() == 30
     assert no_source_selected_instructions.palette().color(QPalette.Foreground).name() == "#a5b3e9"
     no_source_selected_spacer1 = no_source_selected.layout().itemAt(1)
     assert no_source_selected_spacer1.minimumSize().height() == 35
     assert no_source_selected_spacer1.maximumSize().height() == 35
     bullet1_bullet = no_source_selected.layout().itemAt(2).widget().layout().itemAt(0).widget()
     assert bullet1_bullet.getContentsMargins() == (0, 4, 0, 0)
-    bullet1_bullet.font().pixelSize() == 35
+    bullet1_bullet.font().pixelSize() == 30
     QFont.Bold == bullet1_bullet.font().weight()
     assert bullet1_bullet.font().family() == "Montserrat"
     assert bullet1_bullet.palette().color(QPalette.Foreground).name() == "#a5b3e9"
     bullet2_bullet = no_source_selected.layout().itemAt(3).widget().layout().itemAt(0).widget()
     assert bullet2_bullet.getContentsMargins() == (0, 4, 0, 0)
-    bullet2_bullet.font().pixelSize() == 35
+    bullet2_bullet.font().pixelSize() == 30
     QFont.Bold == bullet2_bullet.font().weight()
     assert bullet2_bullet.font().family() == "Montserrat"
     assert bullet2_bullet.palette().color(QPalette.Foreground).name() == "#a5b3e9"
     bullet3_bullet = no_source_selected.layout().itemAt(4).widget().layout().itemAt(0).widget()
     assert bullet3_bullet.getContentsMargins() == (0, 4, 0, 0)
-    bullet3_bullet.font().pixelSize() == 35
+    bullet3_bullet.font().pixelSize() == 30
     QFont.Bold == bullet3_bullet.font().weight()
     assert bullet3_bullet.font().family() == "Montserrat"
     assert bullet3_bullet.palette().color(QPalette.Foreground).name() == "#a5b3e9"

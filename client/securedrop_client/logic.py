@@ -610,6 +610,9 @@ class Controller(QObject):
         # may have attempted online mode login, then switched to offline)
         self.gui.clear_clipboard()
         self.gui.show_main_window()
+
+        # All child elements of main window should show logged_out state
+        self.gui.logout()
         self.update_sources()
 
     def on_action_requiring_login(self) -> None:

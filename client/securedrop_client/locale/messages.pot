@@ -115,7 +115,7 @@ msgstr ""
 msgid "DELETE SOURCES"
 msgstr ""
 
-msgid "Delete selected source accounts. Ctrl+click to select multiple sources."
+msgid "Delete selected source accounts. Ctrl+click sources below to select multiple sources."
 msgstr ""
 
 msgid "{}"
