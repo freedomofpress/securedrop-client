@@ -418,7 +418,7 @@ class Controller(QObject):
             os.chmod(self.last_sync_filepath, 0o600)
 
         # Store currently-selected sources
-        self._selected_sources: set[db.Source] | None = None
+        self._selected_sources: list[db.Source] | None = None
 
     @pyqtSlot(int)
     def _on_main_queue_updated(self, num_items: int) -> None:
@@ -1050,7 +1050,7 @@ class Controller(QObject):
             self.source_deletion_failed.emit(e.source_uuid)
 
     @login_required
-    def delete_sources(self, sources: set[db.Source]) -> None:
+    def delete_sources(self, sources: list[db.Source]) -> None:
         """
         Performs a delete operation on one or more source records.
 
@@ -1192,8 +1192,8 @@ class Controller(QObject):
             self.reply_failed.emit(failed_reply.uuid)
 
     @pyqtSlot(object)
-    def on_receive_selected_sources(self, sources: set[db.Source]) -> None:
+    def on_receive_selected_sources(self, sources: list[db.Source]) -> None:
         self._selected_sources = sources
 
-    def get_selected_sources(self) -> set[db.Source] | None:
+    def get_selected_sources(self) -> list[db.Source] | None:
         return self._selected_sources

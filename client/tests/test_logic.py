@@ -1919,7 +1919,7 @@ def test_Controller_delete_source_not_logged_in(homedir, config, mocker, session
     source_db_object = mocker.MagicMock()
     co.on_action_requiring_login = mocker.MagicMock()
     co.api = None
-    co.delete_sources(set([source_db_object]))
+    co.delete_sources([source_db_object])
     co.on_action_requiring_login.assert_called_with()
 
 
@@ -1945,7 +1945,7 @@ def test_Controller_delete_source(homedir, config, mocker, session_maker, sessio
     session.add(source)
     session.commit()
 
-    co.delete_sources(set([source]))
+    co.delete_sources([source])
 
     assert len(source_deleted_emissions) == 1
     assert source_deleted_emissions[0] == [source.uuid]
