@@ -115,6 +115,45 @@ QWidget {
     background-color: #85f6fe;
 }
 
+#InnerTopPane {
+    background-color: #f3f5f9;
+}
+
+#BatchActionWidget {
+    background-color: #fff;
+    margin: 2px;
+}
+
+#BatchActionToolbar {
+    min-height: 42px;
+}
+
+#BatchActionToolbar QToolButton:disabled {
+    color: #f9f9ff;
+    background-color: #a5b3e9;
+    border: 2px solid #a5b3e9;
+}
+
+#BatchActionToolbar QToolButton {
+    font-family: 'Montserrat';
+    font-weight: 600;
+    font-size: 12px;
+    padding: 2px;
+    color: #a5b3e9;
+    background-color: #fff;
+    border: 2px solid #a5b3e9;
+    border-radius: 4%;
+    margin-left: 2px;
+    margin-right: 2px;
+}
+
+#BatchActionToolbar QToolButton:hover,
+#BatchActionToolbar QToolButton:checked {
+    background-color: #a5b3e9;
+    border: 2px solid #a5b3e9;
+    color: #fff;
+}
+
 #MainView {
     min-height: 558;
 }
@@ -131,7 +170,7 @@ QWidget {
 #EmptyConversationView QLabel {
     font-family: Montserrat;
     font-weight: 400;
-    font-size: 35px;
+    font-size: 30px;
     color: #a5b3e9;
 }
 
@@ -141,7 +180,7 @@ QWidget {
 
 #EmptyConversationView QLabel#EmptyConversationView_bullet {
     margin: 4px 0px 0px 0px;
-    font-size: 35px;
+    font-size: 30px;
     font-weight: 600;
 }
 
@@ -154,11 +193,12 @@ QListView#SourceList {
 }
 
 QListView#SourceList::item:selected {
-    background-color: rgba(244, 245, 255, 0.84);
+    /* #a5b3e94d aka #e4e8f8 */
+    background-color: rgba(165, 179, 233, 0.30);
 }
 
 QListView#SourceList::item:hover {
-    background-color: #f9f9ff;
+    background-color: #e4e8f8;
 }
 
 #SourceWidget_container {

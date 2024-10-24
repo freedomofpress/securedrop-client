@@ -40,7 +40,8 @@ def test_download_file(functional_test_logged_in_context, qtbot, mocker):
 
     def conversation_with_file_is_rendered():
         assert gui.main_view.view_layout.itemAt(0)
-        conversation = gui.main_view.view_layout.itemAt(0).widget()
+        conversation = gui.main_view.view_layout.widget(gui.main_view.view_layout.currentIndex())
+
         assert isinstance(conversation, SourceConversationWrapper)
         file_id = list(conversation.conversation_view.current_messages.keys())[2]
         file_widget = conversation.conversation_view.current_messages[file_id]
@@ -48,7 +49,8 @@ def test_download_file(functional_test_logged_in_context, qtbot, mocker):
 
     # Get the selected source conversation that contains a file attachment
     qtbot.waitUntil(conversation_with_file_is_rendered, timeout=TIME_RENDER_CONV_VIEW)
-    conversation = gui.main_view.view_layout.itemAt(0).widget()
+    conversation = gui.main_view.view_layout.widget(gui.main_view.view_layout.currentIndex())
+
     file_id = list(conversation.conversation_view.current_messages.keys())[2]
     file_widget = conversation.conversation_view.current_messages[file_id]
 
