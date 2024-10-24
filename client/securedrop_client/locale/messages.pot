@@ -112,6 +112,12 @@ msgstr ""
 msgid "Last Refresh: never"
 msgstr ""
 
+msgid "DELETE SOURCES"
+msgstr ""
+
+msgid "Delete selected source accounts"
+msgstr ""
+
 msgid "{}"
 msgstr ""
 
