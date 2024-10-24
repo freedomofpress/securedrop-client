@@ -45,7 +45,7 @@ def test_offline_delete_source_attempt(functional_test_offline_context, qtbot, m
     # Attempt to delete the selected source
     # Note: The qtbot object cannot interact with QAction items (as used in the delete button/menu)
     # so we programatically attempt to delete the source rather than using the GUI via qtbot
-    controller.delete_sources(set([conversation.conversation_title_bar.source]))
+    controller.delete_sources([conversation.conversation_title_bar.source])
 
     def check_for_error():
         msg = gui.bottom_pane.error_status_bar.status_bar.currentMessage()

@@ -45,7 +45,7 @@ def test_delete_source(functional_test_logged_in_context, qtbot, mocker):
     # Note: The qtbot object cannot interact with QAction items (as used in the delete button/menu)
     # so we programatically delete the source rather than using the GUI via qtbot
     source_count = gui.main_view.source_list.count()
-    controller.delete_sources(set([conversation.conversation_title_bar.source]))
+    controller.delete_sources([conversation.conversation_title_bar.source])
 
     def check_source_list():
         assert gui.main_view.source_list.count() == source_count - 1

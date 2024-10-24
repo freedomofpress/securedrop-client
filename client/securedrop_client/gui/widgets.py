@@ -1145,7 +1145,7 @@ class SourceList(QListWidget):
     source_selection_cleared = pyqtSignal()
 
     # Bulk-context signal (toolbar)
-    selected_sources = pyqtSignal(object)  # set[Source]
+    selected_sources = pyqtSignal(object)  # list[Source]
 
     NUM_SOURCES_TO_ADD_AT_A_TIME = 32
     INITIAL_UPDATE_SCROLLBAR_WIDTH = 20
@@ -1365,7 +1365,7 @@ class SourceList(QListWidget):
             self.source_selection_cleared.emit()
 
         # Update listeners (action toolbar) with current selection
-        self.selected_sources.emit(set(selected))
+        self.selected_sources.emit(selected)
 
 
 class SourcePreview(SecureQLabel):
