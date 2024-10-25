@@ -1060,7 +1060,17 @@ class Controller(QObject):
         the failure handler will display an error.
         """
         for source in sources:
-            job = DeleteSourceJob(source.uuid)
+            try:
+                # Accessing source.uuid requires the source object to be
+                # present in the database.
+                # To avoid passing and referencing orm objects, a simplified
+                # ViewModel layer decoupled from the db that presents data to the API/GUI
+                # would be another possibility.
+                job = DeleteSourceJob(source.uuid)
+            except sqlalchemy.orm.exc.ObjectDeletedError:
+                logger.warning("DeleteSourceJob requested but source already deleted")
+                return
+
             job.success_signal.connect(self.on_delete_source_success)
             job.failure_signal.connect(self.on_delete_source_failure)
 

@@ -553,7 +553,7 @@ class BatchActionToolbar(QToolBar):
             # The current source selection is continuously received by the controller
             # as the user selects and deselects; here we retrieve the selection
             targets = self.controller.get_selected_sources()
-            if targets:
+            if targets is not None:
                 dialog = DeleteSourceDialog(targets)
                 dialog.accepted.connect(lambda: self.controller.delete_sources(targets))
                 dialog.exec()
@@ -904,6 +904,8 @@ class MainView(QWidget):
             # One source selected; prepare the conversation widget
             try:
                 source = self.source_list.get_selected_source()
+
+                # Avoid race between user selection and remote deletion
                 if not source:
                     return
 
@@ -1299,6 +1301,7 @@ class SourceList(QListWidget):
         QTimer.singleShot(1, schedule_source_management)
 
     def get_selected_source(self) -> Optional[Source]:
+        # if len == 0, return None
         if not self.selectedItems():
             return None
 
