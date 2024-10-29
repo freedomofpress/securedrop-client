@@ -6,6 +6,7 @@ import os
 from tempfile import NamedTemporaryFile
 from typing import Any
 
+from sqlalchemy.orm.exc import NoResultFound
 from sqlalchemy.orm.session import Session
 
 from securedrop_client.api_jobs.base import SingleObjectApiJob
@@ -108,9 +109,10 @@ class DownloadJob(SingleObjectApiJob):
         """
         raise NotImplementedError
 
-    def get_db_object(self, session: Session) -> File | Message:
+    def get_db_object(self, session: Session) -> File | Message | Reply:
         """
-        Get the database object associated with this job.
+        Get the database object associated with this job; may raise
+        DownloadException if not found
         """
         raise NotImplementedError
 
@@ -242,7 +244,10 @@ class ReplyDownloadJob(DownloadJob):
         """
         Override DownloadJob.
         """
-        return session.query(Reply).filter_by(uuid=self.uuid).one()
+        try:
+            return session.query(Reply).filter_by(uuid=self.uuid).one()
+        except NoResultFound:
+            raise DownloadException("Reply not found in database", Reply, self.uuid)
 
     def call_download_api(self, api: API, db_object: Reply) -> tuple[str, str]:
         """
@@ -298,7 +303,10 @@ class MessageDownloadJob(DownloadJob):
         """
         Override DownloadJob.
         """
-        return session.query(Message).filter_by(uuid=self.uuid).one()
+        try:
+            return session.query(Message).filter_by(uuid=self.uuid).one()
+        except NoResultFound:
+            raise DownloadException("Message not found in database", Message, self.uuid)
 
     def call_download_api(self, api: API, db_object: Message) -> tuple[str, str]:
         """
@@ -354,7 +362,10 @@ class FileDownloadJob(DownloadJob):
         """
         Override DownloadJob.
         """
-        return session.query(File).filter_by(uuid=self.uuid).one()
+        try:
+            return session.query(File).filter_by(uuid=self.uuid).one()
+        except NoResultFound:
+            raise DownloadException("File not found in database", File, self.uuid)
 
     def call_download_api(self, api: API, db_object: File) -> tuple[str, str]:
         """
