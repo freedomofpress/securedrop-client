@@ -27,7 +27,7 @@ from securedrop_client.gui.base import ModalDialog
 class DeleteSourceDialog(ModalDialog):
     """Used to confirm deletion of source accounts."""
 
-    def __init__(self, sources: set[Source]) -> None:
+    def __init__(self, sources: list[Source]) -> None:
         super().__init__(show_header=False, dangerous=True)
         self.sources = sources
 
@@ -50,7 +50,7 @@ class DeleteSourceDialog(ModalDialog):
             self.confirmation_label.setText(_("Are you sure this is what you want?"))
             self.adjustSize()
 
-    def make_body_text(self, sources: set[Source]) -> str:
+    def make_body_text(self, sources: list[Source]) -> str:
         message_tuple = (
             "<p>",
             _("Delete entire account for: {source_or_sources}?"),
@@ -74,7 +74,7 @@ class DeleteSourceDialog(ModalDialog):
             source_or_sources=f"<b>{self._get_source_names(sources)}</b>"
         )
 
-    def _get_source_names(self, sources: set[Source]) -> str:
+    def _get_source_names(self, sources: list[Source]) -> str:
         """
         Helper. Return a comma-separated list of journalist designations.
         """

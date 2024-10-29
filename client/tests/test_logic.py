@@ -1919,13 +1919,13 @@ def test_Controller_delete_source_not_logged_in(homedir, config, mocker, session
     source_db_object = mocker.MagicMock()
     co.on_action_requiring_login = mocker.MagicMock()
     co.api = None
-    co.delete_source(source_db_object)
+    co.delete_sources([source_db_object])
     co.on_action_requiring_login.assert_called_with()
 
 
 def test_Controller_delete_source(homedir, config, mocker, session_maker, session):
     """
-    Check that a DeleteSourceJob is submitted when delete_source is called.
+    Check that a DeleteSourceJob is submitted when delete_sources is called.
     """
     mock_gui = mocker.MagicMock()
     co = Controller("http://localhost", mock_gui, session_maker, homedir, None)
@@ -1945,7 +1945,7 @@ def test_Controller_delete_source(homedir, config, mocker, session_maker, sessio
     session.add(source)
     session.commit()
 
-    co.delete_source(source)
+    co.delete_sources([source])
 
     assert len(source_deleted_emissions) == 1
     assert source_deleted_emissions[0] == [source.uuid]

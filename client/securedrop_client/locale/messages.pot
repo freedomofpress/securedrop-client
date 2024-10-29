@@ -112,6 +112,12 @@ msgstr ""
 msgid "Last Refresh: never"
 msgstr ""
 
+msgid "DELETE SOURCES"
+msgstr ""
+
+msgid "Delete selected source accounts. Ctrl+click sources below to select multiple sources."
+msgstr ""
+
 msgid "{}"
 msgstr ""
 
@@ -140,6 +146,18 @@ msgid "View or retrieve files"
 msgstr ""
 
 msgid "Send a response"
+msgstr ""
+
+msgid "Or, select multiple sources with Ctrl+click."
+msgstr ""
+
+msgid "Multiple Sources Selected"
+msgstr ""
+
+msgid "Select or de-select sources using Ctrl+click, Shift+click, or by dragging the mouse."
+msgstr ""
+
+msgid "Use the top toolbar to delete multiple sources at once. You will be shown a confirmation dialog before anything is deleted."
 msgstr ""
 
 msgid "Deleting files and messages…"

@@ -8,6 +8,7 @@ https://github.com/freedomofpress/securedrop-client/wiki/Test-plan#basic-client-
 from flaky import flaky
 from PyQt5.QtCore import Qt
 
+from securedrop_client.gui.widgets import SourceConversationWrapper
 from tests.conftest import TIME_CLICK_ACTION, TIME_RENDER_CONV_VIEW, TIME_RENDER_SOURCE_LIST
 
 
@@ -30,12 +31,15 @@ def test_send_reply_to_source(functional_test_logged_in_context, qtbot, mocker):
     qtbot.wait(TIME_CLICK_ACTION)
 
     def check_for_conversation():
-        assert gui.main_view.view_layout.itemAt(0)
-        assert gui.main_view.view_layout.itemAt(0).widget()
+        assert gui.main_view.view_layout.currentIndex() == gui.main_view.CONVERSATION_INDEX
+        assert isinstance(
+            gui.main_view.view_layout.widget(gui.main_view.view_layout.currentIndex()),
+            SourceConversationWrapper,
+        )
 
     # Get the selected source conversation
     qtbot.waitUntil(check_for_conversation, timeout=TIME_RENDER_CONV_VIEW)
-    conversation = gui.main_view.view_layout.itemAt(0).widget()
+    conversation = gui.main_view.view_layout.widget(gui.main_view.view_layout.currentIndex())
     item_count = len(list(conversation.conversation_view.current_messages.keys()))
 
     # Focus on the reply box and type a message

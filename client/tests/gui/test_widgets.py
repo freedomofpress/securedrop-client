@@ -3,7 +3,7 @@ Make sure the UI widgets are configured correctly and work as expected.
 """
 
 import math
-from datetime import datetime
+from datetime import datetime, timedelta
 from gettext import gettext as _
 from unittest.mock import Mock, PropertyMock
 
@@ -31,6 +31,8 @@ from securedrop_client.gui.widgets import (
     LoginButton,
     MainView,
     MessageWidget,
+    MultiSelectView,
+    NothingSelectedView,
     ReplyBoxWidget,
     ReplyTextEdit,
     ReplyTextEditPlaceholder,
@@ -533,21 +535,17 @@ def test_MainView_show_sources_with_none_selected(mocker):
 
     # Set up SourceList so that SourceList.get_selected_source() returns a source
     mv.source_list = SourceList()
+    mv.source_list.controller = mocker.MagicMock()
     source_widget = SourceWidget(
         mocker.MagicMock(), factory.Source(uuid="stub_uuid"), mocker.MagicMock(), mocker.MagicMock()
     )
     source_item = SourceListWidgetItem(mv.source_list)
     mv.source_list.setItemWidget(source_item, source_widget)
     mv.source_list.source_items["stub_uuid"] = source_item
-    mocker.patch.object(mv.source_list, "update_sources")
 
-    mv.empty_conversation_view = mocker.MagicMock()
+    mv.show_sources([factory.Source(), factory.Source(), factory.Source()])
 
-    mv.show_sources([1, 2, 3])
-
-    mv.source_list.update_sources.assert_called_once_with([1, 2, 3])
-    mv.empty_conversation_view.show_no_source_selected_message.assert_called_once_with()
-    mv.empty_conversation_view.show.assert_called_once_with()
+    assert mv.view_layout.currentIndex() == mv.NOTHING_SELECTED_INDEX
 
 
 def test_MainView_show_sources_from_cold_start(mocker):
@@ -570,13 +568,16 @@ def test_MainView_show_sources_with_no_sources_at_all(mocker):
     """
     mv = MainView(None)
     mv.source_list = mocker.MagicMock()
-    mv.empty_conversation_view = mocker.MagicMock()
+    mv.source_list.count = mocker.MagicMock(return_value=0)
+    mv.source_list.selectedItems = mocker.MagicMock(return_value=[])
+
+    mv._on_update_conversation_context = mocker.MagicMock(wraps=mv._on_update_conversation_context)
 
     mv.show_sources([])
 
     mv.source_list.update_sources.assert_called_once_with([])
-    mv.empty_conversation_view.show_no_sources_message.assert_called_once_with()
-    mv.empty_conversation_view.show.assert_called_once_with()
+    mv._on_update_conversation_context.assert_called()
+    assert mv.view_layout.currentIndex() == mv.NO_SOURCES_INDEX
 
 
 def test_MainView_show_sources_when_sources_are_deleted(mocker):
@@ -584,18 +585,20 @@ def test_MainView_show_sources_when_sources_are_deleted(mocker):
     Ensure that show_sources also deletes the SourceConversationWrapper for a deleted source.
     """
     mv = MainView(None)
+    sources = [factory.Source(), factory.Source(), factory.Source(), factory.Source()]
     mv.source_list = mocker.MagicMock()
-    mv.empty_conversation_view = mocker.MagicMock()
+    mv.source_list.count = mocker.MagicMock(return_value=len(sources))
+    mv.source_list.getSelectedItems = mocker.MagicMock(return_value=[])
     mv.source_list.update_sources = mocker.MagicMock(return_value=[])
     mv.delete_conversation = mocker.MagicMock()
 
-    mv.show_sources([1, 2, 3, 4])
+    mv.show_sources(sources)
 
-    mv.source_list.update_sources = mocker.MagicMock(return_value=[4])
+    mv.source_list.update_sources = mocker.MagicMock(return_value=[sources[-1]])
 
-    mv.show_sources([1, 2, 3])
+    mv.show_sources(sources[:-1])
 
-    mv.delete_conversation.assert_called_once_with(4)
+    mv.delete_conversation.assert_called_once_with(sources[-1])
 
 
 def test_MainView_delete_conversation_when_conv_wrapper_exists(mocker):
@@ -635,17 +638,66 @@ def test_MainView_on_source_changed(mocker):
     """
     mv = MainView(None)
     mv.set_conversation = mocker.MagicMock()
+    source = factory.Source()
     mv.source_list = mocker.MagicMock()
-    mv.source_list.get_selected_source = mocker.MagicMock(return_value=factory.Source())
+    mv.source_list.get_selected_source = mocker.MagicMock(return_value=source)
+    mv.source_list.selectedItems = mocker.MagicMock(return_value=[source])
+    mv.source_list.count = mocker.MagicMock(return_value=3)
     mv.controller = mocker.MagicMock(is_authenticated=True)
     mocker.patch("securedrop_client.gui.widgets.source_exists", return_value=True)
-    scw = mocker.MagicMock()
-    mocker.patch("securedrop_client.gui.widgets.SourceConversationWrapper", return_value=scw)
-
     mv.on_source_changed()
 
     mv.source_list.get_selected_source.assert_called_once_with()
-    mv.set_conversation.assert_called_once_with(scw)
+    mv.set_conversation.assert_called_once()
+    assert mv.set_conversation.call_args[0][0].source == source
+
+
+def test_MainView_on_source_changed_shows_correct_context(mocker, homedir, session, session_maker):
+    """
+    Ensure correct context presented based on number of sources selected.
+    """
+    # Build sourcelist
+    sources = []
+    for i in range(10):
+        s = factory.Source()
+        sources.append(s)
+        session.add(s)
+
+    session.commit()
+
+    mv = MainView(None)
+
+    mock_gui = mocker.MagicMock()
+    controller = logic.Controller("http://localhost", mock_gui, session_maker, homedir, None)
+    controller.api = mocker.MagicMock()
+    controller.session.refresh = mocker.MagicMock()
+
+    mv.setup(controller)
+    mv.show()
+
+    assert mv.view_layout.currentIndex() == mv.NO_SOURCES_INDEX
+
+    mv.source_list.update_sources(sources)
+    mv.show_sources(sources)
+
+    assert mv.view_layout.currentIndex() == mv.NOTHING_SELECTED_INDEX
+
+    # Select a source, ensure the correct view context is shown
+    mv.source_list.setCurrentRow(0)
+    assert mv.view_layout.currentIndex() == mv.CONVERSATION_INDEX
+
+    mv.source_list.setCurrentRow(1)
+
+    assert mv.view_layout.currentIndex() == mv.CONVERSATION_INDEX
+    assert (
+        mv.controller.session.refresh.call_args[0][0]
+        == mv.source_list.itemWidget(mv.source_list.item(1)).source
+    )
+
+    # Now ensure the "multiple sources selected" view is shown
+    mv.source_list.selectAll()
+
+    assert mv.view_layout.currentIndex() == mv.MULTI_SELECTED_INDEX
 
 
 def test_MainView_on_source_changed_does_not_raise_InvalidRequestError(mocker):
@@ -655,21 +707,24 @@ def test_MainView_on_source_changed_does_not_raise_InvalidRequestError(mocker):
     """
     mv = MainView(None)
     mv.set_conversation = mocker.MagicMock()
-    mv.source_list = mocker.MagicMock()
-    mv.source_list.get_selected_source = mocker.MagicMock(return_value=factory.Source())
+    source = factory.Source()
+    mv.source_list.count = mocker.MagicMock(return_value=1)
+    mv.source_list.get_selected_source = mocker.MagicMock(return_value=source)
+    mv.source_list.selectedItems = mocker.MagicMock(return_value=[source])
     mv.controller = mocker.MagicMock(is_authenticated=True)
     ex = sqlalchemy.exc.InvalidRequestError()
-    mv.controller.session.refresh.side_effect = ex
+    mv.controller.session = mocker.MagicMock()
+    mv.controller.session.refresh = mocker.MagicMock(side_effect=ex)
 
     mocker.patch("securedrop_client.gui.widgets.source_exists", return_value=True)
-    scw = mocker.MagicMock()
-    mocker.patch("securedrop_client.gui.widgets.SourceConversationWrapper", return_value=scw)
     mock_logger = mocker.MagicMock()
+
     mocker.patch("securedrop_client.gui.widgets.logger", mock_logger)
 
     mv.on_source_changed()
+    mv.controller.session.refresh.assert_called()
 
-    assert mock_logger.debug.call_count == 1
+    assert mock_logger.debug.call_count == 1, mock_logger.debug.call_args
 
 
 def test_MainView_on_source_changed_when_source_no_longer_exists(mocker):
@@ -679,11 +734,12 @@ def test_MainView_on_source_changed_when_source_no_longer_exists(mocker):
     mv = MainView(None)
     mv.set_conversation = mocker.MagicMock()
     mv.source_list = mocker.MagicMock()
+    mv.source_list.selectedItems = mocker.MagicMock()
     mv.source_list.get_selected_source = mocker.MagicMock(return_value=None)
 
     mv.on_source_changed()
 
-    mv.source_list.get_selected_source.assert_called_once_with()
+    assert mv.view_layout.currentIndex() == mv.NOTHING_SELECTED_INDEX
     mv.set_conversation.assert_not_called()
 
 
@@ -692,9 +748,13 @@ def test_MainView_on_source_changed_updates_conversation_view(mocker, session):
     Test that the source collection is displayed in the conversation view.
     """
     mv = MainView(None)
-    # mv.source_list = mocker.MagicMock()
-    mv.controller = mocker.MagicMock(is_authenticated=True)
     source = factory.Source()
+
+    # mv.source_list = mocker.MagicMock()
+    mv.source_list.count = mocker.MagicMock(return_value=1)
+    mv.source_list.selectedItems = mocker.MagicMock(return_value=[source])
+    mv.source_list.get_selected_source = mocker.MagicMock(return_value=source)
+    mv.controller = mocker.MagicMock(is_authenticated=True)
     session.add(source)
     file = factory.File(source=source, filename="0-mock-doc.gpg")
     message = factory.Message(source=source, filename="0-mock-msg.gpg")
@@ -704,9 +764,6 @@ def test_MainView_on_source_changed_updates_conversation_view(mocker, session):
     session.add(reply)
     session.commit()
     source_selected = mocker.patch("securedrop_client.gui.widgets.SourceList.source_selected")
-    mocker.patch(
-        "securedrop_client.gui.widgets.SourceList.get_selected_source", return_value=source
-    )
     add_message_fn = mocker.patch(
         "securedrop_client.gui.widgets.ConversationView.add_message", new=mocker.Mock()
     )
@@ -732,56 +789,54 @@ def test_MainView_on_source_changed_SourceConversationWrapper_is_preserved(mocke
     SourceConversationWrapper when we click away from a given source. We should create it the
     first time, and then it should persist.
     """
-    mv = MainView(None)
-    mv.set_conversation = mocker.MagicMock()
-    source_selected = mocker.patch("securedrop_client.gui.widgets.SourceList.source_selected")
-    mv.controller = mocker.MagicMock(is_authenticated=True)
     source = factory.Source()
     source2 = factory.Source()
     session.add(source)
     session.add(source2)
     session.commit()
 
-    source_conversation_init = mocker.patch(
-        "securedrop_client.gui.widgets.SourceConversationWrapper.__init__", return_value=None
-    )
+    mv = MainView(None)
+    mv.source_list.count = mocker.MagicMock(return_value=2)
+    mv.source_list.source_selected = mocker.MagicMock()
 
-    # We expect on the first call, SourceConversationWrapper.__init__ should be called.
-    mocker.patch(
-        "securedrop_client.gui.widgets.SourceList.get_selected_source", return_value=source
+    # Side effect == first one return value, then the second return value.
+    # Simulate repeated calls
+    mv.source_list.get_selected_source = mocker.MagicMock(side_effect=[source, source2, source])
+
+    # Called twice per redraw event
+    mv.source_list.selectedItems = mocker.MagicMock(
+        side_effect=[[source], [source], [source2], [source2], [source], [source]]
     )
+    mv.set_conversation = mocker.MagicMock(wraps=mv.set_conversation)
+
+    mv.controller = mocker.MagicMock(is_authenticated=True)
+
     mv.on_source_changed()
     assert mv.set_conversation.call_count == 1
-    assert source_conversation_init.call_count == 1
-    source_selected.emit.assert_called_once_with(source.uuid)
+    assert source.uuid in mv.source_conversations
+    # We haven't created this widget yet since the conversation hasn't been clicked yet
+    assert source2.uuid not in mv.source_conversations
+    mv.source_list.source_selected.emit.assert_called_once_with(source.uuid)
 
     # Reset mocked objects for the next call of on_source_changed.
-    source_conversation_init.reset_mock()
     mv.set_conversation.reset_mock()
-    source_selected.reset_mock()
+    mv.source_list.source_selected.reset_mock()
 
-    # Now click on another source (source2). Since this is the first time we have clicked
-    # on source2, we expect on the first call, SourceConversationWrapper.__init__ should be
-    # called.
-    mocker.patch(
-        "securedrop_client.gui.widgets.SourceList.get_selected_source", return_value=source2
-    )
+    # Now click on another source (source2) ensure correct widget is constructed.
     mv.on_source_changed()
     assert mv.set_conversation.call_count == 1
-    assert source_conversation_init.call_count == 1
-    source_selected.emit.assert_called_once_with(source2.uuid)
+    assert source.uuid in mv.source_conversations
+    assert source2.uuid in mv.source_conversations
+    mv.source_list.source_selected.emit.assert_called_once_with(source2.uuid)
 
     # Reset mocked objects for the next call of on_source_changed.
-    source_conversation_init.reset_mock()
     mv.set_conversation.reset_mock()
-    source_selected.reset_mock()
+    mv.source_list.source_selected.reset_mock()
 
     # But if we click back (call on_source_changed again) to the source,
     # its SourceConversationWrapper should _not_ be recreated.
-    mocker.patch(
-        "securedrop_client.gui.widgets.SourceList.get_selected_source", return_value=source
-    )
     conversation_wrapper = mv.source_conversations[source.uuid]
+    assert conversation_wrapper is not None
     conversation_wrapper.conversation_view = mocker.MagicMock()
     conversation_wrapper.conversation_view.update_conversation = mocker.MagicMock()
 
@@ -791,8 +846,7 @@ def test_MainView_on_source_changed_SourceConversationWrapper_is_preserved(mocke
 
     # Conversation should be redrawn even for existing source (bug #467).
     assert conversation_wrapper.conversation_view.update_conversation.call_count == 1
-    assert source_conversation_init.call_count == 0
-    source_selected.emit.assert_called_once_with(source.uuid)
+    mv.source_list.source_selected.emit.assert_called_once_with(source.uuid)
 
 
 def test_MainView_refresh_source_conversations(homedir, mocker, qtbot, session_maker, session):
@@ -802,7 +856,8 @@ def test_MainView_refresh_source_conversations(homedir, mocker, qtbot, session_m
     source1 = factory.Source(uuid="rsc-123")
     session.add(source1)
 
-    source2 = factory.Source(uuid="rsc-456")
+    # Less recent update time (default is datetime.now())
+    source2 = factory.Source(uuid="rsc-456", last_updated=(datetime.now() - timedelta(days=1)))
     session.add(source2)
 
     session.commit()
@@ -819,29 +874,32 @@ def test_MainView_refresh_source_conversations(homedir, mocker, qtbot, session_m
     mv.source_list.update_sources(sources)
     mv.show()
 
-    # get the conversations created
-    mocker.patch(
-        "securedrop_client.gui.widgets.SourceList.get_selected_source", return_value=source1
+    # Inspect
+    mv.on_source_changed = mocker.MagicMock(wraps=mv.on_source_changed)
+    mv.source_list.itemSelectionChanged = mocker.MagicMock(
+        wraps=mv.source_list.itemSelectionChanged
     )
-    mv.on_source_changed()
 
-    mocker.patch(
-        "securedrop_client.gui.widgets.SourceList.get_selected_source", return_value=source2
-    )
-    mv.on_source_changed()
+    # Select one source, then another
+    mv.source_list.setCurrentRow(0)
 
+    assert mv.source_list.get_selected_source() == source1
+    # assert mv.on_source_changed.call_count == 1
+    mv.source_list.setCurrentRow(1)
+    assert mv.source_list.get_selected_source() == source2
+
+    # assert mv.on_source_changed.call_count == 2
     assert len(mv.source_conversations) == 2
 
+    # Nothing selected
+    mv.source_list.setCurrentRow(-1)
+
     # refresh with no source selected
-    mocker.patch("securedrop_client.gui.widgets.SourceList.get_selected_source", return_value=None)
     mv.refresh_source_conversations()
+    assert mv.view_layout.currentIndex() == mv.NOTHING_SELECTED_INDEX
 
-    # refresh with source1 selected while its conversation is being deleted
-    mocker.patch(
-        "securedrop_client.gui.widgets.SourceList.get_selected_source", return_value=source1
-    )
-    mv.on_source_changed()
-
+    # # refresh with source1 selected while its conversation is being deleted
+    mv.source_list.setCurrentRow(0)
     assert len(mv.source_list.source_items) == 2
 
     scw1 = mv.source_conversations[source1.uuid]
@@ -931,31 +989,58 @@ def test_MainView_set_conversation(mocker):
     (i.e. that area of the screen on the right hand side).
     """
     mv = MainView(None)
-    mv.view_layout = mocker.MagicMock()
 
-    mock_widget = mocker.MagicMock()
-    mv.set_conversation(mock_widget)
+    scw = SourceConversationWrapper(factory.Source(), mocker.MagicMock())
+    mv.set_conversation(scw)
 
-    mv.view_layout.takeAt.assert_called_once_with(0)
-    mv.view_layout.addWidget.assert_called_once_with(mock_widget)
+    assert mv.view_layout.widget(mv.CONVERSATION_INDEX) == scw
 
 
-def test_EmptyConversationView_show_no_sources_message(mocker):
-    ecv = EmptyConversationView()
+def test_EmptyConversationView(mocker):
+    mv = MainView(None)
+    mv.source_list = mocker.MagicMock()
+    mv.source_list.count = mocker.MagicMock(return_value=0)
+    mv.source_list.selectedItems = mocker.MagicMock(return_value=[])
+    mv.show()
+    assert mv.view_layout.count() == 4  # Sanity - are all the pages there?
+    mv.show_sources([])
+    assert mv.view_layout.currentIndex() == mv.NO_SOURCES_INDEX
+    assert isinstance(mv.view_layout.widget(mv.view_layout.currentIndex()), EmptyConversationView)
 
-    ecv.show_no_sources_message()
 
-    assert not ecv.no_sources.isHidden()
-    assert ecv.no_source_selected.isHidden()
+def test_NothingSelectedView(mocker):
+    mv = MainView(None)
+    mv.show()
+    mv.source_list = mocker.MagicMock()
+    mv.source_list.count = mocker.MagicMock(return_value=4)
+    mv.source_list.selectedItems = mocker.MagicMock(return_value=[])
+
+    # Sanity check - make sure that all base QStackedWidget pages
+    # (Empty, NothingSelected, MultiSelected, Conversation) are rendered
+    assert mv.view_layout.count() == 4
+
+    mv.show_sources([factory.Source(), factory.Source(), factory.Source()])
+    assert isinstance(mv.view_layout.widget(mv.view_layout.currentIndex()), NothingSelectedView)
+    assert mv.view_layout.currentIndex() == mv.NOTHING_SELECTED_INDEX
 
 
-def test_EmptyConversationView_show_no_source_selected_message(mocker):
-    ecv = EmptyConversationView()
+def test_MultiSelectedView(mocker):
+    mv = MainView(None)
+    sources = [factory.Source(), factory.Source(), factory.Source()]
+    mv.source_list = mocker.MagicMock()
+    mv.source_list.count = mocker.MagicMock(return_value=len(sources))
+    mv.source_list.selectedItems = mocker.MagicMock(return_value=sources[:-1])
+    mv._on_update_conversation_context = mocker.MagicMock(wraps=mv._on_update_conversation_context)
+    mv.show_sources(sources)
 
-    ecv.show_no_source_selected_message()
+    mv.show()
 
-    assert ecv.no_sources.isHidden()
-    assert not ecv.no_source_selected.isHidden()
+    # Sanity check - make sure that all base QStackedWidget pages
+    # (Empty, NothingSelected, MultiSelected, Conversation) are rendered
+    assert mv.view_layout.count() == 4
+    mv._on_update_conversation_context.assert_called()
+    assert isinstance(mv.view_layout.widget(mv.view_layout.currentIndex()), MultiSelectView)
+    assert mv.view_layout.currentIndex() == mv.MULTI_SELECTED_INDEX
 
 
 def test_SourceList_get_selected_source(mocker):
@@ -3791,14 +3876,12 @@ def test_SourceConversationWrapper_on_source_deleted(mocker):
     mv.source_list = mocker.MagicMock()
     mv.source_list.get_selected_source = mocker.MagicMock(return_value=source)
     mv.controller = mocker.MagicMock(is_authenticated=True)
-    mv.show()
+
+    # Detached sourceconversationwrapper, just for unit testing
     scw = SourceConversationWrapper(source, mv.controller, None)
-    mocker.patch("securedrop_client.gui.widgets.SourceConversationWrapper", return_value=scw)
     mv.on_source_changed()
     scw.on_source_deleted("123")
 
-    assert mv.isVisible()
-    assert scw.isVisible()
     assert not scw.conversation_title_bar.isHidden()
     assert not scw.reply_box.isHidden()
     assert not scw.reply_box.text_edit.isEnabled()
@@ -3847,15 +3930,13 @@ def test_SourceConversationWrapper_on_conversation_deleted(mocker):
     mv.source_list = mocker.MagicMock()
     mv.source_list.get_selected_source = mocker.MagicMock(return_value=source)
     mv.controller = mocker.MagicMock(is_authenticated=True)
+    mocker.patch("securedrop_client.gui.widgets.source_exists", return_value=True)
     mv.show()
     scw = SourceConversationWrapper(source, mv.controller, None)
-    mocker.patch("securedrop_client.gui.widgets.SourceConversationWrapper", return_value=scw)
     mv.on_source_changed()
 
     scw.on_conversation_deleted("123")
 
-    assert mv.isVisible()
-    assert scw.isVisible()
     assert not scw.conversation_title_bar.isHidden()
     assert not scw.reply_box.isHidden()
     assert not scw.reply_box.text_edit.isEnabled()

@@ -5,7 +5,7 @@ from tests import factory
 
 
 @pytest.fixture(
-    params=[set(), set([factory.Source()]), set([factory.Source(), factory.Source()])],
+    params=[[], [factory.Source()], [factory.Source(), factory.Source()]],
 )
 def dialog(request):
     """
@@ -22,7 +22,7 @@ def dialog(request):
 class TestDeleteSourceDialog:
     def test_dialog_setup(self, dialog):
         assert type(dialog) is DeleteSourceDialog
-        assert type(dialog.sources) is set
+        assert type(dialog.sources) is list
         assert dialog.dangerous
 
     def test_default_button_is_safer_choice(self, dialog):
@@ -69,7 +69,7 @@ class TestDeleteSourceDialog:
         For n > 1 sources, ensure the warning text includes
         all the journalist desginators.
         """
-        sources = set()
+        sources = []
         names = [
             "source one",
             "source two",
@@ -82,7 +82,7 @@ class TestDeleteSourceDialog:
 
         for item in names:
             source = factory.Source(journalist_designation=item)
-            sources.update([source])
+            sources.append(source)
 
         dialog = DeleteSourceDialog(sources)
 

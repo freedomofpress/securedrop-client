@@ -2,7 +2,7 @@ from PyQt5.QtGui import QPalette
 
 
 def test_styles(mocker, main_window):
-    wrapper = main_window.main_view.view_layout.itemAt(0).widget()
+    wrapper = main_window.main_view.view_layout.widget(main_window.main_view.CONVERSATION_INDEX)
     conversation_scrollarea = wrapper.conversation_view._scroll
     speech_bubble = conversation_scrollarea.widget().layout().itemAt(1).widget()
 

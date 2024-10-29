@@ -64,11 +64,18 @@ def test_class_name_matches_css_object_name(mocker, main_window):
     assert main_view.__class__.__name__ == "MainView"
     assert main_view.objectName() == "MainView"
     assert "MainView" in main_view.view_holder.objectName()
-    empty_conversation_view = main_view.empty_conversation_view
-    empty_conversation_view.__class__.__name__ == "EmptyConversationView"
-    empty_conversation_view.objectName() == "EmptyConversationView"
-    "EmptyConversationView" in empty_conversation_view.no_sources.objectName()
-    "EmptyConversationView" in empty_conversation_view.no_source_selected.objectName()
+
+    # All views use the "EmptyConversationView" styling
+    for index in [
+        main_view.NO_SOURCES_INDEX,
+        main_view.NOTHING_SELECTED_INDEX,
+        main_view.MULTI_SELECTED_INDEX,
+    ]:
+        view = main_view.view_layout.widget(index)
+        view.objectName() == "EmptyConversationView"
+        "EmptyConversationView" in view.objectName()
+        "EmptyConversationView" in view.objectName()
+
     source_list = main_view.source_list
 
     source_widget = source_list.itemWidget(source_list.item(0))
@@ -83,7 +90,7 @@ def test_class_name_matches_css_object_name(mocker, main_window):
     assert star.__class__.__name__ == "StarToggleButton"
     assert "StarToggleButton" in star.objectName()
 
-    wrapper = main_view.view_layout.itemAt(0).widget()
+    wrapper = main_view.view_layout.itemAt(main_view.CONVERSATION_INDEX).widget()
     assert wrapper.__class__.__name__ == "SourceConversationWrapper"
     assert wrapper.deletion_indicator.objectName() == "SourceDeletionIndicator"
     reply_box = wrapper.reply_box
@@ -229,14 +236,12 @@ def test_styles_for_main_view(mocker, main_window):
     main_view = main_window.main_view
     assert main_view.minimumSize().height() == 558
     assert main_view.view_holder.palette().color(QPalette.Background).name() == "#f9f9ff"
-
-    assert main_view.empty_conversation_view.minimumSize().width() == 640
-    no_sources = main_view.empty_conversation_view.no_sources
+    no_sources = main_view.view_layout.widget(0)
     assert no_sources.layout().count() == 5
     no_sources_instructions = no_sources.layout().itemAt(0).widget()
     assert no_sources_instructions.font().family() == "Montserrat"
     assert QFont.DemiBold - 1 == no_sources_instructions.font().weight()
-    assert no_sources_instructions.font().pixelSize() == 35
+    assert no_sources_instructions.font().pixelSize() == 30
     assert no_sources_instructions.palette().color(QPalette.Foreground).name() == "#a5b3e9"
     no_sources_spacer1 = no_sources.layout().itemAt(1)
     assert no_sources_spacer1.minimumSize().height() == 35
@@ -244,7 +249,7 @@ def test_styles_for_main_view(mocker, main_window):
     no_sources_instruction_details1 = no_sources.layout().itemAt(2).widget()
     assert no_sources_instruction_details1.font().family() == "Montserrat"
     assert QFont.Normal == no_sources_instruction_details1.font().weight()
-    assert no_sources_instruction_details1.font().pixelSize() == 35
+    assert no_sources_instruction_details1.font().pixelSize() == 30
     assert no_sources_instruction_details1.palette().color(QPalette.Foreground).name() == "#a5b3e9"
     no_sources_spacer2 = no_sources.layout().itemAt(3)
     assert no_sources_spacer2.minimumSize().height() == 35
@@ -252,34 +257,34 @@ def test_styles_for_main_view(mocker, main_window):
     no_sources_instruction_details2 = no_sources.layout().itemAt(4).widget()
     assert no_sources_instruction_details2.font().family() == "Montserrat"
     assert QFont.Normal == no_sources_instruction_details2.font().weight()
-    assert no_sources_instruction_details2.font().pixelSize() == 35
+    assert no_sources_instruction_details2.font().pixelSize() == 30
     assert no_sources_instruction_details2.palette().color(QPalette.Foreground).name() == "#a5b3e9"
 
-    no_source_selected = main_view.empty_conversation_view.no_source_selected
-    assert no_source_selected.layout().count() == 6
+    no_source_selected = main_view.view_layout.widget(1)
+    assert no_source_selected.layout().count() == 8
     no_source_selected_instructions = no_source_selected.layout().itemAt(0).widget()
     assert no_source_selected_instructions.font().family() == "Montserrat"
     assert QFont.DemiBold - 1 == no_source_selected_instructions.font().weight()
-    assert no_source_selected_instructions.font().pixelSize() == 35
+    assert no_source_selected_instructions.font().pixelSize() == 30
     assert no_source_selected_instructions.palette().color(QPalette.Foreground).name() == "#a5b3e9"
     no_source_selected_spacer1 = no_source_selected.layout().itemAt(1)
     assert no_source_selected_spacer1.minimumSize().height() == 35
     assert no_source_selected_spacer1.maximumSize().height() == 35
     bullet1_bullet = no_source_selected.layout().itemAt(2).widget().layout().itemAt(0).widget()
     assert bullet1_bullet.getContentsMargins() == (0, 4, 0, 0)
-    bullet1_bullet.font().pixelSize() == 35
+    bullet1_bullet.font().pixelSize() == 30
     QFont.Bold == bullet1_bullet.font().weight()
     assert bullet1_bullet.font().family() == "Montserrat"
     assert bullet1_bullet.palette().color(QPalette.Foreground).name() == "#a5b3e9"
     bullet2_bullet = no_source_selected.layout().itemAt(3).widget().layout().itemAt(0).widget()
     assert bullet2_bullet.getContentsMargins() == (0, 4, 0, 0)
-    bullet2_bullet.font().pixelSize() == 35
+    bullet2_bullet.font().pixelSize() == 30
     QFont.Bold == bullet2_bullet.font().weight()
     assert bullet2_bullet.font().family() == "Montserrat"
     assert bullet2_bullet.palette().color(QPalette.Foreground).name() == "#a5b3e9"
     bullet3_bullet = no_source_selected.layout().itemAt(4).widget().layout().itemAt(0).widget()
     assert bullet3_bullet.getContentsMargins() == (0, 4, 0, 0)
-    bullet3_bullet.font().pixelSize() == 35
+    bullet3_bullet.font().pixelSize() == 30
     QFont.Bold == bullet3_bullet.font().weight()
     assert bullet3_bullet.font().family() == "Montserrat"
     assert bullet3_bullet.palette().color(QPalette.Foreground).name() == "#a5b3e9"
@@ -314,7 +319,7 @@ def test_styles_source_list(mocker, main_window):
 
 
 def test_styles_for_conversation_view(mocker, main_window):
-    wrapper = main_window.main_view.view_layout.itemAt(0).widget()
+    wrapper = main_window.main_view.view_layout.widget(main_window.main_view.CONVERSATION_INDEX)
     deletion_indicator = wrapper.deletion_indicator
     assert deletion_indicator.deletion_message.font().family() == "Montserrat"
     assert QFont.Normal == deletion_indicator.deletion_message.font().weight()
