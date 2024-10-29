@@ -555,8 +555,9 @@ class BatchActionToolbar(QToolBar):
             targets = self.controller.get_selected_sources()
             if targets is not None:
                 dialog = DeleteSourceDialog(targets)
+                self._last_dialog = dialog  # FIXME: workaround for #2273
                 dialog.accepted.connect(lambda: self.controller.delete_sources(targets))
-                dialog.exec()
+                dialog.open()
             else:
                 # No selected sources should return an empty set, not None
                 logger.error("Toolbar action triggered without valid data from controller.")
