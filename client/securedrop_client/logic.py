@@ -867,7 +867,7 @@ class Controller(QObject):
             logger.error("Failed to find message uuid in database")
             logger.debug(f"Message {uuid} missing from database but download successful")
 
-    def on_message_download_failure(self, exception: DownloadException) -> None:
+    def on_message_download_failure(self, exception: Exception) -> None:
         """
         Called when a message fails to download.
         """
@@ -877,12 +877,16 @@ class Controller(QObject):
             self._submit_download_job(exception.object_type, exception.uuid)
 
         self.session.commit()
-        message = storage.get_message(self.session, exception.uuid)
-        if message:
-            self.message_download_failed.emit(message.source.uuid, message.uuid, str(message))
+        if isinstance(exception, DownloadException):
+            message = storage.get_message(self.session, exception.uuid)
+            if message:
+                self.message_download_failed.emit(message.source.uuid, message.uuid, str(message))
+            else:
+                logger.warning("Message download failure for uuid not in database.")
+                logger.debug(f"Message {exception.uuid} missing from database, was it deleted?")
         else:
-            logger.warning("Message download failure for uuid not in database.")
-            logger.debug(f"Message {exception.uuid} missing from database, was it deleted?")
+            logger.error(f"Unexpected exception: {type(exception)}")
+            logger.debug(f"Unexpected exception: {exception}")
 
     def download_new_replies(self) -> None:
         replies = storage.find_new_replies(self.session)
@@ -906,7 +910,7 @@ class Controller(QObject):
             logger.error("Reply downloaded but reply uuid missing from database")
             logger.debug(f"Reply {uuid} downloaded but uuid missing from database")
 
-    def on_reply_download_failure(self, exception: DownloadException) -> None:
+    def on_reply_download_failure(self, exception: Exception) -> None:
         """
         Called when a reply fails to download.
         """
@@ -916,13 +920,17 @@ class Controller(QObject):
             self._submit_download_job(exception.object_type, exception.uuid)
 
         self.session.commit()
-        reply = storage.get_reply(self.session, exception.uuid)
-        if reply:
-            self.reply_download_failed.emit(reply.source.uuid, reply.uuid, str(reply))
+        if isinstance(exception, DownloadException):
+            reply = storage.get_reply(self.session, exception.uuid)
+            if reply:
+                self.reply_download_failed.emit(reply.source.uuid, reply.uuid, str(reply))
+            else:
+                # Not necessarily an error, it may have been deleted. Warn.
+                logger.warning("Reply download failure for uuid not in database")
+                logger.debug(f"Reply {exception.uuid} not found in database")
         else:
-            # Not necessarily an error, it may have been deleted. Warn.
-            logger.warning("Reply download failure for uuid not in database")
-            logger.debug(f"Reply {exception.uuid} not found in database")
+            logger.error(f"Unexpected exception: {type(exception)}")
+            logger.debug(f"Unexpected exception: {exception}")
 
     def downloaded_file_exists(self, file: db.File, silence_errors: bool = False) -> bool:
         """
