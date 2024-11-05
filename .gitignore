@@ -118,3 +118,7 @@ venv.bak/
 *.swp
 
 *.gpg
+
+# Scalene memory profiling artifacts
+client/profile.json
+client/profile.html
