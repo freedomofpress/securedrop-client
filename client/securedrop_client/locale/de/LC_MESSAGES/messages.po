@@ -7,15 +7,15 @@ msgid ""
 msgstr ""
 "Project-Id-Version: SecureDrop Client 0.5.0\n"
 "Report-Msgid-Bugs-To: securedrop@freedom.press\n"
-"PO-Revision-Date: 2023-06-13 21:56+0000\n"
-"Last-Translator: Ettore Atalan <atalanttore@googlemail.com>\n"
+"PO-Revision-Date: 2024-09-25 09:33+0000\n"
+"Last-Translator: kwadronaut <kwadronaut@autistici.org>\n"
 "Language-Team: German <https://weblate.securedrop.org/projects/securedrop/securedrop-client/de/>\n"
 "Language: de\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=n != 1;\n"
-"X-Generator: Weblate 4.14.1\n"
+"X-Generator: Weblate 5.7.1\n"
 "Generated-By: Babel 2.9.1\n"
 
 msgid "{application_name} is already running"
@@ -288,16 +288,16 @@ msgid "DONE"
 msgstr "FERTIG"
 
 msgid "BACK"
-msgstr ""
+msgstr "ZURÜCK"
 
 msgid "No device detected"
-msgstr ""
+msgstr "Kein Gerät gefunden"
 
 msgid "Too many USB devices detected; please insert one supported device."
-msgstr ""
+msgstr "Zu viele USB-Geräte erkannt. Bitte stecken Sie ein unterstütztes Gerät ein."
 
 msgid "Either the drive is not encrypted or there is something else wrong with it.<br />If this is a VeraCrypt drive, please unlock it from within the sd-devices VM, then try again."
-msgstr ""
+msgstr "Das Laufwerk ist entweder nicht verschlüsselt oder es liegt ein anderer Fehler vor. <br />Falls es ein VeraCrypt-Laufwerk ist, müssen Sie es in der sd-devices VM entsperren, bevor Sie es erneut verwenden können."
 
 msgid "The device is ready for export."
 msgstr ""
@@ -380,11 +380,21 @@ msgstr "Bitte verbinden Sie Ihren Drucker mit einem USB-Anschluss."
 msgid "See your administrator for help."
 msgstr "Wenden Sie sich an Ihren Administrator, um Hilfe zu erhalten."
 
+msgid "This file type cannot be printed."
+msgstr ""
+
+#, fuzzy
+#| msgid "YES, DELETE ENTIRE SOURCE ACCOUNT"
 msgid "YES, DELETE ENTIRE SOURCE ACCOUNT"
-msgstr "JA, DAS GESAMTE QUELLKONTO LÖSCHEN"
+msgid_plural "YES, DELETE {number} SOURCE ACCOUNTS"
+msgstr[0] "JA, DAS GESAMTE QUELLKONTO LÖSCHEN"
+msgstr[1] "JA, DAS GESAMTE QUELLKONTO LÖSCHEN"
 
 msgid "Are you sure this is what you want?"
 msgstr "Sind Sie sicher, dass Sie das wollen?"
+
+msgid "Delete entire account for: {source_or_sources}?"
+msgstr ""
 
 msgid "When the entire account for a source is deleted:"
 msgstr "Wenn das gesamte Konto einer Quelle gelöscht wird:"
@@ -397,6 +407,9 @@ msgstr "Ihre Organisation kann ihnen dann keine Antworten senden."
 
 msgid "All files and messages from that source will also be destroyed."
 msgstr "Alle Dateien und Nachrichten von dieser Quelle werden ebenfalls zerstört."
+
+msgid "No sources have been selected."
+msgstr ""
 
 #~ msgid "SUBMIT"
 #~ msgstr "EINREICHEN"

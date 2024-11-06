@@ -384,11 +384,22 @@ msgstr "Prosíme pripojte vašu tlačiareň do USB portu."
 msgid "See your administrator for help."
 msgstr "Požiadajte vášho správcu o pomoc."
 
+msgid "This file type cannot be printed."
+msgstr ""
+
+#, fuzzy
+#| msgid "YES, DELETE ENTIRE SOURCE ACCOUNT"
 msgid "YES, DELETE ENTIRE SOURCE ACCOUNT"
-msgstr "ÁNO, ZMAZAŤ CELÝ ÚČET ZDROJA"
+msgid_plural "YES, DELETE {number} SOURCE ACCOUNTS"
+msgstr[0] "ÁNO, ZMAZAŤ CELÝ ÚČET ZDROJA"
+msgstr[1] "ÁNO, ZMAZAŤ CELÝ ÚČET ZDROJA"
+msgstr[2] "ÁNO, ZMAZAŤ CELÝ ÚČET ZDROJA"
 
 msgid "Are you sure this is what you want?"
 msgstr "Ste si istí, že to chcete spraviť?"
+
+msgid "Delete entire account for: {source_or_sources}?"
+msgstr ""
 
 msgid "When the entire account for a source is deleted:"
 msgstr "Keď sa vymaže celý účet zdroja:"
@@ -401,6 +412,9 @@ msgstr "Vaša organizácia mu nebude môcť poslať odpovede."
 
 msgid "All files and messages from that source will also be destroyed."
 msgstr "Všetky súbory a správy od daného zdroja budú zničené."
+
+msgid "No sources have been selected."
+msgstr ""
 
 #~ msgid "SUBMIT"
 #~ msgstr "POTVRDIŤ"
