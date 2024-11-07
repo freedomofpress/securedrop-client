@@ -1,5 +1,26 @@
 # Changelog
 
+## 0.14.0-rc1
+
+* Add support for selecting and deleting multiple sources (#2208, 2188, #2230, #2252)
+* Use builtin `venv` module instead of `virtualenv` (#2246)
+* Improve logging of API failures (#2245)
+* Improve client keyboard shortcuts handling (#2209)
+* Fix client crash when a source with an in-progress download is deleted (#2217)
+* Improve exception handling for download failures (#2275, #2276)
+* Add French language support (#2283)
+* Updated multiple dependencies (#2253, #2267, #2214, #2210, #2211)
+
+* Internal and development
+  * Switch securedrop-client package Architecture to "any" (#2178)
+  * Have `run.sh` automatically emit full debug logs (#2198)
+  * Have `make build-debs` print tag signature, if any (#2205)
+  * Upgrade Rust toolchain to 1.81.0 (#2215)
+  * Fixes to SD test cassettes (#2225)
+  * Re-enable `ruff` for files in proxy/ (#2234)
+  * Don't have CI cancel GitHub merge queue jobs (#2235)
+  * Updated multiple dependencies (#2280, #2181, #2183)
+
 ## 0.13.2
 
 * Don't let Range header persist into other requests (#2195)
