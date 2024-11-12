@@ -83,9 +83,10 @@ class DeleteSourceDialog(ModalDialog):
     def _show_warning_nothing_selected(self) -> None:
         """
         Helper. Display warning if no sources are selected for deletion.
-        Disables "Continue" button so user must close or cancel dialog.
+        Hides "Continue" button so user must close or cancel dialog.
         """
         self.continue_button.setEnabled(False)
+        self.continue_button.setVisible(False)
         self.cancel_button.setFocus()
         self.cancel_button.setDefault(True)
         self.body.setText(_("No sources have been selected."))

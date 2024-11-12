@@ -58,11 +58,12 @@ class TestDeleteSourceDialog:
 
         assert dialog.text() == "No sources have been selected."
 
-    def test_no_sources_continue_button_disabled(self, dialog):
+    def test_no_sources_continue_button_not_shown(self, dialog):
         if len(dialog.sources) > 0:
             pytest.skip("Skip if sources")
 
         assert not dialog.continue_button.isEnabled()
+        assert not dialog.continue_button.isVisible()
 
     def test_correct_format_body_text(self):
         """
