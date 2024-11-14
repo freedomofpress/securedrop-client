@@ -20,12 +20,18 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 from gettext import gettext as _
 from gettext import ngettext
 
+from PyQt5.QtCore import QTimer
+
 from securedrop_client.db import Source
 from securedrop_client.gui.base import ModalDialog
 
 # Maximum number of source names to display in delete dialog before
-# truncation
-MAX_DEL_DISP = 30
+# (a) truncation of the list and (b) delayed confirmation:
+LOTS_OF_SOURCES = 30
+
+# Timers for delayed confirmation:
+SEC = 1000  # ms
+CONTINUE_BUTTON_DELAY = 5 * SEC
 
 
 class DeleteSourceDialog(ModalDialog):
@@ -41,18 +47,54 @@ class DeleteSourceDialog(ModalDialog):
         if num_sources == 0:
             self._show_warning_nothing_selected()
         else:
-            continue_text = ngettext(
+            self.continue_text = ngettext(
                 "YES, DELETE ENTIRE SOURCE ACCOUNT",
                 "YES, DELETE {number} SOURCE ACCOUNTS",
                 num_sources,
             ).format(number=num_sources)
 
             self.body.setText(self.make_body_text(self.sources))
-            self.continue_button.setText(continue_text)
+            self.continue_button.setText(self.continue_text)
             self.cancel_button.setDefault(True)
             self.cancel_button.setFocus()
             self.confirmation_label.setText(_("Are you sure this is what you want?"))
             self.adjustSize()
+
+            if num_sources > LOTS_OF_SOURCES:
+                self.block_continue_button()
+
+    def block_continue_button(self) -> None:
+        """Disable the `continue_button` until `CONTINUE_BUTTON_DELAY` has elapsed."""
+        self.continue_button_delay = CONTINUE_BUTTON_DELAY
+        self.continue_button_timer = QTimer(self)
+        self.continue_button_timer.setInterval(SEC)
+        self.continue_button_timer.timeout.connect(self.update_continue_button)
+
+        self.update_continue_button(True)
+        self.continue_button_timer.start()
+
+    def update_continue_button(self, initial: bool = False) -> None:
+        """
+        Update the `continue_button` either initially (disabled) or based on
+        `CONTINUE_BUTTON_DELAY` remaining.
+        """
+        # Zeroth tick doesn't count.
+        if not initial:
+            self.continue_button_delay -= self.continue_button_timer.interval()
+
+        # Keep the button disabled and the label updated with the delay remaining...
+        if self.continue_button_delay > 0:
+            self.continue_button.setDisabled(True)
+            self.continue_button.setText(
+                _("{text} (wait {delay} sec)").format(
+                    text=self.continue_text, delay=int(self.continue_button_delay / SEC)
+                )
+            )
+        # ...until the delay has elapsed: then reenable the button with its original label.
+        else:
+            self.continue_button_timer.stop()
+            self.continue_button.setText(self.continue_text)
+            self.continue_button.setEnabled(True)
 
     def make_body_text(self, sources: list[Source]) -> str:
         message_tuple = (
@@ -75,7 +117,7 @@ class DeleteSourceDialog(ModalDialog):
         )
 
         return "".join(message_tuple).format(
-            source_or_sources=f"<b>{self._get_source_names_truncated(sources, MAX_DEL_DISP)}</b>"
+            source_or_sources=f"<b>{self._get_source_names_truncated(sources, LOTS_OF_SOURCES)}</b>"
         )
 
     def _get_source_names_truncated(self, sources: list[Source], max_shown: int) -> str:
