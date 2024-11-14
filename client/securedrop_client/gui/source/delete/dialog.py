@@ -56,7 +56,7 @@ class DeleteSourceDialog(ModalDialog):
                 ).format(number=num_sources)
             else:
                 continue_text = ngettext(
-                    "YES, DELETE ENTIRE SOURCE ACCOUNT",
+                    "YES, DELETE ENTIRE SOURCE ACCOUNT",  # in this case, all 1 accounts.
                     "YES, DELETE ALL {number} SOURCE ACCOUNTS",
                     num_sources,
                 ).format(number=num_sources)
