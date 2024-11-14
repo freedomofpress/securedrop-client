@@ -410,6 +410,9 @@ msgstr ""
 msgid "All files and messages from that source will also be destroyed."
 msgstr ""
 
+msgid "{sources} ... plus {count} additional sources"
+msgstr ""
+
 msgid "No sources have been selected."
 msgstr ""
 
