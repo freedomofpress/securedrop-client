@@ -23,6 +23,10 @@ from gettext import ngettext
 from securedrop_client.db import Source
 from securedrop_client.gui.base import ModalDialog
 
+# Maximum number of source names to display in delete dialog before
+# truncation
+MAX_DEL_DISP = 30
+
 
 class DeleteSourceDialog(ModalDialog):
     """Used to confirm deletion of source accounts."""
@@ -71,8 +75,24 @@ class DeleteSourceDialog(ModalDialog):
         )
 
         return "".join(message_tuple).format(
-            source_or_sources=f"<b>{self._get_source_names(sources)}</b>"
+            source_or_sources=f"<b>{self._get_source_names_truncated(sources, MAX_DEL_DISP)}</b>"
         )
+
+    def _get_source_names_truncated(self, sources: list[Source], max_shown: int) -> str:
+        """
+        Helper. Return a comma-separated list of journalist designations, truncated to avoid
+        text overflows. If the limit is N and there are N+2 sources, all N+2 are displayed.
+        If there are >N+2 sources, N sources and an additional message (approx 2 source names
+        long) is displayed.
+        """
+        if len(sources) <= max_shown + 2:
+            return self._get_source_names(sources)
+        else:
+            shortlist = sources[:max_shown]
+            return _("{sources} ... plus {count} additional sources").format(
+                sources=", ".join([s.journalist_designation for s in shortlist]),
+                count=len(sources) - max_shown,
+            )
 
     def _get_source_names(self, sources: list[Source]) -> str:
         """
