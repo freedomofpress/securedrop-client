@@ -398,6 +398,9 @@ msgstr ""
 msgid "{text} (wait {delay} sec)"
 msgstr ""
 
+msgid "Notice: All sources have been selected!"
+msgstr ""
+
 msgid "Delete entire account for: {source_or_sources}?"
 msgstr ""
 
