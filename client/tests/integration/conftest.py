@@ -32,6 +32,7 @@ def main_window(mocker, homedir):
         )
         controller.authenticated_user = factory.User()
         controller.qubes = False
+        mocker.patch("securedrop_client.logic.Controller.get_source_count", return_value=1)
         gui.setup(controller)
 
         # Create a source widget
@@ -84,6 +85,7 @@ def main_window_no_key(mocker, homedir):
         )
         controller.authenticated_user = factory.User()
         controller.qubes = False
+        mocker.patch("securedrop_client.logic.Controller.get_source_count", return_value=1)
         gui.setup(controller)
 
         # Create a source widget
@@ -135,6 +137,7 @@ def modal_dialog(mocker, homedir):
         )
         controller.authenticated_user = factory.User()
         controller.qubes = False
+        mocker.patch("securedrop_client.logic.Controller.get_source_count", return_value=1)
         gui.setup(controller)
         gui.login_dialog.close()
         dialog = ModalDialog()
@@ -187,6 +190,7 @@ def print_dialog(mocker, homedir, mock_export):
         )
         controller.authenticated_user = factory.User()
         controller.qubes = False
+        mocker.patch("securedrop_client.logic.Controller.get_source_count", return_value=1)
         gui.setup(controller)
         gui.login_dialog.close()
         dialog = conversation.PrintDialog(mock_export, "file_name", ["/mock/export/file"])
@@ -218,6 +222,7 @@ def export_file_wizard(mocker, homedir, mock_export):
         )
         controller.authenticated_user = factory.User()
         controller.qubes = False
+        mocker.patch("securedrop_client.logic.Controller.get_source_count", return_value=1)
         gui.setup(controller)
         gui.login_dialog.close()
         dialog = conversation.ExportWizard(mock_export, "file_name", ["/mock/export/filepath"])

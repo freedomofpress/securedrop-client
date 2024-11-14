@@ -45,7 +45,7 @@ class DeleteConversationActionTest(unittest.TestCase):
 
         self.action.trigger()
 
-        self._controller.delete_conversation.assert_called_once_with(self._source)
+        (self._controller.delete_conversation.assert_called_once_with(self._source),)
         self._app_state.remove_conversation_files.assert_called_once_with(
             state.ConversationId("some_conversation")
         )
@@ -91,7 +91,7 @@ class DeleteSourceActionTest(unittest.TestCase):
         self._controller = MagicMock(Controller, api=True)
         self._dialog = QDialog()
 
-        def _dialog_constructor(source: Source) -> QDialog:
+        def _dialog_constructor(source: Source, source_total: int) -> QDialog:
             return self._dialog
 
         self.action = DeleteSourceAction(self._source, _menu, self._controller, _dialog_constructor)
