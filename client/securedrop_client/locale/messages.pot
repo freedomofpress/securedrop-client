@@ -395,6 +395,9 @@ msgstr[1] ""
 msgid "Are you sure this is what you want?"
 msgstr ""
 
+msgid "{text} (wait {delay} sec)"
+msgstr ""
+
 msgid "Delete entire account for: {source_or_sources}?"
 msgstr ""
 
