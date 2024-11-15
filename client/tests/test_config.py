@@ -18,7 +18,7 @@ def test_config_from_qubesdb():
     qubesdb = MagicMock()
     QubesDB = MagicMock()
     QubesDB.read = MagicMock()
-    QubesDB.read.side_effect = ["foobar", "foobar", "10"]
+    QubesDB.read.side_effect = ["foobar", "foobar", "10", "foobar"]
     qubesdb.QubesDB = MagicMock(return_value=QubesDB)
 
     with patch.dict("sys.modules", qubesdb=qubesdb):
