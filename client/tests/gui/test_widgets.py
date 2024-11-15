@@ -606,7 +606,9 @@ def test_MainView_delete_conversation_when_conv_wrapper_exists(mocker):
     Ensure SourceConversationWrapper is deleted if it exists.
     """
     source = factory.Source(uuid="123")
-    conversation_wrapper = SourceConversationWrapper(source, mocker.MagicMock())
+    controller = mocker.MagicMock()
+    controller.get_source_count.return_value = 2
+    conversation_wrapper = SourceConversationWrapper(source, controller)
     conversation_wrapper.deleteLater = mocker.MagicMock()
     mv = MainView(None)
     mv.source_conversations = {}
@@ -644,6 +646,7 @@ def test_MainView_on_source_changed(mocker):
     mv.source_list.selectedItems = mocker.MagicMock(return_value=[source])
     mv.source_list.count = mocker.MagicMock(return_value=3)
     mv.controller = mocker.MagicMock(is_authenticated=True)
+    mv.controller.get_source_count.return_value = 3
     mocker.patch("securedrop_client.gui.widgets.source_exists", return_value=True)
     mv.on_source_changed()
 
@@ -755,6 +758,7 @@ def test_MainView_on_source_changed_updates_conversation_view(mocker, session):
     mv.source_list.selectedItems = mocker.MagicMock(return_value=[source])
     mv.source_list.get_selected_source = mocker.MagicMock(return_value=source)
     mv.controller = mocker.MagicMock(is_authenticated=True)
+    mv.controller.get_source_count.return_value = 1
     session.add(source)
     file = factory.File(source=source, filename="0-mock-doc.gpg")
     message = factory.Message(source=source, filename="0-mock-msg.gpg")
@@ -810,6 +814,8 @@ def test_MainView_on_source_changed_SourceConversationWrapper_is_preserved(mocke
     mv.set_conversation = mocker.MagicMock(wraps=mv.set_conversation)
 
     mv.controller = mocker.MagicMock(is_authenticated=True)
+
+    mv.controller.get_source_count.return_value = 2
 
     mv.on_source_changed()
     assert mv.set_conversation.call_count == 1
@@ -990,7 +996,9 @@ def test_MainView_set_conversation(mocker):
     """
     mv = MainView(None)
 
-    scw = SourceConversationWrapper(factory.Source(), mocker.MagicMock())
+    mv_controller = mocker.MagicMock()
+    mv_controller.get_source_count.return_value = 2
+    scw = SourceConversationWrapper(factory.Source(), mv_controller)
     mv.set_conversation(scw)
 
     assert mv.view_layout.widget(mv.CONVERSATION_INDEX) == scw
@@ -3856,6 +3864,7 @@ def test_SourceConversationWrapper_on_conversation_updated(mocker, qtbot):
 
     get_file = mocker.MagicMock(return_value=file)
     controller = mocker.MagicMock(get_file=get_file)
+    controller.get_source_count.return_value = 1
 
     scw = SourceConversationWrapper(source, controller, None)
     scw.conversation_title_bar.updated.setText("CANARY")
@@ -3876,6 +3885,7 @@ def test_SourceConversationWrapper_on_source_deleted(mocker):
     mv.source_list = mocker.MagicMock()
     mv.source_list.get_selected_source = mocker.MagicMock(return_value=source)
     mv.controller = mocker.MagicMock(is_authenticated=True)
+    mv.controller.get_source_count.return_value = 1
 
     # Detached sourceconversationwrapper, just for unit testing
     scw = SourceConversationWrapper(source, mv.controller, None)
@@ -3892,7 +3902,9 @@ def test_SourceConversationWrapper_on_source_deleted(mocker):
 
 
 def test_SourceConversationWrapper_on_source_deleted_wrong_uuid(mocker):
-    scw = SourceConversationWrapper(factory.Source(uuid="123"), mocker.MagicMock())
+    controller = mocker.MagicMock()
+    controller.get_source_count.return_value = 1
+    scw = SourceConversationWrapper(factory.Source(uuid="123"), controller)
     scw.on_source_deleted("321")
     assert not scw.conversation_title_bar.isHidden()
     assert not scw.conversation_view.isHidden()
@@ -3901,7 +3913,9 @@ def test_SourceConversationWrapper_on_source_deleted_wrong_uuid(mocker):
 
 
 def test_SourceConversationWrapper_on_source_deletion_failed(mocker):
-    scw = SourceConversationWrapper(factory.Source(uuid="123"), mocker.MagicMock())
+    controller = mocker.MagicMock()
+    controller.get_source_count.return_value = 1
+    scw = SourceConversationWrapper(factory.Source(uuid="123"), controller)
     scw.on_source_deleted("123")
 
     scw.on_source_deletion_failed("123")
@@ -3913,7 +3927,9 @@ def test_SourceConversationWrapper_on_source_deletion_failed(mocker):
 
 
 def test_SourceConversationWrapper_on_source_deletion_failed_wrong_uuid(mocker):
-    scw = SourceConversationWrapper(factory.Source(uuid="123"), mocker.MagicMock())
+    controller = mocker.MagicMock()
+    controller.get_source_count.return_value = 1
+    scw = SourceConversationWrapper(factory.Source(uuid="123"), controller)
     scw.on_source_deleted("123")
 
     scw.on_source_deletion_failed("321")
@@ -3930,6 +3946,7 @@ def test_SourceConversationWrapper_on_conversation_deleted(mocker):
     mv.source_list = mocker.MagicMock()
     mv.source_list.get_selected_source = mocker.MagicMock(return_value=source)
     mv.controller = mocker.MagicMock(is_authenticated=True)
+    mv.controller.get_source_count.return_value = 1
     mocker.patch("securedrop_client.gui.widgets.source_exists", return_value=True)
     mv.show()
     scw = SourceConversationWrapper(source, mv.controller, None)
@@ -3948,7 +3965,9 @@ def test_SourceConversationWrapper_on_conversation_deleted(mocker):
 
 
 def test_SourceConversationWrapper_on_conversation_deleted_wrong_uuid(mocker):
-    scw = SourceConversationWrapper(factory.Source(uuid="123"), mocker.MagicMock())
+    controller = mocker.MagicMock()
+    controller.get_source_count.return_value = 1
+    scw = SourceConversationWrapper(factory.Source(uuid="123"), controller)
     scw.on_conversation_deleted("321")
     assert not scw.conversation_title_bar.isHidden()
     assert not scw.conversation_view.isHidden()
@@ -3958,7 +3977,9 @@ def test_SourceConversationWrapper_on_conversation_deleted_wrong_uuid(mocker):
 
 
 def test_SourceConversationWrapper__on_conversation_deletion_successful(mocker):
-    scw = SourceConversationWrapper(factory.Source(uuid="123"), mocker.MagicMock())
+    controller = mocker.MagicMock()
+    controller.get_source_count.return_value = 1
+    scw = SourceConversationWrapper(factory.Source(uuid="123"), controller)
     scw.on_conversation_deleted("123")
 
     scw._on_conversation_deletion_successful("123", datetime.now())
@@ -3971,7 +3992,9 @@ def test_SourceConversationWrapper__on_conversation_deletion_successful(mocker):
 
 
 def test_SourceConversationWrapper_on_conversation_deletion_failed(mocker):
-    scw = SourceConversationWrapper(factory.Source(uuid="123"), mocker.MagicMock())
+    controller = mocker.MagicMock()
+    controller.get_source_count.return_value = 1
+    scw = SourceConversationWrapper(factory.Source(uuid="123"), controller)
     scw.on_conversation_deleted("123")
 
     scw.on_conversation_deletion_failed("123")
@@ -3984,7 +4007,9 @@ def test_SourceConversationWrapper_on_conversation_deletion_failed(mocker):
 
 
 def test_SourceConversationWrapper_on_conversation_deletion_failed_wrong_uuid(mocker):
-    scw = SourceConversationWrapper(factory.Source(uuid="123"), mocker.MagicMock())
+    controller = mocker.MagicMock()
+    controller.get_source_count.return_value = 1
+    scw = SourceConversationWrapper(factory.Source(uuid="123"), controller)
     scw.on_conversation_deleted("123")
 
     scw.on_conversation_deletion_failed("321")
@@ -4453,6 +4478,7 @@ def test_ConversationView_add_not_downloaded_file(mocker, homedir, source, sessi
 def test_DeleteSource_from_source_menu_when_user_is_loggedout(mocker):
     mock_controller = mocker.MagicMock()
     mock_controller.api = None
+    mock_controller.get_source_count.return_value = 1
     mock_source = factory.Source()
     mock_delete_source_dialog_instance = mocker.MagicMock(DeleteSourceDialog)
     mock_delete_source_dialog = mocker.MagicMock()
@@ -5326,6 +5352,7 @@ def test_SourceProfileShortWidget_update_timestamp(mocker):
     instance with the last_updated value from the source..
     """
     mock_controller = mocker.MagicMock()
+    mock_controller.get_source_count.return_value = 1
     mock_source = mocker.MagicMock()
     mock_source.last_updated = datetime.now()
     mock_source.journalist_designation = "wimple horse knackered unittest"

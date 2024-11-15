@@ -1215,3 +1215,9 @@ class Controller(QObject):
 
     def get_selected_sources(self) -> list[db.Source] | None:
         return self._selected_sources
+
+    def get_source_count(self) -> int:
+        """
+        Return total sources in local storage.
+        """
+        return self.session.query(db.Source).count()

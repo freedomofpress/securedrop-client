@@ -16,7 +16,7 @@ def dialog(request):
     # Give the source(s) a submission
     for source in request.param:
         factory.File(source=source)
-    return DeleteSourceDialog(request.param)
+    return DeleteSourceDialog(request.param, len(request.param) + 1)
 
 
 class TestDeleteSourceDialog:
@@ -68,24 +68,58 @@ class TestDeleteSourceDialog:
     def test_correct_format_body_text(self):
         """
         For n > 1 sources, ensure the warning text includes
-        all the journalist desginators.
+        all the journalist designators.
         """
         sources = []
         names = [
             "source one",
             "source two",
             "source three",
-            "source four",
-            "source five",
-            "source six",
-            "source seven",
+        ]
+
+        for item in names:
+            source = factory.Source(journalist_designation=item)
+            sources.append(source)
+            # pretend we've selected all but one source
+            fake_total = len(sources) + 1
+
+        dialog = DeleteSourceDialog(sources, fake_total)
+        dialog_text = dialog.make_body_text(sources, fake_total)
+
+        assert "All sources have been selected" not in dialog_text
+        for n in names:
+            assert n in dialog_text
+
+    def test_correct_format_body_text_all_selected(self):
+        """
+        Ensure that warning has been added when all sources selected
+        """
+        sources = []
+        names = [
+            "source one",
+            "source two",
+            "source three",
         ]
 
         for item in names:
             source = factory.Source(journalist_designation=item)
             sources.append(source)
 
-        dialog = DeleteSourceDialog(sources)
+        dialog = DeleteSourceDialog(sources, len(sources))
 
-        for n in names:
-            assert n in dialog.make_body_text(sources)
+        assert "All sources have been selected" in dialog.make_body_text(sources, len(sources))
+
+    def test_correct_format_body_text_truncated(self):
+        """
+        Ensure that source list is truncated correctly when over display limit
+        """
+        sources = []
+        names = [f"source_{i}" for i in range(1, 46)]
+
+        for item in names:
+            source = factory.Source(journalist_designation=item)
+            sources.append(source)
+
+        dialog = DeleteSourceDialog(sources, len(sources))
+
+        assert "plus 15 additional sources" in dialog.make_body_text(sources, len(sources))
