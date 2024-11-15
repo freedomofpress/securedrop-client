@@ -11,6 +11,7 @@ import pytest
 from flaky import flaky
 from PyQt5.QtCore import Qt
 
+from securedrop_client.gui.source.delete import dialog as DialogModule
 from securedrop_client.gui.widgets import MultiSelectView, SourceConversationWrapper
 from tests.conftest import (
     TIME_CLICK_ACTION,
@@ -99,3 +100,59 @@ def test_delete_sources(functional_test_logged_in_context, qtbot, mocker, num_to
             assert source_uuid not in gui.main_view.source_list.source_items
 
     qtbot.waitUntil(check_source_list, timeout=TIME_RENDER_SOURCE_LIST)
+
+
+@flaky
+def test_confirm_before_deleting_lots_of_sources(
+    functional_test_logged_in_context, qtbot, mocker, monkeypatch
+):
+    """
+    Reduction of test_delete_sources(): With LOTS_OF_SOURCES = num_sources - 1,
+    check that the dialog's "continue" button is disabled until the (displayed)
+    countdown timer finishes.
+    """
+    gui, controller = functional_test_logged_in_context
+
+    # Wait for a full sync to give us a stable source list.
+    qtbot.wait(TIME_SYNC)
+    source_uuids = list(gui.main_view.source_list.source_items.keys())
+    num_sources = len(source_uuids)
+    monkeypatch.setattr(DialogModule, "LOTS_OF_SOURCES", num_sources - 1)
+
+    for i, source_uuid in enumerate(source_uuids):
+        source_item = gui.main_view.source_list.source_items[source_uuid]
+        source_widget = gui.main_view.source_list.itemWidget(source_item)
+
+        # Simulate a non-<Ctrl> initial click...
+        if i == 0:
+            qtbot.mouseClick(source_widget, Qt.LeftButton)
+        # ...followed by subsequent <Ctrl>-clicks.
+        else:
+            qtbot.mouseClick(
+                source_widget, Qt.LeftButton, modifier=Qt.KeyboardModifier.ControlModifier
+            )
+
+        qtbot.wait(TIME_CLICK_ACTION)
+
+    # Delete the selected source.  We can't qtbot.mouseClick() on a QAction, but
+    # we can trigger it directly.
+    gui.main_view.top_pane.batch_actions.toolbar.delete_sources_action.trigger()
+
+    def check_and_accept_dialog(ready):
+        """Check that the dialog confirms deletion of all sources selected."""
+        dialog = (
+            gui.main_view.top_pane.batch_actions.toolbar._last_dialog
+        )  # FIXME: workaround for #2273
+        assert set(source_uuids) == {source.uuid for source in dialog.sources}
+
+        assert dialog.continue_button.isEnabled() == ready
+        if ready:
+            dialog.accept()
+        else:
+            assert "wait" in dialog.continue_button.text()
+
+    check_and_accept_dialog(False)
+
+    qtbot.waitUntil(
+        lambda: check_and_accept_dialog(True), timeout=DialogModule.CONTINUE_BUTTON_DELAY
+    )
