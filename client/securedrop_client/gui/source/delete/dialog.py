@@ -104,11 +104,11 @@ class DeleteSourceDialog(ModalDialog):
             self.continue_button.setText(self.continue_text)
             self.continue_button.setEnabled(True)
 
-    def make_body_text(self, sources: list[Source], source_total) -> str:
+    def make_body_text(self, sources: list[Source], source_total: int) -> str:
         if len(sources) == source_total:
             all_sources_text = ("<p><b>", _("Notice: All sources have been selected!"), "</p></b>")
         else:
-            all_sources_text = ()
+            all_sources_text = ("", "", "")
 
         message_text = (
             "<p>",

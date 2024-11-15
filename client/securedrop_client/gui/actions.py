@@ -81,7 +81,7 @@ class DeleteSourceAction(QAction):
         source: Source,
         parent: QMenu,
         controller: Controller,
-        confirmation_dialog: Callable[[list[Source]], QDialog],
+        confirmation_dialog: Callable[[list[Source], int], QDialog],
     ) -> None:
         self.source = source
         self.controller = controller
