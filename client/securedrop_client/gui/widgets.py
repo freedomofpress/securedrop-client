@@ -553,8 +553,9 @@ class BatchActionToolbar(QToolBar):
             # The current source selection is continuously received by the controller
             # as the user selects and deselects; here we retrieve the selection
             targets = self.controller.get_selected_sources()
+            source_count = self.controller.get_source_count()
             if targets is not None:
-                dialog = DeleteSourceDialog(targets)
+                dialog = DeleteSourceDialog(targets, source_count)
                 self._last_dialog = dialog  # FIXME: workaround for #2273
                 dialog.accepted.connect(lambda: self.controller.delete_sources(targets))
                 dialog.open()

@@ -37,9 +37,11 @@ CONTINUE_BUTTON_DELAY = 5 * SEC
 class DeleteSourceDialog(ModalDialog):
     """Used to confirm deletion of source accounts."""
 
-    def __init__(self, sources: list[Source]) -> None:
+    def __init__(self, sources: list[Source], source_total: int) -> None:
         super().__init__(show_header=False, dangerous=True)
         self.sources = sources
+        self.source_total = source_total
+        self.continue_text = "CONTINUE"
 
         # If the dialog is constructed with no sources, show a warning; otherwise,
         # confirm the number and designation of the sources to be deleted
@@ -47,13 +49,20 @@ class DeleteSourceDialog(ModalDialog):
         if num_sources == 0:
             self._show_warning_nothing_selected()
         else:
-            self.continue_text = ngettext(
-                "YES, DELETE ENTIRE SOURCE ACCOUNT",
-                "YES, DELETE {number} SOURCE ACCOUNTS",
-                num_sources,
-            ).format(number=num_sources)
+            if num_sources < source_total:
+                self.continue_text = ngettext(
+                    "YES, DELETE ENTIRE SOURCE ACCOUNT",
+                    "YES, DELETE {number} SOURCE ACCOUNTS",
+                    num_sources,
+                ).format(number=num_sources)
+            else:
+                self.continue_text = ngettext(
+                    "YES, DELETE ENTIRE SOURCE ACCOUNT",  # in this case, all 1 accounts.
+                    "YES, DELETE ALL {number} SOURCE ACCOUNTS",
+                    num_sources,
+                ).format(number=num_sources)
 
-            self.body.setText(self.make_body_text(self.sources))
+            self.body.setText(self.make_body_text(self.sources, self.source_total))
             self.continue_button.setText(self.continue_text)
             self.cancel_button.setDefault(True)
             self.cancel_button.setFocus()
@@ -96,8 +105,13 @@ class DeleteSourceDialog(ModalDialog):
             self.continue_button.setText(self.continue_text)
             self.continue_button.setEnabled(True)
 
-    def make_body_text(self, sources: list[Source]) -> str:
-        message_tuple = (
+    def make_body_text(self, sources: list[Source], source_total: int) -> str:
+        if len(sources) == source_total:
+            all_sources_text = ("<p><b>", _("Notice: All sources have been selected!"), "</p></b>")
+        else:
+            all_sources_text = ("", "", "")
+
+        message_text = (
             "<p>",
             _("Delete entire account for: {source_or_sources}?"),
             "</p>",
@@ -116,7 +130,8 @@ class DeleteSourceDialog(ModalDialog):
             "<p>&nbsp;</p>",
         )
 
-        return "".join(message_tuple).format(
+        full_text = all_sources_text + message_text
+        return "".join(full_text).format(
             source_or_sources=f"<b>{self._get_source_names_truncated(sources, LOTS_OF_SOURCES)}</b>"
         )
 
