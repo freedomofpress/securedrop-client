@@ -41,6 +41,7 @@ class DeleteSourceDialog(ModalDialog):
         super().__init__(show_header=False, dangerous=True)
         self.sources = sources
         self.source_total = source_total
+        self.continue_text = "CONTINUE"
 
         # If the dialog is constructed with no sources, show a warning; otherwise,
         # confirm the number and designation of the sources to be deleted
@@ -49,20 +50,20 @@ class DeleteSourceDialog(ModalDialog):
             self._show_warning_nothing_selected()
         else:
             if num_sources < source_total:
-                continue_text = ngettext(
+                self.continue_text = ngettext(
                     "YES, DELETE ENTIRE SOURCE ACCOUNT",
                     "YES, DELETE {number} SOURCE ACCOUNTS",
                     num_sources,
                 ).format(number=num_sources)
             else:
-                continue_text = ngettext(
+                self.continue_text = ngettext(
                     "YES, DELETE ENTIRE SOURCE ACCOUNT",  # in this case, all 1 accounts.
                     "YES, DELETE ALL {number} SOURCE ACCOUNTS",
                     num_sources,
                 ).format(number=num_sources)
 
             self.body.setText(self.make_body_text(self.sources, self.source_total))
-            self.continue_button.setText(continue_text)
+            self.continue_button.setText(self.continue_text)
             self.cancel_button.setDefault(True)
             self.cancel_button.setFocus()
             self.confirmation_label.setText(_("Are you sure this is what you want?"))
