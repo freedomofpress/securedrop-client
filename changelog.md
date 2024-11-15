@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.14.0-rc2
+
+* Add support for selecting and deleting multiple sources (#2293, #2299, #2300)
+
 ## 0.14.0-rc1
 
 * Add support for selecting and deleting multiple sources (#2208, 2188, #2230, #2252)
@@ -33,7 +37,7 @@
 * Broaden printing support to all filetypes supported by LibreOffice (#2166)
 * Display an error message if user tries to print an unprintable file type (#2166)
 * Use single PrintDialog GUI element for all print actions (#2143)
-* Remove unused _from_string methods from SDK (#2144)
+* Remove unused `_from_string` methods from SDK (#2144)
 * Update build toolchain and `setuptools` for CVE-2024-6345 (#2136, [securedrop-builder#501](https://github.com/freedomofpress/securedrop-builder/pull/501))
 * Update `ruff` to 0.5.4 (#2138)
 
