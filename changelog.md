@@ -1,12 +1,8 @@
 # Changelog
 
-## 0.14.0-rc2
+## 0.14.0
 
-* Add support for selecting and deleting multiple sources (#2293, #2299, #2300)
-
-## 0.14.0-rc1
-
-* Add support for selecting and deleting multiple sources (#2208, 2188, #2230, #2252)
+* Add support for selecting and deleting multiple sources (#2208, #2188, #2230, #2252, #2293, #2299, #2300)
 * Use builtin `venv` module instead of `virtualenv` (#2246)
 * Improve logging of API failures (#2245)
 * Improve client keyboard shortcuts handling (#2209)
