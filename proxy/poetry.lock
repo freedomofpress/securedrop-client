@@ -577,13 +577,13 @@ files = [
 
 [[package]]
 name = "pytest"
-version = "8.3.1"
+version = "8.3.3"
 description = "pytest: simple powerful testing with Python"
 optional = false
 python-versions = ">=3.8"
 files = [
-    {file = "pytest-8.3.1-py3-none-any.whl", hash = "sha256:e9600ccf4f563976e2c99fa02c7624ab938296551f280835ee6516df8bc4ae8c"},
-    {file = "pytest-8.3.1.tar.gz", hash = "sha256:7e8e5c5abd6e93cb1cc151f23e57adc31fcf8cfd2a3ff2da63e23f732de35db6"},
+    {file = "pytest-8.3.3-py3-none-any.whl", hash = "sha256:a6853c7375b2663155079443d2e45de913a911a11d669df02a50814944db57b2"},
+    {file = "pytest-8.3.3.tar.gz", hash = "sha256:70b98107bd648308a7952b06e6ca9a50bc660be218d53c257cc1fc94fda10181"},
 ]
 
 [package.dependencies]
@@ -597,20 +597,20 @@ dev = ["argcomplete", "attrs (>=19.2)", "hypothesis (>=3.56)", "mock", "pygments
 
 [[package]]
 name = "pytest-httpbin"
-version = "2.0.0"
+version = "2.1.0"
 description = "Easily test your HTTP library against a local copy of httpbin"
 optional = false
-python-versions = ">=3.7"
+python-versions = ">=3.8"
 files = [
-    {file = "pytest-httpbin-2.0.0.tar.gz", hash = "sha256:3e739cad9b8f8df58952df7329d9295fe17449d3a647f49c4ce634fd81d71b8e"},
-    {file = "pytest_httpbin-2.0.0-py2.py3-none-any.whl", hash = "sha256:d977f8095796e27a45911bbafa3587c081c9025e060e2fdb559794db2d45e82d"},
+    {file = "pytest_httpbin-2.1.0-py3-none-any.whl", hash = "sha256:b3bf7346cc2ad231447189cd85b458e341056684a7a69d69533dd29692209cdd"},
+    {file = "pytest_httpbin-2.1.0.tar.gz", hash = "sha256:d40579838443228327f9fe4f08d9338bee8885c29fe933e5f2d58c20a26c33c6"},
 ]
 
 [package.dependencies]
 httpbin = "*"
 
 [package.extras]
-test = ["pytest", "requests", "werkzeug (<2.1.0)"]
+test = ["pytest", "requests"]
 
 [[package]]
 name = "pyyaml"
@@ -826,4 +826,4 @@ watchdog = ["watchdog (>=2.3)"]
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.11"
-content-hash = "51a9b6cca46ab166817bb657c735068439c4fec7fddcc97cf90be17db382193e"
+content-hash = "4aad6a10178b200defa15547ee68eba2e31c9bcab9b7bf22956a5b4fc8573fe3"
