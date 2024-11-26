@@ -11,6 +11,7 @@ from typing import Any
 
 from securedrop_client.config import Config
 
+from .progress import Progress
 from .sdlocalobjects import (
     AuthError,
     BaseError,
@@ -131,7 +132,10 @@ class API:
         return [f"{target_directory}/debug/securedrop-proxy"]
 
     def _streaming_download(
-        self, data: dict[str, Any], env: dict
+        self,
+        data: dict[str, Any],
+        env: dict,
+        progress: Progress,
     ) -> StreamedResponse | JSONResponse:
         fobj = tempfile.TemporaryFile("w+b")
 
@@ -183,6 +187,7 @@ class API:
 
                     fobj.write(chunk)
                     bytes_written += len(chunk)
+                    progress.set_value(bytes_written)
                     logger.debug(f"Retry {retry}, bytes written: {bytes_written:,}")
 
                 # Wait for the process to end
@@ -303,6 +308,7 @@ class API:
         body: str | None = None,
         headers: dict[str, str] | None = None,
         timeout: int | None = None,
+        progress: Progress | None = None,
     ) -> StreamedResponse | JSONResponse:
         """Build a JSON-serialized request to pass to the proxy.
         Handle the JSON or streamed response back, plus translate HTTP error statuses
@@ -328,9 +334,12 @@ class API:
         if self.development_mode:
             env["SD_PROXY_ORIGIN"] = self.server
 
+        if not progress:
+            progress = Progress(None)
+
         # Streaming
         if stream:
-            return self._streaming_download(data, env)
+            return self._streaming_download(data, env, progress)
 
         # Not streaming
         data_str = json.dumps(data).encode()
@@ -360,6 +369,7 @@ class API:
             logger.error("Internal proxy error (non-streaming)")
             raise BaseError(f"Internal proxy error: {error_desc}")
 
+        progress.set_value(len(response.stdout))
         return self._handle_json_response(response.stdout)
 
     def authenticate(self, totp: str | None = None) -> bool:
@@ -683,7 +693,11 @@ class API:
         return False
 
     def download_submission(
-        self, submission: Submission, path: str | None = None, timeout: int | None = None
+        self,
+        submission: Submission,
+        path: str | None = None,
+        timeout: int | None = None,
+        progress: Progress | None = None,
     ) -> tuple[str, str]:
         """
         Returns a tuple of etag (format is algorithm:checksum) and file path for
@@ -712,6 +726,7 @@ class API:
             stream=True,
             headers=self.build_headers(),
             timeout=timeout or self.default_download_timeout,
+            progress=progress,
         )
 
         if isinstance(response, JSONResponse):
@@ -909,7 +924,9 @@ class API:
 
         return result
 
-    def download_reply(self, reply: Reply, path: str | None = None) -> tuple[str, str]:
+    def download_reply(
+        self, reply: Reply, path: str | None = None, progress: Progress | None = None
+    ) -> tuple[str, str]:
         """
         Returns a tuple of etag (format is algorithm:checksum) and file path for
         a given Reply object. This method requires a directory path
@@ -936,6 +953,7 @@ class API:
             stream=True,
             headers=self.build_headers(),
             timeout=self.default_request_timeout,
+            progress=progress,
         )
 
         if isinstance(response, JSONResponse):

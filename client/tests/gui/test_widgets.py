@@ -3416,31 +3416,6 @@ def test_FileWidget_on_left_click_open(mocker, session, source):
     fw.controller.on_file_open.assert_called_once_with(file_)
 
 
-def test_FileWidget_set_button_animation_frame(mocker, session, source):
-    """
-    Left click on download when file is not downloaded should trigger
-    a download.
-    """
-    file_ = factory.File(source=source["source"], is_downloaded=False, is_decrypted=None)
-    session.add(file_)
-    session.commit()
-
-    controller = mocker.MagicMock()
-
-    fw = FileWidget(
-        file_,
-        controller,
-        mocker.MagicMock(),
-        mocker.MagicMock(),
-        mocker.MagicMock(),
-        0,
-        123,
-    )
-    fw.download_button = mocker.MagicMock()
-    fw.set_button_animation_frame(1)
-    assert fw.download_button.setIcon.call_count == 1
-
-
 def test_FileWidget_update(mocker, session, source):
     """
     The update method should show/hide widgets if file is downloaded
