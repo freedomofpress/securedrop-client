@@ -4,6 +4,7 @@ from unittest.mock import patch
 import vcr
 from vcr.request import Request
 
+from securedrop_client.gui.base.progress import ProgressProxy
 from securedrop_client.sdk import API, JSONResponse, StreamedResponse
 
 VCR = vcr.VCR(cassette_library_dir="tests/sdk/data/")
@@ -40,6 +41,7 @@ class VCRAPI(API):
         body: str | None = None,
         headers: dict[str, str] | None = None,
         timeout: int | None = None,
+        progress: ProgressProxy | None = None,
     ) -> StreamedResponse | JSONResponse:
         """If the cassette contains a VCR.py `Request` object corresponding to
         this request, play back the response.  If it's an exception, raise it to

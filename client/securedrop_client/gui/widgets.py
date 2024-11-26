@@ -83,7 +83,13 @@ from securedrop_client.gui.actions import (
     ExportConversationTranscriptAction,
     PrintConversationAction,
 )
-from securedrop_client.gui.base import SecureQLabel, SvgLabel, SvgPushButton, SvgToggleButton
+from securedrop_client.gui.base import (
+    FileDownloadProgressBar,
+    SecureQLabel,
+    SvgLabel,
+    SvgPushButton,
+    SvgToggleButton,
+)
 from securedrop_client.gui.conversation import DeleteConversationDialog
 from securedrop_client.gui.datetime_helpers import format_datetime_local
 from securedrop_client.gui.shortcuts import Shortcuts
@@ -2579,7 +2585,8 @@ class FileWidget(QWidget):
         self.download_button.setIcon(load_icon("download_file.svg"))
         self.download_button.setFont(self.file_buttons_font)
         self.download_button.setCursor(QCursor(Qt.PointingHandCursor))
-        self.download_animation = load_movie("download_file.gif")
+        self.download_progress = FileDownloadProgressBar(self.file.size)
+        self.download_progress.hide()
         self.export_button = QPushButton(_("EXPORT"))
         self.export_button.setObjectName("FileWidget_export_print")
         self.export_button.setFont(self.file_buttons_font)
@@ -2590,6 +2597,9 @@ class FileWidget(QWidget):
         self.print_button.setFont(self.file_buttons_font)
         self.print_button.setCursor(QCursor(Qt.PointingHandCursor))
         file_options_layout.addWidget(self.download_button)
+        file_options_layout.addWidget(self.download_progress)
+        # Add a bit of padding after the progress bar
+        file_options_layout.addSpacing(5)
         file_options_layout.addWidget(self.export_button)
         file_options_layout.addWidget(self.middot)
         file_options_layout.addWidget(self.print_button)
@@ -2675,6 +2685,7 @@ class FileWidget(QWidget):
             logger.debug(f"Changing file {self.uuid} state to decrypted/downloaded")
             self._set_file_name()
             self.download_button.hide()
+            self.download_progress.hide()
             self.no_file_name.hide()
             self.export_button.show()
             self.middot.show()
@@ -2693,6 +2704,7 @@ class FileWidget(QWidget):
 
             self.download_button.setFont(self.file_buttons_font)
             self.download_button.show()
+            self.download_progress.hide()
 
             # Reset stylesheet
             self.download_button.setStyleSheet("")
@@ -2793,15 +2805,17 @@ class FileWidget(QWidget):
                 if self.controller.api:
                     self.start_button_animation()
                 # Download the file.
-                self.controller.on_submission_download(File, self.uuid)
+                self.controller.on_submission_download(
+                    File, self.uuid, self.download_progress.proxy()
+                )
 
     def start_button_animation(self) -> None:
         """
         Update the download button to the animated "downloading" state.
         """
         self.downloading = True
-        self.download_animation.frameChanged.connect(self.set_button_animation_frame)
-        self.download_animation.start()
+        self.download_progress.setValue(0)
+        self.download_progress.show()
         self.download_button.setText(_(" DOWNLOADING "))
 
         # Reset widget stylesheet
@@ -2809,18 +2823,11 @@ class FileWidget(QWidget):
         self.download_button.setObjectName("FileWidget_download_button_animating")
         self.download_button.setStyleSheet(self.DOWNLOAD_BUTTON_CSS)
 
-    def set_button_animation_frame(self, frame_number: int) -> None:
-        """
-        Sets the download button's icon to the current frame of the spinner
-        animation.
-        """
-        self.download_button.setIcon(QIcon(self.download_animation.currentPixmap()))
-
     def stop_button_animation(self) -> None:
         """
         Stops the download animation and restores the button to its default state.
         """
-        self.download_animation.stop()
+        self.download_progress.hide()
         file = self.controller.get_file(self.file.uuid)
         if file is None:
             self.deleteLater()

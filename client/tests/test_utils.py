@@ -9,6 +9,7 @@ from securedrop_client.utils import (
     check_dir_permissions,
     check_path_traversal,
     humanize_filesize,
+    humanize_speed,
     relative_filepath,
     safe_mkdir,
 )
@@ -30,6 +31,21 @@ def test_humanize_file_size_megabytes():
     expected_humanized_filesize = "123MB"
     actual_humanized_filesize = humanize_filesize(123 * 1024 * 1024)
     assert expected_humanized_filesize == actual_humanized_filesize
+
+
+@pytest.mark.parametrize(
+    ("input", "expected"),
+    [
+        (0, "0B/s"),
+        (0.1, "0B/s"),
+        (1, "1B/s"),
+        (1234, "1.2KB/s"),
+        (678_123, "662KB/s"),
+        (12_345_678, "12MB/s"),
+    ],
+)
+def test_humanize_speed(input, expected):
+    assert expected == humanize_speed(input)
 
 
 def test_safe_mkdir_with_unsafe_path(homedir):

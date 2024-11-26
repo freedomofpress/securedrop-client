@@ -26,8 +26,10 @@ from securedrop_client.gui.base.misc import (
     SvgPushButton,
     SvgToggleButton,
 )
+from securedrop_client.gui.base.progress import FileDownloadProgressBar
 
 __all__ = [
+    "FileDownloadProgressBar",
     "ModalDialog",
     "PasswordEdit",
     "SDPushButton",
