@@ -5,7 +5,7 @@ Make sure the UI widgets are configured correctly and work as expected.
 import math
 from datetime import datetime, timedelta
 from gettext import gettext as _
-from unittest.mock import Mock, PropertyMock
+from unittest.mock import ANY, Mock, PropertyMock
 
 import pytest
 import sqlalchemy
@@ -3334,7 +3334,9 @@ def test_FileWidget_on_left_click_download(mocker, session, source):
 
     fw._on_left_click()
     get_file.assert_called_once_with(file_.uuid)
-    controller.on_submission_download.assert_called_once_with(db.File, file_.uuid)
+    # Because the ProgressProxy is created dynamically and not retained, we can't assert
+    # the specific value of it, so use ANY.
+    controller.on_submission_download.assert_called_once_with(db.File, file_.uuid, ANY)
 
 
 def test_FileWidget_on_left_click_downloading_in_progress(mocker, session, source):
@@ -3386,10 +3388,10 @@ def test_FileWidget_start_button_animation(mocker, session, source):
         0,
         123,
     )
-    fw.download_button = mocker.MagicMock()
+    fw.download_progress = mocker.MagicMock()
     fw.start_button_animation()
     # Check indicators of activity have been updated.
-    assert fw.download_button.setIcon.call_count == 1
+    assert fw.download_progress.show.call_count == 1
 
 
 def test_FileWidget_on_left_click_open(mocker, session, source):
@@ -3414,31 +3416,6 @@ def test_FileWidget_on_left_click_open(mocker, session, source):
     )
     fw._on_left_click()
     fw.controller.on_file_open.assert_called_once_with(file_)
-
-
-def test_FileWidget_set_button_animation_frame(mocker, session, source):
-    """
-    Left click on download when file is not downloaded should trigger
-    a download.
-    """
-    file_ = factory.File(source=source["source"], is_downloaded=False, is_decrypted=None)
-    session.add(file_)
-    session.commit()
-
-    controller = mocker.MagicMock()
-
-    fw = FileWidget(
-        file_,
-        controller,
-        mocker.MagicMock(),
-        mocker.MagicMock(),
-        mocker.MagicMock(),
-        0,
-        123,
-    )
-    fw.download_button = mocker.MagicMock()
-    fw.set_button_animation_frame(1)
-    assert fw.download_button.setIcon.call_count == 1
 
 
 def test_FileWidget_update(mocker, session, source):
@@ -3632,7 +3609,6 @@ def test_FileWidget_on_file_missing_show_download_button_when_uuid_matches(
     assert fw.print_button.isHidden()
     assert not fw.no_file_name.isHidden()
     assert fw.file_name.isHidden()
-    assert fw.download_animation.state() == QMovie.NotRunning
 
 
 def test_FileWidget_on_file_missing_does_not_show_download_button_when_uuid_does_not_match(
