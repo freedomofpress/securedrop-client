@@ -19,7 +19,7 @@ jobs:
       matrix:
         debian_version:
           - bookworm
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     container: debian:${{ matrix.debian_version }}
     steps:
       - run: |
@@ -49,7 +49,7 @@ jobs:
       matrix:
         debian_version:
           - bookworm
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     outputs:
       artifact_id: ${{ steps.upload.outputs.artifact-id }}
     steps:
@@ -76,7 +76,7 @@ jobs:
       matrix:
         debian_version:
           - bookworm
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     outputs:
       artifact_id: ${{ steps.upload.outputs.artifact-id }}
     steps:
@@ -101,7 +101,7 @@ jobs:
       matrix:
         debian_version:
           - bookworm
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     container: debian:bookworm
     needs:
       - build-debs
@@ -140,7 +140,7 @@ jobs:
           - whonix-config
         debian_version:
           - bookworm
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     needs:
       - build-debs
     steps:
