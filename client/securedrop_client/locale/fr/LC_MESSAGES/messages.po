@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: SecureDrop Client 0.8.1\n"
 "Report-Msgid-Bugs-To: securedrop@freedom.press\n"
-"PO-Revision-Date: 2024-09-26 20:33+0000\n"
+"PO-Revision-Date: 2024-12-09 21:33+0000\n"
 "Last-Translator: AO Localization Lab <ao@localizationlab.org>\n"
 "Language-Team: French <https://weblate.securedrop.org/projects/securedrop/securedrop-client/fr/>\n"
 "Language: fr\n"
@@ -15,7 +15,7 @@ msgstr ""
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=n > 1;\n"
-"X-Generator: Weblate 5.7.1\n"
+"X-Generator: Weblate 5.8.4\n"
 "Generated-By: Babel 2.10.3\n"
 
 msgid "{application_name} is already running"
@@ -33,24 +33,24 @@ msgid ""
 "Could not reach the SecureDrop server. Please check your \n"
 "Internet and Tor connection and try again."
 msgstr ""
-"Impossible d’atteindre le serveur SecureDrop. Veuillez vérifier vos\n"
+"Impossible d’atteindre le serveur SecureDrop. Vérifiez vos\n"
 "connexions à Internet et à Tor et réessayez."
 
 msgid ""
 "Those credentials didn't work. Please try again, and \n"
 "make sure to use a new two-factor code."
 msgstr ""
-"Ces authentifiants sont erronés. Veuillez réessayer et\n"
-"utiliser un nouveau code d’authentification à deux facteurs."
+"Ces authentifiants sont erronés. Réessayez et utilisez\n"
+"un nouveau code d’authentification à deux facteurs."
 
 msgid "That didn't work. Please check everything and try again."
-msgstr "Cela n’a pas fonctionné. Veuillez tout vérifier et réessayer."
+msgstr "Cela n’a pas fonctionné. Vérifiez tout et réessayez."
 
 msgid "You must sign in to perform this action."
 msgstr "Vous devez vous connecter pour effectuer cette action."
 
 msgid "Your session expired. Please log in again."
-msgstr "Votre session a expiré. Veuillez vous reconnecter."
+msgstr "Votre session a expiré. Reconnectez-vous."
 
 msgid "Failed to update star."
 msgstr "Échec de mise à jour de l’étoile."
@@ -118,6 +118,12 @@ msgstr "Dernière actualisation : {}"
 msgid "Last Refresh: never"
 msgstr "Dernière actualisation : jamais"
 
+msgid "DELETE SOURCES"
+msgstr "SUPPRIMER LES SOURCES"
+
+msgid "Delete selected source accounts. Ctrl+click sources below to select multiple sources."
+msgstr "Supprimez les comptes source sélectionnés. Ctrl+clic sur les sources ci-dessous pour sélectionner plusieurs sources."
+
 msgid "{}"
 msgstr "{}"
 
@@ -128,7 +134,7 @@ msgid "SIGN IN"
 msgstr "CONNEXION"
 
 msgid "Nothing to see just yet!"
-msgstr "Rien à voir pour l’instant"
+msgstr "Rien à afficher pour l’instant"
 
 msgid "Source submissions will be listed to the left, once downloaded and decrypted."
 msgstr "Les envois des sources seront listés sur la gauche après téléchargement et déchiffrement."
@@ -147,6 +153,18 @@ msgstr "Visualiser ou récupérer des fichiers"
 
 msgid "Send a response"
 msgstr "Envoyer une réponse"
+
+msgid "Or, select multiple sources with Ctrl+click."
+msgstr "Ou sélectionnez plusieurs sources avec Ctrl+clic."
+
+msgid "Multiple Sources Selected"
+msgstr "Plusieurs sources ont été sélectionnées"
+
+msgid "Select or de-select sources using Ctrl+click, Shift+click, or by dragging the mouse."
+msgstr "Sélectionnez ou dessélectionnez les sources avec Ctrl+clic, Maj+clic ou en faisant glisser la souris."
+
+msgid "Use the top toolbar to delete multiple sources at once. You will be shown a confirmation dialog before anything is deleted."
+msgstr "Utilisez la barre d’outils supérieure pour supprimer plusieurs sources à la fois. Une boite de dialogue de confirmation s’affiche avant toute suppression."
 
 msgid "Deleting files and messages…"
 msgstr "Suppression des fichiers et des messages…"
@@ -290,20 +308,20 @@ msgstr "TERMINÉ"
 msgid "BACK"
 msgstr "RETOUR"
 
-msgid "No device detected"
-msgstr "Aucun périphérique n’a été détecté"
+msgid "No USB drives detected"
+msgstr "Aucune clé USB n’a été détectée"
 
-msgid "Too many USB devices detected; please insert one supported device."
-msgstr "Trop de périphériques USB ont été détectés ; insérez un seul périphérique pris en charge."
+msgid "Too many USB drives detected; please insert one supported drive."
+msgstr "Trop de clés USB ont été détectées ; insérez une seule clé prise en charge."
 
 msgid "Either the drive is not encrypted or there is something else wrong with it.<br />If this is a VeraCrypt drive, please unlock it from within the sd-devices VM, then try again."
 msgstr "Soit le lecteur n’est pas chiffré, soit il présente un autre problème.<br />S’il s’agit d’un lecteur VeraCrypt, déverrouillez-le dans la MV VM sd-devices, puis réessayez."
 
-msgid "The device is ready for export."
-msgstr "Le périphérique est prêt pour l’exportation."
+msgid "The drive is ready for export."
+msgstr "Cette clé prête pour l’exportation."
 
-msgid "The device is locked."
-msgstr "Le périphérique est verrouillé."
+msgid "The drive is locked."
+msgstr "La clé est verrouillée."
 
 msgid "The passphrase provided did not work. Please try again."
 msgstr "La phrase de passe est erronée. Réessayez."
@@ -314,8 +332,8 @@ msgstr "Erreur de montage du lecteur"
 msgid "Error during export"
 msgstr "Erreur d’exportation"
 
-msgid "Files were exported successfully, but the USB device could not be unmounted."
-msgstr "Les fichiers ont été exportés, mais le périphérique USB n’a pas pu être démonté."
+msgid "Files were exported successfully, but the USB drive could not be unmounted."
+msgstr "Les fichiers ont été exportés, mais la clé USB n’a pas pu être démontée."
 
 msgid "Files were exported successfully, but some temporary files remain on disk. Reboot to remove them."
 msgstr "Les fichiers ont été exportés, mais certains fichiers temporaires restent sur le disque. Redémarrez l’ordinateur afin de les supprimer."
@@ -323,8 +341,8 @@ msgstr "Les fichiers ont été exportés, mais certains fichiers temporaires res
 msgid "Export successful"
 msgstr "L’exportation est réussie"
 
-msgid "Error encountered with this device. See your administrator for help."
-msgstr "Une erreur est survenue avec ce périphérique. Consultez votre administrateur pour obtenir de l’aide."
+msgid "Error encountered with this drive. See your administrator for help."
+msgstr "Erreur est survenue avec cette clé. Consultez votre administrateur pour obtenir de l’aide."
 
 msgid "Files were moved or missing and could not be exported."
 msgstr "Des fichiers ont été déplacés ou manquaient et n’ont pas pu être exportés."
@@ -391,6 +409,12 @@ msgstr[1] "OUI, SUPPRIMER COMPLÈTEMENT LE COMPTE DE {number} SOURCES"
 msgid "Are you sure this is what you want?"
 msgstr "Confirmez-vous ?"
 
+msgid "{text} (wait {delay} sec)"
+msgstr "{text} (attendez {delay} s)"
+
+msgid "Notice: All sources have been selected!"
+msgstr "Avis : Toutes vos sources ont été sélectionnées !"
+
 msgid "Delete entire account for: {source_or_sources}?"
 msgstr "Supprimer complètement le compte de : {source_or_sources} ?"
 
@@ -406,8 +430,29 @@ msgstr "Votre organisme ne pourra plus lui envoyer de réponse."
 msgid "All files and messages from that source will also be destroyed."
 msgstr "Tous les fichiers et messages de cette source seront détruits."
 
+msgid "{sources} ... plus {count} additional sources"
+msgstr "{sources}… plus {count} autres sources"
+
 msgid "No sources have been selected."
 msgstr "Aucune source n’a été sélectionnée."
+
+#~ msgid "No device detected"
+#~ msgstr "Aucun périphérique n’a été détecté"
+
+#~ msgid "Too many USB devices detected; please insert one supported device."
+#~ msgstr "Trop de périphériques USB ont été détectés ; insérez un seul périphérique pris en charge."
+
+#~ msgid "The device is ready for export."
+#~ msgstr "Le périphérique est prêt pour l’exportation."
+
+#~ msgid "The device is locked."
+#~ msgstr "Le périphérique est verrouillé."
+
+#~ msgid "Files were exported successfully, but the USB device could not be unmounted."
+#~ msgstr "Les fichiers ont été exportés, mais le périphérique USB n’a pas pu être démonté."
+
+#~ msgid "Error encountered with this device. See your administrator for help."
+#~ msgstr "Une erreur est survenue avec ce périphérique. Consultez votre administrateur pour obtenir de l’aide."
 
 #~ msgid "SUBMIT"
 #~ msgstr "ENVOYER"
