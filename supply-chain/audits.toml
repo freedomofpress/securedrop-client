@@ -33,6 +33,11 @@ who = "Kunal Mehta <legoktm@debian.org>"
 criteria = "safe-to-run"
 version = "2.5.0"
 
+[[audits.litemap]]
+who = "Cory Francis Myers <cory@freedom.press>"
+criteria = "safe-to-run"
+delta = "0.7.3 -> 0.7.4"
+
 [[audits.mime]]
 who = "Kunal Mehta <legoktm@debian.org>"
 criteria = "safe-to-run"
@@ -125,6 +130,12 @@ user-id = 33035 # Taiki Endo (taiki-e)
 start = "2023-01-15"
 end = "2024-11-17"
 notes = "Rust Project member"
+
+[[trusted.displaydoc]]
+criteria = "safe-to-run"
+user-id = 1139 # Manish Goregaokar (Manishearth)
+start = "2024-06-20"
+end = "2025-12-10"
 
 [[trusted.flate2]]
 criteria = "safe-to-deploy"
@@ -259,6 +270,12 @@ start = "2022-01-15"
 end = "2024-11-17"
 notes = "see https://github.com/freedomofpress/securedrop-engineering/pull/87"
 
+[[trusted.icu_properties]]
+criteria = "safe-to-run"
+user-id = 1139 # Manish Goregaokar (Manishearth)
+start = "2022-01-31"
+end = "2025-12-10"
+
 [[trusted.indexmap]]
 criteria = "safe-to-deploy"
 user-id = 539 # Josh Stone (cuviper)
@@ -286,6 +303,12 @@ user-id = 6825 # Dan Gohman (sunfishcode)
 start = "2021-06-12"
 end = "2024-08-12"
 notes = "Rust Project member"
+
+[[trusted.litemap]]
+criteria = "safe-to-run"
+user-id = 1139 # Manish Goregaokar (Manishearth)
+start = "2021-02-23"
+end = "2025-12-10"
 
 [[trusted.mio]]
 criteria = "safe-to-deploy"
@@ -433,3 +456,27 @@ user-id = 1 # Alex Crichton (alexcrichton)
 start = "2019-03-04"
 end = "2024-08-12"
 notes = "Rust Project member"
+
+[[trusted.yoke]]
+criteria = "safe-to-run"
+user-id = 1139 # Manish Goregaokar (Manishearth)
+start = "2021-05-01"
+end = "2025-12-10"
+
+[[trusted.yoke-derive]]
+criteria = "safe-to-run"
+user-id = 1139 # Manish Goregaokar (Manishearth)
+start = "2021-07-02"
+end = "2025-12-10"
+
+[[trusted.zerofrom]]
+criteria = "safe-to-run"
+user-id = 1139 # Manish Goregaokar (Manishearth)
+start = "2022-04-06"
+end = "2025-12-10"
+
+[[trusted.zerofrom-derive]]
+criteria = "safe-to-run"
+user-id = 1139 # Manish Goregaokar (Manishearth)
+start = "2022-04-06"
+end = "2025-12-10"
