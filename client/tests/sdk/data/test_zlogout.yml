@@ -5,7 +5,7 @@ interactions:
       Accept:
       - application/json
       Authorization:
-      - Token Ilhha2ZHZWpVcFZQVmpKdWJOUzJYRG1YVUc4QXZWS0JiOGVNQXJycE5GUFUi.ZeDzXQ.10ODTj49yF7kxKbeMm9eaayR3Xo
+      - Token IlAzb1p1MjRubnlLOFo0SDVaajZPc2JPZWRRcjRYRUxLM3RrUmhsUEFWVTQi.Z1jewg.4VNFOk_5HSHXhgn319zzDh9JVyg
       Content-Type:
       - application/json
     method: POST
@@ -17,10 +17,10 @@ interactions:
       connection: close
       content-length: '48'
       content-type: application/json
-      date: Thu, 29 Feb 2024 21:13:15 GMT
+      date: Wed, 11 Dec 2024 00:37:41 GMT
       server: Werkzeug/2.2.3 Python/3.8.10
-      set-cookie: js=IlB5SjVMQjhnNHhmT0VlV2ZvZzF2Y1pQMFk4c1ZkNXdFUWdKTzg1ZkI0YW8i.ZeDzaw.pqKi4IBPjgmrQPTxfvG9jZkXiDk;
-        HttpOnly; Path=/
+      set-cookie: js=InkybGlOR1R4bnRWR1hUWFBfN0JPUTVRcFk3R0Nfb0VaWEpXR19NY3I4bGMi.Z1je1Q.juWYvy_fiZrth0cyaumt4PvQjwE;
+        HttpOnly; Path=/; SameSite=Strict
       vary: Cookie
     status: 200
 version: 1
