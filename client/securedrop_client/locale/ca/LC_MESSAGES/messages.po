@@ -118,6 +118,12 @@ msgstr "Última actualització: {}"
 msgid "Last Refresh: never"
 msgstr "Última actualització: mai"
 
+msgid "DELETE SOURCES"
+msgstr ""
+
+msgid "Delete selected source accounts. Ctrl+click sources below to select multiple sources."
+msgstr ""
+
 msgid "{}"
 msgstr "{}"
 
@@ -147,6 +153,18 @@ msgstr "Veure o obtenir fitxers"
 
 msgid "Send a response"
 msgstr "Enviar una resposta"
+
+msgid "Or, select multiple sources with Ctrl+click."
+msgstr ""
+
+msgid "Multiple Sources Selected"
+msgstr ""
+
+msgid "Select or de-select sources using Ctrl+click, Shift+click, or by dragging the mouse."
+msgstr ""
+
+msgid "Use the top toolbar to delete multiple sources at once. You will be shown a confirmation dialog before anything is deleted."
+msgstr ""
 
 msgid "Deleting files and messages…"
 msgstr "S'estan suprimint els fitxers i missatges…"
@@ -290,20 +308,20 @@ msgstr "FET"
 msgid "BACK"
 msgstr "TORNA"
 
-msgid "No device detected"
-msgstr "No s'ha detectat cap dispositiu"
+msgid "No USB drives detected"
+msgstr ""
 
-msgid "Too many USB devices detected; please insert one supported device."
-msgstr "S'han detectat massa dispositius USB; inseriu un dispositiu compatible."
+msgid "Too many USB drives detected; please insert one supported drive."
+msgstr ""
 
 msgid "Either the drive is not encrypted or there is something else wrong with it.<br />If this is a VeraCrypt drive, please unlock it from within the sd-devices VM, then try again."
 msgstr "O la unitat no està xifrada o hi ha alguna cosa més.<br />Si es tracta d'una unitat VeraCrypt, desbloquegeu-la des de la VM de dispositius SD i torneu-ho a provar."
 
-msgid "The device is ready for export."
-msgstr "El dispositiu està preparat per a l'exportació."
+msgid "The drive is ready for export."
+msgstr ""
 
-msgid "The device is locked."
-msgstr "El dispositiu està bloquejat."
+msgid "The drive is locked."
+msgstr ""
 
 msgid "The passphrase provided did not work. Please try again."
 msgstr "La contrasenya que he inserit no és vàlida. Torneu a provar."
@@ -314,8 +332,8 @@ msgstr "S'ha produït un error en muntar la unitat"
 msgid "Error during export"
 msgstr "S'ha produït un error en exportar"
 
-msgid "Files were exported successfully, but the USB device could not be unmounted."
-msgstr "Els fitxers s'han exportat correctament, però el dispositiu USB no s'ha pogut desmuntar."
+msgid "Files were exported successfully, but the USB drive could not be unmounted."
+msgstr ""
 
 msgid "Files were exported successfully, but some temporary files remain on disk. Reboot to remove them."
 msgstr "Els fitxers s'han exportat correctament, però alguns fitxers temporals romanen al disc. Reinicieu per eliminar-los."
@@ -323,8 +341,8 @@ msgstr "Els fitxers s'han exportat correctament, però alguns fitxers temporals 
 msgid "Export successful"
 msgstr "S'ha exportat correctament"
 
-msgid "Error encountered with this device. See your administrator for help."
-msgstr "S'ha trobat un error amb aquest dispositiu. Consulteu el vostre administrador per obtenir ajuda."
+msgid "Error encountered with this drive. See your administrator for help."
+msgstr ""
 
 msgid "Files were moved or missing and could not be exported."
 msgstr "Els fitxers s'han mogut o no s'han pogut exportar."
@@ -391,6 +409,12 @@ msgstr[1] "SÍ, SUPRIMEIX ELS {number} COMPTES SENCERS"
 msgid "Are you sure this is what you want?"
 msgstr "Segur que això és el que voleu?"
 
+msgid "{text} (wait {delay} sec)"
+msgstr ""
+
+msgid "Notice: All sources have been selected!"
+msgstr ""
+
 msgid "Delete entire account for: {source_or_sources}?"
 msgstr "Voleu suprimir el compte sencer per a: {source_or_sources}?"
 
@@ -406,8 +430,29 @@ msgstr "La vostra organització no podrà enviar respostes."
 msgid "All files and messages from that source will also be destroyed."
 msgstr "També es destruiran tots els missatges de la font."
 
+msgid "{sources} ... plus {count} additional sources"
+msgstr ""
+
 msgid "No sources have been selected."
 msgstr "No s'ha seleccionat cap font."
+
+#~ msgid "No device detected"
+#~ msgstr "No s'ha detectat cap dispositiu"
+
+#~ msgid "Too many USB devices detected; please insert one supported device."
+#~ msgstr "S'han detectat massa dispositius USB; inseriu un dispositiu compatible."
+
+#~ msgid "The device is ready for export."
+#~ msgstr "El dispositiu està preparat per a l'exportació."
+
+#~ msgid "The device is locked."
+#~ msgstr "El dispositiu està bloquejat."
+
+#~ msgid "Files were exported successfully, but the USB device could not be unmounted."
+#~ msgstr "Els fitxers s'han exportat correctament, però el dispositiu USB no s'ha pogut desmuntar."
+
+#~ msgid "Error encountered with this device. See your administrator for help."
+#~ msgstr "S'ha trobat un error amb aquest dispositiu. Consulteu el vostre administrador per obtenir ajuda."
 
 #~ msgid "SUBMIT"
 #~ msgstr "ENVIA"
