@@ -5,7 +5,7 @@ interactions:
       Accept:
       - application/json
       Authorization:
-      - Token Ilhha2ZHZWpVcFZQVmpKdWJOUzJYRG1YVUc4QXZWS0JiOGVNQXJycE5GUFUi.ZeDzXQ.10ODTj49yF7kxKbeMm9eaayR3Xo
+      - Token IlAzb1p1MjRubnlLOFo0SDVaajZPc2JPZWRRcjRYRUxLM3RrUmhsUEFWVTQi.Z1jewg.4VNFOk_5HSHXhgn319zzDh9JVyg
       Content-Type:
       - application/json
     method: GET
@@ -14,15 +14,15 @@ interactions:
     data:
       first_name: null
       is_admin: true
-      last_login: '2024-02-29T21:13:01.449555Z'
+      last_login: '2024-12-11T00:37:22.232626Z'
       last_name: null
       username: journalist
-      uuid: ed64b0fa-0565-4b12-9c48-6cfe27a73fd9
+      uuid: e7e047d5-aa5e-4afe-9a4f-c24e5f2cec8d
     headers:
       connection: close
       content-length: '196'
       content-type: application/json
-      date: Thu, 29 Feb 2024 21:13:07 GMT
+      date: Wed, 11 Dec 2024 00:37:29 GMT
       server: Werkzeug/2.2.3 Python/3.8.10
     status: 200
 version: 1
