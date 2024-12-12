@@ -15,6 +15,7 @@ python = "^3.11"
 ruff = "^0.6.4"
 safety = "*"
 shellcheck-py = "*"
+zizmor = "*"
 
 [tool.ruff]
 line-length = 100

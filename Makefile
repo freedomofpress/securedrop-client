@@ -27,7 +27,7 @@ lint-desktop: ## Lint .desktop files
 	find . -name *.desktop -type f -not -path '*/\.git/*' | xargs desktop-file-validate
 
 .PHONY: lint
-lint: check-ruff shellcheck ## Run linters and formatters
+lint: check-ruff shellcheck zizmor ## Run linters and formatters
 
 .PHONY: fix
 fix: ## Fix lint and formatting issues
@@ -53,6 +53,10 @@ safety:  ## Run safety dependency checks on build dependencies
 .PHONY: shellcheck
 shellcheck:  ## Lint shell scripts
 	@poetry run ./scripts/shellcheck.sh
+
+.PHONY: zizmor
+zizmor: ## Lint GitHub Actions workflows
+	@poetry run zizmor .
 
 .PHONY: rust-lint
 rust-lint: ## Lint Rust code

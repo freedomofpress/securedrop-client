@@ -25,8 +25,11 @@ jobs:
       - run: |
           apt-get update && apt-get install --yes git git-lfs sudo make
       - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
       - uses: actions/checkout@v4
         with:
+          persist-credentials: false
           repository: "freedomofpress/securedrop-builder"
           path: "securedrop-builder"
           lfs: true
@@ -54,8 +57,11 @@ jobs:
       artifact_id: ${{ steps.upload.outputs.artifact-id }}
     steps:
       - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
       - uses: actions/checkout@v4
         with:
+          persist-credentials: false
           repository: "freedomofpress/securedrop-builder"
           path: "securedrop-builder"
           lfs: true
@@ -81,8 +87,11 @@ jobs:
       artifact_id: ${{ steps.upload.outputs.artifact-id }}
     steps:
       - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
       - uses: actions/checkout@v4
         with:
+          persist-credentials: false
           repository: "freedomofpress/securedrop-builder"
           path: "securedrop-builder"
           lfs: true
@@ -145,6 +154,8 @@ jobs:
       - build-debs
     steps:
       - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
       - uses: actions/download-artifact@v4
         with:
           pattern: "build-${{ matrix.debian_version }}"
