@@ -27,8 +27,11 @@ jobs:
       artifact_id: ${{ steps.upload.outputs.artifact-id }}
     steps:
       - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
       - uses: actions/checkout@v4
         with:
+          persist-credentials: false
           repository: "freedomofpress/securedrop-builder"
           path: "securedrop-builder"
           lfs: true
@@ -58,12 +61,16 @@ jobs:
           pattern: "*${{ matrix.debian_version }}"
       - uses: actions/checkout@v4
         with:
+          # We need to store credentials here
+          persist-credentials: true
           repository: "freedomofpress/securedrop-apt-test"
           path: "securedrop-apt-test"
           lfs: true
           token: ${{ secrets.PUSH_TOKEN }}
       - uses: actions/checkout@v4
         with:
+          # We need to store credentials here
+          persist-credentials: true
           repository: "freedomofpress/build-logs"
           path: "build-logs"
           token: ${{ secrets.PUSH_TOKEN }}

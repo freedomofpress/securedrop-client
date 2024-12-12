@@ -33,7 +33,6 @@ jobs:
     steps:
       - run: |
           apt-get update && apt-get install --yes git make gnupg sudo python3-poetry
-      - uses: actions/checkout@v4
       - name: Setup user
         run: |
           # We want to run tests as a regular user, similar to Qubes VMs
@@ -42,6 +41,8 @@ jobs:
         run: apt-get install --yes build-essential curl libssl-dev pkg-config
         if: ${{ matrix.component == 'proxy' }}
       - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
       # Install Rust, keep in sync with rust-toolchain.toml
       - uses: dtolnay/rust-toolchain@1.81.0
         if: ${{ matrix.component == 'proxy' }}
@@ -74,6 +75,8 @@ jobs:
       - run: |
           apt-get update && apt-get install --yes git make gnupg sudo python3-poetry
       - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
       - name: Setup user
         run: |
           # We want to run tests as a regular user, similar to Qubes VMs
@@ -100,6 +103,8 @@ jobs:
       - run: |
           apt-get update && apt-get install --yes git make python3-poetry
       - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
       - name: Install dependencies
         run: |
           poetry -C client install

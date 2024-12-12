@@ -10,6 +10,8 @@ jobs:
     container: rust:1.81.0
     steps:
       - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
       - name: Check Rust dependencies
         run: |
           cargo install cargo-audit

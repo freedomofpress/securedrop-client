@@ -21,6 +21,8 @@ jobs:
       CARGO_VET_VERSION: 0.10.0
     steps:
     - uses: actions/checkout@v4
+      with:
+        persist-credentials: false
     - uses: actions/cache@v4
       id: cache-vet
       with:
@@ -28,6 +30,6 @@ jobs:
         key: cargo-vet-${{ env.CARGO_VET_VERSION }}
     - name: Install the cargo-vet binary, if needed
       if: ${{ steps.cache-vet.outputs.cache-hit != 'true' }}
-      run: cargo install --version ${{ env.CARGO_VET_VERSION }} cargo-vet
+      run: cargo install --version $CARGO_VET_VERSION cargo-vet
     - name: Invoke cargo-vet
       run: cargo vet --locked
