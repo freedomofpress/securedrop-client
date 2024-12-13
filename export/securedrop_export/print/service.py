@@ -1,12 +1,10 @@
 import logging
 import os
-import signal
 import subprocess
-import time
 from pathlib import Path
 
 from securedrop_export.directory import safe_mkdir
-from securedrop_export.exceptions import ExportException, TimeoutException, handler
+from securedrop_export.exceptions import ExportException
 
 from .status import Status
 
@@ -143,31 +141,62 @@ class Service:
         Check printer setup.
         Raise ExportException if supported setup is not found.
         """
+        legacy_printers = False
+        logger.info("Searching for printer")
+
+        printers = self._get_printers_ipp()
+        if not printers:
+            # look for legacy printers after no IPP ones are detected
+            printers = self._get_printers_legacy()
+            legacy_printers = True
+
+        if not printers:
+            logger.info("No supported printers connected")
+            raise ExportException(sdstatus=Status.ERROR_PRINTER_NOT_FOUND)
+
+        if len(printers) > 1:
+            logger.info("Too many printers connected")
+            raise ExportException(sdstatus=Status.ERROR_MULTIPLE_PRINTERS_FOUND)
+
+        printer_uri = printers[0]
+        if legacy_printers:  # IPP printers are auto-detected by the print dialog
+            self._setup_printer(printer_uri)
+
+    def _get_printers_legacy(self) -> list[str]:
+        logger.info("Searching for legacy printers")
         try:
-            logger.info("Searching for printer")
             output = subprocess.check_output(["sudo", "lpinfo", "-v"])
-            printers = [x for x in output.decode("utf-8").split() if "usb://" in x]
-            if not printers:
-                logger.info("No usb printers connected")
-                raise ExportException(sdstatus=Status.ERROR_PRINTER_NOT_FOUND)
-
-            supported_printers = [
-                p for p in printers if any(sub in p for sub in self.SUPPORTED_PRINTERS)
-            ]
-            if not supported_printers:
-                logger.info(f"{printers} are unsupported printers")
-                raise ExportException(sdstatus=Status.ERROR_PRINTER_NOT_SUPPORTED)
-
-            if len(supported_printers) > 1:
-                logger.info("Too many usb printers connected")
-                raise ExportException(sdstatus=Status.ERROR_MULTIPLE_PRINTERS_FOUND)
-
-            printer_uri = printers[0]
-            printer_ppd = self._install_printer_ppd(printer_uri)
-            self._setup_printer(printer_uri, printer_ppd)
         except subprocess.CalledProcessError as e:
             logger.error(e)
             raise ExportException(sdstatus=Status.ERROR_UNKNOWN)
+
+        discovered_printers = [x for x in output.decode("utf-8").split() if "usb://" in x]
+
+        supported_printers = [
+            p for p in discovered_printers if any(sub in p for sub in self.SUPPORTED_PRINTERS)
+        ]
+        if not supported_printers:
+            logger.info(f"{discovered_printers} are unsupported printers")
+            raise ExportException(sdstatus=Status.ERROR_PRINTER_NOT_SUPPORTED)
+
+        return supported_printers
+
+    def _get_printers_ipp(self) -> list[str]:
+        logger.info("Searching for IPP printers (driverless)")
+        try:
+            discovered_printers = subprocess.check_output(
+                ["ippfind"], universal_newlines=True
+            ).split()
+        except subprocess.CalledProcessError as e:
+            logger.error(e)
+            raise ExportException(sdstatus=Status.ERROR_UNKNOWN)
+
+        if discovered_printers:
+            logger.debug(f"Found IPP printers: {', '.join(discovered_printers)}")
+        else:
+            logger.debug("No IPP were found")
+
+        return discovered_printers
 
     def _get_printer_uri(self) -> str:
         """
@@ -202,6 +231,9 @@ class Service:
         return printer_uri
 
     def _install_printer_ppd(self, uri):
+        """
+        Discovery and installation of PPD driver (for legacy printers)
+        """
         if not any(x in uri for x in self.SUPPORTED_PRINTERS):
             logger.error(f"Cannot install printer ppd for unsupported printer: {uri}")
             raise ExportException(sdstatus=Status.ERROR_PRINTER_NOT_SUPPORTED)
@@ -230,8 +262,9 @@ class Service:
 
         return printer_ppd
 
-    def _setup_printer(self, printer_uri, printer_ppd):
+    def _setup_printer(self, printer_uri):
         # Add the printer using lpadmin
+        printer_ppd = self._install_printer_ppd(printer_uri)
         logger.info(f"Setting up printer {self.printer_name}")
         self.check_output_and_stderr(
             command=[
