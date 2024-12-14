@@ -2,8 +2,7 @@
 all: help
 
 # We prefer to use python3.11 if it's available, especially on arm64 based Macs,
-# which would not be able to install the virtual environment without an x86_64
-# Python 3.11, but we're also OK with just python3 if that's all we've got
+# but we're also OK with just python3 if that's all we've got
 PYTHON := $(if $(shell bash -c "command -v python3.11"), python3.11, python3)
 
 SEMGREP_FLAGS := --exclude "tests/" --error --strict --verbose
