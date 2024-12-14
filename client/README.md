@@ -188,14 +188,7 @@ socat TCP4-LISTEN:8081,fork,reuseaddr TCP4:A.B.C.D:8081
 
 #### Set up the SecureDrop Client
 1. Open a new terminal window.
-2. Install Homebrew
-  a. If you use an Intel based machine, follow the instructions at https://brew.sh/
-  b. If you use an Apple Silicon based machine (M1 or M2 Macs):
-    1. (Informational) If you already have a native `arm64` version of Homebrew, you will wind up with a separate Homebrew installation for each architecture. While they do not conflict, combining them in your `PATH` permanently may cause confusion about which brews are installed where. You may want to modify your `PATH` temporarily to perform this installation. The environment you create in this session will continue to work in subsequent sessions.
-    2. Run `/usr/sbin/softwareupdate --install-rosetta` to allow you to run `x86_64` binaries
-    3. Enter a shell in `x86_64` mode with `arch -x86_64 bash`
-    4. Install Homebrew via the instructions at https://brew.sh/
-    5. Install the dependencies below in the same `x86_64` shell session
+2. Install [Homebrew](https://brew.sh/)
 3. Install dependencies via Homebrew: `brew install python@3.11 gnupg oath-toolkit`
 4. clone the SecureDrop Client repo and install its dependencies
    ```
