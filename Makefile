@@ -50,6 +50,16 @@ safety:  ## Run safety dependency checks on build dependencies
 		--ignore 71591 \
  		-r
 
+.PHONY: sbom
+sbom: ## Generate SBOMs
+	@poetry run python scripts/generate-sbom.py
+
+.PHONY: check-sbom
+check-sbom: ## Check that the SBOMs are up to date with dependencies
+	@make sbom
+	@git diff --exit-code sbom || { echo "SBOMs are out of date. Please run \"make sbom\" and commit the changes."; exit 1; }
+
+
 .PHONY: shellcheck
 shellcheck:  ## Lint shell scripts
 	@poetry run ./scripts/shellcheck.sh
