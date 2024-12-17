@@ -7,6 +7,7 @@ from pathlib import Path
 
 from securedrop_export.directory import safe_mkdir
 from securedrop_export.exceptions import ExportException, TimeoutException, handler
+from securedrop_export.print.print_dialog import open_print_dialog
 
 from .status import Status
 
@@ -421,12 +422,9 @@ class Service:
             raise ExportException(sdstatus=Status.ERROR_PRINT)
 
         logger.info(f"Sending file to printer {self.printer_name}")
+
         try:
-            # We can switch to using libreoffice --pt $printer_cups_name
-            # here, and either print directly (headless) or use the GUI
-            subprocess.check_call(
-                ["xpp", "-P", self.printer_name, file_to_print],
-            )
+            open_print_dialog()
         except subprocess.CalledProcessError as e:
             raise ExportException(sdstatus=Status.ERROR_PRINT, sderror=e.output)
 

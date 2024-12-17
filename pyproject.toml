@@ -10,6 +10,7 @@ license = "AGPLv3+"
 
 [tool.poetry.dependencies]
 python = "^3.11"
+pygobject = "^3.50.0"
 
 [tool.poetry.group.dev.dependencies]
 ruff = "^0.6.4"
