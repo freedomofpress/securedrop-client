@@ -1,0 +1,342 @@
+{
+  "components": [
+    {
+      "bom-ref": "requirements-L1",
+      "description": "requirements line 1: alembic==1.1.0 --hash=sha256:de24f96f0ee198d4ebde1360e81d2590fa46ca3971f73e25a18b516917e8e178",
+      "externalReferences": [
+        {
+          "comment": "implicit dist url",
+          "hashes": [
+            {
+              "alg": "SHA-256",
+              "content": "de24f96f0ee198d4ebde1360e81d2590fa46ca3971f73e25a18b516917e8e178"
+            }
+          ],
+          "type": "distribution",
+          "url": "https://pypi.org/simple/alembic/"
+        }
+      ],
+      "name": "alembic",
+      "purl": "pkg:pypi/alembic@1.1.0",
+      "type": "library",
+      "version": "1.1.0"
+    },
+    {
+      "bom-ref": "requirements-L2",
+      "description": "requirements line 2: arrow==0.12.1 --hash=sha256:1ebe2f35dc36d7150c00fa310d3a7e71616b48f2b0b522ad76b518fb5668174c",
+      "externalReferences": [
+        {
+          "comment": "implicit dist url",
+          "hashes": [
+            {
+              "alg": "SHA-256",
+              "content": "1ebe2f35dc36d7150c00fa310d3a7e71616b48f2b0b522ad76b518fb5668174c"
+            }
+          ],
+          "type": "distribution",
+          "url": "https://pypi.org/simple/arrow/"
+        }
+      ],
+      "name": "arrow",
+      "purl": "pkg:pypi/arrow@0.12.1",
+      "type": "library",
+      "version": "0.12.1"
+    },
+    {
+      "bom-ref": "requirements-L3",
+      "description": "requirements line 3: jinja2==3.1.3 --hash=sha256:a987f55fbbaebab55d75cf41ae415808855a40cf9d72ebf2dbe2aa00fd9243eb",
+      "externalReferences": [
+        {
+          "comment": "implicit dist url",
+          "hashes": [
+            {
+              "alg": "SHA-256",
+              "content": "a987f55fbbaebab55d75cf41ae415808855a40cf9d72ebf2dbe2aa00fd9243eb"
+            }
+          ],
+          "type": "distribution",
+          "url": "https://pypi.org/simple/jinja2/"
+        }
+      ],
+      "name": "jinja2",
+      "purl": "pkg:pypi/jinja2@3.1.3",
+      "type": "library",
+      "version": "3.1.3"
+    },
+    {
+      "bom-ref": "requirements-L4",
+      "description": "requirements line 4: mako==1.2.2 --hash=sha256:a891058241a8c119dfdb8c1e884d97910365bff24a364be850dbd0eb0248d0fa",
+      "externalReferences": [
+        {
+          "comment": "implicit dist url",
+          "hashes": [
+            {
+              "alg": "SHA-256",
+              "content": "a891058241a8c119dfdb8c1e884d97910365bff24a364be850dbd0eb0248d0fa"
+            }
+          ],
+          "type": "distribution",
+          "url": "https://pypi.org/simple/mako/"
+        }
+      ],
+      "name": "mako",
+      "purl": "pkg:pypi/mako@1.2.2",
+      "type": "library",
+      "version": "1.2.2"
+    },
+    {
+      "bom-ref": "requirements-L5",
+      "description": "requirements line 5: markupsafe==2.0.1 --hash=sha256:465ea64f8d1af7349736132ab0f5521483551ae8814c0e655fca81f9b7c3f0ec --hash=sha256:9a055a175f351a559937fb80ebb2885d005283577a016c0139817e261fb759eb",
+      "externalReferences": [
+        {
+          "comment": "implicit dist url",
+          "hashes": [
+            {
+              "alg": "SHA-256",
+              "content": "465ea64f8d1af7349736132ab0f5521483551ae8814c0e655fca81f9b7c3f0ec"
+            },
+            {
+              "alg": "SHA-256",
+              "content": "9a055a175f351a559937fb80ebb2885d005283577a016c0139817e261fb759eb"
+            }
+          ],
+          "type": "distribution",
+          "url": "https://pypi.org/simple/markupsafe/"
+        }
+      ],
+      "name": "markupsafe",
+      "purl": "pkg:pypi/markupsafe@2.0.1",
+      "type": "library",
+      "version": "2.0.1"
+    },
+    {
+      "bom-ref": "requirements-L6",
+      "description": "requirements line 6: python-dateutil==2.7.5 --hash=sha256:aed9ff3c865f8f2297956e9a41e5607a4de8eb43babcd161418b89ee8c59a709",
+      "externalReferences": [
+        {
+          "comment": "implicit dist url",
+          "hashes": [
+            {
+              "alg": "SHA-256",
+              "content": "aed9ff3c865f8f2297956e9a41e5607a4de8eb43babcd161418b89ee8c59a709"
+            }
+          ],
+          "type": "distribution",
+          "url": "https://pypi.org/simple/python-dateutil/"
+        }
+      ],
+      "name": "python-dateutil",
+      "purl": "pkg:pypi/python-dateutil@2.7.5",
+      "type": "library",
+      "version": "2.7.5"
+    },
+    {
+      "bom-ref": "requirements-L7",
+      "description": "requirements line 7: python-editor==1.0.3 --hash=sha256:f6d300a91ca21d60e31483ee69fbe059717d08db7ce2c35c878258b465e3942e",
+      "externalReferences": [
+        {
+          "comment": "implicit dist url",
+          "hashes": [
+            {
+              "alg": "SHA-256",
+              "content": "f6d300a91ca21d60e31483ee69fbe059717d08db7ce2c35c878258b465e3942e"
+            }
+          ],
+          "type": "distribution",
+          "url": "https://pypi.org/simple/python-editor/"
+        }
+      ],
+      "name": "python-editor",
+      "purl": "pkg:pypi/python-editor@1.0.3",
+      "type": "library",
+      "version": "1.0.3"
+    },
+    {
+      "bom-ref": "requirements-L8",
+      "description": "requirements line 8: six==1.11.0 --hash=sha256:4a5d13007949ba6a36f88c2fa0d9cd1db8bda09f400f7df80f0a8a4b60f74e1f",
+      "externalReferences": [
+        {
+          "comment": "implicit dist url",
+          "hashes": [
+            {
+              "alg": "SHA-256",
+              "content": "4a5d13007949ba6a36f88c2fa0d9cd1db8bda09f400f7df80f0a8a4b60f74e1f"
+            }
+          ],
+          "type": "distribution",
+          "url": "https://pypi.org/simple/six/"
+        }
+      ],
+      "name": "six",
+      "purl": "pkg:pypi/six@1.11.0",
+      "type": "library",
+      "version": "1.11.0"
+    },
+    {
+      "bom-ref": "requirements-L9",
+      "description": "requirements line 9: sqlalchemy==1.3.3 --hash=sha256:0ceffb436c5d57029db37d3902e277fd65e0ff826151ef312f536271b788d4e7 --hash=sha256:86ed1e4985a9fd4f3c784da1fcefb89f4435c1c70815f43e5741c0c9f3c79be3",
+      "externalReferences": [
+        {
+          "comment": "implicit dist url",
+          "hashes": [
+            {
+              "alg": "SHA-256",
+              "content": "0ceffb436c5d57029db37d3902e277fd65e0ff826151ef312f536271b788d4e7"
+            },
+            {
+              "alg": "SHA-256",
+              "content": "86ed1e4985a9fd4f3c784da1fcefb89f4435c1c70815f43e5741c0c9f3c79be3"
+            }
+          ],
+          "type": "distribution",
+          "url": "https://pypi.org/simple/sqlalchemy/"
+        }
+      ],
+      "name": "sqlalchemy",
+      "purl": "pkg:pypi/sqlalchemy@1.3.3",
+      "type": "library",
+      "version": "1.3.3"
+    }
+  ],
+  "dependencies": [
+    {
+      "ref": "requirements-L1"
+    },
+    {
+      "ref": "requirements-L2"
+    },
+    {
+      "ref": "requirements-L3"
+    },
+    {
+      "ref": "requirements-L4"
+    },
+    {
+      "ref": "requirements-L5"
+    },
+    {
+      "ref": "requirements-L6"
+    },
+    {
+      "ref": "requirements-L7"
+    },
+    {
+      "ref": "requirements-L8"
+    },
+    {
+      "ref": "requirements-L9"
+    }
+  ],
+  "metadata": {
+    "properties": [
+      {
+        "name": "cdx:reproducible",
+        "value": "true"
+      }
+    ],
+    "tools": {
+      "components": [
+        {
+          "description": "CycloneDX Software Bill of Materials (SBOM) generator for Python projects and environments",
+          "externalReferences": [
+            {
+              "type": "build-system",
+              "url": "https://github.com/CycloneDX/cyclonedx-python/actions"
+            },
+            {
+              "type": "distribution",
+              "url": "https://pypi.org/project/cyclonedx-bom/"
+            },
+            {
+              "type": "documentation",
+              "url": "https://cyclonedx-bom-tool.readthedocs.io/"
+            },
+            {
+              "type": "issue-tracker",
+              "url": "https://github.com/CycloneDX/cyclonedx-python/issues"
+            },
+            {
+              "type": "license",
+              "url": "https://github.com/CycloneDX/cyclonedx-python/blob/main/LICENSE"
+            },
+            {
+              "type": "release-notes",
+              "url": "https://github.com/CycloneDX/cyclonedx-python/blob/main/CHANGELOG.md"
+            },
+            {
+              "type": "vcs",
+              "url": "https://github.com/CycloneDX/cyclonedx-python/"
+            },
+            {
+              "type": "website",
+              "url": "https://github.com/CycloneDX/cyclonedx-python/#readme"
+            }
+          ],
+          "group": "CycloneDX",
+          "licenses": [
+            {
+              "license": {
+                "id": "Apache-2.0"
+              }
+            }
+          ],
+          "name": "cyclonedx-py",
+          "type": "application",
+          "version": "5.1.1"
+        },
+        {
+          "description": "Python library for CycloneDX",
+          "externalReferences": [
+            {
+              "type": "build-system",
+              "url": "https://github.com/CycloneDX/cyclonedx-python-lib/actions"
+            },
+            {
+              "type": "distribution",
+              "url": "https://pypi.org/project/cyclonedx-python-lib/"
+            },
+            {
+              "type": "documentation",
+              "url": "https://cyclonedx-python-library.readthedocs.io/"
+            },
+            {
+              "type": "issue-tracker",
+              "url": "https://github.com/CycloneDX/cyclonedx-python-lib/issues"
+            },
+            {
+              "type": "license",
+              "url": "https://github.com/CycloneDX/cyclonedx-python-lib/blob/main/LICENSE"
+            },
+            {
+              "type": "release-notes",
+              "url": "https://github.com/CycloneDX/cyclonedx-python-lib/blob/main/CHANGELOG.md"
+            },
+            {
+              "type": "vcs",
+              "url": "https://github.com/CycloneDX/cyclonedx-python-lib"
+            },
+            {
+              "type": "website",
+              "url": "https://github.com/CycloneDX/cyclonedx-python-lib/#readme"
+            }
+          ],
+          "group": "CycloneDX",
+          "licenses": [
+            {
+              "license": {
+                "id": "Apache-2.0"
+              }
+            }
+          ],
+          "name": "cyclonedx-python-lib",
+          "type": "library",
+          "version": "8.5.0"
+        }
+      ]
+    }
+  },
+  "version": 1,
+  "$schema": "http://cyclonedx.org/schema/bom-1.5.schema.json",
+  "bomFormat": "CycloneDX",
+  "specVersion": "1.5"
+}
