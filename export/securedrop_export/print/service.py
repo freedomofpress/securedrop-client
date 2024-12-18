@@ -7,6 +7,7 @@ from pathlib import Path
 
 from securedrop_export.directory import safe_mkdir
 from securedrop_export.exceptions import ExportException, TimeoutException, handler
+from securedrop_export.print.print_dialog import open_print_dialog
 
 from .status import Status
 
@@ -143,31 +144,58 @@ class Service:
         Check printer setup.
         Raise ExportException if supported setup is not found.
         """
+        legacy_printers=False
         try:
             logger.info("Searching for printer")
-            output = subprocess.check_output(["sudo", "lpinfo", "-v"])
-            printers = [x for x in output.decode("utf-8").split() if "usb://" in x]
+
+            printers = self._get_printers_ipp()
             if not printers:
-                logger.info("No usb printers connected")
+                # look for legacy printers after no IPP ones are detected
+                printers = self._get_printers_legacy()
+                legacy_printers=True
+
+            if not printers:
+                logger.info("No supported printers connected")
                 raise ExportException(sdstatus=Status.ERROR_PRINTER_NOT_FOUND)
 
-            supported_printers = [
-                p for p in printers if any(sub in p for sub in self.SUPPORTED_PRINTERS)
-            ]
-            if not supported_printers:
-                logger.info(f"{printers} are unsupported printers")
-                raise ExportException(sdstatus=Status.ERROR_PRINTER_NOT_SUPPORTED)
-
-            if len(supported_printers) > 1:
-                logger.info("Too many usb printers connected")
+            if len(printers) > 1:
+                logger.info("Too many printers connected")
                 raise ExportException(sdstatus=Status.ERROR_MULTIPLE_PRINTERS_FOUND)
 
             printer_uri = printers[0]
-            printer_ppd = self._install_printer_ppd(printer_uri)
-            self._setup_printer(printer_uri, printer_ppd)
+            if legacy_printers:  # IPP printers are auto-detected by the print dialog
+                self._setup_printer(printer_uri)
         except subprocess.CalledProcessError as e:
             logger.error(e)
             raise ExportException(sdstatus=Status.ERROR_UNKNOWN)
+
+    def _get_printers_legacy(self) -> list[str]:
+        logger.info("Searching for legacy printers")
+        output = subprocess.check_output(["sudo", "lpinfo", "-v"])
+        discovered_printers = [x for x in output.decode("utf-8").split() if "usb://" in x]
+
+        supported_printers = [
+            p for p in discovered_printers if any(sub in p for sub in self.SUPPORTED_PRINTERS)
+        ]
+        if not supported_printers:
+            logger.info(f"{discovered_printers} are unsupported printers")
+            raise ExportException(sdstatus=Status.ERROR_PRINTER_NOT_SUPPORTED)
+
+        return supported_printers
+
+    def _get_printers_ipp(self) -> list[str]:
+        logger.info("Searching for IPP printers (driverless)")
+        discovered_printers = subprocess.check_output(
+            ["ippfind"],
+            universal_newlines=True
+        ).split()
+
+        if discovered_printers:
+            logger.debug(f"Found IPP printers: {', '.join(discovered_printers)}")
+        else:
+            logger.debug(f"No IPP were found")
+
+        return discovered_printers
 
     def _get_printer_uri(self) -> str:
         """
@@ -202,6 +230,9 @@ class Service:
         return printer_uri
 
     def _install_printer_ppd(self, uri):
+        """
+        Discovery and installation of PPD driver (for legacy printers)
+        """
         if not any(x in uri for x in self.SUPPORTED_PRINTERS):
             logger.error(f"Cannot install printer ppd for unsupported printer: {uri}")
             raise ExportException(sdstatus=Status.ERROR_PRINTER_NOT_SUPPORTED)
@@ -391,12 +422,9 @@ class Service:
             raise ExportException(sdstatus=Status.ERROR_PRINT)
 
         logger.info(f"Sending file to printer {self.printer_name}")
+
         try:
-            # We can switch to using libreoffice --pt $printer_cups_name
-            # here, and either print directly (headless) or use the GUI
-            subprocess.check_call(
-                ["xpp", "-P", self.printer_name, file_to_print],
-            )
+            open_print_dialog()
         except subprocess.CalledProcessError as e:
             raise ExportException(sdstatus=Status.ERROR_PRINT, sderror=e.output)
 
