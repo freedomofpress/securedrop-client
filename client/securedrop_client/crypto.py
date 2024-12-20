@@ -100,7 +100,7 @@ class GpgHelper:
         """
         original_filename = Path(Path(filepath).stem).stem  # Remove one or two suffixes
 
-        err = tempfile.NamedTemporaryFile(suffix=".message-error", delete=False)
+        err = tempfile.NamedTemporaryFile(suffix=".message-error", delete=False)  # noqa: SIM115
         with tempfile.NamedTemporaryFile(suffix=".message") as out:
             cmd = self._gpg_cmd_base()
             cmd.extend(["--decrypt", filepath])

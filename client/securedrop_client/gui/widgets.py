@@ -1237,9 +1237,9 @@ class SourceList(QListWidget):
             source_widget.reload()
 
         # Add widgets for new sources
-        for uuid in sources_to_add:
+        for uuid, source in sources_to_add.items():
             source_widget = SourceWidget(
-                self.controller, sources_to_add[uuid], self.source_selected, self.adjust_preview
+                self.controller, source, self.source_selected, self.adjust_preview
             )
             source_item = SourceListWidgetItem(self)
             source_item.setSizeHint(source_widget.sizeHint())
