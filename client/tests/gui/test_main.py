@@ -141,7 +141,7 @@ def test_show_main_window_without_username(mocker, homedir, session_maker):
 
     w.show.assert_called_once_with()
     w.showMaximized.assert_not_called()
-    w.set_logged_in_as.called is False
+    assert w.set_logged_in_as.called is False
 
     controller.qubes = False
     w.setup(controller)
@@ -153,7 +153,7 @@ def test_show_main_window_without_username(mocker, homedir, session_maker):
 
     w.show.assert_not_called()
     w.showMaximized.assert_called_once_with()
-    w.set_logged_in_as.called is False
+    assert w.set_logged_in_as.called is False
 
 
 def test_show_main_window_without_username_when_already_showing(mocker, homedir, session_maker):
@@ -169,7 +169,7 @@ def test_show_main_window_without_username_when_already_showing(mocker, homedir,
 
     w.show.assert_not_called()
     w.showMaximized.assert_not_called()
-    w.set_logged_in_as.called is False
+    assert w.set_logged_in_as.called is False
 
     controller.qubes = False
     w.setup(controller)
@@ -181,7 +181,7 @@ def test_show_main_window_without_username_when_already_showing(mocker, homedir,
 
     w.show.assert_not_called()
     w.showMaximized.assert_not_called()
-    w.set_logged_in_as.called is False
+    assert w.set_logged_in_as.called is False
 
 
 def test_show_login(mocker):

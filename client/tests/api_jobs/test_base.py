@@ -182,7 +182,7 @@ def test_ApiJob_order_number_unset(mocker):
     api_job_2 = api_job_cls()
 
     with pytest.raises(ValueError):
-        api_job_1 < api_job_2
+        assert api_job_1 < api_job_2
 
 
 def test_SingleObjectApiJob_comparison_obj_without_uuid_attr(mocker):

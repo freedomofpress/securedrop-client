@@ -154,11 +154,13 @@ class SecureQLabel(QLabel):
         self,
         text: str = "",
         parent: QWidget | None = None,
-        flags: Qt.WindowFlags | Qt.WindowType = Qt.WindowFlags(),
+        flags: Qt.WindowFlags | Qt.WindowType | None = None,
         wordwrap: bool = True,
         max_length: int = 0,
         with_tooltip: bool = False,
     ):
+        if flags is None:
+            flags = Qt.WindowFlags()
         super().__init__(parent, flags)
         self.wordwrap = wordwrap
         self.max_length = max_length

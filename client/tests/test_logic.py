@@ -596,7 +596,7 @@ def test_Controller_on_sync_success_username_change(homedir, session, config, mo
 
     co.on_sync_success()
 
-    co.authenticated_user.username == "baz"
+    assert co.authenticated_user.username == "baz"
     assert len(update_authenticated_user_emissions) == 1
     assert update_authenticated_user_emissions[0] == [co.authenticated_user]
 
@@ -618,7 +618,7 @@ def test_Controller_on_sync_success_firstname_change(homedir, session, config, m
 
     co.on_sync_success()
 
-    co.authenticated_user.firstname == "baz"
+    assert co.authenticated_user.firstname == "baz"
     assert len(update_authenticated_user_emissions) == 1
     assert update_authenticated_user_emissions[0] == [co.authenticated_user]
 
@@ -640,7 +640,7 @@ def test_Controller_on_sync_success_lastname_change(homedir, session, config, mo
 
     co.on_sync_success()
 
-    co.authenticated_user.lastname == "baz"
+    assert co.authenticated_user.lastname == "baz"
     assert len(update_authenticated_user_emissions) == 1
     assert update_authenticated_user_emissions[0] == [co.authenticated_user]
 
@@ -1134,7 +1134,7 @@ def test_create_client_dir_permissions(tmpdir, mocker, session_maker):
             os.chmod(sdc_home, case["home_perms"])
 
         def func() -> None:
-            Controller("http://localhost", mock_gui, session_maker, sdc_home, None)
+            Controller("http://localhost", mock_gui, session_maker, sdc_home, None)  # noqa: B023
 
         if case["should_pass"]:
             func()
@@ -1391,9 +1391,10 @@ def test_Controller_on_file_downloaded_checksum_failure(homedir, config, mocker,
 
     # Job should get resubmitted and we should log this is happening
     assert co._submit_download_job.call_count == 1
-    warning_logger.call_args_list[0][0][
-        0
-    ] == f"Failure due to checksum mismatch, retrying {file_.uuid}"
+    assert (
+        warning_logger.call_args_list[0][0][0]
+        == f"Failure due to checksum mismatch, retrying {file_.uuid}"
+    )
 
     # No status will be set if it's a file corruption issue, the file just gets
     # re-downloaded.
@@ -1425,7 +1426,7 @@ def test_Controller_on_file_decryption_failure(homedir, config, mocker, session,
     mock_update_error_status.assert_called_once_with("The file download failed. Please try again.")
 
     assert co._submit_download_job.call_count == 0
-    error_logger.call_args_list[0][0][0] == f"Failed to decrypt {file_.uuid}"
+    assert error_logger.call_args_list[0][0][0] == f"Failed to decrypt {file_.uuid}"
 
     mock_set_status.assert_not_called()
 
@@ -1660,9 +1661,10 @@ def test_Controller_on_reply_downloaded_checksum_failure(mocker, homedir, sessio
 
     # Job should get resubmitted and we should log this is happening
     assert co._submit_download_job.call_count == 1
-    warning_logger.call_args_list[0][0][
-        0
-    ] == f"Failure due to checksum mismatch, retrying {reply.uuid}"
+    assert (
+        warning_logger.call_args_list[0][0][0]
+        == f"Failure due to checksum mismatch, retrying {reply.uuid}"
+    )
 
 
 def test_Controller_on_reply_downloaded_decryption_failure(mocker, homedir, session_maker):
@@ -1773,7 +1775,7 @@ def test_Controller_download_new_messages_skips_recent_failures(
     co.download_new_messages()
 
     assert len(add_job_emissions) == 0
-    info_logger.call_args_list[0][0][0] == (
+    assert info_logger.call_args_list[0][0][0] == (
         f"Download of message {message.uuid} failed since client start; not retrying."
     )
 
@@ -1807,7 +1809,7 @@ def test_Controller_download_new_replies_skips_recent_failures(
     co.download_new_replies()
 
     assert len(add_job_emissions) == 0
-    info_logger.call_args_list[0][0][0] == (
+    assert info_logger.call_args_list[0][0][0] == (
         f"Download of reply {reply.uuid} failed since client start; not retrying."
     )
 
