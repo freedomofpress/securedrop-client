@@ -312,8 +312,8 @@ def test_update_local_storage_sanitizes_remote_data(mocker, homedir):
     )
 
     sanitize_sources.assert_called_once_with([remote_source])
-    sanitize_submissions_or_replies.call_args_list[0][0][0] == [remote_submissions]
-    sanitize_submissions_or_replies.call_args_list[1][0][0] == [remote_reply]
+    assert sanitize_submissions_or_replies.call_args_list[0][0][0] == remote_submissions
+    assert sanitize_submissions_or_replies.call_args_list[1][0][0] == [remote_reply]
 
 
 def test_sync_delete_race(homedir, mocker, session_maker, session):
@@ -1677,7 +1677,7 @@ def test_delete_single_submission_or_reply_race_guard(homedir, mocker):
     mock_remove = mocker.patch("os.remove", side_effect=FileNotFoundError)
     delete_single_submission_or_reply_on_disk(test_obj, homedir)
 
-    mock_remove.call_count == 1
+    assert mock_remove.call_count == 1
 
 
 def test_delete_single_submission_or_reply_single_file(homedir, mocker):

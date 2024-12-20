@@ -203,8 +203,7 @@ def test_RunnableQueue_duplicate_jobs(mocker):
     queue.add_job(dl_job)
     assert len(queue.queue.queue) == 1
 
-    log_msg = f"Duplicate job {dl_job}, skipping"
-    debug_logger.call_args[1] == log_msg
+    assert debug_logger.call_args_list[1][0] == (f"Duplicate job {dl_job}, skipping",)
 
     # Now add a _different_ job with the same arguments (same uuid).
     queue.add_job(msg_dl_job)

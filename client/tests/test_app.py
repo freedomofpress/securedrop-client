@@ -205,7 +205,7 @@ def test_create_app_dir_permissions(tmpdir, mocker):
         mocker.patch("securedrop_client.app.make_session_maker", return_value=mock_session_maker)
 
         def func():
-            start_app(mock_args, mock_qt_args)
+            start_app(mock_args, mock_qt_args)  # noqa: B023
 
         func()
 

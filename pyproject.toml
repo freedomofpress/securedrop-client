@@ -23,6 +23,8 @@ extend-include = ["log/securedrop-{log,log-saver,redis-log}"]
 
 [tool.ruff.lint]
 select = [
+    # flake8-bugbear
+    "B",
     # pycodestyle errors
     "E",
     # pyflakes
@@ -53,6 +55,10 @@ select = [
     "RUF100",
 ]
 ignore = [
+    # `pytest.raises(Exception)` is evil yes, sorry
+    "B017",
+    # we have too many cases of "raise Exception from err"
+    "B904",
     # code complexity checks that we fail
     "PLR0912", "PLR0913", "PLR0915",
     # magic-value-comparison, too many violations for now

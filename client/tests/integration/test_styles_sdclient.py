@@ -72,9 +72,9 @@ def test_class_name_matches_css_object_name(mocker, main_window):
         main_view.MULTI_SELECTED_INDEX,
     ]:
         view = main_view.view_layout.widget(index)
-        view.objectName() == "EmptyConversationView"
-        "EmptyConversationView" in view.objectName()
-        "EmptyConversationView" in view.objectName()
+        assert view.objectName() == "EmptyConversationView"
+        assert "EmptyConversationView" in view.objectName()
+        assert "EmptyConversationView" in view.objectName()
 
     source_list = main_view.source_list
 
@@ -272,20 +272,20 @@ def test_styles_for_main_view(mocker, main_window):
     assert no_source_selected_spacer1.maximumSize().height() == 35
     bullet1_bullet = no_source_selected.layout().itemAt(2).widget().layout().itemAt(0).widget()
     assert bullet1_bullet.getContentsMargins() == (0, 4, 0, 0)
-    bullet1_bullet.font().pixelSize() == 30
-    QFont.Bold == bullet1_bullet.font().weight()
+    assert bullet1_bullet.font().pixelSize() == 30
+    assert QFont.Bold == bullet1_bullet.font().weight()
     assert bullet1_bullet.font().family() == "Montserrat"
     assert bullet1_bullet.palette().color(QPalette.Foreground).name() == "#a5b3e9"
     bullet2_bullet = no_source_selected.layout().itemAt(3).widget().layout().itemAt(0).widget()
     assert bullet2_bullet.getContentsMargins() == (0, 4, 0, 0)
-    bullet2_bullet.font().pixelSize() == 30
-    QFont.Bold == bullet2_bullet.font().weight()
+    assert bullet2_bullet.font().pixelSize() == 30
+    assert QFont.Bold == bullet2_bullet.font().weight()
     assert bullet2_bullet.font().family() == "Montserrat"
     assert bullet2_bullet.palette().color(QPalette.Foreground).name() == "#a5b3e9"
     bullet3_bullet = no_source_selected.layout().itemAt(4).widget().layout().itemAt(0).widget()
     assert bullet3_bullet.getContentsMargins() == (0, 4, 0, 0)
-    bullet3_bullet.font().pixelSize() == 30
-    QFont.Bold == bullet3_bullet.font().weight()
+    assert bullet3_bullet.font().pixelSize() == 30
+    assert QFont.Bold == bullet3_bullet.font().weight()
     assert bullet3_bullet.font().family() == "Montserrat"
     assert bullet3_bullet.palette().color(QPalette.Foreground).name() == "#a5b3e9"
     no_source_selected_spacer2 = no_source_selected.layout().itemAt(5)
@@ -298,23 +298,26 @@ def test_styles_source_list(mocker, main_window):
     source_widget = source_list.itemWidget(source_list.item(0))
     preview = source_widget.preview
     assert preview.font().family() == "Source Sans Pro"
-    QFont.Normal == preview.font().weight()
-    preview.font().pixelSize() == 13
+    assert QFont.Normal == preview.font().weight()
+    assert preview.font().pixelSize() == 13
     assert preview.palette().color(QPalette.Foreground).name() == "#383838"
     deletion_indicator = source_widget.deletion_indicator
     assert deletion_indicator.font().family() == "Source Sans Pro"
-    QFont.Normal == deletion_indicator.font().weight()
-    deletion_indicator.font().pixelSize() == 13
+    assert QFont.Normal == deletion_indicator.font().weight()
+    # FIXME: pixelSize() returns -1 here
+    # assert deletion_indicator.font().pixelSize() == 13
     assert deletion_indicator.palette().color(QPalette.Foreground).name() == "#000000"
     name = source_widget.name
     assert name.font().family() == "Montserrat"
-    QFont.Normal == name.font().weight()
-    name.font().pixelSize() == 13
+    # FIXME: weight() returns QFont.ExtraCondensed here
+    # assert QFont.Normal == name.font().weight()
+    assert name.font().pixelSize() == 13
     assert name.palette().color(QPalette.Foreground).name() == "#2a319d"
     timestamp = source_widget.timestamp
     assert timestamp.font().family() == "Montserrat"
-    QFont.Normal == timestamp.font().weight()
-    timestamp.font().pixelSize() == 13
+    # FIXME: weight() returns QFont.ExtraCondensed here
+    # assert QFont.Normal == timestamp.font().weight()
+    assert timestamp.font().pixelSize() == 13
     assert timestamp.palette().color(QPalette.Foreground).name() == "#383838"
 
 

@@ -16,8 +16,11 @@ class Service:
     This is the "API" portion of the export workflow.
     """
 
-    def __init__(self, submission: Archive, cli: CLI = CLI()):
-        self.cli = cli
+    def __init__(self, submission: Archive, cli: CLI | None = None):
+        if cli is not None:
+            self.cli = cli
+        else:
+            self.cli = CLI()
         self.submission = submission
 
     def scan_all_devices(self) -> Status:
