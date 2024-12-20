@@ -194,7 +194,7 @@ def prevent_second_instance(app: QApplication, unique_name: str) -> None:
 def threads(count: int) -> Any:
     """Ensures that the thread is properly closed before its reference is dropped."""
     threads = []
-    for i in range(count):
+    for _i in range(count):
         threads.append(QThread())
 
     yield threads
