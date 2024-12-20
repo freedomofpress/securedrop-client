@@ -5,7 +5,7 @@ interactions:
       Accept:
       - application/json
       Authorization:
-      - Token Ilhha2ZHZWpVcFZQVmpKdWJOUzJYRG1YVUc4QXZWS0JiOGVNQXJycE5GUFUi.ZeDzXQ.10ODTj49yF7kxKbeMm9eaayR3Xo
+      - Token IlAzb1p1MjRubnlLOFo0SDVaajZPc2JPZWRRcjRYRUxLM3RrUmhsUEFWVTQi.Z1jewg.4VNFOk_5HSHXhgn319zzDh9JVyg
       Content-Type:
       - application/json
     method: GET
@@ -19,7 +19,7 @@ interactions:
       connection: close
       content-length: '165'
       content-type: application/json
-      date: Thu, 29 Feb 2024 21:13:04 GMT
+      date: Wed, 11 Dec 2024 00:37:26 GMT
       server: Werkzeug/2.2.3 Python/3.8.10
     status: 404
 version: 1

@@ -140,6 +140,7 @@ class API:
         download_finished = False
 
         while not download_finished and retry < self.download_retry_limit:
+            bytes_written_prev = bytes_written
             logger.debug(f"Streaming download, retry {retry}")
 
             try:
@@ -213,10 +214,15 @@ class API:
                 contents = fobj.read()
                 fobj.close()
 
-                # Check for an error response
+                # Check for an error response first at the request level...
                 if contents[0:1] == b"{":
                     logger.error(f"Retry {retry}, received JSON error response.")
                     return self._handle_json_response(contents)
+                # ...and then at the retry level.
+                partial = contents[bytes_written_prev:bytes_written]
+                if retry > 0 and partial[0:1] == b"{":
+                    logger.error(f"Retry {retry}, received JSON error response.")
+                    return self._handle_json_response(partial)
 
                 # Get the headers
                 if proc.stderr is not None:
