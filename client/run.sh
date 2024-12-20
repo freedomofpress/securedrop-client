@@ -20,9 +20,6 @@ done
 source scripts/setup-tmp-directories.sh
 
 PYTHON="poetry run python"
-if [[ $OSTYPE == 'darwin'* ]] && [[ "$(uname -m)" == "arm64" ]]; then
-    PYTHON="arch -x86_64 ${PYTHON}"
-fi
 
 GNUPGHOME="$SDC_HOME/gpg"
 export GNUPGHOME
