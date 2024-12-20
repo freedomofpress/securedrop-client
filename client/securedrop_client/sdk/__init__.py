@@ -133,7 +133,7 @@ class API:
     def _streaming_download(
         self, data: dict[str, Any], env: dict
     ) -> StreamedResponse | JSONResponse:
-        fobj = tempfile.TemporaryFile("w+b")
+        fobj = tempfile.TemporaryFile("w+b")  # noqa: SIM115
 
         retry = 0
         bytes_written = 0
