@@ -1,7 +1,7 @@
 interactions:
 - request:
     body: '{"username": "no", "passphrase": "correct horse battery staple profanity
-      oil chewy", "one_time_code": "112097"}'
+      oil chewy", "one_time_code": "578466"}'
     headers: {}
     method: POST
     uri: api/v1/token

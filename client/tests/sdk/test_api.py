@@ -208,23 +208,28 @@ class TestAPI(TestShared):
             with open(filepath, "rb") as fobj:
                 content = fobj.read()
 
-        # Stub subprocess.Popen to raise a subprocess.TimeoutExpired, to simulate an interrupted
-        # download after 200 bytes
+        # Stub subprocess.Popen to raise a subprocess.TimeoutExpired, to
+        # simulate an interrupted download after `breakpoint` bytes.  (This
+        # avoids hard-coding an assumption about the size of the file we expect
+        # from upstream.
+        breakpoint = int(len(content) / 2)
+
         class StubbedStdout:
             def __init__(self):
                 self.counter = 0
                 self.closed = False
 
             def read(self, n=-1):
-                if self.counter >= 200:
-                    # Restore the original Popen before raising the exception
+                if self.counter >= breakpoint:
+                    # Before raising the timeout, restore the original Popen,
+                    # which will handle the retry request untampered.
                     mocker.stopall()
                     raise subprocess.TimeoutExpired(
                         cmd=None, timeout=None, output=None, stderr=None
                     )
                 chunk = content[self.counter : self.counter + n]
                 self.counter += len(chunk)
-                return chunk
+                return chunk[:breakpoint]
 
             def close(self):
                 self.closed = True
@@ -233,8 +238,7 @@ class TestAPI(TestShared):
                 return 1
 
         class StubbedStderr:
-            def __init__(self, content_length):
-                self.content_length = content_length
+            def __init__(self):
                 self.closed = False
 
             def read(self, n=-1):
@@ -244,7 +248,7 @@ class TestAPI(TestShared):
                             "content-type": "application/pgp-encrypted",
                             "etag": "sha256:3aa5ec3fe60b235a76bfc2c3a5c5d525687f04c1670060632a21b6a77c131f65",  # noqa: E501
                             "content-disposition": "attachment; filename=3-assessable_firmness-doc.gz.gpg",  # noqa: E501
-                            "content-length": self.content_length,
+                            "content-length": breakpoint,
                             "accept-ranges": "bytes",
                         }
                     }
@@ -257,7 +261,7 @@ class TestAPI(TestShared):
                 return 2
 
         class StubbedPopen(subprocess.Popen):
-            def __init__(self, *args, content="", **kwargs):
+            def __init__(self, *args, **kwargs):
                 super().__init__(*args, **kwargs)
 
                 # Only stub if the command contains "securedrop.Proxy" or "securedrop-proxy"
@@ -265,7 +269,7 @@ class TestAPI(TestShared):
                 if "securedrop.Proxy" in cmd or "securedrop-proxy" in cmd:
                     self._is_securedrop_proxy = True
                     self.stdout = StubbedStdout()
-                    self.stderr = StubbedStderr(len(content))
+                    self.stderr = StubbedStderr()
                 else:
                     self._is_securedrop_proxy = False
 
