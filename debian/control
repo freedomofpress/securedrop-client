@@ -50,7 +50,7 @@ Package: securedrop-whonix-config
 Section: admin
 Architecture: all
 # FIXME: s/tor/anon-gw-anonymizer-config/ (requires Whonix repositories in piuparts)
-Depends: ${misc:Depends}, securedrop-qubesdb-tools, tor
+Depends: ${misc:Depends}, securedrop-qubesdb-tools, tor, systemcheck
 Description: Whonix configuration for SecureDrop.
  This package configures Whonix/Tor for SecureDrop.
 
