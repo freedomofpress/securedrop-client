@@ -46,7 +46,7 @@ def main():
     except Exception as e:
         print(e, file=sys.stderr)
         # Clean up all open files
-        for k, v in openfiles:
+        for _k, v in openfiles:
             v.close()
         sys.exit(1)
 

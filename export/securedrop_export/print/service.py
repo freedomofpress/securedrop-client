@@ -287,7 +287,9 @@ class Service:
                     for line in f.readlines():
                         if line.startswith("MimeType="):
                             # Semicolon-separated list; don't leave empty element at the end
-                            supported_mimetypes.update(line.strip("MimeType=").split(";")[:-1])
+                            supported_mimetypes.update(
+                                line.removeprefix("MimeType=").split(";")[:-1]
+                            )
 
         return supported_mimetypes
 

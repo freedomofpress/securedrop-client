@@ -451,7 +451,7 @@ def test_UserButton_setup(mocker):
 def test_UserButton_set_username():
     ub = UserButton()
     ub.set_username("test_username")
-    ub.text() == "test_username"
+    assert ub.text() == "test_username"
 
 
 def test_UserButton_set_long_username(mocker):
@@ -661,7 +661,7 @@ def test_MainView_on_source_changed_shows_correct_context(mocker, homedir, sessi
     """
     # Build sourcelist
     sources = []
-    for i in range(10):
+    for _i in range(10):
         s = factory.Source()
         sources.append(s)
         session.add(s)
@@ -2645,7 +2645,7 @@ def test_SpeechBubble_init(mocker):
 
     sb = SpeechBubble("mock id", "hello", mock_update_signal, mock_download_error_signal, 0, 123)
 
-    sb.message.text() == "hello"
+    assert sb.message.text() == "hello"
 
     assert mock_update_connect.called
     assert mock_download_error_connect.called
@@ -2673,7 +2673,7 @@ def test_SpeechBubble_init_with_error(mocker):
         failed_to_decrypt=True,
     )
 
-    sb.message.text() == "hello"
+    assert sb.message.text() == "hello"
     assert mock_update_connect.called
     assert mock_download_error_connect.called
 
@@ -3107,7 +3107,8 @@ def test_ReplyWidget__on_update_authenticated_user_updates_sender_when_changed(m
     user.username = "baz"
     reply_widget._on_update_authenticated_user(authenticated_user)
 
-    reply_widget.sender.username == "baz"
+    # FIXME the following has no effect and the assertion fails
+    reply_widget.sender.username == "baz"  # noqa: B015
     assert reply_widget.sender_is_current_user
     assert reply_widget.sender_icon.is_current_user
     reply_widget._update_styles.assert_called_once_with()
@@ -3272,7 +3273,7 @@ def test_FileWidget_event_handler_left_click(mocker, session, source):
     fw._on_left_click = mocker.MagicMock()
 
     fw.eventFilter(fw, test_event)
-    fw._on_left_click.call_count == 1
+    assert fw._on_left_click.call_count == 1
 
 
 def test_FileWidget_event_handler_hover(mocker, session, source):
@@ -3362,8 +3363,10 @@ def test_FileWidget_on_left_click_downloading_in_progress(mocker, session, sourc
     fw.download_button = mocker.MagicMock()
 
     fw._on_left_click()
-    get_file.call_count == 0
-    controller.on_submission_download.call_count == 0
+    # Called once to get the file object
+    assert get_file.call_count == 1
+    # Never called since the download is already in progress
+    assert controller.on_submission_download.call_count == 0
 
 
 def test_FileWidget_start_button_animation(mocker, session, source):

@@ -346,7 +346,7 @@ class Export(QObject):
                 self.print_failed.emit(ExportStatus.ERROR_PRINT)
 
     def _create_archive(
-        self, archive_dir: str, archive_fn: str, metadata: dict, filepaths: list[str] = []
+        self, archive_dir: str, archive_fn: str, metadata: dict, filepaths: list[str] | None = None
     ) -> str:
         """
         Create the archive to be sent to the Export VM.
@@ -361,6 +361,8 @@ class Export(QObject):
             str: The path to newly-created archive file.
         """
         archive_path = os.path.join(archive_dir, archive_fn)
+        if filepaths is None:
+            filepaths = []
 
         with tarfile.open(archive_path, "w:gz") as archive:
             self._add_virtual_file_to_archive(archive, self._METADATA_FN, metadata)
