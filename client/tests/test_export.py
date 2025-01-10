@@ -78,9 +78,9 @@ class TestDevice:
             self.device.run_printer_preflight_checks()
 
             mock_qproc.start.assert_called_once()
-            assert (
-                mock_qproc.start.call_args[0] == _QREXEC_EXPORT_COMMAND
-            ), f"Actual: {mock_qproc.start.call_args[0]}"
+            assert mock_qproc.start.call_args[0] == _QREXEC_EXPORT_COMMAND, (
+                f"Actual: {mock_qproc.start.call_args[0]}"
+            )
 
     def test_Device_run_print_preflight_checks_with_error(self):
         spy = QSignalSpy(self.device.print_preflight_check_failed)

@@ -103,9 +103,9 @@ class DeleteSourceActionTest(unittest.TestCase):
         self.action.trigger()
 
         self._controller.delete_sources.assert_called_once()
-        assert (
-            self._source in self._controller.delete_sources.call_args[0][0]
-        ), self._controller.delete_sources.call_args[0][0]
+        assert self._source in self._controller.delete_sources.call_args[0][0], (
+            self._controller.delete_sources.call_args[0][0]
+        )
 
     def test_does_not_delete_source_when_dialog_rejected(self):
         # Reject the confirmation dialog from a separate thread.

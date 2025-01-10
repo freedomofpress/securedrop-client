@@ -181,9 +181,7 @@ class LoginDialog(QDialog):
             # Validate username
             if len(username) < self.MIN_JOURNALIST_USERNAME:
                 self.setDisabled(False)
-                self.error(
-                    _("That username won't work.\n" "It should be at least 3 characters long.")
-                )
+                self.error(_("That username won't work.\nIt should be at least 3 characters long."))
                 return
 
             # Validate password
@@ -202,9 +200,7 @@ class LoginDialog(QDialog):
                 int(tfa_token)
             except ValueError:
                 self.setDisabled(False)
-                self.error(
-                    _("That two-factor code won't work.\n" "It should only contain numerals.")
-                )
+                self.error(_("That two-factor code won't work.\nIt should only contain numerals."))
                 return
             self.submit.setText(_("SIGNING IN"))
 
@@ -218,4 +214,4 @@ class LoginDialog(QDialog):
             self.controller.login(username, password, tfa_token)
         else:
             self.setDisabled(False)
-            self.error(_("Please enter a username, passphrase and " "two-factor code."))
+            self.error(_("Please enter a username, passphrase and two-factor code."))

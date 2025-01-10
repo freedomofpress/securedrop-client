@@ -228,9 +228,9 @@ class PreflightPage(ExportWizardPage):
     def __init__(self, export: Export, summary: str) -> None:
         self._should_autoskip_preflight = False
         self.summary = summary
-        header = _(
-            "Preparing to export:<br />" '<span style="font-weight:normal">{}</span>'
-        ).format(summary)
+        header = _('Preparing to export:<br /><span style="font-weight:normal">{}</span>').format(
+            summary
+        )
         body = _(
             "<h2>Understand the risks before exporting files</h2>"
             "<b>Malware</b>"
@@ -285,7 +285,7 @@ class PreflightPage(ExportWizardPage):
     def on_status_received(self, status: ExportStatus) -> None:
         self.status = status
         self.stop_animate_header()
-        header = _("Ready to export:<br />" '<span style="font-weight:normal">{}</span>').format(
+        header = _('Ready to export:<br /><span style="font-weight:normal">{}</span>').format(
             self.summary
         )
         self.header.setText(header)
@@ -326,7 +326,7 @@ class InsertUSBPage(ExportWizardPage):
     def __init__(self, export: Export, summary: str) -> None:
         self.no_device_hint = 0
         self.summary = summary
-        header = _("Ready to export:<br />" '<span style="font-weight:normal">{}</span>').format(
+        header = _('Ready to export:<br /><span style="font-weight:normal">{}</span>').format(
             summary
         )
         body = _(
