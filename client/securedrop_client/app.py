@@ -95,7 +95,7 @@ def configure_logging(sdc_home: Path) -> None:
     log_file = os.path.join(sdc_home, "logs", "client.log")
 
     # set logging format
-    log_fmt = "%(asctime)s - %(name)s:%(lineno)d(%(funcName)s) " "%(levelname)s: %(message)s"
+    log_fmt = "%(asctime)s - %(name)s:%(lineno)d(%(funcName)s) %(levelname)s: %(message)s"
     formatter = logging.Formatter(log_fmt)
 
     # define log handlers such as for rotating log files
@@ -149,8 +149,7 @@ def arg_parser() -> ArgumentParser:
         default=DEFAULT_SDC_HOME,
         type=expand_to_absolute,
         help=(
-            f"{SDC_NAME} home directory for storing files and state. "
-            f"(Default {DEFAULT_SDC_HOME})"
+            f"{SDC_NAME} home directory for storing files and state. (Default {DEFAULT_SDC_HOME})"
         ),
     )
     parser.add_argument(

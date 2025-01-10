@@ -69,9 +69,9 @@ class TestExportWizard:
         self.mock_export.export_state_changed.emit(ExportStatus.DEVICE_WRITABLE)
         self.wizard.next()
 
-        assert isinstance(
-            self.wizard.currentPage(), FinalPage
-        ), f"Actually, f{type(self.wizard.currentPage())}"
+        assert isinstance(self.wizard.currentPage(), FinalPage), (
+            f"Actually, f{type(self.wizard.currentPage())}"
+        )
 
     def test_wizard_rewinds_if_device_removed(self, qtbot):
         self.wizard.show()

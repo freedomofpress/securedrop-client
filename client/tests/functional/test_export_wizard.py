@@ -97,16 +97,16 @@ def test_export_wizard_device_locked(
         functional_test_logged_in_context, qtbot, mocker, mock_export_locked
     )
 
-    assert isinstance(
-        export_wizard.currentPage(), PreflightPage
-    ), f"Actual: {export_wizard.currentPage()} ({export_wizard.currentId()})"
+    assert isinstance(export_wizard.currentPage(), PreflightPage), (
+        f"Actual: {export_wizard.currentPage()} ({export_wizard.currentId()})"
+    )
 
     assert export_wizard.current_status == ExportStatus.NO_DEVICE_DETECTED
 
     def check_insert_usb_page():
-        assert isinstance(
-            export_wizard.currentPage(), InsertUSBPage
-        ), f"Actual: {export_wizard.currentPage()} ({export_wizard.currentId()})"
+        assert isinstance(export_wizard.currentPage(), InsertUSBPage), (
+            f"Actual: {export_wizard.currentPage()} ({export_wizard.currentId()})"
+        )
 
     # Move to "insert usb" screen
     qtbot.mouseClick(export_wizard.next_button, Qt.LeftButton)
@@ -115,9 +115,9 @@ def test_export_wizard_device_locked(
     assert export_wizard.current_status == ExportStatus.NO_DEVICE_DETECTED
 
     def check_password_page():
-        assert isinstance(
-            export_wizard.currentPage(), PassphraseWizardPage
-        ), f"Actual: {export_wizard.currentPage()} ({export_wizard.currentId()})"
+        assert isinstance(export_wizard.currentPage(), PassphraseWizardPage), (
+            f"Actual: {export_wizard.currentPage()} ({export_wizard.currentId()})"
+        )
 
     # Move to "unlock usb" screen - TODO this is an extra click?
     qtbot.mouseClick(export_wizard.next_button, Qt.LeftButton)
@@ -143,9 +143,9 @@ def test_export_wizard_device_locked(
 
     assert export_wizard.current_status == ExportStatus.SUCCESS_EXPORT
 
-    assert isinstance(
-        export_wizard.currentPage(), FinalPage
-    ), f"Actual: {export_wizard.currentPage()} ({export_wizard.currentId()})"
+    assert isinstance(export_wizard.currentPage(), FinalPage), (
+        f"Actual: {export_wizard.currentPage()} ({export_wizard.currentId()})"
+    )
 
 
 @flaky
@@ -164,9 +164,9 @@ def test_export_wizard_device_already_unlocked(
         functional_test_logged_in_context, qtbot, mocker, mock_export_unlocked
     )
 
-    assert isinstance(
-        export_wizard.currentPage(), PreflightPage
-    ), f"Actual: {export_wizard.currentPage()} ({export_wizard.currentId()})"
+    assert isinstance(export_wizard.currentPage(), PreflightPage), (
+        f"Actual: {export_wizard.currentPage()} ({export_wizard.currentId()})"
+    )
 
     assert export_wizard.current_status == ExportStatus.DEVICE_WRITABLE
 
@@ -202,9 +202,9 @@ def test_export_wizard_no_device_then_bad_passphrase(
         mock_export_no_usb_then_bad_passphrase,
     )
 
-    assert isinstance(
-        export_wizard.currentPage(), PreflightPage
-    ), f"Actual: {export_wizard.currentPage()} ({export_wizard.currentId()})"
+    assert isinstance(export_wizard.currentPage(), PreflightPage), (
+        f"Actual: {export_wizard.currentPage()} ({export_wizard.currentId()})"
+    )
 
     assert export_wizard.current_status == ExportStatus.NO_DEVICE_DETECTED
 
@@ -218,9 +218,9 @@ def test_export_wizard_no_device_then_bad_passphrase(
     assert export_wizard.current_status == ExportStatus.NO_DEVICE_DETECTED
 
     def check_password_page():
-        assert isinstance(
-            export_wizard.currentPage(), PassphraseWizardPage
-        ), f"Actual: {export_wizard.currentPage()} ({export_wizard.currentId()})"
+        assert isinstance(export_wizard.currentPage(), PassphraseWizardPage), (
+            f"Actual: {export_wizard.currentPage()} ({export_wizard.currentId()})"
+        )
 
     # Move to "unlock usb" screen
     qtbot.mouseClick(export_wizard.next_button, Qt.LeftButton)
@@ -243,9 +243,9 @@ def test_export_wizard_no_device_then_bad_passphrase(
         After an incorrect password, the 'error details' should be visible
         with a message about incorrect passphrase.
         """
-        assert isinstance(
-            export_wizard.currentPage(), PassphraseWizardPage
-        ), f"Actual: {export_wizard.currentPage()} ({export_wizard.currentId()})"
+        assert isinstance(export_wizard.currentPage(), PassphraseWizardPage), (
+            f"Actual: {export_wizard.currentPage()} ({export_wizard.currentId()})"
+        )
         assert export_wizard.currentPage().error_details.isVisible()
 
     # Click Next - Passphrase error appears
@@ -268,9 +268,9 @@ def test_export_wizard_no_device_then_bad_passphrase(
 
     assert export_wizard.current_status == ExportStatus.SUCCESS_EXPORT
 
-    assert isinstance(
-        export_wizard.currentPage(), FinalPage
-    ), f"Actual: {export_wizard.currentPage()} ({export_wizard.currentId()})"
+    assert isinstance(export_wizard.currentPage(), FinalPage), (
+        f"Actual: {export_wizard.currentPage()} ({export_wizard.currentId()})"
+    )
 
 
 @flaky
@@ -290,9 +290,9 @@ def test_export_wizard_error(
         functional_test_logged_in_context, qtbot, mocker, mock_export_fail_early
     )
 
-    assert isinstance(
-        export_wizard.currentPage(), PreflightPage
-    ), f"Actual: {export_wizard.currentPage()} ({export_wizard.currentId()})"
+    assert isinstance(export_wizard.currentPage(), PreflightPage), (
+        f"Actual: {export_wizard.currentPage()} ({export_wizard.currentId()})"
+    )
 
     assert export_wizard.current_status == ExportStatus.NO_DEVICE_DETECTED
 
@@ -306,9 +306,9 @@ def test_export_wizard_error(
     assert export_wizard.current_status == ExportStatus.NO_DEVICE_DETECTED
 
     def check_password_page():
-        assert isinstance(
-            export_wizard.currentPage(), PassphraseWizardPage
-        ), f"Actual: {export_wizard.currentPage()} ({export_wizard.currentId()})"
+        assert isinstance(export_wizard.currentPage(), PassphraseWizardPage), (
+            f"Actual: {export_wizard.currentPage()} ({export_wizard.currentId()})"
+        )
 
     # Move to "Enter passphrase" screen
     qtbot.mouseClick(export_wizard.next_button, Qt.LeftButton)
@@ -327,7 +327,7 @@ def test_export_wizard_error(
     qtbot.wait(TIME_CLICK_ACTION)
     assert export_wizard.current_status == ExportStatus.ERROR_MOUNT
 
-    assert isinstance(
-        export_wizard.currentPage(), ErrorPage
-    ), f"Actual: {export_wizard.currentPage()} ({export_wizard.currentId()})"
+    assert isinstance(export_wizard.currentPage(), ErrorPage), (
+        f"Actual: {export_wizard.currentPage()} ({export_wizard.currentId()})"
+    )
     assert export_wizard.current_status == ExportStatus.ERROR_MOUNT

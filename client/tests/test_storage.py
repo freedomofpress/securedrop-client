@@ -2478,7 +2478,7 @@ def test_delete_local_conversation_by_uuid_nosuchuuid(homedir, mocker, session):
 
     delete_local_conversation_by_source_uuid(session, mock_uuid, data_dir)
     error_logger.assert_called_once_with(
-        f"Tried to delete source {mock_uuid}, but UUID " "was not found"
+        f"Tried to delete source {mock_uuid}, but UUID was not found"
     )
 
 

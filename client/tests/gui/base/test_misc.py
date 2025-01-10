@@ -122,7 +122,7 @@ def test_SecureQLabel_init_wordwrap(mocker):
     Regression test to make sure we don't remove newlines.
     """
     long_string = (
-        "1234567890123456789012345678901234567890123456789012345678901234567890\n" "12345678901"
+        "1234567890123456789012345678901234567890123456789012345678901234567890\n12345678901"
     )
     sl = SecureQLabel(long_string, wordwrap=False)
     assert sl.text() == long_string
@@ -130,7 +130,7 @@ def test_SecureQLabel_init_wordwrap(mocker):
 
 def test_SecureQLabel_init_no_wordwrap(mocker):
     long_string = (
-        "1234567890123456789012345678901234567890123456789012345678901234567890\n" "12345678901"
+        "1234567890123456789012345678901234567890123456789012345678901234567890\n12345678901"
     )
     sl = SecureQLabel(long_string, wordwrap=False)
     assert sl.text() == long_string
