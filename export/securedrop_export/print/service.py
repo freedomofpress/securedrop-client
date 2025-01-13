@@ -6,6 +6,7 @@ from pathlib import Path
 from securedrop_export.directory import safe_mkdir
 from securedrop_export.exceptions import ExportException
 
+from .print_dialog import open_print_dialog
 from .status import Status
 
 logger = logging.getLogger(__name__)
@@ -110,31 +111,6 @@ class Service:
         # When client can accept new print statuses, we will return
         # a success status here
         return Status.PRINT_TEST_PAGE_SUCCESS
-
-    def _wait_for_print(self):
-        """
-        Use lpstat to ensure the job was fully transfered to the printer
-        Return True if print was successful, otherwise throw ExportException.
-        Currently, the handler `handler` is defined in `exceptions.py`.
-        """
-        signal.signal(signal.SIGALRM, handler)
-        signal.alarm(self.printer_wait_timeout)
-        printer_idle_string = f"printer {self.printer_name} is idle"
-        while True:
-            try:
-                logger.info(f"Running lpstat waiting for printer {self.printer_name}")
-                output = subprocess.check_output(["lpstat", "-p", self.printer_name])
-                if printer_idle_string in output.decode("utf-8"):
-                    logger.info("Print completed")
-                    return True
-                else:
-                    time.sleep(5)
-            except subprocess.CalledProcessError:
-                raise ExportException(sdstatus=Status.ERROR_PRINT)
-            except TimeoutException:
-                logger.error(f"Timeout waiting for printer {self.printer_name}")
-                raise ExportException(sdstatus=Status.ERROR_PRINT)
-        return True
 
     def _check_printer_setup(self) -> None:
         """
@@ -423,20 +399,8 @@ class Service:
             logger.error(f"Something went wrong: {file_to_print} not found")
             raise ExportException(sdstatus=Status.ERROR_PRINT)
 
-        logger.info(f"Sending file to printer {self.printer_name}")
-        try:
-            # We can switch to using libreoffice --pt $printer_cups_name
-            # here, and either print directly (headless) or use the GUI
-            subprocess.check_call(
-                ["xpp", "-P", self.printer_name, file_to_print],
-            )
-        except subprocess.CalledProcessError as e:
-            raise ExportException(sdstatus=Status.ERROR_PRINT, sderror=e.output)
-
-        # This is an addition to ensure that the entire print job is transferred over.
-        # If the job is not fully transferred within the timeout window, the user
-        # will see an error message.
-        self._wait_for_print()
+        logger.info("Opening print dialog")
+        open_print_dialog(str(file_to_print))
 
     def check_output_and_stderr(
         self, command: str, error_status: Status, ignore_stderr_startswith=None
