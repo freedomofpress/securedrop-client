@@ -6,6 +6,7 @@ from pathlib import Path
 from securedrop_export.directory import safe_mkdir
 from securedrop_export.exceptions import ExportException
 
+from .print_dialog import open_print_dialog
 from .status import Status
 
 logger = logging.getLogger(__name__)
@@ -363,15 +364,8 @@ class Service:
             logger.error(f"Something went wrong: {file_to_print} not found")
             raise ExportException(sdstatus=Status.ERROR_PRINT)
 
-        logger.info(f"Sending file to printer {self.printer_name}")
-        try:
-            # We can switch to using libreoffice --pt $printer_cups_name
-            # here, and either print directly (headless) or use the GUI
-            subprocess.check_call(
-                ["xpp", "-P", self.printer_name, file_to_print],
-            )
-        except subprocess.CalledProcessError as e:
-            raise ExportException(sdstatus=Status.ERROR_PRINT, sderror=e.output)
+        logger.info("Opening print dialog")
+        open_print_dialog(str(file_to_print))
 
     def check_output_and_stderr(
         self, command: str, error_status: Status, ignore_stderr_startswith=None
