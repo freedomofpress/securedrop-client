@@ -6,6 +6,7 @@ from pathlib import Path
 from securedrop_export.directory import safe_mkdir
 from securedrop_export.exceptions import ExportException
 
+from .exceptions import PrinterNotFoundException
 from .print_dialog import open_print_dialog
 from .status import Status
 
@@ -120,9 +121,9 @@ class Service:
         legacy_printers = False
         logger.info("Searching for printer")
 
-        printers = self._get_printers_ipp()
-        if not printers:
-            # look for legacy printers after no IPP ones are detected
+        try:
+            printers = self._get_printers_ipp()
+        except PrinterNotFoundException:
             printers = self._get_printers_legacy()
             legacy_printers = True
 
@@ -147,13 +148,18 @@ class Service:
             raise ExportException(sdstatus=Status.ERROR_UNKNOWN)
 
         discovered_printers = [x for x in output.decode("utf-8").split() if "usb://" in x]
-
         supported_printers = [
             p for p in discovered_printers if any(sub in p for sub in self.SUPPORTED_PRINTERS)
         ]
+        unsupported_printers = [p for p in discovered_printers if p not in supported_printers]
+
         if not supported_printers:
-            logger.info(f"{discovered_printers} are unsupported printers")
-            raise ExportException(sdstatus=Status.ERROR_PRINTER_NOT_SUPPORTED)
+            if unsupported_printers:
+                logger.info(f"{', '.join(unsupported_printers)} are unsupported printers")
+                raise ExportException(sdstatus=Status.ERROR_PRINTER_NOT_SUPPORTED)
+            else:
+                logger.info("No legacy (PDP) printers were found")
+                raise PrinterNotFoundException()
 
         return supported_printers
 
@@ -163,14 +169,14 @@ class Service:
             discovered_printers = subprocess.check_output(
                 ["ippfind"], universal_newlines=True
             ).split()
-        except subprocess.CalledProcessError as e:
-            logger.error(e)
-            raise ExportException(sdstatus=Status.ERROR_UNKNOWN)
-
-        if discovered_printers:
             logger.debug(f"Found IPP printers: {', '.join(discovered_printers)}")
-        else:
-            logger.debug("No IPP were found")
+        except subprocess.CalledProcessError as ex:
+            if ex.returncode == 1:  # Did not find any match
+                logger.debug("No IPP printers were found")
+                raise PrinterNotFoundException()
+            else:
+                logger.error("'ippfind' command failed")
+                raise ExportException(sdstatus=Status.ERROR_PRINTER_URI)
 
         return discovered_printers
 
