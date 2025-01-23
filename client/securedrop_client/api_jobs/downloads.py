@@ -6,12 +6,14 @@ import os
 from tempfile import NamedTemporaryFile
 from typing import Any
 
+from PyQt5.QtCore import pyqtBoundSignal
 from sqlalchemy.orm.exc import NoResultFound
 from sqlalchemy.orm.session import Session
 
 from securedrop_client.api_jobs.base import SingleObjectApiJob
 from securedrop_client.crypto import CryptoError, GpgHelper
 from securedrop_client.db import DownloadError, DownloadErrorCodes, File, Message, Reply
+from securedrop_client.file_status import FileStatus
 from securedrop_client.sdk import API, BaseError
 from securedrop_client.sdk import Reply as SdkReply
 from securedrop_client.sdk import Submission as SdkSubmission
@@ -354,9 +356,12 @@ class FileDownloadJob(DownloadJob):
     Download and decrypt a file from a source.
     """
 
-    def __init__(self, uuid: str, data_dir: str, gpg: GpgHelper) -> None:
+    def __init__(
+        self, uuid: str, data_dir: str, gpg: GpgHelper, file_status: pyqtBoundSignal[FileStatus]
+    ) -> None:
         super().__init__(data_dir, uuid)
         self.gpg = gpg
+        # TODO: Use file_status instead of split success/failure signals
 
     def get_db_object(self, session: Session) -> File:
         """

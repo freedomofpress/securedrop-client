@@ -28,7 +28,7 @@ from gettext import ngettext
 
 import arrow
 import sqlalchemy.orm.exc
-from PyQt5.QtCore import QObject, QProcess, QThread, QTimer, pyqtSignal, pyqtSlot
+from PyQt5.QtCore import QObject, QProcess, QThread, QTimer, pyqtBoundSignal, pyqtSignal, pyqtSlot
 from sqlalchemy.orm.session import sessionmaker
 
 from securedrop_client import db, sdk, state, storage
@@ -59,6 +59,7 @@ from securedrop_client.api_jobs.uploads import (
     SendReplyJobTimeoutError,
 )
 from securedrop_client.crypto import GpgHelper
+from securedrop_client.file_status import FileStatus
 from securedrop_client.queue import ApiJobQueue
 from securedrop_client.sdk import AuthError, RequestTimeoutError, ServerConnectionError
 from securedrop_client.sync import ApiSync
@@ -843,6 +844,10 @@ class Controller(QObject):
             job.failure_signal.connect(self.on_file_download_failure)
 
         self.add_job.emit(job)
+
+    @login_required
+    def submit_file_download_job(self, uuid: str, file_status: pyqtBoundSignal[FileStatus]) -> None:
+        self.add_job.emit(FileDownloadJob(uuid, self.data_dir, self.gpg, file_status))
 
     def download_new_messages(self) -> None:
         new_messages = storage.find_new_messages(self.session)

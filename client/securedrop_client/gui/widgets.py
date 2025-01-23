@@ -74,6 +74,7 @@ from securedrop_client.db import (
     User,
 )
 from securedrop_client.export import Export
+from securedrop_client.file_status import FileStatus
 from securedrop_client.gui import conversation
 from securedrop_client.gui.actions import (
     DeleteConversationAction,
@@ -2524,13 +2525,12 @@ class FileWidget(QWidget):
     MIN_CONTAINER_WIDTH = 750
     MIN_WIDTH = 400
 
+    file_status = pyqtSignal(FileStatus)
+
     def __init__(
         self,
         file: File,
         controller: Controller,
-        file_download_started: pyqtBoundSignal,
-        file_ready_signal: pyqtBoundSignal,
-        file_missing: pyqtBoundSignal,
         index: int,
         container_width: int,
     ) -> None:
@@ -2635,9 +2635,7 @@ class FileWidget(QWidget):
         layout.addWidget(self.file_size)
 
         # Connect signals to slots
-        file_download_started.connect(self._on_file_download_started)
-        file_ready_signal.connect(self._on_file_downloaded)
-        file_missing.connect(self._on_file_missing)
+        self.file_status.connect(self.on_file_status)
 
     def adjust_width(self, container_width: int) -> None:
         """
@@ -2712,33 +2710,29 @@ class FileWidget(QWidget):
             self.horizontal_line.hide()
             self.spacer.show()
 
-    @pyqtSlot(state.FileId)
-    def _on_file_download_started(self, id: state.FileId) -> None:
-        if str(id) == self.uuid:
-            self.downloading = True
-            QTimer.singleShot(NO_DELAY, self.start_button_animation)
+    @pyqtSlot(FileStatus)
+    def on_file_status(self, status: FileStatus) -> None:
+        match status:
+            case FileStatus.DOWNLOAD_STARTED:
+                self._on_file_download_started()
+            case FileStatus.READY:
+                self._on_file_downloaded()
+            case FileStatus.MISSING:
+                self._on_file_missing()
 
-    @pyqtSlot(str, str, str)
-    def _on_file_downloaded(self, source_uuid: str, file_uuid: str, filename: str) -> None:
-        logger.debug(
-            f"_on_file_downloaded: {source_uuid} / {file_uuid} ({filename}), expected {self.uuid}"
-        )
-        if file_uuid == self.uuid:
-            self.downloading = False
-            QTimer.singleShot(
-                MINIMUM_ANIMATION_DURATION_IN_MILLISECONDS, self.stop_button_animation
-            )
+    def _on_file_download_started(self) -> None:
+        self.downloading = True
+        QTimer.singleShot(NO_DELAY, self.start_button_animation)
 
-    @pyqtSlot(str, str, str)
-    def _on_file_missing(self, source_uuid: str, file_uuid: str, filename: str) -> None:
-        logger.debug(
-            f"_on_file_missing: {source_uuid} / {file_uuid} ({filename}), expected {self.uuid}"
-        )
-        if file_uuid == self.uuid:
-            self.downloading = False
-            QTimer.singleShot(
-                MINIMUM_ANIMATION_DURATION_IN_MILLISECONDS, self.stop_button_animation
-            )
+    def _on_file_downloaded(self) -> None:
+        self.downloading = False
+        QTimer.singleShot(MINIMUM_ANIMATION_DURATION_IN_MILLISECONDS, self.stop_button_animation)
+
+    def _on_file_missing(
+        self,
+    ) -> None:
+        self.downloading = False
+        QTimer.singleShot(MINIMUM_ANIMATION_DURATION_IN_MILLISECONDS, self.stop_button_animation)
 
     @pyqtSlot()
     def _on_export_clicked(self) -> None:
@@ -2793,7 +2787,10 @@ class FileWidget(QWidget):
                 if self.controller.api:
                     self.start_button_animation()
                 # Download the file.
-                self.controller.on_submission_download(File, self.uuid)
+                # TODO: have Controller inject data_dir/gpg
+                self.controller.submit_file_download_job(
+                    self.uuid, self.controller.data_dir, self.controller.gpg, self.file_status
+                )
 
     def start_button_animation(self) -> None:
         """
