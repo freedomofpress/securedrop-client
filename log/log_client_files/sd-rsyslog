@@ -81,25 +81,6 @@ def onInit():
     config = configparser.ConfigParser()
     config.read('/etc/sd-rsyslog.conf')
     logvmname = config['sd-rsyslog']['remotevm']
-    localvmname = config['sd-rsyslog'].get('localvm', None)
-
-    # If no localvm name is specified, it must be supplied by Qubes OS. If this
-    # fails, we exit, to avoid falsely identified logs.
-    if localvmname is None:
-        try:
-            get_vm_name_process = Popen(["/usr/bin/qubesdb-read", "/name"],
-                                        stdout=PIPE, stderr=PIPE)
-            vm_name_output, vm_name_error = get_vm_name_process.communicate()
-            if vm_name_error != b"":
-                logging.exception("Error obtaining VM name via qubesdb-read:")
-                logging.exception(vm_name_error.decode("utf-8").strip())
-                sys.exit(1)
-            localvmname = vm_name_output.decode("utf-8").strip()
-        except FileNotFoundError:  # not on Qubes?
-            logging.exception("Could not run qubesdb-read command to obtain VM name.")
-            logging.exception("Note that sd-rsyslog must be run on Qubes OS if no "
-                              "localvm name is specified in the configuration.")
-            sys.exit(1)
 
     process = Popen(
             ["/usr/lib/qubes/qrexec-client-vm", logvmname, "securedrop.Log"],
@@ -107,10 +88,6 @@ def onInit():
             stdout=PIPE,
             stderr=PIPE,
     )
-    process.stdin.write(localvmname.encode("utf-8"))
-    process.stdin.write(b"\n")
-    process.stdin.flush()
-
 
 def onMessage(msg):
     """Process one log message received from rsyslog (e.g. send it to a
