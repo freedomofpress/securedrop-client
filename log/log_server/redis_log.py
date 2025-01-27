@@ -1,6 +1,7 @@
 #!/opt/venvs/securedrop-log/bin/python3
 
 
+import os
 import sys
 
 import redis
@@ -27,7 +28,11 @@ def main():
 
     # the first line is always the remote vm name
     untrusted_line = stdin.readline()
-    qrexec_remote = untrusted_line.rstrip(b"\n").decode("utf-8")
+    qrexec_remote = os.getenv("QREXEC_REMOTE_DOMAIN")
+    if not qrexec_remote:
+        print("ERROR: QREXEC_REMOTE_DOMAIN not set", file=sys.stderr)
+        sys.exit(1)
+
     while True:
         untrusted_line = stdin.readline()
         if untrusted_line == b"":
