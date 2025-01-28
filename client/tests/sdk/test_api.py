@@ -11,7 +11,7 @@ import pytest
 from test_shared import TestShared
 from utils import VCRAPI
 
-from securedrop_client.sdk import API, RequestTimeoutError, ServerConnectionError
+from securedrop_client.sdk import API, RequestTimeoutError, ServerConnectionError, StreamedResponse
 from securedrop_client.sdk.sdlocalobjects import (
     AuthError,
     BaseError,
@@ -391,6 +391,32 @@ def test_download_reply_timeout(mocker):
     tmpdir = tempfile.mkdtemp()
     with pytest.raises(RequestTimeoutError):
         api.download_reply(r, tmpdir)
+
+
+def test_stream_download_path_traversal(mocker, tmp_path):
+    api = API("mock", "mock", "mock", "mock", proxy=False)
+    mocker.patch(
+        "securedrop_client.sdk.API._send_json_request",
+        return_value=StreamedResponse(
+            contents=b"12345",
+            sha256sum="12345",
+        ),
+    )
+    r = Reply(uuid="12345", filename="../.config/autostart/pwned")
+    with pytest.raises(ValueError):
+        api.download_reply(r, tmp_path)
+    s = Submission(
+        uuid="12345",
+        filename="../.config/autostart/pwned",
+        download_url="http://mock",
+        is_read=False,
+        size=1000,
+        source_url="http://mock",
+        submission_url="http://mock",
+        seen_by=False,
+    )
+    with pytest.raises(ValueError):
+        api.download_submission(s, tmp_path)
 
 
 def test_download_submission_timeout(mocker):
