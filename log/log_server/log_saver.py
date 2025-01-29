@@ -25,7 +25,7 @@ def main():
                 filepath = os.path.join(
                     os.getenv("HOME", "/"),
                     "QubesIncomingLogs",
-                    f"{vmname}",
+                    f"{vmname}",  # Restricted to r"\A[0-9_.-].*\Z" by qubes.vm.validate_name()
                     "syslog.log",
                 )
                 dirpath = os.path.dirname(filepath)
