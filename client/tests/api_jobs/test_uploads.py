@@ -41,7 +41,7 @@ def test_send_reply_success(homedir, mocker, session, session_maker, reply_statu
     mock_encrypt = mocker.patch.object(gpg, "encrypt_to_source", return_value=encrypted_reply)
     msg = "wat"
 
-    mock_reply_response = sdk.Reply(uuid=msg_uuid, filename="5-dummy-reply")
+    mock_reply_response = sdk.Reply(uuid=msg_uuid, filename="5-dummy-reply.gpg")
     api_client.reply_source = mocker.MagicMock()
     api_client.reply_source.return_value = mock_reply_response
 
@@ -147,7 +147,7 @@ def test_drafts_ordering(homedir, mocker, session, session_maker, reply_status_c
     mock_encrypt = mocker.patch.object(gpg, "encrypt_to_source", return_value=encrypted_reply)
     msg = "wat"
 
-    mock_reply_response = sdk.Reply(uuid=msg_uuid, filename="2-dummy-reply")
+    mock_reply_response = sdk.Reply(uuid=msg_uuid, filename="2-dummy-reply.gpg")
     api_client.reply_source = mocker.MagicMock()
     api_client.reply_source.return_value = mock_reply_response
 
