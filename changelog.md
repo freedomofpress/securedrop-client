@@ -5,8 +5,8 @@
 This release contains fixes for two security issues; please see our advisory for more details.
 
 * Security fixes:
-  * Prevent path manipulation/traversal attacks in SDK
-  * Don't send source VM name to sd-log
+  * Prevent path manipulation/traversal attacks in SDK (CVE-2025-24888)
+  * Don't send source VM name to sd-log (CVE-2025-24889)
 
 * Miscellaneous:
   * Update year in messages.pot
