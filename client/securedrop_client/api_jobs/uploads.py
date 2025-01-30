@@ -93,15 +93,12 @@ class SendReplyJob(SingleObjectApiJob):
             )
 
             # Update following draft replies for the same source to reflect the new reply count
-            draft_file_counter = draft_reply_db_object.file_counter
-            draft_timestamp = draft_reply_db_object.timestamp
-
             update_draft_replies(
                 session,
                 source.id,
-                draft_timestamp,
-                draft_file_counter,
-                new_file_counter,
+                draft_reply_db_object.timestamp,
+                draft_reply_db_object.file_counter,
+                reply_db_object.file_counter,
                 commit=False,
             )
 
