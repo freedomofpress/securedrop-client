@@ -57,7 +57,7 @@ class ServerConnectionError(Exception):
 
 @dataclass(frozen=True)
 class StreamedResponse:
-    """Container for streamed data along with the filename and ETag checksum sent by the server."""
+    """Container for streamed data along with the ETag checksum sent by the server."""
 
     contents: bytes
     sha256sum: str
