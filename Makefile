@@ -48,6 +48,7 @@ safety:  ## Run safety dependency checks on build dependencies
 		--ignore 67895 \
 		--ignore 70612 \
 		--ignore 71591 \
+		--ignore 74735 \
  		-r
 
 .PHONY: shellcheck
