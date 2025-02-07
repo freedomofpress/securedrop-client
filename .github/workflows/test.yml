@@ -52,7 +52,7 @@ jobs:
           if [[ "${{ matrix.component }}" == "export" ]]; then
             make -C ${{ matrix.component }} ci-install-deps
           fi
-          sudo -u user poetry -C ${{ matrix.component }} install
+          sudo -u user poetry -C ${{ matrix.component }} install --no-root
       - name: Run test
         run: |
           sudo chown -R user:user .
