@@ -18,15 +18,18 @@ python-dateutil = "^2.7.5"
 # In production these two are installed using a system package
 # so match those versions exactly
 PyQt5 = [
-    {version = "=5.15.9", python = ">=3.11", platform = "linux"}, # bookworm
+    {version = "=5.15.9", python = "<=3.12", platform = "linux"}, # bookworm
+    {version = "=5.15.11", python = ">=3.13", platform = "linux"}, # trixie
     {version = "^5.15.11", python = ">=3.11", platform = "darwin"},
 ]
 PyQt5-Qt5 = [
-    {version = "=5.15.2", python = ">=3.11", platform = "linux"}, # bookworm
+    {version = "=5.15.2", python = "<=3.12", platform = "linux"}, # bookworm
+    {version = "=5.15.15", python = ">=3.13", platform = "linux"}, # trixie
     {version = "^5.15.15", python = ">=3.11", platform = "darwin"},
 ]
 PyQt5-sip = [
-    {version = "=12.11.1", python = ">=3.11", platform = "linux"}, # bookworm
+    {version = "=12.11.1", python = "<=3.12", platform = "linux"}, # bookworm
+    {version = "=12.17.0", python = ">=3.13", platform = "linux"}, # trixie
     {version = "^12.16.1", python = ">=3.11", platform = "darwin"},
 ]
 PyAutoGUI = "*"

@@ -22,6 +22,7 @@ jobs:
       matrix:
         debian_version:
           - bookworm
+          - trixie
     runs-on: ubuntu-latest
     outputs:
       artifact_id: ${{ steps.upload.outputs.artifact-id }}
@@ -88,6 +89,7 @@ jobs:
           # Now the packages themselves
           cd ../securedrop-apt-test
           cp -v ../build-bookworm/*.deb workstation/bookworm-nightlies/
+          cp -v ../build-trixie/*.deb workstation/trixie-nightlies/
           git add .
           git diff-index --quiet HEAD || git commit -m "Automated SecureDrop workstation build"
           git push origin main

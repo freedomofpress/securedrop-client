@@ -28,6 +28,7 @@ jobs:
           - proxy
         debian_version:
           - bookworm
+          - trixie
     runs-on: ubuntu-latest
     container: debian:${{ matrix.debian_version }}
     steps:
@@ -69,6 +70,7 @@ jobs:
           - test-random
         debian_version:
           - bookworm
+          - trixie
     runs-on: ubuntu-latest
     container: debian:${{ matrix.debian_version }}
     steps:
@@ -97,6 +99,7 @@ jobs:
       matrix:
         debian_version:
           - bookworm
+          - trixie
     runs-on: ubuntu-latest
     container: debian:${{ matrix.debian_version }}
     steps:
