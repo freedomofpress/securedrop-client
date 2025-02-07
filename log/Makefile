@@ -11,7 +11,7 @@ mypy: ## Type check Python files
 	@poetry run mypy
 
 test: ## Run Python unit tests
-	@poetry run python3 -m unittest
+	@echo "securedrop-log doesn't have any tests yet. :("
 
 # Explanation of the below shell command should it ever break.
 # 1. Set the field separator to ": ##" and any make targets that might appear between : and ##
