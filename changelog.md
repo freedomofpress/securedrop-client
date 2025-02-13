@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.14.1
+
+This release contains fixes for two security issues; please see our advisory for more details.
+
+* Security fixes:
+  * Prevent path manipulation/traversal attacks in SDK (CVE-2025-24888)
+  * Don't send source VM name to sd-log (CVE-2025-24889)
+
+* Miscellaneous:
+  * Update year in messages.pot
+
 ## 0.14.0
 
 * Add support for selecting and deleting multiple sources (#2208, #2188, #2230, #2252, #2293, #2299, #2300)

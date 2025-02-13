@@ -16,7 +16,7 @@ from securedrop_client.db import (
     User,
 )
 from securedrop_client.sdk import API, RequestTimeoutError, ServerConnectionError
-from securedrop_client.storage import update_draft_replies
+from securedrop_client.storage import VALID_FILENAME, update_draft_replies
 
 logger = logging.getLogger(__name__)
 
@@ -76,33 +76,29 @@ class SendReplyJob(SingleObjectApiJob):
             encrypted_reply = self.gpg.encrypt_to_source(self.source_uuid, self.message)
             sdk_reply = self._make_call(encrypted_reply, api_client)
 
-            # Create a new reply object with an updated filename and file counter
-            interaction_count = source.interaction_count + 1
-            filename = f"{interaction_count}-{source.journalist_designation}-reply.gpg"
-
+            # Create a new reply object.  Since the server is authoritative for
+            # the ordering (Reply.file_count) embedded in the filename, we might
+            # as well use the filename it returns, but let's validate it just as
+            # we do in storage.sanitize_submissions_or_replies().
+            if not VALID_FILENAME(sdk_reply.filename):
+                raise ValueError(f"Malformed filename: {sdk_reply.filename}")
             reply_db_object = Reply(
                 uuid=self.reply_uuid,
                 source_id=source.id,
-                filename=filename,
+                filename=sdk_reply.filename,
                 journalist_id=sender.id,
                 content=self.message,
                 is_downloaded=True,
                 is_decrypted=True,
             )
-            new_file_counter = int(sdk_reply.filename.split("-")[0])
-            reply_db_object.file_counter = new_file_counter
-            reply_db_object.filename = sdk_reply.filename
 
             # Update following draft replies for the same source to reflect the new reply count
-            draft_file_counter = draft_reply_db_object.file_counter
-            draft_timestamp = draft_reply_db_object.timestamp
-
             update_draft_replies(
                 session,
                 source.id,
-                draft_timestamp,
-                draft_file_counter,
-                new_file_counter,
+                draft_reply_db_object.timestamp,
+                draft_reply_db_object.file_counter,
+                reply_db_object.file_counter,
                 commit=False,
             )
 
