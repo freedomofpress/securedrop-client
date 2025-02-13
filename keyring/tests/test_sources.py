@@ -1,3 +1,4 @@
+from datetime import UTC, datetime, timedelta
 from pathlib import Path
 
 import pysequoia
@@ -17,3 +18,7 @@ def test_pgp_fingerprint_count():
         == "SecureDrop Release Signing Key <securedrop-release-key-2021@freedom.press>"
     )
     assert key.expiration.year == 2027
+    # Fail if we are within 6 months of the key's expiry
+    assert datetime.now(tz=UTC) < (key.expiration - timedelta(days=6 * 30)), (
+        "key expires in less than 6 months"
+    )
