@@ -119,6 +119,12 @@ msgstr "Последнее обновление: {}"
 msgid "Last Refresh: never"
 msgstr "Последнее обновление: никогда"
 
+msgid "DELETE SOURCES"
+msgstr ""
+
+msgid "Delete selected source accounts. Ctrl+click sources below to select multiple sources."
+msgstr ""
+
 msgid "{}"
 msgstr "{}"
 
@@ -148,6 +154,18 @@ msgstr "Просмотреть или получить файлы"
 
 msgid "Send a response"
 msgstr "Отправить ответ"
+
+msgid "Or, select multiple sources with Ctrl+click."
+msgstr ""
+
+msgid "Multiple Sources Selected"
+msgstr ""
+
+msgid "Select or de-select sources using Ctrl+click, Shift+click, or by dragging the mouse."
+msgstr ""
+
+msgid "Use the top toolbar to delete multiple sources at once. You will be shown a confirmation dialog before anything is deleted."
+msgstr ""
 
 msgid "Deleting files and messages…"
 msgstr "Удаляю файлы и сообщения…"
@@ -294,20 +312,20 @@ msgstr "ГОТОВО"
 msgid "BACK"
 msgstr "ВЕРНУТЬСЯ"
 
-msgid "No device detected"
-msgstr "Устройство не обнаружено"
+msgid "No USB drives detected"
+msgstr ""
 
-msgid "Too many USB devices detected; please insert one supported device."
-msgstr "Обнаружено слишком много USB устройств; пожалуйста, вставьте один поддерживаемый девайс."
+msgid "Too many USB drives detected; please insert one supported drive."
+msgstr ""
 
 msgid "Either the drive is not encrypted or there is something else wrong with it.<br />If this is a VeraCrypt drive, please unlock it from within the sd-devices VM, then try again."
 msgstr "Диск либо не зашифрован, или что-то ещё не так.<br />Если это диск VeraCrypt, пожалуйста, разблокируйте его из виртуальной машины sd-devices и попробуйте ещё раз."
 
-msgid "The device is ready for export."
-msgstr "Устройство готово к экспортированию."
+msgid "The drive is ready for export."
+msgstr ""
 
-msgid "The device is locked."
-msgstr "Устройство заблокировано."
+msgid "The drive is locked."
+msgstr ""
 
 msgid "The passphrase provided did not work. Please try again."
 msgstr "Введенный пароль не сработал. Пожалуйста, попробуйте еще раз."
@@ -318,8 +336,8 @@ msgstr "Ошибка во время монтирования диска"
 msgid "Error during export"
 msgstr "Ошибка во время экспорта"
 
-msgid "Files were exported successfully, but the USB device could not be unmounted."
-msgstr "Файлы были успешно экспортированы, но USB устройство не получилось отмонтировать."
+msgid "Files were exported successfully, but the USB drive could not be unmounted."
+msgstr ""
 
 msgid "Files were exported successfully, but some temporary files remain on disk. Reboot to remove them."
 msgstr "Файлы были экспортированы успешно, но некоторые временные файлы остались на диске. Перезагрузите систему, чтобы их убрать."
@@ -327,8 +345,8 @@ msgstr "Файлы были экспортированы успешно, но н
 msgid "Export successful"
 msgstr "Экспорт выполнен успешно"
 
-msgid "Error encountered with this device. See your administrator for help."
-msgstr "Обнаружена ошибка в устройстве. Проконтактируйте администратора для помощи."
+msgid "Error encountered with this drive. See your administrator for help."
+msgstr ""
 
 msgid "Files were moved or missing and could not be exported."
 msgstr "Файлы были перемещены или не могут быть найдены, из-за чего их не получилось экспортировать."
@@ -398,6 +416,12 @@ msgstr[2] "ДА, УДАЛИТЬ ВЕСЬ АККАУНТ ИСТОЧНИКА"
 msgid "Are you sure this is what you want?"
 msgstr "Вы уверены в этом?"
 
+msgid "{text} (wait {delay} sec)"
+msgstr ""
+
+msgid "Notice: All sources have been selected!"
+msgstr ""
+
 msgid "Delete entire account for: {source_or_sources}?"
 msgstr ""
 
@@ -413,8 +437,29 @@ msgstr "Ваша организация не сможет отправлять �
 msgid "All files and messages from that source will also be destroyed."
 msgstr "Все файлы и сообщения источника будут очищены."
 
+msgid "{sources} ... plus {count} additional sources"
+msgstr ""
+
 msgid "No sources have been selected."
 msgstr ""
+
+#~ msgid "No device detected"
+#~ msgstr "Устройство не обнаружено"
+
+#~ msgid "Too many USB devices detected; please insert one supported device."
+#~ msgstr "Обнаружено слишком много USB устройств; пожалуйста, вставьте один поддерживаемый девайс."
+
+#~ msgid "The device is ready for export."
+#~ msgstr "Устройство готово к экспортированию."
+
+#~ msgid "The device is locked."
+#~ msgstr "Устройство заблокировано."
+
+#~ msgid "Files were exported successfully, but the USB device could not be unmounted."
+#~ msgstr "Файлы были успешно экспортированы, но USB устройство не получилось отмонтировать."
+
+#~ msgid "Error encountered with this device. See your administrator for help."
+#~ msgstr "Обнаружена ошибка в устройстве. Проконтактируйте администратора для помощи."
 
 #~ msgid "SUBMIT"
 #~ msgstr "ОТПРАВИТЬ"
