@@ -9,7 +9,6 @@ import os
 from gettext import gettext as _
 from unittest.mock import Mock, call
 
-import arrow
 import pytest
 import sqlalchemy.orm.exc
 from PyQt5.QtTest import QSignalSpy
@@ -385,20 +384,20 @@ def test_Controller_last_sync_with_file(homedir, config, mocker, session_maker):
     """
     The flag indicating the time of the last sync with the API is stored in a
     dotfile in the user's home directory. If such a file exists, ensure an
-    "arrow" object (representing the date/time) is returned.
+    datetime object is returned.
     Using the `config` fixture to ensure the config is written to disk.
     """
     mock_gui = mocker.MagicMock()
 
     co = Controller("http://localhost", mock_gui, session_maker, homedir, None)
 
-    timestamp = "2018-10-10 18:17:13+01:00"
+    timestamp = "2018-10-10T18:17:13.045250+00:00"
     mocker.patch("builtins.open", mocker.mock_open(read_data=timestamp))
 
     result = co.get_last_sync()
 
-    assert isinstance(result, arrow.Arrow)
-    assert result.format() == timestamp
+    assert isinstance(result, datetime.datetime)
+    assert result.isoformat() == timestamp
 
 
 def test_Controller_last_sync_no_file(homedir, config, mocker, session_maker):

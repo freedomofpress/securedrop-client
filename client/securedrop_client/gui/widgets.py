@@ -26,7 +26,6 @@ from gettext import gettext as _
 from typing import Optional, Union
 from uuid import uuid4
 
-import arrow
 import sqlalchemy.orm.exc
 from PyQt5.QtCore import QEvent, QObject, QSize, Qt, QTimer, pyqtBoundSignal, pyqtSignal, pyqtSlot
 from PyQt5.QtGui import (
@@ -1133,9 +1132,7 @@ class SourceListWidgetItem(QListWidgetItem):
         if me and them:
             assert isinstance(me, SourceWidget)
             assert isinstance(them, SourceWidget)
-            my_ts = arrow.get(me.last_updated)
-            other_ts = arrow.get(them.last_updated)
-            return my_ts < other_ts
+            return me.last_updated < them.last_updated
         return True
 
 

@@ -22,11 +22,10 @@ import inspect
 import logging
 import os
 import uuid
-from datetime import datetime
+from datetime import UTC, datetime
 from gettext import gettext as _
 from gettext import ngettext
 
-import arrow
 import sqlalchemy.orm.exc
 from PyQt5.QtCore import QObject, QProcess, QThread, QTimer, pyqtSignal, pyqtSlot
 from sqlalchemy.orm.session import sessionmaker
@@ -629,13 +628,13 @@ class Controller(QObject):
         """
         return bool(self.api and self.api.token is not None)
 
-    def get_last_sync(self):  # type: ignore[no-untyped-def]
+    def get_last_sync(self) -> datetime | None:
         """
         Returns the time of last synchronisation with the remote SD server.
         """
         try:
             with open(self.last_sync_filepath) as f:
-                return arrow.get(f.read())
+                return datetime.fromisoformat(f.read())
         except Exception:
             return None
 
@@ -654,7 +653,7 @@ class Controller(QObject):
               successful
         """
         with open(self.last_sync_filepath, "w") as f:
-            f.write(arrow.now().format())
+            f.write(datetime.now(UTC).isoformat())
         self.show_last_sync()
 
         missing_files = storage.update_missing_files(self.data_dir, self.session)
