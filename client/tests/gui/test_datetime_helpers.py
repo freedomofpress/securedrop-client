@@ -15,7 +15,7 @@ def test_format_datetime_month_day():
     # may result in UI issues - this test is a reminder to check both views!
     midnight_january_london = datetime.datetime(2023, 1, 1, 0, 0, 0, tzinfo=datetime.UTC)
 
-    assert format_datetime_month_day(midnight_january_london) == "Jan 1"
+    assert format_datetime_month_day(midnight_january_london) == "Jan 1, 00:00"
 
 
 def test_localise_datetime(mocker):
@@ -36,4 +36,4 @@ def test_format_datetime_local(mocker):
         return_value=QByteArray(b"Pacific/Auckland"),
     )
     evening_january_1_london = datetime.datetime(2023, 1, 1, 18, 0, 0, tzinfo=datetime.UTC)
-    assert format_datetime_local(evening_january_1_london) == "Jan 2"
+    assert format_datetime_local(evening_january_1_london) == "Jan 2, 07:00"

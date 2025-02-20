@@ -14,7 +14,7 @@ def format_datetime_month_day(date: datetime.datetime) -> str:
     """
     Formats date as e.g. Sep 16
     """
-    return arrow.get(date).format("MMM D")
+    return arrow.get(date).format("MMM D, HH:mm")
 
 
 def localise_datetime(date: datetime.datetime) -> datetime.datetime:
