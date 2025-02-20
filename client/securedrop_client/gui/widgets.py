@@ -98,7 +98,7 @@ logger = logging.getLogger(__name__)
 
 MINIMUM_ANIMATION_DURATION_IN_MILLISECONDS = 300
 NO_DELAY = 1
-LAST_UPDATED_LABEL_TOOLTIP="Time of last activity from source"
+LAST_UPDATED_LABEL_TOOLTIP = "Time of last activity from source"
 
 
 class BottomPane(QWidget):
