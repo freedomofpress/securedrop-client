@@ -117,6 +117,12 @@ msgstr "近期重新整理: {}"
 msgid "Last Refresh: never"
 msgstr "上一回重新整理: 尚無"
 
+msgid "DELETE SOURCES"
+msgstr ""
+
+msgid "Delete selected source accounts. Ctrl+click sources below to select multiple sources."
+msgstr ""
+
 msgid "{}"
 msgstr "{}"
 
@@ -146,6 +152,18 @@ msgstr "檢視或取回檔案"
 
 msgid "Send a response"
 msgstr "發送回應"
+
+msgid "Or, select multiple sources with Ctrl+click."
+msgstr ""
+
+msgid "Multiple Sources Selected"
+msgstr ""
+
+msgid "Select or de-select sources using Ctrl+click, Shift+click, or by dragging the mouse."
+msgstr ""
+
+msgid "Use the top toolbar to delete multiple sources at once. You will be shown a confirmation dialog before anything is deleted."
+msgstr ""
 
 msgid "Deleting files and messages…"
 msgstr "刪除檔案與訊息…"
@@ -286,20 +304,20 @@ msgstr "完成"
 msgid "BACK"
 msgstr "返回"
 
-msgid "No device detected"
-msgstr "未偵測到裝置"
+msgid "No USB drives detected"
+msgstr ""
 
-msgid "Too many USB devices detected; please insert one supported device."
-msgstr "偵測到太多 USB 裝置；請僅插入一項裝置。"
+msgid "Too many USB drives detected; please insert one supported drive."
+msgstr ""
 
 msgid "Either the drive is not encrypted or there is something else wrong with it.<br />If this is a VeraCrypt drive, please unlock it from within the sd-devices VM, then try again."
 msgstr "裝置可能未加密或發生其他錯誤。<br />如果是 VeraCrypt 加密磁碟，請先從 sd-devices 虛擬機器中解鎖，再試一次。"
 
-msgid "The device is ready for export."
-msgstr "裝置已準備好匯出。"
+msgid "The drive is ready for export."
+msgstr ""
 
-msgid "The device is locked."
-msgstr "裝置已鎖定。"
+msgid "The drive is locked."
+msgstr ""
 
 msgid "The passphrase provided did not work. Please try again."
 msgstr "您輸入的助記詞無效，請再試一次。"
@@ -310,8 +328,8 @@ msgstr "掛載磁碟時發生錯誤"
 msgid "Error during export"
 msgstr "匯出時發生錯誤"
 
-msgid "Files were exported successfully, but the USB device could not be unmounted."
-msgstr "已成功匯出檔案，但無法卸除 USB 裝置。"
+msgid "Files were exported successfully, but the USB drive could not be unmounted."
+msgstr ""
 
 msgid "Files were exported successfully, but some temporary files remain on disk. Reboot to remove them."
 msgstr "已成功匯出檔案，但磁碟上仍有部分暫存檔案。請重新開機以移除這些暫存檔案。"
@@ -319,8 +337,8 @@ msgstr "已成功匯出檔案，但磁碟上仍有部分暫存檔案。請重新
 msgid "Export successful"
 msgstr "成功滙出"
 
-msgid "Error encountered with this device. See your administrator for help."
-msgstr "本裝置發生錯誤。請聯繫您的系統管理員。"
+msgid "Error encountered with this drive. See your administrator for help."
+msgstr ""
 
 msgid "Files were moved or missing and could not be exported."
 msgstr "檔案已被移動或遺失，無法匯出。"
@@ -388,6 +406,12 @@ msgstr[0] "確認刪除全部的線人帳戶"
 msgid "Are you sure this is what you want?"
 msgstr "確認真要這麼做？"
 
+msgid "{text} (wait {delay} sec)"
+msgstr ""
+
+msgid "Notice: All sources have been selected!"
+msgstr ""
+
 msgid "Delete entire account for: {source_or_sources}?"
 msgstr ""
 
@@ -403,8 +427,29 @@ msgstr "您的組織將無法向他們發送回覆。"
 msgid "All files and messages from that source will also be destroyed."
 msgstr "即將刪除此線人全部的檔案與訊息。"
 
+msgid "{sources} ... plus {count} additional sources"
+msgstr ""
+
 msgid "No sources have been selected."
 msgstr ""
+
+#~ msgid "No device detected"
+#~ msgstr "未偵測到裝置"
+
+#~ msgid "Too many USB devices detected; please insert one supported device."
+#~ msgstr "偵測到太多 USB 裝置；請僅插入一項裝置。"
+
+#~ msgid "The device is ready for export."
+#~ msgstr "裝置已準備好匯出。"
+
+#~ msgid "The device is locked."
+#~ msgstr "裝置已鎖定。"
+
+#~ msgid "Files were exported successfully, but the USB device could not be unmounted."
+#~ msgstr "已成功匯出檔案，但無法卸除 USB 裝置。"
+
+#~ msgid "Error encountered with this device. See your administrator for help."
+#~ msgstr "本裝置發生錯誤。請聯繫您的系統管理員。"
 
 #~ msgid "SUBMIT"
 #~ msgstr "提交"
