@@ -59,8 +59,13 @@ from securedrop_client.api_jobs.uploads import (
     SendReplyJobTimeoutError,
 )
 from securedrop_client.crypto import GpgHelper
+from securedrop_client.gui.base.progress import ProgressProxy
 from securedrop_client.queue import ApiJobQueue
-from securedrop_client.sdk import AuthError, RequestTimeoutError, ServerConnectionError
+from securedrop_client.sdk import (
+    AuthError,
+    RequestTimeoutError,
+    ServerConnectionError,
+)
 from securedrop_client.sync import ApiSync
 from securedrop_client.utils import check_dir_permissions
 
@@ -825,7 +830,11 @@ class Controller(QObject):
 
     @login_required
     def _submit_download_job(
-        self, object_type: type[db.Reply] | type[db.Message] | type[db.File], uuid: str
+        self,
+        object_type: type[db.Reply] | type[db.Message] | type[db.File],
+        uuid: str,
+        # progress is only reported for file downloads
+        progress: ProgressProxy | None = None,
     ) -> None:
         if object_type == db.Reply:
             job: ReplyDownloadJob | MessageDownloadJob | FileDownloadJob = ReplyDownloadJob(
@@ -842,6 +851,7 @@ class Controller(QObject):
             job.success_signal.connect(self.on_file_download_success)
             job.failure_signal.connect(self.on_file_download_failure)
 
+        job.progress = progress
         self.add_job.emit(job)
 
     def download_new_messages(self) -> None:
@@ -974,12 +984,15 @@ class Controller(QObject):
 
     @login_required
     def on_submission_download(
-        self, submission_type: type[db.File] | type[db.Message], submission_uuid: str
+        self,
+        submission_type: type[db.File] | type[db.Message],
+        submission_uuid: str,
+        progress: ProgressProxy | None = None,
     ) -> None:
         """
         Download the file associated with the Submission (which may be a File or Message).
         """
-        self._submit_download_job(submission_type, submission_uuid)
+        self._submit_download_job(submission_type, submission_uuid, progress)
 
     def on_file_download_success(self, uuid: str) -> None:
         """

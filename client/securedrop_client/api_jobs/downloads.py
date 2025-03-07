@@ -12,6 +12,7 @@ from sqlalchemy.orm.session import Session
 from securedrop_client.api_jobs.base import SingleObjectApiJob
 from securedrop_client.crypto import CryptoError, GpgHelper
 from securedrop_client.db import DownloadError, DownloadErrorCodes, File, Message, Reply
+from securedrop_client.gui.base.progress import ProgressProxy
 from securedrop_client.sdk import API, BaseError
 from securedrop_client.sdk import Reply as SdkReply
 from securedrop_client.sdk import Submission as SdkSubmission
@@ -56,6 +57,7 @@ class DownloadJob(SingleObjectApiJob):
     def __init__(self, data_dir: str, uuid: str) -> None:
         super().__init__(uuid)
         self.data_dir = data_dir
+        self.progress: ProgressProxy | None = None
 
     def _get_realistic_timeout(self, size_in_bytes: int) -> int:
         """
@@ -177,6 +179,8 @@ class DownloadJob(SingleObjectApiJob):
         """
         Decrypt the file located at the given filepath and mark it as decrypted.
         """
+        if self.progress:
+            self.progress.set_decrypting()
         try:
             original_filename = self.call_decrypt(filepath, session)
             db_object.download_error = None
@@ -260,7 +264,7 @@ class ReplyDownloadJob(DownloadJob):
         # will want to pass the default request timeout to download_reply instead of setting it on
         # the api object directly.
         api.default_request_timeout = 20
-        return api.download_reply(sdk_object)
+        return api.download_reply(sdk_object, progress=self.progress)
 
     def call_decrypt(self, filepath: str, session: Session | None = None) -> str:
         """
@@ -316,7 +320,7 @@ class MessageDownloadJob(DownloadJob):
         sdk_object.source_uuid = db_object.source.uuid
         sdk_object.filename = db_object.filename
         return api.download_submission(
-            sdk_object, timeout=self._get_realistic_timeout(db_object.size)
+            sdk_object, timeout=self._get_realistic_timeout(db_object.size), progress=self.progress
         )
 
     def call_decrypt(self, filepath: str, session: Session | None = None) -> str:
@@ -375,7 +379,7 @@ class FileDownloadJob(DownloadJob):
         sdk_object.source_uuid = db_object.source.uuid
         sdk_object.filename = db_object.filename
         return api.download_submission(
-            sdk_object, timeout=self._get_realistic_timeout(db_object.size)
+            sdk_object, timeout=self._get_realistic_timeout(db_object.size), progress=self.progress
         )
 
     def call_decrypt(self, filepath: str, session: Session | None = None) -> str:

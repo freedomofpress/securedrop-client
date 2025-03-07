@@ -194,6 +194,36 @@ def humanize_filesize(filesize: int) -> str:
         return f"{math.floor(filesize / 1024**2)}MB"
 
 
+def humanize_speed(speed: float, length: int = 2) -> str:
+    """
+    Returns a human readable string of a speed, with an input unit of
+    bytes/second.
+
+    length controls how it should be rounded, e.g. length=3 will
+    give you 100KB/s, 4.02MB/s, 62.3KB/s, etc.
+    """
+
+    def adjust(x: float) -> float:
+        if x < 1:
+            # Less than 1B/s, just round to 0
+            return 0
+        if x >= 10**length:
+            return math.floor(x)
+        # Calculate digits ahead of decimal point
+        digits = math.ceil(math.log10(x))
+        if digits >= length:
+            return round(x)
+        # Otherwise keep a few digits after the decimal
+        return round(x, length - digits)
+
+    if speed < 1024:
+        return f"{adjust(speed)}B/s"
+    elif speed < 1024 * 1024:
+        return f"{adjust(speed / 1024)}KB/s"
+    else:
+        return f"{adjust(speed / 1024**2)}MB/s"
+
+
 @contextmanager
 def chronometer(logger: logging.Logger, description: str) -> Generator:
     """
