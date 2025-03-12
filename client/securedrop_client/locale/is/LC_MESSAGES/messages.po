@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: SecureDrop Client 0.5.0\n"
 "Report-Msgid-Bugs-To: securedrop@freedom.press\n"
-"PO-Revision-Date: 2024-09-09 09:32+0000\n"
+"PO-Revision-Date: 2024-12-10 11:33+0000\n"
 "Last-Translator: Sveinn í Felli <sv1@fellsnet.is>\n"
 "Language-Team: Icelandic <https://weblate.securedrop.org/projects/securedrop/securedrop-client/is/>\n"
 "Language: is\n"
@@ -15,7 +15,7 @@ msgstr ""
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=n % 10 != 1 || n % 100 == 11;\n"
-"X-Generator: Weblate 5.6.2\n"
+"X-Generator: Weblate 5.8.4\n"
 "Generated-By: Babel 2.9.1\n"
 
 msgid "{application_name} is already running"
@@ -118,6 +118,12 @@ msgstr "Síðasti endurlestur: {}"
 msgid "Last Refresh: never"
 msgstr "Síðasti endurlestur: aldrei"
 
+msgid "DELETE SOURCES"
+msgstr "EYÐA HEIMILDARMÖNNUM"
+
+msgid "Delete selected source accounts. Ctrl+click sources below to select multiple sources."
+msgstr "Eyða völdum aðgöngum heimildarmanna. Ctrl+smella á heimildarmenn hér fyrir neðan til að velja marga heimildarmenn."
+
 msgid "{}"
 msgstr "{}"
 
@@ -147,6 +153,18 @@ msgstr "Skoða eða sækja skrár"
 
 msgid "Send a response"
 msgstr "Senda svar"
+
+msgid "Or, select multiple sources with Ctrl+click."
+msgstr "Eða veldu marga heimildarmenn með Ctrl+smella."
+
+msgid "Multiple Sources Selected"
+msgstr "Margir heimildarmenn valdir"
+
+msgid "Select or de-select sources using Ctrl+click, Shift+click, or by dragging the mouse."
+msgstr "Veldu eða afveldu heimildarmenn með Ctrl+smella, Shift+smella eða með því að draga músarbendillinn."
+
+msgid "Use the top toolbar to delete multiple sources at once. You will be shown a confirmation dialog before anything is deleted."
+msgstr "Notaðu verkfærastikuna efst til að eyða mörgum heimildarmönnum í einu. Þú munt sjá staðfestingarglugga áður en nokkru er eytt."
 
 msgid "Deleting files and messages…"
 msgstr "Eyði skrám og skilaboðum…"
@@ -290,20 +308,20 @@ msgstr "LOKIÐ"
 msgid "BACK"
 msgstr "TIL BAKA"
 
-msgid "No device detected"
-msgstr "Ekkert tæki fannst"
+msgid "No USB drives detected"
+msgstr "Engin USB-drif fundust"
 
-msgid "Too many USB devices detected; please insert one supported device."
-msgstr "Of mörg USB-tæki fundust; settu inn eitt stutt tæki."
+msgid "Too many USB drives detected; please insert one supported drive."
+msgstr "Of mörg USB-drif fundust; settu inn einn hæfan minnislykil."
 
 msgid "Either the drive is not encrypted or there is something else wrong with it.<br />If this is a VeraCrypt drive, please unlock it from within the sd-devices VM, then try again."
 msgstr "Annað hvort er drifið ekki dulritað eða að það er eitthvað annað að því.<br />Ef þetta er VeraCrypt-drif, skaltu aflæsa því í sd-devices sýndarvélinni og prófa síðan aftur."
 
-msgid "The device is ready for export."
-msgstr "Tækið er tilbúið fyrir útflutning."
+msgid "The drive is ready for export."
+msgstr "Drifið er tilbúið til útflutnings."
 
-msgid "The device is locked."
-msgstr "Tækið er læst."
+msgid "The drive is locked."
+msgstr "Drifið er læst."
 
 msgid "The passphrase provided did not work. Please try again."
 msgstr "Uppgefið lykilorð virkaði ekki. Reyndu aftur."
@@ -314,8 +332,8 @@ msgstr "Villa við að tengja drif í skráakerfi"
 msgid "Error during export"
 msgstr "Villa við útflutning"
 
-msgid "Files were exported successfully, but the USB device could not be unmounted."
-msgstr "Tókst að flytja út skrár, en ekki var hægt að aftengja USB-tækið."
+msgid "Files were exported successfully, but the USB drive could not be unmounted."
+msgstr "Tókst að flytja út skrárnar, en ekki heppnaðist að aftengja USB-drifið."
 
 msgid "Files were exported successfully, but some temporary files remain on disk. Reboot to remove them."
 msgstr "Tókst að flytja út skrár, en einhverjar bráðabirgðaskrár eru eftir á disknum. Endurræstu til að fjarlægja þær."
@@ -323,8 +341,8 @@ msgstr "Tókst að flytja út skrár, en einhverjar bráðabirgðaskrár eru eft
 msgid "Export successful"
 msgstr "Útflutningur tókst"
 
-msgid "Error encountered with this device. See your administrator for help."
-msgstr "Villa kom upp með þetta tæki. Hafðu samband við stjórann þinn til að fá aðstoð."
+msgid "Error encountered with this drive. See your administrator for help."
+msgstr "Villa kom upp með þetta drif. Leitaðu til kerfisstjórnandans þíns til að fá aðstoð."
 
 msgid "Files were moved or missing and could not be exported."
 msgstr "Skrár voru færðar eða þær vantar, þannig að ekki er hægt að flytja þær út."
@@ -383,18 +401,22 @@ msgstr "Hafðu samband við kerfisstjórann þinn til að fá frekari aðstoð."
 msgid "This file type cannot be printed."
 msgstr "Ekki er hægt að prenta þessa gerð skráar."
 
-#, fuzzy
-#| msgid "YES, DELETE ENTIRE SOURCE ACCOUNT"
 msgid "YES, DELETE ENTIRE SOURCE ACCOUNT"
 msgid_plural "YES, DELETE {number} SOURCE ACCOUNTS"
 msgstr[0] "JÁ, EYÐA ÖLLUM AÐGANGI HEIMILDARMANNS"
-msgstr[1] "JÁ, EYÐA ÖLLUM AÐGANGI HEIMILDARMANNS"
+msgstr[1] "JÁ, EYÐA {number} AÐGÖNGUM HEIMILDARMANNA"
 
 msgid "Are you sure this is what you want?"
 msgstr "Ertu viss um að þetta sé það sem þú viljir?"
 
+msgid "{text} (wait {delay} sec)"
+msgstr "{text} (bíddu í {delay} sek)"
+
+msgid "Notice: All sources have been selected!"
+msgstr "Athugaðu: Allir heimildarmenn hafa verið valdir!"
+
 msgid "Delete entire account for: {source_or_sources}?"
-msgstr ""
+msgstr "Eyða öllum aðgangnum fyrir: {source_or_sources}?"
 
 msgid "When the entire account for a source is deleted:"
 msgstr "Þegar öllum notandaaðgangi heimildarmanns er eytt:"
@@ -408,8 +430,29 @@ msgstr "Þið munið ekki geta sent þeim svör."
 msgid "All files and messages from that source will also be destroyed."
 msgstr "Öllum skilaboðum og skrám frá þessum heimildarmanni verður einnig eytt."
 
+msgid "{sources} ... plus {count} additional sources"
+msgstr "{sources} ... og {count} heimildarmenn í viðbót"
+
 msgid "No sources have been selected."
-msgstr ""
+msgstr "Engir heimildarmenn hafa verið valdir."
+
+#~ msgid "No device detected"
+#~ msgstr "Ekkert tæki fannst"
+
+#~ msgid "Too many USB devices detected; please insert one supported device."
+#~ msgstr "Of mörg USB-tæki fundust; settu inn eitt stutt tæki."
+
+#~ msgid "The device is ready for export."
+#~ msgstr "Tækið er tilbúið fyrir útflutning."
+
+#~ msgid "The device is locked."
+#~ msgstr "Tækið er læst."
+
+#~ msgid "Files were exported successfully, but the USB device could not be unmounted."
+#~ msgstr "Tókst að flytja út skrár, en ekki var hægt að aftengja USB-tækið."
+
+#~ msgid "Error encountered with this device. See your administrator for help."
+#~ msgstr "Villa kom upp með þetta tæki. Hafðu samband við stjórann þinn til að fá aðstoð."
 
 #~ msgid "SUBMIT"
 #~ msgstr "SENDA INN"
