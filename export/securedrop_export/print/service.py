@@ -53,6 +53,9 @@ MIMETYPE_PRINT_WITHOUT_CONVERSION = [
 ]
 LIBREOFFICE_DESKTOP_DIR = Path("/usr/share/applications/")
 
+# IPP-USB Socket is created when a printer is detected
+IPP_USB_CTRL_SOCKET = "/var/ipp-usb/ctrl"
+
 
 class Service:
     """
@@ -102,8 +105,12 @@ class Service:
         Check printer setup.
         Raise ExportException if supported setup is not found.
         """
-        logger.info("Searching for IPP printers using IPP-USB:")
-        # TODO: not yet implemented
+        logger.info("Checking if IPP-USB printers are connected")
+
+        # IPP-USB connected printer heuristic (not perfect; fine as smoke test)
+        printer_found = os.path.exists(IPP_USB_CTRL_SOCKET)
+        if not printer_found:
+            raise ExportException(sdstatus=Status.ERROR_PRINTER_NOT_FOUND)
 
     def _print_test_page(self):
         logger.info("Printing test page")

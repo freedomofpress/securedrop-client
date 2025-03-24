@@ -10,7 +10,7 @@ import pytest
 from securedrop_export.archive import Archive
 from securedrop_export.directory import safe_mkdir
 from securedrop_export.exceptions import ExportException
-from securedrop_export.print.service import Service
+from securedrop_export.print.service import IPP_USB_CTRL_SOCKET, Service
 from securedrop_export.print.status import Status
 
 SUPPORTED_MIMETYPE_COUNT = 107  # Mimetypes in the sample LibreOffice .desktop files
@@ -210,21 +210,18 @@ class TestPrint:
 
         assert ex.value.sdstatus is Status.ERROR_PRINT
 
-    @pytest.skip("Not yet implemented")
-    def test__check_printer_setup(self, mocker):
-        assert self.service.printer_preflight() == Status.PREFLIGHT_SUCCESS
+    def test__check_printer_setup(self):
+        # Printer found
+        with mock.patch("os.path.exists", return_value=True) as path_exists:
+            self.service._check_printer_setup()  # No exception raised
+            assert path_exists.called_once_with(IPP_USB_CTRL_SOCKET)
 
-    @pytest.skip("Not yet implemented")
-    def test__check_printer_setup_error(self, ipp_usb_output, expected_status, mocker):
-        with pytest.raises(ExportException) as ex:
-            self.service._check_printer_setup()
-        assert ex.value.sdstatus is Status.ERROR_PRINTER_NOT_FOUND
-
-    @pytest.skip("Not yet implemented")
-    def test__check_printer_setup_error_checking_printer(self, mock_output):
-        with pytest.raises(ExportException) as ex:
-            self.service._check_printer_setup()
-        assert ex.value.sdstatus is Status.ERROR_UNKNOWN
+        # Printer not found
+        with mock.patch("os.path.exists", return_value=False) as path_exists:
+            with pytest.raises(ExportException) as ex:
+                self.service._check_printer_setup()
+            assert ex.value.sdstatus is Status.ERROR_PRINTER_NOT_FOUND
+            assert path_exists.called_once_with(IPP_USB_CTRL_SOCKET)
 
     def test__print_test_page_calls_method(self):
         p = mock.patch.object(self.service, "_print_file")
