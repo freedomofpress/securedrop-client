@@ -130,7 +130,7 @@ The supported device types for export are as follows, including the possible err
 
 3. `printer-preflight`, `printer-test`: test the printer and ensure it is ready.
     - `ERROR_PRINTER_NOT_FOUND` if no printer is detected
-    - `ERROR_IPP_USB_CONFIGURATION` if `ipp-usb` is misconfigured
+    - `ERROR_PRINTER_DISCOVERY` if `ipp-usb` is misconfigured
     - `ERROR_PRINT` if there is an error printing
     - `PRINT_PREFLIGHT_SUCCESS` if preflight checks were successful (Preflight only)
 

@@ -112,16 +112,15 @@ class Service:
 
         except subprocess.CalledProcessError as e:
             logger.debug("Failed to check for IPP-USB devices")
-            raise ExportException(sdstatus=Status.ERROR_UNKNOWN) from e
+            raise ExportException(sdstatus=Status.ERROR_PRINTER_DISCOVERY) from e
 
         # Failure Conditions
-        if "Configuration files: OK" not in ipp_usb_output:
-            raise ExportException(sdstatus=Status.ERROR_IPP_USB_CONFIGURATION)
-        elif "No IPP over USB devices found" in ipp_usb_output:
+        if "No IPP over USB devices found" in ipp_usb_output:
             raise ExportException(sdstatus=Status.ERROR_PRINTER_NOT_FOUND)
         elif "IPP over USB devices:" not in ipp_usb_output:
+            # Fallback in case unexpected outputs
             logger.debug("Failed to check for IPP-USB devices")
-            raise ExportException(sdstatus=Status.ERROR_UNKNOWN)
+            raise ExportException(sdstatus=Status.ERROR_PRINTER_DISCOVERY)
 
     def _print_test_page(self):
         logger.info("Printing test page")

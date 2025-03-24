@@ -166,7 +166,7 @@ def test_PrintDialog_continue_button_enabled_after_preflight(mocker, print_dialo
 
 @pytest.mark.parametrize(
     "print_dialog",
-    [ExportStatus.ERROR_IPP_USB_CONFIGURATION.value],
+    [ExportStatus.ERROR_PRINTER_DISCOVERY.value],
     indirect=True,
 )
 def test_PrintDialog__on_print_preflight_check_failed_shows_error(mocker, print_dialog):

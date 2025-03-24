@@ -244,7 +244,7 @@ class TestPrint:
         ("ipp_usb_output", "expected_status"),
         [
             (IPP_USB_OUTPUT_NO_PRINTER, Status.ERROR_PRINTER_NOT_FOUND),
-            (IPP_USB_OUTPUT_WRONG_CONFIG, Status.ERROR_IPP_USB_CONFIGURATION),
+            (IPP_USB_OUTPUT_WRONG_CONFIG, Status.ERROR_PRINTER_DISCOVERY),
         ],
     )
     def test__check_printer_setup_error(self, ipp_usb_output, expected_status, mocker):
@@ -260,7 +260,7 @@ class TestPrint:
     def test__check_printer_setup_error_checking_printer(self, mock_output):
         with pytest.raises(ExportException) as ex:
             self.service._check_printer_setup()
-        assert ex.value.sdstatus is Status.ERROR_UNKNOWN
+        assert ex.value.sdstatus is Status.ERROR_PRINTER_DISCOVERY
 
     def test__print_test_page_calls_method(self):
         p = mock.patch.object(self.service, "_print_file")

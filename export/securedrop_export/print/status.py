@@ -4,7 +4,7 @@ from securedrop_export.status import BaseStatus
 class Status(BaseStatus):
     # Printer preflight related errors
     ERROR_PRINTER_NOT_FOUND = "ERROR_PRINTER_NOT_FOUND"
-    ERROR_IPP_USB_CONFIGURATION = "ERROR_IPP_USB_CONFIGURATION"
+    ERROR_PRINTER_DISCOVERY = "ERROR_PRINTER_DISCOVERY"
 
     # Print error
     ERROR_PRINT = "ERROR_PRINT"
