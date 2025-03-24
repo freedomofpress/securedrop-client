@@ -1,12 +1,10 @@
 import logging
 import os
-import signal
 import subprocess
-import time
 from pathlib import Path
 
 from securedrop_export.directory import safe_mkdir
-from securedrop_export.exceptions import ExportException, TimeoutException, handler
+from securedrop_export.exceptions import ExportException
 
 from .status import Status
 
@@ -61,20 +59,8 @@ class Service:
     Printer service
     """
 
-    PRINTER_NAME = "sdw-printer"
-    BRLASER_DRIVER = "/usr/share/cups/drv/brlaser.drv"
-    BRLASER_PPD = "/usr/share/cups/model/br7030.ppd"
-    LASERJET_DRIVER = "/usr/share/cups/drv/hpcups.drv"
-    LASERJET_PPD = "/usr/share/cups/model/hp-laserjet_6l.ppd"
-
-    BROTHER = "Brother"
-    LASERJET = "LaserJet"
-
-    SUPPORTED_PRINTERS = [BROTHER, LASERJET]
-
     def __init__(self, submission):
         self.submission = submission
-        self.printer_name = self.PRINTER_NAME
 
     def print(self) -> Status:
         """
@@ -116,113 +102,8 @@ class Service:
         Check printer setup.
         Raise ExportException if supported setup is not found.
         """
-        try:
-            logger.info("Searching for printer")
-            output = subprocess.check_output(["sudo", "lpinfo", "-v"])
-            printers = [x for x in output.decode("utf-8").split() if "usb://" in x]
-            if not printers:
-                logger.info("No usb printers connected")
-                raise ExportException(sdstatus=Status.ERROR_PRINTER_NOT_FOUND)
-
-            supported_printers = [
-                p for p in printers if any(sub in p for sub in self.SUPPORTED_PRINTERS)
-            ]
-            if not supported_printers:
-                logger.info(f"{printers} are unsupported printers")
-                raise ExportException(sdstatus=Status.ERROR_PRINTER_NOT_SUPPORTED)
-
-            if len(supported_printers) > 1:
-                logger.info("Too many usb printers connected")
-                raise ExportException(sdstatus=Status.ERROR_MULTIPLE_PRINTERS_FOUND)
-
-            printer_uri = printers[0]
-            printer_ppd = self._install_printer_ppd(printer_uri)
-            self._setup_printer(printer_uri, printer_ppd)
-        except subprocess.CalledProcessError as e:
-            logger.error(e)
-            raise ExportException(sdstatus=Status.ERROR_UNKNOWN)
-
-    def _get_printer_uri(self) -> str:
-        """
-        Get the URI via lpinfo. Only accept URIs of supported printers.
-
-        Raise ExportException if supported setup is not found.
-        """
-        printer_uri = ""
-        try:
-            output = subprocess.check_output(["sudo", "lpinfo", "-v"])
-        except subprocess.CalledProcessError:
-            logger.error("Error attempting to retrieve printer uri with lpinfo")
-            raise ExportException(sdstatus=Status.ERROR_PRINTER_URI)
-
-        # fetch the usb printer uri
-        for line in output.split():
-            if "usb://" in line.decode("utf-8"):
-                printer_uri = line.decode("utf-8")
-                logger.info(f"lpinfo usb printer: {printer_uri}")
-
-        # verify that the printer is supported, else throw
-        if printer_uri == "":
-            # No usb printer is connected
-            logger.info("No usb printers connected")
-            raise ExportException(sdstatus=Status.ERROR_PRINTER_NOT_FOUND)
-        elif not any(x in printer_uri for x in self.SUPPORTED_PRINTERS):
-            # printer url is a make that is unsupported
-            logger.info(f"Printer {printer_uri} is unsupported")
-            raise ExportException(sdstatus=Status.ERROR_PRINTER_NOT_SUPPORTED)
-
-        logger.info(f"Printer {printer_uri} is supported")
-        return printer_uri
-
-    def _install_printer_ppd(self, uri):
-        if not any(x in uri for x in self.SUPPORTED_PRINTERS):
-            logger.error(f"Cannot install printer ppd for unsupported printer: {uri}")
-            raise ExportException(sdstatus=Status.ERROR_PRINTER_NOT_SUPPORTED)
-
-        if self.BROTHER in uri:
-            printer_driver = self.BRLASER_DRIVER
-            printer_ppd = self.BRLASER_PPD
-        elif self.LASERJET in uri:
-            printer_driver = self.LASERJET_DRIVER
-            printer_ppd = self.LASERJET_PPD
-
-        # Compile and install drivers that are not already installed
-        if not os.path.exists(printer_ppd):
-            logger.info("Installing printer drivers")
-            self.check_output_and_stderr(
-                command=[
-                    "sudo",
-                    "ppdc",
-                    printer_driver,
-                    "-d",
-                    "/usr/share/cups/model/",
-                ],
-                error_status=Status.ERROR_PRINTER_DRIVER_UNAVAILABLE,
-                ignore_stderr_startswith=b"ppdc: Warning",
-            )
-
-        return printer_ppd
-
-    def _setup_printer(self, printer_uri, printer_ppd):
-        # Add the printer using lpadmin
-        logger.info(f"Setting up printer {self.printer_name}")
-        self.check_output_and_stderr(
-            command=[
-                "sudo",
-                "lpadmin",
-                "-p",
-                self.printer_name,
-                "-E",
-                "-v",
-                printer_uri,
-                "-P",
-                printer_ppd,
-                "-u",
-                "allow:user",
-            ],
-            error_status=Status.ERROR_PRINTER_INSTALL,
-            ignore_stderr_startswith=b"lpadmin: Printer drivers",
-        )
+        logger.info("Searching for IPP printers using IPP-USB:")
+        # TODO: not yet implemented
 
     def _print_test_page(self):
         logger.info("Printing test page")
@@ -365,12 +246,12 @@ class Service:
             logger.error(f"Something went wrong: {file_to_print} not found")
             raise ExportException(sdstatus=Status.ERROR_PRINT)
 
-        logger.info(f"Sending file to printer {self.printer_name}")
+        logger.info("Opening print dialog")
         try:
             # We can switch to using libreoffice --pt $printer_cups_name
             # here, and either print directly (headless) or use the GUI
             subprocess.check_call(
-                ["xpp", "-P", self.printer_name, file_to_print],
+                ["xpp", file_to_print],
             )
         except subprocess.CalledProcessError as e:
             raise ExportException(sdstatus=Status.ERROR_PRINT, sderror=e.output)

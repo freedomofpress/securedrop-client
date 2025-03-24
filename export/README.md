@@ -129,11 +129,7 @@ The supported device types for export are as follows, including the possible err
     - `SUCCESS_EXPORT`: Entire routine, including export and cleanup, was successful
 
 3. `printer-preflight`, `printer-test`: test the printer and ensure it is ready.
-    - `ERROR_PRINTER_NOT_FOUND` if no printer is connected
-    - `ERROR_PRINTER_NOT_SUPPORTED` if the printer is not currently supported by the export script
-    - `ERROR_PRINTER_DRIVER_UNAVAILABLE` if the printer driver is not available
-    - `ERROR_PRINTER_URI` if `lpinfo` fails to retrieve printer information
-    - `ERROR_PRINTER_INSTALL` If there is an error installing the printer
+    - `ERROR_PRINTER_NOT_FOUND` if no printer is detected
     - `ERROR_PRINT` if there is an error printing
     - `PRINT_PREFLIGHT_SUCCESS` if preflight checks were successful (Preflight only)
 

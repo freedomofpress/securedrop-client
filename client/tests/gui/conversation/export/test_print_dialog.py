@@ -148,7 +148,6 @@ def test_PrintDialog__on_print_preflight_check_succeeded_when_continue_enabled_s
     "print_dialog",
     [
         ExportStatus.PRINT_PREFLIGHT_SUCCESS.value,
-        ExportStatus.ERROR_PRINTER_INSTALL.value,
         ExportStatus.ERROR_PRINTER_NOT_FOUND.value,
     ],
     indirect=True,
@@ -163,41 +162,6 @@ def test_PrintDialog_continue_button_enabled_after_preflight(mocker, print_dialo
     assert not print_dialog.continue_button.isEnabled()
     print_dialog._device._on_print_preflight_complete()
     assert print_dialog.continue_button.isEnabled()
-
-
-@pytest.mark.parametrize(
-    "print_dialog",
-    [
-        ExportStatus.ERROR_PRINTER_DRIVER_UNAVAILABLE.value,
-        ExportStatus.ERROR_MULTIPLE_PRINTERS_FOUND.value,
-        ExportStatus.ERROR_PRINTER_NOT_SUPPORTED.value,
-        ExportStatus.ERROR_PRINTER_INSTALL.value,
-        ExportStatus.ERROR_PRINTER_URI.value,
-    ],
-    indirect=True,
-)
-def test_PrintDialog__on_print_preflight_check_failed_shows_error(mocker, print_dialog):
-    """
-    Ensure preflight error responses result in the dialog displaying
-    a helpful message. Parametrized argument is
-    passed to print_dialog fixture; see conftest.py.
-    """
-    print_dialog._show_error_message = mocker.MagicMock()
-    print_dialog.continue_button.setEnabled(False)
-    print_dialog.continue_button.clicked = mocker.MagicMock()
-
-    # When the Continue button is disabled, finishing a preflight check will
-    # enable the Continue button and connect the click handler to an error message,
-    # but will not yet display the message (user has to click).
-    print_dialog._device._on_print_preflight_complete()
-    print_dialog.continue_button.clicked.connect.assert_called_once_with(
-        print_dialog._show_error_message
-    )
-
-    # When the continue button is enabled, ensure clicking it displays the error message
-    print_dialog.continue_button.setEnabled(True)
-    print_dialog._device._on_print_preflight_complete()
-    print_dialog._show_error_message.assert_called_once_with()
 
 
 @pytest.mark.parametrize(
