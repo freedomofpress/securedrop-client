@@ -3,7 +3,6 @@ import shutil
 import subprocess
 import tempfile
 from pathlib import Path
-from subprocess import CalledProcessError
 from unittest import mock
 
 import pytest
@@ -14,11 +13,29 @@ from securedrop_export.exceptions import ExportException
 from securedrop_export.print.service import Service
 from securedrop_export.print.status import Status
 
-SAMPLE_OUTPUT_NO_PRINTER = b"network beh\nnetwork https\nnetwork ipp\nnetwork ipps\nnetwork http\nnetwork\nnetwork ipp14\nnetwork lpd"  # noqa
-SAMPLE_OUTPUT_BROTHER_PRINTER = b"network beh\nnetwork https\nnetwork ipp\nnetwork ipps\nnetwork http\nnetwork\nnetwork ipp14\ndirect usb://Brother/HL-L2320D%20series?serial=A00000A000000\nnetwork lpd"  # noqa
-SAMPLE_OUTPUT_LASERJET_PRINTER = b"network beh\nnetwork https\nnetwork ipp\nnetwork ipps\nnetwork http\nnetwork\nnetwork ipp14\ndirect usb://HP/LaserJet%20Pro%20M404-M405?serial=A00000A000000\nnetwork lpd"  # noqa
-SAMPLE_OUTPUT_UNSUPPORTED_PRINTER = b"network beh\nnetwork https\nnetwork ipp\nnetwork ipps\nnetwork http\nnetwork\nnetwork ipp14\ndirect usb://Canon/QL-700%?serial=A00000A000000\nnetwork lpd"  # noqa
+IPP_USB_OUTPUT_NO_PRINTER = """
+Configuration files: OK
+No IPP over USB devices found
+"""
 
+IPP_USB_OUTPUT_SAMPLE_HP_PRINTER = """\
+Configuration files: OK
+IPP over USB devices:
+ Num  Device              Vndr:Prod  Model
+   1. Bus 001 Device 002  03f0:4c54  "HP OfficeJet Pro 8120e series"
+"""
+
+IPP_USB_OUTPUT_MULTIPLE_PRINTERS = """\
+Configuration files: OK
+IPP over USB devices:
+ Num  Device              Vndr:Prod  Model
+   1. Bus 001 Device 002  03f0:4c54  "HP OfficeJet Pro 8120e series"
+   2. Bus 001 Device 005  04a9:2823  "Canon MF440 Series"
+"""
+
+IPP_USB_OUTPUT_WRONG_CONFIG = """\
+/etc/ipp-usb/quirks/printer.conf:1: expected '=' character
+"""
 SUPPORTED_MIMETYPE_COUNT = 107  # Mimetypes in the sample LibreOffice .desktop files
 SAMPLE_FILES_SUPPORTED = Path.cwd() / "tests" / "files" / "samples_supported"
 SAMPLE_FILES_UNSUPPORTED = Path.cwd() / "tests" / "files" / "samples_unsupported"
@@ -44,16 +61,6 @@ class TestPrint:
     def teardown_class(cls):
         cls.service = None
         cls.submission = None
-
-    @mock.patch("subprocess.check_output", return_value=SAMPLE_OUTPUT_BROTHER_PRINTER)
-    def test_get_good_printer_uri_laserjet(self, mocked_call):
-        assert (
-            self.service._get_printer_uri()
-            == "usb://Brother/HL-L2320D%20series?serial=A00000A000000"
-        )
-
-    def test_service_initialized_correctly(self):
-        assert self.service.printer_name == "sdw-printer"
 
     def test_print_all_methods_called(self):
         patch_setup = mock.patch.object(self.service, "_check_printer_setup")
@@ -101,20 +108,6 @@ class TestPrint:
 
         patch_setup.stop()
         patch_print.stop()
-
-    @mock.patch("subprocess.check_output", return_value=SAMPLE_OUTPUT_LASERJET_PRINTER)
-    def test_get_good_printer_uri_brother(self, mocked_call):
-        assert (
-            self.service._get_printer_uri()
-            == "usb://HP/LaserJet%20Pro%20M404-M405?serial=A00000A000000"
-        )
-
-    @mock.patch("subprocess.check_output", return_value=SAMPLE_OUTPUT_NO_PRINTER)
-    def test_get_bad_printer_uri(self, mocked_call, capsys, mocker):
-        with pytest.raises(ExportException) as ex:
-            self.service._get_printer_uri()
-
-        assert ex.value.sdstatus is Status.ERROR_PRINTER_NOT_FOUND
 
     @mock.patch(
         "subprocess.check_output",
@@ -188,8 +181,6 @@ class TestPrint:
                 mock.call(
                     [
                         "xpp",
-                        "-P",
-                        "sdw-printer",
                         expected,
                     ],
                 ),
@@ -213,49 +204,6 @@ class TestPrint:
             self.service._print_file(target)
 
         assert ex.value.sdstatus == Status.ERROR_MIMETYPE_UNSUPPORTED
-
-    @mock.patch("subprocess.run")
-    def test_install_printer_ppd_laserjet(self, mocker):
-        ppd = self.service._install_printer_ppd(
-            "usb://HP/LaserJet%20Pro%20M404-M405?serial=A00000A00000"
-        )
-        assert ppd == "/usr/share/cups/model/hp-laserjet_6l.ppd"
-
-    @mock.patch("subprocess.run")
-    def test_install_printer_ppd_brother(self, mocker):
-        ppd = self.service._install_printer_ppd(
-            "usb://Brother/HL-L2320D%20series?serial=A00000A000000"
-        )
-        assert ppd == "/usr/share/cups/model/br7030.ppd"
-
-    def test_install_printer_ppd_error_no_driver(self, mocker):
-        mocker.patch("subprocess.run", side_effect=CalledProcessError(1, "run"))
-
-        with pytest.raises(ExportException) as ex:
-            self.service._install_printer_ppd(
-                "usb://HP/LaserJet%20Pro%20M404-M405?serial=A00000A000000"
-            )
-
-        assert ex.value.sdstatus is Status.ERROR_PRINTER_DRIVER_UNAVAILABLE
-
-    def test_install_printer_ppd_error_not_supported(self, mocker):
-        mocker.patch("subprocess.run", side_effect=CalledProcessError(1, "run"))
-
-        with pytest.raises(ExportException) as ex:
-            self.service._install_printer_ppd("usb://Not/Supported?serial=A00000A000000")
-
-        assert ex.value.sdstatus is Status.ERROR_PRINTER_NOT_SUPPORTED
-
-    def test_setup_printer_error(self, mocker):
-        mocker.patch("subprocess.run", side_effect=CalledProcessError(1, "run"))
-
-        with pytest.raises(ExportException) as ex:
-            self.service._setup_printer(
-                "usb://Brother/HL-L2320D%20series?serial=A00000A000000",
-                "/usr/share/cups/model/br7030.ppd",
-            )
-
-        assert ex.value.sdstatus is Status.ERROR_PRINTER_INSTALL
 
     def test_check_output_and_stderr(self):
         # This works, since `ls` is a valid comand
@@ -286,42 +234,24 @@ class TestPrint:
         assert ex.value.sdstatus is Status.ERROR_PRINT
 
     @pytest.mark.parametrize(
-        "printers", [SAMPLE_OUTPUT_BROTHER_PRINTER, SAMPLE_OUTPUT_LASERJET_PRINTER]
+        "printer", [IPP_USB_OUTPUT_SAMPLE_HP_PRINTER, IPP_USB_OUTPUT_MULTIPLE_PRINTERS]
     )
-    def test__check_printer_setup(self, printers, mocker):
-        mocker.patch("subprocess.check_output", return_value=printers)
-        p = mocker.patch.object(self.service, "_setup_printer")
-        p2 = mocker.patch.object(self.service, "_install_printer_ppd")
-        p.start()
-        p2.start()
+    def test__check_printer_setup(self, printer, mocker):
+        mocker.patch("subprocess.check_output", return_value=printer)
+        assert self.service.printer_preflight() == Status.PREFLIGHT_SUCCESS
 
-        self.service._check_printer_setup()
-        p.assert_called_once()
-        p2.assert_called_once()
-
-        p.stop()
-        p2.stop()
-
-    @mock.patch("subprocess.check_output", return_value=SAMPLE_OUTPUT_NO_PRINTER)
-    def test__check_printer_setup_error_no_printer(self, mock_output):
-        with pytest.raises(ExportException) as ex:
-            self.service._check_printer_setup()
-        assert ex.value.sdstatus is Status.ERROR_PRINTER_NOT_FOUND
-
-    @mock.patch(
-        "subprocess.check_output",
-        return_value=SAMPLE_OUTPUT_BROTHER_PRINTER + b"\n" + SAMPLE_OUTPUT_LASERJET_PRINTER,
+    @pytest.mark.parametrize(
+        ("ipp_usb_output", "expected_status"),
+        [
+            (IPP_USB_OUTPUT_NO_PRINTER, Status.ERROR_PRINTER_NOT_FOUND),
+            (IPP_USB_OUTPUT_WRONG_CONFIG, Status.ERROR_IPP_USB_CONFIGURATION),
+        ],
     )
-    def test__check_printer_setup_error_too_many_printers(self, mock_output):
+    def test__check_printer_setup_error(self, ipp_usb_output, expected_status, mocker):
+        mocker.patch("subprocess.check_output", return_value=ipp_usb_output)
         with pytest.raises(ExportException) as ex:
             self.service._check_printer_setup()
-        assert ex.value.sdstatus is Status.ERROR_MULTIPLE_PRINTERS_FOUND
-
-    @mock.patch("subprocess.check_output", return_value=SAMPLE_OUTPUT_UNSUPPORTED_PRINTER)
-    def test__check_printer_setup_error_unsupported_printer(self, mock_output):
-        with pytest.raises(ExportException) as ex:
-            self.service._check_printer_setup()
-        assert ex.value.sdstatus is Status.ERROR_PRINTER_NOT_SUPPORTED
+        assert ex.value.sdstatus is expected_status
 
     @mock.patch(
         "subprocess.check_output",
@@ -331,26 +261,6 @@ class TestPrint:
         with pytest.raises(ExportException) as ex:
             self.service._check_printer_setup()
         assert ex.value.sdstatus is Status.ERROR_UNKNOWN
-
-    @mock.patch(
-        "subprocess.check_output",
-        side_effect=subprocess.CalledProcessError(1, "check_output"),
-    )
-    def test__get_printer_uri_error(self, mocked_subprocess):
-        with pytest.raises(ExportException) as ex:
-            self.service._get_printer_uri()
-        assert ex.value.sdstatus is Status.ERROR_PRINTER_URI
-
-    @mock.patch("subprocess.check_output", return_value=SAMPLE_OUTPUT_UNSUPPORTED_PRINTER)
-    def test__get_printer_uri_error_unsupported(self, mocked_subprocess):
-        with pytest.raises(ExportException) as ex:
-            self.service._get_printer_uri()
-        assert ex.value.sdstatus is Status.ERROR_PRINTER_NOT_SUPPORTED
-
-    def test__install_printer_ppd_error_unsupported_uri(self):
-        with pytest.raises(ExportException) as ex:
-            self.service._install_printer_ppd("usb://YOURE_NOT_MY_REAL_PRINTER/A00000A000000")
-        assert ex.value.sdstatus is Status.ERROR_PRINTER_NOT_SUPPORTED
 
     def test__print_test_page_calls_method(self):
         p = mock.patch.object(self.service, "_print_file")
@@ -375,7 +285,11 @@ class TestPrint:
         )
         p.stop()
 
-    def test__print_file_odt_calls_libreoffice_conversion_then_print(self):
+    @mock.patch(
+        "subprocess.check_output",
+        side_effect=subprocess.CalledProcessError(1, "check_output"),
+    )
+    def test__print_file_odt_calls_libreoffice_conversion(self, mock_output):
         print_dir = tempfile.TemporaryDirectory()
         filepath = Path(print_dir.name, "office.odg")
         expected_conversion_file = filepath.parent / "print-pdf" / (filepath.stem + ".pdf")
@@ -421,8 +335,6 @@ class TestPrint:
                 mock.call(
                     [
                         "xpp",
-                        "-P",
-                        "sdw-printer",
                         expected_conversion_file,
                     ],
                 ),
@@ -432,7 +344,7 @@ class TestPrint:
         log.assert_has_calls(
             [
                 mock.call("Convert to pdf for printing"),
-                mock.call("Sending file to printer sdw-printer"),
+                mock.call("Opening print dialog"),
             ]
         )
 
