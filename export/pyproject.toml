@@ -11,6 +11,15 @@ python = "^3.11"
 pexpect = "^4.9.0"
 
 [tool.poetry.group.dev.dependencies]
+# In production these two are installed using a system package
+# so match those versions exactly
+pygobject = [
+    {version = "=3.42.2", python = ">=3.11"}, # bookworm
+]
+pycairo = [
+    {version = "=1.20.1", python = ">=3.11"}, # bookworm
+]
+
 mypy = "^1.13.0"
 types-setuptools = "^75.6.0"
 pytest = "^8.3.4"
@@ -18,6 +27,7 @@ pytest-cov = "^6.0.0"
 pytest-mock = "^3.14.0"
 semgrep = "^1.100.0"
 types-pexpect = "^4.9.0.20241208"
+pygobject-stubs = "^2.13.0"
 
 [tool.mypy]
 python_version = "3.11"
