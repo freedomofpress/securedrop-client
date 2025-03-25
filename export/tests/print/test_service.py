@@ -1,6 +1,5 @@
 import os
 import shutil
-import subprocess
 import tempfile
 from pathlib import Path
 from unittest import mock
@@ -129,7 +128,10 @@ class TestPrint:
         assert "application/vnd.openxmlformats-officedocument.wordprocessingml.document" in mimes
 
     @pytest.mark.parametrize("sample_file", [i for i in os.listdir(SAMPLE_FILES_SUPPORTED)])
-    def test__print_file_with_libreoffice_conversion_integration(self, sample_file, capsys):
+    @mock.patch("securedrop_export.print.service.open_print_dialog")
+    def test__print_file_with_libreoffice_conversion_integration(
+        self, mock_print_dialog, sample_file, capsys
+    ):
         apps = Path("/usr/share/applications")
         if not (apps / "libreoffice-writer.desktop").exists():
             pytest.skip("libreoffice doesn't appear to be installed")
@@ -146,23 +148,10 @@ class TestPrint:
         else:
             expected = target
 
-        with (
-            mock.patch("subprocess.check_call") as mock_print_xpp,
-        ):
-            self.service._print_file(target)
+        self.service._print_file(target)
 
         assert expected.exists()
-        assert mock_print_xpp.call_count == 1
-        mock_print_xpp.assert_has_calls(
-            [
-                mock.call(
-                    [
-                        "xpp",
-                        expected,
-                    ],
-                ),
-            ]
-        )
+        assert mock_print_dialog.call_count == 1
 
     @pytest.mark.parametrize("sample_file", [i for i in os.listdir(SAMPLE_FILES_UNSUPPORTED)])
     def test__print_file_unsupported_integration(self, sample_file, capsys):
@@ -246,18 +235,14 @@ class TestPrint:
         )
         p.stop()
 
-    @mock.patch(
-        "subprocess.check_output",
-        side_effect=subprocess.CalledProcessError(1, "check_output"),
-    )
-    def test__print_file_odt_calls_libreoffice_conversion(self, mock_output):
+    @mock.patch("securedrop_export.print.service.open_print_dialog")
+    def test__print_file_odt_calls_libreoffice_conversion_then_print(self, mock_print_dialog):
         print_dir = tempfile.TemporaryDirectory()
         filepath = Path(print_dir.name, "office.odg")
         expected_conversion_file = filepath.parent / "print-pdf" / (filepath.stem + ".pdf")
 
         with (
             mock.patch.object(self.service, "_needs_pdf_conversion", return_value=True),
-            mock.patch("subprocess.check_call") as check_call,
             mock.patch("securedrop_export.print.service.logger.info") as log,
             mock.patch(
                 "subprocess.check_output",
@@ -290,17 +275,9 @@ class TestPrint:
                 )
             ]
         )
-        assert check_call.call_count == 1
-        check_call.assert_has_calls(
-            [
-                mock.call(
-                    [
-                        "xpp",
-                        expected_conversion_file,
-                    ],
-                ),
-            ]
-        )
+
+        mock_print_dialog.assert_called_once_with(str(expected_conversion_file))
+
         assert log.call_count == 2
         log.assert_has_calls(
             [
