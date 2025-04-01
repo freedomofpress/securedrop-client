@@ -45,9 +45,6 @@ class TestPrint:
         cls.service = None
         cls.submission = None
 
-    def setup_method(self):
-        self.service.printer_wait_timeout = self.service.PRINTER_WAIT_TIMEOUT
-
     @mock.patch("subprocess.check_output", return_value=SAMPLE_OUTPUT_BROTHER_PRINTER)
     def test_get_good_printer_uri_laserjet(self, mocked_call):
         assert (
@@ -56,7 +53,6 @@ class TestPrint:
         )
 
     def test_service_initialized_correctly(self):
-        assert self.service.printer_wait_timeout == 60
         assert self.service.printer_name == "sdw-printer"
 
     def test_print_all_methods_called(self):
@@ -76,8 +72,7 @@ class TestPrint:
         patch_setup.stop()
         patch_print.stop()
 
-    @mock.patch("securedrop_export.print.service.Service._wait_for_print")
-    def test_printer_preflight_all_methods_called(self, mock_wait):
+    def test_printer_preflight_all_methods_called(self):
         patch_setup = mock.patch.object(self.service, "_check_printer_setup")
 
         mock_setup = patch_setup.start()
@@ -90,8 +85,7 @@ class TestPrint:
 
         patch_setup.stop()
 
-    @mock.patch("securedrop_export.print.service.Service._wait_for_print")
-    def test_print_testpage_all_checks_called(self, mock_wait):
+    def test_print_testpage_all_checks_called(self):
         patch_setup = mock.patch.object(self.service, "_check_printer_setup")
         patch_print = mock.patch.object(self.service, "_print_test_page")
 
@@ -164,8 +158,11 @@ class TestPrint:
         assert "application/vnd.oasis.opendocument.text" in mimes
         assert "application/vnd.openxmlformats-officedocument.wordprocessingml.document" in mimes
 
+    @mock.patch("securedrop_export.print.service.open_print_dialog")
     @pytest.mark.parametrize("sample_file", [i for i in os.listdir(SAMPLE_FILES_SUPPORTED)])
-    def test__print_file_with_libreoffice_conversion_integration(self, sample_file, capsys):
+    def test__print_file_with_libreoffice_conversion_integration(
+        self, mock_print_dialog, sample_file, capsys
+    ):
         apps = Path("/usr/share/applications")
         if not (apps / "libreoffice-writer.desktop").exists():
             pytest.skip("libreoffice doesn't appear to be installed")
@@ -182,27 +179,10 @@ class TestPrint:
         else:
             expected = target
 
-        with (
-            mock.patch("subprocess.check_call") as mock_print_xpp,
-            mock.patch.object(self.service, "_wait_for_print") as mock_wait_for_print,
-        ):
-            self.service._print_file(target)
+        self.service._print_file(target)
 
         assert expected.exists()
-        assert mock_wait_for_print.call_count == 1
-        assert mock_print_xpp.call_count == 1
-        mock_print_xpp.assert_has_calls(
-            [
-                mock.call(
-                    [
-                        "xpp",
-                        "-P",
-                        "sdw-printer",
-                        expected,
-                    ],
-                ),
-            ]
-        )
+        assert mock_print_dialog.call_count == 1
 
     @pytest.mark.parametrize("sample_file", [i for i in os.listdir(SAMPLE_FILES_UNSUPPORTED)])
     def test__print_file_unsupported_integration(self, sample_file, capsys):
@@ -293,37 +273,6 @@ class TestPrint:
 
         assert ex.value.sdstatus is Status.ERROR_PRINT
 
-    @mock.patch("securedrop_export.print.service.time.sleep", return_value=None)
-    @mock.patch(
-        "subprocess.check_output",
-        side_effect=[
-            b"printer sdw-printer is busy\n",
-            b"printer sdw-printer is idle\n",
-        ],
-    )
-    def test__wait_for_print(self, mock_subprocess, mock_time):
-        assert self.service._wait_for_print()
-
-    @mock.patch(
-        "subprocess.check_output",
-        side_effect=subprocess.CalledProcessError(1, "check_output"),
-    )
-    @mock.patch("time.sleep", return_value=None)
-    def test__wait_for_print_print_exception(self, mock_time, mock_subprocess):
-        with pytest.raises(ExportException) as ex:
-            self.service._wait_for_print()
-
-        assert ex.value.sdstatus is Status.ERROR_PRINT
-
-    @mock.patch("subprocess.check_output", return_value=b"printer sdw-printer is busy\n")
-    def test__wait_for_print_timeout_exception(self, mock_output):
-        self.service.printer_wait_timeout = 1
-
-        with pytest.raises(ExportException) as ex:
-            self.service._wait_for_print()
-
-        assert ex.value.sdstatus is Status.ERROR_PRINT
-
     @pytest.mark.parametrize(
         "printers", [SAMPLE_OUTPUT_BROTHER_PRINTER, SAMPLE_OUTPUT_LASERJET_PRINTER]
     )
@@ -391,8 +340,7 @@ class TestPrint:
             self.service._install_printer_ppd("usb://YOURE_NOT_MY_REAL_PRINTER/A00000A000000")
         assert ex.value.sdstatus is Status.ERROR_PRINTER_NOT_SUPPORTED
 
-    @mock.patch("securedrop_export.print.service.Service._wait_for_print")
-    def test__print_test_page_calls_method(self, mock_wait):
+    def test__print_test_page_calls_method(self):
         p = mock.patch.object(self.service, "_print_file")
         mock_print = p.start()
 
@@ -400,8 +348,7 @@ class TestPrint:
         mock_print.assert_called_once_with(Path("/usr/share/cups/data/testprint"))
         p.stop()
 
-    @mock.patch("securedrop_export.print.service.Service._wait_for_print")
-    def test__print_all_files(self, mock_wait):
+    def test__print_all_files(self):
         p = mock.patch.object(self.service, "_print_file")
         mock_print = p.start()
 
@@ -416,15 +363,14 @@ class TestPrint:
         )
         p.stop()
 
-    @mock.patch("securedrop_export.print.service.Service._wait_for_print")
-    def test__print_file_odt_calls_libreoffice_conversion_then_print(self, mock_wait):
+    @mock.patch("securedrop_export.print.service.open_print_dialog")
+    def test__print_file_odt_calls_libreoffice_conversion_then_print(self, mock_print_dialog):
         print_dir = tempfile.TemporaryDirectory()
         filepath = Path(print_dir.name, "office.odg")
         expected_conversion_file = filepath.parent / "print-pdf" / (filepath.stem + ".pdf")
 
         with (
             mock.patch.object(self.service, "_needs_pdf_conversion", return_value=True),
-            mock.patch("subprocess.check_call") as check_call,
             mock.patch("securedrop_export.print.service.logger.info") as log,
             mock.patch(
                 "subprocess.check_output",
@@ -457,29 +403,18 @@ class TestPrint:
                 )
             ]
         )
-        assert check_call.call_count == 1
-        check_call.assert_has_calls(
-            [
-                mock.call(
-                    [
-                        "xpp",
-                        "-P",
-                        "sdw-printer",
-                        expected_conversion_file,
-                    ],
-                ),
-            ]
-        )
+
+        mock_print_dialog.assert_called_once_with(str(expected_conversion_file))
+
         assert log.call_count == 2
         log.assert_has_calls(
             [
                 mock.call("Convert to pdf for printing"),
-                mock.call("Sending file to printer sdw-printer"),
+                mock.call("Opening print dialog"),
             ]
         )
 
-    @mock.patch("securedrop_export.print.service.Service._wait_for_print")
-    def test__print_file_raises_if_file_not_found(self, mock_wait):
+    def test__print_file_raises_if_file_not_found(self):
         print_dir = tempfile.TemporaryDirectory()
         filepath = Path(print_dir.name, "office.odg")
         expected_conversion_file = filepath.parent / "print-pdf" / (filepath.stem + ".pdf")
@@ -533,45 +468,3 @@ class TestPrint:
             )
 
         assert ex.value.sdstatus is Status.PRINT_TEST_PAGE_SUCCESS
-
-    @mock.patch("securedrop_export.print.service.time.sleep", return_value=None)
-    @mock.patch(
-        "subprocess.check_output",
-        side_effect=[
-            b"printer sdw-printer is busy\n",
-            b"printer sdw-printer is idle\n",
-        ],
-    )
-    def test__wait_for_print_waits_correctly(self, mock_sp, mock_time):
-        file = tempfile.NamedTemporaryFile()
-        filepath = Path(file.name)
-
-        with (
-            mock.patch("subprocess.check_call") as mock_subprocess,
-            mock.patch("securedrop_export.print.service.logger.info") as log,
-            mock.patch.object(self.service, "_needs_pdf_conversion", return_value=False),
-        ):
-            self.service._print_file(filepath)
-
-        assert mock_subprocess.call_count == 1
-        mock_subprocess.assert_has_calls(
-            [
-                mock.call(
-                    [
-                        "xpp",
-                        "-P",
-                        "sdw-printer",
-                        filepath,
-                    ],
-                ),
-            ]
-        )
-        assert log.call_count == 4
-        log.assert_has_calls(
-            [
-                mock.call("Sending file to printer sdw-printer"),
-                mock.call("Running lpstat waiting for printer sdw-printer"),
-                mock.call("Running lpstat waiting for printer sdw-printer"),
-                mock.call("Print completed"),
-            ]
-        )
