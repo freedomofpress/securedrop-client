@@ -148,7 +148,6 @@ def test_PrintDialog__on_print_preflight_check_succeeded_when_continue_enabled_s
     "print_dialog",
     [
         ExportStatus.PRINT_PREFLIGHT_SUCCESS.value,
-        ExportStatus.ERROR_PRINTER_INSTALL.value,
         ExportStatus.ERROR_PRINTER_NOT_FOUND.value,
     ],
     indirect=True,
@@ -167,13 +166,7 @@ def test_PrintDialog_continue_button_enabled_after_preflight(mocker, print_dialo
 
 @pytest.mark.parametrize(
     "print_dialog",
-    [
-        ExportStatus.ERROR_PRINTER_DRIVER_UNAVAILABLE.value,
-        ExportStatus.ERROR_MULTIPLE_PRINTERS_FOUND.value,
-        ExportStatus.ERROR_PRINTER_NOT_SUPPORTED.value,
-        ExportStatus.ERROR_PRINTER_INSTALL.value,
-        ExportStatus.ERROR_PRINTER_URI.value,
-    ],
+    [ExportStatus.ERROR_PRINTER_DISCOVERY.value],
     indirect=True,
 )
 def test_PrintDialog__on_print_preflight_check_failed_shows_error(mocker, print_dialog):
