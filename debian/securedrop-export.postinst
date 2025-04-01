@@ -29,10 +29,6 @@ case "$1" in
     if [ -e ${NOTIFICATION_SERVICE_PATH} ]; then
         mv "${NOTIFICATION_SERVICE_PATH}" "${NOTIFICATION_SERVICE_PATH}.disabled"
     fi
-
-    # Update shipped systemd presets
-    systemctl daemon-reload
-    systemctl preset avahi-daemon
     ;;
 
     abort-upgrade|abort-remove|abort-deconfigure)
