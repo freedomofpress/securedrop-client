@@ -436,6 +436,13 @@ notes = "Rust Project member"
 
 [[trusted.tokio]]
 criteria = "safe-to-deploy"
+user-id = 10 # Carl Lerche (carllerche)
+start = "2019-03-02"
+end = "2025-10-07"
+notes = "Rust Project member"
+
+[[trusted.tokio]]
+criteria = "safe-to-deploy"
 user-id = 6741 # Alice Ryhl (Darksonn)
 start = "2020-12-25"
 end = "2024-09-12"
@@ -447,6 +454,13 @@ user-id = 10 # Carl Lerche (carllerche)
 start = "2019-04-24"
 end = "2024-08-12"
 notes = "Rust Project member"
+
+[[trusted.tokio-macros]]
+criteria = "safe-to-deploy"
+user-id = 6741 # Alice Ryhl (Darksonn)
+start = "2020-10-26"
+end = "2025-10-07"
+notes = "per https://github.com/freedomofpress/securedrop-engineering/pull/87"
 
 [[trusted.tokio-util]]
 criteria = "safe-to-deploy"
