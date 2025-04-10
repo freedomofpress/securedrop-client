@@ -28,3 +28,6 @@ securedrop-export: file-in-etc-not-marked-as-conffile [etc/udisks2/tcrypt.conf]
 
 # This is intentional
 securedrop-export: control-file-is-empty [conffiles]
+
+# Preset options are missing from deb-systemd-helper
+securedrop-export: maintainer-script-calls-systemctl
