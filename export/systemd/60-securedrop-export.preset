@@ -1,0 +1,4 @@
+# Enable avahi-daemon so that driverless printers are detected when
+# plugged in via USB. Overrides 75-qubes-vm.preset
+
+enable avahi-daemon.socket
