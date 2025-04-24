@@ -3303,8 +3303,10 @@ class SourceConversationWrapper(QWidget):
         layout.setSpacing(0)
 
         # Create widgets
-        self.conversation_title_bar = SourceProfileShortWidget(source, controller, app_state)
         self.conversation_view = ConversationView(source, controller)
+        self.conversation_title_bar = SourceProfileShortWidget(
+            source, controller, self.conversation_view, app_state
+        )
         self.reply_box = ReplyBoxWidget(source, controller)
         self.deletion_indicator = SourceDeletionIndicator()
         self.conversation_deletion_indicator = ConversationDeletionIndicator()
@@ -3727,6 +3729,7 @@ class SourceMenu(QMenu):
         self,
         source: Source,
         controller: Controller,
+        conversation_view: ConversationView,
         app_state: Optional[state.State],
     ) -> None:
         super().__init__()
@@ -3741,7 +3744,7 @@ class SourceMenu(QMenu):
         messages_section = self.addSection(_("FILES AND MESSAGES"))
         messages_section.setFont(separator_font)
 
-        self.addAction(DownloadConversation(self, self.controller, app_state))
+        self.addAction(DownloadConversation(self, self.controller, conversation_view, app_state))
         self.addAction(ExportConversationAction(self, self.controller, self.source, app_state))
         self.addAction(ExportConversationTranscriptAction(self, self.controller, self.source))
         self.addAction(PrintConversationAction(self, self.controller, self.source))
@@ -3767,6 +3770,7 @@ class SourceMenuButton(QToolButton):
         self,
         source: Source,
         controller: Controller,
+        conversation_view: ConversationView,
         app_state: Optional[state.State],
     ) -> None:
         super().__init__()
@@ -3778,7 +3782,7 @@ class SourceMenuButton(QToolButton):
         self.setIcon(load_icon("ellipsis.svg"))
         self.setIconSize(QSize(22, 33))  # Make it taller than the svg viewBox to increase hitbox
 
-        menu = SourceMenu(self.source, self.controller, app_state)
+        menu = SourceMenu(self.source, self.controller, conversation_view, app_state)
         self.setMenu(menu)
 
         self.setPopupMode(QToolButton.InstantPopup)
@@ -3822,6 +3826,7 @@ class SourceProfileShortWidget(QWidget):
         self,
         source: Source,
         controller: Controller,
+        conversation_view: ConversationView,
         app_state: Optional[state.State],
     ) -> None:
         super().__init__()
@@ -3845,7 +3850,7 @@ class SourceProfileShortWidget(QWidget):
         )
         title = TitleLabel(self.source.journalist_designation)
         self.updated = LastUpdatedLabel(_(format_datetime_local(self.source.last_updated)))
-        menu = SourceMenuButton(self.source, self.controller, app_state)
+        menu = SourceMenuButton(self.source, self.controller, conversation_view, app_state)
         header_layout.addWidget(title, alignment=Qt.AlignLeft)
         header_layout.addStretch()
         header_layout.addWidget(self.updated, alignment=Qt.AlignRight)

@@ -5,6 +5,7 @@ Over time, this module could become the interface between
 the GUI and the controller.
 """
 
+import typing
 from collections.abc import Callable
 from contextlib import ExitStack
 from gettext import gettext as _
@@ -15,7 +16,7 @@ from PyQt5.QtWidgets import QAction, QApplication, QDialog, QMenu
 
 from securedrop_client import state
 from securedrop_client.conversation import Transcript as ConversationTranscript
-from securedrop_client.db import Source
+from securedrop_client.db import File, Source
 from securedrop_client.export import Export
 from securedrop_client.gui.base import ModalDialog
 from securedrop_client.gui.conversation import PrintDialog
@@ -24,6 +25,11 @@ from securedrop_client.gui.shortcuts import Shortcuts
 from securedrop_client.logic import Controller
 from securedrop_client.utils import safe_mkdir
 
+if typing.TYPE_CHECKING:
+    # Avoid a recursive import
+    from securedrop_client.gui.widgets import ConversationView
+
+
 TRANSCRIPT_FILENAME = "transcript.txt"
 
 
@@ -31,9 +37,14 @@ class DownloadConversation(QAction):
     """Download all files and messages of the currently selected conversation."""
 
     def __init__(
-        self, parent: QMenu, controller: Controller, app_state: state.State | None = None
+        self,
+        parent: QMenu,
+        controller: Controller,
+        conversation_view: "ConversationView",
+        app_state: state.State | None = None,
     ) -> None:
         self._controller = controller
+        self.conversation_view = conversation_view
         self._state = app_state
         self._text = _("Download All")
         super().__init__(self._text, parent)
@@ -46,13 +57,22 @@ class DownloadConversation(QAction):
 
     @pyqtSlot()
     def on_triggered(self) -> None:
+        from securedrop_client.gui.widgets import FileWidget  # Delayed import to avoid recursion
+
         if self._controller.api is None:
             self._controller.on_action_requiring_login()
         elif self._state is not None:
             id = self._state.selected_conversation
             if id is None:
                 return
-            self._controller.download_conversation(id)
+            for uuid, widget in self.conversation_view.current_messages.items():
+                if not isinstance(widget, FileWidget):
+                    continue
+                if not widget.file.is_downloaded:
+                    widget.start_button_animation()
+                    self._controller.on_submission_download(
+                        File, uuid, widget.download_progress.proxy()
+                    )
 
     def _connect_enabled_to_conversation_changes(self) -> None:
         if self._state is not None:
