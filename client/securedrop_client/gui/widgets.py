@@ -2814,6 +2814,7 @@ class FileWidget(QWidget):
         Update the download button to the animated "downloading" state.
         """
         self.downloading = True
+        self.no_file_name.hide()  # Hide to make room for the progress bar
         self.download_progress.setValue(0)
         self.download_progress.show()
         self.download_button.setText(_(" DOWNLOADING "))
