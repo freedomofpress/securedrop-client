@@ -134,7 +134,6 @@ class TestDownloadConversation(unittest.TestCase):
     def test_trigger(self):
         menu = QMenu()
         controller = MagicMock(Controller, api=True)
-        app_state = state.State()
         file = factory.File(is_downloaded=False)
         progress_proxy = MagicMock()
         progress = MagicMock(proxy=lambda: progress_proxy)
@@ -146,10 +145,7 @@ class TestDownloadConversation(unittest.TestCase):
             },
         )
 
-        action = DownloadConversation(menu, controller, conversation_view, app_state)
-
-        conversation_id = state.ConversationId("some_conversation")
-        app_state.selected_conversation = conversation_id
+        action = DownloadConversation(menu, controller, conversation_view)
 
         action.trigger()
         controller.on_submission_download.assert_called_once_with(File, file.uuid, progress_proxy)
@@ -157,111 +153,48 @@ class TestDownloadConversation(unittest.TestCase):
     def test_requires_authenticated_journalist(self):
         menu = QMenu()
         controller = mock.MagicMock(Controller, api=None)  # no authenticated user
-        app_state = state.State()
-        action = DownloadConversation(menu, controller, MagicMock(), app_state)
-
-        conversation_id = state.ConversationId("some_conversation")
-        app_state.selected_conversation = conversation_id
+        action = DownloadConversation(menu, controller, MagicMock())
 
         action.trigger()
 
         assert not controller.on_submission_download.called
         controller.on_action_requiring_login.assert_called_once()
 
-    def test_trigger_downloads_nothing_if_no_conversation_is_selected(self):
-        menu = QMenu()
-        controller = MagicMock(Controller, api=True)
-        app_state = state.State()
-        action = DownloadConversation(menu, controller, MagicMock(), app_state)
-
-        action.trigger()
-        assert controller.on_submission_download.not_called
-
     def test_gets_disabled_when_no_files_to_download_remain(self):
         menu = QMenu()
         controller = MagicMock(Controller, api=True)
-        app_state = state.State()
-        action = DownloadConversation(menu, controller, MagicMock(), app_state)
+        file = factory.File(is_downloaded=True)
+        conversation_view = MagicMock(
+            ConversationView,
+            current_messages={
+                file.uuid: MagicMock(FileWidget, file=file),
+            },
+        )
 
-        conversation_id = state.ConversationId(3)
-        app_state.selected_conversation = conversation_id
+        action = DownloadConversation(menu, controller, conversation_view)
+        assert action.isEnabled(), "always enabled when in background"
 
-        app_state.add_file(conversation_id, 5)
-        app_state.file(5).is_downloaded = True
-
-        action.setEnabled(True)  # only for extra contrast
-        app_state.selected_conversation_files_changed.emit()
-        assert not action.isEnabled()
+        assert not action.has_downloadable_files()
+        action.on_about_to_show()
+        assert not action.isEnabled(), "state changed after QMenu opened"
 
     def test_gets_enabled_when_files_are_available_to_download(self):
         menu = QMenu()
         controller = MagicMock(Controller, api=True)
-        app_state = state.State()
-        action = DownloadConversation(menu, controller, MagicMock(), app_state)
+        file = factory.File(is_downloaded=False)
+        conversation_view = MagicMock(
+            ConversationView,
+            current_messages={
+                file.uuid: MagicMock(FileWidget, file=file),
+            },
+        )
 
-        conversation_id = state.ConversationId(3)
-        app_state.selected_conversation = conversation_id
+        action = DownloadConversation(menu, controller, conversation_view)
+        assert action.isEnabled(), "always enabled when in background"
 
-        app_state.add_file(conversation_id, 5)
-        app_state.file(5).is_downloaded = False
-
-        action.setEnabled(False)  # only for extra contrast
-        app_state.selected_conversation_files_changed.emit()
-        assert action.isEnabled()
-
-    def test_gets_initially_disabled_when_file_information_is_available(self):
-        menu = QMenu()
-        controller = MagicMock(Controller, api=True)
-        app_state = state.State()
-
-        conversation_id = state.ConversationId(3)
-        app_state.selected_conversation = conversation_id
-        app_state.add_file(conversation_id, 5)
-        app_state.file(5).is_downloaded = True
-
-        action = DownloadConversation(menu, controller, MagicMock(), app_state)
-
-        assert not action.isEnabled()
-
-    def test_gets_initially_enabled_when_file_information_is_available(self):
-        menu = QMenu()
-        controller = MagicMock(Controller, api=True)
-        app_state = state.State()
-
-        conversation_id = state.ConversationId(3)
-        app_state.selected_conversation = conversation_id
-        app_state.add_file(conversation_id, 5)
-        app_state.file(5).is_downloaded = False
-
-        action = DownloadConversation(menu, controller, MagicMock(), app_state)
-
-        assert action.isEnabled()
-
-    def test_does_not_require_state_to_be_defined(self):
-        menu = QMenu()
-        controller = MagicMock(Controller, api=True)
-        action = DownloadConversation(menu, controller, MagicMock(), app_state=None)
-
-        action.setEnabled(False)
-        assert not action.isEnabled()
-
-        action.setEnabled(True)
-        assert action.isEnabled()
-
-    def test_on_selected_conversation_files_changed_handles_missing_state_gracefully(
-        self,
-    ):
-        menu = QMenu()
-        controller = MagicMock(Controller, api=True)
-        action = DownloadConversation(menu, controller, None)
-
-        action.setEnabled(True)
-        action._on_selected_conversation_files_changed()
-        assert action.isEnabled()
-
-        action.setEnabled(False)
-        action._on_selected_conversation_files_changed()
-        assert not action.isEnabled()
+        assert action.has_downloadable_files()
+        action.on_about_to_show()
+        assert action.isEnabled(), "state didn't change after QMenu opened"
 
 
 @contextmanager
