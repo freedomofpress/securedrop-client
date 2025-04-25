@@ -26,42 +26,49 @@ def mock_monotonic(mocker):
 
 def test_progress(mock_monotonic):
     widget = FileDownloadProgressBar(100_000_000)
-    # Disable the timer as we manually control time
-    widget.timer.stop()
+    # Disable the timers as we manually control time
+    widget.speed_timer.stop()
+    widget.display_timer.stop()
     # At first the progress bar displays "%p" (current value) plus a literal "%"
     assert widget.format() == "%p%"
-    # after two timer ticks, it should now take over display formatting
+    # after two speed timer ticks, it should now take over display formatting
     widget.update_speed()
     widget.update_speed()
+    widget.update_display()
     # The progress bar should now display calculated percentage
     assert widget.format() == "0%"
     # Add some data and move forward one second
     widget.proxy().set_value(1_000_000)
     mock_monotonic.increment()
     widget.update_speed()
+    widget.update_display()
     assert widget.format() == "1% | 292KB/s"
 
     # Again
     widget.proxy().set_value(2_000_000)
     mock_monotonic.increment()
     widget.update_speed()
+    widget.update_display()
     assert widget.format() == "2% | 498KB/s"
 
     # A lot of data at once
     widget.proxy().set_value(99_000_000)
     mock_monotonic.increment()
     widget.update_speed()
+    widget.update_display()
     assert widget.format() == "99% | 28MB/s"
 
     # 99.99999% does not round to 100%
     widget.proxy().set_value(99_999_999)
     mock_monotonic.increment()
     widget.update_speed()
+    widget.update_display()
     assert widget.format() == "99% | 20MB/s"
 
     # 100% has no speed
     widget.proxy().set_value(100_000_000)
     widget.update_speed()
+    widget.update_display()
     assert widget.format() == "100%"
 
     # Switch to indetermininate mode as we decrypt

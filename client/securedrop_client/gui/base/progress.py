@@ -32,10 +32,14 @@ class FileDownloadProgressBar(QProgressBar):
         # the timer in update_speed
         self.size_signal.connect(self.setValue)
         self.decrypting_signal.connect(self.handle_decrypting)
-        self.timer = QTimer(self)
-        self.timer.setInterval(100)
-        self.timer.timeout.connect(self.update_speed)
-        self.timer.start()
+        self.speed_timer = QTimer(self)
+        self.speed_timer.setInterval(100)
+        self.speed_timer.timeout.connect(self.update_speed)
+        self.speed_timer.start()
+        self.display_timer = QTimer(self)
+        self.display_timer.setInterval(1000)
+        self.display_timer.timeout.connect(self.update_display)
+        self.display_timer.start()
         # The most recently calculated speed
         self.speed = 0.0
         # The last time we updated the speed
@@ -45,8 +49,9 @@ class FileDownloadProgressBar(QProgressBar):
 
     def handle_decrypting(self, decrypting: bool) -> None:
         if decrypting:
-            # Stop the speed timer and then switch to an indeterminate progress bar
-            self.timer.stop()
+            # Stop the timers and then switch to an indeterminate progress bar
+            self.speed_timer.stop()
+            self.display_timer.stop()
             self.setMaximum(0)
             self.setValue(0)
 
@@ -92,7 +97,6 @@ class FileDownloadProgressBar(QProgressBar):
 
         self.last_total_time = now
         self.last_total_bytes = value
-        self.update_display()
 
     def proxy(self) -> "ProgressProxy":
         """Get a proxy that updates this widget."""
