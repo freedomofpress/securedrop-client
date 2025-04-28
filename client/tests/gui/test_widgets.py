@@ -4466,7 +4466,7 @@ def test_DeleteSource_from_source_menu_when_user_is_loggedout(mocker):
     mock_delete_source_dialog.return_value = mock_delete_source_dialog_instance
 
     mocker.patch("securedrop_client.gui.source.DeleteSourceDialog", mock_delete_source_dialog)
-    source_menu = SourceMenu(mock_source, mock_controller, None)
+    source_menu = SourceMenu(mock_source, mock_controller, mocker.MagicMock(), None)
     source_menu.actions()[5].trigger()
     mock_delete_source_dialog_instance.exec.assert_not_called()
 
@@ -5337,7 +5337,7 @@ def test_SourceProfileShortWidget_update_timestamp(mocker):
     mock_source = mocker.MagicMock()
     mock_source.last_updated = datetime.now()
     mock_source.journalist_designation = "wimple horse knackered unittest"
-    spsw = SourceProfileShortWidget(mock_source, mock_controller, None)
+    spsw = SourceProfileShortWidget(mock_source, mock_controller, mocker.MagicMock(), None)
     spsw.updated = mocker.MagicMock()
     spsw.update_timestamp()
     spsw.updated.setText.assert_called_once_with(format_datetime_local(mock_source.last_updated))
