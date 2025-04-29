@@ -3745,7 +3745,7 @@ class SourceMenu(QMenu):
         messages_section = self.addSection(_("FILES AND MESSAGES"))
         messages_section.setFont(separator_font)
 
-        self.addAction(DownloadConversation(self, self.controller, conversation_view, app_state))
+        self.addAction(DownloadConversation(self, self.controller, conversation_view))
         self.addAction(ExportConversationAction(self, self.controller, self.source, app_state))
         self.addAction(ExportConversationTranscriptAction(self, self.controller, self.source))
         self.addAction(PrintConversationAction(self, self.controller, self.source))

@@ -41,19 +41,17 @@ class DownloadConversation(QAction):
         parent: QMenu,
         controller: Controller,
         conversation_view: "ConversationView",
-        app_state: state.State | None = None,
     ) -> None:
         self._controller = controller
         self.conversation_view = conversation_view
-        self._state = app_state
         self._text = _("Download All")
         super().__init__(self._text, parent)
         self.setShortcut(Shortcuts.DOWNLOAD_CONVERSATION.value)
         self.triggered.connect(self.on_triggered)
+        parent.aboutToShow.connect(self.on_about_to_show)
+        parent.aboutToHide.connect(self.on_about_to_hide)
         self.setShortcutVisibleInContextMenu(True)
-
-        self._connect_enabled_to_conversation_changes()
-        self._set_enabled_initial_value()
+        self.setEnabled(True)
 
     @pyqtSlot()
     def on_triggered(self) -> None:
@@ -61,36 +59,38 @@ class DownloadConversation(QAction):
 
         if self._controller.api is None:
             self._controller.on_action_requiring_login()
-        elif self._state is not None:
-            id = self._state.selected_conversation
-            if id is None:
-                return
-            for uuid, widget in self.conversation_view.current_messages.items():
-                if not isinstance(widget, FileWidget):
-                    continue
-                if not widget.file.is_downloaded:
-                    widget.start_button_animation()
-                    self._controller.on_submission_download(
-                        File, uuid, widget.download_progress.proxy()
-                    )
-
-    def _connect_enabled_to_conversation_changes(self) -> None:
-        if self._state is not None:
-            self._state.selected_conversation_files_changed.connect(
-                self._on_selected_conversation_files_changed
-            )
-
-    @pyqtSlot()
-    def _on_selected_conversation_files_changed(self) -> None:
-        if self._state is None:
             return
-        if self._state.selected_conversation_has_downloadable_files:
-            self.setEnabled(True)
-        else:
-            self.setEnabled(False)
 
-    def _set_enabled_initial_value(self) -> None:
-        self._on_selected_conversation_files_changed()
+        for uuid, widget in self.conversation_view.current_messages.items():
+            if not isinstance(widget, FileWidget):
+                continue
+            if not widget.file.is_downloaded:
+                widget.start_button_animation()
+                self._controller.on_submission_download(
+                    File, uuid, widget.download_progress.proxy()
+                )
+
+    def has_downloadable_files(self) -> bool:
+        from securedrop_client.gui.widgets import FileWidget  # Delayed import to avoid recursion
+
+        for widget in self.conversation_view.current_messages.values():
+            if isinstance(widget, FileWidget) and not widget.file.is_downloaded:
+                return True
+        return False
+
+    def on_about_to_show(self) -> None:
+        """
+        Right before the SourceMenu is opened, set the real enabled state
+        depending on whether anything can even be downloaded
+        """
+        self.setEnabled(self.has_downloadable_files())
+
+    def on_about_to_hide(self) -> None:
+        """
+        Always leave enabled so the keyboard shortcut always works
+        without needing to track
+        """
+        self.setEnabled(True)
 
 
 class DeleteSourceAction(QAction):
