@@ -166,7 +166,7 @@ def test_styles_for_login_dialog(mocker, main_window):
     form = login_dialog.layout().itemAt(2).widget()
     form_children_qlabel = form.findChildren(QLabel)
     for c in form_children_qlabel:
-        assert c.font().family() == "Montserrat" or c.font().family() == "Source Sans Pro"
+        assert c.font().family() == "Source Sans Pro"
         assert QFont.DemiBold - 1 == c.font().weight()
         assert c.font().pixelSize() == 13 or c.font().pixelSize() == 12
         assert c.palette().color(QPalette.Foreground).name() == "#ffffff"
@@ -181,7 +181,7 @@ def test_styles_for_login_dialog(mocker, main_window):
     assert login_offline_link.palette().color(QPalette.Foreground).name() == "#ffffff"
 
     login_button = login_dialog.submit
-    assert login_button.font().family() == "Montserrat"
+    assert login_button.font().family() == "Source Sans Pro"
     assert QFont.Bold == login_button.font().weight()
     assert login_button.font().pixelSize() == 14
     assert login_button.palette().color(QPalette.Foreground).name() == "#2a319d"
@@ -226,7 +226,7 @@ def test_styles_for_left_pane(mocker, main_window):
     assert user_button.palette().color(QPalette.Foreground).name() == "#ffffff"
     login_button = user_profile.login_button
     assert login_button.palette().color(QPalette.Background).name() == "#05edfe"
-    assert login_button.font().family() == "Montserrat"
+    assert login_button.font().family() == "Source Sans Pro"
     assert QFont.Bold == login_button.font().weight()
     assert login_button.font().pixelSize() == 14
     assert login_button.palette().color(QPalette.Foreground).name() == "#2a319d"
@@ -239,7 +239,7 @@ def test_styles_for_main_view(mocker, main_window):
     no_sources = main_view.view_layout.widget(0)
     assert no_sources.layout().count() == 5
     no_sources_instructions = no_sources.layout().itemAt(0).widget()
-    assert no_sources_instructions.font().family() == "Montserrat"
+    assert no_sources_instructions.font().family() == "Source Sans Pro"
     assert QFont.DemiBold - 1 == no_sources_instructions.font().weight()
     assert no_sources_instructions.font().pixelSize() == 30
     assert no_sources_instructions.palette().color(QPalette.Foreground).name() == "#a5b3e9"
@@ -247,7 +247,7 @@ def test_styles_for_main_view(mocker, main_window):
     assert no_sources_spacer1.minimumSize().height() == 35
     assert no_sources_spacer1.maximumSize().height() == 35
     no_sources_instruction_details1 = no_sources.layout().itemAt(2).widget()
-    assert no_sources_instruction_details1.font().family() == "Montserrat"
+    assert no_sources_instruction_details1.font().family() == "Source Sans Pro"
     assert QFont.Normal == no_sources_instruction_details1.font().weight()
     assert no_sources_instruction_details1.font().pixelSize() == 30
     assert no_sources_instruction_details1.palette().color(QPalette.Foreground).name() == "#a5b3e9"
@@ -255,7 +255,7 @@ def test_styles_for_main_view(mocker, main_window):
     assert no_sources_spacer2.minimumSize().height() == 35
     assert no_sources_spacer2.maximumSize().height() == 35
     no_sources_instruction_details2 = no_sources.layout().itemAt(4).widget()
-    assert no_sources_instruction_details2.font().family() == "Montserrat"
+    assert no_sources_instruction_details2.font().family() == "Source Sans Pro"
     assert QFont.Normal == no_sources_instruction_details2.font().weight()
     assert no_sources_instruction_details2.font().pixelSize() == 30
     assert no_sources_instruction_details2.palette().color(QPalette.Foreground).name() == "#a5b3e9"
@@ -263,7 +263,7 @@ def test_styles_for_main_view(mocker, main_window):
     no_source_selected = main_view.view_layout.widget(1)
     assert no_source_selected.layout().count() == 8
     no_source_selected_instructions = no_source_selected.layout().itemAt(0).widget()
-    assert no_source_selected_instructions.font().family() == "Montserrat"
+    assert no_source_selected_instructions.font().family() == "Source Sans Pro"
     assert QFont.DemiBold - 1 == no_source_selected_instructions.font().weight()
     assert no_source_selected_instructions.font().pixelSize() == 30
     assert no_source_selected_instructions.palette().color(QPalette.Foreground).name() == "#a5b3e9"
@@ -274,19 +274,19 @@ def test_styles_for_main_view(mocker, main_window):
     assert bullet1_bullet.getContentsMargins() == (0, 4, 0, 0)
     assert bullet1_bullet.font().pixelSize() == 30
     assert QFont.Bold == bullet1_bullet.font().weight()
-    assert bullet1_bullet.font().family() == "Montserrat"
+    assert bullet1_bullet.font().family() == "Source Sans Pro"
     assert bullet1_bullet.palette().color(QPalette.Foreground).name() == "#a5b3e9"
     bullet2_bullet = no_source_selected.layout().itemAt(3).widget().layout().itemAt(0).widget()
     assert bullet2_bullet.getContentsMargins() == (0, 4, 0, 0)
     assert bullet2_bullet.font().pixelSize() == 30
     assert QFont.Bold == bullet2_bullet.font().weight()
-    assert bullet2_bullet.font().family() == "Montserrat"
+    assert bullet2_bullet.font().family() == "Source Sans Pro"
     assert bullet2_bullet.palette().color(QPalette.Foreground).name() == "#a5b3e9"
     bullet3_bullet = no_source_selected.layout().itemAt(4).widget().layout().itemAt(0).widget()
     assert bullet3_bullet.getContentsMargins() == (0, 4, 0, 0)
     assert bullet3_bullet.font().pixelSize() == 30
     assert QFont.Bold == bullet3_bullet.font().weight()
-    assert bullet3_bullet.font().family() == "Montserrat"
+    assert bullet3_bullet.font().family() == "Source Sans Pro"
     assert bullet3_bullet.palette().color(QPalette.Foreground).name() == "#a5b3e9"
     no_source_selected_spacer2 = no_source_selected.layout().itemAt(5)
     assert no_source_selected_spacer2.minimumSize().height() == (35 * 4)
@@ -308,13 +308,13 @@ def test_styles_source_list(mocker, main_window):
     # assert deletion_indicator.font().pixelSize() == 13
     assert deletion_indicator.palette().color(QPalette.Foreground).name() == "#000000"
     name = source_widget.name
-    assert name.font().family() == "Montserrat"
+    assert name.font().family() == "Source Sans Pro"
     # FIXME: weight() returns QFont.ExtraCondensed here
     # assert QFont.Normal == name.font().weight()
     assert name.font().pixelSize() == 13
     assert name.palette().color(QPalette.Foreground).name() == "#2a319d"
     timestamp = source_widget.timestamp
-    assert timestamp.font().family() == "Montserrat"
+    assert timestamp.font().family() == "Source Sans Pro"
     # FIXME: weight() returns QFont.ExtraCondensed here
     # assert QFont.Normal == timestamp.font().weight()
     assert timestamp.font().pixelSize() == 13
@@ -324,7 +324,7 @@ def test_styles_source_list(mocker, main_window):
 def test_styles_for_conversation_view(mocker, main_window):
     wrapper = main_window.main_view.view_layout.widget(main_window.main_view.CONVERSATION_INDEX)
     deletion_indicator = wrapper.deletion_indicator
-    assert deletion_indicator.deletion_message.font().family() == "Montserrat"
+    assert deletion_indicator.deletion_message.font().family() == "Source Sans Pro"
     assert QFont.Normal == deletion_indicator.deletion_message.font().weight()
     assert deletion_indicator.deletion_message.font().pixelSize() == 30
     assert (
@@ -350,7 +350,7 @@ def test_styles_for_conversation_view(mocker, main_window):
     assert horizontal_line.palette().color(QPalette.Background).green() == 49
     assert horizontal_line.palette().color(QPalette.Background).blue() == 157
     reply_text_edit = reply_box.text_edit
-    assert reply_text_edit.font().family() == "Montserrat"
+    assert reply_text_edit.font().family() == "Source Sans Pro"
     assert QFont.Normal == reply_text_edit.font().weight()
     assert reply_text_edit.font().pixelSize() == 18
     assert reply_text_edit.getContentsMargins() == (0, 0, 0, 0)
@@ -367,13 +367,13 @@ def test_styles_for_conversation_view(mocker, main_window):
     assert horizontal_line.palette().color(QPalette.Background).green() == 49
     assert horizontal_line.palette().color(QPalette.Background).blue() == 157
     last_updated_label = conversation_title_bar.updated
-    assert last_updated_label.font().family() == "Montserrat"
+    assert last_updated_label.font().family() == "Source Sans Pro"
     assert QFont.Light == last_updated_label.font().weight()
     assert last_updated_label.font().pixelSize() == 24
     assert last_updated_label.palette().color(QPalette.Foreground).name() == "#2a319d"
 
     title = conversation_title_bar.layout().itemAt(0).widget().layout().itemAt(0).widget()
-    assert title.font().family() == "Montserrat"
+    assert title.font().family() == "Source Sans Pro"
     assert QFont.Normal == title.font().weight()
     assert title.font().pixelSize() == 24
     assert title.palette().color(QPalette.Foreground).name() == "#2a319d"
@@ -439,7 +439,7 @@ def test_styles_for_modal_dialog(modal_dialog):
     assert modal_dialog.header_spinner_label.maximumSize().height() == 64  # 64px + 0px margin
     assert modal_dialog.header.minimumSize().height() == 68  # 68px + 0px margin
     assert modal_dialog.header.maximumSize().height() == 68  # 68px + 0px margin
-    assert modal_dialog.header.font().family() == "Montserrat"
+    assert modal_dialog.header.font().family() == "Source Sans Pro"
     assert QFont.Bold == modal_dialog.header.font().weight()
     assert modal_dialog.header.font().pixelSize() == 24
     assert modal_dialog.header.palette().color(QPalette.Foreground).name() == "#2a319d"
@@ -452,7 +452,7 @@ def test_styles_for_modal_dialog(modal_dialog):
     assert modal_dialog.header_line.palette().color(QPalette.Background).green() == 49
     assert modal_dialog.header_line.palette().color(QPalette.Background).blue() == 157
 
-    assert modal_dialog.body.font().family() == "Montserrat"
+    assert modal_dialog.body.font().family() == "Source Sans Pro"
     assert modal_dialog.body.font().pixelSize() == 16
     assert modal_dialog.body.palette().color(QPalette.Foreground).name() == "#302aa3"
     window_buttons = modal_dialog.layout().itemAt(4).widget()
@@ -461,7 +461,7 @@ def test_styles_for_modal_dialog(modal_dialog):
     for c in button_box_children:
         # TODO: Why does the assertion below not work?
         # assert 44 == c.height()  # 40px + 4px of border
-        assert c.font().family() == "Montserrat"
+        assert c.font().family() == "Source Sans Pro"
         assert QFont.DemiBold - 1 == c.font().weight()
         assert c.font().pixelSize() == 15
         # TODO: Why do the assertions below not work?
@@ -495,7 +495,7 @@ def test_styles_for_print_dialog(print_dialog):
     assert print_dialog.header_spinner_label.maximumSize().height() == 64  # 64px + 0px margin
     assert print_dialog.header.minimumSize().height() == 68  # 68px + 0px margin
     assert print_dialog.header.maximumSize().height() == 68  # 68px + 0px margin
-    assert print_dialog.header.font().family() == "Montserrat"
+    assert print_dialog.header.font().family() == "Source Sans Pro"
     assert QFont.Bold == print_dialog.header.font().weight()
     assert print_dialog.header.font().pixelSize() == 24
     assert print_dialog.header.palette().color(QPalette.Foreground).name() == "#2a319d"
@@ -508,14 +508,14 @@ def test_styles_for_print_dialog(print_dialog):
     assert print_dialog.header_line.palette().color(QPalette.Background).green() == 49
     assert print_dialog.header_line.palette().color(QPalette.Background).blue() == 157
 
-    assert print_dialog.body.font().family() == "Montserrat"
+    assert print_dialog.body.font().family() == "Source Sans Pro"
     assert print_dialog.body.font().pixelSize() == 16
     assert print_dialog.body.palette().color(QPalette.Foreground).name() == "#302aa3"
     window_buttons = print_dialog.layout().itemAt(4).widget()
     button_box = window_buttons.layout().itemAt(0).widget()
     button_box_children = button_box.findChildren(QPushButton)
     for c in button_box_children:
-        assert c.font().family() == "Montserrat"
+        assert c.font().family() == "Source Sans Pro"
         assert QFont.DemiBold - 1 == c.font().weight()
         assert c.font().pixelSize() == 15
 
@@ -536,7 +536,7 @@ def test_styles_for_export_file_wizard(export_file_wizard):
 
     for c in buttons:
         assert c.height() == 40
-        assert c.font().family() == "Montserrat"
+        assert c.font().family() == "Source Sans Pro"
         assert QFont.DemiBold - 1 == c.font().weight()
         assert c.font().pixelSize() == 15
 
@@ -555,7 +555,7 @@ def test_styles_for_export_file_wizard_page(export_file_wizard):
     assert page.header_spinner_label.maximumSize().height() == 64  # 64px + 0px margin
     assert page.header.minimumSize().height() == 68  # 68px + 0px margin
     assert page.header.maximumSize().height() == 68  # 68px + 0px margin
-    assert page.header.font().family() == "Montserrat"
+    assert page.header.font().family() == "Source Sans Pro"
     assert QFont.Bold == page.header.font().weight()
     assert page.header.font().pixelSize() == 24
     assert page.header.palette().color(QPalette.Foreground).name() == "#2a319d"
@@ -568,7 +568,7 @@ def test_styles_for_export_file_wizard_page(export_file_wizard):
     assert page.header_line.palette().color(QPalette.Background).green() == 49
     assert page.header_line.palette().color(QPalette.Background).blue() == 157
 
-    assert page.body.font().family() == "Montserrat"
+    assert page.body.font().family() == "Source Sans Pro"
     assert page.body.font().pixelSize() == 16
     assert page.body.palette().color(QPalette.Foreground).name() == "#302aa3"
 
@@ -591,7 +591,7 @@ def test_style_passphrase_wizard_page(export_file_wizard):
 
     passphrase_children_qlabel = page.passphrase_form.findChildren(QLabel)
     for c in passphrase_children_qlabel:
-        assert c.font().family() == "Montserrat" or c.font().family() == "Source Sans Pro"
+        assert c.font().family() == "Source Sans Pro"
         assert c.palette().color(QPalette.Foreground).name() == "#2a319d"
         assert c.font().pixelSize() == 12
         assert QFont.DemiBold - 1 == c.font().weight()
