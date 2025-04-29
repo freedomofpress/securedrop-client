@@ -12,9 +12,16 @@ from PyQt5.QtCore import QTimeZone
 
 def format_datetime_month_day(date: datetime.datetime) -> str:
     """
-    Formats date as e.g. Sep 16
+    Formats date: "h:MM" if in the current day, "Mon DD, h:mm" if 
+    current year, Mon DD YYYY if not current year
     """
-    return arrow.get(date).format("MMM D, HH:mm")
+    today = datetime.date.today()
+    if date.date() == today:
+        return arrow.get(date).format("h:mm A")
+    elif date.date().year == today.year:
+        return arrow.get(date).format("MMM D, h:mm A")
+    else:
+        return arrow.get(date).format("MMM D YYYY")
 
 
 def localise_datetime(date: datetime.datetime) -> datetime.datetime:
