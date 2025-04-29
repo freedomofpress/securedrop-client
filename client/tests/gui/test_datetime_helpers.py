@@ -13,10 +13,18 @@ from securedrop_client.gui.datetime_helpers import (
 def test_format_datetime_month_day():
     # Dates are shown in the source list as well as the conversation view. Changing the date format
     # may result in UI issues - this test is a reminder to check both views!
-    midnight_january_london = datetime.datetime(2023, 1, 1, 0, 0, 0, tzinfo=datetime.UTC)
+    midnight_january_london = datetime.datetime(2021, 1, 1, 0, 0, 0, tzinfo=datetime.UTC)
 
-    assert format_datetime_month_day(midnight_january_london) == "Jan 1, 00:00"
+    assert format_datetime_month_day(midnight_january_london) == "Jan 1 2021"
 
+    today = datetime.date.today()
+
+    today_test = datetime.datetime(today.year, today.month, today.day, 8, 30, 0, tzinfo=datetime.UTC)
+    assert format_datetime_month_day(today_test) == "8:30 AM"
+
+    thisyear_test = datetime.datetime(today.year, ((today.month-1)%12), today.day, 8, 30, 0, tzinfo=datetime.UTC)
+
+    assert format_datetime_month_day(thisyear_test) == f"{thisyear_test.strftime('%b')} {today.day}, 8:30 AM"
 
 def test_localise_datetime(mocker):
     mocker.patch(
@@ -36,4 +44,4 @@ def test_format_datetime_local(mocker):
         return_value=QByteArray(b"Pacific/Auckland"),
     )
     evening_january_1_london = datetime.datetime(2023, 1, 1, 18, 0, 0, tzinfo=datetime.UTC)
-    assert format_datetime_local(evening_january_1_london) == "Jan 2, 07:00"
+    assert format_datetime_local(evening_january_1_london) == "Jan 2 2023"
