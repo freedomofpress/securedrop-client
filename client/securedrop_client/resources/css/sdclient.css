@@ -317,14 +317,15 @@ QToolButton#SourceMenuButton::menu-indicator {
 #LastUpdatedLabel {
     font-family: 'Montserrat';
     font-weight: 200;
-    font-size: 24px;
+    font-size: 16px;
     color: #2a319d;
+    padding-left: 4px;
 }
 
 #TitleLabel {
     font-family: 'Montserrat';
     font-weight: 400;
-    font-size: 24px;
+    font-size: 20px;
     color: #2a319d;
     padding-left: 4px;
 }
