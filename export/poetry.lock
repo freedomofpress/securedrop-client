@@ -770,6 +770,19 @@ files = [
 plugins = ["importlib-metadata"]
 
 [[package]]
+name = "pygobject-stubs"
+version = "2.13.0"
+description = "Typing stubs for PyGObject"
+optional = false
+python-versions = ">=3.9"
+files = [
+    {file = "pygobject_stubs-2.13.0.tar.gz", hash = "sha256:4f608f5dfe10c3173f0a082416e22e27b693743c2a635de245c78a51458e2ab6"},
+]
+
+[package.extras]
+dev = ["PyGObject", "black (>=25.1.0)", "codespell (>=2.4.1)", "isort (>=6.0.1)", "pre-commit", "ruff (>=0.9.10)"]
+
+[[package]]
 name = "pytest"
 version = "8.3.4"
 description = "pytest: simple powerful testing with Python"
@@ -1297,4 +1310,4 @@ type = ["pytest-mypy"]
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.11"
-content-hash = "8b8e46c126b7cacb1103b3827b1b5a51101031cbc3b7f8657135b44e731f94e8"
+content-hash = "781838405cd08dd2bf3ac7aaf7dd5cfa273e5e1e47c58217cbaa5850b89dfef8"

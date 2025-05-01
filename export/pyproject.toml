@@ -18,6 +18,7 @@ pytest-cov = "^6.0.0"
 pytest-mock = "^3.14.0"
 semgrep = "^1.100.0"
 types-pexpect = "^4.9.0.20241208"
+pygobject-stubs = "*"
 
 [tool.mypy]
 python_version = "3.11"

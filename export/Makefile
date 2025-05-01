@@ -35,7 +35,7 @@ semgrep-local:
 
 # Install dependencies in CI
 ci-install-deps:
-	apt-get install --yes libreoffice
+	apt-get install --yes libreoffice python3-gi python3-gi-cairo gir1.2-gtk-4.0
 
 # Explanation of the below shell command should it ever break.
 # 1. Set the field separator to ": ##" and any make targets that might appear between : and ##

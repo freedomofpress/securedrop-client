@@ -50,6 +50,7 @@ jobs:
         run: |
           if [[ "${{ matrix.component }}" == "export" ]]; then
             make -C ${{ matrix.component }} ci-install-deps
+            sudo -u user poetry config virtualenvs.options.system-site-packages true
           fi
           sudo -u user poetry -C ${{ matrix.component }} install
       - name: Run test
