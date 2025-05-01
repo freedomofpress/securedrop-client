@@ -3825,7 +3825,8 @@ class SourceProfileShortWidget(QWidget):
 
     MARGIN_LEFT = 25
     MARGIN_RIGHT = 17
-    VERTICAL_MARGIN = 14
+    UPPER_MARGIN = 10
+    LOWER_MARGIN = 6
 
     def __init__(
         self,
@@ -3851,14 +3852,21 @@ class SourceProfileShortWidget(QWidget):
         header = QWidget()
         header_layout = QHBoxLayout(header)
         header_layout.setContentsMargins(
-            self.MARGIN_LEFT, self.VERTICAL_MARGIN, self.MARGIN_RIGHT, self.VERTICAL_MARGIN
+            self.MARGIN_LEFT, self.UPPER_MARGIN, self.MARGIN_RIGHT, self.LOWER_MARGIN
         )
         title = TitleLabel(self.source.journalist_designation)
-        self.updated = LastUpdatedLabel(_(format_datetime_local(self.source.last_updated)))
+        self.updated = LastUpdatedLabel(
+                _("Last seen: {last_update_time}").format(
+                      last_update_time=format_datetime_local(self.source.last_updated, True)
+                      )
+                )
+        stacked_title = QWidget()
+        title_layout = QVBoxLayout(stacked_title)
         menu = SourceMenuButton(self.source, self.controller, conversation_view, app_state)
-        header_layout.addWidget(title, alignment=Qt.AlignLeft)
+        title_layout.addWidget(title, alignment=Qt.AlignLeft)
+        title_layout.addWidget(self.updated, alignment=Qt.AlignLeft)
+        header_layout.addWidget(stacked_title, alignment=Qt.AlignLeft)
         header_layout.addStretch()
-        header_layout.addWidget(self.updated, alignment=Qt.AlignRight)
         header_layout.addWidget(menu, alignment=Qt.AlignRight)
 
         # Create horizontal line
@@ -3875,4 +3883,8 @@ class SourceProfileShortWidget(QWidget):
         Ensure the timestamp is always kept up to date with the latest activity
         from the source.
         """
-        self.updated.setText(_(format_datetime_local(self.source.last_updated)))
+        self.updated.setText(
+                _("Last seen: {last_update_time}").format(
+                  last_update_time=format_datetime_local(self.source.last_updated, True)
+                  )
+                )
