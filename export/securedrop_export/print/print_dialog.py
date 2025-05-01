@@ -42,9 +42,11 @@ class PrintDialog(Gtk.Application):
             printer = self.dialog.get_selected_printer()
             page_setup = self.dialog.get_page_setup()
 
-            # Fix upstream GTK page ranges:
-            #   - not properly passed to IPP printers
-            #   -
+            # GTK in bookworm has a bug in which page ranges are not properly
+            # passed to IPP printers, we work around that by explicitly
+            # passing them to CUPS, and disallowing multiple ranges.
+            #   - https://gitlab.gnome.org/GNOME/gtk/-/issues/7528
+            #   - https://gitlab.gnome.org/GNOME/gtk/-/issues/7527
             page_range_str = ""
             page_ranges = settings.get_page_ranges()
             if len(page_ranges) > 1:
