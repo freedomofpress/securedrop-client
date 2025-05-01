@@ -35,10 +35,28 @@ class PrintDialog(Gtk.Application):
         """
 
         if response_id == Gtk.ResponseType.OK:  # Print
-            self.dialog.hide()
             settings = self.dialog.get_settings()
             printer = self.dialog.get_selected_printer()
             page_setup = self.dialog.get_page_setup()
+
+            # Fix upstream GTK page ranges:
+            #   - not properly passed to IPP printers
+            #   -
+            page_range_str = ""
+            page_ranges = settings.get_page_ranges()
+            if len(page_ranges) > 1:
+                self.show_error_disallowed_range()
+                return
+            elif len(page_ranges) == 1:
+                start = page_ranges[0].start + 1  # start at 0
+                end = page_ranges[0].end + 1  # start at 0
+                if start == end:
+                    page_range_str = str(start)
+                else:
+                    page_range_str = f"{start}-{end}"
+                settings.set("cups-page-ranges", page_range_str)
+
+            self.dialog.hide()
             job = Gtk.PrintJob.new("print job", printer, settings, page_setup)
             job.set_source_file(self.file_to_print)
             job.send(self.on_job_complete, user_data=None)
@@ -63,3 +81,15 @@ class PrintDialog(Gtk.Application):
             #   - future print dialogs display issues with a printer
             pass
         self.quit()  # Close print dialog and exit GTK application
+
+    def show_error_disallowed_range(self):
+        dialog = Gtk.MessageDialog(
+            modal=True,
+            message_type=Gtk.MessageType.ERROR,
+            buttons=Gtk.ButtonsType.OK,
+            text="Page Range Limitation",
+            secondary_text="Providing multiple page ranges are not "
+            "supported at this time.\nPlease use only one (e.g. '2-4')",
+        )
+        dialog.connect("response", lambda d, _: d.close())
+        dialog.show()
