@@ -47,7 +47,6 @@ class PrintDialog(Gtk.Application):
             # passing them to CUPS, and disallowing multiple ranges.
             #   - https://gitlab.gnome.org/GNOME/gtk/-/issues/7528
             #   - https://gitlab.gnome.org/GNOME/gtk/-/issues/7527
-            page_range_str = ""
             page_ranges = settings.get_page_ranges()
             if len(page_ranges) > 1:
                 self.show_error_disallowed_range()
