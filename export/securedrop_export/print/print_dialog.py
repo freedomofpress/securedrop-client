@@ -23,7 +23,10 @@ class PrintDialog(Gtk.Application):
     def on_activate(self, app):
         """On GUI startup"""
         window = Gtk.Window(application=app)
-        self.dialog = Gtk.PrintUnixDialog.new("Print Document", window)
+        self.dialog = Gtk.PrintUnixDialog.new(
+            "Print Document",  # FIXME: this should be localized
+            window
+        )
         self.dialog.connect("response", self.on_response)
         self.dialog.show()
         window.hide()
@@ -48,8 +51,10 @@ class PrintDialog(Gtk.Application):
                 self.show_error_disallowed_range()
                 return
             elif len(page_ranges) == 1:
-                start = page_ranges[0].start + 1  # start at 0
-                end = page_ranges[0].end + 1  # start at 0
+                # `page_ranges` is 0-indexed, but CUPS wants the range to be 1-indexed
+                start = page_ranges[0].start + 1
+                end = page_ranges[0].end + 1
+
                 if start == end:
                     page_range_str = str(start)
                 else:
@@ -57,7 +62,10 @@ class PrintDialog(Gtk.Application):
                 settings.set("cups-page-ranges", page_range_str)
 
             self.dialog.hide()
-            job = Gtk.PrintJob.new("print job", printer, settings, page_setup)
+            job = Gtk.PrintJob.new(
+                "print job",  # FIXME: this should be localized
+                printer, settings, page_setup
+            )
             job.set_source_file(self.file_to_print)
             job.send(self.on_job_complete, user_data=None)
         elif response_id == Gtk.ResponseType.APPLY:  # Preview (if available)
@@ -87,9 +95,9 @@ class PrintDialog(Gtk.Application):
             modal=True,
             message_type=Gtk.MessageType.ERROR,
             buttons=Gtk.ButtonsType.OK,
-            text="Page Range Limitation",
-            secondary_text="Providing multiple page ranges are not "
-            "supported at this time.\nPlease use only one (e.g. '2-4')",
+            text="Page Range Limitation",  # FIXME: this should be localized
+            secondary_text="Providing multiple page ranges is not "
+            "supported at this time.\nPlease use only one, e.g. \"2-4\".",
         )
         dialog.connect("response", lambda d, _: d.close())
         dialog.show()
