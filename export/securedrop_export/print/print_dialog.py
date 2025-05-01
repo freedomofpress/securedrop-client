@@ -25,7 +25,7 @@ class PrintDialog(Gtk.Application):
         window = Gtk.Window(application=app)
         self.dialog = Gtk.PrintUnixDialog.new(
             "Print Document",  # FIXME: this should be localized
-            window
+            window,
         )
         self.dialog.connect("response", self.on_response)
         self.dialog.show()
@@ -65,7 +65,9 @@ class PrintDialog(Gtk.Application):
             self.dialog.hide()
             job = Gtk.PrintJob.new(
                 "print job",  # FIXME: this should be localized
-                printer, settings, page_setup
+                printer,
+                settings,
+                page_setup,
             )
             job.set_source_file(self.file_to_print)
             job.send(self.on_job_complete, user_data=None)
@@ -98,7 +100,7 @@ class PrintDialog(Gtk.Application):
             buttons=Gtk.ButtonsType.OK,
             text="Page Range Limitation",  # FIXME: this should be localized
             secondary_text="Providing multiple page ranges is not "
-            "supported at this time.\nPlease use only one, e.g. \"2-4\".",
+            'supported at this time.\nPlease use only one, e.g. "2-4".',
         )
         dialog.connect("response", lambda d, _: d.close())
         dialog.show()
