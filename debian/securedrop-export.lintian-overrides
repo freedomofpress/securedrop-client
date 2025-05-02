@@ -31,3 +31,6 @@ securedrop-export: control-file-is-empty [conffiles]
 
 # Preset options are missing from deb-systemd-helper
 securedrop-export: maintainer-script-calls-systemctl
+
+# We're abusing `Breaks` to remove obsolete dependencies
+securedrop-export: breaks-without-version
