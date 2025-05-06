@@ -9,11 +9,8 @@ Code for exporting and printing files from the SecureDrop Qubes Workstation.
 
 ## Supported Printers
 
-Printer support is currently limited to a subset of Brother and HP printers that offer USB
-(non-wireless) connectivity, such as:
-
-- HP LaserJet Pro 4001dn
-- Brother HL-L2320D
+Any printer that supports IPP-over-USB will work; consult the [SecureDrop Workstation documentation](https://workstation.securedrop.org/en/stable/admin/reference/hardware.html#choosing-a-printer)
+for further details and advice.
 
 ## Supported Export Devices
 
