@@ -1,1 +1,2 @@
 whonix-config/app_journalist.auth_private.tmpl /usr/share/securedrop-whonix-config
+whonix-config/etc/systemcheck.d/50_securedrop.conf /etc/systemcheck.d/
