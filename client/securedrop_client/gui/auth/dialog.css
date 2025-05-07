@@ -4,7 +4,6 @@ QWidget {
 
 #LoginDialog_form QLabel {
     color: #fff;
-    font-family: 'Montserrat';
     font-weight: 500;
     font-size: 13px;
 }

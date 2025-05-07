@@ -2,7 +2,6 @@
     padding: 5px 3px 3px 5px;
 }
 #ShowPassphrase_widget QLabel{
-    font-family: 'Source Sans Pro';
     font-weight: 500;
     font-size: 12px;
     line-height: 15px;

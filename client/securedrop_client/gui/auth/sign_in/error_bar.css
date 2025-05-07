@@ -11,7 +11,6 @@ QWidget {
 }
 
 #LoginErrorBar_status_bar {
-    font-family: 'Montserrat';
     font-weight: 500;
     font-size: 12px;
     color: #fff;

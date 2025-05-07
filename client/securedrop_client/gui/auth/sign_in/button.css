@@ -5,7 +5,6 @@ QWidget {
 #SignInButton {
     border: none;
     background-color: #05edfe;
-    font-family: 'Montserrat';
     font-weight: 600;
     font-size: 14px;
     color: #2a319d;
