@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: SecureDrop Client 0.5.0\n"
 "Report-Msgid-Bugs-To: securedrop@freedom.press\n"
-"PO-Revision-Date: 2023-10-14 20:30+0000\n"
+"PO-Revision-Date: 2024-12-12 09:33+0000\n"
 "Last-Translator: \"Igor K.\" <igorkrainovic@gmail.com>\n"
 "Language-Team: Croatian <https://weblate.securedrop.org/projects/securedrop/securedrop-client/hr/>\n"
 "Language: hr\n"
@@ -15,7 +15,7 @@ msgstr ""
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=3; plural=n%10==1 && n%100!=11 ? 0 : n%10>=2 && n%10<=4 && (n%100<10 || n%100>=20) ? 1 : 2;\n"
-"X-Generator: Weblate 4.18.2\n"
+"X-Generator: Weblate 5.8.4\n"
 "Generated-By: Babel 2.9.1\n"
 
 msgid "{application_name} is already running"
@@ -23,9 +23,9 @@ msgstr "Aplikacija {application_name} je već pokrenuta"
 
 msgid "Retrieving 1 message"
 msgid_plural "Retrieving {message_count} messages"
-msgstr[0] "Preuzimanje jedne poruke"
-msgstr[1] "Preuzimanje {message_count} poruka"
-msgstr[2] "Preuzimanje {message_count} poruka"
+msgstr[0] "Preuzimam {message_count} poruku"
+msgstr[1] "Preuzimam {message_count} poruke"
+msgstr[2] "Preuzimam {message_count} poruka"
 
 msgid "The SecureDrop server cannot be reached. Trying to reconnect..."
 msgstr "Nije moguće doći do SecureDrop poslužitelja. Pokušavam se spojiti..."
@@ -57,7 +57,7 @@ msgid "Failed to update star."
 msgstr "Nije uspjelo ažuriranje zvijezdice."
 
 msgid "File does not exist in the data directory. Please try re-downloading."
-msgstr "Datoteka ne postoji u direktoriju. Pokušajte ponovno preuzimanje."
+msgstr "Datoteka ne postoji u direktoriju. Pokušajte ponovno preuzeti."
 
 msgid "The file download failed. Please try again."
 msgstr "Preuzimanje datoteke nije uspjelo. Pokušajte opet."
@@ -119,6 +119,12 @@ msgstr "Posljednje osvježenje: {}"
 msgid "Last Refresh: never"
 msgstr "Posljednje osvježenje: nikad"
 
+msgid "DELETE SOURCES"
+msgstr "OBRIŠI IZVORE"
+
+msgid "Delete selected source accounts. Ctrl+click sources below to select multiple sources."
+msgstr "Obriši odabrane račune izvora. Ctrl+klik na izvore niže kako bi označili više izvora."
+
 msgid "{}"
 msgstr "{}"
 
@@ -148,6 +154,18 @@ msgstr "Pogledali ili dohvatili datoteke"
 
 msgid "Send a response"
 msgstr "Poslali odgovor"
+
+msgid "Or, select multiple sources with Ctrl+click."
+msgstr "Ili, odaberite više izvora sa Ctrl+klik."
+
+msgid "Multiple Sources Selected"
+msgstr "Odabrano više izvora"
+
+msgid "Select or de-select sources using Ctrl+click, Shift+click, or by dragging the mouse."
+msgstr "Označite ili odznačite izvore sa Ctrl+klik, Shift+klik, ili povlačenjem miša."
+
+msgid "Use the top toolbar to delete multiple sources at once. You will be shown a confirmation dialog before anything is deleted."
+msgstr "Koristite gornju alatnu traku kako bi obrisali više izvora odjednom. Prikazat će se potvrdni dijalog prije nego se nešto obriše."
 
 msgid "Deleting files and messages…"
 msgstr "Brisanje datoteka i poruka …"
@@ -272,19 +290,19 @@ msgstr "Očuvanje računa će zadržati njegove metapodatke i mogućnost da se {
 
 msgid "one file"
 msgid_plural "{file_count} files"
-msgstr[0] "jedna datoteka"
+msgstr[0] "{file_count} datoteka"
 msgstr[1] "{file_count} datoteke"
 msgstr[2] "{file_count} datoteka"
 
 msgid "one reply"
 msgid_plural "{reply_count} replies"
-msgstr[0] "jedan odgovor"
+msgstr[0] "{reply_count} odgovor"
 msgstr[1] "{reply_count} odgovora"
 msgstr[2] "{reply_count} odgovora"
 
 msgid "one message"
 msgid_plural "{message_count} messages"
-msgstr[0] "jedna poruka"
+msgstr[0] "{message_count} poruka"
 msgstr[1] "{message_count} poruke"
 msgstr[2] "{message_count} poruka"
 
@@ -292,76 +310,76 @@ msgid "DONE"
 msgstr "Gotovo"
 
 msgid "BACK"
-msgstr ""
+msgstr "NATRAG"
 
-msgid "No device detected"
-msgstr ""
+msgid "No USB drives detected"
+msgstr "Nije pronađen USB disk"
 
-msgid "Too many USB devices detected; please insert one supported device."
-msgstr ""
+msgid "Too many USB drives detected; please insert one supported drive."
+msgstr "Previše USB diskova otkriveno; umetnite jedan podržani disk."
 
 msgid "Either the drive is not encrypted or there is something else wrong with it.<br />If this is a VeraCrypt drive, please unlock it from within the sd-devices VM, then try again."
-msgstr ""
+msgstr "Disk nije enkriptiran ili nešto drugo nije u redu s njim.<br />Ako je ovo VeraCrypt disk, otključajte ga unutar sd-devices VM-a, pa pokušajte opet."
 
-msgid "The device is ready for export."
-msgstr ""
+msgid "The drive is ready for export."
+msgstr "Disk je spreman za izvoz."
 
-msgid "The device is locked."
-msgstr ""
+msgid "The drive is locked."
+msgstr "Disk je zaključan."
 
 msgid "The passphrase provided did not work. Please try again."
 msgstr "Dana lozinka ne radi. Molimo pokušajte opet."
 
 msgid "Error mounting drive"
-msgstr ""
+msgstr "Greška prilikom postavljanja diska"
 
 msgid "Error during export"
-msgstr ""
+msgstr "Greška prilikom izvoza"
 
-msgid "Files were exported successfully, but the USB device could not be unmounted."
-msgstr ""
+msgid "Files were exported successfully, but the USB drive could not be unmounted."
+msgstr "Izvoz datoteka je bio uspješan, ali USB disk nije mogao biti otkopčan."
 
 msgid "Files were exported successfully, but some temporary files remain on disk. Reboot to remove them."
-msgstr ""
+msgstr "Izvoz datoteka je uspio, ali su neke privremene datoteke ostale na disku. Ponovno pokrenite kako bi ih uklonili."
 
 msgid "Export successful"
 msgstr "Izvoz je uspio"
 
-msgid "Error encountered with this device. See your administrator for help."
-msgstr ""
+msgid "Error encountered with this drive. See your administrator for help."
+msgstr "Došlo je do greške s ovim diskom. Potražite pomoć svog administratora."
 
 msgid "Files were moved or missing and could not be exported."
-msgstr ""
+msgstr "Datoteke su uklonjene ili nedostaju i ne mogu biti izvezene."
 
 msgid "Error encountered. Please contact support."
-msgstr ""
+msgstr "Došlo je do greške. Molimo kontaktirajte podršku."
 
 msgid "Preparing to export:<br /><span style=\"font-weight:normal\">{}</span>"
 msgstr "Priprema za izvoz:<br /><span style=\"font-weight:normal\">{}</span>"
 
 msgid "<h2>Understand the risks before exporting files</h2><b>Malware</b><br />This workstation lets you open files securely. If you open files on another computer, any embedded malware may spread to your computer or network. If you are unsure how to manage this risk, please print the file, or contact your administrator.<br /><br /><b>Anonymity</b><br />Files submitted by sources may contain information or hidden metadata that identifies who they are. To protect your sources, please consider redacting files before working with them on network-connected computers."
-msgstr "<h2>Razumijte rizike prije izvoza datoteka</h2><b>Malware</b><br />Ova radna stanica Vam omogućuje sigurno otvaranje datoteka. Ako otvorite datoteke na drugom računalu, svaki će se usađeni malware moći proširiti na Vaše računalo ili mrežu. Ako niste sigurni kako upravljati ovim rizikom, molimo Vas da ispišete datoteku ili kontaktirate svog administratora. <br /><br /><b>Anonimnost</b><br />Datoteke koje je predao izvor mogu sadržavati informacije ili skrivene metapodatke koji identificiraju taj izvor. Kako bi zaštitili svoje izvore, razmotrite uređivanje datoteka prije nego radite s njima na računalima spojenim na mrežu."
+msgstr "<h2>Razumijte rizike prije izvoza datoteka</h2><b>Malware</b><br />Ova radna stanica Vam omogućuje sigurno otvaranje datoteka. Ako otvorite datoteke na drugom računalu, usađeni malware će se moći proširiti na Vaše računalo ili mrežu. Ako niste sigurni kako upravljati ovim rizikom, molimo Vas da ispišete datoteku ili kontaktirate svog administratora. <br /><br /><b>Anonimnost</b><br />Datoteke koje je predao izvor mogu sadržavati informacije ili skrivene metapodatke koji identificiraju taj izvor. Kako bi zaštitili svoje izvore, razmotrite uređivanje datoteka prije nego radite s njima na računalima spojenim na mrežu."
 
 msgid "Ready to export:<br /><span style=\"font-weight:normal\">{}</span>"
 msgstr "Spremno za izvoz:<br /><span style=\"font-weight:normal\">{}</span>"
 
 msgid "Export Failed"
-msgstr ""
+msgstr "Izvoz nije uspio"
 
 msgid "Please insert one of the export drives provisioned specifically for the SecureDrop Workstation.<br />If you're using a VeraCrypt drive, unlock it manually before proceeding."
-msgstr ""
+msgstr "Molimo umetnite disk za izvoz provizioniran specifično za SecureDrop radnu stanicu. <br />Ako koristite VeraCrypt disk, otključajte ga ručno prije nego nastavite."
 
 msgid "Remember to be careful when working with files outside of your Workstation machine."
 msgstr "Zapamtite - budite oprezni kad radite s datotekama izvan svoje radne stanice."
 
 msgid "Export sucessful, but drive was not locked"
-msgstr ""
+msgstr "Izvoz je uspio, ali disk nije zaključan"
 
 msgid "Working..."
-msgstr ""
+msgstr "Radim..."
 
 msgid "Enter passphrase for USB drive"
-msgstr "Unesite lozinku za USB pogon"
+msgstr "Unesite lozinku za USB disk"
 
 msgid "Preparing to print:<br /><span style=\"font-weight:normal\">{}</span>"
 msgstr "Pripremanje za ispis:<br /><span style=\"font-weight:normal\">{}</span>"
@@ -379,27 +397,31 @@ msgid "<h2>Managing printout risks</h2><b>QR codes and web addresses</b><br />Ne
 msgstr "<h2>Upravljanje rizicima ispisa</h2><b>QR kodovi i web adrese</b><br />Nikad ne upisujte i ne otvarajte web adrese, i ne skenirajte QR kodove sadržane u ispisanim dokumentima bez poduzimanja sigurnosnih predstrožnosti. Ako niste sigurni kako upravljati ovim rizikom, kontaktirajte svog administratora.<br /><br /><b>Točke printera</b><br />Bilo koji dio ispisane stranice može sadržavati identificirajuće informacije nevidljive golom oku, tzv. točke printera. Pomno razmotrite rizik kad radite sa ili objavljujete skenirane ispise."
 
 msgid "Please connect your printer to a USB port."
-msgstr "Molimo spojite pisač sa USB portom."
+msgstr "Molimo spojite pisač na USB priključak."
 
 msgid "See your administrator for help."
 msgstr "Obratite se administratoru za pomoć."
 
 msgid "This file type cannot be printed."
-msgstr ""
+msgstr "Ovaj tip datoteke se ne može ispisati."
 
-#, fuzzy
-#| msgid "YES, DELETE ENTIRE SOURCE ACCOUNT"
 msgid "YES, DELETE ENTIRE SOURCE ACCOUNT"
 msgid_plural "YES, DELETE {number} SOURCE ACCOUNTS"
 msgstr[0] "Da, obriši cijeli račun izvora"
-msgstr[1] "Da, obriši cijeli račun izvora"
-msgstr[2] "Da, obriši cijeli račun izvora"
+msgstr[1] "Da, obriši {number} računa izvora"
+msgstr[2] "Da, obriši {number} računa izvora"
 
 msgid "Are you sure this is what you want?"
 msgstr "Jeste li sigurni da to stvarno želite?"
 
+msgid "{text} (wait {delay} sec)"
+msgstr "{text} (čekajte {delay} sek.)"
+
+msgid "Notice: All sources have been selected!"
+msgstr "Obavijest: Svi izvori su odabrani!"
+
 msgid "Delete entire account for: {source_or_sources}?"
-msgstr ""
+msgstr "Obriši cijeli račun za: {source_or_sources}?"
 
 msgid "When the entire account for a source is deleted:"
 msgstr "Kad je cijeli račun izvora obrisan:"
@@ -413,8 +435,11 @@ msgstr "Vaša organizacija mu neće moći slati odgovore."
 msgid "All files and messages from that source will also be destroyed."
 msgstr "Sve datoteke i poruke tog izvora će također biti uništene."
 
+msgid "{sources} ... plus {count} additional sources"
+msgstr "{sources} ... plus {count} dodatnih izvora"
+
 msgid "No sources have been selected."
-msgstr ""
+msgstr "Nisu odabrani izvori."
 
 #~ msgid "SUBMIT"
 #~ msgstr "POŠALJI"

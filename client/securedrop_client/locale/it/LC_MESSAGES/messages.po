@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: SecureDrop Client 0.7.0\n"
 "Report-Msgid-Bugs-To: securedrop@freedom.press\n"
-"PO-Revision-Date: 2023-10-31 18:30+0000\n"
+"PO-Revision-Date: 2025-02-11 12:34+0000\n"
 "Last-Translator: Claudio Arseni <claudio.arseni@ubuntu.com>\n"
 "Language-Team: Italian <https://weblate.securedrop.org/projects/securedrop/securedrop-client/it/>\n"
 "Language: it\n"
@@ -15,7 +15,7 @@ msgstr ""
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=n != 1;\n"
-"X-Generator: Weblate 4.18.2\n"
+"X-Generator: Weblate 5.8.4\n"
 "Generated-By: Babel 2.9.1\n"
 
 msgid "{application_name} is already running"
@@ -118,6 +118,12 @@ msgstr "Ultimo aggiornamento: {}"
 msgid "Last Refresh: never"
 msgstr "Ultimo aggiornamento: mai"
 
+msgid "DELETE SOURCES"
+msgstr ""
+
+msgid "Delete selected source accounts. Ctrl+click sources below to select multiple sources."
+msgstr ""
+
 msgid "{}"
 msgstr "{}"
 
@@ -147,6 +153,18 @@ msgstr "Visualizzare o recuperare i file"
 
 msgid "Send a response"
 msgstr "Inviare una risposta"
+
+msgid "Or, select multiple sources with Ctrl+click."
+msgstr ""
+
+msgid "Multiple Sources Selected"
+msgstr ""
+
+msgid "Select or de-select sources using Ctrl+click, Shift+click, or by dragging the mouse."
+msgstr ""
+
+msgid "Use the top toolbar to delete multiple sources at once. You will be shown a confirmation dialog before anything is deleted."
+msgstr ""
 
 msgid "Deleting files and messages…"
 msgstr "Eliminazione in corso di file e messaggi…"
@@ -290,19 +308,19 @@ msgstr ""
 msgid "BACK"
 msgstr ""
 
-msgid "No device detected"
+msgid "No USB drives detected"
 msgstr ""
 
-msgid "Too many USB devices detected; please insert one supported device."
+msgid "Too many USB drives detected; please insert one supported drive."
 msgstr ""
 
 msgid "Either the drive is not encrypted or there is something else wrong with it.<br />If this is a VeraCrypt drive, please unlock it from within the sd-devices VM, then try again."
 msgstr ""
 
-msgid "The device is ready for export."
+msgid "The drive is ready for export."
 msgstr ""
 
-msgid "The device is locked."
+msgid "The drive is locked."
 msgstr ""
 
 msgid "The passphrase provided did not work. Please try again."
@@ -314,7 +332,7 @@ msgstr ""
 msgid "Error during export"
 msgstr ""
 
-msgid "Files were exported successfully, but the USB device could not be unmounted."
+msgid "Files were exported successfully, but the USB drive could not be unmounted."
 msgstr ""
 
 msgid "Files were exported successfully, but some temporary files remain on disk. Reboot to remove them."
@@ -323,7 +341,7 @@ msgstr ""
 msgid "Export successful"
 msgstr "Esportazione avvenuta con successo"
 
-msgid "Error encountered with this device. See your administrator for help."
+msgid "Error encountered with this drive. See your administrator for help."
 msgstr ""
 
 msgid "Files were moved or missing and could not be exported."
@@ -391,6 +409,12 @@ msgstr[1] ""
 msgid "Are you sure this is what you want?"
 msgstr "Procedere veramente con questa scelta?"
 
+msgid "{text} (wait {delay} sec)"
+msgstr ""
+
+msgid "Notice: All sources have been selected!"
+msgstr ""
+
 msgid "Delete entire account for: {source_or_sources}?"
 msgstr ""
 
@@ -405,6 +429,9 @@ msgstr ""
 
 msgid "All files and messages from that source will also be destroyed."
 msgstr "Anche tutti i file e i messaggi inviati da quella fonte verranno distrutti."
+
+msgid "{sources} ... plus {count} additional sources"
+msgstr ""
 
 msgid "No sources have been selected."
 msgstr ""
