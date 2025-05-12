@@ -1129,17 +1129,18 @@ files = [
 
 [[package]]
 name = "semgrep"
-version = "1.120.1"
+version = "1.121.0"
 description = "Lightweight static analysis for many languages. Find bug variants with patterns that look like source code."
 optional = false
 python-versions = ">=3.9"
 groups = ["dev"]
 files = [
-    {file = "semgrep-1.120.1-cp39.cp310.cp311.py39.py310.py311-none-macosx_10_14_x86_64.whl", hash = "sha256:22d6839e56a3793f56a1b45296832f418c8efa653ffe9a0800e71629269feeae"},
-    {file = "semgrep-1.120.1-cp39.cp310.cp311.py39.py310.py311-none-macosx_11_0_arm64.whl", hash = "sha256:b91c4554f0019d3e4b87215b4d134c7a908095f4be9b0e9525f53c8a774aa695"},
-    {file = "semgrep-1.120.1-cp39.cp310.cp311.py39.py310.py311-none-musllinux_1_0_aarch64.manylinux2014_aarch64.whl", hash = "sha256:93babbb7b47bed170bbec7ef704dd33f072e70a144edfd7e032811ac70281c8f"},
-    {file = "semgrep-1.120.1-cp39.cp310.cp311.py39.py310.py311-none-musllinux_1_0_x86_64.manylinux2014_x86_64.whl", hash = "sha256:0feb5294e770b208c42802ff9503550a7464ed792d6ab216ba882edbd42862a7"},
-    {file = "semgrep-1.120.1-cp39.cp310.cp311.py39.py310.py311-none-win_amd64.whl", hash = "sha256:e595c0b6a975fbfd1df2180f41599a0464f496686dc717cf8cfbab1ec264e048"},
+    {file = "semgrep-1.121.0-cp39.cp310.cp311.py39.py310.py311-none-macosx_10_14_x86_64.whl", hash = "sha256:0ece86f06b049242c9ada1f5e5413abcc0a23c218b3e31f459635403d30d1b44"},
+    {file = "semgrep-1.121.0-cp39.cp310.cp311.py39.py310.py311-none-macosx_11_0_arm64.whl", hash = "sha256:e427dd2e2432263b7a243f14738e6879bfe08bb086932b37230e86cd67de0398"},
+    {file = "semgrep-1.121.0-cp39.cp310.cp311.py39.py310.py311-none-musllinux_1_0_aarch64.manylinux2014_aarch64.whl", hash = "sha256:5ed5d1490c38f58f683fd10c5ee16515336424c7e70d158a7e6e3821b2b30485"},
+    {file = "semgrep-1.121.0-cp39.cp310.cp311.py39.py310.py311-none-musllinux_1_0_x86_64.manylinux2014_x86_64.whl", hash = "sha256:09cad989bf1897b1c1bf94360fbc3aa53825b4c687d38678d43eeda66ad99eb9"},
+    {file = "semgrep-1.121.0-cp39.cp310.cp311.py39.py310.py311-none-win_amd64.whl", hash = "sha256:dc697f87f98ae3538018cc57058054705385351655150360f89b3f1c0da2e5d9"},
+    {file = "semgrep-1.121.0.tar.gz", hash = "sha256:3211f673024835e7dfdc32e1e83a5dc4ccf295daa489191f0b2fa02ac8e10723"},
 ]
 
 [package.dependencies]
@@ -1213,14 +1214,14 @@ files = [
 
 [[package]]
 name = "types-setuptools"
-version = "80.0.0.20250429"
+version = "80.4.0.20250511"
 description = "Typing stubs for setuptools"
 optional = false
 python-versions = ">=3.9"
 groups = ["dev"]
 files = [
-    {file = "types_setuptools-80.0.0.20250429-py3-none-any.whl", hash = "sha256:9bbcdcea88d1fda4b0f1371488333f606c78a8b10154a42530ed926ecf3242cb"},
-    {file = "types_setuptools-80.0.0.20250429.tar.gz", hash = "sha256:a4de44f1110f531e7f9453d72999437a1caa6052609e2c7c859dd6613ab0d593"},
+    {file = "types_setuptools-80.4.0.20250511-py3-none-any.whl", hash = "sha256:972d7d947871cf7594263c764a9c2c2f137660c4ac3ad0cec1d4f1254ca8ae6a"},
+    {file = "types_setuptools-80.4.0.20250511.tar.gz", hash = "sha256:faa4159c9384e45b3b04218ca43ee3829efb6acc303e0ee561e47b3404423d32"},
 ]
 
 [package.dependencies]
@@ -1374,4 +1375,4 @@ type = ["pytest-mypy"]
 [metadata]
 lock-version = "2.1"
 python-versions = "^3.11"
-content-hash = "2fae9c082521831c37e93a6164f24f1d2a68c84f943946d4616f2f1641bf9669"
+content-hash = "88b22075482f0914c9968194827a761978a6262e91f8176c1408a74cfa54b655"
