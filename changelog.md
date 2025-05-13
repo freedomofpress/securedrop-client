@@ -1,5 +1,7 @@
 # Changelog
 
+## 0.16.0-rc1
+
 ## 0.15.0
 
 This release vastly expands printer options by using IPP-over-USB to support most

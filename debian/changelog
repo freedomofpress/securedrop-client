@@ -1,3 +1,9 @@
+securedrop-client (0.16.0~rc1) unstable; urgency=medium
+
+  * see changelog.md
+
+ -- SecureDrop Team <securedrop@freedom.press>  Tue, 13 May 2025 21:12:05 +0100
+
 securedrop-client (0.15.0) unstable; urgency=medium
 
   * see changelog.md
