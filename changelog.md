@@ -1,6 +1,6 @@
 # Changelog
 
-## 0.15.0-rc1
+## 0.15.0
 
 This release vastly expands printer options by using IPP-over-USB to support most
 AirPrint-capable printer with a USB port, in addition to switching to the modern
@@ -11,6 +11,7 @@ feedback while a file is downloading.
 * Replace XPP with GTK-based print dialog (#2411)
 * Display download progress for file downloads (#2327, #2428, #2427, #2426, #2424, #2329)
 * Localization: Standardize on "drive" (versus "device") for USB export devices (#2251)
+* Update translations from Weblate (#2322)
 
 ### Dependencies
 * Upgrade to jinja2 3.1.6 for CVE-2025-27516 (#2410)
