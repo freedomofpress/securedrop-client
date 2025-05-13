@@ -10,9 +10,9 @@ from dateutil import tz
 from PyQt5.QtCore import QTimeZone
 
 
-def format_datetime_month_day(date: datetime.datetime, long_format=False) -> str:
+def format_datetime_month_day(date: datetime.datetime, long_format: bool = False) -> str:
     """
-    Formats date: "h:MM" if in the current day, "Mon DD, h:mm" if 
+    Formats date: "h:MM" if in the current day, "Mon DD" if
     current year, Mon DD YYYY if not current year
     """
     if long_format:
@@ -22,9 +22,9 @@ def format_datetime_month_day(date: datetime.datetime, long_format=False) -> str
     if date.date() == today:
         return arrow.get(date).format("h:mm A")
     elif date.date().year == today.year:
-        return arrow.get(date).format("MMM D, h:mm A")
+        return arrow.get(date).format("MMM D")
     else:
-        return arrow.get(date).format("MMM D YYYY")
+        return arrow.get(date).format("MMM D, YYYY")
 
 
 def localise_datetime(date: datetime.datetime) -> datetime.datetime:
@@ -35,7 +35,7 @@ def localise_datetime(date: datetime.datetime) -> datetime.datetime:
     return arrow.get(date).to(tz.gettz(local_timezone)).datetime
 
 
-def format_datetime_local(date: datetime.datetime, long_format=False) -> str:
+def format_datetime_local(date: datetime.datetime, long_format: bool = False) -> str:
     """
     Localise date and return as a string in the format e.g. Sep 16
     """

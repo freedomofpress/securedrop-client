@@ -3856,10 +3856,10 @@ class SourceProfileShortWidget(QWidget):
         )
         title = TitleLabel(self.source.journalist_designation)
         self.updated = LastUpdatedLabel(
-                _("Last seen: {last_update_time}").format(
-                      last_update_time=format_datetime_local(self.source.last_updated, True)
-                      )
-                )
+            _("Last seen: {last_update_time}").format(
+                last_update_time=format_datetime_local(self.source.last_updated, True)
+            )
+        )
         stacked_title = QWidget()
         title_layout = QVBoxLayout(stacked_title)
         menu = SourceMenuButton(self.source, self.controller, conversation_view, app_state)
@@ -3884,7 +3884,7 @@ class SourceProfileShortWidget(QWidget):
         from the source.
         """
         self.updated.setText(
-                _("Last seen: {last_update_time}").format(
-                  last_update_time=format_datetime_local(self.source.last_updated, True)
-                  )
-                )
+            _("Last seen: {last_update_time}").format(
+                last_update_time=format_datetime_local(self.source.last_updated, True)
+            )
+        )

@@ -118,11 +118,21 @@ def test_class_name_matches_css_object_name(mocker, main_window):
     assert conversation_title_bar.__class__.__name__ == "SourceProfileShortWidget"
     horizontal_line = conversation_title_bar.layout().itemAt(1).widget()
     assert "SourceProfileShortWidget" in horizontal_line.objectName()
-    menu = conversation_title_bar.layout().itemAt(0).widget().layout().itemAt(3).widget()
+    menu = conversation_title_bar.layout().itemAt(0).widget().layout().itemAt(2).widget()
     assert "SourceMenuButton" in menu.objectName()
     last_updated_label = conversation_title_bar.updated
     assert "LastUpdatedLabel" in last_updated_label.objectName()
-    title = conversation_title_bar.layout().itemAt(0).widget().layout().itemAt(0).widget()
+    title = (
+        conversation_title_bar.layout()
+        .itemAt(0)
+        .widget()
+        .layout()
+        .itemAt(0)
+        .widget()
+        .layout()
+        .itemAt(0)
+        .widget()
+    )
     assert "TitleLabel" in title.objectName()
     conversation_scroll_area = wrapper.conversation_view._scroll
     assert conversation_scroll_area.__class__.__name__ == "ConversationScrollArea"
@@ -369,13 +379,23 @@ def test_styles_for_conversation_view(mocker, main_window):
     last_updated_label = conversation_title_bar.updated
     assert last_updated_label.font().family() == "Source Sans Pro"
     assert QFont.Light == last_updated_label.font().weight()
-    assert last_updated_label.font().pixelSize() == 24
+    assert last_updated_label.font().pixelSize() == 16
     assert last_updated_label.palette().color(QPalette.Foreground).name() == "#2a319d"
 
-    title = conversation_title_bar.layout().itemAt(0).widget().layout().itemAt(0).widget()
+    title = (
+        conversation_title_bar.layout()
+        .itemAt(0)
+        .widget()
+        .layout()
+        .itemAt(0)
+        .widget()
+        .layout()
+        .itemAt(0)
+        .widget()
+    )
     assert title.font().family() == "Source Sans Pro"
     assert QFont.Normal == title.font().weight()
-    assert title.font().pixelSize() == 24
+    assert title.font().pixelSize() == 20
     assert title.palette().color(QPalette.Foreground).name() == "#2a319d"
 
     conversation_scrollarea = wrapper.conversation_view._scroll

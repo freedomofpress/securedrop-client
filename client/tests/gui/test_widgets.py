@@ -3852,9 +3852,7 @@ def test_SourceConversationWrapper_on_conversation_updated(mocker, qtbot):
 
     scw.conversation_view.add_file(file=file, index=1)
 
-    expected_timestamp = "Last seen: {thetime}".format(
-            thetime=format_datetime_local(source.last_updated, True)
-            )
+    expected_timestamp = f"Last seen: {format_datetime_local(source.last_updated, True)}"
 
     def check_timestamp():
         assert scw.conversation_title_bar.updated.text() == expected_timestamp
@@ -5342,10 +5340,9 @@ def test_SourceProfileShortWidget_update_timestamp(mocker):
     spsw = SourceProfileShortWidget(mock_source, mock_controller, mocker.MagicMock(), None)
     spsw.updated = mocker.MagicMock()
     spsw.update_timestamp()
-    spsw.updated.setText.assert_called_once_with("Last seen: {thetime}".format(
-        thetime=format_datetime_local(mock_source.last_updated, long_format=True)
-        )
-                                                 )
+    spsw.updated.setText.assert_called_once_with(
+        f"Last seen: {format_datetime_local(mock_source.last_updated, long_format=True)}"
+    )
 
 
 def test_SenderIcon_for_deleted_user(mocker):
