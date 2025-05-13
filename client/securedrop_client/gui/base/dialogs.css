@@ -18,7 +18,6 @@
     min-height: 68px;
     max-height: 68px;
     margin: 0;
-    font-family: 'Montserrat';
     font-size: 24px;
     font-weight: 600;
     color: #2a319d;
@@ -33,7 +32,6 @@
 }
 
 #ModalDialog_body {
-    font-family: 'Montserrat';
     font-size: 16px;
     color: #302aa3;
     margin: 0;
@@ -41,7 +39,6 @@
 }
 
 #ModalDialogConfirmation {
-    font-family: 'Montserrat';
     font-size: 16px;
     font-weight: 600;
     color: #302aa3;
@@ -63,7 +60,6 @@
     padding-left: 20px;
     padding-right: 20px;
     border: 2px solid #2a319d;
-    font-family: 'Montserrat';
     font-weight: 500;
     font-size: 15px;
     color: #2a319d;
