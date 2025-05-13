@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: SecureDrop Client 0.8.1\n"
 "Report-Msgid-Bugs-To: securedrop@freedom.press\n"
-"PO-Revision-Date: 2024-09-13 05:32+0000\n"
+"PO-Revision-Date: 2024-12-10 07:33+0000\n"
 "Last-Translator: Adam Rak <kitynska@gmail.com>\n"
 "Language-Team: Polish <https://weblate.securedrop.org/projects/securedrop/securedrop-client/pl/>\n"
 "Language: pl\n"
@@ -15,7 +15,7 @@ msgstr ""
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=3; plural=n==1 ? 0 : n%10>=2 && n%10<=4 && (n%100<10 || n%100>=20) ? 1 : 2;\n"
-"X-Generator: Weblate 5.7.1\n"
+"X-Generator: Weblate 5.8.4\n"
 "Generated-By: Babel 2.10.3\n"
 
 msgid "{application_name} is already running"
@@ -119,6 +119,12 @@ msgstr "Ostatnie odświeżenie: {}"
 msgid "Last Refresh: never"
 msgstr "Ostatnie odświeżenie: nigdy"
 
+msgid "DELETE SOURCES"
+msgstr "USUŃ ŹRÓDŁA"
+
+msgid "Delete selected source accounts. Ctrl+click sources below to select multiple sources."
+msgstr "Usuń wybrane konta źródeł. Ctrl+kliknij źródła poniżej, aby wybrać wiele źródeł."
+
 msgid "{}"
 msgstr "{}"
 
@@ -148,6 +154,18 @@ msgstr "Wyświetl lub pobierz pliki"
 
 msgid "Send a response"
 msgstr "Wyślij odpowiedź"
+
+msgid "Or, select multiple sources with Ctrl+click."
+msgstr "Można też wybrać wiele źródeł za pomocą klawisza Ctrl i kliknięcia."
+
+msgid "Multiple Sources Selected"
+msgstr "Wybrano wiele źródeł"
+
+msgid "Select or de-select sources using Ctrl+click, Shift+click, or by dragging the mouse."
+msgstr "Wybierz lub usuń wybór, używając kombinacji klawiszy Ctrl+kliknięcie, Shift+kliknięcie lub przeciągając mysz."
+
+msgid "Use the top toolbar to delete multiple sources at once. You will be shown a confirmation dialog before anything is deleted."
+msgstr "Użyj górnego paska narzędzi, aby usunąć wiele źródeł jednocześnie. Przed usunięciem czegokolwiek zostanie wyświetlone okno dialogowe potwierdzenia."
 
 msgid "Deleting files and messages…"
 msgstr "Usuwanie plików i wiadomości…"
@@ -294,20 +312,20 @@ msgstr "GOTOWE"
 msgid "BACK"
 msgstr "WSTECZ"
 
-msgid "No device detected"
-msgstr "Nie wykryto żadnego urządzenia"
+msgid "No USB drives detected"
+msgstr "Nie wykryto żadnych dysków USB"
 
-msgid "Too many USB devices detected; please insert one supported device."
-msgstr "Wykryto zbyt wiele urządzeń USB; włóż jedno obsługiwane urządzenie."
+msgid "Too many USB drives detected; please insert one supported drive."
+msgstr "Wykryto zbyt wiele dysków USB. Podłącz jeden obsługiwany dysk."
 
 msgid "Either the drive is not encrypted or there is something else wrong with it.<br />If this is a VeraCrypt drive, please unlock it from within the sd-devices VM, then try again."
 msgstr "Albo dysk nie jest zaszyfrowany, albo jest z nim coś nie tak.<br />Jeśli jest to dysk VeraCrypt, odblokuj go z poziomu sd-devices maszyny wirtualnej, a następnie spróbuj ponownie."
 
-msgid "The device is ready for export."
-msgstr "Urządzenie jest gotowe do eksportu."
+msgid "The drive is ready for export."
+msgstr "Dysk jest gotowy do eksportu."
 
-msgid "The device is locked."
-msgstr "Urządzenie jest zablokowane."
+msgid "The drive is locked."
+msgstr "Dysk jest zablokowany."
 
 msgid "The passphrase provided did not work. Please try again."
 msgstr "Podane hasło nie zadziałało. Spróbuj ponownie."
@@ -318,8 +336,8 @@ msgstr "Błąd podczas montowania napędu"
 msgid "Error during export"
 msgstr "Błąd podczas eksportu"
 
-msgid "Files were exported successfully, but the USB device could not be unmounted."
-msgstr "Pliki zostały wyeksportowane pomyślnie, ale nie można odmontować urządzenia USB."
+msgid "Files were exported successfully, but the USB drive could not be unmounted."
+msgstr "Pliki zostały pomyślnie wyeksportowane, ale nie udało się odmontować dysku USB."
 
 msgid "Files were exported successfully, but some temporary files remain on disk. Reboot to remove them."
 msgstr "Pliki zostały wyeksportowane pomyślnie, ale niektóre pliki tymczasowe pozostają na dysku. Uruchom ponownie system, aby je usunąć."
@@ -327,8 +345,8 @@ msgstr "Pliki zostały wyeksportowane pomyślnie, ale niektóre pliki tymczasowe
 msgid "Export successful"
 msgstr "Eksport udany"
 
-msgid "Error encountered with this device. See your administrator for help."
-msgstr "Wystąpił błąd w tym urządzeniu. Skontaktuj się z administratorem, aby uzyskać pomoc."
+msgid "Error encountered with this drive. See your administrator for help."
+msgstr "Wystąpił błąd z tym napędem. Skontaktuj się z administratorem, aby uzyskać pomoc."
 
 msgid "Files were moved or missing and could not be exported."
 msgstr "Pliki zostały przeniesione lub ich brak i nie można ich wyeksportować."
@@ -396,6 +414,12 @@ msgstr[2] "TAK, USUŃ {number} KONT ŹRÓDŁA"
 msgid "Are you sure this is what you want?"
 msgstr "Czy na pewno tego chcesz?"
 
+msgid "{text} (wait {delay} sec)"
+msgstr "{text} (czekaj {delay} sek.)"
+
+msgid "Notice: All sources have been selected!"
+msgstr "Uwaga: wybrano wszystkie źródła!"
+
 msgid "Delete entire account for: {source_or_sources}?"
 msgstr "Usunąć całe konto dla: {source_or_sources}?"
 
@@ -411,8 +435,29 @@ msgstr "Twoja organizacja nie będzie mogła wysyłać im odpowiedzi."
 msgid "All files and messages from that source will also be destroyed."
 msgstr "Wszystkie pliki i wiadomośc od tego źródła również zostaną zniszczone."
 
+msgid "{sources} ... plus {count} additional sources"
+msgstr "{sources} ... plus dodatkowe źródła: {count}"
+
 msgid "No sources have been selected."
 msgstr "Nie wybrano żadnych źródeł."
+
+#~ msgid "No device detected"
+#~ msgstr "Nie wykryto żadnego urządzenia"
+
+#~ msgid "Too many USB devices detected; please insert one supported device."
+#~ msgstr "Wykryto zbyt wiele urządzeń USB; włóż jedno obsługiwane urządzenie."
+
+#~ msgid "The device is ready for export."
+#~ msgstr "Urządzenie jest gotowe do eksportu."
+
+#~ msgid "The device is locked."
+#~ msgstr "Urządzenie jest zablokowane."
+
+#~ msgid "Files were exported successfully, but the USB device could not be unmounted."
+#~ msgstr "Pliki zostały wyeksportowane pomyślnie, ale nie można odmontować urządzenia USB."
+
+#~ msgid "Error encountered with this device. See your administrator for help."
+#~ msgstr "Wystąpił błąd w tym urządzeniu. Skontaktuj się z administratorem, aby uzyskać pomoc."
 
 #~ msgid "Either the drive is not encrypted or there is something else wrong with it.<br />If this is a VeraCrypt drive, please unlock it from within `sd-devices`, then try again."
 #~ msgstr "Albo dysk nie jest zaszyfrowany, albo jest z nim coś nie tak.<br />Jeśli jest to dysk VeraCrypt, odblokuj go z poziomu `sd-devices` i spróbuj ponownie."
