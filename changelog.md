@@ -1,5 +1,42 @@
 # Changelog
 
+## 0.16.0-rc1
+
+## 0.15.0
+
+This release vastly expands printer options by using IPP-over-USB to support most
+AirPrint-capable printer with a USB port, in addition to switching to the modern
+GTK print dialog. This release also adds progress bars to give users visual
+feedback while a file is downloading.
+
+* Initial support for IPP / driverless printing (#2332, #2434, #2433)
+* Replace XPP with GTK-based print dialog (#2411)
+* Display download progress for file downloads (#2327, #2428, #2427, #2426, #2424, #2329)
+* Localization: Standardize on "drive" (versus "device") for USB export devices (#2251)
+* Update translations from Weblate (#2322)
+
+### Dependencies
+* Upgrade to jinja2 3.1.6 for CVE-2025-27516 (#2410)
+* Upgrade openssl from 0.10.66 to 0.10.70 (#2374)
+* Upgrade openssl (RUSTSEC-2025-0022) and tokio (RUSTSEC-2025-0023) (#2414)
+* Upgrade Rust toolchain to 1.84.1 (#2379)
+* Upgrade url to v2.5.4 for CVE-2024-12224 #2328
+* Upgrade six to 1.16.0 #2387
+* Development dependencies (#2337, #2326, #2338, #2320, #2401, #2311, #2403,
+#2415, #2336, #2340, #2357, #2397)
+
+### Internal and Development
+* Lint GitHub Actions workflows with zizmor (#2331)
+* Remove outdated setuptools install_requires and python_requires (#2356)
+* Remove quotation marks around .desktop entry name (#2086)
+* SDK: Configure custom proxy VM via QubesDB/env; update docs (#2236)
+* Enable development on macOS arm64 (#2334)
+* Enable ruff's flake8-bugbear ruleset (#2341)
+* Fail tests if the signing key will expire soon (#2390)
+* Build: replicate securedrop's verification of head, tag, and working tree (#2431)
+* Chore: ignore CVE-2024-56201 in jinja2 (#2376)
+* Chore: update build requirements (#2420)
+
 ## 0.14.1
 
 This release contains fixes for two security issues; please see our advisory for more details.
