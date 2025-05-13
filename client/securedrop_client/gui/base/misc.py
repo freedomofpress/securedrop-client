@@ -194,13 +194,16 @@ class SecureQLabel(QLabel):
         fm = self.fontMetrics()
         px_width = fm.horizontalAdvance(full_text)
         if px_width > self.max_length:
-            elided_text = ""
-            for c in full_text:
-                if fm.horizontalAdvance(elided_text) > self.max_length:
-                    return elided_text[:-3] + "…"
-                elided_text = elided_text + c
+            # make initial guess for elided string based on average glyph
+            starting_width = self.max_length / fm.averageCharWidth()
+            elided_text = full_text[: starting_width - 1]
 
-        return full_text
+            # delete chars until elided string fits
+            while fm.horizontalAdvance(elided_text) > self.max_length:
+                elided_text = elided_text[:-1]
+            return elided_text[:-3] + "…"
+        else:
+            return full_text
 
     def is_elided(self) -> bool:
         return self.elided
