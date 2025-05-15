@@ -28,9 +28,9 @@ SecureDrop maintainers and testers: As you QA this release, please report back y
     - [ ] pending inclusion as a supported language in [`MANIFEST.in`](https://github.com/freedomofpress/securedrop-client/blob/main/MANIFEST.in)
 - [ ] Update changelog
 - [ ] Create test plan
-- [ ] Refresh nightlies
-- [ ] Begin formal QA using nightlies; refresh nightlies as needed
-- [ ] Build production package in standard [build environment](https://github.com/freedomofpress/securedrop-builder/wiki/FAQ#how-do-i-create-a-local-environment-suitable-for-building-packages)
+- [ ] Build and deploy the package to `apt-test`
+- [ ] Begin formal QA (and iterate until suitable release candidate)
+- [ ] Build production package
 - [ ] Sign production package
 - [ ] Perform final pre-flight testing using `apt-qa.freedom.press`
   - [ ] **Localization:** In a `sd-app`, the locale to a [supported language](https://github.com/freedomofpress/securedrop-client/blob/main/client/MANIFEST.in#L32-L34) (e.g.: `sudo dpkg-reconfigure locales` and select `pt_PT.utf-8` and apply.). Run the Client, and confirm that the application is translated.
