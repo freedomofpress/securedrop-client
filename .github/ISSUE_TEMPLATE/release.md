@@ -22,6 +22,8 @@ SecureDrop maintainers and testers: As you QA this release, please report back y
 
 ## Release tasks
 
+The following checklist is derived from [the developer documentation](https://developers.securedrop.org/en/latest/workstation_release_management.html).
+
 - [ ] Check if there are any security bug fixes waiting to be pulled into the RC
 - [ ] Check if there are any translations:
     - [ ] [pending merge](https://github.com/freedomofpress/securedrop-client/pulls/weblate-fpf) into `main`
@@ -36,3 +38,8 @@ SecureDrop maintainers and testers: As you QA this release, please report back y
   - [ ] **Localization:** In a `sd-app`, the locale to a [supported language](https://github.com/freedomofpress/securedrop-client/blob/main/client/MANIFEST.in#L32-L34) (e.g.: `sudo dpkg-reconfigure locales` and select `pt_PT.utf-8` and apply.). Run the Client, and confirm that the application is translated.
 - [ ] Publish production package
 - [ ] Publicize release via support channels
+
+# Post-release Tasks
+- [ ] Run the updater on a production setup once packages are live, and conduct a smoketest (successful updater run, and basic functionality if updating client packages).
+- [ ] Backport changelog commit(s) with `git cherry-pick -x` from the release branch into the main development branch, and sign the commit(s).
+- [ ] Run the `./update_version.sh` script to bump the version on main to the next minor version’s rc1. Open a PR with these commits; this PR can close the release tracking issue.
