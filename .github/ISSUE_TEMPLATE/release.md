@@ -24,7 +24,7 @@ SecureDrop maintainers and testers: As you QA this release, please report back y
 
 - [ ] Check if there are any security bug fixes waiting to be pulled into the RC
 - [ ] Check if there are any translations:
-    - [ ] pending merge into `main`
+    - [ ] [pending merge](https://github.com/freedomofpress/securedrop-client/pulls/weblate-fpf) into `main`
     - [ ] pending inclusion as a supported language in [`MANIFEST.in`](https://github.com/freedomofpress/securedrop-client/blob/main/MANIFEST.in)
 - [ ] Update changelog
 - [ ] Create test plan
@@ -32,7 +32,7 @@ SecureDrop maintainers and testers: As you QA this release, please report back y
 - [ ] Begin formal QA using nightlies; refresh nightlies as needed
 - [ ] Build production package in standard [build environment](https://github.com/freedomofpress/securedrop-builder/wiki/FAQ#how-do-i-create-a-local-environment-suitable-for-building-packages)
 - [ ] Sign production package
-- [ ] Perform final pre-flight testing using apt-qa.freedom.press
-  - [ ] **Localization:** In a dispVM, change your locale (e.g.: `export LANG=es_ES.utf-8; dpkg-reconfigure locales`), run the Client, and confirm that the application is translated.
+- [ ] Perform final pre-flight testing using `apt-qa.freedom.press`
+  - [ ] **Localization:** In a `sd-app`, the locale to a [supported language](https://github.com/freedomofpress/securedrop-client/blob/main/client/MANIFEST.in#L32-L34) (e.g.: `sudo dpkg-reconfigure locales` and select `pt_PT.utf-8` and apply.). Run the Client, and confirm that the application is translated.
 - [ ] Publish production package
 - [ ] Publicize release via support channels
