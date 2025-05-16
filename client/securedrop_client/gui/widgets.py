@@ -104,6 +104,7 @@ logger = logging.getLogger(__name__)
 
 MINIMUM_ANIMATION_DURATION_IN_MILLISECONDS = 300
 NO_DELAY = 1
+LAST_UPDATED_LABEL_TOOLTIP = "Time of last activity from source"
 
 
 class BottomPane(QWidget):
@@ -1531,7 +1532,7 @@ class SourceWidget(QWidget):
     SPACER = 14
     BOTTOM_SPACER = 11
     STAR_WIDTH = 20
-    TIMESTAMP_WIDTH = 60
+    TIMESTAMP_WIDTH = 120
 
     SOURCE_NAME_CSS = load_css("source_name.css")
     SOURCE_PREVIEW_CSS = load_css("source_preview.css")
@@ -1599,16 +1600,18 @@ class SourceWidget(QWidget):
         self.timestamp = QLabel()
         self.timestamp.setSizePolicy(retain_space)
         self.timestamp.setFixedWidth(self.TIMESTAMP_WIDTH)
+        self.timestamp.setAlignment(Qt.AlignRight)
         self.timestamp.setObjectName("SourceWidget_timestamp")
+        self.timestamp.setToolTip(LAST_UPDATED_LABEL_TOOLTIP)
 
         # Create source_widget:
         # -------------------------------------------------------------------
         # | ------ | -------- | ------                   | -----------      |
-        # | |star| | |spacer| | |name|                   | |paperclip|      |
+        # | |star| | |spacer| | |name|                   | |timestamp|      |
         # | ------ | -------- | ------                   | -----------      |
         # -------------------------------------------------------------------
         # |        |          | ---------                | -----------      |
-        # |        |          | |preview|                | |timestamp|      |
+        # |        |          | |preview|                | |paperclip|      |
         # |        |          | ---------                | -----------      |
         # ------------------------------------------- -----------------------
         # Column 0, 1, and 3 are fixed. Column 2 stretches.
@@ -1622,11 +1625,11 @@ class SourceWidget(QWidget):
         self.spacer.setFixedWidth(self.SPACER)
         source_widget_layout.addWidget(self.spacer, 0, 1, 1, 1)
         source_widget_layout.addWidget(self.name, 0, 2, 1, 1)
-        source_widget_layout.addWidget(self.paperclip, 0, 3, 1, 1)
-        source_widget_layout.addWidget(self.paperclip_disabled, 0, 3, 1, 1)
+        source_widget_layout.addWidget(self.timestamp, 0, 3, 1, 1, alignment=Qt.AlignRight)
         source_widget_layout.addWidget(self.preview, 1, 2, 1, 1, alignment=Qt.AlignLeft)
         source_widget_layout.addWidget(self.deletion_indicator, 1, 2, 1, 1)
-        source_widget_layout.addWidget(self.timestamp, 1, 3, 1, 1)
+        source_widget_layout.addWidget(self.paperclip, 1, 3, 1, 1, alignment=Qt.AlignRight)
+        source_widget_layout.addWidget(self.paperclip_disabled, 1, 3, 1, 1)
         source_widget_layout.addItem(QSpacerItem(self.BOTTOM_SPACER, self.BOTTOM_SPACER))
         self.source_widget.setLayout(source_widget_layout)
         layout = QHBoxLayout(self)
@@ -3809,6 +3812,7 @@ class LastUpdatedLabel(QLabel):
 
         # Set CSS id
         self.setObjectName("LastUpdatedLabel")
+        self.setToolTip(LAST_UPDATED_LABEL_TOOLTIP)
 
 
 class SourceProfileShortWidget(QWidget):
@@ -3821,7 +3825,8 @@ class SourceProfileShortWidget(QWidget):
 
     MARGIN_LEFT = 25
     MARGIN_RIGHT = 17
-    VERTICAL_MARGIN = 14
+    UPPER_MARGIN = 10
+    LOWER_MARGIN = 6
 
     def __init__(
         self,
@@ -3847,14 +3852,21 @@ class SourceProfileShortWidget(QWidget):
         header = QWidget()
         header_layout = QHBoxLayout(header)
         header_layout.setContentsMargins(
-            self.MARGIN_LEFT, self.VERTICAL_MARGIN, self.MARGIN_RIGHT, self.VERTICAL_MARGIN
+            self.MARGIN_LEFT, self.UPPER_MARGIN, self.MARGIN_RIGHT, self.LOWER_MARGIN
         )
         title = TitleLabel(self.source.journalist_designation)
-        self.updated = LastUpdatedLabel(_(format_datetime_local(self.source.last_updated)))
+        self.updated = LastUpdatedLabel(
+            _("Last seen: {last_update_time}").format(
+                last_update_time=format_datetime_local(self.source.last_updated, True)
+            )
+        )
+        stacked_title = QWidget()
+        title_layout = QVBoxLayout(stacked_title)
         menu = SourceMenuButton(self.source, self.controller, conversation_view, app_state)
-        header_layout.addWidget(title, alignment=Qt.AlignLeft)
+        title_layout.addWidget(title, alignment=Qt.AlignLeft)
+        title_layout.addWidget(self.updated, alignment=Qt.AlignLeft)
+        header_layout.addWidget(stacked_title, alignment=Qt.AlignLeft)
         header_layout.addStretch()
-        header_layout.addWidget(self.updated, alignment=Qt.AlignRight)
         header_layout.addWidget(menu, alignment=Qt.AlignRight)
 
         # Create horizontal line
@@ -3871,4 +3883,8 @@ class SourceProfileShortWidget(QWidget):
         Ensure the timestamp is always kept up to date with the latest activity
         from the source.
         """
-        self.updated.setText(_(format_datetime_local(self.source.last_updated)))
+        self.updated.setText(
+            _("Last seen: {last_update_time}").format(
+                last_update_time=format_datetime_local(self.source.last_updated, True)
+            )
+        )

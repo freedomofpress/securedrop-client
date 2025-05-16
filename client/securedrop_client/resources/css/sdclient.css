@@ -303,13 +303,14 @@ QToolButton#SourceMenuButton::menu-indicator {
 
 #LastUpdatedLabel {
     font-weight: 200;
-    font-size: 24px;
+    font-size: 16px;
     color: #2a319d;
+    padding-left: 4px;
 }
 
 #TitleLabel {
     font-weight: 400;
-    font-size: 24px;
+    font-size: 20px;
     color: #2a319d;
     padding-left: 4px;
 }
