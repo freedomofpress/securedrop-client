@@ -157,14 +157,14 @@ files = [
 
 [[package]]
 name = "click"
-version = "8.1.7"
+version = "8.1.8"
 description = "Composable command line interface toolkit"
 optional = false
 python-versions = ">=3.7"
 groups = ["dev"]
 files = [
-    {file = "click-8.1.7-py3-none-any.whl", hash = "sha256:ae74fb96c20a0277a1d615f1e4d73c8414f5a98db8b799a7931d1582f3390c28"},
-    {file = "click-8.1.7.tar.gz", hash = "sha256:ca9853ad459e787e2192211578cc907e7594e294c7ccc834310722b41b9ca6de"},
+    {file = "click-8.1.8-py3-none-any.whl", hash = "sha256:63c132bbbed01578a06712a2d1f497bb62d9c1c0d329b7903a866228027263b2"},
+    {file = "click-8.1.8.tar.gz", hash = "sha256:ed53c9d8990d83c2a27deae68e4ee337473f6330c040a31d4225c9574d16096a"},
 ]
 
 [package.dependencies]
@@ -1129,23 +1129,24 @@ files = [
 
 [[package]]
 name = "semgrep"
-version = "1.120.1"
+version = "1.122.0"
 description = "Lightweight static analysis for many languages. Find bug variants with patterns that look like source code."
 optional = false
 python-versions = ">=3.9"
 groups = ["dev"]
 files = [
-    {file = "semgrep-1.120.1-cp39.cp310.cp311.py39.py310.py311-none-macosx_10_14_x86_64.whl", hash = "sha256:22d6839e56a3793f56a1b45296832f418c8efa653ffe9a0800e71629269feeae"},
-    {file = "semgrep-1.120.1-cp39.cp310.cp311.py39.py310.py311-none-macosx_11_0_arm64.whl", hash = "sha256:b91c4554f0019d3e4b87215b4d134c7a908095f4be9b0e9525f53c8a774aa695"},
-    {file = "semgrep-1.120.1-cp39.cp310.cp311.py39.py310.py311-none-musllinux_1_0_aarch64.manylinux2014_aarch64.whl", hash = "sha256:93babbb7b47bed170bbec7ef704dd33f072e70a144edfd7e032811ac70281c8f"},
-    {file = "semgrep-1.120.1-cp39.cp310.cp311.py39.py310.py311-none-musllinux_1_0_x86_64.manylinux2014_x86_64.whl", hash = "sha256:0feb5294e770b208c42802ff9503550a7464ed792d6ab216ba882edbd42862a7"},
-    {file = "semgrep-1.120.1-cp39.cp310.cp311.py39.py310.py311-none-win_amd64.whl", hash = "sha256:e595c0b6a975fbfd1df2180f41599a0464f496686dc717cf8cfbab1ec264e048"},
+    {file = "semgrep-1.122.0-cp39.cp310.cp311.py39.py310.py311-none-macosx_10_14_x86_64.whl", hash = "sha256:8d1eda7c9fdb7bda9885a5d846752046cd5056b37ee5e4c92b47030428ecc308"},
+    {file = "semgrep-1.122.0-cp39.cp310.cp311.py39.py310.py311-none-macosx_11_0_arm64.whl", hash = "sha256:4b4467a6b40743ea2d2bd798ca5a7750aa4337d3fd3ab7ac03a275f272f52f49"},
+    {file = "semgrep-1.122.0-cp39.cp310.cp311.py39.py310.py311-none-musllinux_1_0_aarch64.manylinux2014_aarch64.whl", hash = "sha256:349246654c2b4435299661a83921de51dc5bd2effd047048792e8243ddad6088"},
+    {file = "semgrep-1.122.0-cp39.cp310.cp311.py39.py310.py311-none-musllinux_1_0_x86_64.manylinux2014_x86_64.whl", hash = "sha256:42fe84f4fbd60a6338437328af933405d9b4e2b8e12bc7a4aceea8d22650311e"},
+    {file = "semgrep-1.122.0-cp39.cp310.cp311.py39.py310.py311-none-win_amd64.whl", hash = "sha256:8ebe5fa37acc4d7f857443825f6673482588190d42da98682f30ae3931d1d5e9"},
+    {file = "semgrep-1.122.0.tar.gz", hash = "sha256:c38b184332761345eef1e0800ab6fb4e682a0ea283060173850e3769979eb5c8"},
 ]
 
 [package.dependencies]
 attrs = ">=21.3"
 boltons = ">=21.0,<22.0"
-click = ">=8.1,<9.0"
+click = ">=8.1.8,<8.2.0"
 click-option-group = ">=0.5,<1.0"
 colorama = ">=0.4.0,<0.5.0"
 defusedxml = ">=0.7.1,<0.8.0"
@@ -1201,30 +1202,27 @@ files = [
 
 [[package]]
 name = "types-pexpect"
-version = "4.9.0.20241208"
+version = "4.9.0.20250516"
 description = "Typing stubs for pexpect"
 optional = false
-python-versions = ">=3.8"
+python-versions = ">=3.9"
 groups = ["dev"]
 files = [
-    {file = "types_pexpect-4.9.0.20241208-py3-none-any.whl", hash = "sha256:1928f478528454f0fea3495c16cf1ee2e67fca5c9fe97d60b868ac48c1fd5633"},
-    {file = "types_pexpect-4.9.0.20241208.tar.gz", hash = "sha256:bbca0d0819947a719989a5cfe83641d9212bef893e2f0a7a01e47926bc82401d"},
+    {file = "types_pexpect-4.9.0.20250516-py3-none-any.whl", hash = "sha256:84cbd7ae9da577c0d2629d4e4fd53cf074cd012296e01fd4fa1031e01973c28a"},
+    {file = "types_pexpect-4.9.0.20250516.tar.gz", hash = "sha256:7baed9ee566fa24034a567cbec56a5cff189a021344e84383b14937b35d83881"},
 ]
 
 [[package]]
 name = "types-setuptools"
-version = "80.0.0.20250429"
+version = "80.7.0.20250516"
 description = "Typing stubs for setuptools"
 optional = false
 python-versions = ">=3.9"
 groups = ["dev"]
 files = [
-    {file = "types_setuptools-80.0.0.20250429-py3-none-any.whl", hash = "sha256:9bbcdcea88d1fda4b0f1371488333f606c78a8b10154a42530ed926ecf3242cb"},
-    {file = "types_setuptools-80.0.0.20250429.tar.gz", hash = "sha256:a4de44f1110f531e7f9453d72999437a1caa6052609e2c7c859dd6613ab0d593"},
+    {file = "types_setuptools-80.7.0.20250516-py3-none-any.whl", hash = "sha256:c1da6c11698139c8307c6df5987592df940e956912c204e42d844ba821dd2741"},
+    {file = "types_setuptools-80.7.0.20250516.tar.gz", hash = "sha256:57274b58e05434de42088a86074c9e630e5786f759cf9cc1e3015e886297ca21"},
 ]
-
-[package.dependencies]
-setuptools = "*"
 
 [[package]]
 name = "typing-extensions"
@@ -1374,4 +1372,4 @@ type = ["pytest-mypy"]
 [metadata]
 lock-version = "2.1"
 python-versions = "^3.11"
-content-hash = "2fae9c082521831c37e93a6164f24f1d2a68c84f943946d4616f2f1641bf9669"
+content-hash = "0ba764d7b92ecbe2e6ce6adcf45573811408f97c3b53fa8393417681969f63d1"
