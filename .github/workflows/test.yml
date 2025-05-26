@@ -44,7 +44,7 @@ jobs:
         with:
           persist-credentials: false
       # Install Rust, keep in sync with rust-toolchain.toml
-      - uses: dtolnay/rust-toolchain@1.84.1
+      - uses: dtolnay/rust-toolchain@1.87.0
         if: ${{ matrix.component == 'proxy' }}
       - name: Install dependencies
         run: |
