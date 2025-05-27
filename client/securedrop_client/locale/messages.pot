@@ -219,6 +219,9 @@ msgstr ""
 msgid "SOURCE ACCOUNT"
 msgstr ""
 
+msgid "Last seen: {last_update_time}"
+msgstr ""
+
 msgid "Username"
 msgstr ""
 
