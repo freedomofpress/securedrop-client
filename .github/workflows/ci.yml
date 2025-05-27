@@ -13,6 +13,9 @@ defaults:
   run:
     shell: bash
 
+env:
+  POETRY_VERSION: 2.1.3
+
 jobs:
   lint-apparmor:
     strategy:
@@ -57,10 +60,22 @@ jobs:
     container: debian:${{ matrix.debian_version }}
     steps:
       - run: |
-          apt-get update && apt-get install --yes git make file python3-poetry
+          apt-get update && apt-get install --yes git make file pipx
       - uses: actions/checkout@v4
         with:
           persist-credentials: false
+      - name: Install poetry
+        run: |
+          pipx install poetry==$POETRY_VERSION
+          pipx ensurepath
+          echo "${HOME}/.local/bin" >> ${GITHUB_PATH}
+      - name: Configure poetry
+        run: |
+          poetry config virtualenvs.use-poetry-python true
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: "poetry"
       - name: Install dependencies
         run: |
           poetry install
@@ -84,10 +99,22 @@ jobs:
     container: debian:${{ matrix.debian_version }}
     steps:
       - run: |
-          apt-get update && apt-get install --yes git make gnupg python3-poetry
+          apt-get update && apt-get install --yes git make gnupg pipx
       - uses: actions/checkout@v4
         with:
           persist-credentials: false
+      - name: Install poetry
+        run: |
+          pipx install poetry==$POETRY_VERSION
+          pipx ensurepath
+          echo "${HOME}/.local/bin" >> ${GITHUB_PATH}
+      - name: Configure poetry
+        run: |
+          poetry config virtualenvs.use-poetry-python true
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: "poetry"
       - name: Install dependencies
         run: |
           poetry -C ${{ matrix.component }} install
@@ -102,10 +129,21 @@ jobs:
     container: debian:bookworm
     steps:
       - run: |
-          apt-get update && apt-get install --yes git make python3-poetry
+          apt-get update && apt-get install --yes git make pipx
       - uses: actions/checkout@v4
         with:
           persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install poetry
+        run: |
+          pipx install poetry==$POETRY_VERSION
+          pipx ensurepath
+          echo "${HOME}/.local/bin" >> ${GITHUB_PATH}
+      - name: Configure poetry
+        run: |
+          poetry config virtualenvs.use-poetry-python true
       - name: Run safety
         run: |
           poetry install
