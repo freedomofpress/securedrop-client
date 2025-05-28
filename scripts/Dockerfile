@@ -15,9 +15,9 @@ COPY qubes_42.sources /etc/apt/sources.list.d/
 RUN sed -i s/##VERSION_CODENAME##/${DISTRO}/ /etc/apt/sources.list.d/qubes_42.sources
 
 # Keep in sync with rust-toolchain.toml
-ENV RUST_VERSION 1.84.1
-ENV RUSTUP_VERSION 1.24.3
-ENV RUSTUP_INIT_SHA256 3dc5ef50861ee18657f9db2eeb7392f9c2a6c95c90ab41e45ab4ca71476b4338
+ENV RUST_VERSION 1.87.0
+ENV RUSTUP_VERSION 1.28.2
+ENV RUSTUP_INIT_SHA256 20a06e644b0d9bd2fbdbfd52d42540bdde820ea7df86e92e533c073da0cdd43c 
 ENV RUSTUP_HOME /opt/rustup
 ENV CARGO_HOME /opt/cargo
 
