@@ -210,27 +210,6 @@ files = [
 hiredis = ["hiredis (>=0.1.3)"]
 
 [[package]]
-name = "setuptools"
-version = "80.0.0"
-description = "Easily download, build, install, upgrade, and uninstall Python packages"
-optional = false
-python-versions = ">=3.9"
-groups = ["dev"]
-files = [
-    {file = "setuptools-80.0.0-py3-none-any.whl", hash = "sha256:a38f898dcd6e5380f4da4381a87ec90bd0a7eec23d204a5552e80ee3cab6bd27"},
-    {file = "setuptools-80.0.0.tar.gz", hash = "sha256:c40a5b3729d58dd749c0f08f1a07d134fb8a0a3d7f87dc33e7c5e1f762138650"},
-]
-
-[package.extras]
-check = ["pytest-checkdocs (>=2.4)", "pytest-ruff (>=0.2.1) ; sys_platform != \"cygwin\"", "ruff (>=0.8.0) ; sys_platform != \"cygwin\""]
-core = ["importlib_metadata (>=6) ; python_version < \"3.10\"", "jaraco.functools (>=4)", "jaraco.text (>=3.7)", "more_itertools", "more_itertools (>=8.8)", "packaging (>=24.2)", "platformdirs (>=4.2.2)", "tomli (>=2.0.1) ; python_version < \"3.11\"", "wheel (>=0.43.0)"]
-cover = ["pytest-cov"]
-doc = ["furo", "jaraco.packaging (>=9.3)", "jaraco.tidelift (>=1.4)", "pygments-github-lexers (==0.0.5)", "pyproject-hooks (!=1.1)", "rst.linker (>=1.9)", "sphinx (>=3.5)", "sphinx-favicon", "sphinx-inline-tabs", "sphinx-lint", "sphinx-notfound-page (>=1,<2)", "sphinx-reredirects", "sphinxcontrib-towncrier", "towncrier (<24.7)"]
-enabler = ["pytest-enabler (>=2.2)"]
-test = ["build[virtualenv] (>=1.0.3)", "filelock (>=3.4.0)", "ini2toml[lite] (>=0.14)", "jaraco.develop (>=7.21) ; python_version >= \"3.9\" and sys_platform != \"cygwin\"", "jaraco.envs (>=2.2)", "jaraco.path (>=3.7.2)", "jaraco.test (>=5.5)", "packaging (>=24.2)", "pip (>=19.1)", "pyproject-hooks (!=1.1)", "pytest (>=6,!=8.1.*)", "pytest-home (>=0.5)", "pytest-perf ; sys_platform != \"cygwin\"", "pytest-subprocess", "pytest-timeout", "pytest-xdist (>=3)", "tomli-w (>=1.0.0)", "virtualenv (>=13.0.0)", "wheel (>=0.44.0)"]
-type = ["importlib_metadata (>=7.0.2) ; python_version < \"3.10\"", "jaraco.develop (>=7.21) ; sys_platform != \"cygwin\"", "mypy (==1.14.*)", "pytest-mypy"]
-
-[[package]]
 name = "types-cffi"
 version = "1.16.0.20240331"
 description = "Typing stubs for cffi"
@@ -279,18 +258,15 @@ types-pyOpenSSL = "*"
 
 [[package]]
 name = "types-setuptools"
-version = "79.0.0.20250422"
+version = "80.8.0.20250521"
 description = "Typing stubs for setuptools"
 optional = false
 python-versions = ">=3.9"
 groups = ["dev"]
 files = [
-    {file = "types_setuptools-79.0.0.20250422-py3-none-any.whl", hash = "sha256:55238c0b18cdc08dd26c32d6d8385ca1ea59b93dde760dae96d15868b7911990"},
-    {file = "types_setuptools-79.0.0.20250422.tar.gz", hash = "sha256:9c9f699a5914d2ed97f02ee749fb2c7bc2898f8dad03b5dd74b74d4f80e29972"},
+    {file = "types_setuptools-80.8.0.20250521-py3-none-any.whl", hash = "sha256:737cd1f54aade1f68fece1381871ea563b622b3ff28393ad65a9d4ed30d6454e"},
+    {file = "types_setuptools-80.8.0.20250521.tar.gz", hash = "sha256:7360b33b1ed3cda6e5a1f379701a61ec9dbee6e59e8bda072b88226157d8da80"},
 ]
-
-[package.dependencies]
-setuptools = "*"
 
 [[package]]
 name = "typing-extensions"
@@ -307,4 +283,4 @@ files = [
 [metadata]
 lock-version = "2.1"
 python-versions = "^3.11"
-content-hash = "c3e8b8917adf44efb7f4ad88c1ba3529d5e8b035ab7bf50984178cfc2891f72a"
+content-hash = "858f2760bfa2935014c0b40e7b9e192d9e274f16d58e166e22ca10928b95b2cf"
