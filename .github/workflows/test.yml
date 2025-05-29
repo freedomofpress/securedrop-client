@@ -36,12 +36,6 @@ jobs:
     steps:
       - run: |
           apt-get update && apt-get install --yes git make gnupg sudo pipx
-          pipx install poetry==$POETRY_VERSION
-          pipx ensurepath
-          echo "${HOME}/.local/bin" >> ${GITHUB_PATH}
-      - name: Configure poetry
-        run: |
-          poetry config virtualenvs.use-poetry-python true
       - name: Setup user
         run: |
           # We want to run tests as a regular user, similar to Qubes VMs
@@ -55,13 +49,21 @@ jobs:
       # Install Rust, keep in sync with rust-toolchain.toml
       - uses: dtolnay/rust-toolchain@1.84.1
         if: ${{ matrix.component == 'proxy' }}
+      - name: Install poetry
+        run: |
+          pipx install poetry==$POETRY_VERSION
+          pipx ensurepath
+          echo "${HOME}/.local/bin" >> ${GITHUB_PATH}
+      - name: Configure poetry
+        run: |
+          poetry config virtualenvs.use-poetry-python true
       - name: Install dependencies
         run: |
           if [[ "${{ matrix.component }}" == "export" ]]; then
             make -C ${{ matrix.component }} ci-install-deps
-            sudo -u user poetry config virtualenvs.options.system-site-packages true
+            poetry config virtualenvs.options.system-site-packages true
           fi
-          sudo -u user poetry -C ${{ matrix.component }} install
+          poetry -C ${{ matrix.component }} install
       - name: Run test
         run: |
           sudo chown -R user:user .
