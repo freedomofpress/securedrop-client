@@ -1,13 +1,16 @@
-[tool.poetry]
+[project]
+requires-python = ">=3.11"
 name = "securedrop-keyring"
 version = "0.0.0"
 description = "SecureDrop keyring"
-authors = ["SecureDrop Team"]
-license = "AGPLv3+"
+authors = [
+    {name = "SecureDrop Team", email = "securedrop@freedom.press"}
+    ]
+license = {text = "AGPLv3+"}
 readme = "README.md"
 
-[tool.poetry.dependencies]
-python = "^3.11"
+[tool.poetry]
+requires-poetry = ">=2.0.0,<3.0"
 
 [tool.poetry.group.dev.dependencies]
 python-debian = "0.1.49"
