@@ -139,7 +139,8 @@ class Export(QObject):
                 logger.error("Export failed while creating archive")
                 self.export_state_changed.emit(err.status)
             else:
-                logger.error("Export failed while creating archive (no status supplied)")
+                # TODO: reported as unreachable by mypy, needs review
+                logger.error("Export failed while creating archive (no status supplied)")  # type: ignore
                 self.export_state_changed.emit(ExportStatus.ERROR_EXPORT)
 
     def _run_qrexec_export(
@@ -342,7 +343,8 @@ class Export(QObject):
                 logger.error("Print failed while creating archive")
                 self.print_failed.emit(err.status)
             else:
-                logger.error("Print failed while creating archive (no status supplied)")
+                # TODO: reported as unreachable by mypy, should be reviewed
+                logger.error("Print failed while creating archive (no status supplied)")  # type: ignore
                 self.print_failed.emit(ExportStatus.ERROR_PRINT)
 
     def _create_archive(
