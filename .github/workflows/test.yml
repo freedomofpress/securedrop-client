@@ -56,14 +56,14 @@ jobs:
           echo "${HOME}/.local/bin" >> ${GITHUB_PATH}
       - name: Configure poetry
         run: |
-          poetry config virtualenvs.use-poetry-python true
+          sudo -u user poetry config virtualenvs.use-poetry-python true
       - name: Install dependencies
         run: |
           if [[ "${{ matrix.component }}" == "export" ]]; then
             make -C ${{ matrix.component }} ci-install-deps
-            poetry config virtualenvs.options.system-site-packages true
+            sudo -u user poetry config virtualenvs.options.system-site-packages true
           fi
-          poetry -C ${{ matrix.component }} install
+          sudo -u user poetry -C ${{ matrix.component }} install
       - name: Run test
         run: |
           sudo chown -R user:user .
@@ -94,7 +94,7 @@ jobs:
           poetry config virtualenvs.use-poetry-python true
       - uses: actions/checkout@v4
         with:
-          persist-credentials: false           
+          persist-credentials: false
       - name: Setup user
         run: |
           # We want to run tests as a regular user, similar to Qubes VMs
