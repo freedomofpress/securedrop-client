@@ -1,6 +1,14 @@
 # Changelog
 
-## 0.16.0-rc1
+## 0.16.0
+
+* Display detailed last update times for sources (#2447)
+* Use a single typeface, Source Sans Pro, across the application (#2430)
+
+### Dependencies
+* Update Rust to 1.87.0 (#2458)
+* Update setuptools to 78.1.1 (#2457)
+* Update development dependencies (#2438, #2459, #2460)
 
 ## 0.15.0
 
