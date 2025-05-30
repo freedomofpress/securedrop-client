@@ -36,6 +36,7 @@ jobs:
     steps:
       - run: |
           apt-get update && apt-get install --yes git make gnupg sudo pipx
+          PIPX_HOME=/opt PIPX_BIN_DIR=/usr/local/bin/ pipx install poetry==$POETRY_VERSION
       - name: Setup user
         run: |
           # We want to run tests as a regular user, similar to Qubes VMs
@@ -49,21 +50,13 @@ jobs:
       # Install Rust, keep in sync with rust-toolchain.toml
       - uses: dtolnay/rust-toolchain@1.87.0
         if: ${{ matrix.component == 'proxy' }}
-      - name: Install poetry
-        run: |
-          pipx install poetry==$POETRY_VERSION
-          pipx ensurepath
-          echo "${HOME}/.local/bin" >> ${GITHUB_PATH}
-      - name: Configure poetry
-        run: |
-          poetry config virtualenvs.use-poetry-python true
       - name: Install dependencies
         run: |
           if [[ "${{ matrix.component }}" == "export" ]]; then
             make -C ${{ matrix.component }} ci-install-deps
-            poetry config virtualenvs.options.system-site-packages true
+            sudo -u user poetry config virtualenvs.options.system-site-packages true
           fi
-          poetry -C ${{ matrix.component }} install
+          sudo -u user poetry -C ${{ matrix.component }} install
       - name: Run test
         run: |
           sudo chown -R user:user .
@@ -86,15 +79,10 @@ jobs:
     steps:
       - run: |
           apt-get update && apt-get install --yes git make gnupg sudo pipx
-          pipx install poetry==$POETRY_VERSION
-          pipx ensurepath
-          echo "${HOME}/.local/bin" >> ${GITHUB_PATH}
-      - name: Configure poetry
-        run: |
-          poetry config virtualenvs.use-poetry-python true
+          PIPX_HOME=/opt PIPX_BIN_DIR=/usr/local/bin/ pipx install poetry==$POETRY_VERSION
       - uses: actions/checkout@v4
         with:
-          persist-credentials: false           
+          persist-credentials: false
       - name: Setup user
         run: |
           # We want to run tests as a regular user, similar to Qubes VMs
@@ -123,9 +111,6 @@ jobs:
           pipx install poetry==$POETRY_VERSION
           pipx ensurepath
           echo "${HOME}/.local/bin" >> ${GITHUB_PATH}
-      - name: Configure poetry
-        run: |
-          poetry config virtualenvs.use-poetry-python true
       - uses: actions/checkout@v4
         with:
           persist-credentials: false

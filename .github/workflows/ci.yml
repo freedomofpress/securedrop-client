@@ -64,9 +64,6 @@ jobs:
           pipx install poetry==$POETRY_VERSION
           pipx ensurepath
           echo "${HOME}/.local/bin" >> ${GITHUB_PATH}
-      - name: Configure poetry
-        run: |
-          poetry config virtualenvs.use-poetry-python true
       - uses: actions/checkout@v4
         with:
           persist-credentials: false
@@ -97,9 +94,6 @@ jobs:
           pipx install poetry==$POETRY_VERSION
           pipx ensurepath
           echo "${HOME}/.local/bin" >> ${GITHUB_PATH}
-      - name: Configure poetry
-        run: |
-          poetry config virtualenvs.use-poetry-python true
       - uses: actions/checkout@v4
         with:
           persist-credentials: false
@@ -121,9 +115,6 @@ jobs:
           pipx install poetry==$POETRY_VERSION
           pipx ensurepath
           echo "${HOME}/.local/bin" >> ${GITHUB_PATH}
-      - name: Configure poetry
-        run: |
-          poetry config virtualenvs.use-poetry-python true
       - uses: actions/checkout@v4
         with:
           persist-credentials: false
