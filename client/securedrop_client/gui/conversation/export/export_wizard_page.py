@@ -211,8 +211,9 @@ class ExportWizardPage(QWizardPage):
         """
         Update page's content based on new status.
         """
+        # TODO: reported as unreachable by mypy, should be checked
         if not status:
-            logger.error("Empty status value given to update_content")
+            logger.error("Empty status value given to update_content")  # type: ignore
             status = ExportStatus.UNEXPECTED_RETURN_STATUS
 
         if should_show_hint:
