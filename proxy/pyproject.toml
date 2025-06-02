@@ -10,5 +10,5 @@ readme = "README.md"
 python = "^3.11"
 
 [tool.poetry.group.dev.dependencies]
-pytest = "^8.3.5"
+pytest = "^8.4.0"
 pytest-httpbin = "^2.1.0"
