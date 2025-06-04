@@ -7,6 +7,7 @@ authors = [
     {name = "SecureDrop Team", email = "securedrop@freedom.press"}
     ]
 license = {text = "AGPLv3+"}
+dependencies = []
 
 [tool.poetry]
 package-mode = false
