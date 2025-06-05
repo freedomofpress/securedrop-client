@@ -1,14 +1,18 @@
-[tool.poetry]
+[project]
+requires-python = ">=3.11"
 name = "securedrop-log"
 version = "0.0.0"
 description = "SecureDrop Qubes logging scripts"
-authors = ["SecureDrop Team"]
-license = "GPLv3+"
+authors = [
+    {name = "SecureDrop Team", email = "securedrop@freedom.press"}
+    ]
+license = {text = "AGPLv3+"}
 readme = "README.md"
+dependencies = ["redis==3.3.11"]
 
-[tool.poetry.dependencies]
-python = "^3.11"
-redis = "=3.3.11"
+[tool.poetry]
+requires-poetry = ">=2.1.3,<3.0"
+package-mode = false
 
 [tool.poetry.group.dev.dependencies]
 mypy = "^1.4.1"

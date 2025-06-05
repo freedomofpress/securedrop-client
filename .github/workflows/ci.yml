@@ -13,6 +13,9 @@ defaults:
   run:
     shell: bash
 
+env:
+  POETRY_VERSION: 2.1.3
+
 jobs:
   lint-apparmor:
     strategy:
@@ -57,7 +60,10 @@ jobs:
     container: debian:${{ matrix.debian_version }}
     steps:
       - run: |
-          apt-get update && apt-get install --yes git make file python3-poetry
+          apt-get update && apt-get install --yes git make file pipx
+          pipx install poetry==$POETRY_VERSION
+          pipx ensurepath
+          echo "${HOME}/.local/bin" >> ${GITHUB_PATH}
       - uses: actions/checkout@v4
         with:
           persist-credentials: false
@@ -84,7 +90,10 @@ jobs:
     container: debian:${{ matrix.debian_version }}
     steps:
       - run: |
-          apt-get update && apt-get install --yes git make gnupg python3-poetry
+          apt-get update && apt-get install --yes git make gnupg pipx
+          pipx install poetry==$POETRY_VERSION
+          pipx ensurepath
+          echo "${HOME}/.local/bin" >> ${GITHUB_PATH}
       - uses: actions/checkout@v4
         with:
           persist-credentials: false
@@ -102,7 +111,10 @@ jobs:
     container: debian:bookworm
     steps:
       - run: |
-          apt-get update && apt-get install --yes git make python3-poetry
+          apt-get update && apt-get install --yes git make pipx
+          pipx install poetry==$POETRY_VERSION
+          pipx ensurepath
+          echo "${HOME}/.local/bin" >> ${GITHUB_PATH}
       - uses: actions/checkout@v4
         with:
           persist-credentials: false

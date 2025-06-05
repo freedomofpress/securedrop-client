@@ -1,13 +1,18 @@
-[tool.poetry]
+[project]
 name = "securedrop-proxy"
+requires-python=">=3.11"
 version = "0.1.0"
 description = "Qubes RPC proxy service for the SecureDrop Client"
-authors = ["SecureDrop Team"]
-license = "GPLv3+"
+authors = [
+    {name = "SecureDrop Team", email = "securedrop@freedom.press"}
+    ]
+license = {text = "AGPLv3+"}
 readme = "README.md"
+dependencies = []
 
-[tool.poetry.dependencies]
-python = "^3.11"
+[tool.poetry]
+requires-poetry = ">=2.1.3,<3.0"
+package-mode = false
 
 [tool.poetry.group.dev.dependencies]
 pytest = "^8.3.5"

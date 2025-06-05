@@ -248,7 +248,9 @@ Or [manually initialize](https://github.com/freedomofpress/securedrop-client/blo
 8. To run a different version of the client, say the version from a branch called `<branchname>`, first add a NetVM (`sys-firewall`) to `sd-app` via its Qubes Settings so you can clone the client repository, and then follow these steps:
 
 ```
-sudo apt-get install git python3-poetry  # NB. won't persist across "sd-app" reboots
+sudo apt-get install git pipx  # NB. won't persist across "sd-app" reboots
+pipx ensurepath
+pipx install poetry # Install poetry version => 2.x.x, < 3.x
 git clone -b <branchname> https://github.com/freedomofpress/securedrop-client.git
 cd securedrop-client
 poetry install

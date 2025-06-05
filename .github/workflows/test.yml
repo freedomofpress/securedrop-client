@@ -13,6 +13,9 @@ defaults:
   run:
     shell: bash
 
+env:
+  POETRY_VERSION: 2.1.3
+
 jobs:
   # Run `make test` against all components but client, which is special
   component:
@@ -32,7 +35,8 @@ jobs:
     container: debian:${{ matrix.debian_version }}
     steps:
       - run: |
-          apt-get update && apt-get install --yes git make gnupg sudo python3-poetry
+          apt-get update && apt-get install --yes git make gnupg sudo pipx
+          PIPX_HOME=/opt PIPX_BIN_DIR=/usr/local/bin/ pipx install poetry==$POETRY_VERSION
       - name: Setup user
         run: |
           # We want to run tests as a regular user, similar to Qubes VMs
@@ -74,7 +78,8 @@ jobs:
     container: debian:${{ matrix.debian_version }}
     steps:
       - run: |
-          apt-get update && apt-get install --yes git make gnupg sudo python3-poetry
+          apt-get update && apt-get install --yes git make gnupg sudo pipx
+          PIPX_HOME=/opt PIPX_BIN_DIR=/usr/local/bin/ pipx install poetry==$POETRY_VERSION
       - uses: actions/checkout@v4
         with:
           persist-credentials: false
@@ -102,7 +107,10 @@ jobs:
     container: debian:${{ matrix.debian_version }}
     steps:
       - run: |
-          apt-get update && apt-get install --yes git make python3-poetry
+          apt-get update && apt-get install --yes git make pipx
+          pipx install poetry==$POETRY_VERSION
+          pipx ensurepath
+          echo "${HOME}/.local/bin" >> ${GITHUB_PATH}
       - uses: actions/checkout@v4
         with:
           persist-credentials: false
