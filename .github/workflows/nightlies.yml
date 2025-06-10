@@ -11,6 +11,8 @@ on:
 concurrency:
   group: "just-one-please"
 
+permissions: {}
+
 defaults:
   run:
     shell: bash
