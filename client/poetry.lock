@@ -313,14 +313,14 @@ files = [
 
 [[package]]
 name = "diffoscope"
-version = "296"
+version = "297"
 description = "in-depth comparison of files, archives, and directories"
 optional = false
 python-versions = ">=3.7"
 groups = ["dev"]
 markers = "sys_platform == \"linux\" or sys_platform == \"darwin\" or sys_platform != \"linux\" and sys_platform != \"darwin\""
 files = [
-    {file = "diffoscope-296.tar.gz", hash = "sha256:a1e9f43052a8b99984ba0bb13649ba0b18fd7da65a359e4f87170c89f8da325e"},
+    {file = "diffoscope-297.tar.gz", hash = "sha256:25532061c640b4be7496f9a726640e20ca0fcb8e46a8a1a46e51ac940a5f4e57"},
 ]
 
 [package.dependencies]
@@ -1504,25 +1504,26 @@ pyscreenshot = "*"
 
 [[package]]
 name = "pytest"
-version = "8.3.5"
+version = "8.4.0"
 description = "pytest: simple powerful testing with Python"
 optional = false
-python-versions = ">=3.8"
+python-versions = ">=3.9"
 groups = ["dev"]
 markers = "sys_platform == \"linux\" or sys_platform == \"darwin\" or sys_platform != \"linux\" and sys_platform != \"darwin\""
 files = [
-    {file = "pytest-8.3.5-py3-none-any.whl", hash = "sha256:c69214aa47deac29fad6c2a4f590b9c4a9fdb16a403176fe154b79c0b4d4d820"},
-    {file = "pytest-8.3.5.tar.gz", hash = "sha256:f4efe70cc14e511565ac476b57c279e12a855b11f48f212af1080ef2263d3845"},
+    {file = "pytest-8.4.0-py3-none-any.whl", hash = "sha256:f40f825768ad76c0977cbacdf1fd37c6f7a468e460ea6a0636078f8972d4517e"},
+    {file = "pytest-8.4.0.tar.gz", hash = "sha256:14d920b48472ea0dbf68e45b96cd1ffda4705f33307dcc86c676c1b5104838a6"},
 ]
 
 [package.dependencies]
-colorama = {version = "*", markers = "sys_platform == \"win32\""}
-iniconfig = "*"
-packaging = "*"
+colorama = {version = ">=0.4", markers = "sys_platform == \"win32\""}
+iniconfig = ">=1"
+packaging = ">=20"
 pluggy = ">=1.5,<2"
+pygments = ">=2.7.2"
 
 [package.extras]
-dev = ["argcomplete", "attrs (>=19.2)", "hypothesis (>=3.56)", "mock", "pygments (>=2.7.2)", "requests", "setuptools", "xmlschema"]
+dev = ["argcomplete", "attrs (>=19.2)", "hypothesis (>=3.56)", "mock", "requests", "setuptools", "xmlschema"]
 
 [[package]]
 name = "pytest-cov"
@@ -2085,15 +2086,15 @@ files = [
 
 [[package]]
 name = "translate-toolkit"
-version = "3.15.2"
+version = "3.15.3"
 description = "Tools and API for translation and localization engineering."
 optional = false
 python-versions = ">=3.9"
 groups = ["dev"]
 markers = "sys_platform == \"linux\" or sys_platform == \"darwin\" or sys_platform != \"linux\" and sys_platform != \"darwin\""
 files = [
-    {file = "translate_toolkit-3.15.2-py3-none-any.whl", hash = "sha256:f55f77d9f4aff1d0740cc7d819819d65454b5105bdeb7b53dbc286da28958479"},
-    {file = "translate_toolkit-3.15.2.tar.gz", hash = "sha256:8b9cf1a6ffd3eb10757c77496c414bc6a6eb400bf88f10914257672431fe22ae"},
+    {file = "translate_toolkit-3.15.3-py3-none-any.whl", hash = "sha256:78def6b06ea5a692ee3ab0a6d868c2e985acbb3f45582a2770d756732482a14d"},
+    {file = "translate_toolkit-3.15.3.tar.gz", hash = "sha256:e25cbc54904feb3e81a8886b83c8dcc8c8e35c131a4df53ea6995b9842a47eab"},
 ]
 
 [package.dependencies]
@@ -2405,4 +2406,4 @@ multidict = ">=4.0"
 [metadata]
 lock-version = "2.1"
 python-versions = ">=3.11"
-content-hash = "9132f666a62e0683d7cf7826e26705208d5b417cac9c0d0d9621f9934b51e4fd"
+content-hash = "2830119a4ad27232074a9e4855f50c614241736c27fd9b2dec72ba174da25ed6"
