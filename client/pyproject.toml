@@ -54,3 +54,7 @@ types-polib = "*"
 types-python-dateutil = "*"
 types-setuptools = "^80.9.0"
 vcrpy = "^7.0.0"
+paracelsus = "^0.9.0"
+
+[tool.paracelsus]
+base = "securedrop_client.db:Base"
