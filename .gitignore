@@ -1,5 +1,5 @@
-# Doxygen output from "make docs"
-docs/
+# Generated documentation
+client/docs/
 
 *.sqlite
 
