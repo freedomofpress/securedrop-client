@@ -7,6 +7,23 @@ PYTHON := $(if $(shell bash -c "command -v python3.11"), python3.11, python3)
 
 SEMGREP_FLAGS := --exclude "tests/" --error --strict --verbose
 
+doxygen:
+	@which doxygen >> /dev/null || { echo "doxygen(1) is not available in your \$$PATH.  Is it installed?"; exit 1; }
+
+graphviz:
+	@which dot >> /dev/null || { echo "Graphviz's dot(1) is not available in your \$$PATH.  Is it installed?"; exit 1; }
+
+.PHONY: graph-code
+graph-code: doxygen graphviz  ## Generate browsable documentation and call/caller graphs (requires Doxygen and Graphviz).
+	@doxygen
+	@echo "Now open \"$(PWD)/docs/html/index.html\" in your browser."
+
+.PHONY: graph-db
+graph-db: graphviz  ## Generate an ERD of the Client's database models (requires Graphviz).
+	@poetry run paracelsus graph --format dot > docs/db.dot
+	@dot -Tpng docs/db.dot > docs/db.png
+	@echo "Now open \"$(PWD)/docs/db.png\"."
+
 .PHONY: semgrep
 semgrep:semgrep-community semgrep-local  ## Run semgrep with both semgrep.dev community and local rules
 
@@ -111,14 +128,6 @@ help: ## Print this message and exit.
 .PHONY: version
 version:
 	@poetry run python -c "import securedrop_client; print(securedrop_client.__version__)"
-
-
-.PHONY: docs
-docs:  ## Generate browsable documentation and call/caller graphs (requires Doxygen and Graphviz)
-	@which doxygen >> /dev/null || { echo "doxygen(1) is not available in your \$$PATH.  Is it installed?"; exit 1; }
-	@which dot >> /dev/null || { echo "Graphviz's dot(1) is not available in your \$$PATH.  Is it installed?"; exit 1; }
-	@doxygen
-	@echo "Now open \"$(PWD)/docs/html/index.html\" in your browser."
 
 ##############
 #
