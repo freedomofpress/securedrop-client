@@ -1,6 +1,10 @@
 import { app, BrowserWindow } from "electron";
 import path from "node:path";
 
+import { openDatabase, closeDatabase } from "./database";
+
+const db = openDatabase();
+
 const createWindow = () => {
   // Create the browser window.
   const mainWindow = new BrowserWindow({
@@ -31,5 +35,6 @@ app.on("window-all-closed", () => {
   app.quit();
 });
 
-// In this file you can include the rest of your app's specific main process
-// code. You can also put them in separate files and import them here.
+app.on("before-quit", () => {
+  closeDatabase();
+});
