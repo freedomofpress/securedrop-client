@@ -3,6 +3,7 @@ import path from "node:path";
 
 import { openDatabase, closeDatabase } from "./database";
 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 const db = openDatabase();
 
 const createWindow = () => {
