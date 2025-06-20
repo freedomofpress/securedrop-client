@@ -45,6 +45,10 @@ jobs:
         working-directory: app
         run: |
           npm run lint
+      - name: Test
+        working-directory: app
+        run: |
+          npm run test
       - name: Build
         working-directory: app
         run: |
