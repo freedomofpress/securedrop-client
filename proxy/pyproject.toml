@@ -15,5 +15,5 @@ requires-poetry = ">=2.1.0,<3.0.0"
 package-mode = false
 
 [tool.poetry.group.dev.dependencies]
-pytest = "^8.3.5"
+pytest = "^8.4.1"
 pytest-httpbin = "^2.1.0"
