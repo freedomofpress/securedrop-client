@@ -1,5 +1,5 @@
+import os from "os";
 import path from "path";
-import { app } from "electron";
 import Database from "better-sqlite3";
 
 let db: Database.Database | null = null;
@@ -9,7 +9,7 @@ export const openDatabase = () => {
     return db;
   }
 
-  const dbPath = path.join(app.getPath("userData"), "db.sqlite");
+  const dbPath = path.join(os.homedir(), ".config", "SecureDrop", "db.sqlite");
   db = new Database(dbPath, {});
   db.pragma("journal_mode = WAL");
   return db;
