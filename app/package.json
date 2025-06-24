@@ -5,7 +5,7 @@
   "description": "",
   "main": ".vite/build/main.js",
   "scripts": {
-    "start": "electron-forge start",
+    "start": "./run.sh",
     "package": "electron-forge package",
     "publish": "electron-forge publish",
     "fix": "eslint --fix . && prettier --write .",
