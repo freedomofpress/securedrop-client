@@ -1,7 +1,8 @@
-import { app, BrowserWindow } from "electron";
+import { app, BrowserWindow, ipcMain } from "electron";
 import path from "node:path";
 
 import { openDatabase, closeDatabase } from "./database";
+import { proxy, ProxyRequest } from "./proxy";
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 const db = openDatabase();
@@ -30,6 +31,11 @@ const createWindow = () => {
 // initialization and is ready to create browser windows.
 // Some APIs can only be used after this event occurs.
 app.on("ready", createWindow);
+
+ipcMain.handle('request', async (event, request: ProxyRequest) => {
+  const result = await proxy(request);
+  return result;
+});
 
 // Quit when all windows are closed
 app.on("window-all-closed", () => {
