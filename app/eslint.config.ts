@@ -4,7 +4,6 @@ import tseslint from "typescript-eslint";
 import reactHooks from "eslint-plugin-react-hooks";
 import reactRefresh from "eslint-plugin-react-refresh";
 import eslintConfigPrettier from "eslint-config-prettier/flat";
-// @ts-expect-error: No types for eslint-plugin-import
 import importPlugin from "eslint-plugin-import";
 
 export default tseslint.config({
