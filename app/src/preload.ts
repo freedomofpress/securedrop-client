@@ -3,6 +3,11 @@
 import { contextBridge, ipcRenderer } from 'electron'
 import { ProxyRequest } from '././proxy';
 
-contextBridge.exposeInMainWorld('electronAPI', {
+
+const electronAPI = {
   request: (request: ProxyRequest) => ipcRenderer.invoke('request', request),
-});
+};
+
+contextBridge.exposeInMainWorld('electronAPI', electronAPI);
+
+export type ElectronAPI = typeof electronAPI;
