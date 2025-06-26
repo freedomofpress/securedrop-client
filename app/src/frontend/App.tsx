@@ -4,21 +4,22 @@ function App() {
   const dummyRequest = async function () {
     console.log("sending dummy request");
     const res = await window.electronAPI.request({
-      method: 'GET',
-      path_query: '/test',
+      method: "GET",
+      path_query: "/test",
       stream: false,
-      headers: {}
+      headers: {},
     } as ProxyRequest);
     console.log("received dummy response");
     console.log(res);
-  }
+  };
 
   return (
     <div>
       <p>Hello world</p>
-      <button onClick={() => dummyRequest()} title="Dummy Request">Dummy Request</button>
+      <button onClick={() => dummyRequest()} title="Dummy Request">
+        Dummy Request
+      </button>
     </div>
-
   );
 }
 

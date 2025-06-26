@@ -4,7 +4,7 @@ import path from "node:path";
 import { openDatabase, closeDatabase } from "./database";
 import { proxy, ProxyRequest } from "./proxy";
 
-app.commandLine.appendSwitch('gtk-version', '3');
+app.commandLine.appendSwitch("gtk-version", "3");
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 const db = openDatabase();
@@ -34,7 +34,7 @@ const createWindow = () => {
 // Some APIs can only be used after this event occurs.
 app.on("ready", createWindow);
 
-ipcMain.handle('request', async (event, request: ProxyRequest) => {
+ipcMain.handle("request", async (event, request: ProxyRequest) => {
   const result = await proxy(request);
   return result;
 });
