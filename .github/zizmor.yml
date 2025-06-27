@@ -4,3 +4,4 @@ rules:
       policies:
         actions/*: ref-pin
         dtolnay/rust-toolchain: ref-pin
+        pnpm/action-setup: any
