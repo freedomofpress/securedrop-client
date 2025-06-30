@@ -28,8 +28,12 @@ const config: ForgeConfig = {
       ],
       renderer: [
         {
-          name: "main_window",
-          config: "vite.renderer.config.ts",
+          name: "sourceview",
+          config: "vite.sourceview.config.ts",
+        },
+        {
+          name: "login",
+          config: "vite.login.config.ts",
         },
       ],
     }),
