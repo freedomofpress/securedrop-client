@@ -6,7 +6,6 @@ import { openDatabase, closeDatabase } from "./database";
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 const db = openDatabase();
 
-
 let loginWindow: BrowserWindow | null;
 let sourceviewWindow: BrowserWindow | null;
 
@@ -15,11 +14,11 @@ function createLoginWindow() {
     width: 400,
     height: 600,
     webPreferences: {
-      preload: path.join(__dirname, 'preload.js'),
-      contextIsolation: true, 
+      preload: path.join(__dirname, "preload.js"),
+      contextIsolation: true,
     },
   });
-  loginWindow.on('closed', () => {
+  loginWindow.on("closed", () => {
     loginWindow = null;
   });
 
@@ -31,12 +30,12 @@ function createLoginWindow() {
     );
   }
   //do we wanna kill it altogether or just hide it?
-  loginWindow.on('closed', () => {
+  loginWindow.on("closed", () => {
     loginWindow = null;
   });
 }
 
-function createSourceviewWindow () {
+function createSourceviewWindow() {
   // Create the source view browser window.
   sourceviewWindow = new BrowserWindow({
     width: 800,
@@ -44,7 +43,7 @@ function createSourceviewWindow () {
     show: false,
     webPreferences: {
       preload: path.join(__dirname, "preload.js"),
-      contextIsolation: true, 
+      contextIsolation: true,
     },
   });
 
@@ -58,10 +57,10 @@ function createSourceviewWindow () {
   }
 
   // Same question
-  sourceviewWindow.on('closed', () => {
+  sourceviewWindow.on("closed", () => {
     sourceviewWindow = null;
   });
-};
+}
 
 // This method will be called when Electron has finished
 // initialization and is ready to create browser windows.
@@ -71,7 +70,7 @@ app.whenReady().then(() => {
 });
 
 // Handle login success from renderer process
-ipcMain.on('login-success', () => {
+ipcMain.on("login-success", () => {
   if (loginWindow) {
     loginWindow.close(); // Close login window
   }
@@ -81,7 +80,7 @@ ipcMain.on('login-success', () => {
   }
 });
 
-app.on('activate', () => {
+app.on("activate", () => {
   if (BrowserWindow.getAllWindows().length === 0) {
     createLoginWindow();
   }
