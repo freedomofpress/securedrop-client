@@ -34,7 +34,6 @@ MIMETYPE_ARCHIVE = [
 # see /usr/share/cups/mime/mime.types
 MIMETYPE_PRINT_WITHOUT_CONVERSION = [
     "application/pdf",
-    "text/plain",
     "image/gif",
     "image/png",
     "image/jpeg",
