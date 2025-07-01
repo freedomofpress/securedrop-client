@@ -1,7 +1,8 @@
-import { app, BrowserWindow } from "electron";
+import { app, BrowserWindow, ipcMain } from "electron";
 import path from "node:path";
 
 import { openDatabase, closeDatabase } from "./database";
+import { proxy, ProxyRequest } from "./proxy";
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 const db = openDatabase();
@@ -38,4 +39,9 @@ app.on("window-all-closed", () => {
 
 app.on("before-quit", () => {
   closeDatabase();
+});
+
+ipcMain.handle("request", async (event, request: ProxyRequest) => {
+  const result = await proxy(request);
+  return result;
 });
