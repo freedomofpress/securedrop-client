@@ -45,3 +45,11 @@ ipcMain.handle("request", async (event, request: ProxyRequest) => {
   const result = await proxy(request);
   return result;
 });
+
+ipcMain.handle(
+  "requestStream",
+  async (event, request: ProxyRequest, downloadPath: string) => {
+    const result = await proxy(request, downloadPath);
+    return result;
+  },
+);
