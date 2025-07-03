@@ -1,24 +1,37 @@
 import child_process from "node:child_process";
+import fs from "fs";
+import path from "path";
+
 import { JSONObject } from "./utils";
 
 export type ProxyRequest = {
   method: "GET" | "POST" | "DELETE";
   path_query: string;
-  stream: false;
+  stream: boolean;
   body?: string;
   headers: object;
 };
 
-export type ProxyResponse = {
+export type ProxyResponse = ProxyJSONResponse | ProxyStreamResponse;
+
+export type ProxyJSONResponse = {
   data: JSONObject;
   status: number;
   headers: Map<string, string>;
 };
 
+export type ProxyStreamResponse = {
+  stream_path: string;
+  sha256sum: string;
+};
+
 const DEFAULT_PROXY_VM_NAME = "sd-proxy";
 const DEFAULT_PROXY_CMD_TIMEOUT_MS = 5000;
 
-export async function proxy(request: ProxyRequest): Promise<ProxyResponse> {
+export async function proxy(
+  request: ProxyRequest,
+  downloadPath?: string,
+): Promise<ProxyResponse> {
   let proxyCommand = "";
   let proxyCommandOptions: string[] = [];
 
@@ -32,7 +45,22 @@ export async function proxy(request: ProxyRequest): Promise<ProxyResponse> {
     proxyCommandOptions = [proxyVmName, "securedrop.Proxy"];
   }
 
-  return proxyInner(
+  if (request.stream) {
+    if (!downloadPath) {
+      return Promise.reject(
+        `Error: no download path specified for streaming request`,
+      );
+    }
+    return proxyStreamingInner(
+      request,
+      proxyCommand,
+      proxyCommandOptions,
+      import.meta.env.VITE_SD_PROXY_ORIGIN,
+      DEFAULT_PROXY_CMD_TIMEOUT_MS,
+      downloadPath,
+    );
+  }
+  return proxyRequestInner(
     request,
     proxyCommand,
     proxyCommandOptions,
@@ -41,13 +69,35 @@ export async function proxy(request: ProxyRequest): Promise<ProxyResponse> {
   );
 }
 
-export async function proxyInner(
+function parseJSONResponse(response: string): ProxyJSONResponse {
+  const result = JSON.parse(response);
+  const status = result["status"];
+  const body = result["body"];
+
+  if (!status) {
+    throw new Error(`Invalid response: no status code found.\n`);
+  }
+  // Ignore 404s for 4xx error response
+  if (status >= 400 && status < 500 && status != 404) {
+    throw new Error(`Client error ${status}: ${body}`);
+  } else if (status >= 500 && status < 600) {
+    throw new Error(`Server error ${status}: ${body}`);
+  }
+
+  return {
+    data: body,
+    status: status,
+    headers: result["headers"] || {},
+  };
+}
+
+export async function proxyRequestInner(
   request: ProxyRequest,
   proxyCommand: string,
   proxyCommandOptions: string[],
   proxyOrigin: string,
   proxyCommandTimeout: number,
-): Promise<ProxyResponse> {
+): Promise<ProxyJSONResponse> {
   return new Promise((resolve, reject) => {
     const process = child_process.spawn(proxyCommand, proxyCommandOptions, {
       env: { SD_PROXY_ORIGIN: proxyOrigin },
@@ -73,27 +123,9 @@ export async function proxyInner(
         );
       } else {
         try {
-          const result = JSON.parse(stdout);
-          const status = result["status"];
-          const body = result["body"];
-
-          if (!status) {
-            reject(new Error(`Invalid response: no status code found.\n`));
-          }
-          // Ignore 404s for 4xx error response
-          if (status >= 400 && status < 500 && status != 404) {
-            reject(new Error(`Client error ${status}: ${body}`));
-          } else if (status >= 500 && status < 600) {
-            reject(new Error(`Server error ${status}: ${body}`));
-          }
-
-          resolve({
-            data: body,
-            status: status,
-            headers: result["headers"] || {},
-          });
-        } catch (error) {
-          reject(error);
+          resolve(parseJSONResponse(stdout));
+        } catch (err) {
+          reject(err);
         }
       }
     });
@@ -105,4 +137,66 @@ export async function proxyInner(
     process.stdin.write(JSON.stringify(request) + "\n");
     process.stdin.end();
   });
+}
+
+export async function proxyStreamingInner(
+  request: ProxyRequest,
+  proxyCommand: string,
+  proxyCommandOptions: string[],
+  proxyOrigin: string,
+  proxyCommandTimeout: number,
+  downloadPath: string,
+): Promise<ProxyStreamResponse> {
+  try {
+    const downloadDir = path.dirname(downloadPath);
+    await fs.promises.mkdir(downloadDir, { recursive: true });
+    const outputStream = fs.createWriteStream(downloadPath);
+
+    return new Promise((resolve, reject) => {
+      let stderr = "";
+      const process = child_process.spawn(proxyCommand, proxyCommandOptions, {
+        env: { SD_PROXY_ORIGIN: proxyOrigin },
+        timeout: proxyCommandTimeout,
+      });
+
+      process.stdout.pipe(outputStream);
+
+      process.stderr.on("data", (data) => {
+        stderr += data;
+      });
+
+      outputStream.on("error", (err) => {
+        throw new Error(`Error writing to temporary file: ${err}`);
+      });
+
+      process.on("close", async (code, signal) => {
+        outputStream.close();
+        if (signal) {
+          reject(`Process terminated with signal ${signal}`);
+        }
+        if (code != 0) {
+          reject(`Process exited with non-zero code ${code}: ${stderr}`);
+        }
+        // Read headers from stderr
+        try {
+          const header = JSON.parse(stderr);
+          resolve({
+            stream_path: downloadPath,
+            sha256sum: header["headers"]["etag"],
+          });
+        } catch (err) {
+          reject(`Error reading headers from proxy stderr: ${err}`);
+        }
+      });
+
+      process.on("error", (err) => {
+        reject(err);
+      });
+
+      process.stdin.write(JSON.stringify(request) + "\n");
+      process.stdin.end();
+    });
+  } catch (err) {
+    throw new Error(`Error proxying streaming request: ${err}`);
+  }
 }
