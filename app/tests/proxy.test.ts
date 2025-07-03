@@ -11,7 +11,6 @@ import {
   ProxyRequest,
   proxyStreamingInner,
   ProxyStreamResponse,
-  ProxyJSONResponse,
 } from "../src/proxy";
 import { PassThrough } from "node:stream";
 import path from "node:path";

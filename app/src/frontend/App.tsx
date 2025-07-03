@@ -13,12 +13,15 @@ function App() {
 
   const dummyStreamRequest = async function () {
     console.log("sending dummy stream request");
-    const res = await window.electronAPI.requestStream({
-      method: "GET",
-      path_query: "/html",
-      headers: {},
-      stream: true,
-    }, "/tmp/download");
+    const res = await window.electronAPI.requestStream(
+      {
+        method: "GET",
+        path_query: "/html",
+        headers: {},
+        stream: true,
+      },
+      "/tmp/download",
+    );
     console.log("received dummy stream response");
     console.log(res);
   };
