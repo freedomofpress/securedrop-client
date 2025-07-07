@@ -3,6 +3,7 @@ import fs from "fs";
 import path from "path";
 
 import { JSONObject } from "./utils";
+import { Writable } from "node:stream";
 
 export type ProxyRequest = {
   method: "GET" | "POST" | "DELETE";
@@ -21,13 +22,15 @@ export type ProxyJSONResponse = {
 };
 
 export type ProxyStreamResponse = {
-  stream_path: string;
   sha256sum: string;
 };
 
 const DEFAULT_PROXY_VM_NAME = "sd-proxy";
 const DEFAULT_PROXY_CMD_TIMEOUT_MS = 5000;
 
+// Proxies a network request through sd-proxy
+// For streaming requests, `downloadPath` must be specified as
+// the file location where stream data is downloaded
 export async function proxy(
   request: ProxyRequest,
   downloadPath?: string,
@@ -51,14 +54,21 @@ export async function proxy(
         `Error: no download path specified for streaming request`,
       );
     }
-    return proxyStreamingInner(
-      request,
-      proxyCommand,
-      proxyCommandOptions,
-      import.meta.env.VITE_SD_PROXY_ORIGIN,
-      DEFAULT_PROXY_CMD_TIMEOUT_MS,
-      downloadPath,
-    );
+    try {
+      const downloadDir = path.dirname(downloadPath);
+      await fs.promises.mkdir(downloadDir, { recursive: true });
+      const writeStream = fs.createWriteStream(downloadPath);
+      return proxyStreamingInner(
+        request,
+        proxyCommand,
+        proxyCommandOptions,
+        import.meta.env.VITE_SD_PROXY_ORIGIN,
+        DEFAULT_PROXY_CMD_TIMEOUT_MS,
+        writeStream,
+      );
+    } catch (err) {
+      return Promise.reject(`Error proxying streaming request: ${err}`);
+    }
   }
   return proxyRequestInner(
     request,
@@ -139,64 +149,57 @@ export async function proxyRequestInner(
   });
 }
 
+// Streams proxy request through sd-proxy, writing stream output to
+// the provided writeStream.
 export async function proxyStreamingInner(
   request: ProxyRequest,
   proxyCommand: string,
   proxyCommandOptions: string[],
   proxyOrigin: string,
   proxyCommandTimeout: number,
-  downloadPath: string,
+  writeStream: Writable,
 ): Promise<ProxyStreamResponse> {
-  try {
-    const downloadDir = path.dirname(downloadPath);
-    await fs.promises.mkdir(downloadDir, { recursive: true });
-    const outputStream = fs.createWriteStream(downloadPath);
-
-    return new Promise((resolve, reject) => {
-      let stderr = "";
-      const process = child_process.spawn(proxyCommand, proxyCommandOptions, {
-        env: { SD_PROXY_ORIGIN: proxyOrigin },
-        timeout: proxyCommandTimeout,
-      });
-
-      process.stdout.pipe(outputStream);
-
-      process.stderr.on("data", (data) => {
-        stderr += data;
-      });
-
-      outputStream.on("error", (err) => {
-        throw new Error(`Error writing to temporary file: ${err}`);
-      });
-
-      process.on("close", async (code, signal) => {
-        outputStream.close();
-        if (signal) {
-          reject(`Process terminated with signal ${signal}`);
-        }
-        if (code != 0) {
-          reject(`Process exited with non-zero code ${code}: ${stderr}`);
-        }
-        // Read headers from stderr
-        try {
-          const header = JSON.parse(stderr);
-          resolve({
-            stream_path: downloadPath,
-            sha256sum: header["headers"]["etag"],
-          });
-        } catch (err) {
-          reject(`Error reading headers from proxy stderr: ${err}`);
-        }
-      });
-
-      process.on("error", (err) => {
-        reject(err);
-      });
-
-      process.stdin.write(JSON.stringify(request) + "\n");
-      process.stdin.end();
+  return new Promise((resolve, reject) => {
+    let stderr = "";
+    const process = child_process.spawn(proxyCommand, proxyCommandOptions, {
+      env: { SD_PROXY_ORIGIN: proxyOrigin },
+      timeout: proxyCommandTimeout,
     });
-  } catch (err) {
-    throw new Error(`Error proxying streaming request: ${err}`);
-  }
+
+    process.stdout.pipe(writeStream);
+
+    process.stderr.on("data", (data) => {
+      stderr += data;
+    });
+
+    writeStream.on("error", (err) => {
+      throw new Error(`Error writing stream data: ${err}`);
+    });
+
+    process.on("close", async (code, signal) => {
+      writeStream.end();
+      if (signal) {
+        reject(`Process terminated with signal ${signal}`);
+      }
+      if (code != 0) {
+        reject(`Process exited with non-zero code ${code}: ${stderr}`);
+      }
+      // Read headers from stderr
+      try {
+        const header = JSON.parse(stderr);
+        resolve({
+          sha256sum: header["headers"]["etag"] || "",
+        });
+      } catch (err) {
+        reject(`Error reading headers from proxy stderr: ${err}`);
+      }
+    });
+
+    process.on("error", (err) => {
+      reject(`Proxy process error: ${err}`);
+    });
+
+    process.stdin.write(JSON.stringify(request) + "\n");
+    process.stdin.end();
+  });
 }

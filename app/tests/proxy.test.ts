@@ -2,9 +2,6 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import child_process from "node:child_process";
 import EventEmitter from "events";
 import { Readable, Writable } from "stream";
-import crypto from "crypto";
-import os from "node:os";
-import fs from "fs";
 
 import {
   proxyRequestInner,
@@ -13,7 +10,6 @@ import {
   ProxyStreamResponse,
 } from "../src/proxy";
 import { PassThrough } from "node:stream";
-import path from "node:path";
 
 vi.mock("child_process");
 
@@ -228,20 +224,16 @@ const mockStreamingChildProcess = (): child_process.ChildProcess => {
 
 describe("Test executing proxy with streaming requests", () => {
   let process: child_process.ChildProcess;
-  let tempDir: string;
-  let downloadPath: string;
+  let writeStream: PassThrough;
 
   beforeEach(async () => {
     process = mockStreamingChildProcess();
     vi.spyOn(child_process, "spawn").mockReturnValueOnce(process);
-
-    tempDir = await fs.promises.mkdtemp(path.join(os.tmpdir(), "testproxy-"));
-    downloadPath = path.join(tempDir, crypto.randomUUID());
+    writeStream = new PassThrough();
   });
 
   afterEach(() => {
     vi.restoreAllMocks();
-    fs.promises.rm(tempDir, { recursive: true });
   });
 
   it("proxy should return ProxyStreamResponse with data on successful response", async () => {
@@ -249,29 +241,33 @@ describe("Test executing proxy with streaming requests", () => {
     const respSHA256 = "12345";
     process.stdout = Readable.from(respData);
 
+    let data = "";
+
+    writeStream.on("data", (chunk) => {
+      data += chunk;
+    });
+
     const proxyExec = proxyStreamingInner(
       {} as ProxyRequest,
       "mock-proxy-command",
       [],
       "",
       100,
-      downloadPath,
+      writeStream,
+    );
+
+    process.stderr.emit(
+      "data",
+      JSON.stringify({ headers: { etag: respSHA256 } }),
     );
 
     setTimeout(() => {
-      process.stderr.emit(
-        "data",
-        JSON.stringify({ headers: { etag: respSHA256 } }),
-      );
       process.emit("close", 0);
     }, 10);
 
-    const { stream_path, sha256sum } = (await proxyExec) as ProxyStreamResponse;
+    const { sha256sum } = (await proxyExec) as ProxyStreamResponse;
 
-    await fs.readFile(stream_path, (err, data) => {
-      expect(data.toString()).toEqual(respData);
-    });
-
+    expect(data.toString()).toEqual(respData);
     expect(sha256sum).toEqual(respSHA256);
   });
 
@@ -282,11 +278,12 @@ describe("Test executing proxy with streaming requests", () => {
       [],
       "",
       100,
-      downloadPath,
+      writeStream,
     );
 
+    process.stderr?.emit("data", "error");
+
     setTimeout(() => {
-      process.stderr?.emit("data", "error");
       process.emit("close", 1);
     }, 10);
 
@@ -302,7 +299,7 @@ describe("Test executing proxy with streaming requests", () => {
       [],
       "",
       100,
-      downloadPath,
+      writeStream,
     );
 
     setTimeout(() => {
@@ -319,7 +316,7 @@ describe("Test executing proxy with streaming requests", () => {
       [],
       "",
       100,
-      downloadPath,
+      writeStream,
     );
 
     setTimeout(() => {
