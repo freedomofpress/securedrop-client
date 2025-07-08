@@ -16,7 +16,7 @@ export default tseslint.config({
     eslintConfigPrettier,
   ],
   files: ["**/*.ts", "**/*.tsx"],
-  ignores: ["eslint.config.ts", ".vite/**/*"],
+  ignores: ["eslint.config.ts", "vitest.config.ts", ".vite/**/*"],
   languageOptions: {
     globals: {
       ...globals.browser,
