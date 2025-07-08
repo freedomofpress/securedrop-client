@@ -5,6 +5,18 @@ updates:
     schedule:
       interval: "weekly"
 
+  - package-ecosystem: npm
+    directory: "/app"
+    schedule:
+      interval: "weekly"
+    groups:
+      dependencies:
+        patterns: ["*"]
+        dependency-type: "production"
+      dev-dependencies:
+        patterns: ["*"]
+        dependency-type: "development"
+
   # Python development dependencies
   - package-ecosystem: "pip"
     directory: "/"
