@@ -8,7 +8,9 @@
     "src/preload/*.d.ts",
     "tests/",
     "src/test-setup.ts",
-    "src/test-types.d.ts"
+    "src/test-types.d.ts",
+    "tests/",
+    "integration_tests/"
   ],
   "compilerOptions": {
     "composite": true,

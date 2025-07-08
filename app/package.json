@@ -11,7 +11,8 @@
   "homepage": "https://securedrop.org",
   "scripts": {
     "start": "./run.sh",
-    "test": "vitest run --config vitest.config.ts --coverage",
+    "test": "vitest run --config vitest.config.ts --project=unit --coverage",
+    "integration-test": "vitest run --config vitest.config.ts --project=integration --coverage",
     "fix": "eslint --fix . && prettier --write .",
     "lint": "prettier . --check && eslint --max-warnings 0 .",
     "typecheck:node": "tsc --noEmit -p tsconfig.node.json --composite false",

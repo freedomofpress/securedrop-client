@@ -11,6 +11,28 @@ export default defineConfig({
     typecheck: {
       tsconfig: "./tsconfig.web.json",
     },
+    coverage: {
+      provider: "v8",
+      reporter: ["text", "json", "html"],
+      include: ["src/**"],
+    },
+    projects: [
+      {
+        test: {
+          name: "unit",
+          include: ["tests/**/*.test.ts"],
+          globals: true,
+        },
+      },
+      {
+        test: {
+          name: "integration",
+          include: ["integration_tests/**/*.test.ts"],
+          setupFiles: ["integration_tests/setup.ts"],
+          globals: true,
+        },
+      },
+    ],
   },
   resolve: {
     alias: {
