@@ -9,8 +9,8 @@ export default defineConfig({
       reporter: ["text", "json", "html"],
       include: ["src/**"],
     },
-    environment: 'jsdom',
+    environment: "jsdom",
     globals: true,
-    setupFiles: './src/setupTests.ts',
+    setupFiles: "./src/setupTests.ts",
   },
 });
