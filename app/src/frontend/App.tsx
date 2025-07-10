@@ -29,6 +29,7 @@ function App() {
             type="primary"
             onClick={() => dummyRequest()}
             title="Dummy Request"
+            data-testid="dummy-button"
           >
             Dummy Request
           </Button>
