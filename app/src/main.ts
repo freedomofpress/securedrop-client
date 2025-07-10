@@ -1,11 +1,13 @@
 import { app, BrowserWindow, ipcMain } from "electron";
 import path from "node:path";
 
-import { openDatabase, closeDatabase } from "./database";
+import { openDatabase, closeDatabase, runMigrations } from "./database";
 import { proxy, ProxyRequest } from "./proxy";
+import { run } from "node:test";
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 const db = openDatabase();
+runMigrations();
 
 const createWindow = () => {
   // Create the browser window.
