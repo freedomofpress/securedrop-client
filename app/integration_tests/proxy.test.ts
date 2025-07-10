@@ -19,7 +19,7 @@ const proxyCommand = (timeoutMs: number): ProxyCommand => {
   };
 };
 
-describe("Test executing JSON proxy commands", async () => {
+describe("Test executing JSON proxy commands against httpbin", async () => {
   it("successful JSON response", async () => {
     const result = await proxyJSONRequest(
       {
@@ -109,7 +109,7 @@ describe("Test executing JSON proxy commands", async () => {
           stream: false,
           headers: {},
         },
-        proxyCommand(1000),
+        proxyCommand(100),
       ),
     ).rejects.toThrowError("Process terminated with signal SIGTERM");
   });
@@ -228,6 +228,22 @@ describe("Test executing streaming proxy", async () => {
       expect(response.status).toEqual(statusCode);
     },
   );
+
+  it("stream proxy subcommand terminates with SIGTERM on timeout", async () => {
+    await expect(
+      proxyStreamRequest(
+        {
+          method: "GET",
+          path_query: "/delay/10",
+          stream: false,
+          headers: {},
+        },
+        proxyCommand(100),
+        "/tmp/bar",
+        1,
+      ),
+    ).rejects.toThrowError("Process terminated with signal SIGTERM");
+  });
 
   it("stream proxy subcommand aborts", async () => {
     const abortController = new AbortController();
