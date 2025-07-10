@@ -23,6 +23,9 @@ importers:
       better-sqlite3:
         specifier: ^12.1.0
         version: 12.1.0
+      dbmate:
+        specifier: ^2.27.0
+        version: 2.27.0
       react:
         specifier: ^19.1.0
         version: 19.1.0
@@ -296,6 +299,41 @@ packages:
   '@csstools/css-tokenizer@3.0.4':
     resolution: {integrity: sha512-Vd/9EVDiu6PPJt9yAh6roZP6El1xHrdvIVGjyBsHR0RYwNHgL7FJPyIIW4fANJNG6FtyZfvlRPpFI4ZM/lubvw==}
     engines: {node: '>=18'}
+
+  '@dbmate/darwin-arm64@2.27.0':
+    resolution: {integrity: sha512-txh4TEmRPmdlBxqI6fXKEBOZxY2cXmlt0wuefjKcYHMkCpTeCzMXg35hcM9f32PmkPo2q7+eXTNE1f6uYx0oRA==}
+    cpu: [arm64]
+    os: [darwin]
+
+  '@dbmate/darwin-x64@2.27.0':
+    resolution: {integrity: sha512-3VcnKeFle4K6f+AtlM+luL1d+Gi4q0sVaTiUqj5VkBiENmQTTl/zuYOdW+qGMmY2gyiRFvri6zdGpGgp4952sQ==}
+    cpu: [x64]
+    os: [darwin]
+
+  '@dbmate/linux-arm64@2.27.0':
+    resolution: {integrity: sha512-XfHBNSsri+7xH+XiGBOLTLkapoaEBRjqguo7K5mKatGYpDATI2yMTBBaUyqyW0n3GpRhsCauJZsUJrOmZYqobw==}
+    cpu: [arm64]
+    os: [linux]
+
+  '@dbmate/linux-arm@2.27.0':
+    resolution: {integrity: sha512-MsMBHRmfUfwEUQ/zOPBjv925YnpMrqPZCuUoh0FvYyQjAh8RlZxUAS5l7ZVOiOr+aBqcCk4T2M9AFvPyKUze2g==}
+    cpu: [arm]
+    os: [linux]
+
+  '@dbmate/linux-ia32@2.27.0':
+    resolution: {integrity: sha512-W8E7ik82Fd/8gaGCm6RVdXae9XzBnpPMSMXhuSCb0pPgHkTSkgV/SKRAjxwIMJ0VCsdakPRLNEVDxf4BASWk0A==}
+    cpu: [ia32]
+    os: [linux]
+
+  '@dbmate/linux-x64@2.27.0':
+    resolution: {integrity: sha512-hItgTv+VX51Jag/r8OxFhorxHII1lgFwZOMOxYvQMpDde2QjKUjRm+GoY4UqZ+OUoqunUj/LMFnDkEVmT/ZfGg==}
+    cpu: [x64]
+    os: [linux]
+
+  '@dbmate/win32-x64@2.27.0':
+    resolution: {integrity: sha512-idhE2dbkkAjgGl+NJxNX0O5Xa6NTjmMp7vN9b74F5VHX/mFocqQJ/0gmg0QcFqGeTIUXorc0cvQzedPMkxpWIQ==}
+    cpu: [x64]
+    os: [win32]
 
   '@electron-forge/cli@7.8.1':
     resolution: {integrity: sha512-QI3EShutfq9Y+2TWWrPjm4JZM3eSAKzoQvRZdVhAfVpUbyJ8K23VqJShg3kGKlPf9BXHAGvE+8LyH5s2yDr1qA==}
@@ -1626,6 +1664,10 @@ packages:
 
   dayjs@1.11.13:
     resolution: {integrity: sha512-oaMBel6gjolK862uaPQOVTA7q3TZhuSvuMQAAglQDOWYO9A91IrAOUJEyKVlqJlHE0vq5p5UXxzdPfMH/x6xNg==}
+
+  dbmate@2.27.0:
+    resolution: {integrity: sha512-Gga0U5ePzDBtqM26d1B2x5B3htl6uS0Gms+1GXbYKOYe44JArk8bcJpuRW97TLeAW36xLZRjBlXbQ0VY+y0PIg==}
+    hasBin: true
 
   debug@2.6.9:
     resolution: {integrity: sha512-bC7ElrdJaJnPbAP+1EotYvqZsb3ecl5wi6Bfi6BJTUcNowp6cvspg0jXznRTKDjm/E7AdgFBVeAPVMNcKGsHMA==}
@@ -4481,6 +4523,27 @@ snapshots:
 
   '@csstools/css-tokenizer@3.0.4': {}
 
+  '@dbmate/darwin-arm64@2.27.0':
+    optional: true
+
+  '@dbmate/darwin-x64@2.27.0':
+    optional: true
+
+  '@dbmate/linux-arm64@2.27.0':
+    optional: true
+
+  '@dbmate/linux-arm@2.27.0':
+    optional: true
+
+  '@dbmate/linux-ia32@2.27.0':
+    optional: true
+
+  '@dbmate/linux-x64@2.27.0':
+    optional: true
+
+  '@dbmate/win32-x64@2.27.0':
+    optional: true
+
   '@electron-forge/cli@7.8.1(encoding@0.1.13)':
     dependencies:
       '@electron-forge/core': 7.8.1(encoding@0.1.13)
@@ -6074,6 +6137,16 @@ snapshots:
       is-data-view: 1.0.2
 
   dayjs@1.11.13: {}
+
+  dbmate@2.27.0:
+    optionalDependencies:
+      '@dbmate/darwin-arm64': 2.27.0
+      '@dbmate/darwin-x64': 2.27.0
+      '@dbmate/linux-arm': 2.27.0
+      '@dbmate/linux-arm64': 2.27.0
+      '@dbmate/linux-ia32': 2.27.0
+      '@dbmate/linux-x64': 2.27.0
+      '@dbmate/win32-x64': 2.27.0
 
   debug@2.6.9:
     dependencies:
