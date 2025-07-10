@@ -18,6 +18,7 @@ export type ProxyCommand = {
   options: string[];
   proxyOrigin: string;
   timeoutMs: number;
+  abortSignal?: AbortSignal;
 };
 
 export type ProxyResponse = ProxyJSONResponse | ProxyStreamResponse;
@@ -43,6 +44,7 @@ const DEFAULT_STREAM_MAX_RETRY_ATTEMPTS = 3;
 export async function proxy(
   request: ProxyRequest,
   downloadPath?: string,
+  abortSignal?: AbortSignal,
 ): Promise<ProxyResponse> {
   let command = "";
   let commandOptions: string[] = [];
@@ -61,6 +63,7 @@ export async function proxy(
     options: commandOptions,
     proxyOrigin: import.meta.env.VITE_SD_PROXY_ORIGIN,
     timeoutMs: DEFAULT_PROXY_CMD_TIMEOUT_MS,
+    abortSignal: abortSignal,
   };
 
   if (request.stream) {
@@ -116,6 +119,7 @@ export async function proxyJSONRequest(
     const process = child_process.spawn(command.command, command.options, {
       env: { SD_PROXY_ORIGIN: command.proxyOrigin },
       timeout: command.timeoutMs,
+      signal: command.abortSignal,
     });
 
     let stdout = "";
@@ -206,6 +210,7 @@ export async function proxyStreamInner(
     const process = child_process.spawn(command.command, command.options, {
       env: { SD_PROXY_ORIGIN: command.proxyOrigin },
       timeout: command.timeoutMs,
+      signal: command.abortSignal,
     });
 
     process.stdout.pipe(writeStream);
