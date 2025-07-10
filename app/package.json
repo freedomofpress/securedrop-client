@@ -67,6 +67,7 @@
     "@tailwindcss/vite": "^4.1.11",
     "antd": "^5.26.4",
     "better-sqlite3": "^12.1.0",
+    "dbmate": "^2.27.0",
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
     "react-redux": "^9.2.0",
