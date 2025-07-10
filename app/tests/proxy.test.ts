@@ -4,9 +4,10 @@ import EventEmitter from "events";
 import { Readable, Writable } from "stream";
 
 import {
-  proxyRequestInner,
+  proxyJSONRequest,
   ProxyRequest,
-  proxyStreamingInner,
+  ProxyCommand,
+  proxyStreamInner,
   ProxyStreamResponse,
 } from "../src/proxy";
 import { PassThrough } from "node:stream";
@@ -24,6 +25,15 @@ const mockChildProcess = (): child_process.ChildProcess => {
   return proc;
 };
 
+const mockProxyCommand = (): ProxyCommand => {
+  return {
+    command: "",
+    options: [],
+    proxyOrigin: "",
+    timeoutMs: 100,
+  };
+};
+
 describe("Test executing proxy with JSON requests", () => {
   let process: child_process.ChildProcess;
 
@@ -37,13 +47,7 @@ describe("Test executing proxy with JSON requests", () => {
   });
 
   it("proxy should return ProxyResponse with deserialized JSON on successful response", async () => {
-    const proxyExec = proxyRequestInner(
-      {} as ProxyRequest,
-      "mock-proxy-command",
-      [],
-      "",
-      100,
-    );
+    const proxyExec = proxyJSONRequest({} as ProxyRequest, mockProxyCommand());
 
     const respData = {
       foo: "bar",
@@ -72,13 +76,7 @@ describe("Test executing proxy with JSON requests", () => {
   });
 
   it("proxy should error on invalid JSON response data", async () => {
-    const proxyExec = proxyRequestInner(
-      {} as ProxyRequest,
-      "mock-proxy-command",
-      [],
-      "",
-      100,
-    );
+    const proxyExec = proxyJSONRequest({} as ProxyRequest, mockProxyCommand());
 
     process.stdout?.emit("data", "this is not valid JSON");
 
@@ -88,13 +86,7 @@ describe("Test executing proxy with JSON requests", () => {
   });
 
   it("proxy should error on non-404 4xx response code", async () => {
-    const proxyExec = proxyRequestInner(
-      {} as ProxyRequest,
-      "mock-proxy-command",
-      [],
-      "",
-      100,
-    );
+    const proxyExec = proxyJSONRequest({} as ProxyRequest, mockProxyCommand());
 
     const respData = "Rate Limited";
     const respStatus = 429;
@@ -113,13 +105,7 @@ describe("Test executing proxy with JSON requests", () => {
   });
 
   it("proxy should return success on 404", async () => {
-    const proxyExec = proxyRequestInner(
-      {} as ProxyRequest,
-      "mock-proxy-command",
-      [],
-      "",
-      100,
-    );
+    const proxyExec = proxyJSONRequest({} as ProxyRequest, mockProxyCommand());
 
     const respData = "Not Found";
     const respStatus = 404;
@@ -139,13 +125,7 @@ describe("Test executing proxy with JSON requests", () => {
   });
 
   it("proxy should error on 5xx response code", async () => {
-    const proxyExec = proxyRequestInner(
-      {} as ProxyRequest,
-      "mock-proxy-command",
-      [],
-      "",
-      100,
-    );
+    const proxyExec = proxyJSONRequest({} as ProxyRequest, mockProxyCommand());
 
     const respData = "Service Unavailable";
     const respStatus = 503;
@@ -164,13 +144,7 @@ describe("Test executing proxy with JSON requests", () => {
   });
 
   it("proxy should fail on proxy-command exit error code", async () => {
-    const proxyExec = proxyRequestInner(
-      {} as ProxyRequest,
-      "mock-proxy-command",
-      [],
-      "",
-      100,
-    );
+    const proxyExec = proxyJSONRequest({} as ProxyRequest, mockProxyCommand());
 
     process.stderr?.emit("data", "error");
     process.emit("close", 1);
@@ -181,13 +155,7 @@ describe("Test executing proxy with JSON requests", () => {
   });
 
   it("proxy should handle subprocess error", async () => {
-    const proxyExec = proxyRequestInner(
-      {} as ProxyRequest,
-      "mock-proxy-command",
-      [],
-      "",
-      100,
-    );
+    const proxyExec = proxyJSONRequest({} as ProxyRequest, mockProxyCommand());
 
     process.emit("error", "error");
 
@@ -195,13 +163,7 @@ describe("Test executing proxy with JSON requests", () => {
   });
 
   it("proxy should handle SIGTERM", async () => {
-    const proxyExec = proxyRequestInner(
-      {} as ProxyRequest,
-      "mock-proxy-command",
-      [],
-      "",
-      100,
-    );
+    const proxyExec = proxyJSONRequest({} as ProxyRequest, mockProxyCommand());
 
     process.emit("close", 0, "SIGTERM");
 
@@ -247,12 +209,9 @@ describe("Test executing proxy with streaming requests", () => {
       data += chunk;
     });
 
-    const proxyExec = proxyStreamingInner(
+    const proxyExec = proxyStreamInner(
       {} as ProxyRequest,
-      "mock-proxy-command",
-      [],
-      "",
-      100,
+      mockProxyCommand(),
       writeStream,
     );
 
@@ -272,12 +231,9 @@ describe("Test executing proxy with streaming requests", () => {
   });
 
   it("proxy should fail on proxy-command exit error code", async () => {
-    const proxyExec = proxyStreamingInner(
+    const proxyExec = proxyStreamInner(
       {} as ProxyRequest,
-      "mock-proxy-command",
-      [],
-      "",
-      100,
+      mockProxyCommand(),
       writeStream,
     );
 
@@ -293,12 +249,9 @@ describe("Test executing proxy with streaming requests", () => {
   });
 
   it("proxy should handle subprocess error", async () => {
-    const proxyExec = proxyStreamingInner(
+    const proxyExec = proxyStreamInner(
       {} as ProxyRequest,
-      "mock-proxy-command",
-      [],
-      "",
-      100,
+      mockProxyCommand(),
       writeStream,
     );
 
@@ -310,12 +263,9 @@ describe("Test executing proxy with streaming requests", () => {
   });
 
   it("proxy should handle SIGTERM", async () => {
-    const proxyExec = proxyStreamingInner(
+    const proxyExec = proxyStreamInner(
       {} as ProxyRequest,
-      "mock-proxy-command",
-      [],
-      "",
-      100,
+      mockProxyCommand(),
       writeStream,
     );
 
