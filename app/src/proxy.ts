@@ -1,7 +1,6 @@
 import child_process from "node:child_process";
 import fs from "fs";
 import path from "path";
-import { readFile } from "fs/promises";
 
 import { JSONObject } from "./utils";
 import { Writable } from "node:stream";
@@ -11,7 +10,7 @@ export type ProxyRequest = {
   path_query: string;
   stream: boolean;
   body?: string;
-  headers: Map<string, string>;
+  headers: object;
 };
 
 export type ProxyCommand = {
@@ -24,6 +23,7 @@ export type ProxyCommand = {
 export type ProxyResponse = ProxyJSONResponse | ProxyStreamResponse;
 
 export type ProxyJSONResponse = {
+  error: boolean;
   data: JSONObject;
   status: number;
   headers: Map<string, string>;
@@ -31,7 +31,6 @@ export type ProxyJSONResponse = {
 
 export type ProxyStreamResponse = {
   sha256sum: string;
-  status: number;
 };
 
 const DEFAULT_PROXY_VM_NAME = "sd-proxy";
@@ -87,19 +86,22 @@ export async function proxy(
 function parseJSONResponse(response: string): ProxyJSONResponse {
   const result = JSON.parse(response);
   const status = result["status"];
-  const body = result["body"];
+  let body = result["body"];
+  try {
+    body = JSON.parse(result["body"]);
+  } catch {
+    // do nothing
+  }
 
   if (!status) {
     throw new Error(`Invalid response: no status code found.\n`);
   }
-  // Ignore 404s for 4xx error response
-  if (status >= 400 && status < 500 && status != 404) {
-    throw new Error(`Client error ${status}: ${body}`);
-  } else if (status >= 500 && status < 600) {
-    throw new Error(`Server error ${status}: ${body}`);
-  }
+  const error =
+    (status >= 400 && status < 500 && status != 404) ||
+    (status >= 500 && status < 600);
 
   return {
+    error,
     data: body,
     status: status,
     headers: result["headers"] || {},
@@ -151,7 +153,7 @@ export async function proxyJSONRequest(
   });
 }
 
-async function proxyStreamRequest(
+export async function proxyStreamRequest(
   request: ProxyRequest,
   command: ProxyCommand,
   downloadPath: string,
@@ -171,17 +173,12 @@ async function proxyStreamRequest(
   let lastErr;
   while (retries < maxRetryAttempts) {
     try {
-      const response = await proxyStreamInner(
+      return proxyStreamInner(
         request,
         command,
         writeStream,
         writeStream.bytesWritten,
       );
-      // On HTTP error response, return JSON response
-      if (response.status >= 400) {
-        const responseData = await readFile(downloadPath, "utf8");
-        return Promise.resolve(parseJSONResponse(responseData));
-      }
     } catch (err) {
       lastErr = err;
       retries += 1;
@@ -201,16 +198,21 @@ export async function proxyStreamInner(
   request: ProxyRequest,
   command: ProxyCommand,
   writeStream: Writable,
-  offset: number,
-): Promise<ProxyStreamResponse> {
+  offset?: number,
+): Promise<ProxyResponse> {
   return new Promise((resolve, reject) => {
     let stderr = "";
+    let stdout = "";
     const process = child_process.spawn(command.command, command.options, {
       env: { SD_PROXY_ORIGIN: command.proxyOrigin },
       timeout: command.timeoutMs,
     });
 
     process.stdout.pipe(writeStream);
+
+    process.stdout.on("data", (data) => {
+      stdout += data;
+    });
 
     process.stderr.on("data", (data) => {
       stderr += data;
@@ -226,21 +228,23 @@ export async function proxyStreamInner(
 
     process.on("close", async (code, signal) => {
       writeStream.end();
+
       if (signal) {
         reject(`Process terminated with signal ${signal}`);
       }
       if (code != 0) {
         reject(`Process exited with non-zero code ${code}: ${stderr}`);
       }
-      // sd-proxy writes response headers to stderr
       try {
-        const header = JSON.parse(stderr);
-        resolve({
-          status: header["headers"]["status"] || 0,
-          sha256sum: header["headers"]["etag"] || "",
-        });
-      } catch (err) {
-        reject(`Error reading headers from proxy stderr: ${err}`);
+        // If we receive JSON data, parse and return
+        resolve(parseJSONResponse(stdout));
+      } catch {
+        try {
+          const header = JSON.parse(stderr);
+          resolve({ sha256sum: header["headers"]["etag"] || "" });
+        } catch (err) {
+          reject(`Error reading headers from proxy stderr: ${err}`);
+        }
       }
     });
 
@@ -249,7 +253,7 @@ export async function proxyStreamInner(
     });
 
     if (offset && offset != 0) {
-      request.headers.set("Range", `bytes=${offset}-`);
+      request.headers["Range"] = `bytes=${offset}-`;
     }
     process.stdin.write(JSON.stringify(request) + "\n");
     process.stdin.end();

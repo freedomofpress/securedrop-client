@@ -99,9 +99,9 @@ describe("Test executing proxy with JSON requests", () => {
 
     process.emit("close", 0);
 
-    await expect(proxyExec).rejects.toThrowError(
-      `Client error ${respStatus}: ${respData}`,
-    );
+    const { status, error } = await proxyExec;
+    expect(error);
+    expect(status).toEqual(respStatus);
   });
 
   it("proxy should return success on 404", async () => {
@@ -138,9 +138,9 @@ describe("Test executing proxy with JSON requests", () => {
 
     process.emit("close", 0);
 
-    await expect(proxyExec).rejects.toThrowError(
-      `Server error ${respStatus}: ${respData}`,
-    );
+    const { status, error } = await proxyExec;
+    expect(error);
+    expect(status).toEqual(respStatus);
   });
 
   it("proxy should fail on proxy-command exit error code", async () => {
