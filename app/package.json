@@ -21,7 +21,8 @@
     "build": "pnpm run typecheck && electron-vite build",
     "postinstall": "electron-builder install-app-deps",
     "build:unpack": "pnpm run build && electron-builder --dir",
-    "build:linux": "electron-vite build && electron-builder --linux"
+    "build:linux": "electron-vite build && electron-builder --linux",
+    "dbmate": "sh -c 'dbmate --url sqlite:$HOME/.config/SecureDrop/db.sqlite --migrations-dir ./src/database/migrations --schema-file ./src/database/schema.sql \"$@\"' _"
   },
   "keywords": [],
   "license": "AGPL-3.0-or-later",
