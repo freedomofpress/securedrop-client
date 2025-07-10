@@ -10,7 +10,8 @@
     "publish": "electron-forge publish",
     "fix": "eslint --fix . && prettier --write .",
     "lint": "prettier . --check && eslint --max-warnings 0 .",
-    "test": "vitest run . --coverage"
+    "test": "vitest run --project=unit --coverage",
+    "integration-test": "vitest run --project=integration --coverage"
   },
   "keywords": [],
   "author": {

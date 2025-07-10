@@ -258,6 +258,7 @@ export async function proxyStreamInner(
     });
 
     if (offset && offset != 0) {
+      // @ts-expect-error type
       request.headers["Range"] = `bytes=${offset}-`;
     }
     process.stdin.write(JSON.stringify(request) + "\n");
