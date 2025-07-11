@@ -16,6 +16,22 @@ build-debs: ## Build Debian packages
 	@echo "You can now examine or commit the log at:"
 	@echo "$(OUT)"
 
+.PHONY: build-debs-arti
+build-debs-arti: OUT:=build/securedrop-arti-$(shell date +%Y%m%d).log
+build-debs-arti: ## Build Debian packages
+	# "build-debs.sh" will create this directory, but we need it to exist
+	# before we call "script".
+	@mkdir -p build
+	@echo "Building Arti packages..."
+	@export TERM=dumb
+	@script \
+		--command 'WHAT=arti scripts/build-debs.sh' --return \
+		$(OUT)
+	@echo
+	@echo "You can now examine or commit the log at:"
+	@echo "$(OUT)"
+
+
 .PHONY: lint-apparmor
 lint-apparmor: ## Lint AppArmor profiles
 	# See apparmor_parser(8)
