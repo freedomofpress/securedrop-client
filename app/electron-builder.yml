@@ -11,6 +11,11 @@ files:
   - "!{tsconfig.json,tsconfig.node.json,tsconfig.web.json}"
 asarUnpack:
   - resources/**
+extraResources:
+  - from: node_modules/@dbmate/linux-x64/bin/dbmate
+    to: bin/dbmate
+  - from: src/main/database/migrations
+    to: migrations
 linux:
   target:
     - deb
