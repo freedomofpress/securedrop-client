@@ -11,7 +11,7 @@ export default tseslint.config(
     ignores: [
       "eslint.config.ts",
       "vitest.config.ts",
-      ".vite/**/*",
+      "out/**/*",
       "coverage/**/*",
     ],
   },
