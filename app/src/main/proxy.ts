@@ -1,19 +1,5 @@
 import child_process from "node:child_process";
-import { JSONObject } from "./utils";
-
-export type ProxyRequest = {
-  method: "GET" | "POST" | "DELETE";
-  path_query: string;
-  stream: false;
-  body?: string;
-  headers: object;
-};
-
-export type ProxyResponse = {
-  data: JSONObject;
-  status: number;
-  headers: Map<string, string>;
-};
+import type { ProxyRequest, ProxyResponse } from "../types";
 
 const DEFAULT_PROXY_VM_NAME = "sd-proxy";
 const DEFAULT_PROXY_CMD_TIMEOUT_MS = 5000;
