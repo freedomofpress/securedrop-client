@@ -36,28 +36,15 @@ export const runMigrations = () => {
   }
 
   // Determine if we're in a packaged app or development
-  console.log(`__dirname: ${__dirname}`);
-  console.log(`process.mainModule?.filename: ${process.mainModule?.filename}`);
-  console.log(`process.env.NODE_ENV: ${process.env.NODE_ENV}`);
-  const isPackaged =
-    process.mainModule?.filename.includes("app.asar") ||
-    process.env.NODE_ENV === "production";
+  const isPackaged = __dirname.includes("app.asar");
 
   let dbmatePath: string;
   let migrationsDir: string;
 
   if (isPackaged) {
-    // In packaged app, use paths relative to the app resources
-    const appPath = process.resourcesPath || path.dirname(process.execPath);
-    dbmatePath = path.join(appPath, "app", "node_modules", ".bin", "dbmate");
-    migrationsDir = path.join(
-      appPath,
-      "app",
-      "src",
-      "main",
-      "database",
-      "migrations",
-    );
+    // For packaged apps, binaries and migrations are outside the asar archive
+    dbmatePath = path.join(process.resourcesPath, "bin", "dbmate");
+    migrationsDir = path.join(process.resourcesPath, "migrations");
   } else {
     // In development, use paths relative to current working directory
     dbmatePath = path.join(process.cwd(), "node_modules", ".bin", "dbmate");
