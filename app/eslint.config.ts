@@ -11,7 +11,7 @@ export default tseslint.config(
     ignores: [
       "eslint.config.ts",
       "vitest.config.ts",
-      ".vite/**/*",
+      "out/**/*",
       "coverage/**/*",
     ],
   },
@@ -32,11 +32,14 @@ export default tseslint.config(
       },
       parserOptions: {
         projectService: true,
-        tsconfigRootDir: __dirname,
       },
     },
     settings: {
       "import/resolver": {
+        typescript: {
+          alwaysTryTypes: true,
+          project: ["./tsconfig.node.json", "./tsconfig.web.json"],
+        },
         node: {
           extensions: [".js", ".jsx", ".ts", ".tsx"],
         },

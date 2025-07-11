@@ -28,4 +28,4 @@ function configure_environment() {
 
 configure_environment
 
-electron-forge start
+electron-vite dev
