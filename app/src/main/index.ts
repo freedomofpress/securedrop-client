@@ -3,7 +3,8 @@ import { join } from "path";
 import { electronApp, optimizer, is } from "@electron-toolkit/utils";
 
 import { openDatabase, closeDatabase } from "./database";
-import { proxy, ProxyRequest } from "./proxy";
+import { proxy } from "./proxy";
+import type { ProxyRequest } from "../types";
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 const db = openDatabase();

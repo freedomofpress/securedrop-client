@@ -3,6 +3,7 @@
   "include": [
     "electron.vite.config.*",
     "tailwind.config.*",
+    "src/*.ts",
     "src/main/**/*",
     "src/preload/**/*"
   ],
