@@ -6,8 +6,7 @@ import { openDatabase, closeDatabase } from "./database";
 import { proxy } from "./proxy";
 import type { ProxyRequest } from "../types";
 
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-const db = openDatabase();
+openDatabase();
 
 function createWindow(): void {
   // Create the browser window.
@@ -54,7 +53,7 @@ app.whenReady().then(() => {
     optimizer.watchWindowShortcuts(window);
   });
 
-  ipcMain.handle("request", async (event, request: ProxyRequest) => {
+  ipcMain.handle("request", async (_event, request: ProxyRequest) => {
     const result = await proxy(request);
     return result;
   });
