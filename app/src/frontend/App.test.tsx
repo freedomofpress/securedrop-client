@@ -13,6 +13,7 @@ describe("App Component", () => {
     // Mock the electronAPI.request function
     window.electronAPI = {
       request: vi.fn().mockResolvedValue({ data: "test" }),
+      requestStream: vi.fn().mockResolvedValue({ sha256sum: "abc" }),
     };
 
     render(<App />);
