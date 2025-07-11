@@ -7,7 +7,7 @@ import Database from "better-sqlite3";
 let db: Database.Database | null = null;
 let databaseUrl: string | null = null;
 
-export const openDatabase = () => {
+export const openDatabase = (): Database.Database => {
   if (db) {
     return db;
   }
@@ -50,11 +50,24 @@ export const runMigrations = () => {
     // In packaged app, use paths relative to the app resources
     const appPath = process.resourcesPath || path.dirname(process.execPath);
     dbmatePath = path.join(appPath, "app", "node_modules", ".bin", "dbmate");
-    migrationsDir = path.join(appPath, "app", "src", "database", "migrations");
+    migrationsDir = path.join(
+      appPath,
+      "app",
+      "src",
+      "main",
+      "database",
+      "migrations",
+    );
   } else {
     // In development, use paths relative to current working directory
     dbmatePath = path.join(process.cwd(), "node_modules", ".bin", "dbmate");
-    migrationsDir = path.join(process.cwd(), "src", "database", "migrations");
+    migrationsDir = path.join(
+      process.cwd(),
+      "src",
+      "main",
+      "database",
+      "migrations",
+    );
   }
 
   // Ensure migrations directory exists
