@@ -1,0 +1,14 @@
+Arti is dual-licensed under either Apache-2.0 or MIT, at your option. On
+Debian systems you can find the Apache license text at
+/usr/share/common-licenses/Apache-2.0
+
+It also contains code licensed under the GNU Lesser General
+Public License, version 3.0. On Debian systems you can find the license
+text at /usr/share/common-licenses/LGPL-3
+
+Copyright 2019-2025 The Tor Project, Inc.
+
+For more details see:
+
+* https://gitlab.torproject.org/tpo/core/arti/-/blob/main/README.md#license
+* https://gitlab.torproject.org/tpo/core/arti/-/blob/main/doc/LGPL-and-rust.md
