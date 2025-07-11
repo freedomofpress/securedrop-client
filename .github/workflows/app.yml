@@ -52,4 +52,4 @@ jobs:
         run: pnpm test
       - name: Build
         working-directory: app
-        run: pnpm package
+        run: pnpm build:linux
