@@ -1,11 +1,11 @@
 import { render, screen } from "@testing-library/react";
 import { vi, expect } from "vitest";
 import userEvent from "@testing-library/user-event";
-import App from "./App";
+import InboxView from "./Inbox";
 
-describe("App Component", () => {
+describe("InboxView Component", () => {
   it('says the string "Hello world!"', () => {
-    render(<App />);
+    render(<InboxView />);
     expect(screen.getByText("Hello world!")).toBeInTheDocument();
   });
 
@@ -15,7 +15,7 @@ describe("App Component", () => {
       request: vi.fn().mockResolvedValue({ data: "test" }),
     };
 
-    render(<App />);
+    render(<InboxView />);
     const dummyButton = screen.getByTestId("dummy-button");
     await userEvent.click(dummyButton);
     expect(window.electronAPI.request).toHaveBeenCalled();
