@@ -4,6 +4,8 @@ import { EyeInvisibleOutlined, EyeTwoTone } from "@ant-design/icons";
 function SignInView() {
   const [form] = Form.useForm();
 
+  const version = window.electronAPI.getVersion();
+
   const handleSubmit = (values: any) => {
     console.log("Form values:", values);
   };
@@ -109,7 +111,7 @@ function SignInView() {
         </div>
 
         <div className="mt-8 text-center">
-          <p className="text-sm text-gray-500">SecureDrop Client vTK</p>
+          <p className="text-sm text-gray-500">SecureDrop Client v{version}</p>
         </div>
       </div>
     </div>

@@ -12,6 +12,7 @@ describe("InboxView Component", () => {
   it("calls window.electronAPI.request when the button is clicked", async () => {
     // Mock the electronAPI.request function
     window.electronAPI = {
+      getVersion: vi.fn().mockResolvedValue("1.0.0"),
       request: vi.fn().mockResolvedValue({ data: "test" }),
     };
 
