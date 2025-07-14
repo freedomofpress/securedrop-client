@@ -1,4 +1,5 @@
 # Ignore artifacts:
-.vite
-out
+.vite/
+out/
+dist/
 pnpm-lock.yaml

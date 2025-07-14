@@ -1,7 +1,9 @@
 ignoredBuiltDependencies:
   - "@tailwindcss/oxide"
   - better-sqlite3
+  - electron-winstaller
   - esbuild
+  - unrs-resolver
 
 onlyBuiltDependencies:
   - electron

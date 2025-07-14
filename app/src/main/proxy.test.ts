@@ -3,7 +3,8 @@ import child_process from "node:child_process";
 import EventEmitter from "events";
 import { Readable, Writable } from "stream";
 
-import { proxyInner, ProxyRequest } from "./proxy";
+import { proxyInner } from "./proxy";
+import type { ProxyRequest } from "../types";
 
 vi.mock("child_process");
 
