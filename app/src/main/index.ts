@@ -11,7 +11,11 @@ openDatabase();
 function createWindow(): void {
   const mainWindow = new BrowserWindow({
     width: 900,
-    height: 670,
+    height: 700,
+    minWidth: 900,
+    minHeight: 700,
+    title: "SecureDrop Client",
+    icon: join(__dirname, "../renderer/resources/icon.png"),
     show: false,
     autoHideMenuBar: true,
     webPreferences: {

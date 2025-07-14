@@ -1,6 +1,9 @@
+import { useNavigate } from "react-router";
 import { Button } from "antd";
 
 function InboxView() {
+  const navigate = useNavigate();
+
   const dummyRequest = async function () {
     console.log("sending dummy request");
     const res = await window.electronAPI.request({
@@ -32,6 +35,16 @@ function InboxView() {
             data-testid="dummy-button"
           >
             Dummy Request
+          </Button>
+        </div>
+        <div className="px-6 pt-4 pb-2">
+          <Button
+            type="primary"
+            onClick={() => navigate("/sign-in")}
+            title="Sign In"
+            data-testid="sign-in-button"
+          >
+            Sign In
           </Button>
         </div>
       </div>
