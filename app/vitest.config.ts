@@ -1,16 +1,20 @@
 import { defineConfig } from "vitest/config";
 import react from "@vitejs/plugin-react";
+import { resolve } from "path";
 
 export default defineConfig({
   plugins: [react()],
   test: {
-    coverage: {
-      provider: "v8",
-      reporter: ["text", "json", "html"],
-      include: ["src/**"],
-    },
-    environment: "jsdom",
     globals: true,
-    setupFiles: "./src/setupTests.ts",
+    environment: "jsdom",
+    setupFiles: ["./src/test-setup.ts"],
+    typecheck: {
+      tsconfig: "./tsconfig.web.json",
+    },
+  },
+  resolve: {
+    alias: {
+      "@renderer": resolve("src/renderer"),
+    },
   },
 });

@@ -26,7 +26,7 @@ jobs:
     steps:
       - name: Install base dependencies
         run: |
-          apt-get update && apt-get install --yes git make
+          apt-get update && apt-get install --yes git make python3 python3-pip build-essential
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
@@ -52,4 +52,4 @@ jobs:
         run: pnpm test
       - name: Build
         working-directory: app
-        run: pnpm package
+        run: pnpm build:linux
