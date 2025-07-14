@@ -13,7 +13,7 @@ export default defineConfig({
   renderer: {
     resolve: {
       alias: {
-        "@renderer": resolve("src/renderer/src"),
+        "@renderer": resolve("src/renderer"),
       },
     },
     plugins: [react(), tailwindcss()],
