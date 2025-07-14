@@ -29,6 +29,12 @@ importers:
       better-sqlite3:
         specifier: ^12.1.0
         version: 12.1.0
+      react:
+        specifier: ^19.1.0
+        version: 19.1.0
+      react-dom:
+        specifier: ^19.1.0
+        version: 19.1.0(react@19.1.0)
       react-redux:
         specifier: ^9.2.0
         version: 9.2.0(@types/react@19.1.8)(react@19.1.0)(redux@5.0.1)
@@ -117,12 +123,6 @@ importers:
       prettier:
         specifier: 3.6.0
         version: 3.6.0
-      react:
-        specifier: ^19.1.0
-        version: 19.1.0
-      react-dom:
-        specifier: ^19.1.0
-        version: 19.1.0(react@19.1.0)
       typescript:
         specifier: ~5.8.3
         version: 5.8.3
