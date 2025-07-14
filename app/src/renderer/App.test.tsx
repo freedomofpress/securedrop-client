@@ -4,9 +4,9 @@ import userEvent from "@testing-library/user-event";
 import App from "./App";
 
 describe("App Component", () => {
-  it('says the string "Hello world!"', () => {
+  it('says the string "PRELOGIN!"', () => {
     render(<App />);
-    expect(screen.getByText("Hello world!")).toBeInTheDocument();
+    expect(screen.getByText("PRELOGIN")).toBeInTheDocument();
   });
 
   it("calls window.electronAPI.request when the button is clicked", async () => {
