@@ -73,9 +73,16 @@ export async function proxyInner(
             reject(new Error(`Server error ${status}: ${body}`));
           }
 
+          let data;
+          try {
+            data = JSON.parse(body);
+          } catch (e) {
+            data = body;
+          }
+
           resolve({
-            data: JSON.parse(body),
-            status: status,
+            data,
+            status,
             headers: result["headers"] || {},
           });
         } catch (error) {
