@@ -126,6 +126,14 @@ function SignInView() {
               name="passphrase"
               rules={[
                 { required: true, message: "Please enter your passphrase" },
+                {
+                  min: 14,
+                  message: "Passphrase must be at least 14 characters long",
+                },
+                {
+                  max: 128,
+                  message: "Passphrase cannot exceed 128 characters",
+                },
               ]}
             >
               <Input.Password
@@ -150,6 +158,10 @@ function SignInView() {
                   required: true,
                   message: "Please enter your two-factor code",
                 },
+                {
+                  pattern: /^\d{6}$/,
+                  message: "Two-factor code must be exactly 6 digits",
+                },
               ]}
             >
               <Input
@@ -157,6 +169,17 @@ function SignInView() {
                 className="h-10 text-sm"
                 style={{ borderRadius: "6px" }}
                 maxLength={6}
+                onKeyPress={(e) => {
+                  // Only allow numeric characters
+                  if (!/[0-9]/.test(e.key)) {
+                    e.preventDefault();
+                  }
+                }}
+                onChange={(e) => {
+                  // Remove any non-numeric characters
+                  const numericValue = e.target.value.replace(/\D/g, "");
+                  form.setFieldValue("oneTimeCode", numericValue);
+                }}
               />
             </Form.Item>
 
