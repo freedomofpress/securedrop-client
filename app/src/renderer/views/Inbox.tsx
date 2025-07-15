@@ -1,8 +1,12 @@
 import { useNavigate } from "react-router";
 import { Button } from "antd";
 
+import { useAppDispatch } from "../hooks";
+import { clear } from "../features/session/sessionSlice";
+
 function InboxView() {
   const navigate = useNavigate();
+  const dispatch = useAppDispatch();
 
   const dummyRequest = async function () {
     console.log("sending dummy request");
@@ -14,6 +18,12 @@ function InboxView() {
     });
     console.log("received dummy response");
     console.log(res);
+  };
+
+  const signOut = () => {
+    console.log("signing out");
+    dispatch(clear());
+    navigate("/");
   };
 
   return (
@@ -40,11 +50,11 @@ function InboxView() {
         <div className="px-6 pt-4 pb-2">
           <Button
             type="primary"
-            onClick={() => navigate("/sign-in")}
-            title="Sign In"
-            data-testid="sign-in-button"
+            onClick={() => signOut()}
+            title="Sign Out"
+            data-testid="sign-out-button"
           >
-            Sign In
+            Sign out
           </Button>
         </div>
       </div>
