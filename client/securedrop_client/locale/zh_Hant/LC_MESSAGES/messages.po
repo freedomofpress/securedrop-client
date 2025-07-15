@@ -7,20 +7,22 @@ msgid ""
 msgstr ""
 "Project-Id-Version: SecureDrop Client 0.9.0\n"
 "Report-Msgid-Bugs-To: securedrop@freedom.press\n"
-"PO-Revision-Date: 2024-06-12 17:30+0000\n"
+"PO-Revision-Date: 2025-07-15 07:37+0000\n"
 "Last-Translator: Meng Pang Wang <mengpangwang@gmail.com>\n"
-"Language-Team: Chinese (Traditional) <https://weblate.securedrop.org/projects/securedrop/securedrop-client/zh_Hant/>\n"
+"Language-Team: Chinese (Traditional Han script) <https://weblate.securedrop.org/projects/securedrop/securedrop-client/zh_Hant/>\n"
 "Language: zh_Hant\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=1; plural=0;\n"
-"X-Generator: Weblate 5.5.3\n"
+"X-Generator: Weblate 5.11.1\n"
 "Generated-By: Babel 2.12.1\n"
 
+#, python-brace-format
 msgid "{application_name} is already running"
 msgstr "{application_name} 已在執行"
 
+#, python-brace-format
 msgid "Retrieving 1 message"
 msgid_plural "Retrieving {message_count} messages"
 msgstr[0] "正在接收 {message_count} 則訊息"
@@ -105,24 +107,27 @@ msgstr "<h2>某些檔案不會匯出</h2>尚未完整下載這名線人的檔案
 msgid "all files and transcript"
 msgstr "所有檔案與文字抄本"
 
+#, python-brace-format
 msgid "SecureDrop Client {}"
 msgstr "SecureDrop 客戶端 {}"
 
 msgid "Quit"
-msgstr "停止"
+msgstr "結束"
 
+#, python-brace-format
 msgid "Last Refresh: {}"
-msgstr "近期重新整理: {}"
+msgstr "最後一次重新整理於： {}"
 
 msgid "Last Refresh: never"
-msgstr "上一回重新整理: 尚無"
+msgstr "最後一次重新整理於：從未執行"
 
 msgid "DELETE SOURCES"
-msgstr ""
+msgstr "刪除線人"
 
 msgid "Delete selected source accounts. Ctrl+click sources below to select multiple sources."
-msgstr ""
+msgstr "刪除選取的線人帳號。按住 Ctrl 並點選來選取多個線人。"
 
+#, python-brace-format
 msgid "{}"
 msgstr "{}"
 
@@ -130,10 +135,10 @@ msgid "SIGN OUT"
 msgstr "登出"
 
 msgid "SIGN IN"
-msgstr "登錄"
+msgstr "登入"
 
 msgid "Nothing to see just yet!"
-msgstr "尚無東西可看!"
+msgstr "目前沒有任何資料！"
 
 msgid "Source submissions will be listed to the left, once downloaded and decrypted."
 msgstr "下載並解密完成後，來自線人的資料會顯示於左側。"
@@ -142,7 +147,7 @@ msgid "This is where you will read messages, reply to sources, and work with fil
 msgstr "這處可讀取訊息、回覆與使用檔案。"
 
 msgid "Select a source from the list, to:"
-msgstr "從列表中選取線人至:"
+msgstr "從清單中選取線人："
 
 msgid "Read a conversation"
 msgstr "讀取對話"
@@ -154,22 +159,22 @@ msgid "Send a response"
 msgstr "發送回應"
 
 msgid "Or, select multiple sources with Ctrl+click."
-msgstr ""
+msgstr "您也可以按住 Ctrl 並點選來選取多個線人。"
 
 msgid "Multiple Sources Selected"
-msgstr ""
+msgstr "已選取多個線人"
 
 msgid "Select or de-select sources using Ctrl+click, Shift+click, or by dragging the mouse."
-msgstr ""
+msgstr "要選取或取消選取線人，可以按住 Ctrl 點選，按住 Shift 點選，或以滑鼠拖曳。"
 
 msgid "Use the top toolbar to delete multiple sources at once. You will be shown a confirmation dialog before anything is deleted."
-msgstr ""
+msgstr "使用上方的工具列來刪除多個線人。在正式刪除前，會向您顯示再次確認的對話方塊。"
 
 msgid "Deleting files and messages…"
 msgstr "刪除檔案與訊息…"
 
 msgid "Deleting source account…"
-msgstr "刪除線人帳戶…"
+msgstr "正在刪除線人帳號…"
 
 msgid "— All files and messages deleted for this source —"
 msgstr "— 刪除此名線人的全部檔案和訊息 —"
@@ -193,7 +198,7 @@ msgid "DOWNLOAD"
 msgstr "下載"
 
 msgid " DOWNLOADING "
-msgstr " 下載 "
+msgstr " 下載中 "
 
 msgid "Earlier files and messages deleted."
 msgstr "先前刪除的檔案與訊息。"
@@ -206,7 +211,7 @@ msgstr ""
 " 檔案與訊息已刪除"
 
 msgid "Compose a reply to "
-msgstr "撰寫回覆給: "
+msgstr "撰寫回覆給： "
 
 msgid "Awaiting encryption key"
 msgstr "等待加密密鑰"
@@ -226,6 +231,10 @@ msgstr "檔案與訊息"
 msgid "SOURCE ACCOUNT"
 msgstr "線人帳戶"
 
+#, python-brace-format
+msgid "Last seen: {last_update_time}"
+msgstr "最後連線於：{last_update_time}"
+
 msgid "Username"
 msgstr "用戶名"
 
@@ -235,8 +244,9 @@ msgstr "密語"
 msgid "Two-Factor Code"
 msgstr "雙因素驗證碼"
 
+#, python-brace-format
 msgid "SecureDrop Client v{}"
-msgstr "SecureDrop 客戶端版本{}"
+msgstr "SecureDrop 客戶端版本 v{}"
 
 msgid ""
 "That username won't work.\n"
@@ -256,8 +266,8 @@ msgid ""
 "That two-factor code won't work.\n"
 "It should only contain numerals."
 msgstr ""
-"雙因素驗證無效。\n"
-"其應該只有數字。"
+"雙因素驗證碼無效。\n"
+"雙因素驗證碼僅包含數字。"
 
 msgid "SIGNING IN"
 msgstr "登錄"
@@ -278,22 +288,27 @@ msgid "CONTINUE"
 msgstr "繼續"
 
 msgid "YES, DELETE FILES AND MESSAGES"
-msgstr "確認刪除檔案與訊息"
+msgstr "確定刪除檔案與訊息"
 
+#, python-brace-format
 msgid "Would you like to delete {files_to_delete}, {replies_to_delete}, {messages_to_delete} from the source account for {source}?"
 msgstr "要刪除來自線人帳戶 {source}的全部{files_to_delete}, {replies_to_delete}, {messages_to_delete} 嗎？"
 
+#, python-brace-format
 msgid "Preserving the account will retain its metadata, and the ability for {source} to log in to your SecureDrop again."
 msgstr "保留帳戶將會留下中繼資料，也會讓{source}可再繼續登錄 SecureDrop。"
 
+#, python-brace-format
 msgid "one file"
 msgid_plural "{file_count} files"
 msgstr[0] "{file_count}檔案"
 
+#, python-brace-format
 msgid "one reply"
 msgid_plural "{reply_count} replies"
 msgstr[0] "{reply_count}回覆"
 
+#, python-brace-format
 msgid "one message"
 msgid_plural "{message_count} messages"
 msgstr[0] "{message_count}訊息"
@@ -305,19 +320,19 @@ msgid "BACK"
 msgstr "返回"
 
 msgid "No USB drives detected"
-msgstr ""
+msgstr "沒有偵測到 USB 磁碟"
 
 msgid "Too many USB drives detected; please insert one supported drive."
-msgstr ""
+msgstr "偵測到太多個 USB 磁碟。請僅插入一個支援的磁碟。"
 
 msgid "Either the drive is not encrypted or there is something else wrong with it.<br />If this is a VeraCrypt drive, please unlock it from within the sd-devices VM, then try again."
-msgstr "裝置可能未加密或發生其他錯誤。<br />如果是 VeraCrypt 加密磁碟，請先從 sd-devices 虛擬機器中解鎖，再試一次。"
+msgstr "磁碟可能未加密或發生其他錯誤。<br />如果是 VeraCrypt 加密磁碟，請先從 sd-devices 虛擬機器中解鎖，並再試一次。"
 
 msgid "The drive is ready for export."
-msgstr ""
+msgstr "磁碟已準備好匯出。"
 
 msgid "The drive is locked."
-msgstr ""
+msgstr "磁碟已鎖定。"
 
 msgid "The passphrase provided did not work. Please try again."
 msgstr "您輸入的助記詞無效，請再試一次。"
@@ -329,7 +344,7 @@ msgid "Error during export"
 msgstr "匯出時發生錯誤"
 
 msgid "Files were exported successfully, but the USB drive could not be unmounted."
-msgstr ""
+msgstr "已成功匯出檔案，但無法卸除 USB 磁碟。"
 
 msgid "Files were exported successfully, but some temporary files remain on disk. Reboot to remove them."
 msgstr "已成功匯出檔案，但磁碟上仍有部分暫存檔案。請重新開機以移除這些暫存檔案。"
@@ -338,7 +353,7 @@ msgid "Export successful"
 msgstr "成功滙出"
 
 msgid "Error encountered with this drive. See your administrator for help."
-msgstr ""
+msgstr "這個磁碟出現錯誤。請向您的系統管理員請求協助。"
 
 msgid "Files were moved or missing and could not be exported."
 msgstr "檔案已被移動或遺失，無法匯出。"
@@ -346,12 +361,14 @@ msgstr "檔案已被移動或遺失，無法匯出。"
 msgid "Error encountered. Please contact support."
 msgstr "發生錯誤。請聯繫支援。"
 
+#, python-brace-format
 msgid "Preparing to export:<br /><span style=\"font-weight:normal\">{}</span>"
-msgstr "準備滙出:<br /><span style=\"font-weight:normal\">{}</span>"
+msgstr "正在準備匯出：<br /><span style=\"font-weight:normal\">{}</span>"
 
 msgid "<h2>Understand the risks before exporting files</h2><b>Malware</b><br />This workstation lets you open files securely. If you open files on another computer, any embedded malware may spread to your computer or network. If you are unsure how to manage this risk, please print the file, or contact your administrator.<br /><br /><b>Anonymity</b><br />Files submitted by sources may contain information or hidden metadata that identifies who they are. To protect your sources, please consider redacting files before working with them on network-connected computers."
 msgstr "<h2>匯出檔案前了解相關風險</h2><b>惡意軟體</b><br />此工作站可讓您安全地開啟檔案。 如果在另一台電腦上打開檔案，任何嵌入的惡意軟體都可能傳播到電腦或網路。 如果不確定如何管理此風險，請列印該文件，或聯絡管理員。<br /><br /><b>匿名性</b><br />線人提交的檔案可能有足以識別出他們是誰的資訊或隱藏元數據。 為了保護消息來源，請考慮在連網的電腦上使用檔案之前先對其進行編輯。"
 
+#, python-brace-format
 msgid "Ready to export:<br /><span style=\"font-weight:normal\">{}</span>"
 msgstr "已滙出:<br /><span style=\"font-weight:normal\">{}</span>"
 
@@ -359,7 +376,7 @@ msgid "Export Failed"
 msgstr "匯出失敗"
 
 msgid "Please insert one of the export drives provisioned specifically for the SecureDrop Workstation.<br />If you're using a VeraCrypt drive, unlock it manually before proceeding."
-msgstr "請插入專供 SecureDrop 工作站使用的匯出磁碟。<br />如果您使用 VeraCrypt 磁碟，請先解鎖再繼續。"
+msgstr "請插入專供 SecureDrop 工作站使用的匯出用磁碟。<br />如果您使用 VeraCrypt 磁碟，請先解鎖再繼續。"
 
 msgid "Remember to be careful when working with files outside of your Workstation machine."
 msgstr "記住在工作站以外的電腦上處理檔案時要小心。"
@@ -371,11 +388,13 @@ msgid "Working..."
 msgstr "正在處理..."
 
 msgid "Enter passphrase for USB drive"
-msgstr "輸入 USB 磁碟的密語"
+msgstr "輸入 USB 磁碟的密碼"
 
+#, python-brace-format
 msgid "Preparing to print:<br /><span style=\"font-weight:normal\">{}</span>"
 msgstr "準備列印:<br /><span style=\"font-weight:normal\">{}</span>"
 
+#, python-brace-format
 msgid "Ready to print:<br /><span style=\"font-weight:normal\">{}</span>"
 msgstr "已可列印:<br /><span style=\"font-weight:normal\">{}</span>"
 
@@ -386,7 +405,7 @@ msgid "Printing failed"
 msgstr "列印失敗"
 
 msgid "<h2>Managing printout risks</h2><b>QR codes and web addresses</b><br />Never type in and open web addresses or scan QR codes contained in printed documents without taking security precautions. If you are unsure how to manage this risk, please contact your administrator.<br /><br /><b>Printer dots</b><br />Any part of a printed page may contain identifying information invisible to the naked eye, such as printer dots. Please carefully consider this risk when working with or publishing scanned printouts."
-msgstr "<h2>管理列印輸出風險</h2><b>二維碼和網址</b><br />在未採取安全預防措施的情況下，切勿輸入並開啟網址或掃描列印文件中包含的QR 圖碼。如果不確定如何管理此風險，請聯絡管理員。<br /><br /><b>印表機隱寫技術</b><br />列印頁面的任何部分都可能包含肉眼看不見的識別資訊，例如印表機隱寫技術。 在使用或發布掃描的列印輸出時，請仔細考慮此風險。"
+msgstr "<h2>列印輸出的風險控管</h2><b>QR 碼與網址</b><br />永遠不要在無安全防範措施的情況下輸入或打開網址或掃描已列印文件中的 QR 碼。如果您不確定如何控管這種風險，請聯繫您的系統管理員。<br /><br /><b>印表機隱寫</b><br />已列印文件中的任何部分都可能包含肉眼無法察覺的可識別資訊，例如印表機隱寫。當您處理或發佈已列印的文件時，請謹慎考量這種風險。"
 
 msgid "Please connect your printer to a USB port."
 msgstr "請將印表機接入 USB 端口。"
@@ -395,25 +414,26 @@ msgid "See your administrator for help."
 msgstr "請聯繫您的系統管理員提供協助。"
 
 msgid "This file type cannot be printed."
-msgstr ""
+msgstr "無法列印這種檔案類型。"
 
-#, fuzzy
-#| msgid "YES, DELETE ENTIRE SOURCE ACCOUNT"
+#, python-brace-format
 msgid "YES, DELETE ENTIRE SOURCE ACCOUNT"
 msgid_plural "YES, DELETE {number} SOURCE ACCOUNTS"
-msgstr[0] "確認刪除全部的線人帳戶"
+msgstr[0] "您確定要刪除 {number} 個線人帳號"
 
 msgid "Are you sure this is what you want?"
 msgstr "確認真要這麼做？"
 
+#, python-brace-format
 msgid "{text} (wait {delay} sec)"
-msgstr ""
+msgstr "{text} (請等待 {delay} 秒)"
 
 msgid "Notice: All sources have been selected!"
-msgstr ""
+msgstr "注意：已選取所有線人！"
 
+#, python-brace-format
 msgid "Delete entire account for: {source_or_sources}?"
-msgstr ""
+msgstr "完整刪除 {source_or_sources} 的線人帳戶？"
 
 msgid "When the entire account for a source is deleted:"
 msgstr "若某名線人的帳戶被刪除："
@@ -427,11 +447,12 @@ msgstr "您的組織將無法向他們發送回覆。"
 msgid "All files and messages from that source will also be destroyed."
 msgstr "即將刪除此線人全部的檔案與訊息。"
 
+#, python-brace-format
 msgid "{sources} ... plus {count} additional sources"
-msgstr ""
+msgstr "{sources} ... 及 {count} 個額外的線人"
 
 msgid "No sources have been selected."
-msgstr ""
+msgstr "未選取任何線人。"
 
 #~ msgid "No device detected"
 #~ msgstr "未偵測到裝置"
