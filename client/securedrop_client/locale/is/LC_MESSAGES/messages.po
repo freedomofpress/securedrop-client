@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: SecureDrop Client 0.5.0\n"
 "Report-Msgid-Bugs-To: securedrop@freedom.press\n"
-"PO-Revision-Date: 2024-12-10 11:33+0000\n"
+"PO-Revision-Date: 2025-07-03 18:25+0000\n"
 "Last-Translator: Sveinn í Felli <sv1@fellsnet.is>\n"
 "Language-Team: Icelandic <https://weblate.securedrop.org/projects/securedrop/securedrop-client/is/>\n"
 "Language: is\n"
@@ -15,12 +15,14 @@ msgstr ""
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=n % 10 != 1 || n % 100 == 11;\n"
-"X-Generator: Weblate 5.8.4\n"
+"X-Generator: Weblate 5.11.1\n"
 "Generated-By: Babel 2.9.1\n"
 
+#, python-brace-format
 msgid "{application_name} is already running"
 msgstr "{application_name} er þegar í gangi"
 
+#, python-brace-format
 msgid "Retrieving 1 message"
 msgid_plural "Retrieving {message_count} messages"
 msgstr[0] "Tek á móti 1 skilaboðum"
@@ -106,12 +108,14 @@ msgstr "<h2>Sumar skrár verða ekki fluttar út</h2>Ekki er búið að sækja s
 msgid "all files and transcript"
 msgstr "allar skrár og umritanir"
 
+#, python-brace-format
 msgid "SecureDrop Client {}"
 msgstr "SecureDrop biðlari {}"
 
 msgid "Quit"
 msgstr "Hætta"
 
+#, python-brace-format
 msgid "Last Refresh: {}"
 msgstr "Síðasti endurlestur: {}"
 
@@ -124,6 +128,7 @@ msgstr "EYÐA HEIMILDARMÖNNUM"
 msgid "Delete selected source accounts. Ctrl+click sources below to select multiple sources."
 msgstr "Eyða völdum aðgöngum heimildarmanna. Ctrl+smella á heimildarmenn hér fyrir neðan til að velja marga heimildarmenn."
 
+#, python-brace-format
 msgid "{}"
 msgstr "{}"
 
@@ -227,6 +232,10 @@ msgstr "SKRÁR OG SKILABOÐ"
 msgid "SOURCE ACCOUNT"
 msgstr "AÐGANGUR HEIMILDAR"
 
+#, python-brace-format
+msgid "Last seen: {last_update_time}"
+msgstr "Sást síðast: {last_update_time}"
+
 msgid "Username"
 msgstr "Notandanafn"
 
@@ -236,6 +245,7 @@ msgstr "Lykilorð"
 msgid "Two-Factor Code"
 msgstr "Tveggja-þátta kóði"
 
+#, python-brace-format
 msgid "SecureDrop Client v{}"
 msgstr "SecureDrop biðlari útg.{}"
 
@@ -281,22 +291,27 @@ msgstr "HALDA ÁFRAM"
 msgid "YES, DELETE FILES AND MESSAGES"
 msgstr "JÁ, EYÐA SKRÁM OG SKILABOÐUM"
 
+#, python-brace-format
 msgid "Would you like to delete {files_to_delete}, {replies_to_delete}, {messages_to_delete} from the source account for {source}?"
 msgstr "Vilt þú eyða {files_to_delete}, {replies_to_delete}, {messages_to_delete} af aðgangi heimildamannsins {source}?"
 
+#, python-brace-format
 msgid "Preserving the account will retain its metadata, and the ability for {source} to log in to your SecureDrop again."
 msgstr "Sé aðganginum haldið, geymast lýsigögn hans og möguleikinn fyrir {source} til að skrá sig aftur inn á SecureDrop hjá þér."
 
+#, python-brace-format
 msgid "one file"
 msgid_plural "{file_count} files"
 msgstr[0] "ein skrá"
 msgstr[1] "{file_count} skrár"
 
+#, python-brace-format
 msgid "one reply"
 msgid_plural "{reply_count} replies"
 msgstr[0] "eitt svar"
 msgstr[1] "{reply_count} svör"
 
+#, python-brace-format
 msgid "one message"
 msgid_plural "{message_count} messages"
 msgstr[0] "ein skilaboð"
@@ -350,12 +365,14 @@ msgstr "Skrár voru færðar eða þær vantar, þannig að ekki er hægt að fl
 msgid "Error encountered. Please contact support."
 msgstr "Villa fannst. Hafðu samband við aðstoðarteymið."
 
+#, python-brace-format
 msgid "Preparing to export:<br /><span style=\"font-weight:normal\">{}</span>"
 msgstr "Undirbý útflutning:<br /><span style=\"font-weight:normal\">{}</span>"
 
 msgid "<h2>Understand the risks before exporting files</h2><b>Malware</b><br />This workstation lets you open files securely. If you open files on another computer, any embedded malware may spread to your computer or network. If you are unsure how to manage this risk, please print the file, or contact your administrator.<br /><br /><b>Anonymity</b><br />Files submitted by sources may contain information or hidden metadata that identifies who they are. To protect your sources, please consider redacting files before working with them on network-connected computers."
 msgstr "<h2>Skilningur á áhættu við að flytja út skrár</h2><b>Spilliforrit</b><br />Þessi vinnutölva gerir kleift að opna skrár á öruggan máta. Ef þú opnar skrár á annarri tölvu, áttu á hættu að ígrædd spilliforrit smiti þá tölvu eða breiðist út á netkerfinu. Ef þú ert ekki viss um hvernig best sé að gæta öryggis svið þessar aðstæður, ættirðu að prenta skrána eða hafa samband við kerfisstjórann þinn.<br /><br /><b>Nafnleysi</b><br />Skrár sem heimildarmenn senda inn geta innihaldið upplýsingar eða falin lýsigögn sem gætu varpað ljósi á hverjir þeir eru. Til að vernda heimildarmenn þína ættirðu að yfirfara skrárnar og breyta þeim áður en þú ferð að vinna með skrárnar á nettengdum tölvum."
 
+#, python-brace-format
 msgid "Ready to export:<br /><span style=\"font-weight:normal\">{}</span>"
 msgstr "Tilbúið að flytja út:<br /><span style=\"font-weight:normal\">{}</span>"
 
@@ -377,9 +394,11 @@ msgstr "Í vinnslu..."
 msgid "Enter passphrase for USB drive"
 msgstr "Settu inn lykilorð fyrir USB-drifið"
 
+#, python-brace-format
 msgid "Preparing to print:<br /><span style=\"font-weight:normal\">{}</span>"
 msgstr "Undirbý prentun:<br /><span style=\"font-weight:normal\">{}</span>"
 
+#, python-brace-format
 msgid "Ready to print:<br /><span style=\"font-weight:normal\">{}</span>"
 msgstr "Tilbúið að prenta:<br /><span style=\"font-weight:normal\">{}</span>"
 
@@ -401,6 +420,7 @@ msgstr "Hafðu samband við kerfisstjórann þinn til að fá frekari aðstoð."
 msgid "This file type cannot be printed."
 msgstr "Ekki er hægt að prenta þessa gerð skráar."
 
+#, python-brace-format
 msgid "YES, DELETE ENTIRE SOURCE ACCOUNT"
 msgid_plural "YES, DELETE {number} SOURCE ACCOUNTS"
 msgstr[0] "JÁ, EYÐA ÖLLUM AÐGANGI HEIMILDARMANNS"
@@ -409,12 +429,14 @@ msgstr[1] "JÁ, EYÐA {number} AÐGÖNGUM HEIMILDARMANNA"
 msgid "Are you sure this is what you want?"
 msgstr "Ertu viss um að þetta sé það sem þú viljir?"
 
+#, python-brace-format
 msgid "{text} (wait {delay} sec)"
 msgstr "{text} (bíddu í {delay} sek)"
 
 msgid "Notice: All sources have been selected!"
 msgstr "Athugaðu: Allir heimildarmenn hafa verið valdir!"
 
+#, python-brace-format
 msgid "Delete entire account for: {source_or_sources}?"
 msgstr "Eyða öllum aðgangnum fyrir: {source_or_sources}?"
 
@@ -430,6 +452,7 @@ msgstr "Þið munið ekki geta sent þeim svör."
 msgid "All files and messages from that source will also be destroyed."
 msgstr "Öllum skilaboðum og skrám frá þessum heimildarmanni verður einnig eytt."
 
+#, python-brace-format
 msgid "{sources} ... plus {count} additional sources"
 msgstr "{sources} ... og {count} heimildarmenn í viðbót"
 
