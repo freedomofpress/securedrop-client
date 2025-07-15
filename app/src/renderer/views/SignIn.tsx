@@ -1,12 +1,35 @@
 import { Button, Input, Form } from "antd";
 import { EyeInvisibleOutlined, EyeTwoTone } from "@ant-design/icons";
+import { useState, useEffect } from "react";
+import logoImage from "../../../resources/images/logo.png";
+
+type FormValues = {
+    username: string;
+    passphrase: string;
+    twoFactorCode: string;
+};
 
 function SignInView() {
   const [form] = Form.useForm();
+  const [version, setVersion] = useState<string>("");
 
-  const version = window.electronAPI.getVersion();
+  // We cannot use the async function directly in the React component, so we need to get
+  // the version in a useEffect hook.
+  useEffect(() => {
+    const getVersion = async () => {
+      try {
+        const appVersion = await window.electronAPI.getVersion();
+        setVersion(appVersion);
+      } catch (error) {
+        console.error("Failed to get app version:", error);
+        setVersion("Unknown");
+      }
+    };
 
-  const handleSubmit = (values: any) => {
+    getVersion();
+  }, []);
+
+  const handleSubmit = (values: FormValues) => {
     console.log("Form values:", values);
   };
 
@@ -15,7 +38,7 @@ function SignInView() {
       <div className="sm:mx-auto sm:w-full sm:max-w-md">
         <div className="flex justify-center mb-6">
           <img
-            src="./resources/images/logo.png"
+            src={logoImage}
             alt="SecureDrop"
             className="w-16 h-16"
           />
