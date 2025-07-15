@@ -18,7 +18,8 @@ beforeAll(() => {
     .trim();
   const targetDir = JSON.parse(stdout)["target_directory"];
   globalThis.sdProxyCommand = `${targetDir}/debug/securedrop-proxy`;
-  globalThis.sdProxyOrigin = "http://localhost:8081";
+  globalThis.sdProxyOrigin =
+    import.meta.env.VITE_HTTPBIN_URL || "http://localhost:8081";
 
   // Pull + start httpbin on 8081 in localdev
   if (import.meta.env.NODE_ENV != "ci") {

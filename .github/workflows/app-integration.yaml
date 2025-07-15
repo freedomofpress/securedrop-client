@@ -55,4 +55,4 @@ jobs:
         uses: dtolnay/rust-toolchain@1.87.0
       - name: Run integration tests
         working-directory: app
-        run: NODE_ENV=ci pnpm integration-test
+        run: NODE_ENV=ci VITE_HTTPBIN_URL=httpbin:8081 pnpm integration-test
