@@ -25,7 +25,7 @@ beforeAll(() => {
     execSync(`podman pull ${HTTPBIN_IMAGE}`);
     execSync(`podman run -d -p 8081:80 ${HTTPBIN_IMAGE}`);
   }
-});
+}, 60000);
 
 afterAll(() => {
   delete globalThis.sdProxyCommand;
