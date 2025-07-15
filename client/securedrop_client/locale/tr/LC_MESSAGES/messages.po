@@ -18,9 +18,11 @@ msgstr ""
 "X-Generator: Weblate 5.7.1\n"
 "Generated-By: Babel 2.9.1\n"
 
+#, python-brace-format
 msgid "{application_name} is already running"
 msgstr "{application_name} zaten çalışıyor"
 
+#, python-brace-format
 msgid "Retrieving 1 message"
 msgid_plural "Retrieving {message_count} messages"
 msgstr[0] "1 mesaj gösteriliyor"
@@ -106,12 +108,14 @@ msgstr "<h2>Bazı dosyalar dışa aktarılmayacak</h2>Bu kaynaktaki bazı dosyal
 msgid "all files and transcript"
 msgstr "tüm dosyalar ve transkript"
 
+#, python-brace-format
 msgid "SecureDrop Client {}"
 msgstr "SecureDrop İstemcisi {}"
 
 msgid "Quit"
 msgstr "Çık"
 
+#, python-brace-format
 msgid "Last Refresh: {}"
 msgstr "Son yenileme: {}"
 
@@ -124,6 +128,7 @@ msgstr ""
 msgid "Delete selected source accounts. Ctrl+click sources below to select multiple sources."
 msgstr ""
 
+#, python-brace-format
 msgid "{}"
 msgstr "{}"
 
@@ -227,6 +232,10 @@ msgstr "DOSYALAR VE MESAJLAR"
 msgid "SOURCE ACCOUNT"
 msgstr "KAYNAK HESAP"
 
+#, python-brace-format
+msgid "Last seen: {last_update_time}"
+msgstr ""
+
 msgid "Username"
 msgstr "Kullanıcı adı"
 
@@ -236,6 +245,7 @@ msgstr "Parola"
 msgid "Two-Factor Code"
 msgstr "İki aşamalı kimlik doğrulama kodu"
 
+#, python-brace-format
 msgid "SecureDrop Client v{}"
 msgstr "SecureDrop istemcisi v{}"
 
@@ -281,22 +291,27 @@ msgstr "DEVAM"
 msgid "YES, DELETE FILES AND MESSAGES"
 msgstr "EVET, DOSYALARI VE İLETİLERİ SİL"
 
+#, python-brace-format
 msgid "Would you like to delete {files_to_delete}, {replies_to_delete}, {messages_to_delete} from the source account for {source}?"
 msgstr "{source} kaynak hesabından bunları silmek istiyor musunuz: {files_to_delete}{replies_to_delete}{messages_to_delete}?"
 
+#, python-brace-format
 msgid "Preserving the account will retain its metadata, and the ability for {source} to log in to your SecureDrop again."
 msgstr "Hesabı korumak, üst verileri korur ve {source} için SecureDrop ile yeniden oturum açılabilmesini sağlar."
 
+#, python-brace-format
 msgid "one file"
 msgid_plural "{file_count} files"
 msgstr[0] "bir dosya"
 msgstr[1] "{file_count} dosya"
 
+#, python-brace-format
 msgid "one reply"
 msgid_plural "{reply_count} replies"
 msgstr[0] "bir yanıt"
 msgstr[1] "{reply_count} yanıt"
 
+#, python-brace-format
 msgid "one message"
 msgid_plural "{message_count} messages"
 msgstr[0] "bir ileti"
@@ -350,12 +365,14 @@ msgstr "Dosyalar taşındı veya kayıp ve dışa aktarılamıyor."
 msgid "Error encountered. Please contact support."
 msgstr "Hata oluştu. Lütfen destek ile iletişim kurun."
 
+#, python-brace-format
 msgid "Preparing to export:<br /><span style=\"font-weight:normal\">{}</span>"
 msgstr "Dışa aktarmaya hazırlanılıyor:<br /><span style=\"font-weight:normal\">{}</span>"
 
 msgid "<h2>Understand the risks before exporting files</h2><b>Malware</b><br />This workstation lets you open files securely. If you open files on another computer, any embedded malware may spread to your computer or network. If you are unsure how to manage this risk, please print the file, or contact your administrator.<br /><br /><b>Anonymity</b><br />Files submitted by sources may contain information or hidden metadata that identifies who they are. To protect your sources, please consider redacting files before working with them on network-connected computers."
 msgstr "<h2>Dosyaları dışa aktarmadan önce riskleri anlayın</h2><b>Kötü amaçlı yazılım</b><br />Bu iş istasyonu, dosyaları güvenli bir şekilde açmanızı sağlar. Dosyaları başka bir bilgisayarda açarsanız, gömülü kötü amaçlı yazılımlar bilgisayarınıza veya ağınıza yayılabilir. Bu riski nasıl yöneteceğinizden emin değilseniz, lütfen dosyayı yazdırın veya yöneticinizle görüşün.<br /><br /><b>Anonimlik</b><br />Kaynaklarınız tarafından gönderilen dosyalarda gerçekte kim olduğunuzu belirleyebilecek bilgiler veya gizli üst veriler bulunabilir. Kaynaklarınızı korumak için, ağa bağlı bilgisayarlarda çalışmaya başlamadan önce dosyaları yeniden düzenlemeyi değerlendirin."
 
+#, python-brace-format
 msgid "Ready to export:<br /><span style=\"font-weight:normal\">{}</span>"
 msgstr "Dışa aktarmaya hazır:<br /><span style=\"font-weight:normal\">{}</span>"
 
@@ -377,9 +394,11 @@ msgstr "Çalışıyor..."
 msgid "Enter passphrase for USB drive"
 msgstr "USB sürücüsünün parolasını yazın"
 
+#, python-brace-format
 msgid "Preparing to print:<br /><span style=\"font-weight:normal\">{}</span>"
 msgstr "Yazdırmaya hazırlanılıyor:<br /><span style=\"font-weight:normal\">{}</span>"
 
+#, python-brace-format
 msgid "Ready to print:<br /><span style=\"font-weight:normal\">{}</span>"
 msgstr "Yazdırmaya hazır:<br /><span style=\"font-weight:normal\">{}</span>"
 
@@ -401,7 +420,7 @@ msgstr "Yardım almak için yöneticinizle görüşün."
 msgid "This file type cannot be printed."
 msgstr "Bu dosya türü yazdırılamaz."
 
-#, fuzzy
+#, fuzzy, python-brace-format
 #| msgid "YES, DELETE ENTIRE SOURCE ACCOUNT"
 msgid "YES, DELETE ENTIRE SOURCE ACCOUNT"
 msgid_plural "YES, DELETE {number} SOURCE ACCOUNTS"
@@ -411,12 +430,14 @@ msgstr[1] "EVET, TÜM KAYNAK HESABINI SİL"
 msgid "Are you sure this is what you want?"
 msgstr "Bu işlemi yapmak istediğinize emin misiniz?"
 
+#, python-brace-format
 msgid "{text} (wait {delay} sec)"
 msgstr ""
 
 msgid "Notice: All sources have been selected!"
 msgstr ""
 
+#, python-brace-format
 msgid "Delete entire account for: {source_or_sources}?"
 msgstr ""
 
@@ -432,6 +453,7 @@ msgstr "Kuruluşunuz onlara yanıt gönderemeyecek."
 msgid "All files and messages from that source will also be destroyed."
 msgstr "Bu kaynağın tüm dosya ve iletileri de silinir."
 
+#, python-brace-format
 msgid "{sources} ... plus {count} additional sources"
 msgstr ""
 
