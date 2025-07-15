@@ -22,6 +22,7 @@ beforeAll(() => {
     import.meta.env.VITE_HTTPBIN_URL || "http://localhost:8081";
 
   // Pull + start httpbin on 8081 in localdev
+  // TODO(vicki): use testcontainers instead?
   if (import.meta.env.NODE_ENV != "ci") {
     execSync(`podman pull ${HTTPBIN_IMAGE}`);
     execSync(`podman run -d -p 8081:80 ${HTTPBIN_IMAGE}`);

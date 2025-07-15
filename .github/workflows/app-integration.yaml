@@ -26,9 +26,11 @@ jobs:
     services:
       httpbin:
         image: kennethreitz/httpbin
-        ports:
-          - 8081:80
+          - 80:80
     steps:
+      - name: Check httpbin connection
+        run: |
+
       - name: Install base dependencies
         run: |
           apt-get update && apt-get install --yes git make python3 python3-pip build-essential
@@ -55,4 +57,4 @@ jobs:
         uses: dtolnay/rust-toolchain@1.87.0
       - name: Run integration tests
         working-directory: app
-        run: NODE_ENV=ci VITE_HTTPBIN_URL=http://httpbin:8081 pnpm integration-test
+        run: NODE_ENV=ci VITE_HTTPBIN_URL=http://httpbin:80 pnpm integration-test
