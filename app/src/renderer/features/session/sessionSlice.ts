@@ -9,17 +9,8 @@ import { createSlice } from "@reduxjs/toolkit";
 import type { PayloadAction } from "@reduxjs/toolkit";
 import type { RootState } from "../../store";
 
-// API response type
-interface AuthorizationResponse {
-  expiration: string; // ISO 8601 datetime string
-  token: string;
-  journalist_uuid: string;
-  journalist_first_name: string;
-  journalist_last_name: string;
-}
-
 interface SessionState {
-  expiration: Date | undefined;
+  expiration: string | undefined;
   token: string | undefined;
   journalist_uuid: string | undefined;
   journalist_first_name: string | undefined;
@@ -43,7 +34,7 @@ export const sessionSlice = createSlice({
   },
 });
 
-export type { SessionState, AuthorizationResponse };
+export type { SessionState };
 export const { clear, set } = sessionSlice.actions;
 export const getSessionState = (state: RootState) => state.session;
 export default sessionSlice.reducer;

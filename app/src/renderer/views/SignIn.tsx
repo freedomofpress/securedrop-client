@@ -66,7 +66,7 @@ function SignInView() {
       try {
         dispatch(
           set({
-            expiration: new Date(res.data.expiration as string),
+            expiration: res.data.expiration,
             token: res.data.token,
             journalist_uuid: res.data.journalist_uuid,
             journalist_first_name: res.data.journalist_first_name,
