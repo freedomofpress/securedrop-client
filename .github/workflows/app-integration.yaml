@@ -26,8 +26,8 @@ jobs:
     services:
       httpbin:
         image: kennethreitz/httpbin
-        options: >-
-          -p 8081:80
+        ports:
+          - 8081:80
     steps:
       - name: Install base dependencies
         run: |
@@ -55,4 +55,4 @@ jobs:
         uses: dtolnay/rust-toolchain@1.87.0
       - name: Run integration tests
         working-directory: app
-        run: NODE_ENV=ci VITE_HTTPBIN_URL=httpbin:8081 pnpm integration-test
+        run: NODE_ENV=ci VITE_HTTPBIN_URL=http://httpbin:8081 pnpm integration-test
