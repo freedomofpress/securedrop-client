@@ -66,12 +66,6 @@ export async function proxyInner(
           if (!status) {
             reject(new Error(`Invalid response: no status code found.\n`));
           }
-          // Ignore 404s for 4xx error response
-          if (status >= 400 && status < 500 && status != 404) {
-            reject(new Error(`Client error ${status}: ${body}`));
-          } else if (status >= 500 && status < 600) {
-            reject(new Error(`Server error ${status}: ${body}`));
-          }
 
           resolve({
             data: body,
