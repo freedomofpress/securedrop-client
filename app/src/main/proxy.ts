@@ -68,7 +68,7 @@ export async function proxyInner(
           }
 
           resolve({
-            data: body,
+            data: JSON.parse(body),
             status: status,
             headers: result["headers"] || {},
           });
