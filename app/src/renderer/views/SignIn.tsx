@@ -1,6 +1,7 @@
 import { Button, Input, Form } from "antd";
 import { EyeInvisibleOutlined, EyeTwoTone } from "@ant-design/icons";
 import { useState, useEffect } from "react";
+import { useNavigate } from "react-router";
 
 import type { ProxyRequest, ProxyResponse } from "../../types";
 import { useAppDispatch } from "../hooks";
@@ -16,10 +17,12 @@ type FormValues = {
 
 function SignInView() {
   const dispatch = useAppDispatch();
+  const navigate = useNavigate();
 
   const [form] = Form.useForm();
   const [version, setVersion] = useState<string>("");
   const [authError, setAuthError] = useState<boolean>(false);
+  const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
 
   // We cannot use the async function directly in the React component, so we need to get
   // the version in a useEffect hook.
@@ -38,10 +41,9 @@ function SignInView() {
   }, []);
 
   const handleSubmit = async (values: FormValues) => {
-    console.log("Form values:", values);
-
-    // Clear any previous errors
+    // Clear any previous errors and set loading state
     setAuthError(false);
+    setIsSubmitting(true);
 
     // Authenticate to the API
     try {
@@ -57,6 +59,7 @@ function SignInView() {
         headers: {},
       } as ProxyRequest);
 
+      // If the status is not 200, fail
       if (res.status !== 200) {
         console.error("Authentication failed:", res.data);
         setAuthError(true);
@@ -64,6 +67,7 @@ function SignInView() {
       }
 
       try {
+        // Update the session state
         dispatch(
           set({
             expiration: res.data.expiration,
@@ -73,17 +77,22 @@ function SignInView() {
             journalist_last_name: res.data.journalist_last_name,
           } as SessionState),
         );
+
+        // Redirect to home
+        navigate("/");
       } catch (e) {
-        console.error(e);
+        console.error("Failed to update session state:", e);
         dispatch(clear());
         setAuthError(true);
       }
     } catch (e) {
-      console.error("Authentication failed:");
-      console.log(e);
+      console.error("Authentication failed:", e);
       dispatch(clear());
       setAuthError(true);
       return;
+    } finally {
+      // Always re-enable the button when done
+      setIsSubmitting(false);
     }
   };
 
@@ -201,6 +210,8 @@ function SignInView() {
               <Button
                 type="primary"
                 htmlType="submit"
+                loading={isSubmitting}
+                disabled={isSubmitting}
                 className="w-full h-10 text-sm font-medium"
                 style={{
                   borderRadius: "6px",
@@ -208,7 +219,7 @@ function SignInView() {
                   borderColor: "#4F46E5",
                 }}
               >
-                Sign in
+                {isSubmitting ? "Signing in..." : "Sign in"}
               </Button>
             </Form.Item>
           </Form>
