@@ -18,9 +18,11 @@ msgstr ""
 "X-Generator: Weblate 5.5.3\n"
 "Generated-By: Babel 2.9.1\n"
 
+#, python-brace-format
 msgid "{application_name} is already running"
 msgstr "{application_name} уже запущено"
 
+#, python-brace-format
 msgid "Retrieving 1 message"
 msgid_plural "Retrieving {message_count} messages"
 msgstr[0] "Получаю {message_count} сообщение"
@@ -107,12 +109,14 @@ msgstr "<h2>Некоторые файлы не будут экспортиров
 msgid "all files and transcript"
 msgstr "все файлы и транскрипции"
 
+#, python-brace-format
 msgid "SecureDrop Client {}"
 msgstr "Клиент SecureDrop {}"
 
 msgid "Quit"
 msgstr "Выход"
 
+#, python-brace-format
 msgid "Last Refresh: {}"
 msgstr "Последнее обновление: {}"
 
@@ -125,6 +129,7 @@ msgstr ""
 msgid "Delete selected source accounts. Ctrl+click sources below to select multiple sources."
 msgstr ""
 
+#, python-brace-format
 msgid "{}"
 msgstr "{}"
 
@@ -228,6 +233,10 @@ msgstr "ФАЙЛЫ И СООБЩЕНИЯ"
 msgid "SOURCE ACCOUNT"
 msgstr "ИСХОДНЫЙ АККАУНТ"
 
+#, python-brace-format
+msgid "Last seen: {last_update_time}"
+msgstr ""
+
 msgid "Username"
 msgstr "Имя пользователя"
 
@@ -237,6 +246,7 @@ msgstr "Пароль"
 msgid "Two-Factor Code"
 msgstr "Двухфакторный код"
 
+#, python-brace-format
 msgid "SecureDrop Client v{}"
 msgstr "Клиент SecureDrop v{}"
 
@@ -282,24 +292,29 @@ msgstr "ПРОДОЛЖИТЬ"
 msgid "YES, DELETE FILES AND MESSAGES"
 msgstr "ДА, УДАЛИТЬ ФАЙЛЫ И СООБЩЕНИЯ"
 
+#, python-brace-format
 msgid "Would you like to delete {files_to_delete}, {replies_to_delete}, {messages_to_delete} from the source account for {source}?"
 msgstr "Желайте удалить {files_to_delete}, {replies_to_delete}, {messages_to_delete} из аккаунта источника для {source}?"
 
+#, python-brace-format
 msgid "Preserving the account will retain its metadata, and the ability for {source} to log in to your SecureDrop again."
 msgstr "При сохранении учетной записи ее метаданные будут сохранены, и {source} сможет снова войти в SecureDrop."
 
+#, python-brace-format
 msgid "one file"
 msgid_plural "{file_count} files"
 msgstr[0] "{file_count} файл"
 msgstr[1] "{file_count} файла"
 msgstr[2] "{file_count} файлов"
 
+#, python-brace-format
 msgid "one reply"
 msgid_plural "{reply_count} replies"
 msgstr[0] "{reply_count} ответ"
 msgstr[1] "{reply_count} ответа"
 msgstr[2] "{reply_count} ответов"
 
+#, python-brace-format
 msgid "one message"
 msgid_plural "{message_count} messages"
 msgstr[0] "{message_count} сообщение"
@@ -354,12 +369,14 @@ msgstr "Файлы были перемещены или не могут быть
 msgid "Error encountered. Please contact support."
 msgstr "Произошла ошибка. Проконтактируйте поддержку."
 
+#, python-brace-format
 msgid "Preparing to export:<br /><span style=\"font-weight:normal\">{}</span>"
 msgstr "Подготовка к экспорту:<br /><span style=\"font-weight:normal\">{}</span>"
 
 msgid "<h2>Understand the risks before exporting files</h2><b>Malware</b><br />This workstation lets you open files securely. If you open files on another computer, any embedded malware may spread to your computer or network. If you are unsure how to manage this risk, please print the file, or contact your administrator.<br /><br /><b>Anonymity</b><br />Files submitted by sources may contain information or hidden metadata that identifies who they are. To protect your sources, please consider redacting files before working with them on network-connected computers."
 msgstr "<h2>Поймите риски перед экспортом файлов</h2><b>Вредоносное ПО</b><br />Эта рабочая станция позволяет безопасно открывать файлы. Если вы открываете файлы на другом компьютере, любое встроенное вредоносное ПО может распространиться на ваш компьютер или сеть. Если вы не знаете, как управлять этим риском, распечатайте файл или обратитесь к вашему администратору.<br /><br /><b>Анонимность</b><br />Файлы, предоставленные источниками, могут содержать информацию или скрытые метаданные, позволяющие определить, чьи это источники. Для защиты источников просим вас отредактировать файлы перед работой с ними на компьютерах, подключенных к сети."
 
+#, python-brace-format
 msgid "Ready to export:<br /><span style=\"font-weight:normal\">{}</span>"
 msgstr "Готовность к экспорту:<br /><span style=\"font-weight:normal\">{}</span>"
 
@@ -381,9 +398,11 @@ msgstr "Работаю..."
 msgid "Enter passphrase for USB drive"
 msgstr "Введите пароль для USB-накопителя"
 
+#, python-brace-format
 msgid "Preparing to print:<br /><span style=\"font-weight:normal\">{}</span>"
 msgstr "Подготовка к печати:<br /><span style=\"font-weight:normal\">{}</span>"
 
+#, python-brace-format
 msgid "Ready to print:<br /><span style=\"font-weight:normal\">{}</span>"
 msgstr "Готовность к печати:<br /><span style=\"font-weight:normal\">{}</span>"
 
@@ -405,7 +424,7 @@ msgstr "Обратитесь за помощью к вашему админис�
 msgid "This file type cannot be printed."
 msgstr ""
 
-#, fuzzy
+#, fuzzy, python-brace-format
 #| msgid "YES, DELETE ENTIRE SOURCE ACCOUNT"
 msgid "YES, DELETE ENTIRE SOURCE ACCOUNT"
 msgid_plural "YES, DELETE {number} SOURCE ACCOUNTS"
@@ -416,12 +435,14 @@ msgstr[2] "ДА, УДАЛИТЬ ВЕСЬ АККАУНТ ИСТОЧНИКА"
 msgid "Are you sure this is what you want?"
 msgstr "Вы уверены в этом?"
 
+#, python-brace-format
 msgid "{text} (wait {delay} sec)"
 msgstr ""
 
 msgid "Notice: All sources have been selected!"
 msgstr ""
 
+#, python-brace-format
 msgid "Delete entire account for: {source_or_sources}?"
 msgstr ""
 
@@ -437,6 +458,7 @@ msgstr "Ваша организация не сможет отправлять �
 msgid "All files and messages from that source will also be destroyed."
 msgstr "Все файлы и сообщения источника будут очищены."
 
+#, python-brace-format
 msgid "{sources} ... plus {count} additional sources"
 msgstr ""
 
