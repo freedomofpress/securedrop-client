@@ -1,6 +1,6 @@
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
-import { BrowserRouter } from "react-router";
+import { MemoryRouter } from "react-router";
 import { Provider } from "react-redux";
 import "@ant-design/v5-patch-for-react-19";
 
@@ -13,9 +13,9 @@ const store = setupStore();
 createRoot(document.getElementById("root")!).render(
   <StrictMode>
     <Provider store={store}>
-      <BrowserRouter>
+      <MemoryRouter initialEntries={["/"]}>
         <App />
-      </BrowserRouter>
+      </MemoryRouter>
     </Provider>
   </StrictMode>,
 );
