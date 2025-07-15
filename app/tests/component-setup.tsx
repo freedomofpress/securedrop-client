@@ -1,10 +1,13 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
+/* eslint-disable react-refresh/only-export-components */
 import { expect, afterEach, beforeEach, vi } from "vitest";
 import { cleanup, render } from "@testing-library/react";
 import * as matchers from "@testing-library/jest-dom/matchers";
 import { MemoryRouter, useLocation } from "react-router";
 import { Provider } from "react-redux";
-import { setupStore } from "../src/renderer/store";
 import React from "react";
+
+import { setupStore } from "../src/renderer/store";
 
 // extends Vitest's expect with jest-dom matchers
 expect.extend(matchers);

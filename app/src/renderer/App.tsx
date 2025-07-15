@@ -1,5 +1,4 @@
-import { Routes, Route } from "react-router";
-import { useNavigate } from "react-router";
+import { Routes, Route, useNavigate } from "react-router";
 import { useEffect } from "react";
 
 import InboxView from "./views/Inbox";
