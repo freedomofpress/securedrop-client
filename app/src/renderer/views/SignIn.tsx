@@ -3,7 +3,7 @@ import { EyeInvisibleOutlined, EyeTwoTone } from "@ant-design/icons";
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router";
 
-import type { ProxyRequest, ProxyResponse } from "../../types";
+import type { ProxyRequest, ProxyJSONResponse } from "../../types";
 import { useAppDispatch } from "../hooks";
 import type { SessionState } from "../features/session/sessionSlice";
 import { set, clear } from "../features/session/sessionSlice";
@@ -47,7 +47,7 @@ function SignInView() {
 
     // Authenticate to the API
     try {
-      const res: ProxyResponse = await window.electronAPI.request({
+      const res: ProxyJSONResponse = await window.electronAPI.request({
         method: "POST",
         path_query: "/api/v1/token",
         stream: false,
