@@ -10,9 +10,10 @@ describe("App Component", () => {
   });
 
   it("calls window.electronAPI.request when the button is clicked", async () => {
-    // Mock the electronAPI.request function
+    // Mock IPC methods
     window.electronAPI = {
       request: vi.fn().mockResolvedValue({ data: "test" }),
+      requestStream: vi.fn().mockResolvedValue({ sha256sum: "abc" }),
     };
 
     render(<App />);
