@@ -1,4 +1,4 @@
-name: app-integration
+name: app
 on:
   - merge_group
   - push
@@ -16,7 +16,7 @@ defaults:
 permissions: {}
 
 jobs:
-  lint-and-build:
+  integration-tests:
     strategy:
       matrix:
         debian_version:
@@ -25,7 +25,7 @@ jobs:
     container: debian:${{ matrix.debian_version }}
     services:
       httpbin:
-        image: kennethreitz/httpbin
+        image: kennethreitz/httpbin@sha256:b138b9264903f46a43e1c750e07dc06f5d2a1bd5d51f37fb185bc608f61090dd
         options: >-
           -p 8081:80
     steps:

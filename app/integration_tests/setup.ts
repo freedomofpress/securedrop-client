@@ -13,12 +13,11 @@ export {};
 beforeAll(() => {
   // Build sd-proxy binary
   execSync("make -C ../proxy build");
-  const stdout = execSync(
-    "cargo metadata --format-version 1 | jq -r '.target_directory'",
-  )
+  const stdout = execSync("cargo metadata --format-version 1")
     .toString()
     .trim();
-  globalThis.sdProxyCommand = `${stdout}/debug/securedrop-proxy`;
+  const targetDir = JSON.parse(stdout)["target_directory"];
+  globalThis.sdProxyCommand = `${targetDir}/debug/securedrop-proxy`;
   globalThis.sdProxyOrigin = "http://localhost:8081";
 
   // Pull + start httpbin on 8081 in localdev
