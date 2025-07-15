@@ -3,7 +3,7 @@ import { EyeInvisibleOutlined, EyeTwoTone } from "@ant-design/icons";
 import { useState, useEffect } from "react";
 
 import type { ProxyRequest, ProxyResponse } from "../../types";
-import { useAppDispatch, useAppSelector } from "../hooks";
+import { useAppDispatch } from "../hooks";
 import type { SessionState } from "../features/session/sessionSlice";
 import { set, clear } from "../features/session/sessionSlice";
 import logoImage from "../../../resources/images/logo.png";
@@ -15,11 +15,11 @@ type FormValues = {
 };
 
 function SignInView() {
-  const session = useAppSelector((state) => state.session);
   const dispatch = useAppDispatch();
 
   const [form] = Form.useForm();
   const [version, setVersion] = useState<string>("");
+  const [authError, setAuthError] = useState<boolean>(false);
 
   // We cannot use the async function directly in the React component, so we need to get
   // the version in a useEffect hook.
@@ -40,6 +40,9 @@ function SignInView() {
   const handleSubmit = async (values: FormValues) => {
     console.log("Form values:", values);
 
+    // Clear any previous errors
+    setAuthError(false);
+
     // Authenticate to the API
     try {
       const res: ProxyResponse = await window.electronAPI.request({
@@ -56,6 +59,7 @@ function SignInView() {
 
       if (res.status !== 200) {
         console.error("Authentication failed:", res.data);
+        setAuthError(true);
         return;
       }
 
@@ -72,11 +76,13 @@ function SignInView() {
       } catch (e) {
         console.error(e);
         dispatch(clear());
+        setAuthError(true);
       }
     } catch (e) {
       console.error("Authentication failed:");
       console.log(e);
       dispatch(clear());
+      setAuthError(true);
       return;
     }
   };
@@ -91,6 +97,14 @@ function SignInView() {
         <h1 className="text-2xl font-medium text-gray-900 text-center mb-6">
           Sign in to SecureDrop
         </h1>
+
+        {authError && (
+          <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg">
+            <p className="text-sm text-red-700 text-center">
+              That didn't work. Please check everything and try again.
+            </p>
+          </div>
+        )}
 
         <div className="bg-white py-8 px-6 shadow-sm rounded-lg sm:px-10">
           <Form
