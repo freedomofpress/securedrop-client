@@ -66,6 +66,7 @@ describe("InboxView Component", () => {
     window.electronAPI = {
       getVersion: vi.fn().mockResolvedValue("1.0.0"),
       request: vi.fn().mockResolvedValue({ data: "test" }),
+      requestStream: vi.fn().mockResolvedValue({ sha256sum: "abc" }),
     };
   });
 

@@ -20,6 +20,21 @@ function InboxView() {
     console.log(res);
   };
 
+  const dummyStreamRequest = async function () {
+    console.log("sending dummy stream request");
+    const res = await window.electronAPI.requestStream(
+      {
+        method: "GET",
+        path_query: "/html",
+        headers: {},
+        stream: true,
+      },
+      "/tmp/download",
+    );
+    console.log("received dummy stream response");
+    console.log(res);
+  };
+
   const signOut = () => {
     console.log("signing out");
     dispatch(clear());
@@ -46,8 +61,16 @@ function InboxView() {
           >
             Dummy Request
           </Button>
-        </div>
-        <div className="px-6 pt-4 pb-2">
+
+          <Button
+            type="default"
+            onClick={() => dummyStreamRequest()}
+            title="Dummy Stream Request"
+            data-testid="dummy-stream-button"
+          >
+            Dummy Stream Request
+          </Button>
+
           <Button
             type="primary"
             onClick={() => signOut()}
