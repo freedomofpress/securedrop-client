@@ -21,20 +21,24 @@ beforeAll(() => {
   globalThis.sdProxyCommand = `${stdout}/debug/securedrop-proxy`;
   globalThis.sdProxyOrigin = "http://localhost:8081";
 
-  // Pull + start httpbin on 8081
-  execSync(`podman pull ${HTTPBIN_IMAGE}`);
-  execSync(`podman run -d -p 8081:80 ${HTTPBIN_IMAGE}`);
+  // Pull + start httpbin on 8081 in localdev
+  if (import.meta.env.NODE_ENV != "ci") {
+    execSync(`podman pull ${HTTPBIN_IMAGE}`);
+    execSync(`podman run -d -p 8081:80 ${HTTPBIN_IMAGE}`);
+  }
 });
 
 afterAll(() => {
   delete globalThis.sdProxyCommand;
   delete globalThis.sdProxyOrigin;
 
-  const containerID = execSync(
-    `podman ps --filter 'ancestor=${HTTPBIN_IMAGE}' --format '{{.ID}}'`,
-    { timeout: 5000 },
-  )
-    .toString()
-    .trim();
-  exec(`podman stop ${containerID}`);
+  if (import.meta.env.NODE_ENV != "ci") {
+    const containerID = execSync(
+      `podman ps --filter 'ancestor=${HTTPBIN_IMAGE}' --format '{{.ID}}'`,
+      { timeout: 5000 },
+    )
+      .toString()
+      .trim();
+    exec(`podman stop ${containerID}`);
+  }
 });
