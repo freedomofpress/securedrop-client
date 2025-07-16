@@ -7,7 +7,7 @@ import { MemoryRouter, useLocation } from "react-router";
 import { Provider } from "react-redux";
 import React from "react";
 
-import { setupStore } from "./store";
+import { setupStore, type RootState } from "./store";
 
 // extends Vitest's expect with jest-dom matchers
 expect.extend(matchers);
@@ -56,12 +56,14 @@ export const TestWrapper = ({
   children,
   initialEntries = ["/"],
   onLocationChange,
+  preloadedState,
 }: {
   children: React.ReactNode;
   initialEntries?: string[];
   onLocationChange?: (location: any) => void;
+  preloadedState?: Partial<RootState>;
 }) => {
-  const store = setupStore();
+  const store = setupStore(preloadedState);
   return (
     <Provider store={store}>
       <MemoryRouter initialEntries={initialEntries}>
@@ -80,6 +82,7 @@ export const renderWithProviders = (
   options?: {
     initialEntries?: string[];
     onLocationChange?: (location: any) => void;
+    preloadedState?: Partial<RootState>;
   },
 ) => {
   return render(ui, {
@@ -87,6 +90,7 @@ export const renderWithProviders = (
       <TestWrapper
         initialEntries={options?.initialEntries}
         onLocationChange={options?.onLocationChange}
+        preloadedState={options?.preloadedState}
       >
         {children}
       </TestWrapper>
