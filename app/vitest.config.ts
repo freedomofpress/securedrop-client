@@ -7,7 +7,10 @@ export default defineConfig({
   test: {
     globals: true,
     environment: "jsdom",
-    setupFiles: ["./src/test-setup.ts", "./tests/component-setup.tsx"],
+    setupFiles: [
+      "./src/test-setup.ts",
+      "./src/renderer/test-component-setup.tsx",
+    ],
     typecheck: {
       tsconfig: "./tsconfig.web.json",
     },

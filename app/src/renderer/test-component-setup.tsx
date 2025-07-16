@@ -7,7 +7,7 @@ import { MemoryRouter, useLocation } from "react-router";
 import { Provider } from "react-redux";
 import React from "react";
 
-import { setupStore } from "../src/renderer/store";
+import { setupStore } from "./store";
 
 // extends Vitest's expect with jest-dom matchers
 expect.extend(matchers);
