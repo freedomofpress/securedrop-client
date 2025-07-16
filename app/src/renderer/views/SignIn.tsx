@@ -19,9 +19,18 @@ function SignInView() {
   const dispatch = useAppDispatch();
   const navigate = useNavigate();
 
+  const errorMessageNetwork =
+    "Could not reach the SecureDrop server. Please check your Internet and Tor connection and try again.";
+  const errorMessageCredentials =
+    "Those credentials didn't work. Please try again, and make sure to use a new two-factor code.";
+  const errorMessageGeneric =
+    "That didn't work. Please check everything and try again.";
+
   const [form] = Form.useForm();
   const [version, setVersion] = useState<string>("");
   const [authError, setAuthError] = useState<boolean>(false);
+  const [authErrorMessage, setAuthErrorMessage] =
+    useState<string>(errorMessageGeneric);
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
 
   // We cannot use the async function directly in the React component, so we need to get
@@ -62,6 +71,7 @@ function SignInView() {
       // If the status is not 200, fail
       if (res.status !== 200) {
         console.error("Authentication failed:", res.data);
+        setAuthErrorMessage(errorMessageCredentials);
         setAuthError(true);
         return;
       }
@@ -83,12 +93,17 @@ function SignInView() {
       } catch (e) {
         console.error("Failed to update session state:", e);
         dispatch(clear());
+
+        setAuthErrorMessage(errorMessageGeneric);
         setAuthError(true);
       }
     } catch (e) {
-      console.error("Authentication failed:", e);
+      console.error("Proxy request failed:", e);
       dispatch(clear());
+
+      setAuthErrorMessage(errorMessageNetwork);
       setAuthError(true);
+
       return;
     } finally {
       // Always re-enable the button when done
@@ -110,7 +125,7 @@ function SignInView() {
         {authError && (
           <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg">
             <p className="text-sm text-red-700 text-center">
-              That didn't work. Please check everything and try again.
+              {authErrorMessage}
             </p>
           </div>
         )}
@@ -130,7 +145,12 @@ function SignInView() {
               }
               name="username"
               rules={[
-                { required: true, message: "Please enter your username" },
+                { required: true, message: "Please enter your username." },
+                {
+                  min: 3,
+                  message:
+                    "That username won't work. It should be at least 3 characters long.",
+                },
               ]}
             >
               <Input
@@ -148,14 +168,16 @@ function SignInView() {
               }
               name="passphrase"
               rules={[
-                { required: true, message: "Please enter your passphrase" },
+                { required: true, message: "Please enter your passphrase." },
                 {
                   min: 14,
-                  message: "Passphrase must be at least 14 characters long",
+                  message:
+                    "That passphrase won't work. It should be between 14 and 128 characters long.",
                 },
                 {
                   max: 128,
-                  message: "Passphrase cannot exceed 128 characters",
+                  message:
+                    "That passphrase won't work. It should be between 14 and 128 characters long.",
                 },
               ]}
             >
@@ -179,11 +201,11 @@ function SignInView() {
               rules={[
                 {
                   required: true,
-                  message: "Please enter your two-factor code",
+                  message: "Please enter your two-factor code.",
                 },
                 {
                   pattern: /^\d{6}$/,
-                  message: "Two-factor code must be exactly 6 digits",
+                  message: "Your two-factor code must be exactly 6 digits.",
                 },
               ]}
             >
