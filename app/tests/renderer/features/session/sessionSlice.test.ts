@@ -2,7 +2,6 @@ import { describe, it, expect } from "vitest";
 import sessionReducer, {
   clear,
   set,
-  getSessionState,
   SessionState,
 } from "../../../../src/renderer/features/session/sessionSlice";
 
