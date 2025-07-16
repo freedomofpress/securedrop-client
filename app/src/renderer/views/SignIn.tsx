@@ -229,7 +229,9 @@ function SignInView() {
                 onChange={(e) => {
                   // Remove any non-numeric characters
                   const numericValue = e.target.value.replace(/\D/g, "");
-                  form.setFieldValue("oneTimeCode", numericValue);
+                  if (numericValue !== e.target.value) {
+                    form.setFieldValue("oneTimeCode", numericValue);
+                  }
                 }}
               />
             </Form.Item>
