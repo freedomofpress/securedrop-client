@@ -2,6 +2,7 @@ import { Button, Input, Form } from "antd";
 import { EyeInvisibleOutlined, EyeTwoTone } from "@ant-design/icons";
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router";
+import { useTranslation } from "react-i18next";
 
 import type { ProxyRequest, ProxyJSONResponse } from "../../types";
 import { useAppDispatch } from "../hooks";
@@ -18,13 +19,11 @@ type FormValues = {
 function SignInView() {
   const dispatch = useAppDispatch();
   const navigate = useNavigate();
+  const { t } = useTranslation("SignIn");
 
-  const errorMessageNetwork =
-    "Could not reach the SecureDrop server. Please check your Internet and Tor connection and try again.";
-  const errorMessageCredentials =
-    "Those credentials didn't work. Please try again, and make sure to use a new two-factor code.";
-  const errorMessageGeneric =
-    "That didn't work. Please check everything and try again.";
+  const errorMessageNetwork = t("errors.network");
+  const errorMessageCredentials = t("errors.credentials");
+  const errorMessageGeneric = t("errors.generic");
 
   const [form] = Form.useForm();
   const [version, setVersion] = useState<string>("");
@@ -119,7 +118,7 @@ function SignInView() {
         </div>
 
         <h1 className="text-2xl font-medium text-gray-900 text-center mb-6">
-          Sign in to SecureDrop
+          {t("title")}
         </h1>
 
         {authError && (
@@ -141,16 +140,15 @@ function SignInView() {
               data-testid="username-form-item"
               label={
                 <span className="text-sm font-medium text-gray-700">
-                  Username
+                  {t("username.label")}
                 </span>
               }
               name="username"
               rules={[
-                { required: true, message: "Please enter your username." },
+                { required: true, message: t("username.required") },
                 {
                   min: 3,
-                  message:
-                    "That username won't work. It should be at least 3 characters long.",
+                  message: t("username.minLength"),
                 },
               ]}
             >
@@ -166,21 +164,19 @@ function SignInView() {
               data-testid="passphrase-form-item"
               label={
                 <span className="text-sm font-medium text-gray-700">
-                  Passphrase
+                  {t("passphrase.label")}
                 </span>
               }
               name="passphrase"
               rules={[
-                { required: true, message: "Please enter your passphrase." },
+                { required: true, message: t("passphrase.required") },
                 {
                   min: 14,
-                  message:
-                    "That passphrase won't work. It should be between 14 and 128 characters long.",
+                  message: t("passphrase.invalidLength"),
                 },
                 {
                   max: 128,
-                  message:
-                    "That passphrase won't work. It should be between 14 and 128 characters long.",
+                  message: t("passphrase.invalidLength"),
                 },
               ]}
             >
@@ -199,18 +195,18 @@ function SignInView() {
               data-testid="one-time-code-form-item"
               label={
                 <span className="text-sm font-medium text-gray-700">
-                  Two-Factor Code
+                  {t("twoFactorCode.label")}
                 </span>
               }
               name="oneTimeCode"
               rules={[
                 {
                   required: true,
-                  message: "Please enter your two-factor code.",
+                  message: t("twoFactorCode.required"),
                 },
                 {
                   pattern: /^\d{6}$/,
-                  message: "Your two-factor code must be exactly 6 digits.",
+                  message: t("twoFactorCode.invalidFormat"),
                 },
               ]}
             >
@@ -250,14 +246,14 @@ function SignInView() {
                   borderColor: "#4F46E5",
                 }}
               >
-                {isSubmitting ? "Signing in..." : "Sign in"}
+                {isSubmitting ? t("button.signingIn") : t("button.signIn")}
               </Button>
             </Form.Item>
           </Form>
         </div>
 
         <div className="mt-8 text-center">
-          <p className="text-sm text-gray-500">SecureDrop App v{version}</p>
+          <p className="text-sm text-gray-500">{t("version", { version })}</p>
         </div>
       </div>
     </div>
