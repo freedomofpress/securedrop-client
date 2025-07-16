@@ -12,6 +12,21 @@ import { setupStore } from "./store";
 // extends Vitest's expect with jest-dom matchers
 expect.extend(matchers);
 
+// Mock window.matchMedia for Ant components
+Object.defineProperty(window, "matchMedia", {
+  writable: true,
+  value: (query: string) => ({
+    matches: false,
+    media: query,
+    onchange: null,
+    addListener: () => {},
+    removeListener: () => {},
+    addEventListener: () => {},
+    removeEventListener: () => {},
+    dispatchEvent: () => {},
+  }),
+});
+
 afterEach(() => {
   cleanup();
 });
