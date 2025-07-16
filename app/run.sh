@@ -29,4 +29,4 @@ function configure_environment() {
 
 configure_environment
 
-electron-vite dev
+pnpm exec electron-vite dev
