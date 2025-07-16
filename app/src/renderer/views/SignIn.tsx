@@ -226,7 +226,7 @@ function SignInView() {
         </div>
 
         <div className="mt-8 text-center">
-          <p className="text-sm text-gray-500">SecureDrop Client v{version}</p>
+          <p className="text-sm text-gray-500">SecureDrop App v{version}</p>
         </div>
       </div>
     </div>

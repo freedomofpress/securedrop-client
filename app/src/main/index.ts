@@ -14,7 +14,7 @@ function createWindow(): void {
     height: 700,
     minWidth: 900,
     minHeight: 700,
-    title: "SecureDrop Client",
+    title: "SecureDrop App",
     icon: join(__dirname, "../renderer/resources/icon.png"),
     show: false,
     autoHideMenuBar: true,
