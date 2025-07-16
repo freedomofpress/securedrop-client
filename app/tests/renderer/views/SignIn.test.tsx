@@ -116,4 +116,134 @@ describe("SignInView Component", () => {
       expect(oneTimeCodeItem).toContainElement(errorText);
     });
   });
+
+  // Server-side validations
+
+  it("fails when server is unreachable", async () => {
+    // Mock window.electronAPI.request to throw an error
+    (window as any).electronAPI.request.mockRejectedValue(
+      new Error("Network error"),
+    );
+
+    renderWithProviders(<SignInView />);
+
+    const usernameInput = screen.getByTestId("username-input");
+    const passphraseInput = screen.getByTestId("passphrase-input");
+    const oneTimeCodeInput = screen.getByTestId("one-time-code-input");
+    const signInButton = screen.getByTestId("sign-in-button");
+
+    // Fill in valid inputs
+    await userEvent.type(usernameInput, "neliebly");
+    await userEvent.type(passphraseInput, "validPassphrase12345");
+    await userEvent.type(oneTimeCodeInput, "123456");
+
+    // Click sign-in button
+    await userEvent.click(signInButton);
+
+    // Wait for server response and check for error message
+    await waitFor(() => {
+      expect(
+        screen.getByText(
+          "Could not reach the SecureDrop server. Please check your Internet and Tor connection and try again.",
+        ),
+      ).toBeInTheDocument();
+    });
+  });
+
+  it("fails when credentials are invalid", async () => {
+    // Mock window.electronAPI.request to return invalid credentials error
+    (window as any).electronAPI.request.mockResolvedValue({
+      error: true,
+      data: {
+        error: "Forbidden",
+        message: "Token authentication failed.",
+      },
+      status: 403,
+      headers: {
+        "content-length": "73",
+        server: "Werkzeug/2.2.3 Python/3.12.3",
+        connection: "close",
+        "content-type": "application/json",
+        date: "Wed, 16 Jul 2025 17:23:30 GMT",
+      },
+    });
+
+    renderWithProviders(<SignInView />);
+
+    const usernameInput = screen.getByTestId("username-input");
+    const passphraseInput = screen.getByTestId("passphrase-input");
+    const oneTimeCodeInput = screen.getByTestId("one-time-code-input");
+    const signInButton = screen.getByTestId("sign-in-button");
+
+    // Fill in valid inputs
+    await userEvent.type(usernameInput, "neliebly");
+    await userEvent.type(passphraseInput, "validPassphrase12345");
+    await userEvent.type(oneTimeCodeInput, "123456");
+
+    // Click sign-in button
+    await userEvent.click(signInButton);
+
+    // Wait for server response and check for error message
+    await waitFor(() => {
+      expect(
+        screen.getByText(
+          "Those credentials didn't work. Please try again, and make sure to use a new two-factor code.",
+        ),
+      ).toBeInTheDocument();
+    });
+  });
+
+  it("redirects to inbox on success", async () => {
+    // Mock window.electronAPI.request to return success
+    (window as any).electronAPI.request.mockResolvedValue({
+      error: false,
+      data: {
+        expiration: "2025-07-16T19:25:44.388054+00:00",
+        journalist_first_name: null,
+        journalist_last_name: null,
+        journalist_uuid: "7f19192d-c8e3-4518-9d4a-26cb39bc8662",
+        token:
+          "IlNrR0lza1M1TDd6TC1HbVBOTEFlQ1YwSHkxNkplX00wbEN1amlCZ2wtTVEi.aHfglw.XM077FlEYyESuwl_JLeMqPSZsyg",
+      },
+      status: 200,
+      headers: {
+        "content-length": "295",
+        date: "Wed, 16 Jul 2025 17:25:44 GMT",
+        connection: "close",
+        server: "Werkzeug/2.2.3 Python/3.12.3",
+        "content-type": "application/json",
+      },
+    });
+
+    let currentLocation: any;
+    const handleLocationChange = (location: any) => {
+      currentLocation = location;
+    };
+
+    renderWithProviders(<SignInView />, {
+      initialEntries: ["/inbox"],
+      onLocationChange: handleLocationChange,
+    });
+
+    // Get initial location
+    expect(currentLocation.pathname).toBe("/inbox");
+
+    const usernameInput = screen.getByTestId("username-input");
+    const passphraseInput = screen.getByTestId("passphrase-input");
+    const oneTimeCodeInput = screen.getByTestId("one-time-code-input");
+    const signInButton = screen.getByTestId("sign-in-button");
+
+    // Fill in valid inputs
+    await userEvent.type(usernameInput, "neliebly");
+    await userEvent.type(passphraseInput, "validPassphrase12345");
+    await userEvent.type(oneTimeCodeInput, "123456");
+
+    // Click sign-in button
+    await userEvent.click(signInButton);
+
+    await waitFor(() => {
+      // Should have redirected to the inbox
+      expect(currentLocation.pathname).toBe("/");
+    });
+  });
 });
