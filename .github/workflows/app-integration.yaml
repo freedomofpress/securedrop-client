@@ -25,13 +25,10 @@ jobs:
     container: debian:${{ matrix.debian_version }}
     services:
       httpbin:
-        image: kennethreitz/httpbin
+        image: kennethreitz/httpbin # zizmor: ignore[unpinned-images]
         ports:
           - 80:80
     steps:
-      - name: Check httpbin connection
-        run: |
-
       - name: Install base dependencies
         run: |
           apt-get update && apt-get install --yes git make python3 python3-pip build-essential
