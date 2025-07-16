@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import { screen, waitFor } from "@testing-library/react";
 import { expect } from "vitest";
 import App from "../../src/renderer/App";
