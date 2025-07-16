@@ -138,6 +138,7 @@ function SignInView() {
             className="space-y-6"
           >
             <Form.Item
+              data-testid="username-form-item"
               label={
                 <span className="text-sm font-medium text-gray-700">
                   Username
@@ -154,6 +155,7 @@ function SignInView() {
               ]}
             >
               <Input
+                data-testid="username-input"
                 placeholder="neliebly"
                 className="h-10 text-sm"
                 style={{ borderRadius: "6px" }}
@@ -161,6 +163,7 @@ function SignInView() {
             </Form.Item>
 
             <Form.Item
+              data-testid="passphrase-form-item"
               label={
                 <span className="text-sm font-medium text-gray-700">
                   Passphrase
@@ -182,6 +185,7 @@ function SignInView() {
               ]}
             >
               <Input.Password
+                data-testid="passphrase-input"
                 placeholder="••••••••••••••••••••••••"
                 className="h-10 text-sm"
                 style={{ borderRadius: "6px" }}
@@ -192,6 +196,7 @@ function SignInView() {
             </Form.Item>
 
             <Form.Item
+              data-testid="one-time-code-form-item"
               label={
                 <span className="text-sm font-medium text-gray-700">
                   Two-Factor Code
@@ -210,6 +215,7 @@ function SignInView() {
               ]}
             >
               <Input
+                data-testid="one-time-code-input"
                 placeholder="338578"
                 className="h-10 text-sm"
                 style={{ borderRadius: "6px" }}
@@ -230,6 +236,7 @@ function SignInView() {
 
             <Form.Item className="mb-0">
               <Button
+                data-testid="sign-in-button"
                 type="primary"
                 htmlType="submit"
                 loading={isSubmitting}
