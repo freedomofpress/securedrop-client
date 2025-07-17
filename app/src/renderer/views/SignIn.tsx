@@ -1,6 +1,6 @@
 import { Button, Input, Form } from "antd";
 import { EyeInvisibleOutlined, EyeTwoTone } from "@ant-design/icons";
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useNavigate } from "react-router";
 
 import type { ProxyRequest, ProxyJSONResponse } from "../../types";
@@ -27,27 +27,13 @@ function SignInView() {
     "That didn't work. Please check everything and try again.";
 
   const [form] = Form.useForm();
-  const [version, setVersion] = useState<string>("");
+  const [version, _setVersion] = useState<string>(
+    import.meta.env.VITE_APP_VERSION || "Unknown",
+  );
   const [authError, setAuthError] = useState<boolean>(false);
   const [authErrorMessage, setAuthErrorMessage] =
     useState<string>(errorMessageGeneric);
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
-
-  // We cannot use the async function directly in the React component, so we need to get
-  // the version in a useEffect hook.
-  useEffect(() => {
-    const getVersion = async () => {
-      try {
-        const appVersion = await window.electronAPI.getVersion();
-        setVersion(appVersion);
-      } catch (error) {
-        console.error("Failed to get app version:", error);
-        setVersion("Unknown");
-      }
-    };
-
-    getVersion();
-  }, []);
 
   const handleSubmit = async (values: FormValues) => {
     // Clear any previous errors and set loading state

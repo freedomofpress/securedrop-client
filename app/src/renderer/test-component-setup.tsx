@@ -34,7 +34,6 @@ afterEach(() => {
 beforeEach(() => {
   // Mock the electronAPI before each test
   (window as any).electronAPI = {
-    getVersion: vi.fn().mockResolvedValue("1.0.0"),
     request: vi.fn().mockResolvedValue({ data: "test" }),
     requestStream: vi.fn().mockResolvedValue({ sha256sum: "abc" }),
   };

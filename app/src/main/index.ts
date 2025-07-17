@@ -52,10 +52,6 @@ app.whenReady().then(() => {
     optimizer.watchWindowShortcuts(window);
   });
 
-  ipcMain.handle("getVersion", async (_event) => {
-    return app.getVersion();
-  });
-
   ipcMain.handle("request", async (_event, request: ProxyRequest) => {
     const result = await proxy(request);
     return result;

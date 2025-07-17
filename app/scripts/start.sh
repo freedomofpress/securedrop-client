@@ -9,6 +9,8 @@ make -C ../proxy build
 function configure_environment() {
     echo "Configuring .env.local..."
 
+    source ./scripts/set-version.sh
+
     # Configure Vite environment variables
     # Accessible in the code as import.meta.env.VITE_ENV_VAR
     # See: https://vite.dev/guide/env-and-mode
@@ -20,6 +22,7 @@ function configure_environment() {
     ENV_VARS=(
         "VITE_SD_PROXY_ORIGIN=\"http://localhost:8081/\""
         "VITE_SD_PROXY_CMD=\"$sd_proxy_cmd\""
+        "VITE_APP_VERSION=\"$VITE_APP_VERSION\""
     )
 
     for var in "${ENV_VARS[@]}"; do 
