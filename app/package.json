@@ -21,7 +21,7 @@
     "build": "pnpm run typecheck && electron-vite build",
     "postinstall": "electron-builder install-app-deps",
     "build:unpack": "pnpm run build && electron-builder --dir",
-    "build:linux": "electron-vite build && electron-builder --linux"
+    "build:linux": "pnpm run build && electron-builder --linux"
   },
   "keywords": [],
   "license": "AGPL-3.0-or-later",

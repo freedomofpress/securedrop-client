@@ -9,6 +9,9 @@ import React from "react";
 
 import { setupStore, type RootState } from "./store";
 
+// Mock global variables
+(global as any).__APP_VERSION__ = "6.6.6-test";
+
 // extends Vitest's expect with jest-dom matchers
 expect.extend(matchers);
 
