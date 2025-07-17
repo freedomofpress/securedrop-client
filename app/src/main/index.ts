@@ -2,11 +2,12 @@ import { app, BrowserWindow, ipcMain } from "electron";
 import { join } from "path";
 import { optimizer, is } from "@electron-toolkit/utils";
 
-import { openDatabase, closeDatabase } from "./database";
+import { openDatabase, closeDatabase, runMigrations } from "./database";
 import { proxy } from "./proxy";
 import type { ProxyRequest } from "../types";
 
 openDatabase();
+runMigrations();
 
 function createWindow(): void {
   const mainWindow = new BrowserWindow({

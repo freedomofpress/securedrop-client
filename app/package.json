@@ -21,7 +21,8 @@
     "build": "pnpm run typecheck && electron-vite build",
     "postinstall": "electron-builder install-app-deps",
     "build:unpack": "pnpm run build && electron-builder --dir",
-    "build:linux": "pnpm run build && electron-builder --linux"
+    "build:linux": "pnpm run build && electron-builder --linux",
+    "dbmate": "sh -c 'dbmate --url sqlite:$HOME/.config/SecureDrop/db.sqlite --migrations-dir ./src/database/migrations --schema-file ./src/database/schema.sql \"$@\"' _"
   },
   "keywords": [],
   "license": "AGPL-3.0-or-later",
@@ -67,6 +68,7 @@
     "@tailwindcss/vite": "^4.1.11",
     "antd": "^5.26.4",
     "better-sqlite3": "^12.1.0",
+    "dbmate": "^2.27.0",
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
     "react-redux": "^9.2.0",
