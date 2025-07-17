@@ -9,7 +9,7 @@ make -C ../proxy build
 function configure_environment() {
     echo "Configuring .env.local..."
 
-    source ./scripts/set-version.sh
+    VITE_APP_VERSION=$(./scripts/get-version.sh)
 
     # Configure Vite environment variables
     # Accessible in the code as import.meta.env.VITE_ENV_VAR
