@@ -27,9 +27,7 @@ function SignInView() {
     "That didn't work. Please check everything and try again.";
 
   const [form] = Form.useForm();
-  const [version, _setVersion] = useState<string>(
-    import.meta.env.VITE_APP_VERSION || "Unknown",
-  );
+  const [version, _setVersion] = useState<string>(__APP_VERSION__ || "Unknown");
   const [authError, setAuthError] = useState<boolean>(false);
   const [authErrorMessage, setAuthErrorMessage] =
     useState<string>(errorMessageGeneric);

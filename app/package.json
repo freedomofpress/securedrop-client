@@ -20,8 +20,8 @@
     "typecheck": "pnpm run typecheck:node && pnpm run typecheck:web",
     "build": "pnpm run typecheck && electron-vite build",
     "postinstall": "electron-builder install-app-deps",
-    "build:unpack": "pnpm run build && VITE_APP_VERSION=$(./scripts/get-version.sh) && electron-builder --dir",
-    "build:linux": "electron-vite build && VITE_APP_VERSION=$(./scripts/get-version.sh) && electron-builder --linux"
+    "build:unpack": "pnpm run build && electron-builder --dir",
+    "build:linux": "electron-vite build && electron-builder --linux"
   },
   "keywords": [],
   "license": "AGPL-3.0-or-later",
