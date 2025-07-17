@@ -19,6 +19,23 @@ export default defineConfig({
       reporter: ["text", "json", "html"],
       include: ["src/**"],
     },
+    projects: [
+      {
+        test: {
+          name: "unit",
+          include: ["tests/**/*.test.ts", "tests/**/*.test.tsx"],
+          globals: true,
+        },
+      },
+      {
+        test: {
+          name: "integration",
+          include: ["integration_tests/**/*.test.ts"],
+          setupFiles: ["integration_tests/setup.ts"],
+          globals: true,
+        },
+      },
+    ],
   },
   resolve: {
     alias: {
