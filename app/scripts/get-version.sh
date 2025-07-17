@@ -4,4 +4,4 @@ set -eo pipefail
 umask 077
 
 # Get the version from package.json
-echo $(cat "package.json" | grep '"version"' | cut -d'"' -f4)
+grep '"version"' package.json | cut -d'"' -f4
