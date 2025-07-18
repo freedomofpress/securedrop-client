@@ -215,10 +215,12 @@ describe("Test executing proxy with streaming requests", () => {
       writeStream,
     );
 
-    process.stderr.emit(
-      "data",
-      JSON.stringify({ headers: { etag: respSHA256 } }),
-    );
+    if (process.stderr) {
+      process.stderr.emit(
+        "data",
+        JSON.stringify({ headers: { etag: respSHA256 } }),
+      );
+    }
 
     setTimeout(() => {
       process.emit("close", 0);

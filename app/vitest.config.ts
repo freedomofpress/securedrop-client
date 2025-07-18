@@ -5,9 +5,10 @@ import { resolve } from "path";
 export default defineConfig({
   plugins: [react()],
   test: {
-    globals: true,
-    environment: "jsdom",
-    setupFiles: ["./src/test-setup.ts"],
+    setupFiles: [
+      "./src/test-setup.ts",
+      "./src/renderer/test-component-setup.tsx",
+    ],
     typecheck: {
       tsconfig: "./tsconfig.web.json",
     },
@@ -20,8 +21,9 @@ export default defineConfig({
       {
         test: {
           name: "unit",
-          include: ["tests/**/*.test.ts"],
+          include: ["tests/**/*.test.ts", "tests/**/*.test.tsx"],
           globals: true,
+          environment: "jsdom",
         },
       },
       {
