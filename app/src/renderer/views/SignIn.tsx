@@ -150,11 +150,7 @@ function SignInView() {
           >
             <Form.Item
               data-testid="username-form-item"
-              label={
-                <span className="text-sm font-medium text-gray-700">
-                  Username
-                </span>
-              }
+              label="Username"
               name="username"
               rules={[
                 { required: true, message: "Please enter your username." },
@@ -165,20 +161,12 @@ function SignInView() {
                 },
               ]}
             >
-              <Input
-                data-testid="username-input"
-                placeholder="neliebly"
-                className="h-10 text-sm"
-              />
+              <Input data-testid="username-input" placeholder="neliebly" />
             </Form.Item>
 
             <Form.Item
               data-testid="passphrase-form-item"
-              label={
-                <span className="text-sm font-medium text-gray-700">
-                  Passphrase
-                </span>
-              }
+              label="Passphrase"
               name="passphrase"
               rules={[
                 { required: true, message: "Please enter your passphrase." },
@@ -197,7 +185,6 @@ function SignInView() {
               <Input.Password
                 data-testid="passphrase-input"
                 placeholder="••••••••••••••••••••••••"
-                className="h-10 text-sm"
                 iconRender={(visible) =>
                   visible ? <EyeOutlined /> : <EyeInvisibleOutlined />
                 }
@@ -206,11 +193,7 @@ function SignInView() {
 
             <Form.Item
               data-testid="one-time-code-form-item"
-              label={
-                <span className="text-sm font-medium text-gray-700">
-                  Two-Factor Code
-                </span>
-              }
+              label="Two-Factor Code"
               name="oneTimeCode"
               rules={[
                 {
@@ -226,7 +209,6 @@ function SignInView() {
               <Input
                 data-testid="one-time-code-input"
                 placeholder="338578"
-                className="h-10 text-sm"
                 maxLength={6}
                 onKeyPress={(e) => {
                   // Only allow numeric characters
@@ -244,14 +226,14 @@ function SignInView() {
               />
             </Form.Item>
 
-            <Form.Item className="mb-0">
+            <Form.Item>
               <Button
                 data-testid="sign-in-button"
                 type="primary"
                 htmlType="submit"
                 loading={isSubmitting}
                 disabled={isSubmitting}
-                className="w-full h-10 text-sm font-medium"
+                className="w-full"
               >
                 {isSubmitting ? "Signing in..." : "Sign in"}
               </Button>
