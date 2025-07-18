@@ -70,11 +70,12 @@ function SignInView() {
         // Update the session state
         dispatch(
           set({
+            offlineMode: false,
             expiration: res.data.expiration,
             token: res.data.token,
-            journalist_uuid: res.data.journalist_uuid,
-            journalist_first_name: res.data.journalist_first_name,
-            journalist_last_name: res.data.journalist_last_name,
+            journalistUuid: res.data.journalist_uuid,
+            journalistFirstName: res.data.journalist_first_name,
+            journalistLastName: res.data.journalist_last_name,
           } as SessionState),
         );
 
@@ -118,8 +119,20 @@ function SignInView() {
   };
 
   const useOffline = () => {
-    // TODO: implement
-    console.log("Use offline clicked, implement this functionality");
+    // Update the session state to offline mode
+    dispatch(
+      set({
+        offlineMode: true,
+        expiration: undefined,
+        token: undefined,
+        journalistUuid: undefined,
+        journalistFirstName: undefined,
+        journalistLastName: undefined,
+      } as SessionState),
+    );
+
+    // Redirect to home
+    navigate("/");
   };
 
   return (

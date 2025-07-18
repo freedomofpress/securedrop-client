@@ -3,19 +3,21 @@ import type { PayloadAction } from "@reduxjs/toolkit";
 import type { RootState } from "../../store";
 
 interface SessionState {
+  offlineMode: boolean;
   expiration: string | undefined;
   token: string | undefined;
-  journalist_uuid: string | undefined;
-  journalist_first_name: string | undefined;
-  journalist_last_name: string | undefined;
+  journalistUuid: string | undefined;
+  journalistFirstName: string | undefined;
+  journalistLastName: string | undefined;
 }
 
 const emptyState: SessionState = {
+  offlineMode: false,
   expiration: undefined,
   token: undefined,
-  journalist_uuid: undefined,
-  journalist_first_name: undefined,
-  journalist_last_name: undefined,
+  journalistUuid: undefined,
+  journalistFirstName: undefined,
+  journalistLastName: undefined,
 };
 
 export const sessionSlice = createSlice({

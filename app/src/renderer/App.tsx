@@ -11,14 +11,14 @@ function App() {
   const dispatch = useAppDispatch();
   const navigate = useNavigate();
 
-  // Check if the session is valid and redirect if needed
+  // If we're not in offline mode and there's no session, redirect to sign-in
   useEffect(() => {
-    if (!session.journalist_uuid) {
+    if (!session.offlineMode && !session.journalistUuid) {
       console.log("No session found, redirecting to sign-in");
       dispatch(clear());
       navigate("/sign-in");
     }
-  }, [session.journalist_uuid, dispatch, navigate]);
+  }, [session.journalistUuid, dispatch, navigate]);
 
   return (
     <Routes>
