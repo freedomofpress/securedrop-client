@@ -1,4 +1,5 @@
 import { Button, Input, Form } from "antd";
+import type { FormProps } from "antd";
 import { EyeInvisibleOutlined, EyeTwoTone } from "@ant-design/icons";
 import { useState } from "react";
 import { useNavigate } from "react-router";
@@ -36,7 +37,9 @@ function SignInView() {
     useState<string>(errorMessageGeneric);
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
 
-  const handleSubmit = async (values: FormValues) => {
+  const onFinish: FormProps<FormValues>["onFinish"] = async (
+    values: FormValues,
+  ) => {
     // Clear any previous errors and set loading state
     setAuthError(false);
     setIsSubmitting(true);
@@ -98,6 +101,22 @@ function SignInView() {
     }
   };
 
+  const onValuesChange: FormProps<FormValues>["onValuesChange"] = async (
+    _changedValues: Partial<FormValues>,
+    _allValues: Partial<FormValues>,
+  ) => {
+    // Disable auth error
+    if (authError) {
+      setAuthError(false);
+    }
+    // Disable validation errors
+    form.setFields([
+      { name: "username", errors: [] },
+      { name: "passphrase", errors: [] },
+      { name: "oneTimeCode", errors: [] },
+    ]);
+  };
+
   return (
     <div
       className="min-h-screen bg-gray-50 flex flex-col justify-center py-8 sm:px-6 lg:px-8 sign-in-container"
@@ -107,12 +126,10 @@ function SignInView() {
     >
       <div className="sm:mx-auto sm:w-full sm:max-w-md">
         <div className="flex justify-center mb-6">
-          <img src={logoImage} alt="SecureDrop" className="w-16 h-16" />
+          <img src={logoImage} alt="SecureDrop" className="logo" />
         </div>
 
-        <h1 className="text-2xl font-medium text-gray-900 text-center mb-6">
-          Sign in to SecureDrop
-        </h1>
+        <h1 className="mb-6">Sign in to SecureDrop</h1>
 
         {authError && (
           <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg">
@@ -125,9 +142,11 @@ function SignInView() {
         <div className="bg-white py-8 px-6 shadow-sm rounded-lg sm:px-10">
           <Form
             form={form}
-            onFinish={handleSubmit}
+            onFinish={onFinish}
+            onValuesChange={onValuesChange}
             layout="vertical"
             className="space-y-6"
+            validateTrigger="onSubmit"
           >
             <Form.Item
               data-testid="username-form-item"

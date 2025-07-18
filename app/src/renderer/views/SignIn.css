@@ -1,3 +1,15 @@
 .sign-in-container {
   background-position: center;
 }
+
+.logo {
+  width: 48px;
+  height: 48px;
+}
+
+h1 {
+  text-align: center;
+  font-size: 30px;
+  font-weight: 600;
+  color: #181d27;
+}
