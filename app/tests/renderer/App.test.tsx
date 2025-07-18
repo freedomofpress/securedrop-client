@@ -40,6 +40,22 @@ describe("App Component", () => {
     expect(screen.queryByTestId("signin-view")).not.toBeInTheDocument();
   });
 
+  it("renders inbox view when in offline mode", async () => {
+    renderWithProviders(<App />, {
+      initialEntries: ["/"],
+      preloadedState: { session: { ...emptySessionState, offlineMode: true } },
+    });
+
+    // Should render the inbox view
+    await waitFor(() => {
+      expect(screen.getByTestId("inbox-view")).toBeInTheDocument();
+      expect(screen.getByText("Inbox View")).toBeInTheDocument();
+    });
+
+    // Should not render the sign-in view
+    expect(screen.queryByTestId("signin-view")).not.toBeInTheDocument();
+  });
+
   it("redirects to sign-in when user has no session", async () => {
     renderWithProviders(<App />, {
       initialEntries: ["/"],
