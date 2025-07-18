@@ -12,8 +12,9 @@ describe("SignInView Component", () => {
     // Wait for the async useEffect to complete
     await waitFor(() => {
       expect(screen.getByText("Sign in to SecureDrop")).toBeInTheDocument();
-      // getVersion is mocked to return "1.0.0"
-      expect(screen.getByText("SecureDrop App v1.0.0")).toBeInTheDocument();
+      expect(
+        screen.getByText("SecureDrop App v6.6.6-test"),
+      ).toBeInTheDocument();
     });
   });
 
@@ -244,6 +245,35 @@ describe("SignInView Component", () => {
     await waitFor(() => {
       // Should have redirected to the inbox
       expect(currentLocation.pathname).toBe("/");
+    });
+  });
+
+  it("sets offline mode and redirects to inbox when offline button is clicked", async () => {
+    let currentLocation: any;
+    const handleLocationChange = (location: any) => {
+      currentLocation = location;
+    };
+
+    const { store } = renderWithProviders(<SignInView />, {
+      initialEntries: ["/sign-in"],
+      onLocationChange: handleLocationChange,
+    });
+
+    // Get initial location
+    expect(currentLocation.pathname).toBe("/sign-in");
+
+    const useOfflineButton = screen.getByTestId("use-offline-button");
+
+    // Click use offline button
+    await userEvent.click(useOfflineButton);
+
+    await waitFor(() => {
+      // Should have redirected to the inbox
+      expect(currentLocation.pathname).toBe("/");
+
+      // Should have set session with offlineMode: true
+      const state = store.getState();
+      expect(state.session.offlineMode).toBe(true);
     });
   });
 });

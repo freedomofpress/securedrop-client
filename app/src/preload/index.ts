@@ -4,7 +4,6 @@ import { contextBridge, ipcRenderer } from "electron";
 import type { ProxyRequest } from "../types";
 
 const electronAPI = {
-  getVersion: () => ipcRenderer.invoke("getVersion"),
   request: (request: ProxyRequest) => ipcRenderer.invoke("request", request),
   requestStream: (request: ProxyRequest, downloadPath: string) =>
     ipcRenderer.invoke("requestStream", request, downloadPath),

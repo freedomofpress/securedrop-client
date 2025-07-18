@@ -5,8 +5,6 @@ import { resolve } from "path";
 export default defineConfig({
   plugins: [react()],
   test: {
-    globals: true,
-    environment: "jsdom",
     setupFiles: [
       "./src/test-setup.ts",
       "./src/renderer/test-component-setup.tsx",
@@ -19,6 +17,24 @@ export default defineConfig({
       reporter: ["text", "json", "html"],
       include: ["src/**"],
     },
+    projects: [
+      {
+        test: {
+          name: "unit",
+          include: ["tests/**/*.test.ts", "tests/**/*.test.tsx"],
+          globals: true,
+          environment: "jsdom",
+        },
+      },
+      {
+        test: {
+          name: "integration",
+          include: ["integration_tests/**/*.test.ts"],
+          setupFiles: ["integration_tests/setup.ts"],
+          globals: true,
+        },
+      },
+    ],
   },
   resolve: {
     alias: {

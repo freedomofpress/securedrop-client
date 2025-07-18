@@ -2,11 +2,12 @@ import { app, BrowserWindow, ipcMain } from "electron";
 import { join } from "path";
 import { optimizer, is } from "@electron-toolkit/utils";
 
-import { openDatabase, closeDatabase } from "./database";
+import { openDatabase, closeDatabase, runMigrations } from "./database";
 import { proxy } from "./proxy";
 import type { ProxyRequest } from "../types";
 
 openDatabase();
+runMigrations();
 
 function createWindow(): void {
   const mainWindow = new BrowserWindow({
@@ -50,10 +51,6 @@ app.whenReady().then(() => {
   // see https://github.com/alex8088/electron-toolkit/tree/master/packages/utils
   app.on("browser-window-created", (_, window) => {
     optimizer.watchWindowShortcuts(window);
-  });
-
-  ipcMain.handle("getVersion", async (_event) => {
-    return app.getVersion();
   });
 
   ipcMain.handle("request", async (_event, request: ProxyRequest) => {

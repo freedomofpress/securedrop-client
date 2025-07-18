@@ -1,11 +1,12 @@
 import { useNavigate } from "react-router";
 import { Button } from "antd";
 
-import { useAppDispatch } from "../hooks";
+import { useAppDispatch, useAppSelector } from "../hooks";
 import { clear } from "../features/session/sessionSlice";
 
 function InboxView() {
   const navigate = useNavigate();
+  const session = useAppSelector((state) => state.session);
   const dispatch = useAppDispatch();
 
   const dummyRequest = async function () {
@@ -41,6 +42,11 @@ function InboxView() {
     navigate("/");
   };
 
+  const signIn = () => {
+    console.log("navigating to sign in");
+    navigate("/sign-in");
+  };
+
   return (
     <div>
       <div className="max-w-sm rounded overflow-hidden shadow-lg">
@@ -71,14 +77,28 @@ function InboxView() {
             Dummy Stream Request
           </Button>
 
-          <Button
-            type="primary"
-            onClick={() => signOut()}
-            title="Sign Out"
-            data-testid="sign-out-button"
-          >
-            Sign out
-          </Button>
+          {session.offlineMode ? (
+            <>
+              <p className="font-bold">Offline Mode</p>
+              <Button
+                type="primary"
+                onClick={() => signIn()}
+                title="Sign In"
+                data-testid="sign-in-button"
+              >
+                Sign in
+              </Button>
+            </>
+          ) : (
+            <Button
+              type="primary"
+              onClick={() => signOut()}
+              title="Sign Out"
+              data-testid="sign-out-button"
+            >
+              Sign out
+            </Button>
+          )}
         </div>
       </div>
     </div>

@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable react-refresh/only-export-components */
 import { expect, afterEach, beforeEach, vi } from "vitest";
-import { cleanup, render } from "@testing-library/react";
+import { cleanup, render, type RenderResult } from "@testing-library/react";
 import * as matchers from "@testing-library/jest-dom/matchers";
 import { MemoryRouter, useLocation } from "react-router";
 import { Provider } from "react-redux";
@@ -13,6 +13,9 @@ import "./i18n";
 
 // Change the language to en to we can test for English strings
 i18n.changeLanguage("en");
+
+// Mock global variables
+(global as any).__APP_VERSION__ = "6.6.6-test";
 
 // extends Vitest's expect with jest-dom matchers
 expect.extend(matchers);
@@ -39,7 +42,6 @@ afterEach(() => {
 beforeEach(() => {
   // Mock the electronAPI before each test
   (window as any).electronAPI = {
-    getVersion: vi.fn().mockResolvedValue("1.0.0"),
     request: vi.fn().mockResolvedValue({ data: "test" }),
     requestStream: vi.fn().mockResolvedValue({ sha256sum: "abc" }),
   };
@@ -62,13 +64,15 @@ export const TestWrapper = ({
   initialEntries = ["/"],
   onLocationChange,
   preloadedState,
+  store: providedStore,
 }: {
   children: React.ReactNode;
   initialEntries?: string[];
   onLocationChange?: (location: any) => void;
   preloadedState?: Partial<RootState>;
+  store?: ReturnType<typeof setupStore>;
 }) => {
-  const store = setupStore(preloadedState);
+  const store = providedStore || setupStore(preloadedState);
   return (
     <Provider store={store}>
       <MemoryRouter initialEntries={initialEntries}>
@@ -89,16 +93,24 @@ export const renderWithProviders = (
     onLocationChange?: (location: any) => void;
     preloadedState?: Partial<RootState>;
   },
-) => {
-  return render(ui, {
+): RenderResult & { store: ReturnType<typeof setupStore> } => {
+  const store = setupStore(options?.preloadedState);
+
+  const renderResult = render(ui, {
     wrapper: ({ children }) => (
       <TestWrapper
         initialEntries={options?.initialEntries}
         onLocationChange={options?.onLocationChange}
         preloadedState={options?.preloadedState}
+        store={store}
       >
         {children}
       </TestWrapper>
     ),
   });
+
+  return {
+    store,
+    ...renderResult,
+  };
 };

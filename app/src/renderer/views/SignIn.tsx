@@ -1,6 +1,7 @@
 import { Button, Input, Form } from "antd";
-import { EyeInvisibleOutlined, EyeTwoTone } from "@ant-design/icons";
-import { useState, useEffect } from "react";
+import type { FormProps } from "antd";
+import { EyeInvisibleOutlined, EyeOutlined } from "@ant-design/icons";
+import { useState } from "react";
 import { useNavigate } from "react-router";
 import { useTranslation } from "react-i18next";
 
@@ -8,7 +9,10 @@ import type { ProxyRequest, ProxyJSONResponse } from "../../types";
 import { useAppDispatch } from "../hooks";
 import type { SessionState } from "../features/session/sessionSlice";
 import { set, clear } from "../features/session/sessionSlice";
+
 import logoImage from "../../../resources/images/logo.png";
+import backgroundImage from "../../../resources/images/sign-in-background.svg";
+import "./SignIn.css";
 
 type FormValues = {
   username: string;
@@ -26,29 +30,15 @@ function SignInView() {
   const errorMessageGeneric = t("errors.generic");
 
   const [form] = Form.useForm();
-  const [version, setVersion] = useState<string>("");
+  const [version, _setVersion] = useState<string>(__APP_VERSION__ || "Unknown");
   const [authError, setAuthError] = useState<boolean>(false);
   const [authErrorMessage, setAuthErrorMessage] =
     useState<string>(errorMessageGeneric);
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
 
-  // We cannot use the async function directly in the React component, so we need to get
-  // the version in a useEffect hook.
-  useEffect(() => {
-    const getVersion = async () => {
-      try {
-        const appVersion = await window.electronAPI.getVersion();
-        setVersion(appVersion);
-      } catch (error) {
-        console.error("Failed to get app version:", error);
-        setVersion("Unknown");
-      }
-    };
-
-    getVersion();
-  }, []);
-
-  const handleSubmit = async (values: FormValues) => {
+  const onFinish: FormProps<FormValues>["onFinish"] = async (
+    values: FormValues,
+  ) => {
     // Clear any previous errors and set loading state
     setAuthError(false);
     setIsSubmitting(true);
@@ -79,11 +69,12 @@ function SignInView() {
         // Update the session state
         dispatch(
           set({
+            offlineMode: false,
             expiration: res.data.expiration,
             token: res.data.token,
-            journalist_uuid: res.data.journalist_uuid,
-            journalist_first_name: res.data.journalist_first_name,
-            journalist_last_name: res.data.journalist_last_name,
+            journalistUuid: res.data.journalist_uuid,
+            journalistFirstName: res.data.journalist_first_name,
+            journalistLastName: res.data.journalist_last_name,
           } as SessionState),
         );
 
@@ -110,16 +101,52 @@ function SignInView() {
     }
   };
 
+  const onValuesChange: FormProps<FormValues>["onValuesChange"] = async (
+    _changedValues: Partial<FormValues>,
+    _allValues: Partial<FormValues>,
+  ) => {
+    // Disable auth error
+    if (authError) {
+      setAuthError(false);
+    }
+    // Disable validation errors
+    form.setFields([
+      { name: "username", errors: [] },
+      { name: "passphrase", errors: [] },
+      { name: "oneTimeCode", errors: [] },
+    ]);
+  };
+
+  const useOffline = () => {
+    // Update the session state to offline mode
+    dispatch(
+      set({
+        offlineMode: true,
+        expiration: undefined,
+        token: undefined,
+        journalistUuid: undefined,
+        journalistFirstName: undefined,
+        journalistLastName: undefined,
+      } as SessionState),
+    );
+
+    // Redirect to home
+    navigate("/");
+  };
+
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col justify-center py-8 sm:px-6 lg:px-8">
+    <div
+      className="min-h-screen bg-gray-50 flex flex-col justify-center py-8 sm:px-6 lg:px-8 sign-in-container"
+      style={{
+        backgroundImage: `url(${backgroundImage})`,
+      }}
+    >
       <div className="sm:mx-auto sm:w-full sm:max-w-md">
         <div className="flex justify-center mb-6">
-          <img src={logoImage} alt="SecureDrop" className="w-16 h-16" />
+          <img src={logoImage} alt="SecureDrop" className="logo" />
         </div>
 
-        <h1 className="text-2xl font-medium text-gray-900 text-center mb-6">
-          {t("title")}
-        </h1>
+        <h1 className="mb-6">{t("title")}</h1>
 
         {authError && (
           <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg">
@@ -129,20 +156,19 @@ function SignInView() {
           </div>
         )}
 
-        <div className="bg-white py-8 px-6 shadow-sm rounded-lg sm:px-10">
+        <div className="bg-white py-6 px-8 shadow-sm rounded-lg">
           <Form
             form={form}
-            onFinish={handleSubmit}
+            onFinish={onFinish}
+            onValuesChange={onValuesChange}
             layout="vertical"
             className="space-y-6"
+            validateTrigger="onSubmit"
+            requiredMark={false}
           >
             <Form.Item
               data-testid="username-form-item"
-              label={
-                <span className="text-sm font-medium text-gray-700">
-                  {t("username.label")}
-                </span>
-              }
+              label={t("username.label")}
               name="username"
               rules={[
                 { required: true, message: t("username.required") },
@@ -152,21 +178,12 @@ function SignInView() {
                 },
               ]}
             >
-              <Input
-                data-testid="username-input"
-                placeholder="neliebly"
-                className="h-10 text-sm"
-                style={{ borderRadius: "6px" }}
-              />
+              <Input data-testid="username-input" placeholder="neliebly" />
             </Form.Item>
 
             <Form.Item
               data-testid="passphrase-form-item"
-              label={
-                <span className="text-sm font-medium text-gray-700">
-                  {t("passphrase.label")}
-                </span>
-              }
+              label={t("passphrase.label")}
               name="passphrase"
               rules={[
                 { required: true, message: t("passphrase.required") },
@@ -183,21 +200,15 @@ function SignInView() {
               <Input.Password
                 data-testid="passphrase-input"
                 placeholder="••••••••••••••••••••••••"
-                className="h-10 text-sm"
-                style={{ borderRadius: "6px" }}
                 iconRender={(visible) =>
-                  visible ? <EyeTwoTone /> : <EyeInvisibleOutlined />
+                  visible ? <EyeOutlined /> : <EyeInvisibleOutlined />
                 }
               />
             </Form.Item>
 
             <Form.Item
               data-testid="one-time-code-form-item"
-              label={
-                <span className="text-sm font-medium text-gray-700">
-                  {t("twoFactorCode.label")}
-                </span>
-              }
+              label={t("twoFactorCode.label")}
               name="oneTimeCode"
               rules={[
                 {
@@ -213,8 +224,6 @@ function SignInView() {
               <Input
                 data-testid="one-time-code-input"
                 placeholder="338578"
-                className="h-10 text-sm"
-                style={{ borderRadius: "6px" }}
                 maxLength={6}
                 onKeyPress={(e) => {
                   // Only allow numeric characters
@@ -232,21 +241,27 @@ function SignInView() {
               />
             </Form.Item>
 
-            <Form.Item className="mb-0">
+            <Form.Item className="button-container">
               <Button
                 data-testid="sign-in-button"
                 type="primary"
+                size="large"
                 htmlType="submit"
                 loading={isSubmitting}
                 disabled={isSubmitting}
-                className="w-full h-10 text-sm font-medium"
-                style={{
-                  borderRadius: "6px",
-                  backgroundColor: "#4F46E5",
-                  borderColor: "#4F46E5",
-                }}
+                className="w-full"
               >
                 {isSubmitting ? t("button.signingIn") : t("button.signIn")}
+              </Button>
+
+              <Button
+                data-testid="use-offline-button"
+                type="text"
+                color="primary"
+                className="w-full mt-4 use-offline-button"
+                onClick={useOffline}
+              >
+                Use offline
               </Button>
             </Form.Item>
           </Form>
