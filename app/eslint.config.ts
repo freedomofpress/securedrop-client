@@ -34,6 +34,16 @@ export default tseslint.config(
         projectService: true,
       },
     },
+    rules: {
+      "@typescript-eslint/no-unused-vars": [
+        "error",
+        {
+          argsIgnorePattern: "^_",
+          varsIgnorePattern: "^_",
+          caughtErrorsIgnorePattern: "^_",
+        },
+      ],
+    },
     settings: {
       "import/resolver": {
         typescript: {
