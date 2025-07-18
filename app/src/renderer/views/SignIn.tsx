@@ -10,6 +10,7 @@ import { set, clear } from "../features/session/sessionSlice";
 
 import logoImage from "../../../resources/images/logo.png";
 import backgroundImage from "../../../resources/images/sign-in-background.svg";
+import "./SignIn.css";
 
 type FormValues = {
   username: string;
@@ -99,10 +100,9 @@ function SignInView() {
 
   return (
     <div
-      className="min-h-screen bg-gray-50 flex flex-col justify-center py-8 sm:px-6 lg:px-8"
+      className="min-h-screen bg-gray-50 flex flex-col justify-center py-8 sm:px-6 lg:px-8 sign-in-container"
       style={{
         backgroundImage: `url(${backgroundImage})`,
-        backgroundPosition: "center",
       }}
     >
       <div className="sm:mx-auto sm:w-full sm:max-w-md">
@@ -150,7 +150,6 @@ function SignInView() {
                 data-testid="username-input"
                 placeholder="neliebly"
                 className="h-10 text-sm"
-                style={{ borderRadius: "6px" }}
               />
             </Form.Item>
 
@@ -180,7 +179,6 @@ function SignInView() {
                 data-testid="passphrase-input"
                 placeholder="••••••••••••••••••••••••"
                 className="h-10 text-sm"
-                style={{ borderRadius: "6px" }}
                 iconRender={(visible) =>
                   visible ? <EyeTwoTone /> : <EyeInvisibleOutlined />
                 }
@@ -210,7 +208,6 @@ function SignInView() {
                 data-testid="one-time-code-input"
                 placeholder="338578"
                 className="h-10 text-sm"
-                style={{ borderRadius: "6px" }}
                 maxLength={6}
                 onKeyPress={(e) => {
                   // Only allow numeric characters
@@ -236,11 +233,6 @@ function SignInView() {
                 loading={isSubmitting}
                 disabled={isSubmitting}
                 className="w-full h-10 text-sm font-medium"
-                style={{
-                  borderRadius: "6px",
-                  backgroundColor: "#4F46E5",
-                  borderColor: "#4F46E5",
-                }}
               >
                 {isSubmitting ? "Signing in..." : "Sign in"}
               </Button>
