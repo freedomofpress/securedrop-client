@@ -152,6 +152,7 @@ function SignInView() {
             layout="vertical"
             className="space-y-6"
             validateTrigger="onSubmit"
+            requiredMark={false}
           >
             <Form.Item
               data-testid="username-form-item"
