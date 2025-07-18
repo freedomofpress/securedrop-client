@@ -13,3 +13,12 @@ h1 {
   font-weight: 600;
   color: #181d27;
 }
+
+.use-offline-button {
+  color: #1d4ed8;
+}
+
+.use-offline-button:hover,
+.use-offline-button:focus {
+  color: #1d4ed8 !important;
+}

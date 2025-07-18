@@ -117,6 +117,11 @@ function SignInView() {
     ]);
   };
 
+  const useOffline = () => {
+    // TODO: implement
+    console.log("Use offline clicked, implement this functionality");
+  };
+
   return (
     <div
       className="min-h-screen bg-gray-50 flex flex-col justify-center py-8 sm:px-6 lg:px-8 sign-in-container"
@@ -230,12 +235,23 @@ function SignInView() {
               <Button
                 data-testid="sign-in-button"
                 type="primary"
+                size="large"
                 htmlType="submit"
                 loading={isSubmitting}
                 disabled={isSubmitting}
                 className="w-full"
               >
                 {isSubmitting ? "Signing in..." : "Sign in"}
+              </Button>
+
+              <Button
+                data-testid="use-offline-button"
+                type="text"
+                color="primary"
+                className="w-full mt-4 use-offline-button"
+                onClick={useOffline}
+              >
+                Use offline
               </Button>
             </Form.Item>
           </Form>
