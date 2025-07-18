@@ -16,6 +16,7 @@ h1 {
 
 .use-offline-button {
   color: #1d4ed8;
+  font-weight: 600;
 }
 
 .use-offline-button:hover,
