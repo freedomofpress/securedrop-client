@@ -1,6 +1,6 @@
 import { Button, Input, Form } from "antd";
 import type { FormProps } from "antd";
-import { EyeInvisibleOutlined, EyeTwoTone } from "@ant-design/icons";
+import { EyeInvisibleOutlined, EyeOutlined } from "@ant-design/icons";
 import { useState } from "react";
 import { useNavigate } from "react-router";
 
@@ -199,7 +199,7 @@ function SignInView() {
                 placeholder="••••••••••••••••••••••••"
                 className="h-10 text-sm"
                 iconRender={(visible) =>
-                  visible ? <EyeTwoTone /> : <EyeInvisibleOutlined />
+                  visible ? <EyeOutlined /> : <EyeInvisibleOutlined />
                 }
               />
             </Form.Item>
