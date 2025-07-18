@@ -247,4 +247,33 @@ describe("SignInView Component", () => {
       expect(currentLocation.pathname).toBe("/");
     });
   });
+
+  it("sets offline mode and redirects to inbox when offline button is clicked", async () => {
+    let currentLocation: any;
+    const handleLocationChange = (location: any) => {
+      currentLocation = location;
+    };
+
+    const { store } = renderWithProviders(<SignInView />, {
+      initialEntries: ["/sign-in"],
+      onLocationChange: handleLocationChange,
+    });
+
+    // Get initial location
+    expect(currentLocation.pathname).toBe("/sign-in");
+
+    const useOfflineButton = screen.getByTestId("use-offline-button");
+
+    // Click use offline button
+    await userEvent.click(useOfflineButton);
+
+    await waitFor(() => {
+      // Should have redirected to the inbox
+      expect(currentLocation.pathname).toBe("/");
+
+      // Should have set session with offlineMode: true
+      const state = store.getState();
+      expect(state.session.offlineMode).toBe(true);
+    });
+  });
 });

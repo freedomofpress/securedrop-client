@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable react-refresh/only-export-components */
 import { expect, afterEach, beforeEach, vi } from "vitest";
-import { cleanup, render } from "@testing-library/react";
+import { cleanup, render, type RenderResult } from "@testing-library/react";
 import * as matchers from "@testing-library/jest-dom/matchers";
 import { MemoryRouter, useLocation } from "react-router";
 import { Provider } from "react-redux";
@@ -59,13 +59,15 @@ export const TestWrapper = ({
   initialEntries = ["/"],
   onLocationChange,
   preloadedState,
+  store: providedStore,
 }: {
   children: React.ReactNode;
   initialEntries?: string[];
   onLocationChange?: (location: any) => void;
   preloadedState?: Partial<RootState>;
+  store?: ReturnType<typeof setupStore>;
 }) => {
-  const store = setupStore(preloadedState);
+  const store = providedStore || setupStore(preloadedState);
   return (
     <Provider store={store}>
       <MemoryRouter initialEntries={initialEntries}>
@@ -86,16 +88,24 @@ export const renderWithProviders = (
     onLocationChange?: (location: any) => void;
     preloadedState?: Partial<RootState>;
   },
-) => {
-  return render(ui, {
+): RenderResult & { store: ReturnType<typeof setupStore> } => {
+  const store = setupStore(options?.preloadedState);
+
+  const renderResult = render(ui, {
     wrapper: ({ children }) => (
       <TestWrapper
         initialEntries={options?.initialEntries}
         onLocationChange={options?.onLocationChange}
         preloadedState={options?.preloadedState}
+        store={store}
       >
         {children}
       </TestWrapper>
     ),
   });
+
+  return {
+    store,
+    ...renderResult,
+  };
 };
