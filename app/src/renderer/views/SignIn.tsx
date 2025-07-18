@@ -7,7 +7,9 @@ import type { ProxyRequest, ProxyJSONResponse } from "../../types";
 import { useAppDispatch } from "../hooks";
 import type { SessionState } from "../features/session/sessionSlice";
 import { set, clear } from "../features/session/sessionSlice";
+
 import logoImage from "../../../resources/images/logo.png";
+import backgroundImage from "../../../resources/images/sign-in-background.svg";
 
 type FormValues = {
   username: string;
@@ -96,7 +98,13 @@ function SignInView() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col justify-center py-8 sm:px-6 lg:px-8">
+    <div
+      className="min-h-screen bg-gray-50 flex flex-col justify-center py-8 sm:px-6 lg:px-8"
+      style={{
+        backgroundImage: `url(${backgroundImage})`,
+        backgroundPosition: "center",
+      }}
+    >
       <div className="sm:mx-auto sm:w-full sm:max-w-md">
         <div className="flex justify-center mb-6">
           <img src={logoImage} alt="SecureDrop" className="w-16 h-16" />
