@@ -18,7 +18,7 @@ function App() {
       dispatch(clear());
       navigate("/sign-in");
     }
-  }, [session.journalistUuid, dispatch, navigate]);
+  }, [session.offlineMode, session.journalistUuid, dispatch, navigate]);
 
   return (
     <Routes>
