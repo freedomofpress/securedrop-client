@@ -30,6 +30,7 @@ export const sessionSlice = createSlice({
 });
 
 export type { SessionState };
+export const emptySessionState = emptyState;
 export const { clear, set } = sessionSlice.actions;
 export const getSessionState = (state: RootState) => state.session;
 export default sessionSlice.reducer;
