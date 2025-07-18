@@ -261,7 +261,7 @@ function SignInView() {
                 className="w-full mt-4 use-offline-button"
                 onClick={useOffline}
               >
-                Use offline
+                {t("button.useOffline")}
               </Button>
             </Form.Item>
           </Form>

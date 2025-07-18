@@ -17,7 +17,8 @@
   },
   "button": {
     "signIn": "Sign in",
-    "signingIn": "Signing in..."
+    "signingIn": "Signing in...",
+    "useOffline": "Use offline"
   },
   "errors": {
     "network": "Could not reach the SecureDrop server. Please check your Internet and Tor connection and try again.",

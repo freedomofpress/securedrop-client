@@ -17,7 +17,8 @@
   },
   "button": {
     "signIn": "Se connecter",
-    "signingIn": "Connexion en cours..."
+    "signingIn": "Connexion en cours...",
+    "useOffline": "Utiliser hors ligne"
   },
   "errors": {
     "network": "Impossible de joindre le serveur SecureDrop. Veuillez vérifier votre connexion Internet et Tor, puis réessayer.",
