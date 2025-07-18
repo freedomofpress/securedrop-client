@@ -22,3 +22,7 @@ h1 {
 .use-offline-button:focus {
   color: #1d4ed8 !important;
 }
+
+.button-container {
+  margin-bottom: 0;
+}

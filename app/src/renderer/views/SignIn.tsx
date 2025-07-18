@@ -144,7 +144,7 @@ function SignInView() {
           </div>
         )}
 
-        <div className="bg-white py-8 px-6 shadow-sm rounded-lg sm:px-10">
+        <div className="bg-white py-6 px-8 shadow-sm rounded-lg">
           <Form
             form={form}
             onFinish={onFinish}
@@ -231,7 +231,7 @@ function SignInView() {
               />
             </Form.Item>
 
-            <Form.Item>
+            <Form.Item className="button-container">
               <Button
                 data-testid="sign-in-button"
                 type="primary"
