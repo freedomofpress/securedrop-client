@@ -143,19 +143,21 @@ function SignInView() {
       }}
     >
       <div className="sm:mx-auto sm:w-full sm:max-w-md">
-        <div className="flex justify-center mb-6">
-          <img src={logoImage} alt="SecureDrop" className="logo" />
-        </div>
-
-        <h1 className="mb-6">Sign in to SecureDrop</h1>
-
-        {authError && (
-          <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg">
-            <p className="text-sm text-red-700 text-center">
-              {authErrorMessage}
-            </p>
+        <div className="relative mb-6">
+          <div className="flex justify-center mb-6">
+            <img src={logoImage} alt="SecureDrop" className="logo" />
           </div>
-        )}
+
+          <h1 className="mb-0">Sign in to SecureDrop</h1>
+
+          {authError && (
+            <div className="absolute top-14 left-0 right-0 p-4 bg-red-50 border border-red-200 rounded-lg shadow-lg z-10">
+              <p className="text-sm text-red-700 text-center">
+                {authErrorMessage}
+              </p>
+            </div>
+          )}
+        </div>
 
         <div className="bg-white py-6 px-8 shadow-sm rounded-lg">
           <Form
