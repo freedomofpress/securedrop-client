@@ -4,7 +4,7 @@ import { useEffect } from "react";
 import InboxView from "./views/Inbox";
 import SignInView from "./views/SignIn";
 import { useAppDispatch, useAppSelector } from "./hooks";
-import { clear, SessionStatus } from "./features/session/sessionSlice";
+import { setUnauth, SessionStatus } from "./features/session/sessionSlice";
 
 function App() {
   const session = useAppSelector((state) => state.session);
@@ -18,7 +18,7 @@ function App() {
       !session.authData?.journalistUUID
     ) {
       console.log("No session found, redirecting to sign-in");
-      dispatch(clear());
+      dispatch(setUnauth());
       navigate("/sign-in");
     }
   }, [session.status, session.authData?.journalistUUID, dispatch, navigate]);

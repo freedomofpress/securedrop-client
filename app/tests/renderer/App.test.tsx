@@ -3,7 +3,7 @@ import { expect } from "vitest";
 import App from "../../src/renderer/App";
 import { renderWithProviders } from "../../src/renderer/test-component-setup";
 import {
-  emptySessionState,
+  unauthSessionState,
   SessionStatus,
 } from "../../src/renderer/features/session/sessionSlice";
 import type {
@@ -67,7 +67,7 @@ describe("App Component", () => {
   it("redirects to sign-in when user has no session", async () => {
     renderWithProviders(<App />, {
       initialEntries: ["/"],
-      preloadedState: { session: emptySessionState },
+      preloadedState: { session: unauthSessionState },
     });
 
     // Should render the sign-in view (redirected from root)

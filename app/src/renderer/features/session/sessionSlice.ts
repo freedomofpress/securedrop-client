@@ -21,23 +21,30 @@ interface SessionState {
   authData?: AuthData;
 }
 
-const emptyState: SessionState = {
+const unauthState: SessionState = {
   status: SessionStatus.Unauth,
   authData: undefined,
 };
 
 export const sessionSlice = createSlice({
   name: "session",
-  initialState: emptyState,
+  initialState: unauthState,
   reducers: {
-    clear: () => emptyState,
-    set: (_state, action: PayloadAction<SessionState>) => action.payload,
+    setAuth: (state, action: PayloadAction<AuthData>) => {
+      state.authData = action.payload;
+      state.status = SessionStatus.Auth;
+    },
+    setUnauth: () => unauthState,
+    setOffline: (state) => {
+      state.status = SessionStatus.Offline;
+      state.authData = undefined;
+    },
   },
 });
 
 export type { SessionState, AuthData };
 export { SessionStatus };
-export const emptySessionState = emptyState;
-export const { clear, set } = sessionSlice.actions;
+export const unauthSessionState = unauthState;
+export const { setAuth, setUnauth, setOffline } = sessionSlice.actions;
 export const getSessionState = (state: RootState) => state.session;
 export default sessionSlice.reducer;

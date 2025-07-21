@@ -6,8 +6,12 @@ import { useNavigate } from "react-router";
 
 import type { ProxyRequest, ProxyJSONResponse } from "../../types";
 import { useAppDispatch } from "../hooks";
-import { SessionStatus, set, clear } from "../features/session/sessionSlice";
-import type { SessionState, AuthData } from "../features/session/sessionSlice";
+import {
+  setAuth,
+  setUnauth,
+  setOffline,
+} from "../features/session/sessionSlice";
+import type { AuthData } from "../features/session/sessionSlice";
 
 import logoImage from "../../../resources/images/logo.png";
 import backgroundImage from "../../../resources/images/sign-in-background.svg";
@@ -69,30 +73,27 @@ function SignInView() {
       try {
         // Update the session state
         dispatch(
-          set({
-            status: SessionStatus.Auth,
-            authData: {
-              expiration: res.data.expiration,
-              token: res.data.token,
-              journalistUUID: res.data.journalist_uuid,
-              journalistFirstName: res.data.journalist_first_name,
-              journalistLastName: res.data.journalist_last_name,
-            } as AuthData,
-          } as SessionState),
+          setAuth({
+            expiration: res.data.expiration,
+            token: res.data.token,
+            journalistUUID: res.data.journalist_uuid,
+            journalistFirstName: res.data.journalist_first_name,
+            journalistLastName: res.data.journalist_last_name,
+          } as AuthData),
         );
 
         // Redirect to home
         navigate("/");
       } catch (e) {
         console.error("Failed to update session state:", e);
-        dispatch(clear());
+        dispatch(setUnauth());
 
         setAuthErrorMessage(errorMessageGeneric);
         setAuthError(true);
       }
     } catch (e) {
       console.error("Proxy request failed:", e);
-      dispatch(clear());
+      dispatch(setUnauth());
 
       setAuthErrorMessage(errorMessageNetwork);
       setAuthError(true);
@@ -122,12 +123,7 @@ function SignInView() {
 
   const useOffline = () => {
     // Update the session state to offline mode
-    dispatch(
-      set({
-        status: SessionStatus.Offline,
-        authData: undefined,
-      } as SessionState),
-    );
+    dispatch(setOffline());
 
     // Redirect to home
     navigate("/");

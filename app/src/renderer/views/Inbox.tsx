@@ -2,7 +2,7 @@ import { useNavigate } from "react-router";
 import { Button } from "antd";
 
 import { useAppDispatch, useAppSelector } from "../hooks";
-import { clear, SessionStatus } from "../features/session/sessionSlice";
+import { setUnauth, SessionStatus } from "../features/session/sessionSlice";
 
 function InboxView() {
   const navigate = useNavigate();
@@ -38,7 +38,7 @@ function InboxView() {
 
   const signOut = () => {
     console.log("signing out");
-    dispatch(clear());
+    dispatch(setUnauth());
     navigate("/");
   };
 
