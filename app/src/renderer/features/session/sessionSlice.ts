@@ -2,22 +2,28 @@ import { createSlice } from "@reduxjs/toolkit";
 import type { PayloadAction } from "@reduxjs/toolkit";
 import type { RootState } from "../../store";
 
+enum SessionStatus {
+  Unauth,
+  Offline,
+  Auth,
+}
+
+interface AuthData {
+  expiration: string;
+  token: string;
+  journalistUUID: string;
+  journalistFirstName: string;
+  journalistLastName: string;
+}
+
 interface SessionState {
-  offlineMode: boolean;
-  expiration: string | undefined;
-  token: string | undefined;
-  journalistUuid: string | undefined;
-  journalistFirstName: string | undefined;
-  journalistLastName: string | undefined;
+  status: SessionStatus;
+  authData?: AuthData;
 }
 
 const emptyState: SessionState = {
-  offlineMode: false,
-  expiration: undefined,
-  token: undefined,
-  journalistUuid: undefined,
-  journalistFirstName: undefined,
-  journalistLastName: undefined,
+  status: SessionStatus.Unauth,
+  authData: undefined,
 };
 
 export const sessionSlice = createSlice({
@@ -29,7 +35,8 @@ export const sessionSlice = createSlice({
   },
 });
 
-export type { SessionState };
+export type { SessionState, AuthData };
+export { SessionStatus };
 export const emptySessionState = emptyState;
 export const { clear, set } = sessionSlice.actions;
 export const getSessionState = (state: RootState) => state.session;

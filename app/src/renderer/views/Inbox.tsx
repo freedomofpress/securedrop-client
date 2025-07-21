@@ -2,7 +2,7 @@ import { useNavigate } from "react-router";
 import { Button } from "antd";
 
 import { useAppDispatch, useAppSelector } from "../hooks";
-import { clear } from "../features/session/sessionSlice";
+import { clear, SessionStatus } from "../features/session/sessionSlice";
 
 function InboxView() {
   const navigate = useNavigate();
@@ -77,7 +77,7 @@ function InboxView() {
             Dummy Stream Request
           </Button>
 
-          {session.offlineMode ? (
+          {session.status == SessionStatus.Offline ? (
             <>
               <p className="font-bold">Offline Mode</p>
               <Button

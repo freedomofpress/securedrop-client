@@ -6,8 +6,8 @@ import { useNavigate } from "react-router";
 
 import type { ProxyRequest, ProxyJSONResponse } from "../../types";
 import { useAppDispatch } from "../hooks";
-import type { SessionState } from "../features/session/sessionSlice";
-import { set, clear } from "../features/session/sessionSlice";
+import { SessionStatus, set, clear } from "../features/session/sessionSlice";
+import type { SessionState, AuthData } from "../features/session/sessionSlice";
 
 import logoImage from "../../../resources/images/logo.png";
 import backgroundImage from "../../../resources/images/sign-in-background.svg";
@@ -70,12 +70,14 @@ function SignInView() {
         // Update the session state
         dispatch(
           set({
-            offlineMode: false,
-            expiration: res.data.expiration,
-            token: res.data.token,
-            journalistUuid: res.data.journalist_uuid,
-            journalistFirstName: res.data.journalist_first_name,
-            journalistLastName: res.data.journalist_last_name,
+            status: SessionStatus.Auth,
+            authData: {
+              expiration: res.data.expiration,
+              token: res.data.token,
+              journalistUUID: res.data.journalist_uuid,
+              journalistFirstName: res.data.journalist_first_name,
+              journalistLastName: res.data.journalist_last_name,
+            } as AuthData,
           } as SessionState),
         );
 
@@ -122,12 +124,8 @@ function SignInView() {
     // Update the session state to offline mode
     dispatch(
       set({
-        offlineMode: true,
-        expiration: undefined,
-        token: undefined,
-        journalistUuid: undefined,
-        journalistFirstName: undefined,
-        journalistLastName: undefined,
+        status: SessionStatus.Offline,
+        authData: undefined,
       } as SessionState),
     );
 
