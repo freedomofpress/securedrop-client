@@ -8,26 +8,26 @@ export default defineConfig(({ command }) => {
   const isDev = command === "serve";
   console.log(`Building in ${isDev ? "development" : "production"} mode`);
 
-  // Build the proxy: `make -C ../proxy build`
-  try {
-    console.log("Building proxy...");
-    execSync("make -C ../proxy build", { stdio: "inherit" });
-    console.log("Proxy build completed successfully");
-  } catch (error) {
-    console.error("Failed to build proxy:", error);
-    process.exit(1);
-  }
-
-  // Get the path to proxy binary
-  const stdout = execSync("cargo metadata --format-version 1", {
-    encoding: "utf-8",
-  });
-  const metadata = JSON.parse(stdout);
-  const targetDir = metadata.target_directory;
-  const proxyPath = `${targetDir}/debug/securedrop-proxy`;
-
   const vars = {};
   if (isDev) {
+    // Build the proxy: `make -C ../proxy build`
+    try {
+      console.log("Building proxy...");
+      execSync("make -C ../proxy build", { stdio: "inherit" });
+      console.log("Proxy build completed successfully");
+    } catch (error) {
+      console.error("Failed to build proxy:", error);
+      process.exit(1);
+    }
+
+    // Get the path to proxy binary
+    const stdout = execSync("cargo metadata --format-version 1", {
+      encoding: "utf-8",
+    });
+    const metadata = JSON.parse(stdout);
+    const targetDir = metadata.target_directory;
+    const proxyPath = `${targetDir}/debug/securedrop-proxy`;
+
     // Get the absolute path to the proxy binary
     const sdProxyCmd = resolve(proxyPath);
     vars["__PROXY_ORIGIN__"] = JSON.stringify("http://localhost:8081/");
