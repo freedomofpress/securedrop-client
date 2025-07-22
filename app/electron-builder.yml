@@ -14,8 +14,6 @@ asarUnpack:
 extraResources:
   - from: node_modules/@dbmate/linux-x64/bin/dbmate
     to: bin/dbmate
-  - from: dist/securedrop-proxy
-    to: bin/securedrop-proxy
   - from: src/main/database/migrations
     to: migrations
 linux:
