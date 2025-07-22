@@ -226,6 +226,10 @@ function SignInView() {
                 placeholder="338578"
                 maxLength={6}
                 onKeyPress={(e) => {
+                  // Allow Enter key for form submission
+                  if (e.key === "Enter") {
+                    return;
+                  }
                   // Only allow numeric characters
                   if (!/[0-9]/.test(e.key)) {
                     e.preventDefault();
