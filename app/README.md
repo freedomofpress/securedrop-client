@@ -95,6 +95,18 @@ pnpm dbmate up
 pnpm dbmate new migration_name
 ```
 
+### Using a proxy VM
+
+By default, the app will use a locally built proxy process runing in the same VM. If you want to use a proxy VM, you must set your environment to "production", e.g.:
+
+`pnpm exec electron-vite preview`
+
+Or, if you want to preserve other features of the development environment:
+
+`pnpm exec electron-vite dev --mode=production`
+
+The VM in which you are running the app must have RPC policy access to the proxy VM. When using `sd-proxy`, this is configured in `dom0` in the file `/etc/qubes/policy.d/31-securedrop-workstation.policy`.
+
 ## License
 
 AGPL-3.0-or-later
