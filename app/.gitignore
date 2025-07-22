@@ -91,3 +91,6 @@ typings/
 # electron-vite
 out/
 dist/
+
+# securedrop-app specific
+src/test-data.sql
