@@ -37,7 +37,7 @@ const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
   ) {
     return children;
   }
-  
+
   return <Navigate to="/sign-in" replace />;
 };
 
