@@ -33,9 +33,9 @@ export default defineConfig(({ command }) => {
     vars["__PROXY_ORIGIN__"] = JSON.stringify("http://localhost:8081/");
     vars["__PROXY_CMD__"] = JSON.stringify(sdProxyCmd);
   } else {
-    // These are determined at runtime in production
+    // __PROXY_CMD__ is determined at runtime in production
     vars["__PROXY_ORIGIN__"] = JSON.stringify("http://localhost:8081/");
-    vars["__PROXY_CMD__"] = "";
+    vars["__PROXY_CMD__"] = '""'; // Empty string
   }
 
   return {
