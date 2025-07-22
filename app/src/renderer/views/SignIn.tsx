@@ -7,8 +7,12 @@ import { useTranslation } from "react-i18next";
 
 import type { ProxyRequest, ProxyJSONResponse } from "../../types";
 import { useAppDispatch } from "../hooks";
-import type { SessionState } from "../features/session/sessionSlice";
-import { set, clear } from "../features/session/sessionSlice";
+import {
+  setAuth,
+  setUnauth,
+  setOffline,
+} from "../features/session/sessionSlice";
+import type { AuthData } from "../features/session/sessionSlice";
 
 import logoImage from "../../../resources/images/logo.png";
 import backgroundImage from "../../../resources/images/sign-in-background.svg";
@@ -68,28 +72,27 @@ function SignInView() {
       try {
         // Update the session state
         dispatch(
-          set({
-            offlineMode: false,
+          setAuth({
             expiration: res.data.expiration,
             token: res.data.token,
-            journalistUuid: res.data.journalist_uuid,
+            journalistUUID: res.data.journalist_uuid,
             journalistFirstName: res.data.journalist_first_name,
             journalistLastName: res.data.journalist_last_name,
-          } as SessionState),
+          } as AuthData),
         );
 
         // Redirect to home
         navigate("/");
       } catch (e) {
         console.error("Failed to update session state:", e);
-        dispatch(clear());
+        dispatch(setUnauth());
 
         setAuthErrorMessage(errorMessageGeneric);
         setAuthError(true);
       }
     } catch (e) {
       console.error("Proxy request failed:", e);
-      dispatch(clear());
+      dispatch(setUnauth());
 
       setAuthErrorMessage(errorMessageNetwork);
       setAuthError(true);
@@ -119,16 +122,7 @@ function SignInView() {
 
   const useOffline = () => {
     // Update the session state to offline mode
-    dispatch(
-      set({
-        offlineMode: true,
-        expiration: undefined,
-        token: undefined,
-        journalistUuid: undefined,
-        journalistFirstName: undefined,
-        journalistLastName: undefined,
-      } as SessionState),
-    );
+    dispatch(setOffline());
 
     // Redirect to home
     navigate("/");
@@ -142,19 +136,20 @@ function SignInView() {
       }}
     >
       <div className="sm:mx-auto sm:w-full sm:max-w-md">
-        <div className="flex justify-center mb-6">
-          <img src={logoImage} alt="SecureDrop" className="logo" />
-        </div>
-
-        <h1 className="mb-6">{t("title")}</h1>
-
-        {authError && (
-          <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg">
-            <p className="text-sm text-red-700 text-center">
-              {authErrorMessage}
-            </p>
+        <div className="relative mb-6">
+          <div className="flex justify-center mb-6">
+            <img src={logoImage} alt="SecureDrop" className="logo" />
           </div>
-        )}
+
+          <h1 className="mb-6">{t("title")}</h1>
+          {authError && (
+            <div className="absolute top-14 left-0 right-0 p-4 bg-red-50 border border-red-200 rounded-lg shadow-lg z-10">
+              <p className="text-sm text-red-700 text-center">
+                {authErrorMessage}
+              </p>
+            </div>
+          )}
+        </div>
 
         <div className="bg-white py-6 px-8 shadow-sm rounded-lg">
           <Form
@@ -226,6 +221,10 @@ function SignInView() {
                 placeholder="338578"
                 maxLength={6}
                 onKeyPress={(e) => {
+                  // Allow Enter key for form submission
+                  if (e.key === "Enter") {
+                    return;
+                  }
                   // Only allow numeric characters
                   if (!/[0-9]/.test(e.key)) {
                     e.preventDefault();

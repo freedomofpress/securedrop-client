@@ -2,35 +2,49 @@ import { createSlice } from "@reduxjs/toolkit";
 import type { PayloadAction } from "@reduxjs/toolkit";
 import type { RootState } from "../../store";
 
-interface SessionState {
-  offlineMode: boolean;
-  expiration: string | undefined;
-  token: string | undefined;
-  journalistUuid: string | undefined;
-  journalistFirstName: string | undefined;
-  journalistLastName: string | undefined;
+enum SessionStatus {
+  Unauth,
+  Offline,
+  Auth,
 }
 
-const emptyState: SessionState = {
-  offlineMode: false,
-  expiration: undefined,
-  token: undefined,
-  journalistUuid: undefined,
-  journalistFirstName: undefined,
-  journalistLastName: undefined,
+interface AuthData {
+  expiration: string;
+  token: string;
+  journalistUUID: string;
+  journalistFirstName: string;
+  journalistLastName: string;
+}
+
+interface SessionState {
+  status: SessionStatus;
+  authData?: AuthData;
+}
+
+const unauthState: SessionState = {
+  status: SessionStatus.Unauth,
+  authData: undefined,
 };
 
 export const sessionSlice = createSlice({
   name: "session",
-  initialState: emptyState,
+  initialState: unauthState,
   reducers: {
-    clear: () => emptyState,
-    set: (_state, action: PayloadAction<SessionState>) => action.payload,
+    setAuth: (state, action: PayloadAction<AuthData>) => {
+      state.authData = action.payload;
+      state.status = SessionStatus.Auth;
+    },
+    setUnauth: () => unauthState,
+    setOffline: (state) => {
+      state.status = SessionStatus.Offline;
+      state.authData = undefined;
+    },
   },
 });
 
-export type { SessionState };
-export const emptySessionState = emptyState;
-export const { clear, set } = sessionSlice.actions;
+export type { SessionState, AuthData };
+export { SessionStatus };
+export const unauthSessionState = unauthState;
+export const { setAuth, setUnauth, setOffline } = sessionSlice.actions;
 export const getSessionState = (state: RootState) => state.session;
 export default sessionSlice.reducer;

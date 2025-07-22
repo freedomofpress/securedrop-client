@@ -4,6 +4,7 @@ import { expect } from "vitest";
 import userEvent from "@testing-library/user-event";
 import SignInView from "../../../src/renderer/views/SignIn";
 import { renderWithProviders } from "../../../src/renderer/test-component-setup";
+import { SessionStatus } from "../../../src/renderer/features/session/sessionSlice";
 
 describe("SignInView Component", () => {
   it("says title and version", async () => {
@@ -271,9 +272,9 @@ describe("SignInView Component", () => {
       // Should have redirected to the inbox
       expect(currentLocation.pathname).toBe("/");
 
-      // Should have set session with offlineMode: true
+      // Should have set session status to offline
       const state = store.getState();
-      expect(state.session.offlineMode).toBe(true);
+      expect(state.session.status).toBe(SessionStatus.Offline);
     });
   });
 });

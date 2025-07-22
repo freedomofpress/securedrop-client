@@ -2,8 +2,14 @@ import { screen, waitFor } from "@testing-library/react";
 import { expect } from "vitest";
 import App from "../../src/renderer/App";
 import { renderWithProviders } from "../../src/renderer/test-component-setup";
-import { emptySessionState } from "../../src/renderer/features/session/sessionSlice";
-import type { SessionState } from "../../src/renderer/features/session/sessionSlice";
+import {
+  unauthSessionState,
+  SessionStatus,
+} from "../../src/renderer/features/session/sessionSlice";
+import type {
+  SessionState,
+  AuthData,
+} from "../../src/renderer/features/session/sessionSlice";
 
 // Mock the views components to make testing simpler
 vi.mock("../../src/renderer/views/Inbox", () => ({
@@ -17,12 +23,14 @@ vi.mock("../../src/renderer/views/SignIn", () => ({
 describe("App Component", () => {
   it("renders inbox view when user has valid session and navigates to root", async () => {
     const validSession: SessionState = {
-      offlineMode: false,
-      journalistUuid: "test-uuid-123",
-      token: "valid-token",
-      expiration: "2025-07-16T19:25:44.388054+00:00",
-      journalistFirstName: "Test",
-      journalistLastName: "User",
+      status: SessionStatus.Auth,
+      authData: {
+        journalistUUID: "test-uuid-123",
+        token: "valid-token",
+        expiration: "2025-07-16T19:25:44.388054+00:00",
+        journalistFirstName: "Test",
+        journalistLastName: "User",
+      } as AuthData,
     };
 
     renderWithProviders(<App />, {
@@ -43,7 +51,7 @@ describe("App Component", () => {
   it("renders inbox view when in offline mode", async () => {
     renderWithProviders(<App />, {
       initialEntries: ["/"],
-      preloadedState: { session: { ...emptySessionState, offlineMode: true } },
+      preloadedState: { session: { status: SessionStatus.Offline } },
     });
 
     // Should render the inbox view
@@ -59,7 +67,7 @@ describe("App Component", () => {
   it("redirects to sign-in when user has no session", async () => {
     renderWithProviders(<App />, {
       initialEntries: ["/"],
-      preloadedState: { session: emptySessionState },
+      preloadedState: { session: unauthSessionState },
     });
 
     // Should render the sign-in view (redirected from root)
