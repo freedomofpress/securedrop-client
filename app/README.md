@@ -20,7 +20,6 @@ On a Debian Bookworm VM, we recommend installing Node and Rust via [nvm](https:/
 - [Node.js installation guide](https://nodejs.org/en/download)
 - [Rust installation guide](https://www.rust-lang.org/tools/install)
 
-
 ## Quick Start
 
 ### 1. Install Dependencies
@@ -36,6 +35,7 @@ pnpm start
 ```
 
 This will:
+
 - Build the SecureDrop proxy component (requires Rust)
 - Configure environment variables automatically
 - Start the Electron app in development mode
