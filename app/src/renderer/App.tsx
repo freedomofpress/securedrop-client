@@ -32,13 +32,13 @@ const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
   const session = useAppSelector((state) => state.session);
 
   if (
-    session.status !== SessionStatus.Auth &&
-    session.status !== SessionStatus.Offline
+    session.status == SessionStatus.Auth ||
+    session.status == SessionStatus.Offline
   ) {
-    return <Navigate to="/sign-in" replace />;
+    return children;
   }
 
-  return children;
+  return <Navigate to="/sign-in" replace />;
 };
 
 export default App;
