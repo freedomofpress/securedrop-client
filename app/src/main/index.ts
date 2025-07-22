@@ -11,8 +11,12 @@ runMigrations();
 
 function createWindow(): void {
   const mainWindow = new BrowserWindow({
-    width: 900,
-    height: 670,
+    width: is.dev ? 1200 : 900,
+    height: 700,
+    minWidth: 900,
+    minHeight: 700,
+    title: "SecureDrop App",
+    icon: join(__dirname, "../renderer/resources/icon.png"),
     show: false,
     autoHideMenuBar: true,
     webPreferences: {
@@ -23,6 +27,10 @@ function createWindow(): void {
 
   mainWindow.on("ready-to-show", () => {
     mainWindow.show();
+    // Default open DevTools in development
+    if (is.dev) {
+      mainWindow.webContents.openDevTools();
+    }
   });
 
   // HMR for renderer base on electron-vite cli.

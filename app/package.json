@@ -2,7 +2,7 @@
   "name": "securedrop-app",
   "version": "0.0.1",
   "description": "Graphical desktop app for SecureDrop",
-  "productName": "SecureDrop",
+  "productName": "SecureDrop App",
   "main": "./out/main/index.js",
   "author": {
     "name": "SecureDrop Team",
@@ -10,7 +10,7 @@
   },
   "homepage": "https://securedrop.org",
   "scripts": {
-    "start": "./run.sh",
+    "start": "./scripts/start.sh",
     "test": "vitest run --config vitest.config.ts --project=unit --coverage",
     "integration-test": "vitest run --config vitest.config.ts --project=integration --coverage",
     "fix": "eslint --fix . && prettier --write .",
@@ -21,7 +21,7 @@
     "build": "pnpm run typecheck && electron-vite build",
     "postinstall": "electron-builder install-app-deps",
     "build:unpack": "pnpm run build && electron-builder --dir",
-    "build:linux": "electron-vite build && electron-builder --linux",
+    "build:linux": "pnpm run build && electron-builder --linux",
     "dbmate": "sh -c 'dbmate --url sqlite:$HOME/.config/SecureDrop/db.sqlite --migrations-dir ./src/database/migrations --schema-file ./src/database/schema.sql \"$@\"' _"
   },
   "keywords": [],
@@ -72,6 +72,7 @@
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
     "react-redux": "^9.2.0",
+    "react-router": "^7.6.3",
     "tailwindcss": "^4.1.11"
   }
 }

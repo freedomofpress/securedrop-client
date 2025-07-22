@@ -1,0 +1,29 @@
+.sign-in-container {
+  background-position: center;
+}
+
+.logo {
+  width: 48px;
+  height: 48px;
+}
+
+h1 {
+  text-align: center;
+  font-size: 30px;
+  font-weight: 600;
+  color: #181d27;
+}
+
+.use-offline-button {
+  color: #1d4ed8;
+  font-weight: 600;
+}
+
+.use-offline-button:hover,
+.use-offline-button:focus {
+  color: #1d4ed8 !important;
+}
+
+.button-container {
+  margin-bottom: 0;
+}

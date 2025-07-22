@@ -1,6 +1,9 @@
 import { combineReducers, configureStore } from "@reduxjs/toolkit";
+import sessionSlice from "./features/session/sessionSlice";
 
-const rootReducer = combineReducers({});
+const rootReducer = combineReducers({
+  session: sessionSlice,
+});
 
 export const setupStore = (preloadedState?: Partial<RootState>) => {
   return configureStore({
