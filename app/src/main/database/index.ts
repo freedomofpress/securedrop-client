@@ -4,6 +4,8 @@ import path from "path";
 import { execSync } from "child_process";
 import Database from "better-sqlite3";
 
+import type { Source, SourceRow, SourceObj } from "../../types";
+
 let db: Database.Database | null = null;
 let databaseUrl: string | null = null;
 
@@ -91,4 +93,17 @@ export const closeDatabase = () => {
     db.close();
     db = null;
   }
+};
+
+export const getSources = (): Source[] => {
+  if (!db) {
+    throw new Error("Database is not open");
+  }
+
+  const stmt = db.prepare("SELECT * FROM sources");
+  const rows: SourceRow[] = stmt.all() as SourceRow[];
+  return rows.map((row) => ({
+    uuid: row.uuid,
+    data: JSON.parse(row.data) as SourceObj,
+  }));
 };

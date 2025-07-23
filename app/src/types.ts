@@ -42,6 +42,11 @@ export type Source = {
   data: SourceObj;
 };
 
+export type SourceRow = {
+  uuid: string;
+  data: string; // JSON stringified SourceObj
+};
+
 export type SourceObj = {
   fingerprint: string;
   is_starred: boolean;
@@ -54,6 +59,13 @@ export type SourceObj = {
 export type Item = {
   uuid: string;
   data: ItemObj;
+  plaintext?: string;
+  filename?: string;
+};
+
+export type ItemRow = {
+  uuid: string;
+  data: string; // JSON stringified ItemObj
   plaintext?: string;
   filename?: string;
 };

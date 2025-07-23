@@ -1,12 +1,17 @@
 // See the Electron documentation for details on how to use preload scripts:
 // https://www.electronjs.org/docs/latest/tutorial/process-model#preload-scripts
 import { contextBridge, ipcRenderer } from "electron";
-import type { ProxyRequest } from "../types";
+import type { ProxyRequest, ProxyResponse, Source } from "../types";
 
 const electronAPI = {
-  request: (request: ProxyRequest) => ipcRenderer.invoke("request", request),
-  requestStream: (request: ProxyRequest, downloadPath: string) =>
+  request: (request: ProxyRequest): Promise<ProxyResponse> =>
+    ipcRenderer.invoke("request", request),
+  requestStream: (
+    request: ProxyRequest,
+    downloadPath: string,
+  ): Promise<ProxyResponse> =>
     ipcRenderer.invoke("requestStream", request, downloadPath),
+  getSources: (): Promise<Source[]> => ipcRenderer.invoke("getSources"),
 };
 
 contextBridge.exposeInMainWorld("electronAPI", electronAPI);
