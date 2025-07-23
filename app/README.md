@@ -31,7 +31,7 @@ pnpm install
 ### 2. Start Development Server
 
 ```bash
-pnpm start
+pnpm dev
 ```
 
 This will:
@@ -42,7 +42,8 @@ This will:
 
 ### 3. Available Scripts
 
-- `pnpm start` - Start development server
+- `pnpm dev` - Start in development mode
+- `pnpm start` - Start in production mode
 - `pnpm test` - Run unit tests with coverage
 - `pnpm integration-test` - Run integration tests
 - `pnpm build` - Build for production
@@ -97,13 +98,7 @@ pnpm dbmate new migration_name
 
 ### Using a proxy VM
 
-By default, the app will use a locally built proxy process runing in the same VM. If you want to use a proxy VM, you must set your environment to "production", e.g.:
-
-`pnpm exec electron-vite preview`
-
-Or, if you want to preserve other features of the development environment:
-
-`pnpm exec electron-vite dev --mode=production`
+The production environment (`pnpm start`) will attempt to use a proxy VM.
 
 The VM in which you are running the app must have RPC policy access to the proxy VM. When using `sd-proxy`, this is configured in `dom0` in the file `/etc/qubes/policy.d/31-securedrop-workstation.policy`.
 
