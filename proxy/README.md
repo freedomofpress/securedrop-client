@@ -88,7 +88,7 @@ See our [documentation for managing dependencies](https://developers.securedrop.
 
 ## Making a Release
 
-See our [documentation for releasing Debian packages](https://developers.securedrop.org/en/latest/workstation_release_management.html#release-a-debian-package).
+See our [documentation for releasing SecureDrop Workstation Debian packages](https://developers.securedrop.org/en/latest/workstation_release_management.html#release-a-debian-package).
 
 ## Configuration
 

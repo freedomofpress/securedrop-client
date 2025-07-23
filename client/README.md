@@ -385,14 +385,7 @@ Note: One of the functional tests deletes a source, so you may need to add it ba
 
 ## Making a Release
 
-1. Update versions: `./update_version.sh $new_version_number` and add a new entry in the changelog.
-2. Commit the changes with commit message `securedrop-client $new_version_number` and make a PR.
-3. You should confirm via a manual debian package build and manual testing in Qubes that there are no regressions (this is limited pre-release QA).
-4. Once your PR is approved, you can add a tag: `git tag -a $new_version_number`.
-5. Perform the release signing ceremony on the tag. Push the tag.
-6. The signer should create the source tarball via `python3 setup.py sdist`.
-7. Add a detached signature (with the release key) for the source tarball.
-8. Submit the source tarball and signature via PR into this [repository](https://github.com/freedomofpress/securedrop-builder) along with the debian changelog addition. This tarball and changelog will be used by the package builder.
+See our [documentation for releasing SecureDrop Workstation Debian packages](https://developers.securedrop.org/en/latest/workstation_release_management.html#release-a-debian-package).
 
 ## Debugging
 
