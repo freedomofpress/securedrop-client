@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 
-import type { Source } from "../../../types";
+import type { Source } from "../../../../types";
 
 function Sources() {
   const [sources, setSources] = useState<Source[]>([]);

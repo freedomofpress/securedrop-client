@@ -1,4 +1,4 @@
-import emptyStateImage from "../../../resources/images/inbox-empty-state.svg";
+import emptyStateImage from "../../../../resources/images/inbox-empty-state.svg";
 import "./MainContent.css";
 
 function MainContent() {

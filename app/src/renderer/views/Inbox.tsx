@@ -1,5 +1,5 @@
-import Sidebar from "../components/Sidebar";
-import MainContent from "../components/MainContent";
+import Sidebar from "./Inbox/Sidebar";
+import MainContent from "./Inbox/MainContent";
 
 function InboxView() {
   return (

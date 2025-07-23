@@ -2,8 +2,11 @@ import { useNavigate } from "react-router";
 import { Button, Typography } from "antd";
 import { UserOutlined, LoginOutlined, LogoutOutlined } from "@ant-design/icons";
 
-import { useAppDispatch, useAppSelector } from "../../hooks";
-import { setUnauth, SessionStatus } from "../../features/session/sessionSlice";
+import { useAppDispatch, useAppSelector } from "../../../hooks";
+import {
+  setUnauth,
+  SessionStatus,
+} from "../../../features/session/sessionSlice";
 
 function Account() {
   const navigate = useNavigate();
