@@ -11,7 +11,7 @@ runMigrations();
 
 function createWindow(): void {
   const mainWindow = new BrowserWindow({
-    width: (is.dev && process.env["NODE_ENV"] != "production") ? 1200 : 900,
+    width: is.dev && process.env["NODE_ENV"] != "production" ? 1200 : 900,
     height: 700,
     minWidth: 900,
     minHeight: 700,
