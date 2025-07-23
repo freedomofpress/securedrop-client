@@ -5,11 +5,15 @@ import { execSync } from "child_process";
 import Database, { Statement } from "better-sqlite3";
 import blake from "blakejs";
 
-import {
+import type {
   Index,
   SourceMetadata,
   ItemMetadata,
   MetadataResponse,
+  Source,
+  SourceWithItems,
+  SourceRow,
+  ItemRow,
 } from "../../types";
 
 const sortKeys = (_, value) =>
@@ -251,5 +255,88 @@ export class DB {
         version: version,
       });
     });
+  }
+
+  // Helper function for truthy values
+  private isTruthy(value: unknown): boolean {
+    if (typeof value === "boolean") return value;
+    if (typeof value === "number") return value !== 0;
+    if (typeof value === "string")
+      return value.toLowerCase() === "true" || value === "1";
+    return Boolean(value);
+  }
+
+  getSources(): Source[] {
+    if (!this.db) {
+      throw new Error("Database is not open");
+    }
+
+    // Select sources
+    const stmt = this.db.prepare(`
+      SELECT
+        uuid,
+        data,
+        is_seen,
+        has_attachment,
+        show_message_preview,
+        message_preview
+      FROM sources
+    `);
+
+    const rows = stmt.all() as Array<SourceRow>;
+
+    return rows.map((row) => {
+      const data = JSON.parse(row.data) as SourceMetadata;
+      return {
+        uuid: row.uuid,
+        data,
+        isRead: this.isTruthy(row.is_seen),
+        hasAttachment: this.isTruthy(row.has_attachment),
+        showMessagePreview: this.isTruthy(row.show_message_preview),
+        messagePreview: row.message_preview,
+      };
+    });
+  }
+
+  getSourceWithItems(sourceUuid: string): SourceWithItems {
+    if (!this.db) {
+      throw new Error("Database is not open");
+    }
+
+    // Get the source data
+    const sourceStmt = this.db.prepare(`
+      SELECT uuid, data FROM sources
+      WHERE uuid = ?;
+    `);
+    const sourceRow = sourceStmt.get(sourceUuid) as SourceRow | undefined;
+
+    if (!sourceRow) {
+      throw new Error(`Source with UUID ${sourceUuid} not found`);
+    }
+
+    const sourceData = JSON.parse(sourceRow.data);
+
+    // Get the items for this source
+    const itemsStmt = this.db.prepare(`
+      SELECT uuid, data, plaintext, filename FROM items
+      WHERE source_uuid = ?;
+    `);
+    const itemRows = itemsStmt.all(sourceUuid) as Array<ItemRow>;
+
+    const items = itemRows.map((row) => {
+      const data = JSON.parse(row.data) as ItemMetadata;
+      return {
+        uuid: row.uuid,
+        data,
+        plaintext: row.plaintext,
+        filename: row.filename,
+      };
+    });
+
+    return {
+      uuid: sourceRow.uuid,
+      data: sourceData as SourceMetadata,
+      items,
+    };
   }
 }
