@@ -19,14 +19,21 @@ def proxy_bin() -> str:
 
 @pytest.fixture
 def proxy_request(httpbin, proxy_bin):
-    def proxy_(input: bytes | dict, origin: str | None = None) -> subprocess.CompletedProcess:
+    def proxy_(
+        input: bytes | dict, origin: str | None = None, use_tor=False
+    ) -> subprocess.CompletedProcess:
         if isinstance(input, dict):
             input = json.dumps(input).encode()
         if origin is None:
             origin = httpbin.url
+
+        env = {"SD_PROXY_ORIGIN": origin}
+        if not use_tor:
+            env["DISABLE_TOR"] = "yes"
+
         return subprocess.run(
             [proxy_bin],
-            env={"SD_PROXY_ORIGIN": origin},
+            env=env,
             input=input,
             capture_output=True,
             check=False,
