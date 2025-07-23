@@ -11,7 +11,7 @@ runMigrations();
 
 function createWindow(): void {
   const mainWindow = new BrowserWindow({
-    width: is.dev ? 1200 : 900,
+    width: (is.dev && process.env["NODE_ENV"] != "production") ? 1200 : 900,
     height: 700,
     minWidth: 900,
     minHeight: 700,
@@ -28,7 +28,7 @@ function createWindow(): void {
   mainWindow.on("ready-to-show", () => {
     mainWindow.show();
     // Default open DevTools in development
-    if (is.dev) {
+    if (is.dev && process.env["NODE_ENV"] != "production") {
       mainWindow.webContents.openDevTools();
     }
   });
