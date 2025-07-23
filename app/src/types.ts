@@ -14,11 +14,11 @@ export type ProxyCommand = {
   abortSignal?: AbortSignal;
 };
 
-export type ProxyResponse = ProxyJSONResponse | ProxyStreamResponse;
+export type ProxyResponse<T> = ProxyJSONResponse<T> | ProxyStreamResponse;
 
-export type ProxyJSONResponse = {
+export type ProxyJSONResponse<T> = {
   error: boolean;
-  data: JSONObject;
+  data?: T;
   status: number;
   headers: Map<string, string>;
 };
@@ -29,10 +29,60 @@ export type ProxyStreamResponse = {
 
 type JSONPrimitive = string | number | boolean | null;
 type JSONArray = JSONValue[];
-export interface JSONObject {
+export type JSONObject = {
   [key: string]: JSONValue;
-}
+};
 
 export type JSONValue = JSONPrimitive | JSONArray | JSONObject;
 
 export type ms = number & { readonly __unit: "ms" };
+
+export interface Index {
+  sources: IndexSourceVersions;
+}
+
+export interface IndexSourceVersions {
+  [uuid: string]: SourceVersion;
+}
+
+export interface SourceVersion {
+  version: string;
+  collection: ItemVersions;
+}
+
+export interface ItemVersions {
+  // UUID: version for each item in the source
+  [uuid: string]: string;
+}
+
+export interface SyncMetadataRequest {
+  authToken: string;
+}
+
+export interface SourceSyncRequest {
+  full_sources: string[];
+  partial_sources: {
+    // source_uuid: [item_uuid, ...]
+    [uuid: string]: string[];
+  };
+}
+
+export interface SourceMetadata {
+  info: {
+    uuid: string;
+    journalist_designation: string;
+    is_starred: boolean;
+    last_updated: string;
+    public_key: string;
+    fingerprint: string;
+  };
+  collection: {
+    [uuid: string]: string;
+  };
+}
+
+export interface SourceSyncResponse {
+  sources: {
+    [sourceUUID: string]: SourceMetadata;
+  };
+}
