@@ -39,6 +39,32 @@ beforeEach(() => {
   (window as any).electronAPI = {
     request: vi.fn().mockResolvedValue({ data: "test" }),
     requestStream: vi.fn().mockResolvedValue({ sha256sum: "abc" }),
+    getSources: vi.fn().mockResolvedValue([
+      {
+        uuid: "source-1",
+        data: {
+          fingerprint: "ABCD1234EFGH5678IJKL9012MNOP3456QRST7890",
+          is_starred: false,
+          journalist_designation: "Journalist 1",
+          last_updated: "2024-01-15T10:30:00Z",
+          public_key:
+            "-----BEGIN PGP PUBLIC KEY BLOCK-----\nVersion: GnuPG v1\n...\n-----END PGP PUBLIC KEY BLOCK-----",
+          uuid: "source-1",
+        },
+      },
+      {
+        uuid: "source-2",
+        data: {
+          fingerprint: "1234ABCD5678EFGH9012IJKL3456MNOP7890QRST",
+          is_starred: true,
+          journalist_designation: "Journalist 2",
+          last_updated: "2024-01-14T15:45:00Z",
+          public_key:
+            "-----BEGIN PGP PUBLIC KEY BLOCK-----\nVersion: GnuPG v1\n...\n-----END PGP PUBLIC KEY BLOCK-----",
+          uuid: "source-2",
+        },
+      },
+    ]),
   };
 });
 
