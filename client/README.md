@@ -1,12 +1,12 @@
 # securedrop-client
 
+**NOTE:**  We are currently focusing on a rewrite of this application using the Electron framework. Please see the [`app`](../app) directory for more information
+
 The SecureDrop Client is a desktop application for journalists to communicate with sources and work with submissions on the [SecureDrop Workstation](https://github.com/freedomofpress/securedrop-workstation).
 
-The client runs within a [Qubes OS](https://www.qubes-os.org/intro/) VM that has no direct network access and opens files within individual, non-networked, disposable VMs. API requests and responses to and from the [SecureDrop application server](https://docs.securedrop.org/en/stable/glossary.html#application-server) are sent through an intermediate VM using the [SecureDrop Proxy](https://github.com/freedomofpress/securedrop-proxy).
+The client runs within a [Qubes OS](https://www.qubes-os.org/intro/) VM that has no direct network access and opens files within individual, non-networked, disposable VMs. API requests and responses to and from the [SecureDrop application server](https://docs.securedrop.org/en/stable/glossary.html#application-server) are sent through an intermediate VM using the [SecureDrop Proxy](https://github.com/freedomofpress/securedrop-client/tree/main/proxy).
 
 To learn more about architecture and our rationale behind our Qubes OS approach, see the [SecureDrop Workstation readme](https://github.com/freedomofpress/securedrop-workstation/blob/main/README.md).
-
-**IMPORTANT:** This project is currently undergoing a pilot study and should not be used in production environments.
 
 ## Index
 
@@ -86,31 +86,31 @@ end
 
 ### Running against a test server
 
-In order to login, or take other actions involving network access, you will need to run the client against a SecureDrop server. If you don't have a production server or want to test against a test server, you can install a SecureDrop server inside a dev container by following the instructions [in the SecureDrop documentation](https://docs.securedrop.org/en/latest/development/setup_development.html#quick-start).
+In order to login, or take other actions involving network access, you will need to run the client against a SecureDrop server. If you don't have a production server or want to test against a test server, you can install a SecureDrop server inside a dev container by following the instructions [in the SecureDrop documentation](https://developers.securedrop.org/en/latest/setup_development.html#quick-start).
 
-The client uses the [SecureDrop SDK](https://github.com/freedomofpress/securedrop-sdk) to interact with the [SecureDrop Journalist API](https://docs.securedrop.org/en/latest/development/journalist_api.html). After you run the server container, the journalist interface API will be running on `127.0.0.1:8081` with a test journalist, admin, and test sources and replies.
+The client uses the [SecureDrop SDK](securedrop_client/sdk) to interact with the [SecureDrop Journalist API](https://developers.securedrop.org/en/latest/journalist_api.html). After you run the server container, the journalist interface API will be running on `127.0.0.1:8081` with a test journalist, admin, and test sources and replies.
 
-To ensure that file decryption works, please import [this test private key](https://raw.githubusercontent.com/freedomofpress/securedrop/0a901362b84a5378fba80e9cd0ffe4542bdcd598/securedrop/tests/files/test_journalist_key.sec) into your GnuPG keyring. Submissions in the SecureDrop server dev environment can be decrypted with this test key.
+Submissions in the SecureDrop server dev environment can be decrypted with [this test key](tests/files/securedrop.gpg.asc). The `./run.sh` script will import it for you into a temporary keyring; you may need to import it manually if you run the client by other means.
 
 ### Developer environment
 
-Running the client in a developer environment will use a temporary directory as its configuration directory, instead of ` ~/.securedrop_client`. A development gpg private key inside a gpg keychain is stored in the temporary configuration directory, which will be used to decrypt messages sent from the server running in the local docker container.
+**NOTE:** Tor is not used in the developer environment. If you want to use a Tor connection between the client and server, then you'll need to follow the [staging environment](#staging-environment) instructions instead.
+
+Running the client in a developer environment will use a temporary directory as its configuration directory, instead of ` ~/.securedrop_client`. The development gpg private key inside a gpg keychain is stored in the temporary configuration directory, which will be used to decrypt messages sent from the server running in the local docker container.
 
 The SecureDrop client will open or export file submissions within disposable AppVms.
-
-Tor is not used in the developer environment. If you want to use a Tor connection between the client and server, then you'll need to follow the [staging environment](#staging-environment) instructions instead.
 
 1. Open a terminal in the `sd-app` AppVM in Qubes
 
 2. Run a SecureDrop server in a local docker container
 
-See [SecureDrop docs](https://docs.securedrop.org/en/latest/development/setup_development.html) for setup instructions, including post-installation steps for allowing docker to be run as a non-root user, which is a requirement on Qubes.
+See the [SecureDrop docs](https://docs.securedrop.org/en/latest/development/setup_development.html) for setup instructions, including post-installation steps for allowing docker to be run as a non-root user, which is a requirement on Qubes.
 
 3. In a new terminal tab, clone the SecureDrop Client repo and install its dependencies:
 
 ```
 git clone git@github.com:freedomofpress/securedrop-client.git
-cd securedrop-client
+cd securedrop-client/client
 poetry install
 ```
 
@@ -128,98 +128,35 @@ Or, if you want to persist data across restarts, you will need to run the client
 ./run.sh --sdc-home /path/to/my/configuration/directory
 ```
 
-### Developer environment on a Linux-based non-Qubes OS
+To log in, use one of the journalist usernames/passwords displayed in the Docker server output, such as `journalist`/`correct horse battery staple profanity oil chewy`. To generate the required 2FA token, we recommend installing and using the `oathtool` command, eg: `oathtool -b --totp "JHCOGO7VCER3EJ4L"` in your terminal. These same credentials are also displayed on https://demo.securedrop.org/ for convenience.
 
-Running the client in a developer environment will use a temporary directory as its configuration directory, instead of ` ~/.securedrop_client`. A development gpg private key inside a gpg keychain is stored in the temporary configuration directory, which will be used to decrypt messages.
+### Developer environment on Linux or macOS
 
-If you want to be able to open or export file submissions in a disposable AppVM, then you'll need to follow the instructions for running this in a [developer environment](#developer-environment) in Qubes.
+The setup process is largely the same as above. Instead of running in `sd-app` or another Qubes VM, you'll go through the above steps in your non-Qubes environment.
 
-Tor is not used in the developer environment. If you want to use a Tor connection between the client and server, then you'll need to follow the [staging environment](#staging-environment) instructions instead.
+Just like on Qubes, this configuration doesn't use the Tor network. In addition, the client will detect that you're not running on Qubes, and won't attempt to launch or access VMs for viewing or exporting documents.
 
-1. Open a terminal from your non-Qubes OS
+On macOS, you can bootstrap your environment using [Homebrew](https://brew.sh). To install Python 3.11, GPG, and `oathtool` (for generating 2FA codes), use:
 
-2. Run a SecureDrop server in a local docker container
+ `brew install python@3.11 gnupg oath-toolkit`
 
-See [SecureDrop docs](https://docs.securedrop.org/en/latest/development/setup_development.html) for setup instructions.
+If you have trouble getting the SecureDrop developer environment running on macOS, but have access to a remote server, you can proxy to it using this command:
 
-3. In a new terminal tab, clone the SecureDrop Client repo and install its dependencies
-
-```
-git clone git@github.com:freedomofpress/securedrop-client.git
-cd securedrop-client
-poetry install
-```
-
-4. Run SecureDrop Client
-
-```
-./run.sh
-```
-
-Or, if you want to persist data across restarts, you will need to run the client with:
-
-```
-./run.sh --sdc-home /path/to/my/configuration/directory
-```
-
-
-### Developer environment on macOS
-
-It is possible to run the development environment in macOS systems, but some functionality may not be available:
- * If you want to be able to open or export file submissions in a disposable AppVM, then you'll need to follow the instructions for running this in a [developer environment](#developer-environment) in Qubes.
- * Tor is not used in the developer environment. If you want to use a Tor connection between the client and server, then you'll need to follow the [staging environment](#staging-environment) instructions instead.
-
-#### Set up the server
-1. Open a terminal in macOS (note: this terminal must be a login shell - check your terminal app preferences)
-
-2. Run a SecureDrop server in a local docker container:
-
-   1. If it is not already installed, install Docker following instructions from https://docs.docker.com/desktop/mac/install/
-   2. Clone the securedrop repo: `git clone git@github.com:freedomofpress/securedrop.git`
-   3. Start the development server: `cd securedrop && make dev`. The Source Interface will now be available on `http://localhost:8080`.
-
-  See [SecureDrop docs](https://docs.securedrop.org/en/latest/development/setup_development.html) for more info and troubleshooting steps if necessary.
-
-Alternatively, if you can run or access a SecureDrop development environment on a remote server `A.B.C.D`, you can use the following command to set up a proxy to that remote server rather than running it locally:
-
-```
-socat TCP4-LISTEN:8081,fork,reuseaddr TCP4:A.B.C.D:8081
-```
-
-#### Set up the SecureDrop Client
-1. Open a new terminal window.
-2. Install [Homebrew](https://brew.sh/)
-3. Install dependencies via Homebrew: `brew install python@3.11 gnupg oath-toolkit`
-4. clone the SecureDrop Client repo and install its dependencies
-   ```
-   git clone git@github.com:freedomofpress/securedrop-client.git
-   cd securedrop-client
-   poetry install
-   ```
-
-5. Run SecureDrop Client
-   ```
-   ./run.sh
-   ```
-
-To log in, use one of the journalist usernames/passwords displayed in the Docker server output, such as
-`journalist/correct horse battery staple profanity oil chewy`. To generate the required 2FA token, use
-the `oathtool` command, eg: `oathtool -b --totp "JHCOGO7VCER3EJ4L"` in your terminal.
-
-Note: to persist data and config across multiple client runs, specify a home directory, e.g. `./run.sh --sdc_home=~/.sd_client`
+`socat TCP4-LISTEN:8081,fork,reuseaddr TCP4:A.B.C.D:8081`
 
 ### Staging environment
 
-Running the SecureDrop client in a staging environment will use a `~/.securedrop_client` as its configuration directory. The gpg key in the `sd-gpg` AppVM configured during `make all` will be used to decrypt messages.
+**NOTE:** You can use the [`try-client-pr.py`](https://github.com/freedomofpress/securedrop-workstation/blob/main/scripts/try-client-pr.py) script in the SecureDrop Workstation repository to build and install packages from a specific branch, to use with a staging or production environment.
+
+Running the SecureDrop client in a SecureDrop Workstation staging environment will use a `~/.securedrop_client` as its configuration directory. The gpg key in the `sd-gpg` AppVM configured during `make all` will be used to decrypt messages.
 
 The SecureDrop client will open or export file submissions within disposable AppVms.
 
 Requests and responses between the client and server use a Tor connection, which are proxied via the `securedrop-proxy` AppVM's RPC service.
 
-
 1. Run a SecureDrop staging server
 
-See [SecureDrop docs on setting up a staging server](https://docs.securedrop.org/en/latest/development/virtual_environments.html#staging) or [SecureDrop docs on setting up a staging server in Qubes](https://docs.securedrop.org/en/latest/development/qubes_staging.html#deploying-securedrop-staging-instance-on-qubes)
+See [SecureDrop docs on setting up a staging server](https://developers.securedrop.org/en/latest/virtual_environments.html#staging) or [SecureDrop docs on setting up a staging server in Qubes](https://developers.securedrop.org/en/latest/qubes_staging.html#deploying-securedrop-staging-instance-on-qubes)
 
 2. Open a terminal in `dom0` in Qubes
 
@@ -243,9 +180,9 @@ vi config.json
 securedrop-client
 ```
 
-Or [manually initialize](https://github.com/freedomofpress/securedrop-client/blob/HEAD/files/securedrop-client) the SecureDrop Client database.
+Or [manually initialize](https://github.com/freedomofpress/securedrop-client/blob/main/client/files/securedrop-client) the SecureDrop Client database.
 
-8. To run a different version of the client, say the version from a branch called `<branchname>`, first add a NetVM (`sys-firewall`) to `sd-app` via its Qubes Settings so you can clone the client repository, and then follow these steps:
+7. To run a different version of the client, say the version from a branch called `<branchname>`, first add a NetVM (`sys-firewall`) to `sd-app` via its Qubes Settings so you can clone the client repository, and then follow these steps:
 
 ```
 sudo apt-get install git pipx  # NB. won't persist across "sd-app" reboots
@@ -256,15 +193,17 @@ cd securedrop-client
 poetry install
 ```
 
-9. Run the client
+8. Run the client
 
 ```
-poetry run securedrop_client
+poetry run python -m securedrop_client
 ```
 
 ### Production environment
 
-Running the SecureDrop client in a production environment will use a `~/.securedrop_client` as its configuration directory. The gpg key in the `sd-gpg` AppVM configured during `make all` will be used to decrypt messages.
+**NOTE:** You can use the [`try-client-pr.py`](https://github.com/freedomofpress/securedrop-workstation/blob/main/scripts/try-client-pr.py) script in the SecureDrop Workstation repository to build and install packages from a specific branch, to use with a staging or production environment.
+
+Running the SecureDrop client in a SecureDrop Workstation production environment will use a `~/.securedrop_client` as its configuration directory. The gpg key in the `sd-gpg` AppVM configured during `make all` will be used to decrypt messages.
 
 The SecureDrop client will open or export file submissions within disposable AppVms.
 
@@ -272,7 +211,7 @@ Requests and responses between the client and server use a Tor connection, which
 
 1. Run a SecureDrop server
 
-See [SecureDrop docs on setting up a server](https://docs.securedrop.org/en/latest/install.html)
+See [SecureDrop docs on setting up a server](https://docs.securedrop.org/en/stable/admin/installation/installation_overview.html) if you want to use a production server for a fully production-like environment.
 
 2. Open a terminal in `dom0` in Qubes
 
