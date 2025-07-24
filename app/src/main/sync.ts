@@ -2,8 +2,8 @@ import { proxy } from "./proxy";
 import {
   ProxyJSONResponse,
   Index,
-  SourceSyncRequest,
-  SourceSyncResponse,
+  SourceDelta,
+  SourceDeltaResponse,
 } from "../types";
 import { DB } from "./database";
 
@@ -38,15 +38,15 @@ async function getIndex(
     return null;
   } else {
     return Promise.reject(
-      `Error fetching index from server: bad status code ${resp.status}`,
+      `Error fetching index from server: ${resp.status}: no data`,
     );
   }
 }
 
 async function syncSources(
   authToken: string,
-  request: SourceSyncRequest,
-): Promise<SourceSyncResponse> {
+  request: SourceDelta,
+): Promise<SourceDeltaResponse> {
   const resp = (await proxy({
     method: "POST",
     path_query: "/api/v2/sources",
@@ -57,9 +57,9 @@ async function syncSources(
       Authorization: `Token ${authToken}`,
     },
     body: JSON.stringify(request),
-  })) as ProxyJSONResponse<SourceSyncResponse>;
+  })) as ProxyJSONResponse<SourceDeltaResponse>;
 
-  if (resp.error || resp.status != 200) {
+  if (resp.error) {
     return Promise.reject(
       `Error fetching synchronized sources from server: ${resp.status}: ${JSON.stringify(resp.data)}`,
     );
@@ -69,15 +69,18 @@ async function syncSources(
     return resp.data;
   }
   return Promise.reject(
-    `Error fetching synchronized sources from server: no data returned`,
+    `Error fetching synchronized sources from server: ${resp.status}: no data`,
   );
 }
 
+// Given the server index and the client's index, return the sources that need to be
+// fully and partially synced. Also optimistically deletes items that are not in the
+// server index.
 function reconcileIndex(
   db: DB,
   serverIndex: Index,
   clientIndex: Index,
-): SourceSyncRequest {
+): SourceDelta {
   const fullSources: string[] = [];
   const partialSources = {};
   Object.keys(serverIndex.sources).forEach((uuid) => {
@@ -90,16 +93,29 @@ function reconcileIndex(
         const itemsToUpdate: string[] = [];
         const source = serverIndex.sources[uuid];
         const clientItemVersions = db.getSourceItemVersions(uuid);
-        Object.keys(source.collection).forEach((itemID) => {
-          if (
-            !clientItemVersions ||
-            !clientItemVersions[itemID] ||
-            clientItemVersions[itemID] != source.collection[itemID]
-          ) {
-            itemsToUpdate.push(itemID);
+        if (!clientItemVersions) {
+          // If there are no items for this source, we need to fetch all of them
+          itemsToUpdate.push(...Object.keys(source.collection));
+        } else {
+          // Otherwise, check our versions against the server's versions
+          Object.keys(source.collection).forEach((itemID) => {
+            if (
+              !clientItemVersions[itemID] ||
+              clientItemVersions[itemID] != source.collection[itemID]
+            ) {
+              itemsToUpdate.push(itemID);
+            }
+            delete clientItemVersions[itemID];
+          });
+          // Check for items that were deleted on the server
+          const itemsToDelete = Object.keys(clientItemVersions);
+          if (itemsToDelete.length != 0) {
+            db.deleteItems(itemsToDelete);
           }
-        });
-        partialSources[uuid] = itemsToUpdate;
+          if (itemsToUpdate.length != 0) {
+            partialSources[uuid] = itemsToUpdate;
+          }
+        }
       }
     }
   });
@@ -133,9 +149,9 @@ export async function syncMetadata(
 
   // Reconcile with client's index
   const clientIndex = db.getIndex();
-  const sourceSyncRequest = reconcileIndex(db, index, clientIndex);
+  const sourceDelta = reconcileIndex(db, index, clientIndex);
 
-  const sources = await syncSources(authToken, sourceSyncRequest);
+  const sources = await syncSources(authToken, sourceDelta);
   db.updateSources(sources);
   return SyncStatus.UPDATED;
 }
