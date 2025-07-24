@@ -109,10 +109,10 @@ function Sources() {
           return (
             <div
               key={source.uuid}
-              className={`flex items-center gap-0 px-4 py-3 border-b border-gray-100 cursor-pointer transition-colors duration-150 ease-in-out hover:bg-gray-50
+              className={`flex items-center px-4 py-3 border-b border-gray-100 cursor-pointer transition-colors duration-150 ease-in-out hover:bg-gray-50
                 ${isActive ? "bg-blue-50 border-l-4 border-l-blue-500" : ""}
                 ${isSelected ? "bg-blue-25" : ""}
-              `}
+`}
               onClick={() => handleSourceClick(source.uuid)}
             >
               {/* Checkbox */}
@@ -151,7 +151,7 @@ function Sources() {
               </div>
 
               {/* Source info */}
-              <div className="flex-1 min-w-0 py-2 pl-3 pr-2">
+              <div className="flex-1 min-w-0 py-2 pl-3">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2 min-w-0">
                     <h3
