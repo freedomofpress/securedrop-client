@@ -4,7 +4,7 @@ import path from "path";
 import { execSync } from "child_process";
 import Database from "better-sqlite3";
 
-import type { Source, SourceRow, SourceObj } from "../../types";
+import type { Source, SourceObj } from "../../types";
 
 let db: Database.Database | null = null;
 let databaseUrl: string | null = null;
@@ -100,10 +100,30 @@ export const getSources = (): Source[] => {
     throw new Error("Database is not open");
   }
 
-  const stmt = db.prepare("SELECT uuid, data FROM sources");
-  const rows: SourceRow[] = stmt.all() as SourceRow[];
+  // Use a single query with LEFT JOIN to get sources and aggregate read status
+  // TODO: I think this is not quite accurate, because if `kind` is `reply` there is no `is_read`, but rather a `seen_by` array
+  const stmt = db.prepare(`
+    SELECT
+      s.uuid,
+      s.data as source_data,
+      COUNT(i.uuid) as item_count,
+      COUNT(CASE WHEN json_extract(i.data, '$.is_read') = 1 THEN 1 END) as read_count
+    FROM sources s
+    LEFT JOIN items i ON s.uuid = json_extract(i.data, '$.source')
+    GROUP BY s.uuid, s.data
+  `);
+
+  const rows = stmt.all() as Array<{
+    uuid: string;
+    source_data: string;
+    item_count: number;
+    read_count: number;
+  }>;
+
   return rows.map((row) => {
-    const data = JSON.parse(row.data);
+    const data = JSON.parse(row.source_data);
+    const isRead = row.item_count > 0 && row.read_count === row.item_count;
+
     return {
       uuid: row.uuid,
       data: {
@@ -114,6 +134,7 @@ export const getSources = (): Source[] => {
         fingerprint: data.fingerprint,
         uuid: data.uuid,
       } as SourceObj,
+      isRead,
     };
   });
 };

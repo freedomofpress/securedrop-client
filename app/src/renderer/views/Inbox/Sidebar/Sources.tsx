@@ -60,7 +60,7 @@ function Sources() {
         source.uuid === sourceId
           ? {
               ...source,
-              data: { ...source.data, is_starred: !currentlyStarred },
+              data: { ...source.data, isStarred: !currentlyStarred },
             }
           : source,
       ),
@@ -155,14 +155,20 @@ function Sources() {
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2 min-w-0">
                     <h3
-                      className={`font-medium text-sm truncate ${isActive ? "text-blue-700" : "text-gray-900"}`}
+                      className={`text-sm truncate ${
+                        isActive ? "text-blue-700" : "text-gray-900"
+                      } ${!source.isRead ? "font-bold" : "font-medium"}`}
                     >
                       {designation}
                     </h3>
                   </div>
 
                   {/* Date */}
-                  <span className="text-xs text-gray-500 flex-shrink-0">
+                  <span
+                    className={`text-xs text-gray-500 flex-shrink-0 ${
+                      !source.isRead ? "font-bold" : "font-normal"
+                    }`}
+                  >
                     {lastUpdated}
                   </span>
                 </div>

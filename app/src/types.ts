@@ -40,6 +40,7 @@ export type ms = number & { readonly __unit: "ms" };
 export type Source = {
   uuid: string;
   data: SourceObj;
+  isRead: boolean;
 };
 
 export type SourceRow = {

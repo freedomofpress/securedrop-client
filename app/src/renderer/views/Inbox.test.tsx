@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import { screen } from "@testing-library/react";
 import { expect } from "vitest";
 import InboxView from "./Inbox";
