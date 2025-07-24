@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { Checkbox, Button } from "antd";
-import { StarFilled, StarOutlined, DeleteOutlined } from "@ant-design/icons";
+import { StarFilled, StarOutlined } from "@ant-design/icons";
 
 import type { Source } from "../../../../types";
 import { formatLastUpdated, getInitials, toTitleCase } from "../../../utils";
@@ -102,9 +102,9 @@ function Sources() {
         {sources.map((source) => {
           const isSelected = selectedSources.has(source.uuid);
           const isActive = activeSourceId === source.uuid;
-          const designation = toTitleCase(source.data.journalist_designation);
+          const designation = toTitleCase(source.data.journalistDesignation);
           const initials = getInitials(designation);
-          const lastUpdated = formatLastUpdated(source.data.last_updated);
+          const lastUpdated = formatLastUpdated(source.data.lastUpdated);
 
           return (
             <div
@@ -130,7 +130,7 @@ function Sources() {
                 type="text"
                 size="large"
                 icon={
-                  source.data.is_starred ? (
+                  source.data.isStarred ? (
                     <StarFilled style={{ color: "#eab308" }} />
                   ) : (
                     <StarOutlined
@@ -141,7 +141,7 @@ function Sources() {
                 }
                 onClick={(e) => {
                   e.stopPropagation();
-                  handleToggleStar(source.uuid, source.data.is_starred);
+                  handleToggleStar(source.uuid, source.data.isStarred);
                 }}
               />
 

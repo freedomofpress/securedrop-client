@@ -49,10 +49,10 @@ export type SourceRow = {
 
 export type SourceObj = {
   fingerprint: string;
-  is_starred: boolean;
-  journalist_designation: string;
-  last_updated: string;
-  public_key: string;
+  isStarred: boolean;
+  journalistDesignation: string;
+  lastUpdated: string;
+  publicKey: string;
   uuid: string;
 };
 
@@ -71,9 +71,9 @@ export type ItemRow = {
 };
 
 export type ItemObj = {
-  is_read: boolean;
+  isRead: boolean;
   kind: string;
-  seen_by: string[];
+  seenBy: string[];
   size: number;
   source: string;
   uuid: string;

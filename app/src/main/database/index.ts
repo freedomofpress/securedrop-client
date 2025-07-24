@@ -100,10 +100,20 @@ export const getSources = (): Source[] => {
     throw new Error("Database is not open");
   }
 
-  const stmt = db.prepare("SELECT * FROM sources");
+  const stmt = db.prepare("SELECT uuid, data FROM sources");
   const rows: SourceRow[] = stmt.all() as SourceRow[];
-  return rows.map((row) => ({
-    uuid: row.uuid,
-    data: JSON.parse(row.data) as SourceObj,
-  }));
+  return rows.map((row) => {
+    const data = JSON.parse(row.data);
+    return {
+      uuid: row.uuid,
+      data: {
+        isStarred: data.is_starred,
+        journalistDesignation: data.journalist_designation,
+        lastUpdated: data.last_updated,
+        publicKey: data.public_key,
+        fingerprint: data.fingerprint,
+        uuid: data.uuid,
+      } as SourceObj,
+    };
+  });
 };
