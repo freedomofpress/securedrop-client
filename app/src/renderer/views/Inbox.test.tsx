@@ -2,8 +2,8 @@
 import { screen } from "@testing-library/react";
 import { expect } from "vitest";
 import userEvent from "@testing-library/user-event";
-import InboxView from "../../../src/renderer/views/Inbox";
-import { renderWithProviders } from "../../../src/renderer/test-component-setup";
+import InboxView from "./Inbox";
+import { renderWithProviders } from "../test-component-setup";
 
 describe("InboxView Component", () => {
   it('says the string "Hello world!"', () => {

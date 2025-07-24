@@ -1,22 +1,19 @@
 import { screen, waitFor } from "@testing-library/react";
 import { expect } from "vitest";
-import App from "../../src/renderer/App";
-import { renderWithProviders } from "../../src/renderer/test-component-setup";
+import App from "./App";
+import { renderWithProviders } from "./test-component-setup";
 import {
   unauthSessionState,
   SessionStatus,
-} from "../../src/renderer/features/session/sessionSlice";
-import type {
-  SessionState,
-  AuthData,
-} from "../../src/renderer/features/session/sessionSlice";
+} from "./features/session/sessionSlice";
+import type { SessionState, AuthData } from "./features/session/sessionSlice";
 
 // Mock the views components to make testing simpler
-vi.mock("../../src/renderer/views/Inbox", () => ({
+vi.mock("./views/Inbox", () => ({
   default: () => <div data-testid="inbox-view">Inbox View</div>,
 }));
 
-vi.mock("../../src/renderer/views/SignIn", () => ({
+vi.mock("./views/SignIn", () => ({
   default: () => <div data-testid="signin-view">Sign In View</div>,
 }));
 
