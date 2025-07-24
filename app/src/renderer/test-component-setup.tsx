@@ -45,7 +45,7 @@ beforeEach(() => {
         data: {
           fingerprint: "ABCD1234EFGH5678IJKL9012MNOP3456QRST7890",
           is_starred: false,
-          journalist_designation: "Journalist 1",
+          journalist_designation: "multiplicative conditionality",
           last_updated: "2024-01-15T10:30:00Z",
           public_key:
             "-----BEGIN PGP PUBLIC KEY BLOCK-----\nVersion: GnuPG v1\n...\n-----END PGP PUBLIC KEY BLOCK-----",
@@ -57,11 +57,23 @@ beforeEach(() => {
         data: {
           fingerprint: "1234ABCD5678EFGH9012IJKL3456MNOP7890QRST",
           is_starred: true,
-          journalist_designation: "Journalist 2",
+          journalist_designation: "piezoelectric crockery",
           last_updated: "2024-01-14T15:45:00Z",
           public_key:
             "-----BEGIN PGP PUBLIC KEY BLOCK-----\nVersion: GnuPG v1\n...\n-----END PGP PUBLIC KEY BLOCK-----",
           uuid: "source-2",
+        },
+      },
+      {
+        uuid: "source-3",
+        data: {
+          fingerprint: "5678EFGH9012IJKL3456MNOP7890QRST1234ABCD",
+          is_starred: false,
+          journalist_designation: "thyroid battle",
+          last_updated: "2024-04-10T09:15:00Z",
+          public_key:
+            "-----BEGIN PGP PUBLIC KEY BLOCK-----\nVersion: GnuPG v1\n...\n-----END PGP PUBLIC KEY BLOCK-----",
+          uuid: "source-3",
         },
       },
     ]),
