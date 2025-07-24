@@ -1,5 +1,5 @@
 import { expect, test } from "vitest";
-import { setupStore, type AppStore } from "../../src/renderer/store";
+import { setupStore, type AppStore } from "./store";
 
 test("setupStore returns an AppStore", () => {
   const store: AppStore = setupStore();
