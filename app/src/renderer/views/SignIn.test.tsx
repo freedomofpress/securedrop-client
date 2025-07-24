@@ -2,9 +2,9 @@
 import { screen, waitFor } from "@testing-library/react";
 import { expect } from "vitest";
 import userEvent from "@testing-library/user-event";
-import SignInView from "../../../src/renderer/views/SignIn";
-import { renderWithProviders } from "../../../src/renderer/test-component-setup";
-import { SessionStatus } from "../../../src/renderer/features/session/sessionSlice";
+import SignInView from "./SignIn";
+import { renderWithProviders } from "../test-component-setup";
+import { SessionStatus } from "../features/session/sessionSlice";
 
 describe("SignInView Component", () => {
   it("says title and version", async () => {

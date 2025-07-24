@@ -8,8 +8,8 @@ import type {
   ProxyCommand,
   ProxyStreamResponse,
   ms,
-} from "../../src/types";
-import { proxyJSONRequest, proxyStreamInner } from "../../src/main/proxy";
+} from "../types";
+import { proxyJSONRequest, proxyStreamInner } from "./proxy";
 import { PassThrough } from "node:stream";
 
 vi.mock("child_process");
