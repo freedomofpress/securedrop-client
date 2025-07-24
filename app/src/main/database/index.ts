@@ -101,13 +101,13 @@ export const getSources = (): Source[] => {
   }
 
   // Use a single query with LEFT JOIN to get sources and aggregate read status
-  // TODO: I think this is not quite accurate, because if `kind` is `reply` there is no `is_read`, but rather a `seen_by` array
+  // Only consider 'message' and 'file' items for read status (replies don't have is_read)
   const stmt = db.prepare(`
     SELECT
       s.uuid,
       s.data as source_data,
-      COUNT(i.uuid) as item_count,
-      COUNT(CASE WHEN json_extract(i.data, '$.is_read') = 1 THEN 1 END) as read_count
+      COUNT(CASE WHEN json_extract(i.data, '$.kind') IN ('message', 'file') THEN 1 END) as readable_item_count,
+      COUNT(CASE WHEN json_extract(i.data, '$.kind') IN ('message', 'file') AND json_extract(i.data, '$.is_read') = 1 THEN 1 END) as read_count
     FROM sources s
     LEFT JOIN items i ON s.uuid = json_extract(i.data, '$.source')
     GROUP BY s.uuid, s.data
@@ -116,13 +116,15 @@ export const getSources = (): Source[] => {
   const rows = stmt.all() as Array<{
     uuid: string;
     source_data: string;
-    item_count: number;
+    readable_item_count: number;
     read_count: number;
   }>;
 
   return rows.map((row) => {
     const data = JSON.parse(row.source_data);
-    const isRead = row.item_count > 0 && row.read_count === row.item_count;
+
+    const isRead =
+      row.readable_item_count > 0 && row.read_count === row.readable_item_count;
 
     return {
       uuid: row.uuid,
@@ -158,12 +160,17 @@ export const getItems = (sourceUuid: string): Item[] => {
     return {
       uuid: row.uuid,
       data: {
-        isRead: data.is_read,
+        uuid: data.uuid,
         kind: data.kind,
         seenBy: data.seen_by,
         size: data.size,
         source: data.source,
-        uuid: data.uuid,
+        // Only include isRead for messages and files
+        ...(data.kind !== "reply" && { isRead: data.is_read }),
+        // Only include isDeletedBySource for replies
+        ...(data.kind === "reply" && {
+          isDeletedBySource: data.is_deleted_by_source,
+        }),
       } as ItemObj,
     };
   });

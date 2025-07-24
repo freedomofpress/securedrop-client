@@ -72,10 +72,11 @@ export type ItemRow = {
 };
 
 export type ItemObj = {
-  isRead: boolean;
-  kind: string;
+  uuid: string;
+  kind: string; // 'message', 'file', or 'reply'
   seenBy: string[];
   size: number;
   source: string;
-  uuid: string;
+  isRead?: boolean; // only on messages and files
+  isDeletedBySource?: boolean; // only on replies
 };
