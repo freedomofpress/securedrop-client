@@ -83,16 +83,17 @@ function reconcileIndex(
 ): SourceDelta {
   const fullSources: string[] = [];
   const partialSources = {};
-  Object.keys(serverIndex.sources).forEach((uuid) => {
-    if (!clientIndex.sources[uuid]) {
-      fullSources.push(uuid);
+  Object.keys(serverIndex.sources).forEach((sourceID) => {
+    if (!clientIndex.sources[sourceID]) {
+      fullSources.push(sourceID);
     } else {
       if (
-        serverIndex.sources[uuid].version != clientIndex.sources[uuid].version
+        serverIndex.sources[sourceID].version !=
+        clientIndex.sources[sourceID].version
       ) {
         const itemsToUpdate: string[] = [];
-        const source = serverIndex.sources[uuid];
-        const clientItemVersions = db.getSourceItemVersions(uuid);
+        const source = serverIndex.sources[sourceID];
+        const clientItemVersions = db.getSourceItemVersions(sourceID);
         if (!clientItemVersions) {
           // If there are no items for this source, we need to fetch all of them
           itemsToUpdate.push(...Object.keys(source.collection));
@@ -113,12 +114,18 @@ function reconcileIndex(
             db.deleteItems(itemsToDelete);
           }
           if (itemsToUpdate.length != 0) {
-            partialSources[uuid] = itemsToUpdate;
+            partialSources[sourceID] = itemsToUpdate;
           }
         }
       }
     }
+    delete clientIndex.sources[sourceID];
   });
+  // Check for sources that were deleted on the server
+  const sourcesToDelete = Object.keys(clientIndex.sources);
+  if (sourcesToDelete.length != 0) {
+    db.deleteSources(sourcesToDelete);
+  }
   return {
     full_sources: fullSources,
     partial_sources: partialSources,
