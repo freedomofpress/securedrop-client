@@ -4,7 +4,7 @@ import path from "path";
 import { execSync } from "child_process";
 import Database from "better-sqlite3";
 
-import type { Source, SourceObj } from "../../types";
+import type { Source, SourceObj, Item, ItemObj } from "../../types";
 
 let db: Database.Database | null = null;
 let databaseUrl: string | null = null;
@@ -135,6 +135,36 @@ export const getSources = (): Source[] => {
         uuid: data.uuid,
       } as SourceObj,
       isRead,
+    };
+  });
+};
+
+export const getItems = (sourceUuid: string): Item[] => {
+  if (!db) {
+    throw new Error("Database is not open");
+  }
+
+  const stmt = db.prepare(`
+    SELECT uuid, data FROM items
+    WHERE json_extract(data, '$.source') = ?;
+  `);
+  const rows = stmt.all(sourceUuid) as Array<{
+    uuid: string;
+    item_data: string;
+  }>;
+
+  return rows.map((row) => {
+    const data = JSON.parse(row.item_data);
+    return {
+      uuid: row.uuid,
+      data: {
+        isRead: data.is_read,
+        kind: data.kind,
+        seenBy: data.seen_by,
+        size: data.size,
+        source: data.source,
+        uuid: data.uuid,
+      } as ItemObj,
     };
   });
 };

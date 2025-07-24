@@ -4,7 +4,7 @@ import { optimizer, is } from "@electron-toolkit/utils";
 
 import * as database from "./database";
 import { proxy } from "./proxy";
-import type { ProxyRequest, ProxyResponse, Source } from "../types";
+import type { ProxyRequest, ProxyResponse, Source, Item } from "../types";
 
 database.openDatabase();
 database.runMigrations();
@@ -65,6 +65,14 @@ app.whenReady().then(() => {
     const sources = await database.getSources();
     return sources;
   });
+
+  ipcMain.handle(
+    "getItems",
+    async (_event, sourceUuid: string): Promise<Item[]> => {
+      const items = await database.getItems(sourceUuid);
+      return items;
+    },
+  );
 
   createWindow();
 });
