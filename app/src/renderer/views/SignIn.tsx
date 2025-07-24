@@ -4,7 +4,11 @@ import { EyeInvisibleOutlined, EyeOutlined } from "@ant-design/icons";
 import { useState } from "react";
 import { useNavigate } from "react-router";
 
-import type { ProxyRequest, ProxyJSONResponse } from "../../types";
+import type {
+  ProxyRequest,
+  ProxyJSONResponse,
+  TokenResponse,
+} from "../../types";
 import { useAppDispatch } from "../hooks";
 import {
   setAuth,
@@ -50,22 +54,30 @@ function SignInView() {
 
     // Authenticate to the API
     try {
-      const res: ProxyJSONResponse = await window.electronAPI.request({
-        method: "POST",
-        path_query: "/api/v1/token",
-        stream: false,
-        body: JSON.stringify({
-          username: values.username,
-          passphrase: values.passphrase,
-          one_time_code: values.oneTimeCode,
-        }),
-        headers: {},
-      } as ProxyRequest);
+      const res: ProxyJSONResponse<TokenResponse> =
+        await window.electronAPI.request({
+          method: "POST",
+          path_query: "/api/v1/token",
+          stream: false,
+          body: JSON.stringify({
+            username: values.username,
+            passphrase: values.passphrase,
+            one_time_code: values.oneTimeCode,
+          }),
+          headers: {},
+        } as ProxyRequest);
 
       // If the status is not 200, fail
       if (res.status !== 200) {
         console.error("Authentication failed:", res.data);
         setAuthErrorMessage(errorMessageCredentials);
+        setAuthError(true);
+        return;
+      }
+
+      if (!res.data) {
+        console.error("Authentication failed: no data received");
+        setAuthErrorMessage(errorMessageGeneric);
         setAuthError(true);
         return;
       }
