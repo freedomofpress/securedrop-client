@@ -1,6 +1,14 @@
 import { useState, useEffect } from "react";
-import { Checkbox, Button } from "antd";
-import { StarFilled, StarOutlined } from "@ant-design/icons";
+import { Checkbox, Button, Dropdown } from "antd";
+import {
+  StarFilled,
+  StarOutlined,
+  DeleteOutlined,
+  MailOutlined,
+  SortAscendingOutlined,
+  SortDescendingOutlined,
+  DownOutlined,
+} from "@ant-design/icons";
 
 import type { Source } from "../../../../types";
 import { formatLastUpdated, getInitials, toTitleCase } from "../../../utils";
@@ -12,6 +20,8 @@ function Sources() {
   );
   const [allSelected, setAllSelected] = useState(false);
   const [activeSourceId, setActiveSourceId] = useState<string | null>(null);
+  const [sortedAsc, setSortedAsc] = useState(true);
+  const [filter, setFilter] = useState<"all" | "unread">("all");
 
   useEffect(() => {
     const fetchSources = async () => {
@@ -78,28 +88,101 @@ function Sources() {
     setActiveSourceId(sourceId);
   };
 
+  const handleBulkDelete = () => {
+    console.log("Delete selected sources:", selectedSources);
+  };
+
+  const handleBulkToggleRead = () => {
+    console.log("Toggle read status for selected sources:", selectedSources);
+  };
+
+  const handleToggleSort = () => {
+    setSortedAsc(!sortedAsc);
+  };
+
+  const handleFilterChange = (newFilter: "all" | "unread") => {
+    setFilter(newFilter);
+  };
+
+  // Filter sources based on the selected filter
+  const filteredSources = sources.filter((source) => {
+    if (filter === "unread") {
+      return !source.isRead;
+    }
+    return true; // "all" filter shows everything
+  });
+
+  const dropdownItems = [
+    {
+      key: "all",
+      label: "All",
+      onClick: () => handleFilterChange("all"),
+    },
+    {
+      key: "unread",
+      label: "Unread",
+      onClick: () => handleFilterChange("unread"),
+    },
+  ];
+
   return (
     <div className="flex-1 flex flex-col">
       {/* Header with select all and action buttons */}
       <div className="sd-bg-primary sd-border-secondary px-4 py-3 border-b">
         <div className="flex items-center justify-between">
-          {/* Select all checkbox */}
-          <Checkbox
-            checked={allSelected}
-            indeterminate={
-              selectedSources.size > 0 && selectedSources.size < sources.length
-            }
-            onChange={(e) => handleSelectAll(e.target.checked)}
-          />
+          <div>
+            {/* Select all checkbox */}
+            <Checkbox
+              checked={allSelected}
+              indeterminate={
+                selectedSources.size > 0 &&
+                selectedSources.size < sources.length
+              }
+              onChange={(e) => handleSelectAll(e.target.checked)}
+            />
 
-          {/* Placeholder for action buttons */}
-          {selectedSources.size > 0 && <></>}
+            {/* Only display action buttons if sources are selected */}
+            {selectedSources.size > 0 && (
+              <>
+                <Button
+                  type="text"
+                  icon={<DeleteOutlined />}
+                  onClick={handleBulkDelete}
+                />
+                <Button
+                  type="text"
+                  icon={<MailOutlined />}
+                  onClick={handleBulkToggleRead}
+                />
+              </>
+            )}
+          </div>
+
+          <div>
+            <Dropdown menu={{ items: dropdownItems }} trigger={["click"]}>
+              <Button type="text">
+                {filter === "all" ? "All" : "Unread"} <DownOutlined />
+              </Button>
+            </Dropdown>
+
+            <Button
+              type="text"
+              icon={
+                sortedAsc ? (
+                  <SortDescendingOutlined />
+                ) : (
+                  <SortAscendingOutlined />
+                )
+              }
+              onClick={handleToggleSort}
+            />
+          </div>
         </div>
       </div>
 
       {/* Sources list */}
       <div className="flex-1 overflow-y-auto">
-        {sources.map((source) => {
+        {filteredSources.map((source) => {
           const isSelected = selectedSources.has(source.uuid);
           const isActive = activeSourceId === source.uuid;
           const designation = toTitleCase(source.data.journalistDesignation);
