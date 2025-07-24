@@ -21,7 +21,7 @@ export default defineConfig({
       {
         test: {
           name: "unit",
-          include: ["tests/**/*.test.ts", "tests/**/*.test.tsx"],
+          include: ["src/**/*.test.ts", "src/**/*.test.tsx"],
           globals: true,
           environment: "jsdom",
         },
