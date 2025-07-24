@@ -20,7 +20,7 @@ function Sources() {
   );
   const [allSelected, setAllSelected] = useState(false);
   const [activeSourceId, setActiveSourceId] = useState<string | null>(null);
-  const [sortedAsc, setSortedAsc] = useState(true);
+  const [sortedAsc, setSortedAsc] = useState(false);
   const [filter, setFilter] = useState<"all" | "unread">("all");
 
   useEffect(() => {
@@ -104,13 +104,24 @@ function Sources() {
     setFilter(newFilter);
   };
 
-  // Filter sources based on the selected filter
-  const filteredSources = sources.filter((source) => {
-    if (filter === "unread") {
-      return !source.isRead;
-    }
-    return true; // "all" filter shows everything
-  });
+  // Filter and sort sources based on the selected filter and sort order
+  const filteredSources = sources
+    .filter((source) => {
+      if (filter === "unread") {
+        return !source.isRead;
+      }
+      return true; // "all" filter shows everything
+    })
+    .sort((a, b) => {
+      const dateA = new Date(a.data.lastUpdated).getTime();
+      const dateB = new Date(b.data.lastUpdated).getTime();
+
+      if (sortedAsc) {
+        return dateA - dateB; // Ascending: oldest first
+      } else {
+        return dateB - dateA; // Descending: newest first
+      }
+    });
 
   const dropdownItems = [
     {
