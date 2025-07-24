@@ -14,6 +14,7 @@ function mockDB({
     getVersion: vi.fn(() => version),
     getIndex: vi.fn(() => index),
     getSourceItemVersions: vi.fn((uuid) => itemVersions[uuid] || {}),
+    deleteItems: vi.fn((_itemIDs) => {}),
     updateSources,
   } as unknown as DB;
 }
@@ -138,6 +139,56 @@ describe("syncMetadata", () => {
     );
     expect(db.updateSources).not.toHaveBeenCalled();
     expect(proxyMock).toHaveBeenCalledTimes(2);
+  });
+
+  it("deletes sources on sync", async () => {
+    // Client index has old item version
+    const clientIndex: Index = {
+      sources: {
+        uuid1: {
+          version: "v1",
+          collection: { item1: "v1", item2: "outOfDate" },
+        },
+      },
+    };
+
+    // Server index doesn't have item2: it has been deleted
+    const serverIndex: Index = {
+      sources: {
+        uuid1: {
+          version: "v2",
+          collection: { item1: "v1" },
+        },
+      },
+    };
+
+    db = mockDB({
+      index: clientIndex,
+      itemVersions: { uuid1: { item1: "v1", item2: "outOfDate" } },
+      updateSources: vi.fn(),
+    });
+
+    const proxyMock = mockProxyResponses([
+      {
+        status: 200,
+        error: false,
+        data: serverIndex,
+        headers: {} as Map<string, string>,
+      },
+      {
+        status: 200,
+        error: false,
+        // @ts-expect-error typecheck
+        data: {},
+        headers: {} as Map<string, string>,
+      },
+    ]);
+
+    await syncModule.syncMetadata(db, "");
+
+    expect(proxyMock).toHaveBeenCalledTimes(2);
+    expect(db.deleteItems).toHaveBeenCalledWith(["item2"]);
+    expect(db.updateSources).toHaveBeenCalledWith({});
   });
 
   it("reconciles partial sources", async () => {

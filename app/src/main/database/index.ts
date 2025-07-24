@@ -5,12 +5,7 @@ import { execSync } from "child_process";
 import Database, { Statement } from "better-sqlite3";
 import blake from "blakejs";
 
-import {
-  Index,
-  ItemVersions,
-  SourceMetadata,
-  SourceSyncResponse,
-} from "../../types";
+import { Index, ItemVersions, SourceDeltaResponse } from "../../types";
 
 const sortKeys = (_, value) =>
   value instanceof Object && !(value instanceof Array)
@@ -43,22 +38,22 @@ export class DB {
 
   private selectAllSourceVersion: Statement<
     [],
-    { uuid: string; version: string; data: string }
+    { id: string; version: string; data: string }
   >;
-  private selectSourceData: Statement<[string], { data: string }>;
   private upsertSource: Statement<
-    { uuid: string; data: string; version: string },
+    { id: string; data: string; version: string },
     void
   >;
 
-  private selectItemVersion: Statement<
-    [string],
-    { uuid: string; version: string }
+  private selectItemVersionsBySource: Statement<
+    { sourceID: string },
+    { id: string; version: string }
   >;
   private upsertItem: Statement<
-    { uuid: string; data: string; version: string },
+    { id: string; sourceID: string; data: string; version: string },
     void
   >;
+  private deleteItem: Statement<{ id: string }, void>;
 
   constructor() {
     // Ensure the directory exists
@@ -84,21 +79,19 @@ export class DB {
     );
 
     this.selectAllSourceVersion = this.db.prepare(
-      "SELECT uuid, version, data FROM sources",
-    );
-    this.selectSourceData = this.db.prepare(
-      "SELECT data FROM sources WHERE uuid = ?",
+      "SELECT id, version, data FROM sources",
     );
     this.upsertSource = this.db.prepare(
-      "INSERT INTO sources (uuid, data, version) VALUES (@uuid, @data, @version) ON CONFLICT(uuid) DO UPDATE SET data=@data, version=@version",
+      "INSERT INTO sources (id, data, version) VALUES (@id, @data, @version) ON CONFLICT(id) DO UPDATE SET data=@data, version=@version",
     );
 
-    this.selectItemVersion = this.db.prepare(
-      "SELECT version FROM items WHERE uuid = ?",
+    this.selectItemVersionsBySource = this.db.prepare(
+      "SELECT id, version FROM items WHERE source_id = @source_id",
     );
     this.upsertItem = this.db.prepare(
-      "INSERT INTO items (uuid, data, version) VALUES (@uuid, @data, @version) ON CONFLICT(uuid) DO UPDATE SET data=@data, version=@version",
+      "INSERT INTO items (id, source_id, data, version) VALUES (@id, @source_id, @data, @version) ON CONFLICT(id, source_id) DO UPDATE SET data=@data, version=@version",
     );
+    this.deleteItem = this.db.prepare("DELETE FROM items WHERE id = @id");
   }
 
   runMigrations(): void {
@@ -183,35 +176,31 @@ export class DB {
         version: row.version,
         collection: {},
       };
-      const sourceMetadata = JSON.parse(row.data) as SourceMetadata;
-      Object.keys(sourceMetadata.collection).forEach((itemUUID) => {
-        const item = this.selectItemVersion.get(itemUUID);
-        if (item) {
-          source.collection[itemUUID] = item.version;
-        }
-      });
-
-      index.sources[row.uuid] = source;
+      for (const item of this.selectItemVersionsBySource.iterate({
+        sourceID: row.id,
+      })) {
+        source.collection[item.id] = item.version;
+      }
+      index.sources[row.id] = source;
     }
 
     return index;
   }
 
-  getSourceItemVersions(id: string): ItemVersions | null {
-    const row = this.selectSourceData.get(id);
-    if (!row) {
-      return null;
+  getSourceItemVersions(sourceID: string): ItemVersions | null {
+    const itemVersions: ItemVersions = {};
+    for (const row of this.selectItemVersionsBySource.iterate({
+      sourceID: sourceID,
+    })) {
+      itemVersions[row.id] = row.version;
     }
-    const sourceData = JSON.parse(row.data) as SourceMetadata;
-
-    const itemVersions = {};
-    Object.keys(sourceData.collection).forEach((itemUUID) => {
-      const itemRow = this.selectItemVersion.get(itemUUID);
-      if (itemRow) {
-        itemVersions[itemUUID] = itemRow.version;
-      }
-    });
     return itemVersions;
+  }
+
+  deleteItems(items: string[]) {
+    for (const itemID in items) {
+      this.deleteItem.run({ id: itemID });
+    }
   }
 
   updateVersion() {
@@ -227,24 +216,25 @@ export class DB {
     }
   }
 
-  updateSources(sources: SourceSyncResponse) {
-    Object.keys(sources.sources).forEach((sourceUUID: string) => {
-      const source = sources.sources[sourceUUID];
+  updateSources(sources: SourceDeltaResponse) {
+    Object.keys(sources.sources).forEach((sourceid: string) => {
+      const source = sources.sources[sourceid];
       // Updating the full source
       if (source.info) {
-        const metadata = JSON.stringify(source, sortKeys);
-        const version = computeVersion(JSON.stringify(source.info, sortKeys));
+        const info = JSON.stringify(source.info, sortKeys);
+        const version = computeVersion(info);
         this.upsertSource.run({
-          uuid: sourceUUID,
-          data: metadata,
+          id: sourceid,
+          data: info,
           version: version,
         });
       }
-      Object.keys(source.collection).forEach((itemUUID: string) => {
-        const data = JSON.stringify(source.collection[itemUUID], sortKeys);
+      Object.keys(source.collection).forEach((itemid: string) => {
+        const data = JSON.stringify(source.collection[itemid], sortKeys);
         const version = computeVersion(data);
         this.upsertItem.run({
-          uuid: itemUUID,
+          id: itemid,
+          sourceID: sourceid,
           data: data,
           version: version,
         });

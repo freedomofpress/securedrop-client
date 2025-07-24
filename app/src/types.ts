@@ -37,12 +37,17 @@ export type JSONValue = JSONPrimitive | JSONArray | JSONObject;
 
 export type ms = number & { readonly __unit: "ms" };
 
-export interface Index {
-  sources: IndexSourceVersions;
+/** Sync types */
+
+// IPC request for syncMetadata operation
+export interface SyncMetadataRequest {
+  authToken: string;
 }
 
-export interface IndexSourceVersions {
-  [uuid: string]: SourceVersion;
+export interface Index {
+  sources: {
+    [uuid: string]: SourceVersion;
+  };
 }
 
 export interface SourceVersion {
@@ -55,11 +60,7 @@ export interface ItemVersions {
   [uuid: string]: string;
 }
 
-export interface SyncMetadataRequest {
-  authToken: string;
-}
-
-export interface SourceSyncRequest {
+export interface SourceDelta {
   full_sources: string[];
   partial_sources: {
     // source_uuid: [item_uuid, ...]
@@ -67,7 +68,13 @@ export interface SourceSyncRequest {
   };
 }
 
-export interface SourceMetadata {
+export interface SourceDeltaResponse {
+  sources: {
+    [sourceUUID: string]: SourceEntry;
+  };
+}
+
+export interface SourceEntry {
   info: {
     uuid: string;
     journalist_designation: string;
@@ -81,8 +88,12 @@ export interface SourceMetadata {
   };
 }
 
-export interface SourceSyncResponse {
-  sources: {
-    [sourceUUID: string]: SourceMetadata;
-  };
+/** API v1 Types */
+
+export interface TokenResponse {
+  expiration: string;
+  token: string;
+  journalist_uuid: string;
+  journalist_first_name: string;
+  journalist_last_name: string;
 }
