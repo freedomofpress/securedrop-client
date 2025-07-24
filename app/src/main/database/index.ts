@@ -44,6 +44,7 @@ export class DB {
     { id: string; data: string; version: string },
     void
   >;
+  private deleteSource: Statement<{ id: string }, void>;
 
   private selectItemVersionsBySource: Statement<
     { sourceID: string },
@@ -84,6 +85,7 @@ export class DB {
     this.upsertSource = this.db.prepare(
       "INSERT INTO sources (id, data, version) VALUES (@id, @data, @version) ON CONFLICT(id) DO UPDATE SET data=@data, version=@version",
     );
+    this.deleteSource = this.db.prepare("DELETE FROM sourecs WHERE id = @id");
 
     this.selectItemVersionsBySource = this.db.prepare(
       "SELECT id, version FROM items WHERE source_id = @source_id",
@@ -197,13 +199,9 @@ export class DB {
     return itemVersions;
   }
 
-  deleteItems(items: string[]) {
-    for (const itemID in items) {
-      this.deleteItem.run({ id: itemID });
-    }
-  }
-
-  updateVersion() {
+  // Updates the index version: should be called on any write operation to
+  // sources or items
+  private updateVersion() {
     const index = this.getIndex();
     const strIndex = JSON.stringify(index, sortKeys);
     const newVersion = computeVersion(strIndex);
@@ -216,10 +214,29 @@ export class DB {
     }
   }
 
+  deleteItems(items: string[]) {
+    for (const itemID in items) {
+      this.deleteItem.run({ id: itemID });
+    }
+    this.updateVersion();
+  }
+
+  deleteSources(sources: string[]) {
+    for (const sourceID in sources) {
+      this.deleteSource.run({ id: sourceID });
+      for (const itemRow of this.selectItemVersionsBySource.iterate({
+        sourceID: sourceID,
+      })) {
+        this.deleteItem.run({ id: itemRow.id });
+      }
+    }
+    this.updateVersion();
+  }
+
   updateSources(sources: SourceDeltaResponse) {
     Object.keys(sources.sources).forEach((sourceid: string) => {
       const source = sources.sources[sourceid];
-      // Updating the full source
+      // Updating the full source: update metadata and re-compute source version
       if (source.info) {
         const info = JSON.stringify(source.info, sortKeys);
         const version = computeVersion(info);
