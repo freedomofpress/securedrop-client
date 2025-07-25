@@ -72,13 +72,26 @@ function Source({
       <div className="flex-1 min-w-0 py-2 pl-3">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2 min-w-0">
-            <h3
-              className={`text-sm truncate ${
-                isActive ? "text-blue-700" : "text-gray-900"
-              } ${!source.isRead ? "font-bold" : "font-medium"}`}
-            >
-              {designation}
-            </h3>
+            <div className="flex flex-col min-w-0">
+              <h3
+                className={`text-sm truncate ${
+                  isActive ? "text-blue-700" : "text-gray-900"
+                } ${!source.isRead ? "font-bold" : "font-medium"}`}
+              >
+                {designation}
+              </h3>
+              {source.showMessagePreview && (
+                <p
+                  className={`text-xs text-gray-500 truncate ${
+                    !source.isRead ? "font-medium" : "font-normal"
+                  } ${source.messagePreview === "" ? "italic" : ""}`}
+                >
+                  {source.messagePreview === ""
+                    ? "encrypted..."
+                    : source.messagePreview}
+                </p>
+              )}
+            </div>
           </div>
 
           {/* Date and attachment info */}

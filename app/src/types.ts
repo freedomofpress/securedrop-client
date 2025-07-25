@@ -42,6 +42,8 @@ export type Source = {
   data: SourceObj;
   isRead: boolean;
   hasAttachment: boolean;
+  showMessagePreview: boolean;
+  messagePreview: string;
 };
 
 export type SourceRow = {
