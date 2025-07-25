@@ -4,11 +4,11 @@ import react from "@vitejs/plugin-react";
 import tailwindcss from "@tailwindcss/vite";
 import { execSync } from "child_process";
 
-export default defineConfig(({ command }) => {
-  const isDev = command === "serve";
+export default defineConfig(({ mode }) => {
+  const isDev = mode === "development";
   console.log(`Building in ${isDev ? "development" : "production"} mode`);
 
-  const vars = {};
+  const mainVars = {};
   if (isDev) {
     // Build the proxy: `make -C ../proxy build`
     try {
@@ -30,18 +30,21 @@ export default defineConfig(({ command }) => {
 
     // Get the absolute path to the proxy binary
     const sdProxyCmd = resolve(proxyPath);
-    vars["__PROXY_ORIGIN__"] = JSON.stringify("http://localhost:8081/");
-    vars["__PROXY_CMD__"] = JSON.stringify(sdProxyCmd);
+    mainVars["__PROXY_ORIGIN__"] = JSON.stringify("http://localhost:8081/");
+    mainVars["__PROXY_CMD__"] = JSON.stringify(sdProxyCmd);
   } else {
     // In production, PROXY_CMD and PROXY_VM_NAME are determined at runtime.  PROXY_ORIGIN is the responsibility of the proxy command *within* the proxy VM; setting it here has no effect.
-    vars["__PROXY_VM_NAME__"] = '""'; // Empty string
-    vars["__PROXY_CMD__"] = '""'; // Empty string
-    vars["__PROXY_ORIGIN__"] = JSON.stringify("http://localhost:8081/");
+    mainVars["__PROXY_VM_NAME__"] = '""'; // Empty string
+    mainVars["__PROXY_CMD__"] = '""'; // Empty string
+    mainVars["__PROXY_ORIGIN__"] = JSON.stringify("http://localhost:8081/");
   }
+
+  console.log("Using main vars:", mainVars);
 
   return {
     main: {
       plugins: [externalizeDepsPlugin()],
+      define: mainVars,
     },
     preload: {
       plugins: [externalizeDepsPlugin()],
@@ -54,7 +57,6 @@ export default defineConfig(({ command }) => {
       },
       plugins: [react(), tailwindcss()],
       define: {
-        ...vars,
         __APP_VERSION__: JSON.stringify(process.env.npm_package_version),
       },
     },
