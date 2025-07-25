@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Checkbox, Button, Dropdown } from "antd";
+import { Checkbox, Button, Dropdown, Input } from "antd";
 import {
   StarFilled,
   StarOutlined,
@@ -8,6 +8,7 @@ import {
   SortAscendingOutlined,
   SortDescendingOutlined,
   DownOutlined,
+  SearchOutlined,
 } from "@ant-design/icons";
 
 import type { Source } from "../../../../types";
@@ -24,6 +25,7 @@ function Sources() {
   const [activeSourceId, setActiveSourceId] = useState<string | null>(null);
   const [sortedAsc, setSortedAsc] = useState(false);
   const [filter, setFilter] = useState<filterOption>("all");
+  const [searchTerm, setSearchTerm] = useState("");
 
   useEffect(() => {
     const fetchSources = async () => {
@@ -109,6 +111,17 @@ function Sources() {
   // Filter and sort sources based on the selected filter and sort order
   const filteredSources = sources
     .filter((source) => {
+      // First filter by search term
+      const designation = toTitleCase(source.data.journalistDesignation);
+      const matchesSearch = designation
+        .toLowerCase()
+        .includes(searchTerm.toLowerCase());
+
+      if (!matchesSearch) {
+        return false;
+      }
+
+      // Then filter by the selected filter option
       switch (filter) {
         case "unread":
           return !source.isRead;
@@ -166,8 +179,8 @@ function Sources() {
     <div className="flex-1 flex flex-col">
       {/* Header with select all and action buttons */}
       <div className="sd-bg-primary sd-border-secondary px-4 py-3 border-b">
-        <div className="flex items-center justify-between">
-          <div>
+        <div className="flex items-center justify-between gap-2 min-w-0">
+          <div className="flex items-center gap-2 flex-shrink-0">
             {/* Select all checkbox */}
             <Checkbox
               checked={allSelected}
@@ -195,10 +208,20 @@ function Sources() {
             )}
           </div>
 
-          <div>
+          <Input
+            placeholder="Search"
+            prefix={<SearchOutlined />}
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="flex-1 min-w-0 max-w-xs"
+            allowClear
+          />
+
+          <div className="flex items-center gap-1 flex-shrink-0">
             <Dropdown menu={{ items: dropdownItems }} trigger={["click"]}>
               <Button type="text">
-                {filter === "all" ? "All" : "Unread"} <DownOutlined />
+                {filter.charAt(0).toUpperCase() + filter.slice(1)}{" "}
+                <DownOutlined />
               </Button>
             </Dropdown>
 
