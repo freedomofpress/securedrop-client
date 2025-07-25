@@ -27,9 +27,9 @@ function Source({
 
   return (
     <div
-      className={`flex items-center px-4 py-3 border-b border-gray-100 cursor-pointer transition-colors duration-150 ease-in-out hover:bg-gray-50
-        ${isActive ? "bg-blue-50 border-l-4 border-l-blue-500" : ""}
-        ${isSelected ? "bg-blue-25" : ""}
+      className={`flex items-center px-4 py-3 border-b border-gray-100 cursor-pointer transition-colors duration-150 ease-in-out
+        ${isActive ? "bg-blue-500 text-white hover:bg-blue-600" : "hover:bg-gray-50"}
+        ${isSelected && !isActive ? "bg-blue-25" : ""}
 `}
       onClick={() => onClick(source.uuid)}
     >
@@ -41,6 +41,11 @@ function Source({
           onSelect(source.uuid, e.target.checked);
         }}
         onClick={(e) => e.stopPropagation()}
+        className={
+          isActive
+            ? "text-white [&_.ant-checkbox-inner]:bg-white [&_.ant-checkbox-inner]:border-white [&_.ant-checkbox-checked_.ant-checkbox-inner]:bg-white [&_.ant-checkbox-checked_.ant-checkbox-inner]:border-white"
+            : ""
+        }
       />
 
       {/* Star button */}
@@ -52,7 +57,7 @@ function Source({
             <StarFilled style={{ color: "#eab308" }} />
           ) : (
             <StarOutlined
-              className="text-gray-400"
+              className={isActive ? "text-white" : "text-gray-400"}
               style={{ color: "#9ca3af" }}
             />
           )
@@ -64,7 +69,13 @@ function Source({
       />
 
       {/* Avatar with initials */}
-      <div className="w-10 h-10 rounded-full bg-gray-100 border border-gray-300 flex items-center justify-center text-gray-600 font-medium text-sm flex-shrink-0">
+      <div
+        className={`w-10 h-10 rounded-full border flex items-center justify-center font-medium text-sm flex-shrink-0 ${
+          isActive
+            ? "bg-blue-700 border-blue-700 text-white"
+            : "bg-gray-100 border-gray-300 text-gray-600"
+        }`}
+      >
         {initials}
       </div>
 
@@ -75,14 +86,16 @@ function Source({
             <div className="flex flex-col min-w-0">
               <h3
                 className={`text-sm truncate ${
-                  isActive ? "text-blue-700" : "text-gray-900"
+                  isActive ? "text-white" : "text-gray-900"
                 } ${!source.isRead ? "font-bold" : "font-medium"}`}
               >
                 {designation}
               </h3>
               {source.showMessagePreview && (
                 <p
-                  className={`text-xs text-gray-500 truncate ${
+                  className={`text-xs truncate ${
+                    isActive ? "text-white opacity-80" : "text-gray-500"
+                  } ${
                     !source.isRead ? "font-medium" : "font-normal"
                   } ${source.messagePreview === "" ? "italic" : ""}`}
                 >
@@ -97,14 +110,18 @@ function Source({
           {/* Date and attachment info */}
           <div className="flex flex-col items-end gap-1 flex-shrink-0">
             <span
-              className={`text-xs text-gray-500 ${
-                !source.isRead ? "font-bold" : "font-normal"
-              }`}
+              className={`text-xs ${
+                isActive ? "text-white opacity-80" : "text-gray-500"
+              } ${!source.isRead ? "font-bold" : "font-normal"}`}
             >
               {lastUpdated}
             </span>
             {source.hasAttachment && (
-              <PaperClipOutlined className="text-xs text-gray-400" />
+              <PaperClipOutlined
+                className={`text-xs ${
+                  isActive ? "text-white opacity-80" : "text-gray-400"
+                }`}
+              />
             )}
           </div>
         </div>
