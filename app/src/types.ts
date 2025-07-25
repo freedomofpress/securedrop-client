@@ -41,6 +41,7 @@ export type Source = {
   uuid: string;
   data: SourceObj;
   isRead: boolean;
+  hasAttachment: boolean;
 };
 
 export type SourceRow = {

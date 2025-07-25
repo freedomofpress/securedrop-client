@@ -9,6 +9,7 @@ import {
   SortDescendingOutlined,
   DownOutlined,
   SearchOutlined,
+  PaperClipOutlined,
 } from "@ant-design/icons";
 
 import type { Source } from "../../../../types";
@@ -30,6 +31,7 @@ function Sources() {
   useEffect(() => {
     const fetchSources = async () => {
       const sources = await window.electronAPI.getSources();
+      console.log("Fetched sources:", sources);
       setSources(sources);
     };
     fetchSources();
@@ -306,14 +308,19 @@ function Sources() {
                     </h3>
                   </div>
 
-                  {/* Date */}
-                  <span
-                    className={`text-xs text-gray-500 flex-shrink-0 ${
-                      !source.isRead ? "font-bold" : "font-normal"
-                    }`}
-                  >
-                    {lastUpdated}
-                  </span>
+                  {/* Date and attachment info */}
+                  <div className="flex flex-col items-end gap-1 flex-shrink-0">
+                    <span
+                      className={`text-xs text-gray-500 ${
+                        !source.isRead ? "font-bold" : "font-normal"
+                      }`}
+                    >
+                      {lastUpdated}
+                    </span>
+                    {source.hasAttachment && (
+                      <PaperClipOutlined className="text-xs text-gray-400" />
+                    )}
+                  </div>
                 </div>
               </div>
             </div>

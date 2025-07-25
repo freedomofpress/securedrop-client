@@ -107,7 +107,8 @@ export const getSources = (): Source[] => {
       s.uuid,
       s.data as source_data,
       COUNT(CASE WHEN json_extract(i.data, '$.kind') IN ('message', 'file') THEN 1 END) as readable_item_count,
-      COUNT(CASE WHEN json_extract(i.data, '$.kind') IN ('message', 'file') AND json_extract(i.data, '$.is_read') = 1 THEN 1 END) as read_count
+      COUNT(CASE WHEN json_extract(i.data, '$.kind') IN ('message', 'file') AND json_extract(i.data, '$.is_read') = 1 THEN 1 END) as read_count,
+      COUNT(CASE WHEN json_extract(i.data, '$.kind') = 'file' THEN 1 END) as file_count
     FROM sources s
     LEFT JOIN items i ON s.uuid = json_extract(i.data, '$.source')
     GROUP BY s.uuid, s.data
@@ -118,6 +119,7 @@ export const getSources = (): Source[] => {
     source_data: string;
     readable_item_count: number;
     read_count: number;
+    file_count: number;
   }>;
 
   return rows.map((row) => {
@@ -125,6 +127,8 @@ export const getSources = (): Source[] => {
 
     const isRead =
       row.readable_item_count > 0 && row.read_count === row.readable_item_count;
+
+    const hasAttachment = row.file_count > 0;
 
     return {
       uuid: row.uuid,
@@ -137,6 +141,7 @@ export const getSources = (): Source[] => {
         uuid: data.uuid,
       } as SourceObj,
       isRead,
+      hasAttachment,
     };
   });
 };
