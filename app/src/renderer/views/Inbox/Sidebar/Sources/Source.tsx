@@ -46,6 +46,7 @@ function Source({
             ? "text-white [&_.ant-checkbox-inner]:bg-white [&_.ant-checkbox-inner]:border-white [&_.ant-checkbox-checked_.ant-checkbox-inner]:bg-white [&_.ant-checkbox-checked_.ant-checkbox-inner]:border-white"
             : ""
         }
+        data-testid="source-checkbox"
       />
 
       {/* Star button */}
@@ -88,6 +89,7 @@ function Source({
                 className={`text-sm truncate ${
                   isActive ? "text-white" : "text-gray-900"
                 } ${!source.isRead ? "font-bold" : "font-medium"}`}
+                data-testid="source-designation"
               >
                 {designation}
               </h3>
@@ -98,6 +100,7 @@ function Source({
                   } ${
                     !source.isRead ? "font-medium" : "font-normal"
                   } ${source.messagePreview === "" ? "italic" : ""}`}
+                  data-testid="message-preview"
                 >
                   {source.messagePreview === ""
                     ? "encrypted..."
@@ -121,6 +124,7 @@ function Source({
                 className={`text-xs ${
                   isActive ? "text-white opacity-80" : "text-gray-400"
                 }`}
+                data-testid="attachment-icon"
               />
             )}
           </div>
