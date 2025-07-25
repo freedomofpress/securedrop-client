@@ -13,6 +13,8 @@ import {
 import type { Source } from "../../../../types";
 import { formatLastUpdated, getInitials, toTitleCase } from "../../../utils";
 
+type filterOption = "all" | "read" | "unread" | "starred" | "unstarred";
+
 function Sources() {
   const [sources, setSources] = useState<Source[]>([]);
   const [selectedSources, setSelectedSources] = useState<Set<string>>(
@@ -21,7 +23,7 @@ function Sources() {
   const [allSelected, setAllSelected] = useState(false);
   const [activeSourceId, setActiveSourceId] = useState<string | null>(null);
   const [sortedAsc, setSortedAsc] = useState(false);
-  const [filter, setFilter] = useState<"all" | "unread">("all");
+  const [filter, setFilter] = useState<filterOption>("all");
 
   useEffect(() => {
     const fetchSources = async () => {
@@ -100,17 +102,26 @@ function Sources() {
     setSortedAsc(!sortedAsc);
   };
 
-  const handleFilterChange = (newFilter: "all" | "unread") => {
+  const handleFilterChange = (newFilter: filterOption) => {
     setFilter(newFilter);
   };
 
   // Filter and sort sources based on the selected filter and sort order
   const filteredSources = sources
     .filter((source) => {
-      if (filter === "unread") {
-        return !source.isRead;
+      switch (filter) {
+        case "unread":
+          return !source.isRead;
+        case "read":
+          return source.isRead;
+        case "starred":
+          return source.data.isStarred;
+        case "unstarred":
+          return !source.data.isStarred;
+        case "all":
+        default:
+          return true; // "all" filter shows everything
       }
-      return true; // "all" filter shows everything
     })
     .sort((a, b) => {
       const dateA = new Date(a.data.lastUpdated).getTime();
@@ -130,9 +141,24 @@ function Sources() {
       onClick: () => handleFilterChange("all"),
     },
     {
+      key: "read",
+      label: "Read",
+      onClick: () => handleFilterChange("read"),
+    },
+    {
       key: "unread",
       label: "Unread",
       onClick: () => handleFilterChange("unread"),
+    },
+    {
+      key: "starred",
+      label: "Starred",
+      onClick: () => handleFilterChange("starred"),
+    },
+    {
+      key: "unstarred",
+      label: "Unstarred",
+      onClick: () => handleFilterChange("unstarred"),
     },
   ];
 
