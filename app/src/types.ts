@@ -36,3 +36,50 @@ export interface JSONObject {
 export type JSONValue = JSONPrimitive | JSONArray | JSONObject;
 
 export type ms = number & { readonly __unit: "ms" };
+
+export type Source = {
+  uuid: string;
+  data: SourceObj;
+  isRead: boolean;
+  hasAttachment: boolean;
+  showMessagePreview: boolean;
+  messagePreview: string;
+};
+
+export type SourceRow = {
+  uuid: string;
+  data: string; // JSON stringified SourceObj
+};
+
+export type SourceObj = {
+  fingerprint: string;
+  isStarred: boolean;
+  journalistDesignation: string;
+  lastUpdated: string;
+  publicKey: string;
+  uuid: string;
+};
+
+export type Item = {
+  uuid: string;
+  data: ItemObj;
+  plaintext?: string;
+  filename?: string;
+};
+
+export type ItemRow = {
+  uuid: string;
+  data: string; // JSON stringified ItemObj
+  plaintext?: string;
+  filename?: string;
+};
+
+export type ItemObj = {
+  uuid: string;
+  kind: string; // 'message', 'file', or 'reply'
+  seenBy: string[];
+  size: number;
+  source: string;
+  isRead?: boolean; // only on messages and files
+  isDeletedBySource?: boolean; // only on replies
+};

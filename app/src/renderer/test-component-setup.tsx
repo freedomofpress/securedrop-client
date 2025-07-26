@@ -39,6 +39,47 @@ beforeEach(() => {
   (window as any).electronAPI = {
     request: vi.fn().mockResolvedValue({ data: "test" }),
     requestStream: vi.fn().mockResolvedValue({ sha256sum: "abc" }),
+    getSources: vi.fn().mockResolvedValue([
+      {
+        uuid: "source-1",
+        data: {
+          fingerprint: "ABCD1234EFGH5678IJKL9012MNOP3456QRST7890",
+          isStarred: false,
+          journalistDesignation: "multiplicative conditionality",
+          lastUpdated: "2024-01-15T10:30:00Z",
+          publicKey:
+            "-----BEGIN PGP PUBLIC KEY BLOCK-----\nVersion: GnuPG v1\n...\n-----END PGP PUBLIC KEY BLOCK-----",
+          uuid: "source-1",
+        },
+        isRead: false,
+      },
+      {
+        uuid: "source-2",
+        data: {
+          fingerprint: "1234ABCD5678EFGH9012IJKL3456MNOP7890QRST",
+          isStarred: true,
+          journalistDesignation: "piezoelectric crockery",
+          lastUpdated: "2024-01-14T15:45:00Z",
+          publicKey:
+            "-----BEGIN PGP PUBLIC KEY BLOCK-----\nVersion: GnuPG v1\n...\n-----END PGP PUBLIC KEY BLOCK-----",
+          uuid: "source-2",
+        },
+        isRead: true,
+      },
+      {
+        uuid: "source-3",
+        data: {
+          fingerprint: "5678EFGH9012IJKL3456MNOP7890QRST1234ABCD",
+          isStarred: false,
+          journalistDesignation: "thyroid battle",
+          lastUpdated: "2024-04-10T09:15:00Z",
+          publicKey:
+            "-----BEGIN PGP PUBLIC KEY BLOCK-----\nVersion: GnuPG v1\n...\n-----END PGP PUBLIC KEY BLOCK-----",
+          uuid: "source-3",
+        },
+        isRead: false,
+      },
+    ]),
   };
 });
 

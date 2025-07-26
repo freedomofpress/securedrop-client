@@ -2,12 +2,12 @@ import { app, BrowserWindow, ipcMain } from "electron";
 import { join } from "path";
 import { optimizer, is } from "@electron-toolkit/utils";
 
-import { openDatabase, closeDatabase, runMigrations } from "./database";
+import * as database from "./database";
 import { proxy } from "./proxy";
-import type { ProxyRequest } from "../types";
+import type { ProxyRequest, ProxyResponse, Source, Item } from "../types";
 
-openDatabase();
-runMigrations();
+database.openDatabase();
+database.runMigrations();
 
 function createWindow(): void {
   const mainWindow = new BrowserWindow({
@@ -53,10 +53,26 @@ app.whenReady().then(() => {
     optimizer.watchWindowShortcuts(window);
   });
 
-  ipcMain.handle("request", async (_event, request: ProxyRequest) => {
-    const result = await proxy(request);
-    return result;
+  ipcMain.handle(
+    "request",
+    async (_event, request: ProxyRequest): Promise<ProxyResponse> => {
+      const result = await proxy(request);
+      return result;
+    },
+  );
+
+  ipcMain.handle("getSources", async (_event): Promise<Source[]> => {
+    const sources = await database.getSources();
+    return sources;
   });
+
+  ipcMain.handle(
+    "getItems",
+    async (_event, sourceUuid: string): Promise<Item[]> => {
+      const items = await database.getItems(sourceUuid);
+      return items;
+    },
+  );
 
   createWindow();
 });
@@ -66,5 +82,5 @@ app.on("window-all-closed", () => {
 });
 
 app.on("before-quit", () => {
-  closeDatabase();
+  database.closeDatabase();
 });
