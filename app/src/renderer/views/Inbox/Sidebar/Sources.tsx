@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useNavigate, useParams } from "react-router";
 import { Checkbox, Button, Dropdown, Input } from "antd";
 import {
   DeleteOutlined,
@@ -16,12 +17,14 @@ import Source from "./Sources/Source";
 type filterOption = "all" | "read" | "unread" | "starred" | "unstarred";
 
 function Sources() {
+  const navigate = useNavigate();
+  const { sourceUuid: activeSourceUuid } = useParams<{ sourceUuid?: string }>();
+
   const [sources, setSources] = useState<SourceType[]>([]);
   const [selectedSources, setSelectedSources] = useState<Set<string>>(
     new Set(),
   );
   const [allSelected, setAllSelected] = useState(false);
-  const [activeSourceId, setActiveSourceId] = useState<string | null>(null);
   const [sortedAsc, setSortedAsc] = useState(false);
   const [filter, setFilter] = useState<filterOption>("all");
   const [searchTerm, setSearchTerm] = useState("");
@@ -81,15 +84,15 @@ function Sources() {
     );
   };
 
-  // Handle source click to select as active
+  // Handle source click to navigate to source route
   const handleSourceClick = (sourceId: string) => {
-    if (activeSourceId === sourceId) {
-      // If already active, deselect it
-      setActiveSourceId(null);
+    if (activeSourceUuid === sourceId) {
+      // If already active, navigate back to inbox home
+      navigate("/");
       return;
     }
-    // Set the clicked source as active
-    setActiveSourceId(sourceId);
+    // Navigate to the source route
+    navigate(`/source/${sourceId}`);
   };
 
   const handleBulkDelete = () => {
@@ -248,7 +251,7 @@ function Sources() {
       <div className="flex-1 overflow-y-auto">
         {filteredSources.map((source) => {
           const isSelected = selectedSources.has(source.uuid);
-          const isActive = activeSourceId === source.uuid;
+          const isActive = activeSourceUuid === source.uuid;
 
           return (
             <Source
