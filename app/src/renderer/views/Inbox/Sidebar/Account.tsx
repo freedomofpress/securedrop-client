@@ -13,8 +13,6 @@ function Account() {
   const session = useAppSelector((state) => state.session);
   const dispatch = useAppDispatch();
 
-  console.log("session", session);
-
   const signOut = () => {
     console.log("signing out");
     dispatch(setUnauth());

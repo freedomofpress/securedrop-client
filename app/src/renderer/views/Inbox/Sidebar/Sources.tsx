@@ -32,7 +32,6 @@ function Sources() {
   useEffect(() => {
     const fetchSources = async () => {
       const sources = await window.electronAPI.getSources();
-      console.log("Fetched sources:", sources);
       setSources(sources);
     };
     fetchSources();
@@ -67,9 +66,6 @@ function Sources() {
     currentlyStarred: boolean,
   ) => {
     // TODO: Implement API call to toggle star status
-    console.log(
-      `Toggle star for source ${sourceId}, currently starred: ${currentlyStarred}`,
-    );
 
     // Update local state optimistically
     setSources(
