@@ -189,6 +189,7 @@ function Sources() {
                 selectedSources.size < sources.length
               }
               onChange={(e) => handleSelectAll(e.target.checked)}
+              data-testid="select-all-checkbox"
             />
 
             {/* Only display action buttons if sources are selected */}
@@ -198,11 +199,13 @@ function Sources() {
                   type="text"
                   icon={<DeleteOutlined />}
                   onClick={handleBulkDelete}
+                  data-testid="bulk-delete-button"
                 />
                 <Button
                   type="text"
                   icon={<MailOutlined />}
                   onClick={handleBulkToggleRead}
+                  data-testid="bulk-toggle-read-button"
                 />
               </>
             )}
@@ -219,7 +222,7 @@ function Sources() {
 
           <div className="flex items-center gap-1 flex-shrink-0">
             <Dropdown menu={{ items: dropdownItems }} trigger={["click"]}>
-              <Button type="text">
+              <Button type="text" data-testid="filter-dropdown">
                 {filter.charAt(0).toUpperCase() + filter.slice(1)}{" "}
                 <DownOutlined />
               </Button>
@@ -235,6 +238,7 @@ function Sources() {
                 )
               }
               onClick={handleToggleSort}
+              data-testid="sort-button"
             />
           </div>
         </div>
