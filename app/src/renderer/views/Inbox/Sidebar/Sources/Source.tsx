@@ -5,7 +5,7 @@ import type { Source as SourceType } from "../../../../../types";
 import { formatLastUpdated, toTitleCase } from "../../../../utils";
 import Avatar from "../../../../components/Avatar";
 
-interface SourceProps {
+export interface SourceProps {
   source: SourceType;
   isSelected: boolean;
   isActive: boolean;

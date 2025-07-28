@@ -3,6 +3,7 @@ import { expect, describe, it, vi, beforeEach, afterEach } from "vitest";
 import userEvent from "@testing-library/user-event";
 import Sources from "./Sources";
 import type { Source as SourceType } from "../../../../types";
+import type { SourceProps } from "./Sources/Source";
 import { renderWithProviders } from "../../../test-component-setup";
 
 // Mock the Source component to simplify testing the main Sources component logic
@@ -14,7 +15,7 @@ vi.mock("./Sources/Source", () => ({
     onSelect,
     onToggleStar,
     onClick,
-  }: any) => (
+  }: SourceProps) => (
     <div
       data-testid={`source-${source.uuid}`}
       data-selected={isSelected}
@@ -115,6 +116,7 @@ describe("Sources Component", () => {
     vi.clearAllMocks();
 
     // Mock electronAPI
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     (window as any).electronAPI = {
       getSources: mockGetSources,
     };
