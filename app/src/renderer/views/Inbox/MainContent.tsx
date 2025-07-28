@@ -2,8 +2,9 @@ import { useParams } from "react-router";
 import { useState, useEffect } from "react";
 import type { SourceWithItems } from "../../../types";
 import { toTitleCase } from "../../utils";
-import emptyStateImage from "../../../../resources/images/inbox-empty-state.svg";
-import "./MainContent.css";
+import Avatar from "../../components/Avatar";
+import EmptyState from "./MainContent/EmptyState";
+import Items from "./MainContent/Items";
 
 function MainContent() {
   const { sourceUuid } = useParams<{ sourceUuid?: string }>();
@@ -11,6 +12,7 @@ function MainContent() {
     useState<SourceWithItems | null>(null);
   const [loading, setLoading] = useState(false);
 
+  // Fetch the source with its items
   useEffect(() => {
     if (sourceUuid) {
       setLoading(true);
@@ -29,70 +31,45 @@ function MainContent() {
     }
   }, [sourceUuid]);
 
+  let header: React.ReactNode = null;
+  let content: React.ReactNode = null;
+
   // If we have a source UUID, show the source content
   if (sourceUuid) {
     if (loading) {
-      return (
-        <div className="flex-1 flex flex-col h-full">
-          <div className="sd-bg-primary sd-border-secondary border-b h-12 flex items-center px-4">
-            <p>Loading...</p>
-          </div>
-          <div className="flex-1 flex items-center justify-center sd-bg-secondary">
-            <p>Loading source details...</p>
-          </div>
-        </div>
+      // Loading
+      header = <p>Loading...</p>;
+      content = <p>Loading source details...</p>;
+    } else if (!sourceWithItems) {
+      // Source not found
+      header = <p>Source Not Found</p>;
+      content = <p>Source not found</p>;
+    } else {
+      // Source found, display items
+      const designation = toTitleCase(
+        sourceWithItems.data.journalistDesignation,
       );
-    }
-
-    if (!sourceWithItems) {
-      return (
-        <div className="flex-1 flex flex-col h-full">
-          <div className="sd-bg-primary sd-border-secondary border-b h-12 flex items-center px-4">
-            <p>Source Not Found</p>
-          </div>
-          <div className="flex-1 flex items-center justify-center sd-bg-secondary">
-            <p>Source not found</p>
-          </div>
-        </div>
+      header = (
+        <>
+          <Avatar designation={designation} isActive={false} />
+          <p className="ml-2">{designation}</p>
+        </>
       );
+      content = <Items sourceWithItems={sourceWithItems} />;
     }
-
-    const designation = toTitleCase(sourceWithItems.data.journalistDesignation);
-
-    return (
-      <div className="flex-1 flex flex-col h-full">
-        <div className="sd-bg-primary sd-border-secondary border-b h-12 flex items-center px-4">
-          <p>{designation}</p>
-        </div>
-
-        <div className="flex-1 flex items-center justify-center sd-bg-secondary">
-          <p>TODO: implement</p>
-        </div>
-      </div>
-    );
+  } else {
+    // Show empty state when no source is selected
+    header = <></>;
+    content = <EmptyState />;
   }
 
-  // Show empty state when no source is selected
   return (
     <div className="flex-1 flex flex-col h-full">
-      <div className="sd-bg-primary sd-border-secondary border-b h-12">
-        {/* Empty header for now */}
+      <div className="sd-bg-primary sd-border-secondary border-b h-12 flex items-center px-4">
+        {header}
       </div>
-
       <div className="flex-1 flex items-center justify-center sd-bg-secondary">
-        <div className="text-center">
-          {/* Empty state */}
-          <img
-            src={emptyStateImage}
-            alt="Empty inbox"
-            className="w-32 h-32 mx-auto mb-4"
-          />
-
-          <p className="sd-text-tertiary empty-state-text">
-            <strong>Select a source</strong> from the list to read messages,
-            retrieve files, or send responses.
-          </p>
-        </div>
+        {content}
       </div>
     </div>
   );
