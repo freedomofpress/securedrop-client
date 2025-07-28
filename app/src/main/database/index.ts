@@ -4,7 +4,14 @@ import path from "path";
 import { execSync } from "child_process";
 import Database from "better-sqlite3";
 
-import type { Source, SourceObj, Item, ItemObj } from "../../types";
+import type {
+  Source,
+  SourceWithItems,
+  SourceObj,
+  SourceRow,
+  ItemObj,
+  ItemRow,
+} from "../../types";
 
 let db: Database.Database | null = null;
 let databaseUrl: string | null = null;
@@ -170,22 +177,33 @@ export const getSources = (): Source[] => {
   });
 };
 
-export const getItems = (sourceUuid: string): Item[] => {
+export const getSourceWithItems = (sourceUuid: string): SourceWithItems => {
   if (!db) {
     throw new Error("Database is not open");
   }
 
-  const stmt = db.prepare(`
-    SELECT uuid, data FROM items
+  // Get the source data
+  const sourceStmt = db.prepare(`
+    SELECT uuid, data FROM sources
+    WHERE uuid = ?;
+  `);
+  const sourceRow = sourceStmt.get(sourceUuid) as SourceRow | undefined;
+
+  if (!sourceRow) {
+    throw new Error(`Source with UUID ${sourceUuid} not found`);
+  }
+
+  const sourceData = JSON.parse(sourceRow.data);
+
+  // Get the items for this source
+  const itemsStmt = db.prepare(`
+    SELECT uuid, data, plaintext, filename FROM items
     WHERE json_extract(data, '$.source') = ?;
   `);
-  const rows = stmt.all(sourceUuid) as Array<{
-    uuid: string;
-    item_data: string;
-  }>;
+  const itemRows = itemsStmt.all(sourceUuid) as Array<ItemRow>;
 
-  return rows.map((row) => {
-    const data = JSON.parse(row.item_data);
+  const items = itemRows.map((row) => {
+    const data = JSON.parse(row.data);
     return {
       uuid: row.uuid,
       data: {
@@ -203,4 +221,17 @@ export const getItems = (sourceUuid: string): Item[] => {
       } as ItemObj,
     };
   });
+
+  return {
+    uuid: sourceRow.uuid,
+    data: {
+      isStarred: sourceData.is_starred,
+      journalistDesignation: sourceData.journalist_designation,
+      lastUpdated: sourceData.last_updated,
+      publicKey: sourceData.public_key,
+      fingerprint: sourceData.fingerprint,
+      uuid: sourceData.uuid,
+    } as SourceObj,
+    items,
+  };
 };

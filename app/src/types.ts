@@ -46,6 +46,12 @@ export type Source = {
   messagePreview: string;
 };
 
+export type SourceWithItems = {
+  uuid: string;
+  data: SourceObj;
+  items: Item[];
+};
+
 export type SourceRow = {
   uuid: string;
   data: string; // JSON stringified SourceObj
