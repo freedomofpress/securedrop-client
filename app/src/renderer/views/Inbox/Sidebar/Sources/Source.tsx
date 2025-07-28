@@ -2,7 +2,8 @@ import { Checkbox, Button } from "antd";
 import { StarFilled, StarOutlined, PaperClipOutlined } from "@ant-design/icons";
 
 import type { Source as SourceType } from "../../../../../types";
-import { formatLastUpdated, getInitials, toTitleCase } from "../../../../utils";
+import { formatLastUpdated, toTitleCase } from "../../../../utils";
+import Avatar from "../../../../components/Avatar";
 
 interface SourceProps {
   source: SourceType;
@@ -22,7 +23,6 @@ function Source({
   onClick,
 }: SourceProps) {
   const designation = toTitleCase(source.data.journalistDesignation);
-  const initials = getInitials(designation);
   const lastUpdated = formatLastUpdated(source.data.lastUpdated);
 
   return (
@@ -70,15 +70,7 @@ function Source({
       />
 
       {/* Avatar with initials */}
-      <div
-        className={`w-10 h-10 rounded-full border flex items-center justify-center font-medium text-sm flex-shrink-0 ${
-          isActive
-            ? "bg-blue-700 border-blue-700 text-white"
-            : "bg-gray-100 border-gray-300 text-gray-600"
-        }`}
-      >
-        {initials}
-      </div>
+      <Avatar designation={designation} isActive={isActive} />
 
       {/* Source info */}
       <div className="flex-1 min-w-0 py-2 pl-3">
