@@ -33,10 +33,9 @@ export default defineConfig(({ mode }) => {
     mainVars["__PROXY_ORIGIN__"] = JSON.stringify("http://localhost:8081/");
     mainVars["__PROXY_CMD__"] = JSON.stringify(sdProxyCmd);
   } else {
-    // In production, PROXY_CMD and PROXY_VM_NAME are determined at runtime.  PROXY_ORIGIN is the responsibility of the proxy command *within* the proxy VM; setting it here has no effect.
-    mainVars["__PROXY_VM_NAME__"] = '""'; // Empty string
+    // In production, PROXY_CMD is determined at runtime, and PROXY_ORIGIN is managed by the proxy VM
     mainVars["__PROXY_CMD__"] = '""'; // Empty string
-    mainVars["__PROXY_ORIGIN__"] = JSON.stringify("http://localhost:8081/");
+    mainVars["__PROXY_ORIGIN__"] = '""'; // Empty string
   }
 
   console.log("Using main vars:", mainVars);
