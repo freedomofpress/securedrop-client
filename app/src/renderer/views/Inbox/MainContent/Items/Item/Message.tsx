@@ -1,5 +1,6 @@
 import type { Item } from "../../../../../../types";
 import { toTitleCase } from "../../../../../utils";
+import Avatar from "../../../../../components/Avatar";
 import "../Item.css";
 
 interface MessageProps {
@@ -17,7 +18,8 @@ function Message({ item, designation }: MessageProps) {
       className="flex items-start mb-4 justify-start"
       data-testid={`item-${item.uuid}`}
     >
-      <div>
+      <Avatar designation={titleCaseDesignation} isActive={false} />
+      <div className="ml-3">
         <div className="flex items-center mb-1">
           <span className="author">{titleCaseDesignation}</span>
         </div>

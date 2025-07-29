@@ -1,5 +1,6 @@
 import type { Item } from "../../../../../../types";
 import { toTitleCase } from "../../../../../utils";
+import Avatar from "../../../../../components/Avatar";
 import "../Item.css";
 
 interface FileProps {
@@ -18,7 +19,8 @@ function File({ item, designation }: FileProps) {
       className="flex items-start mb-4 justify-start"
       data-testid={`item-${item.uuid}`}
     >
-      <div>
+      <Avatar designation={titleCaseDesignation} isActive={false} />
+      <div className="ml-3">
         <div className="flex items-center mb-1">
           <span className="author">{titleCaseDesignation}</span>
         </div>
