@@ -60,7 +60,11 @@ function MainContent() {
   } else {
     // Show empty state when no source is selected
     header = <></>;
-    content = <EmptyState />;
+    content = (
+      <div className="flex flex-1 items-center justify-center w-full h-full">
+        <EmptyState />
+      </div>
+    );
   }
 
   return (
