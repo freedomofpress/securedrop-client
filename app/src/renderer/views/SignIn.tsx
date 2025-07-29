@@ -40,12 +40,15 @@ function SignInView() {
   const [authErrorMessage, setAuthErrorMessage] =
     useState<string>(errorMessageGeneric);
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
+  const [hasValidationErrors, setHasValidationErrors] =
+    useState<boolean>(false);
 
   const onFinish: FormProps<FormValues>["onFinish"] = async (
     values: FormValues,
   ) => {
     // Clear any previous errors and set loading state
     setAuthError(false);
+    setHasValidationErrors(false);
     setIsSubmitting(true);
 
     // Authenticate to the API
@@ -105,6 +108,10 @@ function SignInView() {
     }
   };
 
+  const onFinishFailed: FormProps<FormValues>["onFinishFailed"] = () => {
+    setHasValidationErrors(true);
+  };
+
   const onValuesChange: FormProps<FormValues>["onValuesChange"] = async (
     _changedValues: Partial<FormValues>,
     _allValues: Partial<FormValues>,
@@ -113,12 +120,16 @@ function SignInView() {
     if (authError) {
       setAuthError(false);
     }
-    // Disable validation errors
-    form.setFields([
-      { name: "username", errors: [] },
-      { name: "passphrase", errors: [] },
-      { name: "oneTimeCode", errors: [] },
-    ]);
+
+    // Clear validation errors only if there are any, and only once per form submission cycle
+    if (hasValidationErrors) {
+      setHasValidationErrors(false);
+      form.setFields([
+        { name: "username", errors: [] },
+        { name: "passphrase", errors: [] },
+        { name: "oneTimeCode", errors: [] },
+      ]);
+    }
   };
 
   const useOffline = () => {
@@ -157,6 +168,7 @@ function SignInView() {
           <Form
             form={form}
             onFinish={onFinish}
+            onFinishFailed={onFinishFailed}
             onValuesChange={onValuesChange}
             layout="vertical"
             className="space-y-6"

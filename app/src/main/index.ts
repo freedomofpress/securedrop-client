@@ -16,7 +16,7 @@ database.runMigrations();
 
 function createWindow(): void {
   const mainWindow = new BrowserWindow({
-    width: is.dev ? 1200 : 900,
+    width: is.dev && process.env["NODE_ENV"] != "production" ? 1200 : 900,
     height: 700,
     minWidth: 900,
     minHeight: 700,
@@ -33,7 +33,9 @@ function createWindow(): void {
   mainWindow.on("ready-to-show", () => {
     mainWindow.show();
     // Default open DevTools in development
-    if (is.dev) {
+    // We're checking for both is.dev and NODE_ENV isn't production so that `pnpm start`, which previews
+    // the production build, doesn't open DevTools
+    if (is.dev && process.env["NODE_ENV"] != "production") {
       mainWindow.webContents.openDevTools();
     }
   });

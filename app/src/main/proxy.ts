@@ -27,18 +27,17 @@ export async function proxy(
   let commandOptions: string[] = [];
 
   if (import.meta.env.MODE == "development") {
-    command = import.meta.env.VITE_SD_PROXY_CMD;
+    command = __PROXY_CMD__;
   } else {
     command = "/usr/lib/qubes/qrexec-client-vm";
 
-    const proxyVmName =
-      import.meta.env.VITE_PROXY_VM_NAME || DEFAULT_PROXY_VM_NAME;
+    const proxyVmName = DEFAULT_PROXY_VM_NAME;
     commandOptions = [proxyVmName, "securedrop.Proxy"];
   }
   const proxyCommand: ProxyCommand = {
     command: command,
     options: commandOptions,
-    proxyOrigin: import.meta.env.VITE_SD_PROXY_ORIGIN,
+    proxyOrigin: __PROXY_ORIGIN__,
     timeout: DEFAULT_PROXY_CMD_TIMEOUT_MS,
     abortSignal: abortSignal,
   };
