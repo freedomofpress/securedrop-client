@@ -68,9 +68,7 @@ function MainContent() {
       <div className="sd-bg-primary sd-border-secondary border-b h-12 flex items-center px-4">
         {header}
       </div>
-      <div className="flex-1 flex items-center justify-center sd-bg-secondary">
-        {content}
-      </div>
+      <div className="flex-1 flex w-full sd-bg-secondary">{content}</div>
     </div>
   );
 }
