@@ -80,20 +80,20 @@ export class DB {
     );
 
     this.selectAllSourceVersion = this.db.prepare(
-      "SELECT id, version, data FROM sources",
+      "SELECT uuid, version, data FROM sources",
     );
     this.upsertSource = this.db.prepare(
-      "INSERT INTO sources (id, data, version) VALUES (@id, @data, @version) ON CONFLICT(id) DO UPDATE SET data=@data, version=@version",
+      "INSERT INTO sources (uuid, data, version) VALUES (@id, @data, @version) ON CONFLICT(uuid) DO UPDATE SET data=@data, version=@version",
     );
-    this.deleteSource = this.db.prepare("DELETE FROM sourecs WHERE id = @id");
+    this.deleteSource = this.db.prepare("DELETE FROM sources WHERE uuid = @id");
 
     this.selectItemVersionsBySource = this.db.prepare(
-      "SELECT id, version FROM items WHERE source_id = @source_id",
+      "SELECT uuid, version FROM items WHERE source_id = @sourceID",
     );
     this.upsertItem = this.db.prepare(
-      "INSERT INTO items (id, source_id, data, version) VALUES (@id, @source_id, @data, @version) ON CONFLICT(id, source_id) DO UPDATE SET data=@data, version=@version",
+      "INSERT INTO items (uuid, source_id, data, version) VALUES (@id, @sourceID, @data, @version) ON CONFLICT(uuid, source_id) DO UPDATE SET data=@data, version=@version",
     );
-    this.deleteItem = this.db.prepare("DELETE FROM items WHERE id = @id");
+    this.deleteItem = this.db.prepare("DELETE FROM items WHERE uuid = @id");
   }
 
   runMigrations(): void {
