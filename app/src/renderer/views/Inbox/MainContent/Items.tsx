@@ -17,7 +17,7 @@ function Items({ sourceWithItems }: ItemsProps) {
     <div className="flex flex-col h-full w-full p-4">
       <div className="flex-1 overflow-y-auto pr-1">
         {sourceWithItems.items.map((item) => (
-          <Item key={item.uuid} item={item} />
+          <Item key={item.uuid} item={item} designation={designation} />
         ))}
       </div>
       <div className="pt-4">
