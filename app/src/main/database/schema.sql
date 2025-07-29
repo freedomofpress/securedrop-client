@@ -8,11 +8,12 @@ CREATE TABLE items (
   data json,
   plaintext text,
   filename text
-, version text);
+, version text, source_id text);
 CREATE TABLE version (
     version text
 );
 -- Dbmate schema migrations
 INSERT INTO "schema_migrations" (version) VALUES
   ('20250710180544'),
-  ('20250722165416');
+  ('20250722165416'),
+  ('20250724191248');
