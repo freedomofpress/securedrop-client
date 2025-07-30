@@ -18,11 +18,11 @@ const DEFAULT_STREAM_MAX_RETRY_ATTEMPTS = 3;
 // Proxies a network request through sd-proxy
 // For streaming requests, `downloadPath` must be specified as
 // the file location where stream data is downloaded
-export async function proxy(
+export async function proxy<T>(
   request: ProxyRequest,
   downloadPath?: string,
   abortSignal?: AbortSignal,
-): Promise<ProxyResponse> {
+): Promise<ProxyResponse<T>> {
   let command = "";
   let commandOptions: string[] = [];
 
@@ -62,23 +62,29 @@ export async function proxy(
   return proxyJSONRequest(request, proxyCommand);
 }
 
-function parseJSONResponse(response: string): ProxyJSONResponse {
+function parseJSONResponse<T>(response: string): ProxyJSONResponse<T> {
   const result = JSON.parse(response);
   const status = result["status"];
   let body = result["body"];
-  try {
-    body = JSON.parse(result["body"]);
-  } catch {
-    // do nothing
-  }
-
   if (!status) {
     throw new Error(`Invalid response: no status code found.\n`);
   }
   const error =
-    (status >= 400 && status < 500 && status != 404) ||
-    (status >= 500 && status < 600);
+    (status >= 400 && status < 500) || (status >= 500 && status < 600);
 
+  if (!error) {
+    try {
+      if (body && typeof body === "string") {
+        body = JSON.parse(body) as T;
+      } else {
+        body = body as T;
+      }
+    } catch (e) {
+      console.log(
+        `Failed to parse response body as JSON: ${result["status"]}: ${result["body"]}: ${e}`,
+      );
+    }
+  }
   return {
     error,
     data: body,
@@ -87,10 +93,10 @@ function parseJSONResponse(response: string): ProxyJSONResponse {
   };
 }
 
-export async function proxyJSONRequest(
+export async function proxyJSONRequest<T>(
   request: ProxyRequest,
   command: ProxyCommand,
-): Promise<ProxyJSONResponse> {
+): Promise<ProxyJSONResponse<T>> {
   return new Promise((resolve, reject) => {
     const process = child_process.spawn(command.command, command.options, {
       env: { SD_PROXY_ORIGIN: command.proxyOrigin },
@@ -133,12 +139,12 @@ export async function proxyJSONRequest(
   });
 }
 
-export async function proxyStreamRequest(
+export async function proxyStreamRequest<T>(
   request: ProxyRequest,
   command: ProxyCommand,
   downloadPath: string,
   maxRetryAttempts: number,
-): Promise<ProxyResponse> {
+): Promise<ProxyResponse<T>> {
   let writeStream: fs.WriteStream;
   try {
     const downloadDir = path.dirname(downloadPath);
@@ -174,12 +180,12 @@ export async function proxyStreamRequest(
 
 // Streams proxy request through sd-proxy, writing stream output to
 // the provided writeStream.
-export async function proxyStreamInner(
+export async function proxyStreamInner<T>(
   request: ProxyRequest,
   command: ProxyCommand,
   writeStream: Writable,
   offset?: number,
-): Promise<ProxyResponse> {
+): Promise<ProxyResponse<T>> {
   return new Promise((resolve, reject) => {
     let stderr = "";
     let stdout = "";
