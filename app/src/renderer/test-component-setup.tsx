@@ -6,8 +6,13 @@ import * as matchers from "@testing-library/jest-dom/matchers";
 import { MemoryRouter, useLocation } from "react-router";
 import { Provider } from "react-redux";
 import React from "react";
+import i18n from "i18next";
 
 import { setupStore, type RootState } from "./store";
+import "./i18n";
+
+// Change the language to en to we can test for English strings
+i18n.changeLanguage("en");
 
 // Mock global variables
 (global as any).__APP_VERSION__ = "6.6.6-test";

@@ -1,0 +1,29 @@
+{
+  "title": "Sign in to SecureDrop",
+  "username": {
+    "label": "Username",
+    "required": "Please enter your username.",
+    "minLength": "That username won't work. It should be at least 3 characters long."
+  },
+  "passphrase": {
+    "label": "Passphrase",
+    "required": "Please enter your passphrase.",
+    "invalidLength": "That passphrase won't work. It should be between 14 and 128 characters long."
+  },
+  "twoFactorCode": {
+    "label": "Two-Factor Code",
+    "required": "Please enter your two-factor code.",
+    "invalidFormat": "Your two-factor code must be exactly 6 digits."
+  },
+  "button": {
+    "signIn": "Sign in",
+    "signingIn": "Signing in...",
+    "useOffline": "Use offline"
+  },
+  "errors": {
+    "network": "Could not reach the SecureDrop server. Please check your Internet and Tor connection and try again.",
+    "credentials": "Those credentials didn't work. Please try again, and make sure to use a new two-factor code.",
+    "generic": "That didn't work. Please check everything and try again."
+  },
+  "version": "SecureDrop App v{{version}}"
+}
