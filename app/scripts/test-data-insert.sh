@@ -8,4 +8,4 @@ if [ ! -f ./src/test-data.sql ]; then
 fi
 
 pnpm run dbmate up
-sqlite3 $HOME/.config/SecureDrop/db.sqlite < ./src/test-data.sql
+sqlite3 "$HOME/.config/SecureDrop/db.sqlite" < ./src/test-data.sql
