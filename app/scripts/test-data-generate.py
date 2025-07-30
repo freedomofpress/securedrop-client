@@ -34,16 +34,17 @@ PARAGRAPHS = [
 ]
 
 
-if len(sys.argv) != 4:
-    print(f"Usage: {sys.argv[0]} <adjectives_filename> <nouns_filename> <count>")
-    print(
-        "You can find adjectives.txt and nouns.txt in the the securedrop repo, in securedrop/dictionaries."
-    )
+if len(sys.argv) != 3:
+    print(f"Usage: {sys.argv[0]} <securedrop_repo_path> <count>")
     sys.exit(1)
 
-adjectives_filename = sys.argv[1]
-nouns_filename = sys.argv[2]
-count = int(sys.argv[3])
+securedrop_repo_path = sys.argv[1]
+count = int(sys.argv[2])
+
+adjectives_filename = os.path.join(
+    securedrop_repo_path, "securedrop", "dictionaries", "adjectives.txt"
+)
+nouns_filename = os.path.join(securedrop_repo_path, "securedrop", "dictionaries", "nouns.txt")
 
 with open(adjectives_filename) as f:
     adjectives = [line.strip() for line in f if line.strip()]
