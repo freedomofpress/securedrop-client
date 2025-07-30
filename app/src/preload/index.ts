@@ -8,17 +8,42 @@ import type {
   SourceWithItems,
 } from "../types";
 
+// Log the performance of IPC calls
+function logIpcCall<T>(name: string, fn: (...args: any[]) => Promise<T>) {
+  return async (...args: any[]): Promise<T> => {
+    console.debug(`[IPC] ${name} called`);
+    const start = performance.now();
+    const result = await fn(...args);
+    const end = performance.now();
+    const duration = end - start;
+    let timeStr;
+    if (duration < 1000) {
+      timeStr = `${duration.toFixed(2)}ms`;
+    } else {
+      timeStr = `${(duration / 1000).toFixed(2)}s`;
+    }
+    console.debug(`[IPC] ${name} finished in ${timeStr}`);
+    return result;
+  };
+}
+
 const electronAPI = {
-  request: (request: ProxyRequest): Promise<ProxyResponse> =>
+  request: logIpcCall<ProxyResponse>("request", (request: ProxyRequest) =>
     ipcRenderer.invoke("request", request),
-  requestStream: (
-    request: ProxyRequest,
-    downloadPath: string,
-  ): Promise<ProxyResponse> =>
-    ipcRenderer.invoke("requestStream", request, downloadPath),
-  getSources: (): Promise<Source[]> => ipcRenderer.invoke("getSources"),
-  getSourceWithItems: (sourceUuid: string): Promise<SourceWithItems> =>
-    ipcRenderer.invoke("getSourceWithItems", sourceUuid),
+  ),
+  requestStream: logIpcCall<ProxyResponse>(
+    "requestStream",
+    (request: ProxyRequest, downloadPath: string) =>
+      ipcRenderer.invoke("requestStream", request, downloadPath),
+  ),
+  getSources: logIpcCall<Source[]>("getSources", () =>
+    ipcRenderer.invoke("getSources"),
+  ),
+  getSourceWithItems: logIpcCall<SourceWithItems>(
+    "getSourceWithItems",
+    (sourceUuid: string) =>
+      ipcRenderer.invoke("getSourceWithItems", sourceUuid),
+  ),
 };
 
 contextBridge.exposeInMainWorld("electronAPI", electronAPI);

@@ -13,6 +13,7 @@ import {
 import type { Source as SourceType } from "../../../../types";
 import { toTitleCase } from "../../../utils";
 import Source from "./Sources/Source";
+import LoadingIndicator from "../../../components/LoadingIndicator";
 
 type filterOption = "all" | "read" | "unread" | "starred" | "unstarred";
 
@@ -20,6 +21,7 @@ function Sources() {
   const navigate = useNavigate();
   const { sourceUuid: activeSourceUuid } = useParams<{ sourceUuid?: string }>();
 
+  const [loading, setLoading] = useState(false);
   const [sources, setSources] = useState<SourceType[]>([]);
   const [selectedSources, setSelectedSources] = useState<Set<string>>(
     new Set(),
@@ -31,8 +33,10 @@ function Sources() {
 
   useEffect(() => {
     const fetchSources = async () => {
+      setLoading(true);
       const sources = await window.electronAPI.getSources();
       setSources(sources);
+      setLoading(false);
     };
     fetchSources();
   }, []);
@@ -244,6 +248,7 @@ function Sources() {
       </div>
 
       {/* Sources list */}
+      {loading && <LoadingIndicator />}
       <div className="flex-1 overflow-y-auto">
         {filteredSources.map((source) => {
           const isSelected = selectedSources.has(source.uuid);

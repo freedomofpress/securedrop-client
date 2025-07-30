@@ -107,58 +107,22 @@ export const getSources = (): Source[] => {
     throw new Error("Database is not open");
   }
 
-  // Select sources, along with all other data that needs to be displayed, in a single query
+  // Select sources
   const stmt = db.prepare(`
     SELECT
-      s.uuid,
-      s.data as source_data,
-      COUNT(CASE WHEN json_extract(i.data, '$.kind') IN ('message', 'file') THEN 1 END) as readable_item_count,
-      COUNT(CASE WHEN json_extract(i.data, '$.kind') IN ('message', 'file') AND json_extract(i.data, '$.is_read') = 1 THEN 1 END) as read_count,
-      COUNT(CASE WHEN json_extract(i.data, '$.kind') = 'file' THEN 1 END) as file_count,
-      COUNT(CASE WHEN json_extract(i.data, '$.kind') = 'message' THEN 1 END) as message_count,
-      latest_message.plaintext as latest_message_plaintext
-    FROM sources s
-    LEFT JOIN items i ON s.uuid = json_extract(i.data, '$.source')
-    LEFT JOIN (
-      SELECT
-        json_extract(data, '$.source') as source_uuid,
-        plaintext,
-        ROW_NUMBER() OVER (
-          PARTITION BY json_extract(data, '$.source')
-          ORDER BY json_extract(data, '$.last_updated') DESC
-        ) as rn
-      FROM items
-      WHERE json_extract(data, '$.kind') = 'message'
-    ) latest_message ON s.uuid = latest_message.source_uuid AND latest_message.rn = 1
-    GROUP BY s.uuid, s.data, latest_message.plaintext
+      uuid,
+      data,
+      is_read,
+      has_attachment,
+      show_message_preview,
+      message_preview
+    FROM sources
   `);
 
-  const rows = stmt.all() as Array<{
-    uuid: string;
-    source_data: string;
-    readable_item_count: number;
-    read_count: number;
-    file_count: number;
-    message_count: number;
-    latest_message_plaintext: string | null;
-  }>;
+  const rows = stmt.all() as Array<SourceRow>;
 
   return rows.map((row) => {
-    const data = JSON.parse(row.source_data);
-
-    const isRead =
-      row.readable_item_count > 0 && row.read_count === row.readable_item_count;
-
-    const hasAttachment = row.file_count > 0;
-
-    const showMessagePreview = row.message_count > 0;
-
-    let messagePreview = "";
-    if (showMessagePreview && row.latest_message_plaintext) {
-      // Limit message preview to 200 characters
-      messagePreview = row.latest_message_plaintext.slice(0, 200);
-    }
-
+    const data = JSON.parse(row.data);
     return {
       uuid: row.uuid,
       data: {
@@ -169,10 +133,10 @@ export const getSources = (): Source[] => {
         fingerprint: data.fingerprint,
         uuid: data.uuid,
       } as SourceObj,
-      isRead,
-      hasAttachment,
-      showMessagePreview,
-      messagePreview,
+      isRead: row.is_read,
+      hasAttachment: row.has_attachment,
+      showMessagePreview: row.show_message_preview,
+      messagePreview: row.message_preview,
     };
   });
 };

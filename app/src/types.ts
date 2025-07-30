@@ -55,6 +55,10 @@ export type SourceWithItems = {
 export type SourceRow = {
   uuid: string;
   data: string; // JSON stringified SourceObj
+  is_read: boolean;
+  has_attachment: boolean;
+  show_message_preview: boolean;
+  message_preview: string;
 };
 
 export type SourceObj = {
