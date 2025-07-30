@@ -9,7 +9,9 @@ import type {
 } from "../types";
 
 // Log the performance of IPC calls
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 function logIpcCall<T>(name: string, fn: (...args: any[]) => Promise<T>) {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   return async (...args: any[]): Promise<T> => {
     console.debug(`[IPC] ${name} called`);
     const start = performance.now();
