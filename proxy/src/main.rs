@@ -4,7 +4,7 @@ use anyhow::{bail, Result};
 use futures_util::StreamExt;
 use reqwest::header::HeaderMap;
 use reqwest::Method;
-use reqwest::{Client, Response};
+use reqwest::{Client, Response, Proxy};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::io;
@@ -134,7 +134,9 @@ async fn proxy() -> Result<()> {
         bail! {"request would escape configured origin"}
     }
 
-    let client = Client::new();
+    let client = Client::builder()
+                        .proxy(Proxy::http("socks5h://127.0.0.1:9150")?)
+                        .build()?;
     let mut req =
         client.request(Method::from_str(&incoming_request.method)?, url);
     let header_map = HeaderMap::try_from(&incoming_request.headers)?;
