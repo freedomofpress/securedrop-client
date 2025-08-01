@@ -1,5 +1,6 @@
 import { Checkbox, Button } from "antd";
 import { StarFilled, StarOutlined, PaperClipOutlined } from "@ant-design/icons";
+import { useTranslation } from "react-i18next";
 
 import type { Source as SourceType } from "../../../../../types";
 import { formatLastUpdated, toTitleCase } from "../../../../utils";
@@ -22,6 +23,7 @@ function Source({
   onToggleStar,
   onClick,
 }: SourceProps) {
+  const { t } = useTranslation("Sidebar");
   const designation = toTitleCase(source.data.journalistDesignation);
   const lastUpdated = formatLastUpdated(source.data.lastUpdated);
 
@@ -95,7 +97,7 @@ function Source({
                   data-testid="message-preview"
                 >
                   {source.messagePreview === ""
-                    ? "encrypted..."
+                    ? t("source.encrypted")
                     : source.messagePreview}
                 </p>
               )}

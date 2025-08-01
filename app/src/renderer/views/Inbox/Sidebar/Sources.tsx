@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate, useParams } from "react-router";
-import { Checkbox, Button, Dropdown, Input } from "antd";
+import { Checkbox, Button, Dropdown, Input, Tooltip } from "antd";
 import {
   DeleteOutlined,
   MailOutlined,
@@ -9,6 +9,7 @@ import {
   DownOutlined,
   SearchOutlined,
 } from "@ant-design/icons";
+import { useTranslation } from "react-i18next";
 
 import type { Source as SourceType } from "../../../../types";
 import { toTitleCase } from "../../../utils";
@@ -18,6 +19,7 @@ import LoadingIndicator from "../../../components/LoadingIndicator";
 type filterOption = "all" | "read" | "unread" | "starred" | "unstarred";
 
 function Sources() {
+  const { t } = useTranslation("Sidebar");
   const navigate = useNavigate();
   const { sourceUuid: activeSourceUuid } = useParams<{ sourceUuid?: string }>();
 
@@ -153,27 +155,27 @@ function Sources() {
   const dropdownItems = [
     {
       key: "all",
-      label: "All",
+      label: t("sources.filters.all"),
       onClick: () => handleFilterChange("all"),
     },
     {
       key: "read",
-      label: "Read",
+      label: t("sources.filters.read"),
       onClick: () => handleFilterChange("read"),
     },
     {
       key: "unread",
-      label: "Unread",
+      label: t("sources.filters.unread"),
       onClick: () => handleFilterChange("unread"),
     },
     {
       key: "starred",
-      label: "Starred",
+      label: t("sources.filters.starred"),
       onClick: () => handleFilterChange("starred"),
     },
     {
       key: "unstarred",
-      label: "Unstarred",
+      label: t("sources.filters.unstarred"),
       onClick: () => handleFilterChange("unstarred"),
     },
   ];
@@ -198,24 +200,28 @@ function Sources() {
             {/* Only display action buttons if sources are selected */}
             {selectedSources.size > 0 && (
               <>
-                <Button
-                  type="text"
-                  icon={<DeleteOutlined />}
-                  onClick={handleBulkDelete}
-                  data-testid="bulk-delete-button"
-                />
-                <Button
-                  type="text"
-                  icon={<MailOutlined />}
-                  onClick={handleBulkToggleRead}
-                  data-testid="bulk-toggle-read-button"
-                />
+                <Tooltip title={t("sources.actions.bulkDelete")}>
+                  <Button
+                    type="text"
+                    icon={<DeleteOutlined />}
+                    onClick={handleBulkDelete}
+                    data-testid="bulk-delete-button"
+                  />
+                </Tooltip>
+                <Tooltip title={t("sources.actions.bulkToggleRead")}>
+                  <Button
+                    type="text"
+                    icon={<MailOutlined />}
+                    onClick={handleBulkToggleRead}
+                    data-testid="bulk-toggle-read-button"
+                  />
+                </Tooltip>
               </>
             )}
           </div>
 
           <Input
-            placeholder="Search"
+            placeholder={t("sources.search.placeholder")}
             prefix={<SearchOutlined />}
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
@@ -231,18 +237,20 @@ function Sources() {
               </Button>
             </Dropdown>
 
-            <Button
-              type="text"
-              icon={
-                sortedAsc ? (
-                  <SortDescendingOutlined />
-                ) : (
-                  <SortAscendingOutlined />
-                )
-              }
-              onClick={handleToggleSort}
-              data-testid="sort-button"
-            />
+            <Tooltip title={t("sources.sort.tooltip")}>
+              <Button
+                type="text"
+                icon={
+                  sortedAsc ? (
+                    <SortDescendingOutlined />
+                  ) : (
+                    <SortAscendingOutlined />
+                  )
+                }
+                onClick={handleToggleSort}
+                data-testid="sort-button"
+              />
+            </Tooltip>
           </div>
         </div>
       </div>

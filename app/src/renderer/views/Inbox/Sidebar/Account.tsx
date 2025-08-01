@@ -1,6 +1,7 @@
 import { useNavigate } from "react-router";
 import { Button, Typography } from "antd";
 import { UserOutlined, LoginOutlined, LogoutOutlined } from "@ant-design/icons";
+import { useTranslation } from "react-i18next";
 
 import { useAppDispatch, useAppSelector } from "../../../hooks";
 import {
@@ -9,6 +10,7 @@ import {
 } from "../../../features/session/sessionSlice";
 
 function Account() {
+  const { t } = useTranslation("Sidebar");
   const navigate = useNavigate();
   const session = useAppSelector((state) => state.session);
   const dispatch = useAppDispatch();
@@ -42,12 +44,12 @@ function Account() {
             size="small"
             onClick={signOut}
           >
-            Sign out
+            {t("account.signOut")}
           </Button>
         </>
       ) : (
         <>
-          <Typography.Text type="warning">Offline Mode</Typography.Text>
+          <Typography.Text type="warning">{t("account.offlineMode")}</Typography.Text>
 
           <Button
             type="dashed"
@@ -55,7 +57,7 @@ function Account() {
             size="small"
             onClick={signIn}
           >
-            Sign in
+            {t("account.signIn")}
           </Button>
         </>
       )}
