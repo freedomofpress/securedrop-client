@@ -183,6 +183,8 @@ export const getSourceWithItems = (sourceUuid: string): SourceWithItems => {
           isDeletedBySource: data.is_deleted_by_source,
         }),
       } as ItemObj,
+      plaintext: row.plaintext,
+      filename: row.filename,
     };
   });
 
