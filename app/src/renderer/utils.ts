@@ -64,7 +64,7 @@ export function formatDate(
     });
   } else if (dateOnly.getTime() === yesterday.getTime()) {
     // Yesterday
-    return t ? t("common.yesterday") : "Yesterday";
+    return t ? t("yesterday") : "Yesterday";
   } else if (date.getFullYear() === currentYear) {
     // This year - show month and day
     return date.toLocaleDateString(dateLocale, {
