@@ -14,17 +14,17 @@ function Items({ sourceWithItems }: ItemsProps) {
   const { t } = useTranslation("MainContent");
   const scrollContainerRef = useRef<HTMLDivElement>(null);
 
-  if (!sourceWithItems) return null;
-
-  const designation = sourceWithItems.data.journalistDesignation;
-
   // Scroll to bottom when component mounts or items change
   useEffect(() => {
-    if (scrollContainerRef.current) {
+    if (scrollContainerRef.current && sourceWithItems?.items) {
       scrollContainerRef.current.scrollTop =
         scrollContainerRef.current.scrollHeight;
     }
   }, [sourceWithItems?.items]);
+
+  if (!sourceWithItems) return null;
+
+  const designation = sourceWithItems.data.journalistDesignation;
 
   return (
     <div className="flex flex-col h-full w-full min-h-0">
