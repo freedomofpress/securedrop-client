@@ -46,6 +46,9 @@ const electronAPI = {
     (sourceUuid: string) =>
       ipcRenderer.invoke("getSourceWithItems", sourceUuid),
   ),
+  getSystemLanguage: logIpcCall<string>("getSystemLanguage", () =>
+    ipcRenderer.invoke("getSystemLanguage"),
+  ),
 };
 
 contextBridge.exposeInMainWorld("electronAPI", electronAPI);
