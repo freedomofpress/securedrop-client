@@ -3,3 +3,30 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+:root {
+  --bg-primary: #ffffff;
+  --bg-secondary: #fafafa;
+  --border-secondary: #e9eaeb;
+  --text-tertiary: #535862;
+}
+
+.sd-bg-primary {
+  background-color: var(--bg-primary);
+}
+
+.sd-bg-secondary {
+  background-color: var(--bg-secondary);
+}
+
+.sd-border-secondary {
+  border-color: var(--border-secondary);
+}
+
+.sd-text-tertiary {
+  color: var(--text-tertiary);
+}
+
+p {
+  font-size: 0.875rem;
+}
