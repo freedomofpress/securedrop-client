@@ -1,5 +1,7 @@
 import { useParams } from "react-router";
 import { useState, useEffect } from "react";
+import { useTranslation } from "react-i18next";
+
 import type { SourceWithItems } from "../../../types";
 import { toTitleCase } from "../../utils";
 import Avatar from "../../components/Avatar";
@@ -11,6 +13,7 @@ function MainContent() {
   const [sourceWithItems, setSourceWithItems] =
     useState<SourceWithItems | null>(null);
   const [loading, setLoading] = useState(false);
+  const { t } = useTranslation("MainContent");
 
   // Fetch the source with its items
   useEffect(() => {
@@ -38,12 +41,12 @@ function MainContent() {
   if (sourceUuid) {
     if (loading) {
       // Loading
-      header = <p>Loading...</p>;
-      content = <p>Loading source details...</p>;
+      header = <p>{t("loading.header")}</p>;
+      content = <p>{t("loading.content")}</p>;
     } else if (!sourceWithItems) {
       // Source not found
-      header = <p>Source Not Found</p>;
-      content = <p>Source not found</p>;
+      header = <p>{t("sourceNotFound.header")}</p>;
+      content = <p>{t("sourceNotFound.content")}</p>;
     } else {
       // Source found, display items
       const designation = toTitleCase(
