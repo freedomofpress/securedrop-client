@@ -1,4 +1,4 @@
-import { Checkbox, Button } from "antd";
+import { Checkbox, Button, Tooltip } from "antd";
 import { StarFilled, StarOutlined, PaperClipOutlined } from "@ant-design/icons";
 import { useTranslation } from "react-i18next";
 
@@ -57,24 +57,26 @@ function Source({
       />
 
       {/* Star button */}
-      <Button
-        type="text"
-        size="large"
-        icon={
-          source.data.isStarred ? (
-            <StarFilled style={{ color: "#eab308" }} />
-          ) : (
-            <StarOutlined
-              className={isActive ? "text-white" : "text-gray-400"}
-              style={{ color: "#9ca3af" }}
-            />
-          )
-        }
-        onClick={(e) => {
-          e.stopPropagation();
-          onToggleStar(source.uuid, source.data.isStarred);
-        }}
-      />
+      <Tooltip title={t("source.toggleStar")}>
+        <Button
+          type="text"
+          size="large"
+          icon={
+            source.data.isStarred ? (
+              <StarFilled style={{ color: "#eab308" }} />
+            ) : (
+              <StarOutlined
+                className={isActive ? "text-white" : "text-gray-400"}
+                style={{ color: "#9ca3af" }}
+              />
+            )
+          }
+          onClick={(e) => {
+            e.stopPropagation();
+            onToggleStar(source.uuid, source.data.isStarred);
+          }}
+        />
+      </Tooltip>
 
       {/* Avatar with initials */}
       <Avatar designation={designation} isActive={isActive} />

@@ -24,6 +24,7 @@
     }
   },
   "source": {
-    "encrypted": "chiffré..."
+    "encrypted": "chiffré...",
+    "toggleStar": "Basculer le favori"
   }
 }
