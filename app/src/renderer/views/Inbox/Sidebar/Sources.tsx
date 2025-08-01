@@ -181,9 +181,9 @@ function Sources() {
   ];
 
   return (
-    <div className="flex-1 flex flex-col">
+    <div className="flex-1 flex flex-col min-h-0">
       {/* Header with select all and action buttons */}
-      <div className="sd-bg-primary sd-border-secondary px-4 py-3 border-b">
+      <div className="sd-bg-primary sd-border-secondary px-4 py-3 border-b flex-shrink-0">
         <div className="flex items-center justify-between gap-2 min-w-0">
           <div className="flex items-center gap-2 flex-shrink-0">
             {/* Select all checkbox */}
@@ -256,24 +256,26 @@ function Sources() {
       </div>
 
       {/* Sources list */}
-      {loading && <LoadingIndicator />}
-      <div className="flex-1 overflow-y-auto">
-        {filteredSources.map((source) => {
-          const isSelected = selectedSources.has(source.uuid);
-          const isActive = activeSourceUuid === source.uuid;
+      <div className="flex-1 min-h-0 relative">
+        {loading && <LoadingIndicator />}
+        <div className="absolute inset-0 overflow-y-auto">
+          {filteredSources.map((source) => {
+            const isSelected = selectedSources.has(source.uuid);
+            const isActive = activeSourceUuid === source.uuid;
 
-          return (
-            <Source
-              key={source.uuid}
-              source={source}
-              isSelected={isSelected}
-              isActive={isActive}
-              onSelect={handleSourceSelect}
-              onToggleStar={handleToggleStar}
-              onClick={handleSourceClick}
-            />
-          );
-        })}
+            return (
+              <Source
+                key={source.uuid}
+                source={source}
+                isSelected={isSelected}
+                isActive={isActive}
+                onSelect={handleSourceSelect}
+                onToggleStar={handleToggleStar}
+                onClick={handleSourceClick}
+              />
+            );
+          })}
+        </div>
       </div>
     </div>
   );

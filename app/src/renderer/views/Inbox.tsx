@@ -3,7 +3,7 @@ import MainContent from "./Inbox/MainContent";
 
 function InboxView() {
   return (
-    <div className="flex h-screen">
+    <div className="flex h-screen min-h-0">
       <Sidebar />
       <MainContent />
     </div>
