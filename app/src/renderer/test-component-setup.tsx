@@ -6,13 +6,10 @@ import * as matchers from "@testing-library/jest-dom/matchers";
 import { MemoryRouter, useLocation } from "react-router";
 import { Provider } from "react-redux";
 import React from "react";
-import i18n from "i18next";
 
 import { setupStore, type RootState } from "./store";
 import "./i18n";
-
-// Change the language to en to we can test for English strings
-i18n.changeLanguage("en");
+import type { ElectronAPI } from "../preload/index";
 
 // Mock global variables
 (global as any).__APP_VERSION__ = "6.6.6-test";
@@ -44,7 +41,8 @@ beforeEach(() => {
   (window as any).electronAPI = {
     request: vi.fn().mockResolvedValue({ data: "test" }),
     requestStream: vi.fn().mockResolvedValue({ sha256sum: "abc" }),
-  };
+    getSystemLanguage: vi.fn().mockResolvedValue("en"),
+  } as ElectronAPI;
 });
 
 // Component to track react-router location changes for testing
