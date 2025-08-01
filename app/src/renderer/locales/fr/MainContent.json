@@ -7,5 +7,10 @@
     "sourceNotFound": {
         "header": "Source introuvable",
         "content": "Source introuvable"
-    }
+    },
+    "items": {
+        "sendButton": "Envoyer",
+        "messagePlaceholder": "Message {{designation}}..."
+    },
+    "itemEncrypted": "Message chiffré..."
 }

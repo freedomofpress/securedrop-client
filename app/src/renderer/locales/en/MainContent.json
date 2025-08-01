@@ -7,5 +7,10 @@
     "sourceNotFound": {
         "header": "Source Not Found",
         "content": "Source not found"
-    }
+    },
+    "items": {
+        "sendButton": "Send",
+        "messagePlaceholder": "Message {{designation}}..."
+    },
+    "itemEncrypted": "Message is encrypted..."
 }

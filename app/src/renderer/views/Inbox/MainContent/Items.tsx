@@ -2,6 +2,7 @@ import type { SourceWithItems } from "../../../../types";
 import { toTitleCase } from "../../../utils";
 import Item from "./Items/Item";
 import { Form, Input, Button } from "antd";
+import { useTranslation } from "react-i18next";
 import "./Items.css";
 
 interface ItemsProps {
@@ -9,6 +10,8 @@ interface ItemsProps {
 }
 
 function Items({ sourceWithItems }: ItemsProps) {
+  const { t } = useTranslation("MainContent");
+  
   if (!sourceWithItems) return null;
 
   const designation = sourceWithItems.data.journalistDesignation;
@@ -26,7 +29,7 @@ function Items({ sourceWithItems }: ItemsProps) {
             <div className="relative">
               <Input.TextArea
                 rows={4}
-                placeholder={`Message ${toTitleCase(designation)}...`}
+                placeholder={t("items.messagePlaceholder", { designation: toTitleCase(designation) })}
                 className="w-full border border-gray-300 rounded-lg p-3 text-gray-900 resize-none focus:outline-none focus:ring-2 focus:ring-blue-500 items-textarea"
               />
               <Button
@@ -34,7 +37,7 @@ function Items({ sourceWithItems }: ItemsProps) {
                 htmlType="submit"
                 className="text-blue-600 hover:text-blue-800 font-medium items-send-btn"
               >
-                Send
+                {t("items.sendButton")}
               </Button>
             </div>
           </Form.Item>

@@ -1,4 +1,5 @@
 import type { Item } from "../../../../../../types";
+import { useTranslation } from "react-i18next";
 import "../Item.css";
 
 interface ReplyProps {
@@ -6,6 +7,7 @@ interface ReplyProps {
 }
 
 function Reply({ item }: ReplyProps) {
+  const { t } = useTranslation("MainContent");
   const isEncrypted = !item.plaintext;
   const messageContent = item.plaintext || "";
 
@@ -21,7 +23,7 @@ function Reply({ item }: ReplyProps) {
         <div className="reply-box">
           {isEncrypted ? (
             <span className="italic text-gray-500">
-              Message is encrypted...
+              {t("itemEncrypted")}
             </span>
           ) : (
             messageContent

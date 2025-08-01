@@ -10,6 +10,8 @@ interface FileProps {
 
 function File({ item, designation }: FileProps) {
   const titleCaseDesignation = toTitleCase(designation);
+
+  // TODO: Handle file content. For now, skip localization
   const fileContent = item.filename
     ? `Attachment: ${item.filename}`
     : "Attachment";

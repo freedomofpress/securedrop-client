@@ -1,6 +1,7 @@
 import type { Item } from "../../../../../../types";
 import { toTitleCase } from "../../../../../utils";
 import Avatar from "../../../../../components/Avatar";
+import { useTranslation } from "react-i18next";
 import "../Item.css";
 
 interface MessageProps {
@@ -9,6 +10,7 @@ interface MessageProps {
 }
 
 function Message({ item, designation }: MessageProps) {
+  const { t } = useTranslation("MainContent");
   const titleCaseDesignation = toTitleCase(designation);
   const isEncrypted = !item.plaintext;
   const messageContent = item.plaintext || "";
@@ -26,7 +28,7 @@ function Message({ item, designation }: MessageProps) {
         <div className="message-box">
           {isEncrypted ? (
             <span className="italic text-gray-500">
-              Message is encrypted...
+              {t("itemEncrypted")}
             </span>
           ) : (
             messageContent
