@@ -3,7 +3,7 @@ import { StarFilled, StarOutlined, PaperClipOutlined } from "@ant-design/icons";
 import { useTranslation } from "react-i18next";
 
 import type { Source as SourceType } from "../../../../../types";
-import { formatLastUpdated, toTitleCase } from "../../../../utils";
+import { formatDate, toTitleCase } from "../../../../utils";
 import Avatar from "../../../../components/Avatar";
 
 export interface SourceProps {
@@ -23,9 +23,14 @@ function Source({
   onToggleStar,
   onClick,
 }: SourceProps) {
-  const { t } = useTranslation("Sidebar");
+  const { t, i18n } = useTranslation("Sidebar");
+  const { t: tCommon } = useTranslation("common");
   const designation = toTitleCase(source.data.journalistDesignation);
-  const lastUpdated = formatLastUpdated(source.data.lastUpdated);
+  const lastUpdated = formatDate(
+    source.data.lastUpdated,
+    i18n.language,
+    tCommon,
+  );
 
   return (
     <div
