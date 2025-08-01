@@ -25,7 +25,7 @@ function Message({ item, designation }: MessageProps) {
         <div className="flex items-center mb-1">
           <span className="author">{titleCaseDesignation}</span>
         </div>
-        <div className="message-box">
+        <div className="message-box whitespace-pre-wrap">
           {isEncrypted ? (
             <span className="italic text-gray-500">{t("itemEncrypted")}</span>
           ) : (
