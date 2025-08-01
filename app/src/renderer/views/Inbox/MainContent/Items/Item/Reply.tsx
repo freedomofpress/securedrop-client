@@ -22,9 +22,7 @@ function Reply({ item }: ReplyProps) {
         </div>
         <div className="reply-box">
           {isEncrypted ? (
-            <span className="italic text-gray-500">
-              {t("itemEncrypted")}
-            </span>
+            <span className="italic text-gray-500">{t("itemEncrypted")}</span>
           ) : (
             messageContent
           )}

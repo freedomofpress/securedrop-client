@@ -49,7 +49,9 @@ function Account() {
         </>
       ) : (
         <>
-          <Typography.Text type="warning">{t("account.offlineMode")}</Typography.Text>
+          <Typography.Text type="warning">
+            {t("account.offlineMode")}
+          </Typography.Text>
 
           <Button
             type="dashed"

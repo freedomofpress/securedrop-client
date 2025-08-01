@@ -27,9 +27,7 @@ function Message({ item, designation }: MessageProps) {
         </div>
         <div className="message-box">
           {isEncrypted ? (
-            <span className="italic text-gray-500">
-              {t("itemEncrypted")}
-            </span>
+            <span className="italic text-gray-500">{t("itemEncrypted")}</span>
           ) : (
             messageContent
           )}
