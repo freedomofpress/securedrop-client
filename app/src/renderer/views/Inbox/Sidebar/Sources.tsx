@@ -37,6 +37,7 @@ function Sources() {
     const fetchSources = async () => {
       setLoading(true);
       const sources = await window.electronAPI.getSources();
+      console.log("sources", sources);
       setSources(sources);
       setLoading(false);
     };

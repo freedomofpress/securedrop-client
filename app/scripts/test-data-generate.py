@@ -137,6 +137,7 @@ for _ in range(count):
     # Start with a UUID
     source_uuid = str(uuid.uuid4())
     has_attachment = secrets.choice([True, False])
+    is_read = secrets.choice([True, False])
 
     # Generate items for this source
     item_rows = []
@@ -159,8 +160,7 @@ for _ in range(count):
             "source": source_uuid,
         }
         if kind in ["message", "file"]:
-            # 10% chance of being unread (is_read == False)
-            item_obj["is_read"] = secrets.randbelow(10) != 0
+            item_obj["is_read"] = is_read
         if kind == "reply":
             item_obj["is_deleted_by_source"] = secrets.choice([True, False])
         plaintext = random_plaintext()
@@ -187,17 +187,6 @@ for _ in range(count):
         "public_key": public_key,
         "uuid": source_uuid,
     }
-
-    # If any item is unread, set is_read to False
-    is_read = True
-    for item_row in item_rows:
-        if (
-            isinstance(item_row["data"], dict)
-            and item_row["data"].get("is_read") is not None
-            and not item_row["data"].get("is_read", False)
-        ):
-            is_read = False
-            break
 
     # If any item is a message, set show_message_preview to True
     show_message_preview = False

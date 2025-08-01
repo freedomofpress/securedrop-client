@@ -102,6 +102,15 @@ export const closeDatabase = () => {
   }
 };
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const isTruthy = (value: any): boolean => {
+  if (typeof value === "boolean") return value;
+  if (typeof value === "number") return value !== 0;
+  if (typeof value === "string")
+    return value.toLowerCase() === "true" || value === "1";
+  return Boolean(value);
+};
+
 export const getSources = (): Source[] => {
   if (!db) {
     throw new Error("Database is not open");
@@ -133,9 +142,9 @@ export const getSources = (): Source[] => {
         fingerprint: data.fingerprint,
         uuid: data.uuid,
       } as SourceObj,
-      isRead: row.is_read,
-      hasAttachment: row.has_attachment,
-      showMessagePreview: row.show_message_preview,
+      isRead: isTruthy(row.is_read),
+      hasAttachment: isTruthy(row.has_attachment),
+      showMessagePreview: isTruthy(row.show_message_preview),
       messagePreview: row.message_preview,
     };
   });
@@ -191,7 +200,7 @@ export const getSourceWithItems = (sourceUuid: string): SourceWithItems => {
   return {
     uuid: sourceRow.uuid,
     data: {
-      isStarred: sourceData.is_starred,
+      isStarred: isTruthy(sourceData.is_starred),
       journalistDesignation: sourceData.journalist_designation,
       lastUpdated: sourceData.last_updated,
       publicKey: sourceData.public_key,
