@@ -6,13 +6,10 @@ import * as matchers from "@testing-library/jest-dom/matchers";
 import { MemoryRouter, useLocation } from "react-router";
 import { Provider } from "react-redux";
 import React from "react";
-import i18n from "i18next";
 
 import { setupStore, type RootState } from "./store";
 import "./i18n";
-
-// Change the language to en to we can test for English strings
-i18n.changeLanguage("en");
+import type { ElectronAPI } from "../preload/index";
 
 // Mock global variables
 (global as any).__APP_VERSION__ = "6.6.6-test";
@@ -85,7 +82,44 @@ beforeEach(() => {
         isRead: false,
       },
     ]),
-  };
+    getSourceWithItems: vi.fn().mockResolvedValue({
+      uuid: "source-1",
+      data: {
+        fingerprint: "ABCD1234EFGH5678IJKL9012MNOP3456QRST7890",
+        isStarred: false,
+        journalistDesignation: "multiplicative conditionality",
+        lastUpdated: "2024-01-15T10:30:00Z",
+        publicKey:
+          "-----BEGIN PGP PUBLIC KEY BLOCK-----\nVersion: GnuPG v1\n...\n-----END PGP PUBLIC KEY BLOCK-----",
+        uuid: "source-1",
+      },
+      items: [
+        {
+          uuid: "item-1",
+          data: {
+            uuid: "item-1",
+            kind: "message",
+            seenBy: [],
+            size: 1024,
+            source: "source-1",
+            isRead: false,
+          },
+        },
+        {
+          uuid: "item-2",
+          data: {
+            uuid: "item-2",
+            kind: "file",
+            seenBy: [],
+            size: 2048,
+            source: "source-1",
+            isRead: true,
+          },
+        },
+      ],
+    }),
+    getSystemLanguage: vi.fn().mockResolvedValue("en"),
+  } as ElectronAPI;
 });
 
 // Component to track react-router location changes for testing
