@@ -1,6 +1,7 @@
-import { screen, render } from "@testing-library/react";
+import { screen } from "@testing-library/react";
 import { expect, describe, it, vi } from "vitest";
 import userEvent from "@testing-library/user-event";
+import { renderWithProviders } from "../../../../test-component-setup";
 import Source from "./Source";
 import type { Source as SourceType } from "../../../../../types";
 
@@ -44,7 +45,7 @@ describe("Source Component", () => {
   describe("isRead functionality", () => {
     it("displays designation with bold font when source is unread", () => {
       const unreadSource = createMockSource({ isRead: false });
-      render(<Source source={unreadSource} {...defaultProps} />);
+      renderWithProviders(<Source source={unreadSource} {...defaultProps} />);
 
       const designation = screen.getByTestId("source-designation");
       expect(designation.className).toContain("font-bold");
@@ -53,7 +54,7 @@ describe("Source Component", () => {
 
     it("displays designation with medium font when source is read", () => {
       const readSource = createMockSource({ isRead: true });
-      render(<Source source={readSource} {...defaultProps} />);
+      renderWithProviders(<Source source={readSource} {...defaultProps} />);
 
       const designation = screen.getByTestId("source-designation");
       expect(designation.className).toContain("font-medium");
@@ -64,7 +65,9 @@ describe("Source Component", () => {
   describe("hasAttachment functionality", () => {
     it("displays attachment icon when source has attachment", () => {
       const sourceWithAttachment = createMockSource({ hasAttachment: true });
-      render(<Source source={sourceWithAttachment} {...defaultProps} />);
+      renderWithProviders(
+        <Source source={sourceWithAttachment} {...defaultProps} />,
+      );
 
       const attachmentIcon = screen.getByTestId("attachment-icon");
       expect(attachmentIcon).toBeDefined();
@@ -74,7 +77,9 @@ describe("Source Component", () => {
       const sourceWithoutAttachment = createMockSource({
         hasAttachment: false,
       });
-      render(<Source source={sourceWithoutAttachment} {...defaultProps} />);
+      renderWithProviders(
+        <Source source={sourceWithoutAttachment} {...defaultProps} />,
+      );
 
       const attachmentIcon = screen.queryByTestId("attachment-icon");
       expect(attachmentIcon).toBeNull();
@@ -87,7 +92,9 @@ describe("Source Component", () => {
         showMessagePreview: false,
         messagePreview: "This should not be shown",
       });
-      render(<Source source={sourceWithoutPreview} {...defaultProps} />);
+      renderWithProviders(
+        <Source source={sourceWithoutPreview} {...defaultProps} />,
+      );
 
       const messagePreview = screen.queryByTestId("message-preview");
       expect(messagePreview).toBeNull();
@@ -98,7 +105,9 @@ describe("Source Component", () => {
         showMessagePreview: true,
         messagePreview: "",
       });
-      render(<Source source={sourceWithEmptyPreview} {...defaultProps} />);
+      renderWithProviders(
+        <Source source={sourceWithEmptyPreview} {...defaultProps} />,
+      );
 
       const messagePreview = screen.getByTestId("message-preview");
       expect(messagePreview).toBeDefined();
@@ -111,7 +120,9 @@ describe("Source Component", () => {
         showMessagePreview: true,
         messagePreview: testMessage,
       });
-      render(<Source source={sourceWithPreview} {...defaultProps} />);
+      renderWithProviders(
+        <Source source={sourceWithPreview} {...defaultProps} />,
+      );
 
       const messagePreview = screen.getByTestId("message-preview");
       expect(messagePreview).toBeDefined();
@@ -122,7 +133,9 @@ describe("Source Component", () => {
   describe("checkbox selection functionality", () => {
     it("displays checked checkbox when isSelected is true", () => {
       const source = createMockSource();
-      render(<Source source={source} {...defaultProps} isSelected={true} />);
+      renderWithProviders(
+        <Source source={source} {...defaultProps} isSelected={true} />,
+      );
 
       const checkbox = screen.getByTestId(
         "source-checkbox",
@@ -132,7 +145,9 @@ describe("Source Component", () => {
 
     it("displays unchecked checkbox when isSelected is false", () => {
       const source = createMockSource();
-      render(<Source source={source} {...defaultProps} isSelected={false} />);
+      renderWithProviders(
+        <Source source={source} {...defaultProps} isSelected={false} />,
+      );
 
       const checkbox = screen.getByTestId(
         "source-checkbox",
@@ -143,7 +158,9 @@ describe("Source Component", () => {
     it("calls onSelect when checkbox is clicked", async () => {
       const user = userEvent.setup();
       const source = createMockSource();
-      render(<Source source={source} {...defaultProps} isSelected={false} />);
+      renderWithProviders(
+        <Source source={source} {...defaultProps} isSelected={false} />,
+      );
 
       const checkbox = screen.getByTestId("source-checkbox");
       await user.click(checkbox);
@@ -155,7 +172,7 @@ describe("Source Component", () => {
   describe("active state styling", () => {
     it("applies active styling when isActive is true", () => {
       const source = createMockSource();
-      const { container } = render(
+      const { container } = renderWithProviders(
         <Source source={source} {...defaultProps} isActive={true} />,
       );
 
@@ -166,7 +183,7 @@ describe("Source Component", () => {
 
     it("does not apply active styling when isActive is false", () => {
       const source = createMockSource();
-      const { container } = render(
+      const { container } = renderWithProviders(
         <Source source={source} {...defaultProps} isActive={false} />,
       );
 
@@ -180,7 +197,7 @@ describe("Source Component", () => {
     it("calls onClick when source is clicked", async () => {
       const user = userEvent.setup();
       const source = createMockSource();
-      const { container } = render(
+      const { container } = renderWithProviders(
         <Source source={source} {...defaultProps} />,
       );
 
@@ -198,7 +215,7 @@ describe("Source Component", () => {
           isStarred: true,
         },
       });
-      render(<Source source={starredSource} {...defaultProps} />);
+      renderWithProviders(<Source source={starredSource} {...defaultProps} />);
 
       // Find the star button by its icon
       const starButton = screen.getByRole("button");
@@ -216,7 +233,7 @@ describe("Source Component", () => {
           journalistDesignation: "unique source name",
         },
       });
-      render(<Source source={source} {...defaultProps} />);
+      renderWithProviders(<Source source={source} {...defaultProps} />);
 
       const designation = screen.getByTestId("source-designation");
       expect(designation.textContent).toBe("Unique Source Name"); // toTitleCase applied
