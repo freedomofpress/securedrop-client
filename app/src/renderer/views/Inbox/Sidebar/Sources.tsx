@@ -230,7 +230,7 @@ function Sources() {
           <div className="flex items-center gap-1 flex-shrink-0">
             <Dropdown menu={{ items: dropdownItems }} trigger={["click"]}>
               <Button type="text" data-testid="filter-dropdown">
-                {filter.charAt(0).toUpperCase() + filter.slice(1)}{" "}
+                {dropdownItems.find((item) => item.key === filter)?.label}{" "}
                 <DownOutlined />
               </Button>
             </Dropdown>
