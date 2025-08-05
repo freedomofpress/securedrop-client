@@ -1,3 +1,4 @@
+import "source-map-support/register";
 import { app, BrowserWindow, ipcMain } from "electron";
 import { join } from "path";
 import { optimizer, is } from "@electron-toolkit/utils";

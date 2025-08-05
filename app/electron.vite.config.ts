@@ -44,9 +44,15 @@ export default defineConfig(({ mode }) => {
     main: {
       plugins: [externalizeDepsPlugin()],
       define: mainVars,
+      build: {
+        sourcemap: true,
+      },
     },
     preload: {
       plugins: [externalizeDepsPlugin()],
+      build: {
+        sourcemap: true,
+      },
     },
     renderer: {
       resolve: {
