@@ -106,9 +106,11 @@ function reconcileIndex(
             ) {
               itemsToUpdate.push(itemID);
             }
+            // Remove this item from the set of clientItemVersions to be processed
             delete clientItemVersions[itemID];
           });
-          // Check for items that were deleted on the server
+          // Check for items that were deleted on the server, i.e. any clientItemVersions
+          // remaining that were not processed
           const itemsToDelete = Object.keys(clientItemVersions);
           if (itemsToDelete.length != 0) {
             db.deleteItems(itemsToDelete);
@@ -119,9 +121,11 @@ function reconcileIndex(
         }
       }
     }
+    // Remove this from the set of clientIndex.sources to be processed
     delete clientIndex.sources[sourceID];
   });
-  // Check for sources that were deleted on the server
+  // Check for sources that were deleted on the server, i.e. any clientIndex.sources remaining
+  // that were not processed.
   const sourcesToDelete = Object.keys(clientIndex.sources);
   if (sourcesToDelete.length != 0) {
     db.deleteSources(sourcesToDelete);

@@ -8,8 +8,8 @@ CREATE TABLE items (
   data json,
   plaintext text,
   filename text
-, version text, source_id text);
-CREATE TABLE version (
+, version text, source_uuid text generated always as (json_extract (data, '$.uuid')));
+CREATE TABLE state (
     version text
 );
 -- Dbmate schema migrations
