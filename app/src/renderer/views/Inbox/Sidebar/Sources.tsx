@@ -12,7 +12,6 @@ import {
 import { useTranslation } from "react-i18next";
 
 import type { Source as SourceType } from "../../../../types";
-import { toTitleCase } from "../../../utils";
 import Source from "./Sources/Source";
 import LoadingIndicator from "../../../components/LoadingIndicator";
 
@@ -37,7 +36,6 @@ function Sources() {
     const fetchSources = async () => {
       setLoading(true);
       const sources = await window.electronAPI.getSources();
-      console.log("sources", sources);
       setSources(sources);
       setLoading(false);
     };
@@ -118,8 +116,7 @@ function Sources() {
   const filteredSources = sources
     .filter((source) => {
       // First filter by search term
-      const designation = toTitleCase(source.data.journalistDesignation);
-      const matchesSearch = designation
+      const matchesSearch = source.data.journalistDesignation
         .toLowerCase()
         .includes(searchTerm.toLowerCase());
 
