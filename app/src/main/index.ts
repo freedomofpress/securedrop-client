@@ -2,6 +2,11 @@ import "source-map-support/register";
 import { app, BrowserWindow, ipcMain } from "electron";
 import { join } from "path";
 import { optimizer, is } from "@electron-toolkit/utils";
+import {
+  installExtension,
+  REDUX_DEVTOOLS,
+  REACT_DEVELOPER_TOOLS,
+} from "electron-devtools-installer";
 
 import { openDatabase, closeDatabase, runMigrations } from "./database";
 import { proxy } from "./proxy";
@@ -49,6 +54,17 @@ function createWindow(): void {
 // initialization and is ready to create browser windows.
 // Some APIs can only be used after this event occurs.
 app.whenReady().then(() => {
+  // Load developer tools
+  if (is.dev) {
+    installExtension([REACT_DEVELOPER_TOOLS, REDUX_DEVTOOLS])
+      .then(([react, redux]) =>
+        console.log(`Added extensions: ${react.name}, ${redux.name}`),
+      )
+      .catch((err) =>
+        console.log("An error occurred during extension setup: ", err),
+      );
+  }
+
   // Default open or close DevTools by F12 in development
   // and ignore CommandOrControl + R in production.
   // see https://github.com/alex8088/electron-toolkit/tree/master/packages/utils
