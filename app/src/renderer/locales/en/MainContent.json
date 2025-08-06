@@ -8,7 +8,7 @@
     "header": "Source Not Found",
     "content": "Source not found"
   },
-  "items": {
+  "conversation": {
     "sendButton": "Send",
     "messagePlaceholder": "Message {{designation}}..."
   },

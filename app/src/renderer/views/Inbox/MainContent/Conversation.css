@@ -1,8 +1,8 @@
-.items-textarea {
+.conversation-textarea {
   padding-right: 40px;
 }
 
-.items-send-btn {
+.conversation-send-btn {
   position: absolute;
   right: 10px;
   bottom: 10px;

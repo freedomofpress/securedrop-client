@@ -6,7 +6,7 @@ import type { SourceWithItems } from "../../../types";
 import { toTitleCase } from "../../utils";
 import Avatar from "../../components/Avatar";
 import EmptyState from "./MainContent/EmptyState";
-import Items from "./MainContent/Items";
+import Conversation from "./MainContent/Conversation";
 
 function MainContent() {
   const { sourceUuid } = useParams<{ sourceUuid?: string }>();
@@ -58,7 +58,7 @@ function MainContent() {
           <p className="ml-2">{designation}</p>
         </>
       );
-      content = <Items sourceWithItems={sourceWithItems} />;
+      content = <Conversation sourceWithItems={sourceWithItems} />;
     }
   } else {
     // Show empty state when no source is selected

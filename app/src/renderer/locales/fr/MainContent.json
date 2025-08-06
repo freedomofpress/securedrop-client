@@ -8,7 +8,7 @@
     "header": "Source introuvable",
     "content": "Source introuvable"
   },
-  "items": {
+  "conversation": {
     "sendButton": "Envoyer",
     "messagePlaceholder": "Message {{designation}}..."
   },

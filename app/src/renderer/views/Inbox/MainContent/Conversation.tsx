@@ -1,16 +1,16 @@
 import type { SourceWithItems } from "../../../../types";
 import { toTitleCase } from "../../../utils";
-import Item from "./Items/Item";
+import Item from "./Conversation/Item";
 import { Form, Input, Button } from "antd";
 import { useTranslation } from "react-i18next";
 import { useEffect, useRef } from "react";
-import "./Items.css";
+import "./Conversation.css";
 
-interface ItemsProps {
+interface ConversationProps {
   sourceWithItems: SourceWithItems | null;
 }
 
-function Items({ sourceWithItems }: ItemsProps) {
+function Conversation({ sourceWithItems }: ConversationProps) {
   const { t } = useTranslation("MainContent");
   const scrollContainerRef = useRef<HTMLDivElement>(null);
 
@@ -44,17 +44,17 @@ function Items({ sourceWithItems }: ItemsProps) {
             <div className="relative">
               <Input.TextArea
                 rows={4}
-                placeholder={t("items.messagePlaceholder", {
+                placeholder={t("conversation.messagePlaceholder", {
                   designation: toTitleCase(designation),
                 })}
-                className="w-full border border-gray-300 rounded-lg p-3 text-gray-900 resize-none focus:outline-none focus:ring-2 focus:ring-blue-500 items-textarea"
+                className="w-full border border-gray-300 rounded-lg p-3 text-gray-900 resize-none focus:outline-none focus:ring-2 focus:ring-blue-500 conversation-textarea"
               />
               <Button
                 type="link"
                 htmlType="submit"
-                className="text-blue-600 hover:text-blue-800 font-medium items-send-btn"
+                className="text-blue-600 hover:text-blue-800 font-medium conversation-send-btn"
               >
-                {t("items.sendButton")}
+                {t("conversation.sendButton")}
               </Button>
             </div>
           </Form.Item>
@@ -64,4 +64,4 @@ function Items({ sourceWithItems }: ItemsProps) {
   );
 }
 
-export default Items;
+export default Conversation;
