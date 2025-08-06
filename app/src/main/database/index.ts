@@ -171,7 +171,7 @@ export const getSourceWithItems = (sourceUuid: string): SourceWithItems => {
   // Get the items for this source
   const itemsStmt = db.prepare(`
     SELECT uuid, data, plaintext, filename FROM items
-    WHERE json_extract(data, '$.source') = ?;
+    WHERE source_uuid = ?;
   `);
   const itemRows = itemsStmt.all(sourceUuid) as Array<ItemRow>;
 
