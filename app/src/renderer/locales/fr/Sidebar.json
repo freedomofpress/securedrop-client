@@ -4,7 +4,7 @@
     "offlineMode": "Mode hors ligne",
     "signIn": "Se connecter"
   },
-  "sources": {
+  "sourcelist": {
     "filters": {
       "all": "Tous",
       "read": "Lus",

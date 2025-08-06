@@ -4,7 +4,7 @@
     "offlineMode": "Offline Mode",
     "signIn": "Sign in"
   },
-  "sources": {
+  "sourcelist": {
     "filters": {
       "all": "All",
       "read": "Read",

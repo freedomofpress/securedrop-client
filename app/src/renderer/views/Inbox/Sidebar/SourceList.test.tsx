@@ -1,9 +1,9 @@
 import { screen, waitFor } from "@testing-library/react";
 import { expect, describe, it, vi, beforeEach, afterEach } from "vitest";
 import userEvent from "@testing-library/user-event";
-import Sources from "./Sources";
+import SourceList from "./SourceList";
 import type { Source as SourceType } from "../../../../types";
-import type { SourceProps } from "./Sources/Source";
+import type { SourceProps } from "./SourceList/Source";
 import { renderWithProviders } from "../../../test-component-setup";
 
 // Mock the Source component to simplify testing the main Sources component logic
@@ -131,7 +131,7 @@ describe("Sources Component", () => {
 
   describe("Default behavior", () => {
     it("displays all sources by default", async () => {
-      renderWithProviders(<Sources />);
+      renderWithProviders(<SourceList />);
 
       await waitFor(() => {
         expect(screen.getByTestId("source-source-1")).toBeInTheDocument();
@@ -142,7 +142,7 @@ describe("Sources Component", () => {
     });
 
     it("loads sources on mount", async () => {
-      renderWithProviders(<Sources />);
+      renderWithProviders(<SourceList />);
 
       await waitFor(() => {
         expect(mockGetSources).toHaveBeenCalledTimes(1);
@@ -152,7 +152,7 @@ describe("Sources Component", () => {
 
   describe("Action buttons visibility", () => {
     it("hides action buttons when no checkboxes are checked", async () => {
-      renderWithProviders(<Sources />);
+      renderWithProviders(<SourceList />);
 
       await waitFor(() => {
         expect(screen.getByTestId("source-source-1")).toBeInTheDocument();
@@ -168,7 +168,7 @@ describe("Sources Component", () => {
     });
 
     it("shows action buttons when any checkbox is checked", async () => {
-      renderWithProviders(<Sources />);
+      renderWithProviders(<SourceList />);
 
       await waitFor(() => {
         expect(screen.getByTestId("source-source-1")).toBeInTheDocument();
@@ -184,7 +184,7 @@ describe("Sources Component", () => {
     });
 
     it("hides action buttons when all checkboxes are unchecked", async () => {
-      renderWithProviders(<Sources />);
+      renderWithProviders(<SourceList />);
 
       await waitFor(() => {
         expect(screen.getByTestId("source-source-1")).toBeInTheDocument();
@@ -207,7 +207,7 @@ describe("Sources Component", () => {
 
   describe("Select all functionality", () => {
     it("checks all sources when select all is clicked with none selected", async () => {
-      renderWithProviders(<Sources />);
+      renderWithProviders(<SourceList />);
 
       await waitFor(() => {
         expect(screen.getByTestId("source-source-1")).toBeInTheDocument();
@@ -224,7 +224,7 @@ describe("Sources Component", () => {
     });
 
     it("checks all sources when select all is clicked with some selected", async () => {
-      renderWithProviders(<Sources />);
+      renderWithProviders(<SourceList />);
 
       await waitFor(() => {
         expect(screen.getByTestId("source-source-1")).toBeInTheDocument();
@@ -245,7 +245,7 @@ describe("Sources Component", () => {
     });
 
     it("unchecks all sources when select all is clicked with all selected", async () => {
-      renderWithProviders(<Sources />);
+      renderWithProviders(<SourceList />);
 
       await waitFor(() => {
         expect(screen.getByTestId("source-source-1")).toBeInTheDocument();
@@ -268,7 +268,7 @@ describe("Sources Component", () => {
 
   describe("Search functionality", () => {
     it("filters sources by designation when search term is entered", async () => {
-      renderWithProviders(<Sources />);
+      renderWithProviders(<SourceList />);
 
       await waitFor(() => {
         expect(screen.getByTestId("source-source-1")).toBeInTheDocument();
@@ -285,7 +285,7 @@ describe("Sources Component", () => {
     });
 
     it("filters sources case-insensitively", async () => {
-      renderWithProviders(<Sources />);
+      renderWithProviders(<SourceList />);
 
       await waitFor(() => {
         expect(screen.getByTestId("source-source-1")).toBeInTheDocument();
@@ -302,7 +302,7 @@ describe("Sources Component", () => {
     });
 
     it("shows all sources when search is cleared", async () => {
-      renderWithProviders(<Sources />);
+      renderWithProviders(<SourceList />);
 
       await waitFor(() => {
         expect(screen.getByTestId("source-source-1")).toBeInTheDocument();
@@ -322,7 +322,7 @@ describe("Sources Component", () => {
 
   describe("Filter dropdown functionality", () => {
     it("filters to show only unread sources", async () => {
-      renderWithProviders(<Sources />);
+      renderWithProviders(<SourceList />);
 
       await waitFor(() => {
         expect(screen.getByTestId("source-source-1")).toBeInTheDocument();
@@ -344,7 +344,7 @@ describe("Sources Component", () => {
     });
 
     it("filters to show only read sources", async () => {
-      renderWithProviders(<Sources />);
+      renderWithProviders(<SourceList />);
 
       await waitFor(() => {
         expect(screen.getByTestId("source-source-1")).toBeInTheDocument();
@@ -366,7 +366,7 @@ describe("Sources Component", () => {
     });
 
     it("filters to show only starred sources", async () => {
-      renderWithProviders(<Sources />);
+      renderWithProviders(<SourceList />);
 
       await waitFor(() => {
         expect(screen.getByTestId("source-source-1")).toBeInTheDocument();
@@ -388,7 +388,7 @@ describe("Sources Component", () => {
     });
 
     it("filters to show only unstarred sources", async () => {
-      renderWithProviders(<Sources />);
+      renderWithProviders(<SourceList />);
 
       await waitFor(() => {
         expect(screen.getByTestId("source-source-1")).toBeInTheDocument();
@@ -410,7 +410,7 @@ describe("Sources Component", () => {
     });
 
     it("shows all sources when 'All' filter is selected", async () => {
-      renderWithProviders(<Sources />);
+      renderWithProviders(<SourceList />);
 
       await waitFor(() => {
         expect(screen.getByTestId("source-source-1")).toBeInTheDocument();
@@ -436,7 +436,7 @@ describe("Sources Component", () => {
 
   describe("Sort functionality", () => {
     it("sorts sources in descending order by default (newest first)", async () => {
-      renderWithProviders(<Sources />);
+      renderWithProviders(<SourceList />);
 
       await waitFor(() => {
         expect(screen.getByTestId("source-source-1")).toBeInTheDocument();
@@ -455,7 +455,7 @@ describe("Sources Component", () => {
     });
 
     it("sorts sources in ascending order when sort button is clicked (oldest first)", async () => {
-      renderWithProviders(<Sources />);
+      renderWithProviders(<SourceList />);
 
       await waitFor(() => {
         expect(screen.getByTestId("source-source-1")).toBeInTheDocument();
@@ -478,7 +478,7 @@ describe("Sources Component", () => {
     });
 
     it("toggles between ascending and descending when sort button is clicked multiple times", async () => {
-      renderWithProviders(<Sources />);
+      renderWithProviders(<SourceList />);
 
       await waitFor(() => {
         expect(screen.getByTestId("source-source-1")).toBeInTheDocument();
@@ -504,7 +504,7 @@ describe("Sources Component", () => {
 
   describe("Combined functionality", () => {
     it("applies both search and filter together", async () => {
-      renderWithProviders(<Sources />);
+      renderWithProviders(<SourceList />);
 
       await waitFor(() => {
         expect(screen.getByTestId("source-source-1")).toBeInTheDocument();
@@ -527,7 +527,7 @@ describe("Sources Component", () => {
     });
 
     it("maintains sort order when filtering", async () => {
-      renderWithProviders(<Sources />);
+      renderWithProviders(<SourceList />);
 
       await waitFor(() => {
         expect(screen.getByTestId("source-source-1")).toBeInTheDocument();

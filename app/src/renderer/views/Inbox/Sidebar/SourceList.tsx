@@ -12,12 +12,12 @@ import {
 import { useTranslation } from "react-i18next";
 
 import type { Source as SourceType } from "../../../../types";
-import Source from "./Sources/Source";
+import Source from "./SourceList/Source";
 import LoadingIndicator from "../../../components/LoadingIndicator";
 
 type filterOption = "all" | "read" | "unread" | "starred" | "unstarred";
 
-function Sources() {
+function SourceList() {
   const { t } = useTranslation("Sidebar");
   const navigate = useNavigate();
   const { sourceUuid: activeSourceUuid } = useParams<{ sourceUuid?: string }>();
@@ -153,27 +153,27 @@ function Sources() {
   const dropdownItems = [
     {
       key: "all",
-      label: t("sources.filters.all"),
+      label: t("sourcelist.filters.all"),
       onClick: () => handleFilterChange("all"),
     },
     {
       key: "read",
-      label: t("sources.filters.read"),
+      label: t("sourcelist.filters.read"),
       onClick: () => handleFilterChange("read"),
     },
     {
       key: "unread",
-      label: t("sources.filters.unread"),
+      label: t("sourcelist.filters.unread"),
       onClick: () => handleFilterChange("unread"),
     },
     {
       key: "starred",
-      label: t("sources.filters.starred"),
+      label: t("sourcelist.filters.starred"),
       onClick: () => handleFilterChange("starred"),
     },
     {
       key: "unstarred",
-      label: t("sources.filters.unstarred"),
+      label: t("sourcelist.filters.unstarred"),
       onClick: () => handleFilterChange("unstarred"),
     },
   ];
@@ -198,7 +198,7 @@ function Sources() {
             {/* Only display action buttons if sources are selected */}
             {selectedSources.size > 0 && (
               <>
-                <Tooltip title={t("sources.actions.bulkDelete")}>
+                <Tooltip title={t("sourcelist.actions.bulkDelete")}>
                   <Button
                     type="text"
                     icon={<DeleteOutlined />}
@@ -206,7 +206,7 @@ function Sources() {
                     data-testid="bulk-delete-button"
                   />
                 </Tooltip>
-                <Tooltip title={t("sources.actions.bulkToggleRead")}>
+                <Tooltip title={t("sourcelist.actions.bulkToggleRead")}>
                   <Button
                     type="text"
                     icon={<MailOutlined />}
@@ -219,7 +219,7 @@ function Sources() {
           </div>
 
           <Input
-            placeholder={t("sources.search.placeholder")}
+            placeholder={t("sourcelist.search.placeholder")}
             prefix={<SearchOutlined />}
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
@@ -235,7 +235,7 @@ function Sources() {
               </Button>
             </Dropdown>
 
-            <Tooltip title={t("sources.sort.tooltip")}>
+            <Tooltip title={t("sourcelist.sort.tooltip")}>
               <Button
                 type="text"
                 icon={
@@ -279,4 +279,4 @@ function Sources() {
   );
 }
 
-export default Sources;
+export default SourceList;
