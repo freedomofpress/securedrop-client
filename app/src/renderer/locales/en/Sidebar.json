@@ -17,7 +17,7 @@
       "bulkToggleRead": "Toggle read status for selected sources"
     },
     "search": {
-      "placeholder": "Search"
+      "placeholder": "Search by name"
     },
     "sort": {
       "tooltip": "Toggle sort order"
