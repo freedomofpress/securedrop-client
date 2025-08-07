@@ -9,9 +9,17 @@ CREATE TABLE items (
   plaintext text,
   filename text
 , version text, source_uuid text generated always as (json_extract (data, '$.uuid')));
-CREATE TABLE state (
-    version text
+CREATE TABLE state_history (
+    version text,
+    updated timestamp default current_timestamp,
+    id integer primary key autoincrement
 );
+CREATE VIEW state AS
+SELECT *
+FROM state_history
+ORDER BY id DESC
+LIMIT 1
+/* state(version,updated,id) */;
 -- Dbmate schema migrations
 INSERT INTO "schema_migrations" (version) VALUES
   ('20250710180544'),

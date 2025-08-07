@@ -1,30 +1,57 @@
 import { describe, it, expect, vi, beforeEach, MockInstance } from "vitest";
 import * as syncModule from "../../src/main/sync";
 import { DB } from "../../src/main/database";
-import type { Index, ProxyJSONResponse } from "../../src/types";
+import type {
+  Index,
+  ProxyJSONResponse,
+  MetadataResponse,
+  SourceMetadata,
+  ItemMetadata,
+} from "../../src/types";
 import * as proxyModule from "../../src/main/proxy";
 
-function mockDB({
-  version = "v1",
-  index = { sources: {} },
-  itemVersions = {},
-  updateSources = vi.fn(),
-} = {}) {
+function mockDB({ index = { sources: {}, items: {} } } = {}) {
   return {
-    getVersion: vi.fn(() => version),
+    getVersion: vi.fn(() => "v1"),
     getIndex: vi.fn(() => index),
-    getSourceItemVersions: vi.fn((uuid) => itemVersions[uuid] || {}),
     deleteItems: vi.fn((_itemIDs) => {}),
     deleteSources: vi.fn((_sourceIDs) => {}),
-    updateSources,
+    updateSources: vi.fn((_sources) => {}),
+    updateItems: vi.fn((_items) => {}),
   } as unknown as DB;
+}
+
+function mockSourceMetadata(uuid: string): SourceMetadata {
+  return {
+    source: {
+      uuid: uuid,
+      journalist_designation: "Test Journalist",
+      is_starred: false,
+      last_updated: new Date().toISOString(),
+      public_key: "test_public_key",
+      fingerprint: "test_fingerprint",
+    },
+    collection: {},
+  };
+}
+
+function mockItemMetadata(uuid: string, source_uuid: string): ItemMetadata {
+  return {
+    kind: "reply",
+    uuid: uuid,
+    source: source_uuid,
+    size: 1234,
+    journalist_uuid: "test_journalist",
+    is_deleted_by_source: false,
+    seen_by: [],
+  };
 }
 
 describe("syncMetadata", () => {
   let db: DB;
 
-  function mockProxyResponses<T>(
-    responses: ProxyJSONResponse<T>[],
+  function mockProxyResponses(
+    responses: ProxyJSONResponse<any>[], // eslint-disable-line @typescript-eslint/no-explicit-any
   ): MockInstance {
     const mock = vi.spyOn(proxyModule, "proxy");
     responses.forEach((response) => {
@@ -56,29 +83,38 @@ describe("syncMetadata", () => {
   });
 
   it("syncs and updates sources on initial sync", async () => {
-    // Server index has one new source
+    // Server index has one new source and one new item
     const serverIndex: Index = {
       sources: {
-        uuid1: {
-          version: "abc",
-          collection: { foo: "bar" },
-        },
+        uuid1: "abc",
+      },
+      items: {
+        uuid2: "def",
+      },
+    };
+    const metadata: MetadataResponse = {
+      sources: {
+        uuid1: mockSourceMetadata("uuid1"),
+      },
+      items: {
+        uuid2: mockItemMetadata("uuid2", "uuid1"),
       },
     };
     // Client index is empty
-    db = mockDB({ index: { sources: {} }, updateSources: vi.fn() });
-
+    db = mockDB();
     const proxyMock = mockProxyResponses([
+      // Index response
       {
         status: 200,
         error: false,
         data: serverIndex,
         headers: {} as Map<string, string>,
       },
+      // Metadata response
       {
         status: 200,
         error: false,
-        data: serverIndex,
+        data: metadata,
         headers: {} as Map<string, string>,
       },
     ]);
@@ -86,8 +122,9 @@ describe("syncMetadata", () => {
     await syncModule.syncMetadata(db, "");
 
     expect(proxyMock).toHaveBeenCalledTimes(2);
-    // Should update sources with new data
-    expect(db.updateSources).toHaveBeenCalledWith(serverIndex);
+    // Should update sources and items with new data
+    expect(db.updateSources).toHaveBeenCalledWith(metadata.sources);
+    expect(db.updateItems).toHaveBeenCalledWith(metadata.items);
   });
 
   it("handles error from getIndex", async () => {
@@ -108,13 +145,13 @@ describe("syncMetadata", () => {
     // getIndex returns new index
     const serverIndex: Index = {
       sources: {
-        uuid1: {
-          version: "v2",
-          collection: { item1: "v2" },
-        },
+        uuid1: "v2",
+      },
+      items: {
+        uuid2: "v2",
       },
     };
-    db = mockDB({ index: { sources: {} }, updateSources: vi.fn() });
+    db = mockDB();
 
     const proxyMock = mockProxyResponses([
       {
@@ -126,44 +163,85 @@ describe("syncMetadata", () => {
       {
         status: 500,
         error: true,
-        // @ts-expect-error: typecheck
         data: { msg: "fail" },
         headers: {} as Map<string, string>,
       },
     ]);
 
     await expect(syncModule.syncMetadata(db, "")).rejects.toMatch(
-      /Error fetching synchronized sources from server/,
+      /Error fetching metadata from server/,
     );
     expect(db.updateSources).not.toHaveBeenCalled();
     expect(proxyMock).toHaveBeenCalledTimes(2);
   });
 
-  it("deletes items on sync", async () => {
+  it("reconciles index", async () => {
     // Client index has out of date item
     const clientIndex: Index = {
       sources: {
-        uuid1: {
-          version: "v1",
-          collection: { item1: "v1", item2: "outOfDate" },
-        },
+        source1: "v1",
+      },
+      items: {
+        item1: "v1",
+        item2: "outOfDate",
       },
     };
 
     // Server index doesn't have item2: it has been deleted
     const serverIndex: Index = {
       sources: {
-        uuid1: {
-          version: "v2",
-          collection: { item1: "v1" },
-        },
+        source1: "v2",
+      },
+      items: {
+        item1: "v2",
+      },
+    };
+    db = mockDB({
+      index: clientIndex,
+    });
+    const metadataToUpdate = syncModule.reconcileIndex(
+      db,
+      serverIndex,
+      clientIndex,
+    );
+    expect(metadataToUpdate).toEqual({
+      sources: ["source1"],
+      items: ["item1"],
+    });
+  });
+
+  it("deletes items on sync", async () => {
+    // Client index has out of date item
+    const clientIndex: Index = {
+      sources: {
+        source1: "v1",
+      },
+      items: {
+        item1: "v1",
+        item2: "outOfDate",
+      },
+    };
+
+    // Server index doesn't have item2: it has been deleted
+    const serverIndex: Index = {
+      sources: {
+        source1: "v2",
+      },
+      items: {
+        item1: "v2",
+      },
+    };
+    const metadata: MetadataResponse = {
+      sources: {
+        source1: mockSourceMetadata("source1"),
+      },
+      items: {
+        item1: mockItemMetadata("item1", "source1"),
       },
     };
 
     db = mockDB({
       index: clientIndex,
-      itemVersions: { uuid1: { item1: "v1", item2: "outOfDate" } },
-      updateSources: vi.fn(),
     });
 
     const proxyMock = mockProxyResponses([
@@ -176,8 +254,7 @@ describe("syncMetadata", () => {
       {
         status: 200,
         error: false,
-        // @ts-expect-error typecheck
-        data: {},
+        data: metadata,
         headers: {} as Map<string, string>,
       },
     ]);
@@ -186,38 +263,50 @@ describe("syncMetadata", () => {
 
     expect(proxyMock).toHaveBeenCalledTimes(2);
     expect(db.deleteItems).toHaveBeenCalledWith(["item2"]);
-    expect(db.updateSources).toHaveBeenCalledWith({});
+    expect(db.updateSources).toHaveBeenCalledWith(metadata.sources);
+    expect(db.updateItems).toHaveBeenCalledWith(metadata.items);
   });
 
   it("reconciles partial sources", async () => {
     // Server index has updated item version
     const serverIndex: Index = {
       sources: {
-        uuid1: {
-          version: "v2",
-          collection: { item1: "v2", item2: "v1" },
-        },
+        source1: "v2",
+      },
+      items: {
+        item1: "v2",
+        item2: "v2",
       },
     };
 
     // Client index has old item version
     const clientIndex: Index = {
       sources: {
-        uuid1: {
-          version: "v1",
-          collection: { item1: "v1", item2: "v1" },
-        },
+        source1: "v2",
+      },
+      items: {
+        item1: "v1",
+        item2: "v2",
       },
     };
     db = mockDB({
       index: clientIndex,
-      itemVersions: { uuid1: { item1: "v1", item2: "v1" } },
-      updateSources: vi.fn(),
     });
 
-    const sourceDeltaResponse = {
-      sources: {
-        uuid1: { version: "v2", collection: { item1: "v2", item2: "v1" } },
+    const metadataToUpdate = syncModule.reconcileIndex(
+      db,
+      serverIndex,
+      clientIndex,
+    );
+    expect(metadataToUpdate).toEqual({
+      items: ["item1"],
+      sources: [],
+    });
+
+    const metadata: MetadataResponse = {
+      sources: {},
+      items: {
+        item1: mockItemMetadata("item1", "source1"),
       },
     };
 
@@ -231,7 +320,7 @@ describe("syncMetadata", () => {
       {
         status: 200,
         error: false,
-        data: sourceDeltaResponse,
+        data: metadata,
         headers: {} as Map<string, string>,
       },
     ]);
@@ -239,53 +328,31 @@ describe("syncMetadata", () => {
     await syncModule.syncMetadata(db, "");
 
     expect(proxyMock).toHaveBeenCalledTimes(2);
-    expect(db.updateSources).toHaveBeenCalledWith(sourceDeltaResponse);
+    expect(db.updateItems).toHaveBeenCalledWith(metadata.items);
+    expect(db.updateSources).toHaveBeenCalledWith({});
   });
 
   it("deletes sources on sync + updates source delta", async () => {
     // Client index has since-deleted source, and an out-of-date item
     const clientIndex: Index = {
       sources: {
-        uuid1: {
-          version: "v1",
-          collection: { item1: "v1", item2: "v2" },
-        },
-        uuid2: {
-          version: "deleted",
-          collection: { item3: "deleted", item4: "deleted" },
-        },
+        uuid1: "v1",
+        uuid2: "deleted",
       },
+      items: {},
     };
 
     // Server index doesn't have source uuid2: it has been deleted
     const serverIndex: Index = {
       sources: {
-        uuid1: {
-          version: "v2",
-          collection: { item1: "v2", item2: "v2" },
-        },
+        uuid1: "v2",
       },
+      items: {},
     };
 
     db = mockDB({
       index: clientIndex,
-      itemVersions: {
-        uuid1: { item1: "v1", item2: "v2" },
-        uuid2: { item3: "deleted", item4: "deleted" },
-      },
-      updateSources: vi.fn(),
     });
-
-    const sourceDeltaResponse = {
-      sources: {
-        uuid1: {
-          version: "v2",
-          collection: {
-            item1: "v2",
-          },
-        },
-      },
-    };
 
     const proxyMock = mockProxyResponses([
       {
@@ -297,7 +364,7 @@ describe("syncMetadata", () => {
       {
         status: 200,
         error: false,
-        data: sourceDeltaResponse,
+        data: { sources: {}, items: {} } as MetadataResponse,
         headers: {} as Map<string, string>,
       },
     ]);
@@ -306,6 +373,6 @@ describe("syncMetadata", () => {
 
     expect(proxyMock).toHaveBeenCalledTimes(2);
     expect(db.deleteSources).toHaveBeenCalledWith(["uuid2"]);
-    expect(db.updateSources).toHaveBeenCalledWith(sourceDeltaResponse);
+    expect(db.updateSources).toHaveBeenCalledWith({});
   });
 });

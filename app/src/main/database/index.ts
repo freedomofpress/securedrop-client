@@ -5,7 +5,7 @@ import { execSync } from "child_process";
 import Database, { Statement } from "better-sqlite3";
 import blake from "blakejs";
 
-import { Index, ItemVersions, SourceDeltaResponse } from "../../types";
+import { Index, SourceMetadata, ItemMetadata } from "../../types";
 
 const sortKeys = (_, value) =>
   value instanceof Object && !(value instanceof Array)
@@ -37,7 +37,7 @@ export class DB {
 
   private selectAllSourceVersion: Statement<
     [],
-    { id: string; version: string; data: string }
+    { uuid: string; version: string }
   >;
   private upsertSource: Statement<
     { id: string; data: string; version: string },
@@ -45,9 +45,9 @@ export class DB {
   >;
   private deleteSource: Statement<{ id: string }, void>;
 
-  private selectItemVersionsBySource: Statement<
-    { sourceID: string },
-    { id: string; version: string }
+  private selectAllItemVersion: Statement<
+    [],
+    { uuid: string; version: string }
   >;
   private upsertItem: Statement<
     { id: string; data: string; version: string },
@@ -74,19 +74,19 @@ export class DB {
     // Prepare statements
     this.selectVersion = this.db.prepare("SELECT version FROM state");
     this.insertVersion = this.db.prepare(
-      "INSERT INTO state (version) VALUES (?)",
+      "INSERT INTO state_history (version) VALUES (?)",
     );
 
     this.selectAllSourceVersion = this.db.prepare(
-      "SELECT uuid, version, data FROM sources",
+      "SELECT uuid, version FROM sources",
     );
     this.upsertSource = this.db.prepare(
       "INSERT INTO sources (uuid, data, version) VALUES (@id, @data, @version) ON CONFLICT(uuid) DO UPDATE SET data=@data, version=@version",
     );
     this.deleteSource = this.db.prepare("DELETE FROM sources WHERE uuid = @id");
 
-    this.selectItemVersionsBySource = this.db.prepare(
-      "SELECT uuid, version FROM items WHERE source_uuid = @sourceID",
+    this.selectAllItemVersion = this.db.prepare(
+      "SELECT uuid, version FROM items",
     );
     this.upsertItem = this.db.prepare(
       "INSERT INTO items (uuid, data, version) VALUES (@id, @data, @version) ON CONFLICT(uuid) DO UPDATE SET data=@data, version=@version",
@@ -170,31 +170,14 @@ export class DB {
   }
 
   getIndex(): Index {
-    const index = { sources: {} };
+    const index = { sources: {}, items: {} };
     for (const row of this.selectAllSourceVersion.iterate()) {
-      const source = {
-        version: row.version,
-        collection: {},
-      };
-      for (const item of this.selectItemVersionsBySource.iterate({
-        sourceID: row.id,
-      })) {
-        source.collection[item.id] = item.version;
-      }
-      index.sources[row.id] = source;
+      index.sources[row.uuid] = row.version;
     }
-
+    for (const row of this.selectAllItemVersion.iterate()) {
+      index.items[row.uuid] = row.version;
+    }
     return index;
-  }
-
-  getSourceItemVersions(sourceID: string): ItemVersions | null {
-    const itemVersions: ItemVersions = {};
-    for (const row of this.selectItemVersionsBySource.iterate({
-      sourceID: sourceID,
-    })) {
-      itemVersions[row.id] = row.version;
-    }
-    return itemVersions;
   }
 
   // Updates the index version: should be called on any write operation to
@@ -218,42 +201,42 @@ export class DB {
   deleteSources(sources: string[]) {
     this.db!.transaction((sources) => {
       for (const sourceID in sources) {
-        for (const itemRow of this.selectItemVersionsBySource.iterate({
-          sourceID: sourceID,
-        })) {
-          this.deleteItem.run({ id: itemRow.id });
-        }
         this.deleteSource.run({ id: sourceID });
       }
       this.updateVersion();
     })(sources);
   }
 
-  updateSources(sources: SourceDeltaResponse) {
+  updateSources(sources: { [uuid: string]: SourceMetadata }) {
     this.db!.transaction((sources) => {
-      Object.keys(sources.sources).forEach((sourceid: string) => {
-        const source = sources.sources[sourceid];
+      Object.keys(sources).forEach((sourceid: string) => {
+        const metadata = sources[sourceid];
         // Updating the full source: update metadata and re-compute source version
-        if (source.info) {
-          const info = JSON.stringify(source.info, sortKeys);
-          const version = computeVersion(info);
-          this.upsertSource.run({
-            id: sourceid,
-            data: info,
-            version: version,
-          });
-        }
-        Object.keys(source.collection).forEach((itemid: string) => {
-          const data = JSON.stringify(source.collection[itemid], sortKeys);
-          const version = computeVersion(data);
-          this.upsertItem.run({
-            id: itemid,
-            data: data,
-            version: version,
-          });
+        const info = JSON.stringify(metadata, sortKeys);
+        const version = computeVersion(info);
+        this.upsertSource.run({
+          id: sourceid,
+          data: info,
+          version: version,
         });
       });
       this.updateVersion();
     })(sources);
+  }
+
+  updateItems(items: { [uuid: string]: ItemMetadata }) {
+    this.db!.transaction((items) => {
+      Object.keys(items).forEach((itemid: string) => {
+        const metadata = items[itemid];
+        const blob = JSON.stringify(metadata, sortKeys);
+        const version = computeVersion(blob);
+        this.upsertItem.run({
+          id: itemid,
+          data: blob,
+          version: version,
+        });
+      });
+      this.updateVersion();
+    })(items);
   }
 }
