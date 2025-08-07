@@ -52,7 +52,7 @@ function SignInView() {
 
     // Authenticate to the API
     try {
-      const res: ProxyJSONResponse = await window.electronAPI.request({
+      const res = (await window.electronAPI.request({
         method: "POST",
         path_query: "/api/v1/token",
         stream: false,
@@ -62,7 +62,7 @@ function SignInView() {
           one_time_code: values.oneTimeCode,
         }),
         headers: {},
-      } as ProxyRequest);
+      } as ProxyRequest)) as ProxyJSONResponse;
 
       // If the status is not 200, fail
       if (res.status !== 200) {
