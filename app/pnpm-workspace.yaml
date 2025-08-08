@@ -3,7 +3,6 @@ packages:
 
 ignoredBuiltDependencies:
   - "@tailwindcss/oxide"
-  - better-sqlite3
   - cpu-features
   - electron-winstaller
   - esbuild
@@ -12,4 +11,5 @@ ignoredBuiltDependencies:
   - unrs-resolver
 
 onlyBuiltDependencies:
+  - better-sqlite3
   - electron
