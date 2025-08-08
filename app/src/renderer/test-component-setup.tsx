@@ -6,13 +6,10 @@ import * as matchers from "@testing-library/jest-dom/matchers";
 import { MemoryRouter, useLocation } from "react-router";
 import { Provider } from "react-redux";
 import React from "react";
-import i18n from "i18next";
 
 import { setupStore, type RootState } from "./store";
 import "./i18n";
-
-// Change the language to en to we can test for English strings
-i18n.changeLanguage("en");
+import type { ElectronAPI } from "../preload/index";
 
 // Mock global variables
 (global as any).__APP_VERSION__ = "6.6.6-test";
@@ -44,7 +41,85 @@ beforeEach(() => {
   (window as any).electronAPI = {
     request: vi.fn().mockResolvedValue({ data: "test" }),
     requestStream: vi.fn().mockResolvedValue({ sha256sum: "abc" }),
-  };
+    getSources: vi.fn().mockResolvedValue([
+      {
+        uuid: "source-1",
+        data: {
+          fingerprint: "ABCD1234EFGH5678IJKL9012MNOP3456QRST7890",
+          isStarred: false,
+          journalistDesignation: "multiplicative conditionality",
+          lastUpdated: "2024-01-15T10:30:00Z",
+          publicKey:
+            "-----BEGIN PGP PUBLIC KEY BLOCK-----\nVersion: GnuPG v1\n...\n-----END PGP PUBLIC KEY BLOCK-----",
+          uuid: "source-1",
+        },
+        isRead: false,
+      },
+      {
+        uuid: "source-2",
+        data: {
+          fingerprint: "1234ABCD5678EFGH9012IJKL3456MNOP7890QRST",
+          isStarred: true,
+          journalistDesignation: "piezoelectric crockery",
+          lastUpdated: "2024-01-14T15:45:00Z",
+          publicKey:
+            "-----BEGIN PGP PUBLIC KEY BLOCK-----\nVersion: GnuPG v1\n...\n-----END PGP PUBLIC KEY BLOCK-----",
+          uuid: "source-2",
+        },
+        isRead: true,
+      },
+      {
+        uuid: "source-3",
+        data: {
+          fingerprint: "5678EFGH9012IJKL3456MNOP7890QRST1234ABCD",
+          isStarred: false,
+          journalistDesignation: "thyroid battle",
+          lastUpdated: "2024-04-10T09:15:00Z",
+          publicKey:
+            "-----BEGIN PGP PUBLIC KEY BLOCK-----\nVersion: GnuPG v1\n...\n-----END PGP PUBLIC KEY BLOCK-----",
+          uuid: "source-3",
+        },
+        isRead: false,
+      },
+    ]),
+    getSourceWithItems: vi.fn().mockResolvedValue({
+      uuid: "source-1",
+      data: {
+        fingerprint: "ABCD1234EFGH5678IJKL9012MNOP3456QRST7890",
+        isStarred: false,
+        journalistDesignation: "multiplicative conditionality",
+        lastUpdated: "2024-01-15T10:30:00Z",
+        publicKey:
+          "-----BEGIN PGP PUBLIC KEY BLOCK-----\nVersion: GnuPG v1\n...\n-----END PGP PUBLIC KEY BLOCK-----",
+        uuid: "source-1",
+      },
+      items: [
+        {
+          uuid: "item-1",
+          data: {
+            uuid: "item-1",
+            kind: "message",
+            seenBy: [],
+            size: 1024,
+            source: "source-1",
+            isRead: false,
+          },
+        },
+        {
+          uuid: "item-2",
+          data: {
+            uuid: "item-2",
+            kind: "file",
+            seenBy: [],
+            size: 2048,
+            source: "source-1",
+            isRead: true,
+          },
+        },
+      ],
+    }),
+    getSystemLanguage: vi.fn().mockResolvedValue("en"),
+  } as ElectronAPI;
 });
 
 // Component to track react-router location changes for testing

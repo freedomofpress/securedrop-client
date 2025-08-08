@@ -5,7 +5,7 @@
     "src/renderer/env.d.ts",
     "src/renderer/**/*",
     "src/renderer/**/*.tsx",
-    "src/preload/*.d.ts",
+    "src/preload/**/*",
     "src/*.ts",
     "src/*.d.ts",
     "tests/",

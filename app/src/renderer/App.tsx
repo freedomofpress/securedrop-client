@@ -17,6 +17,14 @@ function App() {
           </ProtectedRoute>
         }
       />
+      <Route
+        path="/source/:sourceUuid"
+        element={
+          <ProtectedRoute>
+            <InboxView />
+          </ProtectedRoute>
+        }
+      />
       <Route path="/sign-in" element={<SignInView />} />
     </Routes>
   );
