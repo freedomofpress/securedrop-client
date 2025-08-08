@@ -10,7 +10,7 @@ import {
 
 import { openDatabase, closeDatabase, runMigrations } from "./database";
 import { proxy } from "./proxy";
-import type { ProxyRequest } from "../types";
+import type { ProxyRequest, SourceWithItems } from "../types";
 
 openDatabase();
 runMigrations();
@@ -77,6 +77,10 @@ app.whenReady().then(() => {
     return result;
   });
 
+  ipcMain.handle("getSystemLanguage", async (_event): Promise<string> => {
+    const systemLanguage = process.env.LANG || app.getLocale() || "en";
+    return systemLanguage;
+  });
   createWindow();
 });
 
