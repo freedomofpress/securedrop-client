@@ -23,15 +23,12 @@ function mockDB({ index = { sources: {}, items: {} } } = {}) {
 
 function mockSourceMetadata(uuid: string): SourceMetadata {
   return {
-    source: {
-      uuid: uuid,
-      journalist_designation: "Test Journalist",
-      is_starred: false,
-      last_updated: new Date().toISOString(),
-      public_key: "test_public_key",
-      fingerprint: "test_fingerprint",
-    },
-    collection: {},
+    uuid: uuid,
+    journalist_designation: "Test Journalist",
+    is_starred: false,
+    last_updated: new Date().toISOString(),
+    public_key: "test_public_key",
+    fingerprint: "test_fingerprint",
   };
 }
 
