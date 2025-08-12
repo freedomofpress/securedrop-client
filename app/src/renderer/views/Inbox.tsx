@@ -36,6 +36,14 @@ function InboxView() {
     console.log(res);
   };
 
+  const syncMetadata = async function () {
+    console.log("sending sync metadata IPC");
+    await window.electronAPI.syncMetadata({
+      authToken: session.authData!.token,
+    });
+    console.log("sync metadata complete");
+  };
+
   const signOut = () => {
     console.log("signing out");
     dispatch(setUnauth());
@@ -99,6 +107,16 @@ function InboxView() {
               Sign out
             </Button>
           )}
+        </div>
+        <div className="px-6 pt-4 pb-2">
+          <Button
+            type="default"
+            onClick={() => syncMetadata()}
+            title="Sync Metadata"
+            data-testid="sync-metadata-button"
+          >
+            Sync Metadata
+          </Button>
         </div>
       </div>
     </div>

@@ -8,12 +8,13 @@ import {
   REACT_DEVELOPER_TOOLS,
 } from "electron-devtools-installer";
 
-import { openDatabase, closeDatabase, runMigrations } from "./database";
+import { DB } from "./database";
 import { proxy } from "./proxy";
-import type { ProxyRequest } from "../types";
+import type { ProxyRequest, SyncMetadataRequest } from "../types";
+import { syncMetadata } from "./sync";
 
-openDatabase();
-runMigrations();
+const db = new DB();
+db.runMigrations();
 
 function createWindow(): void {
   const mainWindow = new BrowserWindow({
@@ -77,6 +78,13 @@ app.whenReady().then(() => {
     return result;
   });
 
+  ipcMain.handle(
+    "syncMetadata",
+    async (_event, request: SyncMetadataRequest) => {
+      await syncMetadata(db, request.authToken);
+    },
+  );
+
   createWindow();
 });
 
@@ -85,5 +93,5 @@ app.on("window-all-closed", () => {
 });
 
 app.on("before-quit", () => {
-  closeDatabase();
+  db.close();
 });

@@ -47,13 +47,21 @@ describe("Test executing proxy with JSON requests", () => {
   });
 
   it("proxy should return ProxyResponse with deserialized JSON on successful response", async () => {
-    const proxyExec = proxyJSONRequest({} as ProxyRequest, mockProxyCommand());
-
-    const respData = {
+    interface RespData {
+      foo: string;
+      baz: string[];
+      key: number;
+    }
+    const respData: RespData = {
       foo: "bar",
       baz: ["foo", "bar"],
       key: 123,
     };
+    const proxyExec = proxyJSONRequest<RespData>(
+      {} as ProxyRequest,
+      mockProxyCommand(),
+    );
+
     const respHeaders = {
       Connection: "Keep-Alive",
       "Content-Type": "text/html",
@@ -86,7 +94,10 @@ describe("Test executing proxy with JSON requests", () => {
   });
 
   it("proxy should error on non-404 4xx response code", async () => {
-    const proxyExec = proxyJSONRequest({} as ProxyRequest, mockProxyCommand());
+    const proxyExec = proxyJSONRequest<string>(
+      {} as ProxyRequest,
+      mockProxyCommand(),
+    );
 
     const respData = "Rate Limited";
     const respStatus = 429;
@@ -104,7 +115,7 @@ describe("Test executing proxy with JSON requests", () => {
     expect(status).toEqual(respStatus);
   });
 
-  it("proxy should return success on 404", async () => {
+  it("proxy should return on 404", async () => {
     const proxyExec = proxyJSONRequest({} as ProxyRequest, mockProxyCommand());
 
     const respData = "Not Found";

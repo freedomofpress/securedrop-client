@@ -2,93 +2,254 @@ import fs from "fs";
 import os from "os";
 import path from "path";
 import { execSync } from "child_process";
-import Database from "better-sqlite3";
+import Database, { Statement } from "better-sqlite3";
+import blake from "blakejs";
 
-let db: Database.Database | null = null;
-let databaseUrl: string | null = null;
+import {
+  Index,
+  SourceMetadata,
+  ItemMetadata,
+  MetadataResponse,
+} from "../../types";
 
-export const openDatabase = (): Database.Database => {
-  if (db) {
-    return db;
-  }
+const sortKeys = (_, value) =>
+  value instanceof Object && !(value instanceof Array)
+    ? Object.keys(value)
+        .sort()
+        .reduce((sorted, key) => {
+          sorted[key] = value[key];
+          return sorted;
+        }, {})
+    : value;
 
-  // Ensure the directory exists
-  const dbDir = path.join(os.homedir(), ".config", "SecureDrop");
-  if (!fs.existsSync(dbDir)) {
-    fs.mkdirSync(dbDir, { recursive: true });
-  }
+// Calculate the version (BLAKE2s digest) of the normalized JSON representation
+// of the provided JSON object.
+//
+// This matches the SecureDrop server implementation of the version calculation.
+// We use BLAKE2s because it is faster than SHA256 and we don't need cryptographic
+// security, and CRC32 is too collision-prone.
+function computeVersion(blob: string): string {
+  return blake.blake2sHex(blob);
+}
 
-  // Create or open the SQLite database
-  const dbPath = path.join(dbDir, "db.sqlite");
-  db = new Database(dbPath, {});
-  db.pragma("journal_mode = WAL");
+export class DB {
+  private db: Database.Database | null;
+  private url: string | null;
 
-  // Set the database URL for migrations
-  databaseUrl = `sqlite:${dbPath}`;
-  return db;
-};
+  // Prepared statements
+  private selectVersion: Statement<[], { version: string }>;
+  private insertVersion: Statement<[string], void>;
 
-export const runMigrations = () => {
-  if (!databaseUrl) {
-    throw new Error(
-      "Database URL is not set. Ensure the database is opened first.",
+  private selectAllSourceVersion: Statement<
+    [],
+    { uuid: string; version: string }
+  >;
+  private upsertSource: Statement<
+    { id: string; data: string; version: string },
+    void
+  >;
+  private deleteSource: Statement<{ id: string }, void>;
+
+  private selectAllItemVersion: Statement<
+    [],
+    { uuid: string; version: string }
+  >;
+  private upsertItem: Statement<
+    { id: string; data: string; version: string },
+    void
+  >;
+  private deleteItem: Statement<{ id: string }, void>;
+
+  constructor() {
+    // Ensure the directory exists
+    const dbDir = path.join(os.homedir(), ".config", "SecureDrop");
+    if (!fs.existsSync(dbDir)) {
+      fs.mkdirSync(dbDir, { recursive: true });
+    }
+
+    // Create or open the SQLite database
+    const dbPath = path.join(dbDir, "db.sqlite");
+    const db = new Database(dbPath, {});
+    db.pragma("journal_mode = WAL");
+
+    // Set the database URL for migrations
+    this.url = `sqlite:${dbPath}`;
+    this.db = db;
+
+    // Prepare statements
+    this.selectVersion = this.db.prepare("SELECT version FROM state");
+    this.insertVersion = this.db.prepare(
+      "INSERT INTO state_history (version) VALUES (?)",
     );
-  }
 
-  // Determine if we're in a packaged app or development
-  const isPackaged = __dirname.includes("app.asar");
-
-  let dbmatePath: string;
-  let migrationsDir: string;
-
-  if (isPackaged) {
-    // For packaged apps, binaries and migrations are outside the asar archive
-    dbmatePath = path.join(process.resourcesPath, "bin", "dbmate");
-    migrationsDir = path.join(process.resourcesPath, "migrations");
-  } else {
-    // In development, use paths relative to current working directory
-    dbmatePath = path.join(process.cwd(), "node_modules", ".bin", "dbmate");
-    migrationsDir = path.join(
-      process.cwd(),
-      "src",
-      "main",
-      "database",
-      "migrations",
+    this.selectAllSourceVersion = this.db.prepare(
+      "SELECT uuid, version FROM sources",
     );
+    this.upsertSource = this.db.prepare(
+      "INSERT INTO sources (uuid, data, version) VALUES (@id, @data, @version) ON CONFLICT(uuid) DO UPDATE SET data=@data, version=@version",
+    );
+    this.deleteSource = this.db.prepare("DELETE FROM sources WHERE uuid = @id");
+
+    this.selectAllItemVersion = this.db.prepare(
+      "SELECT uuid, version FROM items",
+    );
+    this.upsertItem = this.db.prepare(
+      "INSERT INTO items (uuid, data, version) VALUES (@id, @data, @version) ON CONFLICT(uuid) DO UPDATE SET data=@data, version=@version",
+    );
+    this.deleteItem = this.db.prepare("DELETE FROM items WHERE uuid = @id");
   }
 
-  // Ensure migrations directory exists
-  if (!fs.existsSync(migrationsDir)) {
-    throw new Error(`Migrations directory not found: ${migrationsDir}`);
+  runMigrations(): void {
+    if (!this.url) {
+      throw new Error(
+        "Database URL is not set. Ensure the database is opened first.",
+      );
+    }
+
+    // Determine if we're in a packaged app or development
+    const isPackaged = __dirname.includes("app.asar");
+
+    let dbmatePath: string;
+    let migrationsDir: string;
+
+    if (isPackaged) {
+      // For packaged apps, binaries and migrations are outside the asar archive
+      dbmatePath = path.join(process.resourcesPath, "bin", "dbmate");
+      migrationsDir = path.join(process.resourcesPath, "migrations");
+    } else {
+      // In development, use paths relative to current working directory
+      dbmatePath = path.join(process.cwd(), "node_modules", ".bin", "dbmate");
+      migrationsDir = path.join(
+        process.cwd(),
+        "src",
+        "main",
+        "database",
+        "migrations",
+      );
+    }
+
+    // Ensure migrations directory exists
+    if (!fs.existsSync(migrationsDir)) {
+      throw new Error(`Migrations directory not found: ${migrationsDir}`);
+    }
+
+    // Ensure dbmate binary exists
+    if (!fs.existsSync(dbmatePath)) {
+      throw new Error(`dbmate binary not found: ${dbmatePath}`);
+    }
+
+    try {
+      const command = [
+        `"${dbmatePath}"`,
+        `--url "${this.url}"`,
+        `--migrations-dir "${migrationsDir}"`,
+        // Don't update the schema file when running migrations at app startup
+        `--schema-file "/dev/null"`,
+        "up",
+      ].join(" ");
+
+      console.log("Running migrations:", command);
+      execSync(command, { stdio: "inherit" });
+      console.log("Migrations completed successfully");
+    } catch (error) {
+      console.error("Migration failed:", error);
+      throw new Error(`Migration failed: ${error}`);
+    }
   }
 
-  // Ensure dbmate binary exists
-  if (!fs.existsSync(dbmatePath)) {
-    throw new Error(`dbmate binary not found: ${dbmatePath}`);
+  close(): void {
+    this.db?.close();
+    this.db = null;
+    this.url = null;
   }
 
-  try {
-    const command = [
-      `"${dbmatePath}"`,
-      `--url "${databaseUrl}"`,
-      `--migrations-dir "${migrationsDir}"`,
-      // Don't update the schema file when running migrations at app startup
-      `--schema-file "/dev/null"`,
-      "up",
-    ].join(" ");
-
-    console.log("Running migrations:", command);
-    execSync(command, { stdio: "inherit" });
-    console.log("Migrations completed successfully");
-  } catch (error) {
-    console.error("Migration failed:", error);
-    throw new Error(`Migration failed: ${error}`);
+  /// Read the current index version from the DB for sync.
+  /// If we are in the initial sync state and there is no
+  // source data available, then we return empty.
+  getVersion(): string {
+    const version = this.selectVersion.get();
+    if (!version) {
+      return "";
+    }
+    return version.version;
   }
-};
 
-export const closeDatabase = () => {
-  if (db) {
-    db.close();
-    db = null;
+  getIndex(): Index {
+    // NOTE: setting journalists to empty object for now, as implementing
+    // journalist sync is still TODO.
+    const index = { sources: {}, items: {}, journalists: {} };
+    for (const row of this.selectAllSourceVersion.iterate()) {
+      index.sources[row.uuid] = row.version;
+    }
+    for (const row of this.selectAllItemVersion.iterate()) {
+      index.items[row.uuid] = row.version;
+    }
+    return index;
   }
-};
+
+  // Updates the index version: should be called on any write operation to
+  // sources or items
+  private updateVersion() {
+    const index = this.getIndex();
+    const strIndex = JSON.stringify(index, sortKeys);
+    const newVersion = computeVersion(strIndex);
+    this.insertVersion.run(newVersion);
+  }
+
+  deleteItems(items: string[]) {
+    this.db!.transaction((items) => {
+      for (const itemID in items) {
+        this.deleteItem.run({ id: itemID });
+      }
+      this.updateVersion();
+    })(items);
+  }
+
+  deleteSources(sources: string[]) {
+    this.db!.transaction((sources) => {
+      for (const sourceID in sources) {
+        this.deleteSource.run({ id: sourceID });
+      }
+      this.updateVersion();
+    })(sources);
+  }
+
+  updateMetadata(metadata: MetadataResponse) {
+    this.db!.transaction((metadata: MetadataResponse) => {
+      this.updateSources(metadata.sources);
+      this.updateItems(metadata.items);
+      this.updateVersion();
+    })(metadata);
+  }
+
+  // Updates source versions in DB. Should be run in a transaction that also
+  // updates the global index version.
+  private updateSources(sources: { [uuid: string]: SourceMetadata }) {
+    Object.keys(sources).forEach((sourceid: string) => {
+      const metadata = sources[sourceid];
+      // Updating the full source: update metadata and re-compute source version
+      const info = JSON.stringify(metadata, sortKeys);
+      const version = computeVersion(info);
+      this.upsertSource.run({
+        id: sourceid,
+        data: info,
+        version: version,
+      });
+    });
+  }
+
+  // Updates item versions in DB. Should be run in a transaction that also
+  // updates the global index version.
+  private updateItems(items: { [uuid: string]: ItemMetadata }) {
+    Object.keys(items).forEach((itemid: string) => {
+      const metadata = items[itemid];
+      const blob = JSON.stringify(metadata, sortKeys);
+      const version = computeVersion(blob);
+      this.upsertItem.run({
+        id: itemid,
+        data: blob,
+        version: version,
+      });
+    });
+  }
+}
