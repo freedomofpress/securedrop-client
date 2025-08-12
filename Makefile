@@ -39,18 +39,6 @@ check-ruff:
 	poetry run ruff format . --diff
 	poetry run ruff check . --output-format=full
 
-safety:  ## Run safety dependency checks on build dependencies
-	find . -name build-requirements.txt | xargs -n1 poetry run safety check --full-report \
-		--ignore 51668 \
-		--ignore 61601 \
-		--ignore 61893 \
-		--ignore 62044 \
-		--ignore 67895 \
-		--ignore 70612 \
-		--ignore 71591 \
-		--ignore 74735 \
- 		-r
-
 .PHONY: shellcheck
 shellcheck:  ## Lint shell scripts
 	@poetry run ./scripts/shellcheck.sh

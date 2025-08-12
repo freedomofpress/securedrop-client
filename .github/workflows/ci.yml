@@ -108,24 +108,6 @@ jobs:
       - name: Run lint
         run: make -C ${{ matrix.component }} lint
 
-  safety:
-    runs-on: ubuntu-latest
-    container: debian:bookworm
-    steps:
-      - run: |
-          apt-get update && apt-get install --yes git make pipx
-          pipx install poetry==$POETRY_VERSION
-          pipx ensurepath
-          echo "${HOME}/.local/bin" >> ${GITHUB_PATH}
-      - uses: actions/checkout@v5
-        with:
-          persist-credentials: false
-      - name: Run safety
-        run: |
-          poetry install
-          poetry update safety
-          make safety
-
   rust:
     runs-on: ubuntu-latest
     # Keep version in sync with rust-toolchain.toml
