@@ -122,7 +122,7 @@ jobs:
         run: |
           apt-get update && apt-get install --yes diffoscope-minimal \
             --no-install-recommends
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v5
         with:
           pattern: "*${{ matrix.debian_version }}"
       - name: diffoscope
@@ -158,8 +158,9 @@ jobs:
       - uses: actions/checkout@v5
         with:
           persist-credentials: false
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v5
         with:
+          path: build
           pattern: "build-${{ matrix.debian_version }}"
       - name: Run piuparts
         run: |
@@ -169,7 +170,7 @@ jobs:
             -v "/var/run/docker.sock:/var/run/docker.sock" \
             -v "/$(pwd)/keyring:/keyring" \
             -v "/$(pwd)/scripts:/scripts" \
-            -v "/$(pwd)/build-${{ matrix.debian_version }}:/build" \
+            -v "/$(pwd)/build:/build" \
             -v "/$(pwd)/.github/workflows/piuparts:/piuparts" \
             -e DISTRO=${{ matrix.debian_version }} \
             -e PACKAGE=${{ matrix.package }} \
