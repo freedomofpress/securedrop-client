@@ -51,6 +51,9 @@ export interface Index {
   items: {
     [uuid: string]: string;
   };
+  journalists: {
+    [uuid: string]: string;
+  };
 }
 
 export interface MetadataRequest {

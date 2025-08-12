@@ -5,7 +5,12 @@ import { execSync } from "child_process";
 import Database, { Statement } from "better-sqlite3";
 import blake from "blakejs";
 
-import { Index, SourceMetadata, ItemMetadata } from "../../types";
+import {
+  Index,
+  SourceMetadata,
+  ItemMetadata,
+  MetadataResponse,
+} from "../../types";
 
 const sortKeys = (_, value) =>
   value instanceof Object && !(value instanceof Array)
@@ -170,7 +175,9 @@ export class DB {
   }
 
   getIndex(): Index {
-    const index = { sources: {}, items: {} };
+    // NOTE: setting journalists to empty object for now, as implementing
+    // journalist sync is still TODO.
+    const index = { sources: {}, items: {}, journalists: {} };
     for (const row of this.selectAllSourceVersion.iterate()) {
       index.sources[row.uuid] = row.version;
     }
@@ -207,36 +214,42 @@ export class DB {
     })(sources);
   }
 
-  updateSources(sources: { [uuid: string]: SourceMetadata }) {
-    this.db!.transaction((sources) => {
-      Object.keys(sources).forEach((sourceid: string) => {
-        const metadata = sources[sourceid];
-        // Updating the full source: update metadata and re-compute source version
-        const info = JSON.stringify(metadata, sortKeys);
-        const version = computeVersion(info);
-        this.upsertSource.run({
-          id: sourceid,
-          data: info,
-          version: version,
-        });
-      });
+  updateMetadata(metadata: MetadataResponse) {
+    this.db!.transaction((metadata: MetadataResponse) => {
+      this.updateSources(metadata.sources);
+      this.updateItems(metadata.items);
       this.updateVersion();
-    })(sources);
+    })(metadata);
   }
 
-  updateItems(items: { [uuid: string]: ItemMetadata }) {
-    this.db!.transaction((items) => {
-      Object.keys(items).forEach((itemid: string) => {
-        const metadata = items[itemid];
-        const blob = JSON.stringify(metadata, sortKeys);
-        const version = computeVersion(blob);
-        this.upsertItem.run({
-          id: itemid,
-          data: blob,
-          version: version,
-        });
+  // Updates source versions in DB. Should be run in a transaction that also
+  // updates the global index version.
+  private updateSources(sources: { [uuid: string]: SourceMetadata }) {
+    Object.keys(sources).forEach((sourceid: string) => {
+      const metadata = sources[sourceid];
+      // Updating the full source: update metadata and re-compute source version
+      const info = JSON.stringify(metadata, sortKeys);
+      const version = computeVersion(info);
+      this.upsertSource.run({
+        id: sourceid,
+        data: info,
+        version: version,
       });
-      this.updateVersion();
-    })(items);
+    });
+  }
+
+  // Updates item versions in DB. Should be run in a transaction that also
+  // updates the global index version.
+  private updateItems(items: { [uuid: string]: ItemMetadata }) {
+    Object.keys(items).forEach((itemid: string) => {
+      const metadata = items[itemid];
+      const blob = JSON.stringify(metadata, sortKeys);
+      const version = computeVersion(blob);
+      this.upsertItem.run({
+        id: itemid,
+        data: blob,
+        version: version,
+      });
+    });
   }
 }

@@ -16,8 +16,7 @@ function mockDB({ index = { sources: {}, items: {} } } = {}) {
     getIndex: vi.fn(() => index),
     deleteItems: vi.fn((_itemIDs) => {}),
     deleteSources: vi.fn((_sourceIDs) => {}),
-    updateSources: vi.fn((_sources) => {}),
-    updateItems: vi.fn((_items) => {}),
+    updateMetadata: vi.fn((_metadata) => {}),
   } as unknown as DB;
 }
 
@@ -75,7 +74,7 @@ describe("syncMetadata", () => {
     ]);
     const status = await syncModule.syncMetadata(db, "");
     expect(proxyMock).toHaveBeenCalledTimes(1);
-    expect(db.updateSources).not.toHaveBeenCalled();
+    expect(db.updateMetadata).not.toHaveBeenCalled();
     expect(status).toBe(syncModule.SyncStatus.NOT_MODIFIED);
   });
 
@@ -88,6 +87,7 @@ describe("syncMetadata", () => {
       items: {
         uuid2: "def",
       },
+      journalists: {},
     };
     const metadata: MetadataResponse = {
       sources: {
@@ -120,8 +120,7 @@ describe("syncMetadata", () => {
 
     expect(proxyMock).toHaveBeenCalledTimes(2);
     // Should update sources and items with new data
-    expect(db.updateSources).toHaveBeenCalledWith(metadata.sources);
-    expect(db.updateItems).toHaveBeenCalledWith(metadata.items);
+    expect(db.updateMetadata).toHaveBeenCalledWith(metadata);
   });
 
   it("handles error from getIndex", async () => {
@@ -147,6 +146,7 @@ describe("syncMetadata", () => {
       items: {
         uuid2: "v2",
       },
+      journalists: {},
     };
     db = mockDB();
 
@@ -168,7 +168,7 @@ describe("syncMetadata", () => {
     await expect(syncModule.syncMetadata(db, "")).rejects.toMatch(
       /Error fetching metadata from server/,
     );
-    expect(db.updateSources).not.toHaveBeenCalled();
+    expect(db.updateMetadata).not.toHaveBeenCalled();
     expect(proxyMock).toHaveBeenCalledTimes(2);
   });
 
@@ -182,6 +182,7 @@ describe("syncMetadata", () => {
         item1: "v1",
         item2: "outOfDate",
       },
+      journalists: {},
     };
 
     // Server index doesn't have item2: it has been deleted
@@ -192,6 +193,7 @@ describe("syncMetadata", () => {
       items: {
         item1: "v2",
       },
+      journalists: {},
     };
     db = mockDB({
       index: clientIndex,
@@ -217,6 +219,7 @@ describe("syncMetadata", () => {
         item1: "v1",
         item2: "outOfDate",
       },
+      journalists: {},
     };
 
     // Server index doesn't have item2: it has been deleted
@@ -227,6 +230,7 @@ describe("syncMetadata", () => {
       items: {
         item1: "v2",
       },
+      journalists: {},
     };
     const metadata: MetadataResponse = {
       sources: {
@@ -260,8 +264,7 @@ describe("syncMetadata", () => {
 
     expect(proxyMock).toHaveBeenCalledTimes(2);
     expect(db.deleteItems).toHaveBeenCalledWith(["item2"]);
-    expect(db.updateSources).toHaveBeenCalledWith(metadata.sources);
-    expect(db.updateItems).toHaveBeenCalledWith(metadata.items);
+    expect(db.updateMetadata).toHaveBeenCalledWith(metadata);
   });
 
   it("reconciles partial sources", async () => {
@@ -274,6 +277,7 @@ describe("syncMetadata", () => {
         item1: "v2",
         item2: "v2",
       },
+      journalists: {},
     };
 
     // Client index has old item version
@@ -285,6 +289,7 @@ describe("syncMetadata", () => {
         item1: "v1",
         item2: "v2",
       },
+      journalists: {},
     };
     db = mockDB({
       index: clientIndex,
@@ -325,8 +330,7 @@ describe("syncMetadata", () => {
     await syncModule.syncMetadata(db, "");
 
     expect(proxyMock).toHaveBeenCalledTimes(2);
-    expect(db.updateItems).toHaveBeenCalledWith(metadata.items);
-    expect(db.updateSources).toHaveBeenCalledWith({});
+    expect(db.updateMetadata).toHaveBeenCalledWith(metadata);
   });
 
   it("deletes sources on sync + updates source delta", async () => {
@@ -337,6 +341,7 @@ describe("syncMetadata", () => {
         uuid2: "deleted",
       },
       items: {},
+      journalists: {},
     };
 
     // Server index doesn't have source uuid2: it has been deleted
@@ -345,6 +350,7 @@ describe("syncMetadata", () => {
         uuid1: "v2",
       },
       items: {},
+      journalists: {},
     };
 
     db = mockDB({
@@ -370,6 +376,9 @@ describe("syncMetadata", () => {
 
     expect(proxyMock).toHaveBeenCalledTimes(2);
     expect(db.deleteSources).toHaveBeenCalledWith(["uuid2"]);
-    expect(db.updateSources).toHaveBeenCalledWith({});
+    expect(db.updateMetadata).toHaveBeenCalledWith({
+      items: {},
+      sources: {},
+    });
   });
 });

@@ -148,7 +148,6 @@ export async function syncMetadata(
   const metadataToUpdate = reconcileIndex(db, index, clientIndex);
 
   const metadata = await fetchMetadata(authToken, metadataToUpdate);
-  db.updateSources(metadata.sources);
-  db.updateItems(metadata.items);
+  db.updateMetadata(metadata);
   return SyncStatus.UPDATED;
 }
