@@ -58,9 +58,12 @@ jobs:
       - name: Install dependencies
         run: |
           apt-get update && apt-get install --yes git git-lfs
-      - uses: actions/download-artifact@v5
+      # Repeat this for all supported Debian versions
+      - name: Download bookworm artifacts
+        uses: actions/download-artifact@v5
         with:
-          pattern: "*${{ matrix.debian_version }}"
+          name: build-bookworm
+          path: build-bookworm
       - uses: actions/checkout@v5
         with:
           # We need to store credentials here
