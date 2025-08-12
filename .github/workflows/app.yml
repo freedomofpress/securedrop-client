@@ -28,7 +28,7 @@ jobs:
         run: |
           apt-get update && apt-get install --yes git make python3 python3-pip build-essential
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           persist-credentials: false
       - name: Install pnpm
@@ -71,7 +71,7 @@ jobs:
         run: |
           apt-get update && apt-get install --yes git make python3 python3-pip build-essential
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           persist-credentials: false
       - name: Install pnpm
