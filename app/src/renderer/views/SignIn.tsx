@@ -5,11 +5,7 @@ import { useState } from "react";
 import { useNavigate } from "react-router";
 import { useTranslation } from "react-i18next";
 
-import type {
-  ProxyRequest,
-  ProxyJSONResponse,
-  TokenResponse,
-} from "../../types";
+import type { ProxyRequest, TokenResponse } from "../../types";
 import { useAppDispatch } from "../hooks";
 import {
   setAuth,
@@ -56,7 +52,7 @@ function SignInView() {
 
     // Authenticate to the API
     try {
-      const res: ProxyJSONResponse = await window.electronAPI.request({
+      const res = await window.electronAPI.request({
         method: "POST",
         path_query: "/api/v1/token",
         stream: false,
