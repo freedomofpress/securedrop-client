@@ -83,7 +83,7 @@ function SignInView() {
         return;
       }
 
-      let resp = res.data as TokenResponse;
+      const resp = res.data as TokenResponse;
 
       try {
         // Update the session state
