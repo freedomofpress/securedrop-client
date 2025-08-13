@@ -80,6 +80,9 @@ export class DB {
     this.url = `sqlite:${dbPath}`;
     this.db = db;
 
+    // Run migrations (before we prepare any statements based on the latest schema)
+    this.runMigrations();
+
     // Prepare statements
     this.selectVersion = this.db.prepare("SELECT version FROM state");
     this.insertVersion = this.db.prepare(
