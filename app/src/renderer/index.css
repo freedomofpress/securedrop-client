@@ -30,3 +30,14 @@
 p {
   font-size: 0.875rem;
 }
+
+img,
+svg,
+video,
+canvas,
+audio,
+iframe,
+embed,
+object {
+  display: inline-block;
+}
