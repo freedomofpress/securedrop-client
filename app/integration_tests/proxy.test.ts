@@ -85,12 +85,7 @@ describe("Test executing JSON proxy commands against httpbin", async () => {
   );
 
   it("path query with query parameters", async () => {
-    interface Response {
-      args: {
-        [key: string]: string;
-      };
-    }
-    const result = await proxyJSONRequest<Response>(
+    const result = await proxyJSONRequest(
       {
         method: "GET",
         path_query: "/get?foo=bar",
@@ -138,12 +133,7 @@ describe("Test executing JSON proxy commands against httpbin", async () => {
   });
 
   it("request with headers", async () => {
-    interface Response {
-      headers: {
-        [key: string]: string;
-      };
-    }
-    const result = await proxyJSONRequest<Response>(
+    const result = await proxyJSONRequest(
       {
         method: "GET",
         path_query: "/headers",
@@ -158,7 +148,7 @@ describe("Test executing JSON proxy commands against httpbin", async () => {
 
   it("request with body", async () => {
     const input = { id: 42, title: "test" };
-    const result = await proxyJSONRequest<typeof input>(
+    const result = await proxyJSONRequest(
       {
         method: "POST",
         path_query: "/post",
@@ -220,7 +210,7 @@ describe("Test executing streaming proxy", async () => {
   it.for([401, 403, 429, 500, 503, 504])(
     "4xx/5xx HTTP codes return error",
     async (statusCode: number) => {
-      const response: ProxyJSONResponse<string> = (await proxyStreamRequest(
+      const response: ProxyJSONResponse = (await proxyStreamRequest(
         {
           method: "GET",
           path_query: `/status/${statusCode}`,
@@ -230,7 +220,7 @@ describe("Test executing streaming proxy", async () => {
         proxyCommand(1000),
         "/tmp/baz",
         3,
-      )) as ProxyJSONResponse<string>;
+      )) as ProxyJSONResponse;
 
       expect(response.error);
       expect(response.status).toEqual(statusCode);

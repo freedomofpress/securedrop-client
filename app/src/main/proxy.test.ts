@@ -57,10 +57,7 @@ describe("Test executing proxy with JSON requests", () => {
       baz: ["foo", "bar"],
       key: 123,
     };
-    const proxyExec = proxyJSONRequest<RespData>(
-      {} as ProxyRequest,
-      mockProxyCommand(),
-    );
+    const proxyExec = proxyJSONRequest({} as ProxyRequest, mockProxyCommand());
 
     const respHeaders = {
       Connection: "Keep-Alive",
@@ -94,10 +91,7 @@ describe("Test executing proxy with JSON requests", () => {
   });
 
   it("proxy should error on non-404 4xx response code", async () => {
-    const proxyExec = proxyJSONRequest<string>(
-      {} as ProxyRequest,
-      mockProxyCommand(),
-    );
+    const proxyExec = proxyJSONRequest({} as ProxyRequest, mockProxyCommand());
 
     const respData = "Rate Limited";
     const respStatus = 429;

@@ -56,18 +56,17 @@ function SignInView() {
 
     // Authenticate to the API
     try {
-      const res: ProxyJSONResponse<TokenResponse> =
-        await window.electronAPI.request({
-          method: "POST",
-          path_query: "/api/v1/token",
-          stream: false,
-          body: JSON.stringify({
-            username: values.username,
-            passphrase: values.passphrase,
-            one_time_code: values.oneTimeCode,
-          }),
-          headers: {},
-        } as ProxyRequest);
+      const res: ProxyJSONResponse = await window.electronAPI.request({
+        method: "POST",
+        path_query: "/api/v1/token",
+        stream: false,
+        body: JSON.stringify({
+          username: values.username,
+          passphrase: values.passphrase,
+          one_time_code: values.oneTimeCode,
+        }),
+        headers: {},
+      } as ProxyRequest);
 
       // If the status is not 200, fail
       if (res.status !== 200) {
@@ -84,15 +83,17 @@ function SignInView() {
         return;
       }
 
+      const resp = res.data as TokenResponse;
+
       try {
         // Update the session state
         dispatch(
           setAuth({
-            expiration: res.data.expiration,
-            token: res.data.token,
-            journalistUUID: res.data.journalist_uuid,
-            journalistFirstName: res.data.journalist_first_name,
-            journalistLastName: res.data.journalist_last_name,
+            expiration: resp.expiration,
+            token: resp.token,
+            journalistUUID: resp.journalist_uuid,
+            journalistFirstName: resp.journalist_first_name,
+            journalistLastName: resp.journalist_last_name,
           } as AuthData),
         );
 

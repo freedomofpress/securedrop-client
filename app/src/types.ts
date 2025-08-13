@@ -14,11 +14,11 @@ export type ProxyCommand = {
   abortSignal?: AbortSignal;
 };
 
-export type ProxyResponse<T> = ProxyJSONResponse<T> | ProxyStreamResponse;
+export type ProxyResponse = ProxyJSONResponse | ProxyStreamResponse;
 
-export type ProxyJSONResponse<T> = {
+export type ProxyJSONResponse = {
   error: boolean;
-  data?: T;
+  data?: JSONValue;
   status: number;
   headers: Map<string, string>;
 };
@@ -40,11 +40,11 @@ export type ms = number & { readonly __unit: "ms" };
 /** Sync types */
 
 // IPC request for syncMetadata operation
-export interface SyncMetadataRequest {
+export type SyncMetadataRequest = {
   authToken: string;
-}
+};
 
-export interface Index {
+export type Index = {
   sources: {
     [uuid: string]: string;
   };
@@ -54,34 +54,34 @@ export interface Index {
   journalists: {
     [uuid: string]: string;
   };
-}
+};
 
-export interface MetadataRequest {
+export type MetadataRequest = {
   sources: string[];
   items: string[];
-}
+};
 
-export interface MetadataResponse {
+export type MetadataResponse = {
   sources: {
     [uuid: string]: SourceMetadata;
   };
   items: {
     [uuid: string]: ItemMetadata;
   };
-}
+};
 
-export interface SourceMetadata {
+export type SourceMetadata = {
   uuid: string;
   journalist_designation: string;
   is_starred: boolean;
   last_updated: string;
   public_key: string;
   fingerprint: string;
-}
+};
 
 export type ItemMetadata = ReplyMetadata | SubmissionMetadata;
 
-export interface ReplyMetadata {
+export type ReplyMetadata = {
   kind: "reply";
   uuid: string;
   source: string;
@@ -89,23 +89,23 @@ export interface ReplyMetadata {
   journalist_uuid: string;
   is_deleted_by_source: boolean;
   seen_by: string[];
-}
+};
 
-export interface SubmissionMetadata {
+export type SubmissionMetadata = {
   kind: "file" | "message";
   uuid: string;
   source: string;
   size: number;
   is_read: boolean;
   seen_by: string[];
-}
+};
 
 /** API v1 Types */
 
-export interface TokenResponse {
+export type TokenResponse = {
   expiration: string;
   token: string;
   journalist_uuid: string;
   journalist_first_name: string;
   journalist_last_name: string;
-}
+};
