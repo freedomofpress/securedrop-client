@@ -1,6 +1,6 @@
 import { useNavigate } from "react-router";
 import { Button, Typography } from "antd";
-import { UserOutlined, LoginOutlined, LogoutOutlined } from "@ant-design/icons";
+import { User, LogIn, LogOut } from "lucide-react";
 import { useTranslation } from "react-i18next";
 
 import { useAppDispatch, useAppSelector } from "../../../hooks";
@@ -31,7 +31,7 @@ function Account() {
       {session.status == SessionStatus.Auth ? (
         <>
           <Typography.Text>
-            <UserOutlined style={{ marginRight: 6 }} />
+            <User size={20} style={{ marginRight: 6, verticalAlign: "top" }} />
             {session.authData?.journalistFirstName ||
             session.authData?.journalistLastName
               ? `${session.authData?.journalistFirstName || ""} ${session.authData?.journalistLastName || ""}`.trim()
@@ -40,7 +40,7 @@ function Account() {
 
           <Button
             type="dashed"
-            icon={<LogoutOutlined />}
+            icon={<LogOut size={18} />}
             size="small"
             onClick={signOut}
           >
@@ -55,7 +55,7 @@ function Account() {
 
           <Button
             type="dashed"
-            icon={<LoginOutlined />}
+            icon={<LogIn size={18} />}
             size="small"
             onClick={signIn}
           >

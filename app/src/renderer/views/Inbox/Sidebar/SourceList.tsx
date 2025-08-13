@@ -2,13 +2,14 @@ import { useState, useEffect } from "react";
 import { useNavigate, useParams } from "react-router";
 import { Checkbox, Button, Dropdown, Input, Tooltip } from "antd";
 import {
-  DeleteOutlined,
-  MailOutlined,
-  SortAscendingOutlined,
-  SortDescendingOutlined,
-  DownOutlined,
-  SearchOutlined,
-} from "@ant-design/icons";
+  Trash,
+  Mail,
+  Search,
+  CalendarArrowDown,
+  CalendarArrowUp,
+  ChevronDown,
+  ChevronUp,
+} from "lucide-react";
 import { useTranslation } from "react-i18next";
 
 import type { Source as SourceType } from "../../../../types";
@@ -31,6 +32,7 @@ function SourceList() {
   const [sortedAsc, setSortedAsc] = useState(false);
   const [filter, setFilter] = useState<filterOption>("all");
   const [searchTerm, setSearchTerm] = useState("");
+  const [dropdownOpen, setDropdownOpen] = useState(false);
 
   useEffect(() => {
     const fetchSources = async () => {
@@ -183,7 +185,7 @@ function SourceList() {
       {/* Header with select all and action buttons */}
       <div className="sd-bg-primary sd-border-secondary px-4 py-3 border-b flex-shrink-0">
         <div className="flex items-center justify-between gap-2 min-w-0">
-          <div className="flex items-center gap-2 flex-shrink-0">
+          <div className="flex items-center gap-1 flex-shrink-0">
             {/* Select all checkbox */}
             <Checkbox
               checked={allSelected}
@@ -201,7 +203,7 @@ function SourceList() {
                 <Tooltip title={t("sourcelist.actions.bulkDelete")}>
                   <Button
                     type="text"
-                    icon={<DeleteOutlined />}
+                    icon={<Trash size={18} />}
                     onClick={handleBulkDelete}
                     data-testid="bulk-delete-button"
                   />
@@ -209,7 +211,7 @@ function SourceList() {
                 <Tooltip title={t("sourcelist.actions.bulkToggleRead")}>
                   <Button
                     type="text"
-                    icon={<MailOutlined />}
+                    icon={<Mail size={18} />}
                     onClick={handleBulkToggleRead}
                     data-testid="bulk-toggle-read-button"
                   />
@@ -220,7 +222,7 @@ function SourceList() {
 
           <Input
             placeholder={t("sourcelist.search.placeholder")}
-            prefix={<SearchOutlined />}
+            prefix={<Search size={18} />}
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             className="flex-1 min-w-0 max-w-xs"
@@ -228,10 +230,18 @@ function SourceList() {
           />
 
           <div className="flex items-center gap-1 flex-shrink-0">
-            <Dropdown menu={{ items: dropdownItems }} trigger={["click"]}>
+            <Dropdown
+              menu={{ items: dropdownItems }}
+              trigger={["click"]}
+              onOpenChange={setDropdownOpen}
+            >
               <Button type="text" data-testid="filter-dropdown">
                 {dropdownItems.find((item) => item.key === filter)?.label}{" "}
-                <DownOutlined />
+                {dropdownOpen ? (
+                  <ChevronUp size={18} />
+                ) : (
+                  <ChevronDown size={18} />
+                )}
               </Button>
             </Dropdown>
 
@@ -240,9 +250,9 @@ function SourceList() {
                 type="text"
                 icon={
                   sortedAsc ? (
-                    <SortDescendingOutlined />
+                    <CalendarArrowUp size={18} />
                   ) : (
-                    <SortAscendingOutlined />
+                    <CalendarArrowDown size={18} />
                   )
                 }
                 onClick={handleToggleSort}

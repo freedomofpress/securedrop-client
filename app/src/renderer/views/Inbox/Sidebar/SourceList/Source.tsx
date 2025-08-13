@@ -1,5 +1,5 @@
 import { Checkbox, Button, Tooltip } from "antd";
-import { StarFilled, StarOutlined, PaperClipOutlined } from "@ant-design/icons";
+import { Star, Paperclip } from "lucide-react";
 import { useTranslation } from "react-i18next";
 
 import type { Source as SourceType } from "../../../../../types";
@@ -63,11 +63,12 @@ function Source({
           size="large"
           icon={
             source.data.is_starred ? (
-              <StarFilled style={{ color: "#eab308" }} />
+              <Star color="#eab308" strokeWidth={3} size={20} />
             ) : (
-              <StarOutlined
+              <Star
+                color="#9ca3af"
+                size={20}
                 className={isActive ? "text-white" : "text-gray-400"}
-                style={{ color: "#9ca3af" }}
               />
             )
           }
@@ -121,7 +122,8 @@ function Source({
               {lastUpdated}
             </span>
             {source.hasAttachment && (
-              <PaperClipOutlined
+              <Paperclip
+                size={18}
                 className={`text-xs ${
                   isActive ? "text-white opacity-80" : "text-gray-400"
                 }`}
