@@ -18,11 +18,11 @@ const DEFAULT_STREAM_MAX_RETRY_ATTEMPTS = 3;
 // Proxies a network request through sd-proxy
 // For streaming requests, `downloadPath` must be specified as
 // the file location where stream data is downloaded
-export async function proxy<T>(
+export async function proxy(
   request: ProxyRequest,
   downloadPath?: string,
   abortSignal?: AbortSignal,
-): Promise<ProxyResponse<T>> {
+): Promise<ProxyResponse> {
   let command = "";
   let commandOptions: string[] = [];
 
@@ -62,7 +62,7 @@ export async function proxy<T>(
   return proxyJSONRequest(request, proxyCommand);
 }
 
-function parseJSONResponse<T>(response: string): ProxyJSONResponse<T> {
+function parseJSONResponse(response: string): ProxyJSONResponse {
   const result = JSON.parse(response);
   const status = result["status"];
   let body = result["body"];
@@ -75,9 +75,7 @@ function parseJSONResponse<T>(response: string): ProxyJSONResponse<T> {
   if (!error) {
     try {
       if (body && typeof body === "string") {
-        body = JSON.parse(body) as T;
-      } else {
-        body = body as T;
+        body = JSON.parse(body);
       }
     } catch (e) {
       console.log(
@@ -93,10 +91,10 @@ function parseJSONResponse<T>(response: string): ProxyJSONResponse<T> {
   };
 }
 
-export async function proxyJSONRequest<T>(
+export async function proxyJSONRequest(
   request: ProxyRequest,
   command: ProxyCommand,
-): Promise<ProxyJSONResponse<T>> {
+): Promise<ProxyJSONResponse> {
   return new Promise((resolve, reject) => {
     const process = child_process.spawn(command.command, command.options, {
       env: { SD_PROXY_ORIGIN: command.proxyOrigin },
@@ -139,12 +137,12 @@ export async function proxyJSONRequest<T>(
   });
 }
 
-export async function proxyStreamRequest<T>(
+export async function proxyStreamRequest(
   request: ProxyRequest,
   command: ProxyCommand,
   downloadPath: string,
   maxRetryAttempts: number,
-): Promise<ProxyResponse<T>> {
+): Promise<ProxyResponse> {
   let writeStream: fs.WriteStream;
   try {
     const downloadDir = path.dirname(downloadPath);
@@ -180,12 +178,12 @@ export async function proxyStreamRequest<T>(
 
 // Streams proxy request through sd-proxy, writing stream output to
 // the provided writeStream.
-export async function proxyStreamInner<T>(
+export async function proxyStreamInner(
   request: ProxyRequest,
   command: ProxyCommand,
   writeStream: Writable,
   offset?: number,
-): Promise<ProxyResponse<T>> {
+): Promise<ProxyResponse> {
   return new Promise((resolve, reject) => {
     let stderr = "";
     let stdout = "";

@@ -21,7 +21,7 @@ async function getIndex(
       Authorization: `Token ${authToken}`,
       "If-None-Match": currentVersion,
     },
-  })) as ProxyJSONResponse<Index>;
+  })) as ProxyJSONResponse;
 
   if (resp.error) {
     return Promise.reject(
@@ -30,7 +30,7 @@ async function getIndex(
   }
 
   if (resp.data) {
-    return resp.data;
+    return resp.data as Index;
   }
 
   // Version matches, there's nothing to do!
@@ -57,7 +57,7 @@ async function fetchMetadata(
       Authorization: `Token ${authToken}`,
     },
     body: JSON.stringify(request),
-  })) as ProxyJSONResponse<MetadataResponse>;
+  })) as ProxyJSONResponse;
 
   if (resp.error) {
     return Promise.reject(
@@ -66,7 +66,7 @@ async function fetchMetadata(
   }
 
   if (resp.data) {
-    return resp.data;
+    return resp.data as MetadataResponse;
   }
   return Promise.reject(
     `Error fetching metadata from server: ${resp.status}: no data`,

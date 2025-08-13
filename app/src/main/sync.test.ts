@@ -46,9 +46,7 @@ function mockItemMetadata(uuid: string, source_uuid: string): ItemMetadata {
 describe("syncMetadata", () => {
   let db: DB;
 
-  function mockProxyResponses(
-    responses: ProxyJSONResponse<any>[], // eslint-disable-line @typescript-eslint/no-explicit-any
-  ): MockInstance {
+  function mockProxyResponses(responses: ProxyJSONResponse[]): MockInstance {
     const mock = vi.spyOn(proxyModule, "proxy");
     responses.forEach((response) => {
       mock.mockImplementationOnce(() => {
