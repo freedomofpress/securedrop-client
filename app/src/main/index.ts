@@ -14,7 +14,6 @@ import type { ProxyRequest, SyncMetadataRequest } from "../types";
 import { syncMetadata } from "./sync";
 
 const db = new DB();
-db.runMigrations();
 
 function createWindow(): void {
   const mainWindow = new BrowserWindow({

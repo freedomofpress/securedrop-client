@@ -109,3 +109,45 @@ export type TokenResponse = {
   journalist_first_name: string;
   journalist_last_name: string;
 };
+
+/** UI Types */
+
+export type Source = {
+  uuid: string;
+  data: SourceMetadata;
+  isRead: boolean;
+  hasAttachment: boolean;
+  showMessagePreview: boolean;
+  messagePreview: string;
+};
+
+export type SourceWithItems = {
+  uuid: string;
+  data: SourceMetadata;
+  items: Item[];
+};
+
+// Database representation
+export type SourceRow = {
+  uuid: string;
+  data: string; // JSON stringified SourceMetadata
+  is_seen: boolean;
+  has_attachment: boolean;
+  show_message_preview: boolean;
+  message_preview: string;
+};
+
+export type Item = {
+  uuid: string;
+  data: ItemMetadata;
+  plaintext?: string;
+  filename?: string;
+};
+
+// Database representation
+export type ItemRow = {
+  uuid: string;
+  data: string; // JSON stringified ItemMetadata
+  plaintext?: string;
+  filename?: string;
+};
