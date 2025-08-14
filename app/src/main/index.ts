@@ -10,7 +10,13 @@ import {
 
 import { DB } from "./database";
 import { proxy } from "./proxy";
-import type { ProxyRequest, SyncMetadataRequest } from "../types";
+import type {
+  ProxyRequest,
+  ProxyResponse,
+  Source,
+  SourceWithItems,
+  SyncMetadataRequest,
+} from "../types";
 import { syncMetadata } from "./sync";
 
 const db = new DB();
@@ -72,10 +78,26 @@ app.whenReady().then(() => {
     optimizer.watchWindowShortcuts(window);
   });
 
-  ipcMain.handle("request", async (_event, request: ProxyRequest) => {
-    const result = await proxy(request);
-    return result;
+  ipcMain.handle(
+    "request",
+    async (_event, request: ProxyRequest): Promise<ProxyResponse> => {
+      const result = await proxy(request);
+      return result;
+    },
+  );
+
+  ipcMain.handle("getSources", async (_event): Promise<Source[]> => {
+    const sources = db.getSources();
+    return sources;
   });
+
+  ipcMain.handle(
+    "getSourceWithItems",
+    async (_event, sourceUuid: string): Promise<SourceWithItems> => {
+      const sourceWithItems = db.getSourceWithItems(sourceUuid);
+      return sourceWithItems;
+    },
+  );
 
   ipcMain.handle(
     "syncMetadata",
