@@ -28,7 +28,16 @@ On a Debian Bookworm VM, we recommend installing Node and Rust via [nvm](https:/
 pnpm install
 ```
 
-### 2. Start Development Server
+### 2. Generate and Insert Test Data
+
+In order to see sources in the interface, you need to generate test data and insert it. The `test-data-generate` script requires that you pass in the path to the `securedrop` repo, and the number of sources you want to generate.
+
+```bash
+pnpm test-data-generate ../../securedrop 1000
+pnpm test-data-insert
+```
+
+### 3. Start Development Server
 
 ```bash
 pnpm dev
@@ -51,6 +60,8 @@ This will:
 - `pnpm lint` - Check code style and linting
 - `pnpm fix` - Auto-fix linting and formatting issues
 - `pnpm typecheck` - Run TypeScript type checking
+- `pnpm test-data-generate` - Generate random test data into `src/test-data.sql`
+- `pnpm test-data-insert` - Insert the test data into the database
 
 ## Development
 
