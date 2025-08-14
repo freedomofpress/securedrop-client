@@ -85,6 +85,10 @@ app.whenReady().then(() => {
     },
   );
 
+  ipcMain.handle("getSystemLanguage", async (_event): Promise<string> => {
+    const systemLanguage = process.env.LANG || app.getLocale() || "en";
+    return systemLanguage;
+  });
   createWindow();
 });
 

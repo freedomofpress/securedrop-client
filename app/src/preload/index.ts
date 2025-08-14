@@ -41,6 +41,9 @@ const electronAPI = {
   syncMetadata: logIpcCall("syncMetadata", (request: SyncMetadataRequest) =>
     ipcRenderer.invoke("syncMetadata", request),
   ),
+  getSystemLanguage: logIpcCall<string>("getSystemLanguage", () =>
+    ipcRenderer.invoke("getSystemLanguage"),
+  ),
 };
 
 contextBridge.exposeInMainWorld("electronAPI", electronAPI);
