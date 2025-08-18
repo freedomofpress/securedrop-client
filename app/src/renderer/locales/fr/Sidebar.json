@@ -1,0 +1,30 @@
+{
+  "account": {
+    "signOut": "Se déconnecter",
+    "offlineMode": "Mode hors ligne",
+    "signIn": "Se connecter"
+  },
+  "sourcelist": {
+    "filters": {
+      "all": "Tous",
+      "read": "Lus",
+      "unread": "Non lus",
+      "starred": "Favoris",
+      "unstarred": "Non favoris"
+    },
+    "actions": {
+      "bulkDelete": "Supprimer les sources sélectionnées",
+      "bulkToggleRead": "Basculer le statut de lecture des sources sélectionnées"
+    },
+    "search": {
+      "placeholder": "Rechercher"
+    },
+    "sort": {
+      "tooltip": "Basculer l'ordre de tri"
+    }
+  },
+  "source": {
+    "encrypted": "chiffré...",
+    "toggleStar": "Basculer le favori"
+  }
+}

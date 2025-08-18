@@ -5,6 +5,8 @@ import type {
   ProxyJSONResponse,
   ProxyRequest,
   ProxyResponse,
+  Source,
+  SourceWithItems,
   SyncMetadataRequest,
 } from "../types";
 
@@ -40,6 +42,14 @@ const electronAPI = {
   ),
   syncMetadata: logIpcCall("syncMetadata", (request: SyncMetadataRequest) =>
     ipcRenderer.invoke("syncMetadata", request),
+  ),
+  getSources: logIpcCall<Source[]>("getSources", () =>
+    ipcRenderer.invoke("getSources"),
+  ),
+  getSourceWithItems: logIpcCall<SourceWithItems>(
+    "getSourceWithItems",
+    (sourceUuid: string) =>
+      ipcRenderer.invoke("getSourceWithItems", sourceUuid),
   ),
   getSystemLanguage: logIpcCall<string>("getSystemLanguage", () =>
     ipcRenderer.invoke("getSystemLanguage"),
