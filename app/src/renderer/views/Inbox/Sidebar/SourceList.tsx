@@ -12,7 +12,6 @@ import {
 import { useTranslation } from "react-i18next";
 
 import Source from "./SourceList/Source";
-import LoadingIndicator from "../../../components/LoadingIndicator";
 import { useDebounce, useInfiniteScroll } from "../../../hooks";
 
 type filterOption = "all" | "read" | "unread" | "starred" | "unstarred";
@@ -232,8 +231,8 @@ function SourceList() {
 
           {/* Loading indicator at the bottom when loading more */}
           {loading && (
-            <div className="flex justify-center py-4">
-              <LoadingIndicator />
+            <div className="text-center py-2 text-sm text-gray-500">
+              Loading sources...
             </div>
           )}
 
