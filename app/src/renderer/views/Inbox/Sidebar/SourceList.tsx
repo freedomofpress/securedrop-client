@@ -232,7 +232,7 @@ function SourceList() {
           {/* Loading indicator at the bottom when loading more */}
           {loading && (
             <div className="text-center py-2 text-sm text-gray-500">
-              Loading sources...
+              Loading more sources...
             </div>
           )}
 
