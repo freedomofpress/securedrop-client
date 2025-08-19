@@ -115,9 +115,29 @@ export function reconcileIndex(
     db.deleteItems(itemsToDelete);
   }
 
+  const journalistsToUpdate: string[] = [];
+  Object.keys(serverIndex.journalists).forEach((journalistID) => {
+    if (
+      !clientIndex.journalists[journalistID] ||
+      serverIndex.journalists[journalistID] !=
+        clientIndex.journalists[journalistID]
+    ) {
+      journalistsToUpdate.push(journalistID);
+    }
+    // Also check for journalists to delete
+    const journalistsToDelete = Object.keys(clientIndex.journalists).filter(
+      (journalist) =>
+        !Object.keys(serverIndex.journalists).includes(journalist),
+    );
+    if (journalistsToDelete.length > 0) {
+      db.deleteJournalists(journalistsToDelete);
+    }
+  });
+
   return {
     sources: sourcesToUpdate,
     items: itemsToUpdate,
+    journalists: journalistsToUpdate,
   };
 }
 
