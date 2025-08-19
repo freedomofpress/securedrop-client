@@ -14,6 +14,7 @@ import { useTranslation } from "react-i18next";
 import type { Source as SourceType } from "../../../../types";
 import Source from "./SourceList/Source";
 import LoadingIndicator from "../../../components/LoadingIndicator";
+import { useDebounce } from "../../../hooks";
 
 type filterOption = "all" | "read" | "unread" | "starred" | "unstarred";
 
@@ -32,15 +33,23 @@ function SourceList() {
   const [filter, setFilter] = useState<filterOption>("all");
   const [searchTerm, setSearchTerm] = useState("");
 
+  // Debounce search term to avoid too many queries
+  const debouncedSearchTerm = useDebounce(searchTerm, 300);
+
+  // Fetch sources whenever filter parameters change
   useEffect(() => {
     const fetchSources = async () => {
       setLoading(true);
-      const sources = await window.electronAPI.getSources();
+      const sources = await window.electronAPI.getSources({
+        searchTerm: debouncedSearchTerm,
+        filter,
+        sortedAsc,
+      });
       setSources(sources);
       setLoading(false);
     };
     fetchSources();
-  }, []);
+  }, [debouncedSearchTerm, filter, sortedAsc]);
 
   // Handle select all checkbox
   const handleSelectAll = (checked: boolean) => {
@@ -111,44 +120,6 @@ function SourceList() {
   const handleFilterChange = (newFilter: filterOption) => {
     setFilter(newFilter);
   };
-
-  // Filter and sort sources based on the selected filter and sort order
-  const filteredSources = sources
-    .filter((source) => {
-      // First filter by search term
-      const matchesSearch = source.data.journalist_designation
-        .toLowerCase()
-        .includes(searchTerm.toLowerCase());
-
-      if (!matchesSearch) {
-        return false;
-      }
-
-      // Then filter by the selected filter option
-      switch (filter) {
-        case "unread":
-          return !source.isRead;
-        case "read":
-          return source.isRead;
-        case "starred":
-          return source.data.is_starred;
-        case "unstarred":
-          return !source.data.is_starred;
-        case "all":
-        default:
-          return true; // "all" filter shows everything
-      }
-    })
-    .sort((a, b) => {
-      const dateA = new Date(a.data.last_updated).getTime();
-      const dateB = new Date(b.data.last_updated).getTime();
-
-      if (sortedAsc) {
-        return dateA - dateB; // Ascending: oldest first
-      } else {
-        return dateB - dateA; // Descending: newest first
-      }
-    });
 
   const dropdownItems = [
     {
@@ -257,7 +228,7 @@ function SourceList() {
       <div className="flex-1 min-h-0 relative">
         {loading && <LoadingIndicator />}
         <div className="absolute inset-0 overflow-y-auto">
-          {filteredSources.map((source) => {
+          {sources.map((source) => {
             const isSelected = selectedSources.has(source.uuid);
             const isActive = activeSourceUuid === source.uuid;
 

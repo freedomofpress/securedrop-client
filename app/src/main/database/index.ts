@@ -269,13 +269,61 @@ export class DB {
     return Boolean(value);
   }
 
-  getSources(): Source[] {
+  getSources(params?: {
+    searchTerm?: string;
+    filter?: "all" | "read" | "unread" | "starred" | "unstarred";
+    sortedAsc?: boolean;
+  }): Source[] {
     if (!this.db) {
       throw new Error("Database is not open");
     }
 
-    // Select sources
-    const stmt = this.db.prepare(`
+    const searchTerm = params?.searchTerm || "";
+    const filter = params?.filter || "all";
+    const sortedAsc = params?.sortedAsc || false;
+
+    // Build WHERE clause conditions
+    const conditions: string[] = [];
+    const parameters: (string | number)[] = [];
+
+    // Search by journalist designation
+    if (searchTerm) {
+      conditions.push(
+        `LOWER(json_extract(data, '$.journalist_designation')) LIKE LOWER(?)`,
+      );
+      parameters.push(`%${searchTerm}%`);
+    }
+
+    // Filter by read status and starred status
+    switch (filter) {
+      case "read":
+        conditions.push("is_seen = 1");
+        break;
+      case "unread":
+        conditions.push("is_seen = 0");
+        break;
+      case "starred":
+        conditions.push(`json_extract(data, '$.is_starred') = 1`);
+        break;
+      case "unstarred":
+        conditions.push(`json_extract(data, '$.is_starred') = 0`);
+        break;
+      case "all":
+      default:
+        // No additional filter
+        break;
+    }
+
+    // Build the WHERE clause
+    const whereClause =
+      conditions.length > 0 ? `WHERE ${conditions.join(" AND ")}` : "";
+
+    // Build ORDER BY clause
+    const orderDirection = sortedAsc ? "ASC" : "DESC";
+    const orderClause = `ORDER BY json_extract(data, '$.last_updated') ${orderDirection}`;
+
+    // Complete query
+    const query = `
       SELECT
         uuid,
         data,
@@ -284,9 +332,12 @@ export class DB {
         show_message_preview,
         message_preview
       FROM sources
-    `);
+      ${whereClause}
+      ${orderClause}
+    `;
 
-    const rows = stmt.all() as Array<SourceRow>;
+    const stmt = this.db.prepare(query);
+    const rows = stmt.all(...parameters) as Array<SourceRow>;
 
     return rows.map((row) => {
       const data = JSON.parse(row.data) as SourceMetadata;

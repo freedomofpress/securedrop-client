@@ -43,8 +43,13 @@ const electronAPI = {
   syncMetadata: logIpcCall("syncMetadata", (request: SyncMetadataRequest) =>
     ipcRenderer.invoke("syncMetadata", request),
   ),
-  getSources: logIpcCall<Source[]>("getSources", () =>
-    ipcRenderer.invoke("getSources"),
+  getSources: logIpcCall<Source[]>(
+    "getSources",
+    (params?: {
+      searchTerm?: string;
+      filter?: "all" | "read" | "unread" | "starred" | "unstarred";
+      sortedAsc?: boolean;
+    }) => ipcRenderer.invoke("getSources", params),
   ),
   getSourceWithItems: logIpcCall<SourceWithItems>(
     "getSourceWithItems",

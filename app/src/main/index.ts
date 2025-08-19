@@ -86,10 +86,20 @@ app.whenReady().then(() => {
     },
   );
 
-  ipcMain.handle("getSources", async (_event): Promise<Source[]> => {
-    const sources = db.getSources();
-    return sources;
-  });
+  ipcMain.handle(
+    "getSources",
+    async (
+      _event,
+      params?: {
+        searchTerm?: string;
+        filter?: "all" | "read" | "unread" | "starred" | "unstarred";
+        sortedAsc?: boolean;
+      },
+    ): Promise<Source[]> => {
+      const sources = db.getSources(params);
+      return sources;
+    },
+  );
 
   ipcMain.handle(
     "getSourceWithItems",

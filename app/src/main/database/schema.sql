@@ -1,24 +1,14 @@
 CREATE TABLE IF NOT EXISTS "schema_migrations" (version varchar(128) primary key);
 CREATE TABLE sources (
   uuid text primary key,
-  data json,
-  version text,
-  is_seen integer generated always as (json_extract (data, '$.is_seen')) stored,
-  has_attachment integer generated always as (json_extract (data, '$.has_attachment')) stored,
-  show_message_preview integer default 0,
-  message_preview text
-);
+  data json
+, version text, is_seen integer generated always as (json_extract (data, '$.is_seen')) stored, has_attachment integer generated always as (json_extract (data, '$.has_attachment')) stored, show_message_preview integer default 0, message_preview text);
 CREATE TABLE items (
   uuid text primary key,
   data json,
   plaintext text,
-  filename text,
-  version text,
-  kind text generated always as (json_extract (data, '$.kind')) stored,
-  is_read integer generated always as (json_extract (data, '$.is_read')) stored,
-  last_updated integer generated always as (json_extract (data, '$.last_updated')) stored,
-  source_uuid text generated always as (json_extract (data, '$.source'))
-);
+  filename text
+, version text, kind text generated always as (json_extract (data, '$.kind')) stored, is_read integer generated always as (json_extract (data, '$.is_read')) stored, last_updated integer generated always as (json_extract (data, '$.last_updated')) stored, source_uuid text generated always as (json_extract (data, '$.source')));
 CREATE TABLE state_history (
     version text,
     updated timestamp default current_timestamp,
