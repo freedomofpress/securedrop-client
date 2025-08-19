@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useNavigate, useParams } from "react-router";
 import { Checkbox, Button, Dropdown, Input, Tooltip } from "antd";
 import {
@@ -11,10 +11,9 @@ import {
 } from "@ant-design/icons";
 import { useTranslation } from "react-i18next";
 
-import type { Source as SourceType } from "../../../../types";
 import Source from "./SourceList/Source";
 import LoadingIndicator from "../../../components/LoadingIndicator";
-import { useDebounce } from "../../../hooks";
+import { useDebounce, useInfiniteScroll } from "../../../hooks";
 
 type filterOption = "all" | "read" | "unread" | "starred" | "unstarred";
 
@@ -23,8 +22,6 @@ function SourceList() {
   const navigate = useNavigate();
   const { sourceUuid: activeSourceUuid } = useParams<{ sourceUuid?: string }>();
 
-  const [loading, setLoading] = useState(false);
-  const [sources, setSources] = useState<SourceType[]>([]);
   const [selectedSources, setSelectedSources] = useState<Set<string>>(
     new Set(),
   );
@@ -36,20 +33,13 @@ function SourceList() {
   // Debounce search term to avoid too many queries
   const debouncedSearchTerm = useDebounce(searchTerm, 300);
 
-  // Fetch sources whenever filter parameters change
-  useEffect(() => {
-    const fetchSources = async () => {
-      setLoading(true);
-      const sources = await window.electronAPI.getSources({
-        searchTerm: debouncedSearchTerm,
-        filter,
-        sortedAsc,
-      });
-      setSources(sources);
-      setLoading(false);
-    };
-    fetchSources();
-  }, [debouncedSearchTerm, filter, sortedAsc]);
+  // Use infinite scroll hook
+  const { sources, loading, hasMore, totalCount, containerRef } =
+    useInfiniteScroll({
+      searchTerm: debouncedSearchTerm,
+      filter,
+      sortedAsc,
+    });
 
   // Handle select all checkbox
   const handleSelectAll = (checked: boolean) => {
@@ -80,18 +70,8 @@ function SourceList() {
     currentlyStarred: boolean,
   ) => {
     // TODO: Implement API call to toggle star status
-
-    // Update local state optimistically
-    setSources(
-      sources.map((source) =>
-        source.uuid === sourceId
-          ? {
-              ...source,
-              data: { ...source.data, is_starred: !currentlyStarred },
-            }
-          : source,
-      ),
-    );
+    // For now, just log the action
+    console.log(`Toggle star for source ${sourceId}: ${!currentlyStarred}`);
   };
 
   // Handle source click to navigate to source route
@@ -115,10 +95,16 @@ function SourceList() {
 
   const handleToggleSort = () => {
     setSortedAsc(!sortedAsc);
+    // Clear selections when sort changes
+    setSelectedSources(new Set());
+    setAllSelected(false);
   };
 
   const handleFilterChange = (newFilter: filterOption) => {
     setFilter(newFilter);
+    // Clear selections when filter changes
+    setSelectedSources(new Set());
+    setAllSelected(false);
   };
 
   const dropdownItems = [
@@ -226,8 +212,7 @@ function SourceList() {
 
       {/* Sources list */}
       <div className="flex-1 min-h-0 relative">
-        {loading && <LoadingIndicator />}
-        <div className="absolute inset-0 overflow-y-auto">
+        <div ref={containerRef} className="absolute inset-0 overflow-y-auto">
           {sources.map((source) => {
             const isSelected = selectedSources.has(source.uuid);
             const isActive = activeSourceUuid === source.uuid;
@@ -244,6 +229,28 @@ function SourceList() {
               />
             );
           })}
+
+          {/* Loading indicator at the bottom when loading more */}
+          {loading && (
+            <div className="flex justify-center py-4">
+              <LoadingIndicator />
+            </div>
+          )}
+
+          {/* Show total count and load status */}
+          {!loading && sources.length > 0 && (
+            <div className="text-center py-2 text-sm text-gray-500">
+              Showing {sources.length} of {totalCount} sources
+              {hasMore && " (scroll for more)"}
+            </div>
+          )}
+
+          {/* Empty state */}
+          {!loading && sources.length === 0 && (
+            <div className="flex items-center justify-center h-full text-gray-500">
+              No sources found
+            </div>
+          )}
         </div>
       </div>
     </div>

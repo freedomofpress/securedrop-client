@@ -94,10 +94,26 @@ app.whenReady().then(() => {
         searchTerm?: string;
         filter?: "all" | "read" | "unread" | "starred" | "unstarred";
         sortedAsc?: boolean;
+        limit?: number;
+        offset?: number;
       },
     ): Promise<Source[]> => {
       const sources = db.getSources(params);
       return sources;
+    },
+  );
+
+  ipcMain.handle(
+    "getSourcesCount",
+    async (
+      _event,
+      params?: {
+        searchTerm?: string;
+        filter?: "all" | "read" | "unread" | "starred" | "unstarred";
+      },
+    ): Promise<number> => {
+      const count = db.getSourcesCount(params);
+      return count;
     },
   );
 

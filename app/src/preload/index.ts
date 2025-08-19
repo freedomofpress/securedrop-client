@@ -49,7 +49,16 @@ const electronAPI = {
       searchTerm?: string;
       filter?: "all" | "read" | "unread" | "starred" | "unstarred";
       sortedAsc?: boolean;
+      limit?: number;
+      offset?: number;
     }) => ipcRenderer.invoke("getSources", params),
+  ),
+  getSourcesCount: logIpcCall<number>(
+    "getSourcesCount",
+    (params?: {
+      searchTerm?: string;
+      filter?: "all" | "read" | "unread" | "starred" | "unstarred";
+    }) => ipcRenderer.invoke("getSourcesCount", params),
   ),
   getSourceWithItems: logIpcCall<SourceWithItems>(
     "getSourceWithItems",

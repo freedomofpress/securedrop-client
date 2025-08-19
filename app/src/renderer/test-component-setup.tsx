@@ -85,6 +85,7 @@ beforeEach(() => {
         isRead: false,
       },
     ]),
+    getSourcesCount: vi.fn().mockResolvedValue(3),
     getSourceWithItems: vi.fn().mockResolvedValue({
       uuid: "source-1",
       data: {

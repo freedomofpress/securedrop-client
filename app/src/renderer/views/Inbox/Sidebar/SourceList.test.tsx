@@ -46,6 +46,7 @@ vi.mock("./SourceList/Source", () => ({
 
 describe("Sources Component", () => {
   const mockGetSources = vi.fn();
+  const mockGetSourcesCount = vi.fn();
 
   // Mock sources data with different states for comprehensive testing
   const mockSources: SourceType[] = [
@@ -119,10 +120,16 @@ describe("Sources Component", () => {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     (window as any).electronAPI = {
       getSources: mockGetSources,
+      getSourcesCount: mockGetSourcesCount,
     };
 
-    // Default mock implementation
-    mockGetSources.mockResolvedValue(mockSources);
+    // Default mock implementation - simulate pagination
+    mockGetSources.mockImplementation(({ limit = 100, offset = 0 } = {}) => {
+      const startIndex = offset;
+      const endIndex = Math.min(startIndex + limit, mockSources.length);
+      return Promise.resolve(mockSources.slice(startIndex, endIndex));
+    });
+    mockGetSourcesCount.mockResolvedValue(mockSources.length);
   });
 
   afterEach(() => {

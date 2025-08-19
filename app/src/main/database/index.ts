@@ -273,6 +273,8 @@ export class DB {
     searchTerm?: string;
     filter?: "all" | "read" | "unread" | "starred" | "unstarred";
     sortedAsc?: boolean;
+    limit?: number;
+    offset?: number;
   }): Source[] {
     if (!this.db) {
       throw new Error("Database is not open");
@@ -281,6 +283,8 @@ export class DB {
     const searchTerm = params?.searchTerm || "";
     const filter = params?.filter || "all";
     const sortedAsc = params?.sortedAsc || false;
+    const limit = params?.limit;
+    const offset = params?.offset || 0;
 
     // Build WHERE clause conditions
     const conditions: string[] = [];
@@ -322,6 +326,9 @@ export class DB {
     const orderDirection = sortedAsc ? "ASC" : "DESC";
     const orderClause = `ORDER BY json_extract(data, '$.last_updated') ${orderDirection}`;
 
+    // Build LIMIT clause
+    const limitClause = limit ? `LIMIT ${limit} OFFSET ${offset}` : "";
+
     // Complete query
     const query = `
       SELECT
@@ -334,6 +341,7 @@ export class DB {
       FROM sources
       ${whereClause}
       ${orderClause}
+      ${limitClause}
     `;
 
     const stmt = this.db.prepare(query);
@@ -350,6 +358,61 @@ export class DB {
         messagePreview: row.message_preview,
       };
     });
+  }
+
+  getSourcesCount(params?: {
+    searchTerm?: string;
+    filter?: "all" | "read" | "unread" | "starred" | "unstarred";
+  }): number {
+    if (!this.db) {
+      throw new Error("Database is not open");
+    }
+
+    const searchTerm = params?.searchTerm || "";
+    const filter = params?.filter || "all";
+
+    // Build WHERE clause conditions (same as getSources)
+    const conditions: string[] = [];
+    const parameters: (string | number)[] = [];
+
+    // Search by journalist designation
+    if (searchTerm) {
+      conditions.push(
+        `json_extract(data, '$.journalist_designation') LIKE ? COLLATE NOCASE`,
+      );
+      parameters.push(`%${searchTerm}%`);
+    }
+
+    // Filter by read status and starred status
+    switch (filter) {
+      case "read":
+        conditions.push("is_seen = 1");
+        break;
+      case "unread":
+        conditions.push("is_seen = 0");
+        break;
+      case "starred":
+        conditions.push(`json_extract(data, '$.is_starred') = 1`);
+        break;
+      case "unstarred":
+        conditions.push(`json_extract(data, '$.is_starred') = 0`);
+        break;
+      case "all":
+      default:
+        // No additional filter
+        break;
+    }
+
+    // Build the WHERE clause
+    const whereClause =
+      conditions.length > 0 ? `WHERE ${conditions.join(" AND ")}` : "";
+
+    // Count query
+    const query = `SELECT COUNT(*) as count FROM sources ${whereClause}`;
+
+    const stmt = this.db.prepare(query);
+    const result = stmt.get(...parameters) as { count: number };
+    return result.count;
   }
 
   getSourceWithItems(sourceUuid: string): SourceWithItems {
