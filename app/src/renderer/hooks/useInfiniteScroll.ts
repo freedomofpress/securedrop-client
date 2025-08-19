@@ -1,27 +1,5 @@
-import { useDispatch, useSelector, useStore } from "react-redux";
-import { useEffect, useState, useCallback, useRef } from "react";
-import type { AppDispatch, AppStore, RootState } from "./store";
-import type { Source as SourceType } from "../types";
-
-export const useAppDispatch = useDispatch.withTypes<AppDispatch>();
-export const useAppSelector = useSelector.withTypes<RootState>();
-export const useAppStore = useStore.withTypes<AppStore>();
-
-export function useDebounce<T>(value: T, delay: number): T {
-  const [debouncedValue, setDebouncedValue] = useState<T>(value);
-
-  useEffect(() => {
-    const handler = setTimeout(() => {
-      setDebouncedValue(value);
-    }, delay);
-
-    return () => {
-      clearTimeout(handler);
-    };
-  }, [value, delay]);
-
-  return debouncedValue;
-}
+import { useState, useCallback, useRef, useEffect } from "react";
+import type { Source as SourceType } from "../../types";
 
 const PAGE_SIZE = 100;
 const VIRTUAL_WINDOW_SIZE = 300; // Keep 300 items in memory
