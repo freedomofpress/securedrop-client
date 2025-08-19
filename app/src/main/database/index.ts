@@ -289,7 +289,7 @@ export class DB {
     // Search by journalist designation
     if (searchTerm) {
       conditions.push(
-        `LOWER(json_extract(data, '$.journalist_designation')) LIKE LOWER(?)`,
+        `json_extract(data, '$.journalist_designation') LIKE ? COLLATE NOCASE`,
       );
       parameters.push(`%${searchTerm}%`);
     }
