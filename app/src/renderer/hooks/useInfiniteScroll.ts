@@ -44,19 +44,6 @@ export function useInfiniteScroll(
     setTotalCount(0);
   }, []);
 
-  // Check if params changed and reset if needed
-  useEffect(() => {
-    const paramsChanged =
-      lastParamsRef.current.searchTerm !== params.searchTerm ||
-      lastParamsRef.current.filter !== params.filter ||
-      lastParamsRef.current.sortedAsc !== params.sortedAsc;
-
-    if (paramsChanged) {
-      lastParamsRef.current = params;
-      resetPagination();
-    }
-  }, [params, resetPagination]);
-
   // Load sources for a specific offset
   const loadSources = useCallback(
     async (offset: number, append: boolean = true) => {
@@ -66,13 +53,15 @@ export function useInfiniteScroll(
       setLoading(true);
 
       try {
+        // Use the current params from the ref to avoid stale closures
+        const currentParams = lastParamsRef.current;
         const [sourcesResult, countResult] = await Promise.all([
           window.electronAPI.getSources({
-            ...params,
+            ...currentParams,
             limit: PAGE_SIZE,
             offset,
           }),
-          window.electronAPI.getSourcesCount(params),
+          window.electronAPI.getSourcesCount(currentParams),
         ]);
 
         setTotalCount(countResult);
@@ -103,15 +92,42 @@ export function useInfiniteScroll(
         isLoadingRef.current = false;
       }
     },
-    [params],
+    [], // Remove params dependency to prevent recreation
   );
+
+  // Check if params changed and reset if needed, then load initial data
+  useEffect(() => {
+    const paramsChanged =
+      lastParamsRef.current.searchTerm !== params.searchTerm ||
+      lastParamsRef.current.filter !== params.filter ||
+      lastParamsRef.current.sortedAsc !== params.sortedAsc;
+
+    if (paramsChanged || sources.length === 0) {
+      lastParamsRef.current = params;
+
+      if (paramsChanged) {
+        resetPagination();
+      }
+
+      // Load the initial data
+      if (!isLoadingRef.current) {
+        loadSources(0, false);
+      }
+    }
+  }, [
+    params.searchTerm,
+    params.filter,
+    params.sortedAsc,
+    sources.length,
+    resetPagination,
+  ]);
 
   // Load more sources when scrolling down
   const loadMore = useCallback(() => {
     if (hasMore && !loading) {
       loadSources(currentOffset);
     }
-  }, [hasMore, loading, currentOffset, loadSources]);
+  }, [hasMore, loading, currentOffset]);
 
   // Load earlier sources when scrolling up
   const loadEarlier = useCallback(() => {
@@ -120,7 +136,7 @@ export function useInfiniteScroll(
       setWindowStart(newOffset);
       loadSources(newOffset, false);
     }
-  }, [windowStart, loading, loadSources]);
+  }, [windowStart, loading]);
 
   // Scroll event handler
   useEffect(() => {
@@ -145,13 +161,6 @@ export function useInfiniteScroll(
     container.addEventListener("scroll", handleScroll, { passive: true });
     return () => container.removeEventListener("scroll", handleScroll);
   }, [hasMore, loading, loadMore, loadEarlier, windowStart]);
-
-  // Initial load
-  useEffect(() => {
-    if (sources.length === 0 && !loading) {
-      loadSources(0, false);
-    }
-  }, [sources.length, loading, loadSources]);
 
   return {
     sources,
