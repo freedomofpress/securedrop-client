@@ -39,5 +39,6 @@ override_dh_installdeb:
 override_dh_installsystemd:
 	dh_installsystemd --name securedrop-log-server
 	dh_installsystemd --name securedrop-logging-disabled
-	dh_installsystemd --name securedrop-whonix-config
+	dh_installsystemd --name securedrop-proxy-onion-config
+	dh_installsystemd --name securedrop-arti
 	dh_installsystemd --name securedrop-mime-handling

@@ -37,7 +37,8 @@ Description: Python module and qrexec service to store logs for SecureDrop Works
 
 Package: securedrop-proxy
 Architecture: any
-Depends: ${misc:Depends}, ${shlibs:Depends}, libqubesdb
+# TODO: add securedrop-arti once that's published
+Depends: ${misc:Depends}, ${shlibs:Depends}, libqubesdb, python3, python3-cryptography, python3-qubesdb
 Description: This is securedrop Qubes proxy service
  This package provides the network proxy on Qubes to talk to the SecureDrop server.
 
@@ -48,14 +49,6 @@ Depends: ${misc:Depends}, python3, python3-qubesdb
 Description: Tools for configuring non-Qubes-aware applications from QubesDB.
  This package provides tools for configuring non-Qubes-aware applications from
  QubesDB.
-
-Package: securedrop-whonix-config
-Section: admin
-Architecture: all
-# FIXME: s/tor/anon-gw-anonymizer-config/ (requires Whonix repositories in piuparts)
-Depends: ${misc:Depends}, securedrop-qubesdb-tools, tor
-Description: Whonix configuration for SecureDrop.
- This package configures Whonix/Tor for SecureDrop.
 
 Package: securedrop-workstation-config
 Architecture: all
