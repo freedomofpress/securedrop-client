@@ -5,7 +5,7 @@ import { cleanup, render, type RenderResult } from "@testing-library/react";
 import * as matchers from "@testing-library/jest-dom/matchers";
 import { MemoryRouter, useLocation } from "react-router";
 import { Provider } from "react-redux";
-import React from "react";
+import React, { memo } from "react";
 
 import { setupStore, type RootState } from "./store";
 import "./i18n";
@@ -191,3 +191,39 @@ export const renderWithProviders = (
     ...renderResult,
   };
 };
+
+// Generic function to create a memoized component wrapper that tracks render calls
+export function createMockComponent<T extends Record<string, any>>(
+  Component: React.ComponentType<T>,
+) {
+  const mockRenderCount = vi.fn();
+
+  const MockComponent = memo((props: T) => {
+    mockRenderCount(props);
+    return React.createElement(Component, props);
+  });
+
+  return {
+    MockComponent,
+    mockRenderCount,
+  };
+}
+
+// Data-driven memoization test helper
+export function testMemoization<T extends Record<string, any>>(
+  Component: React.ComponentType<T>,
+  testCases: Array<[T, number]>,
+) {
+  return () => {
+    const { MockComponent, mockRenderCount } = createMockComponent(Component);
+
+    const { rerender } = render(<MockComponent {...testCases[0][0]} />);
+    expect(mockRenderCount).toHaveBeenCalledTimes(testCases[0][1]);
+
+    for (let i = 1; i < testCases.length; i++) {
+      const [props, expectedCount] = testCases[i];
+      rerender(<MockComponent {...props} />);
+      expect(mockRenderCount).toHaveBeenCalledTimes(expectedCount);
+    }
+  };
+}
