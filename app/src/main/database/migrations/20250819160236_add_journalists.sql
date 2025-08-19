@@ -2,7 +2,7 @@
 CREATE TABLE IF NOT EXISTS journalists (
     uuid text primary key,
     data json,
-    version text,
+    version text
 );
 
 -- migrate:down

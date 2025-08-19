@@ -1,6 +1,11 @@
 import { useNavigate } from "react-router";
 import { Button, Typography } from "antd";
-import { UserOutlined, LoginOutlined, LogoutOutlined } from "@ant-design/icons";
+import {
+  UserOutlined,
+  LoginOutlined,
+  LogoutOutlined,
+  ReloadOutlined,
+} from "@ant-design/icons";
 import { useTranslation } from "react-i18next";
 
 import { useAppDispatch, useAppSelector } from "../../../hooks";
@@ -26,6 +31,13 @@ function Account() {
     navigate("/sign-in");
   };
 
+  const sync = () => {
+    console.log("syncing metadata");
+    window.electronAPI.syncMetadata({
+      authToken: session.authData?.token,
+    });
+  };
+
   return (
     <div className="sd-border-secondary sd-bg-primary border-b p-2 h-12 flex items-center justify-between flex-shrink-0">
       {session.status == SessionStatus.Auth ? (
@@ -37,6 +49,13 @@ function Account() {
               ? `${session.authData?.journalistFirstName || ""} ${session.authData?.journalistLastName || ""}`.trim()
               : "Signed in"}
           </Typography.Text>
+
+          <Button
+            type="filled"
+            icon={<ReloadOutlined />}
+            size="small"
+            onClick={sync}
+          />
 
           <Button
             type="dashed"

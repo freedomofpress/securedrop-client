@@ -64,6 +64,11 @@ export class DB {
     void
   >;
   private deleteItem: Statement<{ id: string }, void>;
+
+  private selectAllJournalistVersion: Statement<
+    [],
+    { uuid: string; version: string }
+  >;
   private upsertJournalist: Statement<
     { id: string; data: string; version: string },
     void
@@ -110,6 +115,9 @@ export class DB {
       "INSERT INTO items (uuid, data, version) VALUES (@id, @data, @version) ON CONFLICT(uuid) DO UPDATE SET data=@data, version=@version",
     );
     this.deleteItem = this.db.prepare("DELETE FROM items WHERE uuid = @id");
+    this.selectAllJournalistVersion = this.db.prepare(
+      "SELECT uuid, version FROM journalists",
+    );
     this.upsertJournalist = this.db.prepare(
       "INSERT INTO journalists (uuid, data, version) VALUES (@id, @data, @version) ON CONFLICT(uuid) DO UPDATE SET data=@data, version=@version",
     );
@@ -202,6 +210,9 @@ export class DB {
     }
     for (const row of this.selectAllItemVersion.iterate()) {
       index.items[row.uuid] = row.version;
+    }
+    for (const row of this.selectAllJournalistVersion.iterate()) {
+      index.journalists[row.uuid] = row.version;
     }
     return index;
   }
