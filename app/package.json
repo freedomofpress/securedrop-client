@@ -73,6 +73,7 @@
     "@tailwindcss/vite": "^4.1.12",
     "antd": "^5.27.0",
     "better-sqlite3": "^12.2.0",
+    "core-util-is": "^1.0.3",
     "dbmate": "^2.28.0",
     "i18next": "^25.3.6",
     "react": "^19.1.1",
