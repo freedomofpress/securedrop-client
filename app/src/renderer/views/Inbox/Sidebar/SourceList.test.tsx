@@ -123,13 +123,111 @@ describe("Sources Component", () => {
       getSourcesCount: mockGetSourcesCount,
     };
 
-    // Default mock implementation - simulate pagination
-    mockGetSources.mockImplementation(({ limit = 100, offset = 0 } = {}) => {
-      const startIndex = offset;
-      const endIndex = Math.min(startIndex + limit, mockSources.length);
-      return Promise.resolve(mockSources.slice(startIndex, endIndex));
-    });
-    mockGetSourcesCount.mockResolvedValue(mockSources.length);
+    // Default mock implementation - simulate pagination with filtering
+    mockGetSources.mockImplementation(
+      ({
+        searchTerm = "",
+        filter = "all",
+        sortedAsc = false,
+        limit = 100,
+        offset = 0,
+      } = {}) => {
+        let filteredSources = [...mockSources];
+
+        // Apply search filter
+        if (searchTerm) {
+          filteredSources = filteredSources.filter((source) =>
+            source.data.journalist_designation
+              .toLowerCase()
+              .includes(searchTerm.toLowerCase()),
+          );
+        }
+
+        // Apply status filter
+        switch (filter) {
+          case "read":
+            filteredSources = filteredSources.filter((source) => source.isRead);
+            break;
+          case "unread":
+            filteredSources = filteredSources.filter(
+              (source) => !source.isRead,
+            );
+            break;
+          case "starred":
+            filteredSources = filteredSources.filter(
+              (source) => source.data.is_starred,
+            );
+            break;
+          case "unstarred":
+            filteredSources = filteredSources.filter(
+              (source) => !source.data.is_starred,
+            );
+            break;
+          case "all":
+          default:
+            // No additional filtering
+            break;
+        }
+
+        // Apply sorting
+        filteredSources.sort((a, b) => {
+          const dateA = new Date(a.data.last_updated);
+          const dateB = new Date(b.data.last_updated);
+          return sortedAsc
+            ? dateA.getTime() - dateB.getTime()
+            : dateB.getTime() - dateA.getTime();
+        });
+
+        // Apply pagination
+        const startIndex = offset;
+        const endIndex = Math.min(startIndex + limit, filteredSources.length);
+
+        return Promise.resolve(filteredSources.slice(startIndex, endIndex));
+      },
+    );
+
+    mockGetSourcesCount.mockImplementation(
+      ({ searchTerm = "", filter = "all" } = {}) => {
+        let filteredSources = [...mockSources];
+
+        // Apply search filter
+        if (searchTerm) {
+          filteredSources = filteredSources.filter((source) =>
+            source.data.journalist_designation
+              .toLowerCase()
+              .includes(searchTerm.toLowerCase()),
+          );
+        }
+
+        // Apply status filter
+        switch (filter) {
+          case "read":
+            filteredSources = filteredSources.filter((source) => source.isRead);
+            break;
+          case "unread":
+            filteredSources = filteredSources.filter(
+              (source) => !source.isRead,
+            );
+            break;
+          case "starred":
+            filteredSources = filteredSources.filter(
+              (source) => source.data.is_starred,
+            );
+            break;
+          case "unstarred":
+            filteredSources = filteredSources.filter(
+              (source) => !source.data.is_starred,
+            );
+            break;
+          case "all":
+          default:
+            // No additional filtering
+            break;
+        }
+
+        return Promise.resolve(filteredSources.length);
+      },
+    );
   });
 
   afterEach(() => {
@@ -284,9 +382,18 @@ describe("Sources Component", () => {
       const searchInput = screen.getByPlaceholderText("Search by name");
       await userEvent.type(searchInput, "alice");
 
+      // Wait for debounced search and results to update
+      await waitFor(
+        () => {
+          expect(screen.getByTestId("source-source-1")).toBeInTheDocument();
+          expect(
+            screen.queryByTestId("source-source-2"),
+          ).not.toBeInTheDocument();
+        },
+        { timeout: 1000 },
+      );
+
       // Only Alice Wonderland should be visible
-      expect(screen.getByTestId("source-source-1")).toBeInTheDocument();
-      expect(screen.queryByTestId("source-source-2")).not.toBeInTheDocument();
       expect(screen.queryByTestId("source-source-3")).not.toBeInTheDocument();
       expect(screen.queryByTestId("source-source-4")).not.toBeInTheDocument();
     });
@@ -301,9 +408,18 @@ describe("Sources Component", () => {
       const searchInput = screen.getByPlaceholderText("Search by name");
       await userEvent.type(searchInput, "BOB");
 
+      // Wait for debounced search and results to update
+      await waitFor(
+        () => {
+          expect(screen.getByTestId("source-source-2")).toBeInTheDocument();
+          expect(
+            screen.queryByTestId("source-source-1"),
+          ).not.toBeInTheDocument();
+        },
+        { timeout: 1000 },
+      );
+
       // Bob Builder should be visible (case-insensitive search)
-      expect(screen.queryByTestId("source-source-1")).not.toBeInTheDocument();
-      expect(screen.getByTestId("source-source-2")).toBeInTheDocument();
       expect(screen.queryByTestId("source-source-3")).not.toBeInTheDocument();
       expect(screen.queryByTestId("source-source-4")).not.toBeInTheDocument();
     });
@@ -517,20 +633,39 @@ describe("Sources Component", () => {
         expect(screen.getByTestId("source-source-1")).toBeInTheDocument();
       });
 
-      // Search for "b" (should match bob builder and charlie chaplin)
+      // Search for "b" (should match bob builder)
       const searchInput = screen.getByPlaceholderText("Search by name");
       await userEvent.type(searchInput, "b");
 
-      // Filter to starred (should only show bob builder since charlie isn't starred)
+      // Wait for search to be applied before adding filter
+      await waitFor(
+        () => {
+          expect(screen.getByTestId("source-source-2")).toBeInTheDocument(); // bob builder
+        },
+        { timeout: 1000 },
+      );
+
+      // Filter to starred (should only show bob builder since it's the only starred source with "b")
       const filterButton = screen.getByTestId("filter-dropdown");
       await userEvent.click(filterButton);
       await userEvent.click(screen.getByText("Starred"));
 
+      // Wait for both search debounce and filter to be applied
+      await waitFor(
+        () => {
+          expect(screen.getByTestId("source-source-2")).toBeInTheDocument();
+          expect(
+            screen.queryByTestId("source-source-1"),
+          ).not.toBeInTheDocument();
+          expect(
+            screen.queryByTestId("source-source-4"),
+          ).not.toBeInTheDocument();
+        },
+        { timeout: 1500 },
+      );
+
       // Only Bob Builder should be visible (matches search "b" and is starred)
-      expect(screen.queryByTestId("source-source-1")).not.toBeInTheDocument();
-      expect(screen.getByTestId("source-source-2")).toBeInTheDocument();
       expect(screen.queryByTestId("source-source-3")).not.toBeInTheDocument();
-      expect(screen.queryByTestId("source-source-4")).not.toBeInTheDocument();
     });
 
     it("maintains sort order when filtering", async () => {
