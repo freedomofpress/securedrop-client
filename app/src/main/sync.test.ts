@@ -7,10 +7,11 @@ import type {
   MetadataResponse,
   SourceMetadata,
   ItemMetadata,
+  JournalistMetadata,
 } from "../../src/types";
 import * as proxyModule from "../../src/main/proxy";
 
-function mockDB({ index = { sources: {}, items: {} } } = {}) {
+function mockDB({ index = { sources: {}, items: {}, journalists: {} } } = {}) {
   return {
     getVersion: vi.fn(() => "v1"),
     getIndex: vi.fn(() => index),
@@ -40,6 +41,15 @@ function mockItemMetadata(uuid: string, source_uuid: string): ItemMetadata {
     journalist_uuid: "test_journalist",
     is_deleted_by_source: false,
     seen_by: [],
+  };
+}
+
+function mockJournalistMetadata(uuid: string): JournalistMetadata {
+  return {
+    uuid: uuid,
+    username: "test_journalist",
+    first_name: "foo",
+    last_name: "bar",
   };
 }
 
@@ -85,7 +95,9 @@ describe("syncMetadata", () => {
       items: {
         uuid2: "def",
       },
-      journalists: {},
+      journalists: {
+        uuid3: "ghi",
+      },
     };
     const metadata: MetadataResponse = {
       sources: {
@@ -93,6 +105,9 @@ describe("syncMetadata", () => {
       },
       items: {
         uuid2: mockItemMetadata("uuid2", "uuid1"),
+      },
+      journalists: {
+        uuid3: mockJournalistMetadata("uuid3"),
       },
     };
     // Client index is empty
@@ -144,7 +159,9 @@ describe("syncMetadata", () => {
       items: {
         uuid2: "v2",
       },
-      journalists: {},
+      journalists: {
+        uuid3: "v2",
+      },
     };
     db = mockDB();
 
@@ -180,7 +197,9 @@ describe("syncMetadata", () => {
         item1: "v1",
         item2: "outOfDate",
       },
-      journalists: {},
+      journalists: {
+        journalist1: "v1",
+      },
     };
 
     // Server index doesn't have item2: it has been deleted
@@ -191,7 +210,9 @@ describe("syncMetadata", () => {
       items: {
         item1: "v2",
       },
-      journalists: {},
+      journalists: {
+        journalist1: "v2",
+      },
     };
     db = mockDB({
       index: clientIndex,
@@ -204,6 +225,7 @@ describe("syncMetadata", () => {
     expect(metadataToUpdate).toEqual({
       sources: ["source1"],
       items: ["item1"],
+      journalists: ["journalist1"],
     });
   });
 
@@ -217,7 +239,9 @@ describe("syncMetadata", () => {
         item1: "v1",
         item2: "outOfDate",
       },
-      journalists: {},
+      journalists: {
+        journalist1: "v1",
+      },
     };
 
     // Server index doesn't have item2: it has been deleted
@@ -228,7 +252,9 @@ describe("syncMetadata", () => {
       items: {
         item1: "v2",
       },
-      journalists: {},
+      journalists: {
+        journalist1: "v2",
+      },
     };
     const metadata: MetadataResponse = {
       sources: {
@@ -236,6 +262,9 @@ describe("syncMetadata", () => {
       },
       items: {
         item1: mockItemMetadata("item1", "source1"),
+      },
+      journalists: {
+        journalist1: mockJournalistMetadata("journalist1"),
       },
     };
 
@@ -275,7 +304,9 @@ describe("syncMetadata", () => {
         item1: "v2",
         item2: "v2",
       },
-      journalists: {},
+      journalists: {
+        journalist1: "v2",
+      },
     };
 
     // Client index has old item version
@@ -287,7 +318,9 @@ describe("syncMetadata", () => {
         item1: "v1",
         item2: "v2",
       },
-      journalists: {},
+      journalists: {
+        journalist1: "v2",
+      },
     };
     db = mockDB({
       index: clientIndex,
@@ -301,6 +334,7 @@ describe("syncMetadata", () => {
     expect(metadataToUpdate).toEqual({
       items: ["item1"],
       sources: [],
+      journalists: [],
     });
 
     const metadata: MetadataResponse = {
@@ -308,6 +342,7 @@ describe("syncMetadata", () => {
       items: {
         item1: mockItemMetadata("item1", "source1"),
       },
+      journalists: {},
     };
 
     const proxyMock = mockProxyResponses([

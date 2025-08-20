@@ -1,6 +1,6 @@
 import { useNavigate } from "react-router";
 import { Button, Typography } from "antd";
-import { User, LogIn, LogOut } from "lucide-react";
+import { User, LogIn, LogOut, RefreshCw } from "lucide-react";
 import { useTranslation } from "react-i18next";
 
 import { useAppDispatch, useAppSelector } from "../../../hooks";
@@ -26,6 +26,13 @@ function Account() {
     navigate("/sign-in");
   };
 
+  const sync = () => {
+    console.log("syncing metadata");
+    window.electronAPI.syncMetadata({
+      authToken: session.authData?.token,
+    });
+  };
+
   return (
     <div className="sd-border-secondary sd-bg-primary border-b p-2 h-12 flex items-center justify-between flex-shrink-0">
       {session.status == SessionStatus.Auth ? (
@@ -37,6 +44,8 @@ function Account() {
               ? `${session.authData?.journalistFirstName || ""} ${session.authData?.journalistLastName || ""}`.trim()
               : "Signed in"}
           </Typography.Text>
+
+          <Button icon={<RefreshCw />} size="small" onClick={sync} />
 
           <Button
             type="dashed"
