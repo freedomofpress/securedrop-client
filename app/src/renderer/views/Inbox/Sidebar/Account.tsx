@@ -40,7 +40,7 @@ function Account() {
 
           <Button
             type="dashed"
-            icon={<LogOut size={18} />}
+            icon={<LogOut size={16} style={{ verticalAlign: "middle" }} />}
             size="small"
             onClick={signOut}
           >
@@ -55,7 +55,7 @@ function Account() {
 
           <Button
             type="dashed"
-            icon={<LogIn size={18} />}
+            icon={<LogIn size={16} style={{ verticalAlign: "middle" }} />}
             size="small"
             onClick={signIn}
           >
