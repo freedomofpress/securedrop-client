@@ -21,7 +21,10 @@
     },
     "sort": {
       "tooltip": "Toggle sort order"
-    }
+    },
+    "loading": "Loading more sources...",
+    "showing": "Showing {{count}} of {{total}} sources",
+    "noSources": "No sources found"
   },
   "source": {
     "encrypted": "encrypted...",

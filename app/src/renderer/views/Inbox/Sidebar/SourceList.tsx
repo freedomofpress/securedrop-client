@@ -232,22 +232,24 @@ function SourceList() {
           {/* Loading indicator at the bottom when loading more */}
           {loading && (
             <div className="text-center py-2 text-sm text-gray-500">
-              Loading more sources...
+              {t("sourcelist.loading")}
             </div>
           )}
 
           {/* Show total count and load status */}
           {!loading && sources.length > 0 && (
             <div className="text-center py-2 text-sm text-gray-500">
-              Showing {sources.length} of {totalCount} sources
-              {hasMore && " (scroll for more)"}
+              {t("sourcelist.showing", {
+                count: sources.length,
+                total: totalCount,
+              })}
             </div>
           )}
 
           {/* Empty state */}
           {!loading && sources.length === 0 && (
             <div className="flex items-center justify-center h-full text-gray-500">
-              No sources found
+              {t("sourcelist.noSources")}
             </div>
           )}
         </div>

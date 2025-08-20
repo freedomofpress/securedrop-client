@@ -21,7 +21,10 @@
     },
     "sort": {
       "tooltip": "Basculer l'ordre de tri"
-    }
+    },
+    "loading": "Chargement de plus de sources...",
+    "showing": "Affichage de {{count}} sur {{total}} sources",
+    "noSources": "Aucune source trouvée"
   },
   "source": {
     "encrypted": "chiffré...",
