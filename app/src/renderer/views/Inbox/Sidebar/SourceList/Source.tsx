@@ -2,6 +2,8 @@ import { Checkbox, Button, Tooltip } from "antd";
 import { Star, Paperclip } from "lucide-react";
 import { useTranslation } from "react-i18next";
 
+import StarFilled from "./StarFilled";
+
 import type { Source as SourceType } from "../../../../../types";
 import { formatDate, toTitleCase } from "../../../../utils";
 import Avatar from "../../../../components/Avatar";
@@ -63,7 +65,7 @@ function Source({
           size="large"
           icon={
             source.data.is_starred ? (
-              <Star color="#eab308" strokeWidth={3} size={20} />
+              <StarFilled color="#eab308" size={20} />
             ) : (
               <Star
                 color="#9ca3af"
