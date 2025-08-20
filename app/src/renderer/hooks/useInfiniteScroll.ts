@@ -1,8 +1,8 @@
 import { useState, useCallback, useRef, useEffect } from "react";
 import type { Source as SourceType } from "../../types";
 
-const PAGE_SIZE = 100;
-const VIRTUAL_WINDOW_SIZE = 300; // Keep 300 items in memory
+const PAGE_SIZE = 20;
+const VIRTUAL_WINDOW_SIZE = 100; // Keep 100 items in memory
 
 interface UseInfiniteScrollParams {
   searchTerm: string;
@@ -28,8 +28,8 @@ export function useInfiniteScroll(
   const [currentOffset, setCurrentOffset] = useState(0);
   const [hasMore, setHasMore] = useState(true);
 
-  // Track the virtual window boundaries
-  const [windowStart, setWindowStart] = useState(0);
+  // Track if we've loaded all data
+  const [allDataLoaded, setAllDataLoaded] = useState(false);
 
   const containerRef = useRef<HTMLDivElement>(null);
   const isLoadingRef = useRef(false);
@@ -39,9 +39,9 @@ export function useInfiniteScroll(
   const resetPagination = useCallback(() => {
     setSources([]);
     setCurrentOffset(0);
-    setWindowStart(0);
     setHasMore(true);
     setTotalCount(0);
+    setAllDataLoaded(false);
   }, []);
 
   // Load sources for a specific offset
@@ -68,23 +68,38 @@ export function useInfiniteScroll(
 
         if (append) {
           setSources((prev) => {
-            const newSources = [...prev, ...sourcesResult];
-            // Implement virtual window: keep only VIRTUAL_WINDOW_SIZE items
+            // Create a set to track existing sources by UUID to prevent duplicates
+            const existingSourceIds = new Set(
+              prev.map((source) => source.uuid),
+            );
+
+            // Filter out any sources that already exist
+            const uniqueNewSources = sourcesResult.filter(
+              (source) => !existingSourceIds.has(source.uuid),
+            );
+
+            const newSources = [...prev, ...uniqueNewSources];
+
+            // Implement simple virtual window: keep only VIRTUAL_WINDOW_SIZE items
+            // Always keep the most recent items
             if (newSources.length > VIRTUAL_WINDOW_SIZE) {
-              const startIndex = Math.max(
-                0,
-                newSources.length - VIRTUAL_WINDOW_SIZE,
-              );
-              return newSources.slice(startIndex);
+              return newSources.slice(-VIRTUAL_WINDOW_SIZE);
             }
+
             return newSources;
           });
         } else {
           setSources(sourcesResult);
         }
 
-        setHasMore(offset + PAGE_SIZE < countResult);
+        const hasMoreData = offset + PAGE_SIZE < countResult;
+        setHasMore(hasMoreData);
         setCurrentOffset(offset + PAGE_SIZE);
+
+        // Check if we've loaded all available data
+        if (!hasMoreData) {
+          setAllDataLoaded(true);
+        }
       } catch (error) {
         console.error("Failed to load sources:", error);
       } finally {
@@ -124,21 +139,12 @@ export function useInfiniteScroll(
 
   // Load more sources when scrolling down
   const loadMore = useCallback(() => {
-    if (hasMore && !loading) {
+    if (hasMore && !loading && !allDataLoaded) {
       loadSources(currentOffset);
     }
-  }, [hasMore, loading, currentOffset]);
+  }, [hasMore, loading, currentOffset, allDataLoaded]);
 
-  // Load earlier sources when scrolling up
-  const loadEarlier = useCallback(() => {
-    if (windowStart > 0 && !loading) {
-      const newOffset = Math.max(0, windowStart - PAGE_SIZE);
-      setWindowStart(newOffset);
-      loadSources(newOffset, false);
-    }
-  }, [windowStart, loading]);
-
-  // Scroll event handler
+  // Scroll event handler - simple infinite scroll (one direction only)
   useEffect(() => {
     const container = containerRef.current;
     if (!container) return;
@@ -147,20 +153,15 @@ export function useInfiniteScroll(
       const { scrollTop, scrollHeight, clientHeight } = container;
       const scrollPercentage = scrollTop / (scrollHeight - clientHeight);
 
-      // Load more when near bottom (90%)
-      if (scrollPercentage > 0.9 && hasMore && !loading) {
+      // Load more when near bottom (80%) and we have more data
+      if (scrollPercentage > 0.8 && hasMore && !loading && !allDataLoaded) {
         loadMore();
-      }
-
-      // Load earlier when near top (10%) and not at the beginning
-      if (scrollPercentage < 0.1 && windowStart > 0 && !loading) {
-        loadEarlier();
       }
     };
 
     container.addEventListener("scroll", handleScroll, { passive: true });
     return () => container.removeEventListener("scroll", handleScroll);
-  }, [hasMore, loading, loadMore, loadEarlier, windowStart]);
+  }, [hasMore, loading, loadMore, allDataLoaded]);
 
   return {
     sources,
