@@ -50,12 +50,7 @@ function Account() {
               : "Signed in"}
           </Typography.Text>
 
-          <Button
-            type="filled"
-            icon={<ReloadOutlined />}
-            size="small"
-            onClick={sync}
-          />
+          <Button icon={<ReloadOutlined />} size="small" onClick={sync} />
 
           <Button
             type="dashed"
