@@ -16,6 +16,7 @@ interface UseInfiniteScrollReturn {
   totalCount: number;
   containerRef: React.RefObject<HTMLDivElement | null>;
   resetPagination: () => void;
+  loadMore?: () => void; // For testing purposes
 }
 
 export function useInfiniteScroll(
@@ -48,11 +49,9 @@ export function useInfiniteScroll(
 
       // For append operations, check if we've already loaded this page
       if (append && loadedPagesRef.current.has(page)) {
-        console.log(`Page ${page} already loaded, skipping`);
         return;
       }
 
-      console.log(`Loading page ${page}, append: ${append}`);
       isLoadingRef.current = true;
       setLoading(true);
 
@@ -77,9 +76,6 @@ export function useInfiniteScroll(
         if (sourcesResult) {
           const newSources = sourcesResult;
           const total = totalResult || 0;
-          console.log(
-            `Loaded ${newSources.length} sources from page ${page}, total: ${total}`,
-          );
           setTotalCount(total);
 
           setSources((prev) => {
@@ -90,9 +86,6 @@ export function useInfiniteScroll(
               const existingUuids = new Set(prev.map((source) => source.uuid));
               const uniqueNewSources = newSources.filter(
                 (source) => !existingUuids.has(source.uuid),
-              );
-              console.log(
-                `Appending ${uniqueNewSources.length} unique sources (filtered ${newSources.length - uniqueNewSources.length} duplicates)`,
               );
               return [...prev, ...uniqueNewSources];
             } else {
@@ -106,22 +99,13 @@ export function useInfiniteScroll(
           // Update pagination state
           const newOffset = offset + newSources.length;
           const hasMoreData = newOffset < total;
-          console.log(
-            `Setting hasMore to ${hasMoreData} (newOffset: ${newOffset}, total: ${total})`,
-          );
           setHasMore(hasMoreData);
           if (append) {
             // Set currentPage to the next page we want to load
             setCurrentPage(page + 1);
-            console.log(
-              `Updated currentPage to ${page + 1} (next page to load)`,
-            );
           } else {
             // For initial load, next page is 1
             setCurrentPage(1);
-            console.log(
-              `Set currentPage to 1 (next page to load after initial)`,
-            );
           }
         }
       } catch (error) {
@@ -157,10 +141,6 @@ export function useInfiniteScroll(
 
   // Load more sources when scrolling down
   const loadMore = useCallback(() => {
-    console.log(
-      `loadMore called: hasMore=${hasMore}, loading=${loading}, currentPage=${currentPage}`,
-    );
-    console.log(`loadedPages:`, Array.from(loadedPagesRef.current));
     if (hasMore && !loading) {
       loadSources(currentPage, true);
     }
@@ -177,9 +157,6 @@ export function useInfiniteScroll(
 
       // Load more when near bottom (80%) and we have more data
       if (scrollPercentage > 0.8) {
-        console.log(
-          `Scroll threshold reached: ${scrollPercentage.toFixed(2)}, hasMore=${hasMore}, loading=${loading}`,
-        );
         if (hasMore && !loading) {
           loadMore();
         }
@@ -197,5 +174,6 @@ export function useInfiniteScroll(
     totalCount,
     containerRef,
     resetPagination,
+    loadMore: process.env.NODE_ENV === "test" ? loadMore : undefined,
   };
 }
