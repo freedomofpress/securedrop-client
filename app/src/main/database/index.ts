@@ -14,6 +14,7 @@ import type {
   SourceWithItems,
   SourceRow,
   ItemRow,
+  JournalistMetadata,
 } from "../../types";
 
 const sortKeys = (_, value) =>
@@ -64,6 +65,16 @@ export class DB {
   >;
   private deleteItem: Statement<{ id: string }, void>;
 
+  private selectAllJournalistVersion: Statement<
+    [],
+    { uuid: string; version: string }
+  >;
+  private upsertJournalist: Statement<
+    { id: string; data: string; version: string },
+    void
+  >;
+  private deleteJournalist: Statement<{ id: string }, void>;
+
   constructor() {
     // Ensure the directory exists
     const dbDir = path.join(os.homedir(), ".config", "SecureDrop");
@@ -104,6 +115,15 @@ export class DB {
       "INSERT INTO items (uuid, data, version) VALUES (@id, @data, @version) ON CONFLICT(uuid) DO UPDATE SET data=@data, version=@version",
     );
     this.deleteItem = this.db.prepare("DELETE FROM items WHERE uuid = @id");
+    this.selectAllJournalistVersion = this.db.prepare(
+      "SELECT uuid, version FROM journalists",
+    );
+    this.upsertJournalist = this.db.prepare(
+      "INSERT INTO journalists (uuid, data, version) VALUES (@id, @data, @version) ON CONFLICT(uuid) DO UPDATE SET data=@data, version=@version",
+    );
+    this.deleteJournalist = this.db.prepare(
+      "DELETE FROM journalists WHERE uuid = @id",
+    );
   }
 
   runMigrations(): void {
@@ -191,6 +211,9 @@ export class DB {
     for (const row of this.selectAllItemVersion.iterate()) {
       index.items[row.uuid] = row.version;
     }
+    for (const row of this.selectAllJournalistVersion.iterate()) {
+      index.journalists[row.uuid] = row.version;
+    }
     return index;
   }
 
@@ -221,10 +244,20 @@ export class DB {
     })(sources);
   }
 
+  deleteJournalists(journalists: string[]) {
+    this.db!.transaction((journalists) => {
+      for (const journalistID in journalists) {
+        this.deleteJournalist.run({ id: journalistID });
+      }
+      this.updateVersion();
+    })(journalists);
+  }
+
   updateMetadata(metadata: MetadataResponse) {
     this.db!.transaction((metadata: MetadataResponse) => {
       this.updateSources(metadata.sources);
       this.updateItems(metadata.items);
+      this.updateJournalists(metadata.journalists);
       this.updateVersion();
     })(metadata);
   }
@@ -254,6 +287,23 @@ export class DB {
       const version = computeVersion(blob);
       this.upsertItem.run({
         id: itemid,
+        data: blob,
+        version: version,
+      });
+    });
+  }
+
+  // Updates journalist metadata in DB. Should be run in a transaction that also
+  // updates the global index version.
+  private updateJournalists(journalists: {
+    [uuid: string]: JournalistMetadata;
+  }) {
+    Object.keys(journalists).forEach((id: string) => {
+      const metadata = journalists[id];
+      const blob = JSON.stringify(metadata, sortKeys);
+      const version = computeVersion(blob);
+      this.upsertJournalist.run({
+        id: id,
         data: blob,
         version: version,
       });

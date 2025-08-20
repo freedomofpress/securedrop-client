@@ -59,6 +59,7 @@ export type Index = {
 export type MetadataRequest = {
   sources: string[];
   items: string[];
+  journalists: string[];
 };
 
 export type MetadataResponse = {
@@ -67,6 +68,9 @@ export type MetadataResponse = {
   };
   items: {
     [uuid: string]: ItemMetadata;
+  };
+  journalists: {
+    [uuid: string]: JournalistMetadata;
   };
 };
 
@@ -98,6 +102,13 @@ export type SubmissionMetadata = {
   size: number;
   is_read: boolean;
   seen_by: string[];
+};
+
+export type JournalistMetadata = {
+  uuid: string;
+  username: string;
+  first_name: string;
+  last_name: string;
 };
 
 /** API v1 Types */
