@@ -153,14 +153,7 @@ export function useInfiniteScroll(
         loadSources(0, false);
       }
     }
-  }, [
-    params.searchTerm,
-    params.filter,
-    params.sortedAsc,
-    sources.length,
-    resetPagination,
-    loadSources,
-  ]);
+  }, [params, sources.length, resetPagination, loadSources]);
 
   // Load more sources when scrolling down
   const loadMore = useCallback(() => {

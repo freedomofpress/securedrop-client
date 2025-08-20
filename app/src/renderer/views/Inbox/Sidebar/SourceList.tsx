@@ -33,12 +33,11 @@ function SourceList() {
   const debouncedSearchTerm = useDebounce(searchTerm, 300);
 
   // Use infinite scroll hook
-  const { sources, loading, hasMore, totalCount, containerRef } =
-    useInfiniteScroll({
-      searchTerm: debouncedSearchTerm,
-      filter,
-      sortedAsc,
-    });
+  const { sources, loading, totalCount, containerRef } = useInfiniteScroll({
+    searchTerm: debouncedSearchTerm,
+    filter,
+    sortedAsc,
+  });
 
   // Handle select all checkbox
   const handleSelectAll = (checked: boolean) => {
