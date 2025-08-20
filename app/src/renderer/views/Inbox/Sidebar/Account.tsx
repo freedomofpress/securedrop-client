@@ -45,7 +45,12 @@ function Account() {
               : "Signed in"}
           </Typography.Text>
 
-          <Button icon={<RefreshCw />} size="small" onClick={sync} />
+          <Button
+            type="text"
+            icon={<RefreshCw size={18} />}
+            size="small"
+            onClick={sync}
+          />
 
           <Button
             type="dashed"
