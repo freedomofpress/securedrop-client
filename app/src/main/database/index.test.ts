@@ -4,7 +4,7 @@ import path from "path";
 import os from "os";
 import { DB } from "./index";
 
-describe("Database Integration Tests", () => {
+describe("Database Component Tests", () => {
   const testHomeDir = path.join(os.tmpdir(), "test-home");
   const testDbDir = path.join(testHomeDir, ".config", "SecureDrop");
   const testDbPath = path.join(testDbDir, "db.sqlite");
