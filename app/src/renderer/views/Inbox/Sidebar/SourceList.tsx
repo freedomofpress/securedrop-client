@@ -289,7 +289,7 @@ function SourceList() {
       {/* Sources list */}
       <div className="flex-1 min-h-0 relative">
         {loading && <LoadingIndicator />}
-        <div className="absolute inset-0 overflow-y-auto">
+        <div className="absolute inset-0 overflow-y-auto select-none">
           {filteredSources.map((source) => {
             const isSelected = selectedSources.has(source.uuid);
             const isActive = activeSourceUuid === source.uuid;
