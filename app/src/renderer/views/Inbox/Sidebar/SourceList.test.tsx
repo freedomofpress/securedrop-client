@@ -267,6 +267,36 @@ describe("Sources Component", () => {
   });
 
   describe("Search functionality", () => {
+    it("debounces search input to avoid excessive filtering", async () => {
+      renderWithProviders(<SourceList />);
+
+      await waitFor(() => {
+        expect(screen.getByTestId("source-source-1")).toBeInTheDocument();
+      });
+
+      const searchInput = screen.getByTestId("source-search-input");
+
+      // Type quickly and check that we get the debounced result
+      await userEvent.type(searchInput, "alice");
+
+      // Should wait for debounce and then filter to only show Alice
+      await waitFor(
+        () => {
+          expect(screen.getByTestId("source-source-1")).toBeInTheDocument();
+          expect(
+            screen.queryByTestId("source-source-2"),
+          ).not.toBeInTheDocument();
+          expect(
+            screen.queryByTestId("source-source-3"),
+          ).not.toBeInTheDocument();
+          expect(
+            screen.queryByTestId("source-source-4"),
+          ).not.toBeInTheDocument();
+        },
+        { timeout: 1000 },
+      );
+    });
+
     it("filters sources by designation when search term is entered", async () => {
       renderWithProviders(<SourceList />);
 
@@ -274,14 +304,17 @@ describe("Sources Component", () => {
         expect(screen.getByTestId("source-source-1")).toBeInTheDocument();
       });
 
-      const searchInput = screen.getByPlaceholderText("Search by name");
+      const searchInput = screen.getByTestId("source-search-input");
       await userEvent.type(searchInput, "alice");
 
-      // Only Alice Wonderland should be visible
-      expect(screen.getByTestId("source-source-1")).toBeInTheDocument();
-      expect(screen.queryByTestId("source-source-2")).not.toBeInTheDocument();
-      expect(screen.queryByTestId("source-source-3")).not.toBeInTheDocument();
-      expect(screen.queryByTestId("source-source-4")).not.toBeInTheDocument();
+      // Wait for debounce
+      await waitFor(() => {
+        // Only Alice Wonderland should be visible
+        expect(screen.getByTestId("source-source-1")).toBeInTheDocument();
+        expect(screen.queryByTestId("source-source-2")).not.toBeInTheDocument();
+        expect(screen.queryByTestId("source-source-3")).not.toBeInTheDocument();
+        expect(screen.queryByTestId("source-source-4")).not.toBeInTheDocument();
+      });
     });
 
     it("filters sources case-insensitively", async () => {
@@ -291,14 +324,25 @@ describe("Sources Component", () => {
         expect(screen.getByTestId("source-source-1")).toBeInTheDocument();
       });
 
-      const searchInput = screen.getByPlaceholderText("Search by name");
+      const searchInput = screen.getByTestId("source-search-input");
       await userEvent.type(searchInput, "BOB");
 
-      // Bob Builder should be visible (case-insensitive search)
-      expect(screen.queryByTestId("source-source-1")).not.toBeInTheDocument();
-      expect(screen.getByTestId("source-source-2")).toBeInTheDocument();
-      expect(screen.queryByTestId("source-source-3")).not.toBeInTheDocument();
-      expect(screen.queryByTestId("source-source-4")).not.toBeInTheDocument();
+      // Wait for debounce and Bob Builder should be visible (case-insensitive search)
+      await waitFor(
+        () => {
+          expect(
+            screen.queryByTestId("source-source-1"),
+          ).not.toBeInTheDocument();
+          expect(screen.getByTestId("source-source-2")).toBeInTheDocument();
+          expect(
+            screen.queryByTestId("source-source-3"),
+          ).not.toBeInTheDocument();
+          expect(
+            screen.queryByTestId("source-source-4"),
+          ).not.toBeInTheDocument();
+        },
+        { timeout: 1000 },
+      );
     });
 
     it("shows all sources when search is cleared", async () => {
@@ -308,7 +352,7 @@ describe("Sources Component", () => {
         expect(screen.getByTestId("source-source-1")).toBeInTheDocument();
       });
 
-      const searchInput = screen.getByPlaceholderText("Search by name");
+      const searchInput = screen.getByTestId("source-search-input");
       await userEvent.type(searchInput, "alice");
       await userEvent.clear(searchInput);
 
@@ -511,7 +555,7 @@ describe("Sources Component", () => {
       });
 
       // Search for "b" (should match bob builder and charlie chaplin)
-      const searchInput = screen.getByPlaceholderText("Search by name");
+      const searchInput = screen.getByTestId("source-search-input");
       await userEvent.type(searchInput, "b");
 
       // Filter to starred (should only show bob builder since charlie isn't starred)
@@ -519,11 +563,22 @@ describe("Sources Component", () => {
       await userEvent.click(filterButton);
       await userEvent.click(screen.getByText("Starred"));
 
-      // Only Bob Builder should be visible (matches search "b" and is starred)
-      expect(screen.queryByTestId("source-source-1")).not.toBeInTheDocument();
-      expect(screen.getByTestId("source-source-2")).toBeInTheDocument();
-      expect(screen.queryByTestId("source-source-3")).not.toBeInTheDocument();
-      expect(screen.queryByTestId("source-source-4")).not.toBeInTheDocument();
+      await waitFor(
+        () => {
+          // Only Bob Builder should be visible (matches search "b" and is starred)
+          expect(
+            screen.queryByTestId("source-source-1"),
+          ).not.toBeInTheDocument();
+          expect(screen.getByTestId("source-source-2")).toBeInTheDocument();
+          expect(
+            screen.queryByTestId("source-source-3"),
+          ).not.toBeInTheDocument();
+          expect(
+            screen.queryByTestId("source-source-4"),
+          ).not.toBeInTheDocument();
+        },
+        { timeout: 1000 },
+      );
     });
 
     it("maintains sort order when filtering", async () => {
