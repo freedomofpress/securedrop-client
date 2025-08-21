@@ -8,6 +8,7 @@ import {
   ChevronUp,
 } from "lucide-react";
 import { useTranslation } from "react-i18next";
+import "./FilterControls.css";
 
 type filterOption = "all" | "read" | "unread" | "starred" | "unstarred";
 
@@ -78,6 +79,7 @@ function FilterControls({
 
       <div className="flex items-center gap-1 flex-shrink-0">
         <Dropdown
+          className={`sd-filter-${filter}`}
           menu={{ items: dropdownItems }}
           trigger={["click"]}
           onOpenChange={onDropdownOpenChange}

@@ -44,6 +44,9 @@ const Source = memo(function Source({
       className={`flex items-center px-4 py-3 border-b border-gray-100 cursor-pointer transition-colors duration-150 ease-in-out
         ${isActive ? "bg-blue-500 text-white hover:bg-blue-600" : "hover:bg-gray-50"}
         ${isSelected && !isActive ? "bg-blue-25" : ""}
+        sd-source
+        ${source.data.is_starred ? "sd-source-starred" : "sd-source-unstarred"}
+        ${source.isRead ? "sd-source-read" : "sd-source-unread"}
 `}
       onClick={() => onClick(source.uuid)}
     >

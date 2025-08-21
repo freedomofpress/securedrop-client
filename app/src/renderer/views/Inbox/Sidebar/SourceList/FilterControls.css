@@ -1,0 +1,13 @@
+/* nothing to hide for filter-all */
+.sd-sourcelist:has(.sd-filter-read) .sd-source-unread {
+    display: none;
+}
+.sd-sourcelist:has(.sd-filter-unread) .sd-source-read {
+    display: none;
+}
+.sd-sourcelist:has(.sd-filter-starred) .sd-source-unstarred {
+    display: none;
+}
+.sd-sourcelist:has(.sd-filter-unstarred) .sd-source-starred {
+    display: none;
+}

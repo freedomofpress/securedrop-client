@@ -136,8 +136,10 @@ function SourceList() {
           return false;
         }
 
+        return true;
+
         // Then filter by the selected filter option
-        switch (filter) {
+        /*switch (filter) {
           case "unread":
             return !source.isRead;
           case "read":
@@ -149,7 +151,7 @@ function SourceList() {
           case "all":
           default:
             return true; // "all" filter shows everything
-        }
+        }*/
       })
       .sort((a, b) => {
         const dateA = new Date(a.data.last_updated).getTime();
@@ -161,10 +163,10 @@ function SourceList() {
           return dateB - dateA; // Descending: newest first
         }
       });
-  }, [sources, searchTerm, filter, sortedAsc]);
+  }, [sources, searchTerm, sortedAsc]);
 
   return (
-    <div className="flex-1 flex flex-col min-h-0">
+    <div className="flex-1 flex flex-col min-h-0 sd-sourcelist">
       {/* Header with select all and action buttons */}
       <div className="sd-bg-primary sd-border-secondary px-4 py-3 border-b flex-shrink-0">
         <div className="flex items-center justify-between gap-2 min-w-0">
