@@ -20,7 +20,7 @@
     "typecheck:web": "tsc --noEmit -p tsconfig.web.json --composite false",
     "typecheck": "pnpm run typecheck:node && pnpm run typecheck:web",
     "build": "electron-vite build",
-    "postinstall": "electron-builder install-app-deps",
+    "postinstall": "./scripts/download-sqlite-binaries.py",
     "build:unpack": "pnpm run build && electron-builder --dir",
     "build:linux": "pnpm run build && electron-builder --linux",
     "dbmate": "sh -c 'dbmate --url sqlite:$HOME/.config/SecureDrop/db.sqlite --migrations-dir ./src/main/database/migrations --schema-file ./src/main/database/schema.sql \"$@\"' _",

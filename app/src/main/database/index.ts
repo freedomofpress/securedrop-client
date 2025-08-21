@@ -84,7 +84,7 @@ export class DB {
 
     // Create or open the SQLite database
     const dbPath = path.join(dbDir, "db.sqlite");
-    const db = new Database(dbPath, {});
+    const db = new Database(dbPath, { nativeBinding: this.getBinaryPath() });
     db.pragma("journal_mode = WAL");
 
     // Set the database URL for migrations
@@ -124,6 +124,36 @@ export class DB {
     this.deleteJournalist = this.db.prepare(
       "DELETE FROM journalists WHERE uuid = @id",
     );
+  }
+
+  // Detect runtime environment
+  private isElectron(): boolean {
+    return (
+      typeof process !== "undefined" &&
+      process.versions !== undefined &&
+      process.versions.electron !== undefined
+    );
+  }
+
+  // Get binary path for current runtime
+  private getBinaryPath(): string {
+    const runtime = this.isElectron() ? "electron" : "node";
+    const isPackaged = __dirname.includes("app.asar");
+    const basePath = isPackaged
+      ? path.join(process.resourcesPath, "app.asar.unpacked")
+      : process.cwd();
+    const binaryPath = path.join(
+      basePath,
+      "node_modules",
+      "better-sqlite3",
+      "build",
+      `Release-${runtime}`,
+      "better_sqlite3.node",
+    );
+    console.log(
+      `Loading better-sqlite3 from ${binaryPath} (packaged: ${isPackaged})`,
+    );
+    return binaryPath;
   }
 
   runMigrations(): void {
