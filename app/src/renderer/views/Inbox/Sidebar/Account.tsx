@@ -1,11 +1,6 @@
 import { useNavigate } from "react-router";
 import { Button, Typography } from "antd";
-import {
-  UserOutlined,
-  LoginOutlined,
-  LogoutOutlined,
-  ReloadOutlined,
-} from "@ant-design/icons";
+import { User, LogIn, LogOut, RefreshCw } from "lucide-react";
 import { useTranslation } from "react-i18next";
 
 import { useAppDispatch, useAppSelector } from "../../../hooks";
@@ -43,18 +38,23 @@ function Account() {
       {session.status == SessionStatus.Auth ? (
         <>
           <Typography.Text>
-            <UserOutlined style={{ marginRight: 6 }} />
+            <User size={20} style={{ marginRight: 6, verticalAlign: "top" }} />
             {session.authData?.journalistFirstName ||
             session.authData?.journalistLastName
               ? `${session.authData?.journalistFirstName || ""} ${session.authData?.journalistLastName || ""}`.trim()
               : "Signed in"}
           </Typography.Text>
 
-          <Button icon={<ReloadOutlined />} size="small" onClick={sync} />
+          <Button
+            type="text"
+            icon={<RefreshCw size={18} />}
+            size="small"
+            onClick={sync}
+          />
 
           <Button
             type="dashed"
-            icon={<LogoutOutlined />}
+            icon={<LogOut size={16} style={{ verticalAlign: "middle" }} />}
             size="small"
             onClick={signOut}
           >
@@ -69,7 +69,7 @@ function Account() {
 
           <Button
             type="dashed"
-            icon={<LoginOutlined />}
+            icon={<LogIn size={16} style={{ verticalAlign: "middle" }} />}
             size="small"
             onClick={signIn}
           >

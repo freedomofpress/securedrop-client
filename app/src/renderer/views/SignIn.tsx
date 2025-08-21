@@ -1,6 +1,6 @@
 import { Button, Input, Form } from "antd";
 import type { FormProps } from "antd";
-import { EyeInvisibleOutlined, EyeOutlined } from "@ant-design/icons";
+import { Eye, EyeOff } from "lucide-react";
 import { useState } from "react";
 import { useNavigate } from "react-router";
 import { useTranslation } from "react-i18next";
@@ -217,7 +217,7 @@ function SignInView() {
                 data-testid="passphrase-input"
                 placeholder="••••••••••••••••••••••••"
                 iconRender={(visible) =>
-                  visible ? <EyeOutlined /> : <EyeInvisibleOutlined />
+                  visible ? <Eye size={18} /> : <EyeOff size={18} />
                 }
               />
             </Form.Item>

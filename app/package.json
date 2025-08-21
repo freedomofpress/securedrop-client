@@ -75,6 +75,7 @@
     "better-sqlite3": "^12.2.0",
     "dbmate": "^2.28.0",
     "i18next": "^25.3.6",
+    "lucide-react": "^0.539.0",
     "react": "^19.1.1",
     "react-dom": "^19.1.1",
     "react-i18next": "^15.6.1",
