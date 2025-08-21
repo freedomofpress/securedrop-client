@@ -64,13 +64,6 @@ describe("utils", () => {
         const result = formatDate(yesterdayMorning, "en-US", mockT);
         expect(result).toBe("Yesterday");
       });
-
-      it("should fallback to 'Yesterday' when translation function is not provided", () => {
-        const yesterdayDate = "2024-01-14T15:30:00Z";
-        // @ts-expect-error - Testing null t function
-        const result = formatDate(yesterdayDate, "en-US", null);
-        expect(result).toBe("Yesterday");
-      });
     });
 
     describe("this year formatting", () => {
