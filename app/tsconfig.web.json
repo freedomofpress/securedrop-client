@@ -19,6 +19,8 @@
       "@renderer/*": ["src/renderer/*"]
     },
     "types": ["vitest/globals", "@testing-library/jest-dom"],
-    "noImplicitAny": true
+    "noImplicitAny": true,
+    "esModuleInterop": true,
+    "allowSyntheticDefaultImports": true
   }
 }
