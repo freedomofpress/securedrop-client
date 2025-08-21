@@ -1,6 +1,7 @@
 import { Checkbox, Button, Tooltip } from "antd";
 import { StarFilled, StarOutlined, PaperClipOutlined } from "@ant-design/icons";
 import { useTranslation } from "react-i18next";
+import { memo, useMemo } from "react";
 
 import type { Source as SourceType } from "../../../../../types";
 import { formatDate, toTitleCase } from "../../../../utils";
@@ -15,7 +16,7 @@ export interface SourceProps {
   onClick: (sourceId: string) => void;
 }
 
-function Source({
+const Source = memo(function Source({
   source,
   isSelected,
   isActive,
@@ -25,11 +26,15 @@ function Source({
 }: SourceProps) {
   const { t, i18n } = useTranslation("Sidebar");
   const { t: tCommon } = useTranslation("common");
-  const designation = toTitleCase(source.data.journalist_designation);
-  const lastUpdated = formatDate(
-    source.data.last_updated,
-    i18n.language,
-    tCommon,
+
+  const designation = useMemo(
+    () => toTitleCase(source.data.journalist_designation),
+    [source.data.journalist_designation],
+  );
+
+  const lastUpdated = useMemo(
+    () => formatDate(source.data.last_updated, i18n.language, tCommon),
+    [source.data.last_updated, i18n.language, tCommon],
   );
 
   return (
@@ -133,6 +138,6 @@ function Source({
       </div>
     </div>
   );
-}
+});
 
 export default Source;

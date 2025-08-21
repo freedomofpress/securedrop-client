@@ -1,7 +1,10 @@
 import { screen } from "@testing-library/react";
 import { expect, describe, it, vi } from "vitest";
 import userEvent from "@testing-library/user-event";
-import { renderWithProviders } from "../../../../test-component-setup";
+import {
+  renderWithProviders,
+  testMemoization,
+} from "../../../../test-component-setup";
 import Source from "./Source";
 import type { Source as SourceType } from "../../../../../types";
 
@@ -238,5 +241,70 @@ describe("Source Component", () => {
       const designation = screen.getByTestId("source-designation");
       expect(designation.textContent).toBe("Unique Source Name"); // toTitleCase applied
     });
+  });
+
+  describe("memoization", () => {
+    const mockSource: SourceType = {
+      uuid: "source-1",
+      data: {
+        uuid: "source-1",
+        journalist_designation: "test source",
+        is_starred: false,
+        last_updated: "2025-01-15T10:00:00Z",
+        public_key: "test-public-key",
+        fingerprint: "test-fingerprint",
+      },
+      isRead: true,
+      hasAttachment: false,
+      showMessagePreview: false,
+      messagePreview: "",
+    };
+
+    const baseProps = {
+      source: mockSource,
+      isSelected: false,
+      isActive: false,
+      onSelect: mockOnSelect,
+      onToggleStar: mockOnToggleStar,
+      onClick: mockOnClick,
+    };
+
+    const cases: Array<[typeof baseProps, number]> = [
+      // Initial render
+      [baseProps, 1],
+      // Same props - should not re-render
+      [baseProps, 1],
+      // Change isSelected - should re-render
+      [{ ...baseProps, isSelected: true }, 2],
+      // Change isActive - should re-render
+      [{ ...baseProps, isSelected: true, isActive: true }, 3],
+      // Change source data - should re-render
+      [
+        {
+          ...baseProps,
+          isSelected: true,
+          isActive: true,
+          source: {
+            ...mockSource,
+            data: { ...mockSource.data, is_starred: true },
+          },
+        },
+        4,
+      ],
+      // Different source entirely - should re-render
+      [
+        {
+          ...baseProps,
+          source: {
+            ...mockSource,
+            uuid: "source-2",
+            data: { ...mockSource.data, uuid: "source-2" },
+          },
+        },
+        5,
+      ],
+    ];
+
+    it("should handle memoization correctly", testMemoization(Source, cases));
   });
 });

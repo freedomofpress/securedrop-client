@@ -3,14 +3,16 @@ import { toTitleCase } from "../../../utils";
 import Item from "./Conversation/Item";
 import { Form, Input, Button } from "antd";
 import { useTranslation } from "react-i18next";
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, memo, useMemo } from "react";
 import "./Conversation.css";
 
 interface ConversationProps {
   sourceWithItems: SourceWithItems | null;
 }
 
-function Conversation({ sourceWithItems }: ConversationProps) {
+const Conversation = memo(function Conversation({
+  sourceWithItems,
+}: ConversationProps) {
   const { t } = useTranslation("MainContent");
   const scrollContainerRef = useRef<HTMLDivElement>(null);
 
@@ -22,9 +24,20 @@ function Conversation({ sourceWithItems }: ConversationProps) {
     }
   }, [sourceWithItems?.items]);
 
-  if (!sourceWithItems) return null;
+  const designation = useMemo(
+    () => sourceWithItems?.data.journalist_designation,
+    [sourceWithItems?.data.journalist_designation],
+  );
 
-  const designation = sourceWithItems.data.journalist_designation;
+  const placeholderText = useMemo(
+    () =>
+      t("conversation.messagePlaceholder", {
+        designation: designation ? toTitleCase(designation) : "",
+      }),
+    [t, designation],
+  );
+
+  if (!sourceWithItems) return null;
 
   return (
     <div className="flex flex-col h-full w-full min-h-0">
@@ -34,7 +47,7 @@ function Conversation({ sourceWithItems }: ConversationProps) {
           className="absolute inset-0 overflow-y-auto p-4 pb-0"
         >
           {sourceWithItems.items.map((item) => (
-            <Item key={item.uuid} item={item} designation={designation} />
+            <Item key={item.uuid} item={item} designation={designation || ""} />
           ))}
         </div>
       </div>
@@ -44,9 +57,7 @@ function Conversation({ sourceWithItems }: ConversationProps) {
             <div className="relative">
               <Input.TextArea
                 rows={4}
-                placeholder={t("conversation.messagePlaceholder", {
-                  designation: toTitleCase(designation),
-                })}
+                placeholder={placeholderText}
                 className="w-full border border-gray-300 rounded-lg p-3 text-gray-900 resize-none focus:outline-none focus:ring-2 focus:ring-blue-500 conversation-textarea"
               />
               <Button
@@ -62,6 +73,6 @@ function Conversation({ sourceWithItems }: ConversationProps) {
       </div>
     </div>
   );
-}
+});
 
 export default Conversation;

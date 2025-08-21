@@ -1,5 +1,5 @@
 import { useParams } from "react-router";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useTranslation } from "react-i18next";
 
 import type { SourceWithItems } from "../../../types";
@@ -34,41 +34,45 @@ function MainContent() {
     }
   }, [sourceUuid]);
 
-  let header: React.ReactNode = null;
-  let content: React.ReactNode = null;
+  const { header, content } = useMemo(() => {
+    let header: React.ReactNode = null;
+    let content: React.ReactNode = null;
 
-  // If we have a source UUID, show the source content
-  if (sourceUuid) {
-    if (loading) {
-      // Loading
-      header = <p>{t("loading.header")}</p>;
-      content = <p>{t("loading.content")}</p>;
-    } else if (!sourceWithItems) {
-      // Source not found
-      header = <p>{t("sourceNotFound.header")}</p>;
-      content = <p>{t("sourceNotFound.content")}</p>;
+    // If we have a source UUID, show the source content
+    if (sourceUuid) {
+      if (loading) {
+        // Loading
+        header = <p>{t("loading.header")}</p>;
+        content = <p>{t("loading.content")}</p>;
+      } else if (!sourceWithItems) {
+        // Source not found
+        header = <p>{t("sourceNotFound.header")}</p>;
+        content = <p>{t("sourceNotFound.content")}</p>;
+      } else {
+        // Source found, display items
+        const designation = toTitleCase(
+          sourceWithItems.data.journalist_designation,
+        );
+        header = (
+          <>
+            <Avatar designation={designation} isActive={false} />
+            <p className="ml-2">{designation}</p>
+          </>
+        );
+        content = <Conversation sourceWithItems={sourceWithItems} />;
+      }
     } else {
-      // Source found, display items
-      const designation = toTitleCase(
-        sourceWithItems.data.journalist_designation,
+      // Show empty state when no source is selected
+      header = <></>;
+      content = (
+        <div className="flex flex-1 items-center justify-center w-full h-full">
+          <EmptyState />
+        </div>
       );
-      header = (
-        <>
-          <Avatar designation={designation} isActive={false} />
-          <p className="ml-2">{designation}</p>
-        </>
-      );
-      content = <Conversation sourceWithItems={sourceWithItems} />;
     }
-  } else {
-    // Show empty state when no source is selected
-    header = <></>;
-    content = (
-      <div className="flex flex-1 items-center justify-center w-full h-full">
-        <EmptyState />
-      </div>
-    );
-  }
+
+    return { header, content };
+  }, [sourceUuid, loading, sourceWithItems, t]);
 
   return (
     <div className="flex-1 flex flex-col h-full min-h-0">

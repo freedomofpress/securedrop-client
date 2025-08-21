@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo, useCallback } from "react";
 import { useNavigate, useParams } from "react-router";
 import { Checkbox, Button, Dropdown, Input, Tooltip } from "antd";
 import {
@@ -43,140 +43,163 @@ function SourceList() {
   }, []);
 
   // Handle select all checkbox
-  const handleSelectAll = (checked: boolean) => {
-    if (checked) {
-      setSelectedSources(new Set(sources.map((source) => source.uuid)));
-      setAllSelected(true);
-    } else {
-      setSelectedSources(new Set());
-      setAllSelected(false);
-    }
-  };
+  const handleSelectAll = useCallback(
+    (checked: boolean) => {
+      if (checked) {
+        setSelectedSources(new Set(sources.map((source) => source.uuid)));
+        setAllSelected(true);
+      } else {
+        setSelectedSources(new Set());
+        setAllSelected(false);
+      }
+    },
+    [sources],
+  );
 
   // Handle individual source selection
-  const handleSourceSelect = (sourceId: string, checked: boolean) => {
-    const newSelection = new Set(selectedSources);
-    if (checked) {
-      newSelection.add(sourceId);
-    } else {
-      newSelection.delete(sourceId);
-    }
-    setSelectedSources(newSelection);
-    setAllSelected(newSelection.size === sources.length);
-  };
+  const handleSourceSelect = useCallback(
+    (sourceId: string, checked: boolean) => {
+      setSelectedSources((prev) => {
+        const newSelection = new Set(prev);
+        if (checked) {
+          newSelection.add(sourceId);
+        } else {
+          newSelection.delete(sourceId);
+        }
+        setAllSelected(newSelection.size === sources.length);
+        return newSelection;
+      });
+    },
+    [sources.length],
+  );
 
   // Handle starring/unstarring a source
-  const handleToggleStar = async (
-    sourceId: string,
-    currentlyStarred: boolean,
-  ) => {
-    // TODO: Implement API call to toggle star status
+  const handleToggleStar = useCallback(
+    async (sourceId: string, currentlyStarred: boolean) => {
+      // TODO: Implement API call to toggle star status
 
-    // Update local state optimistically
-    setSources(
-      sources.map((source) =>
-        source.uuid === sourceId
-          ? {
-              ...source,
-              data: { ...source.data, is_starred: !currentlyStarred },
-            }
-          : source,
-      ),
-    );
-  };
+      // Update local state optimistically
+      setSources((prevSources) =>
+        prevSources.map((source) =>
+          source.uuid === sourceId
+            ? {
+                ...source,
+                data: { ...source.data, is_starred: !currentlyStarred },
+              }
+            : source,
+        ),
+      );
+    },
+    [],
+  );
 
   // Handle source click to navigate to source route
-  const handleSourceClick = (sourceId: string) => {
-    if (activeSourceUuid === sourceId) {
-      // If already active, navigate back to inbox home
-      navigate("/");
-      return;
-    }
-    // Navigate to the source route
-    navigate(`/source/${sourceId}`);
-  };
+  const handleSourceClick = useCallback(
+    (sourceId: string) => {
+      if (activeSourceUuid === sourceId) {
+        // If already active, navigate back to inbox home
+        navigate("/");
+        return;
+      }
+      // Navigate to the source route
+      navigate(`/source/${sourceId}`);
+    },
+    [activeSourceUuid, navigate],
+  );
 
-  const handleBulkDelete = () => {
+  const handleBulkDelete = useCallback(() => {
     console.log("Delete selected sources:", selectedSources);
-  };
+  }, [selectedSources]);
 
-  const handleBulkToggleRead = () => {
+  const handleBulkToggleRead = useCallback(() => {
     console.log("Toggle read status for selected sources:", selectedSources);
-  };
+  }, [selectedSources]);
 
-  const handleToggleSort = () => {
-    setSortedAsc(!sortedAsc);
-  };
+  const handleToggleSort = useCallback(() => {
+    setSortedAsc((prev) => !prev);
+  }, []);
 
-  const handleFilterChange = (newFilter: filterOption) => {
+  const handleFilterChange = useCallback((newFilter: filterOption) => {
     setFilter(newFilter);
-  };
+  }, []);
+
+  const handleSearchChange = useCallback(
+    (e: React.ChangeEvent<HTMLInputElement>) => {
+      setSearchTerm(e.target.value);
+    },
+    [],
+  );
 
   // Filter and sort sources based on the selected filter and sort order
-  const filteredSources = sources
-    .filter((source) => {
-      // First filter by search term
-      const matchesSearch = source.data.journalist_designation
-        .toLowerCase()
-        .includes(searchTerm.toLowerCase());
+  const filteredSources = useMemo(() => {
+    return sources
+      .filter((source) => {
+        // First filter by search term
+        const matchesSearch = source.data.journalist_designation
+          .toLowerCase()
+          .includes(searchTerm.toLowerCase());
 
-      if (!matchesSearch) {
-        return false;
-      }
+        if (!matchesSearch) {
+          return false;
+        }
 
-      // Then filter by the selected filter option
-      switch (filter) {
-        case "unread":
-          return !source.isRead;
-        case "read":
-          return source.isRead;
-        case "starred":
-          return source.data.is_starred;
-        case "unstarred":
-          return !source.data.is_starred;
-        case "all":
-        default:
-          return true; // "all" filter shows everything
-      }
-    })
-    .sort((a, b) => {
-      const dateA = new Date(a.data.last_updated).getTime();
-      const dateB = new Date(b.data.last_updated).getTime();
+        // Then filter by the selected filter option
+        switch (filter) {
+          case "unread":
+            return !source.isRead;
+          case "read":
+            return source.isRead;
+          case "starred":
+            return source.data.is_starred;
+          case "unstarred":
+            return !source.data.is_starred;
+          case "all":
+          default:
+            return true; // "all" filter shows everything
+        }
+      })
+      .sort((a, b) => {
+        const dateA = new Date(a.data.last_updated).getTime();
+        const dateB = new Date(b.data.last_updated).getTime();
 
-      if (sortedAsc) {
-        return dateA - dateB; // Ascending: oldest first
-      } else {
-        return dateB - dateA; // Descending: newest first
-      }
-    });
+        if (sortedAsc) {
+          return dateA - dateB; // Ascending: oldest first
+        } else {
+          return dateB - dateA; // Descending: newest first
+        }
+      });
+  }, [sources, searchTerm, filter, sortedAsc]);
 
-  const dropdownItems = [
-    {
-      key: "all",
-      label: t("sourcelist.filters.all"),
-      onClick: () => handleFilterChange("all"),
-    },
-    {
-      key: "read",
-      label: t("sourcelist.filters.read"),
-      onClick: () => handleFilterChange("read"),
-    },
-    {
-      key: "unread",
-      label: t("sourcelist.filters.unread"),
-      onClick: () => handleFilterChange("unread"),
-    },
-    {
-      key: "starred",
-      label: t("sourcelist.filters.starred"),
-      onClick: () => handleFilterChange("starred"),
-    },
-    {
-      key: "unstarred",
-      label: t("sourcelist.filters.unstarred"),
-      onClick: () => handleFilterChange("unstarred"),
-    },
-  ];
+  const dropdownItems = useMemo(
+    () => [
+      {
+        key: "all",
+        label: t("sourcelist.filters.all"),
+        onClick: () => handleFilterChange("all"),
+      },
+      {
+        key: "read",
+        label: t("sourcelist.filters.read"),
+        onClick: () => handleFilterChange("read"),
+      },
+      {
+        key: "unread",
+        label: t("sourcelist.filters.unread"),
+        onClick: () => handleFilterChange("unread"),
+      },
+      {
+        key: "starred",
+        label: t("sourcelist.filters.starred"),
+        onClick: () => handleFilterChange("starred"),
+      },
+      {
+        key: "unstarred",
+        label: t("sourcelist.filters.unstarred"),
+        onClick: () => handleFilterChange("unstarred"),
+      },
+    ],
+    [t, handleFilterChange],
+  );
 
   return (
     <div className="flex-1 flex flex-col min-h-0">
@@ -222,7 +245,7 @@ function SourceList() {
             placeholder={t("sourcelist.search.placeholder")}
             prefix={<SearchOutlined />}
             value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
+            onChange={handleSearchChange}
             className="flex-1 min-w-0 max-w-xs"
             allowClear
           />

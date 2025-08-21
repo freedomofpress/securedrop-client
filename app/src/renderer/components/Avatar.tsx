@@ -1,3 +1,4 @@
+import { memo, useMemo } from "react";
 import { getInitials } from "../utils";
 
 interface AvatarProps {
@@ -5,8 +6,8 @@ interface AvatarProps {
   isActive?: boolean;
 }
 
-function Avatar({ designation, isActive }: AvatarProps) {
-  const initials = getInitials(designation);
+const Avatar = memo(function Avatar({ designation, isActive }: AvatarProps) {
+  const initials = useMemo(() => getInitials(designation), [designation]);
 
   return (
     <div
@@ -19,6 +20,6 @@ function Avatar({ designation, isActive }: AvatarProps) {
       {initials}
     </div>
   );
-}
+});
 
 export default Avatar;
