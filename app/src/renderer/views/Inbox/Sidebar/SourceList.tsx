@@ -1,22 +1,13 @@
 import { useState, useEffect, useMemo, useCallback } from "react";
 import { useNavigate, useParams } from "react-router";
-import { Checkbox, Button, Dropdown, Input, Tooltip } from "antd";
-import {
-  Trash,
-  Mail,
-  Search,
-  CalendarArrowDown,
-  CalendarArrowUp,
-  ChevronDown,
-  ChevronUp,
-} from "lucide-react";
+import { Checkbox, Button, Tooltip } from "antd";
+import { Trash, Mail } from "lucide-react";
 import { useTranslation } from "react-i18next";
 
 import type { Source as SourceType } from "../../../../types";
 import Source from "./SourceList/Source";
 import LoadingIndicator from "../../../components/LoadingIndicator";
-
-type filterOption = "all" | "read" | "unread" | "starred" | "unstarred";
+import FilterControls, { type filterOption } from "./SourceList/FilterControls";
 
 function SourceList() {
   const { t } = useTranslation("Sidebar");
@@ -172,37 +163,6 @@ function SourceList() {
       });
   }, [sources, searchTerm, filter, sortedAsc]);
 
-  const dropdownItems = useMemo(
-    () => [
-      {
-        key: "all",
-        label: t("sourcelist.filters.all"),
-        onClick: () => handleFilterChange("all"),
-      },
-      {
-        key: "read",
-        label: t("sourcelist.filters.read"),
-        onClick: () => handleFilterChange("read"),
-      },
-      {
-        key: "unread",
-        label: t("sourcelist.filters.unread"),
-        onClick: () => handleFilterChange("unread"),
-      },
-      {
-        key: "starred",
-        label: t("sourcelist.filters.starred"),
-        onClick: () => handleFilterChange("starred"),
-      },
-      {
-        key: "unstarred",
-        label: t("sourcelist.filters.unstarred"),
-        onClick: () => handleFilterChange("unstarred"),
-      },
-    ],
-    [t, handleFilterChange],
-  );
-
   return (
     <div className="flex-1 flex flex-col min-h-0">
       {/* Header with select all and action buttons */}
@@ -243,46 +203,16 @@ function SourceList() {
             )}
           </div>
 
-          <Input
-            placeholder={t("sourcelist.search.placeholder")}
-            prefix={<Search size={18} />}
-            value={searchTerm}
-            onChange={handleSearchChange}
-            className="flex-1 min-w-0 max-w-xs"
-            allowClear
+          <FilterControls
+            searchTerm={searchTerm}
+            filter={filter}
+            sortedAsc={sortedAsc}
+            dropdownOpen={dropdownOpen}
+            onSearchChange={handleSearchChange}
+            onFilterChange={handleFilterChange}
+            onToggleSort={handleToggleSort}
+            onDropdownOpenChange={setDropdownOpen}
           />
-
-          <div className="flex items-center gap-1 flex-shrink-0">
-            <Dropdown
-              menu={{ items: dropdownItems }}
-              trigger={["click"]}
-              onOpenChange={setDropdownOpen}
-            >
-              <Button type="text" data-testid="filter-dropdown">
-                {dropdownItems.find((item) => item.key === filter)?.label}{" "}
-                {dropdownOpen ? (
-                  <ChevronUp size={18} />
-                ) : (
-                  <ChevronDown size={18} />
-                )}
-              </Button>
-            </Dropdown>
-
-            <Tooltip title={t("sourcelist.sort.tooltip")}>
-              <Button
-                type="text"
-                icon={
-                  sortedAsc ? (
-                    <CalendarArrowUp size={18} />
-                  ) : (
-                    <CalendarArrowDown size={18} />
-                  )
-                }
-                onClick={handleToggleSort}
-                data-testid="sort-button"
-              />
-            </Tooltip>
-          </div>
         </div>
       </div>
 
