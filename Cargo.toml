@@ -1,5 +1,5 @@
 [workspace]
-members = [
+members = [ "fetch",
     "proxy"
 ]
 resolver = "2"

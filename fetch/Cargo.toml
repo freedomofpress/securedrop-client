@@ -1,0 +1,11 @@
+[package]
+name = "fetch"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+anyhow = "1.0.99"
+clap = { version = "4.5.45", features = ["derive"] }
+futures = "0.3.31"
+rusqlite = "0.37.0"
+tokio = { version = "1.47.1", features = ["macros", "rt", "rt-multi-thread"] }
