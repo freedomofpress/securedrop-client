@@ -20,7 +20,7 @@ export default defineConfig({
     projects: [
       {
         test: {
-          name: "unit",
+          name: "unit", // Unit and component tests
           include: ["src/**/*.test.ts", "src/**/*.test.tsx"],
           globals: true,
           environment: "jsdom",
@@ -28,7 +28,7 @@ export default defineConfig({
       },
       {
         test: {
-          name: "integration",
+          name: "integration", // Integration tests that may use testcontainers
           include: ["integration_tests/**/*.test.ts"],
           setupFiles: ["integration_tests/setup.ts"],
           globals: true,
