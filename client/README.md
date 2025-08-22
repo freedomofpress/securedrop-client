@@ -76,11 +76,7 @@ end
 subgraph sd-proxy
 spProxy["securedrop-proxy"]
 end
-spProxy --HTTP--> spTor
-subgraph sd-whonix
-spTor["Tor"]
-end
-spTor --> spServer["SecureDrop Server"]
+spProxy --HTTP over Tor--> spServer["SecureDrop Server"]
 end
 ```
 
