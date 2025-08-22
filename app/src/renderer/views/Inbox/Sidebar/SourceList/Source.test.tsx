@@ -8,10 +8,19 @@ import {
 import Source from "./Source";
 import type { Source as SourceType } from "../../../../../types";
 
+// Mock useNavigate
+const mockNavigate = vi.fn();
+vi.mock("react-router", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("react-router")>();
+  return {
+    ...actual,
+    useNavigate: () => mockNavigate,
+  };
+});
+
 // Mock functions for props
 const mockOnSelect = vi.fn();
 const mockOnToggleStar = vi.fn();
-const mockOnClick = vi.fn();
 
 // Helper function to create a mock source
 const createMockSource = (overrides: Partial<SourceType> = {}): SourceType => ({
@@ -37,12 +46,12 @@ const defaultProps = {
   isActive: false,
   onSelect: mockOnSelect,
   onToggleStar: mockOnToggleStar,
-  onClick: mockOnClick,
 };
 
 describe("Source Component", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    mockNavigate.mockClear();
   });
 
   describe("isRead functionality", () => {
@@ -201,17 +210,30 @@ describe("Source Component", () => {
   });
 
   describe("interaction handlers", () => {
-    it("calls onClick when source is clicked", async () => {
+    it("navigates to source when clicked and not active", async () => {
       const user = userEvent.setup();
       const source = createMockSource();
       const { container } = renderWithProviders(
-        <Source source={source} {...defaultProps} />,
+        <Source source={source} {...defaultProps} isActive={false} />,
       );
 
       const sourceElement = container.firstChild as HTMLElement;
       await user.click(sourceElement);
 
-      expect(mockOnClick).toHaveBeenCalledWith("test-uuid-123");
+      expect(mockNavigate).toHaveBeenCalledWith("/source/test-uuid-123");
+    });
+
+    it("navigates to home when clicked and already active", async () => {
+      const user = userEvent.setup();
+      const source = createMockSource();
+      const { container } = renderWithProviders(
+        <Source source={source} {...defaultProps} isActive={true} />,
+      );
+
+      const sourceElement = container.firstChild as HTMLElement;
+      await user.click(sourceElement);
+
+      expect(mockNavigate).toHaveBeenCalledWith("/");
     });
 
     it("calls onToggleStar when star button is clicked", async () => {
@@ -272,7 +294,6 @@ describe("Source Component", () => {
       isActive: false,
       onSelect: mockOnSelect,
       onToggleStar: mockOnToggleStar,
-      onClick: mockOnClick,
     };
 
     const cases: Array<[typeof baseProps, number]> = [
