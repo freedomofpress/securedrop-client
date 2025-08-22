@@ -15,6 +15,7 @@ import { useTranslation } from "react-i18next";
 import type { Source as SourceType } from "../../../../types";
 import Source from "./SourceList/Source";
 import LoadingIndicator from "../../../components/LoadingIndicator";
+import { useDebounce } from "../../../hooks";
 
 type filterOption = "all" | "read" | "unread" | "starred" | "unstarred";
 
@@ -33,6 +34,9 @@ function SourceList() {
   const [filter, setFilter] = useState<filterOption>("all");
   const [searchTerm, setSearchTerm] = useState("");
   const [dropdownOpen, setDropdownOpen] = useState(false);
+
+  // Debounce search term to avoid excessive filtering
+  const debouncedSearchTerm = useDebounce(searchTerm, 300);
 
   useEffect(() => {
     const fetchSources = async () => {
@@ -139,7 +143,7 @@ function SourceList() {
         // First filter by search term
         const matchesSearch = source.data.journalist_designation
           .toLowerCase()
-          .includes(searchTerm.toLowerCase());
+          .includes(debouncedSearchTerm.toLowerCase());
 
         if (!matchesSearch) {
           return false;
@@ -170,7 +174,7 @@ function SourceList() {
           return dateB - dateA; // Descending: newest first
         }
       });
-  }, [sources, searchTerm, filter, sortedAsc]);
+  }, [sources, debouncedSearchTerm, filter, sortedAsc]);
 
   const dropdownItems = useMemo(
     () => [
@@ -247,6 +251,7 @@ function SourceList() {
             placeholder={t("sourcelist.search.placeholder")}
             prefix={<Search size={18} />}
             value={searchTerm}
+            data-testid="source-search-input"
             onChange={handleSearchChange}
             className="flex-1 min-w-0 max-w-xs"
             allowClear
