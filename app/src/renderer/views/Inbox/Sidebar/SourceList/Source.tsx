@@ -46,6 +46,9 @@ const Source = memo(function Source({
         ${isSelected && !isActive ? "bg-blue-25" : ""}
 `}
       onClick={() => onClick(source.uuid)}
+      data-testid={`source-${source.uuid}`}
+      data-selected={isSelected}
+      data-active={isActive}
     >
       {/* Checkbox */}
       <Checkbox
@@ -60,7 +63,7 @@ const Source = memo(function Source({
             ? "text-white [&_.ant-checkbox-inner]:bg-white [&_.ant-checkbox-inner]:border-white [&_.ant-checkbox-checked_.ant-checkbox-inner]:bg-white [&_.ant-checkbox-checked_.ant-checkbox-inner]:border-white"
             : ""
         }
-        data-testid="source-checkbox"
+        data-testid={`source-checkbox-${source.uuid}`}
       />
 
       {/* Star button */}
@@ -83,6 +86,7 @@ const Source = memo(function Source({
             e.stopPropagation();
             onToggleStar(source.uuid, source.data.is_starred);
           }}
+          data-testid={`star-button-${source.uuid}`}
         />
       </Tooltip>
 
@@ -98,7 +102,7 @@ const Source = memo(function Source({
                 className={`text-sm truncate ${
                   isActive ? "text-white" : "text-gray-900"
                 } ${!source.isRead ? "font-bold" : "font-medium"}`}
-                data-testid="source-designation"
+                data-testid={`source-designation-${source.uuid}`}
               >
                 {designation}
               </h3>
