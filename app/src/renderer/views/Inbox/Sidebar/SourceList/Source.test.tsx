@@ -50,7 +50,9 @@ describe("Source Component", () => {
       const unreadSource = createMockSource({ isRead: false });
       renderWithProviders(<Source source={unreadSource} {...defaultProps} />);
 
-      const designation = screen.getByTestId("source-designation");
+      const designation = screen.getByTestId(
+        "source-designation-test-uuid-123",
+      );
       expect(designation.className).toContain("font-bold");
       expect(designation.className).not.toContain("font-medium");
     });
@@ -59,7 +61,9 @@ describe("Source Component", () => {
       const readSource = createMockSource({ isRead: true });
       renderWithProviders(<Source source={readSource} {...defaultProps} />);
 
-      const designation = screen.getByTestId("source-designation");
+      const designation = screen.getByTestId(
+        "source-designation-test-uuid-123",
+      );
       expect(designation.className).toContain("font-medium");
       expect(designation.className).not.toContain("font-bold");
     });
@@ -141,7 +145,7 @@ describe("Source Component", () => {
       );
 
       const checkbox = screen.getByTestId(
-        "source-checkbox",
+        "source-checkbox-test-uuid-123",
       ) as HTMLInputElement;
       expect(checkbox.checked).toBe(true);
     });
@@ -153,7 +157,7 @@ describe("Source Component", () => {
       );
 
       const checkbox = screen.getByTestId(
-        "source-checkbox",
+        "source-checkbox-test-uuid-123",
       ) as HTMLInputElement;
       expect(checkbox.checked).toBe(false);
     });
@@ -165,7 +169,7 @@ describe("Source Component", () => {
         <Source source={source} {...defaultProps} isSelected={false} />,
       );
 
-      const checkbox = screen.getByTestId("source-checkbox");
+      const checkbox = screen.getByTestId("source-checkbox-test-uuid-123");
       await user.click(checkbox);
 
       expect(mockOnSelect).toHaveBeenCalledWith("test-uuid-123", true);
@@ -238,7 +242,9 @@ describe("Source Component", () => {
       });
       renderWithProviders(<Source source={source} {...defaultProps} />);
 
-      const designation = screen.getByTestId("source-designation");
+      const designation = screen.getByTestId(
+        "source-designation-test-uuid-123",
+      );
       expect(designation.textContent).toBe("Unique Source Name"); // toTitleCase applied
     });
   });

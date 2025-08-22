@@ -1,6 +1,7 @@
 import { screen, waitFor } from "@testing-library/react";
 import { expect, describe, it, vi, beforeEach, afterEach } from "vitest";
 import userEvent from "@testing-library/user-event";
+import React from "react";
 import SourceList from "./SourceList";
 import type { Source as SourceType } from "../../../../types";
 import type { SourceProps } from "./SourceList/Source";
@@ -12,9 +13,20 @@ vi.mock("react-window", () => ({
     children: ItemRenderer,
     itemCount,
     height,
-    itemSize,
     className,
-  }: any) => (
+  }: {
+    children: ({
+      index,
+      style,
+    }: {
+      index: number;
+      style: React.CSSProperties;
+    }) => React.ReactNode;
+    itemCount: number;
+    height: number;
+    itemSize?: number; // Optional since we don't use it in the mock
+    className: string;
+  }) => (
     <div
       data-testid="virtualized-list"
       data-item-count={itemCount}
