@@ -18,6 +18,7 @@ FILES=$(find "." \
         -o -path '*.yml' \
         -o -path '*/.mypy_cache/*' \
         -o -path './.git' \
+        -o -path './app/node_modules/*' \
         -o -path './build/*' \
         -o -path './target' \
      \) -prune \
