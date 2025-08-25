@@ -26,9 +26,9 @@ function Account() {
     navigate("/sign-in");
   };
 
-  const sync = () => {
+  const sync = async () => {
     console.log("syncing metadata");
-    window.electronAPI.syncMetadata({
+    await window.electronAPI.syncMetadata({
       authToken: session.authData?.token,
     });
   };
