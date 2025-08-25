@@ -213,10 +213,12 @@ function SourceList() {
             style={style}
             className="sd-bg-primary sd-border-secondary border-b p-4 flex items-center"
           >
-            <div className="w-6 h-6 bg-gray-200 rounded animate-pulse mr-3"></div>
+            <div className="w-4 h-4 bg-gray-200 rounded animate-pulse mr-3"></div>
+            <div className="w-4 h-4 bg-gray-200 rounded animate-pulse mr-3"></div>
+            <div className="w-8 h-8 bg-gray-200 rounded-full animate-pulse mr-3"></div>
             <div className="flex-1">
               <div className="h-4 bg-gray-200 rounded animate-pulse mb-2 w-3/4"></div>
-              <div className="h-3 bg-gray-200 rounded animate-pulse w-1/2"></div>
+              <div className="h-3 bg-gray-200 rounded animate-pulse w-full"></div>
             </div>
           </div>
         );
