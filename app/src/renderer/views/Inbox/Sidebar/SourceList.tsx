@@ -195,8 +195,33 @@ function SourceList() {
 
   // Item renderer for react-window
   const ItemRenderer = useCallback(
-    ({ index, style }: { index: number; style: React.CSSProperties }) => {
+    ({
+      index,
+      style,
+      isScrolling,
+    }: {
+      index: number;
+      style: React.CSSProperties;
+      isScrolling?: boolean;
+    }) => {
       const source = filteredSources[index];
+
+      // Show placeholder while scrolling
+      if (isScrolling) {
+        return (
+          <div
+            style={style}
+            className="sd-bg-primary sd-border-secondary border-b p-4 flex items-center"
+          >
+            <div className="w-6 h-6 bg-gray-200 rounded animate-pulse mr-3"></div>
+            <div className="flex-1">
+              <div className="h-4 bg-gray-200 rounded animate-pulse mb-2 w-3/4"></div>
+              <div className="h-3 bg-gray-200 rounded animate-pulse w-1/2"></div>
+            </div>
+          </div>
+        );
+      }
+
       const isSelected = selectedSources.has(source.uuid);
       const isActive = activeSourceUuid === source.uuid;
 
@@ -347,6 +372,7 @@ function SourceList() {
             itemCount={filteredSources.length}
             itemSize={72} // Height of each source item
             className="select-none"
+            useIsScrolling
           >
             {ItemRenderer}
           </List>
