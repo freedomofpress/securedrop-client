@@ -1,12 +1,46 @@
 import { screen, waitFor } from "@testing-library/react";
 import { expect, describe, it, vi, beforeEach, afterEach } from "vitest";
 import userEvent from "@testing-library/user-event";
+import React from "react";
 import SourceList from "./SourceList";
 import type { Source as SourceType } from "../../../../types";
 import type { SourceProps } from "./SourceList/Source";
 import { renderWithProviders } from "../../../test-component-setup";
 
-// Mock the Source component to simplify testing the main Sources component logic
+// Mock react-window to render all items instead of virtualizing
+vi.mock("react-window", () => ({
+  FixedSizeList: ({
+    children: ItemRenderer,
+    itemCount,
+    height,
+    className,
+  }: {
+    children: ({
+      index,
+      style,
+    }: {
+      index: number;
+      style: React.CSSProperties;
+    }) => React.ReactNode;
+    itemCount: number;
+    height: number;
+    itemSize?: number; // Optional since we don't use it in the mock
+    className: string;
+  }) => (
+    <div
+      data-testid="virtualized-list"
+      data-item-count={itemCount}
+      style={{ height }}
+      className={className}
+    >
+      {Array.from({ length: itemCount }, (_, index) => (
+        <div key={index}>{ItemRenderer({ index, style: {} })}</div>
+      ))}
+    </div>
+  ),
+}));
+
+// Mock the Source component
 vi.mock("./SourceList/Source", () => ({
   default: ({
     source,
@@ -17,17 +51,28 @@ vi.mock("./SourceList/Source", () => ({
     onClick,
   }: SourceProps) => (
     <div
+      className={`flex items-center px-4 py-3 border-b border-gray-100 cursor-pointer transition-colors duration-150 ease-in-out
+        ${isActive ? "bg-blue-500 text-white hover:bg-blue-600" : "hover:bg-gray-50"}
+        ${isSelected && !isActive ? "bg-blue-25" : ""}
+      `}
       data-testid={`source-${source.uuid}`}
       data-selected={isSelected}
       data-active={isActive}
       onClick={() => onClick(source.uuid)}
     >
+      {/* Checkbox - using input to match test expectations */}
       <input
         type="checkbox"
         data-testid={`source-checkbox-${source.uuid}`}
         checked={isSelected}
-        onChange={(e) => onSelect(source.uuid, e.target.checked)}
+        onChange={(e) => {
+          e.stopPropagation();
+          onSelect(source.uuid, e.target.checked);
+        }}
+        onClick={(e) => e.stopPropagation()}
       />
+
+      {/* Star button */}
       <button
         data-testid={`star-button-${source.uuid}`}
         onClick={(e) => {
@@ -35,9 +80,16 @@ vi.mock("./SourceList/Source", () => ({
           onToggleStar(source.uuid, source.data.is_starred);
         }}
       >
-        {source.data.is_starred ? "star" : "no-star"}
+        {source.data.is_starred ? "★" : "☆"}
       </button>
-      <span data-testid={`source-designation-${source.uuid}`}>
+
+      {/* Source designation */}
+      <span
+        data-testid={`source-designation-${source.uuid}`}
+        className={`text-sm truncate ${
+          isActive ? "text-white" : "text-gray-900"
+        } ${!source.isRead ? "font-bold" : "font-medium"}`}
+      >
         {source.data.journalist_designation}
       </span>
     </div>

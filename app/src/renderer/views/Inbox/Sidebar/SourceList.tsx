@@ -1,5 +1,6 @@
-import { useState, useEffect, useMemo, useCallback } from "react";
+import { useState, useEffect, useMemo, useCallback, useRef } from "react";
 import { useNavigate, useParams } from "react-router";
+import { FixedSizeList as List } from "react-window";
 import { Checkbox, Button, Dropdown, Input, Tooltip } from "antd";
 import {
   Trash,
@@ -34,6 +35,8 @@ function SourceList() {
   const [filter, setFilter] = useState<filterOption>("all");
   const [searchTerm, setSearchTerm] = useState("");
   const [dropdownOpen, setDropdownOpen] = useState(false);
+  const [containerHeight, setContainerHeight] = useState(1000); // Larger default for testing
+  const containerRef = useRef<HTMLDivElement>(null);
 
   // Debounce search term to avoid excessive filtering
   const debouncedSearchTerm = useDebounce(searchTerm, 300);
@@ -46,6 +49,20 @@ function SourceList() {
       setLoading(false);
     };
     fetchSources();
+  }, []);
+
+  // Calculate container height for react-window
+  useEffect(() => {
+    const updateHeight = () => {
+      if (containerRef.current) {
+        const rect = containerRef.current.getBoundingClientRect();
+        setContainerHeight(rect.height);
+      }
+    };
+
+    updateHeight();
+    window.addEventListener("resize", updateHeight);
+    return () => window.removeEventListener("resize", updateHeight);
   }, []);
 
   // Handle select all checkbox
@@ -176,6 +193,36 @@ function SourceList() {
       });
   }, [sources, debouncedSearchTerm, filter, sortedAsc]);
 
+  // Item renderer for react-window
+  const ItemRenderer = useCallback(
+    ({ index, style }: { index: number; style: React.CSSProperties }) => {
+      const source = filteredSources[index];
+      const isSelected = selectedSources.has(source.uuid);
+      const isActive = activeSourceUuid === source.uuid;
+
+      return (
+        <div style={style}>
+          <Source
+            source={source}
+            isSelected={isSelected}
+            isActive={isActive}
+            onSelect={handleSourceSelect}
+            onToggleStar={handleToggleStar}
+            onClick={handleSourceClick}
+          />
+        </div>
+      );
+    },
+    [
+      filteredSources,
+      selectedSources,
+      activeSourceUuid,
+      handleSourceSelect,
+      handleToggleStar,
+      handleSourceClick,
+    ],
+  );
+
   const dropdownItems = useMemo(
     () => [
       {
@@ -292,25 +339,17 @@ function SourceList() {
       </div>
 
       {/* Sources list */}
-      <div className="flex-1 min-h-0 relative">
+      <div ref={containerRef} className="flex-1 min-h-0 relative">
         {loading && <LoadingIndicator />}
-        <div className="absolute inset-0 overflow-y-auto select-none">
-          {filteredSources.map((source) => {
-            const isSelected = selectedSources.has(source.uuid);
-            const isActive = activeSourceUuid === source.uuid;
-
-            return (
-              <Source
-                key={source.uuid}
-                source={source}
-                isSelected={isSelected}
-                isActive={isActive}
-                onSelect={handleSourceSelect}
-                onToggleStar={handleToggleStar}
-                onClick={handleSourceClick}
-              />
-            );
-          })}
+        <div className="absolute inset-0">
+          <List
+            height={containerHeight}
+            itemCount={filteredSources.length}
+            itemSize={72} // Height of each source item
+            className="select-none"
+          >
+            {ItemRenderer}
+          </List>
         </div>
       </div>
     </div>
