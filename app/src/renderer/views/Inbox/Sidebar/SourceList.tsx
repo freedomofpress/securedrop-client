@@ -1,18 +1,28 @@
 import { useState, useEffect, useMemo, useCallback, useRef } from "react";
-import { useParams } from "react-router";
+import { useParams, useNavigate } from "react-router";
 import { FixedSizeList as List } from "react-window";
 
-import type { Source as SourceType } from "../../../../types";
 import Source from "./SourceList/Source";
 import LoadingIndicator from "../../../components/LoadingIndicator";
-import { useDebounce } from "../../../hooks";
-import Toolbar, { type filterOption } from "./SourceList/Toolbar";
+import { useDebounce, useAppDispatch, useAppSelector } from "../../../hooks";
+import {
+  fetchSources,
+  selectSources,
+  selectSourcesLoading,
+  setActiveSource,
+  clearActiveSource,
+} from "../../../features/sources/sourcesSlice";
+import Toolbar from "./SourceList/Toolbar";
+
+type filterOption = "all" | "read" | "unread" | "starred" | "unstarred";
 
 function SourceList() {
   const { sourceUuid: activeSourceUuid } = useParams<{ sourceUuid?: string }>();
+  const dispatch = useAppDispatch();
+  const navigate = useNavigate();
 
-  const [loading, setLoading] = useState(false);
-  const [sources, setSources] = useState<SourceType[]>([]);
+  const sources = useAppSelector(selectSources);
+  const loading = useAppSelector(selectSourcesLoading);
   const [selectedSources, setSelectedSources] = useState<Set<string>>(
     new Set(),
   );
@@ -28,14 +38,8 @@ function SourceList() {
   const debouncedSearchTerm = useDebounce(searchTerm, 300);
 
   useEffect(() => {
-    const fetchSources = async () => {
-      setLoading(true);
-      const sources = await window.electronAPI.getSources();
-      setSources(sources);
-      setLoading(false);
-    };
-    fetchSources();
-  }, []);
+    dispatch(fetchSources());
+  }, [dispatch]);
 
   // Calculate container height for react-window
   useEffect(() => {
@@ -84,24 +88,29 @@ function SourceList() {
 
   // Handle starring/unstarring a source
   const handleToggleStar = useCallback(
-    async (sourceId: string, currentlyStarred: boolean) => {
+    async (sourceId: string, _currentlyStarred: boolean) => {
       // TODO: Implement API call to toggle star status
-
-      // Update local state optimistically
-      setSources((prevSources) =>
-        prevSources.map((source) =>
-          source.uuid === sourceId
-            ? {
-                ...source,
-                data: { ...source.data, is_starred: !currentlyStarred },
-              }
-            : source,
-        ),
-      );
+      // TODO: Create Redux action for optimistic star toggle updates
+      console.log("Toggle star for source:", sourceId);
     },
     [],
   );
 
+  // Handle source click to navigate to source route
+  const handleSourceClick = useCallback(
+    (sourceId: string) => {
+      if (activeSourceUuid === sourceId) {
+        // If already active, clear active source and navigate back to inbox home
+        dispatch(clearActiveSource());
+        navigate("/");
+        return;
+      }
+      // Set active source and navigate to the source route
+      dispatch(setActiveSource(sourceId));
+      navigate(`/source/${sourceId}`);
+    },
+    [activeSourceUuid, navigate, dispatch],
+  );
   const handleBulkDelete = useCallback(() => {
     console.log("Delete selected sources:", selectedSources);
   }, [selectedSources]);

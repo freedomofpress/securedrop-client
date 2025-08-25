@@ -8,6 +8,7 @@ import {
   setUnauth,
   SessionStatus,
 } from "../../../features/session/sessionSlice";
+import { syncSources } from "../../../features/sources/sourcesSlice";
 
 function Account() {
   const { t } = useTranslation("Sidebar");
@@ -26,11 +27,9 @@ function Account() {
     navigate("/sign-in");
   };
 
-  const sync = async () => {
+  const sync = () => {
     console.log("syncing metadata");
-    await window.electronAPI.syncMetadata({
-      authToken: session.authData?.token,
-    });
+    dispatch(syncSources(session.authData?.token));
   };
 
   return (
