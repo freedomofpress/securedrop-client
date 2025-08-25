@@ -1,38 +1,34 @@
 import { useParams } from "react-router";
-import { useState, useEffect, useMemo } from "react";
+import { useEffect, useMemo } from "react";
 import { useTranslation } from "react-i18next";
 
-import type { SourceWithItems } from "../../../types";
 import { toTitleCase } from "../../utils";
+import { useAppDispatch, useAppSelector } from "../../hooks";
+import {
+  fetchConversation,
+  selectConversation,
+  selectConversationsLoading,
+} from "../../features/conversations/conversationsSlice";
 import Avatar from "../../components/Avatar";
 import EmptyState from "./MainContent/EmptyState";
 import Conversation from "./MainContent/Conversation";
 
 function MainContent() {
   const { sourceUuid } = useParams<{ sourceUuid?: string }>();
-  const [sourceWithItems, setSourceWithItems] =
-    useState<SourceWithItems | null>(null);
-  const [loading, setLoading] = useState(false);
+  const dispatch = useAppDispatch();
   const { t } = useTranslation("MainContent");
+
+  const sourceWithItems = useAppSelector((state) =>
+    sourceUuid ? selectConversation(state, sourceUuid) : null,
+  );
+  const loading = useAppSelector(selectConversationsLoading);
 
   // Fetch the source with its items
   useEffect(() => {
     if (sourceUuid) {
-      setLoading(true);
-      window.electronAPI
-        .getSourceWithItems(sourceUuid)
-        .then((sourceWithItems) => {
-          setSourceWithItems(sourceWithItems);
-          setLoading(false);
-        })
-        .catch(() => {
-          setSourceWithItems(null);
-          setLoading(false);
-        });
-    } else {
-      setSourceWithItems(null);
+      dispatch(fetchConversation(sourceUuid));
     }
-  }, [sourceUuid]);
+  }, [dispatch, sourceUuid]);
 
   const { header, content } = useMemo(() => {
     let header: React.ReactNode = null;

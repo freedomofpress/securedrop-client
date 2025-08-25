@@ -1,0 +1,82 @@
+import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
+import type { SourceWithItems } from "../../../types";
+import type { RootState } from "../../store";
+
+export interface ConversationsState {
+  currentConversation: SourceWithItems | null;
+  currentSourceUuid: string | null;
+  loading: boolean;
+  error: string | null;
+  lastFetchTime: number | null;
+}
+
+const initialState: ConversationsState = {
+  currentConversation: null,
+  currentSourceUuid: null,
+  loading: false,
+  error: null,
+  lastFetchTime: null,
+};
+
+export const fetchConversation = createAsyncThunk(
+  "conversations/fetchConversation",
+  async (sourceUuid: string) => {
+    const sourceWithItems =
+      await window.electronAPI.getSourceWithItems(sourceUuid);
+    return { sourceUuid, sourceWithItems };
+  },
+);
+
+const conversationsSlice = createSlice({
+  name: "conversations",
+  initialState,
+  reducers: {
+    clearError: (state) => {
+      state.error = null;
+    },
+    clearConversation: (state) => {
+      state.currentConversation = null;
+      state.currentSourceUuid = null;
+      state.lastFetchTime = null;
+    },
+  },
+  extraReducers: (builder) => {
+    builder
+      .addCase(fetchConversation.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(fetchConversation.fulfilled, (state, action) => {
+        state.loading = false;
+        state.error = null;
+        const { sourceUuid, sourceWithItems } = action.payload;
+        state.currentConversation = sourceWithItems;
+        state.currentSourceUuid = sourceUuid;
+        state.lastFetchTime = Date.now();
+      })
+      .addCase(fetchConversation.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.error.message || "Failed to fetch conversation";
+      });
+  },
+});
+
+export const { clearError, clearConversation } = conversationsSlice.actions;
+
+// Selectors
+export const selectCurrentConversation = (state: RootState) =>
+  state.conversations.currentConversation;
+export const selectCurrentSourceUuid = (state: RootState) =>
+  state.conversations.currentSourceUuid;
+export const selectConversation = (state: RootState, sourceUuid: string) =>
+  state.conversations.currentSourceUuid === sourceUuid
+    ? state.conversations.currentConversation
+    : null;
+export const selectConversationsLoading = (state: RootState) =>
+  state.conversations.loading;
+export const selectConversationsError = (state: RootState) =>
+  state.conversations.error;
+export const selectConversationLastFetchTime = (state: RootState) =>
+  state.conversations.lastFetchTime;
+
+export default conversationsSlice.reducer;
