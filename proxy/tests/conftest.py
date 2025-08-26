@@ -3,8 +3,14 @@
 import json
 import os
 import subprocess
+import sys
+from pathlib import Path
 
 import pytest
+
+# HACK Add the parent directory to the sys.path
+# (bypass need for proper python project structure)
+sys.path.append(str(Path(__file__).resolve().parent.parent))
 
 
 @pytest.fixture(scope="session")
