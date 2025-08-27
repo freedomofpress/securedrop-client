@@ -13,5 +13,6 @@
     "messagePlaceholder": "Message {{designation}}..."
   },
   "itemEncrypted": "Message is encrypted...",
-  "you": "You"
+  "you": "You",
+  "unknown": "Unknown"
 }
