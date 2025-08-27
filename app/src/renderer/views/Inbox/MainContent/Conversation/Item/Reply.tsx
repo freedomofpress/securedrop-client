@@ -1,15 +1,12 @@
 import { useSelector } from "react-redux";
-import type {
-  Item,
-  ReplyMetadata,
-  JournalistMetadata,
-} from "../../../../../../types";
+import type { Item, ReplyMetadata } from "../../../../../../types";
 import { useTranslation } from "react-i18next";
 import {
   getSessionState,
   SessionStatus,
 } from "../../../../../features/session/sessionSlice";
 import { getJournalists } from "../../../../../features/journalists/journalistsSlice";
+import { formatJournalistName } from "../../../../../utils";
 import "../Item.css";
 
 interface ReplyProps {
@@ -26,17 +23,6 @@ function Reply({ item }: ReplyProps) {
 
   // Cast item.data to ReplyMetadata since we know this is a reply
   const replyData = item.data as ReplyMetadata;
-
-  // Helper function to format journalist name
-  const formatJournalistName = (journalist: JournalistMetadata) => {
-    const firstName = journalist.first_name;
-    const lastName = journalist.last_name;
-
-    if (firstName || lastName) {
-      return [firstName, lastName].filter(Boolean).join(" ");
-    }
-    return journalist.username;
-  };
 
   // Determine what to display for the author
   const getAuthorDisplay = () => {
