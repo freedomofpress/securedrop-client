@@ -107,8 +107,8 @@ export type SubmissionMetadata = {
 export type JournalistMetadata = {
   uuid: string;
   username: string;
-  first_name: string;
-  last_name: string;
+  first_name: string | null;
+  last_name: string | null;
 };
 
 /** API v1 Types */
