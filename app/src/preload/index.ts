@@ -7,6 +7,7 @@ import type {
   ProxyResponse,
   Source,
   SourceWithItems,
+  Journalist,
   SyncMetadataRequest,
 } from "../types";
 
@@ -50,6 +51,9 @@ const electronAPI = {
     "getSourceWithItems",
     (sourceUuid: string) =>
       ipcRenderer.invoke("getSourceWithItems", sourceUuid),
+  ),
+  getJournalists: logIpcCall<Journalist[]>("getJournalists", () =>
+    ipcRenderer.invoke("getJournalists"),
   ),
   getSystemLanguage: logIpcCall<string>("getSystemLanguage", () =>
     ipcRenderer.invoke("getSystemLanguage"),
