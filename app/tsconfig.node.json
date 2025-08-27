@@ -11,6 +11,7 @@
     "composite": true,
     "types": ["electron-vite/node"],
     "module": "esnext",
-    "moduleResolution": "bundler"
+    "moduleResolution": "bundler",
+    "noImplicitAny": true
   }
 }
