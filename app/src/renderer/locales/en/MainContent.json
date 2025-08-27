@@ -12,5 +12,6 @@
     "sendButton": "Send",
     "messagePlaceholder": "Message {{designation}}..."
   },
-  "itemEncrypted": "Message is encrypted..."
+  "itemEncrypted": "Message is encrypted...",
+  "you": "You"
 }

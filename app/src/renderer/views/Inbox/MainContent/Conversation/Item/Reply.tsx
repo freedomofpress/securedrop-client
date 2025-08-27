@@ -18,7 +18,7 @@ function Reply({ item }: ReplyProps) {
     >
       <div>
         <div className="flex items-center justify-start mb-1">
-          <span className="author reply-author">You</span>
+          <span className="author reply-author">{t("you")}</span>
         </div>
         <div className="reply-box whitespace-pre-wrap">
           {isEncrypted ? (
