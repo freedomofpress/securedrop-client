@@ -7,7 +7,7 @@ import {
   proxyStreamInner,
   proxyStreamRequest,
 } from "../src/main/proxy";
-import { ProxyCommand, ProxyJSONResponse, ms } from "../src/types";
+import { JSONObject, ProxyCommand, ProxyJSONResponse, ms } from "../src/types";
 
 const proxyCommand = (timeout: number): ProxyCommand => {
   return {
@@ -30,7 +30,7 @@ describe("Test executing JSON proxy commands against httpbin", async () => {
       proxyCommand(1000),
     );
     expect(result.status).toEqual(200);
-    expect(result.headers["content-type"]).toEqual("application/json");
+    expect(result.headers.get("content-type")).toEqual("application/json");
   });
 
   it.for([200, 204, 404])(
@@ -95,7 +95,7 @@ describe("Test executing JSON proxy commands against httpbin", async () => {
       proxyCommand(1000),
     );
     expect(result.status).toEqual(200);
-    expect(result.data!["args"]).toEqual({ foo: "bar" });
+    expect((result.data! as JSONObject)["args"]).toEqual({ foo: "bar" });
   });
 
   it("proxy subcommand terminates with SIGTERM on timeout", async () => {
@@ -143,7 +143,10 @@ describe("Test executing JSON proxy commands against httpbin", async () => {
       proxyCommand(1000),
     );
     expect(result.status).toEqual(200);
-    expect(result.data!["headers"]).toHaveProperty("X-Test-Header", "th");
+    expect((result.data! as JSONObject)["headers"]).toHaveProperty(
+      "X-Test-Header",
+      "th",
+    );
   });
 
   it("request with body", async () => {
@@ -159,7 +162,7 @@ describe("Test executing JSON proxy commands against httpbin", async () => {
       proxyCommand(1000),
     );
     expect(result.status).toEqual(200);
-    expect(result.data!["json"]).toEqual(input);
+    expect((result.data! as JSONObject)["json"]).toEqual(input);
   });
 });
 

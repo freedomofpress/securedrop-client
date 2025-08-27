@@ -3,7 +3,7 @@ export type ProxyRequest = {
   path_query: string;
   stream: boolean;
   body?: string;
-  headers: object;
+  headers: Record<string, string>;
 };
 
 export type ProxyCommand = {

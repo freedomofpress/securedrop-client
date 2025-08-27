@@ -8,7 +8,7 @@ export default defineConfig(({ mode }) => {
   const isDev = mode === "development";
   console.log(`Building in ${isDev ? "development" : "production"} mode`);
 
-  const mainVars = {};
+  const mainVars: Record<string, string> = {};
   if (isDev) {
     // Build the proxy: `make -C ../proxy build`
     try {
