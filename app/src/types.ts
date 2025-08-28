@@ -107,8 +107,8 @@ export type SubmissionMetadata = {
 export type JournalistMetadata = {
   uuid: string;
   username: string;
-  first_name: string;
-  last_name: string;
+  first_name: string | null;
+  last_name: string | null;
 };
 
 /** API v1 Types */
@@ -138,6 +138,11 @@ export type SourceWithItems = {
   items: Item[];
 };
 
+export type Journalist = {
+  uuid: string;
+  data: JournalistMetadata;
+};
+
 // Database representation
 export type SourceRow = {
   uuid: string;
@@ -161,4 +166,11 @@ export type ItemRow = {
   data: string; // JSON stringified ItemMetadata
   plaintext?: string;
   filename?: string;
+};
+
+// Database representation
+export type JournalistRow = {
+  uuid: string;
+  data: string; // JSON stringified JournalistMetadata
+  version: string;
 };

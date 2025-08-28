@@ -1,4 +1,5 @@
 import type { TFunction } from "i18next";
+import type { JournalistMetadata } from "../types";
 
 /**
  * Normalize locale code from POSIX format to BCP 47 format
@@ -100,4 +101,19 @@ export function toTitleCase(str: string): string {
     /\w\S*/g,
     (txt) => txt.charAt(0).toUpperCase() + txt.substr(1).toLowerCase(),
   );
+}
+
+/**
+ * Format a journalist's name for display
+ * If first_name and/or last_name are provided, display those
+ * Otherwise, fall back to username
+ */
+export function formatJournalistName(journalist: JournalistMetadata): string {
+  const firstName = journalist.first_name;
+  const lastName = journalist.last_name;
+
+  if (firstName || lastName) {
+    return [firstName, lastName].filter(Boolean).join(" ");
+  }
+  return journalist.username;
 }

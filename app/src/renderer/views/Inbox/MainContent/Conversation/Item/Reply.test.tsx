@@ -1,0 +1,418 @@
+import { describe, it, expect } from "vitest";
+import { renderWithProviders } from "../../../../../test-component-setup";
+import Reply from "./Reply";
+import type {
+  Item,
+  ReplyMetadata,
+  JournalistMetadata,
+} from "../../../../../../types";
+import { SessionStatus } from "../../../../../features/session/sessionSlice";
+import type { RootState } from "../../../../../store";
+
+describe("Reply", () => {
+  const mockReplyItem: Item = {
+    uuid: "reply-1",
+    data: {
+      kind: "reply",
+      uuid: "reply-1",
+      source: "source-1",
+      size: 1024,
+      journalist_uuid: "journalist-1",
+      is_deleted_by_source: false,
+      seen_by: [],
+    } as ReplyMetadata,
+    plaintext: "This is a reply message",
+  };
+
+  const mockJournalists: Array<{ uuid: string; data: JournalistMetadata }> = [
+    {
+      uuid: "journalist-1",
+      data: {
+        uuid: "journalist-1",
+        username: "dellsberg",
+        first_name: "Daniel",
+        last_name: "Ellsberg",
+      },
+    },
+    {
+      uuid: "journalist-2",
+      data: {
+        uuid: "journalist-2",
+        username: "journalist",
+        first_name: null,
+        last_name: null,
+      },
+    },
+    {
+      uuid: "journalist-3",
+      data: {
+        uuid: "journalist-3",
+        username: "deleted",
+        first_name: "",
+        last_name: "",
+      },
+    },
+  ];
+
+  describe("when session is unauthenticated", () => {
+    const unauthState: Partial<RootState> = {
+      session: {
+        status: SessionStatus.Unauth,
+        authData: undefined,
+      },
+      journalists: {
+        journalists: mockJournalists,
+        loading: false,
+        error: null,
+      },
+    };
+
+    it("should display journalist full name when available", () => {
+      const { getByText } = renderWithProviders(
+        <Reply item={mockReplyItem} />,
+        { preloadedState: unauthState },
+      );
+
+      expect(getByText("Daniel Ellsberg")).toBeInTheDocument();
+    });
+
+    it("should display username when first/last names are null", () => {
+      const itemWithJournalist2: Item = {
+        ...mockReplyItem,
+        data: {
+          ...mockReplyItem.data,
+          journalist_uuid: "journalist-2",
+        } as ReplyMetadata,
+      };
+
+      const { getByText } = renderWithProviders(
+        <Reply item={itemWithJournalist2} />,
+        { preloadedState: unauthState },
+      );
+
+      expect(getByText("journalist")).toBeInTheDocument();
+    });
+
+    it("should display username when first/last names are empty strings", () => {
+      const itemWithJournalist3: Item = {
+        ...mockReplyItem,
+        data: {
+          ...mockReplyItem.data,
+          journalist_uuid: "journalist-3",
+        } as ReplyMetadata,
+      };
+
+      const { getByText } = renderWithProviders(
+        <Reply item={itemWithJournalist3} />,
+        { preloadedState: unauthState },
+      );
+
+      expect(getByText("deleted")).toBeInTheDocument();
+    });
+
+    it("should display 'Unknown' when journalist is not found", () => {
+      const itemWithUnknownJournalist: Item = {
+        ...mockReplyItem,
+        data: {
+          ...mockReplyItem.data,
+          journalist_uuid: "unknown-journalist",
+        } as ReplyMetadata,
+      };
+
+      const { getByText } = renderWithProviders(
+        <Reply item={itemWithUnknownJournalist} />,
+        { preloadedState: unauthState },
+      );
+
+      expect(getByText("Unknown")).toBeInTheDocument();
+    });
+  });
+
+  describe("when session is offline", () => {
+    const offlineState: Partial<RootState> = {
+      session: {
+        status: SessionStatus.Offline,
+        authData: undefined,
+      },
+      journalists: {
+        journalists: mockJournalists,
+        loading: false,
+        error: null,
+      },
+    };
+
+    it("should display journalist name", () => {
+      const { getByText } = renderWithProviders(
+        <Reply item={mockReplyItem} />,
+        { preloadedState: offlineState },
+      );
+
+      expect(getByText("Daniel Ellsberg")).toBeInTheDocument();
+    });
+
+    it("should not display 'You' even if journalist matches offline user", () => {
+      const { queryByText, getByText } = renderWithProviders(
+        <Reply item={mockReplyItem} />,
+        { preloadedState: offlineState },
+      );
+
+      expect(queryByText("You")).not.toBeInTheDocument();
+      expect(getByText("Daniel Ellsberg")).toBeInTheDocument();
+    });
+  });
+
+  describe("when session is authenticated", () => {
+    const authState: Partial<RootState> = {
+      session: {
+        status: SessionStatus.Auth,
+        authData: {
+          expiration: "2025-07-16T19:25:44.388054+00:00",
+          token: "test-token-123",
+          journalistUUID: "journalist-1", // Current user is journalist-1
+          journalistFirstName: "Daniel",
+          journalistLastName: "Ellsberg",
+        },
+      },
+      journalists: {
+        journalists: mockJournalists,
+        loading: false,
+        error: null,
+      },
+    };
+
+    it("should display 'You' when current user is the author", () => {
+      const { getByText } = renderWithProviders(
+        <Reply item={mockReplyItem} />, // journalist_uuid is "journalist-1"
+        { preloadedState: authState },
+      );
+
+      expect(getByText("You")).toBeInTheDocument();
+    });
+
+    it("should display other journalist's name when they are the author", () => {
+      const itemFromOtherJournalist: Item = {
+        ...mockReplyItem,
+        data: {
+          ...mockReplyItem.data,
+          journalist_uuid: "journalist-2", // Different journalist
+        } as ReplyMetadata,
+      };
+
+      const { getByText, queryByText } = renderWithProviders(
+        <Reply item={itemFromOtherJournalist} />,
+        { preloadedState: authState },
+      );
+
+      expect(queryByText("You")).not.toBeInTheDocument();
+      expect(getByText("journalist")).toBeInTheDocument(); // journalist-2's username
+    });
+
+    it("should display full name when other journalist has first/last names", () => {
+      const authStateAsJournalist2: Partial<RootState> = {
+        session: {
+          status: SessionStatus.Auth,
+          authData: {
+            expiration: "2025-07-16T19:25:44.388054+00:00",
+            token: "test-token-123",
+            journalistUUID: "journalist-2", // Current user is journalist-2
+            journalistFirstName: "",
+            journalistLastName: "",
+          },
+        },
+        journalists: {
+          journalists: mockJournalists,
+          loading: false,
+          error: null,
+        },
+      };
+
+      const { getByText, queryByText } = renderWithProviders(
+        <Reply item={mockReplyItem} />, // journalist_uuid is "journalist-1" (Daniel Ellsberg)
+        { preloadedState: authStateAsJournalist2 },
+      );
+
+      expect(queryByText("You")).not.toBeInTheDocument();
+      expect(getByText("Daniel Ellsberg")).toBeInTheDocument();
+    });
+
+    it("should display 'Unknown' when authenticated and journalist not found", () => {
+      const itemWithUnknownJournalist: Item = {
+        ...mockReplyItem,
+        data: {
+          ...mockReplyItem.data,
+          journalist_uuid: "unknown-journalist",
+        } as ReplyMetadata,
+      };
+
+      const { getByText, queryByText } = renderWithProviders(
+        <Reply item={itemWithUnknownJournalist} />,
+        { preloadedState: authState },
+      );
+
+      expect(queryByText("You")).not.toBeInTheDocument();
+      expect(getByText("Unknown")).toBeInTheDocument();
+    });
+  });
+
+  describe("edge cases", () => {
+    it("should handle empty journalists list when unauthenticated", () => {
+      const emptyJournalistsState: Partial<RootState> = {
+        session: {
+          status: SessionStatus.Unauth,
+          authData: undefined,
+        },
+        journalists: {
+          journalists: [],
+          loading: false,
+          error: null,
+        },
+      };
+
+      const { getByText } = renderWithProviders(
+        <Reply item={mockReplyItem} />,
+        { preloadedState: emptyJournalistsState },
+      );
+
+      expect(getByText("Unknown")).toBeInTheDocument();
+    });
+
+    it("should display 'You' when authenticated even if journalists list is empty (current user)", () => {
+      const emptyJournalistsAuthState: Partial<RootState> = {
+        session: {
+          status: SessionStatus.Auth,
+          authData: {
+            expiration: "2025-07-16T19:25:44.388054+00:00",
+            token: "test-token-123",
+            journalistUUID: "journalist-1", // Same as the reply author
+            journalistFirstName: "Daniel",
+            journalistLastName: "Ellsberg",
+          },
+        },
+        journalists: {
+          journalists: [],
+          loading: false,
+          error: null,
+        },
+      };
+
+      const { getByText } = renderWithProviders(
+        <Reply item={mockReplyItem} />, // journalist_uuid is "journalist-1"
+        { preloadedState: emptyJournalistsAuthState },
+      );
+
+      expect(getByText("You")).toBeInTheDocument();
+    });
+
+    it("should display 'You' when journalists still loading (current user)", () => {
+      const loadingState: Partial<RootState> = {
+        session: {
+          status: SessionStatus.Auth,
+          authData: {
+            expiration: "2025-07-16T19:25:44.388054+00:00",
+            token: "test-token-123",
+            journalistUUID: "journalist-1", // Same as reply author
+            journalistFirstName: "Daniel",
+            journalistLastName: "Ellsberg",
+          },
+        },
+        journalists: {
+          journalists: [],
+          loading: true,
+          error: null,
+        },
+      };
+
+      const { getByText } = renderWithProviders(
+        <Reply item={mockReplyItem} />, // journalist_uuid is "journalist-1"
+        { preloadedState: loadingState },
+      );
+
+      expect(getByText("You")).toBeInTheDocument();
+    });
+
+    it("should display 'Unknown' when authenticated but different journalist not in empty list", () => {
+      const emptyJournalistsAuthState: Partial<RootState> = {
+        session: {
+          status: SessionStatus.Auth,
+          authData: {
+            expiration: "2025-07-16T19:25:44.388054+00:00",
+            token: "test-token-123",
+            journalistUUID: "journalist-2", // Different from reply author
+            journalistFirstName: "Current",
+            journalistLastName: "User",
+          },
+        },
+        journalists: {
+          journalists: [],
+          loading: false,
+          error: null,
+        },
+      };
+
+      const { getByText, queryByText } = renderWithProviders(
+        <Reply item={mockReplyItem} />, // journalist_uuid is "journalist-1"
+        { preloadedState: emptyJournalistsAuthState },
+      );
+
+      expect(queryByText("You")).not.toBeInTheDocument();
+      expect(getByText("Unknown")).toBeInTheDocument();
+    });
+  });
+
+  describe("message content", () => {
+    const authState: Partial<RootState> = {
+      session: {
+        status: SessionStatus.Auth,
+        authData: {
+          expiration: "2025-07-16T19:25:44.388054+00:00",
+          token: "test-token-123",
+          journalistUUID: "journalist-1",
+          journalistFirstName: "Daniel",
+          journalistLastName: "Ellsberg",
+        },
+      },
+      journalists: {
+        journalists: mockJournalists,
+        loading: false,
+        error: null,
+      },
+    };
+
+    it("should display plaintext message when available", () => {
+      const { getByText } = renderWithProviders(
+        <Reply item={mockReplyItem} />,
+        { preloadedState: authState },
+      );
+
+      expect(getByText("This is a reply message")).toBeInTheDocument();
+    });
+
+    it("should display encrypted message placeholder when no plaintext", () => {
+      const encryptedReply: Item = {
+        ...mockReplyItem,
+        plaintext: undefined, // No plaintext available
+      };
+
+      const { getByText } = renderWithProviders(
+        <Reply item={encryptedReply} />,
+        { preloadedState: authState },
+      );
+
+      expect(getByText("Message is encrypted...")).toBeInTheDocument();
+    });
+
+    it("should display encrypted message placeholder when plaintext is empty", () => {
+      const encryptedReply: Item = {
+        ...mockReplyItem,
+        plaintext: "", // Empty plaintext
+      };
+
+      const { getByText } = renderWithProviders(
+        <Reply item={encryptedReply} />,
+        { preloadedState: authState },
+      );
+
+      expect(getByText("Message is encrypted...")).toBeInTheDocument();
+    });
+  });
+});

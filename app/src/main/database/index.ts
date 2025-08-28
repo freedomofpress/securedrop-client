@@ -14,6 +14,8 @@ import type {
   SourceWithItems,
   SourceRow,
   ItemRow,
+  Journalist,
+  JournalistRow,
   JournalistMetadata,
 } from "../../types";
 
@@ -421,5 +423,25 @@ export class DB {
       data: sourceData as SourceMetadata,
       items,
     };
+  }
+
+  getJournalists(): Journalist[] {
+    if (!this.db) {
+      throw new Error("Database is not open");
+    }
+
+    const stmt = this.db.prepare(`
+      SELECT uuid, data FROM journalists
+    `);
+
+    const rows = stmt.all() as Array<JournalistRow>;
+
+    return rows.map((row) => {
+      const data = JSON.parse(row.data) as JournalistMetadata;
+      return {
+        uuid: row.uuid,
+        data,
+      };
+    });
   }
 }

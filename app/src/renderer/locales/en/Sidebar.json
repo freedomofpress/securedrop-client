@@ -2,7 +2,8 @@
   "account": {
     "signOut": "Sign out",
     "offlineMode": "Offline Mode",
-    "signIn": "Sign in"
+    "signIn": "Sign in",
+    "signedIn": "Signed in"
   },
   "sourcelist": {
     "filters": {

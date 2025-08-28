@@ -15,6 +15,7 @@ import type {
   ProxyResponse,
   Source,
   SourceWithItems,
+  Journalist,
   SyncMetadataRequest,
 } from "../types";
 import { syncMetadata } from "./sync";
@@ -98,6 +99,11 @@ app.whenReady().then(() => {
       return sourceWithItems;
     },
   );
+
+  ipcMain.handle("getJournalists", async (_event): Promise<Journalist[]> => {
+    const journalists = db.getJournalists();
+    return journalists;
+  });
 
   ipcMain.handle(
     "syncMetadata",

@@ -12,5 +12,7 @@
     "sendButton": "Envoyer",
     "messagePlaceholder": "Message {{designation}}..."
   },
-  "itemEncrypted": "Message chiffré..."
+  "itemEncrypted": "Message chiffré...",
+  "you": "Vous",
+  "unknown": "Inconnu"
 }
