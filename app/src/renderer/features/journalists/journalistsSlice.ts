@@ -61,4 +61,6 @@ export const getJournalistsLoading = (state: RootState) =>
   state.journalists.loading;
 export const getJournalistsError = (state: RootState) =>
   state.journalists.error;
+export const getJournalistById = (state: RootState, journalistId: string) =>
+  state.journalists.journalists.find((j) => j.data.uuid === journalistId);
 export default journalistsSlice.reducer;

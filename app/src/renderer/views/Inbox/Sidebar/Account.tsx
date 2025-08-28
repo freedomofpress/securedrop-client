@@ -8,26 +8,27 @@ import {
   setUnauth,
   SessionStatus,
 } from "../../../features/session/sessionSlice";
-import { getJournalists } from "../../../features/journalists/journalistsSlice";
+import { getJournalistById } from "../../../features/journalists/journalistsSlice";
 import { formatJournalistName } from "../../../utils";
 
 function Account() {
   const { t } = useTranslation("Sidebar");
   const navigate = useNavigate();
   const session = useAppSelector((state) => state.session);
-  const journalists = useAppSelector(getJournalists);
   const dispatch = useAppDispatch();
+
+  // Get the current journalist
+  const currentJournalist = useAppSelector((state) =>
+    session.authData?.journalistUUID
+      ? getJournalistById(state, session.authData.journalistUUID)
+      : undefined,
+  );
 
   // Get the current journalist's display name
   const getCurrentJournalistName = () => {
     console.log(session.authData?.journalistUUID);
-    if (session.authData?.journalistUUID) {
-      const currentJournalist = journalists.find(
-        (j) => j.data.uuid === session.authData!.journalistUUID,
-      );
-      if (currentJournalist) {
-        return formatJournalistName(currentJournalist.data);
-      }
+    if (currentJournalist) {
+      return formatJournalistName(currentJournalist.data);
     }
     return t("account.signedIn");
   };

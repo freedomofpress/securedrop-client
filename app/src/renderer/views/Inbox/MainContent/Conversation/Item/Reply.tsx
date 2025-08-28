@@ -1,12 +1,12 @@
-import { useSelector } from "react-redux";
 import type { Item, ReplyMetadata } from "../../../../../../types";
 import { useTranslation } from "react-i18next";
 import {
   getSessionState,
   SessionStatus,
 } from "../../../../../features/session/sessionSlice";
-import { getJournalists } from "../../../../../features/journalists/journalistsSlice";
+import { getJournalistById } from "../../../../../features/journalists/journalistsSlice";
 import { formatJournalistName } from "../../../../../utils";
+import { useAppSelector } from "../../../../../hooks";
 import "../Item.css";
 
 interface ReplyProps {
@@ -15,8 +15,7 @@ interface ReplyProps {
 
 function Reply({ item }: ReplyProps) {
   const { t } = useTranslation("MainContent");
-  const sessionState = useSelector(getSessionState);
-  const journalists = useSelector(getJournalists);
+  const sessionState = useAppSelector(getSessionState);
 
   const isEncrypted = !item.plaintext;
   const messageContent = item.plaintext || "";
@@ -24,14 +23,15 @@ function Reply({ item }: ReplyProps) {
   // Cast item.data to ReplyMetadata since we know this is a reply
   const replyData = item.data as ReplyMetadata;
 
+  // Get the journalist by ID
+  const journalist = useAppSelector((state) =>
+    getJournalistById(state, replyData.journalist_uuid),
+  );
+
   // Determine what to display for the author
   const getAuthorDisplay = () => {
     // If session is not Auth, always show author name
     if (sessionState.status !== SessionStatus.Auth || !sessionState.authData) {
-      // Find the journalist by UUID
-      const journalist = journalists.find(
-        (j) => j.data.uuid === replyData.journalist_uuid,
-      );
       return journalist ? formatJournalistName(journalist.data) : t("unknown");
     }
 
@@ -42,9 +42,6 @@ function Reply({ item }: ReplyProps) {
     }
 
     // Different journalist, show their name
-    const journalist = journalists.find(
-      (j) => j.data.uuid === replyData.journalist_uuid,
-    );
     return journalist ? formatJournalistName(journalist.data) : t("unknown");
   };
 
