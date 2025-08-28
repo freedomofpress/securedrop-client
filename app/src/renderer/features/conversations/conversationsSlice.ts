@@ -70,9 +70,5 @@ export const selectConversation = (state: RootState, sourceUuid: string) =>
     : null;
 export const selectConversationsLoading = (state: RootState) =>
   state.conversations.loading;
-export const selectConversationsError = (state: RootState) =>
-  state.conversations.error;
-export const selectConversationLastFetchTime = (state: RootState) =>
-  state.conversations.lastFetchTime;
 
 export default conversationsSlice.reducer;

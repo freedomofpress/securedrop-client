@@ -7,11 +7,7 @@ import conversationsSlice, {
   clearError,
   clearConversation,
   selectConversation,
-  selectCurrentConversation,
-  selectCurrentSourceUuid,
   selectConversationsLoading,
-  selectConversationsError,
-  selectConversationLastFetchTime,
   type ConversationsState,
 } from "./conversationsSlice";
 import { SessionStatus } from "../session/sessionSlice";
@@ -246,14 +242,6 @@ describe("conversationsSlice", () => {
       },
     };
 
-    it("selectCurrentConversation returns current conversation", () => {
-      expect(selectCurrentConversation(mockState)).toEqual(mockSourceWithItems);
-    });
-
-    it("selectCurrentSourceUuid returns current source UUID", () => {
-      expect(selectCurrentSourceUuid(mockState)).toBe("source-1");
-    });
-
     it("selectConversation returns conversation for matching UUID", () => {
       expect(selectConversation(mockState, "source-1")).toEqual(
         mockSourceWithItems,
@@ -264,14 +252,6 @@ describe("conversationsSlice", () => {
 
     it("selectConversationsLoading returns loading state", () => {
       expect(selectConversationsLoading(mockState)).toBe(false);
-    });
-
-    it("selectConversationsError returns error state", () => {
-      expect(selectConversationsError(mockState)).toBe("Test error");
-    });
-
-    it("selectConversationLastFetchTime returns last fetch time", () => {
-      expect(selectConversationLastFetchTime(mockState)).toBe(123456789);
     });
   });
 

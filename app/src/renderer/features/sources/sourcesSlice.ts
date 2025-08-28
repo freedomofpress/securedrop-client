@@ -104,5 +104,4 @@ export const selectSources = (state: RootState) => state.sources.sources;
 export const selectActiveSourceUuid = (state: RootState) =>
   state.sources.activeSourceUuid;
 export const selectSourcesLoading = (state: RootState) => state.sources.loading;
-export const selectSourcesError = (state: RootState) => state.sources.error;
 export default sourcesSlice.reducer;

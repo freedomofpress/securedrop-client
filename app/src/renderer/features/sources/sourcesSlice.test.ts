@@ -11,7 +11,6 @@ import sourcesSlice, {
   selectSources,
   selectActiveSourceUuid,
   selectSourcesLoading,
-  selectSourcesError,
   type SourcesState,
 } from "./sourcesSlice";
 import sessionSlice, {
@@ -426,23 +425,6 @@ describe("sourcesSlice", () => {
       };
 
       expect(selectSourcesLoading(state)).toBe(true);
-    });
-
-    it("selectSourcesError returns error state", () => {
-      const errorMessage = "Test error";
-      const state = {
-        session: mockSessionState,
-        sources: {
-          sources: [],
-          activeSourceUuid: null,
-          loading: false,
-          error: errorMessage,
-          lastSyncTime: null,
-        },
-        conversations: mockConversationsState,
-      };
-
-      expect(selectSourcesError(state)).toBe(errorMessage);
     });
   });
 
