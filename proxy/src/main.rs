@@ -3,8 +3,7 @@
 use anyhow::{bail, Result};
 use futures_util::StreamExt;
 use reqwest::header::HeaderMap;
-use reqwest::Method;
-use reqwest::{Client, Response};
+use reqwest::{Client, Method, Proxy, Response};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::io;
@@ -27,6 +26,7 @@ use config_env as config;
 
 // This is the only setting we need to read via `config`.  We should refactor this more extensibly if we ever need multiple.
 const ENV_CONFIG: &str = "SD_PROXY_ORIGIN";
+const DISABLE_TOR: &str = "DISABLE_TOR";
 
 /// Incoming HTTP requests (as JSON) received over stdin
 #[derive(Deserialize, Debug)]
@@ -114,6 +114,7 @@ async fn handle_stream_response(resp: Response) -> Result<()> {
 async fn proxy() -> Result<()> {
     // Get the hostname from the environment or QubesDB
     let origin = config::read(ENV_CONFIG)?;
+
     // Read incoming request from stdin (must be on single line)
     let mut buffer = String::new();
     io::stdin().read_line(&mut buffer)?;
@@ -134,7 +135,16 @@ async fn proxy() -> Result<()> {
         bail! {"request would escape configured origin"}
     }
 
-    let client = Client::new();
+    // Ability to disable tor explicitly (for dev/testing purposes)
+    let client = if config::read(DISABLE_TOR).is_ok() {
+        Client::new()
+    } else {
+        Client::builder()
+            // the *h* in socks5h has the proxy (i.e. Tor) resolve DNS (*h*ostnames)
+            .proxy(Proxy::http("socks5h://127.0.0.1:9150")?)
+            .build()?
+    };
+
     let mut req =
         client.request(Method::from_str(&incoming_request.method)?, url);
     let header_map = HeaderMap::try_from(&incoming_request.headers)?;

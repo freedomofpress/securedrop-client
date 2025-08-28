@@ -9,7 +9,7 @@ export type ProxyRequest = {
 export type ProxyCommand = {
   command: string;
   options: string[];
-  proxyOrigin: string;
+  env: Map<string, string>;
   timeout: ms;
   abortSignal?: AbortSignal;
 };

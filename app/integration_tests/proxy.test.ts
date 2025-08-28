@@ -13,7 +13,10 @@ const proxyCommand = (timeout: number): ProxyCommand => {
   return {
     command: sdProxyCommand,
     options: [],
-    proxyOrigin: sdProxyOrigin,
+    env: new Map([
+      ["SD_PROXY_ORIGIN", sdProxyOrigin],
+      ["DISABLE_TOR", "yes"],
+    ]),
     timeout: timeout as ms,
   };
 };

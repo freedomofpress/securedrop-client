@@ -1,3 +1,5 @@
+#!/usr/bin/dh-exec --with=install
 proxy/qubes/securedrop.Proxy etc/qubes-rpc/
 target/release/securedrop-proxy usr/bin/
 proxy/usr.bin.securedrop-proxy /etc/apparmor.d/
+proxy/configure_onion_service.py => usr/bin/securedrop-configure-onion-service

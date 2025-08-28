@@ -20,16 +20,11 @@ set -e
 
 case "$1" in
     configure)
-    # move pax flags and restart paxctld service
-    # copy and set default mimeapps handling
-    # except for whonix-based VMs
-    if [ ! -e "/etc/whonix_version" ]; then
-      cp /opt/sdw/paxctld.conf /etc/paxctld.conf
-      systemctl restart paxctld
-      cp /opt/sdw/open-in-dvm.desktop /usr/share/applications/
-      cp /opt/sdw/mimeapps.list.sd-app /usr/share/applications/mimeapps.list
-      cp /opt/sdw/mimeapps.list.sd-app /opt/sdw/mimeapps.list.default
-    fi
+    cp /opt/sdw/paxctld.conf /etc/paxctld.conf
+    systemctl restart paxctld
+    cp /opt/sdw/open-in-dvm.desktop /usr/share/applications/
+    cp /opt/sdw/mimeapps.list.sd-app /usr/share/applications/mimeapps.list
+    cp /opt/sdw/mimeapps.list.sd-app /opt/sdw/mimeapps.list.default
     ;;
 
     abort-upgrade|abort-remove|abort-deconfigure)
