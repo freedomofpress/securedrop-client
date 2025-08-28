@@ -1,7 +1,8 @@
 import { Checkbox, Button, Tooltip } from "antd";
 import { Star, Paperclip } from "lucide-react";
 import { useTranslation } from "react-i18next";
-import { memo, useMemo } from "react";
+import { memo, useMemo, useCallback } from "react";
+import { useNavigate } from "react-router";
 
 import StarFilled from "./StarFilled";
 
@@ -15,7 +16,6 @@ export interface SourceProps {
   isActive: boolean;
   onSelect: (sourceId: string, checked: boolean) => void;
   onToggleStar: (sourceId: string, currentlyStarred: boolean) => void;
-  onClick: (sourceId: string) => void;
 }
 
 const Source = memo(function Source({
@@ -24,10 +24,10 @@ const Source = memo(function Source({
   isActive,
   onSelect,
   onToggleStar,
-  onClick,
 }: SourceProps) {
   const { t, i18n } = useTranslation("Sidebar");
   const { t: tCommon } = useTranslation("common");
+  const navigate = useNavigate();
 
   const designation = useMemo(
     () => toTitleCase(source.data.journalist_designation),
@@ -39,13 +39,21 @@ const Source = memo(function Source({
     [source.data.last_updated, i18n.language, tCommon],
   );
 
+  const handleClick = useCallback(() => {
+    if (isActive) {
+      navigate("/");
+    } else {
+      navigate(`/source/${source.uuid}`);
+    }
+  }, [isActive, navigate, source.uuid]);
+
   return (
     <div
       className={`flex items-center px-4 py-3 border-b border-gray-100 cursor-pointer transition-colors duration-150 ease-in-out
         ${isActive ? "bg-blue-500 text-white hover:bg-blue-600" : "hover:bg-gray-50"}
         ${isSelected && !isActive ? "bg-blue-25" : ""}
 `}
-      onClick={() => onClick(source.uuid)}
+      onClick={handleClick}
       data-testid={`source-${source.uuid}`}
       data-selected={isSelected}
       data-active={isActive}

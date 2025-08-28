@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo, useCallback, useRef } from "react";
-import { useNavigate, useParams } from "react-router";
+import { useParams } from "react-router";
 import { FixedSizeList as List } from "react-window";
 
 import type { Source as SourceType } from "../../../../types";
@@ -9,7 +9,6 @@ import { useDebounce } from "../../../hooks";
 import Toolbar, { type filterOption } from "./SourceList/Toolbar";
 
 function SourceList() {
-  const navigate = useNavigate();
   const { sourceUuid: activeSourceUuid } = useParams<{ sourceUuid?: string }>();
 
   const [loading, setLoading] = useState(false);
@@ -103,20 +102,6 @@ function SourceList() {
     [],
   );
 
-  // Handle source click to navigate to source route
-  const handleSourceClick = useCallback(
-    (sourceId: string) => {
-      if (activeSourceUuid === sourceId) {
-        // If already active, navigate back to inbox home
-        navigate("/");
-        return;
-      }
-      // Navigate to the source route
-      navigate(`/source/${sourceId}`);
-    },
-    [activeSourceUuid, navigate],
-  );
-
   const handleBulkDelete = useCallback(() => {
     console.log("Delete selected sources:", selectedSources);
   }, [selectedSources]);
@@ -195,7 +180,6 @@ function SourceList() {
             isActive={isActive}
             onSelect={handleSourceSelect}
             onToggleStar={handleToggleStar}
-            onClick={handleSourceClick}
           />
         </div>
       );
@@ -206,7 +190,6 @@ function SourceList() {
       activeSourceUuid,
       handleSourceSelect,
       handleToggleStar,
-      handleSourceClick,
     ],
   );
 
