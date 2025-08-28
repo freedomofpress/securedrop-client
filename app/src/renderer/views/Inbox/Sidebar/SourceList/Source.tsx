@@ -9,6 +9,11 @@ import StarFilled from "./StarFilled";
 import type { Source as SourceType } from "../../../../../types";
 import { formatDate, toTitleCase } from "../../../../utils";
 import Avatar from "../../../../components/Avatar";
+import { useAppDispatch } from "../../../../hooks";
+import {
+  setActiveSource,
+  clearActiveSource,
+} from "../../../../features/sources/sourcesSlice";
 
 export interface SourceProps {
   source: SourceType;
@@ -28,6 +33,7 @@ const Source = memo(function Source({
   const { t, i18n } = useTranslation("Sidebar");
   const { t: tCommon } = useTranslation("common");
   const navigate = useNavigate();
+  const dispatch = useAppDispatch();
 
   const designation = useMemo(
     () => toTitleCase(source.data.journalist_designation),
@@ -41,11 +47,15 @@ const Source = memo(function Source({
 
   const handleClick = useCallback(() => {
     if (isActive) {
+      // If already active, clear active source and navigate back to inbox home
+      dispatch(clearActiveSource());
       navigate("/");
     } else {
+      // Set active source and navigate to the source route
+      dispatch(setActiveSource(source.uuid));
       navigate(`/source/${source.uuid}`);
     }
-  }, [isActive, navigate, source.uuid]);
+  }, [isActive, navigate, source.uuid, dispatch]);
 
   return (
     <div
