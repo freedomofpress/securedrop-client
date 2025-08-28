@@ -48,7 +48,6 @@ vi.mock("./SourceList/Source", () => ({
     isActive,
     onSelect,
     onToggleStar,
-    onClick,
   }: SourceProps) => (
     <div
       className={`flex items-center px-4 py-3 border-b border-gray-100 cursor-pointer transition-colors duration-150 ease-in-out
@@ -58,7 +57,6 @@ vi.mock("./SourceList/Source", () => ({
       data-testid={`source-${source.uuid}`}
       data-selected={isSelected}
       data-active={isActive}
-      onClick={() => onClick(source.uuid)}
     >
       {/* Checkbox - using input to match test expectations */}
       <input

@@ -54,6 +54,9 @@ jobs:
       matrix:
         debian_version:
           - bookworm
+        what:
+          - main
+          - arti
     runs-on: ubuntu-latest
     outputs:
       artifact_id: ${{ steps.upload.outputs.artifact-id }}
@@ -69,11 +72,11 @@ jobs:
           lfs: true
       - name: Build packages
         run: |
-          DEBIAN_VERSION=${{ matrix.debian_version }} BUILDER=securedrop-builder FAST=1 ./scripts/build-debs.sh
+          DEBIAN_VERSION=${{ matrix.debian_version }} WHAT=${{ matrix.what }} BUILDER=securedrop-builder FAST=1 ./scripts/build-debs.sh
       - uses: actions/upload-artifact@v4
         id: upload
         with:
-          name: build-${{ matrix.debian_version }}
+          name: build-${{ matrix.what }}-${{ matrix.debian_version }}
           path: build
           if-no-files-found: error
 
@@ -84,6 +87,9 @@ jobs:
       matrix:
         debian_version:
           - bookworm
+        what:
+          - main
+          - arti
     runs-on: ubuntu-latest
     outputs:
       artifact_id: ${{ steps.upload.outputs.artifact-id }}
@@ -99,11 +105,11 @@ jobs:
           lfs: true
       - name: Build packages
         run: |
-          DEBIAN_VERSION=${{ matrix.debian_version }} BUILDER=securedrop-builder ./scripts/build-debs.sh
+          DEBIAN_VERSION=${{ matrix.debian_version }} WHAT=${{ matrix.what }} BUILDER=securedrop-builder ./scripts/build-debs.sh
       - uses: actions/upload-artifact@v4
         id: upload
         with:
-          name: build2-${{ matrix.debian_version }}
+          name: build2-${{ matrix.what }}-${{ matrix.debian_version }}
           path: build
           if-no-files-found: error
 
@@ -148,7 +154,6 @@ jobs:
           - log
           - proxy
           - qubesdb-tools
-          - whonix-config
         debian_version:
           - bookworm
     runs-on: ubuntu-latest
@@ -161,7 +166,7 @@ jobs:
       - uses: actions/download-artifact@v5
         with:
           path: build
-          pattern: "build-${{ matrix.debian_version }}"
+          pattern: "build-main-${{ matrix.debian_version }}"
       - name: Run piuparts
         run: |
           # We need to run it as docker-in-docker

@@ -1,0 +1,28 @@
+[Unit]
+Description=System Tor Service (Arti) for securedrop-proxy
+After=network.target
+Before=nss-lookup.target
+Wants=nss-lookup.target
+ConditionPathExists=/var/run/qubes-service/securedrop-arti
+
+[Service]
+Type=simple
+ExecStart=/usr/bin/arti proxy
+ExecReload=/bin/kill -HUP ${MAINPID}
+KillSignal=SIGINT
+User=_arti
+Group=_arti
+LimitNOFILE=16384
+
+# Create /var/lib/arti
+StateDirectory=arti
+StateDirectoryMode=0700
+
+# Hardening
+NoNewPrivileges=yes
+PrivateTmp=yes
+PrivateDevices=yes
+CapabilityBoundingSet=CAP_NET_BIND_SERVICE
+
+[Install]
+WantedBy=multi-user.target

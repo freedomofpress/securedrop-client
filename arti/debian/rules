@@ -1,0 +1,14 @@
+#!/usr/bin/make -f
+
+include /usr/share/dpkg/pkg-info.mk
+
+UPSTREAM_VERSION := $(shell echo $(DEB_VERSION) | cut -d '+' -f 1)
+
+%:
+	dh $@
+
+override_dh_auto_install:
+	bash ./build-arti.sh $(UPSTREAM_VERSION)
+	dh_auto_install
+	# We can remove the manual invocation of installsysusers once we're on compat 14
+	dh_installsysusers

@@ -29,7 +29,7 @@ const mockProxyCommand = (): ProxyCommand => {
   return {
     command: "",
     options: [],
-    proxyOrigin: "",
+    env: new Map(),
     timeout: 100 as ms,
   };
 };

@@ -40,18 +40,15 @@ sequenceDiagram
 participant c as securedrop-client
 participant sdk as securedrop-sdk
 participant p as securedrop-proxy
-participant w as sd-whonix
 participant server as SecureDrop
 
 c ->> sdk: job
 activate sdk
 sdk -->> p: JSON over qrexec
 activate p
-p -->> w: HTTP
-w -->> server: HTTP over Tor
+p -->> server: HTTP over Tor
 
-server -->> w: HTTP over Tor
-w -->> p: HTTP
+server -->> p: HTTP over Tor
 
 alt stream: false
 p -->> sdk: JSON over qrexec

@@ -25,9 +25,12 @@ export async function proxy(
 ): Promise<ProxyResponse> {
   let command = "";
   let commandOptions: string[] = [];
+  const env: Map<string, string> = new Map();
 
   if (import.meta.env.MODE == "development") {
     command = __PROXY_CMD__;
+    env.set("SD_PROXY_ORIGIN", __PROXY_ORIGIN__);
+    env.set("DISABLE_TOR", "yes");
   } else {
     command = "/usr/lib/qubes/qrexec-client-vm";
 
@@ -37,7 +40,7 @@ export async function proxy(
   const proxyCommand: ProxyCommand = {
     command: command,
     options: commandOptions,
-    proxyOrigin: __PROXY_ORIGIN__,
+    env: env,
     timeout: DEFAULT_PROXY_CMD_TIMEOUT_MS,
     abortSignal: abortSignal,
   };
@@ -97,7 +100,7 @@ export async function proxyJSONRequest(
 ): Promise<ProxyJSONResponse> {
   return new Promise((resolve, reject) => {
     const process = child_process.spawn(command.command, command.options, {
-      env: { SD_PROXY_ORIGIN: command.proxyOrigin },
+      env: Object.fromEntries(command.env),
       timeout: command.timeout,
       signal: command.abortSignal,
     });
@@ -188,7 +191,7 @@ export async function proxyStreamInner(
     let stderr = "";
     let stdout = "";
     const process = child_process.spawn(command.command, command.options, {
-      env: { SD_PROXY_ORIGIN: command.proxyOrigin },
+      env: Object.fromEntries(command.env),
       timeout: command.timeout,
       signal: command.abortSignal,
     });

@@ -112,6 +112,12 @@ who = "Kunal Mehta <legoktm@debian.org>"
 criteria = "safe-to-run"
 delta = "3.9.0 -> 3.10.0"
 
+[[audits.tokio-socks]]
+who = "Kunal Mehta <legoktm@debian.org>"
+criteria = "safe-to-run"
+version = "0.5.2"
+notes = "reasonably clean, no unsafe code"
+
 [[audits.tower-layer]]
 who = "Kunal Mehta <legoktm@debian.org>"
 criteria = "safe-to-run"
@@ -437,6 +443,20 @@ criteria = "safe-to-deploy"
 user-id = 3618 # David Tolnay (dtolnay)
 start = "2019-03-01"
 end = "2024-08-12"
+notes = "Rust Project member"
+
+[[trusted.thiserror]]
+criteria = "safe-to-deploy"
+user-id = 3618 # David Tolnay (dtolnay)
+start = "2019-10-09"
+end = "2026-02-25"
+notes = "Rust Project member"
+
+[[trusted.thiserror-impl]]
+criteria = "safe-to-deploy"
+user-id = 3618 # David Tolnay (dtolnay)
+start = "2019-10-09"
+end = "2026-02-25"
 notes = "Rust Project member"
 
 [[trusted.tokio]]
