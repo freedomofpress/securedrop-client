@@ -1,0 +1,13 @@
+Source: securedrop-arti
+Section: unknown
+Priority: optional
+Maintainer: SecureDrop Team <securedrop@freedom.press>
+Build-Depends: debhelper-compat (= 11), git, pkgconf | pkg-config, libssl-dev,
+               libsqlite3-dev,
+Standards-Version: 3.9.8
+Homepage: https://github.com/freedomofpress/securedrop-client
+
+Package: securedrop-arti
+Architecture: any
+Depends: ${shlibs:Depends}, ${misc:Depends}
+Description: Tor daemon written in Rust

@@ -56,12 +56,14 @@ export CONTAINER="fpf.local/sd-client-builder-${DEBIAN_VERSION}"
 
 # We're going to store artifacts in a temp directory
 BUILD_DEST=$(mktemp -d)
+# Optionally build arti, default to "main" packages
+WHAT="${WHAT:-main}"
 
 $OCI_BIN run --rm $OCI_RUN_ARGUMENTS \
     -v "${BUILDER}:/builder:Z" \
     -v "${BUILD_DEST}:/build:Z" \
     --env NIGHTLY="${NIGHTLY:-}" \
-    --entrypoint "/src/scripts/build-debs-real.sh" \
+    --entrypoint "/src/scripts/build-debs-${WHAT}.sh" \
     $CONTAINER
 
 ls "$BUILD_DEST"
