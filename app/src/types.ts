@@ -162,3 +162,11 @@ export type ItemRow = {
   plaintext?: string;
   filename?: string;
 };
+
+export enum FetchStatus {
+  Initial = 0,
+  InProgress = 1,
+  Complete = 2,
+  Failed = 3,
+  Paused = 4,
+}

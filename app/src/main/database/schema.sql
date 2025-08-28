@@ -8,7 +8,7 @@ CREATE TABLE items (
   data json,
   plaintext text,
   filename text
-, version text, kind text generated always as (json_extract (data, '$.kind')) stored, is_read integer generated always as (json_extract (data, '$.is_read')) stored, last_updated integer generated always as (json_extract (data, '$.last_updated')) stored, source_uuid text generated always as (json_extract (data, '$.source')));
+, version text, kind text generated always as (json_extract (data, '$.kind')) stored, is_read integer generated always as (json_extract (data, '$.is_read')) stored, last_updated integer generated always as (json_extract (data, '$.last_updated')) stored, source_uuid text generated always as (json_extract (data, '$.source')), fetch_progress INTEGER, fetch_status INTEGER NOT NULL DEFAULT 0, fetch_last_updated_at timestamp, fetch_retry_attempts integer NOT NULL DEFAULT 0);
 CREATE TABLE state_history (
     version text,
     updated timestamp default current_timestamp,
@@ -30,6 +30,7 @@ CREATE TABLE journalists (
     data json,
     version text
 );
+CREATE INDEX idx_items_fetch_status ON items (fetch_status);
 -- Dbmate schema migrations
 INSERT INTO "schema_migrations" (version) VALUES
   ('20250710180544'),
@@ -37,4 +38,5 @@ INSERT INTO "schema_migrations" (version) VALUES
   ('20250724191248'),
   ('20250725000000'),
   ('20250813000000'),
-  ('20250819160236');
+  ('20250819160236'),
+  ('20250821184819');
