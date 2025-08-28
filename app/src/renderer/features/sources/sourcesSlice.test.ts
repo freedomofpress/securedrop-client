@@ -372,8 +372,7 @@ describe("sourcesSlice", () => {
     };
 
     const mockConversationState = {
-      currentConversation: null,
-      currentSourceUuid: null,
+      conversation: null,
       loading: false,
       error: null,
       lastFetchTime: null,

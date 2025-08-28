@@ -112,8 +112,7 @@ describe("conversationSlice", () => {
     it("has correct initial state", () => {
       const state = (store.getState() as any).conversation;
       expect(state).toEqual({
-        currentConversation: null,
-        currentSourceUuid: null,
+        conversation: null,
         loading: false,
         error: null,
         lastFetchTime: null,
@@ -125,8 +124,7 @@ describe("conversationSlice", () => {
     it("clears the error state", () => {
       // First, set an error state
       const initialState: ConversationState = {
-        currentConversation: null,
-        currentSourceUuid: null,
+        conversation: null,
         loading: false,
         error: "Some error message",
         lastFetchTime: null,
@@ -136,8 +134,7 @@ describe("conversationSlice", () => {
       const newState = conversationSlice(initialState, action);
 
       expect(newState.error).toBeNull();
-      expect(newState.currentConversation).toBeNull();
-      expect(newState.currentSourceUuid).toBeNull();
+      expect(newState.conversation).toBeNull();
       expect(newState.loading).toBe(false);
       expect(newState.lastFetchTime).toBeNull();
     });
@@ -146,8 +143,7 @@ describe("conversationSlice", () => {
   describe("clearConversation action", () => {
     it("clears the current conversation", () => {
       const initialState: ConversationState = {
-        currentConversation: mockSourceWithItems,
-        currentSourceUuid: "source-1",
+        conversation: mockSourceWithItems,
         loading: false,
         error: null,
         lastFetchTime: 123456789,
@@ -156,8 +152,7 @@ describe("conversationSlice", () => {
       const action = clearConversation();
       const newState = conversationSlice(initialState, action);
 
-      expect(newState.currentConversation).toBeNull();
-      expect(newState.currentSourceUuid).toBeNull();
+      expect(newState.conversation).toBeNull();
       expect(newState.lastFetchTime).toBeNull();
     });
   });
@@ -170,8 +165,7 @@ describe("conversationSlice", () => {
       expect(mockGetSourceWithItems).toHaveBeenCalledTimes(1);
 
       const state = (store.getState() as any).conversation;
-      expect(state.currentConversation).toEqual(mockSourceWithItems);
-      expect(state.currentSourceUuid).toBe("source-1");
+      expect(state.conversation).toEqual(mockSourceWithItems);
       expect(state.loading).toBe(false);
       expect(state.error).toBeNull();
       expect(state.lastFetchTime).toBeGreaterThan(0);
@@ -186,8 +180,7 @@ describe("conversationSlice", () => {
       expect(mockGetSourceWithItems).toHaveBeenCalledTimes(1);
 
       const state = (store.getState() as any).conversation;
-      expect(state.currentConversation).toBeNull();
-      expect(state.currentSourceUuid).toBeNull();
+      expect(state.conversation).toBeNull();
       expect(state.loading).toBe(false);
       expect(state.error).toBe(errorMessage);
     });
@@ -234,8 +227,7 @@ describe("conversationSlice", () => {
         lastSyncTime: null,
       },
       conversation: {
-        currentConversation: mockSourceWithItems,
-        currentSourceUuid: "source-1",
+        conversation: mockSourceWithItems,
         loading: false,
         error: "Test error",
         lastFetchTime: 123456789,
@@ -290,8 +282,7 @@ describe("conversationSlice", () => {
 
       const state = (store.getState() as any).conversation;
       expect(state.error).toBeNull();
-      expect(state.currentConversation).toEqual(mockSourceWithItems);
-      expect(state.currentSourceUuid).toBe("source-1");
+      expect(state.conversation).toEqual(mockSourceWithItems);
     });
 
     it("updates lastFetchTime on successful operations", async () => {
@@ -331,8 +322,7 @@ describe("conversationSlice", () => {
 
       const state = (store.getState() as any).conversation;
       // Only the last conversation should be stored
-      expect(state.currentConversation).toEqual(mockSourceWithItems2);
-      expect(state.currentSourceUuid).toBe("source-2");
+      expect(state.conversation).toEqual(mockSourceWithItems2);
       expect(state.loading).toBe(false);
     });
   });

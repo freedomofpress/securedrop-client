@@ -3,16 +3,14 @@ import type { SourceWithItems } from "../../../types";
 import type { RootState } from "../../store";
 
 export interface ConversationState {
-  currentConversation: SourceWithItems | null;
-  currentSourceUuid: string | null;
+  conversation: SourceWithItems | null;
   loading: boolean;
   error: string | null;
   lastFetchTime: number | null;
 }
 
 const initialState: ConversationState = {
-  currentConversation: null,
-  currentSourceUuid: null,
+  conversation: null,
   loading: false,
   error: null,
   lastFetchTime: null,
@@ -35,8 +33,7 @@ const conversationSlice = createSlice({
       state.error = null;
     },
     clearConversation: (state) => {
-      state.currentConversation = null;
-      state.currentSourceUuid = null;
+      state.conversation = null;
       state.lastFetchTime = null;
     },
   },
@@ -49,9 +46,8 @@ const conversationSlice = createSlice({
       .addCase(fetchConversation.fulfilled, (state, action) => {
         state.loading = false;
         state.error = null;
-        const { sourceUuid, sourceWithItems } = action.payload;
-        state.currentConversation = sourceWithItems;
-        state.currentSourceUuid = sourceUuid;
+        const { sourceWithItems } = action.payload;
+        state.conversation = sourceWithItems;
         state.lastFetchTime = Date.now();
       })
       .addCase(fetchConversation.rejected, (state, action) => {
@@ -65,8 +61,8 @@ export const { clearError, clearConversation } = conversationSlice.actions;
 
 // Selectors
 export const selectConversation = (state: RootState, sourceUuid: string) =>
-  state.conversation.currentSourceUuid === sourceUuid
-    ? state.conversation.currentConversation
+  state.conversation.conversation?.uuid === sourceUuid
+    ? state.conversation.conversation
     : null;
 export const selectConversationLoading = (state: RootState) =>
   state.conversation.loading;
