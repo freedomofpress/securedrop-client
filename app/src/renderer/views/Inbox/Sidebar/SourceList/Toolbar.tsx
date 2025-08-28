@@ -126,6 +126,7 @@ const Toolbar = memo(function Toolbar({
         onChange={onSearchChange}
         className="flex-1 min-w-0 max-w-xs"
         allowClear
+        spellCheck={false}
       />
 
       <div className="flex items-center gap-1 flex-shrink-0">
