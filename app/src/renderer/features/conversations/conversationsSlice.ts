@@ -64,10 +64,6 @@ const conversationsSlice = createSlice({
 export const { clearError, clearConversation } = conversationsSlice.actions;
 
 // Selectors
-export const selectCurrentConversation = (state: RootState) =>
-  state.conversations.currentConversation;
-export const selectCurrentSourceUuid = (state: RootState) =>
-  state.conversations.currentSourceUuid;
 export const selectConversation = (state: RootState, sourceUuid: string) =>
   state.conversations.currentSourceUuid === sourceUuid
     ? state.conversations.currentConversation
