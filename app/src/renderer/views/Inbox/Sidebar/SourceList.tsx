@@ -238,6 +238,7 @@ function SourceList() {
         <div className="absolute inset-0">
           <List
             height={containerHeight}
+            width="100%"
             itemCount={filteredSources.length}
             itemSize={72} // Height of each source item
             className="select-none"
