@@ -1,7 +1,7 @@
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
 import type { RootState } from "../../store";
 import type { Source as SourceType } from "../../../types";
-import { fetchConversation } from "../conversations/conversationsSlice";
+import { fetchConversation } from "../conversation/conversationSlice";
 
 export interface SourcesState {
   sources: SourceType[];

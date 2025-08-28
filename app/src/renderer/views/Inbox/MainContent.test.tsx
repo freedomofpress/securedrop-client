@@ -97,7 +97,7 @@ describe("MainContent Component", () => {
       {
         initialEntries: [initialRoute],
         preloadedState: {
-          conversations: {
+          conversation: {
             currentConversation: sourceUuid
               ? conversationData[sourceUuid]
               : null,
@@ -133,7 +133,7 @@ describe("MainContent Component", () => {
         {
           initialEntries: ["/source/source-1"],
           preloadedState: {
-            conversations: {
+            conversation: {
               currentConversation: null,
               currentSourceUuid: null,
               loading: true,
@@ -277,7 +277,7 @@ describe("MainContent Component", () => {
         {
           initialEntries: ["/source/source-1"],
           preloadedState: {
-            conversations: {
+            conversation: {
               currentConversation: null,
               currentSourceUuid: null,
               loading: true,

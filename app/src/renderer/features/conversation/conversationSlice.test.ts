@@ -2,14 +2,14 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { configureStore } from "@reduxjs/toolkit";
 import type { SourceWithItems } from "../../../types";
-import conversationsSlice, {
+import conversationSlice, {
   fetchConversation,
   clearError,
   clearConversation,
   selectConversation,
-  selectConversationsLoading,
-  type ConversationsState,
-} from "./conversationsSlice";
+  selectConversationLoading,
+  type ConversationState,
+} from "./conversationSlice";
 import { SessionStatus } from "../session/sessionSlice";
 
 // Mock conversation data
@@ -80,7 +80,7 @@ const mockSourceWithItems2: SourceWithItems = {
   ],
 };
 
-describe("conversationsSlice", () => {
+describe("conversationSlice", () => {
   let store: ReturnType<typeof configureStore>;
   const mockGetSourceWithItems = vi.fn();
 
@@ -88,7 +88,7 @@ describe("conversationsSlice", () => {
     // Create a test store with conversations slice
     store = configureStore({
       reducer: {
-        conversations: conversationsSlice,
+        conversation: conversationSlice,
       },
     });
 
@@ -110,7 +110,7 @@ describe("conversationsSlice", () => {
 
   describe("initial state", () => {
     it("has correct initial state", () => {
-      const state = (store.getState() as any).conversations;
+      const state = (store.getState() as any).conversation;
       expect(state).toEqual({
         currentConversation: null,
         currentSourceUuid: null,
@@ -124,7 +124,7 @@ describe("conversationsSlice", () => {
   describe("clearError action", () => {
     it("clears the error state", () => {
       // First, set an error state
-      const initialState: ConversationsState = {
+      const initialState: ConversationState = {
         currentConversation: null,
         currentSourceUuid: null,
         loading: false,
@@ -133,7 +133,7 @@ describe("conversationsSlice", () => {
       };
 
       const action = clearError();
-      const newState = conversationsSlice(initialState, action);
+      const newState = conversationSlice(initialState, action);
 
       expect(newState.error).toBeNull();
       expect(newState.currentConversation).toBeNull();
@@ -145,7 +145,7 @@ describe("conversationsSlice", () => {
 
   describe("clearConversation action", () => {
     it("clears the current conversation", () => {
-      const initialState: ConversationsState = {
+      const initialState: ConversationState = {
         currentConversation: mockSourceWithItems,
         currentSourceUuid: "source-1",
         loading: false,
@@ -154,7 +154,7 @@ describe("conversationsSlice", () => {
       };
 
       const action = clearConversation();
-      const newState = conversationsSlice(initialState, action);
+      const newState = conversationSlice(initialState, action);
 
       expect(newState.currentConversation).toBeNull();
       expect(newState.currentSourceUuid).toBeNull();
@@ -169,7 +169,7 @@ describe("conversationsSlice", () => {
       expect(mockGetSourceWithItems).toHaveBeenCalledWith("source-1");
       expect(mockGetSourceWithItems).toHaveBeenCalledTimes(1);
 
-      const state = (store.getState() as any).conversations;
+      const state = (store.getState() as any).conversation;
       expect(state.currentConversation).toEqual(mockSourceWithItems);
       expect(state.currentSourceUuid).toBe("source-1");
       expect(state.loading).toBe(false);
@@ -185,7 +185,7 @@ describe("conversationsSlice", () => {
 
       expect(mockGetSourceWithItems).toHaveBeenCalledTimes(1);
 
-      const state = (store.getState() as any).conversations;
+      const state = (store.getState() as any).conversation;
       expect(state.currentConversation).toBeNull();
       expect(state.currentSourceUuid).toBeNull();
       expect(state.loading).toBe(false);
@@ -206,15 +206,15 @@ describe("conversationsSlice", () => {
       const dispatchPromise = (store.dispatch as any)(action);
 
       // Check loading state is true while pending
-      expect((store.getState() as any).conversations.loading).toBe(true);
-      expect((store.getState() as any).conversations.error).toBeNull();
+      expect((store.getState() as any).conversation.loading).toBe(true);
+      expect((store.getState() as any).conversation.error).toBeNull();
 
       // Resolve the promise
       resolveGetSourceWithItems!(mockSourceWithItems);
       await dispatchPromise;
 
       // Check loading state is false after completion
-      expect((store.getState() as any).conversations.loading).toBe(false);
+      expect((store.getState() as any).conversation.loading).toBe(false);
     });
   });
 
@@ -233,7 +233,7 @@ describe("conversationsSlice", () => {
         error: null,
         lastSyncTime: null,
       },
-      conversations: {
+      conversation: {
         currentConversation: mockSourceWithItems,
         currentSourceUuid: "source-1",
         loading: false,
@@ -250,8 +250,8 @@ describe("conversationsSlice", () => {
       expect(selectConversation(mockState, "nonexistent")).toBeNull();
     });
 
-    it("selectConversationsLoading returns loading state", () => {
-      expect(selectConversationsLoading(mockState)).toBe(false);
+    it("selectConversationLoading returns loading state", () => {
+      expect(selectConversationLoading(mockState)).toBe(false);
     });
   });
 
@@ -263,7 +263,7 @@ describe("conversationsSlice", () => {
 
       await (store.dispatch as any)(fetchConversation("source-1"));
 
-      const state = (store.getState() as any).conversations;
+      const state = (store.getState() as any).conversation;
       expect(state.error).toBe("Failed to fetch conversation");
     });
 
@@ -272,7 +272,7 @@ describe("conversationsSlice", () => {
 
       await (store.dispatch as any)(fetchConversation("source-1"));
 
-      const state = (store.getState() as any).conversations;
+      const state = (store.getState() as any).conversation;
       expect(state.error).toBe("String error");
     });
   });
@@ -282,13 +282,13 @@ describe("conversationsSlice", () => {
       // First, create an error state
       mockGetSourceWithItems.mockRejectedValue(new Error("First error"));
       await (store.dispatch as any)(fetchConversation("source-1"));
-      expect((store.getState() as any).conversations.error).toBe("First error");
+      expect((store.getState() as any).conversation.error).toBe("First error");
 
       // Then make a successful call
       mockGetSourceWithItems.mockResolvedValue(mockSourceWithItems);
       await (store.dispatch as any)(fetchConversation("source-1"));
 
-      const state = (store.getState() as any).conversations;
+      const state = (store.getState() as any).conversation;
       expect(state.error).toBeNull();
       expect(state.currentConversation).toEqual(mockSourceWithItems);
       expect(state.currentSourceUuid).toBe("source-1");
@@ -300,7 +300,7 @@ describe("conversationsSlice", () => {
       await (store.dispatch as any)(fetchConversation("source-1"));
 
       const afterTime = Date.now();
-      const state = (store.getState() as any).conversations;
+      const state = (store.getState() as any).conversation;
 
       expect(state.lastFetchTime).toBeGreaterThanOrEqual(beforeTime);
       expect(state.lastFetchTime).toBeLessThanOrEqual(afterTime);
@@ -311,7 +311,7 @@ describe("conversationsSlice", () => {
 
       await (store.dispatch as any)(fetchConversation("source-1"));
 
-      const state = (store.getState() as any).conversations;
+      const state = (store.getState() as any).conversation;
       expect(state.lastFetchTime).toBeNull();
     });
   });
@@ -329,7 +329,7 @@ describe("conversationsSlice", () => {
 
       expect(mockGetSourceWithItems).toHaveBeenCalledTimes(2);
 
-      const state = (store.getState() as any).conversations;
+      const state = (store.getState() as any).conversation;
       // Only the last conversation should be stored
       expect(state.currentConversation).toEqual(mockSourceWithItems2);
       expect(state.currentSourceUuid).toBe("source-2");

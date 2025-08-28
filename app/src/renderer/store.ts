@@ -1,12 +1,12 @@
 import { combineReducers, configureStore } from "@reduxjs/toolkit";
 import sessionSlice from "./features/session/sessionSlice";
 import sourcesSlice from "./features/sources/sourcesSlice";
-import conversationsSlice from "./features/conversations/conversationsSlice";
+import conversationSlice from "./features/conversation/conversationSlice";
 
 const rootReducer = combineReducers({
   session: sessionSlice,
   sources: sourcesSlice,
-  conversations: conversationsSlice,
+  conversation: conversationSlice,
 });
 
 export const setupStore = (preloadedState?: Partial<RootState>) => {

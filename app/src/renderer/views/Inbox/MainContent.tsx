@@ -7,8 +7,8 @@ import { useAppDispatch, useAppSelector } from "../../hooks";
 import {
   fetchConversation,
   selectConversation,
-  selectConversationsLoading,
-} from "../../features/conversations/conversationsSlice";
+  selectConversationLoading,
+} from "../../features/conversation/conversationSlice";
 import Avatar from "../../components/Avatar";
 import EmptyState from "./MainContent/EmptyState";
 import Conversation from "./MainContent/Conversation";
@@ -21,7 +21,7 @@ function MainContent() {
   const sourceWithItems = useAppSelector((state) =>
     sourceUuid ? selectConversation(state, sourceUuid) : null,
   );
-  const loading = useAppSelector(selectConversationsLoading);
+  const loading = useAppSelector(selectConversationLoading);
 
   // Fetch the source with its items
   useEffect(() => {

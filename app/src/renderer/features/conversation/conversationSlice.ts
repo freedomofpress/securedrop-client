@@ -2,7 +2,7 @@ import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
 import type { SourceWithItems } from "../../../types";
 import type { RootState } from "../../store";
 
-export interface ConversationsState {
+export interface ConversationState {
   currentConversation: SourceWithItems | null;
   currentSourceUuid: string | null;
   loading: boolean;
@@ -10,7 +10,7 @@ export interface ConversationsState {
   lastFetchTime: number | null;
 }
 
-const initialState: ConversationsState = {
+const initialState: ConversationState = {
   currentConversation: null,
   currentSourceUuid: null,
   loading: false,
@@ -19,7 +19,7 @@ const initialState: ConversationsState = {
 };
 
 export const fetchConversation = createAsyncThunk(
-  "conversations/fetchConversation",
+  "conversation/fetchConversation",
   async (sourceUuid: string) => {
     const sourceWithItems =
       await window.electronAPI.getSourceWithItems(sourceUuid);
@@ -27,8 +27,8 @@ export const fetchConversation = createAsyncThunk(
   },
 );
 
-const conversationsSlice = createSlice({
-  name: "conversations",
+const conversationSlice = createSlice({
+  name: "conversation",
   initialState,
   reducers: {
     clearError: (state) => {
@@ -61,14 +61,14 @@ const conversationsSlice = createSlice({
   },
 });
 
-export const { clearError, clearConversation } = conversationsSlice.actions;
+export const { clearError, clearConversation } = conversationSlice.actions;
 
 // Selectors
 export const selectConversation = (state: RootState, sourceUuid: string) =>
-  state.conversations.currentSourceUuid === sourceUuid
-    ? state.conversations.currentConversation
+  state.conversation.currentSourceUuid === sourceUuid
+    ? state.conversation.currentConversation
     : null;
-export const selectConversationsLoading = (state: RootState) =>
-  state.conversations.loading;
+export const selectConversationLoading = (state: RootState) =>
+  state.conversation.loading;
 
-export default conversationsSlice.reducer;
+export default conversationSlice.reducer;

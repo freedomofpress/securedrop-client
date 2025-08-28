@@ -17,7 +17,7 @@ import sessionSlice, {
   SessionStatus,
   type SessionState,
 } from "../session/sessionSlice";
-import conversationsSlice from "../conversations/conversationsSlice";
+import conversationSlice from "../conversation/conversationSlice";
 
 // Mock data matching the structure from test-component-setup.tsx
 const mockSources: SourceType[] = [
@@ -66,7 +66,7 @@ describe("sourcesSlice", () => {
       reducer: {
         sources: sourcesSlice,
         session: sessionSlice,
-        conversations: conversationsSlice,
+        conversation: conversationSlice,
       },
     });
 
@@ -317,7 +317,7 @@ describe("sourcesSlice", () => {
         reducer: {
           sources: sourcesSlice,
           session: sessionSlice,
-          conversations: conversationsSlice,
+          conversation: conversationSlice,
         },
         preloadedState: {
           sources: {
@@ -371,7 +371,7 @@ describe("sourcesSlice", () => {
       authData: undefined,
     };
 
-    const mockConversationsState = {
+    const mockConversationState = {
       currentConversation: null,
       currentSourceUuid: null,
       loading: false,
@@ -389,7 +389,7 @@ describe("sourcesSlice", () => {
           error: null,
           lastSyncTime: 123456789,
         },
-        conversations: mockConversationsState,
+        conversation: mockConversationState,
       };
 
       expect(selectSources(state)).toEqual(mockSources);
@@ -405,7 +405,7 @@ describe("sourcesSlice", () => {
           error: null,
           lastSyncTime: 123456789,
         },
-        conversations: mockConversationsState,
+        conversation: mockConversationState,
       };
 
       expect(selectActiveSourceUuid(state)).toBe("source-1");
@@ -421,7 +421,7 @@ describe("sourcesSlice", () => {
           error: null,
           lastSyncTime: null,
         },
-        conversations: mockConversationsState,
+        conversation: mockConversationState,
       };
 
       expect(selectSourcesLoading(state)).toBe(true);
