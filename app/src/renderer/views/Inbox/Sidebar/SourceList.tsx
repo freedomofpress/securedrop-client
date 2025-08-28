@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo, useCallback, useRef } from "react";
-import { useParams, useNavigate } from "react-router";
+import { useParams } from "react-router";
 import { FixedSizeList as List } from "react-window";
 
 import Source from "./SourceList/Source";
@@ -9,17 +9,12 @@ import {
   fetchSources,
   selectSources,
   selectSourcesLoading,
-  setActiveSource,
-  clearActiveSource,
 } from "../../../features/sources/sourcesSlice";
-import Toolbar from "./SourceList/Toolbar";
-
-type filterOption = "all" | "read" | "unread" | "starred" | "unstarred";
+import Toolbar, { type filterOption } from "./SourceList/Toolbar";
 
 function SourceList() {
   const { sourceUuid: activeSourceUuid } = useParams<{ sourceUuid?: string }>();
   const dispatch = useAppDispatch();
-  const navigate = useNavigate();
 
   const sources = useAppSelector(selectSources);
   const loading = useAppSelector(selectSourcesLoading);
@@ -88,28 +83,17 @@ function SourceList() {
 
   // Handle starring/unstarring a source
   const handleToggleStar = useCallback(
-    async (sourceId: string, _currentlyStarred: boolean) => {
+    async (sourceId: string, currentlyStarred: boolean) => {
       // TODO: Implement API call to toggle star status
       // TODO: Create Redux action for optimistic star toggle updates
-      console.log("Toggle star for source:", sourceId);
+      console.log(
+        "Toggle star for source:",
+        sourceId,
+        "currently starred:",
+        currentlyStarred,
+      );
     },
     [],
-  );
-
-  // Handle source click to navigate to source route
-  const handleSourceClick = useCallback(
-    (sourceId: string) => {
-      if (activeSourceUuid === sourceId) {
-        // If already active, clear active source and navigate back to inbox home
-        dispatch(clearActiveSource());
-        navigate("/");
-        return;
-      }
-      // Set active source and navigate to the source route
-      dispatch(setActiveSource(sourceId));
-      navigate(`/source/${sourceId}`);
-    },
-    [activeSourceUuid, navigate, dispatch],
   );
   const handleBulkDelete = useCallback(() => {
     console.log("Delete selected sources:", selectedSources);
