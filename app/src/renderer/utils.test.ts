@@ -195,6 +195,23 @@ describe("utils", () => {
         expect(resultOffset).toBeTruthy();
       });
     });
+
+    describe("UTC assumption", () => {
+      it("should treat timestamp without timezone as UTC", () => {
+        const timestampWithoutTZ = "2024-08-29T21:13:10.760877";
+        const timestampWithTZ = "2024-08-29T21:13:10.760877Z";
+
+        const resultWithoutTZ = formatDateShort(
+          timestampWithoutTZ,
+          "en-US",
+          mockT,
+        );
+        const resultWithTZ = formatDateShort(timestampWithTZ, "en-US", mockT);
+
+        // Both should produce the same result since we treat no-TZ as UTC
+        expect(resultWithoutTZ).toBe(resultWithTZ);
+      });
+    });
   });
 
   describe("formatDateLong", () => {
@@ -276,6 +293,17 @@ describe("utils", () => {
     it("should handle empty date string", () => {
       const result = formatDateLong("", "en-US");
       expect(result).toMatch(/Invalid Date/i);
+    });
+
+    it("should treat timestamp without timezone as UTC", () => {
+      const timestampWithoutTZ = "2024-08-29T21:13:10.760877";
+      const timestampWithTZ = "2024-08-29T21:13:10.760877Z";
+
+      const resultWithoutTZ = formatDateLong(timestampWithoutTZ, "en-US");
+      const resultWithTZ = formatDateLong(timestampWithTZ, "en-US");
+
+      // Both should produce the same result since we treat no-TZ as UTC
+      expect(resultWithoutTZ).toBe(resultWithTZ);
     });
   });
 

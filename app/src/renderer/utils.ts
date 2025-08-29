@@ -29,6 +29,22 @@ export function normalizeLocale(locale: string): string {
 }
 
 /**
+ * Ensures a date string is treated as UTC by appending 'Z' if no timezone is specified
+ */
+function ensureUtcDateString(dateString: string): string {
+  // Check if timezone info is already present:
+  // - 'Z' indicates UTC
+  // - '+' indicates positive timezone offset
+  // - '-' after position 10 indicates negative timezone offset
+  //   (position check distinguishes timezone '-' from date separator hyphens in "2025-08-29")
+  return dateString.includes("Z") ||
+    dateString.includes("+") ||
+    (dateString.includes("-") && dateString.lastIndexOf("-") > 10)
+    ? dateString
+    : dateString + "Z";
+}
+
+/**
  * Format a date string to show relative or absolute dates for sidebar display
  * - Today: show time (e.g., "2:30 PM")
  * - Yesterday: show "Yesterday"
@@ -40,7 +56,7 @@ export function formatDateShort(
   locale: string,
   t: TFunction,
 ): string {
-  const date = new Date(dateString);
+  const date = new Date(ensureUtcDateString(dateString));
   const now = new Date();
   const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
   const yesterday = new Date(today.getTime() - 24 * 60 * 60 * 1000);
@@ -86,7 +102,7 @@ export function formatDateShort(
  * Shows complete date with time and timezone (e.g., "Apr 10, 2024, 2:30:45 PM PDT")
  */
 export function formatDateLong(dateString: string, locale: string): string {
-  const date = new Date(dateString);
+  const date = new Date(ensureUtcDateString(dateString));
 
   // Handle invalid dates
   if (isNaN(date.getTime())) {
