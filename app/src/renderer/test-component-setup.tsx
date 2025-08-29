@@ -217,7 +217,9 @@ export function testMemoization<T extends Record<string, any>>(
   return () => {
     const { MockComponent, mockRenderCount } = createMockComponent(Component);
 
-    const { rerender } = render(<MockComponent {...testCases[0][0]} />);
+    const { rerender } = renderWithProviders(
+      <MockComponent {...testCases[0][0]} />,
+    );
     expect(mockRenderCount).toHaveBeenCalledTimes(testCases[0][1]);
 
     for (let i = 1; i < testCases.length; i++) {
