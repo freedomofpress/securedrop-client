@@ -99,7 +99,7 @@ export function formatDateShort(
 
 /**
  * Format a date string to show full timestamp with time for header display
- * Shows complete date with time and timezone (e.g., "Apr 10, 2024, 2:30:45 PM PDT")
+ * Shows complete date with time and timezone (e.g., "April 10, 2024 at 2:30 PM PDT")
  */
 export function formatDateLong(dateString: string, locale: string): string {
   const date = new Date(ensureUtcDateString(dateString));
@@ -115,11 +115,10 @@ export function formatDateLong(dateString: string, locale: string): string {
 
   return new Intl.DateTimeFormat(normalizedLocale, {
     year: "numeric",
-    month: "short",
+    month: "long",
     day: "numeric",
-    hour: "2-digit",
+    hour: "numeric",
     minute: "2-digit",
-    second: "2-digit",
     timeZoneName: "short",
   }).format(date);
 }

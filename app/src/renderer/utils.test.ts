@@ -220,8 +220,8 @@ describe("utils", () => {
       const result = formatDateLong(dateString, "en-US");
 
       // Should include year, month, day, time, and timezone
-      expect(result).toMatch(/Mar.*10.*2024/); // Date parts
-      expect(result).toMatch(/\d{1,2}:\d{2}:\d{2}/); // Time with seconds
+      expect(result).toMatch(/March.*10.*2024/); // Date parts with full month name
+      expect(result).toMatch(/\d{1,2}:\d{2}(?!\d)/); // Time without seconds or leading zeros on hours
       expect(result).toMatch(/[AP]M/); // AM/PM
       expect(result).toMatch(/[A-Z]{3,4}/); // Timezone abbreviation
     });
@@ -230,19 +230,19 @@ describe("utils", () => {
       const dateString = "2024-12-25T09:15:30Z";
       const result = formatDateLong(dateString, "fr-FR");
 
-      // French format should have different month abbreviation
-      expect(result).toMatch(/déc|Dec/i); // French December
+      // French format should have full month name
+      expect(result).toMatch(/décembre|December/i); // French December (full name)
       expect(result).toMatch(/25/); // Day
       expect(result).toMatch(/2024/); // Year
-      expect(result).toMatch(/\d{1,2}:\d{2}:\d{2}/); // Time
+      expect(result).toMatch(/\d{1,2}:\d{2}(?!\d)/); // Time without seconds
     });
 
     it("should handle POSIX locale format", () => {
       const dateString = "2024-06-15T18:45:12Z";
       const result = formatDateLong(dateString, "en_US.UTF-8");
 
-      expect(result).toMatch(/Jun.*15.*2024/);
-      expect(result).toMatch(/\d{1,2}:\d{2}:\d{2}/); // Any valid time format
+      expect(result).toMatch(/June.*15.*2024/);
+      expect(result).toMatch(/\d{1,2}:\d{2}(?!\d)/); // Time without seconds
     });
 
     it("should fallback gracefully for invalid locale", () => {
@@ -250,8 +250,8 @@ describe("utils", () => {
       const result = formatDateLong(dateString, "invalid_locale");
 
       // Should still produce a valid date string (may show different date due to timezone conversion)
-      expect(result).toMatch(/Jan.*1.*2024|Dec.*31.*2023/); // Could be either due to timezone
-      expect(result).toMatch(/\d{1,2}:\d{2}:\d{2}/); // Any valid time format
+      expect(result).toMatch(/January.*1.*2024|December.*31.*2023/); // Could be either due to timezone (full month names)
+      expect(result).toMatch(/\d{1,2}:\d{2}(?!\d)/); // Time without seconds
     });
 
     it("should handle different timezone inputs", () => {
@@ -263,23 +263,23 @@ describe("utils", () => {
 
       // Both should be valid timestamps (times will be converted to local timezone)
       expect(resultUTC).toMatch(/May.*20.*2024/);
-      expect(resultUTC).toMatch(/\d{1,2}:\d{2}:\d{2}/);
+      expect(resultUTC).toMatch(/\d{1,2}:\d{2}(?!\d)/);
       expect(resultOffset).toMatch(/May.*20.*2024/);
-      expect(resultOffset).toMatch(/\d{1,2}:\d{2}:\d{2}/);
+      expect(resultOffset).toMatch(/\d{1,2}:\d{2}(?!\d)/);
     });
 
     it("should handle edge case dates", () => {
       // New Year's Day (may show as Dec 31 in local timezone)
       const newYear = "2024-01-01T00:00:00Z";
       const result1 = formatDateLong(newYear, "en-US");
-      expect(result1).toMatch(/Jan.*1.*2024|Dec.*31.*2023/); // Could be either due to timezone
-      expect(result1).toMatch(/\d{1,2}:\d{2}:\d{2}/);
+      expect(result1).toMatch(/January.*1.*2024|December.*31.*2023/); // Could be either due to timezone (full month names)
+      expect(result1).toMatch(/\d{1,2}:\d{2}(?!\d)/);
 
       // Year end
       const yearEnd = "2024-12-31T23:59:59Z";
       const result2 = formatDateLong(yearEnd, "en-US");
-      expect(result2).toMatch(/Dec.*31.*2024/);
-      expect(result2).toMatch(/\d{1,2}:\d{2}:\d{2}/);
+      expect(result2).toMatch(/December.*31.*2024/);
+      expect(result2).toMatch(/\d{1,2}:\d{2}(?!\d)/);
     });
 
     it("should handle invalid date strings", () => {
