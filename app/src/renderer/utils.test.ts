@@ -1,6 +1,11 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import type { TFunction } from "i18next";
-import { formatDate, getInitials, toTitleCase } from "./utils";
+import {
+  formatDateShort,
+  formatDateLong,
+  getInitials,
+  toTitleCase,
+} from "./utils";
 
 describe("utils", () => {
   // Mock Date.now to ensure consistent test results
@@ -16,7 +21,7 @@ describe("utils", () => {
     vi.useRealTimers();
   });
 
-  describe("formatDate", () => {
+  describe("formatDateShort", () => {
     const mockT = vi.fn((key: string) => {
       switch (key) {
         case "yesterday":
@@ -33,19 +38,19 @@ describe("utils", () => {
     describe("today formatting", () => {
       it("should format today's date as time only", () => {
         const todayDate = "2024-01-15T14:30:00Z";
-        const result = formatDate(todayDate, "en-US", mockT);
+        const result = formatDateShort(todayDate, "en-US", mockT);
         expect(result).toMatch(/\d{1,2}:\d{2}.*[AP]M/); // Matches time format like "2:30 PM"
       });
 
       it("should format today's date with different locale", () => {
         const todayDate = "2024-01-15T09:15:00Z";
-        const result = formatDate(todayDate, "fr-FR", mockT);
+        const result = formatDateShort(todayDate, "fr-FR", mockT);
         expect(result).toMatch(/\d{1,2}:\d{2}/); // French format without AM/PM
       });
 
       it("should handle today's date at midnight", () => {
         const midnightDate = "2024-01-15T00:00:00Z";
-        const result = formatDate(midnightDate, "en-US", mockT);
+        const result = formatDateShort(midnightDate, "en-US", mockT);
         // Midnight UTC might be displayed as yesterday in local time
         expect(result).toMatch(/12:00.*AM|Yesterday/);
       });
@@ -54,14 +59,14 @@ describe("utils", () => {
     describe("yesterday formatting", () => {
       it("should format yesterday's date as 'Yesterday'", () => {
         const yesterdayDate = "2024-01-14T15:30:00Z";
-        const result = formatDate(yesterdayDate, "en-US", mockT);
+        const result = formatDateShort(yesterdayDate, "en-US", mockT);
         expect(result).toBe("Yesterday");
         expect(mockT).toHaveBeenCalledWith("yesterday");
       });
 
       it("should handle yesterday at different times", () => {
         const yesterdayMorning = "2024-01-14T08:00:00Z";
-        const result = formatDate(yesterdayMorning, "en-US", mockT);
+        const result = formatDateShort(yesterdayMorning, "en-US", mockT);
         expect(result).toBe("Yesterday");
       });
     });
@@ -69,19 +74,19 @@ describe("utils", () => {
     describe("this year formatting", () => {
       it("should format dates in current year as month and day", () => {
         const currentYearDate = "2024-03-10T10:00:00Z";
-        const result = formatDate(currentYearDate, "en-US", mockT);
+        const result = formatDateShort(currentYearDate, "en-US", mockT);
         expect(result).toBe("Mar 10");
       });
 
       it("should format dates with different locale", () => {
         const currentYearDate = "2024-12-25T10:00:00Z";
-        const result = formatDate(currentYearDate, "fr-FR", mockT);
+        const result = formatDateShort(currentYearDate, "fr-FR", mockT);
         expect(result).toMatch(/déc\.?\s*25|25\s*déc/i); // French format
       });
 
       it("should handle single digit days", () => {
         const singleDigitDay = "2024-05-05T10:00:00Z";
-        const result = formatDate(singleDigitDay, "en-US", mockT);
+        const result = formatDateShort(singleDigitDay, "en-US", mockT);
         expect(result).toBe("May 5");
       });
     });
@@ -89,19 +94,19 @@ describe("utils", () => {
     describe("previous years formatting", () => {
       it("should format dates from previous years with year", () => {
         const previousYearDate = "2023-06-15T10:00:00Z";
-        const result = formatDate(previousYearDate, "en-US", mockT);
+        const result = formatDateShort(previousYearDate, "en-US", mockT);
         expect(result).toBe("Jun 15, 2023");
       });
 
       it("should format very old dates", () => {
         const oldDate = "2020-01-01T10:00:00Z";
-        const result = formatDate(oldDate, "en-US", mockT);
+        const result = formatDateShort(oldDate, "en-US", mockT);
         expect(result).toBe("Jan 1, 2020");
       });
 
       it("should handle different locale for previous years", () => {
         const previousYearDate = "2022-11-30T10:00:00Z";
-        const result = formatDate(previousYearDate, "de-DE", mockT);
+        const result = formatDateShort(previousYearDate, "de-DE", mockT);
         // German format: "30. Nov. 2022"
         expect(result).toMatch(/30\.?\s*Nov\.?\s*2022/i);
       });
@@ -109,17 +114,21 @@ describe("utils", () => {
 
     describe("locale normalization", () => {
       it("should handle POSIX locale format", () => {
-        const result = formatDate("2024-03-10T10:00:00Z", "en_US.UTF-8", mockT);
+        const result = formatDateShort(
+          "2024-03-10T10:00:00Z",
+          "en_US.UTF-8",
+          mockT,
+        );
         expect(result).toBe("Mar 10");
       });
 
       it("should handle locale with underscore", () => {
-        const result = formatDate("2024-03-10T10:00:00Z", "fr_FR", mockT);
+        const result = formatDateShort("2024-03-10T10:00:00Z", "fr_FR", mockT);
         expect(result).toMatch(/mars?\s*10|10\s*mars?/i);
       });
 
       it("should fallback to language code for invalid locale", () => {
-        const result = formatDate(
+        const result = formatDateShort(
           "2024-03-10T10:00:00Z",
           "invalid_LOCALE",
           mockT,
@@ -128,21 +137,21 @@ describe("utils", () => {
       });
 
       it("should fallback to 'en' for completely invalid locale", () => {
-        const result = formatDate("2024-03-10T10:00:00Z", "xxx", mockT);
+        const result = formatDateShort("2024-03-10T10:00:00Z", "xxx", mockT);
         expect(result).toBeTruthy(); // Should fallback to English
       });
 
       it("should use browser default when locale is empty", () => {
-        const result = formatDate("2024-03-10T10:00:00Z", "", mockT);
+        const result = formatDateShort("2024-03-10T10:00:00Z", "", mockT);
         expect(result).toBeTruthy();
       });
 
       it("should handle null/undefined locale", () => {
         // @ts-expect-error - Testing null locale
-        const resultNull = formatDate("2024-03-10T10:00:00Z", null, mockT);
+        const resultNull = formatDateShort("2024-03-10T10:00:00Z", null, mockT);
         expect(resultNull).toBeTruthy();
 
-        const resultUndefined = formatDate(
+        const resultUndefined = formatDateShort(
           "2024-03-10T10:00:00Z",
           // @ts-expect-error - Testing undefined locale
           undefined,
@@ -154,24 +163,24 @@ describe("utils", () => {
 
     describe("edge cases and error handling", () => {
       it("should handle invalid date strings gracefully", () => {
-        const result = formatDate("invalid-date", "en-US", mockT);
+        const result = formatDateShort("invalid-date", "en-US", mockT);
         expect(result).toMatch(/Invalid Date|NaN/i);
       });
 
       it("should handle empty date string", () => {
-        const result = formatDate("", "en-US", mockT);
+        const result = formatDateShort("", "en-US", mockT);
         expect(result).toMatch(/Invalid Date|NaN/i);
       });
 
       it("should handle dates far in the future", () => {
         const futureDate = "2030-12-31T23:59:59Z";
-        const result = formatDate(futureDate, "en-US", mockT);
+        const result = formatDateShort(futureDate, "en-US", mockT);
         expect(result).toBe("Dec 31, 2030");
       });
 
       it("should handle leap year dates", () => {
         const leapYearDate = "2024-02-29T10:00:00Z";
-        const result = formatDate(leapYearDate, "en-US", mockT);
+        const result = formatDateShort(leapYearDate, "en-US", mockT);
         expect(result).toBe("Feb 29");
       });
 
@@ -179,12 +188,94 @@ describe("utils", () => {
         const utcDate = "2024-03-10T10:00:00Z";
         const offsetDate = "2024-03-10T10:00:00+05:00";
 
-        const resultUTC = formatDate(utcDate, "en-US", mockT);
-        const resultOffset = formatDate(offsetDate, "en-US", mockT);
+        const resultUTC = formatDateShort(utcDate, "en-US", mockT);
+        const resultOffset = formatDateShort(offsetDate, "en-US", mockT);
 
         expect(resultUTC).toBeTruthy();
         expect(resultOffset).toBeTruthy();
       });
+    });
+  });
+
+  describe("formatDateLong", () => {
+    it("should format date with full timestamp including time and timezone", () => {
+      const dateString = "2024-03-10T14:30:45Z";
+      const result = formatDateLong(dateString, "en-US");
+
+      // Should include year, month, day, time, and timezone
+      expect(result).toMatch(/Mar.*10.*2024/); // Date parts
+      expect(result).toMatch(/\d{1,2}:\d{2}:\d{2}/); // Time with seconds
+      expect(result).toMatch(/[AP]M/); // AM/PM
+      expect(result).toMatch(/[A-Z]{3,4}/); // Timezone abbreviation
+    });
+
+    it("should format date with different locale", () => {
+      const dateString = "2024-12-25T09:15:30Z";
+      const result = formatDateLong(dateString, "fr-FR");
+
+      // French format should have different month abbreviation
+      expect(result).toMatch(/déc|Dec/i); // French December
+      expect(result).toMatch(/25/); // Day
+      expect(result).toMatch(/2024/); // Year
+      expect(result).toMatch(/\d{1,2}:\d{2}:\d{2}/); // Time
+    });
+
+    it("should handle POSIX locale format", () => {
+      const dateString = "2024-06-15T18:45:12Z";
+      const result = formatDateLong(dateString, "en_US.UTF-8");
+
+      expect(result).toMatch(/Jun.*15.*2024/);
+      expect(result).toMatch(/\d{1,2}:\d{2}:\d{2}/); // Any valid time format
+    });
+
+    it("should fallback gracefully for invalid locale", () => {
+      const dateString = "2024-01-01T00:00:00Z";
+      const result = formatDateLong(dateString, "invalid_locale");
+
+      // Should still produce a valid date string (may show different date due to timezone conversion)
+      expect(result).toMatch(/Jan.*1.*2024|Dec.*31.*2023/); // Could be either due to timezone
+      expect(result).toMatch(/\d{1,2}:\d{2}:\d{2}/); // Any valid time format
+    });
+
+    it("should handle different timezone inputs", () => {
+      const utcDate = "2024-05-20T10:30:15Z";
+      const offsetDate = "2024-05-20T10:30:15+02:00";
+
+      const resultUTC = formatDateLong(utcDate, "en-US");
+      const resultOffset = formatDateLong(offsetDate, "en-US");
+
+      // Both should be valid timestamps (times will be converted to local timezone)
+      expect(resultUTC).toMatch(/May.*20.*2024/);
+      expect(resultUTC).toMatch(/\d{1,2}:\d{2}:\d{2}/);
+      expect(resultOffset).toMatch(/May.*20.*2024/);
+      expect(resultOffset).toMatch(/\d{1,2}:\d{2}:\d{2}/);
+    });
+
+    it("should handle edge case dates", () => {
+      // New Year's Day (may show as Dec 31 in local timezone)
+      const newYear = "2024-01-01T00:00:00Z";
+      const result1 = formatDateLong(newYear, "en-US");
+      expect(result1).toMatch(/Jan.*1.*2024|Dec.*31.*2023/); // Could be either due to timezone
+      expect(result1).toMatch(/\d{1,2}:\d{2}:\d{2}/);
+
+      // Year end
+      const yearEnd = "2024-12-31T23:59:59Z";
+      const result2 = formatDateLong(yearEnd, "en-US");
+      expect(result2).toMatch(/Dec.*31.*2024/);
+      expect(result2).toMatch(/\d{1,2}:\d{2}:\d{2}/);
+    });
+
+    it("should handle invalid date strings", () => {
+      const invalidDate = "invalid-date-string";
+      const result = formatDateLong(invalidDate, "en-US");
+
+      // Should contain "Invalid Date" or similar
+      expect(result).toMatch(/Invalid Date/i);
+    });
+
+    it("should handle empty date string", () => {
+      const result = formatDateLong("", "en-US");
+      expect(result).toMatch(/Invalid Date/i);
     });
   });
 

@@ -29,13 +29,13 @@ export function normalizeLocale(locale: string): string {
 }
 
 /**
- * Format a date string to show relative or absolute dates
+ * Format a date string to show relative or absolute dates for sidebar display
  * - Today: show time (e.g., "2:30 PM")
  * - Yesterday: show "Yesterday"
  * - This year: show month and day (e.g., "10 Apr")
  * - Previous years: show month, day, and year (e.g., "10 Apr 2023")
  */
-export function formatDate(
+export function formatDateShort(
   dateString: string,
   locale: string,
   t: TFunction,
@@ -79,6 +79,33 @@ export function formatDate(
       year: "numeric",
     });
   }
+}
+
+/**
+ * Format a date string to show full timestamp with time for header display
+ * Shows complete date with time and timezone (e.g., "Apr 10, 2024, 2:30:45 PM PDT")
+ */
+export function formatDateLong(dateString: string, locale: string): string {
+  const date = new Date(dateString);
+
+  // Handle invalid dates
+  if (isNaN(date.getTime())) {
+    return "Invalid Date";
+  }
+
+  const normalizedLocale = normalizeLocale(
+    locale || navigator.language || "en",
+  );
+
+  return new Intl.DateTimeFormat(normalizedLocale, {
+    year: "numeric",
+    month: "short",
+    day: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit",
+    timeZoneName: "short",
+  }).format(date);
 }
 
 /**

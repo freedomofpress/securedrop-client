@@ -1,5 +1,5 @@
 import { useTranslation } from "react-i18next";
-import { toTitleCase, normalizeLocale } from "../../../utils";
+import { toTitleCase, formatDateLong } from "../../../utils";
 import Avatar from "../../../components/Avatar";
 import type { SourceWithItems } from "../../../../types";
 
@@ -25,17 +25,10 @@ function Header({ sourceUuid, loading, sourceWithItems }: HeaderProps) {
   }
 
   const designation = toTitleCase(sourceWithItems.data.journalist_designation);
-  const lastUpdated = new Date(sourceWithItems.data.last_updated);
-  const normalizedLocale = normalizeLocale(i18n.language);
-  const formattedLastSeen = new Intl.DateTimeFormat(normalizedLocale, {
-    year: 'numeric',
-    month: 'short',
-    day: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit',
-    second: '2-digit',
-    timeZoneName: 'short'
-  }).format(lastUpdated);
+  const formattedLastSeen = formatDateLong(
+    sourceWithItems.data.last_updated,
+    i18n.language,
+  );
 
   return (
     <>
