@@ -4,7 +4,7 @@ import type { TFunction } from "i18next";
  * Normalize locale code from POSIX format to BCP 47 format
  * e.g., "en_US.UTF-8" -> "en-US", "fr_FR" -> "fr-FR"
  */
-function normalizeLocale(locale: string): string {
+export function normalizeLocale(locale: string): string {
   // Remove encoding part (e.g., .UTF-8)
   const withoutEncoding = locale.split(".")[0];
 

@@ -1,5 +1,5 @@
 import { useTranslation } from "react-i18next";
-import { toTitleCase } from "../../../utils";
+import { toTitleCase, normalizeLocale } from "../../../utils";
 import Avatar from "../../../components/Avatar";
 import type { SourceWithItems } from "../../../../types";
 
@@ -10,7 +10,7 @@ interface HeaderProps {
 }
 
 function Header({ sourceUuid, loading, sourceWithItems }: HeaderProps) {
-  const { t } = useTranslation("MainContent");
+  const { t, i18n } = useTranslation("MainContent");
 
   if (!sourceUuid) {
     return <></>;
@@ -25,11 +25,25 @@ function Header({ sourceUuid, loading, sourceWithItems }: HeaderProps) {
   }
 
   const designation = toTitleCase(sourceWithItems.data.journalist_designation);
+  const lastUpdated = new Date(sourceWithItems.data.last_updated);
+  const normalizedLocale = normalizeLocale(i18n.language);
+  const formattedLastSeen = new Intl.DateTimeFormat(normalizedLocale, {
+    year: 'numeric',
+    month: 'short',
+    day: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit',
+    timeZoneName: 'short'
+  }).format(lastUpdated);
 
   return (
     <>
       <Avatar designation={designation} isActive={false} />
-      <p className="ml-2">{designation}</p>
+      <div className="ml-2">
+        <p>{designation}</p>
+        <p className="text-sm text-gray-600">Last seen: {formattedLastSeen}</p>
+      </div>
     </>
   );
 }
