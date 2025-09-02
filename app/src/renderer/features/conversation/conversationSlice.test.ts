@@ -237,6 +237,11 @@ describe("conversationSlice", () => {
         error: "Test error",
         lastFetchTime: 123456789,
       },
+      sync: {
+        loading: false,
+        error: null,
+        lastSyncTime: null,
+      },
     };
 
     it("selectConversation returns conversation for matching UUID", () => {

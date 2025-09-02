@@ -8,7 +8,7 @@ import {
   setUnauth,
   SessionStatus,
 } from "../../../features/session/sessionSlice";
-import { syncSources } from "../../../features/sources/sourcesSlice";
+import { syncMetadata } from "../../../features/sync/syncSlice";
 import { getJournalistById } from "../../../features/journalists/journalistsSlice";
 import { formatJournalistName } from "../../../utils";
 
@@ -47,7 +47,7 @@ function Account() {
 
   const sync = () => {
     console.log("syncing metadata");
-    dispatch(syncSources(session.authData?.token));
+    dispatch(syncMetadata(session.authData?.token));
   };
 
   return (

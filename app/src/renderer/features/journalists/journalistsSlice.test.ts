@@ -212,6 +212,11 @@ describe("journalistsSlice", () => {
         error: null,
         lastFetchTime: null,
       },
+      sync: {
+        loading: false,
+        error: null,
+        lastSyncTime: null,
+      },
     };
 
     it("getJournalistsState should return the entire journalists state", () => {
