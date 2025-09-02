@@ -1,20 +1,22 @@
-import * as fs from "fs";
-import * as os from "os";
-import * as path from "path";
+import fs from "fs";
+import os from "os";
+import path from "path";
 import { execSync } from "child_process";
 import Database, { Statement } from "better-sqlite3";
-import * as blake from "blakejs";
+import blake from "blakejs";
 
 import {
-  type Index,
-  type SourceMetadata,
-  type ItemMetadata,
-  type MetadataResponse,
-  type Source,
-  type SourceWithItems,
-  type SourceRow,
-  type ItemRow,
-  type JournalistMetadata,
+  Index,
+  SourceMetadata,
+  ItemMetadata,
+  MetadataResponse,
+  Source,
+  SourceWithItems,
+  SourceRow,
+  ItemRow,
+  JournalistMetadata,
+  Journalist,
+  JournalistRow,
   FetchStatus,
 } from "../../types";
 
