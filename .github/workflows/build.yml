@@ -148,6 +148,7 @@ jobs:
         # TODO: workstation-config pulls in systemd, which doesn't work
         # TODO: workstation-viewer pulls in grsec and qubes packages
         package:
+          - arti
           - client
           - export
           - keyring
@@ -166,9 +167,11 @@ jobs:
       - uses: actions/download-artifact@v5
         with:
           path: build
-          pattern: "build-main-${{ matrix.debian_version }}"
+          pattern: "build-*-${{ matrix.debian_version }}"
       - name: Run piuparts
         run: |
+          # Files are downloaded as build/build-{main,arti}-codename/*.deb; so flatten them
+          mv build/*/*.deb build/
           # We need to run it as docker-in-docker
           docker run \
             -v "/var/lib/docker:/var/lib/docker" \
