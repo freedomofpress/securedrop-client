@@ -2,6 +2,7 @@ import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
 import type { RootState } from "../../store";
 import type { Source as SourceType } from "../../../types";
 import { fetchConversation } from "../conversation/conversationSlice";
+import { fetchJournalists } from "../journalists/journalistsSlice";
 
 export interface SourcesState {
   sources: SourceType[];
@@ -37,6 +38,9 @@ export const syncSources = createAsyncThunk(
 
     // Fetch updated sources
     const newSources = await window.electronAPI.getSources();
+
+    // Fetch updated journalists
+    dispatch(fetchJournalists());
 
     // Get the active source from Redux state
     const state = getState() as RootState;
