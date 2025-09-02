@@ -9,12 +9,30 @@ import {
   SessionStatus,
 } from "../../../features/session/sessionSlice";
 import { syncSources } from "../../../features/sources/sourcesSlice";
+import { getJournalistById } from "../../../features/journalists/journalistsSlice";
+import { formatJournalistName } from "../../../utils";
 
 function Account() {
   const { t } = useTranslation("Sidebar");
   const navigate = useNavigate();
   const session = useAppSelector((state) => state.session);
   const dispatch = useAppDispatch();
+
+  // Get the current journalist
+  const currentJournalist = useAppSelector((state) =>
+    session.authData?.journalistUUID
+      ? getJournalistById(state, session.authData.journalistUUID)
+      : undefined,
+  );
+
+  // Get the current journalist's display name
+  const getCurrentJournalistName = () => {
+    console.log(session.authData?.journalistUUID);
+    if (currentJournalist) {
+      return formatJournalistName(currentJournalist.data);
+    }
+    return t("account.signedIn");
+  };
 
   const signOut = () => {
     console.log("signing out");
@@ -38,10 +56,7 @@ function Account() {
         <>
           <Typography.Text>
             <User size={20} style={{ marginRight: 6, verticalAlign: "top" }} />
-            {session.authData?.journalistFirstName ||
-            session.authData?.journalistLastName
-              ? `${session.authData?.journalistFirstName || ""} ${session.authData?.journalistLastName || ""}`.trim()
-              : "Signed in"}
+            {getCurrentJournalistName()}
           </Typography.Text>
 
           <Button
