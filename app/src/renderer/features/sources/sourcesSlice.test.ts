@@ -388,6 +388,11 @@ describe("sourcesSlice", () => {
           error: null,
           lastSyncTime: 123456789,
         },
+        journalists: {
+          journalists: [],
+          loading: false,
+          error: null,
+        },
         conversation: mockConversationState,
       };
 
@@ -404,6 +409,11 @@ describe("sourcesSlice", () => {
           error: null,
           lastSyncTime: 123456789,
         },
+        journalists: {
+          journalists: [],
+          loading: false,
+          error: null,
+        },
         conversation: mockConversationState,
       };
 
@@ -419,6 +429,11 @@ describe("sourcesSlice", () => {
           loading: true,
           error: null,
           lastSyncTime: null,
+        },
+        journalists: {
+          journalists: [],
+          loading: false,
+          error: null,
         },
         conversation: mockConversationState,
       };

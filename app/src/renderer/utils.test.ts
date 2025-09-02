@@ -5,7 +5,9 @@ import {
   formatDateLong,
   getInitials,
   toTitleCase,
+  formatJournalistName,
 } from "./utils";
+import type { JournalistMetadata } from "../types";
 
 describe("utils", () => {
   // Mock Date.now to ensure consistent test results
@@ -509,6 +511,78 @@ describe("utils", () => {
         expect(result).toMatch(/Hello/);
         expect(result).toMatch(/World/);
       });
+    });
+  });
+
+  describe("formatJournalistName", () => {
+    it("should display full name when both first and last names are provided", () => {
+      const journalist: JournalistMetadata = {
+        uuid: "1",
+        username: "dellsberg",
+        first_name: "Daniel",
+        last_name: "Ellsberg",
+      };
+      expect(formatJournalistName(journalist)).toBe("Daniel Ellsberg");
+    });
+
+    it("should display only first name when last name is null", () => {
+      const journalist: JournalistMetadata = {
+        uuid: "2",
+        username: "john_user",
+        first_name: "John",
+        last_name: null,
+      };
+      expect(formatJournalistName(journalist)).toBe("John");
+    });
+
+    it("should display only last name when first name is null", () => {
+      const journalist: JournalistMetadata = {
+        uuid: "3",
+        username: "smith_user",
+        first_name: null,
+        last_name: "Smith",
+      };
+      expect(formatJournalistName(journalist)).toBe("Smith");
+    });
+
+    it("should display username when both first and last names are null", () => {
+      const journalist: JournalistMetadata = {
+        uuid: "4",
+        username: "journalist",
+        first_name: null,
+        last_name: null,
+      };
+      expect(formatJournalistName(journalist)).toBe("journalist");
+    });
+
+    it("should display username when both first and last names are empty strings", () => {
+      const journalist: JournalistMetadata = {
+        uuid: "5",
+        username: "deleted",
+        first_name: "",
+        last_name: "",
+      };
+      expect(formatJournalistName(journalist)).toBe("deleted");
+    });
+
+    it("should handle names with spaces", () => {
+      const journalist: JournalistMetadata = {
+        uuid: "6",
+        username: "van_der_berg",
+        first_name: "Jan",
+        last_name: "van der Berg",
+      };
+      expect(formatJournalistName(journalist)).toBe("Jan van der Berg");
+    });
+
+    it("should handle single character names", () => {
+      const journalist: JournalistMetadata = {
+        uuid: "7",
+        username: "x_user",
+        first_name: "X",
+        last_name: "Y",
+      };
+      expect(formatJournalistName(journalist)).toBe("X Y");
     });
   });
 });

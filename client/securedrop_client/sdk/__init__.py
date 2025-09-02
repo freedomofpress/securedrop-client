@@ -337,6 +337,7 @@ class API:
         env = {}
         if self.development_mode:
             env["SD_PROXY_ORIGIN"] = self.server
+            env["DISABLE_TOR"] = "yes"
 
         # Streaming
         if stream:

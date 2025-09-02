@@ -148,13 +148,13 @@ jobs:
         # TODO: workstation-config pulls in systemd, which doesn't work
         # TODO: workstation-viewer pulls in grsec and qubes packages
         package:
+          - arti
           - client
           - export
           - keyring
           - log
           - proxy
           - qubesdb-tools
-          - whonix-config
         debian_version:
           - bookworm
     runs-on: ubuntu-latest
@@ -167,7 +167,8 @@ jobs:
       - uses: actions/download-artifact@v5
         with:
           path: build
-          pattern: "build-main-${{ matrix.debian_version }}"
+          pattern: "build-*-${{ matrix.debian_version }}"
+          merge-multiple: True
       - name: Run piuparts
         run: |
           # We need to run it as docker-in-docker

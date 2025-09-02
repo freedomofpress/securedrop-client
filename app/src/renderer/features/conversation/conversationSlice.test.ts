@@ -226,6 +226,11 @@ describe("conversationSlice", () => {
         error: null,
         lastSyncTime: null,
       },
+      journalists: {
+        journalists: [],
+        loading: false,
+        error: null,
+      },
       conversation: {
         conversation: mockSourceWithItems,
         loading: false,

@@ -1,0 +1,15 @@
+[Unit]
+Description=SecureDrop Proxy configuration
+ConditionPathExists=/var/run/qubes-service/securedrop-arti
+
+# Ensure that tor is ready
+After=securedrop-arti.service
+
+[Service]
+Type=exec
+User=_arti
+ExecStart=/usr/bin/securedrop-configure-onion-service
+RemainAfterExit=yes
+
+[Install]
+WantedBy=multi-user.target

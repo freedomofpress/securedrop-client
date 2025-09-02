@@ -16,7 +16,6 @@ This repository contains multiple components, including:
 * `qubesdb-tools`: tools for configuring non-Qubes-aware applications from
   QubesDB
 * `proxy`: restricted HTTP proxy
-* `whonix-config`: Whonix configuration for SecureDrop
 * `workstation-config`: configuration for SecureDrop Workstation templates
 
 Each component's folder has a README with more detail.

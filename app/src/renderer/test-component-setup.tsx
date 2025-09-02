@@ -121,6 +121,35 @@ beforeEach(() => {
         },
       ],
     }),
+    getJournalists: vi.fn().mockResolvedValue([
+      {
+        uuid: "journalist-1",
+        data: {
+          uuid: "journalist-1",
+          username: "journalist",
+          first_name: null,
+          last_name: null,
+        },
+      },
+      {
+        uuid: "journalist-2",
+        data: {
+          uuid: "journalist-2",
+          username: "dellsberg",
+          first_name: "Daniel",
+          last_name: "Ellsberg",
+        },
+      },
+      {
+        uuid: "journalist-3",
+        data: {
+          uuid: "journalist-3",
+          username: "deleted",
+          first_name: null,
+          last_name: null,
+        },
+      },
+    ]),
   } as ElectronAPI;
 });
 
