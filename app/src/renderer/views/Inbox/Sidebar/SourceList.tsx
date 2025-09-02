@@ -2,17 +2,22 @@ import { useState, useEffect, useMemo, useCallback, useRef } from "react";
 import { useParams } from "react-router";
 import { FixedSizeList as List } from "react-window";
 
-import type { Source as SourceType } from "../../../../types";
 import Source from "./SourceList/Source";
 import LoadingIndicator from "../../../components/LoadingIndicator";
-import { useDebounce } from "../../../hooks";
+import { useDebounce, useAppDispatch, useAppSelector } from "../../../hooks";
+import {
+  fetchSources,
+  selectSources,
+  selectSourcesLoading,
+} from "../../../features/sources/sourcesSlice";
 import Toolbar, { type filterOption } from "./SourceList/Toolbar";
 
 function SourceList() {
   const { sourceUuid: activeSourceUuid } = useParams<{ sourceUuid?: string }>();
+  const dispatch = useAppDispatch();
 
-  const [loading, setLoading] = useState(false);
-  const [sources, setSources] = useState<SourceType[]>([]);
+  const sources = useAppSelector(selectSources);
+  const loading = useAppSelector(selectSourcesLoading);
   const [selectedSources, setSelectedSources] = useState<Set<string>>(
     new Set(),
   );
@@ -28,14 +33,8 @@ function SourceList() {
   const debouncedSearchTerm = useDebounce(searchTerm, 300);
 
   useEffect(() => {
-    const fetchSources = async () => {
-      setLoading(true);
-      const sources = await window.electronAPI.getSources();
-      setSources(sources);
-      setLoading(false);
-    };
-    fetchSources();
-  }, []);
+    dispatch(fetchSources());
+  }, [dispatch]);
 
   // Calculate container height for react-window
   useEffect(() => {
@@ -86,22 +85,16 @@ function SourceList() {
   const handleToggleStar = useCallback(
     async (sourceId: string, currentlyStarred: boolean) => {
       // TODO: Implement API call to toggle star status
-
-      // Update local state optimistically
-      setSources((prevSources) =>
-        prevSources.map((source) =>
-          source.uuid === sourceId
-            ? {
-                ...source,
-                data: { ...source.data, is_starred: !currentlyStarred },
-              }
-            : source,
-        ),
+      // TODO: Create Redux action for optimistic star toggle updates
+      console.log(
+        "Toggle star for source:",
+        sourceId,
+        "currently starred:",
+        currentlyStarred,
       );
     },
     [],
   );
-
   const handleBulkDelete = useCallback(() => {
     console.log("Delete selected sources:", selectedSources);
   }, [selectedSources]);
