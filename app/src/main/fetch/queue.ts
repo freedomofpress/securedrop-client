@@ -21,7 +21,7 @@ export function createQueue(db: DB): Queue {
     },
     {
       batchSize: 1,
-      maxTimeout: 30_000,
+      maxTimeout: 60_000,
       maxRetries: 5,
       id: "id",
       // Merge handles tasks scheduled with the same ID

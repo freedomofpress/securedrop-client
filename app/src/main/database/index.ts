@@ -237,8 +237,6 @@ export class DB {
   }
 
   getIndex(): Index {
-    // NOTE: setting journalists to empty object for now, as implementing
-    // journalist sync is still TODO.
     const index: Index = { sources: {}, items: {}, journalists: {} };
     for (const row of this.selectAllSourceVersion.iterate()) {
       index.sources[row.uuid] = row.version;
