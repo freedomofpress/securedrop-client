@@ -90,7 +90,9 @@ function parseJSONResponse(response: string): ProxyJSONResponse {
     error,
     data: body,
     status: status,
-    headers: result["headers"] || {},
+    headers: result["headers"]
+      ? new Map(Object.entries(result["headers"]))
+      : new Map(),
   };
 }
 

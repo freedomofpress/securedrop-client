@@ -33,7 +33,7 @@ describe("Test executing JSON proxy commands against httpbin", async () => {
       proxyCommand(1000),
     );
     expect(result.status).toEqual(200);
-    expect(result.headers["content-type"]).toEqual("application/json");
+    expect(result.headers.get("content-type")).toEqual("application/json");
   });
 
   it.for([200, 204, 404])(
