@@ -168,10 +168,9 @@ jobs:
         with:
           path: build
           pattern: "build-*-${{ matrix.debian_version }}"
+          merge-multiple: True
       - name: Run piuparts
         run: |
-          # Files are downloaded as build/build-{main,arti}-codename/*.deb; so flatten them
-          mv build/*/*.deb build/
           # We need to run it as docker-in-docker
           docker run \
             -v "/var/lib/docker:/var/lib/docker" \
