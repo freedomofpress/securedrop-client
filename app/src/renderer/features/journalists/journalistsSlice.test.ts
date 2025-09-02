@@ -199,6 +199,19 @@ describe("journalistsSlice", () => {
       journalists: loadedState,
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       session: {} as any, // Mock other state slices
+      sources: {
+        sources: [],
+        activeSourceUuid: null,
+        loading: false,
+        error: null,
+        lastSyncTime: null,
+      },
+      conversation: {
+        conversation: null,
+        loading: false,
+        error: null,
+        lastFetchTime: null,
+      },
     };
 
     it("getJournalistsState should return the entire journalists state", () => {
