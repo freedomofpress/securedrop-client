@@ -8,6 +8,7 @@ import {
   setUnauth,
   SessionStatus,
 } from "../../../features/session/sessionSlice";
+import { syncSources } from "../../../features/sources/sourcesSlice";
 import { getJournalistById } from "../../../features/journalists/journalistsSlice";
 import { formatJournalistName } from "../../../utils";
 
@@ -46,9 +47,7 @@ function Account() {
 
   const sync = () => {
     console.log("syncing metadata");
-    window.electronAPI.syncMetadata({
-      authToken: session.authData?.token,
-    });
+    dispatch(syncSources(session.authData?.token));
   };
 
   return (

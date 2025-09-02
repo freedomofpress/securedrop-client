@@ -1,10 +1,14 @@
 import { combineReducers, configureStore } from "@reduxjs/toolkit";
 import sessionSlice from "./features/session/sessionSlice";
 import journalistsSlice from "./features/journalists/journalistsSlice";
+import sourcesSlice from "./features/sources/sourcesSlice";
+import conversationSlice from "./features/conversation/conversationSlice";
 
 const rootReducer = combineReducers({
   session: sessionSlice,
   journalists: journalistsSlice,
+  sources: sourcesSlice,
+  conversation: conversationSlice,
 });
 
 export const setupStore = (preloadedState?: Partial<RootState>) => {
