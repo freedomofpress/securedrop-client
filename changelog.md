@@ -1,5 +1,24 @@
 # Changelog
 
+## 0.17.0
+
+This release integrates Tor's next-generation client, Arti, instead of Whonix.
+It should be for the most part invisible to users, but there are slight changes
+in how to troubleshoot network connection issues; see our documentation for updates.
+
+* Replace Whonix in favor of arti in sd-proxy (#2561, #2644)
+* Word-wrap printed conversation transcripts to aid readability (#2510)
+
+### Internal and Development
+* Consolidate old component changelogs in main changelog (#2499)
+* Development dependencies (#2620, #2477)
+* Dependency and review improvements (#2606, #2600)
+* Simplify pull request template (#2578)
+* Clean up client and proxy README files (#2563)
+* Extends automatic generation of call/caller graphs via Paracelsus (#2485)
+* Allow use of poetry 2.1.0 (#2472, #2461)
+* Sync build-requirements.txt with rebuild of six, markupsafe, sqlalchemy (#2469)
+
 ## 0.16.0
 
 * Display detailed last update times for sources (#2447)
