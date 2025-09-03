@@ -155,6 +155,7 @@ jobs:
           - log
           - proxy
           - qubesdb-tools
+          - whonix-config
         debian_version:
           - bookworm
     runs-on: ubuntu-latest
