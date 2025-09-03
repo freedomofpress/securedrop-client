@@ -59,14 +59,14 @@ describe("Test executing proxy with JSON requests", () => {
     };
     const proxyExec = proxyJSONRequest({} as ProxyRequest, mockProxyCommand());
 
-    const respHeaders = {
-      Connection: "Keep-Alive",
-      "Content-Type": "text/html",
-    };
+    const respHeaders = new Map([
+      ["Connection", "Keep-Alive"],
+      ["Content-Type", "text/html"],
+    ]);
     const respStatus = 200;
     const response = {
       status: respStatus,
-      headers: respHeaders,
+      headers: Object.fromEntries(respHeaders),
       body: respData,
     };
     process.stdout?.emit("data", JSON.stringify(response));

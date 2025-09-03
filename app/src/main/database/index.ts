@@ -19,11 +19,13 @@ import type {
   JournalistMetadata,
 } from "../../types";
 
-const sortKeys = (_, value) =>
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const sortKeys = (_: string, value: any) =>
   value instanceof Object && !(value instanceof Array)
     ? Object.keys(value)
         .sort()
-        .reduce((sorted, key) => {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        .reduce((sorted: Record<string, any>, key: string) => {
           sorted[key] = value[key];
           return sorted;
         }, {})
@@ -236,7 +238,7 @@ export class DB {
   getIndex(): Index {
     // NOTE: setting journalists to empty object for now, as implementing
     // journalist sync is still TODO.
-    const index = { sources: {}, items: {}, journalists: {} };
+    const index: Index = { sources: {}, items: {}, journalists: {} };
     for (const row of this.selectAllSourceVersion.iterate()) {
       index.sources[row.uuid] = row.version;
     }
