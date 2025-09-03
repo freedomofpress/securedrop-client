@@ -27,7 +27,6 @@ function Account() {
 
   // Get the current journalist's display name
   const getCurrentJournalistName = () => {
-    console.log(session.authData?.journalistUUID);
     if (currentJournalist) {
       return formatJournalistName(currentJournalist.data);
     }
