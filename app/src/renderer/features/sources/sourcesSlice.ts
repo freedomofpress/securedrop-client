@@ -7,7 +7,6 @@ export interface SourcesState {
   activeSourceUuid: string | null;
   loading: boolean;
   error: string | null;
-  lastSyncTime: number | null;
 }
 
 const initialState: SourcesState = {
@@ -15,7 +14,6 @@ const initialState: SourcesState = {
   activeSourceUuid: null,
   loading: false,
   error: null,
-  lastSyncTime: null,
 };
 
 // Async thunk for fetching sources
@@ -51,7 +49,6 @@ export const sourcesSlice = createSlice({
       .addCase(fetchSources.fulfilled, (state, action) => {
         state.loading = false;
         state.sources = action.payload;
-        state.lastSyncTime = Date.now();
       })
       .addCase(fetchSources.rejected, (state, action) => {
         state.loading = false;

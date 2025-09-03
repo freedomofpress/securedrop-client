@@ -224,7 +224,6 @@ describe("conversationSlice", () => {
         activeSourceUuid: null,
         loading: false,
         error: null,
-        lastSyncTime: null,
       },
       journalists: {
         journalists: [],
@@ -240,7 +239,7 @@ describe("conversationSlice", () => {
       sync: {
         loading: false,
         error: null,
-        lastSyncTime: null,
+        lastFetchTime: null,
       },
     };
 

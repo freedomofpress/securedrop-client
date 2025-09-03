@@ -204,7 +204,6 @@ describe("journalistsSlice", () => {
         activeSourceUuid: null,
         loading: false,
         error: null,
-        lastSyncTime: null,
       },
       conversation: {
         conversation: null,
@@ -215,7 +214,7 @@ describe("journalistsSlice", () => {
       sync: {
         loading: false,
         error: null,
-        lastSyncTime: null,
+        lastFetchTime: null,
       },
     };
 

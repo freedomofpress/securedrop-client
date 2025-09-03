@@ -7,13 +7,13 @@ import { fetchSources } from "../sources/sourcesSlice";
 export interface SyncState {
   loading: boolean;
   error: string | null;
-  lastSyncTime: number | null;
+  lastFetchTime: number | null;
 }
 
 const initialState: SyncState = {
   loading: false,
   error: null,
-  lastSyncTime: null,
+  lastFetchTime: null,
 };
 
 // Async thunk for syncing metadata (sources, journalists, and active conversation)
@@ -58,7 +58,7 @@ export const syncSlice = createSlice({
       })
       .addCase(syncMetadata.fulfilled, (state) => {
         state.loading = false;
-        state.lastSyncTime = Date.now();
+        state.lastFetchTime = Date.now();
       })
       .addCase(syncMetadata.rejected, (state, action) => {
         state.loading = false;
@@ -70,5 +70,6 @@ export const syncSlice = createSlice({
 export const { clearError } = syncSlice.actions;
 export const selectSyncLoading = (state: RootState) => state.sync.loading;
 export const selectSyncError = (state: RootState) => state.sync.error;
-export const selectLastSyncTime = (state: RootState) => state.sync.lastSyncTime;
+export const selectlastFetchTime = (state: RootState) =>
+  state.sync.lastFetchTime;
 export default syncSlice.reducer;

@@ -188,7 +188,6 @@ describe("Sources Component", () => {
           activeSourceUuid: null,
           loading,
           error: null,
-          lastSyncTime: Date.now(),
         },
       },
     });

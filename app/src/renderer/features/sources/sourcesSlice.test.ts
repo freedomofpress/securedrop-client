@@ -97,7 +97,6 @@ describe("sourcesSlice", () => {
         activeSourceUuid: null,
         loading: false,
         error: null,
-        lastSyncTime: null,
       });
     });
   });
@@ -110,7 +109,6 @@ describe("sourcesSlice", () => {
         activeSourceUuid: null,
         loading: false,
         error: "Some error message",
-        lastSyncTime: null,
       };
 
       const action = clearError();
@@ -120,7 +118,6 @@ describe("sourcesSlice", () => {
       expect(newState.sources).toEqual([]);
       expect(newState.activeSourceUuid).toBeNull();
       expect(newState.loading).toBe(false);
-      expect(newState.lastSyncTime).toBeNull();
     });
   });
 
@@ -131,7 +128,6 @@ describe("sourcesSlice", () => {
         activeSourceUuid: null,
         loading: false,
         error: null,
-        lastSyncTime: null,
       };
 
       const action = setActiveSource("source-1");
@@ -148,7 +144,6 @@ describe("sourcesSlice", () => {
         activeSourceUuid: "source-1",
         loading: false,
         error: null,
-        lastSyncTime: null,
       };
 
       const action = clearActiveSource();
@@ -168,7 +163,6 @@ describe("sourcesSlice", () => {
       expect(state.sources).toEqual(mockSources);
       expect(state.loading).toBe(false);
       expect(state.error).toBeNull();
-      expect(state.lastSyncTime).toBeGreaterThan(0);
     });
 
     it("handles fetch error", async () => {
@@ -183,7 +177,6 @@ describe("sourcesSlice", () => {
       expect(state.sources).toEqual([]);
       expect(state.loading).toBe(false);
       expect(state.error).toBe(errorMessage);
-      expect(state.lastSyncTime).toBeNull();
     });
 
     it("sets loading state during fetch", async () => {
@@ -231,7 +224,6 @@ describe("sourcesSlice", () => {
           activeSourceUuid: null,
           loading: false,
           error: null,
-          lastSyncTime: 123456789,
         },
         journalists: {
           journalists: [],
@@ -242,7 +234,7 @@ describe("sourcesSlice", () => {
         sync: {
           loading: false,
           error: null,
-          lastSyncTime: null,
+          lastFetchTime: null,
         },
       };
 
@@ -257,7 +249,6 @@ describe("sourcesSlice", () => {
           activeSourceUuid: "source-1",
           loading: false,
           error: null,
-          lastSyncTime: 123456789,
         },
         journalists: {
           journalists: [],
@@ -268,7 +259,7 @@ describe("sourcesSlice", () => {
         sync: {
           loading: false,
           error: null,
-          lastSyncTime: null,
+          lastFetchTime: null,
         },
       };
 
@@ -283,7 +274,6 @@ describe("sourcesSlice", () => {
           activeSourceUuid: null,
           loading: true,
           error: null,
-          lastSyncTime: null,
         },
         journalists: {
           journalists: [],
@@ -294,7 +284,7 @@ describe("sourcesSlice", () => {
         sync: {
           loading: false,
           error: null,
-          lastSyncTime: null,
+          lastFetchTime: null,
         },
       };
 
@@ -385,27 +375,6 @@ describe("sourcesSlice", () => {
       const state = (store.getState() as any).sources;
       expect(state.error).toBeNull();
       expect(state.sources).toEqual(mockSources);
-    });
-
-    it("updates lastSyncTime on successful operations", async () => {
-      const beforeTime = Date.now();
-
-      await (store.dispatch as any)(fetchSources());
-
-      const afterTime = Date.now();
-      const state = (store.getState() as any).sources;
-
-      expect(state.lastSyncTime).toBeGreaterThanOrEqual(beforeTime);
-      expect(state.lastSyncTime).toBeLessThanOrEqual(afterTime);
-    });
-
-    it("does not update lastSyncTime on failed operations", async () => {
-      mockGetSources.mockRejectedValue(new Error("Failed"));
-
-      await (store.dispatch as any)(fetchSources());
-
-      const state = (store.getState() as any).sources;
-      expect(state.lastSyncTime).toBeNull();
     });
   });
 });

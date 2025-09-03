@@ -97,7 +97,7 @@ describe("syncSlice", () => {
       expect(sourcesState.sources).toEqual(mockSources);
       expect(syncState.loading).toBe(false);
       expect(syncState.error).toBeNull();
-      expect(syncState.lastSyncTime).toBeGreaterThan(0);
+      expect(syncState.lastFetchTime).toBeGreaterThan(0);
     });
 
     it("handles sync failure without auth token", async () => {
@@ -199,12 +199,12 @@ describe("syncSlice", () => {
             activeSourceUuid: activeSourceUuid,
             loading: false,
             error: null,
-            lastSyncTime: null,
+            lastFetchTime: null,
           },
           sync: {
             loading: false,
             error: null,
-            lastSyncTime: null,
+            lastFetchTime: null,
           },
         },
       });
