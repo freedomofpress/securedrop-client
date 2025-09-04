@@ -77,7 +77,7 @@ describe("syncMetadata", () => {
         status: 304,
         error: false,
         data: null,
-        headers: {} as Map<string, string>,
+        headers: new Map(),
       },
     ]);
     const status = await syncModule.syncMetadata(db, "");
@@ -118,14 +118,14 @@ describe("syncMetadata", () => {
         status: 200,
         error: false,
         data: serverIndex,
-        headers: {} as Map<string, string>,
+        headers: new Map(),
       },
       // Metadata response
       {
         status: 200,
         error: false,
         data: metadata,
-        headers: {} as Map<string, string>,
+        headers: new Map(),
       },
     ]);
 
@@ -142,7 +142,7 @@ describe("syncMetadata", () => {
         status: 500,
         error: true,
         data: { msg: "fail" },
-        headers: {} as Map<string, string>,
+        headers: new Map(),
       },
     ]);
     await expect(syncModule.syncMetadata(db, "")).rejects.toMatch(
@@ -150,7 +150,7 @@ describe("syncMetadata", () => {
     );
   });
 
-  it("handles error from syncSources", async () => {
+  it("handles error from syncMetadata", async () => {
     // getIndex returns new index
     const serverIndex: Index = {
       sources: {
@@ -170,13 +170,13 @@ describe("syncMetadata", () => {
         status: 200,
         error: false,
         data: serverIndex,
-        headers: {} as Map<string, string>,
+        headers: new Map(),
       },
       {
         status: 500,
         error: true,
         data: { msg: "fail" },
-        headers: {} as Map<string, string>,
+        headers: new Map(),
       },
     ]);
 
@@ -277,13 +277,13 @@ describe("syncMetadata", () => {
         status: 200,
         error: false,
         data: serverIndex,
-        headers: {} as Map<string, string>,
+        headers: new Map(),
       },
       {
         status: 200,
         error: false,
         data: metadata,
-        headers: {} as Map<string, string>,
+        headers: new Map(),
       },
     ]);
 
@@ -350,13 +350,13 @@ describe("syncMetadata", () => {
         status: 200,
         error: false,
         data: serverIndex,
-        headers: {} as Map<string, string>,
+        headers: new Map(),
       },
       {
         status: 200,
         error: false,
         data: metadata,
-        headers: {} as Map<string, string>,
+        headers: new Map(),
       },
     ]);
 
@@ -395,13 +395,13 @@ describe("syncMetadata", () => {
         status: 200,
         error: false,
         data: serverIndex,
-        headers: {} as Map<string, string>,
+        headers: new Map(),
       },
       {
         status: 200,
         error: false,
         data: { sources: {}, items: {} } as MetadataResponse,
-        headers: {} as Map<string, string>,
+        headers: new Map(),
       },
     ]);
 

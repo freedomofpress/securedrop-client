@@ -87,7 +87,10 @@ describe("MainContent Component", () => {
   });
 
   // Helper function to render MainContent with router and Redux
-  const renderMainContent = (initialRoute = "/", conversationData = {}) => {
+  const renderMainContent = (
+    initialRoute = "/",
+    conversationData: Record<string, SourceWithItems> = {},
+  ) => {
     const sourceUuid = Object.keys(conversationData)[0];
     return renderWithProviders(
       <Routes>

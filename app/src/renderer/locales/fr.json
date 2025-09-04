@@ -1,0 +1,83 @@
+{
+  "common": {
+    "yesterday": "Hier"
+  },
+  "MainContent": {
+    "emptyState": "<bold>Sélectionnez une source</bold> dans la liste pour lire les messages, récupérer les fichiers ou envoyer des réponses.",
+    "loading": {
+      "header": "Chargement...",
+      "content": "Chargement des détails de la source..."
+    },
+    "sourceNotFound": {
+      "header": "Source introuvable",
+      "content": "Source introuvable"
+    },
+    "conversation": {
+      "sendButton": "Envoyer",
+      "messagePlaceholder": "Message {{designation}}..."
+    },
+    "itemEncrypted": "Message chiffré...",
+    "you": "Vous",
+    "unknown": "Inconnu"
+  },
+  "Sidebar": {
+    "account": {
+      "signOut": "Se déconnecter",
+      "offlineMode": "Mode hors ligne",
+      "signIn": "Se connecter",
+      "signedIn": "Connecté"
+    },
+    "sourcelist": {
+      "filters": {
+        "all": "Tous",
+        "read": "Lus",
+        "unread": "Non lus",
+        "starred": "Favoris",
+        "unstarred": "Non favoris"
+      },
+      "actions": {
+        "bulkDelete": "Supprimer les sources sélectionnées",
+        "bulkToggleRead": "Basculer le statut de lecture des sources sélectionnées"
+      },
+      "search": {
+        "placeholder": "Rechercher"
+      },
+      "sort": {
+        "tooltip": "Basculer l'ordre de tri"
+      }
+    },
+    "source": {
+      "encrypted": "chiffré...",
+      "toggleStar": "Basculer le favori"
+    }
+  },
+  "SignIn": {
+    "title": "Se connecter à SecureDrop",
+    "username": {
+      "label": "Nom d'utilisateur",
+      "required": "Veuillez saisir votre nom d'utilisateur.",
+      "minLength": "Ce nom d'utilisateur ne fonctionnera pas. Il doit contenir au moins 3 caractères."
+    },
+    "passphrase": {
+      "label": "Phrase de passe",
+      "required": "Veuillez saisir votre phrase de passe.",
+      "invalidLength": "Cette phrase de passe ne fonctionnera pas. Elle doit contenir entre 14 et 128 caractères."
+    },
+    "twoFactorCode": {
+      "label": "Code d'authentification à deux facteurs",
+      "required": "Veuillez saisir votre code d'authentification à deux facteurs.",
+      "invalidFormat": "Votre code d'authentification à deux facteurs doit contenir exactement 6 chiffres."
+    },
+    "button": {
+      "signIn": "Se connecter",
+      "signingIn": "Connexion en cours...",
+      "useOffline": "Utiliser hors ligne"
+    },
+    "errors": {
+      "network": "Impossible de joindre le serveur SecureDrop. Veuillez vérifier votre connexion Internet et Tor, puis réessayer.",
+      "credentials": "Ces identifiants n'ont pas fonctionné. Veuillez réessayer et assurez-vous d'utiliser un nouveau code d'authentification à deux facteurs.",
+      "generic": "Cela n'a pas fonctionné. Veuillez tout vérifier et réessayer."
+    },
+    "version": "Application SecureDrop v{{version}}"
+  }
+}
