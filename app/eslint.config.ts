@@ -5,6 +5,7 @@ import reactHooks from "eslint-plugin-react-hooks";
 import reactRefresh from "eslint-plugin-react-refresh";
 import eslintConfigPrettier from "eslint-config-prettier/flat";
 import importPlugin from "eslint-plugin-import";
+import i18next from "eslint-plugin-i18next";
 
 export default tseslint.config(
   {
@@ -23,6 +24,7 @@ export default tseslint.config(
       reactHooks.configs["recommended-latest"],
       reactRefresh.configs.recommended,
       eslintConfigPrettier,
+      i18next.configs["flat/recommended"],
     ],
     files: ["**/*.ts", "**/*.tsx"],
     languageOptions: {
