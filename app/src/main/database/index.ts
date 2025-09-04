@@ -14,6 +14,7 @@ import type {
   SourceWithItems,
   SourceRow,
   ItemRow,
+  Item,
   Journalist,
   JournalistRow,
   JournalistMetadata,
@@ -294,6 +295,101 @@ export class DB {
       this.updateJournalists(metadata.journalists);
       this.updateVersion();
     })(metadata);
+  }
+
+  /**
+   * Update item content (plaintext for messages, filename for files)
+   * @param itemId - UUID of the item to update
+   * @param options - Update options
+   * @param options.plaintext - The decrypted plaintext content (only allowed for messages)
+   * @param options.filename - The original filename (only allowed for files)
+   */
+  updateItem(
+    itemId: string,
+    options: { plaintext?: string; filename?: string },
+  ) {
+    if (!this.db) {
+      throw new Error("Database not initialized");
+    }
+
+    // Get the item to check its type
+    const items = this.getItems([itemId]);
+    if (items.length === 0) {
+      throw new Error(`Item with ID ${itemId} not found`);
+    }
+
+    const item = items[0];
+    const { plaintext, filename } = options;
+
+    // Validate update based on item type
+    if (plaintext !== undefined && item.data.kind !== "message") {
+      throw new Error(
+        `Cannot update plaintext for item of kind "${item.data.kind}". Only "message" items can have plaintext updated.`,
+      );
+    }
+
+    if (filename !== undefined && item.data.kind !== "file") {
+      throw new Error(
+        `Cannot update filename for item of kind "${item.data.kind}". Only "file" items can have filename updated.`,
+      );
+    }
+
+    // Build the update query dynamically based on what's being updated
+    const updateFields: string[] = [];
+    const params: Record<string, unknown> = { id: itemId };
+
+    if (plaintext !== undefined) {
+      updateFields.push("plaintext = @plaintext");
+      params.plaintext = plaintext;
+    }
+
+    if (filename !== undefined) {
+      updateFields.push("filename = @filename");
+      params.filename = filename;
+    }
+
+    if (updateFields.length === 0) {
+      return; // Nothing to update
+    }
+
+    const sql = `UPDATE items SET ${updateFields.join(", ")} WHERE uuid = @id`;
+    const stmt = this.db.prepare(sql);
+    stmt.run(params);
+  }
+
+  /**
+   * Get items by their UUIDs
+   * @param itemIds - Array of item UUIDs to retrieve
+   * @returns Array of Item objects
+   */
+  getItems(itemIds: string[]): Item[] {
+    if (!this.db) {
+      throw new Error("Database not initialized");
+    }
+
+    if (itemIds.length === 0) {
+      return [];
+    }
+
+    // Create placeholders for the IN clause
+    const placeholders = itemIds.map(() => "?").join(",");
+    const stmt = this.db.prepare(`
+      SELECT uuid, data, plaintext, filename 
+      FROM items 
+      WHERE uuid IN (${placeholders})
+    `);
+
+    const rows = stmt.all(...itemIds) as Array<ItemRow>;
+
+    return rows.map((row) => {
+      const data = JSON.parse(row.data) as ItemMetadata;
+      return {
+        uuid: row.uuid,
+        data,
+        plaintext: row.plaintext || undefined,
+        filename: row.filename || undefined,
+      };
+    });
   }
 
   // Updates source versions in DB. Should be run in a transaction that also
