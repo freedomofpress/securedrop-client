@@ -36,7 +36,7 @@ function Header({ sourceUuid, loading, sourceWithItems }: HeaderProps) {
       <div className="ml-2">
         <p>{designation}</p>
         <p className="text-sm text-gray-600">
-          Last source activity: {formattedLastSeen}
+          {t("lastSourceActivity")}: {formattedLastSeen}
         </p>
       </div>
     </>
