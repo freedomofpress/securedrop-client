@@ -322,9 +322,13 @@ export class DB {
     const { plaintext, filename } = options;
 
     // Validate update based on item type
-    if (plaintext !== undefined && item.data.kind !== "message") {
+    if (
+      plaintext !== undefined &&
+      item.data.kind !== "message" &&
+      item.data.kind !== "reply"
+    ) {
       throw new Error(
-        `Cannot update plaintext for item of kind "${item.data.kind}". Only "message" items can have plaintext updated.`,
+        `Cannot update plaintext for item of kind "${item.data.kind}". Only "message" and "reply" items can have plaintext updated.`,
       );
     }
 
@@ -390,6 +394,32 @@ export class DB {
         filename: row.filename || undefined,
       };
     });
+  }
+
+  /**
+   * Get UUIDs of all message and reply items that don't have plaintext
+   * @returns Array of item UUIDs that need decryption
+   */
+  getUndecryptedMessageIds(): string[] {
+    if (!this.db) {
+      throw new Error("Database not initialized");
+    }
+
+    const stmt = this.db.prepare(`
+      SELECT uuid, data
+      FROM items 
+      WHERE plaintext IS NULL OR plaintext = ''
+    `);
+
+    const rows = stmt.all() as Array<{ uuid: string; data: string }>;
+
+    // Filter for messages and replies (skip files only)
+    return rows
+      .filter((row) => {
+        const metadata = JSON.parse(row.data) as ItemMetadata;
+        return metadata.kind === "message" || metadata.kind === "reply";
+      })
+      .map((row) => row.uuid);
   }
 
   // Updates source versions in DB. Should be run in a transaction that also

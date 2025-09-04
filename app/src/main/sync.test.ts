@@ -20,6 +20,7 @@ function mockDB({ index = { sources: {}, items: {}, journalists: {} } } = {}) {
     updateMetadata: vi.fn((_metadata) => {}),
     getItems: vi.fn((_itemIds) => []), // Return empty array for testing
     updateItem: vi.fn((_itemId, _options) => {}),
+    getUndecryptedMessageIds: vi.fn(() => []), // Return empty array for testing
   } as unknown as DB;
 }
 

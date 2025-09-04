@@ -134,7 +134,49 @@ describe("Database Component Tests", () => {
     expect(result.filename).toBe(filename);
   });
 
-  it("should reject plaintext update for non-message items", () => {
+  it("should update reply item with plaintext", () => {
+    db = new DB();
+
+    // First, insert a reply item to update
+    const itemId = "test-reply-uuid";
+    const itemMetadata = {
+      kind: "reply" as const,
+      uuid: itemId,
+      source: "test-source-uuid",
+      size: 1024,
+      journalist_uuid: "journalist-uuid",
+      is_deleted_by_source: false,
+      seen_by: [],
+    };
+
+    db.updateMetadata({
+      sources: {},
+      items: {
+        [itemId]: itemMetadata,
+      },
+      journalists: {},
+    });
+
+    // Update the reply item with plaintext content
+    const plaintext = "Decrypted reply content";
+
+    expect(() => {
+      db.updateItem(itemId, { plaintext });
+    }).not.toThrow();
+
+    // Verify the update by checking the database directly
+    const result = db["db"]!.prepare(
+      "SELECT plaintext, filename FROM items WHERE uuid = ?",
+    ).get(itemId) as {
+      plaintext: string;
+      filename: string | null;
+    };
+
+    expect(result.plaintext).toBe(plaintext);
+    expect(result.filename).toBeNull();
+  });
+
+  it("should reject plaintext update for file items", () => {
     db = new DB();
 
     // Insert a file item
@@ -205,6 +247,142 @@ describe("Database Component Tests", () => {
     expect(() => {
       db.updateItem("nonexistent-id", { plaintext: "test-content" });
     }).toThrow("Item with ID nonexistent-id not found");
+  });
+});
+
+describe("DB.getUndecryptedMessageIds", () => {
+  const testHomeDir = path.join(os.tmpdir(), "test-home-undecrypted");
+  const originalHomedir = os.homedir;
+  let db: DB;
+
+  beforeEach(() => {
+    if (fs.existsSync(testHomeDir)) {
+      fs.rmSync(testHomeDir, { recursive: true, force: true });
+    }
+    os.homedir = () => testHomeDir;
+    db = new DB();
+  });
+
+  afterEach(() => {
+    if (db) {
+      db.close();
+    }
+    os.homedir = originalHomedir;
+    if (fs.existsSync(testHomeDir)) {
+      fs.rmSync(testHomeDir, { recursive: true, force: true });
+    }
+  });
+
+  it("should return undecrypted message and reply IDs", () => {
+    // Create test metadata with mixed items
+    const metadata: MetadataResponse = {
+      sources: {
+        source1: {
+          uuid: "source1",
+          journalist_designation: "test source",
+          is_starred: false,
+          last_updated: "2023-01-01T00:00:00Z",
+          public_key: "test-key",
+          fingerprint: "test-fingerprint",
+        },
+      },
+      items: {
+        message1: {
+          kind: "message",
+          uuid: "message1",
+          source: "source1",
+          size: 100,
+          is_read: false,
+          seen_by: [],
+        },
+        message2: {
+          kind: "message",
+          uuid: "message2",
+          source: "source1",
+          size: 200,
+          is_read: false,
+          seen_by: [],
+        },
+        file1: {
+          kind: "file",
+          uuid: "file1",
+          source: "source1",
+          size: 300,
+          is_read: false,
+          seen_by: [],
+        },
+        reply1: {
+          kind: "reply",
+          uuid: "reply1",
+          source: "source1",
+          size: 400,
+          journalist_uuid: "journalist1",
+          is_deleted_by_source: false,
+          seen_by: [],
+        },
+        reply2: {
+          kind: "reply",
+          uuid: "reply2",
+          source: "source1",
+          size: 500,
+          journalist_uuid: "journalist2",
+          is_deleted_by_source: false,
+          seen_by: [],
+        },
+      },
+      journalists: {},
+    };
+
+    db.updateMetadata(metadata);
+
+    // Decrypt one message and one reply to test filtering
+    db.updateItem("message1", { plaintext: "Decrypted message" });
+    db.updateItem("reply1", { plaintext: "Decrypted reply" });
+
+    // Get undecrypted message and reply IDs
+    const undecryptedIds = db.getUndecryptedMessageIds();
+
+    // Should return message2 and reply2 (message1 and reply1 are decrypted, file1 is not a message/reply)
+    expect(undecryptedIds.sort()).toEqual(["message2", "reply2"]);
+  });
+
+  it("should return empty array when all messages are decrypted", () => {
+    const metadata: MetadataResponse = {
+      sources: {
+        source1: {
+          uuid: "source1",
+          journalist_designation: "test source",
+          is_starred: false,
+          last_updated: "2023-01-01T00:00:00Z",
+          public_key: "test-key",
+          fingerprint: "test-fingerprint",
+        },
+      },
+      items: {
+        message1: {
+          kind: "message",
+          uuid: "message1",
+          source: "source1",
+          size: 100,
+          is_read: false,
+          seen_by: [],
+        },
+      },
+      journalists: {},
+    };
+
+    db.updateMetadata(metadata);
+    db.updateItem("message1", { plaintext: "Decrypted content" });
+
+    const undecryptedIds = db.getUndecryptedMessageIds();
+    expect(undecryptedIds).toEqual([]);
+  });
+
+  it("should throw error when database is not initialized", () => {
+    db.close();
+    expect(() => db.getUndecryptedMessageIds()).toThrow(
+      "Database not initialized",
+    );
   });
 });
 
