@@ -150,7 +150,7 @@ describe("syncMetadata", () => {
     );
   });
 
-  it("handles error from syncSources", async () => {
+  it("handles error from syncMetadata", async () => {
     // getIndex returns new index
     const serverIndex: Index = {
       sources: {

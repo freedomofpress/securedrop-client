@@ -4,7 +4,6 @@ import { configureStore } from "@reduxjs/toolkit";
 import type { Source as SourceType } from "../../../types";
 import sourcesSlice, {
   fetchSources,
-  syncSources,
   clearError,
   setActiveSource,
   clearActiveSource,
@@ -58,7 +57,6 @@ const mockSources: SourceType[] = [
 describe("sourcesSlice", () => {
   let store: ReturnType<typeof configureStore>;
   const mockGetSources = vi.fn();
-  const mockSyncMetadata = vi.fn();
 
   beforeEach(() => {
     // Create a test store with sources, session, and conversations slices for proper typing
@@ -76,7 +74,6 @@ describe("sourcesSlice", () => {
     // Mock electronAPI
     (window as any).electronAPI = {
       getSources: mockGetSources,
-      syncMetadata: mockSyncMetadata,
       getSourceWithItems: vi.fn().mockResolvedValue({
         uuid: "source-1",
         data: mockSources[0].data,
@@ -86,7 +83,6 @@ describe("sourcesSlice", () => {
 
     // Default mock implementations
     mockGetSources.mockResolvedValue(mockSources);
-    mockSyncMetadata.mockResolvedValue(undefined);
   });
 
   afterEach(() => {
@@ -101,7 +97,6 @@ describe("sourcesSlice", () => {
         activeSourceUuid: null,
         loading: false,
         error: null,
-        lastSyncTime: null,
       });
     });
   });
@@ -114,7 +109,6 @@ describe("sourcesSlice", () => {
         activeSourceUuid: null,
         loading: false,
         error: "Some error message",
-        lastSyncTime: null,
       };
 
       const action = clearError();
@@ -124,7 +118,6 @@ describe("sourcesSlice", () => {
       expect(newState.sources).toEqual([]);
       expect(newState.activeSourceUuid).toBeNull();
       expect(newState.loading).toBe(false);
-      expect(newState.lastSyncTime).toBeNull();
     });
   });
 
@@ -135,7 +128,6 @@ describe("sourcesSlice", () => {
         activeSourceUuid: null,
         loading: false,
         error: null,
-        lastSyncTime: null,
       };
 
       const action = setActiveSource("source-1");
@@ -152,7 +144,6 @@ describe("sourcesSlice", () => {
         activeSourceUuid: "source-1",
         loading: false,
         error: null,
-        lastSyncTime: null,
       };
 
       const action = clearActiveSource();
@@ -172,7 +163,6 @@ describe("sourcesSlice", () => {
       expect(state.sources).toEqual(mockSources);
       expect(state.loading).toBe(false);
       expect(state.error).toBeNull();
-      expect(state.lastSyncTime).toBeGreaterThan(0);
     });
 
     it("handles fetch error", async () => {
@@ -187,7 +177,6 @@ describe("sourcesSlice", () => {
       expect(state.sources).toEqual([]);
       expect(state.loading).toBe(false);
       expect(state.error).toBe(errorMessage);
-      expect(state.lastSyncTime).toBeNull();
     });
 
     it("sets loading state during fetch", async () => {
@@ -214,157 +203,6 @@ describe("sourcesSlice", () => {
     });
   });
 
-  describe("syncSources async thunk", () => {
-    it("handles successful sync with auth token", async () => {
-      const authToken = "test-auth-token";
-      const action = syncSources(authToken);
-      await (store.dispatch as any)(action);
-
-      expect(mockSyncMetadata).toHaveBeenCalledWith({ authToken });
-      expect(mockSyncMetadata).toHaveBeenCalledTimes(1);
-      expect(mockGetSources).toHaveBeenCalledTimes(1);
-
-      const state = (store.getState() as any).sources;
-      expect(state.sources).toEqual(mockSources);
-      expect(state.loading).toBe(false);
-      expect(state.error).toBeNull();
-      expect(state.lastSyncTime).toBeGreaterThan(0);
-    });
-
-    it("handles sync failure without auth token", async () => {
-      const errorMessage = "Authentication required";
-      mockSyncMetadata.mockRejectedValue(new Error(errorMessage));
-
-      await (store.dispatch as any)(syncSources(undefined));
-
-      expect(mockSyncMetadata).toHaveBeenCalledWith({ authToken: undefined });
-      expect(mockGetSources).not.toHaveBeenCalled();
-
-      const state = (store.getState() as any).sources;
-      expect(state.sources).toEqual([]);
-      expect(state.loading).toBe(false);
-      expect(state.error).toBe(errorMessage);
-    });
-
-    it("handles sync metadata error", async () => {
-      const errorMessage = "Failed to sync metadata";
-      mockSyncMetadata.mockRejectedValue(new Error(errorMessage));
-
-      const action = syncSources("test-token");
-      await (store.dispatch as any)(action);
-
-      expect(mockSyncMetadata).toHaveBeenCalledTimes(1);
-      expect(mockGetSources).not.toHaveBeenCalled();
-
-      const state = (store.getState() as any).sources;
-      expect(state.sources).toEqual([]);
-      expect(state.loading).toBe(false);
-      expect(state.error).toBe(errorMessage);
-    });
-
-    it("handles getSources error after successful sync", async () => {
-      const errorMessage = "Failed to get sources";
-      mockGetSources.mockRejectedValue(new Error(errorMessage));
-
-      const action = syncSources("test-token");
-      await (store.dispatch as any)(action);
-
-      expect(mockSyncMetadata).toHaveBeenCalledTimes(1);
-      expect(mockGetSources).toHaveBeenCalledTimes(1);
-
-      const state = (store.getState() as any).sources;
-      expect(state.sources).toEqual([]);
-      expect(state.loading).toBe(false);
-      expect(state.error).toBe(errorMessage);
-    });
-
-    it("sets loading state during sync", async () => {
-      // Create promises that we can control
-      let resolveSyncMetadata!: () => void;
-      let resolveGetSources!: (value: SourceType[]) => void;
-
-      const syncMetadataPromise = new Promise<void>((resolve) => {
-        resolveSyncMetadata = resolve;
-      });
-      const getSourcesPromise = new Promise<SourceType[]>((resolve) => {
-        resolveGetSources = resolve;
-      });
-
-      mockSyncMetadata.mockReturnValue(syncMetadataPromise);
-      mockGetSources.mockReturnValue(getSourcesPromise);
-
-      const action = syncSources("test-token");
-      const dispatchPromise = (store.dispatch as any)(action);
-
-      // Check loading state is true while pending
-      expect((store.getState() as any).sources.loading).toBe(true);
-      expect((store.getState() as any).sources.error).toBeNull();
-
-      // Resolve both promises
-      resolveSyncMetadata!();
-      resolveGetSources!(mockSources);
-      await dispatchPromise;
-
-      // Check loading state is false after completion
-      expect((store.getState() as any).sources.loading).toBe(false);
-    });
-
-    it("fetches conversation for active source during sync", async () => {
-      const activeSourceUuid = "source-1";
-
-      // Set up store with active source
-      store = configureStore({
-        reducer: {
-          sources: sourcesSlice,
-          session: sessionSlice,
-          conversation: conversationSlice,
-        },
-        preloadedState: {
-          sources: {
-            sources: [],
-            activeSourceUuid: activeSourceUuid,
-            loading: false,
-            error: null,
-            lastSyncTime: null,
-          },
-        },
-      });
-
-      // Mock getSourceWithItems for the active conversation
-      const mockGetSourceWithItems = vi.fn();
-      (window as any).electronAPI.getSourceWithItems = mockGetSourceWithItems;
-      mockGetSourceWithItems.mockResolvedValue({
-        uuid: activeSourceUuid,
-        data: mockSources[0].data,
-        items: [],
-      });
-
-      await (store.dispatch as any)(syncSources("test-token"));
-
-      // Should have called getSourceWithItems for the active source only
-      expect(mockGetSourceWithItems).toHaveBeenCalledWith(activeSourceUuid);
-      expect(mockGetSourceWithItems).toHaveBeenCalledTimes(1);
-
-      // Sources should be updated
-      const state = (store.getState() as any).sources;
-      expect(state.sources).toEqual(mockSources);
-    });
-
-    it("does not fetch conversations when no active source", async () => {
-      const mockGetSourceWithItems = vi.fn();
-      (window as any).electronAPI.getSourceWithItems = mockGetSourceWithItems;
-
-      await (store.dispatch as any)(syncSources("test-token"));
-
-      // Should NOT have called getSourceWithItems since no active source
-      expect(mockGetSourceWithItems).not.toHaveBeenCalled();
-
-      // Sources should still be updated in the store
-      const state = (store.getState() as any).sources;
-      expect(state.sources).toEqual(mockSources);
-    });
-  });
-
   describe("selectors", () => {
     const mockSessionState: SessionState = {
       status: SessionStatus.Unauth,
@@ -386,7 +224,6 @@ describe("sourcesSlice", () => {
           activeSourceUuid: null,
           loading: false,
           error: null,
-          lastSyncTime: 123456789,
         },
         journalists: {
           journalists: [],
@@ -394,6 +231,11 @@ describe("sourcesSlice", () => {
           error: null,
         },
         conversation: mockConversationState,
+        sync: {
+          loading: false,
+          error: null,
+          lastFetchTime: null,
+        },
       };
 
       expect(selectSources(state)).toEqual(mockSources);
@@ -407,7 +249,6 @@ describe("sourcesSlice", () => {
           activeSourceUuid: "source-1",
           loading: false,
           error: null,
-          lastSyncTime: 123456789,
         },
         journalists: {
           journalists: [],
@@ -415,6 +256,11 @@ describe("sourcesSlice", () => {
           error: null,
         },
         conversation: mockConversationState,
+        sync: {
+          loading: false,
+          error: null,
+          lastFetchTime: null,
+        },
       };
 
       expect(selectActiveSourceUuid(state)).toBe("source-1");
@@ -428,7 +274,6 @@ describe("sourcesSlice", () => {
           activeSourceUuid: null,
           loading: true,
           error: null,
-          lastSyncTime: null,
         },
         journalists: {
           journalists: [],
@@ -436,6 +281,11 @@ describe("sourcesSlice", () => {
           error: null,
         },
         conversation: mockConversationState,
+        sync: {
+          loading: false,
+          error: null,
+          lastFetchTime: null,
+        },
       };
 
       expect(selectSourcesLoading(state)).toBe(true);
@@ -458,15 +308,14 @@ describe("sourcesSlice", () => {
       expect(state.loading).toBe(false);
     });
 
-    it("handles fetchSources after syncSources", async () => {
-      // First sync
-      await (store.dispatch as any)(syncSources("test-token"));
-
-      // Then fetch
+    it("handles multiple fetchSources calls after previous actions", async () => {
+      // First fetch
       await (store.dispatch as any)(fetchSources());
 
-      expect(mockSyncMetadata).toHaveBeenCalledTimes(1);
-      expect(mockGetSources).toHaveBeenCalledTimes(2); // Once for sync, once for fetch
+      // Then another fetch
+      await (store.dispatch as any)(fetchSources());
+
+      expect(mockGetSources).toHaveBeenCalledTimes(2);
 
       const state = (store.getState() as any).sources;
       expect(state.sources).toEqual(mockSources);
@@ -476,19 +325,17 @@ describe("sourcesSlice", () => {
   });
 
   describe("error handling edge cases", () => {
-    it("handles network timeout error during sync", async () => {
-      mockSyncMetadata.mockRejectedValue(new Error("Network timeout"));
+    it("handles network timeout error during fetch", async () => {
+      mockGetSources.mockRejectedValue(new Error("Network timeout"));
 
-      await (store.dispatch as any)(syncSources("valid-token"));
+      await (store.dispatch as any)(fetchSources());
 
       const state = (store.getState() as any).sources;
       expect(state.error).toBe("Network timeout");
       expect(state.sources).toEqual([]);
       expect(state.loading).toBe(false);
 
-      // syncMetadata should be called but getSources should not be called due to network failure
-      expect(mockSyncMetadata).toHaveBeenCalledTimes(1);
-      expect(mockGetSources).not.toHaveBeenCalled();
+      expect(mockGetSources).toHaveBeenCalledTimes(1);
     });
 
     it("handles undefined error message", async () => {
@@ -512,16 +359,6 @@ describe("sourcesSlice", () => {
       const state = (store.getState() as any).sources;
       expect(state.error).toBe("String error");
     });
-
-    it("handles non-Error rejection for syncSources", async () => {
-      mockSyncMetadata.mockRejectedValue("String error");
-
-      const action = syncSources("test-token");
-      await (store.dispatch as any)(action);
-
-      const state = (store.getState() as any).sources;
-      expect(state.error).toBe("String error");
-    });
   });
 
   describe("state transitions", () => {
@@ -538,27 +375,6 @@ describe("sourcesSlice", () => {
       const state = (store.getState() as any).sources;
       expect(state.error).toBeNull();
       expect(state.sources).toEqual(mockSources);
-    });
-
-    it("updates lastSyncTime on successful operations", async () => {
-      const beforeTime = Date.now();
-
-      await (store.dispatch as any)(fetchSources());
-
-      const afterTime = Date.now();
-      const state = (store.getState() as any).sources;
-
-      expect(state.lastSyncTime).toBeGreaterThanOrEqual(beforeTime);
-      expect(state.lastSyncTime).toBeLessThanOrEqual(afterTime);
-    });
-
-    it("does not update lastSyncTime on failed operations", async () => {
-      mockGetSources.mockRejectedValue(new Error("Failed"));
-
-      await (store.dispatch as any)(fetchSources());
-
-      const state = (store.getState() as any).sources;
-      expect(state.lastSyncTime).toBeNull();
     });
   });
 });

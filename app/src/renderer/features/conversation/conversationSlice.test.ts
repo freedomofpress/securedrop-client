@@ -224,7 +224,6 @@ describe("conversationSlice", () => {
         activeSourceUuid: null,
         loading: false,
         error: null,
-        lastSyncTime: null,
       },
       journalists: {
         journalists: [],
@@ -236,6 +235,11 @@ describe("conversationSlice", () => {
         loading: false,
         error: "Test error",
         lastFetchTime: 123456789,
+      },
+      sync: {
+        loading: false,
+        error: null,
+        lastFetchTime: null,
       },
     };
 

@@ -204,10 +204,14 @@ describe("journalistsSlice", () => {
         activeSourceUuid: null,
         loading: false,
         error: null,
-        lastSyncTime: null,
       },
       conversation: {
         conversation: null,
+        loading: false,
+        error: null,
+        lastFetchTime: null,
+      },
+      sync: {
         loading: false,
         error: null,
         lastFetchTime: null,
