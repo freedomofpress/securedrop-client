@@ -13,10 +13,16 @@ describe("Crypto", () => {
     vi.unstubAllEnvs();
   });
 
-  describe("constructor and Qubes detection", () => {
+  describe("getInstance and Qubes detection", () => {
+    beforeEach(() => {
+      // Reset singleton instance for testing
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      (Crypto as any).instance = undefined;
+    });
+
     it("should detect Qubes when QUBES_ environment variable exists", () => {
       vi.stubEnv("QUBES_SOMETHING", "value");
-      const crypto = new Crypto();
+      const crypto = Crypto.getInstance();
 
       // Test by checking internal state via the getGpgCommand private method
       const command = (
@@ -28,7 +34,7 @@ describe("Crypto", () => {
     });
 
     it("should use regular GPG when no QUBES_ environment variables exist", () => {
-      const crypto = new Crypto();
+      const crypto = Crypto.getInstance();
 
       const command = (
         crypto as unknown as CryptoWithPrivateMethods
@@ -39,7 +45,10 @@ describe("Crypto", () => {
     });
 
     it("should use custom homedir when provided", () => {
-      const crypto = new Crypto({ isQubes: false, gpgHomedir: "/custom/path" });
+      const crypto = Crypto.getInstance({
+        isQubes: false,
+        gpgHomedir: "/custom/path",
+      });
 
       const command = (
         crypto as unknown as CryptoWithPrivateMethods
@@ -51,7 +60,7 @@ describe("Crypto", () => {
 
     it("should override auto-detection when isQubes is explicitly set", () => {
       vi.stubEnv("QUBES_SOMETHING", "value");
-      const crypto = new Crypto({ isQubes: false });
+      const crypto = Crypto.getInstance({ isQubes: false });
 
       const command = (
         crypto as unknown as CryptoWithPrivateMethods
@@ -64,7 +73,10 @@ describe("Crypto", () => {
     let crypto: Crypto;
 
     beforeEach(() => {
-      crypto = new Crypto();
+      // Reset singleton instance for testing
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      (Crypto as any).instance = undefined;
+      crypto = Crypto.getInstance();
     });
 
     it("should extract filename from gzip header", () => {

@@ -22,12 +22,23 @@ export class CryptoError extends Error {
 }
 
 export class Crypto {
+  private static instance: Crypto;
   private isQubes: boolean;
   private gpgHomedir?: string;
 
-  constructor(config: CryptoConfig = {}) {
+  private constructor(config: CryptoConfig = {}) {
     this.isQubes = config.isQubes ?? this.detectQubes();
     this.gpgHomedir = config.gpgHomedir;
+  }
+
+  /**
+   * Get singleton instance of Crypto
+   */
+  public static getInstance(config: CryptoConfig = {}): Crypto {
+    if (!Crypto.instance) {
+      Crypto.instance = new Crypto(config);
+    }
+    return Crypto.instance;
   }
 
   /**
