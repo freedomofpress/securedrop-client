@@ -7,6 +7,7 @@ import {
   REDUX_DEVTOOLS,
   REACT_DEVELOPER_TOOLS,
 } from "electron-devtools-installer";
+import { Worker } from "worker_threads";
 
 import { DB } from "./database";
 import { proxy } from "./proxy";
@@ -57,6 +58,37 @@ function createWindow(): void {
   }
 }
 
+function spawnFetchWorker(): Worker {
+  const scriptPath = join(
+    app.getAppPath(),
+    "src",
+    "main",
+    "fetch",
+    "worker.ts",
+  );
+  const worker = new Worker(scriptPath, {
+    execArgv: ["--require", "tsx"],
+  });
+
+  worker.on("message", (result) => {
+    console.log("Result from worker: ", result);
+  });
+
+  worker.on("error", (err) => {
+    console.log("Error from worker: ", err);
+  });
+
+  worker.on("exit", (err) => {
+    console.log("Worker exited with code ", err);
+  });
+
+  worker.on("messageerror", (err) => {
+    console.log("Message error from worker: ", err);
+  });
+
+  return worker;
+}
+
 // This method will be called when Electron has finished
 // initialization and is ready to create browser windows.
 // Some APIs can only be used after this event occurs.
@@ -71,6 +103,8 @@ app.whenReady().then(() => {
         console.log("An error occurred during extension setup: ", err),
       );
   }
+
+  const fetchWorker = spawnFetchWorker();
 
   // Default open or close DevTools by F12 in development
   // and ignore CommandOrControl + R in production.
@@ -109,6 +143,8 @@ app.whenReady().then(() => {
     "syncMetadata",
     async (_event, request: SyncMetadataRequest) => {
       await syncMetadata(db, request.authToken);
+      // Send message to fetch worker to fetch newly synced items, if any
+      fetchWorker.postMessage({});
     },
   );
 
@@ -116,6 +152,7 @@ app.whenReady().then(() => {
     const systemLanguage = process.env.LANG || app.getLocale() || "en";
     return systemLanguage;
   });
+
   createWindow();
 });
 

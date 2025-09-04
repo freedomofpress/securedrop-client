@@ -5,7 +5,7 @@ import { execSync } from "child_process";
 import Database, { Statement } from "better-sqlite3";
 import blake from "blakejs";
 
-import type {
+import {
   Index,
   SourceMetadata,
   ItemMetadata,
@@ -14,18 +14,21 @@ import type {
   SourceWithItems,
   SourceRow,
   ItemRow,
+  JournalistMetadata,
   Journalist,
   JournalistRow,
-  JournalistMetadata,
+  FetchStatus,
 } from "../../types";
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-const sortKeys = (_: string, value: any) =>
+interface KeyObject {
+  [key: string]: object;
+}
+
+const sortKeys = (_: string, value: KeyObject) =>
   value instanceof Object && !(value instanceof Array)
     ? Object.keys(value)
         .sort()
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        .reduce((sorted: Record<string, any>, key: string) => {
+        .reduce((sorted: KeyObject, key: string) => {
           sorted[key] = value[key];
           return sorted;
         }, {})
@@ -236,8 +239,6 @@ export class DB {
   }
 
   getIndex(): Index {
-    // NOTE: setting journalists to empty object for now, as implementing
-    // journalist sync is still TODO.
     const index: Index = { sources: {}, items: {}, journalists: {} };
     for (const row of this.selectAllSourceVersion.iterate()) {
       index.sources[row.uuid] = row.version;
@@ -261,7 +262,7 @@ export class DB {
   }
 
   deleteItems(items: string[]) {
-    this.db!.transaction((items) => {
+    this.db!.transaction((items: string[]) => {
       for (const itemID in items) {
         this.deleteItem.run({ id: itemID });
       }
@@ -270,7 +271,7 @@ export class DB {
   }
 
   deleteSources(sources: string[]) {
-    this.db!.transaction((sources) => {
+    this.db!.transaction((sources: string[]) => {
       for (const sourceID in sources) {
         this.deleteSource.run({ id: sourceID });
       }
@@ -279,7 +280,7 @@ export class DB {
   }
 
   deleteJournalists(journalists: string[]) {
-    this.db!.transaction((journalists) => {
+    this.db!.transaction((journalists: string[]) => {
       for (const journalistID in journalists) {
         this.deleteJournalist.run({ id: journalistID });
       }
@@ -445,5 +446,83 @@ export class DB {
         data,
       };
     });
+  }
+
+  getItemsToDownload(): string[] {
+    type Row = {
+      uuid: string;
+    };
+    console.log("getting items to download");
+    const itemStmt = this.db!.prepare(`
+      SELECT uuid FROM items
+      WHERE fetch_status IN (${FetchStatus.Initial}, ${FetchStatus.InProgress})
+    `);
+    const rows = itemStmt?.all() as Array<Row>;
+    return rows.map((r) => r.uuid);
+  }
+
+  getItemFetchStatus(itemUuid: string): [number, number] {
+    type Row = {
+      fetch_status: number;
+      fetch_progress: number;
+    };
+    const itemStatusStmt = this.db?.prepare(`
+      SELECT fetch_status, fetch_progress FROM items WHERE uuid = ?`);
+    const status = itemStatusStmt?.get(itemUuid) as Row;
+    return [status.fetch_status, status.fetch_progress];
+  }
+
+  updateInProgressItem(itemUuid: string, progress: number) {
+    const stmt: Statement<{ uuid: string; progress: number }, void> =
+      this.db!.prepare(
+        `UPDATE items SET fetch_progress = @progress, fetch_status=${FetchStatus.InProgress}, fetch_last_updated_at = CURRENT_TIMESTAMP WHERE uuid = @uuid`,
+      );
+    stmt.run({
+      uuid: itemUuid,
+      progress: progress,
+    });
+  }
+
+  completePlaintextItem(itemUuid: string, plaintext: string) {
+    const stmt: Statement<{ uuid: string; plaintext: string }, void> =
+      this.db!.prepare(
+        `UPDATE items SET fetch_progress = null, fetch_status = ${FetchStatus.Complete}, plaintext = @plaintext, fetch_last_updated_at = CURRENT_TIMESTAMP WHERE uuid = @uuid`,
+      );
+    stmt.run({
+      uuid: itemUuid,
+      plaintext: plaintext,
+    });
+  }
+
+  completeFileItem(itemUuid: string, filename: string) {
+    const stmt: Statement<{ uuid: string; filename: string }, void> =
+      this.db!.prepare(
+        `UPDATE items SET fetch_progress = null, fetch_status = ${FetchStatus.Complete}, filename = @filename, fetch_last_updated_at = CURRENT_TIMESTAMP WHERE uuid = @uuid`,
+      );
+    stmt.run({
+      uuid: itemUuid,
+      filename: filename,
+    });
+  }
+
+  failItem(itemUuid: string) {
+    const stmt: Statement<{ uuid: string }, void> = this.db!.prepare(
+      `UPDATE ITEMS set fetch_status = ${FetchStatus.Failed}, fetch_retry_attempts = fetch_retry_attempts + 1, fetch_last_updated_at = CURRENT_TIMESTAMP WHERE uuid = @uuid`,
+    );
+    stmt.run({ uuid: itemUuid });
+  }
+
+  pauseItem(itemUuid: string) {
+    const stmt: Statement<{ uuid: string }, void> = this.db!.prepare(
+      `UPDATE ITEMS set fetch_status = ${FetchStatus.Paused}, fetch_last_updated_at = CURRENT_TIMESTAMP WHERE uuid = @uuid`,
+    );
+    stmt.run({ uuid: itemUuid });
+  }
+
+  resumeItem(itemUuid: string) {
+    const stmt: Statement<{ uuid: string }, void> = this.db!.prepare(
+      `UPDATE ITEMS set fetch_status = ${FetchStatus.InProgress}, fetch_last_updated_at = CURRENT_TIMESTAMP WHERE uuid = @uuid`,
+    );
+    stmt.run({ uuid: itemUuid });
   }
 }
