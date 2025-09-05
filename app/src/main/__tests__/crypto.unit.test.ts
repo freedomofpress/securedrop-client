@@ -34,6 +34,21 @@ describe("Crypto", () => {
     });
 
     it("should use regular GPG when no QUBES_ environment variables exist", () => {
+      // Mock process.env to exclude all QUBES_ variables
+      const originalEnv = process.env;
+      const mockEnv = Object.keys(originalEnv)
+        .filter((key) => !key.startsWith("QUBES_"))
+        .reduce((env, key) => {
+          env[key] = originalEnv[key];
+          return env;
+        }, {} as NodeJS.ProcessEnv);
+
+      vi.stubGlobal("process", { ...process, env: mockEnv });
+
+      // Reset singleton instance after mocking environment
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      (Crypto as any).instance = undefined;
+
       const crypto = Crypto.getInstance();
 
       const command = (
@@ -42,6 +57,9 @@ describe("Crypto", () => {
       expect(command[0]).toBe("gpg");
       expect(command).toContain("--trust-model");
       expect(command).toContain("always");
+
+      // Restore original process.env
+      vi.unstubAllGlobals();
     });
 
     it("should use custom homedir when provided", () => {
