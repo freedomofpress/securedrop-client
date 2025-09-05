@@ -244,7 +244,7 @@ export enum SyncStatus {
 
 /**
  * Download and decrypt messages and replies that need decryption after metadata sync
- * Processes both message submissions from sources and replies from journalists
+ * Processes both message submissions from sources and replies from journalists in parallel
  */
 async function decryptItems(
   db: DB,
@@ -252,14 +252,16 @@ async function decryptItems(
   itemsToUpdate: string[],
 ): Promise<void> {
   const crypto = Crypto.getInstance();
-  for (const itemId of itemsToUpdate) {
+
+  // Create array of decryption promises for parallel processing
+  const decryptionPromises = itemsToUpdate.map(async (itemId) => {
     let tempFilePath: string | null = null;
 
     try {
       // Get the item from database to check if it needs decryption
       const items = db.getItems([itemId]);
       if (items.length === 0) {
-        continue;
+        return { itemId, status: "skipped", reason: "item not found" };
       }
 
       const item = items[0];
@@ -267,12 +269,12 @@ async function decryptItems(
 
       // Skip files (only process messages and replies)
       if (metadata.kind === "file") {
-        continue;
+        return { itemId, status: "skipped", reason: "file type" };
       }
 
       // Skip items that are already decrypted
       if (item.plaintext) {
-        continue;
+        return { itemId, status: "skipped", reason: "already decrypted" };
       }
 
       if (metadata.kind === "message") {
@@ -296,6 +298,7 @@ async function decryptItems(
         db.updateItem(itemId, { plaintext: decryptedMessage });
 
         console.log(`Successfully decrypted message ${itemId}`);
+        return { itemId, status: "success", type: "message" };
       } else if (metadata.kind === "reply") {
         const replyMetadata = metadata as ReplyMetadata;
         console.log(`Downloading and decrypting reply ${itemId}...`);
@@ -317,14 +320,21 @@ async function decryptItems(
         db.updateItem(itemId, { plaintext: decryptedReply });
 
         console.log(`Successfully decrypted reply ${itemId}`);
+        return { itemId, status: "success", type: "reply" };
       }
+
+      return { itemId, status: "skipped", reason: "unknown type" };
     } catch (error) {
       if (error instanceof CryptoError) {
         console.error(`Failed to decrypt item ${itemId}: ${error.message}`);
-        // Continue with other items rather than failing the entire sync
+        return { itemId, status: "error", error: error.message };
       } else {
         console.error(`Failed to process item ${itemId}:`, error);
-        // Continue with other items rather than failing the entire sync
+        return {
+          itemId,
+          status: "error",
+          error: error instanceof Error ? error.message : String(error),
+        };
       }
     } finally {
       // Clean up temporary file and directory
@@ -333,6 +343,35 @@ async function decryptItems(
         fs.rmSync(tempDir, { recursive: true, force: true });
       }
     }
+  });
+
+  // Execute all decryption operations in parallel
+  const results = await Promise.allSettled(decryptionPromises);
+
+  // Log summary of results
+  let successCount = 0;
+  let errorCount = 0;
+  let skippedCount = 0;
+
+  results.forEach((result, index) => {
+    if (result.status === "fulfilled") {
+      const { status } = result.value;
+      if (status === "success") successCount++;
+      else if (status === "error") errorCount++;
+      else if (status === "skipped") skippedCount++;
+    } else {
+      console.error(
+        `Unexpected error processing item ${itemsToUpdate[index]}:`,
+        result.reason,
+      );
+      errorCount++;
+    }
+  });
+
+  if (successCount > 0 || errorCount > 0) {
+    console.log(
+      `Decryption summary: ${successCount} successful, ${errorCount} failed, ${skippedCount} skipped`,
+    );
   }
 }
 
