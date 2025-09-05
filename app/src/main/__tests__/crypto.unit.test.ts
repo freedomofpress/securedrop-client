@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, vi, afterEach } from "vitest";
-import { Crypto, CryptoError } from "./crypto";
+import { Crypto, CryptoError } from "../crypto";
 
 // Type definition for testing private methods
 type CryptoWithPrivateMethods = {

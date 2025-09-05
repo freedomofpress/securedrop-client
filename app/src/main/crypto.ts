@@ -133,8 +133,10 @@ export class Crypto {
     cmd.push("--decrypt", filepath);
 
     return new Promise((resolve, reject) => {
-      // Create temporary file for GPG output (similar to legacy client's approach)
-      const tempDir = os.tmpdir();
+      // Create temporary directory for this operation
+      const tempDir = fs.mkdtempSync(
+        path.join(os.tmpdir(), "securedrop-decrypt-"),
+      );
       const tempGpgOutput = path.join(
         tempDir,
         `securedrop-gpg-${Date.now()}-${Math.random().toString(36).slice(2)}`,
@@ -159,8 +161,8 @@ export class Crypto {
         gpgOutputFile.end();
 
         if (code !== 0) {
-          // Clean up temp file on error
-          fs.unlink(tempGpgOutput, () => {});
+          // Clean up temp directory on error
+          fs.rmSync(tempDir, { recursive: true, force: true });
           const errorMessage = stderr.toString("utf8");
           reject(
             new CryptoError(
@@ -191,8 +193,8 @@ export class Crypto {
 
           resolve({ filePath: outputPath, filename: finalFilename });
         } catch (error) {
-          // Clean up temp files on error
-          fs.unlink(tempGpgOutput, () => {});
+          // Clean up temp directory on error
+          fs.rmSync(tempDir, { recursive: true, force: true });
           reject(
             new CryptoError(
               "Failed to decompress decrypted file",
@@ -204,7 +206,7 @@ export class Crypto {
 
       gpgProcess.on("error", (error) => {
         gpgOutputFile.destroy();
-        fs.unlink(tempGpgOutput, () => {});
+        fs.rmSync(tempDir, { recursive: true, force: true });
         reject(
           new CryptoError(
             `Failed to start GPG process for file decryption: ${error.message}`,
