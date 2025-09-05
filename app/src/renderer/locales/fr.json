@@ -17,6 +17,7 @@
       "messagePlaceholder": "Message {{designation}}..."
     },
     "itemEncrypted": "Message chiffré...",
+    "lastSourceActivity": "Dernière activité de la source",
     "you": "Vous",
     "unknown": "Inconnu"
   },

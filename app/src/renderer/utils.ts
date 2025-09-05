@@ -5,7 +5,7 @@ import type { JournalistMetadata } from "../types";
  * Normalize locale code from POSIX format to BCP 47 format
  * e.g., "en_US.UTF-8" -> "en-US", "fr_FR" -> "fr-FR"
  */
-function normalizeLocale(locale: string): string {
+export function normalizeLocale(locale: string): string {
   // Remove encoding part (e.g., .UTF-8)
   const withoutEncoding = locale.split(".")[0];
 
@@ -30,18 +30,34 @@ function normalizeLocale(locale: string): string {
 }
 
 /**
- * Format a date string to show relative or absolute dates
+ * Ensures a date string is treated as UTC by appending 'Z' if no timezone is specified
+ */
+function ensureUtcDateString(dateString: string): string {
+  // Check if timezone info is already present:
+  // - 'Z' indicates UTC
+  // - '+' indicates positive timezone offset
+  // - '-' after position 10 indicates negative timezone offset
+  //   (position check distinguishes timezone '-' from date separator hyphens in "2025-08-29")
+  return dateString.includes("Z") ||
+    dateString.includes("+") ||
+    (dateString.includes("-") && dateString.lastIndexOf("-") > 10)
+    ? dateString
+    : dateString + "Z";
+}
+
+/**
+ * Format a date string to show relative or absolute dates for sidebar display
  * - Today: show time (e.g., "2:30 PM")
  * - Yesterday: show "Yesterday"
  * - This year: show month and day (e.g., "10 Apr")
  * - Previous years: show month, day, and year (e.g., "10 Apr 2023")
  */
-export function formatDate(
+export function formatDateShort(
   dateString: string,
   locale: string,
   t: TFunction,
 ): string {
-  const date = new Date(dateString);
+  const date = new Date(ensureUtcDateString(dateString));
   const now = new Date();
   const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
   const yesterday = new Date(today.getTime() - 24 * 60 * 60 * 1000);
@@ -80,6 +96,32 @@ export function formatDate(
       year: "numeric",
     });
   }
+}
+
+/**
+ * Format a date string to show full timestamp with time for header display
+ * Shows complete date with time and timezone (e.g., "April 10, 2024 at 2:30 PM PDT")
+ */
+export function formatDateLong(dateString: string, locale: string): string {
+  const date = new Date(ensureUtcDateString(dateString));
+
+  // Handle invalid dates
+  if (isNaN(date.getTime())) {
+    return "Invalid Date";
+  }
+
+  const normalizedLocale = normalizeLocale(
+    locale || navigator.language || "en",
+  );
+
+  return new Intl.DateTimeFormat(normalizedLocale, {
+    year: "numeric",
+    month: "long",
+    day: "numeric",
+    hour: "numeric",
+    minute: "2-digit",
+    timeZoneName: "short",
+  }).format(date);
 }
 
 /**

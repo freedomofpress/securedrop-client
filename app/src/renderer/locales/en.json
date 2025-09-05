@@ -17,6 +17,7 @@
       "messagePlaceholder": "Message {{designation}}..."
     },
     "itemEncrypted": "Message is encrypted...",
+    "lastSourceActivity": "Last source activity",
     "you": "You",
     "unknown": "Unknown"
   },
