@@ -7,20 +7,22 @@ msgid ""
 msgstr ""
 "Project-Id-Version: SecureDrop Client 0.5.0\n"
 "Report-Msgid-Bugs-To: securedrop@freedom.press\n"
-"PO-Revision-Date: 2024-12-12 09:33+0000\n"
-"Last-Translator: \"Igor K.\" <igorkrainovic@gmail.com>\n"
+"PO-Revision-Date: 2025-09-01 15:37+0000\n"
+"Last-Translator: Milo Ivir <mail@milotype.de>\n"
 "Language-Team: Croatian <https://weblate.securedrop.org/projects/securedrop/securedrop-client/hr/>\n"
 "Language: hr\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=3; plural=n%10==1 && n%100!=11 ? 0 : n%10>=2 && n%10<=4 && (n%100<10 || n%100>=20) ? 1 : 2;\n"
-"X-Generator: Weblate 5.8.4\n"
+"X-Generator: Weblate 5.12.2\n"
 "Generated-By: Babel 2.9.1\n"
 
+#, python-brace-format
 msgid "{application_name} is already running"
 msgstr "Aplikacija {application_name} je već pokrenuta"
 
+#, python-brace-format
 msgid "Retrieving 1 message"
 msgid_plural "Retrieving {message_count} messages"
 msgstr[0] "Preuzimam {message_count} poruku"
@@ -107,12 +109,14 @@ msgstr "<h2>Neke datoteke neće biti izvezene</h2>Neke datoteke iz ovog izvora j
 msgid "all files and transcript"
 msgstr "sve datoteke i prijepis"
 
+#, python-brace-format
 msgid "SecureDrop Client {}"
 msgstr "SecureDrop klijent{}"
 
 msgid "Quit"
 msgstr "Izlaz"
 
+#, python-brace-format
 msgid "Last Refresh: {}"
 msgstr "Posljednje osvježenje: {}"
 
@@ -125,6 +129,7 @@ msgstr "OBRIŠI IZVORE"
 msgid "Delete selected source accounts. Ctrl+click sources below to select multiple sources."
 msgstr "Obriši odabrane račune izvora. Ctrl+klik na izvore niže kako bi označili više izvora."
 
+#, python-brace-format
 msgid "{}"
 msgstr "{}"
 
@@ -228,6 +233,10 @@ msgstr "DATOTEKE I PORUKE"
 msgid "SOURCE ACCOUNT"
 msgstr "RAČUN IZVORA"
 
+#, python-brace-format
+msgid "Last seen: {last_update_time}"
+msgstr "Zadnji put viđeno: {last_update_time}"
+
 msgid "Username"
 msgstr "Korisničko ime"
 
@@ -237,6 +246,7 @@ msgstr "Lozinka"
 msgid "Two-Factor Code"
 msgstr "Dvofaktorski kod"
 
+#, python-brace-format
 msgid "SecureDrop Client v{}"
 msgstr "SecureDrop klijent v{}"
 
@@ -282,24 +292,29 @@ msgstr "NASTAVI"
 msgid "YES, DELETE FILES AND MESSAGES"
 msgstr "Da, obriši datoteke i poruke"
 
+#, python-brace-format
 msgid "Would you like to delete {files_to_delete}, {replies_to_delete}, {messages_to_delete} from the source account for {source}?"
 msgstr "Želite li izbrisati {files_to_delete}, {replies_to_delete}, {messages_to_delete} s računa izvora za {source}?"
 
+#, python-brace-format
 msgid "Preserving the account will retain its metadata, and the ability for {source} to log in to your SecureDrop again."
 msgstr "Očuvanje računa će zadržati njegove metapodatke i mogućnost da se {source} ponovno prijavi na Vaš SecureDrop."
 
+#, python-brace-format
 msgid "one file"
 msgid_plural "{file_count} files"
 msgstr[0] "{file_count} datoteka"
 msgstr[1] "{file_count} datoteke"
 msgstr[2] "{file_count} datoteka"
 
+#, python-brace-format
 msgid "one reply"
 msgid_plural "{reply_count} replies"
 msgstr[0] "{reply_count} odgovor"
 msgstr[1] "{reply_count} odgovora"
 msgstr[2] "{reply_count} odgovora"
 
+#, python-brace-format
 msgid "one message"
 msgid_plural "{message_count} messages"
 msgstr[0] "{message_count} poruka"
@@ -354,12 +369,14 @@ msgstr "Datoteke su uklonjene ili nedostaju i ne mogu biti izvezene."
 msgid "Error encountered. Please contact support."
 msgstr "Došlo je do greške. Molimo kontaktirajte podršku."
 
+#, python-brace-format
 msgid "Preparing to export:<br /><span style=\"font-weight:normal\">{}</span>"
 msgstr "Priprema za izvoz:<br /><span style=\"font-weight:normal\">{}</span>"
 
 msgid "<h2>Understand the risks before exporting files</h2><b>Malware</b><br />This workstation lets you open files securely. If you open files on another computer, any embedded malware may spread to your computer or network. If you are unsure how to manage this risk, please print the file, or contact your administrator.<br /><br /><b>Anonymity</b><br />Files submitted by sources may contain information or hidden metadata that identifies who they are. To protect your sources, please consider redacting files before working with them on network-connected computers."
 msgstr "<h2>Razumijte rizike prije izvoza datoteka</h2><b>Malware</b><br />Ova radna stanica Vam omogućuje sigurno otvaranje datoteka. Ako otvorite datoteke na drugom računalu, usađeni malware će se moći proširiti na Vaše računalo ili mrežu. Ako niste sigurni kako upravljati ovim rizikom, molimo Vas da ispišete datoteku ili kontaktirate svog administratora. <br /><br /><b>Anonimnost</b><br />Datoteke koje je predao izvor mogu sadržavati informacije ili skrivene metapodatke koji identificiraju taj izvor. Kako bi zaštitili svoje izvore, razmotrite uređivanje datoteka prije nego radite s njima na računalima spojenim na mrežu."
 
+#, python-brace-format
 msgid "Ready to export:<br /><span style=\"font-weight:normal\">{}</span>"
 msgstr "Spremno za izvoz:<br /><span style=\"font-weight:normal\">{}</span>"
 
@@ -381,9 +398,11 @@ msgstr "Radim..."
 msgid "Enter passphrase for USB drive"
 msgstr "Unesite lozinku za USB disk"
 
+#, python-brace-format
 msgid "Preparing to print:<br /><span style=\"font-weight:normal\">{}</span>"
 msgstr "Pripremanje za ispis:<br /><span style=\"font-weight:normal\">{}</span>"
 
+#, python-brace-format
 msgid "Ready to print:<br /><span style=\"font-weight:normal\">{}</span>"
 msgstr "Spremno za ispis:<br /><span style=\"font-weight:normal\">{}</span>"
 
@@ -405,21 +424,24 @@ msgstr "Obratite se administratoru za pomoć."
 msgid "This file type cannot be printed."
 msgstr "Ovaj tip datoteke se ne može ispisati."
 
+#, python-brace-format
 msgid "YES, DELETE ENTIRE SOURCE ACCOUNT"
 msgid_plural "YES, DELETE {number} SOURCE ACCOUNTS"
-msgstr[0] "Da, obriši cijeli račun izvora"
-msgstr[1] "Da, obriši {number} računa izvora"
-msgstr[2] "Da, obriši {number} računa izvora"
+msgstr[0] "DA, OBRIŠI CIJELI RAČUN IZVORA"
+msgstr[1] "DA, OBRIŠI {number} RAČUNA IZVORA"
+msgstr[2] "DA, OBRIŠI {number} RAČUNA IZVORA"
 
 msgid "Are you sure this is what you want?"
 msgstr "Jeste li sigurni da to stvarno želite?"
 
+#, python-brace-format
 msgid "{text} (wait {delay} sec)"
 msgstr "{text} (čekajte {delay} sek.)"
 
 msgid "Notice: All sources have been selected!"
 msgstr "Obavijest: Svi izvori su odabrani!"
 
+#, python-brace-format
 msgid "Delete entire account for: {source_or_sources}?"
 msgstr "Obriši cijeli račun za: {source_or_sources}?"
 
@@ -435,6 +457,7 @@ msgstr "Vaša organizacija mu neće moći slati odgovore."
 msgid "All files and messages from that source will also be destroyed."
 msgstr "Sve datoteke i poruke tog izvora će također biti uništene."
 
+#, python-brace-format
 msgid "{sources} ... plus {count} additional sources"
 msgstr "{sources} ... plus {count} dodatnih izvora"
 

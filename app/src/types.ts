@@ -174,3 +174,11 @@ export type JournalistRow = {
   data: string; // JSON stringified JournalistMetadata
   version: string;
 };
+
+export enum FetchStatus {
+  Initial = 0,
+  InProgress = 1,
+  Complete = 2,
+  Failed = 3,
+  Paused = 4,
+}

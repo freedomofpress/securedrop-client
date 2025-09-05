@@ -12,6 +12,8 @@
     "types": ["electron-vite/node"],
     "module": "esnext",
     "moduleResolution": "bundler",
-    "noImplicitAny": true
+    "noImplicitAny": true,
+    "esModuleInterop": true,
+    "allowSyntheticDefaultImports": true
   }
 }

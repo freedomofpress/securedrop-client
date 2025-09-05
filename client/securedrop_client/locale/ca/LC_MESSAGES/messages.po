@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: SecureDrop Client 0.5.0\n"
 "Report-Msgid-Bugs-To: securedrop@freedom.press\n"
-"PO-Revision-Date: 2024-10-23 20:33+0000\n"
+"PO-Revision-Date: 2025-07-03 15:37+0000\n"
 "Last-Translator: victor dargallo <victordargallo@disroot.org>\n"
 "Language-Team: Catalan <https://weblate.securedrop.org/projects/securedrop/securedrop-client/ca/>\n"
 "Language: ca\n"
@@ -15,12 +15,14 @@ msgstr ""
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=n != 1;\n"
-"X-Generator: Weblate 5.7.1\n"
+"X-Generator: Weblate 5.11.1\n"
 "Generated-By: Babel 2.9.1\n"
 
+#, python-brace-format
 msgid "{application_name} is already running"
 msgstr "{application_name} ja s'ha iniciat"
 
+#, python-brace-format
 msgid "Retrieving 1 message"
 msgid_plural "Retrieving {message_count} messages"
 msgstr[0] "S'està recuperant 1 missatge"
@@ -106,12 +108,14 @@ msgstr "<h2>Alguns fitxers no s'exportaran</h2>Alguns fitxers d'aquesta font enc
 msgid "all files and transcript"
 msgstr "tots els fitxers i la transcripció"
 
+#, python-brace-format
 msgid "SecureDrop Client {}"
 msgstr "Client del SecureDrop {}"
 
 msgid "Quit"
 msgstr "Surt"
 
+#, python-brace-format
 msgid "Last Refresh: {}"
 msgstr "Última actualització: {}"
 
@@ -119,11 +123,12 @@ msgid "Last Refresh: never"
 msgstr "Última actualització: mai"
 
 msgid "DELETE SOURCES"
-msgstr ""
+msgstr "SUPRIMEIX LES FONTS"
 
 msgid "Delete selected source accounts. Ctrl+click sources below to select multiple sources."
-msgstr ""
+msgstr "Suprimiu els comptes seleccionats de les fonts. Premeu Ctrl+clic a les fonts, per seleccionar diverses fonts."
 
+#, python-brace-format
 msgid "{}"
 msgstr "{}"
 
@@ -155,10 +160,10 @@ msgid "Send a response"
 msgstr "Enviar una resposta"
 
 msgid "Or, select multiple sources with Ctrl+click."
-msgstr ""
+msgstr "O seleccioneu diverses fonts prement Ctrl+clic."
 
 msgid "Multiple Sources Selected"
-msgstr ""
+msgstr "Diverses fonts seleccionades"
 
 msgid "Select or de-select sources using Ctrl+click, Shift+click, or by dragging the mouse."
 msgstr ""
@@ -227,6 +232,10 @@ msgstr "FITXERS I MISSATGES"
 msgid "SOURCE ACCOUNT"
 msgstr "COMPTE DE LA FONT"
 
+#, python-brace-format
+msgid "Last seen: {last_update_time}"
+msgstr "Vist per última vegada: {last_update_time}"
+
 msgid "Username"
 msgstr "Nom d’usuari"
 
@@ -236,6 +245,7 @@ msgstr "Contrasenya"
 msgid "Two-Factor Code"
 msgstr "Codi d'autenticació de factor doble"
 
+#, python-brace-format
 msgid "SecureDrop Client v{}"
 msgstr "Client del SecureDrop v{}"
 
@@ -281,22 +291,27 @@ msgstr "CONTINUA"
 msgid "YES, DELETE FILES AND MESSAGES"
 msgstr "SÍ, SUPRIMEIX FITXERS I MISSATGES"
 
+#, python-brace-format
 msgid "Would you like to delete {files_to_delete}, {replies_to_delete}, {messages_to_delete} from the source account for {source}?"
 msgstr "Voleu suprimir {files_to_delete}, {replies_to_delete}, {messages_to_delete} del compte de la font {source}?"
 
+#, python-brace-format
 msgid "Preserving the account will retain its metadata, and the ability for {source} to log in to your SecureDrop again."
 msgstr "Preservant el compte es mantindran les metadades i podreu iniciar sessió novament a {source} del vostre SecureDrop."
 
+#, python-brace-format
 msgid "one file"
 msgid_plural "{file_count} files"
 msgstr[0] "un fitxer"
 msgstr[1] "{file_count} fitxers"
 
+#, python-brace-format
 msgid "one reply"
 msgid_plural "{reply_count} replies"
 msgstr[0] "una resposta"
 msgstr[1] "{reply_count} respostes"
 
+#, python-brace-format
 msgid "one message"
 msgid_plural "{message_count} messages"
 msgstr[0] "un missatge"
@@ -309,19 +324,19 @@ msgid "BACK"
 msgstr "TORNA"
 
 msgid "No USB drives detected"
-msgstr ""
+msgstr "No s'han detectat llapis USB"
 
 msgid "Too many USB drives detected; please insert one supported drive."
-msgstr ""
+msgstr "Massa unitats USB detectades. Inseriu una unitat compatible."
 
 msgid "Either the drive is not encrypted or there is something else wrong with it.<br />If this is a VeraCrypt drive, please unlock it from within the sd-devices VM, then try again."
 msgstr "O la unitat no està xifrada o hi ha alguna cosa més.<br />Si es tracta d'una unitat VeraCrypt, desbloquegeu-la des de la VM de dispositius SD i torneu-ho a provar."
 
 msgid "The drive is ready for export."
-msgstr ""
+msgstr "La unitat està preparada per a l'exportació."
 
 msgid "The drive is locked."
-msgstr ""
+msgstr "La unitat està bloquejada."
 
 msgid "The passphrase provided did not work. Please try again."
 msgstr "La contrasenya que he inserit no és vàlida. Torneu a provar."
@@ -333,7 +348,7 @@ msgid "Error during export"
 msgstr "S'ha produït un error en exportar"
 
 msgid "Files were exported successfully, but the USB drive could not be unmounted."
-msgstr ""
+msgstr "Els fitxers s'han exportat correctament, però la unitat USB no s'ha pogut desmuntar."
 
 msgid "Files were exported successfully, but some temporary files remain on disk. Reboot to remove them."
 msgstr "Els fitxers s'han exportat correctament, però alguns fitxers temporals romanen al disc. Reinicieu per eliminar-los."
@@ -342,7 +357,7 @@ msgid "Export successful"
 msgstr "S'ha exportat correctament"
 
 msgid "Error encountered with this drive. See your administrator for help."
-msgstr ""
+msgstr "S'ha trobat un error en aquesta unitat. Consulteu el vostre administrador per obtenir ajuda."
 
 msgid "Files were moved or missing and could not be exported."
 msgstr "Els fitxers s'han mogut o no s'han pogut exportar."
@@ -350,12 +365,14 @@ msgstr "Els fitxers s'han mogut o no s'han pogut exportar."
 msgid "Error encountered. Please contact support."
 msgstr "S'ha trobat un error. Poseu-vos en contacte amb el servei d'assistència."
 
+#, python-brace-format
 msgid "Preparing to export:<br /><span style=\"font-weight:normal\">{}</span>"
 msgstr "S'està preparant per a exportar: <br /><span style=\"font-weight:normal\">{}</span>"
 
 msgid "<h2>Understand the risks before exporting files</h2><b>Malware</b><br />This workstation lets you open files securely. If you open files on another computer, any embedded malware may spread to your computer or network. If you are unsure how to manage this risk, please print the file, or contact your administrator.<br /><br /><b>Anonymity</b><br />Files submitted by sources may contain information or hidden metadata that identifies who they are. To protect your sources, please consider redacting files before working with them on network-connected computers."
 msgstr "<h2>Entenent els riscos abans d'exportar fitxers</h2><b>Fitxers perjudicials</b><br />Aquesta estació de treball us permet obrir fitxers de forma segura. Si obriu fitxers des d'altre ordinador, qualsevol fitxer perillós o perjudicial podria afectar el vostre equip o cap altre de la xarxa. Si no sabeu com manegar aquest risc, imprimiu el fitxer o bé contacteu amb el vostre administrador.<br /><br /><b>Anonimat</b><br />Els fitxers enviats per determinades fonts poden contenir informació amagada o metadades que us poden identificar. Per a protegir les vostres fonts, considereu la possibilitat de censurar parts sensibles del fitxer original abans de posar el fitxer resultant a l'abast d'ordinadors en xarxa."
 
+#, python-brace-format
 msgid "Ready to export:<br /><span style=\"font-weight:normal\">{}</span>"
 msgstr "Preparat per a exportar: <br /><span style=\"font-weight:normal\">{}</span>"
 
@@ -377,9 +394,11 @@ msgstr "Treballant…"
 msgid "Enter passphrase for USB drive"
 msgstr "Introduïu la contrasenya de la unitat USB"
 
+#, python-brace-format
 msgid "Preparing to print:<br /><span style=\"font-weight:normal\">{}</span>"
 msgstr "S'està preparant per a imprimir:<br /><span style=\"font-weight:normal\">{}</span>"
 
+#, python-brace-format
 msgid "Ready to print:<br /><span style=\"font-weight:normal\">{}</span>"
 msgstr "Preparat per a imprimir: <br /><span style=\"font-weight:normal\">{}</span>"
 
@@ -401,6 +420,7 @@ msgstr "Contacteu amb l'administrador si us cal ajuda."
 msgid "This file type cannot be printed."
 msgstr "Aquest tipus de fitxer no es pot imprimir."
 
+#, python-brace-format
 msgid "YES, DELETE ENTIRE SOURCE ACCOUNT"
 msgid_plural "YES, DELETE {number} SOURCE ACCOUNTS"
 msgstr[0] "SÍ, SUPRIMEIX EL COMPTE SENCER"
@@ -409,12 +429,14 @@ msgstr[1] "SÍ, SUPRIMEIX ELS {number} COMPTES SENCERS"
 msgid "Are you sure this is what you want?"
 msgstr "Segur que això és el que voleu?"
 
+#, python-brace-format
 msgid "{text} (wait {delay} sec)"
-msgstr ""
+msgstr "{text} (espereu {delay} segons)"
 
 msgid "Notice: All sources have been selected!"
-msgstr ""
+msgstr "Avís: s'han seleccionat totes les fonts!"
 
+#, python-brace-format
 msgid "Delete entire account for: {source_or_sources}?"
 msgstr "Voleu suprimir el compte sencer per a: {source_or_sources}?"
 
@@ -430,6 +452,7 @@ msgstr "La vostra organització no podrà enviar respostes."
 msgid "All files and messages from that source will also be destroyed."
 msgstr "També es destruiran tots els missatges de la font."
 
+#, python-brace-format
 msgid "{sources} ... plus {count} additional sources"
 msgstr ""
 

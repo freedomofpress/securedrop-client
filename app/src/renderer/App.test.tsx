@@ -10,10 +10,12 @@ import type { SessionState, AuthData } from "./features/session/sessionSlice";
 
 // Mock the views components to make testing simpler
 vi.mock("./views/Inbox", () => ({
+  // eslint-disable-next-line i18next/no-literal-string
   default: () => <div data-testid="inbox-view">Inbox View</div>,
 }));
 
 vi.mock("./views/SignIn", () => ({
+  // eslint-disable-next-line i18next/no-literal-string
   default: () => <div data-testid="signin-view">Sign In View</div>,
 }));
 

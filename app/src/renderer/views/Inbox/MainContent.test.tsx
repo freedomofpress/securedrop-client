@@ -8,6 +8,7 @@ import { renderWithProviders } from "../../test-component-setup";
 // Mock components
 vi.mock("./MainContent/EmptyState", () => ({
   default: () => (
+    // eslint-disable-next-line i18next/no-literal-string
     <div data-testid="empty-state">Select a source to view conversation</div>
   ),
 }));

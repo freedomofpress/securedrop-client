@@ -7,7 +7,7 @@ import { useNavigate } from "react-router";
 import StarFilled from "./StarFilled";
 
 import type { Source as SourceType } from "../../../../../types";
-import { formatDate, toTitleCase } from "../../../../utils";
+import { formatDateShort, toTitleCase } from "../../../../utils";
 import Avatar from "../../../../components/Avatar";
 import { useAppDispatch } from "../../../../hooks";
 import {
@@ -41,7 +41,7 @@ const Source = memo(function Source({
   );
 
   const lastUpdated = useMemo(
-    () => formatDate(source.data.last_updated, i18n.language, tCommon),
+    () => formatDateShort(source.data.last_updated, i18n.language, tCommon),
     [source.data.last_updated, i18n.language, tCommon],
   );
 
