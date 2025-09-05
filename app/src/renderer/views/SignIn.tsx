@@ -194,11 +194,7 @@ function SignInView() {
                 },
               ]}
             >
-              <Input
-                data-testid="username-input"
-                placeholder="neliebly"
-                spellCheck={false}
-              />
+              <Input data-testid="username-input" placeholder="neliebly" />
             </Form.Item>
 
             <Form.Item
