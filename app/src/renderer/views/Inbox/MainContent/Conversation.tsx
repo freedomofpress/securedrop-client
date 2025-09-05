@@ -44,7 +44,7 @@ const Conversation = memo(function Conversation({
       <div className="flex-1 min-h-0 relative">
         <div
           ref={scrollContainerRef}
-          className="absolute inset-0 overflow-y-auto p-4 pb-0"
+          className="absolute inset-0 overflow-y-auto overflow-x-hidden p-4 pb-0"
         >
           {sourceWithItems.items.map((item) => (
             <Item key={item.uuid} item={item} designation={designation || ""} />

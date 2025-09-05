@@ -4,8 +4,15 @@ import {
   Index,
   MetadataRequest,
   MetadataResponse,
+  ItemMetadata,
+  SubmissionMetadata,
+  ReplyMetadata,
 } from "../types";
 import { DB } from "./database";
+import { Crypto, CryptoError } from "./crypto";
+import fs from "fs";
+import path from "path";
+import os from "os";
 
 async function getIndex(
   authToken: string,
@@ -141,10 +148,231 @@ export function reconcileIndex(
   };
 }
 
+/**
+ * Download encrypted content for a submission (message or file)
+ * /api/v1/sources/{source_uuid}/submissions/{submission_uuid}/download
+ */
+async function downloadSubmission(
+  authToken: string,
+  sourceUuid: string,
+  submissionUuid: string,
+): Promise<string> {
+  // Create a temporary file to store the downloaded encrypted content
+  const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), "securedrop-"));
+  const encryptedFilePath = path.join(tempDir, `${submissionUuid}.gpg`);
+
+  try {
+    // Download encrypted content using the proxy with streaming
+    await proxy(
+      {
+        method: "GET",
+        path_query: `/api/v1/sources/${sourceUuid}/submissions/${submissionUuid}/download`,
+        stream: true,
+        headers: {
+          Authorization: `Token ${authToken}`,
+        },
+      },
+      encryptedFilePath,
+    );
+
+    // Verify the download was successful (proxy writes to file)
+    if (!fs.existsSync(encryptedFilePath)) {
+      throw new Error(
+        `Downloaded file not found at ${encryptedFilePath} for submission ${submissionUuid}`,
+      );
+    }
+
+    return encryptedFilePath;
+  } catch (error) {
+    // Clean up temp directory on error
+    if (fs.existsSync(tempDir)) {
+      fs.rmSync(tempDir, { recursive: true, force: true });
+    }
+    throw error;
+  }
+}
+
+/**
+ * Download encrypted content for a reply
+ * /api/v1/sources/{source_uuid}/replies/{reply_uuid}/download
+ */
+async function downloadReply(
+  authToken: string,
+  sourceUuid: string,
+  replyUuid: string,
+): Promise<string> {
+  // Create a temporary file to store the downloaded encrypted content
+  const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), "securedrop-"));
+  const encryptedFilePath = path.join(tempDir, `${replyUuid}.gpg`);
+
+  try {
+    // Download encrypted reply content using the proxy with streaming
+    await proxy(
+      {
+        method: "GET",
+        path_query: `/api/v1/sources/${sourceUuid}/replies/${replyUuid}/download`,
+        stream: true,
+        headers: {
+          Authorization: `Token ${authToken}`,
+        },
+      },
+      encryptedFilePath,
+    );
+
+    // Verify the download was successful (proxy writes to file)
+    if (!fs.existsSync(encryptedFilePath)) {
+      throw new Error(
+        `Downloaded file not found at ${encryptedFilePath} for reply ${replyUuid}`,
+      );
+    }
+
+    return encryptedFilePath;
+  } catch (error) {
+    // Clean up temp directory on error
+    if (fs.existsSync(tempDir)) {
+      fs.rmSync(tempDir, { recursive: true, force: true });
+    }
+    throw error;
+  }
+}
+
 export enum SyncStatus {
   NOT_MODIFIED = "not_modified",
   UPDATED = "updated",
   ERROR = "error",
+}
+
+/**
+ * Download and decrypt messages and replies that need decryption after metadata sync
+ * Processes both message submissions from sources and replies from journalists in parallel
+ */
+async function decryptItems(
+  db: DB,
+  authToken: string,
+  itemsToUpdate: string[],
+): Promise<void> {
+  const crypto = Crypto.getInstance();
+
+  // Create array of decryption promises for parallel processing
+  const decryptionPromises = itemsToUpdate.map(async (itemId) => {
+    let tempFilePath: string | null = null;
+
+    try {
+      // Get the item from database to check if it needs decryption
+      const items = db.getItems([itemId]);
+      if (items.length === 0) {
+        return { itemId, status: "skipped", reason: "item not found" };
+      }
+
+      const item = items[0];
+      const metadata = item.data as ItemMetadata;
+
+      // Skip files (only process messages and replies)
+      if (metadata.kind === "file") {
+        return { itemId, status: "skipped", reason: "file type" };
+      }
+
+      // Skip items that are already decrypted
+      if (item.plaintext) {
+        return { itemId, status: "skipped", reason: "already decrypted" };
+      }
+
+      if (metadata.kind === "message") {
+        const submissionMetadata = metadata as SubmissionMetadata;
+        console.log(`Downloading and decrypting message ${itemId}...`);
+
+        // Download encrypted content from the API
+        tempFilePath = await downloadSubmission(
+          authToken,
+          submissionMetadata.source,
+          submissionMetadata.uuid,
+        );
+
+        // Read the encrypted file content for decryption
+        const encryptedBuffer = fs.readFileSync(tempFilePath);
+
+        // Decrypt the message content
+        const decryptedMessage = await crypto.decryptMessage(encryptedBuffer);
+
+        // Store the decrypted plaintext in the database
+        db.updateItem(itemId, { plaintext: decryptedMessage });
+
+        console.log(`Successfully decrypted message ${itemId}`);
+        return { itemId, status: "success", type: "message" };
+      } else if (metadata.kind === "reply") {
+        const replyMetadata = metadata as ReplyMetadata;
+        console.log(`Downloading and decrypting reply ${itemId}...`);
+
+        // Download encrypted reply content from the API
+        tempFilePath = await downloadReply(
+          authToken,
+          replyMetadata.source,
+          replyMetadata.uuid,
+        );
+
+        // Read the encrypted file content for decryption
+        const encryptedBuffer = fs.readFileSync(tempFilePath);
+
+        // Decrypt the reply content
+        const decryptedReply = await crypto.decryptMessage(encryptedBuffer);
+
+        // Store the decrypted plaintext in the database
+        db.updateItem(itemId, { plaintext: decryptedReply });
+
+        console.log(`Successfully decrypted reply ${itemId}`);
+        return { itemId, status: "success", type: "reply" };
+      }
+
+      return { itemId, status: "skipped", reason: "unknown type" };
+    } catch (error) {
+      if (error instanceof CryptoError) {
+        console.error(`Failed to decrypt item ${itemId}: ${error.message}`);
+        return { itemId, status: "error", error: error.message };
+      } else {
+        console.error(`Failed to process item ${itemId}:`, error);
+        return {
+          itemId,
+          status: "error",
+          error: error instanceof Error ? error.message : String(error),
+        };
+      }
+    } finally {
+      // Clean up temporary file and directory
+      if (tempFilePath && fs.existsSync(tempFilePath)) {
+        const tempDir = path.dirname(tempFilePath);
+        fs.rmSync(tempDir, { recursive: true, force: true });
+      }
+    }
+  });
+
+  // Execute all decryption operations in parallel
+  const results = await Promise.allSettled(decryptionPromises);
+
+  // Log summary of results
+  let successCount = 0;
+  let errorCount = 0;
+  let skippedCount = 0;
+
+  results.forEach((result, index) => {
+    if (result.status === "fulfilled") {
+      const { status } = result.value;
+      if (status === "success") successCount++;
+      else if (status === "error") errorCount++;
+      else if (status === "skipped") skippedCount++;
+    } else {
+      console.error(
+        `Unexpected error processing item ${itemsToUpdate[index]}:`,
+        result.reason,
+      );
+      errorCount++;
+    }
+  });
+
+  if (successCount > 0 || errorCount > 0) {
+    console.log(
+      `Decryption summary: ${successCount} successful, ${errorCount} failed, ${skippedCount} skipped`,
+    );
+  }
 }
 
 // Executes metadata sync with SecureDrop server, updating
@@ -158,16 +386,34 @@ export async function syncMetadata(
 ): Promise<SyncStatus> {
   const currentVersion = db.getVersion();
   const index = await getIndex(authToken, currentVersion);
-  // Versions match, sync is complete
-  if (!index) {
-    return SyncStatus.NOT_MODIFIED;
+
+  let syncStatus = SyncStatus.NOT_MODIFIED;
+
+  // Only update metadata if there are changes from the server
+  if (index) {
+    // Reconcile with client's index
+    const clientIndex = db.getIndex();
+    const metadataToUpdate = reconcileIndex(db, index, clientIndex);
+
+    const metadata = await fetchMetadata(authToken, metadataToUpdate);
+    db.updateMetadata(metadata);
+    syncStatus = SyncStatus.UPDATED;
   }
 
-  // Reconcile with client's index
-  const clientIndex = db.getIndex();
-  const metadataToUpdate = reconcileIndex(db, index, clientIndex);
+  // Always attempt to decrypt undecrypted messages and replies
+  // This ensures that previously failed decryptions are retried on each sync
+  try {
+    const undecryptedMessageIds = db.getUndecryptedMessageIds();
+    if (undecryptedMessageIds.length > 0) {
+      console.log(
+        `Found ${undecryptedMessageIds.length} undecrypted messages and replies, attempting decryption...`,
+      );
+      await decryptItems(db, authToken, undecryptedMessageIds);
+    }
+  } catch (error) {
+    console.error("Error during item decryption:", error);
+    // Don't fail the sync if decryption fails
+  }
 
-  const metadata = await fetchMetadata(authToken, metadataToUpdate);
-  db.updateMetadata(metadata);
-  return SyncStatus.UPDATED;
+  return syncStatus;
 }
