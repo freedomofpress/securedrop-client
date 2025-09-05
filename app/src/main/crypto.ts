@@ -1,7 +1,6 @@
 import { spawn } from "child_process";
 import { createGunzip } from "zlib";
 import { pipeline } from "stream/promises";
-import { Readable } from "stream";
 import * as fs from "fs";
 import * as os from "os";
 import * as path from "path";
@@ -214,25 +213,6 @@ export class Crypto {
         );
       });
     });
-  }
-
-  /**
-   * Decompress gzip content and return as string
-   */
-  private async decompressGzip(compressedData: Buffer): Promise<string> {
-    const readable = Readable.from([compressedData]);
-    const gunzip = createGunzip();
-
-    const chunks: Buffer[] = [];
-
-    await pipeline(readable, gunzip, async function* (source) {
-      for await (const chunk of source) {
-        chunks.push(chunk);
-        yield chunk;
-      }
-    });
-
-    return Buffer.concat(chunks).toString("utf8");
   }
 
   /**
