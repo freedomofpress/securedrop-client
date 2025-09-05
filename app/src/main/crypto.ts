@@ -65,8 +65,9 @@ export class Crypto {
 
   /**
    * Decrypt a message from encrypted buffer content
+   * Messages are not gzipped, so no decompression is needed (unlike files)
    * @param encryptedContent - The encrypted message content
-   * @returns Promise<string> - The decrypted and decompressed plaintext
+   * @returns Promise<string> - The decrypted plaintext
    */
   async decryptMessage(encryptedContent: Buffer): Promise<string> {
     const cmd = this.getGpgCommand();
@@ -105,18 +106,8 @@ export class Crypto {
           return;
         }
 
-        try {
-          // Decompress the decrypted content
-          const decompressed = await this.decompressGzip(stdout);
-          resolve(decompressed);
-        } catch (error) {
-          reject(
-            new CryptoError(
-              "Failed to decompress decrypted message",
-              error instanceof Error ? error : new Error(String(error)),
-            ),
-          );
-        }
+        // Messages are not gzipped, so return the decrypted content directly as string
+        resolve(stdout.toString("utf8"));
       });
 
       gpgProcess.on("error", (error) => {
