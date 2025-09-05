@@ -20,6 +20,7 @@ import type {
   SyncMetadataRequest,
 } from "../types";
 import { syncMetadata } from "./sync";
+import workerPath from "./fetch/worker?modulePath";
 
 const db = new DB();
 
@@ -59,16 +60,7 @@ function createWindow(): void {
 }
 
 function spawnFetchWorker(): Worker {
-  const scriptPath = join(
-    app.getAppPath(),
-    "src",
-    "main",
-    "fetch",
-    "worker.ts",
-  );
-  const worker = new Worker(scriptPath, {
-    execArgv: ["--require", "tsx"],
-  });
+  const worker = new Worker(workerPath);
 
   worker.on("message", (result) => {
     console.log("Result from worker: ", result);
