@@ -49,12 +49,11 @@ Description: Tools for configuring non-Qubes-aware applications from QubesDB.
  This package provides tools for configuring non-Qubes-aware applications from
  QubesDB.
 
-Package: securedrop-whonix-config
+Package: securedrop-proxy-config
 Section: admin
 Architecture: all
 Depends: ${misc:Depends}, securedrop-qubesdb-tools, tor
-Description: Whonix configuration for SecureDrop.
- This package configures Tor for SecureDrop.
+Description: This package configures Tor for SecureDrop.
 
 Package: securedrop-workstation-config
 Architecture: all

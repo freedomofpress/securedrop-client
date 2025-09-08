@@ -1,3 +1,0 @@
-whonix-config/app_journalist.auth_private.tmpl /usr/share/securedrop-whonix-config
-whonix-config/systemd/tor.service.d/35_securedrop-proxy-config.conf lib/systemd/system/tor.service.d
-whonix-config/torrc.d/30_securedrop-journalist-auth.conf etc/tor/torrc.d

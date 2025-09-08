@@ -15,7 +15,7 @@ This repository contains multiple components, including:
 * `log`: centralized logging
 * `qubesdb-tools`: tools for configuring non-Qubes-aware applications from
   QubesDB
-* `whonix-config`: Whonix configuration for SecureDrop
+* `proxy-config`: Tor configuration for SecureDrop
 * `proxy`: restricted HTTP proxy
 * `workstation-config`: configuration for SecureDrop Workstation templates
 

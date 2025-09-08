@@ -1,6 +1,6 @@
 [Unit]
-Description=SecureDrop Whonix configuration
-ConditionPathExists=/var/run/qubes-service/securedrop-whonix-config
+Description=SecureDrop Proxy configuration
+ConditionPathExists=/var/run/qubes-service/securedrop-proxy-config
 
 # Both Qubes's qubes-qrexec-agent (for QubesDB) and Tor (for configuration
 # directories) must have started *before* this service for it to run
@@ -13,7 +13,7 @@ Before=tor.service
 Type=oneshot
 User=root
 ExecStartPre=bash -c "mkdir -p /var/lib/tor/authdir/ && chown debian-tor:debian-tor /var/lib/tor/authdir/"
-ExecStart=/usr/bin/template-from-qubesdb /usr/share/securedrop-whonix-config/app_journalist.auth_private.tmpl /var/lib/tor/authdir/app-journalist.auth_private
+ExecStart=/usr/bin/template-from-qubesdb /usr/share/securedrop-proxy-config/app_journalist.auth_private.tmpl /var/lib/tor/authdir/app-journalist.auth_private
 ExecStartPost=bash -c "chown debian-tor:debian-tor /var/lib/tor/authdir/app-journalist.auth_private && chmod 0600 /var/lib/tor/authdir/app-journalist.auth_private"
 RemainAfterExit=yes
 
