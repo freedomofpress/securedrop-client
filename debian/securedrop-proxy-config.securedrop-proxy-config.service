@@ -8,6 +8,7 @@ ConditionPathExists=/var/run/qubes-service/securedrop-proxy-config
 Requires=qubes-qrexec-agent.service
 After=qubes-qrexec-agent.service
 Before=tor.service
+Before=tor@default.service
 
 [Service]
 Type=oneshot

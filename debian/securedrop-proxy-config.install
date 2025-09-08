@@ -1,3 +1,4 @@
 proxy-config/app_journalist.auth_private.tmpl /usr/share/securedrop-proxy-config
 proxy-config/systemd/tor.service.d/35_securedrop-proxy-config.conf lib/systemd/system/tor.service.d
+proxy-config/systemd/tor@default.service.d/35_securedrop-proxy-config.conf lib/systemd/system/tor@default.service.d
 proxy-config/torrc.d/30_securedrop-journalist-auth.conf etc/tor/torrc.d
