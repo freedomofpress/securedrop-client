@@ -1,71 +1,112 @@
-import { vi, describe, it, expect, beforeEach, afterEach, test } from "vitest";
-import * as queueModule from "./queue";
+import { describe, it, expect, vi, beforeEach } from "vitest";
 import { FetchStatus } from "../../types";
-import Queue from "better-queue";
 import { DB } from "../database";
+import { BufferedWriter } from "./bufferedWriter";
 
-const mockGetItemsToDownload = vi.fn();
-const mockGetItemFetchStatus = vi.fn();
-const mockCompletePlaintextItem = vi.fn();
-const mockFailItem = vi.fn();
-
-function mockDB(): DB {
+// Mocks
+const mockProxyStreamRequest = vi.hoisted(() => {
+  return vi.fn();
+});
+vi.mock("../proxy", async () => {
+  const actual = await vi.importActual("../proxy");
   return {
-    getItemsToDownload: mockGetItemsToDownload,
-    getItemFetchStatus: mockGetItemFetchStatus,
-    completePlaintextItem: mockCompletePlaintextItem,
-    failItem: mockFailItem,
+    ...actual,
+    proxyStreamRequest: mockProxyStreamRequest,
+  };
+});
+
+import { ItemFetchTask, TaskQueue } from "./queue";
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function mockDB(itemsToDownload: string[], itemsWithFetchStatus: any[]) {
+  return {
+    getItemsToDownload: vi.fn(() => itemsToDownload),
+    getItemWithFetchStatus: vi.fn(() => itemsWithFetchStatus),
+    updateInProgressItem: vi.fn(),
+    completePlaintextItem: vi.fn(),
+    completeFileItem: vi.fn(),
+    failItem: vi.fn(),
   } as unknown as DB;
 }
 
-describe("fetch/worker", () => {
-  let queue: Queue;
-  let db: DB;
+function mockFetchDownload(_task: ItemFetchTask, _db: DB): void {
+  return;
+}
 
+describe("TaskQueue", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    vi.resetModules();
-    queue = new Queue(() => {}, {});
-    db = mockDB();
   });
 
-  afterEach(() => {
-    vi.restoreAllMocks();
+  it("should queue fetches for items to download", () => {
+    const db = mockDB(["item1", "item2"], []);
+    const queue = new TaskQueue(db, mockFetchDownload);
+    vi.spyOn(queue.queue, "push");
+    queue.queueFetches({ authToken: "token" });
+    expect(queue.authToken).toBe("token");
+    expect(queue.queue.push).toHaveBeenCalledTimes(2);
+    expect(queue.queue.push).toHaveBeenCalledWith({ id: "item1" });
+    expect(queue.queue.push).toHaveBeenCalledWith({ id: "item2" });
   });
 
-  it("should queue items to be fetched from DB", async () => {
-    vi.spyOn(queue, "push");
-    mockGetItemsToDownload.mockReturnValue(["item1", "item2"]);
-    mockGetItemFetchStatus.mockReturnValue([FetchStatus.InProgress, 0]);
+  it("should handle message download and completePlaintextItem", async () => {
+    const db = mockDB(
+      [],
+      [{ kind: "message", source: "source1" }, FetchStatus.InProgress, 0],
+    );
 
-    queueModule.queueFetches(db, queue);
-    expect(mockGetItemsToDownload).toHaveBeenCalled();
+    const queue = new TaskQueue(db, mockFetchDownload);
+    mockProxyStreamRequest.mockResolvedValue({
+      complete: true,
+      bytesWritten: 50,
+    });
 
-    // Should push both items to the queue
-    expect(queue.push).toHaveBeenCalledTimes(2);
-    expect(queue.push).toHaveBeenCalledWith({ id: "item1" });
-    expect(queue.push).toHaveBeenCalledWith({ id: "item2" });
+    const buf = {
+      toString: vi.fn().mockReturnValue("msg"),
+    } as unknown as Buffer;
+    queue["db"].completePlaintextItem = vi.fn();
+    vi.spyOn(BufferedWriter.prototype, "getBuffer").mockReturnValue(buf);
+    await queue.fetchDownload({ id: "item2" });
+    expect(queue.db.completePlaintextItem).toHaveBeenCalledWith("item2", "msg");
   });
 
-  test.each(["item1", "item2", "paused", "complete"])(
-    "should skip fetching items that are already complete, failed, or paused",
-    async (itemID: string) => {
-      mockGetItemFetchStatus.mockImplementation((id: string) => {
-        if (id === "paused") {
-          return [FetchStatus.Paused, 0];
-        }
-        if (id === "complete") {
-          return [FetchStatus.Complete, 0];
-        }
-        return [FetchStatus.Initial, 0];
-      });
+  it("should handle reply download and completePlaintextItem", async () => {
+    const db = mockDB(
+      [],
+      [{ kind: "reply", source: "source1" }, FetchStatus.InProgress, 0],
+    );
 
-      await queueModule.fetchDownload({ id: itemID }, db);
-      if (itemID === "paused" || itemID === "complete") {
-        expect(db.completePlaintextItem).toHaveBeenCalledTimes(0);
-      } else {
-        expect(db.completePlaintextItem).toHaveBeenCalledWith(itemID, "");
-      }
-    },
-  );
+    const queue = new TaskQueue(db, mockFetchDownload);
+    mockProxyStreamRequest.mockResolvedValue({
+      complete: true,
+      bytesWritten: 50,
+    });
+
+    const buf = {
+      toString: vi.fn().mockReturnValue("replymsg"),
+    } as unknown as Buffer;
+    queue["db"].completePlaintextItem = vi.fn();
+    vi.spyOn(BufferedWriter.prototype, "getBuffer").mockReturnValue(buf);
+    await queue.fetchDownload({ id: "item1" });
+    expect(queue.db.completePlaintextItem).toHaveBeenCalledWith(
+      "item1",
+      "replymsg",
+    );
+  });
+
+  it("should update in-progress item and throw if download incomplete", async () => {
+    const db = mockDB(
+      [],
+      [{ kind: "message", source: "src" }, FetchStatus.InProgress, 20],
+    );
+    const queue = new TaskQueue(db, mockFetchDownload);
+    mockProxyStreamRequest.mockResolvedValue({
+      complete: false,
+      bytesWritten: 30,
+    });
+    await expect(queue.fetchDownload({ id: "item3" })).rejects.toThrow(
+      /Unable to complete stream download/,
+    );
+    expect(queue.db.updateInProgressItem).toHaveBeenCalledWith("item3", 50);
+  });
 });

@@ -461,15 +461,20 @@ export class DB {
     return rows.map((r) => r.uuid);
   }
 
-  getItemFetchStatus(itemUuid: string): [number, number] {
+  getItemWithFetchStatus(itemUuid: string): [ItemMetadata, number, number] {
     type Row = {
+      data: string;
       fetch_status: number;
       fetch_progress: number;
     };
-    const itemStatusStmt = this.db?.prepare(`
-      SELECT fetch_status, fetch_progress FROM items WHERE uuid = ?`);
-    const status = itemStatusStmt?.get(itemUuid) as Row;
-    return [status.fetch_status, status.fetch_progress];
+    const itemStmt = this.db?.prepare(`
+      SELECT data, fetch_status, fetch_progress FROM items WHERE uuid = ?`);
+    const item = itemStmt?.get(itemUuid) as Row;
+    return [
+      JSON.parse(item.data) as ItemMetadata,
+      item.fetch_status,
+      item.fetch_progress,
+    ];
   }
 
   updateInProgressItem(itemUuid: string, progress: number) {

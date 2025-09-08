@@ -2,11 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import { PassThrough } from "node:stream";
 
-import {
-  proxyJSONRequest,
-  proxyStreamInner,
-  proxyStreamRequest,
-} from "../src/main/proxy";
+import { proxyJSONRequest, proxyStreamRequest } from "../src/main/proxy";
 import { JSONObject, ProxyCommand, ProxyJSONResponse, ms } from "../src/types";
 
 const proxyCommand = (timeout: number): ProxyCommand => {
@@ -21,15 +17,17 @@ const proxyCommand = (timeout: number): ProxyCommand => {
   };
 };
 
+vi.mock("../src/main/proxy");
+
 describe("Test executing JSON proxy commands against httpbin", async () => {
   it("successful JSON response", async () => {
     const result = await proxyJSONRequest(
       {
         method: "GET",
         path_query: "/json",
-        stream: false,
         headers: {},
       },
+      undefined,
       proxyCommand(1000),
     );
     expect(result.status).toEqual(200);
@@ -43,9 +41,9 @@ describe("Test executing JSON proxy commands against httpbin", async () => {
         {
           method: "GET",
           path_query: `/status/${statusCode}`,
-          stream: false,
           headers: {},
         },
+        undefined,
         proxyCommand(1000),
       );
 
@@ -60,9 +58,9 @@ describe("Test executing JSON proxy commands against httpbin", async () => {
         {
           method: "GET",
           path_query: `/status/${statusCode}`,
-          stream: false,
           headers: {},
         },
+        undefined,
         proxyCommand(1000),
       );
       expect(result.error);
@@ -77,9 +75,9 @@ describe("Test executing JSON proxy commands against httpbin", async () => {
         {
           method: "GET",
           path_query: `/status/${statusCode}`,
-          stream: false,
           headers: {},
         },
+        undefined,
         proxyCommand(1000),
       );
       expect(result.error);
@@ -92,9 +90,9 @@ describe("Test executing JSON proxy commands against httpbin", async () => {
       {
         method: "GET",
         path_query: "/get?foo=bar",
-        stream: false,
         headers: {},
       },
+      undefined,
       proxyCommand(1000),
     );
     expect(result.status).toEqual(200);
@@ -107,9 +105,9 @@ describe("Test executing JSON proxy commands against httpbin", async () => {
         {
           method: "GET",
           path_query: "/delay/10",
-          stream: false,
           headers: {},
         },
+        undefined,
         proxyCommand(100),
       ),
     ).rejects.toThrowError("Process terminated with signal SIGTERM");
@@ -124,9 +122,9 @@ describe("Test executing JSON proxy commands against httpbin", async () => {
       {
         method: "GET",
         path_query: "/delay/100",
-        stream: false,
         headers: {},
       },
+      abortController.signal,
       command,
     );
 
@@ -140,9 +138,9 @@ describe("Test executing JSON proxy commands against httpbin", async () => {
       {
         method: "GET",
         path_query: "/headers",
-        stream: false,
         headers: { "X-Test-Header": "th" },
       },
+      undefined,
       proxyCommand(1000),
     );
     expect(result.status).toEqual(200);
@@ -158,10 +156,10 @@ describe("Test executing JSON proxy commands against httpbin", async () => {
       {
         method: "POST",
         path_query: "/post",
-        stream: false,
         body: JSON.stringify(input),
         headers: {},
       },
+      undefined,
       proxyCommand(1000),
     );
     expect(result.status).toEqual(200);
@@ -178,15 +176,16 @@ describe("Test executing streaming proxy", async () => {
     });
 
     const count = 20;
-    await proxyStreamInner(
+    await proxyStreamRequest(
       {
         method: "GET",
         path_query: `/drip?duration=5&numbytes=${count}&code=200&delay=0`,
-        stream: true,
         headers: {},
       },
-      proxyCommand(20000),
       writeStream,
+      0,
+      undefined,
+      proxyCommand(20000),
     );
 
     expect(streamData).toEqual("*".repeat(count));
@@ -199,15 +198,16 @@ describe("Test executing streaming proxy", async () => {
       streamData += chunk;
     });
 
-    await proxyStreamInner(
+    await proxyStreamRequest(
       {
         method: "GET",
         path_query: `/html`,
-        stream: true,
         headers: {},
       },
-      proxyCommand(20000),
       writeStream,
+      0,
+      undefined,
+      proxyCommand(20000),
     );
 
     expect(streamData).toMatch("<!DOCTYPE html>");
@@ -216,16 +216,17 @@ describe("Test executing streaming proxy", async () => {
   it.for([401, 403, 429, 500, 503, 504])(
     "4xx/5xx HTTP codes return error",
     async (statusCode: number) => {
+      const writeStream = new PassThrough();
       const response: ProxyJSONResponse = (await proxyStreamRequest(
         {
           method: "GET",
           path_query: `/status/${statusCode}`,
-          stream: true,
           headers: {},
         },
-        proxyCommand(1000),
-        "/tmp/baz",
+        writeStream,
         3,
+        undefined,
+        proxyCommand(1000),
       )) as ProxyJSONResponse;
 
       expect(response.error);
@@ -234,17 +235,18 @@ describe("Test executing streaming proxy", async () => {
   );
 
   it("stream proxy subcommand terminates with SIGTERM on timeout", async () => {
+    const writeStream = new PassThrough();
     await expect(
       proxyStreamRequest(
         {
           method: "GET",
           path_query: "/delay/10",
-          stream: false,
           headers: {},
         },
-        proxyCommand(100),
-        "/tmp/bar",
+        writeStream,
         1,
+        undefined,
+        proxyCommand(100),
       ),
     ).rejects.toThrowError("Process terminated with signal SIGTERM");
   });
@@ -254,16 +256,17 @@ describe("Test executing streaming proxy", async () => {
     const command = proxyCommand(10000);
     command.abortSignal = abortController.signal;
 
+    const writeStream = new PassThrough();
     const proxyExec = proxyStreamRequest(
       {
         method: "GET",
         path_query: "/delay/100",
-        stream: true,
         headers: {},
       },
-      command,
-      "/tmp/bar",
+      writeStream,
       1,
+      undefined,
+      command,
     );
 
     abortController.abort();

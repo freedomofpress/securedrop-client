@@ -57,7 +57,7 @@ describe("syncMetadata", () => {
   let db: DB;
 
   function mockProxyResponses(responses: ProxyJSONResponse[]): MockInstance {
-    const mock = vi.spyOn(proxyModule, "proxy");
+    const mock = vi.spyOn(proxyModule, "proxyJSONRequest");
     responses.forEach((response) => {
       mock.mockImplementationOnce(() => {
         return Promise.resolve(response);

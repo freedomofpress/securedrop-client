@@ -1,17 +1,129 @@
 import Queue from "better-queue";
 
+import fs from "fs";
+import os from "os";
+import path from "path";
+import { Writable } from "stream";
+
+import { BufferedWriter } from "./bufferedWriter";
 import { DB } from "../database";
-import { FetchStatus } from "../../types";
+import {
+  FetchDownloadsMessage,
+  FetchStatus,
+  ProxyRequest,
+  ProxyStreamResponse,
+} from "../../types";
+import { proxyStreamRequest } from "../proxy";
 
 export type ItemFetchTask = {
   id: string;
 };
 
-export function createQueue(db: DB): Queue {
+export class TaskQueue {
+  db: DB;
+  queue: Queue;
+  authToken?: string;
+
+  constructor(db: DB, overrideTaskFn?: (task: ItemFetchTask, db: DB) => void) {
+    this.db = db;
+    this.queue = createQueue(
+      db,
+      overrideTaskFn ? overrideTaskFn : this.fetchDownload,
+    );
+  }
+
+  // Queries the database for all items that need to be downloaded and queues
+  // up download tasks to be processed.
+  queueFetches(message: FetchDownloadsMessage) {
+    this.authToken = message.authToken;
+    try {
+      const itemsToDownload = this.db.getItemsToDownload();
+      console.log("Items to download: ", itemsToDownload);
+      for (const itemUUID of itemsToDownload) {
+        const task: ItemFetchTask = {
+          id: itemUUID,
+        };
+        this.queue.push(task);
+      }
+    } catch (e) {
+      console.log("Error queueing fetches: ", e);
+    }
+  }
+
+  async fetchDownload(item: ItemFetchTask) {
+    console.log("Fetching downloads for: ", item);
+
+    const [metadata, status, progress] = this.db.getItemWithFetchStatus(
+      item.id,
+    );
+    if (
+      status == FetchStatus.Complete ||
+      status == FetchStatus.Failed ||
+      status == FetchStatus.Paused
+    ) {
+      console.log("Item task is not in an in-progress state, skipping...");
+      return;
+    }
+
+    let downloadFilePath: string = "";
+    let downloadWriter: Writable = new BufferedWriter();
+    if (metadata.kind == "file") {
+      downloadFilePath = path.join(
+        os.tmpdir(),
+        "download",
+        metadata.source,
+        item.id,
+        "encrypted.gpg",
+      );
+      const downloadDir = path.dirname(downloadFilePath);
+      await fs.promises.mkdir(downloadDir, { recursive: true });
+      downloadWriter = fs.createWriteStream(downloadFilePath);
+    }
+
+    const queryPath = `/api/v1/sources/${metadata.source}/${metadata.kind == "reply" ? "replies" : "submissions"}/${item.id}/download`;
+    const downloadRequest: ProxyRequest = {
+      method: "GET",
+      path_query: queryPath,
+      headers: authHeader(this?.authToken),
+    };
+    const downloadResponse = (await proxyStreamRequest(
+      downloadRequest,
+      downloadWriter,
+      progress,
+    )) as ProxyStreamResponse;
+
+    // TODO: decrypt response
+    if (!downloadResponse.complete) {
+      const bytesWritten = progress + downloadResponse.bytesWritten;
+      this.db.updateInProgressItem(item.id, bytesWritten);
+      throw new Error(
+        `Unable to complete stream download, total bytes written: ${bytesWritten}, chunk bytes written: ${downloadResponse.bytesWritten}`,
+      );
+    }
+
+    switch (metadata.kind) {
+      case "message":
+      case "reply":
+        this.db.completePlaintextItem(
+          item.id,
+          (downloadWriter as BufferedWriter).getBuffer().toString(),
+        );
+        break;
+      case "file":
+        this.db.completeFileItem(item.id, downloadFilePath);
+        break;
+    }
+  }
+}
+
+function createQueue(
+  db: DB,
+  taskFn: (task: ItemFetchTask, db: DB) => void,
+): Queue {
   const q: Queue = new Queue(
     function (task: ItemFetchTask, onComplete) {
       try {
-        fetchDownload(task, db);
+        taskFn(task, db);
         onComplete();
       } catch (e) {
         console.log("Error executing fetch download task: ", task, e);
@@ -48,39 +160,12 @@ export function createQueue(db: DB): Queue {
   return q;
 }
 
-// Queries the database for all items that need to be downloaded and queues
-// up download tasks to be processed.
-export async function queueFetches(db: DB, queue: Queue) {
-  try {
-    const itemsToDownload = db.getItemsToDownload();
-    console.log("Items to download: ", itemsToDownload);
-    for (const itemUUID of itemsToDownload) {
-      const task: ItemFetchTask = {
-        id: itemUUID,
-      };
-      queue.push(task);
-    }
-  } catch (e) {
-    console.log("Error queueing fetches: ", e);
-  }
-}
-
-export async function fetchDownload(item: ItemFetchTask, db: DB) {
-  console.log("Fetching downloads for: ", item);
-
-  const [status, _progress] = db.getItemFetchStatus(item.id);
-  if (
-    status == FetchStatus.Complete ||
-    status == FetchStatus.Failed ||
-    status == FetchStatus.Paused
-  ) {
-    console.log("Item task is not in an in-progress state, skipping...");
-    return;
-  }
-
-  // TODO: perform download + decryption
-  // checkpoint progress in the DB
-  //
-  // For now, just mark as complete with empty plaintext
-  db.completePlaintextItem(item.id, "");
+function authHeader(authToken: string | undefined): Record<string, string> {
+  return authToken
+    ? {
+        Accept: "application/json",
+        "Content-Type": "application/json",
+        Authorization: `Token ${authToken}`,
+      }
+    : {};
 }

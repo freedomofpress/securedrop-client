@@ -10,7 +10,7 @@ import {
 import { Worker } from "worker_threads";
 
 import { DB } from "./database";
-import { proxy } from "./proxy";
+import { proxyJSONRequest } from "./proxy";
 import type {
   ProxyRequest,
   ProxyResponse,
@@ -108,7 +108,7 @@ app.whenReady().then(() => {
   ipcMain.handle(
     "request",
     async (_event, request: ProxyRequest): Promise<ProxyResponse> => {
-      const result = await proxy(request);
+      const result = await proxyJSONRequest(request);
       return result;
     },
   );
