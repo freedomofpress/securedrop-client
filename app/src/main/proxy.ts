@@ -79,9 +79,8 @@ function parseJSONResponse(response: string): ProxyJSONResponse {
 export async function proxyJSONRequest(
   request: ProxyRequest,
   abortSignal?: AbortSignal,
-  proxyCommand?: ProxyCommand,
 ): Promise<ProxyJSONResponse> {
-  const command = proxyCommand ? proxyCommand : buildProxyCommand(abortSignal);
+  const command = buildProxyCommand(abortSignal);
   return new Promise((resolve, reject) => {
     const process = child_process.spawn(command.command, command.options, {
       env: Object.fromEntries(command.env),
@@ -131,9 +130,8 @@ export async function proxyStreamRequest(
   writeStream: Writable,
   offset?: number,
   abortSignal?: AbortSignal,
-  proxyCommand?: ProxyCommand,
 ): Promise<ProxyResponse> {
-  const command = proxyCommand ? proxyCommand : buildProxyCommand(abortSignal);
+  const command = buildProxyCommand(abortSignal);
   return new Promise((resolve, reject) => {
     let bytesWritten = 0;
     let stdout = "";
