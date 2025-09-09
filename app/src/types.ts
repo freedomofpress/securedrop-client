@@ -1,7 +1,7 @@
 export type ProxyRequest = {
   method: "GET" | "POST" | "DELETE";
   path_query: string;
-  // stream: boolean;
+  stream?: boolean;
   body?: string;
   headers: Record<string, string>;
 };

@@ -12,39 +12,6 @@ import type {
 const DEFAULT_PROXY_VM_NAME = "sd-proxy";
 const DEFAULT_PROXY_CMD_TIMEOUT_MS = 5000 as ms;
 
-/*
-Create two separate methods:
- proxyJSON
- proxyStream
-  - takes writer (not filepath)
-  - takes in progress for incremental resume
-*/
-
-// // Proxies a network request through sd-proxy
-// // For streaming requests, `downloadPath` must be specified as
-// // the file location where stream data is downloaded
-// export async function proxy(
-//   request: ProxyRequest,
-//   downloadPath?: string,
-//   abortSignal?: AbortSignal,
-// ): Promise<ProxyResponse> {
-//   const proxyCommand = buildProxyCommand(abortSignal);
-
-//   if (request.stream) {
-//     if (!downloadPath) {
-//       return Promise.reject(
-//         `Error: no download path specified for streaming request`,
-//       );
-//     }
-//     try {
-//       return proxyStreamRequest(request, proxyCommand, downloadPath);
-//     } catch (err) {
-//       return Promise.reject(`Error proxying streaming request: ${err}`);
-//     }
-//   }
-//   return proxyJSONRequest(request, proxyCommand);
-// }
-
 function parseJSONResponse(response: string): ProxyJSONResponse {
   const result = JSON.parse(response);
   const status = result["status"];
@@ -80,7 +47,13 @@ export async function proxyJSONRequest(
   request: ProxyRequest,
   abortSignal?: AbortSignal,
 ): Promise<ProxyJSONResponse> {
-  const command = buildProxyCommand(abortSignal);
+  return proxyJSONRequestInner(request, buildProxyCommand(abortSignal));
+}
+
+export async function proxyJSONRequestInner(
+  request: ProxyRequest,
+  command: ProxyCommand,
+): Promise<ProxyJSONResponse> {
   return new Promise((resolve, reject) => {
     const process = child_process.spawn(command.command, command.options, {
       env: Object.fromEntries(command.env),
@@ -118,6 +91,7 @@ export async function proxyJSONRequest(
       reject(error);
     });
 
+    request.stream = request.stream ?? false;
     process.stdin.write(JSON.stringify(request) + "\n");
     process.stdin.end();
   });
@@ -131,7 +105,20 @@ export async function proxyStreamRequest(
   offset?: number,
   abortSignal?: AbortSignal,
 ): Promise<ProxyResponse> {
-  const command = buildProxyCommand(abortSignal);
+  return proxyStreamRequestInner(
+    request,
+    buildProxyCommand(abortSignal),
+    writeStream,
+    offset,
+  );
+}
+
+export async function proxyStreamRequestInner(
+  request: ProxyRequest,
+  command: ProxyCommand,
+  writeStream: Writable,
+  offset?: number,
+): Promise<ProxyResponse> {
   return new Promise((resolve, reject) => {
     let bytesWritten = 0;
     let stdout = "";
@@ -204,6 +191,7 @@ export async function proxyStreamRequest(
     if (offset && offset != 0) {
       request.headers["Range"] = `bytes=${offset}-`;
     }
+    request.stream = true;
     process.stdin.write(JSON.stringify(request) + "\n");
     process.stdin.end();
   });

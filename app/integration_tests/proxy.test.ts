@@ -2,18 +2,19 @@ import { describe, expect, it } from "vitest";
 
 import { PassThrough } from "node:stream";
 
-import { proxyJSONRequest, proxyStreamRequest } from "../src/main/proxy";
-import { JSONObject, ProxyCommand, ProxyJSONResponse, ms } from "../src/types";
+import {
+  proxyJSONRequestInner,
+  proxyStreamRequestInner,
+} from "../src/main/proxy";
+import {
+  JSONObject,
+  ProxyCommand,
+  ProxyJSONResponse,
+  ProxyStreamResponse,
+  ms,
+} from "../src/types";
 
-vi.mock("../src/main/proxy", async () => {
-  const actual = await vi.importActual("../src/main/proxy");
-  return {
-    ...actual,
-    buildProxyCommand: vi.fn(mockProxyCommand),
-  };
-});
-
-const mockProxyCommand = vi.hoisted(() => (): ProxyCommand => {
+const proxyCommand = (timeout: number): ProxyCommand => {
   return {
     command: sdProxyCommand,
     options: [],
@@ -21,17 +22,24 @@ const mockProxyCommand = vi.hoisted(() => (): ProxyCommand => {
       ["SD_PROXY_ORIGIN", sdProxyOrigin],
       ["DISABLE_TOR", "yes"],
     ]),
-    timeout: 1000 as ms,
+    timeout: timeout as ms,
   };
-});
+};
 
 describe("Test executing JSON proxy commands against httpbin", async () => {
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
   it("successful JSON response", async () => {
-    const result = await proxyJSONRequest({
-      method: "GET",
-      path_query: "/json",
-      headers: {},
-    });
+    const result = await proxyJSONRequestInner(
+      {
+        method: "GET",
+        path_query: "/json",
+        headers: {},
+      },
+      proxyCommand(1000),
+    );
     expect(result.status).toEqual(200);
     expect(result.headers.get("content-type")).toEqual("application/json");
   });
@@ -39,11 +47,14 @@ describe("Test executing JSON proxy commands against httpbin", async () => {
   it.for([200, 204, 404])(
     "2xx and 404 HTTP codes are passed through cleanly",
     async (statusCode: number) => {
-      const result = await proxyJSONRequest({
-        method: "GET",
-        path_query: `/status/${statusCode}`,
-        headers: {},
-      });
+      const result = await proxyJSONRequestInner(
+        {
+          method: "GET",
+          path_query: `/status/${statusCode}`,
+          headers: {},
+        },
+        proxyCommand(1000),
+      );
 
       expect(result.status).toEqual(statusCode);
     },
@@ -52,11 +63,14 @@ describe("Test executing JSON proxy commands against httpbin", async () => {
   it.for([401, 403, 429])(
     "4xx HTTP codes returns error: true response",
     async (statusCode: number) => {
-      const result = await proxyJSONRequest({
-        method: "GET",
-        path_query: `/status/${statusCode}`,
-        headers: {},
-      });
+      const result = await proxyJSONRequestInner(
+        {
+          method: "GET",
+          path_query: `/status/${statusCode}`,
+          headers: {},
+        },
+        proxyCommand(1000),
+      );
       expect(result.error);
       expect(result.status).toEqual(statusCode);
     },
@@ -65,46 +79,57 @@ describe("Test executing JSON proxy commands against httpbin", async () => {
   it.for([500, 503, 504])(
     "5xx HTTP codes returns error: true response",
     async (statusCode: number) => {
-      const result = await proxyJSONRequest({
-        method: "GET",
-        path_query: `/status/${statusCode}`,
-        headers: {},
-      });
+      const result = await proxyJSONRequestInner(
+        {
+          method: "GET",
+          path_query: `/status/${statusCode}`,
+          headers: {},
+        },
+        proxyCommand(1000),
+      );
       expect(result.error);
       expect(result.status).toEqual(statusCode);
     },
   );
 
   it("path query with query parameters", async () => {
-    const result = await proxyJSONRequest({
-      method: "GET",
-      path_query: "/get?foo=bar",
-      headers: {},
-    });
+    const result = await proxyJSONRequestInner(
+      {
+        method: "GET",
+        path_query: "/get?foo=bar",
+        headers: {},
+      },
+      proxyCommand(1000),
+    );
     expect(result.status).toEqual(200);
     expect((result.data! as JSONObject)["args"]).toEqual({ foo: "bar" });
   });
 
   it("proxy subcommand terminates with SIGTERM on timeout", async () => {
     await expect(
-      proxyJSONRequest({
-        method: "GET",
-        path_query: "/delay/10",
-        headers: {},
-      }),
+      proxyJSONRequestInner(
+        {
+          method: "GET",
+          path_query: "/delay/10",
+          headers: {},
+        },
+        proxyCommand(100),
+      ),
     ).rejects.toThrowError("Process terminated with signal SIGTERM");
   });
 
   it("proxy subcommand aborts", async () => {
     const abortController = new AbortController();
+    const command = proxyCommand(10_000);
+    command.abortSignal = abortController.signal;
 
-    const proxyExec = proxyJSONRequest(
+    const proxyExec = proxyJSONRequestInner(
       {
         method: "GET",
         path_query: "/delay/100",
         headers: {},
       },
-      abortController.signal,
+      command,
     );
 
     abortController.abort();
@@ -113,11 +138,14 @@ describe("Test executing JSON proxy commands against httpbin", async () => {
   });
 
   it("request with headers", async () => {
-    const result = await proxyJSONRequest({
-      method: "GET",
-      path_query: "/headers",
-      headers: { "X-Test-Header": "th" },
-    });
+    const result = await proxyJSONRequestInner(
+      {
+        method: "GET",
+        path_query: "/headers",
+        headers: { "X-Test-Header": "th" },
+      },
+      proxyCommand(1000),
+    );
     expect(result.status).toEqual(200);
     expect((result.data! as JSONObject)["headers"]).toHaveProperty(
       "X-Test-Header",
@@ -127,12 +155,15 @@ describe("Test executing JSON proxy commands against httpbin", async () => {
 
   it("request with body", async () => {
     const input = { id: 42, title: "test" };
-    const result = await proxyJSONRequest({
-      method: "POST",
-      path_query: "/post",
-      body: JSON.stringify(input),
-      headers: {},
-    });
+    const result = await proxyJSONRequestInner(
+      {
+        method: "POST",
+        path_query: "/post",
+        body: JSON.stringify(input),
+        headers: {},
+      },
+      proxyCommand(1000),
+    );
     expect(result.status).toEqual(200);
     expect((result.data! as JSONObject)["json"]).toEqual(input);
   });
@@ -147,12 +178,13 @@ describe("Test executing streaming proxy", async () => {
     });
 
     const count = 20;
-    await proxyStreamRequest(
+    await proxyStreamRequestInner(
       {
         method: "GET",
         path_query: `/drip?duration=5&numbytes=${count}&code=200&delay=0`,
         headers: {},
       },
+      proxyCommand(20000),
       writeStream,
       0,
     );
@@ -167,12 +199,13 @@ describe("Test executing streaming proxy", async () => {
       streamData += chunk;
     });
 
-    await proxyStreamRequest(
+    await proxyStreamRequestInner(
       {
         method: "GET",
         path_query: `/html`,
         headers: {},
       },
+      proxyCommand(20000),
       writeStream,
       0,
     );
@@ -184,12 +217,13 @@ describe("Test executing streaming proxy", async () => {
     "4xx/5xx HTTP codes return error",
     async (statusCode: number) => {
       const writeStream = new PassThrough();
-      const response: ProxyJSONResponse = (await proxyStreamRequest(
+      const response: ProxyJSONResponse = (await proxyStreamRequestInner(
         {
           method: "GET",
           path_query: `/status/${statusCode}`,
           headers: {},
         },
+        proxyCommand(1000),
         writeStream,
         3,
       )) as ProxyJSONResponse;
@@ -201,32 +235,37 @@ describe("Test executing streaming proxy", async () => {
 
   it("stream proxy subcommand terminates with SIGTERM on timeout", async () => {
     const writeStream = new PassThrough();
-    await expect(
-      proxyStreamRequest(
-        {
-          method: "GET",
-          path_query: "/delay/10",
-          headers: {},
-        },
-        writeStream,
-        1,
-      ),
-    ).rejects.toThrowError("Process terminated with signal SIGTERM");
+    const response = (await proxyStreamRequestInner(
+      {
+        method: "GET",
+        path_query: "/delay/10",
+        headers: {},
+      },
+      proxyCommand(100),
+      writeStream,
+      1,
+    )) as ProxyStreamResponse;
+    expect(response.error!.message).toEqual(
+      "Process terminated with signal SIGTERM",
+    );
+    expect(response.complete).toEqual(false);
   });
 
   it("stream proxy subcommand aborts", async () => {
     const abortController = new AbortController();
+    const command = proxyCommand(10000);
+    command.abortSignal = abortController.signal;
 
     const writeStream = new PassThrough();
-    const proxyExec = proxyStreamRequest(
+    const proxyExec = proxyStreamRequestInner(
       {
         method: "GET",
         path_query: "/delay/100",
         headers: {},
       },
+      command,
       writeStream,
       1,
-      abortController.signal,
     );
 
     abortController.abort();
