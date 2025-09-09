@@ -47,14 +47,7 @@ export class TaskQueue {
         const task: ItemFetchTask = {
           id: itemUUID,
         };
-        this.queue.push(
-          task /*(err, _result) => {
-          if (err) {
-            console.log("Error executing fetch download task: ", task, err);
-            this.db.failItem(task.id);
-          }
-        }*/,
-        );
+        this.queue.push(task);
       }
     } catch (e) {
       console.log("Error queueing fetches: ", e);
@@ -116,9 +109,8 @@ export class TaskQueue {
       const bytesWritten = progress + downloadResponse.bytesWritten;
       db.updateInProgressItem(item.id, bytesWritten);
 
-      // TODO(vicki): debug why throwing this error isn't catching in the queue handler and is throwing an error from the worker ......
       throw new Error(
-        `Unable to complete stream download, total bytes written: ${bytesWritten}, chunk bytes written: ${downloadResponse.bytesWritten}`,
+        `Unable to complete stream download, wrote ${downloadResponse.bytesWritten} bytes: ${downloadResponse.error?.message}`,
       );
     }
 

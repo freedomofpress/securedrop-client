@@ -17,6 +17,5 @@ const q = new TaskQueue(db);
 
 port.on("message", (message: FetchDownloadsMessage) => {
   console.log("Queueing items to be fetched");
-  console.log(message);
   q.queueFetches(message);
 });
