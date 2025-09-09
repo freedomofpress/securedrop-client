@@ -182,8 +182,11 @@ export enum FetchStatus {
   Initial = 0,
   InProgress = 1,
   Complete = 2,
-  Failed = 3,
-  Paused = 4,
+  Paused = 3,
+  // Last fetch attempt failed, but will retry
+  FailedRetryable = 4,
+  // Exceeded max retries, considered terminally failed
+  FailedTerminal = 5,
 }
 
 /** Fetch Worker types */

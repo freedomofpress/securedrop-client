@@ -455,7 +455,7 @@ export class DB {
     console.log("getting items to download");
     const itemStmt = this.db!.prepare(`
       SELECT uuid FROM items
-      WHERE fetch_status IN (${FetchStatus.Initial}, ${FetchStatus.InProgress})
+      WHERE fetch_status IN (${FetchStatus.Initial}, ${FetchStatus.InProgress}, ${FetchStatus.FailedRetryable})
     `);
     const rows = itemStmt?.all() as Array<Row>;
     return rows.map((r) => r.uuid);
@@ -512,7 +512,14 @@ export class DB {
 
   failItem(itemUuid: string) {
     const stmt: Statement<{ uuid: string }, void> = this.db!.prepare(
-      `UPDATE ITEMS set fetch_status = ${FetchStatus.Failed}, fetch_retry_attempts = fetch_retry_attempts + 1, fetch_last_updated_at = CURRENT_TIMESTAMP WHERE uuid = @uuid`,
+      `UPDATE ITEMS set fetch_status = ${FetchStatus.FailedRetryable}, fetch_retry_attempts = fetch_retry_attempts + 1, fetch_last_updated_at = CURRENT_TIMESTAMP WHERE uuid = @uuid`,
+    );
+    stmt.run({ uuid: itemUuid });
+  }
+
+  terminallyFailItem(itemUuid: string) {
+    const stmt: Statement<{ uuid: string }, void> = this.db!.prepare(
+      `UPDATE ITEMS set fetch_status = ${FetchStatus.FailedTerminal}, fetch_retry_attempts = fetch_retry_attempts + 1, fetch_last_updated_at = CURRENT_TIMESTAMP WHERE uuid = @uuid`,
     );
     stmt.run({ uuid: itemUuid });
   }

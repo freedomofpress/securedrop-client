@@ -32,6 +32,10 @@ export class TaskQueue {
     );
   }
 
+  getAuthToken(): string {
+    return this.authToken ? this.authToken : "";
+  }
+
   // Queries the database for all items that need to be downloaded and queues
   // up download tasks to be processed.
   queueFetches(message: FetchDownloadsMessage) {
@@ -43,22 +47,27 @@ export class TaskQueue {
         const task: ItemFetchTask = {
           id: itemUUID,
         };
-        this.queue.push(task);
+        this.queue.push(
+          task /*(err, _result) => {
+          if (err) {
+            console.log("Error executing fetch download task: ", task, err);
+            this.db.failItem(task.id);
+          }
+        }*/,
+        );
       }
     } catch (e) {
       console.log("Error queueing fetches: ", e);
     }
   }
 
-  async fetchDownload(item: ItemFetchTask) {
+  fetchDownload = async (item: ItemFetchTask, db: DB) => {
     console.log("Fetching downloads for: ", item);
 
-    const [metadata, status, progress] = this.db.getItemWithFetchStatus(
-      item.id,
-    );
+    const [metadata, status, progress] = db.getItemWithFetchStatus(item.id);
     if (
       status == FetchStatus.Complete ||
-      status == FetchStatus.Failed ||
+      status == FetchStatus.FailedTerminal ||
       status == FetchStatus.Paused
     ) {
       console.log("Item task is not in an in-progress state, skipping...");
@@ -84,18 +93,30 @@ export class TaskQueue {
     const downloadRequest: ProxyRequest = {
       method: "GET",
       path_query: queryPath,
-      headers: authHeader(this?.authToken),
+      headers: authHeader(this.getAuthToken()),
     };
-    const downloadResponse = (await proxyStreamRequest(
+    console.log("Proxying request to: ", downloadRequest);
+    let downloadResponse = await proxyStreamRequest(
       downloadRequest,
       downloadWriter,
       progress,
-    )) as ProxyStreamResponse;
+    );
+
+    // If we received JSON response, indicates an error from the server
+    if ("data" in downloadResponse && downloadResponse.error) {
+      throw new Error(
+        `Received error from server with status ${downloadResponse.status}: ${downloadResponse.data?.toString()}`,
+      );
+    }
+
+    downloadResponse = downloadResponse as ProxyStreamResponse;
 
     // TODO: decrypt response
     if (!downloadResponse.complete) {
       const bytesWritten = progress + downloadResponse.bytesWritten;
-      this.db.updateInProgressItem(item.id, bytesWritten);
+      db.updateInProgressItem(item.id, bytesWritten);
+
+      // TODO(vicki): debug why throwing this error isn't catching in the queue handler and is throwing an error from the worker ......
       throw new Error(
         `Unable to complete stream download, total bytes written: ${bytesWritten}, chunk bytes written: ${downloadResponse.bytesWritten}`,
       );
@@ -104,16 +125,16 @@ export class TaskQueue {
     switch (metadata.kind) {
       case "message":
       case "reply":
-        this.db.completePlaintextItem(
+        db.completePlaintextItem(
           item.id,
           (downloadWriter as BufferedWriter).getBuffer().toString(),
         );
         break;
       case "file":
-        this.db.completeFileItem(item.id, downloadFilePath);
+        db.completeFileItem(item.id, downloadFilePath);
         break;
     }
-  }
+  };
 }
 
 function createQueue(
@@ -121,14 +142,13 @@ function createQueue(
   taskFn: (task: ItemFetchTask, db: DB) => void,
 ): Queue {
   const q: Queue = new Queue(
-    function (task: ItemFetchTask, onComplete) {
+    async (task: ItemFetchTask, onComplete) => {
       try {
-        taskFn(task, db);
-        onComplete();
+        await taskFn(task, db);
       } catch (e) {
         console.log("Error executing fetch download task: ", task, e);
         db.failItem(task.id);
-        throw e;
+        onComplete(e);
       }
     },
     {
@@ -143,6 +163,7 @@ function createQueue(
         return oldTask;
       },
       failTaskOnProcessException: true,
+      autoResume: true,
     },
   );
 
@@ -156,7 +177,9 @@ function createQueue(
       taskId,
       errorMessage,
     );
+    db.terminallyFailItem(taskId);
   });
+
   return q;
 }
 

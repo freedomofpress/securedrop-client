@@ -66,7 +66,7 @@ describe("TaskQueue", () => {
     } as unknown as Buffer;
     queue["db"].completePlaintextItem = vi.fn();
     vi.spyOn(BufferedWriter.prototype, "getBuffer").mockReturnValue(buf);
-    await queue.fetchDownload({ id: "item2" });
+    await queue.fetchDownload({ id: "item2" }, db);
     expect(queue.db.completePlaintextItem).toHaveBeenCalledWith("item2", "msg");
   });
 
@@ -87,7 +87,7 @@ describe("TaskQueue", () => {
     } as unknown as Buffer;
     queue["db"].completePlaintextItem = vi.fn();
     vi.spyOn(BufferedWriter.prototype, "getBuffer").mockReturnValue(buf);
-    await queue.fetchDownload({ id: "item1" });
+    await queue.fetchDownload({ id: "item1" }, db);
     expect(queue.db.completePlaintextItem).toHaveBeenCalledWith(
       "item1",
       "replymsg",
@@ -104,7 +104,7 @@ describe("TaskQueue", () => {
       complete: false,
       bytesWritten: 30,
     });
-    await expect(queue.fetchDownload({ id: "item3" })).rejects.toThrow(
+    await expect(queue.fetchDownload({ id: "item3" }, db)).rejects.toThrow(
       /Unable to complete stream download/,
     );
     expect(queue.db.updateInProgressItem).toHaveBeenCalledWith("item3", 50);

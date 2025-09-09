@@ -18,6 +18,7 @@ import type {
   SourceWithItems,
   Journalist,
   SyncMetadataRequest,
+  FetchDownloadsMessage,
 } from "../types";
 import { syncMetadata } from "./sync";
 import workerPath from "./fetch/worker?modulePath";
@@ -136,7 +137,9 @@ app.whenReady().then(() => {
     async (_event, request: SyncMetadataRequest) => {
       await syncMetadata(db, request.authToken);
       // Send message to fetch worker to fetch newly synced items, if any
-      fetchWorker.postMessage({});
+      fetchWorker.postMessage({
+        authToken: request.authToken,
+      } as FetchDownloadsMessage);
     },
   );
 
