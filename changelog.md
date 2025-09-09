@@ -2,12 +2,13 @@
 
 ## 0.17.0
 
-This release integrates Tor's next-generation client, Arti, instead of Whonix.
+This release integrates Tor directly into sd-proxy rather than using Whonix.
 It should be for the most part invisible to users, but there are slight changes
 in how to troubleshoot network connection issues; see our documentation for updates.
 
-* Replace Whonix in favor of arti in sd-proxy (#2561, #2644)
+* Use CTor in sd-proxy instead of Whonix (#2561, #2644, #2767)
 * Word-wrap printed conversation transcripts to aid readability (#2510)
+* Translation and localization updates (#2659)
 
 ### Internal and Development
 * Consolidate old component changelogs in main changelog (#2499)
