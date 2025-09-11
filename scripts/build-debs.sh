@@ -56,7 +56,7 @@ export CONTAINER="fpf.local/sd-client-builder-${DEBIAN_VERSION}"
 
 # We're going to store artifacts in a temp directory
 BUILD_DEST=$(mktemp -d)
-# Optionally build arti, default to "main" packages
+# Optionally build other packages in the future, default to "main" packages
 WHAT="${WHAT:-main}"
 
 $OCI_BIN run --rm $OCI_RUN_ARGUMENTS \
