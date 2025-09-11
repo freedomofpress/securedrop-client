@@ -47,7 +47,12 @@ export class TaskQueue {
         const task: ItemFetchTask = {
           id: itemUUID,
         };
-        this.queue.push(task);
+        this.queue.push(task, (err, _result) => {
+          if (err) {
+            console.log("Error executing fetch download task: ", task, err);
+            this.db.failItem(task.id);
+          }
+        });
       }
     } catch (e) {
       console.log("Error queueing fetches: ", e);
@@ -134,13 +139,12 @@ function createQueue(
   taskFn: (task: ItemFetchTask, db: DB) => void,
 ): Queue {
   const q: Queue = new Queue(
-    async (task: ItemFetchTask, onComplete) => {
+    async (task: ItemFetchTask, cb: Queue.ProcessFunctionCb<void>) => {
       try {
         await taskFn(task, db);
+        cb();
       } catch (e) {
-        console.log("Error executing fetch download task: ", task, e);
-        db.failItem(task.id);
-        onComplete(e);
+        cb(e);
       }
     },
     {
