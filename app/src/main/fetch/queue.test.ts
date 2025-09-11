@@ -45,8 +45,14 @@ describe("TaskQueue", () => {
     queue.queueFetches({ authToken: "token" });
     expect(queue.authToken).toBe("token");
     expect(queue.queue.push).toHaveBeenCalledTimes(2);
-    expect(queue.queue.push).toHaveBeenCalledWith({ id: "item1" });
-    expect(queue.queue.push).toHaveBeenCalledWith({ id: "item2" });
+    expect(queue.queue.push).toHaveBeenCalledWith(
+      { id: "item1" },
+      expect.any(Function),
+    );
+    expect(queue.queue.push).toHaveBeenCalledWith(
+      { id: "item2" },
+      expect.any(Function),
+    );
   });
 
   it("should handle message download and completePlaintextItem", async () => {
