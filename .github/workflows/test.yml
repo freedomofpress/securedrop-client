@@ -24,8 +24,6 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        # qubesdb-tools has no test suite because it can only usefully be tested
-        # in `securedrop-workstation`'s CI.
         component:
           - export
           - keyring
