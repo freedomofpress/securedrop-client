@@ -1,5 +1,9 @@
 import { Writable } from "stream";
 
+/// BufferedWriter provides a utility class that implements the Writable interface
+/// allowing for data to be streamed directly to a Buffer.
+/// This is used by the fetch workers to stream message data to an in-memory Buffer
+/// to avoid having to open a temporary file.
 export class BufferedWriter extends Writable {
   buffer: Buffer[];
   final: boolean;

@@ -461,7 +461,9 @@ export class DB {
     return rows.map((r) => r.uuid);
   }
 
-  getItemWithFetchStatus(itemUuid: string): [ItemMetadata, number, number] {
+  getItemWithFetchStatus(
+    itemUuid: string,
+  ): [ItemMetadata, FetchStatus, number] {
     type Row = {
       data: string;
       fetch_status: number;
@@ -472,7 +474,7 @@ export class DB {
     const item = itemStmt?.get(itemUuid) as Row;
     return [
       JSON.parse(item.data) as ItemMetadata,
-      item.fetch_status,
+      item.fetch_status as FetchStatus,
       item.fetch_progress,
     ];
   }

@@ -120,22 +120,26 @@ export async function proxyStreamRequestInner(
   offset?: number,
 ): Promise<ProxyResponse> {
   return new Promise((resolve, reject) => {
-    let bytesWritten = 0;
-    let stdout = "";
-    let stderr = "";
     const process = child_process.spawn(command.command, command.options, {
       env: Object.fromEntries(command.env),
       timeout: command.timeout,
       signal: command.abortSignal,
     });
 
+    // Attach provided `writeStream` to the standard output of the proxy command. This will write
+    // contents directly to the `writeStream`.
     process.stdout.pipe(writeStream);
 
+    // Also store stdout and stderr contents in local strings for use in processing potential
+    // error conditions, and track bytes written to allow resuming incremental progress.
+    let stdout = "";
+    let bytesWritten = 0;
     process.stdout.on("data", (data) => {
       bytesWritten += data.length;
       stdout += data;
     });
 
+    let stderr = "";
     process.stderr.on("data", (data) => {
       stderr += data;
     });
