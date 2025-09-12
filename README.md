@@ -13,7 +13,6 @@ This repository contains multiple components, including:
 * `client`: desktop GUI application
 * `export`: logic for exporting submissions
 * `log`: centralized logging
-* `qubesdb-tools`: tools for configuring non-Qubes-aware applications from
   QubesDB
 * `proxy`: restricted HTTP proxy
 * `workstation-config`: configuration for SecureDrop Workstation templates
