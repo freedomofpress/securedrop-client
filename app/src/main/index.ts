@@ -10,7 +10,7 @@ import {
 import { Worker } from "worker_threads";
 
 import { DB } from "./database";
-import { proxy } from "./proxy";
+import { proxyJSONRequest } from "./proxy";
 import type {
   ProxyRequest,
   ProxyResponse,
@@ -18,6 +18,7 @@ import type {
   SourceWithItems,
   Journalist,
   SyncMetadataRequest,
+  FetchDownloadsMessage,
 } from "../types";
 import { syncMetadata } from "./sync";
 import workerPath from "./fetch/worker?modulePath";
@@ -109,7 +110,7 @@ app.whenReady().then(() => {
   ipcMain.handle(
     "request",
     async (_event, request: ProxyRequest): Promise<ProxyResponse> => {
-      const result = await proxy(request);
+      const result = await proxyJSONRequest(request);
       return result;
     },
   );
@@ -137,7 +138,9 @@ app.whenReady().then(() => {
     async (_event, request: SyncMetadataRequest) => {
       await syncMetadata(db, request.authToken);
       // Send message to fetch worker to fetch newly synced items, if any
-      fetchWorker.postMessage({});
+      fetchWorker.postMessage({
+        authToken: request.authToken,
+      } as FetchDownloadsMessage);
     },
   );
 

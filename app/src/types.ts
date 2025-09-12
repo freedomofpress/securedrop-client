@@ -1,7 +1,7 @@
 export type ProxyRequest = {
   method: "GET" | "POST" | "DELETE";
   path_query: string;
-  stream: boolean;
+  stream?: boolean;
   body?: string;
   headers: Record<string, string>;
 };
@@ -24,7 +24,10 @@ export type ProxyJSONResponse = {
 };
 
 export type ProxyStreamResponse = {
-  sha256sum: string;
+  bytesWritten: number;
+  complete: boolean;
+  error?: Error;
+  sha256sum?: string;
 };
 
 type JSONPrimitive = string | number | boolean | null;
@@ -179,6 +182,14 @@ export enum FetchStatus {
   Initial = 0,
   InProgress = 1,
   Complete = 2,
-  Failed = 3,
-  Paused = 4,
+  Paused = 3,
+  // Last fetch attempt failed, but will retry
+  FailedRetryable = 4,
+  // Exceeded max retries, considered terminally failed
+  FailedTerminal = 5,
 }
+
+/** Fetch Worker types */
+export type FetchDownloadsMessage = {
+  authToken: string;
+};

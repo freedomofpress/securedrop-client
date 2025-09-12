@@ -1,7 +1,8 @@
 import { parentPort } from "worker_threads";
 
 import { DB } from "../database";
-import { createQueue, queueFetches } from "./queue";
+import { TaskQueue } from "./queue";
+import { FetchDownloadsMessage } from "../../types";
 
 console.log("Starting fetch worker...");
 
@@ -12,10 +13,9 @@ if (!parentPort) {
 const port = parentPort;
 
 const db = new DB();
-const q = createQueue(db);
+const q = new TaskQueue(db);
 
-// eslint-disable-next-line @typescript-eslint/no-empty-object-type
-port.on("message", (_: {}) => {
+port.on("message", (message: FetchDownloadsMessage) => {
   console.log("Queueing items to be fetched");
-  queueFetches(db, q);
+  q.queueFetches(message);
 });

@@ -3,11 +3,16 @@ import { describe, expect, it } from "vitest";
 import { PassThrough } from "node:stream";
 
 import {
-  proxyJSONRequest,
-  proxyStreamInner,
-  proxyStreamRequest,
+  proxyJSONRequestInner,
+  proxyStreamRequestInner,
 } from "../src/main/proxy";
-import { JSONObject, ProxyCommand, ProxyJSONResponse, ms } from "../src/types";
+import {
+  JSONObject,
+  ProxyCommand,
+  ProxyJSONResponse,
+  ProxyStreamResponse,
+  ms,
+} from "../src/types";
 
 const proxyCommand = (timeout: number): ProxyCommand => {
   return {
@@ -22,12 +27,15 @@ const proxyCommand = (timeout: number): ProxyCommand => {
 };
 
 describe("Test executing JSON proxy commands against httpbin", async () => {
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
   it("successful JSON response", async () => {
-    const result = await proxyJSONRequest(
+    const result = await proxyJSONRequestInner(
       {
         method: "GET",
         path_query: "/json",
-        stream: false,
         headers: {},
       },
       proxyCommand(1000),
@@ -39,11 +47,10 @@ describe("Test executing JSON proxy commands against httpbin", async () => {
   it.for([200, 204, 404])(
     "2xx and 404 HTTP codes are passed through cleanly",
     async (statusCode: number) => {
-      const result = await proxyJSONRequest(
+      const result = await proxyJSONRequestInner(
         {
           method: "GET",
           path_query: `/status/${statusCode}`,
-          stream: false,
           headers: {},
         },
         proxyCommand(1000),
@@ -56,11 +63,10 @@ describe("Test executing JSON proxy commands against httpbin", async () => {
   it.for([401, 403, 429])(
     "4xx HTTP codes returns error: true response",
     async (statusCode: number) => {
-      const result = await proxyJSONRequest(
+      const result = await proxyJSONRequestInner(
         {
           method: "GET",
           path_query: `/status/${statusCode}`,
-          stream: false,
           headers: {},
         },
         proxyCommand(1000),
@@ -73,11 +79,10 @@ describe("Test executing JSON proxy commands against httpbin", async () => {
   it.for([500, 503, 504])(
     "5xx HTTP codes returns error: true response",
     async (statusCode: number) => {
-      const result = await proxyJSONRequest(
+      const result = await proxyJSONRequestInner(
         {
           method: "GET",
           path_query: `/status/${statusCode}`,
-          stream: false,
           headers: {},
         },
         proxyCommand(1000),
@@ -88,11 +93,10 @@ describe("Test executing JSON proxy commands against httpbin", async () => {
   );
 
   it("path query with query parameters", async () => {
-    const result = await proxyJSONRequest(
+    const result = await proxyJSONRequestInner(
       {
         method: "GET",
         path_query: "/get?foo=bar",
-        stream: false,
         headers: {},
       },
       proxyCommand(1000),
@@ -103,11 +107,10 @@ describe("Test executing JSON proxy commands against httpbin", async () => {
 
   it("proxy subcommand terminates with SIGTERM on timeout", async () => {
     await expect(
-      proxyJSONRequest(
+      proxyJSONRequestInner(
         {
           method: "GET",
           path_query: "/delay/10",
-          stream: false,
           headers: {},
         },
         proxyCommand(100),
@@ -117,14 +120,13 @@ describe("Test executing JSON proxy commands against httpbin", async () => {
 
   it("proxy subcommand aborts", async () => {
     const abortController = new AbortController();
-    const command = proxyCommand(10000);
+    const command = proxyCommand(10_000);
     command.abortSignal = abortController.signal;
 
-    const proxyExec = proxyJSONRequest(
+    const proxyExec = proxyJSONRequestInner(
       {
         method: "GET",
         path_query: "/delay/100",
-        stream: false,
         headers: {},
       },
       command,
@@ -136,11 +138,10 @@ describe("Test executing JSON proxy commands against httpbin", async () => {
   });
 
   it("request with headers", async () => {
-    const result = await proxyJSONRequest(
+    const result = await proxyJSONRequestInner(
       {
         method: "GET",
         path_query: "/headers",
-        stream: false,
         headers: { "X-Test-Header": "th" },
       },
       proxyCommand(1000),
@@ -154,11 +155,10 @@ describe("Test executing JSON proxy commands against httpbin", async () => {
 
   it("request with body", async () => {
     const input = { id: 42, title: "test" };
-    const result = await proxyJSONRequest(
+    const result = await proxyJSONRequestInner(
       {
         method: "POST",
         path_query: "/post",
-        stream: false,
         body: JSON.stringify(input),
         headers: {},
       },
@@ -178,15 +178,15 @@ describe("Test executing streaming proxy", async () => {
     });
 
     const count = 20;
-    await proxyStreamInner(
+    await proxyStreamRequestInner(
       {
         method: "GET",
         path_query: `/drip?duration=5&numbytes=${count}&code=200&delay=0`,
-        stream: true,
         headers: {},
       },
       proxyCommand(20000),
       writeStream,
+      0,
     );
 
     expect(streamData).toEqual("*".repeat(count));
@@ -199,15 +199,15 @@ describe("Test executing streaming proxy", async () => {
       streamData += chunk;
     });
 
-    await proxyStreamInner(
+    await proxyStreamRequestInner(
       {
         method: "GET",
         path_query: `/html`,
-        stream: true,
         headers: {},
       },
       proxyCommand(20000),
       writeStream,
+      0,
     );
 
     expect(streamData).toMatch("<!DOCTYPE html>");
@@ -216,15 +216,15 @@ describe("Test executing streaming proxy", async () => {
   it.for([401, 403, 429, 500, 503, 504])(
     "4xx/5xx HTTP codes return error",
     async (statusCode: number) => {
-      const response: ProxyJSONResponse = (await proxyStreamRequest(
+      const writeStream = new PassThrough();
+      const response: ProxyJSONResponse = (await proxyStreamRequestInner(
         {
           method: "GET",
           path_query: `/status/${statusCode}`,
-          stream: true,
           headers: {},
         },
         proxyCommand(1000),
-        "/tmp/baz",
+        writeStream,
         3,
       )) as ProxyJSONResponse;
 
@@ -234,19 +234,21 @@ describe("Test executing streaming proxy", async () => {
   );
 
   it("stream proxy subcommand terminates with SIGTERM on timeout", async () => {
-    await expect(
-      proxyStreamRequest(
-        {
-          method: "GET",
-          path_query: "/delay/10",
-          stream: false,
-          headers: {},
-        },
-        proxyCommand(100),
-        "/tmp/bar",
-        1,
-      ),
-    ).rejects.toThrowError("Process terminated with signal SIGTERM");
+    const writeStream = new PassThrough();
+    const response = (await proxyStreamRequestInner(
+      {
+        method: "GET",
+        path_query: "/delay/10",
+        headers: {},
+      },
+      proxyCommand(100),
+      writeStream,
+      1,
+    )) as ProxyStreamResponse;
+    expect(response.error!.message).toEqual(
+      "Process terminated with signal SIGTERM",
+    );
+    expect(response.complete).toEqual(false);
   });
 
   it("stream proxy subcommand aborts", async () => {
@@ -254,15 +256,15 @@ describe("Test executing streaming proxy", async () => {
     const command = proxyCommand(10000);
     command.abortSignal = abortController.signal;
 
-    const proxyExec = proxyStreamRequest(
+    const writeStream = new PassThrough();
+    const proxyExec = proxyStreamRequestInner(
       {
         method: "GET",
         path_query: "/delay/100",
-        stream: true,
         headers: {},
       },
       command,
-      "/tmp/bar",
+      writeStream,
       1,
     );
 
