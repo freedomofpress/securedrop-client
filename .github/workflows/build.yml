@@ -56,7 +56,6 @@ jobs:
           - bookworm
         what:
           - main
-          - arti
     runs-on: ubuntu-latest
     outputs:
       artifact_id: ${{ steps.upload.outputs.artifact-id }}
@@ -89,7 +88,6 @@ jobs:
           - bookworm
         what:
           - main
-          - arti
     runs-on: ubuntu-latest
     outputs:
       artifact_id: ${{ steps.upload.outputs.artifact-id }}
@@ -148,7 +146,6 @@ jobs:
         # TODO: workstation-config pulls in systemd, which doesn't work
         # TODO: workstation-viewer pulls in grsec and qubes packages
         package:
-          - arti
           - client
           - export
           - keyring
