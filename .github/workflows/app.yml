@@ -53,6 +53,15 @@ jobs:
       - name: Build
         working-directory: app
         run: pnpm build:linux
+      - name: Generate translator screenshots
+        working-directory: app
+        run: pnpm translator-screenshots
+      - name: Upload screenshots
+        uses: actions/upload-artifact@v4
+        with:
+          name: translator-screenshots
+          path: app/screenshots/
+          retention-days: 30
 
   integration-tests:
     strategy:
