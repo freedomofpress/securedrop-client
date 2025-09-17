@@ -1,4 +1,4 @@
-import { proxy } from "./proxy";
+import { proxyJSONRequest } from "./proxy";
 import {
   ProxyJSONResponse,
   Index,
@@ -18,10 +18,9 @@ async function getIndex(
   authToken: string,
   currentVersion: string,
 ): Promise<Index | null> {
-  const resp = (await proxy({
+  const resp = (await proxyJSONRequest({
     method: "GET",
     path_query: "/api/v2/index",
-    stream: false,
     headers: {
       Accept: "application/json",
       "Content-Type": "application/json",
@@ -54,10 +53,9 @@ async function fetchMetadata(
   authToken: string,
   request: MetadataRequest,
 ): Promise<MetadataResponse> {
-  const resp = (await proxy({
+  const resp = (await proxyJSONRequest({
     method: "POST",
     path_query: "/api/v2/metadata",
-    stream: false,
     headers: {
       Accept: "application/json",
       "Content-Type": "application/json",

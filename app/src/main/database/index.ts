@@ -595,21 +595,28 @@ export class DB {
     console.log("getting items to download");
     const itemStmt = this.db!.prepare(`
       SELECT uuid FROM items
-      WHERE fetch_status IN (${FetchStatus.Initial}, ${FetchStatus.InProgress})
+      WHERE fetch_status IN (${FetchStatus.Initial}, ${FetchStatus.InProgress}, ${FetchStatus.FailedRetryable})
     `);
     const rows = itemStmt?.all() as Array<Row>;
     return rows.map((r) => r.uuid);
   }
 
-  getItemFetchStatus(itemUuid: string): [number, number] {
+  getItemWithFetchStatus(
+    itemUuid: string,
+  ): [ItemMetadata, FetchStatus, number] {
     type Row = {
+      data: string;
       fetch_status: number;
       fetch_progress: number;
     };
-    const itemStatusStmt = this.db?.prepare(`
-      SELECT fetch_status, fetch_progress FROM items WHERE uuid = ?`);
-    const status = itemStatusStmt?.get(itemUuid) as Row;
-    return [status.fetch_status, status.fetch_progress];
+    const itemStmt = this.db?.prepare(`
+      SELECT data, fetch_status, fetch_progress FROM items WHERE uuid = ?`);
+    const item = itemStmt?.get(itemUuid) as Row;
+    return [
+      JSON.parse(item.data) as ItemMetadata,
+      item.fetch_status as FetchStatus,
+      item.fetch_progress,
+    ];
   }
 
   updateInProgressItem(itemUuid: string, progress: number) {
@@ -647,7 +654,14 @@ export class DB {
 
   failItem(itemUuid: string) {
     const stmt: Statement<{ uuid: string }, void> = this.db!.prepare(
-      `UPDATE ITEMS set fetch_status = ${FetchStatus.Failed}, fetch_retry_attempts = fetch_retry_attempts + 1, fetch_last_updated_at = CURRENT_TIMESTAMP WHERE uuid = @uuid`,
+      `UPDATE ITEMS set fetch_status = ${FetchStatus.FailedRetryable}, fetch_retry_attempts = fetch_retry_attempts + 1, fetch_last_updated_at = CURRENT_TIMESTAMP WHERE uuid = @uuid`,
+    );
+    stmt.run({ uuid: itemUuid });
+  }
+
+  terminallyFailItem(itemUuid: string) {
+    const stmt: Statement<{ uuid: string }, void> = this.db!.prepare(
+      `UPDATE ITEMS set fetch_status = ${FetchStatus.FailedTerminal}, fetch_retry_attempts = fetch_retry_attempts + 1, fetch_last_updated_at = CURRENT_TIMESTAMP WHERE uuid = @uuid`,
     );
     stmt.run({ uuid: itemUuid });
   }

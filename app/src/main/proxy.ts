@@ -1,6 +1,4 @@
 import child_process from "node:child_process";
-import fs from "fs";
-import path from "path";
 import { Writable } from "node:stream";
 
 import type {
@@ -13,57 +11,6 @@ import type {
 
 const DEFAULT_PROXY_VM_NAME = "sd-proxy";
 const DEFAULT_PROXY_CMD_TIMEOUT_MS = 5000 as ms;
-const DEFAULT_STREAM_MAX_RETRY_ATTEMPTS = 3;
-
-// Proxies a network request through sd-proxy
-// For streaming requests, `downloadPath` must be specified as
-// the file location where stream data is downloaded
-export async function proxy(
-  request: ProxyRequest,
-  downloadPath?: string,
-  abortSignal?: AbortSignal,
-): Promise<ProxyResponse> {
-  let command = "";
-  let commandOptions: string[] = [];
-  const env: Map<string, string> = new Map();
-
-  if (import.meta.env.MODE == "development") {
-    command = __PROXY_CMD__;
-    env.set("SD_PROXY_ORIGIN", __PROXY_ORIGIN__);
-    env.set("DISABLE_TOR", "yes");
-  } else {
-    command = "/usr/lib/qubes/qrexec-client-vm";
-
-    const proxyVmName = DEFAULT_PROXY_VM_NAME;
-    commandOptions = [proxyVmName, "securedrop.Proxy"];
-  }
-  const proxyCommand: ProxyCommand = {
-    command: command,
-    options: commandOptions,
-    env: env,
-    timeout: DEFAULT_PROXY_CMD_TIMEOUT_MS,
-    abortSignal: abortSignal,
-  };
-
-  if (request.stream) {
-    if (!downloadPath) {
-      return Promise.reject(
-        `Error: no download path specified for streaming request`,
-      );
-    }
-    try {
-      return proxyStreamRequest(
-        request,
-        proxyCommand,
-        downloadPath,
-        DEFAULT_STREAM_MAX_RETRY_ATTEMPTS,
-      );
-    } catch (err) {
-      return Promise.reject(`Error proxying streaming request: ${err}`);
-    }
-  }
-  return proxyJSONRequest(request, proxyCommand);
-}
 
 function parseJSONResponse(response: string): ProxyJSONResponse {
   const result = JSON.parse(response);
@@ -97,6 +44,13 @@ function parseJSONResponse(response: string): ProxyJSONResponse {
 }
 
 export async function proxyJSONRequest(
+  request: ProxyRequest,
+  abortSignal?: AbortSignal,
+): Promise<ProxyJSONResponse> {
+  return proxyJSONRequestInner(request, buildProxyCommand(abortSignal));
+}
+
+export async function proxyJSONRequestInner(
   request: ProxyRequest,
   command: ProxyCommand,
 ): Promise<ProxyJSONResponse> {
@@ -137,72 +91,54 @@ export async function proxyJSONRequest(
       reject(error);
     });
 
+    request.stream = request.stream ?? false;
     process.stdin.write(JSON.stringify(request) + "\n");
   });
 }
 
+// Streams proxy request through sd-proxy, writing stream output to
+// the provided writeStream.
 export async function proxyStreamRequest(
   request: ProxyRequest,
-  command: ProxyCommand,
-  downloadPath: string,
-  maxRetryAttempts: number,
+  writeStream: Writable,
+  offset?: number,
+  abortSignal?: AbortSignal,
 ): Promise<ProxyResponse> {
-  let writeStream: fs.WriteStream;
-  try {
-    const downloadDir = path.dirname(downloadPath);
-    await fs.promises.mkdir(downloadDir, { recursive: true });
-    writeStream = fs.createWriteStream(downloadPath);
-  } catch (err) {
-    return Promise.reject(
-      `Error opening write stream to download path: ${err}`,
-    );
-  }
-  let retries = 0;
-  let lastErr;
-  while (retries < maxRetryAttempts) {
-    try {
-      return proxyStreamInner(
-        request,
-        command,
-        writeStream,
-        writeStream.bytesWritten,
-      );
-    } catch (err) {
-      lastErr = err;
-      retries += 1;
-      console.log(
-        `Error streaming proxy request: ${err}.\nRetrying... attempts=${retries}, remaining=${maxRetryAttempts - retries}`,
-      );
-    }
-  }
-  return Promise.reject(
-    `Failed to proxy stream request, max retry attempts exceeded. Error ${lastErr}`,
+  return proxyStreamRequestInner(
+    request,
+    buildProxyCommand(abortSignal),
+    writeStream,
+    offset,
   );
 }
 
-// Streams proxy request through sd-proxy, writing stream output to
-// the provided writeStream.
-export async function proxyStreamInner(
+export async function proxyStreamRequestInner(
   request: ProxyRequest,
   command: ProxyCommand,
   writeStream: Writable,
   offset?: number,
 ): Promise<ProxyResponse> {
   return new Promise((resolve, reject) => {
-    let stderr = "";
-    let stdout = "";
     const process = child_process.spawn(command.command, command.options, {
       env: Object.fromEntries(command.env),
       timeout: command.timeout,
       signal: command.abortSignal,
     });
 
+    // Attach provided `writeStream` to the standard output of the proxy command. This will write
+    // contents directly to the `writeStream`.
     process.stdout.pipe(writeStream);
 
+    // Also store stdout and stderr contents in local strings for use in processing potential
+    // error conditions, and track bytes written to allow resuming incremental progress.
+    let stdout = "";
+    let bytesWritten = 0;
     process.stdout.on("data", (data) => {
+      bytesWritten += data.length;
       stdout += data;
     });
 
+    let stderr = "";
     process.stderr.on("data", (data) => {
       stderr += data;
     });
@@ -219,10 +155,20 @@ export async function proxyStreamInner(
       writeStream.end();
 
       if (signal) {
-        reject(`Process terminated with signal ${signal}`);
+        resolve({
+          complete: false,
+          error: new Error(`Process terminated with signal ${signal}`),
+          bytesWritten: bytesWritten,
+        });
       }
       if (code != 0) {
-        reject(`Process exited with non-zero code ${code}: ${stderr}`);
+        resolve({
+          complete: false,
+          error: new Error(
+            `Process exited with non-zero code ${code}: ${stderr}`,
+          ),
+          bytesWritten: bytesWritten,
+        });
       }
       try {
         // If we receive JSON data, parse and return
@@ -230,7 +176,11 @@ export async function proxyStreamInner(
       } catch {
         try {
           const header = JSON.parse(stderr);
-          resolve({ sha256sum: header["headers"]["etag"] || "" });
+          resolve({
+            complete: true,
+            sha256sum: header["headers"]["etag"] || "",
+            bytesWritten: bytesWritten,
+          });
         } catch (err) {
           reject(`Error reading headers from proxy stderr: ${err}`);
         }
@@ -244,6 +194,31 @@ export async function proxyStreamInner(
     if (offset && offset != 0) {
       request.headers["Range"] = `bytes=${offset}-`;
     }
+    request.stream = true;
     process.stdin.write(JSON.stringify(request) + "\n");
   });
+}
+
+function buildProxyCommand(abortSignal?: AbortSignal): ProxyCommand {
+  let command = "";
+  let commandOptions: string[] = [];
+  const env: Map<string, string> = new Map();
+
+  if (import.meta.env.MODE == "development") {
+    command = __PROXY_CMD__;
+    env.set("SD_PROXY_ORIGIN", __PROXY_ORIGIN__);
+    env.set("DISABLE_TOR", "yes");
+  } else {
+    command = "/usr/lib/qubes/qrexec-client-vm";
+
+    const proxyVmName = DEFAULT_PROXY_VM_NAME;
+    commandOptions = [proxyVmName, "securedrop.Proxy"];
+  }
+  return {
+    command: command,
+    options: commandOptions,
+    env: env,
+    timeout: DEFAULT_PROXY_CMD_TIMEOUT_MS,
+    abortSignal: abortSignal,
+  };
 }

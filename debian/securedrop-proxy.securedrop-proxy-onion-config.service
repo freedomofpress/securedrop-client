@@ -1,14 +1,18 @@
 [Unit]
 Description=SecureDrop Proxy configuration
+# While this is for CTor, the dom0 service is still named "arti"
 ConditionPathExists=/var/run/qubes-service/securedrop-arti
 
-# Ensure that tor is ready
-After=securedrop-arti.service
+# This must run after qubes-qrexec-agent, for QubesDB, and before
+# Tor, so that it doesn't pick up old configuration.
+After=qubes-qrexec-agent.service
+Before=tor.service
 
 [Service]
 Type=exec
-User=_arti
-ExecStart=/usr/bin/securedrop-configure-onion-service
+User=root
+ExecStartPre=sudo -u debian-tor /usr/bin/securedrop-configure-onion-service
+ExecStart=bash -c "cat /usr/share/securedrop-proxy/30_torrc_securedrop.conf >> /etc/tor/torrc"
 RemainAfterExit=yes
 
 [Install]

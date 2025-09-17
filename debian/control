@@ -37,7 +37,7 @@ Description: Python module and qrexec service to store logs for SecureDrop Works
 
 Package: securedrop-proxy
 Architecture: any
-Depends: ${misc:Depends}, ${shlibs:Depends}, securedrop-arti, libqubesdb, python3, python3-cryptography, python3-qubesdb
+Depends: ${misc:Depends}, ${shlibs:Depends}, tor, libqubesdb, python3, python3-qubesdb
 Description: This is securedrop Qubes proxy service
  This package provides the network proxy on Qubes to talk to the SecureDrop server.
 
