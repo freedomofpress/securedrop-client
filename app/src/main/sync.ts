@@ -1,4 +1,4 @@
-import { proxyJSONRequest } from "./proxy";
+import { proxyJSONRequest, proxyStreamRequest } from "./proxy";
 import {
   ProxyJSONResponse,
   Index,
@@ -160,20 +160,29 @@ async function downloadSubmission(
   const encryptedFilePath = path.join(tempDir, `${submissionUuid}.gpg`);
 
   try {
+    // Create a write stream for the encrypted file
+    const writeStream = fs.createWriteStream(encryptedFilePath);
+
     // Download encrypted content using the proxy with streaming
-    await proxy(
+    const response = await proxyStreamRequest(
       {
         method: "GET",
         path_query: `/api/v1/sources/${sourceUuid}/submissions/${submissionUuid}/download`,
-        stream: true,
         headers: {
           Authorization: `Token ${authToken}`,
         },
       },
-      encryptedFilePath,
+      writeStream,
     );
 
-    // Verify the download was successful (proxy writes to file)
+    // Check if the download was successful
+    if ("complete" in response && (!response.complete || response.error)) {
+      throw new Error(
+        `Failed to download submission ${submissionUuid}: ${response.error?.message || "Unknown error"}`,
+      );
+    }
+
+    // Verify the download was successful (file exists and has content)
     if (!fs.existsSync(encryptedFilePath)) {
       throw new Error(
         `Downloaded file not found at ${encryptedFilePath} for submission ${submissionUuid}`,
@@ -204,20 +213,29 @@ async function downloadReply(
   const encryptedFilePath = path.join(tempDir, `${replyUuid}.gpg`);
 
   try {
+    // Create a write stream for the encrypted file
+    const writeStream = fs.createWriteStream(encryptedFilePath);
+
     // Download encrypted reply content using the proxy with streaming
-    await proxy(
+    const response = await proxyStreamRequest(
       {
         method: "GET",
         path_query: `/api/v1/sources/${sourceUuid}/replies/${replyUuid}/download`,
-        stream: true,
         headers: {
           Authorization: `Token ${authToken}`,
         },
       },
-      encryptedFilePath,
+      writeStream,
     );
 
-    // Verify the download was successful (proxy writes to file)
+    // Check if the download was successful
+    if ("complete" in response && (!response.complete || response.error)) {
+      throw new Error(
+        `Failed to download reply ${replyUuid}: ${response.error?.message || "Unknown error"}`,
+      );
+    }
+
+    // Verify the download was successful (file exists and has content)
     if (!fs.existsSync(encryptedFilePath)) {
       throw new Error(
         `Downloaded file not found at ${encryptedFilePath} for reply ${replyUuid}`,
