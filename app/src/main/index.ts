@@ -11,6 +11,7 @@ import { Worker } from "worker_threads";
 
 import { DB } from "./database";
 import { proxy } from "./proxy";
+import { Crypto } from "./crypto";
 import type {
   ProxyRequest,
   ProxyResponse,
@@ -21,6 +22,15 @@ import type {
 } from "../types";
 import { syncMetadata } from "./sync";
 import workerPath from "./fetch/worker?modulePath";
+
+// Parse command line arguments
+const args = process.argv.slice(2);
+const noQubes = args.includes("--no-qubes");
+
+// Initialize crypto configuration based on command line arguments
+if (noQubes) {
+  Crypto.initialize({ isQubes: false });
+}
 
 const db = new DB();
 

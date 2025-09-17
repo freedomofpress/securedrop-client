@@ -22,6 +22,7 @@ export class CryptoError extends Error {
 
 export class Crypto {
   private static instance: Crypto;
+  private static globalConfig: CryptoConfig = {};
   private isQubes: boolean;
   private gpgHomedir?: string;
 
@@ -31,11 +32,24 @@ export class Crypto {
   }
 
   /**
+   * Initialize global crypto configuration (must be called before getInstance)
+   */
+  public static initialize(config: CryptoConfig): void {
+    if (Crypto.instance) {
+      throw new Error(
+        "Crypto already initialized. Call initialize() before getInstance().",
+      );
+    }
+    Crypto.globalConfig = config;
+  }
+
+  /**
    * Get singleton instance of Crypto
    */
   public static getInstance(config: CryptoConfig = {}): Crypto {
     if (!Crypto.instance) {
-      Crypto.instance = new Crypto(config);
+      const finalConfig = { ...Crypto.globalConfig, ...config };
+      Crypto.instance = new Crypto(finalConfig);
     }
     return Crypto.instance;
   }
