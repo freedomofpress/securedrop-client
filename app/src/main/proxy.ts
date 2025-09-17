@@ -138,7 +138,6 @@ export async function proxyJSONRequest(
     });
 
     process.stdin.write(JSON.stringify(request) + "\n");
-    process.stdin.end();
   });
 }
 
@@ -246,6 +245,5 @@ export async function proxyStreamInner(
       request.headers["Range"] = `bytes=${offset}-`;
     }
     process.stdin.write(JSON.stringify(request) + "\n");
-    process.stdin.end();
   });
 }
