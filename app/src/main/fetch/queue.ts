@@ -14,6 +14,7 @@ import {
   ProxyStreamResponse,
 } from "../../types";
 import { proxyStreamRequest } from "../proxy";
+import { Crypto, CryptoError } from "../crypto";
 
 export type ItemFetchTask = {
   id: string;
@@ -109,7 +110,6 @@ export class TaskQueue {
 
     downloadResponse = downloadResponse as ProxyStreamResponse;
 
-    // TODO: decrypt response
     if (!downloadResponse.complete) {
       const bytesWritten = progress + downloadResponse.bytesWritten;
       db.updateInProgressItem(item.id, bytesWritten);
@@ -121,12 +121,39 @@ export class TaskQueue {
 
     switch (metadata.kind) {
       case "message":
-      case "reply":
-        db.completePlaintextItem(
-          item.id,
-          (downloadWriter as BufferedWriter).getBuffer().toString(),
-        );
+      case "reply": {
+        // Get the encrypted binary data from the buffer
+        const bufferResult = (downloadWriter as BufferedWriter).getBuffer();
+
+        if (bufferResult instanceof Error) {
+          throw new Error(
+            `Failed to get buffer from stream: ${bufferResult.message}`,
+          );
+        }
+
+        try {
+          // Decrypt the message/reply content
+          const crypto = Crypto.getInstance();
+          const decryptedContent = await crypto.decryptMessage(bufferResult);
+
+          // Store the decrypted plaintext
+          db.completePlaintextItem(item.id, decryptedContent);
+          console.log(
+            `Successfully decrypted ${metadata.kind} ${item.id} via fetch queue`,
+          );
+        } catch (error) {
+          if (error instanceof CryptoError) {
+            console.error(
+              `Failed to decrypt ${metadata.kind} ${item.id}: ${error.message}`,
+            );
+            // Throw error to let the queue's retry mechanism handle it
+            throw new Error(`Decryption failed: ${error.message}`);
+          } else {
+            throw error;
+          }
+        }
         break;
+      }
       case "file":
         db.completeFileItem(item.id, downloadFilePath);
         break;

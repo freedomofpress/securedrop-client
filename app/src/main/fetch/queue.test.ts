@@ -15,6 +15,18 @@ vi.mock("../proxy", async () => {
   };
 });
 
+const mockCrypto = {
+  decryptMessage: vi.fn(),
+};
+vi.mock("../crypto", () => {
+  return {
+    Crypto: {
+      getInstance: () => mockCrypto,
+    },
+    CryptoError: class CryptoError extends Error {},
+  };
+});
+
 import { ItemFetchTask, TaskQueue } from "./queue";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -36,6 +48,7 @@ function mockFetchDownload(_task: ItemFetchTask, _db: DB): void {
 describe("TaskQueue", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    mockCrypto.decryptMessage.mockReset();
   });
 
   it("should queue fetches for items to download", () => {
@@ -67,13 +80,17 @@ describe("TaskQueue", () => {
       bytesWritten: 50,
     });
 
-    const buf = {
-      toString: vi.fn().mockReturnValue("msg"),
-    } as unknown as Buffer;
+    const buf = Buffer.from("encrypted message data");
+    const decryptedContent = "decrypted message";
+    mockCrypto.decryptMessage.mockResolvedValue(decryptedContent);
     queue["db"].completePlaintextItem = vi.fn();
     vi.spyOn(BufferedWriter.prototype, "getBuffer").mockReturnValue(buf);
     await queue.fetchDownload({ id: "item2" }, db);
-    expect(queue.db.completePlaintextItem).toHaveBeenCalledWith("item2", "msg");
+    expect(mockCrypto.decryptMessage).toHaveBeenCalledWith(buf);
+    expect(queue.db.completePlaintextItem).toHaveBeenCalledWith(
+      "item2",
+      decryptedContent,
+    );
   });
 
   it("should handle reply download and completePlaintextItem", async () => {
@@ -88,15 +105,16 @@ describe("TaskQueue", () => {
       bytesWritten: 50,
     });
 
-    const buf = {
-      toString: vi.fn().mockReturnValue("replymsg"),
-    } as unknown as Buffer;
+    const buf = Buffer.from("encrypted reply data");
+    const decryptedContent = "decrypted reply";
+    mockCrypto.decryptMessage.mockResolvedValue(decryptedContent);
     queue["db"].completePlaintextItem = vi.fn();
     vi.spyOn(BufferedWriter.prototype, "getBuffer").mockReturnValue(buf);
     await queue.fetchDownload({ id: "item1" }, db);
+    expect(mockCrypto.decryptMessage).toHaveBeenCalledWith(buf);
     expect(queue.db.completePlaintextItem).toHaveBeenCalledWith(
       "item1",
-      "replymsg",
+      decryptedContent,
     );
   });
 
