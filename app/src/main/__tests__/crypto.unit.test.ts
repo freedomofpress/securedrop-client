@@ -87,6 +87,30 @@ describe("Crypto", () => {
     });
   });
 
+  describe("isInitialized", () => {
+    beforeEach(() => {
+      // Reset singleton instance and global config for testing
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      (Crypto as any).instance = undefined;
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      (Crypto as any).globalConfig = {};
+    });
+
+    it("should return false when not initialized", () => {
+      expect(Crypto.isInitialized()).toBe(false);
+    });
+
+    it("should return true when initialized with config", () => {
+      Crypto.initialize({ isQubes: false });
+      expect(Crypto.isInitialized()).toBe(true);
+    });
+
+    it("should return true when initialized with empty config", () => {
+      Crypto.initialize({});
+      expect(Crypto.isInitialized()).toBe(false);
+    });
+  });
+
   describe("readGzipHeaderFilename", () => {
     let crypto: Crypto;
 

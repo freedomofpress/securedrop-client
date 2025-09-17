@@ -28,6 +28,9 @@ import workerPath from "./fetch/worker?modulePath";
 const args = process.argv.slice(2);
 const noQubes = args.includes("--no-qubes");
 
+// Create crypto config
+const cryptoConfig = noQubes ? { isQubes: false } : {};
+
 // Initialize crypto configuration based on command line arguments
 if (noQubes) {
   Crypto.initialize({ isQubes: false });
@@ -150,6 +153,7 @@ app.whenReady().then(() => {
       // Send message to fetch worker to fetch newly synced items, if any
       fetchWorker.postMessage({
         authToken: request.authToken,
+        cryptoConfig: cryptoConfig,
       } as FetchDownloadsMessage);
     },
   );

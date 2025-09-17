@@ -44,6 +44,13 @@ export class Crypto {
   }
 
   /**
+   * Check if crypto has been initialized
+   */
+  public static isInitialized(): boolean {
+    return Object.keys(Crypto.globalConfig).length > 0;
+  }
+
+  /**
    * Get singleton instance of Crypto
    */
   public static getInstance(config: CryptoConfig = {}): Crypto {
