@@ -30,9 +30,17 @@ class TranslationScreenshotAPI {
   async launch() {
     console.log("Launching Electron app...");
 
+    const args = ["./out/main/index.js"];
+    const isCI = Boolean(process.env.CI);
+
+    if (isCI) {
+      args.push("--no-sandbox");
+      console.log("Running in CI mode, disabling sandbox");
+    }
+
     this.app = await electron.launch({
-      args: ["./out/main/index.js"],
-      headless: true,
+      args: args,
+      headless: isCI,
     });
 
     this.page = await this.app.firstWindow();
