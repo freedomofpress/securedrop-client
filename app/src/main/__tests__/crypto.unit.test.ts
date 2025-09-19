@@ -22,6 +22,7 @@ describe("Crypto", () => {
 
     it("should detect Qubes when QUBES_ environment variable exists", () => {
       vi.stubEnv("QUBES_SOMETHING", "value");
+      Crypto.initialize({});
       const crypto = Crypto.getInstance();
 
       // Test by checking internal state via the getGpgCommand private method
@@ -49,6 +50,7 @@ describe("Crypto", () => {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       (Crypto as any).instance = undefined;
 
+      Crypto.initialize({});
       const crypto = Crypto.getInstance();
 
       const command = (
@@ -63,10 +65,11 @@ describe("Crypto", () => {
     });
 
     it("should use custom homedir when provided", () => {
-      const crypto = Crypto.getInstance({
+      Crypto.initialize({
         isQubes: false,
         gpgHomedir: "/custom/path",
       });
+      const crypto = Crypto.getInstance();
 
       const command = (
         crypto as unknown as CryptoWithPrivateMethods
@@ -78,7 +81,8 @@ describe("Crypto", () => {
 
     it("should override auto-detection when isQubes is explicitly set", () => {
       vi.stubEnv("QUBES_SOMETHING", "value");
-      const crypto = Crypto.getInstance({ isQubes: false });
+      Crypto.initialize({ isQubes: false });
+      const crypto = Crypto.getInstance();
 
       const command = (
         crypto as unknown as CryptoWithPrivateMethods
@@ -87,27 +91,25 @@ describe("Crypto", () => {
     });
   });
 
-  describe("isInitialized", () => {
+  describe("getInstance", () => {
     beforeEach(() => {
-      // Reset singleton instance and global config for testing
+      // Reset singleton instance for testing
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       (Crypto as any).instance = undefined;
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      (Crypto as any).globalConfig = {};
     });
 
-    it("should return false when not initialized", () => {
-      expect(Crypto.isInitialized()).toBe(false);
+    it("should return null when not initialized", () => {
+      expect(Crypto.getInstance()).toBe(null);
     });
 
-    it("should return true when initialized with config", () => {
+    it("should return instance when initialized with config", () => {
       Crypto.initialize({ isQubes: false });
-      expect(Crypto.isInitialized()).toBe(true);
+      expect(Crypto.getInstance()).not.toBe(null);
     });
 
-    it("should return true when initialized with empty config", () => {
+    it("should return instance when initialized with empty config", () => {
       Crypto.initialize({});
-      expect(Crypto.isInitialized()).toBe(false);
+      expect(Crypto.getInstance()).not.toBe(null);
     });
   });
 
@@ -118,7 +120,8 @@ describe("Crypto", () => {
       // Reset singleton instance for testing
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       (Crypto as any).instance = undefined;
-      crypto = Crypto.getInstance();
+      Crypto.initialize({});
+      crypto = Crypto.getInstance()!;
     });
 
     it("should extract filename from gzip header", () => {

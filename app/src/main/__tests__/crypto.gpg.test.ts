@@ -63,10 +63,11 @@ describe("Crypto with Real GPG", () => {
     // Reset singleton and create with test homedir
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     (Crypto as any).instance = undefined;
-    crypto = Crypto.getInstance({
+    Crypto.initialize({
       isQubes: false,
       gpgHomedir: gpgEnv.homedir,
     });
+    crypto = Crypto.getInstance()!;
   });
 
   describe("Message Decryption (No Gzip)", () => {

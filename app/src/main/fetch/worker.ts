@@ -17,7 +17,7 @@ const db = new DB();
 const q = new TaskQueue(db);
 
 // Initialize crypto with workerData config if it exists and we haven't initialized yet
-if (workerData?.cryptoConfig && !Crypto.isInitialized()) {
+if (workerData?.cryptoConfig) {
   console.log("Initializing crypto with config:", workerData.cryptoConfig);
   Crypto.initialize(workerData.cryptoConfig);
 }

@@ -60,7 +60,8 @@ describe("Crypto Integration Tests", () => {
 
   describe("Message Decryption", () => {
     it("should successfully decrypt a message (non-doc)", async () => {
-      const crypto = Crypto.getInstance({ isQubes: false });
+      Crypto.initialize({ isQubes: false });
+      const crypto = Crypto.getInstance()!;
       const testMessage = "Test message content";
       const encryptedContent = Buffer.from("encrypted-content");
 
@@ -108,7 +109,8 @@ describe("Crypto Integration Tests", () => {
     });
 
     it("should handle GPG decryption failure for messages", async () => {
-      const crypto = Crypto.getInstance({ isQubes: false });
+      Crypto.initialize({ isQubes: false });
+      const crypto = Crypto.getInstance()!;
       const encryptedContent = Buffer.from("bad-encrypted-content");
 
       // Mock GPG process for failed decryption
@@ -142,7 +144,8 @@ describe("Crypto Integration Tests", () => {
     });
 
     it("should handle GPG process spawn failure", async () => {
-      const crypto = Crypto.getInstance({ isQubes: false });
+      Crypto.initialize({ isQubes: false });
+      const crypto = Crypto.getInstance()!;
       const encryptedContent = Buffer.from("encrypted-content");
 
       // Mock spawn failure
@@ -186,7 +189,8 @@ describe("Crypto Integration Tests", () => {
     });
 
     it("should successfully decrypt and decompress a gzipped file", async () => {
-      const crypto = Crypto.getInstance({ isQubes: false });
+      Crypto.initialize({ isQubes: false });
+      const crypto = Crypto.getInstance()!;
       const testFilePath = "/path/to/encrypted-file.gpg";
 
       // Mock successful GPG process
@@ -230,7 +234,8 @@ describe("Crypto Integration Tests", () => {
     });
 
     it("should handle file decryption failure", async () => {
-      const crypto = Crypto.getInstance({ isQubes: false });
+      Crypto.initialize({ isQubes: false });
+      const crypto = Crypto.getInstance()!;
       const testFilePath = "/path/to/encrypted-file.gpg";
 
       // Mock failed GPG process
@@ -266,7 +271,8 @@ describe("Crypto Integration Tests", () => {
     });
 
     it("should use fallback filename when gzip header has no filename", async () => {
-      const crypto = Crypto.getInstance({ isQubes: false });
+      Crypto.initialize({ isQubes: false });
+      const crypto = Crypto.getInstance()!;
       const testFilePath = "/path/to/encrypted-file.gpg";
 
       // Mock successful GPG process
@@ -301,7 +307,8 @@ describe("Crypto Integration Tests", () => {
     });
 
     it("should handle decompression failure", async () => {
-      const crypto = Crypto.getInstance({ isQubes: false });
+      Crypto.initialize({ isQubes: false });
+      const crypto = Crypto.getInstance()!;
       const testFilePath = "/path/to/encrypted-file.gpg";
 
       // Mock successful GPG but failed decompression
@@ -337,7 +344,8 @@ describe("Crypto Integration Tests", () => {
   describe("Environment-specific behavior", () => {
     it("should use qubes-gpg-client in Qubes environment", async () => {
       vi.stubEnv("QUBES_SOMETHING", "value");
-      const crypto = Crypto.getInstance();
+      Crypto.initialize({});
+      const crypto = Crypto.getInstance()!;
       const encryptedContent = Buffer.from("test");
 
       mockProcess.on.mockImplementation(
@@ -372,10 +380,11 @@ describe("Crypto Integration Tests", () => {
     });
 
     it("should use custom homedir when specified", async () => {
-      const crypto = Crypto.getInstance({
+      Crypto.initialize({
         isQubes: false,
         gpgHomedir: "/custom/gnupg",
       });
+      const crypto = Crypto.getInstance()!;
       const encryptedContent = Buffer.from("test");
 
       mockProcess.on.mockImplementation(
@@ -412,7 +421,8 @@ describe("Crypto Integration Tests", () => {
     let crypto: Crypto;
 
     beforeEach(() => {
-      crypto = Crypto.getInstance({ isQubes: false });
+      Crypto.initialize({ isQubes: false });
+      crypto = Crypto.getInstance()!;
     });
 
     it("should extract filename from gzip header with extra fields", () => {
@@ -475,22 +485,19 @@ describe("Crypto Integration Tests", () => {
 
   describe("Singleton behavior", () => {
     it("should return the same instance on multiple calls", () => {
+      Crypto.initialize({});
       const crypto1 = Crypto.getInstance();
       const crypto2 = Crypto.getInstance();
       expect(crypto1).toBe(crypto2);
     });
 
-    it("should not create new instance with different config after first call", () => {
-      const crypto1 = Crypto.getInstance({ isQubes: false });
-      const crypto2 = Crypto.getInstance({ isQubes: true }); // This should be ignored
-
-      expect(crypto1).toBe(crypto2);
-
-      // Verify it's still using the original config
-      const command = (
-        crypto2 as unknown as CryptoWithPrivateMethods
-      ).getGpgCommand();
-      expect(command[0]).toBe("gpg"); // Should still be gpg, not qubes-gpg-client
+    it("should throw error when trying to initialize twice", () => {
+      Crypto.initialize({ isQubes: false });
+      expect(() => {
+        Crypto.initialize({ isQubes: true });
+      }).toThrow(
+        "Crypto already initialized: cannot initialize twice. Call initialize() before getInstance().",
+      );
     });
   });
 });

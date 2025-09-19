@@ -22,7 +22,6 @@ export class CryptoError extends Error {
 
 export class Crypto {
   private static instance: Crypto;
-  private static globalConfig: CryptoConfig = {};
   private isQubes: boolean;
   private gpgHomedir?: string;
 
@@ -37,26 +36,18 @@ export class Crypto {
   public static initialize(config: CryptoConfig): void {
     if (Crypto.instance) {
       throw new Error(
-        "Crypto already initialized. Call initialize() before getInstance().",
+        "Crypto already initialized: cannot initialize twice. Call initialize() before getInstance().",
       );
     }
-    Crypto.globalConfig = config;
-  }
-
-  /**
-   * Check if crypto has been initialized
-   */
-  public static isInitialized(): boolean {
-    return Object.keys(Crypto.globalConfig).length > 0;
+    Crypto.instance = new Crypto(config);
   }
 
   /**
    * Get singleton instance of Crypto
    */
-  public static getInstance(config: CryptoConfig = {}): Crypto {
+  public static getInstance(): Crypto | null {
     if (!Crypto.instance) {
-      const finalConfig = { ...Crypto.globalConfig, ...config };
-      Crypto.instance = new Crypto(finalConfig);
+      return null;
     }
     return Crypto.instance;
   }

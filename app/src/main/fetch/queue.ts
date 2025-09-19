@@ -134,6 +134,10 @@ export class TaskQueue {
         try {
           // Decrypt the message/reply content
           const crypto = Crypto.getInstance();
+          if (!crypto) {
+            throw new Error("Crypto not initialized in fetch worker");
+          }
+
           const decryptedContent = await crypto.decryptMessage(bufferResult);
 
           // Store the decrypted plaintext
