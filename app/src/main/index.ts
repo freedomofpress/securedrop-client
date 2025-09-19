@@ -75,7 +75,9 @@ function createWindow(): void {
 }
 
 function spawnFetchWorker(): Worker {
-  const worker = new Worker(workerPath);
+  const worker = new Worker(workerPath, {
+    workerData: { cryptoConfig },
+  });
 
   worker.on("message", (result) => {
     console.log("Result from worker: ", result);
@@ -153,7 +155,6 @@ app.whenReady().then(() => {
       // Send message to fetch worker to fetch newly synced items, if any
       fetchWorker.postMessage({
         authToken: request.authToken,
-        cryptoConfig: cryptoConfig,
       } as FetchDownloadsMessage);
     },
   );

@@ -1,4 +1,4 @@
-import { parentPort } from "worker_threads";
+import { parentPort, workerData } from "worker_threads";
 
 import { DB } from "../database";
 import { TaskQueue } from "./queue";
@@ -16,14 +16,13 @@ const port = parentPort;
 const db = new DB();
 const q = new TaskQueue(db);
 
+// Initialize crypto with workerData config if it exists and we haven't initialized yet
+if (workerData?.cryptoConfig && !Crypto.isInitialized()) {
+  console.log("Initializing crypto with config:", workerData.cryptoConfig);
+  Crypto.initialize(workerData.cryptoConfig);
+}
+
 port.on("message", (message: FetchDownloadsMessage) => {
   console.log("Queueing items to be fetched");
-
-  // Initialize crypto with the provided config if it exists and we haven't initialized yet
-  if (message.cryptoConfig && !Crypto.isInitialized()) {
-    console.log("Initializing crypto with config:", message.cryptoConfig);
-    Crypto.initialize(message.cryptoConfig);
-  }
-
   q.queueFetches(message);
 });

@@ -192,8 +192,4 @@ export enum FetchStatus {
 /** Fetch Worker types */
 export type FetchDownloadsMessage = {
   authToken: string;
-  cryptoConfig?: {
-    isQubes?: boolean;
-    gpgHomedir?: string;
-  };
 };
