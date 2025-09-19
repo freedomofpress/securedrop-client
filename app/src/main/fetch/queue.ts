@@ -155,6 +155,7 @@ export class TaskQueue {
         break;
       }
       case "file":
+        // TODO: decrypt files here
         db.completeFileItem(item.id, downloadFilePath);
         break;
     }
