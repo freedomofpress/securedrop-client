@@ -14,6 +14,7 @@ import {
   SourceWithItems,
   SourceRow,
   ItemRow,
+  Item,
   JournalistMetadata,
   Journalist,
   JournalistRow,
@@ -82,6 +83,26 @@ export class DB {
   >;
   private deleteJournalist: Statement<{ id: string }, void>;
 
+  private selectItemById: Statement<[string], ItemRow>;
+  private selectUndecryptedMessages: Statement<
+    [],
+    { uuid: string; data: string }
+  >;
+  private selectAllSources: Statement<[], SourceRow>;
+  private selectSourceById: Statement<[string], SourceRow>;
+  private selectItemsBySourceId: Statement<[string], ItemRow>;
+  private selectAllJournalists: Statement<[], JournalistRow>;
+
+  private updateItemPlaintext: Statement<
+    { id: string; plaintext: string },
+    void
+  >;
+  private updateItemFilename: Statement<{ id: string; filename: string }, void>;
+  private updateItemBoth: Statement<
+    { id: string; plaintext: string; filename: string },
+    void
+  >;
+
   constructor() {
     // Ensure the directory exists
     const dbDir = path.join(os.homedir(), ".config", "SecureDrop");
@@ -131,6 +152,47 @@ export class DB {
     this.deleteJournalist = this.db.prepare(
       "DELETE FROM journalists WHERE uuid = @id",
     );
+
+    this.selectUndecryptedMessages = this.db.prepare(`
+      SELECT uuid, data
+      FROM items 
+      WHERE plaintext IS NULL OR plaintext = ''
+    `);
+    this.selectAllSources = this.db.prepare(`
+      SELECT
+        uuid,
+        data,
+        is_seen,
+        has_attachment,
+        show_message_preview,
+        message_preview
+      FROM sources
+    `);
+    this.selectSourceById = this.db.prepare(`
+      SELECT uuid, data FROM sources
+      WHERE uuid = ?
+    `);
+    this.selectItemsBySourceId = this.db.prepare(`
+      SELECT uuid, data, plaintext, filename FROM items
+      WHERE source_uuid = ?
+    `);
+    this.selectAllJournalists = this.db.prepare(`
+      SELECT uuid, data FROM journalists
+    `);
+    this.selectItemById = this.db.prepare(`
+      SELECT uuid, data, plaintext, filename 
+      FROM items 
+      WHERE uuid = ?
+    `);
+    this.updateItemPlaintext = this.db.prepare(`
+      UPDATE items SET plaintext = @plaintext WHERE uuid = @id
+    `);
+    this.updateItemFilename = this.db.prepare(`
+      UPDATE items SET filename = @filename WHERE uuid = @id
+    `);
+    this.updateItemBoth = this.db.prepare(`
+      UPDATE items SET plaintext = @plaintext, filename = @filename WHERE uuid = @id
+    `);
   }
 
   // Detect runtime environment
@@ -297,6 +359,108 @@ export class DB {
     })(metadata);
   }
 
+  /**
+   * Update item content (plaintext for messages, filename for files)
+   * @param itemId - UUID of the item to update
+   * @param options - Update options
+   * @param options.plaintext - The decrypted plaintext content (only allowed for messages)
+   * @param options.filename - The original filename (only allowed for files)
+   */
+  updateItem(
+    itemId: string,
+    options: { plaintext?: string; filename?: string },
+  ) {
+    if (!this.db) {
+      throw new Error("Database not initialized");
+    }
+
+    // Get the item to check its type
+    const items = this.getItems([itemId]);
+    if (items.length === 0) {
+      throw new Error(`Item with ID ${itemId} not found`);
+    }
+
+    const item = items[0];
+    const { plaintext, filename } = options;
+
+    // Validate update based on item type
+    if (
+      plaintext !== undefined &&
+      item.data.kind !== "message" &&
+      item.data.kind !== "reply"
+    ) {
+      throw new Error(
+        `Cannot update plaintext for item of kind "${item.data.kind}". Only "message" and "reply" items can have plaintext updated.`,
+      );
+    }
+
+    if (filename !== undefined && item.data.kind !== "file") {
+      throw new Error(
+        `Cannot update filename for item of kind "${item.data.kind}". Only "file" items can have filename updated.`,
+      );
+    }
+
+    // Use appropriate prepared statement based on what's being updated
+    if (plaintext !== undefined && filename !== undefined) {
+      this.updateItemBoth.run({ id: itemId, plaintext, filename });
+    } else if (plaintext !== undefined) {
+      this.updateItemPlaintext.run({ id: itemId, plaintext });
+    } else if (filename !== undefined) {
+      this.updateItemFilename.run({ id: itemId, filename });
+    }
+  }
+
+  /**
+   * Get items by their UUIDs
+   * @param itemIds - Array of item UUIDs to retrieve
+   * @returns Array of Item objects
+   */
+  getItems(itemIds: string[]): Item[] {
+    if (!this.db) {
+      throw new Error("Database not initialized");
+    }
+
+    if (itemIds.length === 0) {
+      return [];
+    }
+
+    const items: Item[] = [];
+    for (const itemId of itemIds) {
+      const row = this.selectItemById.get(itemId);
+      if (row) {
+        const data = JSON.parse(row.data) as ItemMetadata;
+        items.push({
+          uuid: row.uuid,
+          data,
+          plaintext: row.plaintext || undefined,
+          filename: row.filename || undefined,
+        });
+      }
+    }
+
+    return items;
+  }
+
+  /**
+   * Get UUIDs of all message and reply items that don't have plaintext
+   * @returns Array of item UUIDs that need decryption
+   */
+  getUndecryptedMessageIds(): string[] {
+    if (!this.db) {
+      throw new Error("Database not initialized");
+    }
+
+    const rows = this.selectUndecryptedMessages.all();
+
+    // Filter for messages and replies (skip files)
+    return rows
+      .filter((row) => {
+        const metadata = JSON.parse(row.data) as ItemMetadata;
+        return metadata.kind === "message" || metadata.kind === "reply";
+      })
+      .map((row) => row.uuid);
+  }
+
   // Updates source versions in DB. Should be run in a transaction that also
   // updates the global index version.
   private updateSources(sources: { [uuid: string]: SourceMetadata }) {
@@ -359,19 +523,7 @@ export class DB {
       throw new Error("Database is not open");
     }
 
-    // Select sources
-    const stmt = this.db.prepare(`
-      SELECT
-        uuid,
-        data,
-        is_seen,
-        has_attachment,
-        show_message_preview,
-        message_preview
-      FROM sources
-    `);
-
-    const rows = stmt.all() as Array<SourceRow>;
+    const rows = this.selectAllSources.all();
 
     return rows.map((row) => {
       const data = JSON.parse(row.data) as SourceMetadata;
@@ -391,12 +543,9 @@ export class DB {
       throw new Error("Database is not open");
     }
 
-    // Get the source data
-    const sourceStmt = this.db.prepare(`
-      SELECT uuid, data FROM sources
-      WHERE uuid = ?;
-    `);
-    const sourceRow = sourceStmt.get(sourceUuid) as SourceRow | undefined;
+    const sourceRow = this.selectSourceById.get(sourceUuid) as
+      | SourceRow
+      | undefined;
 
     if (!sourceRow) {
       throw new Error(`Source with UUID ${sourceUuid} not found`);
@@ -404,12 +553,7 @@ export class DB {
 
     const sourceData = JSON.parse(sourceRow.data);
 
-    // Get the items for this source
-    const itemsStmt = this.db.prepare(`
-      SELECT uuid, data, plaintext, filename FROM items
-      WHERE source_uuid = ?;
-    `);
-    const itemRows = itemsStmt.all(sourceUuid) as Array<ItemRow>;
+    const itemRows = this.selectItemsBySourceId.all(sourceUuid);
 
     const items = itemRows.map((row) => {
       const data = JSON.parse(row.data) as ItemMetadata;
@@ -433,11 +577,7 @@ export class DB {
       throw new Error("Database is not open");
     }
 
-    const stmt = this.db.prepare(`
-      SELECT uuid, data FROM journalists
-    `);
-
-    const rows = stmt.all() as Array<JournalistRow>;
+    const rows = this.selectAllJournalists.all();
 
     return rows.map((row) => {
       const data = JSON.parse(row.data) as JournalistMetadata;
@@ -515,6 +655,13 @@ export class DB {
   failItem(itemUuid: string) {
     const stmt: Statement<{ uuid: string }, void> = this.db!.prepare(
       `UPDATE ITEMS set fetch_status = ${FetchStatus.FailedRetryable}, fetch_retry_attempts = fetch_retry_attempts + 1, fetch_last_updated_at = CURRENT_TIMESTAMP WHERE uuid = @uuid`,
+    );
+    stmt.run({ uuid: itemUuid });
+  }
+
+  resetItemFetchStatus(itemUuid: string) {
+    const stmt: Statement<{ uuid: string }, void> = this.db!.prepare(
+      `UPDATE items SET fetch_status = ${FetchStatus.Initial}, fetch_progress = null, fetch_retry_attempts = 0, fetch_last_updated_at = CURRENT_TIMESTAMP WHERE uuid = @uuid`,
     );
     stmt.run({ uuid: itemUuid });
   }

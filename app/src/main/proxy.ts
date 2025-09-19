@@ -93,7 +93,6 @@ export async function proxyJSONRequestInner(
 
     request.stream = request.stream ?? false;
     process.stdin.write(JSON.stringify(request) + "\n");
-    process.stdin.end();
   });
 }
 
@@ -130,13 +129,13 @@ export async function proxyStreamRequestInner(
     // contents directly to the `writeStream`.
     process.stdout.pipe(writeStream);
 
-    // Also store stdout and stderr contents in local strings for use in processing potential
-    // error conditions, and track bytes written to allow resuming incremental progress.
-    let stdout = "";
+    // Store stdout as buffer array to avoid binary data corruption, and track bytes written
+    // to allow resuming incremental progress.
+    const stdoutChunks: Buffer[] = [];
     let bytesWritten = 0;
     process.stdout.on("data", (data) => {
       bytesWritten += data.length;
-      stdout += data;
+      stdoutChunks.push(data);
     });
 
     let stderr = "";
@@ -173,6 +172,8 @@ export async function proxyStreamRequestInner(
       }
       try {
         // If we receive JSON data, parse and return
+        // Convert buffer chunks to string only when needed for JSON parsing
+        const stdout = Buffer.concat(stdoutChunks).toString("utf8");
         resolve(parseJSONResponse(stdout));
       } catch {
         try {
@@ -197,7 +198,6 @@ export async function proxyStreamRequestInner(
     }
     request.stream = true;
     process.stdin.write(JSON.stringify(request) + "\n");
-    process.stdin.end();
   });
 }
 

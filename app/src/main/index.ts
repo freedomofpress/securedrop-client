@@ -10,6 +10,7 @@ import {
 import { Worker } from "worker_threads";
 
 import { DB } from "./database";
+import { Crypto } from "./crypto";
 import { proxyJSONRequest } from "./proxy";
 import type {
   ProxyRequest,
@@ -22,6 +23,18 @@ import type {
 } from "../types";
 import { syncMetadata } from "./sync";
 import workerPath from "./fetch/worker?modulePath";
+
+// Parse command line arguments
+const args = process.argv.slice(2);
+const noQubes = args.includes("--no-qubes");
+
+// Create crypto config
+const cryptoConfig = noQubes ? { isQubes: false } : {};
+
+// Initialize crypto configuration based on command line arguments
+if (noQubes) {
+  Crypto.initialize({ isQubes: false });
+}
 
 const db = new DB();
 
@@ -62,7 +75,9 @@ function createWindow(): void {
 }
 
 function spawnFetchWorker(): Worker {
-  const worker = new Worker(workerPath);
+  const worker = new Worker(workerPath, {
+    workerData: { cryptoConfig },
+  });
 
   worker.on("message", (result) => {
     console.log("Result from worker: ", result);

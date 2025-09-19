@@ -4,6 +4,7 @@ import {
   Index,
   MetadataRequest,
   MetadataResponse,
+  ItemMetadata,
 } from "../types";
 import { DB } from "./database";
 
@@ -145,6 +146,41 @@ export enum SyncStatus {
   ERROR = "error",
 }
 
+/**
+ * Queue items for download and decryption via the fetch queue
+ */
+function queueItemsForDecryption(db: DB, itemsToUpdate: string[]): void {
+  // Filter items that need decryption (messages and replies without plaintext)
+  const itemsNeedingDecryption = itemsToUpdate.filter((itemId) => {
+    const items = db.getItems([itemId]);
+    if (items.length === 0) {
+      return false;
+    }
+
+    const item = items[0];
+    const metadata = item.data as ItemMetadata;
+
+    // Only queue messages and replies that don't already have plaintext
+    return (
+      (metadata.kind === "message" || metadata.kind === "reply") &&
+      !item.plaintext
+    );
+  });
+
+  if (itemsNeedingDecryption.length > 0) {
+    console.log(
+      `Queueing ${itemsNeedingDecryption.length} items for download and decryption via fetch queue`,
+    );
+
+    // Queue each item for download by resetting their fetch status
+    // The fetch queue will handle download + decryption automatically
+    itemsNeedingDecryption.forEach((itemId) => {
+      // Reset fetch status to Initial so the fetch queue will pick it up
+      db.resetItemFetchStatus(itemId);
+    });
+  }
+}
+
 // Executes metadata sync with SecureDrop server, updating
 // the current version and persisting updated source, reply,
 // and submission metadata to the DB.
@@ -156,16 +192,34 @@ export async function syncMetadata(
 ): Promise<SyncStatus> {
   const currentVersion = db.getVersion();
   const index = await getIndex(authToken, currentVersion);
-  // Versions match, sync is complete
-  if (!index) {
-    return SyncStatus.NOT_MODIFIED;
+
+  let syncStatus = SyncStatus.NOT_MODIFIED;
+
+  // Only update metadata if there are changes from the server
+  if (index) {
+    // Reconcile with client's index
+    const clientIndex = db.getIndex();
+    const metadataToUpdate = reconcileIndex(db, index, clientIndex);
+
+    const metadata = await fetchMetadata(authToken, metadataToUpdate);
+    db.updateMetadata(metadata);
+    syncStatus = SyncStatus.UPDATED;
   }
 
-  // Reconcile with client's index
-  const clientIndex = db.getIndex();
-  const metadataToUpdate = reconcileIndex(db, index, clientIndex);
+  // Queue undecrypted messages and replies for download and decryption
+  // This ensures that previously failed decryptions are retried via the fetch queue
+  try {
+    const undecryptedMessageIds = db.getUndecryptedMessageIds();
+    if (undecryptedMessageIds.length > 0) {
+      console.log(
+        `Found ${undecryptedMessageIds.length} undecrypted messages and replies, queueing for download...`,
+      );
+      queueItemsForDecryption(db, undecryptedMessageIds);
+    }
+  } catch (error) {
+    console.error("Error during item queueing:", error);
+    // Don't fail the sync if queueing fails
+  }
 
-  const metadata = await fetchMetadata(authToken, metadataToUpdate);
-  db.updateMetadata(metadata);
-  return SyncStatus.UPDATED;
+  return syncStatus;
 }
