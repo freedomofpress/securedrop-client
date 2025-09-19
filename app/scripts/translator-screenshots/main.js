@@ -71,5 +71,8 @@ async function main() {
 
 // ESM equivalent of require.main === module
 if (import.meta.url === `file://${process.argv[1]}`) {
-  main().catch(console.error);
+  main().catch((error) => {
+    console.error(error);
+    process.exit(1);
+  });
 }

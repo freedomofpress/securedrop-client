@@ -53,13 +53,13 @@ jobs:
       - name: Extra runtime dependencies for Electron
         run: |
           apt-get install --yes libglib2.0-0 libnspr4 libnss3 libdbus-1-3 libatk1.0-0 libatk-bridge2.0-0 \
-            libcups2 libcairo2 libgtk-3-0 libgbm1 libasound2
+            libcups2 libcairo2 libgtk-3-0 libgbm1 libasound2 xvfb
       - name: Build
         working-directory: app
         run: pnpm build:linux
       - name: Generate translator screenshots
         working-directory: app
-        run: pnpm translator-screenshots
+        run: xvfb-run --auto-servernum --server-args="-screen 0 1920x1080x24" pnpm translator-screenshots
       - name: Upload screenshots
         uses: actions/upload-artifact@v4
         with:
