@@ -155,9 +155,7 @@ export class Crypto {
       const gpgOutputFile = fs.createWriteStream(tempGpgOutput);
       let stderr = Buffer.alloc(0);
 
-      const gpgProcess = spawn(cmd[0], cmd.slice(1), {
-        stdio: ["pipe", "pipe", "pipe"],
-      });
+      const gpgProcess = spawn(cmd[0], cmd.slice(1));
 
       // Stream GPG output directly to temporary file (no memory accumulation)
       gpgProcess.stdout.pipe(gpgOutputFile);

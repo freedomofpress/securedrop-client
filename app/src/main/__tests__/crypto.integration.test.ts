@@ -100,9 +100,6 @@ describe("Crypto Integration Tests", () => {
       expect(mockSpawn).toHaveBeenCalledWith(
         "gpg",
         ["--trust-model", "always", "--decrypt"],
-        {
-          stdio: ["pipe", "pipe", "pipe"],
-        },
       );
       expect(mockProcess.stdin.write).toHaveBeenCalledWith(encryptedContent);
       expect(mockProcess.stdin.end).toHaveBeenCalled();
@@ -227,9 +224,6 @@ describe("Crypto Integration Tests", () => {
       expect(mockSpawn).toHaveBeenCalledWith(
         "gpg",
         ["--trust-model", "always", "--decrypt", testFilePath],
-        {
-          stdio: ["pipe", "pipe", "pipe"],
-        },
       );
     });
 
@@ -373,9 +367,6 @@ describe("Crypto Integration Tests", () => {
       expect(mockSpawn).toHaveBeenCalledWith(
         "qubes-gpg-client",
         ["--trust-model", "always", "--decrypt"],
-        {
-          stdio: ["pipe", "pipe", "pipe"],
-        },
       );
     });
 
@@ -412,7 +403,6 @@ describe("Crypto Integration Tests", () => {
       expect(mockSpawn).toHaveBeenCalledWith(
         "gpg",
         ["--trust-model", "always", "--homedir", "/custom/gnupg", "--decrypt"],
-        { stdio: ["pipe", "pipe", "pipe"] },
       );
     });
   });
