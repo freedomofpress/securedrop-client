@@ -275,7 +275,10 @@ export class TaskQueue {
         }
 
         db.failDecryption(item.id);
-        throw new Error(`Decryption failed: ${error.message}`);
+        console.log(
+          `Decryption failed for ${item.id}, status set to FailedDecryptionRetryable`,
+        );
+        return;
       } else {
         db.failDecryption(item.id);
         throw error;

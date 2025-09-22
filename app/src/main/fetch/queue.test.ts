@@ -148,10 +148,8 @@ describe("TaskQueue - Two-Phase Download and Decryption", () => {
 
       const queue = new TaskQueue(db);
 
-      // First attempt - should fail decryption and save to disk
-      await expect(queue.fetchDownload({ id: "msg1" }, db)).rejects.toThrow(
-        "Decryption failed",
-      );
+      // First attempt - should fail decryption and save to disk (but not throw)
+      await queue.fetchDownload({ id: "msg1" }, db);
 
       expect(db.setDownloadInProgress).toHaveBeenCalledWith("msg1");
       expect(db.setDecryptionInProgress).toHaveBeenCalledWith("msg1");
@@ -316,9 +314,8 @@ describe("TaskQueue - Two-Phase Download and Decryption", () => {
 
       const queue = new TaskQueue(db);
 
-      await expect(queue.fetchDownload({ id: "reply1" }, db)).rejects.toThrow(
-        "Decryption failed",
-      );
+      // Should fail decryption and save to disk (but not throw)
+      await queue.fetchDownload({ id: "reply1" }, db);
 
       expect(db.failDecryption).toHaveBeenCalledWith("reply1");
       expect(fs.promises.writeFile).toHaveBeenCalledWith(
