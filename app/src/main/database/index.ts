@@ -619,17 +619,6 @@ export class DB {
     ];
   }
 
-  updateInProgressItem(itemUuid: string, progress: number) {
-    const stmt: Statement<{ uuid: string; progress: number }, void> =
-      this.db!.prepare(
-        `UPDATE items SET fetch_progress = @progress, fetch_status=${FetchStatus.InProgress}, fetch_last_updated_at = CURRENT_TIMESTAMP WHERE uuid = @uuid`,
-      );
-    stmt.run({
-      uuid: itemUuid,
-      progress: progress,
-    });
-  }
-
   completePlaintextItem(itemUuid: string, plaintext: string) {
     const stmt: Statement<{ uuid: string; plaintext: string }, void> =
       this.db!.prepare(
@@ -650,13 +639,6 @@ export class DB {
       uuid: itemUuid,
       filename: filename,
     });
-  }
-
-  failItem(itemUuid: string) {
-    const stmt: Statement<{ uuid: string }, void> = this.db!.prepare(
-      `UPDATE ITEMS set fetch_status = ${FetchStatus.FailedRetryable}, fetch_retry_attempts = fetch_retry_attempts + 1, fetch_last_updated_at = CURRENT_TIMESTAMP WHERE uuid = @uuid`,
-    );
-    stmt.run({ uuid: itemUuid });
   }
 
   resetItemFetchStatus(itemUuid: string) {
@@ -682,7 +664,46 @@ export class DB {
 
   resumeItem(itemUuid: string) {
     const stmt: Statement<{ uuid: string }, void> = this.db!.prepare(
-      `UPDATE ITEMS set fetch_status = ${FetchStatus.InProgress}, fetch_last_updated_at = CURRENT_TIMESTAMP WHERE uuid = @uuid`,
+      `UPDATE ITEMS set fetch_status = ${FetchStatus.DownloadInProgress}, fetch_last_updated_at = CURRENT_TIMESTAMP WHERE uuid = @uuid`,
+    );
+    stmt.run({ uuid: itemUuid });
+  }
+
+  setDownloadInProgress(itemUuid: string, progress?: number) {
+    if (progress !== undefined) {
+      const stmt: Statement<{ uuid: string; progress: number }, void> =
+        this.db!.prepare(
+          `UPDATE items SET fetch_progress = @progress, fetch_status = ${FetchStatus.DownloadInProgress}, fetch_last_updated_at = CURRENT_TIMESTAMP WHERE uuid = @uuid`,
+        );
+      stmt.run({
+        uuid: itemUuid,
+        progress: progress,
+      });
+    } else {
+      const stmt: Statement<{ uuid: string }, void> = this.db!.prepare(
+        `UPDATE items SET fetch_status = ${FetchStatus.DownloadInProgress}, fetch_last_updated_at = CURRENT_TIMESTAMP WHERE uuid = @uuid`,
+      );
+      stmt.run({ uuid: itemUuid });
+    }
+  }
+
+  setDecryptionInProgress(itemUuid: string) {
+    const stmt: Statement<{ uuid: string }, void> = this.db!.prepare(
+      `UPDATE items SET fetch_status = ${FetchStatus.DecryptionInProgress}, fetch_last_updated_at = CURRENT_TIMESTAMP WHERE uuid = @uuid`,
+    );
+    stmt.run({ uuid: itemUuid });
+  }
+
+  failDownload(itemUuid: string) {
+    const stmt: Statement<{ uuid: string }, void> = this.db!.prepare(
+      `UPDATE items SET fetch_status = ${FetchStatus.FailedDownloadRetryable}, fetch_retry_attempts = fetch_retry_attempts + 1, fetch_last_updated_at = CURRENT_TIMESTAMP WHERE uuid = @uuid`,
+    );
+    stmt.run({ uuid: itemUuid });
+  }
+
+  failDecryption(itemUuid: string) {
+    const stmt: Statement<{ uuid: string }, void> = this.db!.prepare(
+      `UPDATE items SET fetch_status = ${FetchStatus.FailedDecryptionRetryable}, fetch_retry_attempts = fetch_retry_attempts + 1, fetch_last_updated_at = CURRENT_TIMESTAMP WHERE uuid = @uuid`,
     );
     stmt.run({ uuid: itemUuid });
   }

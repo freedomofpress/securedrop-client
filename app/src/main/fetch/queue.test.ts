@@ -30,14 +30,16 @@ vi.mock("../crypto", () => {
 import { ItemFetchTask, TaskQueue } from "./queue";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-function mockDB(itemsToDownload: string[], itemsWithFetchStatus: any[]) {
+function mockDB(itemsToProcess: string[], itemsWithFetchStatus: any[]) {
   return {
-    getItemsToDownload: vi.fn(() => itemsToDownload),
+    getItemsToProcess: vi.fn(() => itemsToProcess),
     getItemWithFetchStatus: vi.fn(() => itemsWithFetchStatus),
-    updateInProgressItem: vi.fn(),
     completePlaintextItem: vi.fn(),
     completeFileItem: vi.fn(),
-    failItem: vi.fn(),
+    setDownloadInProgress: vi.fn(),
+    setDecryptionInProgress: vi.fn(),
+    failDownload: vi.fn(),
+    failDecryption: vi.fn(),
   } as unknown as DB;
 }
 
@@ -71,7 +73,7 @@ describe("TaskQueue", () => {
   it("should handle message download and completePlaintextItem", async () => {
     const db = mockDB(
       [],
-      [{ kind: "message", source: "source1" }, FetchStatus.InProgress, 0],
+      [{ kind: "message", source: "source1" }, FetchStatus.Initial, 0],
     );
 
     const queue = new TaskQueue(db, mockFetchDownload);
@@ -96,7 +98,7 @@ describe("TaskQueue", () => {
   it("should handle reply download and completePlaintextItem", async () => {
     const db = mockDB(
       [],
-      [{ kind: "reply", source: "source1" }, FetchStatus.InProgress, 0],
+      [{ kind: "reply", source: "source1" }, FetchStatus.Initial, 0],
     );
 
     const queue = new TaskQueue(db, mockFetchDownload);
@@ -121,7 +123,7 @@ describe("TaskQueue", () => {
   it("should update in-progress item and throw if download incomplete", async () => {
     const db = mockDB(
       [],
-      [{ kind: "message", source: "src" }, FetchStatus.InProgress, 20],
+      [{ kind: "message", source: "src" }, FetchStatus.Initial, 20],
     );
     const queue = new TaskQueue(db, mockFetchDownload);
     mockProxyStreamRequest.mockResolvedValue({
@@ -131,6 +133,6 @@ describe("TaskQueue", () => {
     await expect(queue.fetchDownload({ id: "item3" }, db)).rejects.toThrow(
       /Unable to complete stream download/,
     );
-    expect(queue.db.updateInProgressItem).toHaveBeenCalledWith("item3", 50);
+    expect(queue.db.setDownloadInProgress).toHaveBeenCalledWith("item3", 50);
   });
 });
