@@ -14,7 +14,6 @@ import {
   SourceWithItems,
   SourceRow,
   ItemRow,
-  Item,
   JournalistMetadata,
   Journalist,
   JournalistRow,
@@ -83,25 +82,10 @@ export class DB {
   >;
   private deleteJournalist: Statement<{ id: string }, void>;
 
-  private selectItemById: Statement<[string], ItemRow>;
-  private selectUndecryptedMessages: Statement<
-    [],
-    { uuid: string; data: string }
-  >;
   private selectAllSources: Statement<[], SourceRow>;
   private selectSourceById: Statement<[string], SourceRow>;
   private selectItemsBySourceId: Statement<[string], ItemRow>;
   private selectAllJournalists: Statement<[], JournalistRow>;
-
-  private updateItemPlaintext: Statement<
-    { id: string; plaintext: string },
-    void
-  >;
-  private updateItemFilename: Statement<{ id: string; filename: string }, void>;
-  private updateItemBoth: Statement<
-    { id: string; plaintext: string; filename: string },
-    void
-  >;
 
   constructor() {
     // Ensure the directory exists
@@ -153,11 +137,6 @@ export class DB {
       "DELETE FROM journalists WHERE uuid = @id",
     );
 
-    this.selectUndecryptedMessages = this.db.prepare(`
-      SELECT uuid, data
-      FROM items 
-      WHERE plaintext IS NULL OR plaintext = ''
-    `);
     this.selectAllSources = this.db.prepare(`
       SELECT
         uuid,
@@ -178,20 +157,6 @@ export class DB {
     `);
     this.selectAllJournalists = this.db.prepare(`
       SELECT uuid, data FROM journalists
-    `);
-    this.selectItemById = this.db.prepare(`
-      SELECT uuid, data, plaintext, filename 
-      FROM items 
-      WHERE uuid = ?
-    `);
-    this.updateItemPlaintext = this.db.prepare(`
-      UPDATE items SET plaintext = @plaintext WHERE uuid = @id
-    `);
-    this.updateItemFilename = this.db.prepare(`
-      UPDATE items SET filename = @filename WHERE uuid = @id
-    `);
-    this.updateItemBoth = this.db.prepare(`
-      UPDATE items SET plaintext = @plaintext, filename = @filename WHERE uuid = @id
     `);
   }
 
@@ -357,108 +322,6 @@ export class DB {
       this.updateJournalists(metadata.journalists);
       this.updateVersion();
     })(metadata);
-  }
-
-  /**
-   * Update item content (plaintext for messages, filename for files)
-   * @param itemId - UUID of the item to update
-   * @param options - Update options
-   * @param options.plaintext - The decrypted plaintext content (only allowed for messages)
-   * @param options.filename - The original filename (only allowed for files)
-   */
-  updateItem(
-    itemId: string,
-    options: { plaintext?: string; filename?: string },
-  ) {
-    if (!this.db) {
-      throw new Error("Database not initialized");
-    }
-
-    // Get the item to check its type
-    const items = this.getItems([itemId]);
-    if (items.length === 0) {
-      throw new Error(`Item with ID ${itemId} not found`);
-    }
-
-    const item = items[0];
-    const { plaintext, filename } = options;
-
-    // Validate update based on item type
-    if (
-      plaintext !== undefined &&
-      item.data.kind !== "message" &&
-      item.data.kind !== "reply"
-    ) {
-      throw new Error(
-        `Cannot update plaintext for item of kind "${item.data.kind}". Only "message" and "reply" items can have plaintext updated.`,
-      );
-    }
-
-    if (filename !== undefined && item.data.kind !== "file") {
-      throw new Error(
-        `Cannot update filename for item of kind "${item.data.kind}". Only "file" items can have filename updated.`,
-      );
-    }
-
-    // Use appropriate prepared statement based on what's being updated
-    if (plaintext !== undefined && filename !== undefined) {
-      this.updateItemBoth.run({ id: itemId, plaintext, filename });
-    } else if (plaintext !== undefined) {
-      this.updateItemPlaintext.run({ id: itemId, plaintext });
-    } else if (filename !== undefined) {
-      this.updateItemFilename.run({ id: itemId, filename });
-    }
-  }
-
-  /**
-   * Get items by their UUIDs
-   * @param itemIds - Array of item UUIDs to retrieve
-   * @returns Array of Item objects
-   */
-  getItems(itemIds: string[]): Item[] {
-    if (!this.db) {
-      throw new Error("Database not initialized");
-    }
-
-    if (itemIds.length === 0) {
-      return [];
-    }
-
-    const items: Item[] = [];
-    for (const itemId of itemIds) {
-      const row = this.selectItemById.get(itemId);
-      if (row) {
-        const data = JSON.parse(row.data) as ItemMetadata;
-        items.push({
-          uuid: row.uuid,
-          data,
-          plaintext: row.plaintext || undefined,
-          filename: row.filename || undefined,
-        });
-      }
-    }
-
-    return items;
-  }
-
-  /**
-   * Get UUIDs of all message and reply items that don't have plaintext
-   * @returns Array of item UUIDs that need decryption
-   */
-  getUndecryptedMessageIds(): string[] {
-    if (!this.db) {
-      throw new Error("Database not initialized");
-    }
-
-    const rows = this.selectUndecryptedMessages.all();
-
-    // Filter for messages and replies (skip files)
-    return rows
-      .filter((row) => {
-        const metadata = JSON.parse(row.data) as ItemMetadata;
-        return metadata.kind === "message" || metadata.kind === "reply";
-      })
-      .map((row) => row.uuid);
   }
 
   // Updates source versions in DB. Should be run in a transaction that also
