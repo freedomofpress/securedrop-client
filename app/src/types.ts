@@ -180,13 +180,16 @@ export type JournalistRow = {
 
 export enum FetchStatus {
   Initial = 0,
-  InProgress = 1,
-  Complete = 2,
-  Paused = 3,
-  // Last fetch attempt failed, but will retry
-  FailedRetryable = 4,
+  DownloadInProgress = 1,
+  DecryptionInProgress = 2,
+  Complete = 3,
+  Paused = 4,
+  // Download failed, but will retry
+  FailedDownloadRetryable = 5,
+  // Decryption failed, but will retry
+  FailedDecryptionRetryable = 6,
   // Exceeded max retries, considered terminally failed
-  FailedTerminal = 5,
+  FailedTerminal = 7,
 }
 
 /** Fetch Worker types */

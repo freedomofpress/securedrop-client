@@ -588,14 +588,14 @@ export class DB {
     });
   }
 
-  getItemsToDownload(): string[] {
+  getItemsToProcess(): string[] {
     type Row = {
       uuid: string;
     };
-    console.log("getting items to download");
+    console.log("getting items to process");
     const itemStmt = this.db!.prepare(`
       SELECT uuid FROM items
-      WHERE fetch_status IN (${FetchStatus.Initial}, ${FetchStatus.InProgress}, ${FetchStatus.FailedRetryable})
+      WHERE fetch_status IN (${FetchStatus.Initial}, ${FetchStatus.DownloadInProgress}, ${FetchStatus.FailedDownloadRetryable}, ${FetchStatus.FailedDecryptionRetryable})
     `);
     const rows = itemStmt?.all() as Array<Row>;
     return rows.map((r) => r.uuid);

@@ -42,9 +42,9 @@ export class TaskQueue {
   queueFetches(message: FetchDownloadsMessage) {
     this.authToken = message.authToken;
     try {
-      const itemsToDownload = this.db.getItemsToDownload();
-      console.log("Items to download: ", itemsToDownload);
-      for (const itemUUID of itemsToDownload) {
+      const itemsToProcess = this.db.getItemsToProcess();
+      console.log("Items to process: ", itemsToProcess);
+      for (const itemUUID of itemsToProcess) {
         const task: ItemFetchTask = {
           id: itemUUID,
         };
