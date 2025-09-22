@@ -85,9 +85,7 @@ export class Crypto {
     cmd.push("--decrypt");
 
     return new Promise((resolve, reject) => {
-      const gpgProcess = spawn(cmd[0], cmd.slice(1), {
-        stdio: ["pipe", "pipe", "pipe"],
-      });
+      const gpgProcess = spawn(cmd[0], cmd.slice(1));
 
       let stdout = Buffer.alloc(0);
       let stderr = Buffer.alloc(0);
