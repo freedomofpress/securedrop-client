@@ -69,6 +69,11 @@ jobs:
       - uses: actions/checkout@v5
         with:
           persist-credentials: false
+      - name: Cache Poetry dependencies
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/pypoetry
+          key: poetry-${{ hashFiles('/etc/os-release', 'poetry.lock') }}
       - name: Install dependencies
         run: |
           poetry install
@@ -99,6 +104,11 @@ jobs:
       - uses: actions/checkout@v5
         with:
           persist-credentials: false
+      - name: Cache Poetry dependencies
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/pypoetry
+          key: poetry-${{ matrix.component }}-${{ hashFiles('/etc/os-release', format('{0}/poetry.lock', matrix.component)) }}
       - name: Install dependencies
         run: |
           poetry -C ${{ matrix.component }} install
@@ -122,6 +132,11 @@ jobs:
           source /etc/os-release
           sed -i s/##VERSION_CODENAME##/${VERSION_CODENAME}/ /etc/apt/sources.list.d/qubes_42.sources
           apt-get update && apt-get install --yes libclang-dev qubesdb-dev
+      - name: Cache Rust dependencies
+        uses: actions/cache@v4
+        with:
+          path: ~/.cargo
+          key: cargo-${{ hashFiles('/etc/os-release', 'Cargo.lock') }}
       - name: Install dependencies
         run: |
           rustup component add rustfmt

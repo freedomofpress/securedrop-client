@@ -91,6 +91,11 @@ jobs:
         run: apt-get install --yes build-essential curl libssl-dev pkg-config
       - name: Install Rust to build sd-proxy
         uses: dtolnay/rust-toolchain@1.87.0
+      - name: Cache Rust dependencies
+        uses: actions/cache@v4
+        with:
+          path: ~/.cargo
+          key: cargo-proxy-${{ hashFiles('/etc/os-release', 'Cargo.lock') }}
       - name: Run integration tests
         working-directory: app
         run: NODE_ENV=ci VITE_HTTPBIN_URL=http://httpbin:80 pnpm integration-test
