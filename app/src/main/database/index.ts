@@ -82,6 +82,11 @@ export class DB {
   >;
   private deleteJournalist: Statement<{ id: string }, void>;
 
+  private selectAllSources: Statement<[], SourceRow>;
+  private selectSourceById: Statement<[string], SourceRow>;
+  private selectItemsBySourceId: Statement<[string], ItemRow>;
+  private selectAllJournalists: Statement<[], JournalistRow>;
+
   constructor() {
     // Ensure the directory exists
     const dbDir = path.join(os.homedir(), ".config", "SecureDrop");
@@ -131,6 +136,28 @@ export class DB {
     this.deleteJournalist = this.db.prepare(
       "DELETE FROM journalists WHERE uuid = @id",
     );
+
+    this.selectAllSources = this.db.prepare(`
+      SELECT
+        uuid,
+        data,
+        is_seen,
+        has_attachment,
+        show_message_preview,
+        message_preview
+      FROM sources
+    `);
+    this.selectSourceById = this.db.prepare(`
+      SELECT uuid, data FROM sources
+      WHERE uuid = ?
+    `);
+    this.selectItemsBySourceId = this.db.prepare(`
+      SELECT uuid, data, plaintext, filename FROM items
+      WHERE source_uuid = ?
+    `);
+    this.selectAllJournalists = this.db.prepare(`
+      SELECT uuid, data FROM journalists
+    `);
   }
 
   // Detect runtime environment
@@ -359,19 +386,7 @@ export class DB {
       throw new Error("Database is not open");
     }
 
-    // Select sources
-    const stmt = this.db.prepare(`
-      SELECT
-        uuid,
-        data,
-        is_seen,
-        has_attachment,
-        show_message_preview,
-        message_preview
-      FROM sources
-    `);
-
-    const rows = stmt.all() as Array<SourceRow>;
+    const rows = this.selectAllSources.all();
 
     return rows.map((row) => {
       const data = JSON.parse(row.data) as SourceMetadata;
@@ -391,12 +406,9 @@ export class DB {
       throw new Error("Database is not open");
     }
 
-    // Get the source data
-    const sourceStmt = this.db.prepare(`
-      SELECT uuid, data FROM sources
-      WHERE uuid = ?;
-    `);
-    const sourceRow = sourceStmt.get(sourceUuid) as SourceRow | undefined;
+    const sourceRow = this.selectSourceById.get(sourceUuid) as
+      | SourceRow
+      | undefined;
 
     if (!sourceRow) {
       throw new Error(`Source with UUID ${sourceUuid} not found`);
@@ -404,12 +416,7 @@ export class DB {
 
     const sourceData = JSON.parse(sourceRow.data);
 
-    // Get the items for this source
-    const itemsStmt = this.db.prepare(`
-      SELECT uuid, data, plaintext, filename FROM items
-      WHERE source_uuid = ?;
-    `);
-    const itemRows = itemsStmt.all(sourceUuid) as Array<ItemRow>;
+    const itemRows = this.selectItemsBySourceId.all(sourceUuid);
 
     const items = itemRows.map((row) => {
       const data = JSON.parse(row.data) as ItemMetadata;
@@ -433,11 +440,7 @@ export class DB {
       throw new Error("Database is not open");
     }
 
-    const stmt = this.db.prepare(`
-      SELECT uuid, data FROM journalists
-    `);
-
-    const rows = stmt.all() as Array<JournalistRow>;
+    const rows = this.selectAllJournalists.all();
 
     return rows.map((row) => {
       const data = JSON.parse(row.data) as JournalistMetadata;
@@ -448,14 +451,14 @@ export class DB {
     });
   }
 
-  getItemsToDownload(): string[] {
+  getItemsToProcess(): string[] {
     type Row = {
       uuid: string;
     };
-    console.log("getting items to download");
+    console.log("getting items to process");
     const itemStmt = this.db!.prepare(`
       SELECT uuid FROM items
-      WHERE fetch_status IN (${FetchStatus.Initial}, ${FetchStatus.InProgress}, ${FetchStatus.FailedRetryable})
+      WHERE fetch_status IN (${FetchStatus.Initial}, ${FetchStatus.DownloadInProgress}, ${FetchStatus.FailedDownloadRetryable}, ${FetchStatus.FailedDecryptionRetryable})
     `);
     const rows = itemStmt?.all() as Array<Row>;
     return rows.map((r) => r.uuid);
@@ -477,17 +480,6 @@ export class DB {
       item.fetch_status as FetchStatus,
       item.fetch_progress,
     ];
-  }
-
-  updateInProgressItem(itemUuid: string, progress: number) {
-    const stmt: Statement<{ uuid: string; progress: number }, void> =
-      this.db!.prepare(
-        `UPDATE items SET fetch_progress = @progress, fetch_status=${FetchStatus.InProgress}, fetch_last_updated_at = CURRENT_TIMESTAMP WHERE uuid = @uuid`,
-      );
-    stmt.run({
-      uuid: itemUuid,
-      progress: progress,
-    });
   }
 
   completePlaintextItem(itemUuid: string, plaintext: string) {
@@ -512,13 +504,6 @@ export class DB {
     });
   }
 
-  failItem(itemUuid: string) {
-    const stmt: Statement<{ uuid: string }, void> = this.db!.prepare(
-      `UPDATE ITEMS set fetch_status = ${FetchStatus.FailedRetryable}, fetch_retry_attempts = fetch_retry_attempts + 1, fetch_last_updated_at = CURRENT_TIMESTAMP WHERE uuid = @uuid`,
-    );
-    stmt.run({ uuid: itemUuid });
-  }
-
   terminallyFailItem(itemUuid: string) {
     const stmt: Statement<{ uuid: string }, void> = this.db!.prepare(
       `UPDATE ITEMS set fetch_status = ${FetchStatus.FailedTerminal}, fetch_retry_attempts = fetch_retry_attempts + 1, fetch_last_updated_at = CURRENT_TIMESTAMP WHERE uuid = @uuid`,
@@ -535,7 +520,46 @@ export class DB {
 
   resumeItem(itemUuid: string) {
     const stmt: Statement<{ uuid: string }, void> = this.db!.prepare(
-      `UPDATE ITEMS set fetch_status = ${FetchStatus.InProgress}, fetch_last_updated_at = CURRENT_TIMESTAMP WHERE uuid = @uuid`,
+      `UPDATE ITEMS set fetch_status = ${FetchStatus.DownloadInProgress}, fetch_last_updated_at = CURRENT_TIMESTAMP WHERE uuid = @uuid`,
+    );
+    stmt.run({ uuid: itemUuid });
+  }
+
+  setDownloadInProgress(itemUuid: string, progress?: number) {
+    if (progress !== undefined) {
+      const stmt: Statement<{ uuid: string; progress: number }, void> =
+        this.db!.prepare(
+          `UPDATE items SET fetch_progress = @progress, fetch_status = ${FetchStatus.DownloadInProgress}, fetch_last_updated_at = CURRENT_TIMESTAMP WHERE uuid = @uuid`,
+        );
+      stmt.run({
+        uuid: itemUuid,
+        progress: progress,
+      });
+    } else {
+      const stmt: Statement<{ uuid: string }, void> = this.db!.prepare(
+        `UPDATE items SET fetch_status = ${FetchStatus.DownloadInProgress}, fetch_last_updated_at = CURRENT_TIMESTAMP WHERE uuid = @uuid`,
+      );
+      stmt.run({ uuid: itemUuid });
+    }
+  }
+
+  setDecryptionInProgress(itemUuid: string) {
+    const stmt: Statement<{ uuid: string }, void> = this.db!.prepare(
+      `UPDATE items SET fetch_status = ${FetchStatus.DecryptionInProgress}, fetch_last_updated_at = CURRENT_TIMESTAMP WHERE uuid = @uuid`,
+    );
+    stmt.run({ uuid: itemUuid });
+  }
+
+  failDownload(itemUuid: string) {
+    const stmt: Statement<{ uuid: string }, void> = this.db!.prepare(
+      `UPDATE items SET fetch_status = ${FetchStatus.FailedDownloadRetryable}, fetch_retry_attempts = fetch_retry_attempts + 1, fetch_last_updated_at = CURRENT_TIMESTAMP WHERE uuid = @uuid`,
+    );
+    stmt.run({ uuid: itemUuid });
+  }
+
+  failDecryption(itemUuid: string) {
+    const stmt: Statement<{ uuid: string }, void> = this.db!.prepare(
+      `UPDATE items SET fetch_status = ${FetchStatus.FailedDecryptionRetryable}, fetch_retry_attempts = fetch_retry_attempts + 1, fetch_last_updated_at = CURRENT_TIMESTAMP WHERE uuid = @uuid`,
     );
     stmt.run({ uuid: itemUuid });
   }

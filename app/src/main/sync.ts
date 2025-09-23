@@ -156,16 +156,19 @@ export async function syncMetadata(
 ): Promise<SyncStatus> {
   const currentVersion = db.getVersion();
   const index = await getIndex(authToken, currentVersion);
-  // Versions match, sync is complete
-  if (!index) {
-    return SyncStatus.NOT_MODIFIED;
+
+  let syncStatus = SyncStatus.NOT_MODIFIED;
+
+  // Only update metadata if there are changes from the server
+  if (index) {
+    // Reconcile with client's index
+    const clientIndex = db.getIndex();
+    const metadataToUpdate = reconcileIndex(db, index, clientIndex);
+
+    const metadata = await fetchMetadata(authToken, metadataToUpdate);
+    db.updateMetadata(metadata);
+    syncStatus = SyncStatus.UPDATED;
   }
 
-  // Reconcile with client's index
-  const clientIndex = db.getIndex();
-  const metadataToUpdate = reconcileIndex(db, index, clientIndex);
-
-  const metadata = await fetchMetadata(authToken, metadataToUpdate);
-  db.updateMetadata(metadata);
-  return SyncStatus.UPDATED;
+  return syncStatus;
 }

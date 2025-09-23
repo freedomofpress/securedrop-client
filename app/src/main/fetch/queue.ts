@@ -10,10 +10,12 @@ import { DB } from "../database";
 import {
   FetchDownloadsMessage,
   FetchStatus,
+  ItemMetadata,
   ProxyRequest,
   ProxyStreamResponse,
 } from "../../types";
 import { proxyStreamRequest } from "../proxy";
+import { Crypto, CryptoError } from "../crypto";
 
 export type ItemFetchTask = {
   id: string;
@@ -41,16 +43,16 @@ export class TaskQueue {
   queueFetches(message: FetchDownloadsMessage) {
     this.authToken = message.authToken;
     try {
-      const itemsToDownload = this.db.getItemsToDownload();
-      console.log("Items to download: ", itemsToDownload);
-      for (const itemUUID of itemsToDownload) {
+      const itemsToProcess = this.db.getItemsToProcess();
+      console.log("Items to process: ", itemsToProcess);
+      for (const itemUUID of itemsToProcess) {
         const task: ItemFetchTask = {
           id: itemUUID,
         };
         this.queue.push(task, (err, _result) => {
           if (err) {
             console.log("Error executing fetch download task: ", task, err);
-            this.db.failItem(task.id);
+            this.db.failDownload(task.id);
           }
         });
       }
@@ -59,32 +61,78 @@ export class TaskQueue {
     }
   }
 
+  private getEncryptedFilePath(
+    item: ItemFetchTask,
+    metadata: ItemMetadata,
+  ): string {
+    return path.join(
+      os.tmpdir(),
+      "download",
+      metadata.source,
+      item.id,
+      "encrypted.gpg",
+    );
+  }
+
   fetchDownload = async (item: ItemFetchTask, db: DB) => {
-    console.log("Fetching downloads for: ", item);
+    console.log("Processing item: ", item);
 
     const [metadata, status, progress] = db.getItemWithFetchStatus(item.id);
+
+    // Skip items that are already complete, terminally failed, or paused
     if (
       status == FetchStatus.Complete ||
       status == FetchStatus.FailedTerminal ||
       status == FetchStatus.Paused
     ) {
-      console.log("Item task is not in an in-progress state, skipping...");
+      console.log("Item task is not in an processable state, skipping...");
       return;
     }
 
+    // Phase 1: Download
+    if (
+      status === FetchStatus.Initial ||
+      status === FetchStatus.FailedDownloadRetryable
+    ) {
+      await this.performDownloadAndDecryption(item, db, metadata, progress);
+      return;
+    }
+
+    // Phase 2: Decryption (for failed decryption retries)
+    if (status === FetchStatus.FailedDecryptionRetryable) {
+      await this.performDecryption(item, db, metadata);
+      return;
+    }
+
+    // Handle unexpected statuses
+    console.log(`Unexpected status ${status} for item ${item.id}, skipping...`);
+  };
+
+  private async performDownloadAndDecryption(
+    item: ItemFetchTask,
+    db: DB,
+    metadata: ItemMetadata,
+    progress: number,
+  ) {
+    console.log(`Starting download phase for ${metadata.kind} ${item.id}`);
+
+    // Set status to download in progress
+    db.setDownloadInProgress(item.id);
+
     let downloadFilePath: string = "";
-    let downloadWriter: Writable = new BufferedWriter();
-    if (metadata.kind == "file") {
-      downloadFilePath = path.join(
-        os.tmpdir(),
-        "download",
-        metadata.source,
-        item.id,
-        "encrypted.gpg",
-      );
+    let downloadWriter: Writable;
+
+    if (metadata.kind === "message" || metadata.kind === "reply") {
+      // For messages/replies: use BufferedWriter (in-memory only)
+      downloadWriter = new BufferedWriter();
+    } else if (metadata.kind === "file") {
+      // For files: write directly to disk
+      downloadFilePath = this.getEncryptedFilePath(item, metadata);
       const downloadDir = path.dirname(downloadFilePath);
       await fs.promises.mkdir(downloadDir, { recursive: true });
       downloadWriter = fs.createWriteStream(downloadFilePath);
+    } else {
+      throw new Error(`Unsupported item kind: ${metadata.kind}`);
     }
 
     const queryPath = `/api/v1/sources/${metadata.source}/${metadata.kind == "reply" ? "replies" : "submissions"}/${item.id}/download`;
@@ -93,6 +141,7 @@ export class TaskQueue {
       path_query: queryPath,
       headers: authHeader(this.getAuthToken()),
     };
+
     console.log("Proxying request to: ", downloadRequest);
     let downloadResponse = await proxyStreamRequest(
       downloadRequest,
@@ -102,6 +151,7 @@ export class TaskQueue {
 
     // If we received JSON response, indicates an error from the server
     if ("data" in downloadResponse && downloadResponse.error) {
+      db.failDownload(item.id);
       throw new Error(
         `Received error from server with status ${downloadResponse.status}: ${downloadResponse.data?.toString()}`,
       );
@@ -109,29 +159,132 @@ export class TaskQueue {
 
     downloadResponse = downloadResponse as ProxyStreamResponse;
 
-    // TODO: decrypt response
     if (!downloadResponse.complete) {
       const bytesWritten = progress + downloadResponse.bytesWritten;
-      db.updateInProgressItem(item.id, bytesWritten);
-
+      db.setDownloadInProgress(item.id, bytesWritten);
+      db.failDownload(item.id);
       throw new Error(
         `Unable to complete stream download, wrote ${downloadResponse.bytesWritten} bytes: ${downloadResponse.error?.message}`,
       );
     }
 
-    switch (metadata.kind) {
-      case "message":
-      case "reply":
-        db.completePlaintextItem(
-          item.id,
-          (downloadWriter as BufferedWriter).getBuffer().toString(),
-        );
-        break;
-      case "file":
-        db.completeFileItem(item.id, downloadFilePath);
-        break;
+    console.log(`Download completed for ${metadata.kind} ${item.id}`);
+
+    // Move to decryption phase for messages/replies, complete for files
+    if (metadata.kind === "message" || metadata.kind === "reply") {
+      // For messages/replies: attempt decryption directly from BufferedWriter
+      await this.performDecryption(
+        item,
+        db,
+        metadata,
+        downloadWriter as BufferedWriter,
+      );
+    } else {
+      // TODO: we need to decrypt files as well
+      db.completeFileItem(item.id, downloadFilePath);
     }
-  };
+  }
+
+  private async performDecryption(
+    item: ItemFetchTask,
+    db: DB,
+    metadata: ItemMetadata,
+    bufferWriter?: BufferedWriter,
+  ) {
+    console.log(`Starting decryption phase for ${metadata.kind} ${item.id}`);
+
+    // Set status to decryption in progress
+    db.setDecryptionInProgress(item.id);
+
+    let encryptedData: Buffer;
+
+    if (bufferWriter) {
+      // First-time decryption after download
+      const bufferResult = bufferWriter.getBuffer();
+      if (bufferResult instanceof Error) {
+        db.failDecryption(item.id);
+        throw new Error(
+          `Failed to get buffer from stream: ${bufferResult.message}`,
+        );
+      }
+      encryptedData = bufferResult;
+    } else {
+      // Retry decryption from disk
+      const downloadFilePath = this.getEncryptedFilePath(item, metadata);
+
+      try {
+        encryptedData = await fs.promises.readFile(downloadFilePath);
+        console.log(
+          `Loaded encrypted data from disk for retry: ${downloadFilePath}`,
+        );
+      } catch (error) {
+        db.failDecryption(item.id);
+        throw new Error(`Failed to load encrypted data from disk: ${error}`);
+      }
+    }
+
+    try {
+      // Decrypt the message/reply content
+      const crypto = Crypto.getInstance();
+      if (!crypto) {
+        throw new Error("Crypto not initialized in fetch worker");
+      }
+
+      const decryptedContent = await crypto.decryptMessage(encryptedData);
+
+      // Store the decrypted plaintext and mark as complete
+      db.completePlaintextItem(item.id, decryptedContent);
+      console.log(
+        `Successfully decrypted ${metadata.kind} ${item.id} via fetch queue`,
+      );
+
+      // Clean up encrypted file after successful decryption (only if it exists - retry case)
+      if (!bufferWriter) {
+        const downloadFilePath = this.getEncryptedFilePath(item, metadata);
+        try {
+          await fs.promises.unlink(downloadFilePath);
+          console.log(`Cleaned up encrypted file: ${downloadFilePath}`);
+        } catch (error) {
+          console.warn(`Failed to clean up encrypted file: ${error}`);
+        }
+      }
+    } catch (error) {
+      if (error instanceof CryptoError) {
+        console.error(
+          `Failed to decrypt ${metadata.kind} ${item.id}: ${error.message}`,
+        );
+
+        // For first-time decryption failure, ensure data is saved to disk
+        if (bufferWriter) {
+          const downloadFilePath = this.getEncryptedFilePath(item, metadata);
+          try {
+            const bufferResult = bufferWriter.getBuffer();
+            if (!(bufferResult instanceof Error)) {
+              const downloadDir = path.dirname(downloadFilePath);
+              await fs.promises.mkdir(downloadDir, { recursive: true });
+              await fs.promises.writeFile(downloadFilePath, bufferResult);
+              console.log(
+                `Saved encrypted data to disk for retry: ${downloadFilePath}`,
+              );
+            }
+          } catch (saveError) {
+            console.error(
+              `Failed to save encrypted data to disk: ${saveError}`,
+            );
+          }
+        }
+
+        db.failDecryption(item.id);
+        console.log(
+          `Decryption failed for ${item.id}, status set to FailedDecryptionRetryable`,
+        );
+        return;
+      } else {
+        db.failDecryption(item.id);
+        throw error;
+      }
+    }
+  }
 }
 
 function createQueue(
