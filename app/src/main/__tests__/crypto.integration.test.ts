@@ -97,10 +97,11 @@ describe("Crypto Integration Tests", () => {
       const result = await crypto.decryptMessage(encryptedContent);
 
       expect(result).toBe(testMessage);
-      expect(mockSpawn).toHaveBeenCalledWith(
-        "gpg",
-        ["--trust-model", "always", "--decrypt"],
-      );
+      expect(mockSpawn).toHaveBeenCalledWith("gpg", [
+        "--trust-model",
+        "always",
+        "--decrypt",
+      ]);
       expect(mockProcess.stdin.write).toHaveBeenCalledWith(encryptedContent);
       expect(mockProcess.stdin.end).toHaveBeenCalled();
     });
@@ -221,10 +222,12 @@ describe("Crypto Integration Tests", () => {
       expect(result.filePath).toMatch(
         /securedrop-decrypted-.*-original-file\.txt$/,
       );
-      expect(mockSpawn).toHaveBeenCalledWith(
-        "gpg",
-        ["--trust-model", "always", "--decrypt", testFilePath],
-      );
+      expect(mockSpawn).toHaveBeenCalledWith("gpg", [
+        "--trust-model",
+        "always",
+        "--decrypt",
+        testFilePath,
+      ]);
     });
 
     it("should handle file decryption failure", async () => {
@@ -364,10 +367,11 @@ describe("Crypto Integration Tests", () => {
 
       await crypto.decryptMessage(encryptedContent);
 
-      expect(mockSpawn).toHaveBeenCalledWith(
-        "qubes-gpg-client",
-        ["--trust-model", "always", "--decrypt"],
-      );
+      expect(mockSpawn).toHaveBeenCalledWith("qubes-gpg-client", [
+        "--trust-model",
+        "always",
+        "--decrypt",
+      ]);
     });
 
     it("should use custom homedir when specified", async () => {
@@ -400,10 +404,13 @@ describe("Crypto Integration Tests", () => {
 
       await crypto.decryptMessage(encryptedContent);
 
-      expect(mockSpawn).toHaveBeenCalledWith(
-        "gpg",
-        ["--trust-model", "always", "--homedir", "/custom/gnupg", "--decrypt"],
-      );
+      expect(mockSpawn).toHaveBeenCalledWith("gpg", [
+        "--trust-model",
+        "always",
+        "--homedir",
+        "/custom/gnupg",
+        "--decrypt",
+      ]);
     });
   });
 

@@ -50,5 +50,4 @@ describe("Database Component Tests", () => {
     expect(stats.isFile()).toBe(true);
     expect(stats.size).toBeGreaterThan(0);
   });
-
 });
