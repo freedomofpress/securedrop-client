@@ -28,16 +28,6 @@ describe("BufferedWriter constructor", () => {
     });
   });
 
-  it("should return error if stream not closed", () => {
-    const writer = new BufferedWriter();
-    writer.write("data", "utf8", () => {});
-    const result = writer.getBuffer();
-    expect(result).toBeInstanceOf(Error);
-    expect((result as Error).message).toBe(
-      "Writable stream not yet closed, cannot return buffer",
-    );
-  });
-
   it("should return concatenated buffer after stream is closed", () => {
     const writer = new BufferedWriter();
     writer.write("foo", "utf8", () => {

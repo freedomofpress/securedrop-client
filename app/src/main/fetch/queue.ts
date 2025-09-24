@@ -21,6 +21,8 @@ export type ItemFetchTask = {
   id: string;
 };
 
+type DownloadResult = Buffer | string;
+
 export class TaskQueue {
   db: DB;
   queue: Queue;
@@ -30,7 +32,7 @@ export class TaskQueue {
     this.db = db;
     this.queue = createQueue(
       db,
-      overrideTaskFn ? overrideTaskFn : this.fetchDownload,
+      overrideTaskFn ? overrideTaskFn : this.process,
     );
   }
 
@@ -74,7 +76,9 @@ export class TaskQueue {
     );
   }
 
-  fetchDownload = async (item: ItemFetchTask, db: DB) => {
+  // Process each task by downloading item data via proxy, and then
+  // decrypting data to plaintext stored in the DB or to a file on disk.
+  process = async (item: ItemFetchTask, db: DB) => {
     console.log("Processing item: ", item);
 
     const [metadata, status, progress] = db.getItemWithFetchStatus(item.id);
@@ -90,33 +94,38 @@ export class TaskQueue {
     }
 
     // Phase 1: Download
+    let downloadResult: DownloadResult | undefined;
+    let nextStatus = status;
     if (
       status === FetchStatus.Initial ||
       status === FetchStatus.FailedDownloadRetryable
     ) {
-      await this.performDownloadAndDecryption(item, db, metadata, progress);
-      return;
+      downloadResult = await this.download(item, db, metadata, progress);
+      nextStatus = FetchStatus.DecryptionInProgress;
     }
 
     // Phase 2: Decryption (for failed decryption retries)
-    if (status === FetchStatus.FailedDecryptionRetryable) {
-      await this.performDecryption(item, db, metadata);
-      return;
+    if (
+      nextStatus === FetchStatus.DownloadInProgress ||
+      nextStatus === FetchStatus.DecryptionInProgress ||
+      nextStatus === FetchStatus.FailedDecryptionRetryable
+    ) {
+      await this.decrypt(item, db, metadata, downloadResult);
+    } else {
+      // Handle unexpected statuses
+      console.log(
+        `Unexpected status ${nextStatus} for item ${item.id}, skipping...`,
+      );
     }
-
-    // Handle unexpected statuses
-    console.log(`Unexpected status ${status} for item ${item.id}, skipping...`);
   };
 
-  private async performDownloadAndDecryption(
+  private async download(
     item: ItemFetchTask,
     db: DB,
     metadata: ItemMetadata,
     progress: number,
-  ) {
-    console.log(`Starting download phase for ${metadata.kind} ${item.id}`);
-
-    // Set status to download in progress
+  ): Promise<DownloadResult> {
+    console.log(`Starting download for ${metadata.kind} ${item.id}`);
     db.setDownloadInProgress(item.id);
 
     let downloadFilePath: string = "";
@@ -170,119 +179,152 @@ export class TaskQueue {
 
     console.log(`Download completed for ${metadata.kind} ${item.id}`);
 
-    // Move to decryption phase for messages/replies, complete for files
     if (metadata.kind === "message" || metadata.kind === "reply") {
-      // For messages/replies: attempt decryption directly from BufferedWriter
-      await this.performDecryption(
-        item,
-        db,
-        metadata,
-        downloadWriter as BufferedWriter,
-      );
-    } else {
-      // TODO: we need to decrypt files as well
-      db.completeFileItem(item.id, downloadFilePath);
+      return (downloadWriter as BufferedWriter).getBuffer();
     }
+    return downloadFilePath;
   }
 
-  private async performDecryption(
+  private async decrypt(
     item: ItemFetchTask,
     db: DB,
     metadata: ItemMetadata,
-    bufferWriter?: BufferedWriter,
+    downloadResult?: DownloadResult,
   ) {
-    console.log(`Starting decryption phase for ${metadata.kind} ${item.id}`);
-
-    // Set status to decryption in progress
-    db.setDecryptionInProgress(item.id);
-
-    let encryptedData: Buffer;
-
-    if (bufferWriter) {
-      // First-time decryption after download
-      const bufferResult = bufferWriter.getBuffer();
-      if (bufferResult instanceof Error) {
-        db.failDecryption(item.id);
-        throw new Error(
-          `Failed to get buffer from stream: ${bufferResult.message}`,
-        );
-      }
-      encryptedData = bufferResult;
-    } else {
-      // Retry decryption from disk
-      const downloadFilePath = this.getEncryptedFilePath(item, metadata);
-
-      try {
-        encryptedData = await fs.promises.readFile(downloadFilePath);
-        console.log(
-          `Loaded encrypted data from disk for retry: ${downloadFilePath}`,
-        );
-      } catch (error) {
-        db.failDecryption(item.id);
-        throw new Error(`Failed to load encrypted data from disk: ${error}`);
-      }
+    const crypto = Crypto.getInstance();
+    if (!crypto) {
+      throw new Error("Crypto not initilaized in fetch worker, cannot decrypt");
     }
 
+    // Set status to decryption in progress
+    console.log(`Starting decryption for ${metadata.kind} ${item.id}`);
+    db.setDecryptionInProgress(item.id);
     try {
-      // Decrypt the message/reply content
-      const crypto = Crypto.getInstance();
-      if (!crypto) {
-        throw new Error("Crypto not initialized in fetch worker");
-      }
-
-      const decryptedContent = await crypto.decryptMessage(encryptedData);
-
-      // Store the decrypted plaintext and mark as complete
-      db.completePlaintextItem(item.id, decryptedContent);
-      console.log(
-        `Successfully decrypted ${metadata.kind} ${item.id} via fetch queue`,
-      );
-
-      // Clean up encrypted file after successful decryption (only if it exists - retry case)
-      if (!bufferWriter) {
-        const downloadFilePath = this.getEncryptedFilePath(item, metadata);
-        try {
-          await fs.promises.unlink(downloadFilePath);
-          console.log(`Cleaned up encrypted file: ${downloadFilePath}`);
-        } catch (error) {
-          console.warn(`Failed to clean up encrypted file: ${error}`);
+      if (downloadResult) {
+        if (metadata.kind === "message" || metadata.kind === "reply") {
+          await this.decryptBuffer(
+            item,
+            db,
+            crypto,
+            metadata,
+            downloadResult as Buffer,
+          );
+        } else {
+          await this.decryptFile(
+            item,
+            db,
+            crypto,
+            metadata,
+            downloadResult as string,
+          );
         }
+      } else {
+        await this.decryptRetry(item, db, crypto, metadata);
       }
+    } catch (error) {
+      db.failDecryption(item.id);
+      throw error;
+    }
+  }
+
+  // Decrypt plaintext item from the in-memory buffer and persist to DB
+  // on success. On failure, write the ciphertext to disk so we can retry
+  // without needing to re-download.
+  private async decryptBuffer(
+    item: ItemFetchTask,
+    db: DB,
+    crypto: Crypto,
+    metadata: ItemMetadata,
+    buffer: Buffer,
+  ) {
+    try {
+      const decryptedContent = await crypto.decryptMessage(buffer);
+
+      // Store the decrypted plaintext and mark item as complete
+      db.completePlaintextItem(item.id, decryptedContent);
+      console.log(`Successfully decrypted ${metadata.kind} ${item.id}`);
     } catch (error) {
       if (error instanceof CryptoError) {
         console.error(
           `Failed to decrypt ${metadata.kind} ${item.id}: ${error.message}`,
         );
-
-        // For first-time decryption failure, ensure data is saved to disk
-        if (bufferWriter) {
-          const downloadFilePath = this.getEncryptedFilePath(item, metadata);
-          try {
-            const bufferResult = bufferWriter.getBuffer();
-            if (!(bufferResult instanceof Error)) {
-              const downloadDir = path.dirname(downloadFilePath);
-              await fs.promises.mkdir(downloadDir, { recursive: true });
-              await fs.promises.writeFile(downloadFilePath, bufferResult);
-              console.log(
-                `Saved encrypted data to disk for retry: ${downloadFilePath}`,
-              );
-            }
-          } catch (saveError) {
-            console.error(
-              `Failed to save encrypted data to disk: ${saveError}`,
-            );
-          }
-        }
-
-        db.failDecryption(item.id);
-        console.log(
-          `Decryption failed for ${item.id}, status set to FailedDecryptionRetryable`,
-        );
-        return;
-      } else {
-        db.failDecryption(item.id);
-        throw error;
       }
+      // Ensure data is persisted to disk for retries
+      try {
+        const downloadFilePath = this.getEncryptedFilePath(item, metadata);
+        const downloadDir = path.dirname(downloadFilePath);
+        await fs.promises.mkdir(downloadDir, { recursive: true });
+        await fs.promises.writeFile(downloadFilePath, buffer);
+        console.log(
+          `Saved encrypted buffer data to disk for retry: ${downloadFilePath}`,
+        );
+      } catch (saveError) {
+        console.error(`Failed to save encrypted data to disk: ${saveError}`);
+      }
+      throw error;
+    }
+  }
+
+  // Decrypt a formerly failed message or reply decryption. Reads the
+  // ciphertext from disk to decrypt, and then write the plaintext to
+  // DB on success and clean up the encrypted file.
+  private async decryptRetry(
+    item: ItemFetchTask,
+    db: DB,
+    crypto: Crypto,
+    metadata: ItemMetadata,
+  ) {
+    const downloadPath = this.getEncryptedFilePath(item, metadata);
+    try {
+      const buffer = await fs.promises.readFile(downloadPath);
+      const decryptedContent = await crypto.decryptMessage(buffer);
+
+      // Store the decrypted plaintext and mark item as complete
+      db.completePlaintextItem(item.id, decryptedContent);
+      console.log(`Successfully decrypted ${metadata.kind} ${item.id}`);
+    } catch (error) {
+      throw new Error(`Failed to load encrypted data from disk: ${error}`);
+    }
+
+    // After successful decryption, clean up the encrypted file
+    try {
+      await fs.promises.unlink(downloadPath);
+      console.log(`Cleaned up encrypted file: ${downloadPath}`);
+    } catch (error) {
+      console.warn(`Failed to clean up encrypted file: ${error}`);
+    }
+  }
+
+  // Decrypt an encrypted file submission. Writes the unencrypted filepath
+  // to DB on success.
+  private async decryptFile(
+    item: ItemFetchTask,
+    db: DB,
+    crypto: Crypto,
+    metadata: ItemMetadata,
+    downloadPath: string,
+  ) {
+    try {
+      const decryptedFilepath = await crypto.decryptFile(downloadPath);
+      db.completeFileItem(
+        item.id,
+        path.join(decryptedFilepath.filePath, decryptedFilepath.filename),
+      );
+      console.log(`Successfully decrypted ${metadata.kind} ${item.id}`);
+    } catch (error) {
+      if (error instanceof CryptoError) {
+        console.error(
+          `Failed to decrypt ${metadata.kind} ${item.id}: ${error.message}`,
+        );
+      }
+      throw error;
+    }
+
+    // After successful decryption, clean up the encrypted file
+    try {
+      await fs.promises.unlink(downloadPath);
+    } catch (error) {
+      console.warn(`Failed to clean up encrypted file: ${error}`);
     }
   }
 }
