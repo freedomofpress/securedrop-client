@@ -7,6 +7,9 @@ import {
 } from "../types";
 import { DB } from "./database";
 
+import fs from "fs";
+import { encryptedFilepath } from "./crypto";
+
 async function getIndex(
   authToken: string,
   currentVersion: string,
@@ -110,7 +113,7 @@ export function reconcileIndex(
     (item) => !Object.keys(serverIndex.items).includes(item),
   );
   if (itemsToDelete.length > 0) {
-    db.deleteItems(itemsToDelete);
+    deleteItems(db, itemsToDelete);
   }
 
   const journalistsToUpdate: string[] = [];
@@ -137,6 +140,31 @@ export function reconcileIndex(
     items: itemsToUpdate,
     journalists: journalistsToUpdate,
   };
+}
+
+// Delete items from DB and delete any files persisted to disk from
+// the filesystem.
+function deleteItems(db: DB, itemIDs: string[]) {
+  // Perform fs cleanup
+  for (const itemID of itemIDs) {
+    const data = db.getItemFileData(itemID);
+    if (!data) {
+      continue;
+    }
+    if (data.filename) {
+      fs.rmSync(data.filename, { recursive: true, force: true });
+    }
+    // Encrypted file should already have been removed on decryption,
+    // but attempt again to clean up here just in case.
+    if (data.source) {
+      fs.rmSync(encryptedFilepath(data.source, itemID), {
+        recursive: true,
+        force: true,
+      });
+    }
+  }
+
+  db.deleteItems(itemIDs);
 }
 
 export enum SyncStatus {

@@ -326,3 +326,7 @@ export class Crypto {
     return ""; // No filename in header
   }
 }
+
+export function encryptedFilepath(sourceID: string, itemID: string) {
+  return path.join(os.tmpdir(), "download", sourceID, itemID, "encrypted.gpg");
+}
