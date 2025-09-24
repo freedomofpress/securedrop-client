@@ -66,6 +66,10 @@ export class DB {
     [],
     { uuid: string; version: string }
   >;
+  private selectItemFilenameSource: Statement<
+    { uuid: string },
+    { filename: string; source: string }
+  >;
   private upsertItem: Statement<
     { id: string; data: string; version: string },
     void
@@ -122,6 +126,9 @@ export class DB {
 
     this.selectAllItemVersion = this.db.prepare(
       "SELECT uuid, version FROM items",
+    );
+    this.selectItemFilenameSource = this.db.prepare(
+      "SELECT filename, source_uuid FROM items WHERE uuid = @id",
     );
     this.upsertItem = this.db.prepare(
       "INSERT INTO items (uuid, data, version) VALUES (@id, @data, @version) ON CONFLICT(uuid) DO UPDATE SET data=@data, version=@version",
@@ -286,6 +293,15 @@ export class DB {
     const strIndex = JSON.stringify(index, sortKeys);
     const newVersion = computeVersion(strIndex);
     this.insertVersion.run(newVersion);
+  }
+
+  getItemFileData(itemID: string):
+    | {
+        filename: string;
+        source: string;
+      }
+    | undefined {
+    return this.selectItemFilenameSource.get({ uuid: itemID });
   }
 
   deleteItems(items: string[]) {

@@ -1,7 +1,6 @@
 import Queue from "better-queue";
 
 import fs from "fs";
-import os from "os";
 import path from "path";
 import { Writable } from "stream";
 
@@ -15,7 +14,7 @@ import {
   ProxyStreamResponse,
 } from "../../types";
 import { proxyStreamRequest } from "../proxy";
-import { Crypto, CryptoError } from "../crypto";
+import { Crypto, CryptoError, encryptedFilepath } from "../crypto";
 
 export type ItemFetchTask = {
   id: string;
@@ -61,19 +60,6 @@ export class TaskQueue {
     } catch (e) {
       console.log("Error queueing fetches: ", e);
     }
-  }
-
-  private getEncryptedFilePath(
-    item: ItemFetchTask,
-    metadata: ItemMetadata,
-  ): string {
-    return path.join(
-      os.tmpdir(),
-      "download",
-      metadata.source,
-      item.id,
-      "encrypted.gpg",
-    );
   }
 
   // Process each task by downloading item data via proxy, and then
@@ -136,7 +122,7 @@ export class TaskQueue {
       downloadWriter = new BufferedWriter();
     } else if (metadata.kind === "file") {
       // For files: write directly to disk
-      downloadFilePath = this.getEncryptedFilePath(item, metadata);
+      downloadFilePath = encryptedFilepath(metadata.source, item.id);
       const downloadDir = path.dirname(downloadFilePath);
       await fs.promises.mkdir(downloadDir, { recursive: true });
       downloadWriter = fs.createWriteStream(downloadFilePath);
@@ -245,7 +231,7 @@ export class TaskQueue {
       }
       // Ensure data is persisted to disk for retries
       try {
-        const downloadFilePath = this.getEncryptedFilePath(item, metadata);
+        const downloadFilePath = encryptedFilepath(metadata.source, item.id);
         const downloadDir = path.dirname(downloadFilePath);
         await fs.promises.mkdir(downloadDir, { recursive: true });
         await fs.promises.writeFile(downloadFilePath, buffer);
@@ -268,7 +254,7 @@ export class TaskQueue {
     crypto: Crypto,
     metadata: ItemMetadata,
   ) {
-    const downloadPath = this.getEncryptedFilePath(item, metadata);
+    const downloadPath = encryptedFilepath(metadata.source, item.id);
     try {
       const buffer = await fs.promises.readFile(downloadPath);
       const decryptedContent = await crypto.decryptMessage(buffer);
@@ -297,7 +283,7 @@ export class TaskQueue {
     crypto: Crypto,
     metadata: ItemMetadata,
   ) {
-    const downloadPath = this.getEncryptedFilePath(item, metadata);
+    const downloadPath = encryptedFilepath(metadata.source, item.id);
     try {
       const decryptedFilepath = await crypto.decryptFile(downloadPath);
       db.completeFileItem(
