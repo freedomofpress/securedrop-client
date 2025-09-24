@@ -200,24 +200,18 @@ export class TaskQueue {
     console.log(`Starting decryption for ${metadata.kind} ${item.id}`);
     db.setDecryptionInProgress(item.id);
     try {
+      if (metadata.kind === "file") {
+        await this.decryptFile(item, db, crypto, metadata);
+        return;
+      }
       if (downloadResult) {
-        if (metadata.kind === "message" || metadata.kind === "reply") {
-          await this.decryptBuffer(
-            item,
-            db,
-            crypto,
-            metadata,
-            downloadResult as Buffer,
-          );
-        } else {
-          await this.decryptFile(
-            item,
-            db,
-            crypto,
-            metadata,
-            downloadResult as string,
-          );
-        }
+        await this.decryptBuffer(
+          item,
+          db,
+          crypto,
+          metadata,
+          downloadResult as Buffer,
+        );
       } else {
         await this.decryptRetry(item, db, crypto, metadata);
       }
@@ -302,8 +296,8 @@ export class TaskQueue {
     db: DB,
     crypto: Crypto,
     metadata: ItemMetadata,
-    downloadPath: string,
   ) {
+    const downloadPath = this.getEncryptedFilePath(item, metadata);
     try {
       const decryptedFilepath = await crypto.decryptFile(downloadPath);
       db.completeFileItem(
