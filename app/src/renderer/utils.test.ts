@@ -6,6 +6,7 @@ import {
   getInitials,
   toTitleCase,
   formatJournalistName,
+  prettyPrintBytes,
 } from "./utils";
 import type { JournalistMetadata } from "../types";
 
@@ -583,6 +584,46 @@ describe("utils", () => {
         last_name: "Y",
       };
       expect(formatJournalistName(journalist)).toBe("X Y");
+    });
+  });
+
+  describe("prettyPrintBytes", () => {
+    it("should format 0 bytes", () => {
+      expect(prettyPrintBytes(0)).toBe("0 B");
+    });
+
+    it("should format bytes less than 1 KB", () => {
+      expect(prettyPrintBytes(512)).toBe("512 B");
+    });
+
+    it("should format kilobytes", () => {
+      expect(prettyPrintBytes(1024)).toBe("1 KB");
+      expect(prettyPrintBytes(1536)).toBe("1.5 KB");
+    });
+
+    it("should format megabytes", () => {
+      expect(prettyPrintBytes(1048576)).toBe("1 MB");
+      expect(prettyPrintBytes(1572864)).toBe("1.5 MB");
+    });
+
+    it("should format gigabytes", () => {
+      expect(prettyPrintBytes(1073741824)).toBe("1 GB");
+    });
+
+    it("should format terabytes", () => {
+      expect(prettyPrintBytes(1099511627776)).toBe("1 TB");
+    });
+
+    it("should format petabytes", () => {
+      expect(prettyPrintBytes(1125899906842624)).toBe("1 PB");
+    });
+
+    it("should round to two decimals", () => {
+      expect(prettyPrintBytes(123456789)).toMatch(/\d+\.\d{1,2} MB/);
+    });
+
+    it("should handle negative numbers", () => {
+      expect(prettyPrintBytes(-1024)).toBe("0 B");
     });
   });
 });
