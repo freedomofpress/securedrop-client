@@ -152,7 +152,7 @@ export class DB {
       WHERE uuid = ?
     `);
     this.selectItemsBySourceId = this.db.prepare(`
-      SELECT uuid, data, plaintext, filename FROM items
+      SELECT uuid, data, plaintext, filename, fetch_status, fetch_progress FROM items
       WHERE source_uuid = ?
     `);
     this.selectAllJournalists = this.db.prepare(`
@@ -425,6 +425,8 @@ export class DB {
         data,
         plaintext: row.plaintext,
         filename: row.filename,
+        fetch_status: row.fetch_status,
+        fetch_progress: row.fetch_progress,
       };
     });
 

@@ -80,5 +80,10 @@
       "generic": "That didn't work. Please check everything and try again."
     },
     "version": "SecureDrop App v{{version}}"
+  },
+  "Item": {
+    "encryptedFile": "Encrypted File",
+    "cancel": "Cancel",
+    "of": "of"
   }
 }
