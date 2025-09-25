@@ -66,33 +66,43 @@ jobs:
           path: build-bookworm
       - uses: actions/checkout@v5
         with:
-          # We need to store credentials here
-          persist-credentials: true
+          persist-credentials: false
           repository: "freedomofpress/securedrop-apt-test"
           path: "securedrop-apt-test"
           lfs: true
-          token: ${{ secrets.PUSH_TOKEN }}
       - uses: actions/checkout@v5
         with:
-          # We need to store credentials here
-          persist-credentials: true
+          persist-credentials: false
           repository: "freedomofpress/build-logs"
           path: "build-logs"
-          token: ${{ secrets.PUSH_TOKEN }}
+      - uses: actions/create-github-app-token@v2
+        id: app-token
+        with:
+          app-id: ${{ vars.FPF_BRANCH_UPDATER_APP_ID }}
+          private-key: ${{ secrets.FPF_BRANCH_UPDATER_APP_PRIVKEY }}
+          repostiories: |
+            build-logs
+            securedrop-apt-test
       - name: Commit and push
+        env:
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+          LOGS_REPO: freedomofpress/build-logs
+          PKG_REPO: freedomofpress/securedrop-apt-test
         run: |
           git config --global user.email "securedrop@freedom.press"
-          git config --global user.name "sdcibot"
+          git config --global user.name "sdcibot-nightlies[bot]"
           # First publish buildinfo files
           cd build-logs
           mkdir -p "buildinfo/$(date +%Y)"
           cp -v ../build-*/*.buildinfo "buildinfo/$(date +%Y)"
           git add .
           git diff-index --quiet HEAD || git commit -m "Publishing buildinfo files for workstation nightlies"
+          git remote set-url origin https://x-access-token:${GH_TOKEN}@github.com/${LOGS_REPO}.git
           git push origin main
           # Now the packages themselves
           cd ../securedrop-apt-test
           cp -v ../build-bookworm/*.deb workstation/bookworm-nightlies/
           git add .
           git diff-index --quiet HEAD || git commit -m "Automated SecureDrop workstation build"
+          git remote set-url origin https://x-access-token:${GH_TOKEN}@github.com/${PKG_REPO}.git
           git push origin main
