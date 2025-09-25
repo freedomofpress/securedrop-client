@@ -80,5 +80,10 @@
       "generic": "Cela n'a pas fonctionné. Veuillez tout vérifier et réessayer."
     },
     "version": "Application SecureDrop v{{version}}"
+  },
+  "Item": {
+    "encryptedFile": "Fichier Crypté",
+    "cancel": "Annuler",
+    "of": "de"
   }
 }

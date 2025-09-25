@@ -25,6 +25,8 @@ describe("Conversation Component Memoization", () => {
           seen_by: [],
           is_read: false,
         },
+        fetch_progress: 1024,
+        fetch_status: 3,
       },
     ],
   };

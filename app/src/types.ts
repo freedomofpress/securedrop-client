@@ -161,6 +161,8 @@ export type Item = {
   data: ItemMetadata;
   plaintext?: string;
   filename?: string;
+  fetch_status?: FetchStatus;
+  fetch_progress?: number;
 };
 
 // Database representation
@@ -169,6 +171,8 @@ export type ItemRow = {
   data: string; // JSON stringified ItemMetadata
   plaintext?: string;
   filename?: string;
+  fetch_status: number; // FetchStatus enum
+  fetch_progress: number;
 };
 
 // Database representation
