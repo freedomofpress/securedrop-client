@@ -34,6 +34,14 @@ export default defineConfig({
           globals: true,
         },
       },
+      {
+        test: {
+          name: "server", // Tests that require a running server
+          include: ["server_tests/**/*.test.ts"],
+          setupFiles: ["server_tests/setup.ts"],
+          globals: true,
+        },
+      },
     ],
   },
   resolve: {
