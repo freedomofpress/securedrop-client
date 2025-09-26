@@ -94,3 +94,45 @@ jobs:
       - name: Run integration tests
         working-directory: app
         run: NODE_ENV=ci VITE_HTTPBIN_URL=http://httpbin:80 pnpm integration-test
+
+  server-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          persist-credentials: false
+      - uses: actions/checkout@v5
+        with:
+          persist-credentials: false
+          repository: "freedomofpress/securedrop"
+          path: "securedrop-server"
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.11"
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10
+      - name: Install node
+        uses: actions/setup-node@v5
+        with:
+          node-version: "22.x"
+          cache: pnpm
+          cache-dependency-path: app/pnpm-lock.yaml
+      - name: Install node dependencies
+        working-directory: app
+        run: pnpm install
+      # n.b. because this runs on Ubuntu runner directly,
+      # build-essential, curl, libssl-dev and pkg-config are already installed
+      - name: Install Rust to build sd-proxy
+        uses: dtolnay/rust-toolchain@1.87.0
+      - name: Run tests
+        run: |
+          # Start the server in the background
+          USE_FIXED_DATA="../app/server_tests/data/data.yaml" make -C securedrop-server dev &
+          # Wait for server to come up
+          echo "Polling with curl --silent until the server is up..."
+          while ! curl --silent --fail --output /dev/null http://127.0.0.1:8081; do sleep 5; done
+          # Run tests
+          cd app
+          pnpm server-test
