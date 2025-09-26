@@ -8,8 +8,7 @@
     "src/*.ts",
     "src/*.d.ts",
     "tests/",
-    "integration_tests/",
-    "server_tests/"
+    "integration_tests/"
   ],
   "compilerOptions": {
     "composite": true,

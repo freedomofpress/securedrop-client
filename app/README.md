@@ -105,6 +105,7 @@ USE_FIXED_DATA="../securedrop-client/app/server_tests/data/data.yaml" make dev
 ```
 
 Once it's started, you can run:
+
 ```
 pnpm server-test
 ```

@@ -7,7 +7,7 @@ import {
 } from "../types";
 import { DB } from "./database";
 
-async function getIndex(
+export async function getIndex(
   authToken: string,
   currentVersion: string,
 ): Promise<Index | null> {

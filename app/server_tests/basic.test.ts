@@ -1,6 +1,6 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, inject, it } from "vitest";
 
-import { proxyJSONRequestInner } from "../src/main/proxy";
+import { proxyJSONRequest } from "../src/main/proxy";
 
 describe("Test login via setup.ts worked", async () => {
   afterEach(() => {
@@ -8,14 +8,11 @@ describe("Test login via setup.ts worked", async () => {
   });
 
   it("logged in as journalist", async () => {
-    const result = await proxyJSONRequestInner(
-      {
-        method: "GET",
-        path_query: "/api/v1/user",
-        headers: { Authorization: authHeader },
-      },
-      proxyCommand,
-    );
+    const result = await proxyJSONRequest({
+      method: "GET",
+      path_query: "/api/v1/user",
+      headers: { Authorization: inject("authHeader") },
+    });
     expect(result.status).toEqual(200);
     expect(result.headers.get("content-type")).toEqual("application/json");
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
