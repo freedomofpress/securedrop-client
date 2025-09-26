@@ -29,10 +29,7 @@ export class BufferedWriter extends Writable {
     callback();
   }
 
-  getBuffer(): Buffer | Error {
-    if (this.final) {
-      return Buffer.concat(this.buffer);
-    }
-    return new Error("Writable stream not yet closed, cannot return buffer");
+  getBuffer(): Buffer {
+    return Buffer.concat(this.buffer);
   }
 }
