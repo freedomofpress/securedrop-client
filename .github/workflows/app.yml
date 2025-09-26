@@ -131,7 +131,7 @@ jobs:
       - name: Run tests
         run: |
           # Start the server in the background
-          USE_FIXED_DATA="app/server_tests/data/data.yaml" make -C securedrop-server dev &
+          USE_FIXED_DATA="../app/server_tests/data/data.yaml" make -C securedrop-server dev &
           # Wait for server to come up
           echo "Polling with curl --silent until the server is up..."
           while ! curl --silent --fail --output /dev/null http://127.0.0.1:8081; do sleep 5; done
