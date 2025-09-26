@@ -1,7 +1,6 @@
 import Queue from "better-queue";
 
 import fs from "fs";
-import os from "os";
 import path from "path";
 import { Writable } from "stream";
 
@@ -15,7 +14,7 @@ import {
   ProxyStreamResponse,
 } from "../../types";
 import { proxyStreamRequest } from "../proxy";
-import { Crypto, CryptoError } from "../crypto";
+import { Crypto, CryptoError, encryptedFilepath } from "../crypto";
 
 export type ItemFetchTask = {
   id: string;
@@ -59,19 +58,6 @@ export class TaskQueue {
     } catch (e) {
       console.log("Error queueing fetches: ", e);
     }
-  }
-
-  private getEncryptedFilePath(
-    item: ItemFetchTask,
-    metadata: ItemMetadata,
-  ): string {
-    return path.join(
-      os.tmpdir(),
-      "download",
-      metadata.source,
-      item.id,
-      "encrypted.gpg",
-    );
   }
 
   fetchDownload = async (item: ItemFetchTask, db: DB) => {
@@ -127,7 +113,7 @@ export class TaskQueue {
       downloadWriter = new BufferedWriter();
     } else if (metadata.kind === "file") {
       // For files: write directly to disk
-      downloadFilePath = this.getEncryptedFilePath(item, metadata);
+      downloadFilePath = encryptedFilepath(metadata.source, item.id);
       const downloadDir = path.dirname(downloadFilePath);
       await fs.promises.mkdir(downloadDir, { recursive: true });
       downloadWriter = fs.createWriteStream(downloadFilePath);
@@ -210,7 +196,7 @@ export class TaskQueue {
       encryptedData = bufferResult;
     } else {
       // Retry decryption from disk
-      const downloadFilePath = this.getEncryptedFilePath(item, metadata);
+      const downloadFilePath = encryptedFilepath(metadata.source, item.id);
 
       try {
         encryptedData = await fs.promises.readFile(downloadFilePath);
@@ -240,7 +226,7 @@ export class TaskQueue {
 
       // Clean up encrypted file after successful decryption (only if it exists - retry case)
       if (!bufferWriter) {
-        const downloadFilePath = this.getEncryptedFilePath(item, metadata);
+        const downloadFilePath = encryptedFilepath(metadata.source, item.id);
         try {
           await fs.promises.unlink(downloadFilePath);
           console.log(`Cleaned up encrypted file: ${downloadFilePath}`);
@@ -256,7 +242,7 @@ export class TaskQueue {
 
         // For first-time decryption failure, ensure data is saved to disk
         if (bufferWriter) {
-          const downloadFilePath = this.getEncryptedFilePath(item, metadata);
+          const downloadFilePath = encryptedFilepath(metadata.source, item.id);
           try {
             const bufferResult = bufferWriter.getBuffer();
             if (!(bufferResult instanceof Error)) {

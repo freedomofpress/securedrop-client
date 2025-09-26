@@ -19,8 +19,10 @@ vi.mock("../proxy", async () => {
 const mockCrypto = {
   decryptMessage: vi.fn(),
 };
-vi.mock("../crypto", () => {
+vi.mock("../crypto", async () => {
+  const actual = await vi.importActual("../crypto");
   return {
+    ...actual,
     Crypto: {
       getInstance: () => mockCrypto,
     },
