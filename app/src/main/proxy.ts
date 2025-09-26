@@ -206,7 +206,7 @@ function buildProxyCommand(abortSignal?: AbortSignal): ProxyCommand {
   let commandOptions: string[] = [];
   const env: Map<string, string> = new Map();
 
-  if (import.meta.env.MODE == "development") {
+  if (import.meta.env.MODE == "development" || import.meta.env.MODE == "test") {
     command = __PROXY_CMD__;
     env.set("SD_PROXY_ORIGIN", __PROXY_ORIGIN__);
     env.set("DISABLE_TOR", "yes");
