@@ -54,6 +54,11 @@ export default defineConfig({
           globals: true,
           environment: "jsdom",
         },
+        define: {
+          // Unit tests might reference proxy functions, so provide dummy values
+          __PROXY_CMD__: JSON.stringify("dummy-proxy-command"),
+          __PROXY_ORIGIN__: JSON.stringify("http://dummy-origin"),
+        },
       },
       {
         test: {
