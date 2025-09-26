@@ -97,12 +97,10 @@ jobs:
           cp -v ../build-*/*.buildinfo "buildinfo/$(date +%Y)"
           git add .
           git diff-index --quiet HEAD || git commit -m "Publishing buildinfo files for workstation nightlies"
-          git remote set-url origin https://x-access-token:${GH_TOKEN}@github.com/${LOGS_REPO}.git
-          git push origin main
+          git push https://x-access-token:${GH_TOKEN}@github.com/${LOGS_REPO}.git main
           # Now the packages themselves
           cd ../securedrop-apt-test
           cp -v ../build-bookworm/*.deb workstation/bookworm-nightlies/
           git add .
           git diff-index --quiet HEAD || git commit -m "Automated SecureDrop workstation build"
-          git remote set-url origin https://x-access-token:${GH_TOKEN}@github.com/${PKG_REPO}.git
-          git push origin main
+          git push https://x-access-token:${GH_TOKEN}@github.com/${PKG_REPO}.git main
