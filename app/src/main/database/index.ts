@@ -57,10 +57,10 @@ export class DB {
     { uuid: string; version: string }
   >;
   private upsertSource: Statement<
-    { id: string; data: string; version: string },
+    { uuid: string; data: string; version: string },
     void
   >;
-  private deleteSource: Statement<{ id: string }, void>;
+  private deleteSource: Statement<{ uuid: string }, void>;
 
   private selectAllItemVersion: Statement<
     [],
@@ -68,23 +68,23 @@ export class DB {
   >;
   private selectItemFilenameSource: Statement<
     { uuid: string },
-    { filename: string; source: string }
+    { filename: string; source_uuid: string }
   >;
   private upsertItem: Statement<
-    { id: string; data: string; version: string },
+    { uuid: string; data: string; version: string },
     void
   >;
-  private deleteItem: Statement<{ id: string }, void>;
+  private deleteItem: Statement<{ uuid: string }, void>;
 
   private selectAllJournalistVersion: Statement<
     [],
     { uuid: string; version: string }
   >;
   private upsertJournalist: Statement<
-    { id: string; data: string; version: string },
+    { uuid: string; data: string; version: string },
     void
   >;
-  private deleteJournalist: Statement<{ id: string }, void>;
+  private deleteJournalist: Statement<{ uuid: string }, void>;
 
   private selectAllSources: Statement<[], SourceRow>;
   private selectSourceById: Statement<[string], SourceRow>;
@@ -120,28 +120,30 @@ export class DB {
       "SELECT uuid, version FROM sources",
     );
     this.upsertSource = this.db.prepare(
-      "INSERT INTO sources (uuid, data, version) VALUES (@id, @data, @version) ON CONFLICT(uuid) DO UPDATE SET data=@data, version=@version",
+      "INSERT INTO sources (uuid, data, version) VALUES (@uuid, @data, @version) ON CONFLICT(uuid) DO UPDATE SET data=@data, version=@version",
     );
-    this.deleteSource = this.db.prepare("DELETE FROM sources WHERE uuid = @id");
+    this.deleteSource = this.db.prepare(
+      "DELETE FROM sources WHERE uuid = @uuid",
+    );
 
     this.selectAllItemVersion = this.db.prepare(
       "SELECT uuid, version FROM items",
     );
     this.selectItemFilenameSource = this.db.prepare(
-      "SELECT filename, source_uuid FROM items WHERE uuid = @id",
+      "SELECT filename, source_uuid FROM items WHERE source_uuid = @uuid",
     );
     this.upsertItem = this.db.prepare(
-      "INSERT INTO items (uuid, data, version) VALUES (@id, @data, @version) ON CONFLICT(uuid) DO UPDATE SET data=@data, version=@version",
+      "INSERT INTO items (uuid, data, version) VALUES (@uuid, @data, @version) ON CONFLICT(uuid) DO UPDATE SET data=@data, version=@version",
     );
-    this.deleteItem = this.db.prepare("DELETE FROM items WHERE uuid = @id");
+    this.deleteItem = this.db.prepare("DELETE FROM items WHERE uuid = @uuid");
     this.selectAllJournalistVersion = this.db.prepare(
       "SELECT uuid, version FROM journalists",
     );
     this.upsertJournalist = this.db.prepare(
-      "INSERT INTO journalists (uuid, data, version) VALUES (@id, @data, @version) ON CONFLICT(uuid) DO UPDATE SET data=@data, version=@version",
+      "INSERT INTO journalists (uuid, data, version) VALUES (@uuid, @data, @version) ON CONFLICT(uuid) DO UPDATE SET data=@data, version=@version",
     );
     this.deleteJournalist = this.db.prepare(
-      "DELETE FROM journalists WHERE uuid = @id",
+      "DELETE FROM journalists WHERE uuid = @uuid",
     );
 
     this.selectAllSources = this.db.prepare(`
@@ -298,7 +300,7 @@ export class DB {
   getItemFileData(itemID: string):
     | {
         filename: string;
-        source: string;
+        source_uuid: string;
       }
     | undefined {
     return this.selectItemFilenameSource.get({ uuid: itemID });
@@ -307,7 +309,7 @@ export class DB {
   deleteItems(items: string[]) {
     this.db!.transaction((items: string[]) => {
       for (const itemID in items) {
-        this.deleteItem.run({ id: itemID });
+        this.deleteItem.run({ uuid: itemID });
       }
       this.updateVersion();
     })(items);
@@ -316,7 +318,7 @@ export class DB {
   deleteSources(sources: string[]) {
     this.db!.transaction((sources: string[]) => {
       for (const sourceID in sources) {
-        this.deleteSource.run({ id: sourceID });
+        this.deleteSource.run({ uuid: sourceID });
       }
       this.updateVersion();
     })(sources);
@@ -325,7 +327,7 @@ export class DB {
   deleteJournalists(journalists: string[]) {
     this.db!.transaction((journalists: string[]) => {
       for (const journalistID in journalists) {
-        this.deleteJournalist.run({ id: journalistID });
+        this.deleteJournalist.run({ uuid: journalistID });
       }
       this.updateVersion();
     })(journalists);
@@ -349,7 +351,7 @@ export class DB {
       const info = JSON.stringify(metadata, sortKeys);
       const version = computeVersion(info);
       this.upsertSource.run({
-        id: sourceid,
+        uuid: sourceid,
         data: info,
         version: version,
       });
@@ -364,7 +366,7 @@ export class DB {
       const blob = JSON.stringify(metadata, sortKeys);
       const version = computeVersion(blob);
       this.upsertItem.run({
-        id: itemid,
+        uuid: itemid,
         data: blob,
         version: version,
       });
@@ -381,7 +383,7 @@ export class DB {
       const blob = JSON.stringify(metadata, sortKeys);
       const version = computeVersion(blob);
       this.upsertJournalist.run({
-        id: id,
+        uuid: id,
         data: blob,
         version: version,
       });

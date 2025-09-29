@@ -152,13 +152,12 @@ function deleteItems(db: DB, itemIDs: string[]) {
       continue;
     }
     if (data.filename) {
-      fs.rmSync(data.filename, { recursive: true, force: true });
+      fs.rmSync(data.filename, { force: true });
     }
     // Encrypted file should already have been removed on decryption,
     // but attempt again to clean up here just in case.
-    if (data.source) {
-      fs.rmSync(encryptedFilepath(data.source, itemID), {
-        recursive: true,
+    if (data.source_uuid) {
+      fs.rmSync(encryptedFilepath(data.source_uuid, itemID), {
         force: true,
       });
     }
