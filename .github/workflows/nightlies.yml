@@ -80,7 +80,7 @@ jobs:
         with:
           app-id: ${{ vars.FPF_BRANCH_UPDATER_APP_ID }}
           private-key: ${{ secrets.FPF_BRANCH_UPDATER_APP_PRIVKEY }}
-          repostiories: |
+          repositories: |
             build-logs
             securedrop-apt-test
       - name: Commit and push
