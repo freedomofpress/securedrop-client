@@ -308,7 +308,7 @@ export class DB {
 
   deleteItems(items: string[]) {
     this.db!.transaction((items: string[]) => {
-      for (const itemID in items) {
+      for (const itemID of items) {
         this.deleteItem.run({ uuid: itemID });
       }
       this.updateVersion();
@@ -317,7 +317,7 @@ export class DB {
 
   deleteSources(sources: string[]) {
     this.db!.transaction((sources: string[]) => {
-      for (const sourceID in sources) {
+      for (const sourceID of sources) {
         this.deleteSource.run({ uuid: sourceID });
       }
       this.updateVersion();
@@ -326,7 +326,7 @@ export class DB {
 
   deleteJournalists(journalists: string[]) {
     this.db!.transaction((journalists: string[]) => {
-      for (const journalistID in journalists) {
+      for (const journalistID of journalists) {
         this.deleteJournalist.run({ uuid: journalistID });
       }
       this.updateVersion();

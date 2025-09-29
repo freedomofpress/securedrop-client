@@ -125,15 +125,14 @@ export function reconcileIndex(
     ) {
       journalistsToUpdate.push(journalistID);
     }
-    // Also check for journalists to delete
-    const journalistsToDelete = Object.keys(clientIndex.journalists).filter(
-      (journalist) =>
-        !Object.keys(serverIndex.journalists).includes(journalist),
-    );
-    if (journalistsToDelete.length > 0) {
-      db.deleteJournalists(journalistsToDelete);
-    }
   });
+  // Also check for journalists to delete
+  const journalistsToDelete = Object.keys(clientIndex.journalists).filter(
+    (journalist) => !Object.keys(serverIndex.journalists).includes(journalist),
+  );
+  if (journalistsToDelete.length > 0) {
+    db.deleteJournalists(journalistsToDelete);
+  }
 
   return {
     sources: sourcesToUpdate,
