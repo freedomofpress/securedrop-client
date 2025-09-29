@@ -87,9 +87,11 @@ export class DB {
   private selectItemsBySourceId: Statement<[string], ItemRow>;
   private selectAllJournalists: Statement<[], JournalistRow>;
 
-  constructor() {
+  constructor(dbDir?: string) {
+    if (!dbDir) {
+      dbDir = path.join(os.homedir(), ".config", "SecureDrop");
+    }
     // Ensure the directory exists
-    const dbDir = path.join(os.homedir(), ".config", "SecureDrop");
     if (!fs.existsSync(dbDir)) {
       fs.mkdirSync(dbDir, { recursive: true });
     }
