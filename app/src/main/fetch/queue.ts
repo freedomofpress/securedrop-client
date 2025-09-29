@@ -193,7 +193,7 @@ export class TaskQueue {
   ) {
     const crypto = Crypto.getInstance();
     if (!crypto) {
-      throw new Error("Crypto not initilaized in fetch worker, cannot decrypt");
+      throw new Error("Crypto not initialized in fetch worker, cannot decrypt");
     }
 
     // Set status to decryption in progress
