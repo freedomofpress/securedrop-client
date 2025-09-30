@@ -3,6 +3,7 @@ import fs from "fs";
 import path from "path";
 import os from "os";
 import { DB } from "./index";
+import { ItemMetadata, PendingEventType, SourceMetadata } from "../../types";
 
 describe("Database Component Tests", () => {
   const testHomeDir = path.join(os.tmpdir(), "test-home");
@@ -49,5 +50,261 @@ describe("Database Component Tests", () => {
     const stats = fs.statSync(testDbPath);
     expect(stats.isFile()).toBe(true);
     expect(stats.size).toBeGreaterThan(0);
+  });
+});
+
+describe("pending_events update projected views", () => {
+  const testHomeDir = path.join(os.tmpdir(), "test-home");
+  const originalHomedir = os.homedir;
+  let db: DB;
+
+  beforeEach(() => {
+    if (fs.existsSync(testHomeDir)) {
+      fs.rmSync(testHomeDir, { recursive: true, force: true });
+    }
+    os.homedir = () => testHomeDir;
+    db = new DB();
+  });
+
+  afterEach(() => {
+    if (db) {
+      db.close();
+    }
+    os.homedir = originalHomedir;
+    if (fs.existsSync(testHomeDir)) {
+      fs.rmSync(testHomeDir, { recursive: true, force: true });
+    }
+  });
+
+  function mockSourceMetadata(
+    uuid: string,
+    is_starred?: boolean,
+  ): SourceMetadata {
+    return {
+      uuid: uuid,
+      journalist_designation: "Foo Bar",
+      is_starred: is_starred ?? false,
+      last_updated: "",
+      public_key: "",
+      fingerprint: "",
+    };
+  }
+
+  function mockItemMetadata(uuid: string, source_uuid: string): ItemMetadata {
+    return {
+      kind: "reply",
+      uuid: uuid,
+      source: source_uuid,
+      size: 50,
+      journalist_uuid: "",
+      is_deleted_by_source: false,
+      seen_by: [],
+    };
+  }
+
+  it("pending SourceDeleted event should remove source in getSources", () => {
+    // Insert three sources
+    db.updateSources({
+      source1: mockSourceMetadata("source1"),
+      source2: mockSourceMetadata("source2"),
+      source3: mockSourceMetadata("source3"),
+    });
+
+    let sources = db.getSources();
+    expect(sources.length).toEqual(3);
+    expect(sources.map((s) => s.uuid)).toEqual([
+      "source1",
+      "source2",
+      "source3",
+    ]);
+
+    // Add pending delete for source3
+    db.addPendingSourceEvent("source3", PendingEventType.SourceDeleted);
+
+    // getSources should now return only source1, source2
+    sources = db.getSources();
+    expect(sources.length).toEqual(2);
+    expect(sources.map((s) => s.uuid)).toEqual(["source1", "source2"]);
+  });
+
+  it("pending SourceConversationDeleted should remove all items", () => {
+    db.updateSources({
+      source1: mockSourceMetadata("source1"),
+    });
+
+    db.updateItems({
+      item1: mockItemMetadata("item1", "source1"),
+      item2: mockItemMetadata("item2", "source1"),
+      item3: mockItemMetadata("item3", "source1"),
+    });
+
+    let sourceWithItems = db.getSourceWithItems("source1");
+    expect(sourceWithItems.items.length).toEqual(3);
+
+    db.addPendingSourceEvent(
+      "source1",
+      PendingEventType.SourceConversationDeleted,
+    );
+    sourceWithItems = db.getSourceWithItems("source1");
+    expect(sourceWithItems.items.length).toEqual(0);
+
+    db.updateSources({
+      source2: mockSourceMetadata("source2"),
+    });
+  });
+
+  it("pending SourceConversationDeleted event shoudl only affect given source", () => {
+    db.updateSources({
+      source1: mockSourceMetadata("source1"),
+    });
+
+    db.updateItems({
+      item1: mockItemMetadata("item1", "source1"),
+      item2: mockItemMetadata("item2", "source1"),
+      item3: mockItemMetadata("item3", "source1"),
+    });
+
+    let sourceWithItems = db.getSourceWithItems("source1");
+    expect(sourceWithItems.items.length).toEqual(3);
+
+    db.addPendingSourceEvent(
+      "source1",
+      PendingEventType.SourceConversationDeleted,
+    );
+    sourceWithItems = db.getSourceWithItems("source1");
+    expect(sourceWithItems.items.length).toEqual(0);
+
+    // Add source2 with 3 items
+    db.updateSources({
+      source2: mockSourceMetadata("source2"),
+    });
+
+    db.updateItems({
+      item1: mockItemMetadata("item1", "source2"),
+      item2: mockItemMetadata("item2", "source2"),
+      item3: mockItemMetadata("item3", "source2"),
+    });
+    sourceWithItems = db.getSourceWithItems("source2");
+    expect(sourceWithItems.items.length).toEqual(3);
+  });
+
+  it("pending Starred event should star source", () => {
+    // Insert three sources
+    db.updateSources({
+      source1: mockSourceMetadata("source1"),
+      source2: mockSourceMetadata("source2"),
+      source3: mockSourceMetadata("source3"),
+    });
+    let sources = db.getSources();
+    for (const source of sources) {
+      expect(source.data.is_starred).toBe(false);
+    }
+
+    db.addPendingSourceEvent("source1", PendingEventType.Starred);
+
+    sources = db.getSources();
+    for (const source of sources) {
+      if (source.uuid === "source1") {
+        expect(source.data.is_starred).toBeTruthy();
+        continue;
+      }
+      expect(source.data.is_starred).toBe(false);
+    }
+  });
+
+  it("pending Unstarred event should star source", () => {
+    // Insert three sources
+    db.updateSources({
+      source1: mockSourceMetadata("source1", true),
+      source2: mockSourceMetadata("source2", true),
+      source3: mockSourceMetadata("source3", true),
+    });
+    let sources = db.getSources();
+    for (const source of sources) {
+      expect(source.data.is_starred).toBe(true);
+    }
+
+    db.addPendingSourceEvent("source1", PendingEventType.Unstarred);
+
+    sources = db.getSources();
+    for (const source of sources) {
+      if (source.uuid === "source1") {
+        expect(source.data.is_starred).toBeFalsy();
+        continue;
+      }
+      expect(source.data.is_starred).toBe(true);
+    }
+  });
+
+  it("pending Seen event should mark seen", () => {
+    // Insert three sources
+    db.updateSources({
+      source1: mockSourceMetadata("source1", true),
+      source2: mockSourceMetadata("source2", true),
+      source3: mockSourceMetadata("source3", true),
+    });
+    let sources = db.getSources();
+    for (const source of sources) {
+      expect(source.isRead).toBe(false);
+    }
+
+    db.addPendingSourceEvent("source1", PendingEventType.Seen);
+    sources = db.getSources();
+    for (const source of sources) {
+      if (source.uuid === "source1") {
+        expect(source.isRead).toBe(true);
+        continue;
+      }
+      expect(source.isRead).toBe(false);
+    }
+  });
+
+  it("pending ReplySent event should add reply", () => {
+    db.updateSources({
+      source1: mockSourceMetadata("source1"),
+    });
+
+    db.updateItems({
+      item1: mockItemMetadata("item1", "source1"),
+      item2: mockItemMetadata("item2", "source1"),
+      item3: mockItemMetadata("item3", "source1"),
+    });
+
+    let sourceWithItems = db.getSourceWithItems("source1");
+    expect(sourceWithItems.items.length).toEqual(3);
+
+    db.addPendingItemEvent(
+      "item4",
+      PendingEventType.ReplySent,
+      "here is a reply",
+      "source1",
+      "journalist",
+    );
+    sourceWithItems = db.getSourceWithItems("source1");
+    expect(sourceWithItems.items.length).toEqual(4);
+    const reply = sourceWithItems.items.find((i) => {
+      return i.uuid === "item4";
+    });
+    expect(reply?.plaintext === "this is a reply");
+  });
+
+  it("pending ReplyDeleted event should delete reply", () => {
+    db.updateSources({
+      source1: mockSourceMetadata("source1"),
+    });
+
+    db.updateItems({
+      item1: mockItemMetadata("item1", "source1"),
+      item2: mockItemMetadata("item2", "source1"),
+      item3: mockItemMetadata("item3", "source1"),
+    });
+
+    let sourceWithItems = db.getSourceWithItems("source1");
+    expect(sourceWithItems.items.length).toEqual(3);
+
+    db.addPendingItemEvent("item1", PendingEventType.ReplyDeleted);
+
+    sourceWithItems = db.getSourceWithItems("source1");
+    expect(sourceWithItems.items.length).toEqual(2);
   });
 });
