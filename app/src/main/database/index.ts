@@ -4,6 +4,7 @@ import path from "path";
 import { execSync } from "child_process";
 import Database, { Statement } from "better-sqlite3";
 import blake from "blakejs";
+import { Snowflake } from "@sapphire/snowflake";
 
 import {
   Index,
@@ -18,6 +19,8 @@ import {
   Journalist,
   JournalistRow,
   FetchStatus,
+  PendingEventType,
+  ReplySentData,
 } from "../../types";
 
 interface KeyObject {
@@ -91,6 +94,20 @@ export class DB {
   private selectItemsBySourceId: Statement<[string], ItemRow>;
   private selectAllJournalists: Statement<[], JournalistRow>;
 
+  private insertSourcePendingEvent: Statement<
+    { snowflake_id: bigint; source_uuid: string; type: number },
+    void
+  >;
+  private insertItemPendingEvent: Statement<
+    {
+      snowflake_id: bigint;
+      item_uuid?: string;
+      type: number;
+      reply_data: string;
+    },
+    void
+  >;
+
   constructor() {
     // Ensure the directory exists
     const dbDir = path.join(os.homedir(), ".config", "SecureDrop");
@@ -117,7 +134,7 @@ export class DB {
     );
 
     this.selectAllSourceVersion = this.db.prepare(
-      "SELECT uuid, version FROM sources",
+      "SELECT uuid, version FROM sources_projected",
     );
     this.upsertSource = this.db.prepare(
       "INSERT INTO sources (uuid, data, version) VALUES (@uuid, @data, @version) ON CONFLICT(uuid) DO UPDATE SET data=@data, version=@version",
@@ -127,10 +144,10 @@ export class DB {
     );
 
     this.selectAllItemVersion = this.db.prepare(
-      "SELECT uuid, version FROM items",
+      "SELECT uuid, version FROM items_projected",
     );
     this.selectItemFilenameSource = this.db.prepare(
-      "SELECT filename, source_uuid FROM items WHERE source_uuid = @uuid",
+      "SELECT filename, source_uuid FROM items_projected WHERE source_uuid = @uuid",
     );
     this.upsertItem = this.db.prepare(
       "INSERT INTO items (uuid, data, version) VALUES (@uuid, @data, @version) ON CONFLICT(uuid) DO UPDATE SET data=@data, version=@version",
@@ -154,18 +171,26 @@ export class DB {
         has_attachment,
         show_message_preview,
         message_preview
-      FROM sources
+      FROM sources_projected
     `);
     this.selectSourceById = this.db.prepare(`
-      SELECT uuid, data FROM sources
+      SELECT uuid, data FROM sources_projected
       WHERE uuid = ?
     `);
     this.selectItemsBySourceId = this.db.prepare(`
-      SELECT uuid, data, plaintext, filename FROM items
+      SELECT uuid, data, plaintext, filename FROM items_projected
       WHERE source_uuid = ?
     `);
     this.selectAllJournalists = this.db.prepare(`
       SELECT uuid, data FROM journalists
+    `);
+
+    this.insertSourcePendingEvent = this.db.prepare(`
+      INSERT INTO pending_events (snowflake_id, source_uuid, type) VALUES (@snowflake_id, @source_uuid, @type)
+    `);
+
+    this.insertItemPendingEvent = this.db.prepare(`
+      INSERT INTO pending_events (snowflake_id, item_uuid, type, data) VALUES(@snowflake_id, @item_uuid, @type, @reply_data)
     `);
   }
 
@@ -344,7 +369,7 @@ export class DB {
 
   // Updates source versions in DB. Should be run in a transaction that also
   // updates the global index version.
-  private updateSources(sources: { [uuid: string]: SourceMetadata }) {
+  updateSources(sources: { [uuid: string]: SourceMetadata }) {
     Object.keys(sources).forEach((sourceid: string) => {
       const metadata = sources[sourceid];
       // Updating the full source: update metadata and re-compute source version
@@ -360,7 +385,7 @@ export class DB {
 
   // Updates item versions in DB. Should be run in a transaction that also
   // updates the global index version.
-  private updateItems(items: { [uuid: string]: ItemMetadata }) {
+  updateItems(items: { [uuid: string]: ItemMetadata }) {
     Object.keys(items).forEach((itemid: string) => {
       const metadata = items[itemid];
       const blob = JSON.stringify(metadata, sortKeys);
@@ -580,5 +605,46 @@ export class DB {
       `UPDATE items SET fetch_status = ${FetchStatus.FailedDecryptionRetryable}, fetch_retry_attempts = fetch_retry_attempts + 1, fetch_last_updated_at = CURRENT_TIMESTAMP WHERE uuid = @uuid`,
     );
     stmt.run({ uuid: itemUuid });
+  }
+
+  addPendingSourceEvent(sourceUuid: string, type: PendingEventType): bigint {
+    const snowflakeID = new Snowflake(Date.now()).generate();
+    this.insertSourcePendingEvent.run({
+      snowflake_id: snowflakeID,
+      source_uuid: sourceUuid,
+      type: type,
+    });
+    return snowflakeID;
+  }
+
+  addPendingItemEvent(
+    itemUuid: string,
+    type: PendingEventType,
+    replyText?: string,
+    replySourceUuid?: string,
+    journalistUuid?: string,
+  ): bigint {
+    const snowflakeID = new Snowflake(Date.now()).generate();
+    const replyData: ReplySentData = {
+      metadata: {
+        kind: "reply",
+        uuid: itemUuid,
+        source: replySourceUuid ?? "",
+        size: replyText?.length ?? 0,
+        journalist_uuid: journalistUuid ?? "",
+        is_deleted_by_source: false,
+        seen_by: [],
+      },
+      text: replyText ?? "",
+    };
+    this.insertItemPendingEvent.run({
+      snowflake_id: snowflakeID,
+      // Don't sent item_uuid for new replies since the uuid does not exist
+      // in the items table and will violate fkey constraint
+      item_uuid: type !== PendingEventType.ReplySent ? itemUuid : undefined,
+      type: type,
+      reply_data: JSON.stringify(replyData, sortKeys),
+    });
+    return snowflakeID;
   }
 }
