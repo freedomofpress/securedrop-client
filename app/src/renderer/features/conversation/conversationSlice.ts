@@ -1,5 +1,5 @@
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
-import type { SourceWithItems } from "../../../types";
+import { type SourceWithItems } from "../../../types";
 import type { RootState } from "../../store";
 
 export interface ConversationState {
@@ -22,6 +22,36 @@ export const fetchConversation = createAsyncThunk(
     const sourceWithItems =
       await window.electronAPI.getSourceWithItems(sourceUuid);
     return { sourceUuid, sourceWithItems };
+  },
+);
+
+export const updateItemFetchStatus = createAsyncThunk(
+  "conversation/updateItemFetchStatus",
+  async ({
+    itemUuid,
+    fetchStatus,
+    authToken,
+  }: {
+    sourceUuid: string;
+    itemUuid: string;
+    fetchStatus: number;
+    authToken: string | undefined;
+  }) => {
+    await window.electronAPI.updateFetchStatus(
+      itemUuid,
+      fetchStatus,
+      authToken,
+    );
+    const item = await window.electronAPI.getItem(itemUuid);
+    return { item };
+  },
+);
+
+export const pollItem = createAsyncThunk(
+  "conversation/pollItem",
+  async ({ itemUuid }: { itemUuid: string }) => {
+    const item = await window.electronAPI.getItem(itemUuid);
+    return { item };
   },
 );
 
@@ -53,6 +83,30 @@ const conversationSlice = createSlice({
       .addCase(fetchConversation.rejected, (state, action) => {
         state.loading = false;
         state.error = action.error.message || "Failed to fetch conversation";
+      })
+      .addCase(updateItemFetchStatus.fulfilled, (state, action) => {
+        const { item: updatedItem } = action.payload;
+        if (state.conversation) {
+          state.conversation.items = state.conversation.items.map((item, _) => {
+            if (item.uuid === updatedItem.uuid) {
+              return updatedItem;
+            }
+            return item;
+          });
+        }
+        state.lastFetchTime = Date.now();
+      })
+      .addCase(pollItem.fulfilled, (state, action) => {
+        const { item: updatedItem } = action.payload;
+        if (state.conversation) {
+          state.conversation.items = state.conversation.items.map((item, _) => {
+            if (item.uuid === updatedItem.uuid) {
+              return updatedItem;
+            }
+            return item;
+          });
+        }
+        state.lastFetchTime = Date.now();
       });
   },
 });

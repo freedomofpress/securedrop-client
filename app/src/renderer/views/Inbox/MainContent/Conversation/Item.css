@@ -46,3 +46,18 @@
   width: auto;
   box-sizing: border-box;
 }
+
+.file-box {
+  border-radius: var(--radius-none, 0) var(--radius-md, 4px)
+    var(--radius-md, 4px) var(--radius-md, 4px);
+  border: 1px solid var(--Colors-Border-border-secondary, #e9eaeb);
+  background: var(--Colors-Background-bg-primary, #fff);
+  padding: var(--spacing-md, 8px) var(--spacing-lg, 12px);
+  min-width: 300px;
+  max-width: 500px;
+  word-wrap: break-word;
+  word-break: break-word;
+  overflow-wrap: anywhere;
+  hyphens: auto;
+  box-sizing: border-box;
+}

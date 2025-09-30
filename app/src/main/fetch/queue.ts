@@ -8,7 +8,7 @@ import { Writable } from "stream";
 import { BufferedWriter } from "./bufferedWriter";
 import { DB } from "../database";
 import {
-  FetchDownloadsMessage,
+  AuthedRequest,
   FetchStatus,
   ItemMetadata,
   ProxyRequest,
@@ -42,7 +42,7 @@ export class TaskQueue {
 
   // Queries the database for all items that need to be downloaded and queues
   // up download tasks to be processed.
-  queueFetches(message: FetchDownloadsMessage) {
+  queueFetches(message: AuthedRequest) {
     this.authToken = message.authToken;
     try {
       const itemsToProcess = this.db.getItemsToProcess();
@@ -81,13 +81,18 @@ export class TaskQueue {
   process = async (item: ItemFetchTask, db: DB) => {
     console.log("Processing item: ", item);
 
-    const [metadata, status, progress] = db.getItemWithFetchStatus(item.id);
+    const {
+      data: metadata,
+      fetch_status: status,
+      fetch_progress: progress,
+    } = db.getItem(item.id);
 
-    // Skip items that are already complete, terminally failed, or paused
+    // Skip items that are complete, terminally failed, paused, or not scheduled
     if (
       status == FetchStatus.Complete ||
       status == FetchStatus.FailedTerminal ||
-      status == FetchStatus.Paused
+      status == FetchStatus.Paused ||
+      status == FetchStatus.NotScheduled
     ) {
       console.log("Item task is not in an processable state, skipping...");
       return;
@@ -98,15 +103,15 @@ export class TaskQueue {
     let nextStatus = status;
     if (
       status === FetchStatus.Initial ||
+      status === FetchStatus.DownloadInProgress ||
       status === FetchStatus.FailedDownloadRetryable
     ) {
-      downloadResult = await this.download(item, db, metadata, progress);
+      downloadResult = await this.download(item, db, metadata, progress || 0);
       nextStatus = FetchStatus.DecryptionInProgress;
     }
 
-    // Phase 2: Decryption (for failed decryption retries)
+    // Phase 2: Decryption (or failed decryption retries)
     if (
-      nextStatus === FetchStatus.DownloadInProgress ||
       nextStatus === FetchStatus.DecryptionInProgress ||
       nextStatus === FetchStatus.FailedDecryptionRetryable
     ) {
