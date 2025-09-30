@@ -28,7 +28,6 @@ export const fetchConversation = createAsyncThunk(
 export const updateItemFetchStatus = createAsyncThunk(
   "conversation/updateItemFetchStatus",
   async ({
-    sourceUuid,
     itemUuid,
     fetchStatus,
     authToken,
@@ -43,10 +42,16 @@ export const updateItemFetchStatus = createAsyncThunk(
       fetchStatus,
       authToken,
     );
-    // TODO(vicki): only fetch item to be updated
-    const sourceWithItems =
-      await window.electronAPI.getSourceWithItems(sourceUuid);
-    return { sourceWithItems };
+    const item = await window.electronAPI.getItem(itemUuid);
+    return { item };
+  },
+);
+
+export const pollItem = createAsyncThunk(
+  "conversation/pollItem",
+  async ({ itemUuid }: { itemUuid: string }) => {
+    const item = await window.electronAPI.getItem(itemUuid);
+    return { item };
   },
 );
 
@@ -80,8 +85,27 @@ const conversationSlice = createSlice({
         state.error = action.error.message || "Failed to fetch conversation";
       })
       .addCase(updateItemFetchStatus.fulfilled, (state, action) => {
-        const { sourceWithItems } = action.payload;
-        state.conversation = sourceWithItems;
+        const { item: updatedItem } = action.payload;
+        if (state.conversation) {
+          state.conversation.items = state.conversation.items.map((item, _) => {
+            if (item.uuid === updatedItem.uuid) {
+              return updatedItem;
+            }
+            return item;
+          });
+        }
+        state.lastFetchTime = Date.now();
+      })
+      .addCase(pollItem.fulfilled, (state, action) => {
+        const { item: updatedItem } = action.payload;
+        if (state.conversation) {
+          state.conversation.items = state.conversation.items.map((item, _) => {
+            if (item.uuid === updatedItem.uuid) {
+              return updatedItem;
+            }
+            return item;
+          });
+        }
         state.lastFetchTime = Date.now();
       });
   },

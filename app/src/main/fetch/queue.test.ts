@@ -6,7 +6,7 @@ import { PassThrough } from "stream";
 
 import { TaskQueue } from "./queue";
 import { CryptoError } from "../crypto";
-import { FetchStatus, ItemMetadata } from "../../types";
+import { FetchStatus, ItemMetadata, Item } from "../../types";
 import { DB } from "../database";
 import { BufferedWriter } from "./bufferedWriter";
 
@@ -52,7 +52,7 @@ vi.mock("fs", () => ({
 function createMockDB() {
   return {
     getItemsToProcess: vi.fn(),
-    getItemWithFetchStatus: vi.fn(),
+    getItem: vi.fn(),
     completePlaintextItem: vi.fn(),
     completeFileItem: vi.fn(),
     setDownloadInProgress: vi.fn(),
@@ -61,6 +61,19 @@ function createMockDB() {
     failDecryption: vi.fn(),
     terminallyFailItem: vi.fn(),
   } as unknown as DB;
+}
+
+function mockItem(
+  metadata: ItemMetadata,
+  fetch_status: FetchStatus,
+  fetch_progress?: number,
+): Item {
+  return {
+    uuid: "id",
+    data: metadata,
+    fetch_status,
+    fetch_progress,
+  };
 }
 
 describe("TaskQueue - Two-Phase Download and Decryption", () => {
@@ -73,17 +86,10 @@ describe("TaskQueue - Two-Phase Download and Decryption", () => {
   describe("Message Processing", () => {
     it("should download and decrypt a message successfully on first attempt", async () => {
       const db = createMockDB();
-      const metadata = { kind: "message", source: "source1" };
+      const metadata = { kind: "message", source: "source1" } as ItemMetadata;
 
       // Mock: item is in Initial status
-      db.getItemWithFetchStatus = vi.fn(
-        () =>
-          [metadata, FetchStatus.Initial, 0] as [
-            ItemMetadata,
-            FetchStatus,
-            number,
-          ],
-      );
+      db.getItem = vi.fn(() => mockItem(metadata, FetchStatus.Initial, 0));
 
       // Mock successful download
       mockProxyStreamRequest.mockResolvedValue({
@@ -123,17 +129,15 @@ describe("TaskQueue - Two-Phase Download and Decryption", () => {
 
     it("should download successfully but fail decryption, save to disk, and retry decryption only", async () => {
       const db = createMockDB();
-      const metadata = { kind: "message", source: "source1" };
+      const metadata = { kind: "message", source: "source1" } as ItemMetadata;
 
       // First attempt: Initial status
-      db.getItemWithFetchStatus = vi
+      db.getItem = vi
         .fn()
-        .mockReturnValueOnce([metadata, FetchStatus.Initial, 0])
-        .mockReturnValueOnce([
-          metadata,
-          FetchStatus.FailedDecryptionRetryable,
-          0,
-        ]);
+        .mockReturnValueOnce(mockItem(metadata, FetchStatus.Initial, 0))
+        .mockReturnValueOnce(
+          mockItem(metadata, FetchStatus.FailedDecryptionRetryable, 0),
+        );
 
       // Mock successful download
       mockProxyStreamRequest.mockResolvedValue({
@@ -195,17 +199,15 @@ describe("TaskQueue - Two-Phase Download and Decryption", () => {
 
     it("should fail download, retry download and decryption successfully", async () => {
       const db = createMockDB();
-      const metadata = { kind: "message", source: "source1" };
+      const metadata = { kind: "message", source: "source1" } as ItemMetadata;
 
       // First attempt: Initial status, Second attempt: FailedDownloadRetryable
-      db.getItemWithFetchStatus = vi
+      db.getItem = vi
         .fn()
-        .mockReturnValueOnce([metadata, FetchStatus.Initial, 0])
-        .mockReturnValueOnce([
-          metadata,
-          FetchStatus.FailedDownloadRetryable,
-          50,
-        ]);
+        .mockReturnValueOnce(mockItem(metadata, FetchStatus.Initial, 0))
+        .mockReturnValueOnce(
+          mockItem(metadata, FetchStatus.FailedDownloadRetryable, 50),
+        );
 
       const queue = new TaskQueue(db);
 
@@ -250,16 +252,9 @@ describe("TaskQueue - Two-Phase Download and Decryption", () => {
   describe("Reply Processing", () => {
     it("should download and decrypt a reply successfully on first attempt", async () => {
       const db = createMockDB();
-      const metadata = { kind: "reply", source: "source1" };
+      const metadata = { kind: "reply", source: "source1" } as ItemMetadata;
 
-      db.getItemWithFetchStatus = vi.fn(
-        () =>
-          [metadata, FetchStatus.Initial, 0] as [
-            ItemMetadata,
-            FetchStatus,
-            number,
-          ],
-      );
+      db.getItem = vi.fn(() => mockItem(metadata, FetchStatus.Initial, 0));
 
       mockProxyStreamRequest.mockResolvedValue({
         complete: true,
@@ -293,16 +288,14 @@ describe("TaskQueue - Two-Phase Download and Decryption", () => {
 
     it("should download successfully but fail decryption, save to disk, and retry decryption only", async () => {
       const db = createMockDB();
-      const metadata = { kind: "reply", source: "source1" };
+      const metadata = { kind: "reply", source: "source1" } as ItemMetadata;
 
-      db.getItemWithFetchStatus = vi
+      db.getItem = vi
         .fn()
-        .mockReturnValueOnce([metadata, FetchStatus.Initial, 0])
-        .mockReturnValueOnce([
-          metadata,
-          FetchStatus.FailedDecryptionRetryable,
-          0,
-        ]);
+        .mockReturnValueOnce(mockItem(metadata, FetchStatus.Initial, 0))
+        .mockReturnValueOnce(
+          mockItem(metadata, FetchStatus.FailedDecryptionRetryable, 0),
+        );
 
       mockProxyStreamRequest.mockResolvedValue({
         complete: true,
@@ -349,16 +342,14 @@ describe("TaskQueue - Two-Phase Download and Decryption", () => {
 
     it("should fail download, retry download and decryption successfully", async () => {
       const db = createMockDB();
-      const metadata = { kind: "reply", source: "source1" };
+      const metadata = { kind: "reply", source: "source1" } as ItemMetadata;
 
-      db.getItemWithFetchStatus = vi
+      db.getItem = vi
         .fn()
-        .mockReturnValueOnce([metadata, FetchStatus.Initial, 0])
-        .mockReturnValueOnce([
-          metadata,
-          FetchStatus.FailedDownloadRetryable,
-          30,
-        ]);
+        .mockReturnValueOnce(mockItem(metadata, FetchStatus.Initial, 0))
+        .mockReturnValueOnce(
+          mockItem(metadata, FetchStatus.FailedDownloadRetryable, 30),
+        );
 
       const queue = new TaskQueue(db);
 
@@ -398,16 +389,9 @@ describe("TaskQueue - Two-Phase Download and Decryption", () => {
   describe("File Processing", () => {
     it("should download and decrypt a file successfully on first attempt", async () => {
       const db = createMockDB();
-      const metadata = { kind: "file", source: "source1" };
+      const metadata = { kind: "file", source: "source1" } as ItemMetadata;
 
-      db.getItemWithFetchStatus = vi.fn(
-        () =>
-          [metadata, FetchStatus.Initial, 0] as [
-            ItemMetadata,
-            FetchStatus,
-            number,
-          ],
-      );
+      db.getItem = vi.fn(() => mockItem(metadata, FetchStatus.Initial, 0));
 
       // Mock successful download
       mockProxyStreamRequest.mockResolvedValue({
@@ -452,17 +436,15 @@ describe("TaskQueue - Two-Phase Download and Decryption", () => {
 
     it("should download successfully but fail decryption, and retry decryption only", async () => {
       const db = createMockDB();
-      const metadata = { kind: "file", source: "source1" };
+      const metadata = { kind: "file", source: "source1" } as ItemMetadata;
 
       // First attempt: Initial status, Second attempt: FailedDecryptionRetryable
-      db.getItemWithFetchStatus = vi
+      db.getItem = vi
         .fn()
-        .mockReturnValueOnce([metadata, FetchStatus.Initial, 0])
-        .mockReturnValueOnce([
-          metadata,
-          FetchStatus.FailedDecryptionRetryable,
-          0,
-        ]);
+        .mockReturnValueOnce(mockItem(metadata, FetchStatus.Initial, 0))
+        .mockReturnValueOnce(
+          mockItem(metadata, FetchStatus.FailedDecryptionRetryable, 0),
+        );
 
       // Mock successful download
       mockProxyStreamRequest.mockResolvedValue({
@@ -516,17 +498,14 @@ describe("TaskQueue - Two-Phase Download and Decryption", () => {
 
     it("should fail download, retry download and decryption successfully", async () => {
       const db = createMockDB();
-      const metadata = { kind: "file", source: "source1" };
+      const metadata = { kind: "file", source: "source1" } as ItemMetadata;
 
-      // First attempt: Initial status, Second attempt: FailedDownloadRetryable
-      db.getItemWithFetchStatus = vi
+      db.getItem = vi
         .fn()
-        .mockReturnValueOnce([metadata, FetchStatus.Initial, 0])
-        .mockReturnValueOnce([
-          metadata,
-          FetchStatus.FailedDownloadRetryable,
-          50,
-        ]);
+        .mockReturnValueOnce(mockItem(metadata, FetchStatus.Initial, 0))
+        .mockReturnValueOnce(
+          mockItem(metadata, FetchStatus.FailedDownloadRetryable, 30),
+        );
 
       const queue = new TaskQueue(db);
 
@@ -569,16 +548,9 @@ describe("TaskQueue - Two-Phase Download and Decryption", () => {
   describe("Edge Cases and Error Handling", () => {
     it("should skip items that are already complete", async () => {
       const db = createMockDB();
-      const metadata = { kind: "message", source: "source1" };
+      const metadata = { kind: "message", source: "source1" } as ItemMetadata;
 
-      db.getItemWithFetchStatus = vi.fn(
-        () =>
-          [metadata, FetchStatus.Complete, 0] as [
-            ItemMetadata,
-            FetchStatus,
-            number,
-          ],
-      );
+      db.getItem = vi.fn(() => mockItem(metadata, FetchStatus.Complete, 0));
 
       const queue = new TaskQueue(db);
       await queue.process({ id: "msg1" }, db);
@@ -591,15 +563,10 @@ describe("TaskQueue - Two-Phase Download and Decryption", () => {
 
     it("should skip items that are terminally failed", async () => {
       const db = createMockDB();
-      const metadata = { kind: "message", source: "source1" };
+      const metadata = { kind: "message", source: "source1" } as ItemMetadata;
 
-      db.getItemWithFetchStatus = vi.fn(
-        () =>
-          [metadata, FetchStatus.FailedTerminal, 0] as [
-            ItemMetadata,
-            FetchStatus,
-            number,
-          ],
+      db.getItem = vi.fn(() =>
+        mockItem(metadata, FetchStatus.FailedTerminal, 0),
       );
 
       const queue = new TaskQueue(db);
@@ -610,16 +577,9 @@ describe("TaskQueue - Two-Phase Download and Decryption", () => {
 
     it("should skip items that are paused", async () => {
       const db = createMockDB();
-      const metadata = { kind: "message", source: "source1" };
+      const metadata = { kind: "message", source: "source1" } as ItemMetadata;
 
-      db.getItemWithFetchStatus = vi.fn(
-        () =>
-          [metadata, FetchStatus.Paused, 0] as [
-            ItemMetadata,
-            FetchStatus,
-            number,
-          ],
-      );
+      db.getItem = vi.fn(() => mockItem(metadata, FetchStatus.Paused, 0));
 
       const queue = new TaskQueue(db);
       await queue.process({ id: "msg1" }, db);
@@ -629,16 +589,9 @@ describe("TaskQueue - Two-Phase Download and Decryption", () => {
 
     it("should handle server error responses during download", async () => {
       const db = createMockDB();
-      const metadata = { kind: "message", source: "source1" };
+      const metadata = { kind: "message", source: "source1" } as ItemMetadata;
 
-      db.getItemWithFetchStatus = vi.fn(
-        () =>
-          [metadata, FetchStatus.Initial, 0] as [
-            ItemMetadata,
-            FetchStatus,
-            number,
-          ],
-      );
+      db.getItem = vi.fn(() => mockItem(metadata, FetchStatus.Initial, 0));
 
       mockProxyStreamRequest.mockResolvedValue({
         data: "Server error message",
@@ -657,15 +610,10 @@ describe("TaskQueue - Two-Phase Download and Decryption", () => {
 
     it("should handle file read errors during decryption retry", async () => {
       const db = createMockDB();
-      const metadata = { kind: "message", source: "source1" };
+      const metadata = { kind: "message", source: "source1" } as ItemMetadata;
 
-      db.getItemWithFetchStatus = vi.fn(
-        () =>
-          [metadata, FetchStatus.FailedDecryptionRetryable, 0] as [
-            ItemMetadata,
-            FetchStatus,
-            number,
-          ],
+      db.getItem = vi.fn(() =>
+        mockItem(metadata, FetchStatus.FailedDecryptionRetryable, 0),
       );
 
       // Mock file read error
@@ -684,16 +632,12 @@ describe("TaskQueue - Two-Phase Download and Decryption", () => {
 
     it("should handle unsupported item kinds", async () => {
       const db = createMockDB();
-      const metadata = { kind: "unknown", source: "source1" };
+      const metadata = {
+        kind: "unknown",
+        source: "source1",
+      } as unknown as ItemMetadata;
 
-      db.getItemWithFetchStatus = vi.fn(
-        () =>
-          [metadata, FetchStatus.Initial, 0] as [
-            ItemMetadata,
-            FetchStatus,
-            number,
-          ],
-      );
+      db.getItem = vi.fn(() => mockItem(metadata, FetchStatus.Initial, 0));
 
       const queue = new TaskQueue(db);
 
