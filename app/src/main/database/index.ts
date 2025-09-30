@@ -67,9 +67,13 @@ export class DB {
     { uuid: string; version: string }
   >;
   private upsertItem: Statement<
-    { id: string; data: string; version: string },
+    { id: string; data: string; version: string; fetch_status: number },
     void
   >;
+  private updateItemFetchStatus: Statement<{
+    uuid: string;
+    fetch_status: number;
+  }>;
   private deleteItem: Statement<{ id: string }, void>;
 
   private selectAllJournalistVersion: Statement<
@@ -124,7 +128,10 @@ export class DB {
       "SELECT uuid, version FROM items",
     );
     this.upsertItem = this.db.prepare(
-      "INSERT INTO items (uuid, data, version) VALUES (@id, @data, @version) ON CONFLICT(uuid) DO UPDATE SET data=@data, version=@version",
+      "INSERT INTO items (uuid, data, version, fetch_status) VALUES (@id, @data, @version, @fetch_status) ON CONFLICT(uuid) DO UPDATE SET data=@data, version=@version, fetch_status=@fetch_status",
+    );
+    this.updateItemFetchStatus = this.db.prepare(
+      "UPDATE items SET fetch_status = @fetch_status WHERE uuid = @uuid",
     );
     this.deleteItem = this.db.prepare("DELETE FROM items WHERE uuid = @id");
     this.selectAllJournalistVersion = this.db.prepare(
@@ -290,7 +297,7 @@ export class DB {
 
   deleteItems(items: string[]) {
     this.db!.transaction((items: string[]) => {
-      for (const itemID in items) {
+      for (const itemID of items) {
         this.deleteItem.run({ id: itemID });
       }
       this.updateVersion();
@@ -299,7 +306,7 @@ export class DB {
 
   deleteSources(sources: string[]) {
     this.db!.transaction((sources: string[]) => {
-      for (const sourceID in sources) {
+      for (const sourceID of sources) {
         this.deleteSource.run({ id: sourceID });
       }
       this.updateVersion();
@@ -308,7 +315,7 @@ export class DB {
 
   deleteJournalists(journalists: string[]) {
     this.db!.transaction((journalists: string[]) => {
-      for (const journalistID in journalists) {
+      for (const journalistID of journalists) {
         this.deleteJournalist.run({ id: journalistID });
       }
       this.updateVersion();
@@ -347,11 +354,26 @@ export class DB {
       const metadata = items[itemid];
       const blob = JSON.stringify(metadata, sortKeys);
       const version = computeVersion(blob);
+
+      // Set all files to be unscheduled initially since fetch should be
+      // manually enqueued for files.
+      let fetchStatus = FetchStatus.Initial;
+      if (metadata.kind === "file") {
+        fetchStatus = FetchStatus.NotScheduled;
+      }
       this.upsertItem.run({
         id: itemid,
         data: blob,
         version: version,
+        fetch_status: fetchStatus,
       });
+    });
+  }
+
+  public updateFetchStatus(itemUuid: string, fetchStatus: number) {
+    this.updateItemFetchStatus.run({
+      uuid: itemUuid,
+      fetch_status: fetchStatus,
     });
   }
 

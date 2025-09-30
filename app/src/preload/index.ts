@@ -8,7 +8,7 @@ import type {
   Source,
   SourceWithItems,
   Journalist,
-  SyncMetadataRequest,
+  AuthedRequest,
 } from "../types";
 
 // Log the performance of IPC calls
@@ -41,8 +41,13 @@ const electronAPI = {
     (request: ProxyRequest, downloadPath: string) =>
       ipcRenderer.invoke("requestStream", request, downloadPath),
   ),
-  syncMetadata: logIpcCall("syncMetadata", (request: SyncMetadataRequest) =>
+  syncMetadata: logIpcCall("syncMetadata", (request: AuthedRequest) =>
     ipcRenderer.invoke("syncMetadata", request),
+  ),
+  updateFetchStatus: logIpcCall(
+    "updateFetchStatus",
+    (itemUuid: string, fetchStatus: number, authToken: string) =>
+      ipcRenderer.invoke("updateFetchStatus", itemUuid, fetchStatus, authToken),
   ),
   getSources: logIpcCall<Source[]>("getSources", () =>
     ipcRenderer.invoke("getSources"),

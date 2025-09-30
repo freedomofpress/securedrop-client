@@ -83,7 +83,9 @@
   },
   "Item": {
     "encryptedFile": "Fichier Crypté",
-    "cancel": "Annuler",
-    "of": "de"
+    "pause": "Pause",
+    "resume": "Reprendre",
+    "of": "de",
+    "filenameTooltip": "Nom de fichier disponible après le téléchargement"
   }
 }

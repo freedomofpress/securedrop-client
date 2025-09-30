@@ -18,8 +18,7 @@ import type {
   Source,
   SourceWithItems,
   Journalist,
-  SyncMetadataRequest,
-  FetchDownloadsMessage,
+  AuthedRequest,
 } from "../types";
 import { syncMetadata } from "./sync";
 import workerPath from "./fetch/worker?modulePath";
@@ -148,14 +147,26 @@ app.whenReady().then(() => {
     return journalists;
   });
 
+  ipcMain.handle("syncMetadata", async (_event, request: AuthedRequest) => {
+    await syncMetadata(db, request.authToken);
+    // Send message to fetch worker to fetch newly synced items, if any
+    fetchWorker.postMessage({
+      authToken: request.authToken,
+    } as AuthedRequest);
+  });
+
   ipcMain.handle(
-    "syncMetadata",
-    async (_event, request: SyncMetadataRequest) => {
-      await syncMetadata(db, request.authToken);
-      // Send message to fetch worker to fetch newly synced items, if any
+    "updateFetchStatus",
+    async (
+      _event,
+      itemUuid: string,
+      fetchStatus: number,
+      authToken: string,
+    ) => {
+      db.updateFetchStatus(itemUuid, fetchStatus);
       fetchWorker.postMessage({
-        authToken: request.authToken,
-      } as FetchDownloadsMessage);
+        authToken: authToken,
+      } as AuthedRequest);
     },
   );
 

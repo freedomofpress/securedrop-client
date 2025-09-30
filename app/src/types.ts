@@ -42,8 +42,9 @@ export type ms = number & { readonly __unit: "ms" };
 
 /** Sync types */
 
-// IPC request for syncMetadata operation
-export type SyncMetadataRequest = {
+// IPC request for operation requiring auth token
+// ex: syncMetadata, fetchDownloads
+export type AuthedRequest = {
   authToken: string;
 };
 
@@ -146,6 +147,19 @@ export type Journalist = {
   data: JournalistMetadata;
 };
 
+// Defines an item update in the UI, to be translated
+// to write events dispatched to the main process
+export type ItemUpdate = {
+  item_uuid: string;
+  type: ItemUpdateType;
+  fetch_status?: number;
+  // TODO: define other item updates
+};
+
+export enum ItemUpdateType {
+  FetchStatus = 1,
+}
+
 // Database representation
 export type SourceRow = {
   uuid: string;
@@ -194,9 +208,7 @@ export enum FetchStatus {
   FailedDecryptionRetryable = 6,
   // Exceeded max retries, considered terminally failed
   FailedTerminal = 7,
+  // Only for file submissions: set FetchStatus to NotScheduled since we
+  // want to manually enqueue file submissions for fetch + decryption
+  NotScheduled = 8,
 }
-
-/** Fetch Worker types */
-export type FetchDownloadsMessage = {
-  authToken: string;
-};
