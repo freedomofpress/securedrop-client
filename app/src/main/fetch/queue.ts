@@ -67,7 +67,11 @@ export class TaskQueue {
   process = async (item: ItemFetchTask, db: DB) => {
     console.debug("Processing item: ", item);
 
-    const [metadata, status, progress] = db.getItemWithFetchStatus(item.id);
+    const {
+      data: metadata,
+      fetch_status: status,
+      fetch_progress: progress,
+    } = db.getItem(item.id);
 
     // Skip items that are complete, terminally failed, paused, or not scheduled
     if (
@@ -88,7 +92,7 @@ export class TaskQueue {
       status === FetchStatus.DownloadInProgress ||
       status === FetchStatus.FailedDownloadRetryable
     ) {
-      downloadResult = await this.download(item, db, metadata, progress);
+      downloadResult = await this.download(item, db, metadata, progress || 0);
       nextStatus = FetchStatus.DecryptionInProgress;
     }
 

@@ -18,6 +18,7 @@ import {
   Journalist,
   JournalistRow,
   FetchStatus,
+  Item,
 } from "../../types";
 
 interface KeyObject {
@@ -79,6 +80,8 @@ export class DB {
     uuid: string;
     fetch_status: number;
   }>;
+  private selectItem: Statement<{ uuid: string }, ItemRow>;
+
   private selectAllJournalistVersion: Statement<
     [],
     { uuid: string; version: string }
@@ -147,6 +150,10 @@ export class DB {
       "INSERT INTO items (uuid, data, version) VALUES (@uuid, @data, @version) ON CONFLICT(uuid) DO UPDATE SET data=@data, version=@version",
     );
     this.deleteItem = this.db.prepare("DELETE FROM items WHERE uuid = @uuid");
+    this.selectItem = this.db.prepare(
+      `SELECT uuid, data, plaintext, filename, fetch_status, fetch_progress FROM items WHERE uuid = @uuid`,
+    );
+
     this.selectAllJournalistVersion = this.db.prepare(
       "SELECT uuid, version FROM journalists",
     );
@@ -510,22 +517,16 @@ export class DB {
     return rows.map((r) => r.uuid);
   }
 
-  getItemWithFetchStatus(
-    itemUuid: string,
-  ): [ItemMetadata, FetchStatus, number] {
-    type Row = {
-      data: string;
-      fetch_status: number;
-      fetch_progress: number;
+  getItem(itemUuid: string): Item {
+    const row = this.selectItem.get({ uuid: itemUuid }) as ItemRow;
+    return {
+      uuid: row.uuid,
+      data: JSON.parse(row.data) as ItemMetadata,
+      plaintext: row.plaintext,
+      filename: row.filename,
+      fetch_status: row.fetch_status as FetchStatus,
+      fetch_progress: row.fetch_progress,
     };
-    const itemStmt = this.db?.prepare(`
-      SELECT data, fetch_status, fetch_progress FROM items WHERE uuid = ?`);
-    const item = itemStmt?.get(itemUuid) as Row;
-    return [
-      JSON.parse(item.data) as ItemMetadata,
-      item.fetch_status as FetchStatus,
-      item.fetch_progress,
-    ];
   }
 
   completePlaintextItem(itemUuid: string, plaintext: string) {

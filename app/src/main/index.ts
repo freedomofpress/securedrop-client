@@ -19,6 +19,7 @@ import type {
   SourceWithItems,
   Journalist,
   AuthedRequest,
+  Item,
 } from "../types";
 import { syncMetadata } from "./sync";
 import workerPath from "./fetch/worker?modulePath";
@@ -141,6 +142,10 @@ app.whenReady().then(() => {
       return sourceWithItems;
     },
   );
+
+  ipcMain.handle("getItem", async (_event, itemUuid: string): Promise<Item> => {
+    return db.getItem(itemUuid);
+  });
 
   ipcMain.handle("getJournalists", async (_event): Promise<Journalist[]> => {
     const journalists = db.getJournalists();

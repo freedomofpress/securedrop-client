@@ -47,6 +47,7 @@ beforeEach(() => {
     updateFetchStatus: vi
       .fn()
       .mockRejectedValue(new Error("mock not implemented")),
+    getItem: vi.fn().mockRejectedValue(new Error("mock not implemented")),
     getSources: vi.fn().mockResolvedValue([
       {
         uuid: "source-1",

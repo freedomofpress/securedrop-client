@@ -8,11 +8,12 @@ import {
   selectConversation,
   selectConversationLoading,
   updateItemFetchStatus,
+  pollItem,
 } from "../../features/conversation/conversationSlice";
 import EmptyState from "./MainContent/EmptyState";
 import Conversation from "./MainContent/Conversation";
 import Header from "./MainContent/Header";
-import { ItemUpdate, ItemUpdateType } from "../../../../src/types";
+import { ItemUpdate, ItemUpdateType, FetchStatus } from "../../../../src/types";
 
 function MainContent() {
   const { sourceUuid } = useParams<{ sourceUuid?: string }>();
@@ -33,18 +34,31 @@ function MainContent() {
   }, [dispatch, sourceUuid]);
 
   const onItemUpdate = useCallback(
-    (update: ItemUpdate) => {
-      switch (update.type) {
-        case ItemUpdateType.FetchStatus:
-          dispatch(
-            updateItemFetchStatus({
-              sourceUuid: sourceUuid ?? "",
-              itemUuid: update.item_uuid,
-              fetchStatus: update.fetch_status!,
-              authToken: session.authData?.token,
-            }),
+    async (update: ItemUpdate) => {
+      if (update.type === ItemUpdateType.FetchStatus) {
+        dispatch(
+          updateItemFetchStatus({
+            sourceUuid: sourceUuid ?? "",
+            itemUuid: update.item_uuid,
+            fetchStatus: update.fetch_status!,
+            authToken: session.authData?.token,
+          }),
+        );
+
+        const intervalId = setInterval(async () => {
+          const action = await dispatch(
+            pollItem({ itemUuid: update.item_uuid }),
           );
-          break;
+          if (
+            pollItem.fulfilled.match(action) &&
+            action.payload &&
+            (action.payload.item.fetch_status === FetchStatus.Complete ||
+              action.payload.item.fetch_status === FetchStatus.FailedTerminal ||
+              action.payload.item.fetch_status === FetchStatus.Paused)
+          ) {
+            clearInterval(intervalId);
+          }
+        }, 100);
       }
     },
     [dispatch, sourceUuid, session.authData?.token],
