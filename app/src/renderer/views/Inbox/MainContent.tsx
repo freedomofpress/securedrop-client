@@ -1,5 +1,5 @@
 import { useParams } from "react-router";
-import { useEffect, useMemo } from "react";
+import { useEffect, useMemo, useCallback } from "react";
 import { useTranslation } from "react-i18next";
 
 import { useAppDispatch, useAppSelector } from "../../hooks";
@@ -7,14 +7,17 @@ import {
   fetchConversation,
   selectConversation,
   selectConversationLoading,
+  updateItemFetchStatus,
 } from "../../features/conversation/conversationSlice";
 import EmptyState from "./MainContent/EmptyState";
 import Conversation from "./MainContent/Conversation";
 import Header from "./MainContent/Header";
+import { ItemUpdate, ItemUpdateType } from "../../../../src/types";
 
 function MainContent() {
   const { sourceUuid } = useParams<{ sourceUuid?: string }>();
   const dispatch = useAppDispatch();
+  const session = useAppSelector((state) => state.session);
   const { t } = useTranslation("MainContent");
 
   const sourceWithItems = useAppSelector((state) =>
@@ -29,6 +32,24 @@ function MainContent() {
     }
   }, [dispatch, sourceUuid]);
 
+  const onItemUpdate = useCallback(
+    (update: ItemUpdate) => {
+      switch (update.type) {
+        case ItemUpdateType.FetchStatus:
+          dispatch(
+            updateItemFetchStatus({
+              sourceUuid: sourceUuid ?? "",
+              itemUuid: update.item_uuid,
+              fetchStatus: update.fetch_status!,
+              authToken: session.authData?.token,
+            }),
+          );
+          break;
+      }
+    },
+    [dispatch, sourceUuid, session.authData?.token],
+  );
+
   const content = useMemo(() => {
     // If we have a source UUID, show the source content
     if (sourceUuid) {
@@ -40,7 +61,12 @@ function MainContent() {
         return <p>{t("sourceNotFound.content")}</p>;
       } else {
         // Source found, display items
-        return <Conversation sourceWithItems={sourceWithItems} />;
+        return (
+          <Conversation
+            sourceWithItems={sourceWithItems}
+            onItemUpdate={onItemUpdate}
+          />
+        );
       }
     } else {
       // Show empty state when no source is selected
@@ -50,7 +76,7 @@ function MainContent() {
         </div>
       );
     }
-  }, [sourceUuid, loading, sourceWithItems, t]);
+  }, [sourceUuid, loading, sourceWithItems, t, onItemUpdate]);
 
   return (
     <div className="flex-1 flex flex-col h-full min-h-0">

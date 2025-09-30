@@ -1,7 +1,7 @@
 import { describe, it } from "vitest";
 import Conversation from "./Conversation";
 import { testMemoization } from "../../../test-component-setup";
-import type { SourceWithItems } from "../../../../types";
+import type { ItemUpdate, SourceWithItems } from "../../../../types";
 
 describe("Conversation Component Memoization", () => {
   const mockSourceWithItems: SourceWithItems = {
@@ -31,15 +31,25 @@ describe("Conversation Component Memoization", () => {
     ],
   };
 
-  const cases: Array<[{ sourceWithItems: SourceWithItems | null }, number]> = [
+  const mockOnUpdate: (_: ItemUpdate) => void = vi.fn();
+
+  const cases: Array<
+    [
+      {
+        sourceWithItems: SourceWithItems | null;
+        onItemUpdate: (_: ItemUpdate) => void;
+      },
+      number,
+    ]
+  > = [
     // Initial render with source
-    [{ sourceWithItems: mockSourceWithItems }, 1],
+    [{ sourceWithItems: mockSourceWithItems, onItemUpdate: mockOnUpdate }, 1],
     // Same props - should not re-render
-    [{ sourceWithItems: mockSourceWithItems }, 1],
+    [{ sourceWithItems: mockSourceWithItems, onItemUpdate: mockOnUpdate }, 1],
     // Null source - should re-render
-    [{ sourceWithItems: null }, 2],
+    [{ sourceWithItems: null, onItemUpdate: mockOnUpdate }, 2],
     // Back to same source - should re-render
-    [{ sourceWithItems: mockSourceWithItems }, 3],
+    [{ sourceWithItems: mockSourceWithItems, onItemUpdate: mockOnUpdate }, 3],
     // Different source - should re-render
     [
       {
@@ -48,6 +58,7 @@ describe("Conversation Component Memoization", () => {
           uuid: "source-2",
           data: { ...mockSourceWithItems.data, uuid: "source-2" },
         },
+        onItemUpdate: mockOnUpdate,
       },
       4,
     ],

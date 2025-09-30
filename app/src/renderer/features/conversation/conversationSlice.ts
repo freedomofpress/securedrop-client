@@ -1,5 +1,5 @@
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
-import type { SourceWithItems } from "../../../types";
+import { type SourceWithItems } from "../../../types";
 import type { RootState } from "../../store";
 
 export interface ConversationState {
@@ -22,6 +22,31 @@ export const fetchConversation = createAsyncThunk(
     const sourceWithItems =
       await window.electronAPI.getSourceWithItems(sourceUuid);
     return { sourceUuid, sourceWithItems };
+  },
+);
+
+export const updateItemFetchStatus = createAsyncThunk(
+  "conversation/updateItemFetchStatus",
+  async ({
+    sourceUuid,
+    itemUuid,
+    fetchStatus,
+    authToken,
+  }: {
+    sourceUuid: string;
+    itemUuid: string;
+    fetchStatus: number;
+    authToken: string | undefined;
+  }) => {
+    await window.electronAPI.updateFetchStatus(
+      itemUuid,
+      fetchStatus,
+      authToken,
+    );
+    // TODO(vicki): only fetch item to be updated
+    const sourceWithItems =
+      await window.electronAPI.getSourceWithItems(sourceUuid);
+    return { sourceWithItems };
   },
 );
 
@@ -53,6 +78,11 @@ const conversationSlice = createSlice({
       .addCase(fetchConversation.rejected, (state, action) => {
         state.loading = false;
         state.error = action.error.message || "Failed to fetch conversation";
+      })
+      .addCase(updateItemFetchStatus.fulfilled, (state, action) => {
+        const { sourceWithItems } = action.payload;
+        state.conversation = sourceWithItems;
+        state.lastFetchTime = Date.now();
       });
   },
 });

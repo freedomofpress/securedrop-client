@@ -83,7 +83,9 @@
   },
   "Item": {
     "encryptedFile": "Encrypted File",
-    "cancel": "Cancel",
-    "of": "of"
+    "pause": "Pause",
+    "resume": "Resume",
+    "of": "of",
+    "filenameTooltip": "Filename available after downloading"
   }
 }

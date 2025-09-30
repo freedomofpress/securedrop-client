@@ -71,11 +71,14 @@ export class DB {
     { filename: string; source_uuid: string }
   >;
   private upsertItem: Statement<
-    { uuid: string; data: string; version: string },
+    { uuid: string; data: string; version: string; fetch_status: number },
     void
   >;
   private deleteItem: Statement<{ uuid: string }, void>;
-
+  private updateItemFetchStatus: Statement<{
+    uuid: string;
+    fetch_status: number;
+  }>;
   private selectAllJournalistVersion: Statement<
     [],
     { uuid: string; version: string }
@@ -133,6 +136,12 @@ export class DB {
     );
     this.selectItemFilenameSource = this.db.prepare(
       "SELECT filename, source_uuid FROM items WHERE source_uuid = @uuid",
+    );
+    this.upsertItem = this.db.prepare(
+      "INSERT INTO items (uuid, data, version, fetch_status) VALUES (@id, @data, @version, @fetch_status) ON CONFLICT(uuid) DO UPDATE SET data=@data, version=@version, fetch_status=@fetch_status",
+    );
+    this.updateItemFetchStatus = this.db.prepare(
+      "UPDATE items SET fetch_status = @fetch_status WHERE uuid = @uuid",
     );
     this.upsertItem = this.db.prepare(
       "INSERT INTO items (uuid, data, version) VALUES (@uuid, @data, @version) ON CONFLICT(uuid) DO UPDATE SET data=@data, version=@version",
@@ -367,11 +376,26 @@ export class DB {
       const metadata = items[itemid];
       const blob = JSON.stringify(metadata, sortKeys);
       const version = computeVersion(blob);
+
+      // Set all files to be unscheduled initially since fetch should be
+      // manually enqueued for files.
+      let fetchStatus = FetchStatus.Initial;
+      if (metadata.kind === "file") {
+        fetchStatus = FetchStatus.NotScheduled;
+      }
       this.upsertItem.run({
         uuid: itemid,
         data: blob,
         version: version,
+        fetch_status: fetchStatus,
       });
+    });
+  }
+
+  public updateFetchStatus(itemUuid: string, fetchStatus: number) {
+    this.updateItemFetchStatus.run({
+      uuid: itemUuid,
+      fetch_status: fetchStatus,
     });
   }
 
