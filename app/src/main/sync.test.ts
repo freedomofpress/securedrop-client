@@ -10,14 +10,26 @@ import type {
   JournalistMetadata,
 } from "../../src/types";
 import * as proxyModule from "../../src/main/proxy";
+import { encryptedFilepath } from "./crypto";
+import fs from "fs";
 
-function mockDB({ index = { sources: {}, items: {}, journalists: {} } } = {}) {
+vi.mock("fs", () => ({
+  default: {
+    rmSync: vi.fn(),
+  },
+}));
+
+function mockDB({
+  index = { sources: {}, items: {}, journalists: {} },
+  itemFileData = {},
+} = {}) {
   return {
     getVersion: vi.fn(() => "v1"),
     getIndex: vi.fn(() => index),
     deleteItems: vi.fn((_itemIDs) => {}),
     deleteSources: vi.fn((_sourceIDs) => {}),
     updateMetadata: vi.fn((_metadata) => {}),
+    getItemFileData: vi.fn(() => itemFileData),
   } as unknown as DB;
 }
 
@@ -270,6 +282,10 @@ describe("syncMetadata", () => {
 
     db = mockDB({
       index: clientIndex,
+      itemFileData: {
+        filename: "/securedrop/plaintext.txt",
+        source_uuid: "source1",
+      },
     });
 
     const proxyMock = mockProxyResponses([
@@ -292,6 +308,14 @@ describe("syncMetadata", () => {
     expect(proxyMock).toHaveBeenCalledTimes(2);
     expect(db.deleteItems).toHaveBeenCalledWith(["item2"]);
     expect(db.updateMetadata).toHaveBeenCalledWith(metadata);
+    expect(fs.rmSync).toHaveBeenCalledTimes(2);
+    expect(fs.rmSync).toHaveBeenCalledWith("/securedrop/plaintext.txt", {
+      force: true,
+    });
+    expect(fs.rmSync).toHaveBeenCalledWith(
+      encryptedFilepath("source1", "item2"),
+      { force: true },
+    );
   });
 
   it("reconciles partial sources", async () => {

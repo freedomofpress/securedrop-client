@@ -1,7 +1,6 @@
 import Queue from "better-queue";
 
 import fs from "fs";
-import os from "os";
 import path from "path";
 import { Writable } from "stream";
 
@@ -15,7 +14,7 @@ import {
   ProxyStreamResponse,
 } from "../../types";
 import { proxyStreamRequest } from "../proxy";
-import { Crypto, CryptoError } from "../crypto";
+import { Crypto, CryptoError, encryptedFilepath } from "../crypto";
 
 export type ItemFetchTask = {
   id: string;
@@ -46,40 +45,27 @@ export class TaskQueue {
     this.authToken = message.authToken;
     try {
       const itemsToProcess = this.db.getItemsToProcess();
-      console.log("Items to process: ", itemsToProcess);
+      console.debug("Items to process: ", itemsToProcess);
       for (const itemUUID of itemsToProcess) {
         const task: ItemFetchTask = {
           id: itemUUID,
         };
         this.queue.push(task, (err, _result) => {
           if (err) {
-            console.log("Error executing fetch download task: ", task, err);
+            console.error("Error executing fetch download task: ", task, err);
             this.db.failDownload(task.id);
           }
         });
       }
     } catch (e) {
-      console.log("Error queueing fetches: ", e);
+      console.error("Error queueing fetches: ", e);
     }
-  }
-
-  private getEncryptedFilePath(
-    item: ItemFetchTask,
-    metadata: ItemMetadata,
-  ): string {
-    return path.join(
-      os.tmpdir(),
-      "download",
-      metadata.source,
-      item.id,
-      "encrypted.gpg",
-    );
   }
 
   // Process each task by downloading item data via proxy, and then
   // decrypting data to plaintext stored in the DB or to a file on disk.
   process = async (item: ItemFetchTask, db: DB) => {
-    console.log("Processing item: ", item);
+    console.debug("Processing item: ", item);
 
     const [metadata, status, progress] = db.getItemWithFetchStatus(item.id);
 
@@ -89,7 +75,7 @@ export class TaskQueue {
       status == FetchStatus.FailedTerminal ||
       status == FetchStatus.Paused
     ) {
-      console.log("Item task is not in an processable state, skipping...");
+      console.debug("Item task is not in an processable state, skipping...");
       return;
     }
 
@@ -113,7 +99,7 @@ export class TaskQueue {
       await this.decrypt(item, db, metadata, downloadResult);
     } else {
       // Handle unexpected statuses
-      console.log(
+      console.debug(
         `Unexpected status ${nextStatus} for item ${item.id}, skipping...`,
       );
     }
@@ -125,7 +111,7 @@ export class TaskQueue {
     metadata: ItemMetadata,
     progress: number,
   ): Promise<DownloadResult> {
-    console.log(`Starting download for ${metadata.kind} ${item.id}`);
+    console.debug(`Starting download for ${metadata.kind} ${item.id}`);
     db.setDownloadInProgress(item.id);
 
     let downloadFilePath: string = "";
@@ -136,7 +122,7 @@ export class TaskQueue {
       downloadWriter = new BufferedWriter();
     } else if (metadata.kind === "file") {
       // For files: write directly to disk
-      downloadFilePath = this.getEncryptedFilePath(item, metadata);
+      downloadFilePath = encryptedFilepath(metadata.source, item.id);
       const downloadDir = path.dirname(downloadFilePath);
       await fs.promises.mkdir(downloadDir, { recursive: true });
       downloadWriter = fs.createWriteStream(downloadFilePath);
@@ -151,7 +137,6 @@ export class TaskQueue {
       headers: authHeader(this.getAuthToken()),
     };
 
-    console.log("Proxying request to: ", downloadRequest);
     let downloadResponse = await proxyStreamRequest(
       downloadRequest,
       downloadWriter,
@@ -177,8 +162,6 @@ export class TaskQueue {
       );
     }
 
-    console.log(`Download completed for ${metadata.kind} ${item.id}`);
-
     if (metadata.kind === "message" || metadata.kind === "reply") {
       return (downloadWriter as BufferedWriter).getBuffer();
     }
@@ -197,7 +180,6 @@ export class TaskQueue {
     }
 
     // Set status to decryption in progress
-    console.log(`Starting decryption for ${metadata.kind} ${item.id}`);
     db.setDecryptionInProgress(item.id);
     try {
       if (metadata.kind === "file") {
@@ -236,24 +218,23 @@ export class TaskQueue {
 
       // Store the decrypted plaintext and mark item as complete
       db.completePlaintextItem(item.id, decryptedContent);
-      console.log(`Successfully decrypted ${metadata.kind} ${item.id}`);
     } catch (error) {
       if (error instanceof CryptoError) {
-        console.error(
+        console.warn(
           `Failed to decrypt ${metadata.kind} ${item.id}: ${error.message}`,
         );
       }
       // Ensure data is persisted to disk for retries
       try {
-        const downloadFilePath = this.getEncryptedFilePath(item, metadata);
+        const downloadFilePath = encryptedFilepath(metadata.source, item.id);
         const downloadDir = path.dirname(downloadFilePath);
         await fs.promises.mkdir(downloadDir, { recursive: true });
         await fs.promises.writeFile(downloadFilePath, buffer);
-        console.log(
+        console.debug(
           `Saved encrypted buffer data to disk for retry: ${downloadFilePath}`,
         );
       } catch (saveError) {
-        console.error(`Failed to save encrypted data to disk: ${saveError}`);
+        console.warn(`Failed to save encrypted data to disk: ${saveError}`);
       }
       throw error;
     }
@@ -268,14 +249,13 @@ export class TaskQueue {
     crypto: Crypto,
     metadata: ItemMetadata,
   ) {
-    const downloadPath = this.getEncryptedFilePath(item, metadata);
+    const downloadPath = encryptedFilepath(metadata.source, item.id);
     try {
       const buffer = await fs.promises.readFile(downloadPath);
       const decryptedContent = await crypto.decryptMessage(buffer);
 
       // Store the decrypted plaintext and mark item as complete
       db.completePlaintextItem(item.id, decryptedContent);
-      console.log(`Successfully decrypted ${metadata.kind} ${item.id}`);
     } catch (error) {
       throw new Error(`Failed to load encrypted data from disk: ${error}`);
     }
@@ -283,7 +263,6 @@ export class TaskQueue {
     // After successful decryption, clean up the encrypted file
     try {
       await fs.promises.unlink(downloadPath);
-      console.log(`Cleaned up encrypted file: ${downloadPath}`);
     } catch (error) {
       console.warn(`Failed to clean up encrypted file: ${error}`);
     }
@@ -297,17 +276,17 @@ export class TaskQueue {
     crypto: Crypto,
     metadata: ItemMetadata,
   ) {
-    const downloadPath = this.getEncryptedFilePath(item, metadata);
+    const downloadPath = encryptedFilepath(metadata.source, item.id);
     try {
       const decryptedFilepath = await crypto.decryptFile(downloadPath);
       db.completeFileItem(
         item.id,
         path.join(decryptedFilepath.filePath, decryptedFilepath.filename),
       );
-      console.log(`Successfully decrypted ${metadata.kind} ${item.id}`);
+      console.debug(`Successfully decrypted ${metadata.kind} ${item.id}`);
     } catch (error) {
       if (error instanceof CryptoError) {
-        console.error(
+        console.warn(
           `Failed to decrypt ${metadata.kind} ${item.id}: ${error.message}`,
         );
       }
@@ -353,11 +332,11 @@ function createQueue(
   );
 
   q.on("error", (error) => {
-    console.log("Error from queue: ", error);
+    console.error("Error from queue: ", error);
   });
 
   q.on("task_failed", (taskId, errorMessage) => {
-    console.log(
+    console.error(
       "Task failed and exceeded retry attempts, removing from queue: ",
       taskId,
       errorMessage,
