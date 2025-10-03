@@ -192,6 +192,24 @@ export enum FetchStatus {
   FailedTerminal = 7,
 }
 
+export enum PendingEventType {
+  Undefined = 0,
+  ReplySent = 1,
+  ReplyDeleted = 2,
+  SourceDeleted = 3,
+  SourceConversationDeleted = 4,
+  Starred = 5,
+  Unstarred = 6,
+  Seen = 7,
+}
+
+export type PendingEventData = ReplySentData;
+
+export type ReplySentData = {
+  text: string;
+  metadata: ReplyMetadata;
+};
+
 /** Fetch Worker types */
 export type FetchDownloadsMessage = {
   authToken: string;
