@@ -5,11 +5,12 @@
     "tailwind.config.*",
     "src/*.ts",
     "src/main/**/*",
-    "src/preload/**/*"
+    "src/preload/**/*",
+    "server_tests/"
   ],
   "compilerOptions": {
     "composite": true,
-    "types": ["electron-vite/node"],
+    "types": ["electron-vite/node", "vitest/globals"],
     "module": "esnext",
     "moduleResolution": "bundler",
     "noImplicitAny": true,

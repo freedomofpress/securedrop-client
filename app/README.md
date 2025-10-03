@@ -95,6 +95,21 @@ pnpm integration-test
 pnpm typecheck
 ```
 
+#### Server tests
+
+Once you have a SecureDrop server development environment set up, start the server
+using our fixed dataset:
+
+```
+USE_FIXED_DATA="../securedrop-client/app/server_tests/data/data.yaml" make dev
+```
+
+Once it's started, you can run:
+
+```
+pnpm server-test
+```
+
 ### Database
 
 The app uses SQLite with migrations managed by dbmate:

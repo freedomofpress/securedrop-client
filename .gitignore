@@ -118,3 +118,4 @@ venv.bak/
 *.swp
 
 *.gpg
+!app/server_tests/data/items/*.gpg

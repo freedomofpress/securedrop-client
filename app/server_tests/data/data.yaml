@@ -1,0 +1,179 @@
+journalists:
+  - username: journalist
+    uuid: be726875-1290-49d4-922d-2fc0901c9266
+    passphrase: correct horse battery staple profanity oil chewy
+    otp_secret: JHCOGO7VCER3EJ4L
+    first_name: null
+    last_name: null
+    is_admin: 1
+    created_on: "2025-09-24 18:19:42.160452"
+  - username: dellsberg
+    uuid: 72eb04dc-7596-4bc0-a9b1-a0f5648f04f0
+    passphrase: correct horse battery staple profanity oil chewy
+    otp_secret: JHCOGO7VCER3EJ4L
+    is_admin: 0
+    first_name: null
+    last_name: null
+    created_on: "2025-09-24 18:19:42.601412"
+  - username: nbly
+    uuid: e32be48a-67b9-4516-834a-69fbe0f14d10
+    passphrase: correct horse battery staple profanity oil chewy
+    otp_secret: JHCOGO7VCER3EJ4L
+    is_admin: 0
+    first_name: null
+    last_name: null
+    created_on: "2025-09-24 18:20:01.687798"
+sources:
+  - journalist_designation: incapable elimination
+    uuid: 60a49b24-1a75-4daf-b0fa-125c1ce0d723
+    last_updated: "2025-09-24 18:19:49.665896"
+    pgp_fingerprint: F6283AE2A3C92F8C910946FA3BE7DFE991FC8A87
+    pgp_public_key: keys/F6283AE2A3C92F8C910946FA3BE7DFE991FC8A87.pub
+    pgp_secret_key: keys/F6283AE2A3C92F8C910946FA3BE7DFE991FC8A87.secret
+    items:
+      - uuid: f53f43d9-41fa-42a6-88b0-6529aaacc599
+        kind: message
+        content: Lorem ipsum dolor sit amet, <b>consectetur adipiscing elit</b>. Vivamus lacinia odio vitae <i>vestibulum</i>.
+        seen_by: [72eb04dc-7596-4bc0-a9b1-a0f5648f04f0] # dellsberg
+        downloaded: 0
+        encrypted_file: items/f53f43d9-41fa-42a6-88b0-6529aaacc599.gpg
+      - uuid: 6428c271-3108-4c73-9a44-9acfb7e2b388
+        kind: reply
+        journalist_uuid: e32be48a-67b9-4516-834a-69fbe0f14d10 # nbly
+        content: Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.
+        seen_by: [e32be48a-67b9-4516-834a-69fbe0f14d10] # nbly
+        deleted_by_source: null
+        encrypted_file: items/6428c271-3108-4c73-9a44-9acfb7e2b388.gpg
+      - uuid: d8782e98-0cbd-4142-850d-6bcefabb8237
+        kind: message
+        content: Donec auctor <i>blandit quam</i>. Pellentesque habitant morbi tristique <b>senectus et netus</b> et malesuada fames ac turpis egestas. Mauris vel tortor accumsan, <i>faucibus orci non</i>, varius turpis.
+        seen_by: [be726875-1290-49d4-922d-2fc0901c9266] # journalist
+        downloaded: 0
+        encrypted_file: items/d8782e98-0cbd-4142-850d-6bcefabb8237.gpg
+      - uuid: 127b98a7-2976-45a9-8dde-dd50602bffbb
+        kind: file
+        file:
+          content: Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.
+          filename: lorem_ipsum.txt
+        seen_by: [e32be48a-67b9-4516-834a-69fbe0f14d10] # nbly
+        downloaded: 0
+        encrypted_file: items/127b98a7-2976-45a9-8dde-dd50602bffbb.gpg
+      - uuid: 40e13a88-5409-4201-9495-d06c335e203f
+        kind: reply
+        journalist_uuid: 72eb04dc-7596-4bc0-a9b1-a0f5648f04f0 # dellsberg
+        content: Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur.
+        seen_by: [72eb04dc-7596-4bc0-a9b1-a0f5648f04f0] # dellsberg
+        deleted_by_source: null
+        encrypted_file: items/40e13a88-5409-4201-9495-d06c335e203f.gpg
+      - uuid: 2c287eff-a397-46d0-905f-8842147d183d
+        kind: file
+        file:
+          content: Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore.
+          filename: dolor_sit.txt
+        seen_by: [72eb04dc-7596-4bc0-a9b1-a0f5648f04f0] # dellsberg
+        downloaded: 0
+        encrypted_file: items/2c287eff-a397-46d0-905f-8842147d183d.gpg
+  - journalist_designation: gorgeous apron
+    uuid: 6d3a8b24-a7ec-4c8e-b646-36782b52d77e
+    last_updated: "2025-09-24 18:19:55.366421"
+    pgp_fingerprint: 6E0B59448DD8DA2CFEF61B8F926290C5880A6D62
+    pgp_public_key: keys/6E0B59448DD8DA2CFEF61B8F926290C5880A6D62.pub
+    pgp_secret_key: keys/6E0B59448DD8DA2CFEF61B8F926290C5880A6D62.secret
+    items:
+      - uuid: 48256b37-2761-4695-8a1a-282601dc3c87
+        kind: message
+        content: Sed do <b>eiusmod tempor</b> incididunt ut labore et dolore <i>magna aliqua</i>.
+        seen_by: [72eb04dc-7596-4bc0-a9b1-a0f5648f04f0] # dellsberg
+        downloaded: 0
+        encrypted_file: items/48256b37-2761-4695-8a1a-282601dc3c87.gpg
+      - uuid: 3f3d5d05-e758-4cbb-9ea0-876d7152fd7f
+        kind: reply
+        journalist_uuid: e32be48a-67b9-4516-834a-69fbe0f14d10 # nbly
+        content: Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.
+        seen_by: [e32be48a-67b9-4516-834a-69fbe0f14d10] # nbly
+        deleted_by_source: null
+        encrypted_file: items/3f3d5d05-e758-4cbb-9ea0-876d7152fd7f.gpg
+      - uuid: d6dc8fb4-582f-4cfc-b466-19e4b402b3ae
+        kind: message
+        content: Ut enim ad <i>minim veniam</i>, quis nostrud exercitation <b>ullamco laboris</b> nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in <i>voluptate velit</i> esse cillum dolore eu fugiat nulla pariatur. Excepteur sint <b>occaecat cupidatat</b> non proident.
+        seen_by: [72eb04dc-7596-4bc0-a9b1-a0f5648f04f0] # dellsberg
+        downloaded: 0
+        encrypted_file: items/d6dc8fb4-582f-4cfc-b466-19e4b402b3ae.gpg
+      - uuid: 6ba8a2c8-aa3a-4b0e-95f9-34d3001a5043
+        kind: file
+        file:
+          content: Sed ut perspiciatis unde omnis iste natus error sit voluptatem accusantium doloremque laudantium, totam rem aperiam.
+          filename: sed_ut.txt
+        seen_by: [72eb04dc-7596-4bc0-a9b1-a0f5648f04f0] # dellsberg
+        downloaded: 0
+        encrypted_file: items/6ba8a2c8-aa3a-4b0e-95f9-34d3001a5043.gpg
+      - uuid: a500332a-52dd-4296-a8e7-213cb575d9ff
+        kind: reply
+        journalist_uuid: e32be48a-67b9-4516-834a-69fbe0f14d10 # nbly
+        content: Sed ut perspiciatis unde omnis iste natus error sit voluptatem accusantium doloremque laudantium. Totam rem aperiam, eaque ipsa quae ab illo inventore veritatis et quasi architecto beatae vitae dicta sunt explicabo. Nemo enim ipsam voluptatem quia voluptas sit aspernatur aut odit aut fugit.
+        seen_by: [
+            e32be48a-67b9-4516-834a-69fbe0f14d10,
+            be726875-1290-49d4-922d-2fc0901c9266,
+          ] # nbly, journalist
+        deleted_by_source: null
+        encrypted_file: items/a500332a-52dd-4296-a8e7-213cb575d9ff.gpg
+      - uuid: 485396d7-114b-49d5-a910-43337f72b471
+        kind: file
+        file:
+          content: Neque porro quisquam est, qui dolorem ipsum quia dolor sit amet, consectetur, adipisci velit, sed quia non numquam eius modi tempora incidunt.
+          filename: neque_porro.txt
+        seen_by: [e32be48a-67b9-4516-834a-69fbe0f14d10] # nbly
+        downloaded: 0
+        encrypted_file: items/485396d7-114b-49d5-a910-43337f72b471.gpg
+  - journalist_designation: preservative legislator
+    uuid: 10e66c23-c687-40e2-b71c-2ce063fd50fe
+    last_updated: "2025-09-24 18:20:01.209205"
+    pgp_fingerprint: 1D5EED3E722A21361FB1609436AA2DFBDC429CA1
+    pgp_public_key: keys/1D5EED3E722A21361FB1609436AA2DFBDC429CA1.pub
+    pgp_secret_key: keys/1D5EED3E722A21361FB1609436AA2DFBDC429CA1.secret
+    items:
+      - uuid: b8260d37-87b2-49b3-a235-bac31c11021d
+        kind: message
+        content: Cras ultricies <b>ligula sed magna</b> dictum porta. Vestibulum ante ipsum primis in faucibus <i>orci luctus</i> et ultrices posuere cubilia curae.
+        seen_by: []
+        downloaded: 0
+        encrypted_file: items/b8260d37-87b2-49b3-a235-bac31c11021d.gpg
+      - uuid: 85f0d337-b077-41b6-a914-33fee7bfcaa1
+        kind: file
+        file:
+          content: At vero eos et accusamus et iusto odio dignissimos ducimus qui blanditiis praesentium voluptatum deleniti atque corrupti.
+          filename: at_vero.txt
+        seen_by: []
+        downloaded: 0
+        encrypted_file: items/85f0d337-b077-41b6-a914-33fee7bfcaa1.gpg
+      - uuid: cc1be744-8a71-4e52-92e7-51315b6cb643
+        kind: reply
+        journalist_uuid: 72eb04dc-7596-4bc0-a9b1-a0f5648f04f0 # dellsberg
+        content: Neque porro quisquam est, qui dolorem ipsum quia dolor sit amet. Consectetur, adipisci velit, sed quia non numquam eius modi tempora incidunt ut labore et dolore magnam aliquam quaerat voluptatem.
+        seen_by: [72eb04dc-7596-4bc0-a9b1-a0f5648f04f0] # dellsberg
+        deleted_by_source: null
+        encrypted_file: items/cc1be744-8a71-4e52-92e7-51315b6cb643.gpg
+      - uuid: 31eeac69-e02f-46f1-a5da-b8f912eb773d
+        kind: file
+        file:
+          content: Temporibus autem quibusdam et aut officiis debitis aut rerum necessitatibus saepe eveniet ut et voluptates repudiandae sint et molestiae non recusandae.
+          filename: temporibus_autem.txt
+        seen_by: []
+        downloaded: 0
+        encrypted_file: items/31eeac69-e02f-46f1-a5da-b8f912eb773d.gpg
+      - uuid: 96325861-741a-41eb-91b5-bb1ff34f3e70
+        kind: message
+        content: Proin eget <i>tortor risus</i>. Vestibulum ac diam sit amet quam <b>vehicula elementum</b> sed sit amet dui. Pellentesque in ipsum id <i>orci porta dapibus</i>. Vivamus magna justo, lacinia eget <b>consectetur sed</b>, convallis at tellus.
+        seen_by: []
+        downloaded: 0
+        encrypted_file: items/96325861-741a-41eb-91b5-bb1ff34f3e70.gpg
+      - uuid: adca50a5-9f70-49db-a5ae-0c184b54c6ed
+        kind: reply
+        journalist_uuid: 72eb04dc-7596-4bc0-a9b1-a0f5648f04f0 # dellsberg
+        content: At vero eos et accusamus et iusto odio dignissimos ducimus qui blanditiis praesentium voluptatum deleniti atque corrupti quos dolores et quas molestias excepturi sint occaecati cupiditate non provident.
+        seen_by: [
+            72eb04dc-7596-4bc0-a9b1-a0f5648f04f0,
+            be726875-1290-49d4-922d-2fc0901c9266,
+          ] # dellsberg, journalist
+        deleted_by_source: null
+        encrypted_file: items/adca50a5-9f70-49db-a5ae-0c184b54c6ed.gpg
