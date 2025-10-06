@@ -67,6 +67,9 @@ const electronAPI = {
   getSystemLanguage: logIpcCall<string>("getSystemLanguage", () =>
     ipcRenderer.invoke("getSystemLanguage"),
   ),
+  getCSPNonce: logIpcCall<string>("getCSPNonce", () =>
+    ipcRenderer.invoke("getCSPNonce"),
+  ),
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   onItemUpdate: (callback: (...args: any[]) => void) => {
     ipcRenderer.on("item-update", (_event, ...args) => callback(...args));

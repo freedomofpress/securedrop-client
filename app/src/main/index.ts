@@ -1,6 +1,7 @@
 import "source-map-support/register";
-import { app, BrowserWindow, ipcMain } from "electron";
+import { app, BrowserWindow, ipcMain, session } from "electron";
 import { join } from "path";
+import { randomBytes } from "crypto";
 import { optimizer, is } from "@electron-toolkit/utils";
 import {
   installExtension,
@@ -37,6 +38,12 @@ if (noQubes) {
 }
 
 const db = new DB();
+
+// Generate a CSP nonce for this session (used by Ant Design)
+const cspNonce = randomBytes(32).toString("base64");
+
+// Get Vite nonce from build-time generated value (injected via define in vite config)
+const viteNonce = is.dev ? __VITE_NONCE__ : "";
 
 function createWindow(): BrowserWindow {
   const mainWindow = new BrowserWindow({
@@ -105,6 +112,35 @@ function spawnFetchWorker(mainWindow: BrowserWindow): Worker {
 // initialization and is ready to create browser windows.
 // Some APIs can only be used after this event occurs.
 app.whenReady().then(() => {
+  // Set strict Content Security Policy via HTTP header with nonce
+  session.defaultSession.webRequest.onHeadersReceived((details, callback) => {
+    let scriptSrc = "script-src 'self' ";
+    let styleSrc = `style-src 'self' 'nonce-${cspNonce}'`;
+    let connectSrc = "";
+    if (is.dev) {
+      // Inject vite's nonce for auto-reload
+      scriptSrc += ` 'nonce-${viteNonce}'`;
+      styleSrc += ` 'nonce-${viteNonce}'`;
+      connectSrc = "connect-src 'self'";
+    }
+
+    callback({
+      responseHeaders: {
+        ...details.responseHeaders,
+        "Content-Security-Policy": [
+          "default-src 'none';" +
+            scriptSrc +
+            ";" +
+            styleSrc +
+            ";" +
+            "img-src 'self';" +
+            "font-src 'self';" +
+            connectSrc +
+            ";",
+        ],
+      },
+    });
+  });
   // Load developer tools
   if (is.dev) {
     installExtension([REACT_DEVELOPER_TOOLS, REDUX_DEVTOOLS])
@@ -179,6 +215,10 @@ app.whenReady().then(() => {
   ipcMain.handle("getSystemLanguage", async (_event): Promise<string> => {
     const systemLanguage = process.env.LANG || app.getLocale() || "en";
     return systemLanguage;
+  });
+
+  ipcMain.handle("getCSPNonce", async (_event): Promise<string> => {
+    return cspNonce;
   });
 
   const mainWindow = createWindow();
