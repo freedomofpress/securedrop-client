@@ -11,6 +11,7 @@ import {
 } from "../../../../../utils";
 import Avatar from "../../../../../components/Avatar";
 import "../Item.css";
+import "./File.css";
 
 import { useTranslation } from "react-i18next";
 import {
@@ -84,10 +85,10 @@ function InitialFile(item: Item, onUpdate: (update: ItemUpdate) => void) {
     <Tooltip title={t("filenameTooltip")}>
       <div className="flex items-center justify-between pt-2 pb-2">
         <div className="flex items-center">
-          <FileIcon size={30} strokeWidth={1} style={{ marginRight: 6 }} />
+          <FileIcon size={30} strokeWidth={1} className="file-icon" />
           <div className="ml-2">
-            <p style={{ fontStyle: "italic" }}>{t("encryptedFile")}</p>
-            <p style={{ fontStyle: "italic" }}>{fileSize}</p>
+            <p className="italic">{t("encryptedFile")}</p>
+            <p className="italic">{fileSize}</p>
           </div>
         </div>
 
@@ -95,13 +96,7 @@ function InitialFile(item: Item, onUpdate: (update: ItemUpdate) => void) {
           <Button
             type="text"
             size="large"
-            icon={
-              <Download
-                size={20}
-                style={{ verticalAlign: "center" }}
-                onClick={scheduleDownload}
-              />
-            }
+            icon={<Download size={20} onClick={scheduleDownload} />}
           />
         </div>
       </div>
@@ -137,15 +132,14 @@ function InProgressFile(item: Item, onUpdate: (update: ItemUpdate) => void) {
       <LoaderCircle
         className={
           item.fetch_status === FetchStatus.DownloadInProgress
-            ? "animate-spin"
-            : ""
+            ? "animate-spin file-icon"
+            : "file-icon"
         }
         size={30}
         strokeWidth={1}
-        style={{ marginRight: 6 }}
       />
       <div className="ml-2">
-        <p style={{ fontStyle: "italic" }}>{t("encryptedFile")}</p>
+        <p className="italic">{t("encryptedFile")}</p>
         <div className="flex items-center space-x-2 h-3">
           {/* Loading bar */}
           <div className="w-64 h-0.5 bg-gray-200 rounded-full overflow-hidden">
@@ -156,7 +150,7 @@ function InProgressFile(item: Item, onUpdate: (update: ItemUpdate) => void) {
           </div>
         </div>
         <div className="flex justify-between">
-          <p style={{ fontStyle: "italic" }}>
+          <p className="italic">
             {progressSize} {t("of")} {fileSize}
           </p>
           {item.fetch_status === FetchStatus.DownloadInProgress ? (
@@ -189,19 +183,15 @@ function CompleteFile(item: Item) {
 
   return (
     <div className="flex items-center justify-start mt-2 mb-2">
-      <FileCheck2
-        size={30}
-        strokeWidth={1}
-        style={{ marginRight: 6, verticalAlign: "center" }}
-      />
+      <FileCheck2 size={30} strokeWidth={1} className="file-icon" />
       <div className="ml-2">
         <Tooltip title={tooltipTitle}>
-          <Button size="small" type="link" style={{ paddingInlineStart: 0 }}>
+          <Button size="small" type="link" className="file-namebtn">
             {formattedFilename}
           </Button>
         </Tooltip>
 
-        <p style={{ fontStyle: "italic" }}>{fileSize}</p>
+        <p className="italic">{fileSize}</p>
       </div>
     </div>
   );
@@ -214,10 +204,10 @@ function FailedFile(item: Item) {
   return (
     <div className="flex items-center justify-between pt-2 pb-2">
       <div className="flex items-center">
-        <FileX2 size={30} strokeWidth={1} style={{ marginRight: 6 }} />
+        <FileX2 size={30} strokeWidth={1} className="file-icon" />
         <div className="ml-2">
-          <p style={{ fontStyle: "italic" }}>{t("encryptedFile")}</p>
-          <p style={{ fontStyle: "italic" }}>{fileSize}</p>
+          <p className="italic">{t("encryptedFile")}</p>
+          <p className="italic">{fileSize}</p>
         </div>
       </div>
     </div>

@@ -41,3 +41,8 @@ embed,
 object {
   display: inline-block;
 }
+
+/* fix alignment of lucide icons in antd buttons */
+.ant-btn-icon > svg.lucide {
+  vertical-align: middle;
+}
