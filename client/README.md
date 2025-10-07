@@ -64,6 +64,7 @@ end
 end
 
 subgraph "staging/production environment"
+direction TB
 spKeychain --- spClient
 subgraph sd-app
 spData(("~/.securedrop_client")) --- spClient
