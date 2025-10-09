@@ -34,10 +34,9 @@ function File({ item, designation, onUpdate }: FileProps) {
 
   let fileInner;
   switch (fetchStatus) {
-    case FetchStatus.NotScheduled:
-      fileInner = NotScheduledFile(item, onUpdate);
-      break;
     case FetchStatus.Initial:
+      fileInner = InitialFile(item, onUpdate);
+      break;
     case FetchStatus.DownloadInProgress:
     case FetchStatus.DecryptionInProgress:
     case FetchStatus.FailedDownloadRetryable:
@@ -69,7 +68,7 @@ function File({ item, designation, onUpdate }: FileProps) {
   );
 }
 
-function NotScheduledFile(item: Item, onUpdate: (update: ItemUpdate) => void) {
+function InitialFile(item: Item, onUpdate: (update: ItemUpdate) => void) {
   const { t } = useTranslation("Item");
   const fileSize = prettyPrintBytes(item.data.size);
 
@@ -77,7 +76,7 @@ function NotScheduledFile(item: Item, onUpdate: (update: ItemUpdate) => void) {
     onUpdate({
       item_uuid: item.uuid,
       type: ItemUpdateType.FetchStatus,
-      fetch_status: FetchStatus.Initial,
+      fetch_status: FetchStatus.DownloadInProgress,
     });
   };
 
@@ -182,6 +181,12 @@ function CompleteFile(item: Item) {
     : "";
   const fileSize = prettyPrintBytes(item.data.size);
 
+  // Format the filename to cap the length, and show full filename in tooltip if
+  // formatted filename is truncated
+  const filenameMaxLength = 30;
+  const formattedFilename = formatFilename(filename, filenameMaxLength, 6);
+  const tooltipTitle = filename.length > filenameMaxLength ? filename : "";
+
   return (
     <div className="flex items-center justify-start mt-2 mb-2">
       <FileCheck2
@@ -190,9 +195,12 @@ function CompleteFile(item: Item) {
         style={{ marginRight: 6, verticalAlign: "center" }}
       />
       <div className="ml-2">
-        <Button size="small" type="link" style={{ paddingInlineStart: 0 }}>
-          {formatFilename(filename, 30, 6)}
-        </Button>
+        <Tooltip title={tooltipTitle}>
+          <Button size="small" type="link" style={{ paddingInlineStart: 0 }}>
+            {formattedFilename}
+          </Button>
+        </Tooltip>
+
         <p style={{ fontStyle: "italic" }}>{fileSize}</p>
       </div>
     </div>

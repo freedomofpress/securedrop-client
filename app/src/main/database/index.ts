@@ -71,6 +71,7 @@ export class DB {
     { uuid: string },
     { filename: string; source_uuid: string }
   >;
+  private selectItemsProcessable: Statement<[], { uuid: string }>;
   private upsertItem: Statement<
     { uuid: string; data: string; version: string; fetch_status: number },
     void
@@ -139,6 +140,13 @@ export class DB {
     );
     this.selectItemFilenameSource = this.db.prepare(
       "SELECT filename, source_uuid FROM items WHERE source_uuid = @uuid",
+    );
+    this.selectItemsProcessable = this.db.prepare(
+      `SELECT uuid FROM items
+      WHERE
+        (kind = 'file' AND fetch_status in (${FetchStatus.DownloadInProgress}, ${FetchStatus.DecryptionInProgress}, ${FetchStatus.FailedDownloadRetryable}, ${FetchStatus.FailedDecryptionRetryable}))
+        OR
+        (kind <> 'file' AND fetch_status in (${FetchStatus.Initial}, ${FetchStatus.DownloadInProgress}, ${FetchStatus.DecryptionInProgress}, ${FetchStatus.FailedDownloadRetryable}, ${FetchStatus.FailedDecryptionRetryable}))`,
     );
     this.upsertItem = this.db.prepare(
       "INSERT INTO items (uuid, data, version, fetch_status) VALUES (@id, @data, @version, @fetch_status) ON CONFLICT(uuid) DO UPDATE SET data=@data, version=@version, fetch_status=@fetch_status",
@@ -384,17 +392,11 @@ export class DB {
       const blob = JSON.stringify(metadata, sortKeys);
       const version = computeVersion(blob);
 
-      // Set all files to be unscheduled initially since fetch should be
-      // manually enqueued for files.
-      let fetchStatus = FetchStatus.Initial;
-      if (metadata.kind === "file") {
-        fetchStatus = FetchStatus.NotScheduled;
-      }
       this.upsertItem.run({
         uuid: itemid,
         data: blob,
         version: version,
-        fetch_status: fetchStatus,
+        fetch_status: FetchStatus.Initial,
       });
     });
   }
@@ -504,16 +506,14 @@ export class DB {
     });
   }
 
+  // Selects items that are ready to be downloaded + decrypted. This
+  // is all messages, and files that have been initiated from the client
+  // by being put into FetchStatus.DownloadInProgress
   getItemsToProcess(): string[] {
     type Row = {
       uuid: string;
     };
-    console.log("getting items to process");
-    const itemStmt = this.db!.prepare(`
-      SELECT uuid FROM items
-      WHERE fetch_status IN (${FetchStatus.Initial}, ${FetchStatus.DownloadInProgress}, ${FetchStatus.FailedDownloadRetryable}, ${FetchStatus.FailedDecryptionRetryable})
-    `);
-    const rows = itemStmt?.all() as Array<Row>;
+    const rows = this.selectItemsProcessable.all() as Array<Row>;
     return rows.map((r) => r.uuid);
   }
 

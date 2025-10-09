@@ -89,8 +89,7 @@ export class TaskQueue {
       if (
         status == FetchStatus.Complete ||
         status == FetchStatus.FailedTerminal ||
-        status == FetchStatus.Paused ||
-        status == FetchStatus.NotScheduled
+        status == FetchStatus.Paused
       ) {
         console.debug("Item task is not in an processable state, skipping...");
         return;

@@ -208,7 +208,4 @@ export enum FetchStatus {
   FailedDecryptionRetryable = 6,
   // Exceeded max retries, considered terminally failed
   FailedTerminal = 7,
-  // Only for file submissions: set FetchStatus to NotScheduled since we
-  // want to manually enqueue file submissions for fetch + decryption
-  NotScheduled = 8,
 }
