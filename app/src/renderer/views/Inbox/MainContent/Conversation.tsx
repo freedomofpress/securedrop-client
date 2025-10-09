@@ -1,4 +1,4 @@
-import type { ItemUpdate, SourceWithItems } from "../../../../types";
+import type { SourceWithItems } from "../../../../types";
 import { toTitleCase } from "../../../utils";
 import Item from "./Conversation/Item";
 import { Form, Input, Button } from "antd";
@@ -8,12 +8,10 @@ import "./Conversation.css";
 
 interface ConversationProps {
   sourceWithItems: SourceWithItems | null;
-  onItemUpdate: (update: ItemUpdate) => void;
 }
 
 const Conversation = memo(function Conversation({
   sourceWithItems,
-  onItemUpdate,
 }: ConversationProps) {
   const { t } = useTranslation("MainContent");
   const scrollContainerRef = useRef<HTMLDivElement>(null);
@@ -49,12 +47,7 @@ const Conversation = memo(function Conversation({
           className="absolute inset-0 overflow-y-auto overflow-x-hidden p-4 pb-0"
         >
           {sourceWithItems.items.map((item) => (
-            <Item
-              key={item.uuid}
-              item={item}
-              designation={designation || ""}
-              onUpdate={onItemUpdate}
-            />
+            <Item key={item.uuid} item={item} designation={designation || ""} />
           ))}
         </div>
       </div>

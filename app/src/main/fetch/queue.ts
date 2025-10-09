@@ -15,6 +15,7 @@ import {
 } from "../../types";
 import { proxyStreamRequest } from "../proxy";
 import { Crypto, CryptoError, encryptedFilepath } from "../crypto";
+import { MessagePort } from "worker_threads";
 
 export type ItemFetchTask = {
   id: string;
@@ -26,13 +27,20 @@ export class TaskQueue {
   db: DB;
   queue: Queue;
   authToken?: string;
+  port?: MessagePort;
 
-  constructor(db: DB, overrideTaskFn?: (task: ItemFetchTask, db: DB) => void) {
+  constructor(
+    db: DB,
+    port?: MessagePort,
+    overrideTaskFn?: (task: ItemFetchTask, db: DB) => void,
+  ) {
     this.db = db;
     this.queue = createQueue(
       db,
       overrideTaskFn ? overrideTaskFn : this.process,
+      port,
     );
+    this.port = port;
   }
 
   getAuthToken(): string {
@@ -54,6 +62,9 @@ export class TaskQueue {
           if (err) {
             console.error("Error executing fetch download task: ", task, err);
             this.db.failDownload(task.id);
+            if (this.port) {
+              this.port.postMessage(this.db.getItem(task.id));
+            }
           }
         });
       }
@@ -65,48 +76,55 @@ export class TaskQueue {
   // Process each task by downloading item data via proxy, and then
   // decrypting data to plaintext stored in the DB or to a file on disk.
   process = async (item: ItemFetchTask, db: DB) => {
-    console.debug("Processing item: ", item);
+    try {
+      console.debug("Processing item: ", item);
 
-    const {
-      data: metadata,
-      fetch_status: status,
-      fetch_progress: progress,
-    } = db.getItem(item.id);
+      const {
+        data: metadata,
+        fetch_status: status,
+        fetch_progress: progress,
+      } = db.getItem(item.id);
 
-    // Skip items that are complete, terminally failed, paused, or not scheduled
-    if (
-      status == FetchStatus.Complete ||
-      status == FetchStatus.FailedTerminal ||
-      status == FetchStatus.Paused ||
-      status == FetchStatus.NotScheduled
-    ) {
-      console.debug("Item task is not in an processable state, skipping...");
-      return;
-    }
+      // Skip items that are complete, terminally failed, paused, or not scheduled
+      if (
+        status == FetchStatus.Complete ||
+        status == FetchStatus.FailedTerminal ||
+        status == FetchStatus.Paused ||
+        status == FetchStatus.NotScheduled
+      ) {
+        console.debug("Item task is not in an processable state, skipping...");
+        return;
+      }
 
-    // Phase 1: Download
-    let downloadResult: DownloadResult | undefined;
-    let nextStatus = status;
-    if (
-      status === FetchStatus.Initial ||
-      status === FetchStatus.DownloadInProgress ||
-      status === FetchStatus.FailedDownloadRetryable
-    ) {
-      downloadResult = await this.download(item, db, metadata, progress || 0);
-      nextStatus = FetchStatus.DecryptionInProgress;
-    }
+      // Phase 1: Download
+      let downloadResult: DownloadResult | undefined;
+      let nextStatus = status;
+      if (
+        status === FetchStatus.Initial ||
+        status === FetchStatus.DownloadInProgress ||
+        status === FetchStatus.FailedDownloadRetryable
+      ) {
+        downloadResult = await this.download(item, db, metadata, progress || 0);
+        nextStatus = FetchStatus.DecryptionInProgress;
+      }
 
-    // Phase 2: Decryption (or failed decryption retries)
-    if (
-      nextStatus === FetchStatus.DecryptionInProgress ||
-      nextStatus === FetchStatus.FailedDecryptionRetryable
-    ) {
-      await this.decrypt(item, db, metadata, downloadResult);
-    } else {
-      // Handle unexpected statuses
-      console.debug(
-        `Unexpected status ${nextStatus} for item ${item.id}, skipping...`,
-      );
+      // Phase 2: Decryption (or failed decryption retries)
+      if (
+        nextStatus === FetchStatus.DecryptionInProgress ||
+        nextStatus === FetchStatus.FailedDecryptionRetryable
+      ) {
+        await this.decrypt(item, db, metadata, downloadResult);
+      } else {
+        // Handle unexpected statuses
+        console.debug(
+          `Unexpected status ${nextStatus} for item ${item.id}, skipping...`,
+        );
+      }
+    } finally {
+      // After every process tick, post message to main thread
+      if (this.port) {
+        this.port.postMessage(this.db.getItem(item.id));
+      }
     }
   };
 
@@ -310,6 +328,7 @@ export class TaskQueue {
 function createQueue(
   db: DB,
   taskFn: (task: ItemFetchTask, db: DB) => void,
+  port?: MessagePort,
 ): Queue {
   const q: Queue = new Queue(
     async (task: ItemFetchTask, cb: Queue.ProcessFunctionCb<void>) => {
@@ -347,6 +366,9 @@ function createQueue(
       errorMessage,
     );
     db.terminallyFailItem(taskId);
+    if (port) {
+      port.postMessage(db.getItem(taskId));
+    }
   });
 
   return q;

@@ -7,6 +7,7 @@ import {
   toTitleCase,
   formatJournalistName,
   prettyPrintBytes,
+  formatFilename,
 } from "./utils";
 import type { JournalistMetadata } from "../types";
 
@@ -624,6 +625,69 @@ describe("utils", () => {
 
     it("should handle negative numbers", () => {
       expect(prettyPrintBytes(-1024)).toBe("0 B");
+    });
+  });
+
+  describe("formatFilename", () => {
+    it("returns filename unchanged when within maxLength", () => {
+      expect(formatFilename("report.pdf", 12, 6)).toBe("report.pdf");
+      expect(formatFilename("short.txt", 20, 6)).toBe("short.txt");
+    });
+
+    it("truncates with ellipses in the middle when too long", () => {
+      expect(formatFilename("very_long_filename_example.txt", 20, 5)).toBe(
+        "very_lon...ample.txt",
+      );
+      expect(formatFilename("averyverylongfilenamewithoutdot", 20, 6)).toBe(
+        "averyverylo...outdot",
+      );
+    });
+
+    it("uses custom endLength correctly", () => {
+      expect(formatFilename("very_long_filename_example.txt", 20, 3)).toBe(
+        "very_long_...ple.txt",
+      );
+      expect(formatFilename("very_long_filename_example.txt", 20, 8)).toBe(
+        "very_..._example.txt",
+      );
+    });
+
+    it("retains file extension correctly", () => {
+      expect(
+        formatFilename("super_long_file_name_with_long_ext.extension", 25, 6),
+      ).toBe("super_...ng_ext.extension");
+      expect(formatFilename("super_long_name_archive.tar.gz", 15, 6)).toBe(
+        "sup...ve.tar.gz",
+      );
+    });
+
+    it("handles filenames with no extension", () => {
+      expect(formatFilename("longfilenamewithoutdot", 15, 6)).toBe(
+        "longfi...outdot",
+      );
+      expect(formatFilename("shortname", 10, 6)).toBe("shortname");
+    });
+
+    it("skips ellipses if namePart is shorter than or equal to endLength", () => {
+      expect(formatFilename("tiny.pdf", 10, 6)).toBe("tiny.pdf");
+      expect(formatFilename("small.doc", 12, 8)).toBe("small.doc");
+    });
+
+    it("handles extremely small maxLength gracefully", () => {
+      expect(formatFilename("example.txt", 5, 6)).toBe("...txt");
+      expect(formatFilename("short.txt", 5, 6)).toBe("...txt");
+    });
+
+    it("handles filenames with dots in the name", () => {
+      expect(formatFilename("my.cool.project.file.js", 19, 6)).toBe(
+        "my.cool...t.file.js",
+      );
+    });
+
+    it("handles long extensions properly", () => {
+      expect(formatFilename("filename.reallylongext", 20, 6)).toBe(
+        "...reallylongext",
+      );
     });
   });
 });

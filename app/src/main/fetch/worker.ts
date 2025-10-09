@@ -14,7 +14,7 @@ if (!parentPort) {
 const port = parentPort;
 
 const db = new DB();
-const q = new TaskQueue(db);
+const q = new TaskQueue(db, port);
 
 // Initialize crypto with workerData config if it exists and we haven't initialized yet
 if (workerData?.cryptoConfig) {
