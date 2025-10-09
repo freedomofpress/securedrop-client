@@ -298,7 +298,7 @@ function SourceList() {
 
       {/* Sources list */}
       <div ref={containerRef} className="flex-1 min-h-0 relative">
-        {loading && <LoadingIndicator />}
+        {filteredSources.length === 0 && loading && <LoadingIndicator />}
         <div className="absolute inset-0">
           <List
             height={containerHeight}

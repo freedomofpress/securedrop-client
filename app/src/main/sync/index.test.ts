@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach, MockInstance } from "vitest";
-import * as syncModule from "../../src/main/sync";
-import { DB } from "../../src/main/database";
+import * as syncModule from "../../../src/main/sync";
+import { DB } from "../../../src/main/database";
 import type {
   Index,
   ProxyJSONResponse,
@@ -8,9 +8,9 @@ import type {
   SourceMetadata,
   ItemMetadata,
   JournalistMetadata,
-} from "../../src/types";
-import * as proxyModule from "../../src/main/proxy";
-import { encryptedFilepath } from "./crypto";
+} from "../../../src/types";
+import * as proxyModule from "../../../src/main/proxy";
+import { encryptedFilepath } from "../crypto";
 import fs from "fs";
 
 vi.mock("fs", () => ({

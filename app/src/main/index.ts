@@ -25,6 +25,7 @@ import type {
 } from "../types";
 import { syncMetadata } from "./sync";
 import workerPath from "./fetch/worker?modulePath";
+import { Lock } from "./sync/lock";
 
 // Parse command line arguments
 const args = process.argv.slice(2);
@@ -154,6 +155,8 @@ app.whenReady().then(() => {
       );
   }
 
+  const syncLock = new Lock();
+
   // Default open or close DevTools by F12 in development
   // and ignore CommandOrControl + R in production.
   // see https://github.com/alex8088/electron-toolkit/tree/master/packages/utils
@@ -191,14 +194,6 @@ app.whenReady().then(() => {
     return journalists;
   });
 
-  ipcMain.handle("syncMetadata", async (_event, request: AuthedRequest) => {
-    await syncMetadata(db, request.authToken);
-    // Send message to fetch worker to fetch newly synced items, if any
-    fetchWorker.postMessage({
-      authToken: request.authToken,
-    } as AuthedRequest);
-  });
-
   ipcMain.handle(
     "updateFetchStatus",
     async (
@@ -213,6 +208,16 @@ app.whenReady().then(() => {
       } as AuthedRequest);
     },
   );
+
+  ipcMain.handle("syncMetadata", async (_event, request: AuthedRequest) => {
+    await syncLock.run(async () => {
+      await syncMetadata(db, request.authToken);
+    });
+    // Send message to fetch worker to fetch newly synced items, if any
+    fetchWorker.postMessage({
+      authToken: request.authToken,
+    } as AuthedRequest);
+  });
 
   ipcMain.handle("getSystemLanguage", async (_event): Promise<string> => {
     const systemLanguage = process.env.LANG || app.getLocale() || "en";
