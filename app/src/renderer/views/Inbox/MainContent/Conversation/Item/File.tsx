@@ -4,7 +4,11 @@ import {
   ItemUpdateType,
   type Item,
 } from "../../../../../../types";
-import { prettyPrintBytes, toTitleCase } from "../../../../../utils";
+import {
+  formatFilename,
+  prettyPrintBytes,
+  toTitleCase,
+} from "../../../../../utils";
 import Avatar from "../../../../../components/Avatar";
 import "../Item.css";
 
@@ -187,7 +191,7 @@ function CompleteFile(item: Item) {
       />
       <div className="ml-2">
         <Button size="small" type="link" style={{ paddingInlineStart: 0 }}>
-          {filename}
+          {formatFilename(filename, 30, 6)}
         </Button>
         <p style={{ fontStyle: "italic" }}>{fileSize}</p>
       </div>

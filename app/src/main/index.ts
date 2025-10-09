@@ -82,8 +82,7 @@ function spawnFetchWorker(mainWindow: BrowserWindow): Worker {
   });
 
   worker.on("message", (result) => {
-    console.log("Message from worker: ", result);
-
+    console.debug("Message from worker: ", result);
     mainWindow.webContents.send("item-update", result);
   });
 
