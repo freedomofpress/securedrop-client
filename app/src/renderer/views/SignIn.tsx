@@ -1,7 +1,7 @@
 import { Button, Input, Form } from "antd";
 import type { FormProps } from "antd";
 import { Eye, EyeOff } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router";
 import { useTranslation } from "react-i18next";
 
@@ -147,6 +147,23 @@ function SignInView() {
     // Redirect to home
     navigate("/");
   };
+
+  // Dev-only auto-login: will be compiled out in production builds
+  if (__DEV_AUTO_LOGIN__) {
+    // Track execution to prevent double-triggering in React Strict Mode
+    // eslint-disable-next-line react-hooks/rules-of-hooks
+    const autoLoginExecutedRef = useRef<boolean>(false);
+
+    // eslint-disable-next-line react-hooks/rules-of-hooks
+    useEffect(() => {
+      if (!autoLoginExecutedRef.current) {
+        autoLoginExecutedRef.current = true;
+        import("./SignIn.dev").then(({ performAutoLogin }) => {
+          performAutoLogin(form);
+        });
+      }
+    }, [form]);
+  }
 
   return (
     <div

@@ -63,6 +63,7 @@ export default defineConfig(({ mode }) => {
       plugins: [react(), tailwindcss()],
       define: {
         __APP_VERSION__: JSON.stringify(process.env.npm_package_version),
+        __DEV_AUTO_LOGIN__: isDev,
       },
     },
   };
