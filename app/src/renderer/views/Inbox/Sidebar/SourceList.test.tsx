@@ -32,6 +32,7 @@ vi.mock("react-window", () => ({
     <div
       data-testid="virtualized-list"
       data-item-count={itemCount}
+      // eslint-disable-next-line react/forbid-dom-props
       style={{ height }}
       className={className}
     >

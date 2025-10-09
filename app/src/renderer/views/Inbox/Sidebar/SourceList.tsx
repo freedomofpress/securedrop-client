@@ -166,6 +166,8 @@ function SourceList() {
       const isActive = activeSourceUuid === source.uuid;
 
       return (
+        // Need to inject inline styles through, this is done dynamically without violating CSP
+        // eslint-disable-next-line react/forbid-dom-props
         <div style={style}>
           <Source
             source={source}

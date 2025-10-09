@@ -145,6 +145,8 @@ function InProgressFile(item: Item, onUpdate: (update: ItemUpdate) => void) {
           <div className="w-64 h-0.5 bg-gray-200 rounded-full overflow-hidden">
             <div
               className="h-full bg-blue-500 transition-all duration-300 ease-out"
+              // No straightforward way to do dynamic width without inline styles
+              // eslint-disable-next-line react/forbid-dom-props
               style={{ width: `${progressPct}%` }}
             ></div>
           </div>
