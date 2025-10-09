@@ -213,7 +213,7 @@ export enum FetchStatus {
 export enum PendingEventType {
   Undefined = 0,
   ReplySent = 1,
-  ReplyDeleted = 2,
+  ItemDeleted = 2,
   SourceDeleted = 3,
   SourceConversationDeleted = 4,
   Starred = 5,

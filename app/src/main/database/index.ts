@@ -51,6 +51,7 @@ function computeVersion(blob: string): string {
 export class DB {
   private db: Database.Database | null;
   private url: string | null;
+  private snowflake: Snowflake;
 
   // Prepared statements
   private selectVersion: Statement<[], { version: string }>;
@@ -109,12 +110,14 @@ export class DB {
       snowflake_id: bigint;
       item_uuid?: string;
       type: number;
-      reply_data: string;
+      data?: string;
     },
     void
   >;
 
   constructor(dbDir?: string) {
+    this.snowflake = new Snowflake(new Date("2000-01-01T00:00:00.000Z"));
+
     if (!dbDir) {
       dbDir = path.join(os.homedir(), ".config", "SecureDrop");
     }
@@ -216,7 +219,7 @@ export class DB {
     `);
 
     this.insertItemPendingEvent = this.db.prepare(`
-      INSERT INTO pending_events (snowflake_id, item_uuid, type, data) VALUES(@snowflake_id, @item_uuid, @type, @reply_data)
+      INSERT INTO pending_events (snowflake_id, item_uuid, type, data) VALUES(@snowflake_id, @item_uuid, @type, @data)
     `);
   }
 
@@ -637,7 +640,7 @@ export class DB {
   }
 
   addPendingSourceEvent(sourceUuid: string, type: PendingEventType): bigint {
-    const snowflakeID = new Snowflake(Date.now()).generate();
+    const snowflakeID = this.snowflake.generate({ timestamp: Date.now() });
     this.insertSourcePendingEvent.run({
       snowflake_id: snowflakeID,
       source_uuid: sourceUuid,
@@ -646,33 +649,42 @@ export class DB {
     return snowflakeID;
   }
 
-  addPendingItemEvent(
+  addPendingReplySentEvent(
     itemUuid: string,
-    type: PendingEventType,
-    replyText?: string,
-    replySourceUuid?: string,
-    journalistUuid?: string,
+    text: string,
+    sourceUuid: string,
+    journalistUuid: string,
   ): bigint {
-    const snowflakeID = new Snowflake(Date.now()).generate();
+    const snowflakeID = this.snowflake.generate({ timestamp: Date.now() });
     const replyData: ReplySentData = {
       metadata: {
         kind: "reply",
         uuid: itemUuid,
-        source: replySourceUuid ?? "",
-        size: replyText?.length ?? 0,
+        source: sourceUuid,
+        size: text.length,
         journalist_uuid: journalistUuid ?? "",
         is_deleted_by_source: false,
         seen_by: [],
       },
-      text: replyText ?? "",
+      text: text ?? "",
     };
+
     this.insertItemPendingEvent.run({
       snowflake_id: snowflakeID,
-      // Don't sent item_uuid for new replies since the uuid does not exist
-      // in the items table and will violate fkey constraint
-      item_uuid: type !== PendingEventType.ReplySent ? itemUuid : undefined,
+      item_uuid: itemUuid,
+      type: PendingEventType.ReplySent,
+      data: JSON.stringify(replyData, sortKeys),
+    });
+    return snowflakeID;
+  }
+
+  addPendingItemEvent(itemUuid: string, type: PendingEventType): bigint {
+    const snowflakeID = this.snowflake.generate({ timestamp: Date.now() });
+    this.insertItemPendingEvent.run({
+      snowflake_id: snowflakeID,
+      item_uuid: itemUuid,
       type: type,
-      reply_data: JSON.stringify(replyData, sortKeys),
+      data: undefined,
     });
     return snowflakeID;
   }
