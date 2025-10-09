@@ -80,5 +80,12 @@
       "generic": "Cela n'a pas fonctionné. Veuillez tout vérifier et réessayer."
     },
     "version": "Application SecureDrop v{{version}}"
+  },
+  "Item": {
+    "encryptedFile": "Fichier Crypté",
+    "pause": "Pause",
+    "resume": "Reprendre",
+    "of": "de",
+    "filenameTooltip": "Nom de fichier disponible après le téléchargement"
   }
 }

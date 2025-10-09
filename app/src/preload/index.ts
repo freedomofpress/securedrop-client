@@ -1,14 +1,15 @@
 // See the Electron documentation for details on how to use preload scripts:
 // https://www.electronjs.org/docs/latest/tutorial/process-model#preload-scripts
 import { contextBridge, ipcRenderer } from "electron";
-import type {
-  ProxyJSONResponse,
-  ProxyRequest,
-  ProxyResponse,
-  Source,
-  SourceWithItems,
-  Journalist,
-  SyncMetadataRequest,
+import {
+  type ProxyJSONResponse,
+  type ProxyRequest,
+  type ProxyResponse,
+  type Source,
+  type SourceWithItems,
+  type Journalist,
+  type AuthedRequest,
+  Item,
 } from "../types";
 
 // Log the performance of IPC calls
@@ -41,8 +42,13 @@ const electronAPI = {
     (request: ProxyRequest, downloadPath: string) =>
       ipcRenderer.invoke("requestStream", request, downloadPath),
   ),
-  syncMetadata: logIpcCall("syncMetadata", (request: SyncMetadataRequest) =>
+  syncMetadata: logIpcCall("syncMetadata", (request: AuthedRequest) =>
     ipcRenderer.invoke("syncMetadata", request),
+  ),
+  updateFetchStatus: logIpcCall(
+    "updateFetchStatus",
+    (itemUuid: string, fetchStatus: number, authToken: string) =>
+      ipcRenderer.invoke("updateFetchStatus", itemUuid, fetchStatus, authToken),
   ),
   getSources: logIpcCall<Source[]>("getSources", () =>
     ipcRenderer.invoke("getSources"),
@@ -52,12 +58,19 @@ const electronAPI = {
     (sourceUuid: string) =>
       ipcRenderer.invoke("getSourceWithItems", sourceUuid),
   ),
+  getItem: logIpcCall<Item>("getItem", (itemUuid: string) =>
+    ipcRenderer.invoke("getItem", itemUuid),
+  ),
   getJournalists: logIpcCall<Journalist[]>("getJournalists", () =>
     ipcRenderer.invoke("getJournalists"),
   ),
   getSystemLanguage: logIpcCall<string>("getSystemLanguage", () =>
     ipcRenderer.invoke("getSystemLanguage"),
   ),
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  onItemUpdate: (callback: (...args: any[]) => void) => {
+    ipcRenderer.on("item-update", (_event, ...args) => callback(...args));
+  },
 };
 
 contextBridge.exposeInMainWorld("electronAPI", electronAPI);

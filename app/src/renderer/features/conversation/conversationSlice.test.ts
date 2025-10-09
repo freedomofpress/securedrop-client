@@ -36,6 +36,8 @@ const mockSourceWithItems: SourceWithItems = {
         seen_by: [],
       },
       plaintext: "Hello from Alice!",
+      fetch_progress: 1024,
+      fetch_status: 3,
     },
     {
       uuid: "item-2",
@@ -49,6 +51,8 @@ const mockSourceWithItems: SourceWithItems = {
         seen_by: ["journalist-1"],
       },
       plaintext: "Hi Alice, thanks for reaching out.",
+      fetch_progress: 512,
+      fetch_status: 3,
     },
   ],
 };
@@ -76,6 +80,8 @@ const mockSourceWithItems2: SourceWithItems = {
         seen_by: ["journalist-1"],
       },
       filename: "document.pdf",
+      fetch_progress: 2048,
+      fetch_status: 3,
     },
   ],
 };

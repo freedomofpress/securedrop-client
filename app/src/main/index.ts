@@ -18,8 +18,8 @@ import type {
   Source,
   SourceWithItems,
   Journalist,
-  SyncMetadataRequest,
-  FetchDownloadsMessage,
+  AuthedRequest,
+  Item,
 } from "../types";
 import { syncMetadata } from "./sync";
 import workerPath from "./fetch/worker?modulePath";
@@ -38,7 +38,7 @@ if (noQubes) {
 
 const db = new DB();
 
-function createWindow(): void {
+function createWindow(): BrowserWindow {
   const mainWindow = new BrowserWindow({
     width: is.dev && process.env["NODE_ENV"] != "production" ? 1500 : 1200,
     height: 900,
@@ -72,15 +72,18 @@ function createWindow(): void {
   } else {
     mainWindow.loadFile(join(__dirname, "../renderer/index.html"));
   }
+
+  return mainWindow;
 }
 
-function spawnFetchWorker(): Worker {
+function spawnFetchWorker(mainWindow: BrowserWindow): Worker {
   const worker = new Worker(workerPath, {
     workerData: { cryptoConfig },
   });
 
   worker.on("message", (result) => {
-    console.log("Result from worker: ", result);
+    console.debug("Message from worker: ", result);
+    mainWindow.webContents.send("item-update", result);
   });
 
   worker.on("error", (err) => {
@@ -113,8 +116,6 @@ app.whenReady().then(() => {
       );
   }
 
-  const fetchWorker = spawnFetchWorker();
-
   // Default open or close DevTools by F12 in development
   // and ignore CommandOrControl + R in production.
   // see https://github.com/alex8088/electron-toolkit/tree/master/packages/utils
@@ -143,19 +144,35 @@ app.whenReady().then(() => {
     },
   );
 
+  ipcMain.handle("getItem", async (_event, itemUuid: string): Promise<Item> => {
+    return db.getItem(itemUuid);
+  });
+
   ipcMain.handle("getJournalists", async (_event): Promise<Journalist[]> => {
     const journalists = db.getJournalists();
     return journalists;
   });
 
+  ipcMain.handle("syncMetadata", async (_event, request: AuthedRequest) => {
+    await syncMetadata(db, request.authToken);
+    // Send message to fetch worker to fetch newly synced items, if any
+    fetchWorker.postMessage({
+      authToken: request.authToken,
+    } as AuthedRequest);
+  });
+
   ipcMain.handle(
-    "syncMetadata",
-    async (_event, request: SyncMetadataRequest) => {
-      await syncMetadata(db, request.authToken);
-      // Send message to fetch worker to fetch newly synced items, if any
+    "updateFetchStatus",
+    async (
+      _event,
+      itemUuid: string,
+      fetchStatus: number,
+      authToken: string,
+    ) => {
+      db.updateFetchStatus(itemUuid, fetchStatus);
       fetchWorker.postMessage({
-        authToken: request.authToken,
-      } as FetchDownloadsMessage);
+        authToken: authToken,
+      } as AuthedRequest);
     },
   );
 
@@ -164,7 +181,9 @@ app.whenReady().then(() => {
     return systemLanguage;
   });
 
-  createWindow();
+  const mainWindow = createWindow();
+
+  const fetchWorker = spawnFetchWorker(mainWindow);
 });
 
 app.on("window-all-closed", () => {

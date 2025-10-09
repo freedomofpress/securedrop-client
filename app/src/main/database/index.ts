@@ -18,6 +18,7 @@ import {
   Journalist,
   JournalistRow,
   FetchStatus,
+  Item,
 } from "../../types";
 
 interface KeyObject {
@@ -70,11 +71,17 @@ export class DB {
     { uuid: string },
     { filename: string; source_uuid: string }
   >;
+  private selectItemsProcessable: Statement<[], { uuid: string }>;
   private upsertItem: Statement<
-    { uuid: string; data: string; version: string },
+    { uuid: string; data: string; version: string; fetch_status: number },
     void
   >;
   private deleteItem: Statement<{ uuid: string }, void>;
+  private updateItemFetchStatus: Statement<{
+    uuid: string;
+    fetch_status: number;
+  }>;
+  private selectItem: Statement<{ uuid: string }, ItemRow>;
 
   private selectAllJournalistVersion: Statement<
     [],
@@ -134,10 +141,27 @@ export class DB {
     this.selectItemFilenameSource = this.db.prepare(
       "SELECT filename, source_uuid FROM items WHERE source_uuid = @uuid",
     );
+    this.selectItemsProcessable = this.db.prepare(
+      `SELECT uuid FROM items
+      WHERE
+        (kind = 'file' AND fetch_status in (${FetchStatus.DownloadInProgress}, ${FetchStatus.DecryptionInProgress}, ${FetchStatus.FailedDownloadRetryable}, ${FetchStatus.FailedDecryptionRetryable}))
+        OR
+        (kind <> 'file' AND fetch_status in (${FetchStatus.Initial}, ${FetchStatus.DownloadInProgress}, ${FetchStatus.DecryptionInProgress}, ${FetchStatus.FailedDownloadRetryable}, ${FetchStatus.FailedDecryptionRetryable}))`,
+    );
+    this.upsertItem = this.db.prepare(
+      "INSERT INTO items (uuid, data, version, fetch_status) VALUES (@id, @data, @version, @fetch_status) ON CONFLICT(uuid) DO UPDATE SET data=@data, version=@version, fetch_status=@fetch_status",
+    );
+    this.updateItemFetchStatus = this.db.prepare(
+      "UPDATE items SET fetch_status = @fetch_status WHERE uuid = @uuid",
+    );
     this.upsertItem = this.db.prepare(
       "INSERT INTO items (uuid, data, version) VALUES (@uuid, @data, @version) ON CONFLICT(uuid) DO UPDATE SET data=@data, version=@version",
     );
     this.deleteItem = this.db.prepare("DELETE FROM items WHERE uuid = @uuid");
+    this.selectItem = this.db.prepare(
+      `SELECT uuid, data, plaintext, filename, fetch_status, fetch_progress FROM items WHERE uuid = @uuid`,
+    );
+
     this.selectAllJournalistVersion = this.db.prepare(
       "SELECT uuid, version FROM journalists",
     );
@@ -163,7 +187,7 @@ export class DB {
       WHERE uuid = ?
     `);
     this.selectItemsBySourceId = this.db.prepare(`
-      SELECT uuid, data, plaintext, filename FROM items
+      SELECT uuid, data, plaintext, filename, fetch_status, fetch_progress FROM items
       WHERE source_uuid = ?
     `);
     this.selectAllJournalists = this.db.prepare(`
@@ -367,11 +391,20 @@ export class DB {
       const metadata = items[itemid];
       const blob = JSON.stringify(metadata, sortKeys);
       const version = computeVersion(blob);
+
       this.upsertItem.run({
         uuid: itemid,
         data: blob,
         version: version,
+        fetch_status: FetchStatus.Initial,
       });
+    });
+  }
+
+  public updateFetchStatus(itemUuid: string, fetchStatus: number) {
+    this.updateItemFetchStatus.run({
+      uuid: itemUuid,
+      fetch_status: fetchStatus,
     });
   }
 
@@ -445,6 +478,8 @@ export class DB {
         data,
         plaintext: row.plaintext,
         filename: row.filename,
+        fetch_status: row.fetch_status,
+        fetch_progress: row.fetch_progress,
       };
     });
 
@@ -471,35 +506,27 @@ export class DB {
     });
   }
 
+  // Selects items that are ready to be downloaded + decrypted. This
+  // is all messages, and files that have been initiated from the client
+  // by being put into FetchStatus.DownloadInProgress
   getItemsToProcess(): string[] {
     type Row = {
       uuid: string;
     };
-    console.log("getting items to process");
-    const itemStmt = this.db!.prepare(`
-      SELECT uuid FROM items
-      WHERE fetch_status IN (${FetchStatus.Initial}, ${FetchStatus.DownloadInProgress}, ${FetchStatus.FailedDownloadRetryable}, ${FetchStatus.FailedDecryptionRetryable})
-    `);
-    const rows = itemStmt?.all() as Array<Row>;
+    const rows = this.selectItemsProcessable.all() as Array<Row>;
     return rows.map((r) => r.uuid);
   }
 
-  getItemWithFetchStatus(
-    itemUuid: string,
-  ): [ItemMetadata, FetchStatus, number] {
-    type Row = {
-      data: string;
-      fetch_status: number;
-      fetch_progress: number;
+  getItem(itemUuid: string): Item {
+    const row = this.selectItem.get({ uuid: itemUuid }) as ItemRow;
+    return {
+      uuid: row.uuid,
+      data: JSON.parse(row.data) as ItemMetadata,
+      plaintext: row.plaintext,
+      filename: row.filename,
+      fetch_status: row.fetch_status as FetchStatus,
+      fetch_progress: row.fetch_progress,
     };
-    const itemStmt = this.db?.prepare(`
-      SELECT data, fetch_status, fetch_progress FROM items WHERE uuid = ?`);
-    const item = itemStmt?.get(itemUuid) as Row;
-    return [
-      JSON.parse(item.data) as ItemMetadata,
-      item.fetch_status as FetchStatus,
-      item.fetch_progress,
-    ];
   }
 
   completePlaintextItem(itemUuid: string, plaintext: string) {

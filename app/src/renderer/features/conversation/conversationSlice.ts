@@ -1,5 +1,5 @@
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
-import type { SourceWithItems } from "../../../types";
+import { Item, type SourceWithItems } from "../../../types";
 import type { RootState } from "../../store";
 
 export interface ConversationState {
@@ -25,6 +25,28 @@ export const fetchConversation = createAsyncThunk(
   },
 );
 
+export const updateItemFetchStatus = createAsyncThunk(
+  "conversation/updateItemFetchStatus",
+  async ({
+    itemUuid,
+    fetchStatus,
+    authToken,
+  }: {
+    sourceUuid: string;
+    itemUuid: string;
+    fetchStatus: number;
+    authToken: string | undefined;
+  }) => {
+    await window.electronAPI.updateFetchStatus(
+      itemUuid,
+      fetchStatus,
+      authToken,
+    );
+    const item = await window.electronAPI.getItem(itemUuid);
+    return { item };
+  },
+);
+
 const conversationSlice = createSlice({
   name: "conversation",
   initialState,
@@ -35,6 +57,17 @@ const conversationSlice = createSlice({
     clearConversation: (state) => {
       state.conversation = null;
       state.lastFetchTime = null;
+    },
+    updateItem: (state, action) => {
+      const updatedItem: Item = action.payload;
+      if (state.conversation) {
+        state.conversation.items = state.conversation.items.map((item, _) => {
+          if (item.uuid === updatedItem.uuid) {
+            return updatedItem;
+          }
+          return item;
+        });
+      }
     },
   },
   extraReducers: (builder) => {
@@ -53,11 +86,24 @@ const conversationSlice = createSlice({
       .addCase(fetchConversation.rejected, (state, action) => {
         state.loading = false;
         state.error = action.error.message || "Failed to fetch conversation";
+      })
+      .addCase(updateItemFetchStatus.fulfilled, (state, action) => {
+        const { item: updatedItem } = action.payload;
+        if (state.conversation) {
+          state.conversation.items = state.conversation.items.map((item, _) => {
+            if (item.uuid === updatedItem.uuid) {
+              return updatedItem;
+            }
+            return item;
+          });
+        }
+        state.lastFetchTime = Date.now();
       });
   },
 });
 
-export const { clearError, clearConversation } = conversationSlice.actions;
+export const { clearError, clearConversation, updateItem } =
+  conversationSlice.actions;
 
 // Selectors
 export const selectConversation = (state: RootState, sourceUuid: string) =>

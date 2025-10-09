@@ -44,6 +44,11 @@ beforeEach(() => {
     getSystemLanguage: vi.fn().mockResolvedValue("en"),
     // TODO: we may want a real mock here
     syncMetadata: vi.fn().mockRejectedValue(new Error("mock not implemented")),
+    updateFetchStatus: vi
+      .fn()
+      .mockRejectedValue(new Error("mock not implemented")),
+    onItemUpdate: vi.fn().mockRejectedValue(new Error("mock not implemented")),
+    getItem: vi.fn().mockRejectedValue(new Error("mock not implemented")),
     getSources: vi.fn().mockResolvedValue([
       {
         uuid: "source-1",

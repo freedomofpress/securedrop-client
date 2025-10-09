@@ -159,3 +159,56 @@ export function formatJournalistName(journalist: JournalistMetadata): string {
   }
   return journalist.username;
 }
+
+/**
+ * Pretty-print file size in human-readable format
+ */
+export function prettyPrintBytes(bytes: number): string {
+  if (bytes <= 0) return "0 B";
+  const k = 1024;
+  const sizes = ["B", "KB", "MB", "GB", "TB", "PB"];
+  const i = Math.floor(Math.log(bytes) / Math.log(k));
+  const size = parseFloat((bytes / Math.pow(k, i)).toFixed(2));
+  return `${size} ${sizes[i]}`;
+}
+
+/**
+ * Format a filename with a given max length, truncating with ellipses
+ * in the middle while retaining the file extension and a configurable
+ * number of characters from the end of the base name.
+ *
+ * Example:
+ *   formatFilename("very_long_filename_example.txt", 20, 6)
+ *   → "very_lo...ample.txt"
+ */
+export function formatFilename(
+  filename: string,
+  maxLength: number,
+  endLength: number,
+): string {
+  if (filename.length <= maxLength) return filename;
+
+  const dotIndex = filename.lastIndexOf(".");
+  const hasExtension = dotIndex > 0 && dotIndex < filename.length - 1;
+
+  let namePart = filename;
+  let extPart = "";
+
+  if (hasExtension) {
+    namePart = filename.slice(0, dotIndex);
+    extPart = filename.slice(dotIndex);
+  }
+
+  const suffixLen = Math.min(endLength, namePart.length);
+  const suffix = namePart.slice(-suffixLen);
+
+  const minRequired = suffixLen + 3 + extPart.length; // 3 for "..."
+  if (minRequired >= maxLength) {
+    return ".." + extPart;
+  }
+
+  const remaining = maxLength - minRequired;
+  const prefix = namePart.slice(0, remaining);
+
+  return `${prefix}...${suffix}${extPart}`;
+}
