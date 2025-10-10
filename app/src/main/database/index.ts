@@ -4,6 +4,7 @@ import path from "path";
 import { execSync } from "child_process";
 import Database, { Statement } from "better-sqlite3";
 import blake from "blakejs";
+import { Snowflake } from "@sapphire/snowflake";
 
 import {
   Index,
@@ -19,6 +20,8 @@ import {
   JournalistRow,
   FetchStatus,
   Item,
+  PendingEventType,
+  ReplySentData,
 } from "../../types";
 
 interface KeyObject {
@@ -48,6 +51,7 @@ function computeVersion(blob: string): string {
 export class DB {
   private db: Database.Database | null;
   private url: string | null;
+  private snowflake: Snowflake;
 
   // Prepared statements
   private selectVersion: Statement<[], { version: string }>;
@@ -97,11 +101,27 @@ export class DB {
   private selectSourceById: Statement<[string], SourceRow>;
   private selectItemsBySourceId: Statement<[string], ItemRow>;
   private selectAllJournalists: Statement<[], JournalistRow>;
+  private insertSourcePendingEvent: Statement<
+    { snowflake_id: bigint; source_uuid: string; type: number },
+    void
+  >;
+  private insertItemPendingEvent: Statement<
+    {
+      snowflake_id: bigint;
+      item_uuid?: string;
+      type: number;
+      data?: string;
+    },
+    void
+  >;
 
   constructor(dbDir?: string) {
+    this.snowflake = new Snowflake(new Date("2000-01-01T00:00:00.000Z"));
+
     if (!dbDir) {
       dbDir = path.join(os.homedir(), ".config", "SecureDrop");
     }
+
     // Ensure the directory exists
     if (!fs.existsSync(dbDir)) {
       fs.mkdirSync(dbDir, { recursive: true });
@@ -126,7 +146,7 @@ export class DB {
     );
 
     this.selectAllSourceVersion = this.db.prepare(
-      "SELECT uuid, version FROM sources",
+      "SELECT uuid, version FROM sources_projected",
     );
     this.upsertSource = this.db.prepare(
       "INSERT INTO sources (uuid, data, version) VALUES (@uuid, @data, @version) ON CONFLICT(uuid) DO UPDATE SET data=@data, version=@version",
@@ -136,10 +156,10 @@ export class DB {
     );
 
     this.selectAllItemVersion = this.db.prepare(
-      "SELECT uuid, version FROM items",
+      "SELECT uuid, version FROM items_projected",
     );
     this.selectItemFilenameSource = this.db.prepare(
-      "SELECT filename, source_uuid FROM items WHERE source_uuid = @uuid",
+      "SELECT filename, source_uuid FROM items_projected WHERE source_uuid = @uuid",
     );
     this.selectItemsProcessable = this.db.prepare(
       `SELECT uuid FROM items
@@ -180,18 +200,26 @@ export class DB {
         has_attachment,
         show_message_preview,
         message_preview
-      FROM sources
+      FROM sources_projected
     `);
     this.selectSourceById = this.db.prepare(`
-      SELECT uuid, data FROM sources
+      SELECT uuid, data FROM sources_projected
       WHERE uuid = ?
     `);
     this.selectItemsBySourceId = this.db.prepare(`
-      SELECT uuid, data, plaintext, filename, fetch_status, fetch_progress FROM items
+      SELECT uuid, data, plaintext, filename, fetch_status, fetch_progress FROM items_projected
       WHERE source_uuid = ?
     `);
     this.selectAllJournalists = this.db.prepare(`
       SELECT uuid, data FROM journalists
+    `);
+
+    this.insertSourcePendingEvent = this.db.prepare(`
+      INSERT INTO pending_events (snowflake_id, source_uuid, type) VALUES (@snowflake_id, @source_uuid, @type)
+    `);
+
+    this.insertItemPendingEvent = this.db.prepare(`
+      INSERT INTO pending_events (snowflake_id, item_uuid, type, data) VALUES(@snowflake_id, @item_uuid, @type, @data)
     `);
   }
 
@@ -370,7 +398,7 @@ export class DB {
 
   // Updates source versions in DB. Should be run in a transaction that also
   // updates the global index version.
-  private updateSources(sources: { [uuid: string]: SourceMetadata }) {
+  updateSources(sources: { [uuid: string]: SourceMetadata }) {
     Object.keys(sources).forEach((sourceid: string) => {
       const metadata = sources[sourceid];
       // Updating the full source: update metadata and re-compute source version
@@ -386,7 +414,7 @@ export class DB {
 
   // Updates item versions in DB. Should be run in a transaction that also
   // updates the global index version.
-  private updateItems(items: { [uuid: string]: ItemMetadata }) {
+  updateItems(items: { [uuid: string]: ItemMetadata }) {
     Object.keys(items).forEach((itemid: string) => {
       const metadata = items[itemid];
       const blob = JSON.stringify(metadata, sortKeys);
@@ -609,5 +637,55 @@ export class DB {
       `UPDATE items SET fetch_status = ${FetchStatus.FailedDecryptionRetryable}, fetch_retry_attempts = fetch_retry_attempts + 1, fetch_last_updated_at = CURRENT_TIMESTAMP WHERE uuid = @uuid`,
     );
     stmt.run({ uuid: itemUuid });
+  }
+
+  addPendingSourceEvent(sourceUuid: string, type: PendingEventType): bigint {
+    const snowflakeID = this.snowflake.generate({ timestamp: Date.now() });
+    this.insertSourcePendingEvent.run({
+      snowflake_id: snowflakeID,
+      source_uuid: sourceUuid,
+      type: type,
+    });
+    return snowflakeID;
+  }
+
+  addPendingReplySentEvent(
+    itemUuid: string,
+    text: string,
+    sourceUuid: string,
+    journalistUuid: string,
+  ): bigint {
+    const snowflakeID = this.snowflake.generate({ timestamp: Date.now() });
+    const replyData: ReplySentData = {
+      metadata: {
+        kind: "reply",
+        uuid: itemUuid,
+        source: sourceUuid,
+        size: text.length,
+        journalist_uuid: journalistUuid ?? "",
+        is_deleted_by_source: false,
+        seen_by: [],
+      },
+      text: text ?? "",
+    };
+
+    this.insertItemPendingEvent.run({
+      snowflake_id: snowflakeID,
+      item_uuid: itemUuid,
+      type: PendingEventType.ReplySent,
+      data: JSON.stringify(replyData, sortKeys),
+    });
+    return snowflakeID;
+  }
+
+  addPendingItemEvent(itemUuid: string, type: PendingEventType): bigint {
+    const snowflakeID = this.snowflake.generate({ timestamp: Date.now() });
+    this.insertItemPendingEvent.run({
+      snowflake_id: snowflakeID,
+      item_uuid: itemUuid,
+      type: type,
+      data: undefined,
+    });
+    return snowflakeID;
   }
 }
