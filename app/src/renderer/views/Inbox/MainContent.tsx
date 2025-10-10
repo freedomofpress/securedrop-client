@@ -32,15 +32,15 @@ function MainContent() {
   const content = useMemo(() => {
     // If we have a source UUID, show the source content
     if (sourceUuid) {
-      if (loading) {
+      if (sourceWithItems) {
+        // Source and items exists, display
+        return <Conversation sourceWithItems={sourceWithItems} />;
+      } else if (loading) {
         // Loading
         return <p>{t("loading.content")}</p>;
-      } else if (!sourceWithItems) {
+      } else {
         // Source not found
         return <p>{t("sourceNotFound.content")}</p>;
-      } else {
-        // Source found, display items
-        return <Conversation sourceWithItems={sourceWithItems} />;
       }
     } else {
       // Show empty state when no source is selected

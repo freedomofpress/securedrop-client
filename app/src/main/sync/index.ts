@@ -1,14 +1,14 @@
-import { proxyJSONRequest } from "./proxy";
+import { proxyJSONRequest } from "../proxy";
 import {
   ProxyJSONResponse,
   Index,
   MetadataRequest,
   MetadataResponse,
-} from "../types";
-import { DB } from "./database";
+} from "../../types";
+import { DB } from "../database";
 
 import fs from "fs";
-import { encryptedFilepath } from "./crypto";
+import { encryptedFilepath } from "../crypto";
 
 async function getIndex(
   authToken: string,
