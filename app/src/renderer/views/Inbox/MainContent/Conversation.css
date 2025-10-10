@@ -1,3 +1,8 @@
+.conversation-formitem {
+  /* need a dedicated class since tailwind won't override ant styles */
+  margin-bottom: 0;
+}
+
 .conversation-textarea {
   padding-right: 40px;
 }

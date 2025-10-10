@@ -6,6 +6,7 @@ import reactRefresh from "eslint-plugin-react-refresh";
 import eslintConfigPrettier from "eslint-config-prettier/flat";
 import importPlugin from "eslint-plugin-import";
 import i18next from "eslint-plugin-i18next";
+import react from "eslint-plugin-react";
 
 export default tseslint.config(
   {
@@ -17,6 +18,9 @@ export default tseslint.config(
     ],
   },
   {
+    plugins: {
+      react,
+    },
     extends: [
       eslint.configs.recommended,
       tseslint.configs.recommended,
@@ -45,6 +49,8 @@ export default tseslint.config(
           caughtErrorsIgnorePattern: "^_",
         },
       ],
+      "react/forbid-dom-props": ["error", { forbid: ["style"] }],
+      "react/forbid-component-props": ["error", { forbid: ["style"] }],
     },
     settings: {
       "import/resolver": {

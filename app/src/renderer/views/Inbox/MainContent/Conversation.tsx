@@ -53,7 +53,7 @@ const Conversation = memo(function Conversation({
       </div>
       <div className="flex-shrink-0 p-4 pt-0">
         <Form layout="vertical">
-          <Form.Item style={{ marginBottom: 0 }}>
+          <Form.Item className="conversation-formitem">
             <div className="relative">
               <Input.TextArea
                 rows={4}
