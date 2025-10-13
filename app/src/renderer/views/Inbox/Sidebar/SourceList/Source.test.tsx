@@ -21,6 +21,7 @@ vi.mock("react-router", async (importOriginal) => {
 // Mock functions for props
 const mockOnSelect = vi.fn();
 const mockOnToggleStar = vi.fn();
+const mockOnCancelPendingStar = vi.fn();
 
 // Helper function to create a mock source
 const createMockSource = (overrides: Partial<SourceType> = {}): SourceType => ({
@@ -46,6 +47,7 @@ const defaultProps = {
   isActive: false,
   onSelect: mockOnSelect,
   onToggleStar: mockOnToggleStar,
+  onCancelPendingStar: mockOnCancelPendingStar,
 };
 
 describe("Source Component", () => {
@@ -294,6 +296,7 @@ describe("Source Component", () => {
       isActive: false,
       onSelect: mockOnSelect,
       onToggleStar: mockOnToggleStar,
+      onCancelPendingStar: mockOnCancelPendingStar,
     };
 
     const cases: Array<[typeof baseProps, number]> = [

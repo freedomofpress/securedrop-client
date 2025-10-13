@@ -22,6 +22,7 @@ export interface SourceProps {
   isActive: boolean;
   onSelect: (sourceId: string, checked: boolean) => void;
   onToggleStar: (sourceId: string, currentlyStarred: boolean) => void;
+  onCancelPendingStar: (sourceId: string, snowflakeId: string) => void;
 }
 
 const Source = memo(function Source({
@@ -30,6 +31,7 @@ const Source = memo(function Source({
   isActive,
   onSelect,
   onToggleStar,
+  onCancelPendingStar,
 }: SourceProps) {
   const { t, i18n } = useTranslation("Sidebar");
   const { t: tCommon } = useTranslation("common");
@@ -52,13 +54,15 @@ const Source = memo(function Source({
     const pendingState = starPendingStates[source.uuid];
     if (pendingState !== undefined) {
       return {
-        isStarred: pendingState,
+        isStarred: pendingState.targetStarState,
         isPending: true,
+        snowflakeId: pendingState.snowflakeId,
       };
     }
     return {
       isStarred: source.data.is_starred,
       isPending: false,
+      snowflakeId: undefined,
     };
   }, [starPendingStates, source.uuid, source.data.is_starred]);
 
@@ -110,7 +114,6 @@ const Source = memo(function Source({
         <Button
           type="text"
           size="large"
-          disabled={starState.isPending}
           className={starState.isPending ? "opacity-60" : ""}
           icon={
             starState.isStarred ? (
@@ -125,7 +128,11 @@ const Source = memo(function Source({
           }
           onClick={(e) => {
             e.stopPropagation();
-            if (!starState.isPending) {
+            if (starState.isPending && starState.snowflakeId) {
+              // Cancel the pending operation
+              onCancelPendingStar(source.uuid, starState.snowflakeId);
+            } else if (!starState.isPending) {
+              // Start a new toggle operation
               onToggleStar(source.uuid, starState.isStarred);
             }
           }}

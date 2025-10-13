@@ -8,7 +8,12 @@ export interface SourcesState {
   activeSourceUuid: string | null;
   loading: boolean;
   error: string | null;
-  starPendingStates: { [sourceUuid: string]: boolean };
+  starPendingStates: {
+    [sourceUuid: string]: {
+      targetStarState: boolean;
+      snowflakeId: string;
+    };
+  };
 }
 
 const initialState: SourcesState = {
@@ -41,8 +46,30 @@ export const toggleSourceStar = createAsyncThunk(
     const eventType = targetStarState
       ? PendingEventType.Starred
       : PendingEventType.Unstarred;
-    await window.electronAPI.addPendingSourceEvent(sourceUuid, eventType);
-    return { sourceUuid, targetStarState };
+    const snowflakeId = await window.electronAPI.addPendingSourceEvent(
+      sourceUuid,
+      eventType,
+    );
+    return {
+      sourceUuid,
+      targetStarState,
+      snowflakeId: snowflakeId.toString(),
+    };
+  },
+);
+
+// Async thunk for canceling pending source star
+export const cancelPendingSourceEvent = createAsyncThunk(
+  "sources/cancelPendingSourceEvent",
+  async ({
+    sourceUuid,
+    snowflakeId,
+  }: {
+    sourceUuid: string;
+    snowflakeId: string;
+  }) => {
+    await window.electronAPI.removePendingEvent(BigInt(snowflakeId));
+    return { sourceUuid };
   },
 );
 
@@ -80,18 +107,33 @@ export const sourcesSlice = createSlice({
       // toggleSourceStar
       .addCase(toggleSourceStar.pending, (state, action) => {
         const { sourceUuid, targetStarState } = action.meta.arg;
-        state.starPendingStates[sourceUuid] = targetStarState;
+        state.starPendingStates[sourceUuid] = {
+          targetStarState,
+          snowflakeId: "", // Will be set on fulfilled
+        };
       })
       .addCase(toggleSourceStar.fulfilled, (state, action) => {
         // Keep the pending state - it will be cleared on next sync
-        const { sourceUuid, targetStarState } = action.payload;
-        state.starPendingStates[sourceUuid] = targetStarState;
+        const { sourceUuid, targetStarState, snowflakeId } = action.payload;
+        state.starPendingStates[sourceUuid] = {
+          targetStarState,
+          snowflakeId,
+        };
       })
       .addCase(toggleSourceStar.rejected, (state, action) => {
         const { sourceUuid } = action.meta.arg;
         // Remove pending state on failure to revert to original
         delete state.starPendingStates[sourceUuid];
         state.error = action.error.message || "Failed to toggle star";
+      })
+      // cancelPendingSourceEvent
+      .addCase(cancelPendingSourceEvent.fulfilled, (state, action) => {
+        const { sourceUuid } = action.payload;
+        // Remove the pending state when successfully canceled
+        delete state.starPendingStates[sourceUuid];
+      })
+      .addCase(cancelPendingSourceEvent.rejected, (state, action) => {
+        state.error = action.error.message || "Failed to cancel pending event";
       });
   },
 });

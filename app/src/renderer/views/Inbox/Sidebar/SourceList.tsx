@@ -10,6 +10,7 @@ import {
   selectSources,
   selectSourcesLoading,
   toggleSourceStar,
+  cancelPendingSourceEvent,
 } from "../../../features/sources/sourcesSlice";
 import Toolbar, { type filterOption } from "./SourceList/Toolbar";
 
@@ -94,6 +95,20 @@ function SourceList() {
     },
     [dispatch],
   );
+
+  // Handle canceling pending star operation
+  const handleCancelPendingStar = useCallback(
+    (sourceId: string, snowflakeId: string) => {
+      dispatch(
+        cancelPendingSourceEvent({
+          sourceUuid: sourceId,
+          snowflakeId,
+        }),
+      );
+    },
+    [dispatch],
+  );
+
   const handleBulkDelete = useCallback(() => {
     console.log("Delete selected sources:", selectedSources);
   }, [selectedSources]);
@@ -172,6 +187,7 @@ function SourceList() {
             isActive={isActive}
             onSelect={handleSourceSelect}
             onToggleStar={handleToggleStar}
+            onCancelPendingStar={handleCancelPendingStar}
           />
         </div>
       );
@@ -182,6 +198,7 @@ function SourceList() {
       activeSourceUuid,
       handleSourceSelect,
       handleToggleStar,
+      handleCancelPendingStar,
     ],
   );
 
