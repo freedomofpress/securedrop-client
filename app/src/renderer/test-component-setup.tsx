@@ -155,6 +155,9 @@ beforeEach(() => {
         },
       },
     ]),
+    addPendingSourceEvent: vi.fn().mockResolvedValue(BigInt(123)),
+    addPendingReplySentEvent: vi.fn().mockResolvedValue(BigInt(456)),
+    addPendingItemEvent: vi.fn().mockResolvedValue(BigInt(789)),
   } as ElectronAPI;
 });
 
