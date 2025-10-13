@@ -10,6 +10,7 @@ import {
   type Journalist,
   type AuthedRequest,
   Item,
+  PendingEventType,
 } from "../types";
 
 // Log the performance of IPC calls
@@ -66,6 +67,21 @@ const electronAPI = {
   ),
   getSystemLanguage: logIpcCall<string>("getSystemLanguage", () =>
     ipcRenderer.invoke("getSystemLanguage"),
+  ),
+  addPendingSourceEvent: logIpcCall<bigint>(
+    "addPendingSourceEvent",
+    (sourceUuid: string, type: PendingEventType) =>
+      ipcRenderer.invoke("addPendingSourceEvent", sourceUuid, type),
+  ),
+  addPendingReplySentEvent: logIpcCall<bigint>(
+    "addPendingReplySentEvent",
+    (itemUuid: string, text: string, sourceUuid: string, journalistUuid: string) =>
+      ipcRenderer.invoke("addPendingReplySentEvent", itemUuid, text, sourceUuid, journalistUuid),
+  ),
+  addPendingItemEvent: logIpcCall<bigint>(
+    "addPendingItemEvent",
+    (itemUuid: string, type: PendingEventType) =>
+      ipcRenderer.invoke("addPendingItemEvent", itemUuid, type),
   ),
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   onItemUpdate: (callback: (...args: any[]) => void) => {
