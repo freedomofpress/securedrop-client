@@ -222,6 +222,13 @@ app.whenReady().then(() => {
     },
   );
 
+  ipcMain.handle(
+    "removePendingEvent",
+    async (_event, snowflakeId: bigint): Promise<void> => {
+      return db.removePendingEvent(snowflakeId);
+    },
+  );
+
   const mainWindow = createWindow();
 
   const fetchWorker = spawnFetchWorker(mainWindow);

@@ -94,6 +94,11 @@ const electronAPI = {
     (itemUuid: string, type: PendingEventType) =>
       ipcRenderer.invoke("addPendingItemEvent", itemUuid, type),
   ),
+  removePendingEvent: logIpcCall<void>(
+    "removePendingEvent",
+    (snowflakeId: bigint) =>
+      ipcRenderer.invoke("removePendingEvent", snowflakeId),
+  ),
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   onItemUpdate: (callback: (...args: any[]) => void) => {
     ipcRenderer.on("item-update", (_event, ...args) => callback(...args));

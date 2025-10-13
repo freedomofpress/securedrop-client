@@ -114,6 +114,7 @@ export class DB {
     },
     void
   >;
+  private deletePendingEvent: Statement<{ snowflake_id: bigint }, void>;
 
   constructor(dbDir?: string) {
     this.snowflake = new Snowflake(new Date("2000-01-01T00:00:00.000Z"));
@@ -220,6 +221,10 @@ export class DB {
 
     this.insertItemPendingEvent = this.db.prepare(`
       INSERT INTO pending_events (snowflake_id, item_uuid, type, data) VALUES(@snowflake_id, @item_uuid, @type, @data)
+    `);
+
+    this.deletePendingEvent = this.db.prepare(`
+      DELETE FROM pending_events WHERE snowflake_id = @snowflake_id
     `);
   }
 
@@ -687,5 +692,11 @@ export class DB {
       data: undefined,
     });
     return snowflakeID;
+  }
+
+  removePendingEvent(snowflakeId: bigint): void {
+    this.deletePendingEvent.run({
+      snowflake_id: snowflakeId,
+    });
   }
 }
