@@ -41,11 +41,8 @@ export const toggleSourceStar = createAsyncThunk(
     const eventType = targetStarState
       ? PendingEventType.Starred
       : PendingEventType.Unstarred;
-    const snowflakeId = await window.electronAPI.addPendingSourceEvent(
-      sourceUuid,
-      eventType,
-    );
-    return { sourceUuid, targetStarState, snowflakeId };
+    await window.electronAPI.addPendingSourceEvent(sourceUuid, eventType);
+    return { sourceUuid, targetStarState };
   },
 );
 
