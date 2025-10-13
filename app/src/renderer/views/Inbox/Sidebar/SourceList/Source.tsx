@@ -114,7 +114,7 @@ const Source = memo(function Source({
         <Button
           type="text"
           size="large"
-          className={starState.isPending ? "opacity-60" : ""}
+          className={starState.isPending ? "animate-pulse" : ""}
           icon={
             starState.isStarred ? (
               <StarFilled color="#eab308" size={20} />
