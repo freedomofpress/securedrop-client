@@ -9,10 +9,11 @@ import StarFilled from "./StarFilled";
 import type { Source as SourceType } from "../../../../../types";
 import { formatDateShort, toTitleCase } from "../../../../utils";
 import Avatar from "../../../../components/Avatar";
-import { useAppDispatch } from "../../../../hooks";
+import { useAppDispatch, useAppSelector } from "../../../../hooks";
 import {
   setActiveSource,
   clearActiveSource,
+  selectStarPendingStates,
 } from "../../../../features/sources/sourcesSlice";
 
 export interface SourceProps {
@@ -34,6 +35,7 @@ const Source = memo(function Source({
   const { t: tCommon } = useTranslation("common");
   const navigate = useNavigate();
   const dispatch = useAppDispatch();
+  const starPendingStates = useAppSelector(selectStarPendingStates);
 
   const designation = useMemo(
     () => toTitleCase(source.data.journalist_designation),
@@ -44,6 +46,21 @@ const Source = memo(function Source({
     () => formatDateShort(source.data.last_updated, i18n.language, tCommon),
     [source.data.last_updated, i18n.language, tCommon],
   );
+
+  // Calculate effective star state (pending takes priority over actual state)
+  const starState = useMemo(() => {
+    const pendingState = starPendingStates[source.uuid];
+    if (pendingState !== undefined) {
+      return {
+        isStarred: pendingState,
+        isPending: true,
+      };
+    }
+    return {
+      isStarred: source.data.is_starred,
+      isPending: false,
+    };
+  }, [starPendingStates, source.uuid, source.data.is_starred]);
 
   const handleClick = useCallback(() => {
     if (isActive) {
@@ -85,12 +102,18 @@ const Source = memo(function Source({
       />
 
       {/* Star button */}
-      <Tooltip title={t("source.toggleStar")}>
+      <Tooltip
+        title={
+          starState.isPending ? t("source.starPending") : t("source.toggleStar")
+        }
+      >
         <Button
           type="text"
           size="large"
+          disabled={starState.isPending}
+          className={starState.isPending ? "opacity-60" : ""}
           icon={
-            source.data.is_starred ? (
+            starState.isStarred ? (
               <StarFilled color="#eab308" size={20} />
             ) : (
               <Star
@@ -102,7 +125,9 @@ const Source = memo(function Source({
           }
           onClick={(e) => {
             e.stopPropagation();
-            onToggleStar(source.uuid, source.data.is_starred);
+            if (!starState.isPending) {
+              onToggleStar(source.uuid, starState.isStarred);
+            }
           }}
           data-testid={`star-button-${source.uuid}`}
         />

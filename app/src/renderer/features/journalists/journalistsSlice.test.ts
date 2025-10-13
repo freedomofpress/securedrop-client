@@ -204,6 +204,7 @@ describe("journalistsSlice", () => {
         activeSourceUuid: null,
         loading: false,
         error: null,
+        starPendingStates: {},
       },
       conversation: {
         conversation: null,

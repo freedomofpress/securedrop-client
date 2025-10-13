@@ -230,6 +230,7 @@ describe("conversationSlice", () => {
         activeSourceUuid: null,
         loading: false,
         error: null,
+        starPendingStates: {},
       },
       journalists: {
         journalists: [],

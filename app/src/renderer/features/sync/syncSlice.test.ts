@@ -199,7 +199,7 @@ describe("syncSlice", () => {
             activeSourceUuid: activeSourceUuid,
             loading: false,
             error: null,
-            lastFetchTime: null,
+            starPendingStates: {},
           },
           sync: {
             loading: false,

@@ -97,6 +97,7 @@ describe("sourcesSlice", () => {
         activeSourceUuid: null,
         loading: false,
         error: null,
+        starPendingStates: {},
       });
     });
   });
@@ -109,6 +110,7 @@ describe("sourcesSlice", () => {
         activeSourceUuid: null,
         loading: false,
         error: "Some error message",
+        starPendingStates: {},
       };
 
       const action = clearError();
@@ -128,6 +130,7 @@ describe("sourcesSlice", () => {
         activeSourceUuid: null,
         loading: false,
         error: null,
+        starPendingStates: {},
       };
 
       const action = setActiveSource("source-1");
@@ -144,6 +147,7 @@ describe("sourcesSlice", () => {
         activeSourceUuid: "source-1",
         loading: false,
         error: null,
+        starPendingStates: {},
       };
 
       const action = clearActiveSource();
@@ -224,6 +228,7 @@ describe("sourcesSlice", () => {
           activeSourceUuid: null,
           loading: false,
           error: null,
+          starPendingStates: {},
         },
         journalists: {
           journalists: [],
@@ -249,6 +254,7 @@ describe("sourcesSlice", () => {
           activeSourceUuid: "source-1",
           loading: false,
           error: null,
+          starPendingStates: {},
         },
         journalists: {
           journalists: [],
@@ -274,6 +280,7 @@ describe("sourcesSlice", () => {
           activeSourceUuid: null,
           loading: true,
           error: null,
+          starPendingStates: {},
         },
         journalists: {
           journalists: [],

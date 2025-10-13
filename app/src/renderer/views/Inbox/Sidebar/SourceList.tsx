@@ -9,6 +9,7 @@ import {
   fetchSources,
   selectSources,
   selectSourcesLoading,
+  toggleSourceStar,
 } from "../../../features/sources/sourcesSlice";
 import Toolbar, { type filterOption } from "./SourceList/Toolbar";
 
@@ -83,17 +84,15 @@ function SourceList() {
 
   // Handle starring/unstarring a source
   const handleToggleStar = useCallback(
-    async (sourceId: string, currentlyStarred: boolean) => {
-      // TODO: Implement API call to toggle star status
-      // TODO: Create Redux action for optimistic star toggle updates
-      console.log(
-        "Toggle star for source:",
-        sourceId,
-        "currently starred:",
-        currentlyStarred,
+    (sourceId: string, currentlyStarred: boolean) => {
+      dispatch(
+        toggleSourceStar({
+          sourceUuid: sourceId,
+          targetStarState: !currentlyStarred,
+        }),
       );
     },
-    [],
+    [dispatch],
   );
   const handleBulkDelete = useCallback(() => {
     console.log("Delete selected sources:", selectedSources);
