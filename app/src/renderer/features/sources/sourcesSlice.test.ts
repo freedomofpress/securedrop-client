@@ -2,14 +2,18 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { configureStore } from "@reduxjs/toolkit";
 import type { Source as SourceType } from "../../../types";
+import { PendingEventType } from "../../../types";
 import sourcesSlice, {
   fetchSources,
+  toggleSourceStar,
+  cancelPendingSourceEvent,
   clearError,
   setActiveSource,
   clearActiveSource,
   selectSources,
   selectActiveSourceUuid,
   selectSourcesLoading,
+  selectStarPendingStates,
   type SourcesState,
 } from "./sourcesSlice";
 import sessionSlice, {
@@ -382,6 +386,425 @@ describe("sourcesSlice", () => {
       const state = (store.getState() as any).sources;
       expect(state.error).toBeNull();
       expect(state.sources).toEqual(mockSources);
+    });
+  });
+
+  describe("toggleSourceStar async thunk", () => {
+    let mockAddPendingSourceEvent: ReturnType<typeof vi.fn>;
+
+    beforeEach(() => {
+      mockAddPendingSourceEvent = vi.fn();
+      (window as any).electronAPI.addPendingSourceEvent =
+        mockAddPendingSourceEvent;
+    });
+
+    it("handles successful star toggle (starring a source)", async () => {
+      mockAddPendingSourceEvent.mockResolvedValue(BigInt(12345));
+
+      await (store.dispatch as any)(
+        toggleSourceStar({ sourceUuid: "source-1", targetStarState: true }),
+      );
+
+      expect(mockAddPendingSourceEvent).toHaveBeenCalledWith(
+        "source-1",
+        PendingEventType.Starred,
+      );
+
+      const state = (store.getState() as any).sources;
+      expect(state.starPendingStates["source-1"]).toEqual({
+        targetStarState: true,
+        snowflakeId: "12345",
+      });
+      expect(state.error).toBeNull();
+    });
+
+    it("handles successful star toggle (unstarring a source)", async () => {
+      mockAddPendingSourceEvent.mockResolvedValue(BigInt(67890));
+
+      await (store.dispatch as any)(
+        toggleSourceStar({ sourceUuid: "source-2", targetStarState: false }),
+      );
+
+      expect(mockAddPendingSourceEvent).toHaveBeenCalledWith(
+        "source-2",
+        PendingEventType.Unstarred,
+      );
+
+      const state = (store.getState() as any).sources;
+      expect(state.starPendingStates["source-2"]).toEqual({
+        targetStarState: false,
+        snowflakeId: "67890",
+      });
+    });
+
+    it("sets pending state immediately when toggleSourceStar is dispatched", async () => {
+      let resolveAddPendingEvent!: (value: bigint) => void;
+      const addPendingPromise = new Promise<bigint>((resolve) => {
+        resolveAddPendingEvent = resolve;
+      });
+      mockAddPendingSourceEvent.mockReturnValue(addPendingPromise);
+
+      const action = toggleSourceStar({
+        sourceUuid: "source-1",
+        targetStarState: true,
+      });
+      const dispatchPromise = (store.dispatch as any)(action);
+
+      // Check pending state is set immediately (with empty snowflakeId)
+      const pendingState = (store.getState() as any).sources.starPendingStates[
+        "source-1"
+      ];
+      expect(pendingState).toEqual({
+        targetStarState: true,
+        snowflakeId: "",
+      });
+
+      // Resolve and check snowflakeId is populated
+      resolveAddPendingEvent!(BigInt(99999));
+      await dispatchPromise;
+
+      const fulfilledState = (store.getState() as any).sources
+        .starPendingStates["source-1"];
+      expect(fulfilledState).toEqual({
+        targetStarState: true,
+        snowflakeId: "99999",
+      });
+    });
+
+    it("removes pending state on toggleSourceStar failure", async () => {
+      const errorMessage = "Failed to add pending event";
+      mockAddPendingSourceEvent.mockRejectedValue(new Error(errorMessage));
+
+      await (store.dispatch as any)(
+        toggleSourceStar({ sourceUuid: "source-1", targetStarState: true }),
+      );
+
+      const state = (store.getState() as any).sources;
+      expect(state.starPendingStates["source-1"]).toBeUndefined();
+      expect(state.error).toBe(errorMessage);
+    });
+
+    it("handles multiple star toggles for different sources", async () => {
+      mockAddPendingSourceEvent
+        .mockResolvedValueOnce(BigInt(111))
+        .mockResolvedValueOnce(BigInt(222));
+
+      await (store.dispatch as any)(
+        toggleSourceStar({ sourceUuid: "source-1", targetStarState: true }),
+      );
+      await (store.dispatch as any)(
+        toggleSourceStar({ sourceUuid: "source-2", targetStarState: false }),
+      );
+
+      const state = (store.getState() as any).sources;
+      expect(state.starPendingStates["source-1"]).toEqual({
+        targetStarState: true,
+        snowflakeId: "111",
+      });
+      expect(state.starPendingStates["source-2"]).toEqual({
+        targetStarState: false,
+        snowflakeId: "222",
+      });
+    });
+
+    it("allows canceling and re-toggling a source star", async () => {
+      mockAddPendingSourceEvent
+        .mockResolvedValueOnce(BigInt(111))
+        .mockResolvedValueOnce(BigInt(222));
+      const mockRemovePendingEvent = vi.fn().mockResolvedValue(undefined);
+      (window as any).electronAPI.removePendingEvent = mockRemovePendingEvent;
+
+      // First toggle - creates pending state
+      await (store.dispatch as any)(
+        toggleSourceStar({ sourceUuid: "source-1", targetStarState: true }),
+      );
+
+      let state = (store.getState() as any).sources;
+      expect(state.starPendingStates["source-1"]).toEqual({
+        targetStarState: true,
+        snowflakeId: "111",
+      });
+
+      // Cancel the pending state
+      await (store.dispatch as any)(
+        cancelPendingSourceEvent({
+          sourceUuid: "source-1",
+          snowflakeId: "111",
+        }),
+      );
+
+      state = (store.getState() as any).sources;
+      expect(state.starPendingStates["source-1"]).toBeUndefined();
+
+      // Now can toggle again in the opposite direction
+      await (store.dispatch as any)(
+        toggleSourceStar({ sourceUuid: "source-1", targetStarState: false }),
+      );
+
+      state = (store.getState() as any).sources;
+      expect(state.starPendingStates["source-1"]).toEqual({
+        targetStarState: false,
+        snowflakeId: "222",
+      });
+    });
+
+    it("handles error with undefined message in toggleSourceStar", async () => {
+      const errorWithoutMessage = new Error();
+      errorWithoutMessage.message = "";
+      mockAddPendingSourceEvent.mockRejectedValue(errorWithoutMessage);
+
+      await (store.dispatch as any)(
+        toggleSourceStar({ sourceUuid: "source-1", targetStarState: true }),
+      );
+
+      const state = (store.getState() as any).sources;
+      expect(state.error).toBe("Failed to toggle star");
+      expect(state.starPendingStates["source-1"]).toBeUndefined();
+    });
+  });
+
+  describe("cancelPendingSourceEvent async thunk", () => {
+    let mockRemovePendingEvent: ReturnType<typeof vi.fn>;
+    let mockAddPendingSourceEvent: ReturnType<typeof vi.fn>;
+
+    beforeEach(() => {
+      mockRemovePendingEvent = vi.fn();
+      mockAddPendingSourceEvent = vi.fn();
+      (window as any).electronAPI.removePendingEvent = mockRemovePendingEvent;
+      (window as any).electronAPI.addPendingSourceEvent =
+        mockAddPendingSourceEvent;
+    });
+
+    it("removes pending state when event is successfully canceled", async () => {
+      mockRemovePendingEvent.mockResolvedValue(undefined);
+      mockAddPendingSourceEvent.mockResolvedValue(BigInt(12345));
+
+      // First add a pending state
+      await (store.dispatch as any)(
+        toggleSourceStar({ sourceUuid: "source-1", targetStarState: true }),
+      );
+
+      expect(
+        (store.getState() as any).sources.starPendingStates["source-1"],
+      ).toBeDefined();
+
+      // Then cancel it
+      await (store.dispatch as any)(
+        cancelPendingSourceEvent({
+          sourceUuid: "source-1",
+          snowflakeId: "12345",
+        }),
+      );
+
+      expect(mockRemovePendingEvent).toHaveBeenCalledWith(BigInt(12345));
+
+      const state = (store.getState() as any).sources;
+      expect(state.starPendingStates["source-1"]).toBeUndefined();
+      expect(state.error).toBeNull();
+    });
+
+    it("handles cancelPendingSourceEvent failure", async () => {
+      const errorMessage = "Failed to remove pending event";
+      mockRemovePendingEvent.mockRejectedValue(new Error(errorMessage));
+
+      await (store.dispatch as any)(
+        cancelPendingSourceEvent({
+          sourceUuid: "source-1",
+          snowflakeId: "12345",
+        }),
+      );
+
+      const state = (store.getState() as any).sources;
+      expect(state.error).toBe(errorMessage);
+    });
+
+    it("handles canceling non-existent pending state gracefully", async () => {
+      mockRemovePendingEvent.mockResolvedValue(undefined);
+
+      await (store.dispatch as any)(
+        cancelPendingSourceEvent({
+          sourceUuid: "source-999",
+          snowflakeId: "99999",
+        }),
+      );
+
+      expect(mockRemovePendingEvent).toHaveBeenCalledWith(BigInt(99999));
+
+      const state = (store.getState() as any).sources;
+      expect(state.starPendingStates["source-999"]).toBeUndefined();
+      expect(state.error).toBeNull();
+    });
+
+    it("handles error with undefined message in cancelPendingSourceEvent", async () => {
+      const errorWithoutMessage = new Error();
+      errorWithoutMessage.message = "";
+      mockRemovePendingEvent.mockRejectedValue(errorWithoutMessage);
+
+      await (store.dispatch as any)(
+        cancelPendingSourceEvent({
+          sourceUuid: "source-1",
+          snowflakeId: "12345",
+        }),
+      );
+
+      const state = (store.getState() as any).sources;
+      expect(state.error).toBe("Failed to cancel pending event");
+    });
+  });
+
+  describe("pending states interaction with fetchSources", () => {
+    let mockAddPendingSourceEvent: ReturnType<typeof vi.fn>;
+
+    beforeEach(() => {
+      mockAddPendingSourceEvent = vi.fn();
+      (window as any).electronAPI.addPendingSourceEvent =
+        mockAddPendingSourceEvent;
+    });
+
+    it("clears all pending star states when sources are successfully fetched", async () => {
+      mockAddPendingSourceEvent.mockResolvedValue(BigInt(12345));
+
+      // Add some pending states
+      await (store.dispatch as any)(
+        toggleSourceStar({ sourceUuid: "source-1", targetStarState: true }),
+      );
+      await (store.dispatch as any)(
+        toggleSourceStar({ sourceUuid: "source-2", targetStarState: false }),
+      );
+
+      let state = (store.getState() as any).sources;
+      expect(Object.keys(state.starPendingStates).length).toBe(2);
+
+      // Fetch sources should clear pending states
+      await (store.dispatch as any)(fetchSources());
+
+      state = (store.getState() as any).sources;
+      expect(state.starPendingStates).toEqual({});
+      expect(state.sources).toEqual(mockSources);
+    });
+
+    it("does not clear pending states when fetchSources fails", async () => {
+      mockAddPendingSourceEvent.mockResolvedValue(BigInt(12345));
+
+      // Add a pending state
+      await (store.dispatch as any)(
+        toggleSourceStar({ sourceUuid: "source-1", targetStarState: true }),
+      );
+
+      // Make fetchSources fail
+      mockGetSources.mockRejectedValue(new Error("Network error"));
+      await (store.dispatch as any)(fetchSources());
+
+      const state = (store.getState() as any).sources;
+      expect(state.starPendingStates["source-1"]).toBeDefined();
+      expect(state.error).toBe("Network error");
+    });
+  });
+
+  describe("selectStarPendingStates selector", () => {
+    const mockSessionState: SessionState = {
+      status: SessionStatus.Unauth,
+      authData: undefined,
+    };
+
+    const mockConversationState = {
+      conversation: null,
+      loading: false,
+      error: null,
+      lastFetchTime: null,
+    };
+
+    it("returns empty object when no pending states exist", () => {
+      const state = {
+        session: mockSessionState,
+        sources: {
+          sources: [],
+          activeSourceUuid: null,
+          loading: false,
+          error: null,
+          starPendingStates: {},
+        },
+        journalists: {
+          journalists: [],
+          loading: false,
+          error: null,
+        },
+        conversation: mockConversationState,
+        sync: {
+          loading: false,
+          error: null,
+          lastFetchTime: null,
+        },
+      };
+
+      expect(selectStarPendingStates(state)).toEqual({});
+    });
+
+    it("returns pending states when they exist", () => {
+      const pendingStates = {
+        "source-1": { targetStarState: true, snowflakeId: "12345" },
+        "source-2": { targetStarState: false, snowflakeId: "67890" },
+      };
+
+      const state = {
+        session: mockSessionState,
+        sources: {
+          sources: [],
+          activeSourceUuid: null,
+          loading: false,
+          error: null,
+          starPendingStates: pendingStates,
+        },
+        journalists: {
+          journalists: [],
+          loading: false,
+          error: null,
+        },
+        conversation: mockConversationState,
+        sync: {
+          loading: false,
+          error: null,
+          lastFetchTime: null,
+        },
+      };
+
+      expect(selectStarPendingStates(state)).toEqual(pendingStates);
+    });
+  });
+
+  describe("edge cases for pending states", () => {
+    it("handles rapid toggle and cancel operations", async () => {
+      const mockAddPendingSourceEvent = vi
+        .fn()
+        .mockResolvedValue(BigInt(12345));
+      const mockRemovePendingEvent = vi.fn().mockResolvedValue(undefined);
+      (window as any).electronAPI.addPendingSourceEvent =
+        mockAddPendingSourceEvent;
+      (window as any).electronAPI.removePendingEvent = mockRemovePendingEvent;
+
+      // Toggle
+      await (store.dispatch as any)(
+        toggleSourceStar({ sourceUuid: "source-1", targetStarState: true }),
+      );
+
+      // Cancel
+      await (store.dispatch as any)(
+        cancelPendingSourceEvent({
+          sourceUuid: "source-1",
+          snowflakeId: "12345",
+        }),
+      );
+
+      // Toggle again
+      await (store.dispatch as any)(
+        toggleSourceStar({ sourceUuid: "source-1", targetStarState: false }),
+      );
+
+      const state = (store.getState() as any).sources;
+      expect(state.starPendingStates["source-1"]).toEqual({
+        targetStarState: false,
+        snowflakeId: "12345",
+      });
     });
   });
 });
