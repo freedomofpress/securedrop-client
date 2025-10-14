@@ -11,6 +11,7 @@ import {
   selectSourcesLoading,
 } from "../../../features/sources/sourcesSlice";
 import Toolbar, { type filterOption } from "./SourceList/Toolbar";
+import { PendingEventType } from "../../../../types";
 
 function SourceList() {
   const { sourceUuid: activeSourceUuid } = useParams<{ sourceUuid?: string }>();
@@ -84,16 +85,16 @@ function SourceList() {
   // Handle starring/unstarring a source
   const handleToggleStar = useCallback(
     async (sourceId: string, currentlyStarred: boolean) => {
-      // TODO: Implement API call to toggle star status
-      // TODO: Create Redux action for optimistic star toggle updates
-      console.log(
-        "Toggle star for source:",
-        sourceId,
-        "currently starred:",
-        currentlyStarred,
-      );
+      // Add pending event
+      const eventType = currentlyStarred
+        ? PendingEventType.Unstarred
+        : PendingEventType.Starred;
+      await window.electronAPI.addPendingSourceEvent(sourceId, eventType);
+
+      // Update local state immediately with projected changes
+      dispatch(fetchSources());
     },
-    [],
+    [dispatch],
   );
   const handleBulkDelete = useCallback(() => {
     console.log("Delete selected sources:", selectedSources);
