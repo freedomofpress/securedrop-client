@@ -4,6 +4,7 @@ import {
   Index,
   MetadataRequest,
   MetadataResponse,
+  SyncStatus,
 } from "../../types";
 import { DB } from "../database";
 
@@ -163,12 +164,6 @@ function deleteItems(db: DB, itemIDs: string[]) {
   }
 
   db.deleteItems(itemIDs);
-}
-
-export enum SyncStatus {
-  NOT_MODIFIED = "not_modified",
-  UPDATED = "updated",
-  ERROR = "error",
 }
 
 // Executes metadata sync with SecureDrop server, updating

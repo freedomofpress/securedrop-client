@@ -95,7 +95,6 @@ describe("syncSlice", () => {
       const syncState = (store.getState() as any).sync;
       const sourcesState = (store.getState() as any).sources;
       expect(sourcesState.sources).toEqual(mockSources);
-      expect(syncState.loading).toBe(false);
       expect(syncState.error).toBeNull();
       expect(syncState.lastFetchTime).toBeGreaterThan(0);
     });
@@ -112,7 +111,6 @@ describe("syncSlice", () => {
       const syncState = (store.getState() as any).sync;
       const sourcesState = (store.getState() as any).sources;
       expect(sourcesState.sources).toEqual([]);
-      expect(syncState.loading).toBe(false);
       expect(syncState.error).toBe(errorMessage);
     });
 
@@ -129,7 +127,6 @@ describe("syncSlice", () => {
       const syncState = (store.getState() as any).sync;
       const sourcesState = (store.getState() as any).sources;
       expect(sourcesState.sources).toEqual([]);
-      expect(syncState.loading).toBe(false);
       expect(syncState.error).toBe(errorMessage);
     });
 
@@ -146,40 +143,8 @@ describe("syncSlice", () => {
       const syncState = (store.getState() as any).sync;
       const sourcesState = (store.getState() as any).sources;
       expect(sourcesState.sources).toEqual([]);
-      expect(syncState.loading).toBe(false);
       expect(syncState.error).toBeNull(); // Sync succeeded, sources fetch failed
       expect(sourcesState.error).toBe(errorMessage); // Error is in sources slice
-    });
-
-    it("sets loading state during sync", async () => {
-      // Create promises that we can control
-      let resolveSyncMetadata!: () => void;
-      let resolveGetSources!: (value: SourceType[]) => void;
-
-      const syncMetadataPromise = new Promise<void>((resolve) => {
-        resolveSyncMetadata = resolve;
-      });
-      const getSourcesPromise = new Promise<SourceType[]>((resolve) => {
-        resolveGetSources = resolve;
-      });
-
-      mockSyncMetadata.mockReturnValue(syncMetadataPromise);
-      mockGetSources.mockReturnValue(getSourcesPromise);
-
-      const action = syncMetadata("test-token");
-      const dispatchPromise = (store.dispatch as any)(action);
-
-      // Check loading state is true while pending
-      expect((store.getState() as any).sync.loading).toBe(true);
-      expect((store.getState() as any).sync.error).toBeNull();
-
-      // Resolve both promises
-      resolveSyncMetadata!();
-      resolveGetSources!(mockSources);
-      await dispatchPromise;
-
-      // Check loading state is false after completion
-      expect((store.getState() as any).sync.loading).toBe(false);
     });
 
     it("fetches conversation for active source during sync", async () => {
@@ -197,12 +162,11 @@ describe("syncSlice", () => {
           sources: {
             sources: [],
             activeSourceUuid: activeSourceUuid,
-            loading: false,
             error: null,
             lastFetchTime: null,
+            loading: false,
           },
           sync: {
-            loading: false,
             error: null,
             lastFetchTime: null,
           },
@@ -252,7 +216,6 @@ describe("syncSlice", () => {
       const sourcesState = (store.getState() as any).sources;
       expect(syncState.error).toBe("Network timeout");
       expect(sourcesState.sources).toEqual([]);
-      expect(syncState.loading).toBe(false);
 
       // syncMetadata should be called but getSources should not be called due to network failure
       expect(mockSyncMetadata).toHaveBeenCalledTimes(1);

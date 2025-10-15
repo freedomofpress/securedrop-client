@@ -42,6 +42,12 @@ export type ms = number & { readonly __unit: "ms" };
 
 /** Sync types */
 
+export enum SyncStatus {
+  NOT_MODIFIED = "not_modified",
+  UPDATED = "updated",
+  ERROR = "error",
+}
+
 // IPC request for operation requiring auth token
 // ex: syncMetadata, fetchDownloads
 export type AuthedRequest = {
