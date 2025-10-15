@@ -11,10 +11,12 @@ function InboxView() {
   const dispatch = useDispatch<AppDispatch>();
   const session = useAppSelector((state) => state.session);
 
-  // Trigger sync in the background every second
+  // Trigger sync in the background every minute
   setInterval(() => {
-    dispatch(syncMetadata(session.authData?.token));
-  }, 1000);
+    if (session.authData && import.meta.env.MODE != "test") {
+      dispatch(syncMetadata(session.authData.token));
+    }
+  }, 1000 * 60);
 
   useEffect(() => {
     dispatch(fetchJournalists());

@@ -22,6 +22,7 @@ import type {
   AuthedRequest,
   Item,
   PendingEventType,
+  SyncStatus,
 } from "../types";
 import { syncMetadata } from "./sync";
 import workerPath from "./fetch/worker?modulePath";
@@ -209,15 +210,19 @@ app.whenReady().then(() => {
     },
   );
 
-  ipcMain.handle("syncMetadata", async (_event, request: AuthedRequest) => {
-    await syncLock.run(async () => {
-      await syncMetadata(db, request.authToken);
-    });
-    // Send message to fetch worker to fetch newly synced items, if any
-    fetchWorker.postMessage({
-      authToken: request.authToken,
-    } as AuthedRequest);
-  });
+  ipcMain.handle(
+    "syncMetadata",
+    async (_event, request: AuthedRequest): Promise<SyncStatus> => {
+      const syncStatus = await syncLock.run(async () => {
+        return await syncMetadata(db, request.authToken);
+      });
+      // Send message to fetch worker to fetch newly synced items, if any
+      fetchWorker.postMessage({
+        authToken: request.authToken,
+      } as AuthedRequest);
+      return syncStatus;
+    },
+  );
 
   ipcMain.handle("getSystemLanguage", async (_event): Promise<string> => {
     const systemLanguage = process.env.LANG || app.getLocale() || "en";
