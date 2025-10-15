@@ -28,6 +28,7 @@ import workerPath from "./fetch/worker?modulePath";
 // Parse command line arguments
 const args = process.argv.slice(2);
 const noQubes = args.includes("--no-qubes");
+const shouldAutoLogin = args.includes("--login");
 
 // Create crypto config
 const cryptoConfig = noQubes ? { isQubes: false } : {};
@@ -221,6 +222,10 @@ app.whenReady().then(() => {
       return db.addPendingItemEvent(itemUuid, type);
     },
   );
+  ipcMain.handle("shouldAutoLogin", async (_event): Promise<boolean> => {
+    // Only honor auto-login in development mode
+    return is.dev && shouldAutoLogin;
+  });
 
   const mainWindow = createWindow();
 
