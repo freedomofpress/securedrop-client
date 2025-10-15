@@ -1,16 +1,17 @@
 import { describe, it, expect, vi, beforeEach, MockInstance } from "vitest";
-import * as syncModule from "../../src/main/sync";
-import { DB } from "../../src/main/database";
-import type {
+import * as syncModule from "../../../src/main/sync";
+import { DB } from "../../../src/main/database";
+import {
   Index,
   ProxyJSONResponse,
   MetadataResponse,
   SourceMetadata,
   ItemMetadata,
   JournalistMetadata,
-} from "../../src/types";
-import * as proxyModule from "../../src/main/proxy";
-import { encryptedFilepath } from "./crypto";
+  SyncStatus,
+} from "../../../src/types";
+import * as proxyModule from "../../../src/main/proxy";
+import { encryptedFilepath } from "../crypto";
 import fs from "fs";
 
 vi.mock("fs", () => ({
@@ -95,7 +96,7 @@ describe("syncMetadata", () => {
     const status = await syncModule.syncMetadata(db, "");
     expect(proxyMock).toHaveBeenCalledTimes(1);
     expect(db.updateMetadata).not.toHaveBeenCalled();
-    expect(status).toBe(syncModule.SyncStatus.NOT_MODIFIED);
+    expect(status).toBe(SyncStatus.NOT_MODIFIED);
   });
 
   it("syncs and updates sources on initial sync", async () => {

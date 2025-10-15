@@ -2,7 +2,8 @@ import { describe, expect, inject, it } from "vitest";
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
-import { syncMetadata, SyncStatus } from "../src/main/sync";
+import { SyncStatus } from "../src/types";
+import { syncMetadata } from "../src/main/sync";
 import { DB } from "../src/main/database";
 
 describe("Sync functionality", async () => {
