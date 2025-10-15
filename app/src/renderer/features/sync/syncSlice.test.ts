@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { configureStore } from "@reduxjs/toolkit";
-import type { Source as SourceType } from "../../../types";
+import { Source as SourceType, SyncStatus } from "../../../types";
 import syncSlice, { syncMetadata } from "./syncSlice";
 import sourcesSlice from "../sources/sourcesSlice";
 import sessionSlice from "../session/sessionSlice";
@@ -75,7 +75,7 @@ describe("syncSlice", () => {
 
     // Default mock implementations
     mockGetSources.mockResolvedValue(mockSources);
-    mockSyncMetadata.mockResolvedValue(undefined);
+    mockSyncMetadata.mockResolvedValue(SyncStatus.UPDATED);
   });
 
   afterEach(() => {
@@ -230,6 +230,15 @@ describe("syncSlice", () => {
 
       const syncState = (store.getState() as any).sync;
       expect(syncState.error).toBe("String error");
+    });
+
+    it("skips source fetch on no-update sync", async () => {
+      mockSyncMetadata.mockResolvedValue(SyncStatus.NOT_MODIFIED);
+
+      await (store.dispatch as any)(syncMetadata("test-token"));
+
+      // Should NOT have called getSourceWithItems
+      expect(mockGetSources).not.toHaveBeenCalled();
     });
   });
 });
