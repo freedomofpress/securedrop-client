@@ -20,6 +20,7 @@ import type {
   Journalist,
   AuthedRequest,
   Item,
+  PendingEventType,
 } from "../types";
 import { syncMetadata } from "./sync";
 import workerPath from "./fetch/worker?modulePath";
@@ -182,6 +183,45 @@ app.whenReady().then(() => {
     return systemLanguage;
   });
 
+  ipcMain.handle(
+    "addPendingSourceEvent",
+    async (
+      _event,
+      sourceUuid: string,
+      type: PendingEventType,
+    ): Promise<bigint> => {
+      return db.addPendingSourceEvent(sourceUuid, type);
+    },
+  );
+
+  ipcMain.handle(
+    "addPendingReplySentEvent",
+    async (
+      _event,
+      itemUuid: string,
+      text: string,
+      sourceUuid: string,
+      journalistUuid: string,
+    ): Promise<bigint> => {
+      return db.addPendingReplySentEvent(
+        itemUuid,
+        text,
+        sourceUuid,
+        journalistUuid,
+      );
+    },
+  );
+
+  ipcMain.handle(
+    "addPendingItemEvent",
+    async (
+      _event,
+      itemUuid: string,
+      type: PendingEventType,
+    ): Promise<bigint> => {
+      return db.addPendingItemEvent(itemUuid, type);
+    },
+  );
   ipcMain.handle("shouldAutoLogin", async (_event): Promise<boolean> => {
     // Only honor auto-login in development mode
     return is.dev && shouldAutoLogin;
