@@ -188,7 +188,7 @@ describe("pending_events update projected views", () => {
     expect(sourceWithItems.items.length).toEqual(3);
   });
 
-  it("pending Starred event should star source", () => {
+  it("pending Starred event should star sources", () => {
     // Insert three sources
     db.updateSources({
       source1: mockSourceMetadata("source1"),
@@ -201,10 +201,11 @@ describe("pending_events update projected views", () => {
     }
 
     db.addPendingSourceEvent("source1", PendingEventType.Starred);
+    db.addPendingSourceEvent("source2", PendingEventType.Starred);
 
     sources = db.getSources();
     for (const source of sources) {
-      if (source.uuid === "source1") {
+      if (source.uuid === "source1" || source.uuid === "source2") {
         expect(source.data.is_starred).toBeTruthy();
         continue;
       }
@@ -212,7 +213,7 @@ describe("pending_events update projected views", () => {
     }
   });
 
-  it("pending Unstarred event should star source", () => {
+  it("pending Unstarred event should unstar source", () => {
     // Insert three sources
     db.updateSources({
       source1: mockSourceMetadata("source1", true),
@@ -225,10 +226,11 @@ describe("pending_events update projected views", () => {
     }
 
     db.addPendingSourceEvent("source1", PendingEventType.Unstarred);
+    db.addPendingSourceEvent("source2", PendingEventType.Unstarred);
 
     sources = db.getSources();
     for (const source of sources) {
-      if (source.uuid === "source1") {
+      if (source.uuid === "source1" || source.uuid === "source2") {
         expect(source.data.is_starred).toBeFalsy();
         continue;
       }
