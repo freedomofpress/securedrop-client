@@ -4,6 +4,7 @@ import userEvent from "@testing-library/user-event";
 import React from "react";
 import SourceList from "./SourceList";
 import type { Source as SourceType } from "../../../../types";
+import { PendingEventType } from "../../../../types";
 import type { SourceProps } from "./SourceList/Source";
 import { renderWithProviders } from "../../../test-component-setup";
 
@@ -167,12 +168,11 @@ describe("Sources Component", () => {
     // Reset mocks
     vi.clearAllMocks();
 
-    // Mock electronAPI
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    (window as any).electronAPI = {
+    // Mock electronAPI with partial implementation for these tests
+    window.electronAPI = {
       getSources: vi.fn().mockResolvedValue(mockSources),
       syncMetadata: vi.fn().mockResolvedValue(undefined),
-    };
+    } as Partial<typeof window.electronAPI> as typeof window.electronAPI;
   });
 
   afterEach(() => {
@@ -670,6 +670,249 @@ describe("Sources Component", () => {
 
       // Should still be in date descending order: source-4 (newer), source-2 (older)
       expect(sourceOrder).toEqual(["source-source-4", "source-source-2"]);
+    });
+  });
+
+  describe("Bulk delete functionality", () => {
+    beforeEach(() => {
+      // Mock the showMessageBox function
+      window.electronAPI.showMessageBox = vi.fn();
+      window.electronAPI.addPendingSourceEvent = vi
+        .fn()
+        .mockResolvedValue(BigInt(123));
+    });
+
+    it("shows dialog when delete button is clicked with single source selected", async () => {
+      vi.mocked(window.electronAPI.showMessageBox).mockResolvedValue({
+        response: 0,
+        checkboxChecked: false,
+      }); // Cancel
+
+      renderSourceList();
+
+      await waitFor(() => {
+        expect(screen.getByTestId("source-source-1")).toBeInTheDocument();
+      });
+
+      // Select one source
+      const checkbox = screen.getByTestId("source-checkbox-source-1");
+      await userEvent.click(checkbox);
+
+      // Click bulk delete button
+      const deleteButton = screen.getByTestId("bulk-delete-button");
+      await userEvent.click(deleteButton);
+
+      await waitFor(() => {
+        expect(window.electronAPI.showMessageBox).toHaveBeenCalledWith(
+          expect.objectContaining({
+            message: expect.stringContaining(
+              "Do you want to delete the source's account or just the conversation?",
+            ),
+            buttons: expect.arrayContaining([
+              "Cancel",
+              "Delete Account",
+              "Delete Conversation",
+            ]),
+            type: "warning",
+          }),
+        );
+      });
+    });
+
+    it("shows dialog with correct message for multiple sources", async () => {
+      vi.mocked(window.electronAPI.showMessageBox).mockResolvedValue({
+        response: 0,
+        checkboxChecked: false,
+      }); // Cancel
+
+      renderSourceList();
+
+      await waitFor(() => {
+        expect(screen.getByTestId("source-source-1")).toBeInTheDocument();
+      });
+
+      // Select two sources
+      await userEvent.click(screen.getByTestId("source-checkbox-source-1"));
+      await userEvent.click(screen.getByTestId("source-checkbox-source-2"));
+
+      // Click bulk delete button
+      const deleteButton = screen.getByTestId("bulk-delete-button");
+      await userEvent.click(deleteButton);
+
+      await waitFor(() => {
+        expect(window.electronAPI.showMessageBox).toHaveBeenCalledWith(
+          expect.objectContaining({
+            message: expect.stringContaining(
+              "Do you want to delete these 2 source accounts or just the conversations?",
+            ),
+            buttons: expect.arrayContaining([
+              "Cancel",
+              "Delete Accounts",
+              "Delete Conversations",
+            ]),
+          }),
+        );
+      });
+    });
+
+    it("calls addPendingSourceEvent with SourceDeleted when Delete Account is selected", async () => {
+      vi.mocked(window.electronAPI.showMessageBox).mockResolvedValue({
+        response: 1,
+        checkboxChecked: false,
+      }); // Delete Account
+
+      renderSourceList();
+
+      await waitFor(() => {
+        expect(screen.getByTestId("source-source-1")).toBeInTheDocument();
+      });
+
+      // Select one source
+      await userEvent.click(screen.getByTestId("source-checkbox-source-1"));
+
+      // Click bulk delete button
+      const deleteButton = screen.getByTestId("bulk-delete-button");
+      await userEvent.click(deleteButton);
+
+      await waitFor(() => {
+        expect(window.electronAPI.addPendingSourceEvent).toHaveBeenCalledWith(
+          "source-1",
+          PendingEventType.SourceDeleted,
+        );
+      });
+    });
+
+    it("calls addPendingSourceEvent with SourceConversationDeleted when Delete Conversation is selected", async () => {
+      vi.mocked(window.electronAPI.showMessageBox).mockResolvedValue({
+        response: 2,
+        checkboxChecked: false,
+      }); // Delete Conversation
+
+      renderSourceList();
+
+      await waitFor(() => {
+        expect(screen.getByTestId("source-source-1")).toBeInTheDocument();
+      });
+
+      // Select one source
+      await userEvent.click(screen.getByTestId("source-checkbox-source-1"));
+
+      // Click bulk delete button
+      const deleteButton = screen.getByTestId("bulk-delete-button");
+      await userEvent.click(deleteButton);
+
+      await waitFor(() => {
+        expect(window.electronAPI.addPendingSourceEvent).toHaveBeenCalledWith(
+          "source-1",
+          PendingEventType.SourceConversationDeleted,
+        );
+      });
+    });
+
+    it("calls addPendingSourceEvent for all selected sources", async () => {
+      vi.mocked(window.electronAPI.showMessageBox).mockResolvedValue({
+        response: 1,
+        checkboxChecked: false,
+      }); // Delete Account
+
+      renderSourceList();
+
+      await waitFor(() => {
+        expect(screen.getByTestId("source-source-1")).toBeInTheDocument();
+      });
+
+      // Select multiple sources
+      await userEvent.click(screen.getByTestId("source-checkbox-source-1"));
+      await userEvent.click(screen.getByTestId("source-checkbox-source-2"));
+      await userEvent.click(screen.getByTestId("source-checkbox-source-3"));
+
+      // Click bulk delete button
+      const deleteButton = screen.getByTestId("bulk-delete-button");
+      await userEvent.click(deleteButton);
+
+      await waitFor(() => {
+        const addPendingSourceEvent = window.electronAPI.addPendingSourceEvent;
+        expect(addPendingSourceEvent).toHaveBeenCalledTimes(3);
+        expect(addPendingSourceEvent).toHaveBeenCalledWith(
+          "source-1",
+          PendingEventType.SourceDeleted,
+        );
+        expect(addPendingSourceEvent).toHaveBeenCalledWith(
+          "source-2",
+          PendingEventType.SourceDeleted,
+        );
+        expect(addPendingSourceEvent).toHaveBeenCalledWith(
+          "source-3",
+          PendingEventType.SourceDeleted,
+        );
+      });
+    });
+
+    it("does not call addPendingSourceEvent when Cancel is selected", async () => {
+      vi.mocked(window.electronAPI.showMessageBox).mockResolvedValue({
+        response: 0,
+        checkboxChecked: false,
+      }); // Cancel
+
+      renderSourceList();
+
+      await waitFor(() => {
+        expect(screen.getByTestId("source-source-1")).toBeInTheDocument();
+      });
+
+      // Select one source
+      await userEvent.click(screen.getByTestId("source-checkbox-source-1"));
+
+      // Click bulk delete button
+      const deleteButton = screen.getByTestId("bulk-delete-button");
+      await userEvent.click(deleteButton);
+
+      await waitFor(() => {
+        expect(window.electronAPI.showMessageBox).toHaveBeenCalled();
+      });
+
+      // Wait a bit to ensure addPendingSourceEvent is not called
+      await new Promise((resolve) => setTimeout(resolve, 100));
+
+      expect(window.electronAPI.addPendingSourceEvent).not.toHaveBeenCalled();
+    });
+
+    it("clears selection after deleting sources", async () => {
+      vi.mocked(window.electronAPI.showMessageBox).mockResolvedValue({
+        response: 1,
+        checkboxChecked: false,
+      }); // Delete Account
+
+      renderSourceList();
+
+      await waitFor(() => {
+        expect(screen.getByTestId("source-source-1")).toBeInTheDocument();
+      });
+
+      // Select sources
+      const checkbox1 = screen.getByTestId("source-checkbox-source-1");
+      const checkbox2 = screen.getByTestId("source-checkbox-source-2");
+      await userEvent.click(checkbox1);
+      await userEvent.click(checkbox2);
+
+      // Verify they are checked
+      expect(checkbox1).toBeChecked();
+      expect(checkbox2).toBeChecked();
+
+      // Click bulk delete button
+      const deleteButton = screen.getByTestId("bulk-delete-button");
+      await userEvent.click(deleteButton);
+
+      // Wait for the operation to complete
+      await waitFor(() => {
+        expect(window.electronAPI.addPendingSourceEvent).toHaveBeenCalled();
+      });
+
+      // Checkboxes should be unchecked
+      await waitFor(() => {
+        expect(checkbox1).not.toBeChecked();
+        expect(checkbox2).not.toBeChecked();
+      });
     });
   });
 });
