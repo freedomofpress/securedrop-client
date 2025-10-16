@@ -40,6 +40,20 @@
         "bulkDelete": "Delete selected sources",
         "bulkToggleRead": "Toggle read status for selected sources"
       },
+      "deleteDialog": {
+        "detail": "If you delete a source's account, they will no longer be able to sign in and send you messages. To communicate with this source in the future, they must create a new account.",
+        "cancelButton": "Cancel",
+        "single": {
+          "message": "Do you want to delete the source's account or just the conversation?",
+          "deleteAccountButton": "Delete Account",
+          "keepAccountButton": "Delete Conversation"
+        },
+        "multiple": {
+          "message": "Do you want to delete these {{count}} source accounts or just the conversations?",
+          "deleteAccountsButton": "Delete Accounts",
+          "keepAccountsButton": "Delete Conversations"
+        }
+      },
       "search": {
         "placeholder": "Search by name"
       },

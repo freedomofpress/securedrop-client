@@ -40,6 +40,20 @@
         "bulkDelete": "Supprimer les sources sélectionnées",
         "bulkToggleRead": "Basculer le statut de lecture des sources sélectionnées"
       },
+      "deleteDialog": {
+        "detail": "Si vous supprimez le compte d'une source, elle ne pourra plus se connecter et vous envoyer des messages. Pour communiquer avec cette source à l'avenir, elle devra créer un nouveau compte.",
+        "cancelButton": "Annuler",
+        "single": {
+          "message": "Voulez-vous supprimer le compte de la source ou seulement la conversation?",
+          "deleteAccountButton": "Supprimer le compte",
+          "keepAccountButton": "Supprimer la conversation"
+        },
+        "multiple": {
+          "message": "Voulez-vous supprimer ces {{count}} comptes sources ou seulement les conversations?",
+          "deleteAccountsButton": "Supprimer les comptes",
+          "keepAccountsButton": "Supprimer les conversations"
+        }
+      },
       "search": {
         "placeholder": "Rechercher"
       },

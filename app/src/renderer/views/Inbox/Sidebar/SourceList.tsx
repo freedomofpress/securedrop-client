@@ -1,6 +1,7 @@
 import { useState, useEffect, useMemo, useCallback, useRef } from "react";
 import { useParams } from "react-router";
 import { FixedSizeList as List } from "react-window";
+import { useTranslation } from "react-i18next";
 
 import Source from "./SourceList/Source";
 import LoadingIndicator from "../../../components/LoadingIndicator";
@@ -16,6 +17,7 @@ import { PendingEventType } from "../../../../types";
 function SourceList() {
   const { sourceUuid: activeSourceUuid } = useParams<{ sourceUuid?: string }>();
   const dispatch = useAppDispatch();
+  const { t } = useTranslation("Sidebar");
 
   const sources = useAppSelector(selectSources);
   const loading = useAppSelector(selectSourcesLoading);
@@ -96,9 +98,53 @@ function SourceList() {
     },
     [dispatch],
   );
-  const handleBulkDelete = useCallback(() => {
-    console.log("Delete selected sources:", selectedSources);
-  }, [selectedSources]);
+  const handleBulkDelete = useCallback(async () => {
+    if (selectedSources.size === 0) {
+      return;
+    }
+
+    // Determine if single or multiple sources are selected
+    const isSingle = selectedSources.size === 1;
+
+    const message = isSingle
+      ? t("sourcelist.deleteDialog.single.message")
+      : t("sourcelist.deleteDialog.multiple.message", {
+          count: selectedSources.size,
+        });
+
+    const buttons = isSingle
+      ? [
+          t("sourcelist.deleteDialog.cancelButton"),
+          t("sourcelist.deleteDialog.single.deleteAccountButton"),
+          t("sourcelist.deleteDialog.single.keepAccountButton"),
+        ]
+      : [
+          t("sourcelist.deleteDialog.cancelButton"),
+          t("sourcelist.deleteDialog.multiple.deleteAccountsButton"),
+          t("sourcelist.deleteDialog.multiple.keepAccountsButton"),
+        ];
+
+    const detail = t("sourcelist.deleteDialog.detail");
+
+    const result = await window.electronAPI.showMessageBox({
+      message: message,
+      detail: detail,
+      buttons: buttons,
+      type: "warning",
+      defaultId: 0, // Cancel is default
+      cancelId: 0, // Cancel is cancel button
+    });
+
+    // Handle the result
+    if (result.response === 1) {
+      // Delete Account(s)
+      console.log("Delete selected sources completely:", selectedSources);
+    } else if (result.response === 2) {
+      // Keep Account(s) but Delete Conversation(s)
+      console.log("Delete conversation history for:", selectedSources);
+    }
+    // result.response === 0 means Cancel, do nothing
+  }, [selectedSources, t]);
 
   const handleBulkToggleRead = useCallback(() => {
     console.log("Toggle read status for selected sources:", selectedSources);
