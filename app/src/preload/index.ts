@@ -97,6 +97,18 @@ const electronAPI = {
   shouldAutoLogin: logIpcCall<boolean>("shouldAutoLogin", () =>
     ipcRenderer.invoke("shouldAutoLogin"),
   ),
+  showMessageBox: logIpcCall<{ response: number; checkboxChecked: boolean }>(
+    "showMessageBox",
+    (options: {
+      message: string;
+      detail?: string;
+      buttons?: string[];
+      type?: "none" | "info" | "error" | "question" | "warning";
+      title?: string;
+      defaultId?: number;
+      cancelId?: number;
+    }) => ipcRenderer.invoke("showMessageBox", options),
+  ),
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   onItemUpdate: (callback: (...args: any[]) => void) => {
     ipcRenderer.on("item-update", (_event, ...args) => callback(...args));
