@@ -915,4 +915,130 @@ describe("Sources Component", () => {
       });
     });
   });
+
+  describe("handleToggleStar", () => {
+    beforeEach(() => {
+      // Mock the addPendingSourceEvent function
+      window.electronAPI.addPendingSourceEvent = vi
+        .fn()
+        .mockResolvedValue(BigInt(123));
+    });
+
+    it("calls addPendingSourceEvent with Starred when source is unstarred", async () => {
+      // Create a mock source that is not starred
+      const unstarredSource = {
+        ...mockSources[0],
+        data: { ...mockSources[0].data, is_starred: false },
+      };
+
+      renderSourceList([unstarredSource]);
+
+      await waitFor(() => {
+        expect(screen.getByTestId("source-source-1")).toBeInTheDocument();
+      });
+
+      // Click the star icon to star the source
+      const starButton = screen.getByTestId("star-button-source-1");
+      await userEvent.click(starButton);
+
+      await waitFor(() => {
+        expect(window.electronAPI.addPendingSourceEvent).toHaveBeenCalledWith(
+          "source-1",
+          PendingEventType.Starred,
+        );
+      });
+    });
+
+    it("calls addPendingSourceEvent with Unstarred when source is starred", async () => {
+      // Create a mock source that is starred
+      const starredSources = [
+        {
+          ...mockSources[0],
+          data: { ...mockSources[0].data, is_starred: true },
+        },
+        ...mockSources.slice(1),
+      ];
+
+      // Override getSources mock to return our custom sources
+      vi.mocked(window.electronAPI.getSources).mockResolvedValue(
+        starredSources,
+      );
+
+      renderSourceList(starredSources);
+
+      await waitFor(() => {
+        expect(screen.getByTestId("source-source-1")).toBeInTheDocument();
+      });
+
+      // Click the star icon to unstar the source
+      const starButton = screen.getByTestId("star-button-source-1");
+      await userEvent.click(starButton);
+
+      await waitFor(() => {
+        expect(window.electronAPI.addPendingSourceEvent).toHaveBeenCalledWith(
+          "source-1",
+          PendingEventType.Unstarred,
+        );
+      });
+    });
+
+    it("handles multiple star toggles correctly", async () => {
+      const sources = [
+        {
+          ...mockSources[0],
+          data: { ...mockSources[0].data, is_starred: false },
+        },
+        {
+          ...mockSources[1],
+          data: { ...mockSources[1].data, is_starred: true },
+        },
+        {
+          ...mockSources[2],
+          data: { ...mockSources[2].data, is_starred: false },
+        },
+      ];
+
+      renderSourceList(sources);
+
+      await waitFor(() => {
+        expect(screen.getByTestId("source-source-1")).toBeInTheDocument();
+      });
+
+      // Star the first source (unstarred -> starred)
+      const starButton1 = screen.getByTestId("star-button-source-1");
+      await userEvent.click(starButton1);
+
+      await waitFor(() => {
+        expect(window.electronAPI.addPendingSourceEvent).toHaveBeenCalledWith(
+          "source-1",
+          PendingEventType.Starred,
+        );
+      });
+
+      // Unstar the second source (starred -> unstarred)
+      const starButton2 = screen.getByTestId("star-button-source-2");
+      await userEvent.click(starButton2);
+
+      await waitFor(() => {
+        expect(window.electronAPI.addPendingSourceEvent).toHaveBeenCalledWith(
+          "source-2",
+          PendingEventType.Unstarred,
+        );
+      });
+
+      // Star the third source (unstarred -> starred)
+      const starButton3 = screen.getByTestId("star-button-source-3");
+      await userEvent.click(starButton3);
+
+      await waitFor(() => {
+        expect(window.electronAPI.addPendingSourceEvent).toHaveBeenCalledWith(
+          "source-3",
+          PendingEventType.Starred,
+        );
+      });
+
+      // Verify all three calls were made
+      expect(window.electronAPI.addPendingSourceEvent).toHaveBeenCalledTimes(3);
+    });
+  });
 });
