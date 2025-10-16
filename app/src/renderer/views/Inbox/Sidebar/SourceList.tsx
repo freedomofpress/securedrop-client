@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo, useCallback, useRef } from "react";
-import { useParams } from "react-router";
+import { useParams, useNavigate } from "react-router";
 import { FixedSizeList as List } from "react-window";
 import { useTranslation } from "react-i18next";
 
@@ -11,12 +11,14 @@ import {
   selectSources,
   selectSourcesLoading,
 } from "../../../features/sources/sourcesSlice";
+import { fetchConversation } from "../../../features/conversation/conversationSlice";
 import Toolbar, { type filterOption } from "./SourceList/Toolbar";
 import { PendingEventType } from "../../../../types";
 
 function SourceList() {
   const { sourceUuid: activeSourceUuid } = useParams<{ sourceUuid?: string }>();
   const dispatch = useAppDispatch();
+  const navigate = useNavigate();
   const { t } = useTranslation("Sidebar");
 
   const sources = useAppSelector(selectSources);
@@ -136,15 +138,42 @@ function SourceList() {
     });
 
     // Handle the result
+    let eventType: PendingEventType | null = null;
     if (result.response === 1) {
       // Delete Account(s)
-      console.log("Delete selected sources completely:", selectedSources);
+      eventType = PendingEventType.SourceDeleted;
     } else if (result.response === 2) {
-      // Keep Account(s) but Delete Conversation(s)
-      console.log("Delete conversation history for:", selectedSources);
+      // Delete Conversation(s)
+      eventType = PendingEventType.SourceConversationDeleted;
     }
-    // result.response === 0 means Cancel, do nothing
-  }, [selectedSources, t]);
+
+    if (eventType !== null) {
+      for (const sourceUuid of selectedSources) {
+        await window.electronAPI.addPendingSourceEvent(sourceUuid, eventType);
+      }
+      // If we deleted an account and it was the currently active source, navigate away
+      if (
+        eventType === PendingEventType.SourceDeleted &&
+        activeSourceUuid &&
+        selectedSources.has(activeSourceUuid)
+      ) {
+        navigate("/");
+      }
+      // If we deleted a conversation and there's an active source, refresh the conversation
+      if (
+        eventType === PendingEventType.SourceConversationDeleted &&
+        activeSourceUuid
+      ) {
+        dispatch(fetchConversation(activeSourceUuid));
+      }
+      // Update local state immediately with projected changes
+      dispatch(fetchSources());
+      // Uncheck all boxes
+      setSelectedSources(new Set());
+      setAllSelected(false);
+    }
+    // eventType === null means Cancel, do nothing
+  }, [selectedSources, t, dispatch, activeSourceUuid, navigate]);
 
   const handleBulkToggleRead = useCallback(() => {
     console.log("Toggle read status for selected sources:", selectedSources);
