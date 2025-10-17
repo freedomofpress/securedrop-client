@@ -42,7 +42,15 @@
         "bulkToggleRead": "Toggle read status for selected sources"
       },
       "deleteDialog": {
-        "detail": "If you delete a source's account, they will no longer be able to sign in and send you messages. To communicate with this source in the future, they must create a new account.",
+        "warning": "If you delete a source's account, they will no longer be able to sign in and send you messages. To communicate with this source in the future, they must create a new account.",
+        "countingItems": "Calculating items to delete...",
+        "itemCountsHeader": "This will delete:",
+        "messageCount_one": "{{count}} message",
+        "messageCount_other": "{{count}} messages",
+        "fileCount_one": "{{count}} file",
+        "fileCount_other": "{{count}} files",
+        "replyCount_one": "{{count}} reply",
+        "replyCount_other": "{{count}} replies",
         "cancelButton": "Cancel",
         "single": {
           "message": "Do you want to delete the source's account or just the conversation?",

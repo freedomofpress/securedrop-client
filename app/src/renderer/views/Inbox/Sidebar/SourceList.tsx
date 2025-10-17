@@ -35,6 +35,12 @@ function SourceList() {
   const [containerHeight, setContainerHeight] = useState(1000); // Larger default for testing
   const containerRef = useRef<HTMLDivElement>(null);
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
+  const [deleteModalLoading, setDeleteModalLoading] = useState(false);
+  const [deleteCounts, setDeleteCounts] = useState<{
+    messages: number;
+    files: number;
+    replies: number;
+  }>({ messages: 0, files: 0, replies: 0 });
 
   // Debounce search term to avoid excessive filtering
   const debouncedSearchTerm = useDebounce(searchTerm, 300);
@@ -103,11 +109,48 @@ function SourceList() {
     [dispatch],
   );
 
-  const handleBulkDelete = useCallback(() => {
+  const handleBulkDelete = useCallback(async () => {
     if (selectedSources.size === 0) {
       return;
     }
+
     setDeleteModalOpen(true);
+    setDeleteModalLoading(true);
+
+    try {
+      // Fetch all source items to count messages, files, and replies
+      let totalMessages = 0;
+      let totalFiles = 0;
+      let totalReplies = 0;
+
+      for (const sourceUuid of selectedSources) {
+        const sourceWithItems =
+          await window.electronAPI.getSourceWithItems(sourceUuid);
+        if (sourceWithItems) {
+          // Count messages, files, and replies
+          for (const item of sourceWithItems.items) {
+            if (item.data.kind === "message") {
+              totalMessages++;
+            } else if (item.data.kind === "file") {
+              totalFiles++;
+            } else if (item.data.kind === "reply") {
+              totalReplies++;
+            }
+          }
+        }
+      }
+
+      setDeleteCounts({
+        messages: totalMessages,
+        files: totalFiles,
+        replies: totalReplies,
+      });
+    } catch (error) {
+      console.error("Error fetching source items:", error);
+      setDeleteCounts({ messages: 0, files: 0, replies: 0 });
+    } finally {
+      setDeleteModalLoading(false);
+    }
   }, [selectedSources]);
 
   const handleDeleteModalCancel = useCallback(() => {
@@ -317,9 +360,49 @@ function SourceList() {
           </Button>,
         ]}
       >
-        <p data-testid="delete-modal-content">
-          {t("sourcelist.deleteDialog.detail")}
-        </p>
+        <div data-testid="delete-modal-content">
+          <p>{t("sourcelist.deleteDialog.warning")}</p>
+          {deleteModalLoading ? (
+            <p className="text-gray-600 italic">
+              {t("sourcelist.deleteDialog.countingItems")}
+            </p>
+          ) : (
+            <>
+              {(deleteCounts.messages > 0 ||
+                deleteCounts.files > 0 ||
+                deleteCounts.replies > 0) && (
+                <div className="mt-3">
+                  <p className="font-medium text-gray-800">
+                    {t("sourcelist.deleteDialog.itemCountsHeader")}
+                  </p>
+                  <ul className="mt-1 ml-4 list-none text-gray-700">
+                    {deleteCounts.messages > 0 && (
+                      <li>
+                        {t("sourcelist.deleteDialog.messageCount", {
+                          count: deleteCounts.messages,
+                        })}
+                      </li>
+                    )}
+                    {deleteCounts.files > 0 && (
+                      <li>
+                        {t("sourcelist.deleteDialog.fileCount", {
+                          count: deleteCounts.files,
+                        })}
+                      </li>
+                    )}
+                    {deleteCounts.replies > 0 && (
+                      <li>
+                        {t("sourcelist.deleteDialog.replyCount", {
+                          count: deleteCounts.replies,
+                        })}
+                      </li>
+                    )}
+                  </ul>
+                </div>
+              )}
+            </>
+          )}
+        </div>
       </Modal>
     </div>
   );
