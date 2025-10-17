@@ -675,19 +675,12 @@ describe("Sources Component", () => {
 
   describe("Bulk delete functionality", () => {
     beforeEach(() => {
-      // Mock the showMessageBox function
-      window.electronAPI.showMessageBox = vi.fn();
       window.electronAPI.addPendingSourceEvent = vi
         .fn()
         .mockResolvedValue(BigInt(123));
     });
 
-    it("shows dialog when delete button is clicked with single source selected", async () => {
-      vi.mocked(window.electronAPI.showMessageBox).mockResolvedValue({
-        response: 0,
-        checkboxChecked: false,
-      }); // Cancel
-
+    it("shows modal when delete button is clicked with single source selected", async () => {
       renderSourceList();
 
       await waitFor(() => {
@@ -702,29 +695,26 @@ describe("Sources Component", () => {
       const deleteButton = screen.getByTestId("bulk-delete-button");
       await userEvent.click(deleteButton);
 
+      // Check that modal is displayed
       await waitFor(() => {
-        expect(window.electronAPI.showMessageBox).toHaveBeenCalledWith(
-          expect.objectContaining({
-            message: expect.stringContaining(
-              "Do you want to delete the source's account or just the conversation?",
-            ),
-            buttons: expect.arrayContaining([
-              "Cancel",
-              "Delete Account",
-              "Delete Conversation",
-            ]),
-            type: "warning",
-          }),
-        );
+        expect(screen.getByTestId("delete-modal")).toBeInTheDocument();
+        expect(screen.getByTestId("delete-modal-title")).toBeInTheDocument();
+        expect(screen.getByTestId("delete-modal-content")).toBeInTheDocument();
       });
+
+      // Check that all three buttons are present
+      expect(
+        screen.getByTestId("delete-modal-cancel-button"),
+      ).toBeInTheDocument();
+      expect(
+        screen.getByTestId("delete-modal-delete-conversation-button"),
+      ).toBeInTheDocument();
+      expect(
+        screen.getByTestId("delete-modal-delete-account-button"),
+      ).toBeInTheDocument();
     });
 
-    it("shows dialog with correct message for multiple sources", async () => {
-      vi.mocked(window.electronAPI.showMessageBox).mockResolvedValue({
-        response: 0,
-        checkboxChecked: false,
-      }); // Cancel
-
+    it("shows modal with correct message for multiple sources", async () => {
       renderSourceList();
 
       await waitFor(() => {
@@ -739,28 +729,26 @@ describe("Sources Component", () => {
       const deleteButton = screen.getByTestId("bulk-delete-button");
       await userEvent.click(deleteButton);
 
+      // Check that modal is displayed
       await waitFor(() => {
-        expect(window.electronAPI.showMessageBox).toHaveBeenCalledWith(
-          expect.objectContaining({
-            message: expect.stringContaining(
-              "Do you want to delete these 2 source accounts or just the conversations?",
-            ),
-            buttons: expect.arrayContaining([
-              "Cancel",
-              "Delete Accounts",
-              "Delete Conversations",
-            ]),
-          }),
-        );
+        expect(screen.getByTestId("delete-modal")).toBeInTheDocument();
+        expect(screen.getByTestId("delete-modal-title")).toBeInTheDocument();
+        expect(screen.getByTestId("delete-modal-content")).toBeInTheDocument();
       });
+
+      // Check that all three buttons are present with correct text for multiple sources
+      expect(
+        screen.getByTestId("delete-modal-cancel-button"),
+      ).toBeInTheDocument();
+      expect(
+        screen.getByTestId("delete-modal-delete-conversation-button"),
+      ).toBeInTheDocument();
+      expect(
+        screen.getByTestId("delete-modal-delete-account-button"),
+      ).toBeInTheDocument();
     });
 
-    it("calls addPendingSourceEvent with SourceDeleted when Delete Account is selected", async () => {
-      vi.mocked(window.electronAPI.showMessageBox).mockResolvedValue({
-        response: 1,
-        checkboxChecked: false,
-      }); // Delete Account
-
+    it("calls addPendingSourceEvent with SourceDeleted when Delete Account is clicked", async () => {
       renderSourceList();
 
       await waitFor(() => {
@@ -773,6 +761,18 @@ describe("Sources Component", () => {
       // Click bulk delete button
       const deleteButton = screen.getByTestId("bulk-delete-button");
       await userEvent.click(deleteButton);
+
+      // Wait for modal to appear and click "Delete Account" button
+      await waitFor(() => {
+        expect(
+          screen.getByTestId("delete-modal-delete-account-button"),
+        ).toBeInTheDocument();
+      });
+
+      const deleteAccountButton = screen.getByTestId(
+        "delete-modal-delete-account-button",
+      );
+      await userEvent.click(deleteAccountButton);
 
       await waitFor(() => {
         expect(window.electronAPI.addPendingSourceEvent).toHaveBeenCalledWith(
@@ -782,12 +782,7 @@ describe("Sources Component", () => {
       });
     });
 
-    it("calls addPendingSourceEvent with SourceConversationDeleted when Delete Conversation is selected", async () => {
-      vi.mocked(window.electronAPI.showMessageBox).mockResolvedValue({
-        response: 2,
-        checkboxChecked: false,
-      }); // Delete Conversation
-
+    it("calls addPendingSourceEvent with SourceConversationDeleted when Delete Conversation is clicked", async () => {
       renderSourceList();
 
       await waitFor(() => {
@@ -800,6 +795,18 @@ describe("Sources Component", () => {
       // Click bulk delete button
       const deleteButton = screen.getByTestId("bulk-delete-button");
       await userEvent.click(deleteButton);
+
+      // Wait for modal to appear and click "Delete Conversation" button
+      await waitFor(() => {
+        expect(
+          screen.getByTestId("delete-modal-delete-conversation-button"),
+        ).toBeInTheDocument();
+      });
+
+      const deleteConversationButton = screen.getByTestId(
+        "delete-modal-delete-conversation-button",
+      );
+      await userEvent.click(deleteConversationButton);
 
       await waitFor(() => {
         expect(window.electronAPI.addPendingSourceEvent).toHaveBeenCalledWith(
@@ -810,11 +817,6 @@ describe("Sources Component", () => {
     });
 
     it("calls addPendingSourceEvent for all selected sources", async () => {
-      vi.mocked(window.electronAPI.showMessageBox).mockResolvedValue({
-        response: 1,
-        checkboxChecked: false,
-      }); // Delete Account
-
       renderSourceList();
 
       await waitFor(() => {
@@ -829,6 +831,18 @@ describe("Sources Component", () => {
       // Click bulk delete button
       const deleteButton = screen.getByTestId("bulk-delete-button");
       await userEvent.click(deleteButton);
+
+      // Wait for modal to appear and click "Delete Accounts" button
+      await waitFor(() => {
+        expect(
+          screen.getByTestId("delete-modal-delete-account-button"),
+        ).toBeInTheDocument();
+      });
+
+      const deleteAccountsButton = screen.getByTestId(
+        "delete-modal-delete-account-button",
+      );
+      await userEvent.click(deleteAccountsButton);
 
       await waitFor(() => {
         const addPendingSourceEvent = window.electronAPI.addPendingSourceEvent;
@@ -848,12 +862,7 @@ describe("Sources Component", () => {
       });
     });
 
-    it("does not call addPendingSourceEvent when Cancel is selected", async () => {
-      vi.mocked(window.electronAPI.showMessageBox).mockResolvedValue({
-        response: 0,
-        checkboxChecked: false,
-      }); // Cancel
-
+    it("does not call addPendingSourceEvent when Cancel is clicked", async () => {
       renderSourceList();
 
       await waitFor(() => {
@@ -867,9 +876,15 @@ describe("Sources Component", () => {
       const deleteButton = screen.getByTestId("bulk-delete-button");
       await userEvent.click(deleteButton);
 
+      // Wait for modal to appear and click "Cancel" button
       await waitFor(() => {
-        expect(window.electronAPI.showMessageBox).toHaveBeenCalled();
+        expect(
+          screen.getByTestId("delete-modal-cancel-button"),
+        ).toBeInTheDocument();
       });
+
+      const cancelButton = screen.getByTestId("delete-modal-cancel-button");
+      await userEvent.click(cancelButton);
 
       // Wait a bit to ensure addPendingSourceEvent is not called
       await new Promise((resolve) => setTimeout(resolve, 100));
@@ -878,11 +893,6 @@ describe("Sources Component", () => {
     });
 
     it("clears selection after deleting sources", async () => {
-      vi.mocked(window.electronAPI.showMessageBox).mockResolvedValue({
-        response: 1,
-        checkboxChecked: false,
-      }); // Delete Account
-
       renderSourceList();
 
       await waitFor(() => {
@@ -902,6 +912,18 @@ describe("Sources Component", () => {
       // Click bulk delete button
       const deleteButton = screen.getByTestId("bulk-delete-button");
       await userEvent.click(deleteButton);
+
+      // Wait for modal to appear and click "Delete Accounts" button
+      await waitFor(() => {
+        expect(
+          screen.getByTestId("delete-modal-delete-account-button"),
+        ).toBeInTheDocument();
+      });
+
+      const deleteAccountsButton = screen.getByTestId(
+        "delete-modal-delete-account-button",
+      );
+      await userEvent.click(deleteAccountsButton);
 
       // Wait for the operation to complete
       await waitFor(() => {

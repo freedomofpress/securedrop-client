@@ -272,20 +272,29 @@ function SourceList() {
       {/* Delete confirmation modal */}
       <Modal
         open={deleteModalOpen}
+        data-testid="delete-modal"
         title={
-          selectedSources.size === 1
-            ? t("sourcelist.deleteDialog.single.message")
-            : t("sourcelist.deleteDialog.multiple.message", {
-                count: selectedSources.size,
-              })
+          <span data-testid="delete-modal-title">
+            {selectedSources.size === 1
+              ? t("sourcelist.deleteDialog.single.message")
+              : t("sourcelist.deleteDialog.multiple.message", {
+                  count: selectedSources.size,
+                })}
+          </span>
         }
         onCancel={handleDeleteModalCancel}
         footer={[
-          <Button key="cancel" onClick={handleDeleteModalCancel} autoFocus>
+          <Button
+            key="cancel"
+            data-testid="delete-modal-cancel-button"
+            onClick={handleDeleteModalCancel}
+            autoFocus
+          >
             {t("sourcelist.deleteDialog.cancelButton")}
           </Button>,
           <Button
             key="deleteConversation"
+            data-testid="delete-modal-delete-conversation-button"
             type="primary"
             onClick={() =>
               handleDeleteAction(PendingEventType.SourceConversationDeleted)
@@ -297,6 +306,7 @@ function SourceList() {
           </Button>,
           <Button
             key="deleteAccount"
+            data-testid="delete-modal-delete-account-button"
             type="primary"
             danger
             onClick={() => handleDeleteAction(PendingEventType.SourceDeleted)}
@@ -307,7 +317,9 @@ function SourceList() {
           </Button>,
         ]}
       >
-        <p>{t("sourcelist.deleteDialog.detail")}</p>
+        <p data-testid="delete-modal-content">
+          {t("sourcelist.deleteDialog.detail")}
+        </p>
       </Modal>
     </div>
   );
