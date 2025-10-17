@@ -2,6 +2,7 @@ import { useState, useEffect, useMemo, useCallback, useRef } from "react";
 import { useParams, useNavigate } from "react-router";
 import { FixedSizeList as List } from "react-window";
 import { useTranslation } from "react-i18next";
+import { Modal, Button } from "antd";
 
 import Source from "./SourceList/Source";
 import LoadingIndicator from "../../../components/LoadingIndicator";
@@ -33,6 +34,7 @@ function SourceList() {
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [containerHeight, setContainerHeight] = useState(1000); // Larger default for testing
   const containerRef = useRef<HTMLDivElement>(null);
+  const [deleteModalOpen, setDeleteModalOpen] = useState(false);
 
   // Debounce search term to avoid excessive filtering
   const debouncedSearchTerm = useDebounce(searchTerm, 300);
@@ -100,54 +102,20 @@ function SourceList() {
     },
     [dispatch],
   );
-  const handleBulkDelete = useCallback(async () => {
+
+  const handleBulkDelete = useCallback(() => {
     if (selectedSources.size === 0) {
       return;
     }
+    setDeleteModalOpen(true);
+  }, [selectedSources]);
 
-    // Determine if single or multiple sources are selected
-    const isSingle = selectedSources.size === 1;
+  const handleDeleteModalCancel = useCallback(() => {
+    setDeleteModalOpen(false);
+  }, []);
 
-    const message = isSingle
-      ? t("sourcelist.deleteDialog.single.message")
-      : t("sourcelist.deleteDialog.multiple.message", {
-          count: selectedSources.size,
-        });
-
-    const buttons = isSingle
-      ? [
-          t("sourcelist.deleteDialog.cancelButton"),
-          t("sourcelist.deleteDialog.single.deleteAccountButton"),
-          t("sourcelist.deleteDialog.single.keepAccountButton"),
-        ]
-      : [
-          t("sourcelist.deleteDialog.cancelButton"),
-          t("sourcelist.deleteDialog.multiple.deleteAccountsButton"),
-          t("sourcelist.deleteDialog.multiple.keepAccountsButton"),
-        ];
-
-    const detail = t("sourcelist.deleteDialog.detail");
-
-    const result = await window.electronAPI.showMessageBox({
-      message: message,
-      detail: detail,
-      buttons: buttons,
-      type: "warning",
-      defaultId: 0, // Cancel is default
-      cancelId: 0, // Cancel is cancel button
-    });
-
-    // Handle the result
-    let eventType: PendingEventType | null = null;
-    if (result.response === 1) {
-      // Delete Account(s)
-      eventType = PendingEventType.SourceDeleted;
-    } else if (result.response === 2) {
-      // Delete Conversation(s)
-      eventType = PendingEventType.SourceConversationDeleted;
-    }
-
-    if (eventType !== null) {
+  const handleDeleteAction = useCallback(
+    async (eventType: PendingEventType) => {
       for (const sourceUuid of selectedSources) {
         await window.electronAPI.addPendingSourceEvent(sourceUuid, eventType);
       }
@@ -171,9 +139,10 @@ function SourceList() {
       // Uncheck all boxes
       setSelectedSources(new Set());
       setAllSelected(false);
-    }
-    // eventType === null means Cancel, do nothing
-  }, [selectedSources, t, dispatch, activeSourceUuid, navigate]);
+      setDeleteModalOpen(false);
+    },
+    [selectedSources, dispatch, activeSourceUuid, navigate],
+  );
 
   const handleBulkToggleRead = useCallback(() => {
     console.log("Toggle read status for selected sources:", selectedSources);
@@ -299,6 +268,47 @@ function SourceList() {
           </List>
         </div>
       </div>
+
+      {/* Delete confirmation modal */}
+      <Modal
+        open={deleteModalOpen}
+        title={
+          selectedSources.size === 1
+            ? t("sourcelist.deleteDialog.single.message")
+            : t("sourcelist.deleteDialog.multiple.message", {
+                count: selectedSources.size,
+              })
+        }
+        onCancel={handleDeleteModalCancel}
+        footer={[
+          <Button key="cancel" onClick={handleDeleteModalCancel} autoFocus>
+            {t("sourcelist.deleteDialog.cancelButton")}
+          </Button>,
+          <Button
+            key="deleteConversation"
+            type="primary"
+            onClick={() =>
+              handleDeleteAction(PendingEventType.SourceConversationDeleted)
+            }
+          >
+            {selectedSources.size === 1
+              ? t("sourcelist.deleteDialog.single.keepAccountButton")
+              : t("sourcelist.deleteDialog.multiple.keepAccountsButton")}
+          </Button>,
+          <Button
+            key="deleteAccount"
+            type="primary"
+            danger
+            onClick={() => handleDeleteAction(PendingEventType.SourceDeleted)}
+          >
+            {selectedSources.size === 1
+              ? t("sourcelist.deleteDialog.single.deleteAccountButton")
+              : t("sourcelist.deleteDialog.multiple.deleteAccountsButton")}
+          </Button>,
+        ]}
+      >
+        <p>{t("sourcelist.deleteDialog.detail")}</p>
+      </Modal>
     </div>
   );
 }
