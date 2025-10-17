@@ -1,6 +1,8 @@
 import { useState, useEffect, useMemo, useCallback, useRef } from "react";
-import { useParams } from "react-router";
+import { useParams, useNavigate } from "react-router";
 import { FixedSizeList as List } from "react-window";
+import { useTranslation } from "react-i18next";
+import { Modal, Button } from "antd";
 
 import Source from "./SourceList/Source";
 import LoadingIndicator from "../../../components/LoadingIndicator";
@@ -10,12 +12,15 @@ import {
   selectSources,
   selectSourcesLoading,
 } from "../../../features/sources/sourcesSlice";
+import { fetchConversation } from "../../../features/conversation/conversationSlice";
 import Toolbar, { type filterOption } from "./SourceList/Toolbar";
 import { PendingEventType } from "../../../../types";
 
 function SourceList() {
   const { sourceUuid: activeSourceUuid } = useParams<{ sourceUuid?: string }>();
   const dispatch = useAppDispatch();
+  const navigate = useNavigate();
+  const { t } = useTranslation("Sidebar");
 
   const sources = useAppSelector(selectSources);
   const loading = useAppSelector(selectSourcesLoading);
@@ -29,6 +34,13 @@ function SourceList() {
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [containerHeight, setContainerHeight] = useState(1000); // Larger default for testing
   const containerRef = useRef<HTMLDivElement>(null);
+  const [deleteModalOpen, setDeleteModalOpen] = useState(false);
+  const [deleteModalLoading, setDeleteModalLoading] = useState(false);
+  const [deleteCounts, setDeleteCounts] = useState<{
+    messages: number;
+    files: number;
+    replies: number;
+  }>({ messages: 0, files: 0, replies: 0 });
 
   // Debounce search term to avoid excessive filtering
   const debouncedSearchTerm = useDebounce(searchTerm, 300);
@@ -96,9 +108,84 @@ function SourceList() {
     },
     [dispatch],
   );
-  const handleBulkDelete = useCallback(() => {
-    console.log("Delete selected sources:", selectedSources);
+
+  const handleBulkDelete = useCallback(async () => {
+    if (selectedSources.size === 0) {
+      return;
+    }
+
+    setDeleteModalOpen(true);
+    setDeleteModalLoading(true);
+
+    try {
+      // Fetch all source items to count messages, files, and replies
+      let totalMessages = 0;
+      let totalFiles = 0;
+      let totalReplies = 0;
+
+      for (const sourceUuid of selectedSources) {
+        const sourceWithItems =
+          await window.electronAPI.getSourceWithItems(sourceUuid);
+        if (sourceWithItems) {
+          // Count messages, files, and replies
+          for (const item of sourceWithItems.items) {
+            if (item.data.kind === "message") {
+              totalMessages++;
+            } else if (item.data.kind === "file") {
+              totalFiles++;
+            } else if (item.data.kind === "reply") {
+              totalReplies++;
+            }
+          }
+        }
+      }
+
+      setDeleteCounts({
+        messages: totalMessages,
+        files: totalFiles,
+        replies: totalReplies,
+      });
+    } catch (error) {
+      console.error("Error fetching source items:", error);
+      setDeleteCounts({ messages: 0, files: 0, replies: 0 });
+    } finally {
+      setDeleteModalLoading(false);
+    }
   }, [selectedSources]);
+
+  const handleDeleteModalCancel = useCallback(() => {
+    setDeleteModalOpen(false);
+  }, []);
+
+  const handleDeleteAction = useCallback(
+    async (eventType: PendingEventType) => {
+      for (const sourceUuid of selectedSources) {
+        await window.electronAPI.addPendingSourceEvent(sourceUuid, eventType);
+      }
+      // If we deleted an account and it was the currently active source, navigate away
+      if (
+        eventType === PendingEventType.SourceDeleted &&
+        activeSourceUuid &&
+        selectedSources.has(activeSourceUuid)
+      ) {
+        navigate("/");
+      }
+      // If we deleted a conversation and there's an active source, refresh the conversation
+      if (
+        eventType === PendingEventType.SourceConversationDeleted &&
+        activeSourceUuid
+      ) {
+        dispatch(fetchConversation(activeSourceUuid));
+      }
+      // Update local state immediately with projected changes
+      dispatch(fetchSources());
+      // Uncheck all boxes
+      setSelectedSources(new Set());
+      setAllSelected(false);
+      setDeleteModalOpen(false);
+    },
+    [selectedSources, dispatch, activeSourceUuid, navigate],
+  );
 
   const handleBulkToggleRead = useCallback(() => {
     console.log("Toggle read status for selected sources:", selectedSources);
@@ -224,6 +311,99 @@ function SourceList() {
           </List>
         </div>
       </div>
+
+      {/* Delete confirmation modal */}
+      <Modal
+        open={deleteModalOpen}
+        data-testid="delete-modal"
+        title={
+          <span data-testid="delete-modal-title">
+            {selectedSources.size === 1
+              ? t("sourcelist.deleteDialog.single.message")
+              : t("sourcelist.deleteDialog.multiple.message", {
+                  count: selectedSources.size,
+                })}
+          </span>
+        }
+        onCancel={handleDeleteModalCancel}
+        footer={[
+          <Button
+            key="cancel"
+            data-testid="delete-modal-cancel-button"
+            onClick={handleDeleteModalCancel}
+            autoFocus
+          >
+            {t("sourcelist.deleteDialog.cancelButton")}
+          </Button>,
+          <Button
+            key="deleteConversation"
+            data-testid="delete-modal-delete-conversation-button"
+            type="primary"
+            onClick={() =>
+              handleDeleteAction(PendingEventType.SourceConversationDeleted)
+            }
+          >
+            {selectedSources.size === 1
+              ? t("sourcelist.deleteDialog.single.keepAccountButton")
+              : t("sourcelist.deleteDialog.multiple.keepAccountsButton")}
+          </Button>,
+          <Button
+            key="deleteAccount"
+            data-testid="delete-modal-delete-account-button"
+            type="primary"
+            danger
+            onClick={() => handleDeleteAction(PendingEventType.SourceDeleted)}
+          >
+            {selectedSources.size === 1
+              ? t("sourcelist.deleteDialog.single.deleteAccountButton")
+              : t("sourcelist.deleteDialog.multiple.deleteAccountsButton")}
+          </Button>,
+        ]}
+      >
+        <div data-testid="delete-modal-content">
+          <p>{t("sourcelist.deleteDialog.warning")}</p>
+          {deleteModalLoading ? (
+            <p className="text-gray-600 italic">
+              {t("sourcelist.deleteDialog.countingItems")}
+            </p>
+          ) : (
+            <>
+              {(deleteCounts.messages > 0 ||
+                deleteCounts.files > 0 ||
+                deleteCounts.replies > 0) && (
+                <div className="mt-3">
+                  <p className="font-medium text-gray-800">
+                    {t("sourcelist.deleteDialog.itemCountsHeader")}
+                  </p>
+                  <ul className="mt-1 ml-4 list-none text-gray-700">
+                    {deleteCounts.messages > 0 && (
+                      <li>
+                        {t("sourcelist.deleteDialog.messageCount", {
+                          count: deleteCounts.messages,
+                        })}
+                      </li>
+                    )}
+                    {deleteCounts.files > 0 && (
+                      <li>
+                        {t("sourcelist.deleteDialog.fileCount", {
+                          count: deleteCounts.files,
+                        })}
+                      </li>
+                    )}
+                    {deleteCounts.replies > 0 && (
+                      <li>
+                        {t("sourcelist.deleteDialog.replyCount", {
+                          count: deleteCounts.replies,
+                        })}
+                      </li>
+                    )}
+                  </ul>
+                </div>
+              )}
+            </>
+          )}
+        </div>
+      </Modal>
     </div>
   );
 }
