@@ -1,5 +1,5 @@
 import "source-map-support/register";
-import { app, BrowserWindow, ipcMain, dialog } from "electron";
+import { app, BrowserWindow, ipcMain } from "electron";
 import { join } from "path";
 import { optimizer, is } from "@electron-toolkit/utils";
 import {
@@ -226,33 +226,6 @@ app.whenReady().then(() => {
     // Only honor auto-login in development mode
     return is.dev && shouldAutoLogin;
   });
-
-  ipcMain.handle(
-    "showMessageBox",
-    async (
-      _event,
-      options: {
-        message: string;
-        detail?: string;
-        buttons?: string[];
-        type?: "none" | "info" | "error" | "question" | "warning";
-        title?: string;
-        defaultId?: number;
-        cancelId?: number;
-      },
-    ): Promise<{ response: number; checkboxChecked: boolean }> => {
-      const result = await dialog.showMessageBox(mainWindow, {
-        message: options.message,
-        detail: options.detail,
-        buttons: options.buttons || ["OK"],
-        type: options.type || "none",
-        title: options.title,
-        defaultId: options.defaultId,
-        cancelId: options.cancelId,
-      });
-      return result;
-    },
-  );
 
   const mainWindow = createWindow();
 
