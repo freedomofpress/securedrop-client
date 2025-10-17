@@ -15,7 +15,6 @@ import {
 import type { AuthData } from "../features/session/sessionSlice";
 
 import logoImage from "../../../resources/images/logo.png";
-import backgroundImage from "../../../resources/images/sign-in-background.svg";
 import "./SignIn.css";
 
 type FormValues = {
@@ -166,12 +165,7 @@ function SignInView() {
   }
 
   return (
-    <div
-      className="min-h-screen bg-gray-50 flex flex-col justify-center py-8 sm:px-6 lg:px-8 sign-in-container"
-      style={{
-        backgroundImage: `url(${backgroundImage})`,
-      }}
-    >
+    <div className="min-h-screen bg-gray-50 flex flex-col justify-center py-8 sm:px-6 lg:px-8 sign-in-container">
       <div className="sm:mx-auto sm:w-full sm:max-w-md">
         <div className="relative mb-6">
           <div className="flex justify-center mb-6">
