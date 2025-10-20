@@ -3,7 +3,10 @@ import { toTitleCase } from "../../../utils";
 import Item from "./Conversation/Item";
 import { Form, Input, Button } from "antd";
 import { useTranslation } from "react-i18next";
-import { useEffect, useRef, memo, useMemo } from "react";
+import { useEffect, useRef, memo, useMemo, useCallback } from "react";
+import { useAppDispatch } from "../../../hooks";
+import { fetchSources } from "../../../features/sources/sourcesSlice";
+import { fetchConversation } from "../../../features/conversation/conversationSlice";
 import "./Conversation.css";
 
 interface ConversationProps {
@@ -14,6 +17,8 @@ const Conversation = memo(function Conversation({
   sourceWithItems,
 }: ConversationProps) {
   const { t } = useTranslation("MainContent");
+  const dispatch = useAppDispatch();
+  const [form] = Form.useForm();
   const scrollContainerRef = useRef<HTMLDivElement>(null);
 
   // Scroll to bottom when component mounts or items change
@@ -37,6 +42,29 @@ const Conversation = memo(function Conversation({
     [t, designation],
   );
 
+  const handleSubmit = useCallback(
+    async (values: { message: string }) => {
+      if (!sourceWithItems || !values.message?.trim()) return;
+
+      try {
+        await window.electronAPI.addPendingReplySentEvent(
+          values.message,
+          sourceWithItems.uuid,
+        );
+
+        // Update local state immediately with projected changes
+        dispatch(fetchSources());
+        dispatch(fetchConversation(sourceWithItems.uuid));
+
+        // Clear the form
+        form.resetFields();
+      } catch (error) {
+        console.error("Failed to send reply:", error);
+      }
+    },
+    [sourceWithItems, dispatch, form],
+  );
+
   if (!sourceWithItems) return null;
 
   return (
@@ -52,8 +80,8 @@ const Conversation = memo(function Conversation({
         </div>
       </div>
       <div className="flex-shrink-0 p-4 pt-0">
-        <Form layout="vertical">
-          <Form.Item style={{ marginBottom: 0 }}>
+        <Form form={form} layout="vertical" onFinish={handleSubmit}>
+          <Form.Item name="message" style={{ marginBottom: 0 }}>
             <div className="relative">
               <Input.TextArea
                 rows={4}
