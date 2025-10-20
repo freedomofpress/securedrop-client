@@ -101,6 +101,10 @@ export class DB {
   private selectSourceById: Statement<[string], SourceRow>;
   private selectItemsBySourceId: Statement<[string], ItemRow>;
   private selectAllJournalists: Statement<[], JournalistRow>;
+  private selectUnseenItemsBySource: Statement<
+    { source_uuid: string; type: number },
+    { uuid: string }
+  >;
   private insertSourcePendingEvent: Statement<
     { snowflake_id: bigint; source_uuid: string; type: number },
     void
@@ -212,6 +216,16 @@ export class DB {
     `);
     this.selectAllJournalists = this.db.prepare(`
       SELECT uuid, data FROM journalists
+    `);
+
+    this.selectUnseenItemsBySource = this.db.prepare(`
+      SELECT uuid FROM items_projected
+      WHERE source_uuid = @source_uuid
+      AND NOT EXISTS (
+        SELECT 1 FROM pending_events
+        WHERE pending_events.item_uuid = items_projected.uuid
+        AND pending_events.type = @type
+      )
     `);
 
     this.insertSourcePendingEvent = this.db.prepare(`
@@ -687,5 +701,28 @@ export class DB {
       data: undefined,
     });
     return snowflakeID;
+  }
+
+  addPendingItemsSeenBatch(sourceUuid: string): bigint[] {
+    return this.db!.transaction(() => {
+      // Query for items that don't have a Seen pending event yet
+      const unseenItems = this.selectUnseenItemsBySource.all({
+        source_uuid: sourceUuid,
+        type: PendingEventType.Seen,
+      });
+
+      const snowflakeIds: bigint[] = [];
+
+      // Batch insert Seen events
+      for (const item of unseenItems) {
+        const snowflakeId = this.addPendingItemEvent(
+          item.uuid,
+          PendingEventType.Seen,
+        );
+        snowflakeIds.push(snowflakeId);
+      }
+
+      return snowflakeIds;
+    })();
   }
 }
