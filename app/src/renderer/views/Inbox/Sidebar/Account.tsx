@@ -63,6 +63,7 @@ function Account() {
             icon={<RefreshCw size={18} />}
             size="small"
             onClick={sync}
+            data-testid="sync-button"
           />
 
           <Button
@@ -85,6 +86,7 @@ function Account() {
             icon={<LogIn size={16} />}
             size="small"
             onClick={signIn}
+            data-testid="signin-form-button"
           >
             {t("account.signIn")}
           </Button>
