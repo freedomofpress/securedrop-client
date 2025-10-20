@@ -222,6 +222,14 @@ app.whenReady().then(() => {
       return db.addPendingItemEvent(itemUuid, type);
     },
   );
+
+  ipcMain.handle(
+    "addPendingItemsSeenBatch",
+    async (_event, sourceUuid: string): Promise<bigint[]> => {
+      return db.addPendingItemsSeenBatch(sourceUuid);
+    },
+  );
+
   ipcMain.handle("shouldAutoLogin", async (_event): Promise<boolean> => {
     // Only honor auto-login in development mode
     return is.dev && shouldAutoLogin;

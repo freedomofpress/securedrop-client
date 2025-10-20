@@ -159,6 +159,7 @@ beforeEach(() => {
     addPendingSourceEvent: vi.fn().mockResolvedValue(BigInt(123)),
     addPendingReplySentEvent: vi.fn().mockResolvedValue(BigInt(456)),
     addPendingItemEvent: vi.fn().mockResolvedValue(BigInt(789)),
+    addPendingItemsSeenBatch: vi.fn().mockResolvedValue([]),
     shouldAutoLogin: vi.fn().mockResolvedValue(false),
   } as ElectronAPI;
 });

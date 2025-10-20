@@ -94,6 +94,11 @@ const electronAPI = {
     (itemUuid: string, type: PendingEventType) =>
       ipcRenderer.invoke("addPendingItemEvent", itemUuid, type),
   ),
+  addPendingItemsSeenBatch: logIpcCall<bigint[]>(
+    "addPendingItemsSeenBatch",
+    (sourceUuid: string) =>
+      ipcRenderer.invoke("addPendingItemsSeenBatch", sourceUuid),
+  ),
   shouldAutoLogin: logIpcCall<boolean>("shouldAutoLogin", () =>
     ipcRenderer.invoke("shouldAutoLogin"),
   ),
