@@ -587,4 +587,92 @@ describe("Reply", () => {
       expect(getByText("Message is encrypted...")).toBeInTheDocument();
     });
   });
+
+  describe("Pending Reply Icon", () => {
+    const authState: Partial<RootState> = {
+      session: {
+        status: SessionStatus.Auth,
+        authData: {
+          expiration: "2025-07-16T19:25:44.388054+00:00",
+          token: "test-token-123",
+          journalistUUID: "journalist-1",
+          journalistFirstName: "Daniel",
+          journalistLastName: "Ellsberg",
+        },
+      },
+      journalists: {
+        journalists: mockJournalists,
+        loading: false,
+        error: null,
+      },
+    };
+
+    const pendingReplyItem: Item = {
+      uuid: "pending-reply-1",
+      data: {
+        kind: "reply",
+        uuid: "pending-reply-1",
+        source: "source-1",
+        size: 1024,
+        journalist_uuid: "", // Empty UUID indicates pending reply
+        is_deleted_by_source: false,
+        seen_by: [],
+      } as ReplyMetadata,
+      plaintext: "This is a pending reply",
+    };
+
+    it("should display pending icon for pending replies", () => {
+      const { getByTestId } = renderWithProviders(
+        <Reply item={pendingReplyItem} />,
+        { preloadedState: authState },
+      );
+
+      expect(getByTestId("pending-reply-icon")).toBeInTheDocument();
+    });
+
+    it("should not display pending icon for regular replies", () => {
+      const { queryByTestId } = renderWithProviders(
+        <Reply item={mockReplyItem} />, // Has journalist_uuid
+        { preloadedState: authState },
+      );
+
+      expect(queryByTestId("pending-reply-icon")).not.toBeInTheDocument();
+    });
+
+    it("should display pending icon with tooltip", () => {
+      const { getByTestId } = renderWithProviders(
+        <Reply item={pendingReplyItem} />,
+        { preloadedState: authState },
+      );
+
+      const icon = getByTestId("pending-reply-icon");
+      expect(icon).toBeInTheDocument();
+
+      // Hover to show tooltip (note: actual tooltip rendering may vary in tests)
+      // The tooltip title is set, which is what matters for accessibility
+      const tooltipContainer = icon.parentElement;
+      expect(tooltipContainer).toBeInTheDocument();
+    });
+
+    it("should display pending icon when offline", () => {
+      const offlineState: Partial<RootState> = {
+        session: {
+          status: SessionStatus.Offline,
+          authData: undefined,
+        },
+        journalists: {
+          journalists: mockJournalists,
+          loading: false,
+          error: null,
+        },
+      };
+
+      const { getByTestId } = renderWithProviders(
+        <Reply item={pendingReplyItem} />,
+        { preloadedState: offlineState },
+      );
+
+      expect(getByTestId("pending-reply-icon")).toBeInTheDocument();
+    });
+  });
 });

@@ -7,7 +7,10 @@ import {
 import { getJournalistById } from "../../../../../features/journalists/journalistsSlice";
 import { formatJournalistName } from "../../../../../utils";
 import { useAppSelector } from "../../../../../hooks";
+import { Tooltip } from "antd";
+import { ClockCircleOutlined } from "@ant-design/icons";
 import "../Item.css";
+import "./Reply.css";
 
 interface ReplyProps {
   item: Item;
@@ -86,8 +89,16 @@ function Reply({ item }: ReplyProps) {
       data-testid={`item-${item.uuid}`}
     >
       <div>
-        <div className="flex items-center justify-start mb-1">
+        <div className="flex items-center justify-start mb-1 gap-1">
           <span className="author reply-author">{getAuthorDisplay()}</span>
+          {isPendingReply && (
+            <Tooltip title={t("pendingReplyTooltip")}>
+              <ClockCircleOutlined
+                data-testid="pending-reply-icon"
+                className="pending-reply-icon"
+              />
+            </Tooltip>
+          )}
         </div>
         <div className="reply-box whitespace-pre-wrap">
           {isEncrypted ? (
