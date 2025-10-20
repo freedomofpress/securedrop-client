@@ -310,18 +310,11 @@ describe("pending_events update projected views", () => {
     let sourceWithItems = db.getSourceWithItems("source1");
     expect(sourceWithItems.items.length).toEqual(3);
 
-    db.addPendingReplySentEvent(
-      "item4",
-      "here is a reply",
-      "source1",
-      "journalist",
-    );
+    db.addPendingReplySentEvent("here is a reply", "source1");
     sourceWithItems = db.getSourceWithItems("source1");
     expect(sourceWithItems.items.length).toEqual(4);
-    const reply = sourceWithItems.items.find((i) => {
-      return i.uuid === "item4";
-    });
-    expect(reply?.plaintext === "this is a reply");
+    const reply = sourceWithItems.items[3];
+    expect(reply?.plaintext).toBe("here is a reply");
   });
 
   it("pending ItemDeleted event should delete reply", () => {
@@ -354,7 +347,7 @@ describe("pending_events update projected views", () => {
       item2: mockItemMetadata("item2", "source1"),
     });
 
-    db.addPendingReplySentEvent("item3", "reply text", "source1", "journalist");
+    db.addPendingReplySentEvent("reply text", "source1");
     let sourceWithItems = db.getSourceWithItems("source1");
     expect(sourceWithItems.items.length).toEqual(3);
 
@@ -383,17 +376,14 @@ describe("pending_events update projected views", () => {
     let sourceWithItems = db.getSourceWithItems("source1");
     expect(sourceWithItems.items.length).toEqual(0);
 
-    const snowflake2 = db.addPendingReplySentEvent(
-      "item3",
-      "reply text",
-      "source1",
-      "journalist",
-    );
+    const snowflake2 = db.addPendingReplySentEvent("reply text", "source1");
     expect(snowflake2 > snowflake1);
     sourceWithItems = db.getSourceWithItems("source1");
     expect(sourceWithItems.items.length).toEqual(1);
-    expect(sourceWithItems.items[0].uuid).toBe("item3");
-    expect(sourceWithItems.items[0].plaintext).toBeDefined();
+    expect(sourceWithItems.items[0].uuid).toMatch(
+      /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i,
+    );
+    expect(sourceWithItems.items[0].plaintext).toBe("reply text");
   });
 
   it("pending ReplySent and then pending SourceDeleted should delete source", () => {
@@ -405,7 +395,7 @@ describe("pending_events update projected views", () => {
       item1: mockItemMetadata("item1", "source1"),
     });
 
-    db.addPendingReplySentEvent("item2", "reply text", "source1", "journalist");
+    db.addPendingReplySentEvent("reply text", "source1");
     let sources = db.getSources();
     expect(sources.length).toEqual(1);
 
@@ -423,15 +413,16 @@ describe("pending_events update projected views", () => {
       item1: mockItemMetadata("item1", "source1"),
     });
 
-    db.addPendingReplySentEvent("item2", "reply text", "source1", "journalist");
+    db.addPendingReplySentEvent("reply text", "source1");
     let sourceWithItems = db.getSourceWithItems("source1");
     expect(sourceWithItems.items.length).toEqual(2);
+    const pendingReplyUuid = sourceWithItems.items[1].uuid;
 
-    db.addPendingItemEvent("item2", PendingEventType.ItemDeleted);
+    db.addPendingItemEvent(pendingReplyUuid, PendingEventType.ItemDeleted);
     sourceWithItems = db.getSourceWithItems("source1");
     expect(sourceWithItems.items.length).toEqual(1);
     expect(
-      sourceWithItems.items.find((i) => i.uuid === "item2"),
+      sourceWithItems.items.find((i) => i.uuid === pendingReplyUuid),
     ).toBeUndefined();
   });
 
