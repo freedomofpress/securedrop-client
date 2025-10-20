@@ -3,7 +3,7 @@ import { toTitleCase } from "../../../utils";
 import Item from "./Conversation/Item";
 import { Form, Input, Button } from "antd";
 import { useTranslation } from "react-i18next";
-import { useEffect, useRef, memo, useMemo, useCallback } from "react";
+import { useEffect, useRef, memo, useMemo, useCallback, useState } from "react";
 import { useAppDispatch } from "../../../hooks";
 import { fetchSources } from "../../../features/sources/sourcesSlice";
 import { fetchConversation } from "../../../features/conversation/conversationSlice";
@@ -20,6 +20,7 @@ const Conversation = memo(function Conversation({
   const dispatch = useAppDispatch();
   const [form] = Form.useForm();
   const scrollContainerRef = useRef<HTMLDivElement>(null);
+  const [messageValue, setMessageValue] = useState("");
 
   // Scroll to bottom when component mounts or items change
   useEffect(() => {
@@ -42,9 +43,18 @@ const Conversation = memo(function Conversation({
     [t, designation],
   );
 
+  const isSendDisabled = useMemo(
+    () => !messageValue || !messageValue.trim(),
+    [messageValue],
+  );
+
   const handleSubmit = useCallback(
     async (values: { message: string }) => {
       if (!sourceWithItems || !values.message?.trim()) return;
+
+      // Clear the form immediately for better UX
+      form.resetFields();
+      setMessageValue("");
 
       try {
         await window.electronAPI.addPendingReplySentEvent(
@@ -55,11 +65,11 @@ const Conversation = memo(function Conversation({
         // Update local state immediately with projected changes
         dispatch(fetchSources());
         dispatch(fetchConversation(sourceWithItems.uuid));
-
-        // Clear the form
-        form.resetFields();
       } catch (error) {
         console.error("Failed to send reply:", error);
+        // Restore the message on error
+        form.setFieldsValue({ message: values.message });
+        setMessageValue(values.message);
       }
     },
     [sourceWithItems, dispatch, form],
@@ -81,22 +91,26 @@ const Conversation = memo(function Conversation({
       </div>
       <div className="flex-shrink-0 p-4 pt-0">
         <Form form={form} layout="vertical" onFinish={handleSubmit}>
-          <Form.Item name="message" style={{ marginBottom: 0 }}>
-            <div className="relative">
+          <div className="relative">
+            <Form.Item name="message" style={{ marginBottom: 0 }}>
               <Input.TextArea
+                data-testid="reply-textarea"
                 rows={4}
                 placeholder={placeholderText}
                 className="w-full border border-gray-300 rounded-lg p-3 text-gray-900 resize-none focus:outline-none focus:ring-2 focus:ring-blue-500 conversation-textarea"
+                onChange={(e) => setMessageValue(e.target.value)}
               />
-              <Button
-                type="link"
-                htmlType="submit"
-                className="text-blue-600 hover:text-blue-800 font-medium conversation-send-btn"
-              >
-                {t("conversation.sendButton")}
-              </Button>
-            </div>
-          </Form.Item>
+            </Form.Item>
+            <Button
+              data-testid="send-button"
+              type="link"
+              htmlType="submit"
+              disabled={isSendDisabled}
+              className="text-blue-600 hover:text-blue-800 font-medium conversation-send-btn"
+            >
+              {t("conversation.sendButton")}
+            </Button>
+          </div>
         </Form>
       </div>
     </div>
