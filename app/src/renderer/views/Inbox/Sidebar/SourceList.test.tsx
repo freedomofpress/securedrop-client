@@ -4,6 +4,7 @@ import userEvent from "@testing-library/user-event";
 import React from "react";
 import SourceList from "./SourceList";
 import type { Source as SourceType } from "../../../../types";
+import { PendingEventType } from "../../../../types";
 import type { SourceProps } from "./SourceList/Source";
 import { renderWithProviders } from "../../../test-component-setup";
 
@@ -167,12 +168,11 @@ describe("Sources Component", () => {
     // Reset mocks
     vi.clearAllMocks();
 
-    // Mock electronAPI
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    (window as any).electronAPI = {
+    // Mock electronAPI with partial implementation for these tests
+    window.electronAPI = {
       getSources: vi.fn().mockResolvedValue(mockSources),
       syncMetadata: vi.fn().mockResolvedValue(undefined),
-    };
+    } as Partial<typeof window.electronAPI> as typeof window.electronAPI;
   });
 
   afterEach(() => {
@@ -670,6 +670,397 @@ describe("Sources Component", () => {
 
       // Should still be in date descending order: source-4 (newer), source-2 (older)
       expect(sourceOrder).toEqual(["source-source-4", "source-source-2"]);
+    });
+  });
+
+  describe("Bulk delete functionality", () => {
+    beforeEach(() => {
+      window.electronAPI.addPendingSourceEvent = vi
+        .fn()
+        .mockResolvedValue(BigInt(123));
+    });
+
+    it("shows modal when delete button is clicked with single source selected", async () => {
+      renderSourceList();
+
+      await waitFor(() => {
+        expect(screen.getByTestId("source-source-1")).toBeInTheDocument();
+      });
+
+      // Select one source
+      const checkbox = screen.getByTestId("source-checkbox-source-1");
+      await userEvent.click(checkbox);
+
+      // Click bulk delete button
+      const deleteButton = screen.getByTestId("bulk-delete-button");
+      await userEvent.click(deleteButton);
+
+      // Check that modal is displayed
+      await waitFor(() => {
+        expect(screen.getByTestId("delete-modal")).toBeInTheDocument();
+        expect(screen.getByTestId("delete-modal-title")).toBeInTheDocument();
+        expect(screen.getByTestId("delete-modal-content")).toBeInTheDocument();
+      });
+
+      // Check that all three buttons are present
+      expect(
+        screen.getByTestId("delete-modal-cancel-button"),
+      ).toBeInTheDocument();
+      expect(
+        screen.getByTestId("delete-modal-delete-conversation-button"),
+      ).toBeInTheDocument();
+      expect(
+        screen.getByTestId("delete-modal-delete-account-button"),
+      ).toBeInTheDocument();
+    });
+
+    it("shows modal with correct message for multiple sources", async () => {
+      renderSourceList();
+
+      await waitFor(() => {
+        expect(screen.getByTestId("source-source-1")).toBeInTheDocument();
+      });
+
+      // Select two sources
+      await userEvent.click(screen.getByTestId("source-checkbox-source-1"));
+      await userEvent.click(screen.getByTestId("source-checkbox-source-2"));
+
+      // Click bulk delete button
+      const deleteButton = screen.getByTestId("bulk-delete-button");
+      await userEvent.click(deleteButton);
+
+      // Check that modal is displayed
+      await waitFor(() => {
+        expect(screen.getByTestId("delete-modal")).toBeInTheDocument();
+        expect(screen.getByTestId("delete-modal-title")).toBeInTheDocument();
+        expect(screen.getByTestId("delete-modal-content")).toBeInTheDocument();
+      });
+
+      // Check that all three buttons are present with correct text for multiple sources
+      expect(
+        screen.getByTestId("delete-modal-cancel-button"),
+      ).toBeInTheDocument();
+      expect(
+        screen.getByTestId("delete-modal-delete-conversation-button"),
+      ).toBeInTheDocument();
+      expect(
+        screen.getByTestId("delete-modal-delete-account-button"),
+      ).toBeInTheDocument();
+    });
+
+    it("calls addPendingSourceEvent with SourceDeleted when Delete Account is clicked", async () => {
+      renderSourceList();
+
+      await waitFor(() => {
+        expect(screen.getByTestId("source-source-1")).toBeInTheDocument();
+      });
+
+      // Select one source
+      await userEvent.click(screen.getByTestId("source-checkbox-source-1"));
+
+      // Click bulk delete button
+      const deleteButton = screen.getByTestId("bulk-delete-button");
+      await userEvent.click(deleteButton);
+
+      // Wait for modal to appear and click "Delete Account" button
+      await waitFor(() => {
+        expect(
+          screen.getByTestId("delete-modal-delete-account-button"),
+        ).toBeInTheDocument();
+      });
+
+      const deleteAccountButton = screen.getByTestId(
+        "delete-modal-delete-account-button",
+      );
+      await userEvent.click(deleteAccountButton);
+
+      await waitFor(() => {
+        expect(window.electronAPI.addPendingSourceEvent).toHaveBeenCalledWith(
+          "source-1",
+          PendingEventType.SourceDeleted,
+        );
+      });
+    });
+
+    it("calls addPendingSourceEvent with SourceConversationDeleted when Delete Conversation is clicked", async () => {
+      renderSourceList();
+
+      await waitFor(() => {
+        expect(screen.getByTestId("source-source-1")).toBeInTheDocument();
+      });
+
+      // Select one source
+      await userEvent.click(screen.getByTestId("source-checkbox-source-1"));
+
+      // Click bulk delete button
+      const deleteButton = screen.getByTestId("bulk-delete-button");
+      await userEvent.click(deleteButton);
+
+      // Wait for modal to appear and click "Delete Conversation" button
+      await waitFor(() => {
+        expect(
+          screen.getByTestId("delete-modal-delete-conversation-button"),
+        ).toBeInTheDocument();
+      });
+
+      const deleteConversationButton = screen.getByTestId(
+        "delete-modal-delete-conversation-button",
+      );
+      await userEvent.click(deleteConversationButton);
+
+      await waitFor(() => {
+        expect(window.electronAPI.addPendingSourceEvent).toHaveBeenCalledWith(
+          "source-1",
+          PendingEventType.SourceConversationDeleted,
+        );
+      });
+    });
+
+    it("calls addPendingSourceEvent for all selected sources", async () => {
+      renderSourceList();
+
+      await waitFor(() => {
+        expect(screen.getByTestId("source-source-1")).toBeInTheDocument();
+      });
+
+      // Select multiple sources
+      await userEvent.click(screen.getByTestId("source-checkbox-source-1"));
+      await userEvent.click(screen.getByTestId("source-checkbox-source-2"));
+      await userEvent.click(screen.getByTestId("source-checkbox-source-3"));
+
+      // Click bulk delete button
+      const deleteButton = screen.getByTestId("bulk-delete-button");
+      await userEvent.click(deleteButton);
+
+      // Wait for modal to appear and click "Delete Accounts" button
+      await waitFor(() => {
+        expect(
+          screen.getByTestId("delete-modal-delete-account-button"),
+        ).toBeInTheDocument();
+      });
+
+      const deleteAccountsButton = screen.getByTestId(
+        "delete-modal-delete-account-button",
+      );
+      await userEvent.click(deleteAccountsButton);
+
+      await waitFor(() => {
+        const addPendingSourceEvent = window.electronAPI.addPendingSourceEvent;
+        expect(addPendingSourceEvent).toHaveBeenCalledTimes(3);
+        expect(addPendingSourceEvent).toHaveBeenCalledWith(
+          "source-1",
+          PendingEventType.SourceDeleted,
+        );
+        expect(addPendingSourceEvent).toHaveBeenCalledWith(
+          "source-2",
+          PendingEventType.SourceDeleted,
+        );
+        expect(addPendingSourceEvent).toHaveBeenCalledWith(
+          "source-3",
+          PendingEventType.SourceDeleted,
+        );
+      });
+    });
+
+    it("does not call addPendingSourceEvent when Cancel is clicked", async () => {
+      renderSourceList();
+
+      await waitFor(() => {
+        expect(screen.getByTestId("source-source-1")).toBeInTheDocument();
+      });
+
+      // Select one source
+      await userEvent.click(screen.getByTestId("source-checkbox-source-1"));
+
+      // Click bulk delete button
+      const deleteButton = screen.getByTestId("bulk-delete-button");
+      await userEvent.click(deleteButton);
+
+      // Wait for modal to appear and click "Cancel" button
+      await waitFor(() => {
+        expect(
+          screen.getByTestId("delete-modal-cancel-button"),
+        ).toBeInTheDocument();
+      });
+
+      const cancelButton = screen.getByTestId("delete-modal-cancel-button");
+      await userEvent.click(cancelButton);
+
+      // Wait a bit to ensure addPendingSourceEvent is not called
+      await new Promise((resolve) => setTimeout(resolve, 100));
+
+      expect(window.electronAPI.addPendingSourceEvent).not.toHaveBeenCalled();
+    });
+
+    it("clears selection after deleting sources", async () => {
+      renderSourceList();
+
+      await waitFor(() => {
+        expect(screen.getByTestId("source-source-1")).toBeInTheDocument();
+      });
+
+      // Select sources
+      const checkbox1 = screen.getByTestId("source-checkbox-source-1");
+      const checkbox2 = screen.getByTestId("source-checkbox-source-2");
+      await userEvent.click(checkbox1);
+      await userEvent.click(checkbox2);
+
+      // Verify they are checked
+      expect(checkbox1).toBeChecked();
+      expect(checkbox2).toBeChecked();
+
+      // Click bulk delete button
+      const deleteButton = screen.getByTestId("bulk-delete-button");
+      await userEvent.click(deleteButton);
+
+      // Wait for modal to appear and click "Delete Accounts" button
+      await waitFor(() => {
+        expect(
+          screen.getByTestId("delete-modal-delete-account-button"),
+        ).toBeInTheDocument();
+      });
+
+      const deleteAccountsButton = screen.getByTestId(
+        "delete-modal-delete-account-button",
+      );
+      await userEvent.click(deleteAccountsButton);
+
+      // Wait for the operation to complete
+      await waitFor(() => {
+        expect(window.electronAPI.addPendingSourceEvent).toHaveBeenCalled();
+      });
+
+      // Checkboxes should be unchecked
+      await waitFor(() => {
+        expect(checkbox1).not.toBeChecked();
+        expect(checkbox2).not.toBeChecked();
+      });
+    });
+  });
+
+  describe("handleToggleStar", () => {
+    beforeEach(() => {
+      // Mock the addPendingSourceEvent function
+      window.electronAPI.addPendingSourceEvent = vi
+        .fn()
+        .mockResolvedValue(BigInt(123));
+    });
+
+    it("calls addPendingSourceEvent with Starred when source is unstarred", async () => {
+      // Create a mock source that is not starred
+      const unstarredSource = {
+        ...mockSources[0],
+        data: { ...mockSources[0].data, is_starred: false },
+      };
+
+      renderSourceList([unstarredSource]);
+
+      await waitFor(() => {
+        expect(screen.getByTestId("source-source-1")).toBeInTheDocument();
+      });
+
+      // Click the star icon to star the source
+      const starButton = screen.getByTestId("star-button-source-1");
+      await userEvent.click(starButton);
+
+      await waitFor(() => {
+        expect(window.electronAPI.addPendingSourceEvent).toHaveBeenCalledWith(
+          "source-1",
+          PendingEventType.Starred,
+        );
+      });
+    });
+
+    it("calls addPendingSourceEvent with Unstarred when source is starred", async () => {
+      // Create a mock source that is starred
+      const starredSources = [
+        {
+          ...mockSources[0],
+          data: { ...mockSources[0].data, is_starred: true },
+        },
+        ...mockSources.slice(1),
+      ];
+
+      // Override getSources mock to return our custom sources
+      vi.mocked(window.electronAPI.getSources).mockResolvedValue(
+        starredSources,
+      );
+
+      renderSourceList(starredSources);
+
+      await waitFor(() => {
+        expect(screen.getByTestId("source-source-1")).toBeInTheDocument();
+      });
+
+      // Click the star icon to unstar the source
+      const starButton = screen.getByTestId("star-button-source-1");
+      await userEvent.click(starButton);
+
+      await waitFor(() => {
+        expect(window.electronAPI.addPendingSourceEvent).toHaveBeenCalledWith(
+          "source-1",
+          PendingEventType.Unstarred,
+        );
+      });
+    });
+
+    it("handles multiple star toggles correctly", async () => {
+      const sources = [
+        {
+          ...mockSources[0],
+          data: { ...mockSources[0].data, is_starred: false },
+        },
+        {
+          ...mockSources[1],
+          data: { ...mockSources[1].data, is_starred: true },
+        },
+        {
+          ...mockSources[2],
+          data: { ...mockSources[2].data, is_starred: false },
+        },
+      ];
+
+      renderSourceList(sources);
+
+      await waitFor(() => {
+        expect(screen.getByTestId("source-source-1")).toBeInTheDocument();
+      });
+
+      // Star the first source (unstarred -> starred)
+      const starButton1 = screen.getByTestId("star-button-source-1");
+      await userEvent.click(starButton1);
+
+      await waitFor(() => {
+        expect(window.electronAPI.addPendingSourceEvent).toHaveBeenCalledWith(
+          "source-1",
+          PendingEventType.Starred,
+        );
+      });
+
+      // Unstar the second source (starred -> unstarred)
+      const starButton2 = screen.getByTestId("star-button-source-2");
+      await userEvent.click(starButton2);
+
+      await waitFor(() => {
+        expect(window.electronAPI.addPendingSourceEvent).toHaveBeenCalledWith(
+          "source-2",
+          PendingEventType.Unstarred,
+        );
+      });
+
+      // Star the third source (unstarred -> starred)
+      const starButton3 = screen.getByTestId("star-button-source-3");
+      await userEvent.click(starButton3);
+
+      await waitFor(() => {
+        expect(window.electronAPI.addPendingSourceEvent).toHaveBeenCalledWith(
+          "source-3",
+          PendingEventType.Starred,
+        );
+      });
+
+      // Verify all three calls were made
+      expect(window.electronAPI.addPendingSourceEvent).toHaveBeenCalledTimes(3);
     });
   });
 });

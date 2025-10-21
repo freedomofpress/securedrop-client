@@ -1,6 +1,7 @@
 import type { SourceWithItems } from "../../../../types";
 import { toTitleCase } from "../../../utils";
 import Item from "./Conversation/Item";
+import EmptyConversation from "./EmptyConversation";
 import { Form, Input, Button } from "antd";
 import { useTranslation } from "react-i18next";
 import { useEffect, useRef, memo, useMemo } from "react";
@@ -39,17 +40,29 @@ const Conversation = memo(function Conversation({
 
   if (!sourceWithItems) return null;
 
+  const hasItems = sourceWithItems.items.length > 0;
+
   return (
     <div className="flex flex-col h-full w-full min-h-0">
       <div className="flex-1 min-h-0 relative">
-        <div
-          ref={scrollContainerRef}
-          className="absolute inset-0 overflow-y-auto overflow-x-hidden p-4 pb-0"
-        >
-          {sourceWithItems.items.map((item) => (
-            <Item key={item.uuid} item={item} designation={designation || ""} />
-          ))}
-        </div>
+        {hasItems ? (
+          <div
+            ref={scrollContainerRef}
+            className="absolute inset-0 overflow-y-auto overflow-x-hidden p-4 pb-0"
+          >
+            {sourceWithItems.items.map((item) => (
+              <Item
+                key={item.uuid}
+                item={item}
+                designation={designation || ""}
+              />
+            ))}
+          </div>
+        ) : (
+          <div className="flex items-center justify-center h-full">
+            <EmptyConversation />
+          </div>
+        )}
       </div>
       <div className="flex-shrink-0 p-4 pt-0">
         <Form layout="vertical">
