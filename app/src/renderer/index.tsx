@@ -2,6 +2,7 @@ import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 import { MemoryRouter } from "react-router";
 import { Provider } from "react-redux";
+import { ConfigProvider } from "antd";
 import "@ant-design/v5-patch-for-react-19";
 
 import "./i18n";
@@ -11,12 +12,16 @@ import { setupStore } from "./store";
 
 const store = setupStore();
 
-createRoot(document.getElementById("root")!).render(
-  <StrictMode>
-    <Provider store={store}>
-      <MemoryRouter initialEntries={["/"]}>
-        <App />
-      </MemoryRouter>
-    </Provider>
-  </StrictMode>,
-);
+window.electronAPI.getCSPNonce().then((nonce) => {
+  createRoot(document.getElementById("root")!).render(
+    <StrictMode>
+      <ConfigProvider csp={{ nonce }}>
+        <Provider store={store}>
+          <MemoryRouter initialEntries={["/"]}>
+            <App />
+          </MemoryRouter>
+        </Provider>
+      </ConfigProvider>
+    </StrictMode>,
+  );
+});
