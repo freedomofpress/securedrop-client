@@ -57,21 +57,27 @@ WITH
             CASE
                 WHEN type = 5 THEN true -- Starred
                 WHEN type = 6 THEN false -- Unstarred
-            END AS starred_value
+            END as starred_value
         FROM
             (
                 SELECT
                     source_uuid,
-                    type
+                    type,
+                    -- Order events to select most recent
+                    ROW_NUMBER() OVER (
+                        PARTITION BY
+                            source_uuid
+                        ORDER BY
+                            snowflake_id DESC
+                    ) AS rn
                 FROM
                     pending_events
                 WHERE
-                    type in (5, 6) -- Starred or Unstarred
-                ORDER BY
-                    snowflake_id DESC
-                LIMIT
-                    1
-            )
+                    type IN (5, 6) -- Starred or Unstarred
+                    AND source_uuid IS NOT NULL
+            ) latest
+        WHERE
+            rn = 1
     )
 SELECT
     sources.uuid,
