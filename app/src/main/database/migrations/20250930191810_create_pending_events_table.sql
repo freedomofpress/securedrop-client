@@ -1,11 +1,11 @@
 -- migrate:up
 CREATE TABLE
     pending_events (
-        snowflake_id INTEGER PRIMARY KEY,
-        source_uuid INTEGER REFERENCES sources (uuid),
+        snowflake_id TEXT PRIMARY KEY,
+        source_uuid TEXT REFERENCES sources (uuid),
         -- pending items may not exist in the items table, so 
         -- we don't add the fkey constraint
-        item_uuid INTEGER,
+        item_uuid TEXT,
         type INTEGER NOT NULL,
         -- additional event data
         data json,

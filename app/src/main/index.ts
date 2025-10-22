@@ -235,14 +235,14 @@ app.whenReady().then(() => {
       _event,
       sourceUuid: string,
       type: PendingEventType,
-    ): Promise<bigint> => {
+    ): Promise<string> => {
       return db.addPendingSourceEvent(sourceUuid, type);
     },
   );
 
   ipcMain.handle(
     "addPendingReplySentEvent",
-    async (_event, text: string, sourceUuid: string): Promise<bigint> => {
+    async (_event, text: string, sourceUuid: string): Promise<string> => {
       return db.addPendingReplySentEvent(text, sourceUuid);
     },
   );
@@ -253,7 +253,7 @@ app.whenReady().then(() => {
       _event,
       itemUuid: string,
       type: PendingEventType,
-    ): Promise<bigint> => {
+    ): Promise<string> => {
       return db.addPendingItemEvent(itemUuid, type);
     },
   );

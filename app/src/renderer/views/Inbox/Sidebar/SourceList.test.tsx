@@ -107,6 +107,7 @@ describe("Sources Component", () => {
       data: {
         fingerprint: "fingerprint-1",
         is_starred: false,
+        is_seen: false,
         journalist_designation: "alice wonderland",
         last_updated: "2024-01-15T10:30:00Z",
         public_key: "key-1",
@@ -122,6 +123,7 @@ describe("Sources Component", () => {
       data: {
         fingerprint: "fingerprint-2",
         is_starred: true,
+        is_seen: true,
         journalist_designation: "bob builder",
         last_updated: "2024-01-16T15:45:00Z",
         public_key: "key-2",
@@ -137,6 +139,7 @@ describe("Sources Component", () => {
       data: {
         fingerprint: "fingerprint-3",
         is_starred: false,
+        is_seen: false,
         journalist_designation: "charlie chaplin",
         last_updated: "2024-01-14T09:15:00Z",
         public_key: "key-3",
@@ -152,6 +155,7 @@ describe("Sources Component", () => {
       data: {
         fingerprint: "fingerprint-4",
         is_starred: true,
+        is_seen: true,
         journalist_designation: "diana ross",
         last_updated: "2024-01-17T11:20:00Z",
         public_key: "key-4",
