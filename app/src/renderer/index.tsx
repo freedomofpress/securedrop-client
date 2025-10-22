@@ -12,6 +12,12 @@ import { setupStore } from "./store";
 
 const store = setupStore();
 
+// Expose store to window for testing
+if (typeof window !== "undefined") {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  (window as any).__REDUX_STORE__ = store;
+}
+
 window.electronAPI.getCSPNonce().then((nonce) => {
   createRoot(document.getElementById("root")!).render(
     <StrictMode>
