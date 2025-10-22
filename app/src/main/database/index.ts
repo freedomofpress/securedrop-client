@@ -101,10 +101,6 @@ export class DB {
   private selectSourceById: Statement<[string], SourceRow>;
   private selectItemsBySourceId: Statement<[string], ItemRow>;
   private selectAllJournalists: Statement<[], JournalistRow>;
-  private selectPendingUnseenItemsBySource: Statement<
-    { source_uuid: string },
-    { uuid: string }
-  >;
   private insertSourcePendingEvent: Statement<
     { snowflake_id: bigint; source_uuid: string; type: number },
     void
@@ -115,6 +111,15 @@ export class DB {
       item_uuid?: string;
       type: number;
       data?: string;
+    },
+    void
+  >;
+  private upsertPendingSeenItemEvent: Statement<
+    {
+      snowflake_id: bigint;
+      source_uuid: string;
+      item_uuid: string;
+      type: number;
     },
     void
   >;
@@ -218,22 +223,25 @@ export class DB {
       SELECT uuid, data FROM journalists
     `);
 
-    this.selectPendingUnseenItemsBySource = this.db.prepare(`
-      SELECT uuid FROM items_projected
-      WHERE source_uuid = @source_uuid
-      AND NOT EXISTS (
-        SELECT 1 FROM pending_events
-        WHERE pending_events.item_uuid = items_projected.uuid
-        AND pending_events.type = ${PendingEventType.Seen}
-      )
-    `);
-
     this.insertSourcePendingEvent = this.db.prepare(`
       INSERT INTO pending_events (snowflake_id, source_uuid, type) VALUES (@snowflake_id, @source_uuid, @type)
     `);
 
     this.insertItemPendingEvent = this.db.prepare(`
       INSERT INTO pending_events (snowflake_id, item_uuid, type, data) VALUES(@snowflake_id, @item_uuid, @type, @data)
+    `);
+
+    this.upsertPendingSeenItemEvent = this.db.prepare(`
+      INSERT INTO pending_events (snowflake_id, item_uuid, type)
+      SELECT @snowflake_id, @item_uuid, @type
+      WHERE EXISTS (
+        SELECT 1 FROM items
+        WHERE uuid = @item_uuid AND source_uuid = @source_uuid
+      )
+      AND NOT EXISTS (
+        SELECT 1 FROM pending_events
+        WHERE item_uuid = @item_uuid AND type = @type
+      )
     `);
   }
 
@@ -702,28 +710,25 @@ export class DB {
 
   addPendingItemsSeenBatch(sourceUuid: string, itemUuids: string[]): bigint[] {
     return this.db!.transaction(() => {
-      // Query for items that don't have a Seen pending event yet
-      const unseenItems = this.selectPendingUnseenItemsBySource.all({
-        source_uuid: sourceUuid,
-      });
-
-      // Create a Set for efficient lookup
-      const itemUuidsSet = new Set(itemUuids);
-
-      // Filter to only include items in the provided itemUuids array
-      const itemsToMarkSeen = unseenItems.filter((item) =>
-        itemUuidsSet.has(item.uuid),
-      );
-
       const snowflakeIds: bigint[] = [];
 
-      // Batch insert Seen events for filtered items
-      for (const item of itemsToMarkSeen) {
-        const snowflakeId = this.addPendingItemEvent(
-          item.uuid,
-          PendingEventType.Seen,
-        );
-        snowflakeIds.push(snowflakeId);
+      for (const itemUuid of itemUuids) {
+        const snowflakeId = this.snowflake.generate({ timestamp: Date.now() });
+
+        // Conditionally insert Seen event only if:
+        // 1. Item belongs to the specified source
+        // 2. No Seen event exists for this item yet
+        const info = this.upsertPendingSeenItemEvent.run({
+          snowflake_id: snowflakeId,
+          source_uuid: sourceUuid,
+          item_uuid: itemUuid,
+          type: PendingEventType.Seen,
+        });
+
+        // Only add to results if the insert actually happened
+        if (info.changes > 0) {
+          snowflakeIds.push(snowflakeId);
+        }
       }
 
       return snowflakeIds;
