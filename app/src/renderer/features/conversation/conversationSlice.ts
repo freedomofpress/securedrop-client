@@ -21,6 +21,11 @@ export const fetchConversation = createAsyncThunk(
   async (sourceUuid: string) => {
     const sourceWithItems =
       await window.electronAPI.getSourceWithItems(sourceUuid);
+
+    // Mark all items in this conversation as seen
+    const itemUuids = sourceWithItems.items.map((item) => item.uuid);
+    await window.electronAPI.addPendingItemsSeenBatch(sourceUuid, itemUuids);
+
     return { sourceUuid, sourceWithItems };
   },
 );

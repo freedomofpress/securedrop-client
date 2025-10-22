@@ -114,6 +114,15 @@ export class DB {
     },
     void
   >;
+  private upsertPendingSeenItemEvent: Statement<
+    {
+      snowflake_id: bigint;
+      source_uuid: string;
+      item_uuid: string;
+      type: number;
+    },
+    void
+  >;
 
   constructor(dbDir?: string) {
     this.snowflake = new Snowflake(new Date("2000-01-01T00:00:00.000Z"));
@@ -220,6 +229,19 @@ export class DB {
 
     this.insertItemPendingEvent = this.db.prepare(`
       INSERT INTO pending_events (snowflake_id, item_uuid, type, data) VALUES(@snowflake_id, @item_uuid, @type, @data)
+    `);
+
+    this.upsertPendingSeenItemEvent = this.db.prepare(`
+      INSERT INTO pending_events (snowflake_id, item_uuid, type)
+      SELECT @snowflake_id, @item_uuid, @type
+      WHERE EXISTS (
+        SELECT 1 FROM items
+        WHERE uuid = @item_uuid AND source_uuid = @source_uuid
+      )
+      AND NOT EXISTS (
+        SELECT 1 FROM pending_events
+        WHERE item_uuid = @item_uuid AND type = @type
+      )
     `);
   }
 
@@ -684,5 +706,32 @@ export class DB {
       data: undefined,
     });
     return snowflakeID;
+  }
+
+  addPendingItemsSeenBatch(sourceUuid: string, itemUuids: string[]): bigint[] {
+    return this.db!.transaction(() => {
+      const snowflakeIds: bigint[] = [];
+
+      for (const itemUuid of itemUuids) {
+        const snowflakeId = this.snowflake.generate({ timestamp: Date.now() });
+
+        // Conditionally insert Seen event only if:
+        // 1. Item belongs to the specified source
+        // 2. No Seen event exists for this item yet
+        const info = this.upsertPendingSeenItemEvent.run({
+          snowflake_id: snowflakeId,
+          source_uuid: sourceUuid,
+          item_uuid: itemUuid,
+          type: PendingEventType.Seen,
+        });
+
+        // Only add to results if the insert actually happened
+        if (info.changes > 0) {
+          snowflakeIds.push(snowflakeId);
+        }
+      }
+
+      return snowflakeIds;
+    })();
   }
 }

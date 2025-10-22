@@ -444,4 +444,190 @@ describe("pending_events update projected views", () => {
     expect(sourceWithItems.items.length).toEqual(1);
     expect(sourceWithItems.items[0].uuid).toBe("item2");
   });
+
+  it("addPendingItemsSeenBatch should create Seen events for all items in source", () => {
+    db.updateSources({
+      source1: mockSourceMetadata("source1"),
+    });
+
+    db.updateItems({
+      item1: mockItemMetadata("item1", "source1"),
+      item2: mockItemMetadata("item2", "source1"),
+      item3: mockItemMetadata("item3", "source1"),
+    });
+
+    const snowflakeIds = db.addPendingItemsSeenBatch("source1", [
+      "item1",
+      "item2",
+      "item3",
+    ]);
+
+    // Should create 3 events for 3 items
+    expect(snowflakeIds.length).toEqual(3);
+
+    // All snowflake IDs should be unique
+    const uniqueIds = new Set(snowflakeIds);
+    expect(uniqueIds.size).toEqual(3);
+  });
+
+  it("addPendingItemsSeenBatch should be idempotent - no duplicates on second call", () => {
+    db.updateSources({
+      source1: mockSourceMetadata("source1"),
+    });
+
+    db.updateItems({
+      item1: mockItemMetadata("item1", "source1"),
+      item2: mockItemMetadata("item2", "source1"),
+      item3: mockItemMetadata("item3", "source1"),
+    });
+
+    // First call should create 3 events
+    const firstCallIds = db.addPendingItemsSeenBatch("source1", [
+      "item1",
+      "item2",
+      "item3",
+    ]);
+    expect(firstCallIds.length).toEqual(3);
+
+    // Second call should create 0 events (all items already have Seen events)
+    const secondCallIds = db.addPendingItemsSeenBatch("source1", [
+      "item1",
+      "item2",
+      "item3",
+    ]);
+    expect(secondCallIds.length).toEqual(0);
+  });
+
+  it("addPendingItemsSeenBatch should only create events for new items after sync", () => {
+    db.updateSources({
+      source1: mockSourceMetadata("source1"),
+    });
+
+    db.updateItems({
+      item1: mockItemMetadata("item1", "source1"),
+      item2: mockItemMetadata("item2", "source1"),
+    });
+
+    // First call creates events for 2 items
+    const firstCallIds = db.addPendingItemsSeenBatch("source1", [
+      "item1",
+      "item2",
+    ]);
+    expect(firstCallIds.length).toEqual(2);
+
+    // Add a new item
+    db.updateItems({
+      item3: mockItemMetadata("item3", "source1"),
+    });
+
+    // Second call should only create event for the new item
+    const secondCallIds = db.addPendingItemsSeenBatch("source1", [
+      "item1",
+      "item2",
+      "item3",
+    ]);
+    expect(secondCallIds.length).toEqual(1);
+  });
+
+  it("addPendingItemsSeenBatch should only affect specified source", () => {
+    db.updateSources({
+      source1: mockSourceMetadata("source1"),
+      source2: mockSourceMetadata("source2"),
+    });
+
+    db.updateItems({
+      item1: mockItemMetadata("item1", "source1"),
+      item2: mockItemMetadata("item2", "source1"),
+      item3: mockItemMetadata("item3", "source2"),
+      item4: mockItemMetadata("item4", "source2"),
+    });
+
+    // Mark source1 items as seen
+    const source1Ids = db.addPendingItemsSeenBatch("source1", [
+      "item1",
+      "item2",
+    ]);
+    expect(source1Ids.length).toEqual(2);
+
+    // source2 items should still be unseen
+    const source2Ids = db.addPendingItemsSeenBatch("source2", [
+      "item3",
+      "item4",
+    ]);
+    expect(source2Ids.length).toEqual(2);
+  });
+
+  it("addPendingItemsSeenBatch should return empty array for source with no items", () => {
+    db.updateSources({
+      source1: mockSourceMetadata("source1"),
+    });
+
+    const snowflakeIds = db.addPendingItemsSeenBatch("source1", []);
+    expect(snowflakeIds.length).toEqual(0);
+  });
+
+  it("addPendingItemsSeenBatch should only create events for specified items", () => {
+    db.updateSources({
+      source1: mockSourceMetadata("source1"),
+    });
+
+    db.updateItems({
+      item1: mockItemMetadata("item1", "source1"),
+      item2: mockItemMetadata("item2", "source1"),
+      item3: mockItemMetadata("item3", "source1"),
+    });
+
+    // Only mark item1 and item3 as seen, not item2
+    const snowflakeIds = db.addPendingItemsSeenBatch("source1", [
+      "item1",
+      "item3",
+    ]);
+
+    // Should only create 2 events
+    expect(snowflakeIds.length).toEqual(2);
+
+    // Calling again with all items should only create event for item2
+    const secondCallIds = db.addPendingItemsSeenBatch("source1", [
+      "item1",
+      "item2",
+      "item3",
+    ]);
+    expect(secondCallIds.length).toEqual(1);
+  });
+
+  it("addPendingItemsSeenBatch should handle empty itemUuids array", () => {
+    db.updateSources({
+      source1: mockSourceMetadata("source1"),
+    });
+
+    db.updateItems({
+      item1: mockItemMetadata("item1", "source1"),
+      item2: mockItemMetadata("item2", "source1"),
+    });
+
+    // Passing empty array should create no events
+    const snowflakeIds = db.addPendingItemsSeenBatch("source1", []);
+    expect(snowflakeIds.length).toEqual(0);
+  });
+
+  it("addPendingItemsSeenBatch should ignore items not in the source", () => {
+    db.updateSources({
+      source1: mockSourceMetadata("source1"),
+      source2: mockSourceMetadata("source2"),
+    });
+
+    db.updateItems({
+      item1: mockItemMetadata("item1", "source1"),
+      item2: mockItemMetadata("item2", "source2"),
+    });
+
+    // Try to mark item2 as seen, but it belongs to source2
+    const snowflakeIds = db.addPendingItemsSeenBatch("source1", [
+      "item1",
+      "item2",
+    ]);
+
+    // Should only create event for item1
+    expect(snowflakeIds.length).toEqual(1);
+  });
 });

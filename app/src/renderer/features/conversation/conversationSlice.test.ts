@@ -89,6 +89,7 @@ const mockSourceWithItems2: SourceWithItems = {
 describe("conversationSlice", () => {
   let store: ReturnType<typeof configureStore>;
   const mockGetSourceWithItems = vi.fn();
+  const mockAddPendingItemsSeenBatch = vi.fn();
 
   beforeEach(() => {
     // Create a test store with conversations slice
@@ -104,10 +105,12 @@ describe("conversationSlice", () => {
     // Mock electronAPI
     (window as any).electronAPI = {
       getSourceWithItems: mockGetSourceWithItems,
+      addPendingItemsSeenBatch: mockAddPendingItemsSeenBatch,
     };
 
     // Default mock implementations
     mockGetSourceWithItems.mockResolvedValue(mockSourceWithItems);
+    mockAddPendingItemsSeenBatch.mockResolvedValue([]);
   });
 
   afterEach(() => {
