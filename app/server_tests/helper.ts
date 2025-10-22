@@ -15,8 +15,6 @@ export class TestContext {
   public tempDir: string;
   public dbPath: string;
 
-  private static lastTOTP: string | null = null;
-
   private constructor(
     app: ElectronApplication,
     page: Page,
@@ -78,15 +76,22 @@ export class TestContext {
     });
 
     let code = totp.generate();
-
-    while (code === TestContext.lastTOTP) {
+    let lastOTP;
+    try {
+      lastOTP = fs
+        .readFileSync("/tmp/app-server_tests-totp", "utf-8")
+        .toString();
+    } catch (_error) {
+      lastOTP = "";
+    }
+    while (code === lastOTP) {
       // wait 1 second and try again
       await new Promise((resolve) => setTimeout(resolve, 1000));
       code = totp.generate();
     }
 
-    // Store the code globally for future comparison across all instances
-    TestContext.lastTOTP = code;
+    // Store the code for future comparison across all instances
+    fs.writeFileSync("/tmp/app-server_tests-totp", code);
     return code;
   }
 
