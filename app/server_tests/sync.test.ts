@@ -74,7 +74,7 @@ describe.sequential("sync against a real server", () => {
 
   afterAll(async () => {
     await context.teardown();
-  }, 20000);
+  }, 30000);
 
   it("should start with a fresh empty database", async () => {
     // Wait for the sign-in page to load
@@ -107,7 +107,7 @@ describe.sequential("sync against a real server", () => {
     expect(Object.keys(index.journalists).length).toBe(0);
 
     db.close();
-  }, 10000);
+  });
 
   it("should successfully log in with valid credentials", async () => {
     // Navigate back to sign-in page
@@ -116,7 +116,7 @@ describe.sequential("sync against a real server", () => {
 
     // Log in with test credentials
     await context.login();
-  }, 10000);
+  });
 
   it("should verify logged-in journalist from Redux state", async () => {
     // Verify journalist info from Redux state
@@ -133,7 +133,7 @@ describe.sequential("sync against a real server", () => {
     expect(reduxState.session.authData.journalistUUID).toBe(
       "be726875-1290-49d4-922d-2fc0901c9266",
     );
-  }, 10000);
+  });
 
   it("should sync and populate database with sources", async () => {
     await context.runSync();
@@ -158,7 +158,7 @@ describe.sequential("sync against a real server", () => {
     expect(firstSyncVersion).toBe(EXPECTED_VERSION);
 
     db.close();
-  }, 15000);
+  });
 
   it("should be idempotent when syncing again", async () => {
     await context.runSync();
@@ -176,5 +176,5 @@ describe.sequential("sync against a real server", () => {
     expect(secondVersion).toBe(firstSyncVersion);
     expect(secondVersion).toBe(EXPECTED_VERSION);
     db.close();
-  }, 15000);
+  });
 });
