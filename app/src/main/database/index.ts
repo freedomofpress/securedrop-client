@@ -700,17 +700,25 @@ export class DB {
     return snowflakeID;
   }
 
-  addPendingItemsSeenBatch(sourceUuid: string): bigint[] {
+  addPendingItemsSeenBatch(sourceUuid: string, itemUuids: string[]): bigint[] {
     return this.db!.transaction(() => {
       // Query for items that don't have a Seen pending event yet
       const unseenItems = this.selectPendingUnseenItemsBySource.all({
         source_uuid: sourceUuid,
       });
 
+      // Create a Set for efficient lookup
+      const itemUuidsSet = new Set(itemUuids);
+
+      // Filter to only include items in the provided itemUuids array
+      const itemsToMarkSeen = unseenItems.filter((item) =>
+        itemUuidsSet.has(item.uuid),
+      );
+
       const snowflakeIds: bigint[] = [];
 
-      // Batch insert Seen events
-      for (const item of unseenItems) {
+      // Batch insert Seen events for filtered items
+      for (const item of itemsToMarkSeen) {
         const snowflakeId = this.addPendingItemEvent(
           item.uuid,
           PendingEventType.Seen,

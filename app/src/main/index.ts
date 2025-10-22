@@ -250,8 +250,12 @@ app.whenReady().then(() => {
 
   ipcMain.handle(
     "addPendingItemsSeenBatch",
-    async (_event, sourceUuid: string): Promise<bigint[]> => {
-      return db.addPendingItemsSeenBatch(sourceUuid);
+    async (
+      _event,
+      sourceUuid: string,
+      itemUuids: string[],
+    ): Promise<bigint[]> => {
+      return db.addPendingItemsSeenBatch(sourceUuid, itemUuids);
     },
   );
 
