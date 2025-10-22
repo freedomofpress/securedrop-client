@@ -43,6 +43,7 @@ beforeEach(() => {
     request: vi.fn().mockResolvedValue({ data: "test" }),
     requestStream: vi.fn().mockResolvedValue({ sha256sum: "abc" }),
     getSystemLanguage: vi.fn().mockResolvedValue("en"),
+    getCSPNonce: vi.fn().mockResolvedValue("nonce"),
     // TODO: we may want a real mock here
     syncMetadata: vi.fn().mockRejectedValue(new Error("mock not implemented")),
     updateFetchStatus: vi

@@ -75,19 +75,8 @@ const electronAPI = {
   ),
   addPendingReplySentEvent: logIpcCall<bigint>(
     "addPendingReplySentEvent",
-    (
-      itemUuid: string,
-      text: string,
-      sourceUuid: string,
-      journalistUuid: string,
-    ) =>
-      ipcRenderer.invoke(
-        "addPendingReplySentEvent",
-        itemUuid,
-        text,
-        sourceUuid,
-        journalistUuid,
-      ),
+    (text: string, sourceUuid: string) =>
+      ipcRenderer.invoke("addPendingReplySentEvent", text, sourceUuid),
   ),
   addPendingItemEvent: logIpcCall<bigint>(
     "addPendingItemEvent",
@@ -101,6 +90,9 @@ const electronAPI = {
   ),
   shouldAutoLogin: logIpcCall<boolean>("shouldAutoLogin", () =>
     ipcRenderer.invoke("shouldAutoLogin"),
+  ),
+  getCSPNonce: logIpcCall<string>("getCSPNonce", () =>
+    ipcRenderer.invoke("getCSPNonce"),
   ),
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   onItemUpdate: (callback: (...args: any[]) => void) => {

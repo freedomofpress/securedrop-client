@@ -663,12 +663,8 @@ export class DB {
     return snowflakeID;
   }
 
-  addPendingReplySentEvent(
-    itemUuid: string,
-    text: string,
-    sourceUuid: string,
-    journalistUuid: string,
-  ): bigint {
+  addPendingReplySentEvent(text: string, sourceUuid: string): bigint {
+    const itemUuid = crypto.randomUUID();
     const snowflakeID = this.snowflake.generate({ timestamp: Date.now() });
     const replyData: ReplySentData = {
       metadata: {
@@ -676,7 +672,8 @@ export class DB {
         uuid: itemUuid,
         source: sourceUuid,
         size: text.length,
-        journalist_uuid: journalistUuid ?? "",
+        // The server sets the journalist_uuid when processing the event
+        journalist_uuid: "",
         is_deleted_by_source: false,
         seen_by: [],
       },

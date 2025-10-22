@@ -1,4 +1,5 @@
 .sign-in-container {
+  background-image: url("../../../resources/images/sign-in-background.svg");
   background-position: center;
 }
 

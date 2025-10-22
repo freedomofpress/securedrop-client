@@ -1,9 +1,13 @@
 import type { SourceWithItems } from "../../../../types";
 import { toTitleCase } from "../../../utils";
 import Item from "./Conversation/Item";
+import EmptyConversation from "./EmptyConversation";
 import { Form, Input, Button } from "antd";
 import { useTranslation } from "react-i18next";
-import { useEffect, useRef, memo, useMemo } from "react";
+import { useEffect, useRef, memo, useMemo, useCallback, useState } from "react";
+import { useAppDispatch } from "../../../hooks";
+import { fetchSources } from "../../../features/sources/sourcesSlice";
+import { fetchConversation } from "../../../features/conversation/conversationSlice";
 import "./Conversation.css";
 
 interface ConversationProps {
@@ -14,7 +18,10 @@ const Conversation = memo(function Conversation({
   sourceWithItems,
 }: ConversationProps) {
   const { t } = useTranslation("MainContent");
+  const dispatch = useAppDispatch();
+  const [form] = Form.useForm();
   const scrollContainerRef = useRef<HTMLDivElement>(null);
+  const [messageValue, setMessageValue] = useState("");
 
   // Scroll to bottom when component mounts or items change
   useEffect(() => {
@@ -37,38 +44,86 @@ const Conversation = memo(function Conversation({
     [t, designation],
   );
 
+  const isSendDisabled = useMemo(
+    () => !messageValue || !messageValue.trim(),
+    [messageValue],
+  );
+
+  const handleSubmit = useCallback(
+    async (values: { message: string }) => {
+      if (!sourceWithItems || !values.message?.trim()) return;
+
+      // Clear the form immediately for better UX
+      form.resetFields();
+      setMessageValue("");
+
+      try {
+        await window.electronAPI.addPendingReplySentEvent(
+          values.message,
+          sourceWithItems.uuid,
+        );
+
+        // Update local state immediately with projected changes
+        dispatch(fetchSources());
+        dispatch(fetchConversation(sourceWithItems.uuid));
+      } catch (error) {
+        console.error("Failed to send reply:", error);
+        // Restore the message on error
+        form.setFieldsValue({ message: values.message });
+        setMessageValue(values.message);
+      }
+    },
+    [sourceWithItems, dispatch, form],
+  );
+
   if (!sourceWithItems) return null;
+
+  const hasItems = sourceWithItems.items.length > 0;
 
   return (
     <div className="flex flex-col h-full w-full min-h-0">
       <div className="flex-1 min-h-0 relative">
-        <div
-          ref={scrollContainerRef}
-          className="absolute inset-0 overflow-y-auto overflow-x-hidden p-4 pb-0"
-        >
-          {sourceWithItems.items.map((item) => (
-            <Item key={item.uuid} item={item} designation={designation || ""} />
-          ))}
-        </div>
+        {hasItems ? (
+          <div
+            ref={scrollContainerRef}
+            className="absolute inset-0 overflow-y-auto overflow-x-hidden p-4 pb-0"
+          >
+            {sourceWithItems.items.map((item) => (
+              <Item
+                key={item.uuid}
+                item={item}
+                designation={designation || ""}
+              />
+            ))}
+          </div>
+        ) : (
+          <div className="flex items-center justify-center h-full">
+            <EmptyConversation />
+          </div>
+        )}
       </div>
       <div className="flex-shrink-0 p-4 pt-0">
-        <Form layout="vertical">
-          <Form.Item style={{ marginBottom: 0 }}>
-            <div className="relative">
+        <Form form={form} layout="vertical" onFinish={handleSubmit}>
+          <div className="relative">
+            <Form.Item name="message" style={{ marginBottom: 0 }}>
               <Input.TextArea
+                data-testid="reply-textarea"
                 rows={4}
                 placeholder={placeholderText}
                 className="w-full border border-gray-300 rounded-lg p-3 text-gray-900 resize-none focus:outline-none focus:ring-2 focus:ring-blue-500 conversation-textarea"
+                onChange={(e) => setMessageValue(e.target.value)}
               />
-              <Button
-                type="link"
-                htmlType="submit"
-                className="text-blue-600 hover:text-blue-800 font-medium conversation-send-btn"
-              >
-                {t("conversation.sendButton")}
-              </Button>
-            </div>
-          </Form.Item>
+            </Form.Item>
+            <Button
+              data-testid="send-button"
+              type="link"
+              htmlType="submit"
+              disabled={isSendDisabled}
+              className="text-blue-600 hover:text-blue-800 font-medium conversation-send-btn"
+            >
+              {t("conversation.sendButton")}
+            </Button>
+          </div>
         </Form>
       </div>
     </div>

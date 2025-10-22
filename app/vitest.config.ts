@@ -72,7 +72,6 @@ export default defineConfig({
         test: {
           name: "server", // Tests that require a running server
           include: ["server_tests/**/*.test.ts"],
-          globalSetup: ["server_tests/globalSetup.ts"],
           globals: true,
         },
         define: {

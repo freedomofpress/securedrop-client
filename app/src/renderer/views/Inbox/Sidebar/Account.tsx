@@ -54,7 +54,7 @@ function Account() {
       {session.status == SessionStatus.Auth ? (
         <>
           <Typography.Text>
-            <User size={20} style={{ marginRight: 6, verticalAlign: "top" }} />
+            <User size={20} className="mr-1.5 align-top" />
             {getCurrentJournalistName()}
           </Typography.Text>
 
@@ -63,11 +63,12 @@ function Account() {
             icon={<RefreshCw size={18} />}
             size="small"
             onClick={sync}
+            data-testid="sync-button"
           />
 
           <Button
             type="dashed"
-            icon={<LogOut size={16} style={{ verticalAlign: "middle" }} />}
+            icon={<LogOut size={16} />}
             size="small"
             onClick={signOut}
           >
@@ -82,9 +83,10 @@ function Account() {
 
           <Button
             type="dashed"
-            icon={<LogIn size={16} style={{ verticalAlign: "middle" }} />}
+            icon={<LogIn size={16} />}
             size="small"
             onClick={signIn}
+            data-testid="signin-form-button"
           >
             {t("account.signIn")}
           </Button>

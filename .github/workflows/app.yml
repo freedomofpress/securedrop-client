@@ -179,6 +179,8 @@ jobs:
       # build-essential, curl, libssl-dev and pkg-config are already installed
       - name: Install Rust to build sd-proxy
         uses: dtolnay/rust-toolchain@1.87.0
+      - name: Install ffmpeg for video recording
+        run: sudo apt-get update && sudo apt-get install -y ffmpeg
       - name: Run tests
         run: |
           # Start the server in the background
@@ -186,6 +188,40 @@ jobs:
           # Wait for server to come up
           echo "Polling with curl --silent until the server is up..."
           while ! curl --silent --fail --output /dev/null http://127.0.0.1:8081; do sleep 5; done
+
+          # Build the proxy Rust code before the recording starts to reduce delay
+          cargo build
+
+          # Start Xvfb on display :99
+          Xvfb :99 -screen 0 1920x1080x24 &
+          XVFB_PID=$!
+          export DISPLAY=:99
+          sleep 1  # Give Xvfb a moment to start
+
+          # Start video recording
+          ffmpeg -video_size 1920x1080 -framerate 25 -f x11grab -i :99 \
+            -codec:v libx264 -preset ultrafast -pix_fmt yuv420p \
+            server-test-recording.mp4 &
+          FFMPEG_PID=$!
+          sleep 1  # Give ffmpeg a moment to start
+
+          # Setup cleanup trap to ensure recording is stopped even if tests fail
+          cleanup() {
+            echo "Stopping video recording and Xvfb..."
+            kill $FFMPEG_PID 2>/dev/null || true
+            sleep 2  # Give ffmpeg time to finish writing
+            kill $XVFB_PID 2>/dev/null || true
+          }
+          trap cleanup EXIT
+
           # Run tests
           cd app
           pnpm server-test
+      - name: Upload test video
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: server-test-recording
+          path: server-test-recording.mp4
+          retention-days: 30
+          if-no-files-found: warn
