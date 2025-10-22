@@ -28,6 +28,7 @@ const createMockSource = (overrides: Partial<SourceType> = {}): SourceType => ({
   data: {
     fingerprint: "test-fingerprint",
     is_starred: false,
+    is_seen: false,
     journalist_designation: "test source",
     last_updated: "2025-01-15T10:00:00Z",
     public_key: "test-public-key",
@@ -278,6 +279,7 @@ describe("Source Component", () => {
         uuid: "source-1",
         journalist_designation: "test source",
         is_starred: false,
+        is_seen: false,
         last_updated: "2025-01-15T10:00:00Z",
         public_key: "test-public-key",
         fingerprint: "test-fingerprint",

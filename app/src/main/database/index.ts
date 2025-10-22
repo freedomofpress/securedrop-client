@@ -10,7 +10,6 @@ import {
   Index,
   SourceMetadata,
   ItemMetadata,
-  MetadataResponse,
   Source,
   SourceWithItems,
   SourceRow,
@@ -22,6 +21,13 @@ import {
   Item,
   PendingEventType,
   ReplySentData,
+  PendingEvent,
+  PendingEventRow,
+  SourceTarget,
+  ItemTarget,
+  PendingEventData,
+  BatchResponse,
+  EventStatus,
 } from "../../types";
 
 interface KeyObject {
@@ -61,6 +67,7 @@ export class DB {
     [],
     { uuid: string; version: string }
   >;
+  private selectSourceVersion: Statement<{ uuid: string }, { version: string }>;
   private upsertSource: Statement<
     { uuid: string; data: string; version: string },
     void
@@ -71,6 +78,7 @@ export class DB {
     [],
     { uuid: string; version: string }
   >;
+  private selectItemVersion: Statement<{ uuid: string }, { version: string }>;
   private selectItemFilenameSource: Statement<
     { uuid: string },
     { filename: string; source_uuid: string }
@@ -81,6 +89,7 @@ export class DB {
     void
   >;
   private deleteItem: Statement<{ uuid: string }, void>;
+  private deleteItemsBySourceId: Statement<{ source_uuid: string }, void>;
   private updateItemFetchStatus: Statement<{
     uuid: string;
     fetch_status: number;
@@ -102,12 +111,12 @@ export class DB {
   private selectItemsBySourceId: Statement<[string], ItemRow>;
   private selectAllJournalists: Statement<[], JournalistRow>;
   private insertSourcePendingEvent: Statement<
-    { snowflake_id: bigint; source_uuid: string; type: number },
+    { snowflake_id: string; source_uuid: string; type: number },
     void
   >;
   private insertItemPendingEvent: Statement<
     {
-      snowflake_id: bigint;
+      snowflake_id: string;
       item_uuid?: string;
       type: number;
       data?: string;
@@ -123,6 +132,8 @@ export class DB {
     },
     void
   >;
+  private deletePendingEvent: Statement<{ snowflake_id: string }, void>;
+  private selectPendingEvents: Statement<[], PendingEventRow>;
 
   constructor(dbDir?: string) {
     this.snowflake = new Snowflake(new Date("2000-01-01T00:00:00.000Z"));
@@ -157,6 +168,9 @@ export class DB {
     this.selectAllSourceVersion = this.db.prepare(
       "SELECT uuid, version FROM sources_projected",
     );
+    this.selectSourceVersion = this.db.prepare(
+      "SELECT version FROM sources_projected WHERE uuid = @uuid",
+    );
     this.upsertSource = this.db.prepare(
       "INSERT INTO sources (uuid, data, version) VALUES (@uuid, @data, @version) ON CONFLICT(uuid) DO UPDATE SET data=@data, version=@version",
     );
@@ -166,6 +180,9 @@ export class DB {
 
     this.selectAllItemVersion = this.db.prepare(
       "SELECT uuid, version FROM items_projected",
+    );
+    this.selectItemVersion = this.db.prepare(
+      "SELECT version FROM items_projected WHERE uuid = @uuid",
     );
     this.selectItemFilenameSource = this.db.prepare(
       "SELECT filename, source_uuid FROM items_projected WHERE source_uuid = @uuid",
@@ -187,6 +204,9 @@ export class DB {
       "INSERT INTO items (uuid, data, version) VALUES (@uuid, @data, @version) ON CONFLICT(uuid) DO UPDATE SET data=@data, version=@version",
     );
     this.deleteItem = this.db.prepare("DELETE FROM items WHERE uuid = @uuid");
+    this.deleteItemsBySourceId = this.db.prepare(
+      "DELETE FROM items WHERE source_uuid = @source_uuid",
+    );
     this.selectItem = this.db.prepare(
       `SELECT uuid, data, plaintext, filename, fetch_status, fetch_progress FROM items WHERE uuid = @uuid`,
     );
@@ -243,6 +263,12 @@ export class DB {
         SELECT 1 FROM pending_events
         WHERE item_uuid = @item_uuid AND type = @type
       )
+        `);
+    this.deletePendingEvent = this.db.prepare(
+      `DELETE FROM pending_events WHERE snowflake_id = @snowflake_id`,
+    );
+    this.selectPendingEvents = this.db.prepare(`
+      SELECT snowflake_id, source_uuid, item_uuid, type, data FROM pending_events
     `);
   }
 
@@ -340,6 +366,24 @@ export class DB {
     this.url = null;
   }
 
+  // Select rows from a table where the specified column matches any value in an array.
+  // Allows for multi-select with an array of IDs
+  selectWhereIn<T>(
+    table: string,
+    column: string,
+    values: (string | number)[],
+  ): T[] {
+    if (values.length === 0) return [];
+
+    // Build placeholders (?, ?, ?, ...)
+    const placeholders = values.map(() => "?").join(", ");
+
+    const stmt = this.db!.prepare(
+      `SELECT * FROM ${table} WHERE ${column} IN (${placeholders})`,
+    );
+    return stmt.all(...values) as T[];
+  }
+
   /// Read the current index version from the DB for sync.
   /// If we are in the initial sync state and there is no
   // source data available, then we return empty.
@@ -410,13 +454,14 @@ export class DB {
     })(journalists);
   }
 
-  updateMetadata(metadata: MetadataResponse) {
-    this.db!.transaction((metadata: MetadataResponse) => {
-      this.updateSources(metadata.sources);
-      this.updateItems(metadata.items);
-      this.updateJournalists(metadata.journalists);
+  updateBatch(batchResponse: BatchResponse) {
+    this.db!.transaction((batch: BatchResponse) => {
+      this.updateSources(batch.sources);
+      this.updateItems(batch.items);
+      this.updateJournalists(batch.journalists);
+      this.updatePendingEvents(batch.events);
       this.updateVersion();
-    })(metadata);
+    })(batchResponse);
   }
 
   // Updates source versions in DB. Should be run in a transaction that also
@@ -662,8 +707,10 @@ export class DB {
     stmt.run({ uuid: itemUuid });
   }
 
-  addPendingSourceEvent(sourceUuid: string, type: PendingEventType): bigint {
-    const snowflakeID = this.snowflake.generate({ timestamp: Date.now() });
+  addPendingSourceEvent(sourceUuid: string, type: PendingEventType): string {
+    const snowflakeID = this.snowflake
+      .generate({ timestamp: Date.now() })
+      .toString();
     this.insertSourcePendingEvent.run({
       snowflake_id: snowflakeID,
       source_uuid: sourceUuid,
@@ -678,7 +725,9 @@ export class DB {
     interactionCount: number,
   ): bigint {
     const itemUuid = crypto.randomUUID();
-    const snowflakeID = this.snowflake.generate({ timestamp: Date.now() });
+    const snowflakeID = this.snowflake
+      .generate({ timestamp: Date.now() })
+      .toString();
     const replyData: ReplySentData = {
       metadata: {
         kind: "reply",
@@ -703,8 +752,10 @@ export class DB {
     return snowflakeID;
   }
 
-  addPendingItemEvent(itemUuid: string, type: PendingEventType): bigint {
-    const snowflakeID = this.snowflake.generate({ timestamp: Date.now() });
+  addPendingItemEvent(itemUuid: string, type: PendingEventType): string {
+    const snowflakeID = this.snowflake
+      .generate({ timestamp: Date.now() })
+      .toString();
     this.insertItemPendingEvent.run({
       snowflake_id: snowflakeID,
       item_uuid: itemUuid,
@@ -739,5 +790,107 @@ export class DB {
 
       return snowflakeIds;
     })();
+  }
+
+  getPendingEvents(): PendingEvent[] {
+    const rows: PendingEventRow[] = this.selectPendingEvents.all();
+    const pendingEvents = rows.map((r) => {
+      let target: SourceTarget | ItemTarget;
+      if (r.source_uuid) {
+        target = {
+          source_uuid: r.source_uuid,
+          version:
+            this.selectSourceVersion.get({ uuid: r.source_uuid })?.version ??
+            "",
+        };
+      } else {
+        target = {
+          item_uuid: r.item_uuid,
+          version:
+            this.selectItemVersion.get({ uuid: r.item_uuid })?.version ?? "",
+        };
+      }
+      return {
+        snowflake_id: r.snowflake_id,
+        type: r.type as PendingEventType,
+        target: target,
+        data: JSON.parse(r.data) as PendingEventData,
+      };
+    });
+    return pendingEvents;
+  }
+
+  // Takes pending events and their statuses from the server and applies
+  // pending event updates as needed.
+  // Should be run within a transaction that also updates index version.
+  updatePendingEvents(events: { [snowflake_id: string]: number }) {
+    // Apply pending events on success. On failure, retain them in the
+    // pending events table for resubmission on next sync
+    const eventIDsToApply: string[] = [];
+    const eventIDsToRemove: string[] = [];
+    Object.keys(events).forEach((snowflake_id: string) => {
+      const result = events[snowflake_id];
+      if (result === EventStatus.OK) {
+        eventIDsToApply.push(snowflake_id);
+      }
+      if (result === EventStatus.AlreadyReported) {
+        eventIDsToRemove.push(snowflake_id);
+      }
+    });
+
+    for (const eventID of eventIDsToRemove) {
+      this.deletePendingEvent.run({ snowflake_id: eventID });
+    }
+
+    const eventsToApply: PendingEventRow[] = this.selectWhereIn(
+      "pending_events",
+      "snowflake_id",
+      eventIDsToApply,
+    );
+    for (const event of eventsToApply) {
+      switch (event.type as PendingEventType) {
+        case PendingEventType.ReplySent:
+          this.upsertItem.run({
+            uuid: event.item_uuid,
+            data: event.data,
+            version: computeVersion(event.data),
+            fetch_status: FetchStatus.Complete,
+          });
+          break;
+        case PendingEventType.ItemDeleted:
+          this.deleteItem.run({ uuid: event.item_uuid });
+          break;
+        case PendingEventType.SourceDeleted:
+          this.deleteSource.run({ uuid: event.source_uuid });
+          break;
+        case PendingEventType.SourceConversationDeleted:
+          // NOTE: there are potential race conditions here where items may be deleted
+          // and then resurrected in a later sync
+          this.deleteItemsBySourceId.run({ source_uuid: event.source_uuid });
+          break;
+        case PendingEventType.Starred:
+        case PendingEventType.Unstarred:
+        case PendingEventType.Seen: {
+          // Get current source metadata to modify + upsert
+          const source = this.selectSourceById.get(
+            event.source_uuid,
+          ) as SourceRow;
+          const sourceData = JSON.parse(source.data) as SourceMetadata;
+          if (event.type === PendingEventType.Starred) {
+            sourceData.is_starred = true;
+          } else if (event.type === PendingEventType.Unstarred) {
+            sourceData.is_starred = false;
+          } else if (event.type === PendingEventType.Seen) {
+            sourceData.is_seen = true;
+          }
+          this.updateSources({
+            [event.source_uuid]: sourceData,
+          });
+          break;
+        }
+      }
+      // Once event is applied, delete from pending events table
+      this.deletePendingEvent.run({ snowflake_id: event.snowflake_id });
+    }
   }
 }

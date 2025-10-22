@@ -87,6 +87,7 @@ describe("pending_events update projected views", () => {
       last_updated: "",
       public_key: "",
       fingerprint: "",
+      is_seen: false,
     };
   }
 
@@ -670,5 +671,120 @@ describe("pending_events update projected views", () => {
 
     // Should only create event for item1
     expect(snowflakeIds.length).toEqual(1);
+  });
+
+  it("getPendingEvents should return all pending events with correct structure", () => {
+    db.updateSources({
+      source1: mockSourceMetadata("source1"),
+    });
+    db.updateItems({
+      item1: mockItemMetadata("item1", "source1"),
+    });
+
+    const snowflakeSource = db.addPendingSourceEvent(
+      "source1",
+      PendingEventType.Starred,
+    );
+    console.log("source Snowflake: ", snowflakeSource);
+    const snowflakeItem = db.addPendingItemEvent(
+      "item1",
+      PendingEventType.ItemDeleted,
+    );
+    const snowflakeReply = db.addPendingReplySentEvent("reply text", "source1");
+
+    const events = db.getPendingEvents();
+    expect(events.length).toBe(3);
+    console.log("events: ", events);
+
+    const sourceEvent = events.find((e) => e.snowflake_id === snowflakeSource);
+    expect(sourceEvent).toBeDefined();
+    expect(sourceEvent!.type).toBe(PendingEventType.Starred);
+    expect(sourceEvent!.target).toHaveProperty("source_uuid", "source1");
+
+    const itemEvent = events.find((e) => e.snowflake_id === snowflakeItem);
+    expect(itemEvent).toBeDefined();
+    expect(itemEvent!.type).toBe(PendingEventType.ItemDeleted);
+    expect(itemEvent!.target).toHaveProperty("item_uuid", "item1");
+
+    const replyEvent = events.find((e) => e.snowflake_id === snowflakeReply);
+    expect(replyEvent).toBeDefined();
+    expect(replyEvent!.type).toBe(PendingEventType.ReplySent);
+    expect(replyEvent!.target).toHaveProperty("item_uuid");
+    expect(replyEvent!.data).toHaveProperty("metadata");
+    expect(replyEvent!.data).toHaveProperty("text", "reply text");
+  });
+
+  it("updatePendingEvents should remove successful events from pending_events", () => {
+    db.updateSources({
+      source1: mockSourceMetadata("source1"),
+    });
+    db.updateItems({
+      item1: mockItemMetadata("item1", "source1"),
+    });
+
+    // Verify source and item exist
+    const sourceWithItems = db.getSourceWithItems("source1");
+    expect(sourceWithItems).toBeDefined();
+    expect(sourceWithItems.uuid).toEqual("source1");
+    expect(sourceWithItems.items.length).toBe(1);
+    expect(sourceWithItems.items[0].uuid).toBe("item1");
+
+    const snowflakeSource = db.addPendingSourceEvent(
+      "source1",
+      PendingEventType.Starred,
+    );
+    const snowflakeItem = db.addPendingItemEvent(
+      "item1",
+      PendingEventType.ItemDeleted,
+    );
+
+    // Before update, both events are present
+    let events = db.getPendingEvents();
+    expect(events.length).toBe(2);
+
+    // Simulate server response: both events succeeded (HTTP 200)
+    db.updatePendingEvents({
+      [snowflakeSource.toString()]: 200,
+      [snowflakeItem.toString()]: 200,
+    });
+
+    // After update, no pending events should remain
+    events = db.getPendingEvents();
+    expect(events.length).toBe(0);
+
+    // Pending event updates are applied correctly
+    const updatedSourceWithItems = db.getSourceWithItems("source1");
+    expect(updatedSourceWithItems).toBeDefined();
+    expect(updatedSourceWithItems.uuid).toBe("source1");
+    expect(updatedSourceWithItems.items.length).toBe(0);
+  });
+
+  it("updatePendingEvents should retain failed events", () => {
+    db.updateSources({
+      source1: mockSourceMetadata("source1"),
+    });
+    db.updateItems({
+      item1: mockItemMetadata("item1", "source1"),
+    });
+
+    const snowflakeSource = db.addPendingSourceEvent(
+      "source1",
+      PendingEventType.Starred,
+    );
+    const snowflakeItem = db.addPendingItemEvent(
+      "item1",
+      PendingEventType.ItemDeleted,
+    );
+
+    // Simulate server response: only one event succeeded
+    db.updatePendingEvents({
+      [snowflakeSource.toString()]: 200,
+      [snowflakeItem.toString()]: 500, // failed
+    });
+
+    const events = db.getPendingEvents();
+    expect(events.length).toBe(1);
+    expect(events[0].snowflake_id).toBe(snowflakeItem);
+    expect(events[0].type).toBe(PendingEventType.ItemDeleted);
   });
 });

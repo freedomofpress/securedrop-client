@@ -235,7 +235,7 @@ app.whenReady().then(() => {
       _event,
       sourceUuid: string,
       type: PendingEventType,
-    ): Promise<bigint> => {
+    ): Promise<string> => {
       return db.addPendingSourceEvent(sourceUuid, type);
     },
   );
@@ -258,7 +258,7 @@ app.whenReady().then(() => {
       _event,
       itemUuid: string,
       type: PendingEventType,
-    ): Promise<bigint> => {
+    ): Promise<string> => {
       return db.addPendingItemEvent(itemUuid, type);
     },
   );

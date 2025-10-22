@@ -25,6 +25,7 @@ const mockSources: SourceType[] = [
     data: {
       fingerprint: "ABCD1234EFGH5678IJKL9012MNOP3456QRST7890",
       is_starred: false,
+      is_seen: false,
       journalist_designation: "multiplicative conditionality",
       last_updated: "2024-01-15T10:30:00Z",
       public_key:
@@ -41,6 +42,7 @@ const mockSources: SourceType[] = [
     data: {
       fingerprint: "1234ABCD5678EFGH9012IJKL3456MNOP7890QRST",
       is_starred: true,
+      is_seen: true,
       journalist_designation: "piezoelectric crockery",
       last_updated: "2024-01-14T15:45:00Z",
       public_key:

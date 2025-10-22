@@ -18,6 +18,7 @@ const mockSourceWithItems: SourceWithItems = {
   data: {
     fingerprint: "ABCD1234EFGH5678IJKL9012MNOP3456QRST7890",
     is_starred: false,
+    is_seen: false,
     journalist_designation: "alice wonderland",
     last_updated: "2024-01-15T10:30:00Z",
     public_key:
@@ -64,6 +65,7 @@ const mockSourceWithItems2: SourceWithItems = {
   data: {
     fingerprint: "EFGH5678IJKL9012MNOP3456QRST7890ABCD1234",
     is_starred: true,
+    is_seen: true,
     journalist_designation: "bob builder",
     last_updated: "2024-01-16T15:45:00Z",
     public_key:
