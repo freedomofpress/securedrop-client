@@ -53,7 +53,9 @@ export class TaskQueue {
     this.authToken = message.authToken;
     try {
       const itemsToProcess = this.db.getItemsToProcess();
-      console.debug("Items to process: ", itemsToProcess);
+      if (itemsToProcess.length > 0) {
+        console.debug("Items to process: ", itemsToProcess);
+      }
       for (const itemUUID of itemsToProcess) {
         const task: ItemFetchTask = {
           id: itemUUID,

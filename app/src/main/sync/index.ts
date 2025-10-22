@@ -1,14 +1,15 @@
-import { proxyJSONRequest } from "./proxy";
+import { proxyJSONRequest } from "../proxy";
 import {
   ProxyJSONResponse,
   Index,
   MetadataRequest,
   MetadataResponse,
-} from "../types";
-import { DB } from "./database";
+  SyncStatus,
+} from "../../types";
+import { DB } from "../database";
 
 import fs from "fs";
-import { encryptedFilepath } from "./crypto";
+import { encryptedFilepath } from "../crypto";
 
 async function getIndex(
   authToken: string,
@@ -163,12 +164,6 @@ function deleteItems(db: DB, itemIDs: string[]) {
   }
 
   db.deleteItems(itemIDs);
-}
-
-export enum SyncStatus {
-  NOT_MODIFIED = "not_modified",
-  UPDATED = "updated",
-  ERROR = "error",
 }
 
 // Executes metadata sync with SecureDrop server, updating

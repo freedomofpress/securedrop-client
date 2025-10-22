@@ -16,7 +16,7 @@ function Header({ sourceUuid, loading, sourceWithItems }: HeaderProps) {
     return <></>;
   }
 
-  if (loading) {
+  if (loading && !sourceWithItems) {
     return <p>{t("loading.header")}</p>;
   }
 

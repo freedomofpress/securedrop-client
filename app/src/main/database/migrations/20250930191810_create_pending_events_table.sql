@@ -181,7 +181,4 @@ DROP VIEW IF EXISTS items_projected;
 
 DROP VIEW IF EXISTS sources_projected;
 
-ALTER TABLE sources
-DROP COLUMN is_starred;
-
 DROP TABLE IF EXISTS pending_events;

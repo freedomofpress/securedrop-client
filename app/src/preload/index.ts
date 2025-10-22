@@ -11,6 +11,7 @@ import {
   type AuthedRequest,
   Item,
   PendingEventType,
+  SyncStatus,
 } from "../types";
 
 // Log the performance of IPC calls
@@ -43,8 +44,9 @@ const electronAPI = {
     (request: ProxyRequest, downloadPath: string) =>
       ipcRenderer.invoke("requestStream", request, downloadPath),
   ),
-  syncMetadata: logIpcCall("syncMetadata", (request: AuthedRequest) =>
-    ipcRenderer.invoke("syncMetadata", request),
+  syncMetadata: logIpcCall<SyncStatus>(
+    "syncMetadata",
+    (request: AuthedRequest) => ipcRenderer.invoke("syncMetadata", request),
   ),
   updateFetchStatus: logIpcCall(
     "updateFetchStatus",

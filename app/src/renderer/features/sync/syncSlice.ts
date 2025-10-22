@@ -3,15 +3,14 @@ import type { RootState } from "../../store";
 import { fetchConversation } from "../conversation/conversationSlice";
 import { fetchJournalists } from "../journalists/journalistsSlice";
 import { fetchSources } from "../sources/sourcesSlice";
+import { SyncStatus } from "../../../types";
 
 export interface SyncState {
-  loading: boolean;
   error: string | null;
   lastFetchTime: number | null;
 }
 
 const initialState: SyncState = {
-  loading: false,
   error: null,
   lastFetchTime: null,
 };
@@ -21,21 +20,26 @@ export const syncMetadata = createAsyncThunk(
   "sync/syncMetadata",
   async (authToken: string | undefined, { getState, dispatch }) => {
     // Sync metadata with the server
-    await window.electronAPI.syncMetadata({ authToken });
+    const status: SyncStatus = await window.electronAPI.syncMetadata({
+      authToken,
+    });
 
-    // Fetch updated sources
-    dispatch(fetchSources());
+    // If there are updates from sync, fetch downstream state
+    if (status === SyncStatus.UPDATED) {
+      // Fetch updated sources
+      dispatch(fetchSources());
 
-    // Fetch updated journalists
-    dispatch(fetchJournalists());
+      // Fetch updated journalists
+      dispatch(fetchJournalists());
 
-    // Get the active source from Redux state
-    const state = getState() as RootState;
-    const activeSourceUuid = state.sources.activeSourceUuid;
+      // Get the active source from Redux state
+      const state = getState() as RootState;
+      const activeSourceUuid = state.sources.activeSourceUuid;
 
-    // If there's an active source, fetch its conversation
-    if (activeSourceUuid) {
-      dispatch(fetchConversation(activeSourceUuid));
+      // If there's an active source, fetch its conversation
+      if (activeSourceUuid) {
+        dispatch(fetchConversation(activeSourceUuid));
+      }
     }
 
     return;
@@ -52,23 +56,16 @@ export const syncSlice = createSlice({
   },
   extraReducers: (builder) => {
     builder
-      .addCase(syncMetadata.pending, (state) => {
-        state.loading = true;
-        state.error = null;
-      })
       .addCase(syncMetadata.fulfilled, (state) => {
-        state.loading = false;
         state.lastFetchTime = Date.now();
       })
       .addCase(syncMetadata.rejected, (state, action) => {
-        state.loading = false;
         state.error = action.error.message || "Failed to sync metadata";
       });
   },
 });
 
 export const { clearError } = syncSlice.actions;
-export const selectSyncLoading = (state: RootState) => state.sync.loading;
 export const selectSyncError = (state: RootState) => state.sync.error;
 export const selectlastFetchTime = (state: RootState) =>
   state.sync.lastFetchTime;

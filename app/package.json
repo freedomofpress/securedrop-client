@@ -14,7 +14,7 @@
     "dev": "electron-vite dev",
     "test": "vitest run --config vitest.config.ts --project=unit --coverage",
     "integration-test": "vitest run --config vitest.config.ts --project=integration --coverage",
-    "server-test": "electron-vite build --mode development && vitest run --config vitest.config.ts --project=server --coverage --no-file-parallelism",
+    "server-test": "electron-vite build --mode test && vitest run --config vitest.config.ts --project=server --coverage --no-file-parallelism",
     "fix": "eslint --fix . && prettier --write .",
     "lint": "prettier . --check && eslint --max-warnings 0 . && pnpm run typecheck",
     "typecheck:node": "tsc --noEmit -p tsconfig.node.json --composite false",

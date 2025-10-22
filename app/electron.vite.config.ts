@@ -6,14 +6,14 @@ import { execSync } from "child_process";
 import { randomBytes } from "crypto";
 
 export default defineConfig(({ mode }) => {
-  const isDev = mode === "development";
-  console.log(`Building in ${isDev ? "development" : "production"} mode`);
+  console.log(`Building in ${mode} mode`);
 
   // Generate Vite CSP nonce for dev mode
-  const viteNonce = isDev ? randomBytes(32).toString("base64") : "";
+  const viteNonce =
+    mode === "development" ? randomBytes(32).toString("base64") : "";
 
   const mainVars: Record<string, string> = {};
-  if (isDev) {
+  if (mode === "development" || mode === "test") {
     // Build the proxy: `make -C ../proxy build`
     try {
       console.log("Building proxy...");
@@ -69,16 +69,17 @@ export default defineConfig(({ mode }) => {
       plugins: [react(), tailwindcss()],
       define: {
         __APP_VERSION__: JSON.stringify(process.env.npm_package_version),
-        __DEV_AUTO_LOGIN__: isDev,
+        __DEV_AUTO_LOGIN__: mode === "development",
       },
       build: {
         assetsInlineLimit: 0, // Disable inlining assets as data URIs for strict CSP
       },
-      html: isDev
-        ? {
-            cspNonce: viteNonce,
-          }
-        : undefined,
+      html:
+        mode === "development"
+          ? {
+              cspNonce: viteNonce,
+            }
+          : undefined,
     },
   };
 });

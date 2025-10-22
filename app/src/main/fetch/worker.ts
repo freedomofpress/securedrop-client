@@ -23,6 +23,5 @@ if (workerData?.cryptoConfig) {
 }
 
 port.on("message", (message: AuthedRequest) => {
-  console.log("Queueing items to be fetched");
   q.queueFetches(message);
 });
