@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useCallback } from "react";
 import { useDispatch } from "react-redux";
 import type { AppDispatch } from "../store";
 import { fetchJournalists } from "../features/journalists/journalistsSlice";
@@ -11,12 +11,25 @@ function InboxView() {
   const dispatch = useDispatch<AppDispatch>();
   const session = useAppSelector((state) => state.session);
 
-  // Trigger sync in the background every minute
-  setInterval(() => {
+  const sync = useCallback(() => {
     if (session.authData && import.meta.env.MODE != "test") {
       dispatch(syncMetadata(session.authData.token));
     }
-  }, 1000 * 60);
+  }, [dispatch, session.authData]);
+
+  // Trigger sync in the background every minute
+  useEffect(() => {
+    // Trigger immediately
+    sync();
+    const syncInterval = setInterval(() => {
+      sync();
+    }, 1000 * 60);
+
+    // Clean up interval
+    return () => {
+      clearInterval(syncInterval);
+    };
+  }, [sync]);
 
   useEffect(() => {
     dispatch(fetchJournalists());
