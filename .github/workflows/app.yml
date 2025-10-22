@@ -205,17 +205,18 @@ jobs:
           FFMPEG_PID=$!
           sleep 1  # Give ffmpeg a moment to start
 
+          # Setup cleanup trap to ensure recording is stopped even if tests fail
+          cleanup() {
+            echo "Stopping video recording and Xvfb..."
+            kill $FFMPEG_PID 2>/dev/null || true
+            sleep 2  # Give ffmpeg time to finish writing
+            kill $XVFB_PID 2>/dev/null || true
+          }
+          trap cleanup EXIT
+
           # Run tests
           cd app
           pnpm server-test
-          TEST_EXIT_CODE=$?
-
-          # Stop recording and Xvfb
-          kill $FFMPEG_PID || true
-          sleep 2  # Give ffmpeg time to finish writing
-          kill $XVFB_PID || true
-
-          exit $TEST_EXIT_CODE
       - name: Upload test video
         if: always()
         uses: actions/upload-artifact@v4
