@@ -258,8 +258,8 @@ export enum PendingEventType {
   ItemDeleted = "item_deleted",
   SourceDeleted = "source_deleted",
   SourceConversationDeleted = "source_conversation_deleted",
-  Starred = "starred",
-  Unstarred = "unstarred",
+  Starred = "source_starred",
+  Unstarred = "source_unstarred",
   Seen = "seen",
 }
 

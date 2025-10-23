@@ -898,9 +898,16 @@ export class DB {
         case PendingEventType.Unstarred:
         case PendingEventType.Seen: {
           // Get current source metadata to modify + upsert
-          const source = this.selectSourceById.get(
-            event.source_uuid,
-          ) as SourceRow;
+          let sourceUuid = event.source_uuid;
+          // If the source UUID isn't set, get it from the item
+          if (!sourceUuid) {
+            const item = this.selectItem.get({ uuid: event.item_uuid });
+            if (!item) {
+              break;
+            }
+            sourceUuid = (JSON.parse(item.data) as ItemMetadata).source;
+          }
+          const source = this.selectSourceById.get(sourceUuid) as SourceRow;
           const sourceData = JSON.parse(source.data) as SourceMetadata;
           if (event.type === PendingEventType.Starred) {
             sourceData.is_starred = true;
@@ -910,7 +917,7 @@ export class DB {
             sourceData.is_seen = true;
           }
           this.updateSources({
-            [event.source_uuid]: sourceData,
+            [sourceUuid]: sourceData,
           });
           break;
         }

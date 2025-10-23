@@ -207,11 +207,7 @@ export async function syncMetadata(
     return syncStatus;
   }
 
-  console.log("submitting batch: ", request);
-
   const batchResponse = await submitBatch(authToken, request);
-
-  console.log("received response: ", batchResponse);
 
   db.updateBatch(batchResponse);
   syncStatus = SyncStatus.UPDATED;

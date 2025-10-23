@@ -55,8 +55,8 @@ WITH
         SELECT
             source_uuid,
             CASE
-                WHEN type = 'starred' THEN true
-                WHEN type = 'unstarred' THEN false
+                WHEN type = 'source_starred' THEN true
+                WHEN type = 'source_unstarred' THEN false
             END as starred_value
         FROM
             (
@@ -73,7 +73,7 @@ WITH
                 FROM
                     pending_events
                 WHERE
-                    type IN ('starred', 'unstarred')
+                    type IN ('source_starred', 'source_unstarred')
                     AND source_uuid IS NOT NULL
             ) latest
         WHERE
