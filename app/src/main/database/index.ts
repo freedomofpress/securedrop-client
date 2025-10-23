@@ -25,10 +25,10 @@ import {
   PendingEventRow,
   SourceTarget,
   ItemTarget,
-  PendingEventData,
   BatchResponse,
   EventStatus,
 } from "../../types";
+import { Crypto } from "../crypto";
 
 interface KeyObject {
   [key: string]: object;
@@ -58,6 +58,7 @@ export class DB {
   private db: Database.Database | null;
   private url: string | null;
   private snowflake: Snowflake;
+  private crypto: Crypto;
 
   // Prepared statements
   private selectVersion: Statement<[], { version: string }>;
@@ -141,7 +142,8 @@ export class DB {
   private deletePendingEvent: Statement<{ snowflake_id: string }, void>;
   private selectPendingEvents: Statement<[], PendingEventRow>;
 
-  constructor(dbDir?: string) {
+  constructor(crypto: Crypto, dbDir?: string) {
+    this.crypto = crypto;
     this.snowflake = new Snowflake(new Date("2000-01-01T00:00:00.000Z"));
 
     if (!dbDir) {
@@ -750,6 +752,7 @@ export class DB {
     if (!source || !source.data) {
       return Promise.reject("no source metadata: cannot send reply");
     }
+    const sourceMetadata: SourceMetadata = JSON.parse(source.data);
 
     const replyData: ReplySentData = {
       uuid: itemUuid,
@@ -765,8 +768,10 @@ export class DB {
         interaction_count: interactionCount,
       },
       plaintext: text,
-      // TODO(vicki): encrypt reply
-      reply: "",
+      reply: await this.crypto.encryptSourceMessage(
+        text,
+        sourceMetadata.public_key,
+      ),
     };
 
     this.insertSourcePendingEvent.run({
@@ -841,7 +846,7 @@ export class DB {
         id: r.snowflake_id,
         type: r.type as PendingEventType,
         target: target,
-        data: JSON.parse(r.data) as PendingEventData,
+        data: JSON.parse(r.data),
       };
     });
     return pendingEvents;
@@ -850,7 +855,9 @@ export class DB {
   // Takes pending events and their statuses from the server and applies
   // pending event updates as needed.
   // Should be run within a transaction that also updates index version.
-  updatePendingEvents(events: { [snowflake_id: string]: [number, string] }) {
+  updatePendingEvents(events: {
+    [snowflake_id: string]: [number, string | null];
+  }) {
     // Remove successfully applied pending events. On failure, retain them in the
     // pending events table for resubmission on next sync
     const appliedEventIDs: string[] = [];

@@ -4,6 +4,7 @@ import react from "@vitejs/plugin-react";
 import tailwindcss from "@tailwindcss/vite";
 import { execSync } from "child_process";
 import { randomBytes } from "crypto";
+import * as fs from "fs";
 
 export default defineConfig(({ mode }) => {
   console.log(`Building in ${mode} mode`);
@@ -37,11 +38,19 @@ export default defineConfig(({ mode }) => {
     mainVars["__PROXY_ORIGIN__"] = JSON.stringify("http://localhost:8081/");
     mainVars["__PROXY_CMD__"] = JSON.stringify(sdProxyCmd);
     mainVars["__VITE_NONCE__"] = JSON.stringify(viteNonce);
+    // Load test submission key
+    mainVars["import.meta.env.SD_SUBMISSION_PUBKEY"] = JSON.stringify(
+      fs
+        .readFileSync("./src/main/__tests__/files/securedrop.gpg.pub.asc")
+        .toString("utf-8"),
+    );
   } else {
     // In production, PROXY_CMD is determined at runtime, and PROXY_ORIGIN is managed by the proxy VM
     mainVars["__PROXY_CMD__"] = '""'; // Empty string
     mainVars["__PROXY_ORIGIN__"] = '""'; // Empty string
     mainVars["__VITE_NONCE__"] = '""'; // Empty string
+    // In production, SD_SUBMISSION_PUBKEY is read from QubesDB
+    mainVars["import.meta.env.SD_SUBMISSION_PUBKEY"] = '""';
   }
 
   console.log("Using main vars:", mainVars);

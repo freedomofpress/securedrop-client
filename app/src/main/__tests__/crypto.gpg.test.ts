@@ -9,10 +9,10 @@ import {
 } from "vitest";
 import * as path from "path";
 import * as fs from "fs";
-import { Crypto, CryptoError } from "../crypto";
+import * as openpgp from "openpgp";
+import { Crypto, CryptoError, encryptMessage } from "../crypto";
 import {
   createGpgTestEnvironment,
-  createTestEncryptedContent,
   createTestEncryptedFile,
   verifyGpgAvailable,
   loadTestKeys,
@@ -29,6 +29,7 @@ describe("Crypto with Real GPG", () => {
   let testKeyId: string;
   const storage = new Storage();
   let itemDirectory: PathBuilder;
+  let testRecipients: string[];
 
   beforeAll(async () => {
     if (!isGpgAvailable) {
@@ -44,6 +45,7 @@ describe("Crypto with Real GPG", () => {
     const { publicKey, privateKey } = loadTestKeys(testFilesDir);
 
     if (publicKey && privateKey) {
+      testRecipients = [publicKey, privateKey];
       console.log("Importing test keys from files...");
       try {
         gpgEnv.importKey(privateKey); // Import private key (contains public key too)
@@ -75,9 +77,10 @@ describe("Crypto with Real GPG", () => {
     // Reset singleton and create with test homedir
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     (Crypto as any).instance = undefined;
-    Crypto.initialize({
+    crypto = Crypto.initialize({
       isQubes: false,
       gpgHomedir: gpgEnv.homedir,
+      journalistPublicKey: "",
     });
     crypto = Crypto.getInstance()!;
 
@@ -97,10 +100,9 @@ describe("Crypto with Real GPG", () => {
       const originalMessage = "Hello, this is a secret message!";
 
       // Encrypt using GPG directly
-      const encryptedContent = createTestEncryptedContent(
-        originalMessage,
-        testKeyId,
-        gpgEnv.homedir,
+      const encryptedContent = Buffer.from(
+        await encryptMessage(originalMessage, testRecipients),
+        "utf-8",
       );
 
       // Decrypt using our crypto class
@@ -114,10 +116,9 @@ describe("Crypto with Real GPG", () => {
 with special characters: àáâãäåæçèéêë
 and symbols: !@#$%^&*()_+-={}[]|\\:";'<>?,./`;
 
-      const encryptedContent = createTestEncryptedContent(
-        originalMessage,
-        testKeyId,
-        gpgEnv.homedir,
+      const encryptedContent = Buffer.from(
+        await encryptMessage(originalMessage, testRecipients),
+        "utf-8",
       );
 
       const decryptedMessage = await crypto.decryptMessage(encryptedContent);
@@ -136,10 +137,9 @@ and symbols: !@#$%^&*()_+-={}[]|\\:";'<>?,./`;
     it("should handle empty message", async () => {
       const originalMessage = "";
 
-      const encryptedContent = createTestEncryptedContent(
-        originalMessage,
-        testKeyId,
-        gpgEnv.homedir,
+      const encryptedContent = Buffer.from(
+        await encryptMessage(originalMessage, testRecipients),
+        "utf-8",
       );
 
       const decryptedMessage = await crypto.decryptMessage(encryptedContent);
@@ -267,10 +267,9 @@ and symbols: !@#$%^&*()_+-={}[]|\\:";'<>?,./`;
       const testData = "Secret message data";
 
       // Messages: encrypt directly, decrypt directly (no compression)
-      const encryptedMessage = createTestEncryptedContent(
-        testData,
-        testKeyId,
-        gpgEnv.homedir,
+      const encryptedMessage = Buffer.from(
+        await encryptMessage(testData, testRecipients),
+        "utf-8",
       );
 
       const decryptedMessage = await crypto.decryptMessage(encryptedMessage);
@@ -312,10 +311,9 @@ and symbols: !@#$%^&*()_+-={}[]|\\:";'<>?,./`;
       // Create a 50KB message
       const largeMessage = "A".repeat(50000);
 
-      const encryptedContent = createTestEncryptedContent(
-        largeMessage,
-        testKeyId,
-        gpgEnv.homedir,
+      const encryptedContent = Buffer.from(
+        await encryptMessage(largeMessage, testRecipients),
+        "utf-8",
       );
 
       const startTime = Date.now();
@@ -333,8 +331,10 @@ and symbols: !@#$%^&*()_+-={}[]|\\:";'<>?,./`;
         "Third concurrent message",
       ];
 
-      const encryptedMessages = messages.map((msg) =>
-        createTestEncryptedContent(msg, testKeyId, gpgEnv.homedir),
+      const encryptedMessages = await Promise.all(
+        messages.map(async (msg) =>
+          Buffer.from(await encryptMessage(msg, testRecipients), "utf-8"),
+        ),
       );
 
       // Decrypt all messages concurrently
@@ -343,6 +343,60 @@ and symbols: !@#$%^&*()_+-={}[]|\\:";'<>?,./`;
       );
 
       expect(results).toEqual(messages);
+    });
+  });
+
+  describe("encryptMessage", () => {
+    const plaintext = "Hello, SecureDrop!";
+    const recipientPublicKeys = [
+      "-----BEGIN PGP PUBLIC KEY BLOCK-----\n...\n-----END PGP PUBLIC KEY BLOCK-----",
+      "-----BEGIN PGP PUBLIC KEY BLOCK-----\n...\n-----END PGP PUBLIC KEY BLOCK-----",
+    ];
+
+    const mockReadKey = vi.fn().mockResolvedValue("mockKey");
+    const mockCreateMessage = vi.fn().mockResolvedValue("mockMessage");
+    const mockEncrypt = vi.fn().mockResolvedValue("mockEncryptedText");
+
+    beforeEach(() => {
+      vi.mock("openpgp", { spy: true });
+      vi.mocked(openpgp.readKey).mockImplementation(mockReadKey);
+      vi.mocked(openpgp.createMessage).mockImplementation(mockCreateMessage);
+      vi.mocked(openpgp.encrypt).mockImplementation(mockEncrypt);
+    });
+
+    afterEach(() => {
+      vi.resetAllMocks();
+    });
+
+    it("successfully encrypts message to multiple recipients", async () => {
+      const result = await encryptMessage(plaintext, recipientPublicKeys);
+      expect(mockReadKey).toHaveBeenCalledTimes(recipientPublicKeys.length);
+      for (const key of recipientPublicKeys) {
+        expect(mockReadKey).toHaveBeenCalledWith({ armoredKey: key });
+      }
+
+      expect(mockCreateMessage).toHaveBeenCalledWith({ text: plaintext });
+
+      expect(mockEncrypt).toHaveBeenCalledWith({
+        message: "mockMessage",
+        encryptionKeys: ["mockKey", "mockKey"],
+      });
+
+      expect(result).toBe("mockEncryptedText");
+    });
+
+    it("throws if openpgp.readKey fails", async () => {
+      mockReadKey.mockRejectedValueOnce(new Error("bad key"));
+      await expect(
+        encryptMessage(plaintext, recipientPublicKeys),
+      ).rejects.toThrow("bad key");
+    });
+
+    it("throws if openpgp.encrypt fails", async () => {
+      mockEncrypt.mockRejectedValueOnce(new Error("encrypt error"));
+      await expect(
+        encryptMessage(plaintext, recipientPublicKeys),
+      ).rejects.toThrow("encrypt error");
     });
   });
 });

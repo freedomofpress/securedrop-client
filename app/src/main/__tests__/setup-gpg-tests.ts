@@ -123,27 +123,6 @@ Expire-Date: 0
 }
 
 /**
- * Create test encrypted content for testing
- */
-export function createTestEncryptedContent(
-  content: string,
-  recipientKeyId: string,
-  gpgHomedir: string,
-  armor: boolean = true,
-): Buffer {
-  const armorFlag = armor ? "--armor" : "";
-  const result = execSync(
-    `gpg --homedir "${gpgHomedir}" --trust-model always --encrypt ${armorFlag} -r ${recipientKeyId}`,
-    {
-      input: content,
-      stdio: "pipe",
-    },
-  );
-
-  return Buffer.from(result);
-}
-
-/**
  * Create test gzipped and encrypted file for testing
  */
 export function createTestEncryptedFile(
