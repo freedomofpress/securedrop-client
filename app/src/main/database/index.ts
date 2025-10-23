@@ -29,6 +29,7 @@ import {
   BatchResponse,
   EventStatus,
 } from "../../types";
+import { Crypto } from "../crypto";
 
 interface KeyObject {
   [key: string]: object;
@@ -111,15 +112,20 @@ export class DB {
   private selectItemsBySourceId: Statement<[string], ItemRow>;
   private selectAllJournalists: Statement<[], JournalistRow>;
   private insertSourcePendingEvent: Statement<
-    { snowflake_id: string; source_uuid: string; type: number },
+    {
+      snowflake_id: string;
+      source_uuid: string;
+      type: string;
+      data: string | null;
+    },
     void
   >;
   private insertItemPendingEvent: Statement<
     {
       snowflake_id: string;
       item_uuid?: string;
-      type: number;
-      data?: string;
+      type: string;
+      data: string | null;
     },
     void
   >;
@@ -128,7 +134,7 @@ export class DB {
       snowflake_id: bigint;
       source_uuid: string;
       item_uuid: string;
-      type: number;
+      type: string;
     },
     void
   >;
@@ -245,7 +251,7 @@ export class DB {
     `);
 
     this.insertSourcePendingEvent = this.db.prepare(`
-      INSERT INTO pending_events (snowflake_id, source_uuid, type) VALUES (@snowflake_id, @source_uuid, @type)
+      INSERT INTO pending_events (snowflake_id, source_uuid, type, data) VALUES (@snowflake_id, @source_uuid, @type, @data)
     `);
 
     this.insertItemPendingEvent = this.db.prepare(`
@@ -715,20 +721,30 @@ export class DB {
       snowflake_id: snowflakeID,
       source_uuid: sourceUuid,
       type: type,
+      data: null,
     });
     return snowflakeID;
   }
 
-  addPendingReplySentEvent(
+  async addPendingReplySentEvent(
     text: string,
     sourceUuid: string,
     interactionCount: number,
-  ): bigint {
+  ): Promise<string> {
     const itemUuid = crypto.randomUUID();
     const snowflakeID = this.snowflake
       .generate({ timestamp: Date.now() })
       .toString();
+
+    const cryptoInstance = Crypto.getInstance();
+    const source = this.selectSourceById.get(sourceUuid);
+    if (!source || !source.data) {
+      return Promise.reject("no source metadata: cannot send reply");
+    }
+    const sourceMetadata: SourceMetadata = JSON.parse(source.data);
+
     const replyData: ReplySentData = {
+      uuid: itemUuid,
       metadata: {
         kind: "reply",
         uuid: itemUuid,
@@ -740,12 +756,19 @@ export class DB {
         seen_by: [],
         interaction_count: interactionCount,
       },
-      text: text ?? "",
+      plaintext: text,
+      reply: cryptoInstance
+        ? await cryptoInstance.encryptMessage(
+            text,
+            sourceMetadata.fingerprint,
+            sourceMetadata.public_key,
+          )
+        : "",
     };
 
-    this.insertItemPendingEvent.run({
+    this.insertSourcePendingEvent.run({
       snowflake_id: snowflakeID,
-      item_uuid: itemUuid,
+      source_uuid: sourceUuid,
       type: PendingEventType.ReplySent,
       data: JSON.stringify(replyData, sortKeys),
     });
@@ -760,7 +783,7 @@ export class DB {
       snowflake_id: snowflakeID,
       item_uuid: itemUuid,
       type: type,
-      data: undefined,
+      data: null,
     });
     return snowflakeID;
   }
@@ -811,7 +834,7 @@ export class DB {
         };
       }
       return {
-        snowflake_id: r.snowflake_id,
+        id: r.snowflake_id,
         type: r.type as PendingEventType,
         target: target,
         data: JSON.parse(r.data) as PendingEventData,
@@ -823,13 +846,13 @@ export class DB {
   // Takes pending events and their statuses from the server and applies
   // pending event updates as needed.
   // Should be run within a transaction that also updates index version.
-  updatePendingEvents(events: { [snowflake_id: string]: number }) {
+  updatePendingEvents(events: { [snowflake_id: string]: [number, string] }) {
     // Apply pending events on success. On failure, retain them in the
     // pending events table for resubmission on next sync
     const eventIDsToApply: string[] = [];
     const eventIDsToRemove: string[] = [];
     Object.keys(events).forEach((snowflake_id: string) => {
-      const result = events[snowflake_id];
+      const result = events[snowflake_id][0];
       if (result === EventStatus.OK) {
         eventIDsToApply.push(snowflake_id);
       }
@@ -849,14 +872,17 @@ export class DB {
     );
     for (const event of eventsToApply) {
       switch (event.type as PendingEventType) {
-        case PendingEventType.ReplySent:
+        case PendingEventType.ReplySent: {
+          const replyData: ReplySentData = JSON.parse(event.data);
           this.upsertItem.run({
             uuid: event.item_uuid,
             data: event.data,
             version: computeVersion(event.data),
             fetch_status: FetchStatus.Complete,
           });
+          this.completePlaintextItem(event.item_uuid, replyData.reply);
           break;
+        }
         case PendingEventType.ItemDeleted:
           this.deleteItem.run({ uuid: event.item_uuid });
           break;

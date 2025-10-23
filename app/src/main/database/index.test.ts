@@ -401,7 +401,7 @@ describe("pending_events update projected views", () => {
     expect(sourceWithItems.items.length).toEqual(0);
   });
 
-  it("pending SourceConversationDeleted and ReplySent should show reply", () => {
+  it("pending SourceConversationDeleted and ReplySent should show reply", async () => {
     db.updateSources({
       source1: mockSourceMetadata("source1"),
     });
@@ -418,7 +418,11 @@ describe("pending_events update projected views", () => {
     let sourceWithItems = db.getSourceWithItems("source1");
     expect(sourceWithItems.items.length).toEqual(0);
 
-    const snowflake2 = db.addPendingReplySentEvent("reply text", "source1", 1);
+    const snowflake2 = await db.addPendingReplySentEvent(
+      "reply text",
+      "source1",
+      1,
+    );
     expect(snowflake2 > snowflake1);
     sourceWithItems = db.getSourceWithItems("source1");
     expect(sourceWithItems.items.length).toEqual(1);
@@ -673,7 +677,7 @@ describe("pending_events update projected views", () => {
     expect(snowflakeIds.length).toEqual(1);
   });
 
-  it("getPendingEvents should return all pending events with correct structure", () => {
+  it("getPendingEvents should return all pending events with correct structure", async () => {
     db.updateSources({
       source1: mockSourceMetadata("source1"),
     });
@@ -690,28 +694,32 @@ describe("pending_events update projected views", () => {
       "item1",
       PendingEventType.ItemDeleted,
     );
-    const snowflakeReply = db.addPendingReplySentEvent("reply text", "source1");
+    const snowflakeReply = await db.addPendingReplySentEvent(
+      "reply text",
+      "source1",
+      1,
+    );
 
     const events = db.getPendingEvents();
     expect(events.length).toBe(3);
     console.log("events: ", events);
 
-    const sourceEvent = events.find((e) => e.snowflake_id === snowflakeSource);
+    const sourceEvent = events.find((e) => e.id === snowflakeSource);
     expect(sourceEvent).toBeDefined();
     expect(sourceEvent!.type).toBe(PendingEventType.Starred);
     expect(sourceEvent!.target).toHaveProperty("source_uuid", "source1");
 
-    const itemEvent = events.find((e) => e.snowflake_id === snowflakeItem);
+    const itemEvent = events.find((e) => e.id === snowflakeItem);
     expect(itemEvent).toBeDefined();
     expect(itemEvent!.type).toBe(PendingEventType.ItemDeleted);
     expect(itemEvent!.target).toHaveProperty("item_uuid", "item1");
 
-    const replyEvent = events.find((e) => e.snowflake_id === snowflakeReply);
+    const replyEvent = events.find((e) => e.id === snowflakeReply);
     expect(replyEvent).toBeDefined();
     expect(replyEvent!.type).toBe(PendingEventType.ReplySent);
-    expect(replyEvent!.target).toHaveProperty("item_uuid");
+    expect(replyEvent!.target).toHaveProperty("source_uuid");
     expect(replyEvent!.data).toHaveProperty("metadata");
-    expect(replyEvent!.data).toHaveProperty("text", "reply text");
+    expect(replyEvent!.data).toHaveProperty("plaintext", "reply text");
   });
 
   it("updatePendingEvents should remove successful events from pending_events", () => {
@@ -744,8 +752,8 @@ describe("pending_events update projected views", () => {
 
     // Simulate server response: both events succeeded (HTTP 200)
     db.updatePendingEvents({
-      [snowflakeSource.toString()]: 200,
-      [snowflakeItem.toString()]: 200,
+      [snowflakeSource.toString()]: [200, ""],
+      [snowflakeItem.toString()]: [200, ""],
     });
 
     // After update, no pending events should remain
@@ -778,13 +786,13 @@ describe("pending_events update projected views", () => {
 
     // Simulate server response: only one event succeeded
     db.updatePendingEvents({
-      [snowflakeSource.toString()]: 200,
-      [snowflakeItem.toString()]: 500, // failed
+      [snowflakeSource.toString()]: [200, ""],
+      [snowflakeItem.toString()]: [500, "error"], // failed
     });
 
     const events = db.getPendingEvents();
     expect(events.length).toBe(1);
-    expect(events[0].snowflake_id).toBe(snowflakeItem);
+    expect(events[0].id).toBe(snowflakeItem);
     expect(events[0].type).toBe(PendingEventType.ItemDeleted);
   });
 });

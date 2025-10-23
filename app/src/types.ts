@@ -87,7 +87,7 @@ export type BatchResponse = {
     [uuid: string]: JournalistMetadata;
   };
   events: {
-    [snowflake_id: string]: number;
+    [snowflake_id: string]: [number, string];
   };
 };
 
@@ -234,7 +234,7 @@ export type PendingEventRow = {
   snowflake_id: string;
   source_uuid: string;
   item_uuid: string;
-  type: number;
+  type: string;
   data: string; // JSON stringified PendingEventData
 };
 
@@ -253,14 +253,14 @@ export enum FetchStatus {
 }
 
 export enum PendingEventType {
-  Undefined = 0,
-  ReplySent = 1,
-  ItemDeleted = 2,
-  SourceDeleted = 3,
-  SourceConversationDeleted = 4,
-  Starred = 5,
-  Unstarred = 6,
-  Seen = 7,
+  Undefined = "undefined",
+  ReplySent = "reply_sent",
+  ItemDeleted = "item_deleted",
+  SourceDeleted = "source_deleted",
+  SourceConversationDeleted = "source_conversation_deleted",
+  Starred = "starred",
+  Unstarred = "unstarred",
+  Seen = "seen",
 }
 
 // EventStatus codes returned from the server
@@ -286,14 +286,18 @@ export type ItemTarget = {
 };
 
 export type PendingEvent = {
-  snowflake_id: string;
+  id: string;
   type: PendingEventType;
   target: SourceTarget | ItemTarget;
   data?: PendingEventData;
 };
 
 export type ReplySentData = {
-  text: string;
+  uuid: string;
+  // reply ciphertext
+  reply: string;
+  // reply plaintext: for storing in pending_events table only
+  plaintext: string;
   metadata: ReplyMetadata;
 };
 
