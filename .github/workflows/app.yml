@@ -36,7 +36,7 @@ jobs:
         with:
           version: 10
       - name: Install node
-        uses: actions/setup-node@v5
+        uses: actions/setup-node@v6
         with:
           node-version: "22.x"
           cache: pnpm
@@ -82,7 +82,7 @@ jobs:
         with:
           version: 10
       - name: Install node
-        uses: actions/setup-node@v5
+        uses: actions/setup-node@v6
         with:
           node-version: "22.x"
           cache: pnpm
@@ -132,7 +132,7 @@ jobs:
         with:
           version: 10
       - name: Install node
-        uses: actions/setup-node@v5
+        uses: actions/setup-node@v6
         with:
           node-version: "22.x"
           cache: pnpm
@@ -167,7 +167,7 @@ jobs:
         with:
           version: 10
       - name: Install node
-        uses: actions/setup-node@v5
+        uses: actions/setup-node@v6
         with:
           node-version: "22.x"
           cache: pnpm
