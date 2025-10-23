@@ -8,7 +8,7 @@ import * as path from "path";
 export interface CryptoConfig {
   isQubes?: boolean; // Auto-detect if not provided
   gpgHomedir?: string;
-  journalistFingerprint: string;
+  journalistFingerprint?: string;
 }
 
 export class CryptoError extends Error {
@@ -25,7 +25,7 @@ export class Crypto {
   private static instance: Crypto;
   private isQubes: boolean;
   private gpgHomedir?: string;
-  private journalistFingerprint: string;
+  private journalistFingerprint?: string;
 
   private constructor(config: CryptoConfig) {
     this.isQubes = config.isQubes ?? this.detectQubes();
@@ -290,11 +290,14 @@ export class Crypto {
   }
 
   /**
-   * Encrypted a plaintext message
+   * Encrypts a message to a source: attempts to import the source public key
+   * and then encrypts with source and journalist key
    * @param plaintext - The message plaintext
+   * @param sourceFingerprint - Source GPG key fingerprint
+   * @param sourcePublicKey - Source GPG public key
    * @returns Promise<string> - The encrypted ciphertext
    */
-  async encryptMessage(
+  async encryptSourceMessage(
     plaintext: string,
     sourceFingerprint: string,
     sourcePublicKey: string,
@@ -302,15 +305,33 @@ export class Crypto {
     // Import source key
     await this.importKey(sourcePublicKey);
 
-    const cmd = this.getGpgCommand();
-    cmd.push(
-      "--encrypt",
-      "-r",
+    if (!this.journalistFingerprint) {
+      return Promise.reject(
+        "journalist fingerprint not available: cannot encrypt messages",
+      );
+    }
+    return this.encryptMessage(plaintext, [
       sourceFingerprint,
-      "-r",
       this.journalistFingerprint,
-      "--armor",
-    );
+    ]);
+  }
+
+  /**
+   * Encrypts a message to a source to the specified recipients
+   * @param plaintext - The message plaintext
+   * @param recipients - Encrypted message recipients
+   * @returns Promise<string> - The encrypted ciphertext
+   */
+  async encryptMessage(
+    plaintext: string,
+    recipients: string[],
+  ): Promise<string> {
+    const cmd = this.getGpgCommand();
+    cmd.push("--encrypt");
+    for (const recipient of recipients) {
+      cmd.push("-r", recipient);
+    }
+    cmd.push("--armor");
     if (!this.isQubes) {
       cmd.push("-o-");
     }

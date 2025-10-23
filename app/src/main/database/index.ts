@@ -758,7 +758,7 @@ export class DB {
       },
       plaintext: text,
       reply: cryptoInstance
-        ? await cryptoInstance.encryptMessage(
+        ? await cryptoInstance.encryptSourceMessage(
             text,
             sourceMetadata.fingerprint,
             sourceMetadata.public_key,

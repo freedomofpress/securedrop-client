@@ -469,7 +469,7 @@ describe("syncMetadata", () => {
       sources: {},
       items: {},
       journalists: {},
-      events: { 1: 200, 2: 200 },
+      events: { 1: [200, ""], 2: [200, ""] },
     };
 
     db = mockDB({ pendingEvents: pendingEvents });
@@ -553,7 +553,7 @@ describe("syncMetadata", () => {
       journalists: {
         uuid3: mockJournalistMetadata("uuid3"),
       },
-      events: { 1: 200 },
+      events: { 1: [200, ""] },
     };
 
     db = mockDB();

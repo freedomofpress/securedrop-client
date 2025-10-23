@@ -480,6 +480,201 @@ describe("Crypto Integration Tests", () => {
     });
   });
 
+  describe("Message encryption", () => {
+    it("should successfully encrypt a message", async () => {
+      Crypto.initialize({ isQubes: false });
+      const crypto = Crypto.getInstance()!;
+      const testMessage = "Secret message";
+      const encryptedContent = Buffer.from("encrypted-content");
+
+      // Mock GPG process for successful encryption
+      mockProcess.on.mockImplementation(
+        (event: string, callback: (code: number) => void) => {
+          if (event === "close") {
+            setTimeout(() => callback(0), 10);
+          }
+          return mockProcess;
+        },
+      );
+
+      mockProcess.stdout.on.mockImplementation(
+        (event: string, callback: (data: Buffer) => void) => {
+          if (event === "data") {
+            setTimeout(() => callback(encryptedContent), 5);
+          }
+          return mockProcess;
+        },
+      );
+
+      mockProcess.stderr.on.mockImplementation(() => mockProcess);
+
+      mockSpawn.mockReturnValue(mockProcess as never);
+
+      const result = await crypto.encryptMessage(testMessage, [
+        "recipient@example.com",
+      ]);
+
+      expect(result).toEqual(encryptedContent.toString("utf-8"));
+      expect(mockSpawn).toHaveBeenCalledWith("gpg", [
+        "--trust-model",
+        "always",
+        "--encrypt",
+        "-r",
+        "recipient@example.com",
+        "--armor",
+        "-o-",
+      ]);
+      expect(mockProcess.stdin.write).toHaveBeenCalledWith(testMessage);
+      expect(mockProcess.stdin.end).toHaveBeenCalled();
+    });
+
+    it("should handle GPG encryption failure", async () => {
+      Crypto.initialize({ isQubes: false });
+      const crypto = Crypto.getInstance()!;
+      const testMessage = "Secret message";
+
+      mockProcess.on.mockImplementation(
+        (event: string, callback: (code: number) => void) => {
+          if (event === "close") {
+            setTimeout(() => callback(1), 10);
+          }
+          return mockProcess;
+        },
+      );
+
+      mockProcess.stderr.on.mockImplementation(
+        (event: string, callback: (data: Buffer) => void) => {
+          if (event === "data") {
+            setTimeout(() => callback(Buffer.from("GPG encryption error")), 5);
+          }
+          return mockProcess;
+        },
+      );
+
+      mockSpawn.mockReturnValue(mockProcess as never);
+
+      await expect(
+        crypto.encryptMessage(testMessage, ["recipient@example.com"]),
+      ).rejects.toThrow(CryptoError);
+      await expect(
+        crypto.encryptMessage(testMessage, ["recipient@example.com"]),
+      ).rejects.toThrow(
+        "GPG encryption failed (exit code 1): GPG encryption error",
+      );
+    });
+
+    it("should handle GPG process spawn failure during encryption", async () => {
+      Crypto.initialize({ isQubes: false });
+      const crypto = Crypto.getInstance()!;
+      const testMessage = "Secret message";
+
+      mockProcess.on.mockImplementation(
+        (event: string, callback: (error: Error) => void) => {
+          if (event === "error") {
+            setTimeout(() => callback(new Error("Process spawn failed")), 5);
+          }
+          return mockProcess;
+        },
+      );
+
+      mockSpawn.mockReturnValue(mockProcess as never);
+
+      await expect(
+        crypto.encryptMessage(testMessage, ["recipient@example.com"]),
+      ).rejects.toThrow(CryptoError);
+      await expect(
+        crypto.encryptMessage(testMessage, ["recipient@example.com"]),
+      ).rejects.toThrow("Failed to start GPG process: Process spawn failed");
+    });
+
+    it("should use qubes-gpg-client in Qubes environment for encryption", async () => {
+      vi.stubEnv("QUBES_SOMETHING", "value");
+      Crypto.initialize({});
+      const crypto = Crypto.getInstance()!;
+      const testMessage = "Secret message";
+      const encryptedContent = Buffer.from("encrypted-content");
+
+      mockProcess.on.mockImplementation(
+        (event: string, callback: (code: number) => void) => {
+          if (event === "close") {
+            setTimeout(() => callback(0), 10);
+          }
+          return mockProcess;
+        },
+      );
+
+      mockProcess.stdout.on.mockImplementation(
+        (event: string, callback: (data: Buffer) => void) => {
+          if (event === "data") {
+            setTimeout(() => callback(encryptedContent), 5);
+          }
+          return mockProcess;
+        },
+      );
+
+      mockProcess.stderr.on.mockImplementation(() => mockProcess);
+
+      mockSpawn.mockReturnValue(mockProcess as never);
+
+      await crypto.encryptMessage(testMessage, ["recipient@example.com"]);
+
+      expect(mockSpawn).toHaveBeenCalledWith("qubes-gpg-client", [
+        "--trust-model",
+        "always",
+        "--encrypt",
+        "-r",
+        "recipient@example.com",
+        "--armor",
+      ]);
+    });
+
+    it("should use custom homedir when specified for encryption", async () => {
+      Crypto.initialize({
+        isQubes: false,
+        gpgHomedir: "/custom/gnupg",
+      });
+      const crypto = Crypto.getInstance()!;
+      const testMessage = "Secret message";
+      const encryptedContent = Buffer.from("encrypted-content");
+
+      mockProcess.on.mockImplementation(
+        (event: string, callback: (code: number) => void) => {
+          if (event === "close") {
+            setTimeout(() => callback(0), 10);
+          }
+          return mockProcess;
+        },
+      );
+
+      mockProcess.stdout.on.mockImplementation(
+        (event: string, callback: (data: Buffer) => void) => {
+          if (event === "data") {
+            setTimeout(() => callback(encryptedContent), 5);
+          }
+          return mockProcess;
+        },
+      );
+
+      mockProcess.stderr.on.mockImplementation(() => mockProcess);
+
+      mockSpawn.mockReturnValue(mockProcess as never);
+
+      await crypto.encryptMessage(testMessage, ["recipient@example.com"]);
+
+      expect(mockSpawn).toHaveBeenCalledWith("gpg", [
+        "--trust-model",
+        "always",
+        "--homedir",
+        "/custom/gnupg",
+        "--encrypt",
+        "-r",
+        "recipient@example.com",
+        "--armor",
+        "-o-",
+      ]);
+    });
+  });
+
   describe("Singleton behavior", () => {
     it("should return the same instance on multiple calls", () => {
       Crypto.initialize({});
