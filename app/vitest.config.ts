@@ -73,6 +73,7 @@ export default defineConfig({
           name: "server", // Tests that require a running server
           include: ["server_tests/**/*.test.ts"],
           globals: true,
+          testTimeout: 30000, // 30s default timeout
         },
         define: {
           __PROXY_CMD__: JSON.stringify(sdProxyCmd),

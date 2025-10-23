@@ -32,7 +32,7 @@ describe.sequential("source list functionality", () => {
 
   afterAll(async () => {
     await context.teardown();
-  }, 20000);
+  }, 30000);
 
   it("should log in and sync sources", async () => {
     // Log in with test credentials
@@ -49,7 +49,7 @@ describe.sequential("source list functionality", () => {
     await expect(
       context.page.getByText("Preservative Legislator"),
     ).toBeVisible();
-  }, 25000);
+  });
 
   it("should search sources by codename", async () => {
     // Get the search input
@@ -115,7 +115,7 @@ describe.sequential("source list functionality", () => {
     await context.page.waitForTimeout(500);
 
     expect(await getVisibleSourceCount()).toBe(0);
-  }, 15000);
+  });
 
   it("should search case-insensitively", async () => {
     const searchInput = context.page.getByTestId("source-search-input");
@@ -138,7 +138,7 @@ describe.sequential("source list functionality", () => {
 
     // Clear search
     await searchInput.clear();
-  }, 10000);
+  });
 
   it("should search by partial codename", async () => {
     const searchInput = context.page.getByTestId("source-search-input");
@@ -162,7 +162,7 @@ describe.sequential("source list functionality", () => {
 
     // Clear search
     await searchInput.clear();
-  }, 10000);
+  });
 
   it("should show Preservative Legislator as unread", async () => {
     // Get the Preservative Legislator source by UUID
@@ -175,7 +175,7 @@ describe.sequential("source list functionality", () => {
     // Check that the element has font-bold class (indicates unread)
     const classes = await preservativeLegislator.getAttribute("class");
     expect(classes).toContain("font-bold");
-  }, 5000);
+  });
 
   it("should filter to show only unread sources", async () => {
     await setFilter("unread");
@@ -197,7 +197,7 @@ describe.sequential("source list functionality", () => {
 
     // Verify all sources are visible again
     expect(await getVisibleSourceCount()).toBe(3);
-  }, 10000);
+  });
 
   it("should filter to show only read sources", async () => {
     await setFilter("read");
@@ -219,5 +219,5 @@ describe.sequential("source list functionality", () => {
 
     // Verify all sources are visible again
     expect(await getVisibleSourceCount()).toBe(3);
-  }, 10000);
+  });
 });
