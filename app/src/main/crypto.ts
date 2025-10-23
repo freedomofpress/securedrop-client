@@ -8,6 +8,7 @@ import * as path from "path";
 export interface CryptoConfig {
   isQubes?: boolean; // Auto-detect if not provided
   gpgHomedir?: string;
+  journalistFingerprint: string;
 }
 
 export class CryptoError extends Error {
@@ -24,10 +25,12 @@ export class Crypto {
   private static instance: Crypto;
   private isQubes: boolean;
   private gpgHomedir?: string;
+  private journalistFingerprint: string;
 
-  private constructor(config: CryptoConfig = {}) {
+  private constructor(config: CryptoConfig) {
     this.isQubes = config.isQubes ?? this.detectQubes();
     this.gpgHomedir = config.gpgHomedir;
+    this.journalistFingerprint = config.journalistFingerprint;
   }
 
   /**
@@ -218,6 +221,139 @@ export class Crypto {
         reject(
           new CryptoError(
             `Failed to start GPG process for file decryption: ${error.message}`,
+            error,
+          ),
+        );
+      });
+    });
+  }
+
+  /**
+   * Imports a public key
+   * @param publicKey - The GPG public key to import
+   */
+  async importKey(publicKey: string): Promise<void> {
+    // Write public key to temporary file
+    const tempDir = fs.mkdtempSync(
+      path.join(os.tmpdir(), "securedrop-import-"),
+    );
+    const tempPubkey = path.join(
+      tempDir,
+      `gpg-pub-key-${Date.now()}-${Math.random().toString(36).slice(2)}`,
+    );
+    fs.writeFileSync(tempPubkey, publicKey);
+
+    let cmd: string[] = [];
+    if (this.isQubes) {
+      cmd = ["qubes-gpg-import-key", tempPubkey];
+    } else {
+      cmd = [
+        ...this.getGpgCommand(),
+        "--import-options",
+        "import-show",
+        "--with-colons",
+        "--import",
+        tempPubkey,
+      ];
+    }
+    return new Promise((resolve, reject) => {
+      const proc = spawn(cmd[0], cmd.slice(1));
+      let stderr = Buffer.alloc(0);
+
+      proc.stderr.on("data", (chunk) => {
+        stderr = Buffer.concat([stderr, chunk]);
+      });
+
+      proc.on("close", (code) => {
+        fs.rmSync(tempDir, { recursive: true, force: true });
+        if (code !== 0) {
+          reject(
+            new CryptoError(
+              `GPG key import failed (exit code ${code}): ${stderr.toString("utf8")}`,
+            ),
+          );
+        } else {
+          resolve();
+        }
+      });
+
+      proc.on("error", (error) => {
+        fs.rmSync(tempDir, { recursive: true, force: true });
+        reject(
+          new CryptoError(
+            `Failed to start GPG process for key import: ${error.message}`,
+            error,
+          ),
+        );
+      });
+    });
+  }
+
+  /**
+   * Encrypted a plaintext message
+   * @param plaintext - The message plaintext
+   * @returns Promise<string> - The encrypted ciphertext
+   */
+  async encryptMessage(
+    plaintext: string,
+    sourceFingerprint: string,
+    sourcePublicKey: string,
+  ): Promise<string> {
+    // Import source key
+    await this.importKey(sourcePublicKey);
+
+    const cmd = this.getGpgCommand();
+    cmd.push(
+      "--encrypt",
+      "-r",
+      sourceFingerprint,
+      "-r",
+      this.journalistFingerprint,
+      "--armor",
+    );
+    if (!this.isQubes) {
+      cmd.push("-o-");
+    }
+
+    return new Promise((resolve, reject) => {
+      const gpgProcess = spawn(cmd[0], cmd.slice(1));
+
+      let stdout = Buffer.alloc(0);
+      let stderr = Buffer.alloc(0);
+
+      // Write plaintext to GPG stdin
+      gpgProcess.stdin.write(plaintext);
+      gpgProcess.stdin.end();
+
+      // Collect stdout (encrypted ciphertext)
+      gpgProcess.stdout.on("data", (chunk) => {
+        stdout = Buffer.concat([stdout, chunk]);
+      });
+
+      // Collect stderr (error messages)
+      gpgProcess.stderr.on("data", (chunk) => {
+        stderr = Buffer.concat([stderr, chunk]);
+      });
+
+      gpgProcess.on("close", async (code) => {
+        if (code !== 0) {
+          const errorMessage = stderr.toString("utf8");
+          reject(
+            new CryptoError(
+              `GPG encryption failed (exit code ${code}): ${errorMessage}`,
+            ),
+          );
+          return;
+        }
+
+        // Messages are not gzipped, so return the decrypted content directly as string
+        resolve(stdout.toString("utf8"));
+      });
+
+      gpgProcess.on("error", (error) => {
+        reject(
+          new CryptoError(
+            `Failed to start GPG process: ${error.message}`,
             error,
           ),
         );

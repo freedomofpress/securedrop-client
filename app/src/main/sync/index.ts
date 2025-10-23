@@ -178,7 +178,6 @@ export async function syncMetadata(
 ): Promise<SyncStatus> {
   const currentVersion = db.getVersion();
   const pendingEvents = db.getPendingEvents();
-
   const serverIndex = await getServerIndex(authToken, currentVersion);
 
   let syncStatus = SyncStatus.NOT_MODIFIED;
@@ -208,7 +207,12 @@ export async function syncMetadata(
     return syncStatus;
   }
 
+  console.log("submitting batch: ", request);
+
   const batchResponse = await submitBatch(authToken, request);
+
+  console.log("received response: ", batchResponse);
+
   db.updateBatch(batchResponse);
   syncStatus = SyncStatus.UPDATED;
 

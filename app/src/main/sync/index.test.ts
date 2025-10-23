@@ -454,12 +454,12 @@ describe("syncMetadata", () => {
     // Server index is up-to-date, but there are pending events
     const pendingEvents: PendingEvent[] = [
       {
-        snowflake_id: "1",
+        id: "1",
         type: PendingEventType.Seen,
         target: { item_uuid: "item1", version: "" },
       },
       {
-        snowflake_id: "2",
+        id: "2",
         type: PendingEventType.ItemDeleted,
         target: { item_uuid: "item3", version: "" },
       },
@@ -534,7 +534,7 @@ describe("syncMetadata", () => {
     };
     const pendingEvents: PendingEvent[] = [
       {
-        snowflake_id: "1",
+        id: "1",
         type: PendingEventType.Seen,
         target: {
           item_uuid: "uuid2",
