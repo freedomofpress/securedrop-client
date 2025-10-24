@@ -9,6 +9,9 @@ import {
   ItemMetadata,
   JournalistMetadata,
   SyncStatus,
+  PendingEventType,
+  PendingEvent,
+  BatchResponse,
 } from "../../../src/types";
 import * as proxyModule from "../../../src/main/proxy";
 import { encryptedFilepath } from "../crypto";
@@ -23,14 +26,16 @@ vi.mock("fs", () => ({
 function mockDB({
   index = { sources: {}, items: {}, journalists: {} },
   itemFileData = {},
+  pendingEvents = [{}],
 } = {}) {
   return {
     getVersion: vi.fn(() => "v1"),
     getIndex: vi.fn(() => index),
     deleteItems: vi.fn((_itemIDs) => {}),
     deleteSources: vi.fn((_sourceIDs) => {}),
-    updateMetadata: vi.fn((_metadata) => {}),
+    updateBatch: vi.fn((_metadata) => {}),
     getItemFileData: vi.fn(() => itemFileData),
+    getPendingEvents: vi.fn(() => pendingEvents),
   } as unknown as DB;
 }
 
@@ -42,6 +47,7 @@ function mockSourceMetadata(uuid: string): SourceMetadata {
     last_updated: new Date().toISOString(),
     public_key: "test_public_key",
     fingerprint: "test_fingerprint",
+    is_seen: false,
   };
 }
 
@@ -85,6 +91,7 @@ describe("syncMetadata", () => {
   });
 
   it("does nothing if index is up-to-date (304)", async () => {
+    db = mockDB({ pendingEvents: [] });
     const proxyMock = mockProxyResponses([
       {
         status: 304,
@@ -95,7 +102,7 @@ describe("syncMetadata", () => {
     ]);
     const status = await syncModule.syncMetadata(db, "");
     expect(proxyMock).toHaveBeenCalledTimes(1);
-    expect(db.updateMetadata).not.toHaveBeenCalled();
+    expect(db.updateBatch).not.toHaveBeenCalled();
     expect(status).toBe(SyncStatus.NOT_MODIFIED);
   });
 
@@ -112,7 +119,7 @@ describe("syncMetadata", () => {
         uuid3: "ghi",
       },
     };
-    const metadata: MetadataResponse = {
+    const batch: BatchResponse = {
       sources: {
         uuid1: mockSourceMetadata("uuid1"),
       },
@@ -122,6 +129,7 @@ describe("syncMetadata", () => {
       journalists: {
         uuid3: mockJournalistMetadata("uuid3"),
       },
+      events: {},
     };
     // Client index is empty
     db = mockDB();
@@ -133,11 +141,11 @@ describe("syncMetadata", () => {
         data: serverIndex,
         headers: new Map(),
       },
-      // Metadata response
+      // Batch response
       {
         status: 200,
         error: false,
-        data: metadata,
+        data: batch,
         headers: new Map(),
       },
     ]);
@@ -146,7 +154,7 @@ describe("syncMetadata", () => {
 
     expect(proxyMock).toHaveBeenCalledTimes(2);
     // Should update sources and items with new data
-    expect(db.updateMetadata).toHaveBeenCalledWith(metadata);
+    expect(db.updateBatch).toHaveBeenCalledWith(batch);
   });
 
   it("handles error from getIndex", async () => {
@@ -194,9 +202,9 @@ describe("syncMetadata", () => {
     ]);
 
     await expect(syncModule.syncMetadata(db, "")).rejects.toMatch(
-      /Error fetching metadata from server/,
+      /Error fetching data from server/,
     );
-    expect(db.updateMetadata).not.toHaveBeenCalled();
+    expect(db.updateBatch).not.toHaveBeenCalled();
     expect(proxyMock).toHaveBeenCalledTimes(2);
   });
 
@@ -239,6 +247,7 @@ describe("syncMetadata", () => {
       sources: ["source1"],
       items: ["item1"],
       journalists: ["journalist1"],
+      events: [],
     });
   });
 
@@ -308,7 +317,7 @@ describe("syncMetadata", () => {
 
     expect(proxyMock).toHaveBeenCalledTimes(2);
     expect(db.deleteItems).toHaveBeenCalledWith(["item2"]);
-    expect(db.updateMetadata).toHaveBeenCalledWith(metadata);
+    expect(db.updateBatch).toHaveBeenCalledWith(metadata);
     expect(fs.rmSync).toHaveBeenCalledTimes(2);
     expect(fs.rmSync).toHaveBeenCalledWith("/securedrop/plaintext.txt", {
       force: true,
@@ -360,6 +369,7 @@ describe("syncMetadata", () => {
       items: ["item1"],
       sources: [],
       journalists: [],
+      events: [],
     });
 
     const metadata: MetadataResponse = {
@@ -388,7 +398,7 @@ describe("syncMetadata", () => {
     await syncModule.syncMetadata(db, "");
 
     expect(proxyMock).toHaveBeenCalledTimes(2);
-    expect(db.updateMetadata).toHaveBeenCalledWith(metadata);
+    expect(db.updateBatch).toHaveBeenCalledWith(metadata);
   });
 
   it("deletes sources on sync + updates source delta", async () => {
@@ -434,9 +444,141 @@ describe("syncMetadata", () => {
 
     expect(proxyMock).toHaveBeenCalledTimes(2);
     expect(db.deleteSources).toHaveBeenCalledWith(["uuid2"]);
-    expect(db.updateMetadata).toHaveBeenCalledWith({
+    expect(db.updateBatch).toHaveBeenCalledWith({
       items: {},
       sources: {},
     });
+  });
+
+  it("sends pending events in batch and updates when accepted", async () => {
+    // Server index is up-to-date, but there are pending events
+    const pendingEvents: PendingEvent[] = [
+      {
+        id: "1",
+        type: PendingEventType.Seen,
+        target: { item_uuid: "item1", version: "" },
+      },
+      {
+        id: "2",
+        type: PendingEventType.ItemDeleted,
+        target: { item_uuid: "item3", version: "" },
+      },
+    ];
+    const batch: BatchResponse = {
+      sources: {},
+      items: {},
+      journalists: {},
+      events: { 1: [200, ""], 2: [200, ""] },
+    };
+
+    db = mockDB({ pendingEvents: pendingEvents });
+    db.getPendingEvents = vi.fn(() => pendingEvents);
+
+    const proxyMock = vi.spyOn(proxyModule, "proxyJSONRequest");
+    proxyMock
+      // Server index has no changes
+      .mockResolvedValueOnce({
+        status: 304,
+        error: false,
+        data: null,
+        headers: new Map(),
+      })
+      // Response with accepted pending events
+      .mockResolvedValueOnce({
+        status: 200,
+        error: false,
+        data: batch,
+        headers: new Map(),
+      });
+
+    const status = await syncModule.syncMetadata(db, "");
+
+    expect(proxyMock).toHaveBeenCalledTimes(2);
+    // The batch request should include the pending events
+    const batchRequestArg = proxyMock.mock.calls[1][0];
+    expect(JSON.parse(batchRequestArg.body!).events).toEqual(pendingEvents);
+    expect(db.updateBatch).toHaveBeenCalledWith(batch);
+    expect(status).toBe(SyncStatus.UPDATED);
+  });
+
+  it("does not send batch if no server update and no pending events", async () => {
+    db = mockDB();
+    db.getPendingEvents = vi.fn(() => []);
+    const proxyMock = vi.spyOn(proxyModule, "proxyJSONRequest");
+    proxyMock.mockResolvedValueOnce({
+      status: 304,
+      error: false,
+      data: null,
+      headers: new Map(),
+    });
+
+    const status = await syncModule.syncMetadata(db, "");
+
+    expect(proxyMock).toHaveBeenCalledTimes(1);
+    expect(db.updateBatch).not.toHaveBeenCalled();
+    expect(status).toBe(SyncStatus.NOT_MODIFIED);
+  });
+
+  it("handles batch response with events and index changes", async () => {
+    // Server index is up-to-date, but there are pending events
+    const serverIndex: Index = {
+      sources: {
+        uuid1: "abc",
+      },
+      items: {
+        uuid2: "def",
+      },
+      journalists: {
+        uuid3: "ghi",
+      },
+    };
+    const pendingEvents: PendingEvent[] = [
+      {
+        id: "1",
+        type: PendingEventType.Seen,
+        target: {
+          item_uuid: "uuid2",
+          version: "",
+        },
+      },
+    ];
+    const batch: BatchResponse = {
+      sources: {
+        uuid1: mockSourceMetadata("uuid1"),
+      },
+      items: {
+        uuid2: mockItemMetadata("uuid2", "uuid1"),
+      },
+      journalists: {
+        uuid3: mockJournalistMetadata("uuid3"),
+      },
+      events: { 1: [200, ""] },
+    };
+
+    db = mockDB();
+    db.getPendingEvents = vi.fn(() => pendingEvents);
+
+    const proxyMock = vi.spyOn(proxyModule, "proxyJSONRequest");
+    proxyMock
+      // Index response
+      .mockResolvedValueOnce({
+        status: 200,
+        error: false,
+        data: serverIndex,
+        headers: new Map(),
+      })
+      // Batch response
+      .mockResolvedValueOnce({
+        status: 200,
+        error: false,
+        data: batch,
+        headers: new Map(),
+      });
+
+    const status = await syncModule.syncMetadata(db, "");
+
+    expect(proxyMock).toHaveBeenCalledTimes(2);
+    expect(db.updateBatch).toHaveBeenCalledWith(batch);
+    expect(status).toBe(SyncStatus.UPDATED);
   });
 });
