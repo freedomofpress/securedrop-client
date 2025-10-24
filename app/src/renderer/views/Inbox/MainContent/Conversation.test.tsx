@@ -28,6 +28,7 @@ const mockSourceWithItems: SourceWithItems = {
         size: 1024,
         seen_by: [],
         is_read: false,
+        interaction_count: 1,
       },
       fetch_progress: 1024,
       fetch_status: 3,

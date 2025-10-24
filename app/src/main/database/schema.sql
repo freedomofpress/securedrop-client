@@ -8,7 +8,7 @@ CREATE TABLE items (
   data json,
   plaintext text,
   filename text
-, version text, kind text generated always as (json_extract (data, '$.kind')) stored, is_read integer generated always as (json_extract (data, '$.is_read')) stored, last_updated integer generated always as (json_extract (data, '$.last_updated')) stored, source_uuid text generated always as (json_extract (data, '$.source')), fetch_progress INTEGER, fetch_status INTEGER NOT NULL DEFAULT 0, fetch_last_updated_at timestamp, fetch_retry_attempts integer NOT NULL DEFAULT 0);
+, version text, kind text generated always as (json_extract (data, '$.kind')) stored, is_read integer generated always as (json_extract (data, '$.is_read')) stored, last_updated integer generated always as (json_extract (data, '$.last_updated')) stored, source_uuid text generated always as (json_extract (data, '$.source')), fetch_progress INTEGER, fetch_status INTEGER NOT NULL DEFAULT 0, fetch_last_updated_at timestamp, fetch_retry_attempts integer NOT NULL DEFAULT 0, interaction_count integer generated always as (json_extract (data, '$.interaction_count')));
 CREATE TABLE state_history (
     version text,
     updated timestamp default current_timestamp,
@@ -135,6 +135,7 @@ SELECT
     items.fetch_status,
     items.fetch_last_updated_at,
     items.fetch_retry_attempts
+    items.interaction_count
 FROM
     items
     -- project ItemDeleted event
@@ -214,3 +215,4 @@ INSERT INTO "schema_migrations" (version) VALUES
   ('20250819160236'),
   ('20250821184819'),
   ('20250930191810');
+  ('20251024000000');

@@ -87,6 +87,7 @@ const Conversation = memo(function Conversation({
           <div
             ref={scrollContainerRef}
             className="absolute inset-0 overflow-y-auto overflow-x-hidden p-4 pb-0"
+            data-testid="conversation-items-container"
           >
             {sourceWithItems.items.map((item) => (
               <Item
