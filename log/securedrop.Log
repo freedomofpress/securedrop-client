@@ -1,1 +1,2 @@
+#!/bin/sh
 /usr/sbin/securedrop-redis-log

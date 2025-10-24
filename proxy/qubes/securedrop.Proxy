@@ -1,1 +1,2 @@
+#!/bin/sh
 /usr/bin/securedrop-proxy
