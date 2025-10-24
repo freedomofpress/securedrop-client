@@ -77,8 +77,13 @@ const electronAPI = {
   ),
   addPendingReplySentEvent: logIpcCall<bigint>(
     "addPendingReplySentEvent",
-    (text: string, sourceUuid: string) =>
-      ipcRenderer.invoke("addPendingReplySentEvent", text, sourceUuid),
+    (text: string, sourceUuid: string, interactionCount: number) =>
+      ipcRenderer.invoke(
+        "addPendingReplySentEvent",
+        text,
+        sourceUuid,
+        interactionCount,
+      ),
   ),
   addPendingItemEvent: logIpcCall<bigint>(
     "addPendingItemEvent",

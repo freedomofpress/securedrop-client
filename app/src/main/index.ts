@@ -242,8 +242,13 @@ app.whenReady().then(() => {
 
   ipcMain.handle(
     "addPendingReplySentEvent",
-    async (_event, text: string, sourceUuid: string): Promise<bigint> => {
-      return db.addPendingReplySentEvent(text, sourceUuid);
+    async (
+      _event,
+      text: string,
+      sourceUuid: string,
+      interactionCount: number,
+    ): Promise<bigint> => {
+      return db.addPendingReplySentEvent(text, sourceUuid, interactionCount);
     },
   );
 

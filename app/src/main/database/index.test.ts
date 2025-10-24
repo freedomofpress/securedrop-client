@@ -99,6 +99,7 @@ describe("pending_events update projected views", () => {
       journalist_uuid: "",
       is_deleted_by_source: false,
       seen_by: [],
+      interaction_count: 1,
     };
   }
 
@@ -310,11 +311,51 @@ describe("pending_events update projected views", () => {
     let sourceWithItems = db.getSourceWithItems("source1");
     expect(sourceWithItems.items.length).toEqual(3);
 
-    db.addPendingReplySentEvent("here is a reply", "source1");
+    db.addPendingReplySentEvent("here is a reply", "source1", 4);
     sourceWithItems = db.getSourceWithItems("source1");
     expect(sourceWithItems.items.length).toEqual(4);
     const reply = sourceWithItems.items[3];
     expect(reply?.plaintext).toBe("here is a reply");
+  });
+
+  it("getSourceWithItems returns items sorted by interaction_count", () => {
+    db.updateSources({
+      source1: mockSourceMetadata("source1"),
+    });
+
+    db.updateItems({
+      item3: {
+        ...mockItemMetadata("item3", "source1"),
+        interaction_count: 3,
+      },
+      item1: {
+        ...mockItemMetadata("item1", "source1"),
+        interaction_count: 1,
+      },
+      item5: {
+        ...mockItemMetadata("item5", "source1"),
+        interaction_count: 5,
+      },
+      item2: {
+        ...mockItemMetadata("item2", "source1"),
+        interaction_count: 2,
+      },
+      item4: {
+        ...mockItemMetadata("item4", "source1"),
+        interaction_count: 4,
+      },
+    });
+
+    const sourceWithItems = db.getSourceWithItems("source1");
+    const items = sourceWithItems.items;
+
+    // Clone and sort by interaction_count
+    const sortedItems = [...items].sort(
+      (a, b) => a.data.interaction_count - b.data.interaction_count,
+    );
+
+    // Verify the returned items are already sorted
+    expect(items).toEqual(sortedItems);
   });
 
   it("pending ItemDeleted event should delete reply", () => {
@@ -347,7 +388,7 @@ describe("pending_events update projected views", () => {
       item2: mockItemMetadata("item2", "source1"),
     });
 
-    db.addPendingReplySentEvent("reply text", "source1");
+    db.addPendingReplySentEvent("reply text", "source1", 3);
     let sourceWithItems = db.getSourceWithItems("source1");
     expect(sourceWithItems.items.length).toEqual(3);
 
@@ -376,7 +417,7 @@ describe("pending_events update projected views", () => {
     let sourceWithItems = db.getSourceWithItems("source1");
     expect(sourceWithItems.items.length).toEqual(0);
 
-    const snowflake2 = db.addPendingReplySentEvent("reply text", "source1");
+    const snowflake2 = db.addPendingReplySentEvent("reply text", "source1", 1);
     expect(snowflake2 > snowflake1);
     sourceWithItems = db.getSourceWithItems("source1");
     expect(sourceWithItems.items.length).toEqual(1);
@@ -395,7 +436,7 @@ describe("pending_events update projected views", () => {
       item1: mockItemMetadata("item1", "source1"),
     });
 
-    db.addPendingReplySentEvent("reply text", "source1");
+    db.addPendingReplySentEvent("reply text", "source1", 1);
     let sources = db.getSources();
     expect(sources.length).toEqual(1);
 
@@ -413,7 +454,7 @@ describe("pending_events update projected views", () => {
       item1: mockItemMetadata("item1", "source1"),
     });
 
-    db.addPendingReplySentEvent("reply text", "source1");
+    db.addPendingReplySentEvent("reply text", "source1", 2);
     let sourceWithItems = db.getSourceWithItems("source1");
     expect(sourceWithItems.items.length).toEqual(2);
     const pendingReplyUuid = sourceWithItems.items[1].uuid;

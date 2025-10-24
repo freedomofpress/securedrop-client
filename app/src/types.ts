@@ -103,6 +103,7 @@ export type ReplyMetadata = {
   journalist_uuid: string;
   is_deleted_by_source: boolean;
   seen_by: string[];
+  interaction_count: number;
 };
 
 export type SubmissionMetadata = {
@@ -112,6 +113,7 @@ export type SubmissionMetadata = {
   size: number;
   is_read: boolean;
   seen_by: string[];
+  interaction_count: number;
 };
 
 export type JournalistMetadata = {
