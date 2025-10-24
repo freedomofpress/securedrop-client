@@ -218,6 +218,7 @@ export class DB {
     this.selectItemsBySourceId = this.db.prepare(`
       SELECT uuid, data, plaintext, filename, fetch_status, fetch_progress FROM items_projected
       WHERE source_uuid = ?
+      ORDER BY interaction_count ASC
     `);
     this.selectAllJournalists = this.db.prepare(`
       SELECT uuid, data FROM journalists
@@ -684,6 +685,8 @@ export class DB {
         journalist_uuid: "",
         is_deleted_by_source: false,
         seen_by: [],
+        // FIXME: we should calculate this ahead of time
+        interaction_count: 0,
       },
       text: text ?? "",
     };

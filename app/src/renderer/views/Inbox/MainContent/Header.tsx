@@ -34,8 +34,11 @@ function Header({ sourceUuid, loading, sourceWithItems }: HeaderProps) {
     <>
       <Avatar designation={designation} isActive={false} />
       <div className="ml-2">
-        <p>{designation}</p>
-        <p className="text-sm text-gray-600">
+        <p data-testid="conversation-header-designation">{designation}</p>
+        <p
+          className="text-sm text-gray-600"
+          data-testid="conversation-header-last-activity"
+        >
           {t("lastSourceActivity")}: {formattedLastSeen}
         </p>
       </div>

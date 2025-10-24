@@ -99,6 +99,7 @@ describe("pending_events update projected views", () => {
       journalist_uuid: "",
       is_deleted_by_source: false,
       seen_by: [],
+      interaction_count: 1,
     };
   }
 
