@@ -143,7 +143,7 @@ jobs:
       - name: Install Rust-specific dependencies for sd-proxy
         run: apt-get install --yes build-essential curl libssl-dev pkg-config
       - name: Install Rust to build sd-proxy
-        uses: dtolnay/rust-toolchain@1.87.0
+        uses: dtolnay/rust-toolchain@1.90.0
       - name: Run integration tests
         working-directory: app
         run: NODE_ENV=ci VITE_HTTPBIN_URL=http://httpbin:80 pnpm integration-test
@@ -178,7 +178,7 @@ jobs:
       # n.b. because this runs on Ubuntu runner directly,
       # build-essential, curl, libssl-dev and pkg-config are already installed
       - name: Install Rust to build sd-proxy
-        uses: dtolnay/rust-toolchain@1.87.0
+        uses: dtolnay/rust-toolchain@1.90.0
       - name: Install ffmpeg for video recording
         run: sudo apt-get update && sudo apt-get install -y ffmpeg
       - name: Run tests
