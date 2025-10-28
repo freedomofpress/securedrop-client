@@ -759,12 +759,6 @@ describe("pending_events update projected views", () => {
     // After update, no pending events should remain
     events = db.getPendingEvents();
     expect(events.length).toBe(0);
-
-    // Pending event updates are applied correctly
-    const updatedSourceWithItems = db.getSourceWithItems("source1");
-    expect(updatedSourceWithItems).toBeDefined();
-    expect(updatedSourceWithItems.uuid).toBe("source1");
-    expect(updatedSourceWithItems.items.length).toBe(0);
   });
 
   it("updatePendingEvents should retain failed events", () => {

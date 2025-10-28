@@ -871,57 +871,6 @@ export class DB {
       eventIDsToApply,
     );
     for (const event of eventsToApply) {
-      switch (event.type as PendingEventType) {
-        case PendingEventType.ReplySent: {
-          const replyData: ReplySentData = JSON.parse(event.data);
-          this.upsertItem.run({
-            uuid: event.item_uuid,
-            data: event.data,
-            version: computeVersion(event.data),
-            fetch_status: FetchStatus.Complete,
-          });
-          this.completePlaintextItem(event.item_uuid, replyData.reply);
-          break;
-        }
-        case PendingEventType.ItemDeleted:
-          this.deleteItem.run({ uuid: event.item_uuid });
-          break;
-        case PendingEventType.SourceDeleted:
-          this.deleteSource.run({ uuid: event.source_uuid });
-          break;
-        case PendingEventType.SourceConversationDeleted:
-          // NOTE: there are potential race conditions here where items may be deleted
-          // and then resurrected in a later sync
-          this.deleteItemsBySourceId.run({ source_uuid: event.source_uuid });
-          break;
-        case PendingEventType.Starred:
-        case PendingEventType.Unstarred:
-        case PendingEventType.Seen: {
-          // Get current source metadata to modify + upsert
-          let sourceUuid = event.source_uuid;
-          // If the source UUID isn't set, get it from the item
-          if (!sourceUuid) {
-            const item = this.selectItem.get({ uuid: event.item_uuid });
-            if (!item) {
-              break;
-            }
-            sourceUuid = (JSON.parse(item.data) as ItemMetadata).source;
-          }
-          const source = this.selectSourceById.get(sourceUuid) as SourceRow;
-          const sourceData = JSON.parse(source.data) as SourceMetadata;
-          if (event.type === PendingEventType.Starred) {
-            sourceData.is_starred = true;
-          } else if (event.type === PendingEventType.Unstarred) {
-            sourceData.is_starred = false;
-          } else if (event.type === PendingEventType.Seen) {
-            sourceData.is_seen = true;
-          }
-          this.updateSources({
-            [sourceUuid]: sourceData,
-          });
-          break;
-        }
-      }
       // Once event is applied, delete from pending events table
       this.deletePendingEvent.run({ snowflake_id: event.snowflake_id });
     }
