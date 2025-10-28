@@ -7,6 +7,7 @@ import {
   SyncStatus,
 } from "../../types";
 import { DB } from "../database";
+import { IndexSchema, MetadataResponseSchema } from "../../schemas";
 
 import fs from "fs";
 import { encryptedFilepath } from "../crypto";
@@ -33,7 +34,7 @@ async function getIndex(
   }
 
   if (resp.data) {
-    return resp.data as Index;
+    return IndexSchema.parse(resp.data);
   }
 
   // Version matches, there's nothing to do!
@@ -68,7 +69,7 @@ async function fetchMetadata(
   }
 
   if (resp.data) {
-    return resp.data as MetadataResponse;
+    return MetadataResponseSchema.parse(resp.data);
   }
   return Promise.reject(
     `Error fetching metadata from server: ${resp.status}: no data`,

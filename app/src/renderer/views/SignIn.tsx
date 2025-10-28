@@ -5,7 +5,8 @@ import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router";
 import { useTranslation } from "react-i18next";
 
-import type { ProxyRequest, TokenResponse } from "../../types";
+import type { ProxyRequest } from "../../types";
+import { TokenResponseSchema } from "../../schemas";
 import { useAppDispatch } from "../hooks";
 import {
   setAuth,
@@ -78,9 +79,9 @@ function SignInView() {
         return;
       }
 
-      const resp = res.data as TokenResponse;
-
       try {
+        const resp = TokenResponseSchema.parse(res.data);
+
         // Update the session state
         dispatch(
           setAuth({
@@ -95,7 +96,7 @@ function SignInView() {
         // Redirect to home
         navigate("/");
       } catch (e) {
-        console.error("Failed to update session state:", e);
+        console.error("Failed to validate or update session state:", e);
         dispatch(setUnauth());
 
         setAuthErrorMessage(errorMessageGeneric);
