@@ -29,7 +29,6 @@ import {
   BatchResponse,
   EventStatus,
 } from "../../types";
-import { Crypto } from "../crypto";
 
 interface KeyObject {
   [key: string]: object;
@@ -732,12 +731,10 @@ export class DB {
       .generate({ timestamp: Date.now() })
       .toString();
 
-    const cryptoInstance = Crypto.getInstance();
     const source = this.selectSourceById.get(sourceUuid);
     if (!source || !source.data) {
       return Promise.reject("no source metadata: cannot send reply");
     }
-    const sourceMetadata: SourceMetadata = JSON.parse(source.data);
 
     const replyData: ReplySentData = {
       uuid: itemUuid,
@@ -753,13 +750,8 @@ export class DB {
         interaction_count: interactionCount,
       },
       plaintext: text,
-      reply: cryptoInstance
-        ? await cryptoInstance.encryptSourceMessage(
-            text,
-            sourceMetadata.fingerprint,
-            sourceMetadata.public_key,
-          )
-        : "",
+      // TODO(vicki): encrypt reply
+      reply: "",
     };
 
     this.insertSourcePendingEvent.run({
