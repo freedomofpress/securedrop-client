@@ -70,7 +70,7 @@ SELECT
                 pending_events
             WHERE
                 pending_events.source_uuid = sources.uuid
-                AND pending_events.type = 'seen'
+                AND pending_events.type = 'item_seen'
         ) THEN 1
         ELSE sources.is_seen
     END AS is_seen

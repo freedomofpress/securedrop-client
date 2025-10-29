@@ -37,16 +37,11 @@ export default defineConfig(({ mode }) => {
     mainVars["__PROXY_ORIGIN__"] = JSON.stringify("http://localhost:8081/");
     mainVars["__PROXY_CMD__"] = JSON.stringify(sdProxyCmd);
     mainVars["__VITE_NONCE__"] = JSON.stringify(viteNonce);
-    // Test submission key fingerprint for encrypting replies
-    mainVars["__SUBMISSION_KEY_FPR__"] = JSON.stringify(
-      "65A1B5FF195B56353CC63DFFCC40EF1228271441",
-    );
   } else {
     // In production, PROXY_CMD is determined at runtime, and PROXY_ORIGIN is managed by the proxy VM
     mainVars["__PROXY_CMD__"] = '""'; // Empty string
     mainVars["__PROXY_ORIGIN__"] = '""'; // Empty string
     mainVars["__VITE_NONCE__"] = '""'; // Empty string
-    mainVars["__SUBMISSION_KEY_FPR__"] = '""'; // Empty string
   }
 
   console.log("Using main vars:", mainVars);

@@ -260,7 +260,7 @@ export enum PendingEventType {
   SourceConversationDeleted = "source_conversation_deleted",
   Starred = "source_starred",
   Unstarred = "source_unstarred",
-  Seen = "seen",
+  Seen = "item_seen",
 }
 
 // EventStatus codes returned from the server

@@ -11,7 +11,7 @@ import {
 import { Worker } from "worker_threads";
 
 import { DB } from "./database";
-import { Crypto, CryptoConfig } from "./crypto";
+import { Crypto } from "./crypto";
 import { proxyJSONRequest } from "./proxy";
 import type {
   ProxyRequest,
@@ -34,14 +34,10 @@ const noQubes = args.includes("--no-qubes");
 const shouldAutoLogin = args.includes("--login");
 
 // Create crypto config + initialize
-const cryptoConfig: CryptoConfig = {
-  journalistFingerprint: __SUBMISSION_KEY_FPR__,
-};
+const cryptoConfig = noQubes ? { isQubes: false } : {};
 if (noQubes) {
-  cryptoConfig.isQubes = false;
+  Crypto.initialize(cryptoConfig);
 }
-
-Crypto.initialize(cryptoConfig);
 
 const db = new DB();
 

@@ -66,7 +66,6 @@ describe("Crypto with Real GPG", () => {
     Crypto.initialize({
       isQubes: false,
       gpgHomedir: gpgEnv.homedir,
-      journalistFingerprint: "",
     });
     crypto = Crypto.getInstance()!;
   });

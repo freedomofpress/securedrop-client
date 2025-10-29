@@ -90,7 +90,6 @@ export class DB {
     void
   >;
   private deleteItem: Statement<{ uuid: string }, void>;
-  private deleteItemsBySourceId: Statement<{ source_uuid: string }, void>;
   private updateItemFetchStatus: Statement<{
     uuid: string;
     fetch_status: number;
@@ -210,9 +209,6 @@ export class DB {
       "INSERT INTO items (uuid, data, version) VALUES (@uuid, @data, @version) ON CONFLICT(uuid) DO UPDATE SET data=@data, version=@version",
     );
     this.deleteItem = this.db.prepare("DELETE FROM items WHERE uuid = @uuid");
-    this.deleteItemsBySourceId = this.db.prepare(
-      "DELETE FROM items WHERE source_uuid = @source_uuid",
-    );
     this.selectItem = this.db.prepare(
       `SELECT uuid, data, plaintext, filename, fetch_status, fetch_progress FROM items WHERE uuid = @uuid`,
     );
