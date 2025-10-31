@@ -1,10 +1,11 @@
 import { describe, it, expect, beforeEach, vi, afterEach } from "vitest";
 import { Crypto, CryptoError } from "../crypto";
+import { UnsafePathComponent } from "../storage";
 
 // Type definition for testing private methods
 type CryptoWithPrivateMethods = {
   getGpgCommand(): string[];
-  readGzipHeaderFilename(data: Buffer): string;
+  readGzipHeaderFilename(data: Buffer): UnsafePathComponent | null;
 };
 
 describe("Crypto", () => {
@@ -144,7 +145,7 @@ describe("Crypto", () => {
       const result = (
         crypto as unknown as CryptoWithPrivateMethods
       ).readGzipHeaderFilename(gzipHeader);
-      expect(result).toBe(filename);
+      expect(result?.path).toBe(filename);
     });
 
     it("should return empty string when no filename in header", () => {
@@ -164,7 +165,7 @@ describe("Crypto", () => {
       const result = (
         crypto as unknown as CryptoWithPrivateMethods
       ).readGzipHeaderFilename(gzipHeader);
-      expect(result).toBe("");
+      expect(result).toBe(null);
     });
 
     it("should throw error for invalid gzip magic number", () => {
