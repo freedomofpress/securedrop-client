@@ -245,7 +245,7 @@ app.whenReady().then(() => {
       text: string,
       sourceUuid: string,
       interactionCount: number,
-    ): Promise<bigint> => {
+    ): Promise<string> => {
       return db.addPendingReplySentEvent(text, sourceUuid, interactionCount);
     },
   );
