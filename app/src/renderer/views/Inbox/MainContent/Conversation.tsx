@@ -57,10 +57,17 @@ const Conversation = memo(function Conversation({
       form.resetFields();
       setMessageValue("");
 
+      // Calculate the likely interactionCount this reply will be assigned; it
+      // may not be correct (e.g. if the conversation was deleted) but it'll display
+      // in the correct order while pending and then get adjusted on the server.
+      const nextInteractionCount =
+        (sourceWithItems.items.at(-1)?.data.interaction_count || 0) + 1;
+
       try {
         await window.electronAPI.addPendingReplySentEvent(
           values.message,
           sourceWithItems.uuid,
+          nextInteractionCount,
         );
 
         // Update local state immediately with projected changes
@@ -87,6 +94,7 @@ const Conversation = memo(function Conversation({
           <div
             ref={scrollContainerRef}
             className="absolute inset-0 overflow-y-auto overflow-x-hidden p-4 pb-0"
+            data-testid="conversation-items-container"
           >
             {sourceWithItems.items.map((item) => (
               <Item

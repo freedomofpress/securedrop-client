@@ -218,6 +218,7 @@ export class DB {
     this.selectItemsBySourceId = this.db.prepare(`
       SELECT uuid, data, plaintext, filename, fetch_status, fetch_progress FROM items_projected
       WHERE source_uuid = ?
+      ORDER BY interaction_count ASC
     `);
     this.selectAllJournalists = this.db.prepare(`
       SELECT uuid, data FROM journalists
@@ -671,7 +672,11 @@ export class DB {
     return snowflakeID;
   }
 
-  addPendingReplySentEvent(text: string, sourceUuid: string): bigint {
+  addPendingReplySentEvent(
+    text: string,
+    sourceUuid: string,
+    interactionCount: number,
+  ): bigint {
     const itemUuid = crypto.randomUUID();
     const snowflakeID = this.snowflake.generate({ timestamp: Date.now() });
     const replyData: ReplySentData = {
@@ -684,6 +689,7 @@ export class DB {
         journalist_uuid: "",
         is_deleted_by_source: false,
         seen_by: [],
+        interaction_count: interactionCount,
       },
       text: text ?? "",
     };

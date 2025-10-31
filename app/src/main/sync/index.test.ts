@@ -54,6 +54,7 @@ function mockItemMetadata(uuid: string, source_uuid: string): ItemMetadata {
     journalist_uuid: "test_journalist",
     is_deleted_by_source: false,
     seen_by: [],
+    interaction_count: 1,
   };
 }
 

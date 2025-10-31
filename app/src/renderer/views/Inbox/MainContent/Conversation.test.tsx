@@ -28,6 +28,7 @@ const mockSourceWithItems: SourceWithItems = {
         size: 1024,
         seen_by: [],
         is_read: false,
+        interaction_count: 1,
       },
       fetch_progress: 1024,
       fetch_status: 3,
@@ -106,6 +107,7 @@ describe("Conversation Component Reply Submission", () => {
       expect(mockAddPendingReplySentEvent).toHaveBeenCalledWith(
         "This is my reply",
         "source-1",
+        2,
       );
     });
 
@@ -198,6 +200,7 @@ describe("Conversation Component Reply Submission", () => {
       expect(mockAddPendingReplySentEvent).toHaveBeenCalledWith(
         multilineMessage,
         "source-1",
+        2,
       );
     });
 

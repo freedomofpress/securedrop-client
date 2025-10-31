@@ -20,6 +20,7 @@ describe("Reply", () => {
       journalist_uuid: "journalist-1",
       is_deleted_by_source: false,
       seen_by: [],
+      interaction_count: 1,
     } as ReplyMetadata,
     plaintext: "This is a reply message",
   };
@@ -370,6 +371,7 @@ describe("Reply", () => {
         journalist_uuid: "", // Empty UUID indicates pending reply
         is_deleted_by_source: false,
         seen_by: [],
+        interaction_count: 1,
       } as ReplyMetadata,
       plaintext: "This is a pending reply",
     };
@@ -617,6 +619,8 @@ describe("Reply", () => {
         journalist_uuid: "", // Empty UUID indicates pending reply
         is_deleted_by_source: false,
         seen_by: [],
+        // FIXME
+        interaction_count: 0,
       } as ReplyMetadata,
       plaintext: "This is a pending reply",
     };
