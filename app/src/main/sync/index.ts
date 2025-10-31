@@ -2,8 +2,8 @@ import { proxyJSONRequest } from "../proxy";
 import {
   ProxyJSONResponse,
   Index,
-  MetadataRequest,
-  MetadataResponse,
+  BatchRequest,
+  BatchResponse,
   SyncStatus,
 } from "../../types";
 import { DB } from "../database";
@@ -11,7 +11,7 @@ import { DB } from "../database";
 import fs from "fs";
 import { encryptedFilepath } from "../crypto";
 
-async function getIndex(
+async function getServerIndex(
   authToken: string,
   currentVersion: string,
 ): Promise<Index | null> {
@@ -46,13 +46,13 @@ async function getIndex(
   }
 }
 
-async function fetchMetadata(
+async function submitBatch(
   authToken: string,
-  request: MetadataRequest,
-): Promise<MetadataResponse> {
+  request: BatchRequest,
+): Promise<BatchResponse> {
   const resp = (await proxyJSONRequest({
     method: "POST",
-    path_query: "/api/v2/metadata",
+    path_query: "/api/v2/data",
     headers: {
       Accept: "application/json",
       "Content-Type": "application/json",
@@ -63,15 +63,15 @@ async function fetchMetadata(
 
   if (resp.error) {
     return Promise.reject(
-      `Error fetching metadata from server: ${resp.status}: ${JSON.stringify(resp.data)}`,
+      `Error fetching data from server: ${resp.status}: ${JSON.stringify(resp.data)}`,
     );
   }
 
   if (resp.data) {
-    return resp.data as MetadataResponse;
+    return resp.data as BatchResponse;
   }
   return Promise.reject(
-    `Error fetching metadata from server: ${resp.status}: no data`,
+    `Error fetching data from server: ${resp.status}: no data`,
   );
 }
 
@@ -81,7 +81,7 @@ export function reconcileIndex(
   db: DB,
   serverIndex: Index,
   clientIndex: Index,
-): MetadataRequest {
+): BatchRequest {
   const sourcesToUpdate: string[] = [];
   Object.keys(serverIndex.sources).forEach((sourceID) => {
     if (
@@ -139,6 +139,7 @@ export function reconcileIndex(
     sources: sourcesToUpdate,
     items: itemsToUpdate,
     journalists: journalistsToUpdate,
+    events: [],
   };
 }
 
@@ -176,20 +177,40 @@ export async function syncMetadata(
   authToken: string,
 ): Promise<SyncStatus> {
   const currentVersion = db.getVersion();
-  const index = await getIndex(authToken, currentVersion);
+  const pendingEvents = db.getPendingEvents();
+  const serverIndex = await getServerIndex(authToken, currentVersion);
 
   let syncStatus = SyncStatus.NOT_MODIFIED;
 
-  // Only update metadata if there are changes from the server
-  if (index) {
-    // Reconcile with client's index
-    const clientIndex = db.getIndex();
-    const metadataToUpdate = reconcileIndex(db, index, clientIndex);
+  const request: BatchRequest = {
+    sources: [],
+    items: [],
+    journalists: [],
+    events: pendingEvents,
+  };
 
-    const metadata = await fetchMetadata(authToken, metadataToUpdate);
-    db.updateMetadata(metadata);
-    syncStatus = SyncStatus.UPDATED;
+  if (serverIndex) {
+    // Reconcile with client's index to get metadata to update
+    const clientIndex = db.getIndex();
+    const { sources, items, journalists } = reconcileIndex(
+      db,
+      serverIndex,
+      clientIndex,
+    );
+    request.sources = sources;
+    request.items = items;
+    request.journalists = journalists;
   }
+
+  // No pending events and no server updates, nothing to sync
+  if (!serverIndex && (!pendingEvents || pendingEvents.length == 0)) {
+    return syncStatus;
+  }
+
+  const batchResponse = await submitBatch(authToken, request);
+
+  db.updateBatch(batchResponse);
+  syncStatus = SyncStatus.UPDATED;
 
   return syncStatus;
 }

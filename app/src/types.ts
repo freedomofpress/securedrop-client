@@ -66,6 +66,31 @@ export type Index = {
   };
 };
 
+export type BatchRequest = {
+  // Metadata requests
+  sources: string[];
+  items: string[];
+  journalists: string[];
+
+  // Pending Events
+  events: PendingEvent[];
+};
+
+export type BatchResponse = {
+  sources: {
+    [uuid: string]: SourceMetadata;
+  };
+  items: {
+    [uuid: string]: ItemMetadata;
+  };
+  journalists: {
+    [uuid: string]: JournalistMetadata;
+  };
+  events: {
+    [snowflake_id: string]: [number, string];
+  };
+};
+
 export type MetadataRequest = {
   sources: string[];
   items: string[];
@@ -91,6 +116,7 @@ export type SourceMetadata = {
   last_updated: string;
   public_key: string;
   fingerprint: string;
+  is_seen: boolean;
 };
 
 export type ItemMetadata = ReplyMetadata | SubmissionMetadata;
@@ -204,6 +230,14 @@ export type JournalistRow = {
   version: string;
 };
 
+export type PendingEventRow = {
+  snowflake_id: string;
+  source_uuid: string;
+  item_uuid: string;
+  type: string;
+  data: string; // JSON stringified PendingEventData
+};
+
 export enum FetchStatus {
   Initial = 0,
   DownloadInProgress = 1,
@@ -219,20 +253,51 @@ export enum FetchStatus {
 }
 
 export enum PendingEventType {
-  Undefined = 0,
-  ReplySent = 1,
-  ItemDeleted = 2,
-  SourceDeleted = 3,
-  SourceConversationDeleted = 4,
-  Starred = 5,
-  Unstarred = 6,
-  Seen = 7,
+  Undefined = "undefined",
+  ReplySent = "reply_sent",
+  ItemDeleted = "item_deleted",
+  SourceDeleted = "source_deleted",
+  SourceConversationDeleted = "source_conversation_deleted",
+  Starred = "source_starred",
+  Unstarred = "source_unstarred",
+  Seen = "item_seen",
+}
+
+// EventStatus codes returned from the server
+export enum EventStatus {
+  Processing = 102,
+  OK = 200,
+  AlreadyReported = 208,
+  BadRequest = 400,
+  NotFound = 404,
+  NotImplemented = 501,
 }
 
 export type PendingEventData = ReplySentData;
 
+export type SourceTarget = {
+  source_uuid: string;
+  version: string;
+};
+
+export type ItemTarget = {
+  item_uuid: string;
+  version: string;
+};
+
+export type PendingEvent = {
+  id: string;
+  type: PendingEventType;
+  target: SourceTarget | ItemTarget;
+  data?: PendingEventData;
+};
+
 export type ReplySentData = {
-  text: string;
+  uuid: string;
+  // reply ciphertext
+  reply: string;
+  // reply plaintext: for storing in pending_events table only
+  plaintext: string;
   metadata: ReplyMetadata;
 };
 

@@ -33,12 +33,10 @@ const args = process.argv.slice(2);
 const noQubes = args.includes("--no-qubes");
 const shouldAutoLogin = args.includes("--login");
 
-// Create crypto config
+// Create crypto config + initialize
 const cryptoConfig = noQubes ? { isQubes: false } : {};
-
-// Initialize crypto configuration based on command line arguments
 if (noQubes) {
-  Crypto.initialize({ isQubes: false });
+  Crypto.initialize(cryptoConfig);
 }
 
 const db = new DB();
@@ -235,7 +233,7 @@ app.whenReady().then(() => {
       _event,
       sourceUuid: string,
       type: PendingEventType,
-    ): Promise<bigint> => {
+    ): Promise<string> => {
       return db.addPendingSourceEvent(sourceUuid, type);
     },
   );
@@ -247,7 +245,7 @@ app.whenReady().then(() => {
       text: string,
       sourceUuid: string,
       interactionCount: number,
-    ): Promise<bigint> => {
+    ): Promise<string> => {
       return db.addPendingReplySentEvent(text, sourceUuid, interactionCount);
     },
   );
@@ -258,7 +256,7 @@ app.whenReady().then(() => {
       _event,
       itemUuid: string,
       type: PendingEventType,
-    ): Promise<bigint> => {
+    ): Promise<string> => {
       return db.addPendingItemEvent(itemUuid, type);
     },
   );

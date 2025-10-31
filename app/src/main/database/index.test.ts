@@ -87,6 +87,7 @@ describe("pending_events update projected views", () => {
       last_updated: "",
       public_key: "",
       fingerprint: "",
+      is_seen: false,
     };
   }
 
@@ -400,7 +401,7 @@ describe("pending_events update projected views", () => {
     expect(sourceWithItems.items.length).toEqual(0);
   });
 
-  it("pending SourceConversationDeleted and ReplySent should show reply", () => {
+  it("pending SourceConversationDeleted and ReplySent should show reply", async () => {
     db.updateSources({
       source1: mockSourceMetadata("source1"),
     });
@@ -417,7 +418,11 @@ describe("pending_events update projected views", () => {
     let sourceWithItems = db.getSourceWithItems("source1");
     expect(sourceWithItems.items.length).toEqual(0);
 
-    const snowflake2 = db.addPendingReplySentEvent("reply text", "source1", 1);
+    const snowflake2 = await db.addPendingReplySentEvent(
+      "reply text",
+      "source1",
+      1,
+    );
     expect(snowflake2 > snowflake1);
     sourceWithItems = db.getSourceWithItems("source1");
     expect(sourceWithItems.items.length).toEqual(1);
@@ -670,5 +675,118 @@ describe("pending_events update projected views", () => {
 
     // Should only create event for item1
     expect(snowflakeIds.length).toEqual(1);
+  });
+
+  it("getPendingEvents should return all pending events with correct structure", async () => {
+    db.updateSources({
+      source1: mockSourceMetadata("source1"),
+    });
+    db.updateItems({
+      item1: mockItemMetadata("item1", "source1"),
+    });
+
+    const snowflakeSource = db.addPendingSourceEvent(
+      "source1",
+      PendingEventType.Starred,
+    );
+    console.log("source Snowflake: ", snowflakeSource);
+    const snowflakeItem = db.addPendingItemEvent(
+      "item1",
+      PendingEventType.ItemDeleted,
+    );
+    const snowflakeReply = await db.addPendingReplySentEvent(
+      "reply text",
+      "source1",
+      1,
+    );
+
+    const events = db.getPendingEvents();
+    expect(events.length).toBe(3);
+    console.log("events: ", events);
+
+    const sourceEvent = events.find((e) => e.id === snowflakeSource);
+    expect(sourceEvent).toBeDefined();
+    expect(sourceEvent!.type).toBe(PendingEventType.Starred);
+    expect(sourceEvent!.target).toHaveProperty("source_uuid", "source1");
+
+    const itemEvent = events.find((e) => e.id === snowflakeItem);
+    expect(itemEvent).toBeDefined();
+    expect(itemEvent!.type).toBe(PendingEventType.ItemDeleted);
+    expect(itemEvent!.target).toHaveProperty("item_uuid", "item1");
+
+    const replyEvent = events.find((e) => e.id === snowflakeReply);
+    expect(replyEvent).toBeDefined();
+    expect(replyEvent!.type).toBe(PendingEventType.ReplySent);
+    expect(replyEvent!.target).toHaveProperty("source_uuid");
+    expect(replyEvent!.data).toHaveProperty("metadata");
+    expect(replyEvent!.data).toHaveProperty("plaintext", "reply text");
+  });
+
+  it("updatePendingEvents should remove successful events from pending_events", () => {
+    db.updateSources({
+      source1: mockSourceMetadata("source1"),
+    });
+    db.updateItems({
+      item1: mockItemMetadata("item1", "source1"),
+    });
+
+    // Verify source and item exist
+    const sourceWithItems = db.getSourceWithItems("source1");
+    expect(sourceWithItems).toBeDefined();
+    expect(sourceWithItems.uuid).toEqual("source1");
+    expect(sourceWithItems.items.length).toBe(1);
+    expect(sourceWithItems.items[0].uuid).toBe("item1");
+
+    const snowflakeSource = db.addPendingSourceEvent(
+      "source1",
+      PendingEventType.Starred,
+    );
+    const snowflakeItem = db.addPendingItemEvent(
+      "item1",
+      PendingEventType.ItemDeleted,
+    );
+
+    // Before update, both events are present
+    let events = db.getPendingEvents();
+    expect(events.length).toBe(2);
+
+    // Simulate server response: both events succeeded (HTTP 200)
+    db.updatePendingEvents({
+      [snowflakeSource.toString()]: [200, ""],
+      [snowflakeItem.toString()]: [200, ""],
+    });
+
+    // After update, no pending events should remain
+    events = db.getPendingEvents();
+    expect(events.length).toBe(0);
+  });
+
+  it("updatePendingEvents should retain failed events", () => {
+    db.updateSources({
+      source1: mockSourceMetadata("source1"),
+    });
+    db.updateItems({
+      item1: mockItemMetadata("item1", "source1"),
+    });
+
+    const snowflakeSource = db.addPendingSourceEvent(
+      "source1",
+      PendingEventType.Starred,
+    );
+    const snowflakeItem = db.addPendingItemEvent(
+      "item1",
+      PendingEventType.ItemDeleted,
+    );
+
+    // Simulate server response: only one event succeeded
+    db.updatePendingEvents({
+      [snowflakeSource.toString()]: [200, ""],
+      [snowflakeItem.toString()]: [500, "error"], // failed
+    });
+
+    const events = db.getPendingEvents();
+    expect(events.length).toBe(1);
+    expect(events[0].id).toBe(snowflakeItem);
+    expect(events[0].type).toBe(PendingEventType.ItemDeleted);
   });
 });

@@ -32,12 +32,12 @@ CREATE TABLE journalists (
 );
 CREATE INDEX idx_items_fetch_status ON items (fetch_status);
 CREATE TABLE pending_events (
-        snowflake_id INTEGER PRIMARY KEY,
-        source_uuid INTEGER REFERENCES sources (uuid),
+        snowflake_id TEXT PRIMARY KEY,
+        source_uuid TEXT REFERENCES sources (uuid),
         -- pending items may not exist in the items table, so
         -- we don't add the fkey constraint
-        item_uuid INTEGER,
-        type INTEGER NOT NULL,
+        item_uuid TEXT,
+        type TEXT NOT NULL,
         -- additional event data
         data json,
         -- only one of source_uuid OR item_uuid is set
@@ -55,8 +55,8 @@ WITH
         SELECT
             source_uuid,
             CASE
-                WHEN type = 5 THEN true -- Starred
-                WHEN type = 6 THEN false -- Unstarred
+                WHEN type = 'source_starred' THEN true
+                WHEN type = 'source_unstarred' THEN false
             END as starred_value
         FROM
             (
@@ -73,7 +73,7 @@ WITH
                 FROM
                     pending_events
                 WHERE
-                    type IN (5, 6) -- Starred or Unstarred
+                    type IN ('source_starred', 'source_unstarred')
                     AND source_uuid IS NOT NULL
             ) latest
         WHERE
@@ -99,8 +99,7 @@ SELECT
                 pending_events
             WHERE
                 pending_events.source_uuid = sources.uuid
-                -- type: Seen
-                AND pending_events.type = 7
+                AND pending_events.type = 'item_seen'
         ) THEN 1
         ELSE sources.is_seen
     END AS is_seen
@@ -116,8 +115,7 @@ WHERE
             pending_events
         WHERE
             pending_events.source_uuid = sources.uuid
-            -- type: SourceDeleted
-            AND pending_events.type = 3
+            AND pending_events.type = 'source_deleted'
     )
 /* sources_projected(uuid,data,version,has_attachment,show_message_preview,message_preview,is_seen) */;
 CREATE VIEW items_projected AS
@@ -147,8 +145,7 @@ WHERE
             pending_events
         WHERE
             pending_events.item_uuid = items.uuid
-            -- type: ItemDeleted
-            AND pending_events.type = 2
+            AND pending_events.type = 'item_deleted'
     )
     -- project SourceDeleted, SourceConversationDeleted event
     AND NOT EXISTS (
@@ -158,8 +155,7 @@ WHERE
             pending_events
         WHERE
             pending_events.source_uuid = items.source_uuid
-            -- type: SourceDeleted, SourceConversationDeleted
-            AND pending_events.type IN (3, 4)
+            AND pending_events.type IN ('source_deleted', 'source_conversation_deleted')
     )
     -- project ReplySent event
 UNION ALL
@@ -167,7 +163,7 @@ SELECT
     json_extract (pending_events.data, '$.metadata.uuid') AS uuid,
     json_extract (pending_events.data, '$.metadata') as data,
     NULL as version,
-    json_extract (pending_events.data, '$.text') AS plaintext,
+    json_extract (pending_events.data, '$.plaintext') AS plaintext,
     NULL as filename,
     'reply' AS kind,
     NULL as is_read,
@@ -177,12 +173,14 @@ SELECT
     NULL as fetch_status,
     NULL as fetch_last_updated_at,
     NULL as fetch_retry_attempts,
-    json_extract (pending_events.data, '$.metadata.interaction_count') AS interaction_count
+    json_extract (
+        pending_events.data,
+        '$.metadata.interaction_count'
+    ) AS interaction_count
 FROM
     pending_events
 WHERE
-    -- type: ReplySent
-    pending_events.type = 1
+    pending_events.type = 'reply_sent'
     -- Check that there is no later overriding deletion
     AND NOT EXISTS (
         SELECT
@@ -194,13 +192,13 @@ WHERE
                 -- SourceDeleted or SourceConversationDeleted
                 (
                     later.source_uuid = json_extract (pending_events.data, '$.metadata.source')
-                    AND later.type IN (3, 4)
+                    AND later.type IN ('source_deleted', 'source_conversation_deleted')
                 )
                 OR
                 -- ItemDeleted
                 (
                     later.item_uuid = json_extract (pending_events.data, '$.metadata.uuid')
-                    AND later.type = 2
+                    AND later.type = 'item_deleted'
                 )
             )
             AND later.snowflake_id > pending_events.snowflake_id
@@ -215,5 +213,6 @@ INSERT INTO "schema_migrations" (version) VALUES
   ('20250813000000'),
   ('20250819160236'),
   ('20250821184819'),
-  ('20250930191810');
-  ('20251024000000');
+  ('20250930191810'),
+  ('20251024000000'),
+  ('20251031152200');
