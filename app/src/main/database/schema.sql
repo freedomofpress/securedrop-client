@@ -160,7 +160,7 @@ WHERE
     -- project ReplySent event
 UNION ALL
 SELECT
-    json_extract (pending_events.data, '$.uuid') AS uuid,
+    json_extract (pending_events.data, '$.metadata.uuid') AS uuid,
     json_extract (pending_events.data, '$.metadata') as data,
     NULL as version,
     json_extract (pending_events.data, '$.plaintext') AS plaintext,
@@ -173,7 +173,10 @@ SELECT
     NULL as fetch_status,
     NULL as fetch_last_updated_at,
     NULL as fetch_retry_attempts,
-    json_extract (pending_events.data, '$.metadata.interaction_count') AS interaction_count
+    json_extract (
+        pending_events.data,
+        '$.metadata.interaction_count'
+    ) AS interaction_count
 FROM
     pending_events
 WHERE
@@ -186,11 +189,14 @@ WHERE
             pending_events later
         WHERE
             (
+                -- SourceDeleted or SourceConversationDeleted
                 (
                     later.source_uuid = json_extract (pending_events.data, '$.metadata.source')
                     AND later.type IN ('source_deleted', 'source_conversation_deleted')
                 )
-                OR (
+                OR
+                -- ItemDeleted
+                (
                     later.item_uuid = json_extract (pending_events.data, '$.metadata.uuid')
                     AND later.type = 'item_deleted'
                 )
@@ -207,5 +213,6 @@ INSERT INTO "schema_migrations" (version) VALUES
   ('20250813000000'),
   ('20250819160236'),
   ('20250821184819'),
-  ('20250930191810');
-  ('20251024000000');
+  ('20250930191810'),
+  ('20251024000000'),
+  ('20251031152200');
