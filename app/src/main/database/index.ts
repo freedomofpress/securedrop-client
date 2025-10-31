@@ -67,7 +67,10 @@ export class DB {
     [],
     { uuid: string; version: string }
   >;
-  private selectSourceVersion: Statement<{ uuid: string }, { version: string }>;
+  private selectUnprojectedSourceVersion: Statement<
+    { uuid: string },
+    { version: string }
+  >;
   private upsertSource: Statement<
     { uuid: string; data: string; version: string },
     void
@@ -78,7 +81,10 @@ export class DB {
     [],
     { uuid: string; version: string }
   >;
-  private selectItemVersion: Statement<{ uuid: string }, { version: string }>;
+  private selectUnprojectedItemVersion: Statement<
+    { uuid: string },
+    { version: string }
+  >;
   private selectItemFilenameSource: Statement<
     { uuid: string },
     { filename: string; source_uuid: string }
@@ -172,8 +178,8 @@ export class DB {
     this.selectAllSourceVersion = this.db.prepare(
       "SELECT uuid, version FROM sources_projected",
     );
-    this.selectSourceVersion = this.db.prepare(
-      "SELECT version FROM sources_projected WHERE uuid = @uuid",
+    this.selectUnprojectedSourceVersion = this.db.prepare(
+      "SELECT version FROM sources WHERE uuid = @uuid",
     );
     this.upsertSource = this.db.prepare(
       "INSERT INTO sources (uuid, data, version) VALUES (@uuid, @data, @version) ON CONFLICT(uuid) DO UPDATE SET data=@data, version=@version",
@@ -185,8 +191,8 @@ export class DB {
     this.selectAllItemVersion = this.db.prepare(
       "SELECT uuid, version FROM items_projected",
     );
-    this.selectItemVersion = this.db.prepare(
-      "SELECT version FROM items_projected WHERE uuid = @uuid",
+    this.selectUnprojectedItemVersion = this.db.prepare(
+      "SELECT version FROM items WHERE uuid = @uuid",
     );
     this.selectItemFilenameSource = this.db.prepare(
       "SELECT filename, source_uuid FROM items_projected WHERE source_uuid = @uuid",
@@ -437,10 +443,21 @@ export class DB {
     })(items);
   }
 
+  deleteSourceAndItems(sourceUuid: string) {
+    // First, delete all source items
+    const items = this.selectItemsBySourceId.all(sourceUuid);
+    const itemUuids: string[] = items.map((item) => {
+      return item.uuid;
+    });
+    this.deleteItems(itemUuids);
+    // Then, delete the source
+    this.deleteSource.run({ uuid: sourceUuid });
+  }
+
   deleteSources(sources: string[]) {
     this.db!.transaction((sources: string[]) => {
       for (const sourceID of sources) {
-        this.deleteSource.run({ uuid: sourceID });
+        this.deleteSourceAndItems(sourceID);
       }
       this.updateVersion();
     })(sources);
@@ -457,10 +474,10 @@ export class DB {
 
   updateBatch(batchResponse: BatchResponse) {
     this.db!.transaction((batch: BatchResponse) => {
-      this.updateSources(batch.sources);
-      this.updateItems(batch.items);
-      this.updateJournalists(batch.journalists);
       this.updatePendingEvents(batch.events);
+      this.updateItems(batch.items);
+      this.updateSources(batch.sources);
+      this.updateJournalists(batch.journalists);
       this.updateVersion();
     })(batchResponse);
   }
@@ -470,14 +487,18 @@ export class DB {
   updateSources(sources: { [uuid: string]: SourceMetadata }) {
     Object.keys(sources).forEach((sourceid: string) => {
       const metadata = sources[sourceid];
-      // Updating the full source: update metadata and re-compute source version
-      const info = JSON.stringify(metadata, sortKeys);
-      const version = computeVersion(info);
-      this.upsertSource.run({
-        uuid: sourceid,
-        data: info,
-        version: version,
-      });
+      if (metadata) {
+        // Updating the full source: update metadata and re-compute source version
+        const info = JSON.stringify(metadata, sortKeys);
+        const version = computeVersion(info);
+        this.upsertSource.run({
+          uuid: sourceid,
+          data: info,
+          version: version,
+        });
+      } else {
+        this.deleteSourceAndItems(sourceid);
+      }
     });
   }
 
@@ -486,15 +507,19 @@ export class DB {
   updateItems(items: { [uuid: string]: ItemMetadata }) {
     Object.keys(items).forEach((itemid: string) => {
       const metadata = items[itemid];
-      const blob = JSON.stringify(metadata, sortKeys);
-      const version = computeVersion(blob);
+      if (metadata) {
+        const blob = JSON.stringify(metadata, sortKeys);
+        const version = computeVersion(blob);
 
-      this.upsertItem.run({
-        uuid: itemid,
-        data: blob,
-        version: version,
-        fetch_status: FetchStatus.Initial,
-      });
+        this.upsertItem.run({
+          uuid: itemid,
+          data: blob,
+          version: version,
+          fetch_status: FetchStatus.Initial,
+        });
+      } else {
+        this.deleteItem.run({ uuid: itemid });
+      }
     });
   }
 
@@ -512,13 +537,17 @@ export class DB {
   }) {
     Object.keys(journalists).forEach((id: string) => {
       const metadata = journalists[id];
-      const blob = JSON.stringify(metadata, sortKeys);
-      const version = computeVersion(blob);
-      this.upsertJournalist.run({
-        uuid: id,
-        data: blob,
-        version: version,
-      });
+      if (metadata) {
+        const blob = JSON.stringify(metadata, sortKeys);
+        const version = computeVersion(blob);
+        this.upsertJournalist.run({
+          uuid: id,
+          data: blob,
+          version: version,
+        });
+      } else {
+        this.deleteJournalist.run({ uuid: id });
+      }
     });
   }
 
@@ -811,14 +840,15 @@ export class DB {
         target = {
           source_uuid: r.source_uuid,
           version:
-            this.selectSourceVersion.get({ uuid: r.source_uuid })?.version ??
-            "",
+            this.selectUnprojectedSourceVersion.get({ uuid: r.source_uuid })
+              ?.version ?? "",
         };
       } else {
         target = {
           item_uuid: r.item_uuid,
           version:
-            this.selectItemVersion.get({ uuid: r.item_uuid })?.version ?? "",
+            this.selectUnprojectedItemVersion.get({ uuid: r.item_uuid })
+              ?.version ?? "",
         };
       }
       return {
@@ -835,14 +865,14 @@ export class DB {
   // pending event updates as needed.
   // Should be run within a transaction that also updates index version.
   updatePendingEvents(events: { [snowflake_id: string]: [number, string] }) {
-    // Apply pending events on success. On failure, retain them in the
+    // Remove successfully applied pending events. On failure, retain them in the
     // pending events table for resubmission on next sync
-    const eventIDsToApply: string[] = [];
+    const appliedEventIDs: string[] = [];
     const eventIDsToRemove: string[] = [];
     Object.keys(events).forEach((snowflake_id: string) => {
       const result = events[snowflake_id][0];
       if (result === EventStatus.OK) {
-        eventIDsToApply.push(snowflake_id);
+        appliedEventIDs.push(snowflake_id);
       }
       if (result === EventStatus.AlreadyReported) {
         eventIDsToRemove.push(snowflake_id);
@@ -856,7 +886,7 @@ export class DB {
     const eventsToApply: PendingEventRow[] = this.selectWhereIn(
       "pending_events",
       "snowflake_id",
-      eventIDsToApply,
+      appliedEventIDs,
     );
     for (const event of eventsToApply) {
       // Once event is applied, delete from pending events table
