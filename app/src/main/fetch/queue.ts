@@ -14,8 +14,9 @@ import {
   ProxyStreamResponse,
 } from "../../types";
 import { proxyStreamRequest } from "../proxy";
-import { Crypto, CryptoError, encryptedFilepath } from "../crypto";
+import { Crypto, CryptoError } from "../crypto";
 import { MessagePort } from "worker_threads";
+import { Storage } from "../storage";
 
 export type ItemFetchTask = {
   id: string;
@@ -28,6 +29,7 @@ export class TaskQueue {
   queue: Queue;
   authToken?: string;
   port?: MessagePort;
+  storage: Storage;
 
   constructor(
     db: DB,
@@ -41,6 +43,7 @@ export class TaskQueue {
       port,
     );
     this.port = port;
+    this.storage = new Storage();
   }
 
   getAuthToken(): string {
@@ -146,7 +149,7 @@ export class TaskQueue {
       downloadWriter = new BufferedWriter();
     } else if (metadata.kind === "file") {
       // For files: write directly to disk
-      downloadFilePath = encryptedFilepath(metadata.source, item.id);
+      downloadFilePath = this.storage.downloadFilePath(metadata, item);
       const downloadDir = path.dirname(downloadFilePath);
       await fs.promises.mkdir(downloadDir, { recursive: true });
       downloadWriter = fs.createWriteStream(downloadFilePath);
@@ -250,7 +253,7 @@ export class TaskQueue {
       }
       // Ensure data is persisted to disk for retries
       try {
-        const downloadFilePath = encryptedFilepath(metadata.source, item.id);
+        const downloadFilePath = this.storage.downloadFilePath(metadata, item);
         const downloadDir = path.dirname(downloadFilePath);
         await fs.promises.mkdir(downloadDir, { recursive: true });
         await fs.promises.writeFile(downloadFilePath, buffer);
@@ -273,7 +276,7 @@ export class TaskQueue {
     crypto: Crypto,
     metadata: ItemMetadata,
   ) {
-    const downloadPath = encryptedFilepath(metadata.source, item.id);
+    const downloadPath = this.storage.downloadFilePath(metadata, item);
     try {
       const buffer = await fs.promises.readFile(downloadPath);
       const decryptedContent = await crypto.decryptMessage(buffer);
@@ -300,13 +303,15 @@ export class TaskQueue {
     crypto: Crypto,
     metadata: ItemMetadata,
   ) {
-    const downloadPath = encryptedFilepath(metadata.source, item.id);
+    const downloadPath = this.storage.downloadFilePath(metadata, item);
+    const itemDirectory = this.storage.itemDirectory(metadata);
     try {
-      const decryptedFilepath = await crypto.decryptFile(downloadPath);
-      db.completeFileItem(
-        item.id,
-        path.join(decryptedFilepath.filePath, decryptedFilepath.filename),
+      const finalAbsolutePath = await crypto.decryptFile(
+        this.storage,
+        itemDirectory,
+        downloadPath,
       );
+      db.completeFileItem(item.id, finalAbsolutePath);
       console.debug(`Successfully decrypted ${metadata.kind} ${item.id}`);
     } catch (error) {
       if (error instanceof CryptoError) {
