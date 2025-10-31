@@ -12,8 +12,8 @@ interface AuthData {
   expiration: string;
   token: string;
   journalistUUID: string;
-  journalistFirstName: string;
-  journalistLastName: string;
+  journalistFirstName: string | null;
+  journalistLastName: string | null;
 }
 
 interface SessionState {

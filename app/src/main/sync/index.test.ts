@@ -20,6 +20,13 @@ vi.mock("fs", () => ({
   },
 }));
 
+// Valid UUIDs for testing
+const SOURCE_UUID_1 = "550e8400-e29b-41d4-a716-446655440001";
+const SOURCE_UUID_2 = "550e8400-e29b-41d4-a716-446655440002";
+const ITEM_UUID_1 = "660e8400-e29b-41d4-a716-446655440001";
+const ITEM_UUID_2 = "660e8400-e29b-41d4-a716-446655440002";
+const JOURNALIST_UUID_1 = "770e8400-e29b-41d4-a716-446655440001";
+
 function mockDB({
   index = { sources: {}, items: {}, journalists: {} },
   itemFileData = {},
@@ -37,8 +44,10 @@ function mockDB({
 function mockSourceMetadata(uuid: string): SourceMetadata {
   return {
     uuid: uuid,
-    journalist_designation: "Test Journalist",
+    journalist_designation: "test journalist",
     is_starred: false,
+    is_seen: false,
+    has_attachment: false,
     last_updated: new Date().toISOString(),
     public_key: "test_public_key",
     fingerprint: "test_fingerprint",
@@ -51,7 +60,7 @@ function mockItemMetadata(uuid: string, source_uuid: string): ItemMetadata {
     uuid: uuid,
     source: source_uuid,
     size: 1234,
-    journalist_uuid: "test_journalist",
+    journalist_uuid: JOURNALIST_UUID_1,
     is_deleted_by_source: false,
     seen_by: [],
     interaction_count: 1,
@@ -104,24 +113,24 @@ describe("syncMetadata", () => {
     // Server index has one new source and one new item
     const serverIndex: Index = {
       sources: {
-        uuid1: "abc",
+        [SOURCE_UUID_1]: "abc",
       },
       items: {
-        uuid2: "def",
+        [SOURCE_UUID_2]: "def",
       },
       journalists: {
-        uuid3: "ghi",
+        [JOURNALIST_UUID_1]: "ghi",
       },
     };
     const metadata: MetadataResponse = {
       sources: {
-        uuid1: mockSourceMetadata("uuid1"),
+        [SOURCE_UUID_1]: mockSourceMetadata(SOURCE_UUID_1),
       },
       items: {
-        uuid2: mockItemMetadata("uuid2", "uuid1"),
+        [SOURCE_UUID_2]: mockItemMetadata(ITEM_UUID_1, SOURCE_UUID_1),
       },
       journalists: {
-        uuid3: mockJournalistMetadata("uuid3"),
+        [JOURNALIST_UUID_1]: mockJournalistMetadata(JOURNALIST_UUID_1),
       },
     };
     // Client index is empty
@@ -168,13 +177,13 @@ describe("syncMetadata", () => {
     // getIndex returns new index
     const serverIndex: Index = {
       sources: {
-        uuid1: "v2",
+        [SOURCE_UUID_1]: "v2",
       },
       items: {
-        uuid2: "v2",
+        [SOURCE_UUID_2]: "v2",
       },
       journalists: {
-        uuid3: "v2",
+        [JOURNALIST_UUID_1]: "v2",
       },
     };
     db = mockDB();
@@ -205,27 +214,27 @@ describe("syncMetadata", () => {
     // Client index has out of date item
     const clientIndex: Index = {
       sources: {
-        source1: "v1",
+        [SOURCE_UUID_1]: "v1",
       },
       items: {
-        item1: "v1",
-        item2: "outOfDate",
+        [ITEM_UUID_1]: "v1",
+        [ITEM_UUID_2]: "outOfDate",
       },
       journalists: {
-        journalist1: "v1",
+        [JOURNALIST_UUID_1]: "v1",
       },
     };
 
-    // Server index doesn't have item2: it has been deleted
+    // Server index doesn't have [ITEM_UUID_2]: it has been deleted
     const serverIndex: Index = {
       sources: {
-        source1: "v2",
+        [SOURCE_UUID_1]: "v2",
       },
       items: {
-        item1: "v2",
+        [ITEM_UUID_1]: "v2",
       },
       journalists: {
-        journalist1: "v2",
+        [JOURNALIST_UUID_1]: "v2",
       },
     };
     db = mockDB({
@@ -237,9 +246,9 @@ describe("syncMetadata", () => {
       clientIndex,
     );
     expect(metadataToUpdate).toEqual({
-      sources: ["source1"],
-      items: ["item1"],
-      journalists: ["journalist1"],
+      sources: [SOURCE_UUID_1],
+      items: [ITEM_UUID_1],
+      journalists: [JOURNALIST_UUID_1],
     });
   });
 
@@ -247,38 +256,38 @@ describe("syncMetadata", () => {
     // Client index has out of date item
     const clientIndex: Index = {
       sources: {
-        source1: "v1",
+        [SOURCE_UUID_1]: "v1",
       },
       items: {
-        item1: "v1",
-        item2: "outOfDate",
+        [ITEM_UUID_1]: "v1",
+        [ITEM_UUID_2]: "outOfDate",
       },
       journalists: {
-        journalist1: "v1",
+        [JOURNALIST_UUID_1]: "v1",
       },
     };
 
-    // Server index doesn't have item2: it has been deleted
+    // Server index doesn't have [ITEM_UUID_2]: it has been deleted
     const serverIndex: Index = {
       sources: {
-        source1: "v2",
+        [SOURCE_UUID_1]: "v2",
       },
       items: {
-        item1: "v2",
+        [ITEM_UUID_1]: "v2",
       },
       journalists: {
-        journalist1: "v2",
+        [JOURNALIST_UUID_1]: "v2",
       },
     };
     const metadata: MetadataResponse = {
       sources: {
-        source1: mockSourceMetadata("source1"),
+        [SOURCE_UUID_1]: mockSourceMetadata(SOURCE_UUID_1),
       },
       items: {
-        item1: mockItemMetadata("item1", "source1"),
+        [ITEM_UUID_1]: mockItemMetadata(ITEM_UUID_1, SOURCE_UUID_1),
       },
       journalists: {
-        journalist1: mockJournalistMetadata("journalist1"),
+        [JOURNALIST_UUID_1]: mockJournalistMetadata(JOURNALIST_UUID_1),
       },
     };
 
@@ -286,7 +295,7 @@ describe("syncMetadata", () => {
       index: clientIndex,
       itemFileData: {
         filename: "/securedrop/plaintext.txt",
-        source_uuid: "source1",
+        source_uuid: SOURCE_UUID_1,
       },
     });
 
@@ -308,14 +317,14 @@ describe("syncMetadata", () => {
     await syncModule.syncMetadata(db, "");
 
     expect(proxyMock).toHaveBeenCalledTimes(2);
-    expect(db.deleteItems).toHaveBeenCalledWith(["item2"]);
+    expect(db.deleteItems).toHaveBeenCalledWith([ITEM_UUID_2]);
     expect(db.updateMetadata).toHaveBeenCalledWith(metadata);
     expect(fs.rmSync).toHaveBeenCalledTimes(2);
     expect(fs.rmSync).toHaveBeenCalledWith("/securedrop/plaintext.txt", {
       force: true,
     });
     expect(fs.rmSync).toHaveBeenCalledWith(
-      encryptedFilepath("source1", "item2"),
+      encryptedFilepath(SOURCE_UUID_1, ITEM_UUID_2),
       { force: true },
     );
   });
@@ -324,28 +333,28 @@ describe("syncMetadata", () => {
     // Server index has updated item version
     const serverIndex: Index = {
       sources: {
-        source1: "v2",
+        [SOURCE_UUID_1]: "v2",
       },
       items: {
-        item1: "v2",
-        item2: "v2",
+        [ITEM_UUID_1]: "v2",
+        [ITEM_UUID_2]: "v2",
       },
       journalists: {
-        journalist1: "v2",
+        [JOURNALIST_UUID_1]: "v2",
       },
     };
 
     // Client index has old item version
     const clientIndex: Index = {
       sources: {
-        source1: "v2",
+        [SOURCE_UUID_1]: "v2",
       },
       items: {
-        item1: "v1",
-        item2: "v2",
+        [ITEM_UUID_1]: "v1",
+        [ITEM_UUID_2]: "v2",
       },
       journalists: {
-        journalist1: "v2",
+        [JOURNALIST_UUID_1]: "v2",
       },
     };
     db = mockDB({
@@ -358,7 +367,7 @@ describe("syncMetadata", () => {
       clientIndex,
     );
     expect(metadataToUpdate).toEqual({
-      items: ["item1"],
+      items: [ITEM_UUID_1],
       sources: [],
       journalists: [],
     });
@@ -366,7 +375,7 @@ describe("syncMetadata", () => {
     const metadata: MetadataResponse = {
       sources: {},
       items: {
-        item1: mockItemMetadata("item1", "source1"),
+        [ITEM_UUID_1]: mockItemMetadata(ITEM_UUID_1, SOURCE_UUID_1),
       },
       journalists: {},
     };
@@ -396,17 +405,17 @@ describe("syncMetadata", () => {
     // Client index has since-deleted source, and an out-of-date item
     const clientIndex: Index = {
       sources: {
-        uuid1: "v1",
-        uuid2: "deleted",
+        [SOURCE_UUID_1]: "v1",
+        [SOURCE_UUID_2]: "deleted",
       },
       items: {},
       journalists: {},
     };
 
-    // Server index doesn't have source uuid2: it has been deleted
+    // Server index doesn't have source [SOURCE_UUID_2]: it has been deleted
     const serverIndex: Index = {
       sources: {
-        uuid1: "v2",
+        [SOURCE_UUID_1]: "v2",
       },
       items: {},
       journalists: {},
@@ -426,7 +435,7 @@ describe("syncMetadata", () => {
       {
         status: 200,
         error: false,
-        data: { sources: {}, items: {} } as MetadataResponse,
+        data: { sources: {}, items: {}, journalists: {} } as MetadataResponse,
         headers: new Map(),
       },
     ]);
@@ -434,10 +443,11 @@ describe("syncMetadata", () => {
     await syncModule.syncMetadata(db, "");
 
     expect(proxyMock).toHaveBeenCalledTimes(2);
-    expect(db.deleteSources).toHaveBeenCalledWith(["uuid2"]);
+    expect(db.deleteSources).toHaveBeenCalledWith([SOURCE_UUID_2]);
     expect(db.updateMetadata).toHaveBeenCalledWith({
       items: {},
       sources: {},
+      journalists: {},
     });
   });
 });
