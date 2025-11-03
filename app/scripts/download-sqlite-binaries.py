@@ -102,7 +102,9 @@ def download_file(url, output_path):
     """Download a file from URL to output_path"""
     print(f"Downloading: {url}")
 
-    with urllib.request.urlopen(url) as response:  # noqa: S310
+    if not url.startswith("https://"):
+        raise RuntimeError("Only HTTPS URLs can be downloaded")
+    with urllib.request.urlopen(url) as response:  # noqa: S310  # nosemgrep: python.lang.security.audit.dynamic-urllib-use-detected.dynamic-urllib-use-detected
         if response.status != 200:
             raise RuntimeError(f"HTTP {response.status}")
 

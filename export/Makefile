@@ -2,7 +2,7 @@
 all: help
 
 .PHONY: lint
-lint: mypy semgrep  ## Run all linters
+lint: mypy  ## Run all linters
 
 
 .PHONY: check
@@ -17,21 +17,6 @@ test:  ## Run tests
 .PHONY: mypy
 mypy:  ## Type check Python files
 	poetry run mypy .
-
-SEMGREP_FLAGS := --exclude "tests/" --error --strict --verbose
-
-.PHONY: semgrep
-semgrep:semgrep-community semgrep-local
-
-.PHONY: semgrep-community
-semgrep-community:
-	@echo "Running semgrep with semgrep.dev community rules..."
-	@poetry run semgrep $(SEMGREP_FLAGS) --config "p/r2c-security-audit" --config "p/r2c-ci"
-
-.PHONY: semgrep-local
-semgrep-local:
-	@echo "Running semgrep with local rules..."
-	@poetry run semgrep $(SEMGREP_FLAGS) --config ".semgrep"
 
 # Install dependencies in CI
 ci-install-deps:

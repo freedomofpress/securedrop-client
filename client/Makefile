@@ -5,8 +5,6 @@ all: help
 # but we're also OK with just python3 if that's all we've got
 PYTHON := $(if $(shell bash -c "command -v python3.11"), python3.11, python3)
 
-SEMGREP_FLAGS := --exclude "tests/" --error --strict --verbose
-
 doxygen:
 	@which doxygen >> /dev/null || { echo "doxygen(1) is not available in your \$$PATH.  Is it installed?"; exit 1; }
 
@@ -23,19 +21,6 @@ graph-db: graphviz  ## Generate an ERD of the Client's database models (requires
 	@poetry run paracelsus graph --format dot > docs/db.dot
 	@dot -Tpng docs/db.dot > docs/db.png
 	@echo "Now open \"$(PWD)/docs/db.png\"."
-
-.PHONY: semgrep
-semgrep:semgrep-community semgrep-local  ## Run semgrep with both semgrep.dev community and local rules
-
-.PHONY: semgrep-community
-semgrep-community:
-	@echo "Running semgrep with semgrep.dev community rules..."
-	@poetry run semgrep $(SEMGREP_FLAGS) --config "p/r2c-security-audit"
-
-.PHONY: semgrep-local
-semgrep-local:
-	@echo "Running semgrep with local rules..."
-	@poetry run semgrep $(SEMGREP_FLAGS) --config ".semgrep"
 
 .PHONY: mypy
 mypy: ## Run static type checker
@@ -105,7 +90,7 @@ regenerate-sdk-cassettes:
 	@make test-sdk
 
 .PHONY: lint
-lint: mypy semgrep ## Run all linters
+lint: mypy ## Run all linters
 
 .PHONY: check
 check: clean lint test-random test-integration test-functional ## Run the full CI test suite
