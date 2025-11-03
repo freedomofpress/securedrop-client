@@ -65,6 +65,7 @@ semgrep-app: ## Run Semgrep on app/ (JavaScript/TypeScript)
 		--config p/nodejs \
 		--config p/security-audit \
 		--config p/ci \
+		--config app/.semgrep \
 		app/
 
 .PHONY: semgrep-client

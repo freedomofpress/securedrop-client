@@ -1,0 +1,94 @@
+# Custom Semgrep Rules for SQL Injection Prevention
+#
+# In general, use prepared statements without dynamic variables for safety.
+
+rules:
+  # Rule 1: Ban db.exec() in favor of prepared statements
+  # The exec() method doesn't support parameter binding, making it inherently unsafe
+  # for any dynamic values. This project exclusively uses prepared statements.
+  # This rule bans ALL usage of exec(), not just unsafe patterns.
+  - id: better-sqlite3-ban-exec
+    pattern: $DB.exec(...)
+    message: >-
+      The exec() method is banned in this codebase. It doesn't support parameter binding,
+      making it unsafe for any queries with dynamic values. Use prepare() instead.
+    languages:
+      - typescript
+      - javascript
+    severity: ERROR
+    metadata:
+      category: security
+      confidence: HIGH
+      likelihood: HIGH
+      impact: HIGH
+      subcategory:
+        - vuln
+
+  # Rule 2: Ban ALL dynamic content in prepare() statements
+  # Only allow template literals with safe constants (FetchStatus, EventStatus).
+  # Exception: selectWhereIn method uses TypeScript string literal types for safety.
+  - id: better-sqlite3-ban-dynamic-content
+    patterns:
+      - pattern: $DB.prepare(`...${$VAR}...`)
+      # Exclude safe constants
+      - pattern-not: $DB.prepare(`...${FetchStatus.$FIELD}...`)
+      - pattern-not: $DB.prepare(`...${EventStatus.$FIELD}...`)
+      # Exclude selectWhereIn which is validated by using string literal types
+      - pattern-not-inside: |
+          selectWhereIn(...) {
+            ...
+          }
+    message: >-
+      Dynamic content in SQL prepare() statements is banned for security.
+      Template literals with variables can lead to SQL injection.
+
+      Required: Use parameterized queries with ? or @name placeholders:
+        - CORRECT: db.prepare('SELECT * FROM users WHERE id = ?').get(userId)
+        - CORRECT: db.prepare('SELECT * FROM users WHERE name = @name').get({ name })
+        - WRONG: db.prepare(`SELECT * FROM users WHERE id = ${userId}`)
+
+      Exception: FetchStatus and EventStatus enum values are allowed as they are compile-time constants.
+
+      Note: selectWhereIn uses TypeScript string literal types for compile-time safety.
+    languages:
+      - typescript
+      - javascript
+    severity: ERROR
+    metadata:
+      category: security
+      confidence: HIGH
+      likelihood: HIGH
+      impact: HIGH
+      subcategory:
+        - vuln
+
+  # Rule 3: Enforce database operation centralization
+  # All database operations must go through the DB class in src/main/database/index.ts
+  # This ensures consistent security practices and makes auditing easier.
+  - id: better-sqlite3-centralize-db-operations
+    pattern: $DB.prepare(...)
+    paths:
+      exclude:
+        - "**/*/src/main/database/index.ts"
+    message: >-
+      Database operations must be centralized in src/main/database/index.ts for security and maintainability.
+      All SQL queries should go through the DB class methods.
+
+      Do not use db.prepare() directly outside the database module.
+      Instead, add a method to the DB class that encapsulates your query.
+
+      This ensures:
+        - Consistent security practices
+        - Easier auditing of all SQL queries
+        - Single source of truth for database operations
+    languages:
+      - typescript
+      - javascript
+    severity: ERROR
+    metadata:
+      category: security
+      confidence: HIGH
+      likelihood: HIGH
+      impact: HIGH
+      subcategory:
+        - vuln

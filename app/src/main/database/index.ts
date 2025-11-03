@@ -375,9 +375,11 @@ export class DB {
 
   // Select rows from a table where the specified column matches any value in an array.
   // Allows for multi-select with an array of IDs
+  // Any new table/column must be added to the allowlist here as a string literal type to
+  // ensure it's hardcoded and not user input.
   selectWhereIn<T>(
-    table: string,
-    column: string,
+    table: "pending_events",
+    column: "snowflake_id",
     values: (string | number)[],
   ): T[] {
     if (values.length === 0) return [];
