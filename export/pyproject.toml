@@ -15,13 +15,13 @@ requires-poetry = ">=2.1.0,<3.0.0"
 package-mode = false
 
 [tool.poetry.group.dev.dependencies]
-mypy = "^1.17.1"
+mypy = "^1.18.2"
 types-setuptools = "^80.9.0"
 pytest = "^8.4.2"
-pytest-cov = "^6.3.0"
-pytest-mock = "^3.15.0"
-semgrep = "^1.135.0"
-types-pexpect = "^4.9.0.20250809"
+pytest-cov = "^7.0.0"
+pytest-mock = "^3.15.1"
+semgrep = "^1.142.0"
+types-pexpect = "^4.9.0.20250916"
 pygobject-stubs = "*"
 
 [tool.mypy]
