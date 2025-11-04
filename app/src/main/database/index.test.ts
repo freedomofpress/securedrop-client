@@ -84,10 +84,11 @@ describe("pending_events update projected views", () => {
       uuid: uuid,
       journalist_designation: "Foo Bar",
       is_starred: is_starred ?? false,
+      is_seen: false,
+      has_attachment: false,
       last_updated: "",
       public_key: "",
       fingerprint: "",
-      is_seen: false,
     };
   }
 

@@ -54,16 +54,27 @@ export type AuthedRequest = {
   authToken: string;
 };
 
-export type Index = {
-  sources: {
-    [uuid: string]: string;
-  };
-  items: {
-    [uuid: string]: string;
-  };
-  journalists: {
-    [uuid: string]: string;
-  };
+// Re-export some types that are derived from zod schemas
+import type {
+  TokenResponse,
+  Index,
+  BatchResponse,
+  SourceMetadata,
+  ItemMetadata,
+  ReplyMetadata,
+  SubmissionMetadata,
+  JournalistMetadata,
+} from "./schemas";
+
+export type {
+  TokenResponse,
+  Index,
+  BatchResponse,
+  SourceMetadata,
+  ItemMetadata,
+  ReplyMetadata,
+  SubmissionMetadata,
+  JournalistMetadata,
 };
 
 export type BatchRequest = {
@@ -76,87 +87,10 @@ export type BatchRequest = {
   events: PendingEvent[];
 };
 
-export type BatchResponse = {
-  sources: {
-    [uuid: string]: SourceMetadata;
-  };
-  items: {
-    [uuid: string]: ItemMetadata;
-  };
-  journalists: {
-    [uuid: string]: JournalistMetadata;
-  };
-  events: {
-    [snowflake_id: string]: [number, string];
-  };
-};
-
 export type MetadataRequest = {
   sources: string[];
   items: string[];
   journalists: string[];
-};
-
-export type MetadataResponse = {
-  sources: {
-    [uuid: string]: SourceMetadata;
-  };
-  items: {
-    [uuid: string]: ItemMetadata;
-  };
-  journalists: {
-    [uuid: string]: JournalistMetadata;
-  };
-};
-
-export type SourceMetadata = {
-  uuid: string;
-  journalist_designation: string;
-  is_starred: boolean;
-  last_updated: string;
-  public_key: string;
-  fingerprint: string;
-  is_seen: boolean;
-};
-
-export type ItemMetadata = ReplyMetadata | SubmissionMetadata;
-
-export type ReplyMetadata = {
-  kind: "reply";
-  uuid: string;
-  source: string;
-  size: number;
-  journalist_uuid: string;
-  is_deleted_by_source: boolean;
-  seen_by: string[];
-  interaction_count: number;
-};
-
-export type SubmissionMetadata = {
-  kind: "file" | "message";
-  uuid: string;
-  source: string;
-  size: number;
-  is_read: boolean;
-  seen_by: string[];
-  interaction_count: number;
-};
-
-export type JournalistMetadata = {
-  uuid: string;
-  username: string;
-  first_name: string | null;
-  last_name: string | null;
-};
-
-/** API v1 Types */
-
-export type TokenResponse = {
-  expiration: string;
-  token: string;
-  journalist_uuid: string;
-  journalist_first_name: string;
-  journalist_last_name: string;
 };
 
 /** UI Types */

@@ -15,6 +15,7 @@ const mockSourceWithItems: SourceWithItems = {
     journalist_designation: "test source",
     is_starred: false,
     is_seen: false,
+    has_attachment: false,
     last_updated: "2025-01-15T10:00:00Z",
     public_key: "test-public-key",
     fingerprint: "test-fingerprint",
