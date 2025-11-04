@@ -37,6 +37,7 @@ const mockSourceWithItems: SourceWithItems = {
     fingerprint: "ABCD1234EFGH5678IJKL9012MNOP3456QRST7890",
     is_starred: false,
     is_seen: false,
+    has_attachment: false,
     journalist_designation: "alice wonderland",
     last_updated: "2024-01-15T10:30:00Z",
     public_key:
