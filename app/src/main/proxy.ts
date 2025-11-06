@@ -55,6 +55,8 @@ export async function proxyJSONRequestInner(
   command: ProxyCommand,
 ): Promise<ProxyJSONResponse> {
   return new Promise((resolve, reject) => {
+    // The path in `command.command` is hardcoded and not user input
+    // nosemgrep: javascript.lang.security.detect-child-process.detect-child-process
     const process = child_process.spawn(command.command, command.options, {
       env: Object.fromEntries(command.env),
       timeout: command.timeout,
@@ -119,6 +121,8 @@ export async function proxyStreamRequestInner(
   offset?: number,
 ): Promise<ProxyResponse> {
   return new Promise((resolve, reject) => {
+    // The path in `command.command` is hardcoded and not user input
+    // nosemgrep: javascript.lang.security.detect-child-process.detect-child-process
     const process = child_process.spawn(command.command, command.options, {
       env: Object.fromEntries(command.env),
       timeout: command.timeout,

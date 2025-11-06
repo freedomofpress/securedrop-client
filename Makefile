@@ -27,7 +27,7 @@ lint-desktop: ## Lint .desktop files
 	find . -name *.desktop -type f -not -path '*/\.git/*' | xargs desktop-file-validate
 
 .PHONY: lint
-lint: check-ruff shellcheck zizmor ## Run linters and formatters
+lint: check-ruff shellcheck zizmor semgrep ## Run linters and formatters
 
 .PHONY: fix
 fix: ## Fix lint and formatting issues
@@ -46,6 +46,53 @@ shellcheck:  ## Lint shell scripts
 .PHONY: zizmor
 zizmor: ## Lint GitHub Actions workflows
 	@poetry run zizmor .
+
+.PHONY: semgrep
+semgrep: semgrep-app semgrep-client semgrep-export ## Run Semgrep security checks on all components
+
+.PHONY: semgrep-app
+semgrep-app: ## Run Semgrep on app/ (JavaScript/TypeScript)
+	@echo "Running semgrep on app/ directory..."
+	@poetry run semgrep scan --metrics=off \
+		--exclude "*test*" \
+		--exclude "*__tests__*" \
+		--error \
+		--strict \
+		--verbose \
+		--config p/javascript \
+		--config p/typescript \
+		--config p/react \
+		--config p/nodejs \
+		--config p/security-audit \
+		--config p/ci \
+		--config app/.semgrep \
+		app/
+
+.PHONY: semgrep-client
+semgrep-client: ## Run Semgrep on client/ (Python)
+	@echo "Running semgrep on client/ directory..."
+	@poetry run semgrep scan --metrics=off \
+		--exclude "tests/" \
+		--error \
+		--strict \
+		--verbose \
+		--config "p/security-audit" \
+		--config "p/ci" \
+		--config "client/.semgrep" \
+		client/
+
+.PHONY: semgrep-export
+semgrep-export: ## Run Semgrep on export/ (Python)
+	@echo "Running semgrep on export/ directory..."
+	@poetry run semgrep scan --metrics=off \
+		--exclude "tests/" \
+		--error \
+		--strict \
+		--verbose \
+		--config "p/security-audit" \
+		--config "p/ci" \
+		--config "export/.semgrep" \
+		export/
 
 .PHONY: rust-lint
 rust-lint: ## Lint Rust code
