@@ -86,7 +86,7 @@ export class Storage {
       "SecureDrop",
       "files",
     );
-    this.tmp = new PathBuilder(os.tmpdir() + "/");
+    this.tmp = new PathBuilder(fs.realpathSync(os.tmpdir()) + "/");
   }
 
   /** We use a predictable path here so we can pick up if it crashes midway */
