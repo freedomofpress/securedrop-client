@@ -51,6 +51,7 @@ vi.mock("fs", () => ({
   existsSync: vi.fn(() => true),
   realpathSync: vi.fn((path) => path),
   mkdtempSync: vi.fn((prefix) => prefix + "XXXXXX"),
+  mkdirSync: vi.fn(),
   rmSync: vi.fn(),
 }));
 

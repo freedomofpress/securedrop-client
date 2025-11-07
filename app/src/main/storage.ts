@@ -86,20 +86,27 @@ export class Storage {
       "SecureDrop",
       "files",
     );
-    this.tmp = new PathBuilder(os.tmpdir() + "/");
+    // on macOS the tmpdir() is a symlink, so we need to resolve it first
+    this.tmp = new PathBuilder(fs.realpathSync(os.tmpdir()) + "/");
   }
 
   /** We use a predictable path here so we can pick up if it crashes midway */
   downloadFilePath(metadata: ItemMetadata, item: ItemFetchTask): string {
+    const dirPath = this.tmp.join("download", metadata.source, item.id);
+    fs.mkdirSync(dirPath, { recursive: true });
     return this.tmp.join("download", metadata.source, item.id, "encrypted.gpg");
   }
 
   sourceDirectory(sourceID: string): PathBuilder {
-    return this.persistent.getSubBuilder(sourceID);
+    const dir = this.persistent.getSubBuilder(sourceID);
+    fs.mkdirSync(dir.path, { recursive: true });
+    return dir;
   }
 
   itemDirectory(item: ItemMetadata): PathBuilder {
-    return this.sourceDirectory(item.source).getSubBuilder(item.uuid);
+    const dir = this.sourceDirectory(item.source).getSubBuilder(item.uuid);
+    fs.mkdirSync(dir.path, { recursive: true });
+    return dir;
   }
 
   createTempDir(prefix: string): PathBuilder {
