@@ -86,6 +86,7 @@ export class Storage {
       "SecureDrop",
       "files",
     );
+    // on macOS the tmpdir() is a symlink, so we need to resolve it first
     this.tmp = new PathBuilder(fs.realpathSync(os.tmpdir()) + "/");
   }
 
