@@ -56,6 +56,7 @@ jobs:
           - bookworm
         what:
           - main
+          - app
     runs-on: ubuntu-latest
     outputs:
       artifact_id: ${{ steps.upload.outputs.artifact-id }}
@@ -88,6 +89,7 @@ jobs:
           - bookworm
         what:
           - main
+          - app
     runs-on: ubuntu-latest
     outputs:
       artifact_id: ${{ steps.upload.outputs.artifact-id }}
@@ -128,15 +130,15 @@ jobs:
             --no-install-recommends
       - uses: actions/download-artifact@v5
         with:
-          pattern: "*${{ matrix.debian_version }}"
+          pattern: "*main-${{ matrix.debian_version }}"
       - name: diffoscope
         run: |
           find . -name '*.deb' -exec sha256sum {} \;
           # TODO: Ideally we'd just be able to diff the .changes files and let diffoscope find
           # all the individual debs, but the source packages are not identical. When they are,
-          for deb in `find build-${{ matrix.debian_version }} -name '*.deb' -exec basename {} \;`; do
+          for deb in `find build-main-${{ matrix.debian_version }} -name '*.deb' -exec basename {} \;`; do
             echo "Diffoscoping $deb"
-            diffoscope build-${{ matrix.debian_version }}/$deb build2-${{ matrix.debian_version }}/$deb
+            diffoscope build-main-${{ matrix.debian_version }}/$deb build2-main-${{ matrix.debian_version }}/$deb
           done;
 
   piuparts:
@@ -163,7 +165,7 @@ jobs:
       - uses: actions/download-artifact@v5
         with:
           path: build
-          pattern: "build-*-${{ matrix.debian_version }}"
+          pattern: "build-main-${{ matrix.debian_version }}"
           merge-multiple: True
       - name: Run piuparts
         run: |

@@ -16,6 +16,22 @@ build-debs: ## Build Debian packages
 	@echo "You can now examine or commit the log at:"
 	@echo "$(OUT)"
 
+.PHONY: build-debs-app
+build-debs-app: OUT:=build/securedrop-app-$(shell date +%Y%m%d).log
+build-debs-app: ## Build Debian packages, including SecureDrop App
+	# "build-debs.sh" will create this directory, but we need it to exist
+	# before we call "script".
+	@mkdir -p build
+	@echo "Building SecureDrop Client Debian packages..."
+	@export TERM=dumb
+	@script \
+		--command bash -c "export WHAT=app; scripts/build-debs.sh" --return \
+		$(OUT)
+	@echo
+	@echo "You can now examine or commit the log at:"
+	@echo "$(OUT)"
+
+
 .PHONY: lint-apparmor
 lint-apparmor: ## Lint AppArmor profiles
 	# See apparmor_parser(8)

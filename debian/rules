@@ -14,6 +14,9 @@ override_dh_auto_install:
 	bash ./debian/setup-venv.sh export
 	bash ./debian/setup-venv.sh log
 	cargo build --release --locked --features qubesdb
+	if dh_listpackages | grep -q '^securedrop-app$$'; then \
+		bash ./debian/build-app.sh; \
+	fi
 	dh_auto_install
 	dh_apparmor --profile-name=usr.bin.securedrop-client -psecuredrop-client
 	dh_apparmor --profile-name=usr.bin.securedrop-proxy -psecuredrop-proxy
@@ -41,3 +44,17 @@ override_dh_installsystemd:
 	dh_installsystemd --name securedrop-logging-disabled
 	dh_installsystemd --name securedrop-proxy-onion-config
 	dh_installsystemd --name securedrop-mime-handling
+
+override_dh_shlibdeps:
+	if dh_listpackages | grep -q '^securedrop-app$$'; then \
+		dh_shlibdeps --exclude=securedrop-app; \
+	else \
+		dh_shlibdeps; \
+	fi
+
+override_dh_strip:
+	if dh_listpackages | grep -q '^securedrop-app$$'; then \
+		dh_strip --exclude=securedrop-app; \
+	else \
+		dh_strip; \
+	fi

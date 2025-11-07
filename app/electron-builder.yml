@@ -16,9 +16,4 @@ extraResources:
     to: bin/dbmate
   - from: src/main/database/migrations
     to: migrations
-linux:
-  target:
-    - deb
-  maintainer: securedrop.org
-  category: Utility
 npmRebuild: false

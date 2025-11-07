@@ -9,15 +9,16 @@ ENV PIP_PROGRESS_BAR=off
 ENV CARGO_TERM_COLOR=never
 ENV CARGO_TERM_PROGRESS_WHEN=never
 
-RUN apt-get update && apt-get --yes upgrade && apt-get install --yes build-essential curl
+RUN apt-get update && apt-get --yes upgrade && apt-get install --yes build-essential curl rsync
 
 COPY qubes_42.sources /etc/apt/sources.list.d/
 RUN sed -i s/##VERSION_CODENAME##/${DISTRO}/ /etc/apt/sources.list.d/qubes_42.sources
+COPY nodesource-node22.sources /etc/apt/sources.list.d/
 
 # Keep in sync with rust-toolchain.toml
 ENV RUST_VERSION 1.90.0
 ENV RUSTUP_VERSION 1.28.2
-ENV RUSTUP_INIT_SHA256 20a06e644b0d9bd2fbdbfd52d42540bdde820ea7df86e92e533c073da0cdd43c 
+ENV RUSTUP_INIT_SHA256 20a06e644b0d9bd2fbdbfd52d42540bdde820ea7df86e92e533c073da0cdd43c
 ENV RUSTUP_HOME /opt/rustup
 ENV CARGO_HOME /opt/cargo
 
