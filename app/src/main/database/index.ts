@@ -88,7 +88,7 @@ export class DB {
   >;
   private selectItemsProcessable: Statement<[], { uuid: string }>;
   private upsertItem: Statement<
-    { uuid: string; data: string; version: string; fetch_status: number },
+    { uuid: string; data: string; version: string },
     void
   >;
   private deleteItem: Statement<{ uuid: string }, void>;
@@ -200,7 +200,7 @@ export class DB {
         (kind <> 'file' AND fetch_status in (${FetchStatus.Initial}, ${FetchStatus.DownloadInProgress}, ${FetchStatus.DecryptionInProgress}, ${FetchStatus.FailedDownloadRetryable}, ${FetchStatus.FailedDecryptionRetryable}))`,
     );
     this.upsertItem = this.db.prepare(
-      "INSERT INTO items (uuid, data, version, fetch_status) VALUES (@id, @data, @version, @fetch_status) ON CONFLICT(uuid) DO UPDATE SET data=@data, version=@version, fetch_status=@fetch_status",
+      "INSERT INTO items (uuid, data, version) VALUES (@id, @data, @version) ON CONFLICT(uuid) DO UPDATE SET data=@data, version=@version",
     );
     this.updateItemFetchStatus = this.db.prepare(
       "UPDATE items SET fetch_status = @fetch_status WHERE uuid = @uuid",
@@ -503,7 +503,6 @@ export class DB {
           uuid: itemid,
           data: blob,
           version: version,
-          fetch_status: FetchStatus.Initial,
         });
       } else {
         this.deleteItem.run({ uuid: itemid });
@@ -882,6 +881,19 @@ export class DB {
       appliedEventIDs,
     );
     for (const event of eventsToApply) {
+      // For reply_sent events, upsert the item into the items table manually
+      // to avoid doing a duplicate fetch from the server
+      if (event.type === PendingEventType.ReplySent) {
+        const replyData = JSON.parse(event.data) as ReplySentData;
+        const metadataBlob = JSON.stringify(replyData.metadata, sortKeys);
+        const version = computeVersion(metadataBlob);
+        this.upsertItem.run({
+          uuid: replyData.uuid,
+          data: metadataBlob,
+          version: version,
+        });
+        this.completePlaintextItem(replyData.uuid, replyData.plaintext);
+      }
       // Once event is applied, delete from pending events table
       this.deletePendingEvent.run({ snowflake_id: event.snowflake_id });
     }

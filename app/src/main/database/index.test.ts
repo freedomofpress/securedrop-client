@@ -3,7 +3,12 @@ import fs from "fs";
 import path from "path";
 import os from "os";
 import { DB } from "./index";
-import { ItemMetadata, PendingEventType, SourceMetadata } from "../../types";
+import {
+  FetchStatus,
+  ItemMetadata,
+  PendingEventType,
+  SourceMetadata,
+} from "../../types";
 import { Crypto } from "../crypto";
 
 describe("Database Component Tests", () => {
@@ -817,5 +822,51 @@ describe("pending_events update projected views", () => {
     expect(events.length).toBe(1);
     expect(events[0].id).toBe(snowflakeItem);
     expect(events[0].type).toBe(PendingEventType.ItemDeleted);
+  });
+
+  it("updateItems should upsert items with conflicting uuid", () => {
+    db.updateSources({
+      source1: mockSourceMetadata("source1"),
+    });
+
+    // Insert initial item
+    db.updateItems({
+      item1: {
+        ...mockItemMetadata("item1", "source1"),
+        size: 50,
+        interaction_count: 1,
+      },
+    });
+
+    let sourceWithItems = db.getSourceWithItems("source1");
+    expect(sourceWithItems.items.length).toBe(1);
+    expect(sourceWithItems.items[0].uuid).toBe("item1");
+    expect(sourceWithItems.items[0].data.size).toBe(50);
+    expect(sourceWithItems.items[0].data.interaction_count).toBe(1);
+    expect(sourceWithItems.items[0].fetch_status).toBe(FetchStatus.Initial);
+
+    db.completePlaintextItem("item1", "plaintext");
+    sourceWithItems = db.getSourceWithItems("source1");
+    expect(sourceWithItems.items.length).toBe(1);
+    expect(sourceWithItems.items[0].uuid).toBe("item1");
+    expect(sourceWithItems.items[0].plaintext).toBe("plaintext");
+    expect(sourceWithItems.items[0].fetch_status).toBe(FetchStatus.Complete);
+
+    // Upsert with same uuid but different data
+    db.updateItems({
+      item1: {
+        ...mockItemMetadata("item1", "source1"),
+        size: 99,
+        interaction_count: 42,
+      },
+    });
+
+    sourceWithItems = db.getSourceWithItems("source1");
+    expect(sourceWithItems.items.length).toBe(1);
+    expect(sourceWithItems.items[0].uuid).toBe("item1");
+    expect(sourceWithItems.items[0].data.size).toBe(99);
+    expect(sourceWithItems.items[0].data.interaction_count).toBe(42);
+    expect(sourceWithItems.items[0].plaintext).toBe("plaintext");
+    expect(sourceWithItems.items[0].fetch_status).toBe(FetchStatus.Complete);
   });
 });
