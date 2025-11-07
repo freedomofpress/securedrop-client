@@ -112,7 +112,9 @@ describe("PathBuilder", () => {
     let builder: PathBuilder;
 
     beforeEach(() => {
-      tempDir = fs.mkdtempSync(path.join(os.tmpdir(), "pathbuilder-test-"));
+      tempDir = fs.mkdtempSync(
+        path.join(fs.realpathSync(os.tmpdir()), "pathbuilder-test-"),
+      );
       builder = new PathBuilder(tempDir + "/");
     });
 
@@ -139,7 +141,7 @@ describe("PathBuilder", () => {
     it("should detect symlink escape attempts", () => {
       // Create a symlink pointing outside the root directory
       const outsideDir = fs.mkdtempSync(
-        path.join(os.tmpdir(), "pathbuilder-outside-"),
+        path.join(fs.realpathSync(os.tmpdir()), "pathbuilder-outside-"),
       );
       const symlinkPath = path.join(tempDir, "escape");
 
@@ -196,7 +198,9 @@ describe("Storage", () => {
 
   beforeEach(() => {
     // Create test home directory
-    testHomeDir = fs.mkdtempSync(path.join(os.tmpdir(), "storage-test-home-"));
+    testHomeDir = fs.mkdtempSync(
+      path.join(fs.realpathSync(os.tmpdir()), "storage-test-home-"),
+    );
     originalHomedir = os.homedir;
     os.homedir = () => testHomeDir;
 
@@ -218,7 +222,7 @@ describe("Storage", () => {
     });
 
     it("should initialize tmp storage path", () => {
-      expect(storage["tmp"].path).toBe(os.tmpdir() + "/");
+      expect(storage["tmp"].path).toBe(fs.realpathSync(os.tmpdir()) + "/");
     });
   });
 
@@ -239,7 +243,7 @@ describe("Storage", () => {
 
       const result = storage.downloadFilePath(metadata, item);
       expect(result).toBe(
-        `${os.tmpdir()}/download/source-uuid-456/item-uuid-123/encrypted.gpg`,
+        `${fs.realpathSync(os.tmpdir())}/download/source-uuid-456/item-uuid-123/encrypted.gpg`,
       );
     });
 
@@ -392,7 +396,7 @@ describe("Storage", () => {
       expect(result).toBeInstanceOf(PathBuilder);
       expect(fs.existsSync(result.path)).toBe(true);
       expect(result.path).toContain("test-prefix-");
-      expect(result.path.startsWith(os.tmpdir())).toBe(true);
+      expect(result.path.startsWith(fs.realpathSync(os.tmpdir()))).toBe(true);
     });
 
     it("should create unique directories for each call", () => {

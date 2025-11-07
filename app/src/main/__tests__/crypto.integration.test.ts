@@ -7,6 +7,12 @@ import { Storage, PathBuilder, UnsafePathComponent } from "../storage";
 // Mock fs for testing
 vi.mock("fs");
 vi.mock("child_process");
+vi.mock("os", () => ({
+  default: {
+    homedir: vi.fn(() => "/tmp/test-home"),
+    tmpdir: vi.fn(() => "/tmp"),
+  },
+}));
 
 const mockFs = vi.mocked(fs);
 const mockSpawn = vi.mocked(spawn);
@@ -39,6 +45,14 @@ describe("Crypto Integration Tests", () => {
     (Crypto as any).instance = undefined;
     vi.clearAllMocks();
     vi.unstubAllEnvs();
+
+    // Mock fs functions needed by Storage
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    (mockFs.realpathSync as any) = vi.fn((path) => path);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    (mockFs.existsSync as any) = vi.fn(() => false);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    (mockFs.mkdirSync as any) = vi.fn();
 
     // Mock process object for spawn
     mockProcess = {
