@@ -161,27 +161,22 @@ describe("PathBuilder", () => {
       }
     });
 
-    // this test will fail on macOS, because tmpdir() is /var, but it's
-    // a symlink to /private/var, which escapes the root and fails
-    it.skipIf(os.platform() === "darwin")(
-      "should allow valid symlinks within root",
-      () => {
-        // Create target and symlink within the root
-        const targetDir = path.join(tempDir, "target");
-        const symlinkPath = path.join(tempDir, "link");
+    it("should allow valid symlinks within root", () => {
+      // Create target and symlink within the root
+      const targetDir = path.join(tempDir, "target");
+      const symlinkPath = path.join(tempDir, "link");
 
-        fs.mkdirSync(targetDir);
-        fs.symlinkSync(targetDir, symlinkPath);
+      fs.mkdirSync(targetDir);
+      fs.symlinkSync(targetDir, symlinkPath);
 
-        try {
-          const result = builder.join("link");
-          expect(result).toBe(`${tempDir}/link`);
-        } finally {
-          fs.unlinkSync(symlinkPath);
-          fs.rmdirSync(targetDir);
-        }
-      },
-    );
+      try {
+        const result = builder.join("link");
+        expect(result).toBe(`${tempDir}/link`);
+      } finally {
+        fs.unlinkSync(symlinkPath);
+        fs.rmdirSync(targetDir);
+      }
+    });
 
     it("should not check symlinks for non-existent paths", () => {
       // This should not throw even though the path doesn't exist
