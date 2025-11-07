@@ -202,35 +202,11 @@ for _ in range(count):
         "has_attachment": has_attachment,
     }
 
-    # If any item is a message, set show_message_preview to True
-    show_message_preview = False
-    for item_row in item_rows:
-        if (
-            isinstance(item_row["data"], dict)
-            and item_row["data"].get("kind") is not None
-            and item_row["data"].get("kind", "") == "message"
-        ):
-            show_message_preview = True
-            break
-
-    # The message preview should be the most recent message's plaintext
-    message_preview = ""
-    for item_row in reversed(item_rows):
-        if (
-            isinstance(item_row["data"], dict)
-            and item_row["data"].get("kind") == "message"
-            and item_row.get("plaintext")
-        ):
-            message_preview = str(item_row.get("plaintext", ""))[:200]  # Limit to 200 characters
-            break
-
     # Create the source row SQL
     # Note: is_seen and has_attachment are generated columns, so we don't insert them directly
     source_row = {
         "uuid": source_uuid,
         "data": source_obj,
-        "show_message_preview": show_message_preview,
-        "message_preview": message_preview,
     }
     sql_lines.append(insert("sources", source_row))
 

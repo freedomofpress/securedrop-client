@@ -37,8 +37,7 @@ const createMockSource = (overrides: Partial<SourceType> = {}): SourceType => ({
   },
   isRead: true,
   hasAttachment: false,
-  showMessagePreview: false,
-  messagePreview: "",
+  messagePreview: null,
   ...overrides,
 });
 
@@ -105,11 +104,8 @@ describe("Source Component", () => {
   });
 
   describe("message preview functionality", () => {
-    it("does not display message preview when showMessagePreview is false", () => {
-      const sourceWithoutPreview = createMockSource({
-        showMessagePreview: false,
-        messagePreview: "This should not be shown",
-      });
+    it("does not display message preview when messagePreview is undefined", () => {
+      const sourceWithoutPreview = createMockSource();
       renderWithProviders(
         <Source source={sourceWithoutPreview} {...defaultProps} />,
       );
@@ -118,10 +114,12 @@ describe("Source Component", () => {
       expect(messagePreview).toBeNull();
     });
 
-    it("displays 'encrypted...' when showMessagePreview is true but messagePreview is empty", () => {
+    it("displays 'Encrypted File' when messagePreview exists but plaintext is empty for file", () => {
       const sourceWithEmptyPreview = createMockSource({
-        showMessagePreview: true,
-        messagePreview: "",
+        messagePreview: {
+          kind: "file",
+          plaintext: null,
+        },
       });
       renderWithProviders(
         <Source source={sourceWithEmptyPreview} {...defaultProps} />,
@@ -129,14 +127,32 @@ describe("Source Component", () => {
 
       const messagePreview = screen.getByTestId("message-preview");
       expect(messagePreview).toBeDefined();
-      expect(messagePreview.textContent).toBe("encrypted...");
+      expect(messagePreview.textContent).toBe("Encrypted File");
     });
 
-    it("displays actual message preview when showMessagePreview is true and messagePreview has content", () => {
+    it("displays 'Encrypted Message' when messagePreview exists but plaintext is empty for file", () => {
+      const sourceWithEmptyPreview = createMockSource({
+        messagePreview: {
+          kind: "message",
+          plaintext: null,
+        },
+      });
+      renderWithProviders(
+        <Source source={sourceWithEmptyPreview} {...defaultProps} />,
+      );
+
+      const messagePreview = screen.getByTestId("message-preview");
+      expect(messagePreview).toBeDefined();
+      expect(messagePreview.textContent).toBe("Encrypted Message");
+    });
+
+    it("displays actual message preview when messagePreview is set and plaintext has content", () => {
       const testMessage = "This is a test message preview";
       const sourceWithPreview = createMockSource({
-        showMessagePreview: true,
-        messagePreview: testMessage,
+        messagePreview: {
+          kind: "message",
+          plaintext: testMessage,
+        },
       });
       renderWithProviders(
         <Source source={sourceWithPreview} {...defaultProps} />,
@@ -288,8 +304,7 @@ describe("Source Component", () => {
       },
       isRead: true,
       hasAttachment: false,
-      showMessagePreview: false,
-      messagePreview: "",
+      messagePreview: null,
     };
 
     const baseProps = {

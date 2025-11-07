@@ -124,6 +124,12 @@ export class TaskQueue {
           `Unexpected status ${nextStatus} for item ${item.id}, skipping...`,
         );
       }
+
+      // After decryption, update source message preview and
+      // post message to main thread
+      if (this.port) {
+        this.port.postMessage(this.db.getSource(metadata.source));
+      }
     } finally {
       // After every process tick, post message to main thread
       if (this.port) {

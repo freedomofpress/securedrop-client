@@ -116,8 +116,7 @@ describe("Sources Component", () => {
       },
       isRead: false,
       hasAttachment: false,
-      showMessagePreview: false,
-      messagePreview: "",
+      messagePreview: null,
     },
     {
       uuid: "source-2",
@@ -133,8 +132,10 @@ describe("Sources Component", () => {
       },
       isRead: true,
       hasAttachment: true,
-      showMessagePreview: true,
-      messagePreview: "Hello from Bob",
+      messagePreview: {
+        kind: "message",
+        plaintext: "Hello from Bob,",
+      },
     },
     {
       uuid: "source-3",
@@ -150,8 +151,7 @@ describe("Sources Component", () => {
       },
       isRead: false,
       hasAttachment: false,
-      showMessagePreview: false,
-      messagePreview: "",
+      messagePreview: null,
     },
     {
       uuid: "source-4",
@@ -167,8 +167,7 @@ describe("Sources Component", () => {
       },
       isRead: true,
       hasAttachment: false,
-      showMessagePreview: false,
-      messagePreview: "",
+      messagePreview: null,
     },
   ];
 
@@ -180,6 +179,7 @@ describe("Sources Component", () => {
     window.electronAPI = {
       getSources: vi.fn().mockResolvedValue(mockSources),
       syncMetadata: vi.fn().mockResolvedValue(undefined),
+      onSourceUpdate: vi.fn().mockResolvedValue(undefined),
     } as Partial<typeof window.electronAPI> as typeof window.electronAPI;
   });
 

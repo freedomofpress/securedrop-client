@@ -72,7 +72,8 @@
       }
     },
     "source": {
-      "encrypted": "chiffré...",
+      "encryptedFile": "Fichier Crypté",
+      "encryptedMessage": "Message Crypté",
       "toggleStar": "Basculer le favori"
     }
   },

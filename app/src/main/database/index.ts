@@ -225,17 +225,31 @@ export class DB {
 
     this.selectAllSources = this.db.prepare(`
       SELECT
-        uuid,
-        data,
-        is_seen,
-        has_attachment,
-        show_message_preview,
-        message_preview
-      FROM sources_projected
+        s.uuid,
+        s.data,
+        s.is_seen,
+        s.has_attachment,
+        i.kind AS last_message_kind,
+        i.plaintext AS last_message_plaintext,
+        i.filename AS last_message_filename
+      FROM sources_projected s
+      LEFT JOIN sorted_items i
+        ON s.uuid = i.source_uuid
+        AND i.rn = 1;
     `);
     this.selectSourceById = this.db.prepare(`
-      SELECT uuid, data FROM sources_projected
-      WHERE uuid = ?
+      SELECT 
+        s.uuid, 
+        s.data, 
+        s.is_seen, 
+        s.has_attachment,
+        i.kind AS last_message_kind,
+        i.plaintext AS last_message_plaintext,
+        i.filename AS last_message_filename
+      FROM sources_projected s
+      LEFT JOIN sorted_items i 
+        ON s.uuid = i.source_uuid AND i.rn = 1
+      WHERE s.uuid = ?
     `);
     this.selectItemsBySourceId = this.db.prepare(`
       SELECT uuid, data, plaintext, filename, fetch_status, fetch_progress FROM items_projected
@@ -547,23 +561,43 @@ export class DB {
     return Boolean(value);
   }
 
+  // Helper function for handling SourceRow
+  private toSource(row: SourceRow): Source {
+    return {
+      uuid: row.uuid,
+      data: JSON.parse(row.data) as SourceMetadata,
+      isRead: this.isTruthy(row.is_seen),
+      hasAttachment: this.isTruthy(row.has_attachment),
+      messagePreview: row.last_message_kind
+        ? {
+            kind: row.last_message_kind,
+            plaintext:
+              (row.last_message_kind === "file"
+                ? row.last_message_filename?.substring(
+                    row.last_message_filename.lastIndexOf("/") + 1,
+                  )
+                : row.last_message_plaintext) ?? null,
+          }
+        : null,
+    };
+  }
+
+  getSource(uuid: string): Source | null {
+    const row = this.selectSourceById.get(uuid);
+    if (!row) {
+      return null;
+    }
+    return this.toSource(row);
+  }
+
   getSources(): Source[] {
     if (!this.db) {
       throw new Error("Database is not open");
     }
 
     const rows = this.selectAllSources.all();
-
     return rows.map((row) => {
-      const data = JSON.parse(row.data) as SourceMetadata;
-      return {
-        uuid: row.uuid,
-        data,
-        isRead: this.isTruthy(row.is_seen),
-        hasAttachment: this.isTruthy(row.has_attachment),
-        showMessagePreview: this.isTruthy(row.show_message_preview),
-        messagePreview: row.message_preview,
-      };
+      return this.toSource(row);
     });
   }
 

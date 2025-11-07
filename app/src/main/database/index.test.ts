@@ -69,7 +69,7 @@ describe("Database Component Tests", () => {
   });
 });
 
-describe("pending_events update projected views", () => {
+describe("Database Method Tests", () => {
   const testHomeDir = path.join(os.tmpdir(), "test-home");
   const originalHomedir = os.homedir;
   let db: DB;
@@ -125,16 +125,32 @@ describe("pending_events update projected views", () => {
     };
   }
 
-  function mockItemMetadata(uuid: string, source_uuid: string): ItemMetadata {
+  function mockItemMetadata(
+    uuid: string,
+    source_uuid: string,
+    kind: "file" | "reply" | "message" = "reply",
+    interaction_count: number = 1,
+  ): ItemMetadata {
+    if (kind === "reply") {
+      return {
+        kind: kind,
+        uuid: uuid,
+        source: source_uuid,
+        size: 50,
+        journalist_uuid: "",
+        is_deleted_by_source: false,
+        seen_by: [],
+        interaction_count: interaction_count,
+      };
+    }
     return {
-      kind: "reply",
+      kind: kind,
       uuid: uuid,
       source: source_uuid,
       size: 50,
-      journalist_uuid: "",
-      is_deleted_by_source: false,
+      is_read: false,
       seen_by: [],
-      interaction_count: 1,
+      interaction_count: interaction_count,
     };
   }
 
@@ -868,5 +884,115 @@ describe("pending_events update projected views", () => {
     expect(sourceWithItems.items[0].data.interaction_count).toBe(42);
     expect(sourceWithItems.items[0].plaintext).toBe("plaintext");
     expect(sourceWithItems.items[0].fetch_status).toBe(FetchStatus.Complete);
+  });
+
+  it("getSource should return correct message preview", () => {
+    db.updateSources({
+      source1: mockSourceMetadata("source1"),
+    });
+
+    let source = db.getSource("source1");
+    expect(source).not.toBeNull();
+    if (source) {
+      expect(source.messagePreview).toBeNull();
+    }
+
+    db.updateItems({
+      item1: mockItemMetadata("item1", "source1", "reply", 1),
+      item2: mockItemMetadata("item2", "source1", "message", 2),
+      item3: mockItemMetadata("item3", "source1", "file", 3),
+    });
+
+    // Set plaintext and filename for items
+    db.completePlaintextItem("item1", "reply message 1");
+    db.completePlaintextItem("item2", "submission message");
+    db.completeFileItem("item3", "/tmp/file3.txt");
+
+    source = db.getSource("source1");
+    expect(source).not.toBeNull();
+    if (source) {
+      expect(source.messagePreview).not.toBeNull();
+      expect(source.messagePreview?.kind).toBe("file");
+      expect(source.messagePreview?.plaintext).toBe("file3.txt");
+    }
+
+    db.updateItems({
+      item4: mockItemMetadata("item4", "source1", "message", 4),
+    });
+
+    source = db.getSource("source1");
+    expect(source).not.toBeNull();
+    if (source) {
+      expect(source.messagePreview).not.toBeNull();
+      expect(source.messagePreview!.kind).toBe("message");
+      expect(source.messagePreview?.plaintext).toBeNull();
+    }
+
+    db.completePlaintextItem("item4", "latest message");
+    source = db.getSource("source1");
+    expect(source).not.toBeNull();
+    if (source) {
+      expect(source.messagePreview).not.toBeNull();
+      expect(source.messagePreview!.kind).toBe("message");
+      expect(source.messagePreview?.plaintext).toBe("latest message");
+    }
+  });
+
+  it("getSources should return sources with correct last_message_kind, last_message_plaintext, and last_message_filename", () => {
+    db.updateSources({
+      source1: mockSourceMetadata("source1"),
+      source2: mockSourceMetadata("source2"),
+      source3: mockSourceMetadata("source3"),
+      source4: mockSourceMetadata("source4"),
+    });
+
+    db.updateItems({
+      // source1 items
+      item1: mockItemMetadata("item1", "source1", "reply", 1),
+      item2: mockItemMetadata("item2", "source1", "message", 2),
+      // source2 items
+      item3: mockItemMetadata("item3", "source2", "reply", 1),
+      item4: mockItemMetadata("item4", "source2", "file", 2),
+      // source3 items
+      item5: mockItemMetadata("item5", "source3", "message", 1),
+      item6: mockItemMetadata("item6", "source3", "message", 2),
+    });
+
+    db.completePlaintextItem("item1", "reply message 1");
+    db.completePlaintextItem("item2", "message 2");
+    db.completePlaintextItem("item3", "message 1");
+    db.completeFileItem("item4", "/tmp/filename.txt");
+
+    const sources = db.getSources();
+    const s1 = sources.find((s) => s.uuid === "source1");
+    const s2 = sources.find((s) => s.uuid === "source2");
+    const s3 = sources.find((s) => s.uuid === "source3");
+    const s4 = sources.find((s) => s.uuid === "source4");
+
+    expect(s1).not.toBeNull();
+    if (s1) {
+      expect(s1.messagePreview).not.toBeNull();
+      expect(s1.messagePreview?.kind).toBe("message");
+      expect(s1.messagePreview?.plaintext).toBe("message 2");
+    }
+
+    expect(s2).not.toBeNull();
+    if (s2) {
+      expect(s2.messagePreview).not.toBeNull();
+      expect(s2.messagePreview?.kind).toBe("file");
+      expect(s2.messagePreview?.plaintext).toBe("filename.txt");
+    }
+
+    expect(s3).not.toBeNull();
+    if (s3) {
+      expect(s3.messagePreview).not.toBeNull();
+      expect(s3.messagePreview?.kind).toBe("message");
+      expect(s3.messagePreview?.plaintext).toBeNull();
+    }
+
+    expect(s4).not.toBeNull();
+    if (s4) {
+      expect(s4.messagePreview).toBeNull();
+    }
   });
 });

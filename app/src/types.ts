@@ -101,8 +101,12 @@ export type Source = {
   data: SourceMetadata;
   isRead: boolean;
   hasAttachment: boolean;
-  showMessagePreview: boolean;
-  messagePreview: string;
+  messagePreview: MessagePreview | null;
+};
+
+export type MessagePreview = {
+  kind: "message" | "reply" | "file";
+  plaintext: string | null;
 };
 
 export type SourceWithItems = {
@@ -135,8 +139,9 @@ export type SourceRow = {
   data: string; // JSON stringified SourceMetadata
   is_seen: boolean;
   has_attachment: boolean;
-  show_message_preview: boolean;
-  message_preview: string;
+  last_message_kind?: "message" | "reply" | "file";
+  last_message_plaintext?: string;
+  last_message_filename?: string;
 };
 
 export type Item = {
