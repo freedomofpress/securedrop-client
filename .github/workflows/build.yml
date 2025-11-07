@@ -56,6 +56,7 @@ jobs:
           - bookworm
         what:
           - main
+          - app
     runs-on: ubuntu-latest
     outputs:
       artifact_id: ${{ steps.upload.outputs.artifact-id }}
@@ -88,6 +89,7 @@ jobs:
           - bookworm
         what:
           - main
+          - app
     runs-on: ubuntu-latest
     outputs:
       artifact_id: ${{ steps.upload.outputs.artifact-id }}
