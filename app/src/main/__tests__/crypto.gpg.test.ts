@@ -1,5 +1,14 @@
-import { describe, it, expect, beforeAll, afterAll, beforeEach } from "vitest";
+import {
+  describe,
+  it,
+  expect,
+  beforeAll,
+  afterAll,
+  beforeEach,
+  afterEach,
+} from "vitest";
 import * as path from "path";
+import * as fs from "fs";
 import { Crypto, CryptoError } from "../crypto";
 import {
   createGpgTestEnvironment,
@@ -9,6 +18,7 @@ import {
   loadTestKeys,
   type GpgTestEnvironment,
 } from "./setup-gpg-tests";
+import { PathBuilder, Storage } from "../storage";
 
 // Verify GPG is available - fail tests if not
 const isGpgAvailable = verifyGpgAvailable();
@@ -17,6 +27,8 @@ describe("Crypto with Real GPG", () => {
   let gpgEnv: GpgTestEnvironment;
   let crypto: Crypto;
   let testKeyId: string;
+  const storage = new Storage();
+  let itemDirectory: PathBuilder;
 
   beforeAll(async () => {
     if (!isGpgAvailable) {
@@ -68,6 +80,16 @@ describe("Crypto with Real GPG", () => {
       gpgHomedir: gpgEnv.homedir,
     });
     crypto = Crypto.getInstance()!;
+
+    // Create fresh itemDirectory for each test
+    itemDirectory = storage.createTempDir("securedrop-test-");
+  });
+
+  afterEach(() => {
+    // Cleanup itemDirectory after each test
+    if (itemDirectory && fs.existsSync(itemDirectory.path)) {
+      fs.rmSync(itemDirectory.path, { recursive: true, force: true });
+    }
   });
 
   describe("Message Decryption (No Gzip)", () => {
@@ -141,22 +163,18 @@ and symbols: !@#$%^&*()_+-={}[]|\\:";'<>?,./`;
 
       try {
         // Decrypt using our crypto class
-        const result = await crypto.decryptFile(filePath);
+        const result = await crypto.decryptFile(
+          storage,
+          itemDirectory,
+          filePath,
+        );
 
-        expect(result.filename).toBe(originalFilename);
+        expect(path.basename(result)).toBe(originalFilename);
 
         // Read the decrypted file and verify content
         const fs = await import("fs");
-        const decryptedContent = fs.readFileSync(result.filePath, "utf8");
+        const decryptedContent = fs.readFileSync(result, "utf8");
         expect(decryptedContent).toBe(originalContent);
-
-        // Cleanup decrypted file
-        if (fs.existsSync(result.filePath)) {
-          fs.rmSync(path.dirname(result.filePath), {
-            recursive: true,
-            force: true,
-          });
-        }
       } finally {
         cleanup();
       }
@@ -187,24 +205,20 @@ and symbols: !@#$%^&*()_+-={}[]|\\:";'<>?,./`;
       );
 
       try {
-        const result = await crypto.decryptFile(filePath);
+        const result = await crypto.decryptFile(
+          storage,
+          itemDirectory,
+          filePath,
+        );
 
-        expect(result.filename).toBe(originalFilename);
+        expect(path.basename(result)).toBe(originalFilename);
 
         // Read the decrypted file and verify binary content
         const fs = await import("fs");
-        const decryptedContent = fs.readFileSync(result.filePath);
+        const decryptedContent = fs.readFileSync(result);
 
         // Compare binary data
         expect(Buffer.compare(decryptedContent, binaryContent)).toBe(0);
-
-        // Cleanup
-        if (fs.existsSync(result.filePath)) {
-          fs.rmSync(path.dirname(result.filePath), {
-            recursive: true,
-            force: true,
-          });
-        }
       } finally {
         cleanup();
       }
@@ -223,20 +237,17 @@ and symbols: !@#$%^&*()_+-={}[]|\\:";'<>?,./`;
       );
 
       try {
-        const result = await crypto.decryptFile(filePath);
+        const result = await crypto.decryptFile(
+          storage,
+          itemDirectory,
+          filePath,
+        );
 
-        expect(result.filename).toBe(longFilename);
+        expect(path.basename(result)).toBe(longFilename);
 
         const fs = await import("fs");
-        const decryptedContent = fs.readFileSync(result.filePath, "utf8");
+        const decryptedContent = fs.readFileSync(result, "utf8");
         expect(decryptedContent).toBe(originalContent);
-
-        if (fs.existsSync(result.filePath)) {
-          fs.rmSync(path.dirname(result.filePath), {
-            recursive: true,
-            force: true,
-          });
-        }
       } finally {
         cleanup();
       }
@@ -245,9 +256,9 @@ and symbols: !@#$%^&*()_+-={}[]|\\:";'<>?,./`;
     it("should fail with non-existent encrypted file", async () => {
       const nonExistentPath = "/path/that/does/not/exist.gpg";
 
-      await expect(crypto.decryptFile(nonExistentPath)).rejects.toThrow(
-        CryptoError,
-      );
+      await expect(
+        crypto.decryptFile(storage, itemDirectory, nonExistentPath),
+      ).rejects.toThrow(CryptoError);
     });
   });
 
@@ -279,20 +290,17 @@ and symbols: !@#$%^&*()_+-={}[]|\\:";'<>?,./`;
       );
 
       try {
-        const result = await crypto.decryptFile(filePath);
+        const result = await crypto.decryptFile(
+          storage,
+          itemDirectory,
+          filePath,
+        );
 
-        expect(result.filename).toBe(filename);
+        expect(path.basename(result)).toBe(filename);
 
         const fs = await import("fs");
-        const decryptedContent = fs.readFileSync(result.filePath, "utf8");
+        const decryptedContent = fs.readFileSync(result, "utf8");
         expect(decryptedContent).toBe(testData);
-
-        if (fs.existsSync(result.filePath)) {
-          fs.rmSync(path.dirname(result.filePath), {
-            recursive: true,
-            force: true,
-          });
-        }
       } finally {
         cleanup();
       }

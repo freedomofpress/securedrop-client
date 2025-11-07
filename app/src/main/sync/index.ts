@@ -9,8 +9,8 @@ import {
 import { DB } from "../database";
 import { IndexSchema, BatchResponseSchema } from "../../schemas";
 
-import fs from "fs";
-import { encryptedFilepath } from "../crypto";
+import * as fs from "fs";
+import { Storage } from "../storage";
 
 async function getServerIndex(
   authToken: string,
@@ -147,21 +147,21 @@ export function reconcileIndex(
 // Delete items from DB and delete any files persisted to disk from
 // the filesystem.
 function deleteItems(db: DB, itemIDs: string[]) {
+  const storage = new Storage();
   // Perform fs cleanup
   for (const itemID of itemIDs) {
-    const data = db.getItemFileData(itemID);
-    if (!data) {
+    const item = db.getItem(itemID);
+    if (!item) {
       continue;
     }
-    if (data.filename) {
-      fs.rmSync(data.filename, { force: true });
+    // Clean up the raw file
+    if (item.filename) {
+      fs.rmSync(item.filename, { force: true });
     }
-    // Encrypted file should already have been removed on decryption,
-    // but attempt again to clean up here just in case.
-    if (data.source_uuid) {
-      fs.rmSync(encryptedFilepath(data.source_uuid, itemID), {
-        force: true,
-      });
+    // and the item folder too
+    const itemDirectory = storage.itemDirectory(item.data);
+    if (fs.existsSync(itemDirectory.path)) {
+      fs.rmSync(itemDirectory.path, { recursive: true, force: true });
     }
   }
 

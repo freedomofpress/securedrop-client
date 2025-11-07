@@ -85,10 +85,6 @@ export class DB {
     { uuid: string },
     { version: string }
   >;
-  private selectItemFilenameSource: Statement<
-    { uuid: string },
-    { filename: string; source_uuid: string }
-  >;
   private selectItemsProcessable: Statement<[], { uuid: string }>;
   private upsertItem: Statement<
     { uuid: string; data: string; version: string; fetch_status: number },
@@ -193,9 +189,6 @@ export class DB {
     );
     this.selectUnprojectedItemVersion = this.db.prepare(
       "SELECT version FROM items WHERE uuid = @uuid",
-    );
-    this.selectItemFilenameSource = this.db.prepare(
-      "SELECT filename, source_uuid FROM items_projected WHERE source_uuid = @uuid",
     );
     this.selectItemsProcessable = this.db.prepare(
       `SELECT uuid FROM items
@@ -425,15 +418,6 @@ export class DB {
     const strIndex = JSON.stringify(index, sortKeys);
     const newVersion = computeVersion(strIndex);
     this.insertVersion.run(newVersion);
-  }
-
-  getItemFileData(itemID: string):
-    | {
-        filename: string;
-        source_uuid: string;
-      }
-    | undefined {
-    return this.selectItemFilenameSource.get({ uuid: itemID });
   }
 
   deleteItems(items: string[]) {

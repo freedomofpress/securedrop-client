@@ -48,6 +48,10 @@ vi.mock("fs", () => ({
     },
     createWriteStream: vi.fn(() => new PassThrough()),
   },
+  existsSync: vi.fn(() => true),
+  realpathSync: vi.fn((path) => path),
+  mkdtempSync: vi.fn((prefix) => prefix + "XXXXXX"),
+  rmSync: vi.fn(),
 }));
 
 // Helper to create mock DB with specific methods
@@ -391,7 +395,11 @@ describe("TaskQueue - Two-Phase Download and Decryption", () => {
   describe("File Processing", () => {
     it("should download and decrypt a file successfully on first attempt", async () => {
       const db = createMockDB();
-      const metadata = { kind: "file", source: "source1" } as ItemMetadata;
+      const metadata = {
+        kind: "file",
+        source: "source1",
+        uuid: "file-uuid-1",
+      } as ItemMetadata;
 
       db.getItem = vi.fn(() => mockItem(metadata, FetchStatus.Initial, 0));
 
@@ -402,10 +410,9 @@ describe("TaskQueue - Two-Phase Download and Decryption", () => {
       });
 
       // Mock successful decryption
-      mockCrypto.decryptFile.mockResolvedValue({
-        filePath: "/securedrop/source1",
-        filename: "plaintext.txt",
-      });
+      mockCrypto.decryptFile.mockResolvedValue(
+        "/securedrop/source1/plaintext.txt",
+      );
 
       const queue = new TaskQueue(db);
       await queue.process({ id: "msg1" }, db);
@@ -429,7 +436,11 @@ describe("TaskQueue - Two-Phase Download and Decryption", () => {
         "encrypted.gpg",
       );
       expect(db.setDecryptionInProgress).toHaveBeenCalledWith("msg1");
-      expect(mockCrypto.decryptFile).toHaveBeenCalledWith(downloadPath);
+      expect(mockCrypto.decryptFile).toHaveBeenCalledWith(
+        expect.any(Object), // storage
+        expect.any(Object), // itemDirectory
+        downloadPath,
+      );
       expect(db.completeFileItem).toHaveBeenCalledWith(
         "msg1",
         "/securedrop/source1/plaintext.txt",
@@ -438,7 +449,11 @@ describe("TaskQueue - Two-Phase Download and Decryption", () => {
 
     it("should download successfully but fail decryption, and retry decryption only", async () => {
       const db = createMockDB();
-      const metadata = { kind: "file", source: "source1" } as ItemMetadata;
+      const metadata = {
+        kind: "file",
+        source: "source1",
+        uuid: "file-uuid-2",
+      } as ItemMetadata;
 
       // First attempt: Initial status, Second attempt: FailedDecryptionRetryable
       db.getItem = vi
@@ -478,10 +493,9 @@ describe("TaskQueue - Two-Phase Download and Decryption", () => {
 
       // Second attempt - retry from FailedDecryptionRetryable status
       // Mock successful decryption this time
-      mockCrypto.decryptFile.mockResolvedValue({
-        filePath: "/securedrop/source1",
-        filename: "plaintext.txt",
-      });
+      mockCrypto.decryptFile.mockResolvedValue(
+        "/securedrop/source1/plaintext.txt",
+      );
 
       await queue.process({ id: "msg1" }, db);
 
@@ -500,7 +514,11 @@ describe("TaskQueue - Two-Phase Download and Decryption", () => {
 
     it("should fail download, retry download and decryption successfully", async () => {
       const db = createMockDB();
-      const metadata = { kind: "file", source: "source1" } as ItemMetadata;
+      const metadata = {
+        kind: "file",
+        source: "source1",
+        uuid: "file-uuid-3",
+      } as ItemMetadata;
 
       db.getItem = vi
         .fn()
@@ -532,10 +550,9 @@ describe("TaskQueue - Two-Phase Download and Decryption", () => {
         bytesWritten: 100,
       });
 
-      mockCrypto.decryptFile.mockResolvedValue({
-        filePath: "/securedrop/source1",
-        filename: "plaintext.txt",
-      });
+      mockCrypto.decryptFile.mockResolvedValue(
+        "/securedrop/source1/plaintext.txt",
+      );
 
       await queue.process({ id: "msg1" }, db);
 

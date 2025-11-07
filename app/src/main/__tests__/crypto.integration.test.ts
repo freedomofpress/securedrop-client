@@ -2,6 +2,7 @@ import { describe, it, expect, beforeEach, vi, afterEach } from "vitest";
 import { spawn } from "child_process";
 import * as fs from "fs";
 import { Crypto, CryptoError } from "../crypto";
+import { Storage, PathBuilder, UnsafePathComponent } from "../storage";
 
 // Mock fs for testing
 vi.mock("fs");
@@ -13,7 +14,7 @@ const mockSpawn = vi.mocked(spawn);
 // Type definition for testing private methods
 type CryptoWithPrivateMethods = {
   getGpgCommand(): string[];
-  readGzipHeaderFilename(data: Buffer): string;
+  readGzipHeaderFilename(data: Buffer): UnsafePathComponent | null;
   decompressGzip(data: Buffer): Promise<string>;
   readGzipHeaderFilenameFromFile(filePath: string): Promise<string>;
   streamDecompressGzipFile(
@@ -29,6 +30,8 @@ describe("Crypto Integration Tests", () => {
     stderr: { on: ReturnType<typeof vi.fn> };
     on: ReturnType<typeof vi.fn>;
   };
+  let storage: Storage;
+  let itemDirectory: PathBuilder;
 
   beforeEach(() => {
     // Reset singleton instance for testing
@@ -52,6 +55,10 @@ describe("Crypto Integration Tests", () => {
       },
       on: vi.fn(),
     };
+
+    // Create real Storage and PathBuilder instances
+    storage = new Storage();
+    itemDirectory = new PathBuilder("/tmp/test-item/");
   });
 
   afterEach(() => {
@@ -184,6 +191,8 @@ describe("Crypto Integration Tests", () => {
 
       mockFs.existsSync.mockReturnValue(true);
       mockFs.mkdtempSync.mockReturnValue("/tmp/test-temp");
+      mockFs.realpathSync.mockImplementation((path) => path as string);
+      mockFs.rmSync.mockImplementation(() => {});
     });
 
     it("should successfully decrypt and decompress a gzipped file", async () => {
@@ -216,12 +225,13 @@ describe("Crypto Integration Tests", () => {
 
       mockSpawn.mockReturnValue(mockProcess as never);
 
-      const result = await crypto.decryptFile(testFilePath);
-
-      expect(result.filename).toBe("original-file.txt");
-      expect(result.filePath).toMatch(
-        /securedrop-decrypted-.*-original-file\.txt$/,
+      const result = await crypto.decryptFile(
+        storage,
+        itemDirectory,
+        testFilePath,
       );
+
+      expect(result).toMatch(/original-file\.txt$/);
       expect(mockSpawn).toHaveBeenCalledWith("gpg", [
         "--trust-model",
         "always",
@@ -259,10 +269,12 @@ describe("Crypto Integration Tests", () => {
 
       mockSpawn.mockReturnValue(mockProcess as never);
 
-      await expect(crypto.decryptFile(testFilePath)).rejects.toThrow(
-        CryptoError,
-      );
-      await expect(crypto.decryptFile(testFilePath)).rejects.toThrow(
+      await expect(
+        crypto.decryptFile(storage, itemDirectory, testFilePath),
+      ).rejects.toThrow(CryptoError);
+      await expect(
+        crypto.decryptFile(storage, itemDirectory, testFilePath),
+      ).rejects.toThrow(
         "GPG file decryption failed (exit code 2): GPG file decryption error",
       );
     });
@@ -297,9 +309,13 @@ describe("Crypto Integration Tests", () => {
 
       mockSpawn.mockReturnValue(mockProcess as never);
 
-      const result = await crypto.decryptFile(testFilePath);
+      const result = await crypto.decryptFile(
+        storage,
+        itemDirectory,
+        testFilePath,
+      );
 
-      expect(result.filename).toBe("encrypted-file"); // Falls back to basename without .gpg
+      expect(result).toMatch(/encrypted-file$/); // Falls back to basename without .gpg
       expect(mockSpawn).toHaveBeenCalled();
     });
 
@@ -329,12 +345,12 @@ describe("Crypto Integration Tests", () => {
 
       mockSpawn.mockReturnValue(mockProcess as never);
 
-      await expect(crypto.decryptFile(testFilePath)).rejects.toThrow(
-        CryptoError,
-      );
-      await expect(crypto.decryptFile(testFilePath)).rejects.toThrow(
-        "Failed to decompress decrypted file",
-      );
+      await expect(
+        crypto.decryptFile(storage, itemDirectory, testFilePath),
+      ).rejects.toThrow(CryptoError);
+      await expect(
+        crypto.decryptFile(storage, itemDirectory, testFilePath),
+      ).rejects.toThrow("Failed to decompress decrypted file");
     });
   });
 
@@ -442,7 +458,7 @@ describe("Crypto Integration Tests", () => {
 
       const cryptoWithPrivate = crypto as unknown as CryptoWithPrivateMethods;
       const result = cryptoWithPrivate.readGzipHeaderFilename(header);
-      expect(result).toBe(filename);
+      expect(result?.path).toBe(filename);
     });
 
     it("should handle incomplete gzip header gracefully", () => {

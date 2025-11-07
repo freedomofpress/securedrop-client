@@ -13,12 +13,18 @@ import {
   BatchResponse,
 } from "../../../src/types";
 import * as proxyModule from "../../../src/main/proxy";
-import { encryptedFilepath } from "../crypto";
-import fs from "fs";
+import * as fs from "fs";
 
 vi.mock("fs", () => ({
+  rmSync: vi.fn(),
+  existsSync: vi.fn(() => true),
+  realpathSync: vi.fn((path) => path),
+}));
+
+vi.mock("os", () => ({
   default: {
-    rmSync: vi.fn(),
+    homedir: vi.fn(() => "/mock-home"),
+    tmpdir: vi.fn(() => "/tmp"),
   },
 }));
 
@@ -37,6 +43,7 @@ function mockDB({
   return {
     getVersion: vi.fn(() => "v1"),
     getIndex: vi.fn(() => index),
+    getItem: vi.fn((_itemID) => null),
     deleteItems: vi.fn((_itemIDs) => {}),
     deleteSources: vi.fn((_sourceIDs) => {}),
     updateBatch: vi.fn((_metadata) => {}),
@@ -301,10 +308,19 @@ describe("syncMetadata", () => {
 
     db = mockDB({
       index: clientIndex,
-      itemFileData: {
-        filename: "/securedrop/plaintext.txt",
-        source_uuid: SOURCE_UUID_1,
-      },
+    });
+
+    // Mock getItem to return data for ITEM_UUID_2 so cleanup can happen
+    db.getItem = vi.fn((itemID: string) => {
+      if (itemID === ITEM_UUID_2) {
+        return {
+          uuid: ITEM_UUID_2,
+          filename: "/securedrop/plaintext.txt",
+          data: mockItemMetadata(ITEM_UUID_2, SOURCE_UUID_1),
+        };
+      }
+      // we only care about ITEM_UUID_2 here
+      throw new Error(`Item ${itemID} not found`);
     });
 
     const proxyMock = mockProxyResponses([
@@ -332,8 +348,11 @@ describe("syncMetadata", () => {
       force: true,
     });
     expect(fs.rmSync).toHaveBeenCalledWith(
-      encryptedFilepath(SOURCE_UUID_1, ITEM_UUID_2),
-      { force: true },
+      `/mock-home/.config/SecureDrop/files/${SOURCE_UUID_1}/${ITEM_UUID_2}/`,
+      {
+        recursive: true,
+        force: true,
+      },
     );
   });
 

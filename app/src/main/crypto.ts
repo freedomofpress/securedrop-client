@@ -2,8 +2,8 @@ import { spawn } from "child_process";
 import { createGunzip } from "zlib";
 import { pipeline } from "stream/promises";
 import * as fs from "fs";
-import * as os from "os";
 import * as path from "path";
+import { PathBuilder, Storage, UnsafePathComponent } from "./storage";
 
 export interface CryptoConfig {
   isQubes?: boolean; // Auto-detect if not provided
@@ -134,23 +134,20 @@ export class Crypto {
    * Decrypt a file and return the path to the decrypted file with original filename
    * Uses streaming approach to handle large files efficiently (similar to legacy client)
    * @param filepath - Path to the encrypted file
-   * @returns Promise with path to decrypted file and original filename
+   * @returns Promise with path to decrypted file
    */
   async decryptFile(
+    storage: Storage,
+    itemDirectory: PathBuilder,
     filepath: string,
-  ): Promise<{ filePath: string; filename: string }> {
+  ): Promise<string> {
     const cmd = this.getGpgCommand();
     cmd.push("--decrypt", filepath);
 
     return new Promise((resolve, reject) => {
       // Create temporary directory for this operation
-      const tempDir = fs.mkdtempSync(
-        path.join(os.tmpdir(), "securedrop-decrypt-"),
-      );
-      const tempGpgOutput = path.join(
-        tempDir,
-        `securedrop-gpg-${Date.now()}-${Math.random().toString(36).slice(2)}`,
-      );
+      const tempDir = storage.createTempDir("securedrop-decrypt-");
+      const tempGpgOutput = tempDir.join("decrypted.gz");
 
       const gpgOutputFile = fs.createWriteStream(tempGpgOutput);
       let stderr = Buffer.alloc(0);
@@ -170,7 +167,7 @@ export class Crypto {
 
         if (code !== 0) {
           // Clean up temp directory on error
-          fs.rmSync(tempDir, { recursive: true, force: true });
+          fs.rmSync(tempDir.path, { recursive: true, force: true });
           const errorMessage = stderr.toString("utf8");
           reject(
             new CryptoError(
@@ -188,21 +185,18 @@ export class Crypto {
           // Create final output file path
           const finalFilename =
             originalFilename || path.basename(filepath, ".gpg");
-          const outputPath = path.join(
-            tempDir,
-            `securedrop-decrypted-${Date.now()}-${finalFilename}`,
-          );
+          const finalAbsolutePath = itemDirectory.join(finalFilename);
 
           // Stream decompress the gzipped content to final file
-          await this.streamDecompressGzipFile(tempGpgOutput, outputPath);
+          await this.streamDecompressGzipFile(tempGpgOutput, finalAbsolutePath);
 
           // Clean up temporary GPG output file
           fs.unlink(tempGpgOutput, () => {});
 
-          resolve({ filePath: outputPath, filename: finalFilename });
+          resolve(finalAbsolutePath);
         } catch (error) {
           // Clean up temp directory on error
-          fs.rmSync(tempDir, { recursive: true, force: true });
+          fs.rmSync(tempDir.path, { recursive: true, force: true });
           reject(
             new CryptoError(
               "Failed to decompress decrypted file",
@@ -214,7 +208,7 @@ export class Crypto {
 
       gpgProcess.on("error", (error) => {
         gpgOutputFile.destroy();
-        fs.rmSync(tempDir, { recursive: true, force: true });
+        fs.rmSync(tempDir.path, { recursive: true, force: true });
         reject(
           new CryptoError(
             `Failed to start GPG process for file decryption: ${error.message}`,
@@ -245,7 +239,7 @@ export class Crypto {
    */
   private async readGzipHeaderFilenameFromFile(
     filePath: string,
-  ): Promise<string> {
+  ): Promise<UnsafePathComponent | null> {
     return new Promise((resolve, reject) => {
       const readStream = fs.createReadStream(filePath, { start: 0, end: 1023 }); // Read first 1KB for header
       let headerData = Buffer.alloc(0);
@@ -271,7 +265,7 @@ export class Crypto {
   /**
    * Extract original filename from gzip header
    */
-  private readGzipHeaderFilename(data: Buffer): string {
+  private readGzipHeaderFilename(data: Buffer): UnsafePathComponent | null {
     if (data.length < 10) {
       throw new Error("Data too short to be a valid gzip file");
     }
@@ -320,13 +314,12 @@ export class Crypto {
         throw new Error("Filename in gzip header not null-terminated");
       }
 
-      return data.subarray(filenameStart, filenameEnd).toString("utf8");
+      const filename = data
+        .subarray(filenameStart, filenameEnd)
+        .toString("utf8");
+      return new UnsafePathComponent(filename);
     }
 
-    return ""; // No filename in header
+    return null; // No filename in header
   }
-}
-
-export function encryptedFilepath(sourceID: string, itemID: string) {
-  return path.join(os.tmpdir(), "download", sourceID, itemID, "encrypted.gpg");
 }
