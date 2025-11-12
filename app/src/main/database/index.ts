@@ -472,7 +472,7 @@ export class DB {
 
   // Updates source versions in DB. Should be run in a transaction that also
   // updates the global index version.
-  updateSources(sources: { [uuid: string]: SourceMetadata }) {
+  updateSources(sources: { [uuid: string]: SourceMetadata | null }) {
     Object.keys(sources).forEach((sourceid: string) => {
       const metadata = sources[sourceid];
       if (metadata) {
@@ -492,7 +492,7 @@ export class DB {
 
   // Updates item versions in DB. Should be run in a transaction that also
   // updates the global index version.
-  updateItems(items: { [uuid: string]: ItemMetadata }) {
+  updateItems(items: { [uuid: string]: ItemMetadata | null }) {
     Object.keys(items).forEach((itemid: string) => {
       const metadata = items[itemid];
       if (metadata) {
@@ -520,7 +520,7 @@ export class DB {
   // Updates journalist metadata in DB. Should be run in a transaction that also
   // updates the global index version.
   private updateJournalists(journalists: {
-    [uuid: string]: JournalistMetadata;
+    [uuid: string]: JournalistMetadata | null;
   }) {
     Object.keys(journalists).forEach((id: string) => {
       const metadata = journalists[id];
