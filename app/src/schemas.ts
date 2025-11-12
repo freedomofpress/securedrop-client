@@ -74,9 +74,9 @@ export const IndexSchema = z.object({
 
 // Metadata, maps UUIDs to full metadata objects
 export const BatchResponseSchema = z.object({
-  sources: z.record(UUIDSchema, SourceMetadataSchema),
-  items: z.record(UUIDSchema, ItemMetadataSchema),
-  journalists: z.record(UUIDSchema, JournalistMetadataSchema),
+  sources: z.record(UUIDSchema, SourceMetadataSchema.nullable()),
+  items: z.record(UUIDSchema, ItemMetadataSchema.nullable()),
+  journalists: z.record(UUIDSchema, JournalistMetadataSchema.nullable()),
   events: z.record(z.string(), z.tuple([z.number(), z.string().nullable()])),
 });
 
