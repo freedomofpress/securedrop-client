@@ -49,15 +49,23 @@ export default defineConfig({
     projects: [
       {
         test: {
-          name: "unit", // Unit and component tests
-          include: ["src/**/*.test.ts", "src/**/*.test.tsx"],
+          name: "unit", // main process unit tests
+          include: ["src/main/**/*.test.ts", "src/main/**/*.test.tsx"],
           globals: true,
-          environment: "jsdom",
+          environment: "node",
         },
         define: {
           // Unit tests might reference proxy functions, so provide dummy values
           __PROXY_CMD__: JSON.stringify("dummy-proxy-command"),
           __PROXY_ORIGIN__: JSON.stringify("http://dummy-origin"),
+        },
+      },
+      {
+        test: {
+          name: "component",
+          include: ["src/renderer/**/*.test.ts", "src/renderer/**/*.test.tsx"],
+          globals: true,
+          environment: "jsdom",
         },
       },
       {

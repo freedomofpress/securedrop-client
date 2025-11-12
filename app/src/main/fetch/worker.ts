@@ -14,12 +14,14 @@ if (!parentPort) {
 const port = parentPort;
 
 // Initialize crypto with workerData config if it exists and we haven't initialized yet
-if (workerData?.cryptoConfig) {
-  console.log("Initializing crypto with config:", workerData.cryptoConfig);
-  Crypto.initialize(workerData.cryptoConfig);
+if (!workerData.cryptoConfig) {
+  throw new Error("Worker missing crypto config");
 }
 
-const db = new DB();
+console.log("Initializing crypto with config:", workerData.cryptoConfig);
+const crypto = Crypto.initialize(workerData.cryptoConfig);
+
+const db = new DB(crypto);
 const q = new TaskQueue(db, port);
 
 port.on("message", (message: AuthedRequest) => {

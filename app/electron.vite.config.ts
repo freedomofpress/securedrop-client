@@ -37,6 +37,10 @@ export default defineConfig(({ mode }) => {
     mainVars["__PROXY_ORIGIN__"] = JSON.stringify("http://localhost:8081/");
     mainVars["__PROXY_CMD__"] = JSON.stringify(sdProxyCmd);
     mainVars["__VITE_NONCE__"] = JSON.stringify(viteNonce);
+    // Load test submission key
+    mainVars["import.meta.env.SD_SUBMISSION_PUBKEY_PATH"] = JSON.stringify(
+      "./src/main/__tests__/files/securedrop.gpg.pub.asc",
+    );
   } else {
     // In production, PROXY_CMD is determined at runtime, and PROXY_ORIGIN is managed by the proxy VM
     mainVars["__PROXY_CMD__"] = '""'; // Empty string

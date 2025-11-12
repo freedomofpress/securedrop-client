@@ -39,7 +39,7 @@ const JOURNALIST_UUID_1 = "770e8400-e29b-41d4-a716-446655440001";
 function mockDB({
   index = { sources: {}, items: {}, journalists: {} },
   itemFileData = {},
-  pendingEvents = [{}],
+  pendingEvents = [],
 } = {}) {
   return {
     getVersion: vi.fn(() => "v1"),
@@ -488,12 +488,14 @@ describe("syncMetadata", () => {
       {
         id: "1",
         type: PendingEventType.Seen,
-        target: { item_uuid: "item1", version: "" },
+        target: { item_uuid: ITEM_UUID_1, version: "" },
+        data: null,
       },
       {
         id: "2",
         type: PendingEventType.ItemDeleted,
-        target: { item_uuid: "item3", version: "" },
+        target: { item_uuid: ITEM_UUID_2, version: "" },
+        data: null,
       },
     ];
     const batch: BatchResponse = {
@@ -503,7 +505,7 @@ describe("syncMetadata", () => {
       events: { 1: [200, ""], 2: [200, ""] },
     };
 
-    db = mockDB({ pendingEvents: pendingEvents });
+    db = mockDB();
     db.getPendingEvents = vi.fn(() => pendingEvents);
 
     const proxyMock = vi.spyOn(proxyModule, "proxyJSONRequest");
@@ -572,6 +574,7 @@ describe("syncMetadata", () => {
           item_uuid: ITEM_UUID_1,
           version: "",
         },
+        data: null,
       },
     ];
     const batch: BatchResponse = {

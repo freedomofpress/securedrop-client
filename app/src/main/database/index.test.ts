@@ -3,7 +3,13 @@ import fs from "fs";
 import path from "path";
 import os from "os";
 import { DB } from "./index";
-import { ItemMetadata, PendingEventType, SourceMetadata } from "../../types";
+import {
+  FetchStatus,
+  ItemMetadata,
+  PendingEventType,
+  SourceMetadata,
+} from "../../types";
+import { Crypto } from "../crypto";
 
 describe("Database Component Tests", () => {
   const testHomeDir = path.join(os.tmpdir(), "test-home");
@@ -11,6 +17,16 @@ describe("Database Component Tests", () => {
   const testDbPath = path.join(testDbDir, "db.sqlite");
   const originalHomedir = os.homedir;
   let db: DB;
+  let crypto: Crypto;
+
+  beforeAll(() => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    (Crypto as any).instance = undefined;
+    crypto = Crypto.initialize({
+      isQubes: false,
+      journalistPublicKey: "",
+    });
+  });
 
   beforeEach(() => {
     if (fs.existsSync(testHomeDir)) {
@@ -30,7 +46,7 @@ describe("Database Component Tests", () => {
   });
 
   it("should create database with correct setup", () => {
-    db = new DB();
+    db = new DB(crypto);
 
     expect(db).toBeDefined();
     expect(fs.existsSync(testDbPath)).toBe(true);
@@ -38,7 +54,7 @@ describe("Database Component Tests", () => {
   });
 
   it("should handle database closure", () => {
-    db = new DB();
+    db = new DB(crypto);
     expect(db).toBeDefined();
 
     db.close();
@@ -46,7 +62,7 @@ describe("Database Component Tests", () => {
   });
 
   it("should create valid database file", () => {
-    db = new DB();
+    db = new DB(crypto);
     const stats = fs.statSync(testDbPath);
     expect(stats.isFile()).toBe(true);
     expect(stats.size).toBeGreaterThan(0);
@@ -57,13 +73,30 @@ describe("pending_events update projected views", () => {
   const testHomeDir = path.join(os.tmpdir(), "test-home");
   const originalHomedir = os.homedir;
   let db: DB;
+  let crypto: Crypto;
+
+  beforeAll(() => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    (Crypto as any).instance = undefined;
+    crypto = Crypto.initialize({
+      isQubes: false,
+      journalistPublicKey: "",
+    });
+
+    // Mock crypto.encryptSourceMessage
+    vi.spyOn(crypto, "encryptSourceMessage").mockImplementation(
+      (_plaintext: string, _sourcePublicKey: string): Promise<string> => {
+        return Promise.resolve("test-ciphertext");
+      },
+    );
+  });
 
   beforeEach(() => {
     if (fs.existsSync(testHomeDir)) {
       fs.rmSync(testHomeDir, { recursive: true, force: true });
     }
     os.homedir = () => testHomeDir;
-    db = new DB();
+    db = new DB(crypto);
   });
 
   afterEach(() => {
@@ -299,7 +332,7 @@ describe("pending_events update projected views", () => {
     }
   });
 
-  it("pending ReplySent event should add reply", () => {
+  it("pending ReplySent event should add reply", async () => {
     db.updateSources({
       source1: mockSourceMetadata("source1"),
     });
@@ -313,7 +346,7 @@ describe("pending_events update projected views", () => {
     let sourceWithItems = db.getSourceWithItems("source1");
     expect(sourceWithItems.items.length).toEqual(3);
 
-    db.addPendingReplySentEvent("here is a reply", "source1", 4);
+    await db.addPendingReplySentEvent("here is a reply", "source1", 4);
     sourceWithItems = db.getSourceWithItems("source1");
     expect(sourceWithItems.items.length).toEqual(4);
     const reply = sourceWithItems.items[3];
@@ -380,7 +413,7 @@ describe("pending_events update projected views", () => {
     expect(sourceWithItems.items.length).toEqual(2);
   });
 
-  it("pending ReplySent and pending SourceConversationDeleted should delete all items in conversation", () => {
+  it("pending ReplySent and pending SourceConversationDeleted should delete all items in conversation", async () => {
     db.updateSources({
       source1: mockSourceMetadata("source1"),
     });
@@ -390,7 +423,7 @@ describe("pending_events update projected views", () => {
       item2: mockItemMetadata("item2", "source1"),
     });
 
-    db.addPendingReplySentEvent("reply text", "source1", 3);
+    await db.addPendingReplySentEvent("reply text", "source1", 3);
     let sourceWithItems = db.getSourceWithItems("source1");
     expect(sourceWithItems.items.length).toEqual(3);
 
@@ -433,7 +466,7 @@ describe("pending_events update projected views", () => {
     expect(sourceWithItems.items[0].plaintext).toBe("reply text");
   });
 
-  it("pending ReplySent and then pending SourceDeleted should delete source", () => {
+  it("pending ReplySent and then pending SourceDeleted should delete source", async () => {
     db.updateSources({
       source1: mockSourceMetadata("source1"),
     });
@@ -442,7 +475,7 @@ describe("pending_events update projected views", () => {
       item1: mockItemMetadata("item1", "source1"),
     });
 
-    db.addPendingReplySentEvent("reply text", "source1", 1);
+    await db.addPendingReplySentEvent("reply text", "source1", 1);
     let sources = db.getSources();
     expect(sources.length).toEqual(1);
 
@@ -451,7 +484,7 @@ describe("pending_events update projected views", () => {
     expect(sources.length).toEqual(0);
   });
 
-  it("pending ReplySent and then pending ItemDeleted should delete reply", () => {
+  it("pending ReplySent and then pending ItemDeleted should delete reply", async () => {
     db.updateSources({
       source1: mockSourceMetadata("source1"),
     });
@@ -460,7 +493,7 @@ describe("pending_events update projected views", () => {
       item1: mockItemMetadata("item1", "source1"),
     });
 
-    db.addPendingReplySentEvent("reply text", "source1", 2);
+    await db.addPendingReplySentEvent("reply text", "source1", 2);
     let sourceWithItems = db.getSourceWithItems("source1");
     expect(sourceWithItems.items.length).toEqual(2);
     const pendingReplyUuid = sourceWithItems.items[1].uuid;
@@ -789,5 +822,51 @@ describe("pending_events update projected views", () => {
     expect(events.length).toBe(1);
     expect(events[0].id).toBe(snowflakeItem);
     expect(events[0].type).toBe(PendingEventType.ItemDeleted);
+  });
+
+  it("updateItems should upsert items with conflicting uuid", () => {
+    db.updateSources({
+      source1: mockSourceMetadata("source1"),
+    });
+
+    // Insert initial item
+    db.updateItems({
+      item1: {
+        ...mockItemMetadata("item1", "source1"),
+        size: 50,
+        interaction_count: 1,
+      },
+    });
+
+    let sourceWithItems = db.getSourceWithItems("source1");
+    expect(sourceWithItems.items.length).toBe(1);
+    expect(sourceWithItems.items[0].uuid).toBe("item1");
+    expect(sourceWithItems.items[0].data.size).toBe(50);
+    expect(sourceWithItems.items[0].data.interaction_count).toBe(1);
+    expect(sourceWithItems.items[0].fetch_status).toBe(FetchStatus.Initial);
+
+    db.completePlaintextItem("item1", "plaintext");
+    sourceWithItems = db.getSourceWithItems("source1");
+    expect(sourceWithItems.items.length).toBe(1);
+    expect(sourceWithItems.items[0].uuid).toBe("item1");
+    expect(sourceWithItems.items[0].plaintext).toBe("plaintext");
+    expect(sourceWithItems.items[0].fetch_status).toBe(FetchStatus.Complete);
+
+    // Upsert with same uuid but different data
+    db.updateItems({
+      item1: {
+        ...mockItemMetadata("item1", "source1"),
+        size: 99,
+        interaction_count: 42,
+      },
+    });
+
+    sourceWithItems = db.getSourceWithItems("source1");
+    expect(sourceWithItems.items.length).toBe(1);
+    expect(sourceWithItems.items[0].uuid).toBe("item1");
+    expect(sourceWithItems.items[0].data.size).toBe(99);
+    expect(sourceWithItems.items[0].data.interaction_count).toBe(42);
+    expect(sourceWithItems.items[0].plaintext).toBe("plaintext");
+    expect(sourceWithItems.items[0].fetch_status).toBe(FetchStatus.Complete);
   });
 });

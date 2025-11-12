@@ -12,7 +12,7 @@
   "scripts": {
     "start": "electron-vite preview",
     "dev": "electron-vite dev",
-    "test": "vitest run --config vitest.config.ts --project=unit --coverage",
+    "test": "vitest run --config vitest.config.ts --project=unit --project=component --coverage",
     "integration-test": "vitest run --config vitest.config.ts --project=integration --coverage",
     "server-test": "electron-vite build --mode test && vitest run --config vitest.config.ts --project=server --coverage --no-file-parallelism",
     "fix": "eslint --fix . && prettier --write .",
@@ -85,6 +85,7 @@
     "dbmate": "^2.28.0",
     "i18next": "^25.3.6",
     "lucide-react": "^0.539.0",
+    "openpgp": "^6.2.2",
     "react": "^19.1.1",
     "react-dom": "^19.1.1",
     "react-i18next": "^15.6.1",

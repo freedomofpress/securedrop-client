@@ -1,13 +1,16 @@
 import { spawn } from "child_process";
 import { createGunzip } from "zlib";
 import { pipeline } from "stream/promises";
+
+import * as openpgp from "openpgp";
 import * as fs from "fs";
 import * as path from "path";
 import { PathBuilder, Storage, UnsafePathComponent } from "./storage";
 
 export interface CryptoConfig {
-  isQubes?: boolean; // Auto-detect if not provided
+  isQubes: boolean;
   gpgHomedir?: string;
+  journalistPublicKey: string;
 }
 
 export class CryptoError extends Error {
@@ -24,22 +27,26 @@ export class Crypto {
   private static instance: Crypto;
   private isQubes: boolean;
   private gpgHomedir?: string;
+  private journalistPublicKey: string;
 
-  private constructor(config: CryptoConfig = {}) {
-    this.isQubes = config.isQubes ?? this.detectQubes();
+  private constructor(config: CryptoConfig) {
+    this.isQubes = config.isQubes;
     this.gpgHomedir = config.gpgHomedir;
+    this.journalistPublicKey = config.journalistPublicKey;
   }
 
   /**
    * Initialize global crypto configuration (must be called before getInstance)
    */
-  public static initialize(config: CryptoConfig): void {
+  public static initialize(config: CryptoConfig): Crypto {
     if (Crypto.instance) {
       throw new Error(
         "Crypto already initialized: cannot initialize twice. Call initialize() before getInstance().",
       );
     }
+
     Crypto.instance = new Crypto(config);
+    return Crypto.instance;
   }
 
   /**
@@ -50,13 +57,6 @@ export class Crypto {
       return null;
     }
     return Crypto.instance;
-  }
-
-  /**
-   * Detect if running in Qubes OS by checking for QUBES_* environment variables
-   */
-  private detectQubes(): boolean {
-    return Object.keys(process.env).some((key) => key.startsWith("QUBES_"));
   }
 
   /**
@@ -220,6 +220,23 @@ export class Crypto {
   }
 
   /**
+   * Encrypts a message to a source given the source public key. Message
+   * will be encrypted to source and journalist public keys.
+   * @param plaintext - The message plaintext
+   * @param sourcePublicKey - Source PGP public key
+   * @returns Promise<string> - The encrypted ciphertext
+   */
+  async encryptSourceMessage(
+    plaintext: string,
+    sourcePublicKey: string,
+  ): Promise<string> {
+    return encryptMessage(plaintext, [
+      sourcePublicKey,
+      this.journalistPublicKey,
+    ]);
+  }
+
+  /**
    * Stream decompress a gzip file to another file (memory efficient)
    * Similar to legacy client's safe_copyfileobj approach
    */
@@ -322,4 +339,26 @@ export class Crypto {
 
     return null; // No filename in header
   }
+}
+
+/**
+ * Encrypts a message to a source to the specified recipients
+ * @param plaintext - The message plaintext
+ * @param recipientPublicKeys - ASCII-encoded armored public keys for message recipients
+ * @returns Promise<string> - The encrypted ciphertext
+ */
+export async function encryptMessage(
+  plaintext: string,
+  recipientPublicKeys: string[],
+): Promise<string> {
+  const publicKeys = await Promise.all(
+    recipientPublicKeys.map((recipient) =>
+      openpgp.readKey({ armoredKey: recipient }),
+    ),
+  );
+
+  return await openpgp.encrypt({
+    message: await openpgp.createMessage({ text: plaintext }),
+    encryptionKeys: publicKeys,
+  });
 }

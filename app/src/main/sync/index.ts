@@ -7,7 +7,11 @@ import {
   SyncStatus,
 } from "../../types";
 import { DB } from "../database";
-import { IndexSchema, BatchResponseSchema } from "../../schemas";
+import {
+  IndexSchema,
+  BatchResponseSchema,
+  BatchRequestSchema,
+} from "../../schemas";
 
 import * as fs from "fs";
 import { Storage } from "../storage";
@@ -59,7 +63,7 @@ async function submitBatch(
       "Content-Type": "application/json",
       Authorization: `Token ${authToken}`,
     },
-    body: JSON.stringify(request),
+    body: JSON.stringify(BatchRequestSchema.parse(request)),
   })) as ProxyJSONResponse;
 
   if (resp.error) {

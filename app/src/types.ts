@@ -64,7 +64,12 @@ import type {
   ReplyMetadata,
   SubmissionMetadata,
   JournalistMetadata,
+  BatchRequest,
+  SourceTarget,
+  ItemTarget,
+  PendingEvent,
 } from "./schemas";
+import { PendingEventType } from "./schemas";
 
 export type {
   TokenResponse,
@@ -75,17 +80,13 @@ export type {
   ReplyMetadata,
   SubmissionMetadata,
   JournalistMetadata,
+  BatchRequest,
+  SourceTarget,
+  ItemTarget,
+  PendingEvent,
 };
 
-export type BatchRequest = {
-  // Metadata requests
-  sources: string[];
-  items: string[];
-  journalists: string[];
-
-  // Pending Events
-  events: PendingEvent[];
-};
+export { PendingEventType };
 
 export type MetadataRequest = {
   sources: string[];
@@ -186,17 +187,6 @@ export enum FetchStatus {
   FailedTerminal = 7,
 }
 
-export enum PendingEventType {
-  Undefined = "undefined",
-  ReplySent = "reply_sent",
-  ItemDeleted = "item_deleted",
-  SourceDeleted = "source_deleted",
-  SourceConversationDeleted = "source_conversation_deleted",
-  Starred = "source_starred",
-  Unstarred = "source_unstarred",
-  Seen = "item_seen",
-}
-
 // EventStatus codes returned from the server
 export enum EventStatus {
   Processing = 102,
@@ -209,28 +199,13 @@ export enum EventStatus {
 
 export type PendingEventData = ReplySentData;
 
-export type SourceTarget = {
-  source_uuid: string;
-  version: string;
-};
-
-export type ItemTarget = {
-  item_uuid: string;
-  version: string;
-};
-
-export type PendingEvent = {
-  id: string;
-  type: PendingEventType;
-  target: SourceTarget | ItemTarget;
-  data?: PendingEventData;
-};
-
 export type ReplySentData = {
   uuid: string;
   // reply ciphertext
   reply: string;
-  // reply plaintext: for storing in pending_events table only
+
+  // fields for storing in pending_events table only: not
+  // to be sent to the server + excluded from the request schema
   plaintext: string;
   metadata: ReplyMetadata;
 };

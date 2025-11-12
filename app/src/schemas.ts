@@ -77,7 +77,67 @@ export const BatchResponseSchema = z.object({
   sources: z.record(UUIDSchema, SourceMetadataSchema),
   items: z.record(UUIDSchema, ItemMetadataSchema),
   journalists: z.record(UUIDSchema, JournalistMetadataSchema),
-  events: z.record(z.string(), z.tuple([z.number(), z.string()])),
+  events: z.record(z.string(), z.tuple([z.number(), z.string().nullable()])),
+});
+
+/**
+ * Zod schemas for server requests
+ */
+
+export const ReplySentDataSchema = z.object({
+  uuid: UUIDSchema,
+  reply: z.string(),
+});
+
+export const SourceTargetSchema = z.object({
+  source_uuid: UUIDSchema,
+  version: z.string(),
+});
+
+export const ItemTargetSchema = z.object({
+  item_uuid: UUIDSchema,
+  version: z.string(),
+});
+
+export enum PendingEventType {
+  Undefined = "undefined",
+  ReplySent = "reply_sent",
+  ItemDeleted = "item_deleted",
+  SourceDeleted = "source_deleted",
+  SourceConversationDeleted = "source_conversation_deleted",
+  Starred = "source_starred",
+  Unstarred = "source_unstarred",
+  Seen = "item_seen",
+}
+
+const BasePendingEvent = {
+  id: z.string(),
+  target: z.union([SourceTargetSchema, ItemTargetSchema]),
+};
+
+export const PendingEventSchema = z.discriminatedUnion("type", [
+  z.object({
+    ...BasePendingEvent,
+    type: z.literal(PendingEventType.ReplySent),
+    data: ReplySentDataSchema,
+  }),
+  // All other event types
+  ...Object.values(PendingEventType)
+    .filter((v) => v !== PendingEventType.ReplySent)
+    .map((v) => {
+      return z.object({
+        ...BasePendingEvent,
+        type: z.literal(v),
+        data: z.object().nullable(),
+      });
+    }),
+]);
+
+export const BatchRequestSchema = z.object({
+  sources: z.array(UUIDSchema).optional(),
+  items: z.array(UUIDSchema).optional(),
+  journalists: z.array(UUIDSchema).optional(),
+  events: z.array(PendingEventSchema).optional(),
 });
 
 // Export types inferred from schemas
@@ -89,3 +149,7 @@ export type ItemMetadata = z.infer<typeof ItemMetadataSchema>;
 export type ReplyMetadata = z.infer<typeof ReplyMetadataSchema>;
 export type SubmissionMetadata = z.infer<typeof SubmissionMetadataSchema>;
 export type JournalistMetadata = z.infer<typeof JournalistMetadataSchema>;
+export type BatchRequest = z.infer<typeof BatchRequestSchema>;
+export type SourceTarget = z.infer<typeof SourceTargetSchema>;
+export type ItemTarget = z.infer<typeof ItemTargetSchema>;
+export type PendingEvent = z.infer<typeof PendingEventSchema>;

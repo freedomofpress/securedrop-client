@@ -21,56 +21,12 @@ describe("Crypto", () => {
       (Crypto as any).instance = undefined;
     });
 
-    it("should detect Qubes when QUBES_ environment variable exists", () => {
-      vi.stubEnv("QUBES_SOMETHING", "value");
-      Crypto.initialize({});
-      const crypto = Crypto.getInstance();
-
-      // Test by checking internal state via the getGpgCommand private method
-      const command = (
-        crypto as unknown as CryptoWithPrivateMethods
-      ).getGpgCommand();
-      expect(command[0]).toBe("qubes-gpg-client");
-      expect(command).toContain("--trust-model");
-      expect(command).toContain("always");
-    });
-
-    it("should use regular GPG when no QUBES_ environment variables exist", () => {
-      // Mock process.env to exclude all QUBES_ variables
-      const originalEnv = process.env;
-      const mockEnv = Object.keys(originalEnv)
-        .filter((key) => !key.startsWith("QUBES_"))
-        .reduce((env, key) => {
-          env[key] = originalEnv[key];
-          return env;
-        }, {} as NodeJS.ProcessEnv);
-
-      vi.stubGlobal("process", { ...process, env: mockEnv });
-
-      // Reset singleton instance after mocking environment
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      (Crypto as any).instance = undefined;
-
-      Crypto.initialize({});
-      const crypto = Crypto.getInstance();
-
-      const command = (
-        crypto as unknown as CryptoWithPrivateMethods
-      ).getGpgCommand();
-      expect(command[0]).toBe("gpg");
-      expect(command).toContain("--trust-model");
-      expect(command).toContain("always");
-
-      // Restore original process.env
-      vi.unstubAllGlobals();
-    });
-
     it("should use custom homedir when provided", () => {
-      Crypto.initialize({
+      const crypto = Crypto.initialize({
+        journalistPublicKey: "",
         isQubes: false,
         gpgHomedir: "/custom/path",
       });
-      const crypto = Crypto.getInstance();
 
       const command = (
         crypto as unknown as CryptoWithPrivateMethods
@@ -82,8 +38,10 @@ describe("Crypto", () => {
 
     it("should override auto-detection when isQubes is explicitly set", () => {
       vi.stubEnv("QUBES_SOMETHING", "value");
-      Crypto.initialize({ isQubes: false });
-      const crypto = Crypto.getInstance();
+      const crypto = Crypto.initialize({
+        isQubes: false,
+        journalistPublicKey: "",
+      });
 
       const command = (
         crypto as unknown as CryptoWithPrivateMethods
@@ -104,12 +62,12 @@ describe("Crypto", () => {
     });
 
     it("should return instance when initialized with config", () => {
-      Crypto.initialize({ isQubes: false });
+      Crypto.initialize({ isQubes: false, journalistPublicKey: "" });
       expect(Crypto.getInstance()).not.toBe(null);
     });
 
     it("should return instance when initialized with empty config", () => {
-      Crypto.initialize({});
+      Crypto.initialize({ journalistPublicKey: "", isQubes: false });
       expect(Crypto.getInstance()).not.toBe(null);
     });
   });
@@ -121,8 +79,7 @@ describe("Crypto", () => {
       // Reset singleton instance for testing
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       (Crypto as any).instance = undefined;
-      Crypto.initialize({});
-      crypto = Crypto.getInstance()!;
+      crypto = Crypto.initialize({ journalistPublicKey: "", isQubes: false });
     });
 
     it("should extract filename from gzip header", () => {

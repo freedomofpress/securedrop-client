@@ -25,10 +25,10 @@ import {
   PendingEventRow,
   SourceTarget,
   ItemTarget,
-  PendingEventData,
   BatchResponse,
   EventStatus,
 } from "../../types";
+import { Crypto } from "../crypto";
 
 interface KeyObject {
   [key: string]: object;
@@ -58,6 +58,7 @@ export class DB {
   private db: Database.Database | null;
   private url: string | null;
   private snowflake: Snowflake;
+  private crypto: Crypto;
 
   // Prepared statements
   private selectVersion: Statement<[], { version: string }>;
@@ -87,7 +88,7 @@ export class DB {
   >;
   private selectItemsProcessable: Statement<[], { uuid: string }>;
   private upsertItem: Statement<
-    { uuid: string; data: string; version: string; fetch_status: number },
+    { uuid: string; data: string; version: string },
     void
   >;
   private deleteItem: Statement<{ uuid: string }, void>;
@@ -141,7 +142,8 @@ export class DB {
   private deletePendingEvent: Statement<{ snowflake_id: string }, void>;
   private selectPendingEvents: Statement<[], PendingEventRow>;
 
-  constructor(dbDir?: string) {
+  constructor(crypto: Crypto, dbDir?: string) {
+    this.crypto = crypto;
     this.snowflake = new Snowflake(new Date("2000-01-01T00:00:00.000Z"));
 
     if (!dbDir) {
@@ -198,7 +200,7 @@ export class DB {
         (kind <> 'file' AND fetch_status in (${FetchStatus.Initial}, ${FetchStatus.DownloadInProgress}, ${FetchStatus.DecryptionInProgress}, ${FetchStatus.FailedDownloadRetryable}, ${FetchStatus.FailedDecryptionRetryable}))`,
     );
     this.upsertItem = this.db.prepare(
-      "INSERT INTO items (uuid, data, version, fetch_status) VALUES (@id, @data, @version, @fetch_status) ON CONFLICT(uuid) DO UPDATE SET data=@data, version=@version, fetch_status=@fetch_status",
+      "INSERT INTO items (uuid, data, version) VALUES (@id, @data, @version) ON CONFLICT(uuid) DO UPDATE SET data=@data, version=@version",
     );
     this.updateItemFetchStatus = this.db.prepare(
       "UPDATE items SET fetch_status = @fetch_status WHERE uuid = @uuid",
@@ -501,7 +503,6 @@ export class DB {
           uuid: itemid,
           data: blob,
           version: version,
-          fetch_status: FetchStatus.Initial,
         });
       } else {
         this.deleteItem.run({ uuid: itemid });
@@ -750,6 +751,7 @@ export class DB {
     if (!source || !source.data) {
       return Promise.reject("no source metadata: cannot send reply");
     }
+    const sourceMetadata: SourceMetadata = JSON.parse(source.data);
 
     const replyData: ReplySentData = {
       uuid: itemUuid,
@@ -765,8 +767,10 @@ export class DB {
         interaction_count: interactionCount,
       },
       plaintext: text,
-      // TODO(vicki): encrypt reply
-      reply: "",
+      reply: await this.crypto.encryptSourceMessage(
+        text,
+        sourceMetadata.public_key,
+      ),
     };
 
     this.insertSourcePendingEvent.run({
@@ -841,7 +845,7 @@ export class DB {
         id: r.snowflake_id,
         type: r.type as PendingEventType,
         target: target,
-        data: JSON.parse(r.data) as PendingEventData,
+        data: JSON.parse(r.data),
       };
     });
     return pendingEvents;
@@ -850,7 +854,9 @@ export class DB {
   // Takes pending events and their statuses from the server and applies
   // pending event updates as needed.
   // Should be run within a transaction that also updates index version.
-  updatePendingEvents(events: { [snowflake_id: string]: [number, string] }) {
+  updatePendingEvents(events: {
+    [snowflake_id: string]: [number, string | null];
+  }) {
     // Remove successfully applied pending events. On failure, retain them in the
     // pending events table for resubmission on next sync
     const appliedEventIDs: string[] = [];
@@ -875,6 +881,19 @@ export class DB {
       appliedEventIDs,
     );
     for (const event of eventsToApply) {
+      // For reply_sent events, upsert the item into the items table manually
+      // to avoid doing a duplicate fetch from the server
+      if (event.type === PendingEventType.ReplySent) {
+        const replyData = JSON.parse(event.data) as ReplySentData;
+        const metadataBlob = JSON.stringify(replyData.metadata, sortKeys);
+        const version = computeVersion(metadataBlob);
+        this.upsertItem.run({
+          uuid: replyData.uuid,
+          data: metadataBlob,
+          version: version,
+        });
+        this.completePlaintextItem(replyData.uuid, replyData.plaintext);
+      }
       // Once event is applied, delete from pending events table
       this.deletePendingEvent.run({ snowflake_id: event.snowflake_id });
     }

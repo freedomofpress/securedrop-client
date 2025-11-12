@@ -9,9 +9,10 @@ import {
   REACT_DEVELOPER_TOOLS,
 } from "electron-devtools-installer";
 import { Worker } from "worker_threads";
+import fs from "fs";
 
 import { DB } from "./database";
-import { Crypto } from "./crypto";
+import { Crypto, CryptoConfig } from "./crypto";
 import { proxyJSONRequest } from "./proxy";
 import type {
   ProxyRequest,
@@ -27,19 +28,26 @@ import type {
 import { syncMetadata } from "./sync";
 import workerPath from "./fetch/worker?modulePath";
 import { Lock } from "./sync/lock";
+import { Config } from "./config";
 
 // Parse command line arguments
 const args = process.argv.slice(2);
 const noQubes = args.includes("--no-qubes");
 const shouldAutoLogin = args.includes("--login");
 
-// Create crypto config + initialize
-const cryptoConfig = noQubes ? { isQubes: false } : {};
-if (noQubes) {
-  Crypto.initialize(cryptoConfig);
-}
+const config = Config.load(noQubes);
 
-const db = new DB();
+// Create crypto config + initialize
+const cryptoConfig: CryptoConfig = {
+  journalistPublicKey: fs
+    .readFileSync(config.journalist_public_key_path)
+    .toString("utf-8"),
+  isQubes: config.is_qubes,
+};
+
+const crypto = Crypto.initialize(cryptoConfig);
+
+const db = new DB(crypto);
 
 // Generate a CSP nonce for this session (used by Ant Design)
 const cspNonce = randomBytes(32).toString("base64");
