@@ -9,3 +9,6 @@ fi
 
 pnpm run dbmate up
 sqlite3 "$HOME/.config/SecureDrop/db.sqlite" < ./src/test-data.sql
+
+# Write journalist pubkey
+cp "./src/main/__tests__/files/securedrop.gpg.pub.asc" "$HOME/.config/SecureDrop/public.key"

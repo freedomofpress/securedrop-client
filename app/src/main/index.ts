@@ -9,6 +9,7 @@ import {
   REACT_DEVELOPER_TOOLS,
 } from "electron-devtools-installer";
 import { Worker } from "worker_threads";
+import fs from "fs";
 
 import { DB } from "./database";
 import { Crypto, CryptoConfig } from "./crypto";
@@ -38,7 +39,9 @@ const config = Config.load(noQubes);
 
 // Create crypto config + initialize
 const cryptoConfig: CryptoConfig = {
-  journalistPublicKey: config.journalist_public_key,
+  journalistPublicKey: fs
+    .readFileSync(config.journalist_public_key_path)
+    .toString("utf-8"),
   isQubes: config.is_qubes,
 };
 
