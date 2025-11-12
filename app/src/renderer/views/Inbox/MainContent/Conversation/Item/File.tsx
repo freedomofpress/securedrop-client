@@ -14,19 +14,170 @@ import "../Item.css";
 import "./File.css";
 
 import { useTranslation } from "react-i18next";
-import {
-  File as FileIcon,
-  Download,
-  LoaderCircle,
-  FileCheck2,
-  FileX2,
-} from "lucide-react";
+import { File as FileIcon, Download, LoaderCircle, FileX2 } from "lucide-react";
 import { Button, Tooltip } from "antd";
+import {
+  FilePdfFilled,
+  FileExcelFilled,
+  FileImageFilled,
+  FileWordFilled,
+  FileZipFilled,
+  FilePptFilled,
+  FileMarkdownFilled,
+  FileFilled,
+} from "@ant-design/icons";
+import FileVideoFilled from "./FileVideoFilled";
+import FileAudioFilled from "./FileAudioFilled";
+
+const EXCEL_EXTENSIONS = new Set([
+  ".xls",
+  ".xlsx",
+  ".xlsm",
+  ".xlsb",
+  ".xlt",
+  ".xltx",
+  ".xltm",
+  ".csv",
+  ".tsv",
+  ".ods",
+]);
+
+const IMAGE_EXTENSIONS = new Set([
+  ".png",
+  ".jpg",
+  ".jpeg",
+  ".gif",
+  ".bmp",
+  ".tif",
+  ".tiff",
+  ".svg",
+  ".svgz",
+  ".webp",
+  ".ico",
+  ".djvu",
+  ".heif",
+  ".heic",
+  ".avif",
+]);
+
+const WORD_EXTENSIONS = new Set([".doc", ".docx", ".rtf", ".odt", ".txt"]);
+
+const ARCHIVE_EXTENSIONS = new Set([
+  ".zip",
+  ".gz",
+  ".tgz",
+  ".tar",
+  ".bz2",
+  ".tbz",
+  ".xz",
+  ".txz",
+  ".7z",
+  ".rar",
+]);
+
+const POWERPOINT_EXTENSIONS = new Set([
+  ".ppt",
+  ".pptx",
+  ".pps",
+  ".ppsx",
+  ".odp",
+]);
+
+const VIDEO_EXTENSIONS = new Set([
+  ".mp4",
+  ".mov",
+  ".avi",
+  ".mkv",
+  ".wmv",
+  ".flv",
+  ".webm",
+  ".ogv",
+  ".m4v",
+  ".mpg",
+  ".mpeg",
+  ".3gp",
+  ".3g2",
+]);
+
+const AUDIO_EXTENSIONS = new Set([
+  ".mp3",
+  ".wav",
+  ".flac",
+  ".aac",
+  ".ogg",
+  ".oga",
+  ".m4a",
+  ".wma",
+  ".aif",
+  ".aiff",
+  ".opus",
+]);
 
 interface FileProps {
   item: Item;
   designation: string;
   onUpdate: (update: ItemUpdate) => void;
+}
+
+function getFileIconAndColor(filename: string): {
+  Icon: React.ComponentType<{
+    style?: React.CSSProperties;
+    className?: string;
+  }>;
+  color: string;
+} {
+  const normalizedFilename = filename.toLowerCase();
+  const lastDotIndex = normalizedFilename.lastIndexOf(".");
+  const extension =
+    lastDotIndex === -1 ? "" : normalizedFilename.substring(lastDotIndex);
+
+  // PDF
+  if (extension === ".pdf") {
+    return { Icon: FilePdfFilled, color: "#FF4D4F" };
+  }
+
+  // Excel
+  if (EXCEL_EXTENSIONS.has(extension)) {
+    return { Icon: FileExcelFilled, color: "#22B35E" };
+  }
+
+  // Image
+  if (IMAGE_EXTENSIONS.has(extension)) {
+    return { Icon: FileImageFilled, color: "#8C8C8C" };
+  }
+
+  // Word
+  if (WORD_EXTENSIONS.has(extension)) {
+    return { Icon: FileWordFilled, color: "#1677FF" };
+  }
+
+  // Zip
+  if (ARCHIVE_EXTENSIONS.has(extension)) {
+    return { Icon: FileZipFilled, color: "#FAB714" };
+  }
+
+  // PowerPoint
+  if (POWERPOINT_EXTENSIONS.has(extension)) {
+    return { Icon: FilePptFilled, color: "#FF6E31" };
+  }
+
+  // Video
+  if (VIDEO_EXTENSIONS.has(extension)) {
+    return { Icon: FileVideoFilled, color: "#FF4D4F" };
+  }
+
+  // Audio
+  if (AUDIO_EXTENSIONS.has(extension)) {
+    return { Icon: FileAudioFilled, color: "#8C8C8C" };
+  }
+
+  // Markdown
+  if ([".md", ".markdown"].includes(extension)) {
+    return { Icon: FileMarkdownFilled, color: "#8C8C8C" };
+  }
+
+  // Other
+  return { Icon: FileFilled, color: "#8C8C8C" };
 }
 
 function File({ item, designation, onUpdate }: FileProps) {
@@ -181,9 +332,11 @@ function CompleteFile(item: Item) {
   const formattedFilename = formatFilename(filename, filenameMaxLength, 6);
   const tooltipTitle = filename.length > filenameMaxLength ? filename : "";
 
+  const { Icon, color } = getFileIconAndColor(filename);
+
   return (
     <div className="flex items-center justify-start mt-2 mb-2">
-      <FileCheck2 size={30} strokeWidth={1} className="file-icon" />
+      <Icon style={{ fontSize: 30, color }} className="file-icon" />
       <div className="ml-2">
         <Tooltip title={tooltipTitle}>
           <Button size="small" type="link" className="file-namebtn">
