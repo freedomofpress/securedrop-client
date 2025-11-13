@@ -38,6 +38,15 @@ export const sourcesSlice = createSlice({
     clearActiveSource: (state) => {
       state.activeSourceUuid = null;
     },
+    updateSource: (state, action) => {
+      const updatedSource: SourceType = action.payload;
+      state.sources = state.sources.map((source, _) => {
+        if (source.uuid === updatedSource.uuid) {
+          return updatedSource;
+        }
+        return source;
+      });
+    },
   },
   extraReducers: (builder) => {
     builder
@@ -57,7 +66,7 @@ export const sourcesSlice = createSlice({
   },
 });
 
-export const { clearError, setActiveSource, clearActiveSource } =
+export const { clearError, setActiveSource, clearActiveSource, updateSource } =
   sourcesSlice.actions;
 export const selectSources = (state: RootState) => state.sources.sources;
 export const selectActiveSourceUuid = (state: RootState) =>

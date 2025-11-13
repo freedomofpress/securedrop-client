@@ -35,8 +35,7 @@ const mockSources: SourceType[] = [
     },
     isRead: false,
     hasAttachment: false,
-    showMessagePreview: false,
-    messagePreview: "",
+    messagePreview: null,
   },
   {
     uuid: "source-2",
@@ -53,8 +52,10 @@ const mockSources: SourceType[] = [
     },
     isRead: true,
     hasAttachment: true,
-    showMessagePreview: true,
-    messagePreview: "Hello from source 2",
+    messagePreview: {
+      kind: "message",
+      plaintext: "Hello from source 2",
+    },
   },
 ];
 

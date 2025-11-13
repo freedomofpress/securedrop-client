@@ -124,18 +124,20 @@ const Source = memo(function Source({
               >
                 {designation}
               </h3>
-              {source.showMessagePreview && (
+              {source.messagePreview && (
                 <p
                   className={`text-xs truncate ${
                     isActive ? "text-white opacity-80" : "text-gray-500"
                   } ${
                     !source.isRead ? "font-medium" : "font-normal"
-                  } ${source.messagePreview === "" ? "italic" : ""}`}
+                  } ${!source.messagePreview.plaintext ? "italic" : ""}`}
                   data-testid="message-preview"
                 >
-                  {source.messagePreview === ""
-                    ? t("source.encrypted")
-                    : source.messagePreview}
+                  {!source.messagePreview.plaintext
+                    ? source.messagePreview.kind === "file"
+                      ? t("source.encryptedFile")
+                      : t("source.encryptedMessage")
+                    : source.messagePreview.plaintext}
                 </p>
               )}
             </div>

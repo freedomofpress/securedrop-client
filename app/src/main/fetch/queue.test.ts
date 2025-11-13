@@ -64,6 +64,7 @@ function createMockDB() {
     completeFileItem: vi.fn(),
     setDownloadInProgress: vi.fn(),
     setDecryptionInProgress: vi.fn(),
+    setSourceMessagePreview: vi.fn(),
     failDownload: vi.fn(),
     failDecryption: vi.fn(),
     terminallyFailItem: vi.fn(),

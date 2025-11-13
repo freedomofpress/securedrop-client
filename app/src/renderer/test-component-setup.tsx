@@ -50,6 +50,9 @@ beforeEach(() => {
       .fn()
       .mockRejectedValue(new Error("mock not implemented")),
     onItemUpdate: vi.fn().mockRejectedValue(new Error("mock not implemented")),
+    onSourceUpdate: vi
+      .fn()
+      .mockRejectedValue(new Error("mock not implemented")),
     getItem: vi.fn().mockRejectedValue(new Error("mock not implemented")),
     getSources: vi.fn().mockResolvedValue([
       {

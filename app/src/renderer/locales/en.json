@@ -72,7 +72,8 @@
       }
     },
     "source": {
-      "encrypted": "encrypted...",
+      "encryptedFile": "Encrypted File",
+      "encryptedMessage": "Encrypted Message",
       "toggleStar": "Toggle star"
     }
   },

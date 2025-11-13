@@ -105,6 +105,10 @@ const electronAPI = {
   onItemUpdate: (callback: (...args: any[]) => void) => {
     ipcRenderer.on("item-update", (_event, ...args) => callback(...args));
   },
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  onSourceUpdate: (callback: (...args: any[]) => void) => {
+    ipcRenderer.on("source-update", (_event, ...args) => callback(...args));
+  },
 };
 
 contextBridge.exposeInMainWorld("electronAPI", electronAPI);

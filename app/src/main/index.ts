@@ -101,7 +101,12 @@ function spawnFetchWorker(mainWindow: BrowserWindow): Worker {
 
   worker.on("message", (result) => {
     console.debug("Message from worker: ", result);
-    mainWindow.webContents.send("item-update", result);
+    // Check if worker update is Source or Item
+    if ("messagePreview" in result) {
+      mainWindow.webContents.send("source-update", result);
+    } else {
+      mainWindow.webContents.send("item-update", result);
+    }
   });
 
   worker.on("error", (err) => {
