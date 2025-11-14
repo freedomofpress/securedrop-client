@@ -377,7 +377,7 @@ describe("Reply", () => {
     };
 
     describe("when authenticated (online mode)", () => {
-      it("should display current user's full name when available in journalists list", () => {
+      it("should display 'You' for pending reply", () => {
         const authState: Partial<RootState> = {
           session: {
             status: SessionStatus.Auth,
@@ -401,10 +401,10 @@ describe("Reply", () => {
           { preloadedState: authState },
         );
 
-        expect(getByText("Daniel Ellsberg")).toBeInTheDocument();
+        expect(getByText("You")).toBeInTheDocument();
       });
 
-      it("should display current user's name from authData when not in journalists list", () => {
+      it("should display 'You' even when not in journalists list", () => {
         const authState: Partial<RootState> = {
           session: {
             status: SessionStatus.Auth,
@@ -428,7 +428,7 @@ describe("Reply", () => {
           { preloadedState: authState },
         );
 
-        expect(getByText("New User")).toBeInTheDocument();
+        expect(getByText("You")).toBeInTheDocument();
       });
 
       it("should display 'You' when current user has no first/last name", () => {
@@ -458,7 +458,7 @@ describe("Reply", () => {
         expect(getByText("You")).toBeInTheDocument();
       });
 
-      it("should display only first name when last name is missing", () => {
+      it("should display 'You' even when only first name is provided", () => {
         const authState: Partial<RootState> = {
           session: {
             status: SessionStatus.Auth,
@@ -482,7 +482,7 @@ describe("Reply", () => {
           { preloadedState: authState },
         );
 
-        expect(getByText("John")).toBeInTheDocument();
+        expect(getByText("You")).toBeInTheDocument();
       });
     });
 
@@ -510,7 +510,7 @@ describe("Reply", () => {
     });
 
     describe("when unauthenticated (edge case)", () => {
-      it("should display 'Unknown' for pending reply", () => {
+      it("should display 'You' for pending reply", () => {
         const unauthState: Partial<RootState> = {
           session: {
             status: SessionStatus.Unauth,
@@ -528,7 +528,7 @@ describe("Reply", () => {
           { preloadedState: unauthState },
         );
 
-        expect(getByText("Unknown")).toBeInTheDocument();
+        expect(getByText("You")).toBeInTheDocument();
       });
     });
   });

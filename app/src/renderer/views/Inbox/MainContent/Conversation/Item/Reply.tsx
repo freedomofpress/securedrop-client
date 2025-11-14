@@ -36,35 +36,11 @@ function Reply({ item }: ReplyProps) {
       : undefined,
   );
 
-  // Get the current journalist (for pending replies)
-  const currentJournalist = useAppSelector((state) =>
-    sessionState.status === SessionStatus.Auth && sessionState.authData
-      ? getJournalistById(state, sessionState.authData.journalistUUID)
-      : undefined,
-  );
-
   // Determine what to display for the author
   const getAuthorDisplay = () => {
     // Handle pending replies (journalist_uuid is empty)
     if (isPendingReply) {
-      if (sessionState.status === SessionStatus.Auth && sessionState.authData) {
-        // Online/authenticated mode: show current user's name
-        if (currentJournalist) {
-          return formatJournalistName(currentJournalist.data);
-        }
-        // Fallback to authData if journalist not yet in store
-        const firstName = sessionState.authData.journalistFirstName;
-        const lastName = sessionState.authData.journalistLastName;
-        if (firstName || lastName) {
-          return [firstName, lastName].filter(Boolean).join(" ");
-        }
-        return t("you");
-      } else if (sessionState.status === SessionStatus.Offline) {
-        // Offline mode: show "You"
-        return t("you");
-      }
-      // Fallback (shouldn't happen - can't create replies when unauthenticated)
-      return t("unknown");
+      return t("you");
     }
 
     // Handle normal replies (with journalist_uuid)
