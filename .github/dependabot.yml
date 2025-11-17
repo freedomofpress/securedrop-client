@@ -4,11 +4,15 @@ updates:
     directory: "/"
     schedule:
       interval: "weekly"
+    cooldown:
+      default-days: 5
 
   - package-ecosystem: npm
     directory: "/app"
     schedule:
       interval: "weekly"
+    cooldown:
+      default-days: 5
     groups:
       dependencies:
         patterns: ["*"]
@@ -22,12 +26,16 @@ updates:
     directory: "/"
     schedule:
       interval: "weekly"
+    cooldown:
+      default-days: 5
     allow:
       - dependency-type: "development"
   - package-ecosystem: "pip"
     directory: "/client"
     schedule:
       interval: "weekly"
+    cooldown:
+      default-days: 5
     allow:
       - dependency-type: "development"
     ignore:
@@ -40,6 +48,8 @@ updates:
     directory: "/export"
     schedule:
       interval: "weekly"
+    cooldown:
+      default-days: 5
     allow:
       - dependency-type: "development"
     groups:
@@ -50,6 +60,8 @@ updates:
     directory: "/log"
     schedule:
       interval: "weekly"
+    cooldown:
+      default-days: 5
     allow:
       - dependency-type: "development"
     groups:
@@ -60,6 +72,8 @@ updates:
     directory: "/proxy"
     schedule:
       interval: "weekly"
+    cooldown:
+      default-days: 5
     allow:
       - dependency-type: "development"
     groups:
