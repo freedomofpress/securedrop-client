@@ -127,7 +127,6 @@ describe.sequential("sync against a real server", () => {
   it("should verify logged-in journalist from Redux state", async () => {
     // Verify journalist info from Redux state
     const reduxState = await context.page.evaluate(() => {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const store = (window as any).__REDUX_STORE__;
       if (!store) {
         throw new Error("Redux store not found on window object");

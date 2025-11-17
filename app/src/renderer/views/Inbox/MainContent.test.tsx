@@ -85,7 +85,6 @@ describe("MainContent Component", () => {
     vi.clearAllMocks();
 
     // Mock electronAPI
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     (window as any).electronAPI = {
       getSourceWithItems: vi.fn().mockResolvedValue(mockSourceWithItems),
     };
@@ -160,7 +159,6 @@ describe("MainContent Component", () => {
   describe("Source Not Found", () => {
     it("shows source not found when conversation is null", async () => {
       // Mock the API to return null/error for this source
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       (window as any).electronAPI.getSourceWithItems = vi
         .fn()
         .mockRejectedValue(new Error("Source not found"));
@@ -204,7 +202,6 @@ describe("MainContent Component", () => {
       const mockGetSourceWithItems = vi
         .fn()
         .mockResolvedValue(mockSourceWithItems);
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       (window as any).electronAPI.getSourceWithItems = mockGetSourceWithItems;
 
       renderMainContent("/source/source-1");
@@ -227,7 +224,6 @@ describe("MainContent Component", () => {
       };
 
       // Mock the API to return the lowercase name
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       (window as any).electronAPI.getSourceWithItems = vi
         .fn()
         .mockResolvedValue(sourceWithLowercaseName);
@@ -263,7 +259,6 @@ describe("MainContent Component", () => {
 
     it("handles empty conversations in Redux state", async () => {
       // Mock the API to not return any data
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       (window as any).electronAPI.getSourceWithItems = vi
         .fn()
         .mockRejectedValue(new Error("Not found"));

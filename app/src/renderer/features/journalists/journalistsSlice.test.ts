@@ -197,7 +197,6 @@ describe("journalistsSlice", () => {
   describe("selectors", () => {
     const mockRootState = {
       journalists: loadedState,
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       session: {} as any, // Mock other state slices
       sources: {
         sources: [],
