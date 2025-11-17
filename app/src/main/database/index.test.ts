@@ -20,7 +20,6 @@ describe("Database Component Tests", () => {
   let crypto: Crypto;
 
   beforeAll(() => {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     (Crypto as any).instance = undefined;
     crypto = Crypto.initialize({
       isQubes: false,
@@ -76,7 +75,6 @@ describe("Database Method Tests", () => {
   let crypto: Crypto;
 
   beforeAll(() => {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     (Crypto as any).instance = undefined;
     crypto = Crypto.initialize({
       isQubes: false,

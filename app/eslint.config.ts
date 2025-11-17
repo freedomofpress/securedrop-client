@@ -58,4 +58,16 @@ export default tseslint.config(
       },
     },
   },
+  {
+    files: [
+      "**/*.test.ts",
+      "**/*.test.tsx",
+      "tests/**/*",
+      "integration_tests/**/*",
+      "**/test-component-setup.tsx",
+    ],
+    rules: {
+      "@typescript-eslint/no-explicit-any": "off",
+    },
+  },
 );

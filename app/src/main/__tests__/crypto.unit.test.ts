@@ -17,7 +17,6 @@ describe("Crypto", () => {
   describe("getInstance and Qubes detection", () => {
     beforeEach(() => {
       // Reset singleton instance for testing
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       (Crypto as any).instance = undefined;
     });
 
@@ -53,7 +52,6 @@ describe("Crypto", () => {
   describe("getInstance", () => {
     beforeEach(() => {
       // Reset singleton instance for testing
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       (Crypto as any).instance = undefined;
     });
 
@@ -77,7 +75,6 @@ describe("Crypto", () => {
 
     beforeEach(() => {
       // Reset singleton instance for testing
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       (Crypto as any).instance = undefined;
       crypto = Crypto.initialize({ journalistPublicKey: "", isQubes: false });
     });

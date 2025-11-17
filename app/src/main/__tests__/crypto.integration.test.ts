@@ -41,17 +41,13 @@ describe("Crypto Integration Tests", () => {
 
   beforeEach(() => {
     // Reset singleton instance for testing
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     (Crypto as any).instance = undefined;
     vi.clearAllMocks();
     vi.unstubAllEnvs();
 
     // Mock fs functions needed by Storage
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     (mockFs.realpathSync as any) = vi.fn((path) => path);
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     (mockFs.existsSync as any) = vi.fn(() => false);
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     (mockFs.mkdirSync as any) = vi.fn();
 
     // Mock process object for spawn

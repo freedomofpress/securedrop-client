@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable react-refresh/only-export-components */
 import { expect, afterEach, beforeEach, vi } from "vitest";
 import { cleanup, render, type RenderResult } from "@testing-library/react";
