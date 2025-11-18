@@ -1,12 +1,14 @@
+import { forwardRef } from "react";
 import { useTranslation } from "react-i18next";
 import { Button } from "antd";
 import "./NewMessagesDivider.css";
 
-function NewMessagesDivider() {
+const NewMessagesDivider = forwardRef<HTMLDivElement>((_, ref) => {
   const { t } = useTranslation("MainContent");
 
   return (
     <div
+      ref={ref}
       className="new-messages-divider"
       data-testid="new-messages-divider"
       role="separator"
@@ -24,6 +26,8 @@ function NewMessagesDivider() {
       <span className="new-messages-divider__line" aria-hidden="true" />
     </div>
   );
-}
+});
+
+NewMessagesDivider.displayName = "NewMessagesDivider";
 
 export default NewMessagesDivider;

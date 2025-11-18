@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { screen, waitFor } from "@testing-library/react";
+import { act, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import Conversation from "./Conversation";
 import {
@@ -37,6 +37,30 @@ const mockSourceWithItems: SourceWithItems = {
     },
   ],
 };
+
+const createMessageItem = (
+  uuid: string,
+  interactionCount: number,
+): SourceWithItems["items"][number] => ({
+  uuid,
+  data: {
+    kind: "message",
+    uuid,
+    source: "source-1",
+    size: 1024,
+    seen_by: [],
+    is_read: false,
+    interaction_count: interactionCount,
+  },
+  fetch_progress: 1024,
+  fetch_status: 3,
+});
+
+const withItems = (items: SourceWithItems["items"]): SourceWithItems => ({
+  ...mockSourceWithItems,
+  data: { ...mockSourceWithItems.data },
+  items,
+});
 
 describe("Conversation Component Memoization", () => {
   const mockOnUpdate: (_: ItemUpdate) => void = vi.fn();
@@ -234,5 +258,197 @@ describe("Conversation Component Reply Submission", () => {
     // Add actual content - button should be enabled
     await userEvent.type(textarea, "Real message");
     expect(sendButton).toBeEnabled();
+  });
+});
+
+describe("Conversation new message indicator", () => {
+  const baseItems = [createMessageItem("item-1", 1)];
+
+  it("renders divider when new items arrive and scrolls near them", async () => {
+    const { rerender } = renderWithProviders(
+      <Conversation sourceWithItems={withItems(baseItems)} />,
+    );
+
+    expect(
+      screen.queryByTestId("new-messages-divider"),
+    ).not.toBeInTheDocument();
+
+    const container = screen.getByTestId(
+      "conversation-items-container",
+    ) as HTMLDivElement;
+
+    let scrollTopValue = 0;
+    Object.defineProperty(container, "scrollHeight", {
+      configurable: true,
+      value: 1000,
+    });
+    Object.defineProperty(container, "clientHeight", {
+      configurable: true,
+      value: 400,
+    });
+    Object.defineProperty(container, "scrollTop", {
+      configurable: true,
+      get: () => scrollTopValue,
+      set: (value) => {
+        scrollTopValue = value;
+      },
+    });
+
+    const offsetSpy = vi
+      .spyOn(HTMLElement.prototype, "offsetTop", "get")
+      .mockReturnValue(400);
+
+    rerender(
+      <Conversation
+        sourceWithItems={withItems([
+          ...baseItems,
+          createMessageItem("item-2", 2),
+          createMessageItem("item-3", 3),
+        ])}
+      />,
+    );
+
+    await screen.findByTestId("new-messages-divider");
+
+    await waitFor(() => {
+      expect(scrollTopValue).toBe(336);
+    });
+
+    const renderedItems = screen.getAllByTestId(/item-/);
+    expect(renderedItems).toHaveLength(3);
+
+    offsetSpy.mockRestore();
+  });
+
+  it("clears divider once user scrolls to the bottom", async () => {
+    const { rerender } = renderWithProviders(
+      <Conversation sourceWithItems={withItems(baseItems)} />,
+    );
+
+    const container = screen.getByTestId(
+      "conversation-items-container",
+    ) as HTMLDivElement;
+
+    Object.defineProperty(container, "scrollHeight", {
+      configurable: true,
+      value: 1200,
+    });
+    Object.defineProperty(container, "clientHeight", {
+      configurable: true,
+      value: 500,
+    });
+    let scrollTopValue = 0;
+    Object.defineProperty(container, "scrollTop", {
+      configurable: true,
+      get: () => scrollTopValue,
+      set: (value) => {
+        scrollTopValue = value;
+      },
+    });
+
+    const originalRAF = window.requestAnimationFrame;
+    const rafCallbacks: FrameRequestCallback[] = [];
+    (window as any).requestAnimationFrame = vi.fn(
+      (cb: FrameRequestCallback) => {
+        rafCallbacks.push(cb);
+        return 0;
+      },
+    ) as typeof window.requestAnimationFrame;
+
+    rerender(
+      <Conversation
+        sourceWithItems={withItems([
+          ...baseItems,
+          createMessageItem("item-2", 2),
+        ])}
+      />,
+    );
+
+    await screen.findByTestId("new-messages-divider");
+
+    rafCallbacks.forEach((cb) => cb(0));
+    if (originalRAF) {
+      window.requestAnimationFrame = originalRAF;
+    } else {
+      delete (window as any).requestAnimationFrame;
+    }
+
+    await act(async () => {
+      container.scrollTop = container.scrollHeight;
+      container.dispatchEvent(new Event("scroll"));
+    });
+
+    await waitFor(() => {
+      expect(
+        screen.queryByTestId("new-messages-divider"),
+      ).not.toBeInTheDocument();
+    });
+  });
+
+  it("keeps divider visible while auto-scrolling", async () => {
+    const { rerender } = renderWithProviders(
+      <Conversation sourceWithItems={withItems(baseItems)} />,
+    );
+
+    const container = screen.getByTestId(
+      "conversation-items-container",
+    ) as HTMLDivElement;
+
+    Object.defineProperty(container, "scrollHeight", {
+      configurable: true,
+      value: 1000,
+    });
+    Object.defineProperty(container, "clientHeight", {
+      configurable: true,
+      value: 400,
+    });
+    let scrollTopValue = 0;
+    Object.defineProperty(container, "scrollTop", {
+      configurable: true,
+      get: () => scrollTopValue,
+      set: (value) => {
+        scrollTopValue = value;
+      },
+    });
+
+    const offsetSpy = vi
+      .spyOn(HTMLElement.prototype, "offsetTop", "get")
+      .mockReturnValue(400);
+
+    const originalRAF = window.requestAnimationFrame;
+    const rafCallbacks: FrameRequestCallback[] = [];
+    (window as any).requestAnimationFrame = vi.fn(
+      (cb: FrameRequestCallback) => {
+        rafCallbacks.push(cb);
+        return 0;
+      },
+    ) as typeof window.requestAnimationFrame;
+
+    rerender(
+      <Conversation
+        sourceWithItems={withItems([
+          ...baseItems,
+          createMessageItem("item-2", 2),
+        ])}
+      />,
+    );
+
+    await screen.findByTestId("new-messages-divider");
+
+    await waitFor(() => {
+      expect(scrollTopValue).toBe(336);
+    });
+
+    container.dispatchEvent(new Event("scroll"));
+
+    expect(screen.getByTestId("new-messages-divider")).toBeInTheDocument();
+
+    rafCallbacks.forEach((cb) => cb(0));
+    if (originalRAF) {
+      window.requestAnimationFrame = originalRAF;
+    } else {
+      delete (window as any).requestAnimationFrame;
+    }
+    offsetSpy.mockRestore();
   });
 });

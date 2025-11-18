@@ -1,6 +1,7 @@
 import type { SourceWithItems } from "../../../../types";
 import { toTitleCase } from "../../../utils";
 import Item from "./Conversation/Item";
+import NewMessagesDivider from "./Conversation/NewMessagesDivider";
 import EmptyConversation from "./EmptyConversation";
 import { Form, Input, Button } from "antd";
 import { useTranslation } from "react-i18next";
@@ -9,6 +10,9 @@ import { useAppDispatch } from "../../../hooks";
 import { fetchSources } from "../../../features/sources/sourcesSlice";
 import { fetchConversation } from "../../../features/conversation/conversationSlice";
 import "./Conversation.css";
+
+const NEW_MESSAGE_SCROLL_OFFSET = 150;
+const NEW_MESSAGE_SEEN_THRESHOLD = 12;
 
 interface ConversationProps {
   sourceWithItems: SourceWithItems | null;
@@ -22,29 +26,166 @@ const Conversation = memo(function Conversation({
   const [form] = Form.useForm();
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const [messageValue, setMessageValue] = useState("");
-  const lastItemUuidRef = useRef<string | null>(null);
+  const [dividerItemUuid, setDividerItemUuid] = useState<string | null>(null);
+  const sourceUuidRef = useRef<string | null>(null);
   const itemCountRef = useRef<number>(0);
-  const lastItemUuid = sourceWithItems?.items.at(-1)?.uuid ?? null;
-  const itemCount = sourceWithItems?.items.length ?? 0;
+  const dividerUuidRef = useRef<string | null>(null);
+  const pendingScrollTargetRef = useRef<"divider" | "bottom" | null>(null);
+  const dividerRef = useRef<HTMLDivElement | null>(null);
+  const isAutoScrollingRef = useRef(false);
 
-  // Only auto-scroll when a newly appended item arrives to avoid jumping during status updates
+  const items = useMemo(
+    () => (sourceWithItems ? sourceWithItems.items : []),
+    [sourceWithItems],
+  );
+  const itemCount = items.length;
+  const hasItems = itemCount > 0;
+
+  // Track conversation transitions and detect when new items are appended so we know when to show the divider and where to scroll.
   useEffect(() => {
-    const scrollEl = scrollContainerRef.current;
-    if (!scrollEl) {
+    if (!sourceWithItems) {
+      setDividerItemUuid(null);
+      dividerUuidRef.current = null;
+      sourceUuidRef.current = null;
+      itemCountRef.current = 0;
+      pendingScrollTargetRef.current = null;
       return;
     }
 
-    const hasNewItem =
-      lastItemUuid !== null && lastItemUuid !== lastItemUuidRef.current;
-    const listGrew = itemCount > itemCountRef.current;
+    const prevSourceUuid = sourceUuidRef.current;
+    const prevCount = itemCountRef.current;
 
-    if (hasNewItem || listGrew) {
-      scrollEl.scrollTop = scrollEl.scrollHeight;
+    if (prevSourceUuid !== sourceWithItems.uuid) {
+      setDividerItemUuid(null);
+      dividerUuidRef.current = null;
+      pendingScrollTargetRef.current = "bottom";
+    } else if (itemCount > prevCount && dividerUuidRef.current === null) {
+      const firstNewItem = items.at(prevCount);
+      if (firstNewItem) {
+        setDividerItemUuid(firstNewItem.uuid);
+        dividerUuidRef.current = firstNewItem.uuid;
+        pendingScrollTargetRef.current = "divider";
+      }
     }
 
-    lastItemUuidRef.current = lastItemUuid;
+    sourceUuidRef.current = sourceWithItems.uuid;
     itemCountRef.current = itemCount;
-  }, [lastItemUuid, itemCount]);
+  }, [itemCount, items, sourceWithItems]);
+
+  useEffect(() => {
+    dividerUuidRef.current = dividerItemUuid;
+  }, [dividerItemUuid]);
+
+  // Jump to just above the divider so the top of the viewport lands slightly before the new items
+  const scrollToDivider = useCallback(() => {
+    const scrollEl = scrollContainerRef.current;
+    const dividerEl = dividerRef.current;
+    if (!scrollEl || !dividerEl) {
+      return false;
+    }
+    const target = Math.max(dividerEl.offsetTop - NEW_MESSAGE_SCROLL_OFFSET, 0);
+    scrollEl.scrollTop = target;
+    return true;
+  }, []);
+
+  // Default behavior for initial loads or when there are no unseen items
+  const scrollToBottom = useCallback(() => {
+    const scrollEl = scrollContainerRef.current;
+    if (!scrollEl) {
+      return false;
+    }
+    scrollEl.scrollTop = scrollEl.scrollHeight;
+    return true;
+  }, []);
+
+  const scheduleAutoScrollReset = useCallback(() => {
+    const reset = () => {
+      isAutoScrollingRef.current = false;
+    };
+
+    if (typeof window !== "undefined" && window.requestAnimationFrame) {
+      window.requestAnimationFrame(reset);
+    } else {
+      setTimeout(reset, 0);
+    }
+  }, []);
+
+  // Execute pending scroll actions once the DOM metrics are available
+  useEffect(() => {
+    const target = pendingScrollTargetRef.current;
+    if (!target) {
+      return;
+    }
+
+    if (target === "divider" && dividerItemUuid) {
+      isAutoScrollingRef.current = true;
+      if (scrollToDivider()) {
+        pendingScrollTargetRef.current = null;
+        scheduleAutoScrollReset();
+      } else {
+        isAutoScrollingRef.current = false;
+      }
+      return;
+    }
+
+    if (target === "bottom") {
+      isAutoScrollingRef.current = true;
+      if (scrollToBottom()) {
+        pendingScrollTargetRef.current = null;
+        scheduleAutoScrollReset();
+      } else {
+        isAutoScrollingRef.current = false;
+      }
+    }
+  }, [
+    dividerItemUuid,
+    itemCount,
+    scheduleAutoScrollReset,
+    scrollToBottom,
+    scrollToDivider,
+  ]);
+
+  // Clear the divider once the user reaches the end of the list
+  useEffect(() => {
+    const scrollEl = scrollContainerRef.current;
+    if (!scrollEl || !dividerItemUuid) {
+      return;
+    }
+
+    const handleScroll = () => {
+      if (isAutoScrollingRef.current) {
+        return;
+      }
+      const distanceToBottom =
+        scrollEl.scrollHeight - (scrollEl.scrollTop + scrollEl.clientHeight);
+      if (distanceToBottom <= NEW_MESSAGE_SEEN_THRESHOLD) {
+        setDividerItemUuid(null);
+      }
+    };
+
+    scrollEl.addEventListener("scroll", handleScroll);
+    return () => {
+      scrollEl.removeEventListener("scroll", handleScroll);
+    };
+  }, [dividerItemUuid]);
+
+  const { oldItems, newItems } = useMemo(() => {
+    if (!dividerItemUuid) {
+      return { oldItems: items, newItems: [] as typeof items };
+    }
+
+    const dividerIndex = items.findIndex(
+      (item) => item.uuid === dividerItemUuid,
+    );
+    if (dividerIndex === -1) {
+      return { oldItems: items, newItems: [] as typeof items };
+    }
+
+    return {
+      oldItems: items.slice(0, dividerIndex),
+      newItems: items.slice(dividerIndex),
+    };
+  }, [dividerItemUuid, items]);
 
   const designation = useMemo(
     () => sourceWithItems?.data.journalist_designation,
@@ -100,8 +241,6 @@ const Conversation = memo(function Conversation({
 
   if (!sourceWithItems) return null;
 
-  const hasItems = sourceWithItems.items.length > 0;
-
   return (
     <div className="flex flex-col h-full w-full min-h-0">
       <div className="flex-1 min-h-0 relative">
@@ -111,13 +250,25 @@ const Conversation = memo(function Conversation({
             className="absolute inset-0 overflow-y-auto overflow-x-hidden p-4 pb-0"
             data-testid="conversation-items-container"
           >
-            {sourceWithItems.items.map((item) => (
+            {oldItems.map((item) => (
               <Item
                 key={item.uuid}
                 item={item}
                 designation={designation || ""}
               />
             ))}
+            {newItems.length > 0 && (
+              <>
+                <NewMessagesDivider ref={dividerRef} />
+                {newItems.map((item) => (
+                  <Item
+                    key={item.uuid}
+                    item={item}
+                    designation={designation || ""}
+                  />
+                ))}
+              </>
+            )}
           </div>
         ) : (
           <div className="flex items-center justify-center h-full">
