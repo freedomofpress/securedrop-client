@@ -22,14 +22,29 @@ const Conversation = memo(function Conversation({
   const [form] = Form.useForm();
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const [messageValue, setMessageValue] = useState("");
+  const lastItemUuidRef = useRef<string | null>(null);
+  const itemCountRef = useRef<number>(0);
+  const lastItemUuid = sourceWithItems?.items.at(-1)?.uuid ?? null;
+  const itemCount = sourceWithItems?.items.length ?? 0;
 
-  // Scroll to bottom when component mounts or items change
+  // Only auto-scroll when a newly appended item arrives to avoid jumping during status updates
   useEffect(() => {
-    if (scrollContainerRef.current && sourceWithItems?.items) {
-      scrollContainerRef.current.scrollTop =
-        scrollContainerRef.current.scrollHeight;
+    const scrollEl = scrollContainerRef.current;
+    if (!scrollEl) {
+      return;
     }
-  }, [sourceWithItems?.items]);
+
+    const hasNewItem =
+      lastItemUuid !== null && lastItemUuid !== lastItemUuidRef.current;
+    const listGrew = itemCount > itemCountRef.current;
+
+    if (hasNewItem || listGrew) {
+      scrollEl.scrollTop = scrollEl.scrollHeight;
+    }
+
+    lastItemUuidRef.current = lastItemUuid;
+    itemCountRef.current = itemCount;
+  }, [lastItemUuid, itemCount]);
 
   const designation = useMemo(
     () => sourceWithItems?.data.journalist_designation,
