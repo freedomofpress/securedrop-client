@@ -13,14 +13,14 @@ import {
   updateItemFetchStatus,
 } from "../../../../features/conversation/conversationSlice";
 
-import { useEffect, useCallback } from "react";
+import { memo, useEffect, useCallback } from "react";
 
 interface ItemProps {
   item: Item;
   designation: string;
 }
 
-function Item({ item, designation }: ItemProps) {
+const Item = memo(function ItemComponent({ item, designation }: ItemProps) {
   const dispatch = useAppDispatch();
   const session = useAppSelector((state) => state.session);
 
@@ -64,6 +64,6 @@ function Item({ item, designation }: ItemProps) {
   }
   // Fallback
   return null;
-}
+});
 
 export default Item;
