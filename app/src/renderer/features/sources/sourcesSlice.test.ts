@@ -9,6 +9,9 @@ import sourcesSlice, {
   selectSources,
   selectActiveSourceUuid,
   selectSourcesLoading,
+  selectConversationLastSeen,
+  initializeConversationIndicator,
+  markConversationLastSeen,
   type SourcesState,
 } from "./sourcesSlice";
 import sessionSlice, {
@@ -101,6 +104,7 @@ describe("sourcesSlice", () => {
         activeSourceUuid: null,
         loading: false,
         error: null,
+        conversationIndicators: {},
       });
     });
   });
@@ -113,6 +117,7 @@ describe("sourcesSlice", () => {
         activeSourceUuid: null,
         loading: false,
         error: "Some error message",
+        conversationIndicators: {},
       };
 
       const action = clearError();
@@ -132,6 +137,7 @@ describe("sourcesSlice", () => {
         activeSourceUuid: null,
         loading: false,
         error: null,
+        conversationIndicators: {},
       };
 
       const action = setActiveSource("source-1");
@@ -148,12 +154,81 @@ describe("sourcesSlice", () => {
         activeSourceUuid: "source-1",
         loading: false,
         error: null,
+        conversationIndicators: {},
       };
 
       const action = clearActiveSource();
       const newState = sourcesSlice(initialState, action);
 
       expect(newState.activeSourceUuid).toBeNull();
+    });
+  });
+
+  describe("conversation indicator actions", () => {
+    it("initializes indicator once per source", () => {
+      const initialState: SourcesState = {
+        sources: [],
+        activeSourceUuid: null,
+        loading: false,
+        error: null,
+        conversationIndicators: {},
+      };
+
+      const initAction = initializeConversationIndicator({
+        sourceUuid: "source-1",
+        lastSeenInteractionCount: 5,
+      });
+
+      const firstState = sourcesSlice(initialState, initAction);
+      expect(firstState.conversationIndicators["source-1"]).toEqual({
+        lastSeenInteractionCount: 5,
+      });
+
+      const secondState = sourcesSlice(
+        firstState,
+        initializeConversationIndicator({
+          sourceUuid: "source-1",
+          lastSeenInteractionCount: 2,
+        }),
+      );
+
+      expect(secondState.conversationIndicators["source-1"]).toEqual({
+        lastSeenInteractionCount: 5,
+      });
+    });
+
+    it("marks conversation last seen with latest count", () => {
+      const initialState: SourcesState = {
+        sources: [],
+        activeSourceUuid: null,
+        loading: false,
+        error: null,
+        conversationIndicators: {},
+      };
+
+      const markedState = sourcesSlice(
+        initialState,
+        markConversationLastSeen({
+          sourceUuid: "source-2",
+          interactionCount: 7,
+        }),
+      );
+
+      expect(markedState.conversationIndicators["source-2"]).toEqual({
+        lastSeenInteractionCount: 7,
+      });
+
+      const clearedState = sourcesSlice(
+        markedState,
+        markConversationLastSeen({
+          sourceUuid: "source-2",
+          interactionCount: null,
+        }),
+      );
+
+      expect(clearedState.conversationIndicators["source-2"]).toEqual({
+        lastSeenInteractionCount: null,
+      });
     });
   });
 
@@ -228,6 +303,7 @@ describe("sourcesSlice", () => {
           activeSourceUuid: null,
           loading: false,
           error: null,
+          conversationIndicators: {},
         },
         journalists: {
           journalists: [],
@@ -253,6 +329,7 @@ describe("sourcesSlice", () => {
           activeSourceUuid: "source-1",
           loading: false,
           error: null,
+          conversationIndicators: {},
         },
         journalists: {
           journalists: [],
@@ -278,6 +355,7 @@ describe("sourcesSlice", () => {
           activeSourceUuid: null,
           loading: true,
           error: null,
+          conversationIndicators: {},
         },
         journalists: {
           journalists: [],
@@ -293,6 +371,39 @@ describe("sourcesSlice", () => {
       };
 
       expect(selectSourcesLoading(state)).toBe(true);
+    });
+
+    it("selectConversationLastSeen returns stored count", () => {
+      const state = {
+        session: mockSessionState,
+        sources: {
+          sources: [],
+          activeSourceUuid: null,
+          loading: false,
+          error: null,
+          conversationIndicators: {
+            "source-1": {
+              lastSeenInteractionCount: 9,
+            },
+          },
+        },
+        journalists: {
+          journalists: [],
+          loading: false,
+          error: null,
+        },
+        conversation: mockConversationState,
+        sync: {
+          loading: false,
+          error: null,
+          lastFetchTime: null,
+        },
+      };
+
+      expect(selectConversationLastSeen(state as any, "source-1")).toBe(9);
+      expect(
+        selectConversationLastSeen(state as any, "source-missing"),
+      ).toBeUndefined();
     });
   });
 

@@ -6,8 +6,13 @@ import EmptyConversation from "./EmptyConversation";
 import { Form, Input, Button } from "antd";
 import { useTranslation } from "react-i18next";
 import { useEffect, useRef, memo, useMemo, useCallback, useState } from "react";
-import { useAppDispatch } from "../../../hooks";
-import { fetchSources } from "../../../features/sources/sourcesSlice";
+import { useAppDispatch, useAppSelector } from "../../../hooks";
+import {
+  fetchSources,
+  initializeConversationIndicator,
+  markConversationLastSeen,
+  selectConversationLastSeen,
+} from "../../../features/sources/sourcesSlice";
 import { fetchConversation } from "../../../features/conversation/conversationSlice";
 import "./Conversation.css";
 
@@ -33,6 +38,12 @@ const Conversation = memo(function Conversation({
   const pendingScrollTargetRef = useRef<"divider" | "bottom" | null>(null);
   const dividerRef = useRef<HTMLDivElement | null>(null);
   const isAutoScrollingRef = useRef(false);
+  const activeSourceUuid = sourceWithItems?.uuid ?? null;
+  const lastSeenInteractionCount = useAppSelector((state) =>
+    activeSourceUuid
+      ? selectConversationLastSeen(state, activeSourceUuid)
+      : undefined,
+  );
 
   const items = useMemo(
     () => (sourceWithItems ? sourceWithItems.items : []),
@@ -40,11 +51,54 @@ const Conversation = memo(function Conversation({
   );
   const itemCount = items.length;
   const hasItems = itemCount > 0;
+  const latestInteractionCount = useMemo(() => {
+    return sourceWithItems?.items.at(-1)?.data.interaction_count ?? null;
+  }, [sourceWithItems?.items]);
 
-  // Track conversation transitions and detect when new items are appended so we know when to show the divider and where to scroll.
+  useEffect(() => {
+    if (!sourceWithItems || lastSeenInteractionCount !== undefined) {
+      return;
+    }
+    dispatch(
+      initializeConversationIndicator({
+        sourceUuid: sourceWithItems.uuid,
+        lastSeenInteractionCount: latestInteractionCount,
+      }),
+    );
+  }, [
+    dispatch,
+    lastSeenInteractionCount,
+    latestInteractionCount,
+    sourceWithItems,
+  ]);
+
   useEffect(() => {
     if (!sourceWithItems) {
       setDividerItemUuid(null);
+      return;
+    }
+
+    if (lastSeenInteractionCount === undefined || items.length === 0) {
+      setDividerItemUuid(null);
+      return;
+    }
+
+    const threshold =
+      lastSeenInteractionCount === null ? -Infinity : lastSeenInteractionCount;
+    const firstNewItem = items.find((item) => {
+      const interaction = item.data.interaction_count ?? null;
+      if (interaction === null) {
+        return false;
+      }
+      return interaction > threshold;
+    });
+
+    setDividerItemUuid(firstNewItem ? firstNewItem.uuid : null);
+  }, [items, lastSeenInteractionCount, sourceWithItems]);
+
+  // Track conversation transitions and detect when scroll adjustments are needed.
+  useEffect(() => {
+    if (!sourceWithItems) {
       dividerUuidRef.current = null;
       sourceUuidRef.current = null;
       itemCountRef.current = 0;
@@ -56,25 +110,17 @@ const Conversation = memo(function Conversation({
     const prevCount = itemCountRef.current;
 
     if (prevSourceUuid !== sourceWithItems.uuid) {
-      setDividerItemUuid(null);
-      dividerUuidRef.current = null;
+      pendingScrollTargetRef.current = dividerItemUuid ? "divider" : "bottom";
+    } else if (dividerItemUuid && dividerItemUuid !== dividerUuidRef.current) {
+      pendingScrollTargetRef.current = "divider";
+    } else if (itemCount > prevCount && !dividerItemUuid) {
       pendingScrollTargetRef.current = "bottom";
-    } else if (itemCount > prevCount && dividerUuidRef.current === null) {
-      const firstNewItem = items.at(prevCount);
-      if (firstNewItem) {
-        setDividerItemUuid(firstNewItem.uuid);
-        dividerUuidRef.current = firstNewItem.uuid;
-        pendingScrollTargetRef.current = "divider";
-      }
     }
 
     sourceUuidRef.current = sourceWithItems.uuid;
     itemCountRef.current = itemCount;
-  }, [itemCount, items, sourceWithItems]);
-
-  useEffect(() => {
     dividerUuidRef.current = dividerItemUuid;
-  }, [dividerItemUuid]);
+  }, [dividerItemUuid, itemCount, sourceWithItems]);
 
   // Jump to just above the divider so the top of the viewport lands slightly before the new items
   const scrollToDivider = useCallback(() => {
@@ -109,6 +155,21 @@ const Conversation = memo(function Conversation({
       setTimeout(reset, 0);
     }
   }, []);
+
+  const acknowledgeNewMessages = useCallback(() => {
+    if (!sourceWithItems) {
+      return;
+    }
+    if (latestInteractionCount === null) {
+      return;
+    }
+    dispatch(
+      markConversationLastSeen({
+        sourceUuid: sourceWithItems.uuid,
+        interactionCount: latestInteractionCount,
+      }),
+    );
+  }, [dispatch, latestInteractionCount, sourceWithItems]);
 
   // Execute pending scroll actions once the DOM metrics are available
   useEffect(() => {
@@ -159,7 +220,7 @@ const Conversation = memo(function Conversation({
       const distanceToBottom =
         scrollEl.scrollHeight - (scrollEl.scrollTop + scrollEl.clientHeight);
       if (distanceToBottom <= NEW_MESSAGE_SEEN_THRESHOLD) {
-        setDividerItemUuid(null);
+        acknowledgeNewMessages();
       }
     };
 
@@ -167,7 +228,7 @@ const Conversation = memo(function Conversation({
     return () => {
       scrollEl.removeEventListener("scroll", handleScroll);
     };
-  }, [dividerItemUuid]);
+  }, [acknowledgeNewMessages, dividerItemUuid]);
 
   const { oldItems, newItems } = useMemo(() => {
     if (!dividerItemUuid) {

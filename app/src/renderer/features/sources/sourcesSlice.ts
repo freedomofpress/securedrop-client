@@ -2,11 +2,16 @@ import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
 import type { RootState } from "../../store";
 import type { Source as SourceType } from "../../../types";
 
+export interface ConversationIndicatorState {
+  lastSeenInteractionCount: number | null;
+}
+
 export interface SourcesState {
   sources: SourceType[];
   activeSourceUuid: string | null;
   loading: boolean;
   error: string | null;
+  conversationIndicators: Record<string, ConversationIndicatorState>;
 }
 
 const initialState: SourcesState = {
@@ -14,6 +19,7 @@ const initialState: SourcesState = {
   activeSourceUuid: null,
   loading: false,
   error: null,
+  conversationIndicators: {},
 };
 
 // Async thunk for fetching sources
@@ -47,6 +53,20 @@ export const sourcesSlice = createSlice({
         return source;
       });
     },
+    initializeConversationIndicator: (state, action) => {
+      const { sourceUuid, lastSeenInteractionCount } = action.payload;
+      if (!state.conversationIndicators[sourceUuid]) {
+        state.conversationIndicators[sourceUuid] = {
+          lastSeenInteractionCount: lastSeenInteractionCount ?? null,
+        };
+      }
+    },
+    markConversationLastSeen: (state, action) => {
+      const { sourceUuid, interactionCount } = action.payload;
+      state.conversationIndicators[sourceUuid] = {
+        lastSeenInteractionCount: interactionCount ?? null,
+      };
+    },
   },
   extraReducers: (builder) => {
     builder
@@ -66,10 +86,20 @@ export const sourcesSlice = createSlice({
   },
 });
 
-export const { clearError, setActiveSource, clearActiveSource, updateSource } =
-  sourcesSlice.actions;
+export const {
+  clearError,
+  setActiveSource,
+  clearActiveSource,
+  updateSource,
+  initializeConversationIndicator,
+  markConversationLastSeen,
+} = sourcesSlice.actions;
 export const selectSources = (state: RootState) => state.sources.sources;
 export const selectActiveSourceUuid = (state: RootState) =>
   state.sources.activeSourceUuid;
 export const selectSourcesLoading = (state: RootState) => state.sources.loading;
+export const selectConversationLastSeen = (
+  state: RootState,
+  sourceUuid: string,
+) => state.sources.conversationIndicators[sourceUuid]?.lastSeenInteractionCount;
 export default sourcesSlice.reducer;
