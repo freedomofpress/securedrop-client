@@ -44,7 +44,21 @@ def read_gzip_header_filename(filename: str) -> str:
     """
     Extract the original filename from the header of a gzipped file.
 
-    Adapted from Python's gzip._GzipReader._read_gzip_header.
+    gzip files look like:
+
+    +---+---+---+---+---+---+---+---+---+---+
+    |ID1|ID2|CM |FLG|     MTIME     |XFL|OS |
+    +---+---+---+---+---+---+---+---+---+---+
+
+    ID1,ID2 = \037\213 (GZIP_FILE_IDENTIFICATION)
+    CM (compression method) = 8 (deflate)
+    FLG (flags) = maybe GZIP_FLAG_EXTRA_FIELDS, GZIP_FLAG_FILENAME
+    MTIME = modification time
+    XFL = eXtra FLags
+    OS = operating system
+
+    We are checking if the GZIP_FLAG_FILENAME is set, and if so, parsing
+    the filename from those bytes.
     """
     original_filename = ""
     with open(filename, "rb") as f:

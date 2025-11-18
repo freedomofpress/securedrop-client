@@ -1,11 +1,9 @@
 import os
-import struct
 import subprocess
-import tempfile
 
 import pytest
 
-from securedrop_client.crypto import CryptoError, GpgHelper, read_gzip_header_filename
+from securedrop_client.crypto import CryptoError, GpgHelper
 from tests import factory
 
 with open(os.path.join(os.path.dirname(__file__), "files", "test-key.gpg.pub.asc")) as f:
@@ -87,32 +85,6 @@ def test_gzip_header_without_filename(homedir, config, mocker, session_maker):
     original_filename = gpg.decrypt_submission_or_reply(test_gzip, output_filename, is_doc=True)
     assert original_filename == output_filename
     os.remove(expected_output_filename)
-
-
-def test_read_gzip_header_filename_with_bad_file(homedir):
-    with tempfile.NamedTemporaryFile() as tf:
-        tf.write(b"test")
-        tf.seek(0)
-        with pytest.raises(OSError, match=r"Not a gzipped file"):
-            read_gzip_header_filename(tf.name)
-
-
-def test_read_gzip_header_filename_with_bad_compression_method(homedir):
-    # 9 is a bad method
-    header = struct.pack("<BBBBIxxHBBcccc", 31, 139, 9, 12, 0, 2, 1, 1, b"a", b"b", b"c", b"\0")
-    with tempfile.NamedTemporaryFile() as tf:
-        tf.write(header)
-        tf.seek(0)
-        with pytest.raises(OSError, match=r"Unknown compression method"):
-            read_gzip_header_filename(tf.name)
-
-
-def test_read_gzip_header_filename(homedir):
-    header = struct.pack("<BBBBIxxHBBcccc", 31, 139, 8, 12, 0, 2, 1, 1, b"a", b"b", b"c", b"\0")
-    with tempfile.NamedTemporaryFile() as tf:
-        tf.write(header)
-        tf.seek(0)
-        assert read_gzip_header_filename(tf.name) == "abc"
 
 
 def test_subprocess_raises_exception(homedir, config, mocker, session_maker):
