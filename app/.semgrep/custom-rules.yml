@@ -1,9 +1,107 @@
-# Custom Semgrep Rules for SQL Injection Prevention
+# Custom Semgrep Rules
 #
-# In general, use prepared statements without dynamic variables for safety.
+# Currently covers:
+# - Preventing SQL injection by using prepared statements
+# - Enforce React components are wrapped with memo when appropriate
 
 rules:
-  # Rule 1: Ban db.exec() in favor of prepared statements
+  # Rule: Enforce React components are wrapped with memo()
+  # All React components should be memoized to prevent unnecessary re-renders,
+  # unless they subscribe to Redux state using useAppSelector or useSelector.
+  - id: react-component-missing-memo
+    patterns:
+      # Match function declarations that return JSX anywhere in the function
+      - pattern-either:
+          - patterns:
+              - pattern: |
+                  function $COMPONENT($PROPS) { ... }
+              # Component name must start with uppercase (React convention)
+              - metavariable-regex:
+                  metavariable: $COMPONENT
+                  regex: "^[A-Z].*"
+              # Must contain JSX elements
+              - pattern-inside: |
+                  function $COMPONENT(...) {
+                    ...
+                    <$JSX>...</$JSX>
+                    ...
+                  }
+          - patterns:
+              - pattern: |
+                  const $COMPONENT = ($PROPS) => { ... }
+              - metavariable-regex:
+                  metavariable: $COMPONENT
+                  regex: "^[A-Z].*"
+              - pattern-inside: |
+                  const $COMPONENT = (...) => {
+                    ...
+                    <$JSX>...</$JSX>
+                    ...
+                  }
+          - patterns:
+              - pattern: |
+                  const $COMPONENT = function($PROPS) { ... }
+              - metavariable-regex:
+                  metavariable: $COMPONENT
+                  regex: "^[A-Z].*"
+              - pattern-inside: |
+                  const $COMPONENT = function(...) {
+                    ...
+                    <$JSX>...</$JSX>
+                    ...
+                  }
+      # Exclude components already wrapped with memo
+      - pattern-not: |
+          const $COMPONENT = memo(...)
+      # Exclude components that use Redux hooks (need to re-render on state changes)
+      - pattern-not-inside: |
+          const $X = ($ARGS) => {
+            ...
+            useAppSelector(...)
+            ...
+          }
+      - pattern-not-inside: |
+          const $X = ($ARGS) => {
+            ...
+            useSelector(...)
+            ...
+          }
+      - pattern-not-inside: |
+          function $F(...) {
+            ...
+            useAppSelector(...)
+            ...
+          }
+      - pattern-not-inside: |
+          function $F(...) {
+            ...
+            useSelector(...)
+            ...
+          }
+    message: >-
+      React component '$COMPONENT' should be wrapped with memo() for performance optimization.
+
+      Components should be memoized to prevent unnecessary re-renders when parent components update.
+
+      Note: memo() should not be used with components that subscribe to Redux state using
+      useAppSelector or useSelector. Components that only use useAppDispatch can still be memoized.
+    languages:
+      - typescript
+    paths:
+      exclude:
+        - "**/*.test.tsx"
+        - "**/*.test.ts"
+        - "**/test-*.tsx"
+        - "**/test-*.ts"
+    severity: WARNING
+    metadata:
+      category: performance
+      confidence: HIGH
+      likelihood: MEDIUM
+      impact: MEDIUM
+      subcategory:
+        - audit
+  # Rule: Ban db.exec() in favor of prepared statements
   # The exec() method doesn't support parameter binding, making it inherently unsafe
   # for any dynamic values. This project exclusively uses prepared statements.
   # This rule bans ALL usage of exec(), not just unsafe patterns.
@@ -24,7 +122,7 @@ rules:
       subcategory:
         - vuln
 
-  # Rule 2: Ban ALL dynamic content in prepare() statements
+  # Rule: Ban ALL dynamic content in prepare() statements
   # Only allow template literals with safe constants (FetchStatus, EventStatus).
   # Exception: selectWhereIn method uses TypeScript string literal types for safety.
   - id: better-sqlite3-ban-dynamic-content
@@ -62,7 +160,7 @@ rules:
       subcategory:
         - vuln
 
-  # Rule 3: Enforce database operation centralization
+  # Rule: Enforce database operation centralization
   # All database operations must go through the DB class in src/main/database/index.ts
   # This ensures consistent security practices and makes auditing easier.
   - id: better-sqlite3-centralize-db-operations
