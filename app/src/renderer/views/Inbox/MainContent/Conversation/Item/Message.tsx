@@ -1,3 +1,4 @@
+import { memo } from "react";
 import type { Item } from "../../../../../../types";
 import { toTitleCase } from "../../../../../utils";
 import Avatar from "../../../../../components/Avatar";
@@ -9,7 +10,7 @@ interface MessageProps {
   designation: string;
 }
 
-function Message({ item, designation }: MessageProps) {
+const Message = memo(function Message({ item, designation }: MessageProps) {
   const { t } = useTranslation("MainContent");
   const titleCaseDesignation = toTitleCase(designation);
   const isEncrypted = !item.plaintext;
@@ -35,6 +36,6 @@ function Message({ item, designation }: MessageProps) {
       </div>
     </div>
   );
-}
+});
 
 export default Message;
