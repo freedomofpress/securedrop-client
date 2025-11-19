@@ -13,7 +13,8 @@ defaults:
   run:
     shell: bash
 
-permissions: {}
+permissions:
+  contents: read
 
 jobs:
   lint-and-build:
