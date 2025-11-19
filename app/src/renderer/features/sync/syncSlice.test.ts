@@ -169,6 +169,7 @@ describe("syncSlice", () => {
             error: null,
             lastFetchTime: null,
             loading: false,
+            conversationIndicators: {},
           },
           sync: {
             error: null,
