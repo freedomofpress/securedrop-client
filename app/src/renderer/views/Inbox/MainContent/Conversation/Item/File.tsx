@@ -335,7 +335,6 @@ const InProgressFile = memo(function InProgressFile({
   );
 });
 
-// TODO: implement download viewer
 const CompleteFile = memo(function CompleteFile({ item }: { item: Item }) {
   const filename = item.filename
     ? item.filename.substring(item.filename.lastIndexOf("/") + 1)
@@ -350,12 +349,25 @@ const CompleteFile = memo(function CompleteFile({ item }: { item: Item }) {
 
   const { Icon, color } = getFileIconAndColor(filename);
 
+  const handleOpenFile = async () => {
+    try {
+      await window.electronAPI.openFile(item.uuid);
+    } catch (error) {
+      console.error("Failed to open file:", error);
+    }
+  };
+
   return (
     <div className="flex items-center justify-start mt-2 mb-2">
       <Icon style={{ fontSize: 30, color }} className="file-icon" />
       <div className="ml-2">
         <Tooltip title={tooltipTitle}>
-          <Button size="small" type="link" className="file-namebtn">
+          <Button
+            size="small"
+            type="link"
+            className="file-namebtn"
+            onClick={handleOpenFile}
+          >
             {formattedFilename}
           </Button>
         </Tooltip>

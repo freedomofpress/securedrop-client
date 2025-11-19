@@ -101,6 +101,9 @@ const electronAPI = {
   getCSPNonce: logIpcCall<string>("getCSPNonce", () =>
     ipcRenderer.invoke("getCSPNonce"),
   ),
+  openFile: logIpcCall<void>("openFile", (itemUuid: string) =>
+    ipcRenderer.invoke("openFile", itemUuid),
+  ),
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   onItemUpdate: (callback: (...args: any[]) => void) => {
     ipcRenderer.on("item-update", (_event, ...args) => callback(...args));
