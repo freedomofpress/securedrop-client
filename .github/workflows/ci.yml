@@ -13,7 +13,8 @@ defaults:
   run:
     shell: bash
 
-permissions: {}
+permissions:
+  contents: read
 
 env:
   POETRY_VERSION: 2.1.3
