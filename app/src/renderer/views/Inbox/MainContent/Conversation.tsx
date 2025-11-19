@@ -39,6 +39,9 @@ const Conversation = memo(function Conversation({
   const dividerRef = useRef<HTMLDivElement | null>(null);
   const isAutoScrollingRef = useRef(false);
   const activeSourceUuid = sourceWithItems?.uuid ?? null;
+  const journalistUUID = useAppSelector(
+    (state) => state.session.authData?.journalistUUID ?? null,
+  );
   const lastSeenInteractionCount = useAppSelector((state) =>
     activeSourceUuid
       ? selectConversationLastSeen(state, activeSourceUuid)
@@ -55,6 +58,48 @@ const Conversation = memo(function Conversation({
     return sourceWithItems?.items.at(-1)?.data.interaction_count ?? null;
   }, [sourceWithItems?.items]);
 
+  // Load last-seen state from whatever the database already considered "seen"
+  // so the divider appears immediately on cold start, before any new scroll events
+  const historicalLastSeenInteractionCount = useMemo(() => {
+    if (!sourceWithItems) {
+      return null;
+    }
+
+    let maxSeen: number | null = null;
+    for (const item of sourceWithItems.items) {
+      const interaction = item.data.interaction_count;
+      if (interaction == null) {
+        continue;
+      }
+
+      let hasBeenSeen = false;
+      if (journalistUUID) {
+        hasBeenSeen = item.data.seen_by.includes(journalistUUID);
+      } else if (item.data.kind !== "reply") {
+        hasBeenSeen = item.data.is_read;
+      } else {
+        hasBeenSeen = true;
+      }
+
+      if (!hasBeenSeen) {
+        continue;
+      }
+
+      if (maxSeen === null || interaction > maxSeen) {
+        maxSeen = interaction;
+      }
+    }
+
+    return maxSeen;
+  }, [journalistUUID, sourceWithItems]);
+
+  const initialLastSeenInteractionCount = useMemo(() => {
+    if (historicalLastSeenInteractionCount !== null) {
+      return historicalLastSeenInteractionCount;
+    }
+    return latestInteractionCount;
+  }, [historicalLastSeenInteractionCount, latestInteractionCount]);
+
   useEffect(() => {
     if (!sourceWithItems || lastSeenInteractionCount !== undefined) {
       return;
@@ -62,13 +107,13 @@ const Conversation = memo(function Conversation({
     dispatch(
       initializeConversationIndicator({
         sourceUuid: sourceWithItems.uuid,
-        lastSeenInteractionCount: latestInteractionCount,
+        lastSeenInteractionCount: initialLastSeenInteractionCount,
       }),
     );
   }, [
     dispatch,
+    initialLastSeenInteractionCount,
     lastSeenInteractionCount,
-    latestInteractionCount,
     sourceWithItems,
   ]);
 

@@ -6,6 +6,7 @@ import {
   testMemoization,
   renderWithProviders,
 } from "../../../test-component-setup";
+import { SessionStatus } from "../../../features/session/sessionSlice";
 import type { ItemUpdate, SourceWithItems } from "../../../../types";
 
 const mockSourceWithItems: SourceWithItems = {
@@ -41,6 +42,7 @@ const mockSourceWithItems: SourceWithItems = {
 const createMessageItem = (
   uuid: string,
   interactionCount: number,
+  options?: { seenBy?: string[]; isRead?: boolean },
 ): SourceWithItems["items"][number] => ({
   uuid,
   data: {
@@ -48,8 +50,8 @@ const createMessageItem = (
     uuid,
     source: "source-1",
     size: 1024,
-    seen_by: [],
-    is_read: false,
+    seen_by: options?.seenBy ?? [],
+    is_read: options?.isRead ?? false,
     interaction_count: interactionCount,
   },
   fetch_progress: 1024,
@@ -264,6 +266,48 @@ describe("Conversation Component Reply Submission", () => {
 describe("Conversation new message indicator", () => {
   const baseItems = [createMessageItem("item-1", 1)];
 
+  it("restores indicator from previously seen history", async () => {
+    const source = withItems([
+      createMessageItem("item-1", 1, {
+        seenBy: ["journalist-1"],
+        isRead: true,
+      }),
+      createMessageItem("item-2", 2, {
+        seenBy: ["journalist-1"],
+        isRead: true,
+      }),
+      createMessageItem("item-3", 3),
+    ]);
+
+    const { store } = renderWithProviders(
+      <Conversation sourceWithItems={source} />,
+      {
+        preloadedState: {
+          session: {
+            status: SessionStatus.Auth,
+            authData: {
+              expiration: "2025-01-01T00:00:00Z",
+              token: "token",
+              journalistUUID: "journalist-1",
+              journalistFirstName: "Test",
+              journalistLastName: "User",
+            },
+          },
+        },
+      },
+    );
+
+    await waitFor(() => {
+      expect(
+        store.getState().sources.conversationIndicators["source-1"],
+      ).toEqual({ lastSeenInteractionCount: 2 });
+    });
+
+    expect(
+      await screen.findByTestId("new-messages-divider"),
+    ).toBeInTheDocument();
+  });
+
   it("renders divider when new items arrive and scrolls near them", async () => {
     const { rerender } = renderWithProviders(
       <Conversation sourceWithItems={withItems(baseItems)} />,
@@ -311,7 +355,7 @@ describe("Conversation new message indicator", () => {
     await screen.findByTestId("new-messages-divider");
 
     await waitFor(() => {
-      expect(scrollTopValue).toBe(336);
+      expect(scrollTopValue).toBe(250);
     });
 
     const renderedItems = screen.getAllByTestId(/item-/);
@@ -436,7 +480,7 @@ describe("Conversation new message indicator", () => {
     await screen.findByTestId("new-messages-divider");
 
     await waitFor(() => {
-      expect(scrollTopValue).toBe(336);
+      expect(scrollTopValue).toBe(250);
     });
 
     container.dispatchEvent(new Event("scroll"));
