@@ -335,6 +335,10 @@ const Conversation = memo(function Conversation({
           nextInteractionCount,
         );
 
+        if (dividerItemUuid) {
+          acknowledgeNewMessages();
+        }
+
         // Update local state immediately with projected changes
         dispatch(fetchSources());
         dispatch(fetchConversation(sourceWithItems.uuid));
@@ -345,7 +349,7 @@ const Conversation = memo(function Conversation({
         setMessageValue(values.message);
       }
     },
-    [sourceWithItems, dispatch, form],
+    [acknowledgeNewMessages, dispatch, dividerItemUuid, form, sourceWithItems],
   );
 
   if (!sourceWithItems) return null;

@@ -404,6 +404,35 @@ describe("Conversation new message indicator", () => {
     });
   });
 
+  it("clears divider immediately after sending reply", async () => {
+    const { rerender } = renderWithProviders(
+      <Conversation sourceWithItems={withItems(baseItems)} />,
+    );
+
+    rerender(
+      <Conversation
+        sourceWithItems={withItems([
+          ...baseItems,
+          createMessageItem("item-2", 2),
+        ])}
+      />,
+    );
+
+    await screen.findByTestId("new-messages-divider");
+
+    const textarea = screen.getByTestId("reply-textarea");
+    const sendButton = screen.getByTestId("send-button");
+
+    await userEvent.type(textarea, "reply message");
+    await userEvent.click(sendButton);
+
+    await waitFor(() => {
+      expect(
+        screen.queryByTestId("new-messages-divider"),
+      ).not.toBeInTheDocument();
+    });
+  });
+
   it("clears divider once user scrolls to the bottom", async () => {
     const { rerender } = renderWithProviders(
       <Conversation sourceWithItems={withItems(baseItems)} />,
