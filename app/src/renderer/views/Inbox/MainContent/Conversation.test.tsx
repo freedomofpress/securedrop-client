@@ -58,6 +58,25 @@ const createMessageItem = (
   fetch_status: 3,
 });
 
+const createReplyItem = (
+  uuid: string,
+  interactionCount: number,
+): SourceWithItems["items"][number] => ({
+  uuid,
+  data: {
+    kind: "reply",
+    uuid,
+    source: "source-1",
+    size: 1024,
+    journalist_uuid: "journalist-1",
+    seen_by: [],
+    is_deleted_by_source: false,
+    interaction_count: interactionCount,
+  },
+  fetch_progress: 1024,
+  fetch_status: 3,
+});
+
 const withItems = (items: SourceWithItems["items"]): SourceWithItems => ({
   ...mockSourceWithItems,
   data: { ...mockSourceWithItems.data },
@@ -362,6 +381,27 @@ describe("Conversation new message indicator", () => {
     expect(renderedItems).toHaveLength(3);
 
     offsetSpy.mockRestore();
+  });
+
+  it("does not render divider for new replies", async () => {
+    const { rerender } = renderWithProviders(
+      <Conversation sourceWithItems={withItems(baseItems)} />,
+    );
+
+    rerender(
+      <Conversation
+        sourceWithItems={withItems([
+          ...baseItems,
+          createReplyItem("reply-1", 2),
+        ])}
+      />,
+    );
+
+    await waitFor(() => {
+      expect(
+        screen.queryByTestId("new-messages-divider"),
+      ).not.toBeInTheDocument();
+    });
   });
 
   it("clears divider once user scrolls to the bottom", async () => {

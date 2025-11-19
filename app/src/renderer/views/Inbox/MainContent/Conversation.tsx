@@ -131,6 +131,9 @@ const Conversation = memo(function Conversation({
     const threshold =
       lastSeenInteractionCount === null ? -Infinity : lastSeenInteractionCount;
     const firstNewItem = items.find((item) => {
+      if (item.data.kind === "reply") {
+        return false;
+      }
       const interaction = item.data.interaction_count ?? null;
       if (interaction === null) {
         return false;
