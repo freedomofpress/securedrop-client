@@ -13,7 +13,8 @@ defaults:
   run:
     shell: bash
 
-permissions: {}
+permissions:
+  contents: read
 
 jobs:
   lint-and-build:
@@ -90,7 +91,7 @@ jobs:
       - name: Install Rust-specific dependencies for sd-proxy
         run: apt-get install --yes build-essential curl libssl-dev pkg-config
       - name: Install Rust to build sd-proxy
-        uses: dtolnay/rust-toolchain@1.87.0
+        uses: dtolnay/rust-toolchain@1.90.0
       - name: Run integration tests
         working-directory: app
         run: NODE_ENV=ci VITE_HTTPBIN_URL=http://httpbin:80 pnpm integration-test

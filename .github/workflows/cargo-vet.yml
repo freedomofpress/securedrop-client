@@ -11,14 +11,15 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: ${{ github.ref != 'refs/heads/main' && !startsWith( github.ref, 'refs/heads/release/' ) && !startsWith( github.ref, 'refs/heads/gh-readonly-queue/' ) }}
 
-permissions: {}
+permissions:
+  contents: read
 
 jobs:
   cargo-vet:
     name: Vet Dependencies
     runs-on: ubuntu-latest
     # Keep version in sync with rust-toolchain.toml
-    container: rust:1.87.0
+    container: rust:1.90.0
     env:
       CARGO_VET_VERSION: 0.10.0
     steps:

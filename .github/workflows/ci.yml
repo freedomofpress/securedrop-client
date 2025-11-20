@@ -13,7 +13,8 @@ defaults:
   run:
     shell: bash
 
-permissions: {}
+permissions:
+  contents: read
 
 env:
   POETRY_VERSION: 2.1.3
@@ -111,7 +112,7 @@ jobs:
   rust:
     runs-on: ubuntu-latest
     # Keep version in sync with rust-toolchain.toml
-    container: rust:1.87.0
+    container: rust:1.90.0
     steps:
       - uses: actions/checkout@v5
         with:
