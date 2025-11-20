@@ -479,7 +479,9 @@ describe("Conversation new message indicator", () => {
 
     await screen.findByTestId("new-messages-divider");
 
-    rafCallbacks.forEach((cb) => cb(0));
+    await act(async () => {
+      rafCallbacks.forEach((cb) => cb(0));
+    });
     if (originalRAF) {
       window.requestAnimationFrame = originalRAF;
     } else {
@@ -556,7 +558,9 @@ describe("Conversation new message indicator", () => {
 
     expect(screen.getByTestId("new-messages-divider")).toBeInTheDocument();
 
-    rafCallbacks.forEach((cb) => cb(0));
+    await act(async () => {
+      rafCallbacks.forEach((cb) => cb(0));
+    });
     if (originalRAF) {
       window.requestAnimationFrame = originalRAF;
     } else {

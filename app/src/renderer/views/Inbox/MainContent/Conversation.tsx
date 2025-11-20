@@ -37,7 +37,15 @@ const Conversation = memo(function Conversation({
   const dividerUuidRef = useRef<string | null>(null);
   const pendingScrollTargetRef = useRef<"divider" | "bottom" | null>(null);
   const dividerRef = useRef<HTMLDivElement | null>(null);
-  const isAutoScrollingRef = useRef(false);
+  const [_isAutoScrolling, setIsAutoScrollingState] = useState(false);
+  const isAutoScrollingValueRef = useRef(false);
+  const setIsAutoScrolling = useCallback(
+    (nextValue: boolean) => {
+      isAutoScrollingValueRef.current = nextValue;
+      setIsAutoScrollingState(nextValue);
+    },
+    [setIsAutoScrollingState],
+  );
   const activeSourceUuid = sourceWithItems?.uuid ?? null;
   const journalistUUID = useAppSelector(
     (state) => state.session.authData?.journalistUUID ?? null,
@@ -193,16 +201,14 @@ const Conversation = memo(function Conversation({
   }, []);
 
   const scheduleAutoScrollReset = useCallback(() => {
-    const reset = () => {
-      isAutoScrollingRef.current = false;
-    };
+    const reset = () => setIsAutoScrolling(false);
 
     if (typeof window !== "undefined" && window.requestAnimationFrame) {
       window.requestAnimationFrame(reset);
     } else {
       setTimeout(reset, 0);
     }
-  }, []);
+  }, [setIsAutoScrolling]);
 
   const acknowledgeNewMessages = useCallback(() => {
     if (!sourceWithItems) {
@@ -222,34 +228,31 @@ const Conversation = memo(function Conversation({
   // Execute pending scroll actions once the DOM metrics are available
   useEffect(() => {
     const target = pendingScrollTargetRef.current;
-    if (!target) {
+    if (!target || !hasItems) {
       return;
     }
 
-    if (target === "divider" && dividerItemUuid) {
-      isAutoScrollingRef.current = true;
-      if (scrollToDivider()) {
-        pendingScrollTargetRef.current = null;
-        scheduleAutoScrollReset();
-      } else {
-        isAutoScrollingRef.current = false;
-      }
+    setIsAutoScrolling(true);
+
+    if (target === "divider" && dividerItemUuid && scrollToDivider()) {
+      pendingScrollTargetRef.current = null;
+      scheduleAutoScrollReset();
       return;
     }
 
-    if (target === "bottom") {
-      isAutoScrollingRef.current = true;
-      if (scrollToBottom()) {
-        pendingScrollTargetRef.current = null;
-        scheduleAutoScrollReset();
-      } else {
-        isAutoScrollingRef.current = false;
-      }
+    if (target === "bottom" && scrollToBottom()) {
+      pendingScrollTargetRef.current = null;
+      scheduleAutoScrollReset();
+      return;
     }
+
+    setIsAutoScrolling(false);
   }, [
     dividerItemUuid,
+    hasItems,
     itemCount,
     scheduleAutoScrollReset,
+    setIsAutoScrolling,
     scrollToBottom,
     scrollToDivider,
   ]);
@@ -262,7 +265,7 @@ const Conversation = memo(function Conversation({
     }
 
     const handleScroll = () => {
-      if (isAutoScrollingRef.current) {
+      if (isAutoScrollingValueRef.current) {
         return;
       }
       const distanceToBottom =
