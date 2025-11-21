@@ -1,0 +1,35 @@
+.new-messages-divider {
+  display: flex;
+  align-items: center;
+  gap: 0;
+  margin: 1.5rem 0;
+}
+
+.new-messages-divider__line {
+  flex: 1;
+  height: 1px;
+  background: rgba(206, 55, 92, 0.5);
+}
+
+.new-messages-divider__button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0;
+  padding: 0 var(--Components-Button-Component-paddingInline, 15px);
+  border-radius: var(--Components-Button-Global-borderRadius, 6px) !important;
+  border: var(--Components-Button-Global-lineWidth, 1px) solid
+    var(--Colors-Neutral-Border-colorBorder, #d9d9d9) !important;
+  background: var(--Components-Button-Global-colorBgContainer, #fff) !important;
+  box-shadow: 0 var(--Components-Button-Global-controlOutlineWidth, 2px) 0 0
+    var(--Components-Button-Global-controlOutline, rgba(5, 145, 255, 0.1));
+  color: var(--Colors-Neutral-Text-colorTextTertiary, #8c8c8c) !important;
+  font-weight: 500;
+  line-height: 1.4;
+}
+
+.new-messages-divider__button:disabled {
+  color: var(--Colors-Neutral-Text-colorTextTertiary, #8c8c8c) !important;
+  opacity: 1 !important;
+  cursor: default !important;
+}

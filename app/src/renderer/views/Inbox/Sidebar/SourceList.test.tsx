@@ -196,6 +196,7 @@ describe("Sources Component", () => {
           activeSourceUuid: null,
           loading,
           error: null,
+          conversationIndicators: {},
         },
       },
     });

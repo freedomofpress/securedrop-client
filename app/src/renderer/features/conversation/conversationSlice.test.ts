@@ -239,6 +239,7 @@ describe("conversationSlice", () => {
         activeSourceUuid: null,
         loading: false,
         error: null,
+        conversationIndicators: {},
       },
       journalists: {
         journalists: [],
