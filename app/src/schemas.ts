@@ -4,6 +4,11 @@
 
 import { z } from "zod";
 
+// Bump this constant when this file has been updated to reflect a new minor
+// version of the v2 Journalist API with new request/response shapes.  See the
+// constant of the same name in freedomofpress/securedrop for possible values.
+export const API_MINOR_VERSION = 3; // 2.x
+
 export const UUIDSchema = z.uuid({ version: "v4" });
 
 // Response from /api/v1/token

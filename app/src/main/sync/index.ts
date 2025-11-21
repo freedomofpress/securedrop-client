@@ -8,6 +8,7 @@ import {
 } from "../../types";
 import { DB } from "../database";
 import {
+  API_MINOR_VERSION,
   IndexSchema,
   BatchResponseSchema,
   BatchRequestSchema,
@@ -28,6 +29,7 @@ async function getServerIndex(
       "Content-Type": "application/json",
       Authorization: `Token ${authToken}`,
       "If-None-Match": currentVersion,
+      Prefer: `securedrop=${API_MINOR_VERSION}`,
     },
   })) as ProxyJSONResponse;
 
@@ -62,6 +64,7 @@ async function submitBatch(
       Accept: "application/json",
       "Content-Type": "application/json",
       Authorization: `Token ${authToken}`,
+      Prefer: `securedrop=${API_MINOR_VERSION}`,
     },
     body: JSON.stringify(BatchRequestSchema.parse(request)),
   })) as ProxyJSONResponse;
