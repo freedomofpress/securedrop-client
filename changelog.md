@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.17.1
+
+This release closes a potential path traversal attack that could result in a
+denial of service (DoS). We do not consider the issue a security concern, as
+it would require a compromised SecureDrop server and could only produce an
+empty 0-byte file.
+
+* Guard against path traversals in the gzip content's original filename
+* Update Rust to 1.90.0
+
 ## 0.17.0
 
 This release integrates Tor directly into sd-proxy rather than using Whonix.
