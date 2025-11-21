@@ -7,15 +7,15 @@ msgid ""
 msgstr ""
 "Project-Id-Version: SecureDrop Client 0.5.0\n"
 "Report-Msgid-Bugs-To: securedrop@freedom.press\n"
-"PO-Revision-Date: 2025-07-03 15:37+0000\n"
-"Last-Translator: victor dargallo <victordargallo@disroot.org>\n"
+"PO-Revision-Date: 2025-11-21 12:11+0000\n"
+"Last-Translator: John Smith <ecron_89@hotmail.com>\n"
 "Language-Team: Catalan <https://weblate.securedrop.org/projects/securedrop/securedrop-client/ca/>\n"
 "Language: ca\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=n != 1;\n"
-"X-Generator: Weblate 5.11.1\n"
+"X-Generator: Weblate 5.13.3\n"
 "Generated-By: Babel 2.9.1\n"
 
 #, python-brace-format
@@ -166,10 +166,10 @@ msgid "Multiple Sources Selected"
 msgstr "Diverses fonts seleccionades"
 
 msgid "Select or de-select sources using Ctrl+click, Shift+click, or by dragging the mouse."
-msgstr ""
+msgstr "Seleccioneu o desseleccioneu fonts amb Ctrl+clic, Majús.+clic o arrossegant el ratolí."
 
 msgid "Use the top toolbar to delete multiple sources at once. You will be shown a confirmation dialog before anything is deleted."
-msgstr ""
+msgstr "Feu servir la barra d'eines superior per a suprimir diverses fonts alhora. Es mostrarà una confirmació abans de suprimir res."
 
 msgid "Deleting files and messages…"
 msgstr "S'estan suprimint els fitxers i missatges…"
@@ -454,7 +454,7 @@ msgstr "També es destruiran tots els missatges de la font."
 
 #, python-brace-format
 msgid "{sources} ... plus {count} additional sources"
-msgstr ""
+msgstr "{sources} ... més {count} fonts addicionals"
 
 msgid "No sources have been selected."
 msgstr "No s'ha seleccionat cap font."
