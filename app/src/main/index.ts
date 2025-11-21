@@ -1,5 +1,5 @@
 import "source-map-support/register";
-import { app, BrowserWindow, ipcMain, session } from "electron";
+import { app, BrowserWindow, ipcMain, session, clipboard } from "electron";
 import { join } from "path";
 import { randomBytes } from "crypto";
 import { optimizer, is } from "@electron-toolkit/utils";
@@ -292,6 +292,12 @@ app.whenReady().then(() => {
 
   ipcMain.handle("getCSPNonce", async (_event): Promise<string> => {
     return cspNonce;
+  });
+
+  ipcMain.handle("clearClipboard", async (_event): Promise<void> => {
+    clipboard.clear();
+    clipboard.clear("selection");
+    return;
   });
 
   const mainWindow = createWindow();

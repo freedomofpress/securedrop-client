@@ -93,6 +93,9 @@ function SignInView() {
           } as AuthData),
         );
 
+        // Clear the clipboard in case they pasted their password
+        window.electronAPI.clearClipboard();
+
         // Redirect to home
         navigate("/");
       } catch (e) {

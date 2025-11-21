@@ -109,6 +109,9 @@ const electronAPI = {
   onSourceUpdate: (callback: (...args: any[]) => void) => {
     ipcRenderer.on("source-update", (_event, ...args) => callback(...args));
   },
+  clearClipboard: logIpcCall<void>("clearClipboard", () =>
+    ipcRenderer.invoke("clearClipboard"),
+  ),
 };
 
 contextBridge.exposeInMainWorld("electronAPI", electronAPI);
