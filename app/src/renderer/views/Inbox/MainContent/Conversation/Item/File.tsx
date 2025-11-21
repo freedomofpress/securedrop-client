@@ -1,3 +1,4 @@
+import { memo } from "react";
 import {
   FetchStatus,
   ItemUpdate,
@@ -180,28 +181,30 @@ function getFileIconAndColor(filename: string): {
   return { Icon: FileFilled, color: "#8C8C8C" };
 }
 
-function File({ item, designation, onUpdate }: FileProps) {
+const File = memo(function File({ item, designation, onUpdate }: FileProps) {
   const titleCaseDesignation = toTitleCase(designation);
   const fetchStatus = item.fetch_status;
 
-  let fileInner;
+  let FileInner;
   switch (fetchStatus) {
     case FetchStatus.Initial:
-      fileInner = InitialFile(item, onUpdate);
+      FileInner = InitialFile;
       break;
     case FetchStatus.DownloadInProgress:
     case FetchStatus.DecryptionInProgress:
     case FetchStatus.FailedDownloadRetryable:
     case FetchStatus.FailedDecryptionRetryable:
     case FetchStatus.Paused:
-      fileInner = InProgressFile(item, onUpdate);
+      FileInner = InProgressFile;
       break;
     case FetchStatus.Complete:
-      fileInner = CompleteFile(item);
+      FileInner = CompleteFile;
       break;
     case FetchStatus.FailedTerminal:
-      fileInner = FailedFile(item);
+      FileInner = FailedFile;
       break;
+    default:
+      throw new Error(`Unknown fetch status: ${fetchStatus}`);
   }
 
   return (
@@ -214,13 +217,23 @@ function File({ item, designation, onUpdate }: FileProps) {
         <div className="flex items-center mb-1">
           <span className="author">{titleCaseDesignation ?? ""}</span>
         </div>
-        <div className="file-box w-80">{fileInner}</div>
+        <div className="file-box w-80">
+          <FileInner item={item} onUpdate={onUpdate} />
+        </div>
       </div>
     </div>
   );
+});
+
+interface FileViewProps {
+  item: Item;
+  onUpdate: (update: ItemUpdate) => void;
 }
 
-function InitialFile(item: Item, onUpdate: (update: ItemUpdate) => void) {
+const InitialFile = memo(function InitialFile({
+  item,
+  onUpdate,
+}: FileViewProps) {
   const { t } = useTranslation("Item");
   const fileSize = prettyPrintBytes(item.data.size);
 
@@ -253,9 +266,12 @@ function InitialFile(item: Item, onUpdate: (update: ItemUpdate) => void) {
       </div>
     </Tooltip>
   );
-}
+});
 
-function InProgressFile(item: Item, onUpdate: (update: ItemUpdate) => void) {
+const InProgressFile = memo(function InProgressFile({
+  item,
+  onUpdate,
+}: FileViewProps) {
   const { t } = useTranslation("Item");
   const progressBytes = item.fetch_progress ?? 0;
   const fileSize = prettyPrintBytes(item.data.size);
@@ -317,10 +333,10 @@ function InProgressFile(item: Item, onUpdate: (update: ItemUpdate) => void) {
       </div>
     </div>
   );
-}
+});
 
 // TODO: implement download viewer
-function CompleteFile(item: Item) {
+const CompleteFile = memo(function CompleteFile({ item }: { item: Item }) {
   const filename = item.filename
     ? item.filename.substring(item.filename.lastIndexOf("/") + 1)
     : "";
@@ -348,9 +364,9 @@ function CompleteFile(item: Item) {
       </div>
     </div>
   );
-}
+});
 
-function FailedFile(item: Item) {
+const FailedFile = memo(function FailedFile({ item }: { item: Item }) {
   const { t } = useTranslation("Item");
   const fileSize = prettyPrintBytes(item.data.size);
 
@@ -365,6 +381,6 @@ function FailedFile(item: Item) {
       </div>
     </div>
   );
-}
+});
 
 export default File;

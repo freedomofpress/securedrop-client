@@ -1,3 +1,4 @@
+import { memo } from "react";
 import { useTranslation } from "react-i18next";
 import { toTitleCase, formatDateLong } from "../../../utils";
 import Avatar from "../../../components/Avatar";
@@ -9,7 +10,11 @@ interface HeaderProps {
   sourceWithItems: SourceWithItems | null;
 }
 
-function Header({ sourceUuid, loading, sourceWithItems }: HeaderProps) {
+const Header = memo(function Header({
+  sourceUuid,
+  loading,
+  sourceWithItems,
+}: HeaderProps) {
   const { t, i18n } = useTranslation("MainContent");
 
   if (!sourceUuid) {
@@ -44,6 +49,6 @@ function Header({ sourceUuid, loading, sourceWithItems }: HeaderProps) {
       </div>
     </>
   );
-}
+});
 
 export default Header;

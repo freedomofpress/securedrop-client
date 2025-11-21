@@ -1,10 +1,12 @@
+import { memo } from "react";
+
 interface StarFilledProps {
   size?: number;
   color?: string;
   className?: string;
 }
 
-function StarFilled({
+const StarFilled = memo(function StarFilled({
   size = 20,
   color = "#eab308",
   className,
@@ -28,6 +30,6 @@ function StarFilled({
       />
     </svg>
   );
-}
+});
 
 export default StarFilled;
