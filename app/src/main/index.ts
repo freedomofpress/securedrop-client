@@ -40,10 +40,10 @@ const config = Config.load(noQubes);
 
 // Create crypto config + initialize
 const cryptoConfig: CryptoConfig = {
-  journalistPublicKey: fs
-    .readFileSync(config.journalist_public_key_path)
-    .toString("utf-8"),
+  submissionKeyFingerprint: config.sd_submission_key_fpr,
   isQubes: config.is_qubes,
+  gpgHomedir: config.gnupghome || undefined,
+  qubesGpgDomain: config.qubes_gpg_domain,
 };
 
 const crypto = Crypto.initialize(cryptoConfig);

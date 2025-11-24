@@ -79,7 +79,7 @@ describe("Crypto Integration Tests", () => {
     it("should successfully decrypt a message (non-doc)", async () => {
       const crypto = Crypto.initialize({
         isQubes: false,
-        journalistPublicKey: "",
+        submissionKeyFingerprint: "",
       });
       const testMessage = "Test message content";
       const encryptedContent = Buffer.from("encrypted-content");
@@ -116,11 +116,11 @@ describe("Crypto Integration Tests", () => {
       const result = await crypto.decryptMessage(encryptedContent);
 
       expect(result).toBe(testMessage);
-      expect(mockSpawn).toHaveBeenCalledWith("gpg", [
-        "--trust-model",
-        "always",
-        "--decrypt",
-      ]);
+      expect(mockSpawn).toHaveBeenCalledWith(
+        "gpg",
+        ["--trust-model", "always", "--decrypt"],
+        expect.objectContaining({ env: expect.any(Object) }),
+      );
       expect(mockProcess.stdin.write).toHaveBeenCalledWith(encryptedContent);
       expect(mockProcess.stdin.end).toHaveBeenCalled();
     });
@@ -128,7 +128,7 @@ describe("Crypto Integration Tests", () => {
     it("should handle GPG decryption failure for messages", async () => {
       const crypto = Crypto.initialize({
         isQubes: false,
-        journalistPublicKey: "",
+        submissionKeyFingerprint: "",
       });
 
       const encryptedContent = Buffer.from("bad-encrypted-content");
@@ -166,7 +166,7 @@ describe("Crypto Integration Tests", () => {
     it("should handle GPG process spawn failure", async () => {
       const crypto = Crypto.initialize({
         isQubes: false,
-        journalistPublicKey: "",
+        submissionKeyFingerprint: "",
       });
 
       const encryptedContent = Buffer.from("encrypted-content");
@@ -216,7 +216,7 @@ describe("Crypto Integration Tests", () => {
     it("should successfully decrypt and decompress a gzipped file", async () => {
       const crypto = Crypto.initialize({
         isQubes: false,
-        journalistPublicKey: "",
+        submissionKeyFingerprint: "",
       });
 
       const testFilePath = "/path/to/encrypted-file.gpg";
@@ -253,18 +253,17 @@ describe("Crypto Integration Tests", () => {
       );
 
       expect(result).toMatch(/original-file\.txt$/);
-      expect(mockSpawn).toHaveBeenCalledWith("gpg", [
-        "--trust-model",
-        "always",
-        "--decrypt",
-        testFilePath,
-      ]);
+      expect(mockSpawn).toHaveBeenCalledWith(
+        "gpg",
+        ["--trust-model", "always", "--decrypt", testFilePath],
+        expect.objectContaining({ env: expect.any(Object) }),
+      );
     });
 
     it("should handle file decryption failure", async () => {
       const crypto = Crypto.initialize({
         isQubes: false,
-        journalistPublicKey: "",
+        submissionKeyFingerprint: "",
       });
 
       const testFilePath = "/path/to/encrypted-file.gpg";
@@ -306,7 +305,7 @@ describe("Crypto Integration Tests", () => {
     it("should use fallback filename when gzip header has no filename", async () => {
       const crypto = Crypto.initialize({
         isQubes: false,
-        journalistPublicKey: "",
+        submissionKeyFingerprint: "",
       });
 
       const testFilePath = "/path/to/encrypted-file.gpg";
@@ -349,7 +348,7 @@ describe("Crypto Integration Tests", () => {
     it("should handle decompression failure", async () => {
       const crypto = Crypto.initialize({
         isQubes: false,
-        journalistPublicKey: "",
+        submissionKeyFingerprint: "",
       });
 
       const testFilePath = "/path/to/encrypted-file.gpg";
@@ -387,7 +386,7 @@ describe("Crypto Integration Tests", () => {
   describe("Environment-specific behavior", () => {
     it("should use qubes-gpg-client in Qubes environment", async () => {
       const crypto = Crypto.initialize({
-        journalistPublicKey: "",
+        submissionKeyFingerprint: "",
         isQubes: true,
       });
 
@@ -415,18 +414,18 @@ describe("Crypto Integration Tests", () => {
 
       await crypto.decryptMessage(encryptedContent);
 
-      expect(mockSpawn).toHaveBeenCalledWith("qubes-gpg-client", [
-        "--trust-model",
-        "always",
-        "--decrypt",
-      ]);
+      expect(mockSpawn).toHaveBeenCalledWith(
+        "qubes-gpg-client",
+        ["--trust-model", "always", "--decrypt"],
+        expect.objectContaining({ env: expect.any(Object) }),
+      );
     });
 
     it("should use custom homedir when specified", async () => {
       const crypto = Crypto.initialize({
         isQubes: false,
         gpgHomedir: "/custom/gnupg",
-        journalistPublicKey: "",
+        submissionKeyFingerprint: "",
       });
 
       const encryptedContent = Buffer.from("test");
@@ -453,13 +452,11 @@ describe("Crypto Integration Tests", () => {
 
       await crypto.decryptMessage(encryptedContent);
 
-      expect(mockSpawn).toHaveBeenCalledWith("gpg", [
-        "--trust-model",
-        "always",
-        "--homedir",
-        "/custom/gnupg",
-        "--decrypt",
-      ]);
+      expect(mockSpawn).toHaveBeenCalledWith(
+        "gpg",
+        ["--trust-model", "always", "--homedir", "/custom/gnupg", "--decrypt"],
+        expect.objectContaining({ env: expect.any(Object) }),
+      );
     });
   });
 
@@ -469,7 +466,7 @@ describe("Crypto Integration Tests", () => {
     beforeEach(() => {
       crypto = Crypto.initialize({
         isQubes: false,
-        journalistPublicKey: "",
+        submissionKeyFingerprint: "",
       });
     });
 
@@ -533,7 +530,7 @@ describe("Crypto Integration Tests", () => {
 
   describe("Singleton behavior", () => {
     it("should return the same instance on multiple calls", () => {
-      Crypto.initialize({ journalistPublicKey: "", isQubes: false });
+      Crypto.initialize({ submissionKeyFingerprint: "", isQubes: false });
       const crypto1 = Crypto.getInstance();
       const crypto2 = Crypto.getInstance();
       expect(crypto1).toBe(crypto2);
@@ -542,10 +539,10 @@ describe("Crypto Integration Tests", () => {
     it("should throw error when trying to initialize twice", () => {
       Crypto.initialize({
         isQubes: false,
-        journalistPublicKey: "",
+        submissionKeyFingerprint: "",
       });
       expect(() => {
-        Crypto.initialize({ isQubes: true, journalistPublicKey: "" });
+        Crypto.initialize({ isQubes: true, submissionKeyFingerprint: "" });
       }).toThrow(
         "Crypto already initialized: cannot initialize twice. Call initialize() before getInstance().",
       );

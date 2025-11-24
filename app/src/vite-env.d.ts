@@ -7,7 +7,8 @@ declare const __DEV_AUTO_LOGIN__: boolean;
 declare const __VITE_NONCE__: string;
 
 interface ImportMetaEnv {
-  readonly SD_SUBMISSION_PUBKEY_PATH: string;
+  readonly SD_SUBMISSION_KEY_FPR: string;
+  readonly GNUPGHOME: string;
 }
 
 interface ImportMeta {

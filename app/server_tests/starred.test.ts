@@ -64,7 +64,7 @@ describe.sequential("starring sources", () => {
     context = await TestContext.setup();
     crypto = Crypto.initialize({
       isQubes: false,
-      journalistPublicKey: "",
+      submissionKeyFingerprint: "",
     });
     await context.login();
     await context.runSync();

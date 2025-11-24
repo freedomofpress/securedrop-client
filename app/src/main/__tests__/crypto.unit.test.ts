@@ -22,7 +22,7 @@ describe("Crypto", () => {
 
     it("should use custom homedir when provided", () => {
       const crypto = Crypto.initialize({
-        journalistPublicKey: "",
+        submissionKeyFingerprint: "",
         isQubes: false,
         gpgHomedir: "/custom/path",
       });
@@ -39,7 +39,7 @@ describe("Crypto", () => {
       vi.stubEnv("QUBES_SOMETHING", "value");
       const crypto = Crypto.initialize({
         isQubes: false,
-        journalistPublicKey: "",
+        submissionKeyFingerprint: "",
       });
 
       const command = (
@@ -60,12 +60,12 @@ describe("Crypto", () => {
     });
 
     it("should return instance when initialized with config", () => {
-      Crypto.initialize({ isQubes: false, journalistPublicKey: "" });
+      Crypto.initialize({ isQubes: false, submissionKeyFingerprint: "" });
       expect(Crypto.getInstance()).not.toBe(null);
     });
 
     it("should return instance when initialized with empty config", () => {
-      Crypto.initialize({ journalistPublicKey: "", isQubes: false });
+      Crypto.initialize({ submissionKeyFingerprint: "", isQubes: false });
       expect(Crypto.getInstance()).not.toBe(null);
     });
   });
@@ -76,7 +76,10 @@ describe("Crypto", () => {
     beforeEach(() => {
       // Reset singleton instance for testing
       (Crypto as any).instance = undefined;
-      crypto = Crypto.initialize({ journalistPublicKey: "", isQubes: false });
+      crypto = Crypto.initialize({
+        submissionKeyFingerprint: "",
+        isQubes: false,
+      });
     });
 
     it("should extract filename from gzip header", () => {

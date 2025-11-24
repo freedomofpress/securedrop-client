@@ -10,7 +10,8 @@ import { PathBuilder, Storage, UnsafePathComponent } from "./storage";
 export interface CryptoConfig {
   isQubes: boolean;
   gpgHomedir?: string;
-  journalistPublicKey: string;
+  qubesGpgDomain?: string;
+  submissionKeyFingerprint: string;
 }
 
 export class CryptoError extends Error {
@@ -27,12 +28,15 @@ export class Crypto {
   private static instance: Crypto;
   private isQubes: boolean;
   private gpgHomedir?: string;
-  private journalistPublicKey: string;
+  private qubesGpgDomain?: string;
+  private submissionKeyFingerprint: string;
+  private submissionKey?: string;
 
   private constructor(config: CryptoConfig) {
     this.isQubes = config.isQubes;
     this.gpgHomedir = config.gpgHomedir;
-    this.journalistPublicKey = config.journalistPublicKey;
+    this.qubesGpgDomain = config.qubesGpgDomain;
+    this.submissionKeyFingerprint = config.submissionKeyFingerprint;
   }
 
   /**
@@ -75,6 +79,71 @@ export class Crypto {
   }
 
   /**
+   * Get the environment for running GPG
+   */
+  private getGpgEnv(): NodeJS.ProcessEnv {
+    if (this.isQubes && this.qubesGpgDomain) {
+      return { ...process.env, QUBES_GPG_DOMAIN: this.qubesGpgDomain };
+    }
+    return process.env;
+  }
+
+  /**
+   * Lazily get the public part of the submission key
+   */
+  async getSubmissionKey(): Promise<string> {
+    if (!this.submissionKey) {
+      this.submissionKey = await this.exportSubmissionKey();
+    }
+    return this.submissionKey;
+  }
+
+  /**
+   * Internal method to export the public part of the submission key
+   * from sd-gpg by using qubes-split-gpg
+   */
+  async exportSubmissionKey(): Promise<string> {
+    const cmd = this.getGpgCommand();
+    cmd.push("--export", "--armor", this.submissionKeyFingerprint);
+
+    return new Promise((resolve, reject) => {
+      const process = spawn(cmd[0], cmd.slice(1), { env: this.getGpgEnv() });
+      let stdout = "";
+      let stderr = "";
+
+      process.stdout.on("data", (data) => {
+        stdout += data.toString();
+      });
+
+      process.stderr.on("data", (data) => {
+        stderr += data.toString();
+      });
+
+      process.on("error", (err) => {
+        reject(err);
+      });
+
+      process.on("close", (code, signal) => {
+        if (signal) {
+          reject(new Error(`Process terminated with signal ${signal}`));
+        } else if (code !== 0) {
+          reject(
+            new Error(`Process exited with non-zero code ${code}: ${stderr}`),
+          );
+        } else if (!stdout.trim()) {
+          reject(
+            new Error(
+              `Failed to export key ${this.submissionKeyFingerprint}: Key not found or export returned empty result`,
+            ),
+          );
+        } else {
+          resolve(stdout);
+        }
+      });
+    });
+  }
+
+  /**
    * Decrypt a message from encrypted buffer content
    * Messages are not gzipped, so no decompression is needed (unlike files)
    * @param encryptedContent - The encrypted message content
@@ -85,7 +154,7 @@ export class Crypto {
     cmd.push("--decrypt");
 
     return new Promise((resolve, reject) => {
-      const gpgProcess = spawn(cmd[0], cmd.slice(1));
+      const gpgProcess = spawn(cmd[0], cmd.slice(1), { env: this.getGpgEnv() });
 
       let stdout = Buffer.alloc(0);
       let stderr = Buffer.alloc(0);
@@ -152,7 +221,7 @@ export class Crypto {
       const gpgOutputFile = fs.createWriteStream(tempGpgOutput);
       let stderr = Buffer.alloc(0);
 
-      const gpgProcess = spawn(cmd[0], cmd.slice(1));
+      const gpgProcess = spawn(cmd[0], cmd.slice(1), { env: this.getGpgEnv() });
 
       // Stream GPG output directly to temporary file (no memory accumulation)
       gpgProcess.stdout.pipe(gpgOutputFile);
@@ -232,7 +301,7 @@ export class Crypto {
   ): Promise<string> {
     return encryptMessage(plaintext, [
       sourcePublicKey,
-      this.journalistPublicKey,
+      await this.getSubmissionKey(),
     ]);
   }
 

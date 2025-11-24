@@ -23,7 +23,7 @@ describe("Database Component Tests", () => {
     (Crypto as any).instance = undefined;
     crypto = Crypto.initialize({
       isQubes: false,
-      journalistPublicKey: "",
+      submissionKeyFingerprint: "",
     });
   });
 
@@ -78,7 +78,7 @@ describe("Database Method Tests", () => {
     (Crypto as any).instance = undefined;
     crypto = Crypto.initialize({
       isQubes: false,
-      journalistPublicKey: "",
+      submissionKeyFingerprint: "",
     });
 
     // Mock crypto.encryptSourceMessage
