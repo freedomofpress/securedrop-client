@@ -26,7 +26,7 @@ from sqlalchemy.orm import scoped_session
 
 from securedrop_client.config import Config
 from securedrop_client.db import Source
-from securedrop_client.utils import safe_copy, safe_gzip_extract, safe_mkdir
+from securedrop_client.utils import check_path_traversal, safe_copy, safe_gzip_extract, safe_mkdir
 
 logger = logging.getLogger(__name__)
 
@@ -44,7 +44,21 @@ def read_gzip_header_filename(filename: str) -> str:
     """
     Extract the original filename from the header of a gzipped file.
 
-    Adapted from Python's gzip._GzipReader._read_gzip_header.
+    gzip files look like:
+
+    +---+---+---+---+---+---+---+---+---+---+
+    |ID1|ID2|CM |FLG|     MTIME     |XFL|OS |
+    +---+---+---+---+---+---+---+---+---+---+
+
+    ID1,ID2 = \037\213 (GZIP_FILE_IDENTIFICATION)
+    CM (compression method) = 8 (deflate)
+    FLG (flags) = maybe GZIP_FLAG_EXTRA_FIELDS, GZIP_FLAG_FILENAME
+    MTIME = modification time
+    XFL = eXtra FLags
+    OS = operating system
+
+    We are checking if the GZIP_FLAG_FILENAME is set, and if so, parsing
+    the filename from those bytes.
     """
     original_filename = ""
     with open(filename, "rb") as f:
@@ -69,6 +83,7 @@ def read_gzip_header_filename(filename: str) -> str:
                 fb += s
             original_filename = str(fb, "utf-8")
 
+    check_path_traversal(original_filename)
     return original_filename
 
 
