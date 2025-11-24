@@ -15,7 +15,8 @@
     },
     "conversation": {
       "sendButton": "Envoyer",
-      "messagePlaceholder": "Message {{designation}}..."
+      "messagePlaceholder": "Message {{designation}}...",
+      "newMessagesDivider": "nouveaux messages"
     },
     "itemEncrypted": "Message chiffré...",
     "lastSourceActivity": "Dernière activité de la source",

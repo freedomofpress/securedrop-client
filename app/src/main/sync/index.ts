@@ -5,6 +5,7 @@ import {
   BatchRequest,
   BatchResponse,
   SyncStatus,
+  type Item,
 } from "../../types";
 import { DB } from "../database";
 import {
@@ -157,7 +158,12 @@ function deleteItems(db: DB, itemIDs: string[]) {
   const storage = new Storage();
   // Perform fs cleanup
   for (const itemID of itemIDs) {
-    const item = db.getItem(itemID);
+    let item: Item | null = null;
+    try {
+      item = db.getItem(itemID);
+    } catch (_error) {
+      continue;
+    }
     if (!item) {
       continue;
     }

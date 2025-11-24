@@ -1,13 +1,15 @@
 import type { SourceWithItems } from "../../../../types";
 import { toTitleCase } from "../../../utils";
 import Item from "./Conversation/Item";
+import NewMessagesDivider from "./Conversation/NewMessagesDivider";
 import EmptyConversation from "./EmptyConversation";
 import { Form, Input, Button } from "antd";
 import { useTranslation } from "react-i18next";
-import { useEffect, useRef, memo, useMemo, useCallback, useState } from "react";
+import { memo, useMemo, useCallback, useState } from "react";
 import { useAppDispatch } from "../../../hooks";
 import { fetchSources } from "../../../features/sources/sourcesSlice";
 import { fetchConversation } from "../../../features/conversation/conversationSlice";
+import useConversationScroll from "./Conversation/useConversationScroll";
 import "./Conversation.css";
 
 interface ConversationProps {
@@ -20,31 +22,16 @@ const Conversation = memo(function Conversation({
   const { t } = useTranslation("MainContent");
   const dispatch = useAppDispatch();
   const [form] = Form.useForm();
-  const scrollContainerRef = useRef<HTMLDivElement>(null);
   const [messageValue, setMessageValue] = useState("");
-  const lastItemUuidRef = useRef<string | null>(null);
-  const itemCountRef = useRef<number>(0);
-  const lastItemUuid = sourceWithItems?.items.at(-1)?.uuid ?? null;
-  const itemCount = sourceWithItems?.items.length ?? 0;
-
-  // Only auto-scroll when a newly appended item arrives to avoid jumping during status updates
-  useEffect(() => {
-    const scrollEl = scrollContainerRef.current;
-    if (!scrollEl) {
-      return;
-    }
-
-    const hasNewItem =
-      lastItemUuid !== null && lastItemUuid !== lastItemUuidRef.current;
-    const listGrew = itemCount > itemCountRef.current;
-
-    if (hasNewItem || listGrew) {
-      scrollEl.scrollTop = scrollEl.scrollHeight;
-    }
-
-    lastItemUuidRef.current = lastItemUuid;
-    itemCountRef.current = itemCount;
-  }, [lastItemUuid, itemCount]);
+  const {
+    acknowledgeNewMessages,
+    dividerItemUuid,
+    dividerRef,
+    hasItems,
+    newItems,
+    oldItems,
+    scrollContainerRef,
+  } = useConversationScroll(sourceWithItems);
 
   const designation = useMemo(
     () => sourceWithItems?.data.journalist_designation,
@@ -85,6 +72,10 @@ const Conversation = memo(function Conversation({
           nextInteractionCount,
         );
 
+        if (dividerItemUuid) {
+          acknowledgeNewMessages();
+        }
+
         // Update local state immediately with projected changes
         dispatch(fetchSources());
         dispatch(fetchConversation(sourceWithItems.uuid));
@@ -95,12 +86,10 @@ const Conversation = memo(function Conversation({
         setMessageValue(values.message);
       }
     },
-    [sourceWithItems, dispatch, form],
+    [acknowledgeNewMessages, dispatch, dividerItemUuid, form, sourceWithItems],
   );
 
   if (!sourceWithItems) return null;
-
-  const hasItems = sourceWithItems.items.length > 0;
 
   return (
     <div className="flex flex-col h-full w-full min-h-0">
@@ -111,13 +100,25 @@ const Conversation = memo(function Conversation({
             className="absolute inset-0 overflow-y-auto overflow-x-hidden p-4 pb-0"
             data-testid="conversation-items-container"
           >
-            {sourceWithItems.items.map((item) => (
+            {oldItems.map((item) => (
               <Item
                 key={item.uuid}
                 item={item}
                 designation={designation || ""}
               />
             ))}
+            {newItems.length > 0 && (
+              <>
+                <NewMessagesDivider ref={dividerRef} />
+                {newItems.map((item) => (
+                  <Item
+                    key={item.uuid}
+                    item={item}
+                    designation={designation || ""}
+                  />
+                ))}
+              </>
+            )}
           </div>
         ) : (
           <div className="flex items-center justify-center h-full">

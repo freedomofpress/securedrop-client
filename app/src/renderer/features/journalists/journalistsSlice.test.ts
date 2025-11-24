@@ -203,6 +203,7 @@ describe("journalistsSlice", () => {
         activeSourceUuid: null,
         loading: false,
         error: null,
+        conversationIndicators: {},
       },
       conversation: {
         conversation: null,

@@ -15,7 +15,8 @@
     },
     "conversation": {
       "sendButton": "Send",
-      "messagePlaceholder": "Message {{designation}}..."
+      "messagePlaceholder": "Message {{designation}}...",
+      "newMessagesDivider": "new messages"
     },
     "itemEncrypted": "Message is encrypted...",
     "lastSourceActivity": "Last source activity",
