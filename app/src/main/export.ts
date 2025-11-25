@@ -4,6 +4,7 @@ import {
   rm as rmCb,
   constants,
   promises as fsPromises,
+  rmSync,
 } from "fs";
 import * as os from "os";
 import * as path from "path";
@@ -363,7 +364,7 @@ export class ArchiveExporter {
       this.processStderr += data.toString();
     });
 
-    this.process.on("error", (err) => {
+    this.process.on("error", async (err) => {
       console.log("qrexec spawn error", err);
       // process spawn failed
       this.cleanupTmpdir();
@@ -379,7 +380,7 @@ export class ArchiveExporter {
     });
   }
 
-  /// Parse stderr buffer of the child process for a final status line and return DeviceStatus.
+  // Parse stderr buffer of the child process for a final status line and return DeviceStatus.
   parseStatus(processStderr: string): DeviceStatus {
     const outputUntrusted = processStderr.trim();
     if (!outputUntrusted) {
@@ -421,10 +422,10 @@ export class ArchiveExporter {
     }
   }
 
-  async cleanupTmpdir() {
+  cleanupTmpdir() {
     if (this.tmpdir) {
       try {
-        await rm(this.tmpdir, { recursive: true, force: true });
+        rmSync(this.tmpdir, { recursive: true, force: true });
       } catch (e) {
         console.log("Failed to cleanup tmpdir", e);
       } finally {
@@ -449,7 +450,7 @@ export class Printer extends ArchiveExporter {
   constructor() {
     super();
     this.fsm = new PrintStateMachine();
-    this.fsm.onError = this._onError;
+    this.fsm.onError = this._onError.bind(this);
   }
 
   // Initiate print and run preflight checks to make sure that Export VM is started
@@ -543,7 +544,7 @@ export class Printer extends ArchiveExporter {
       this.fsm.transition({
         action: "fail",
         error: new PrintExportError(
-          `Export status returned unexpected value ${e}`,
+          `Print status returned unexpected value ${e}`,
         ),
       });
     } finally {
@@ -566,11 +567,12 @@ export class Exporter extends ArchiveExporter {
   constructor() {
     super();
     this.fsm = new ExportStateMachine();
-    this.fsm.onError = this._onError;
+    this.fsm.onError = this._onError.bind(this);
   }
 
   public async runExportPreflightChecks(): Promise<void> {
     console.log("Beginning export preflight check");
+    this.fsm.transition({ action: "initiateExport" });
     try {
       this.tmpdir = await mkdtemp(path.join(os.tmpdir(), "sd-export-"));
       await chmodAsync(this.tmpdir, 0o700);
@@ -600,6 +602,7 @@ export class Exporter extends ArchiveExporter {
   ): Promise<void> {
     try {
       console.log(`Begin exporting ${filepaths.length} item(s)`);
+      this.fsm.transition({ action: "export" });
 
       const metadata = { ...Exporter.DISK_METADATA } as Record<string, unknown>;
       if (passphrase) {
@@ -643,6 +646,11 @@ export class Exporter extends ArchiveExporter {
             action: "exportSuccess",
           });
         }
+      } else {
+        this.fsm.transition({
+          action: "fail",
+          error: new PrintExportError(`Export failed with status: ${status}`),
+        });
       }
     } catch (err) {
       this.fsm.transition({
@@ -659,12 +667,14 @@ export class Exporter extends ArchiveExporter {
   }
 
   private _onError() {
+    const errorMsg = this.processStderr;
+
     this.cleanupTmpdir();
     this.process = null;
     this.processStderr = "";
     this.fsm.transition({
       action: "fail",
-      error: new PrintExportError(`Error: ${this.processStderr}`),
+      error: new PrintExportError(`Error: ${errorMsg}`),
     });
   }
 }
