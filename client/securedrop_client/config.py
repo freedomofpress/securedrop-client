@@ -14,7 +14,7 @@ def try_qubesdb() -> Generator:
     db: bool | "QubesDB" = False  # noqa: UP037
 
     try:
-        from qubesdb import QubesDB
+        from qubesdb import QubesDB  # noqa: PLC0415
 
         db = QubesDB()
         yield db

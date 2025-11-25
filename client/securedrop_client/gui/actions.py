@@ -55,7 +55,9 @@ class DownloadConversation(QAction):
 
     @pyqtSlot()
     def on_triggered(self) -> None:
-        from securedrop_client.gui.widgets import FileWidget  # Delayed import to avoid recursion
+        from securedrop_client.gui.widgets import (  # noqa: PLC0415
+            FileWidget,
+        )  # Delayed import to avoid recursion
 
         if self._controller.api is None:
             self._controller.on_action_requiring_login()
@@ -71,7 +73,9 @@ class DownloadConversation(QAction):
                 )
 
     def has_downloadable_files(self) -> bool:
-        from securedrop_client.gui.widgets import FileWidget  # Delayed import to avoid recursion
+        from securedrop_client.gui.widgets import (  # noqa: PLC0415
+            FileWidget,
+        )  # Delayed import to avoid recursion
 
         for widget in self.conversation_view.current_messages.values():
             if isinstance(widget, FileWidget) and not widget.file.is_downloaded:
