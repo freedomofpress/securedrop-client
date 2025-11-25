@@ -23,7 +23,7 @@ import html
 import logging
 from datetime import datetime
 from gettext import gettext as _
-from typing import Optional, Union
+from typing import Union
 from uuid import uuid4
 
 import arrow
@@ -764,8 +764,8 @@ class MainView(QWidget):
 
     def __init__(
         self,
-        parent: Optional[QWidget],
-        app_state: Optional[state.State] = None,
+        parent: QWidget | None,
+        app_state: state.State | None = None,
     ) -> None:
         super().__init__(parent)
 
@@ -1305,7 +1305,7 @@ class SourceList(QListWidget):
         # Qt event loop (thus unblocking the UI).
         QTimer.singleShot(1, schedule_source_management)
 
-    def get_selected_source(self) -> Optional[Source]:
+    def get_selected_source(self) -> Source | None:
         # if len == 0, return None
         if not self.selectedItems():
             return None
@@ -1317,7 +1317,7 @@ class SourceList(QListWidget):
             return source_widget.source
         return None  # pragma: nocover
 
-    def get_source_widget(self, source_uuid: str) -> Optional[SourceWidget]:
+    def get_source_widget(self, source_uuid: str) -> SourceWidget | None:
         """
         First try to get the source widget from the cache, then look for it in the SourceList.
         """
@@ -1689,7 +1689,7 @@ class SourceWidget(QWidget):
 
     @pyqtSlot(str, str, str)
     def set_snippet(
-        self, source_uuid: str, collection_uuid: Optional[str] = None, content: Optional[str] = None
+        self, source_uuid: str, collection_uuid: str | None = None, content: str | None = None
     ) -> None:
         """
         Update the preview snippet if the source_uuid matches our own.
@@ -2091,7 +2091,7 @@ class SpeechBubble(QWidget):
         download_error_signal,
         index: int,
         container_width: int,
-        authenticated_user: Optional[User] = None,
+        authenticated_user: User | None = None,
         failed_to_decrypt: bool = False,
     ) -> None:
         super().__init__()
@@ -2291,7 +2291,7 @@ class MessageWidget(SpeechBubble):
         download_error_signal,
         index: int,
         container_width: int,
-        authenticated_user: Optional[User] = None,
+        authenticated_user: User | None = None,
         failed_to_decrypt: bool = False,
     ) -> None:
         super().__init__(
@@ -2336,7 +2336,7 @@ class ReplyWidget(SpeechBubble):
         container_width: int,
         sender: User,
         sender_is_current_user: bool,
-        authenticated_user: Optional[User] = None,
+        authenticated_user: User | None = None,
         failed_to_decrypt: bool = False,
     ) -> None:
         super().__init__(
@@ -3278,7 +3278,7 @@ class SourceConversationWrapper(QWidget):
         self,
         source: Source,
         controller: Controller,
-        app_state: Optional[state.State] = None,
+        app_state: state.State | None = None,
     ) -> None:
         super().__init__()
 
@@ -3730,7 +3730,7 @@ class SourceMenu(QMenu):
         source: Source,
         controller: Controller,
         conversation_view: ConversationView,
-        app_state: Optional[state.State],
+        app_state: state.State | None,
     ) -> None:
         super().__init__()
         self.source = source
@@ -3771,7 +3771,7 @@ class SourceMenuButton(QToolButton):
         source: Source,
         controller: Controller,
         conversation_view: ConversationView,
-        app_state: Optional[state.State],
+        app_state: state.State | None,
     ) -> None:
         super().__init__()
         self.controller = controller
@@ -3829,7 +3829,7 @@ class SourceProfileShortWidget(QWidget):
         source: Source,
         controller: Controller,
         conversation_view: ConversationView,
-        app_state: Optional[state.State],
+        app_state: state.State | None,
     ) -> None:
         super().__init__()
 
