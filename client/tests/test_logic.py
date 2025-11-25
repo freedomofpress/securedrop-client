@@ -2196,7 +2196,7 @@ def test_Controller_on_queue_cleared(homedir, config, mocker, session_maker):
     co.api = "not none"
     co.show_last_sync_timer = mocker.MagicMock()
     co.on_queue_cleared()
-    fail_draft_replies.called_once_with(co.session)
+    fail_draft_replies.assert_called_once_with(co.session)
 
 
 def test_Controller_on_queue_paused(homedir, config, mocker, session_maker):
