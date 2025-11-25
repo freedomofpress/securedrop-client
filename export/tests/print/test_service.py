@@ -49,8 +49,8 @@ class TestPrint:
 
         # When the client can accept new status values, we will assert that the
         # above call results in Status.PRINT_SUCCESS
-        assert mock_setup.called_once()
-        assert mock_print.called_once()
+        mock_setup.assert_called_once()
+        mock_print.assert_called_once()
 
         patch_setup.stop()
         patch_print.stop()
@@ -64,7 +64,7 @@ class TestPrint:
 
         # When the client can accept new status values, we will assert that the
         # above call results in Status.PREFLIGHT_SUCCESS
-        assert mock_setup.called_once()
+        mock_setup.assert_called_once()
 
         patch_setup.stop()
 
@@ -79,8 +79,8 @@ class TestPrint:
         # When the client can accept new status values, we will assert that the
         # above call results in Status.TEST_SUCCESS
 
-        assert mock_setup.called_once()
-        assert mock_print.called_once()
+        mock_setup.assert_called_once()
+        mock_print.assert_called_once()
 
         patch_setup.stop()
         patch_print.stop()
@@ -203,14 +203,14 @@ class TestPrint:
         # Printer found
         with mock.patch("os.path.exists", return_value=True) as path_exists:
             self.service._check_printer_setup()  # No exception raised
-            assert path_exists.called_once_with(IPP_USB_CTRL_SOCKET)
+            path_exists.assert_called_once_with(IPP_USB_CTRL_SOCKET)
 
         # Printer not found
         with mock.patch("os.path.exists", return_value=False) as path_exists:
             with pytest.raises(ExportException) as ex:
                 self.service._check_printer_setup()
             assert ex.value.sdstatus is Status.ERROR_PRINTER_NOT_FOUND
-            assert path_exists.called_once_with(IPP_USB_CTRL_SOCKET)
+            path_exists.assert_called_once_with(IPP_USB_CTRL_SOCKET)
 
     def test__print_test_page_calls_method(self):
         p = mock.patch.object(self.service, "_print_file")
