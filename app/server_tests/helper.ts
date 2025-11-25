@@ -126,4 +126,14 @@ export class TestContext {
     // TODO: let's avoid a fixed timeout here
     await this.page.waitForTimeout(3000);
   }
+
+  /**
+   * Returns the number of sources currently rendered in the sidebar list.
+   */
+  async getVisibleSourceCount(): Promise<number> {
+    const sourceCheckboxes = this.page.locator(
+      '[data-testid^="source-checkbox-"]',
+    );
+    return await sourceCheckboxes.count();
+  }
 }

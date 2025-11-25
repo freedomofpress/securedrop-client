@@ -16,16 +16,6 @@ describe.sequential("source list functionality", () => {
     await context.page.waitForTimeout(500);
   }
 
-  /**
-   * Helper function to get the count of visible sources
-   */
-  async function getVisibleSourceCount(): Promise<number> {
-    const sourceCheckboxes = context.page.locator(
-      '[data-testid^="source-checkbox-"]',
-    );
-    return await sourceCheckboxes.count();
-  }
-
   beforeAll(async () => {
     context = await TestContext.setup();
   }, 40000);
@@ -41,7 +31,7 @@ describe.sequential("source list functionality", () => {
     await context.runSync();
 
     // Verify sources are now visible in the UI
-    expect(await getVisibleSourceCount()).toBe(3);
+    expect(await context.getVisibleSourceCount()).toBe(3);
 
     // Verify all three expected sources are displayed
     await expect(context.page.getByText("Incapable Elimination")).toBeVisible();
@@ -57,14 +47,14 @@ describe.sequential("source list functionality", () => {
     await expect(searchInput).toBeVisible();
 
     // Initially all 3 sources should be visible
-    expect(await getVisibleSourceCount()).toBe(3);
+    expect(await context.getVisibleSourceCount()).toBe(3);
 
     // Search for "gorgeous" - should match "Gorgeous Apron"
     await searchInput.fill("gorgeous");
     await context.page.waitForTimeout(500); // Wait for debounce/filtering
 
     // Verify only one source is visible
-    expect(await getVisibleSourceCount()).toBe(1);
+    expect(await context.getVisibleSourceCount()).toBe(1);
     await expect(context.page.getByText("Gorgeous Apron")).toBeVisible();
     await expect(
       context.page.getByText("Incapable Elimination"),
@@ -78,7 +68,7 @@ describe.sequential("source list functionality", () => {
     await searchInput.fill("elimination");
     await context.page.waitForTimeout(500);
 
-    expect(await getVisibleSourceCount()).toBe(1);
+    expect(await context.getVisibleSourceCount()).toBe(1);
     await expect(context.page.getByText("Incapable Elimination")).toBeVisible();
     await expect(context.page.getByText("Gorgeous Apron")).not.toBeVisible();
     await expect(
@@ -90,7 +80,7 @@ describe.sequential("source list functionality", () => {
     await searchInput.fill("preservative");
     await context.page.waitForTimeout(500);
 
-    expect(await getVisibleSourceCount()).toBe(1);
+    expect(await context.getVisibleSourceCount()).toBe(1);
     await expect(
       context.page.getByText("Preservative Legislator"),
     ).toBeVisible();
@@ -103,7 +93,7 @@ describe.sequential("source list functionality", () => {
     await searchInput.clear();
     await context.page.waitForTimeout(500);
 
-    expect(await getVisibleSourceCount()).toBe(3);
+    expect(await context.getVisibleSourceCount()).toBe(3);
     await expect(context.page.getByText("Incapable Elimination")).toBeVisible();
     await expect(context.page.getByText("Gorgeous Apron")).toBeVisible();
     await expect(
@@ -114,7 +104,7 @@ describe.sequential("source list functionality", () => {
     await searchInput.fill("nonexistent");
     await context.page.waitForTimeout(500);
 
-    expect(await getVisibleSourceCount()).toBe(0);
+    expect(await context.getVisibleSourceCount()).toBe(0);
   });
 
   it("should search case-insensitively", async () => {
@@ -125,7 +115,7 @@ describe.sequential("source list functionality", () => {
     await searchInput.fill("GORGEOUS");
     await context.page.waitForTimeout(500);
 
-    expect(await getVisibleSourceCount()).toBe(1);
+    expect(await context.getVisibleSourceCount()).toBe(1);
     await expect(context.page.getByText("Gorgeous Apron")).toBeVisible();
 
     // Test mixed case search
@@ -133,7 +123,7 @@ describe.sequential("source list functionality", () => {
     await searchInput.fill("InCaPaBlE");
     await context.page.waitForTimeout(500);
 
-    expect(await getVisibleSourceCount()).toBe(1);
+    expect(await context.getVisibleSourceCount()).toBe(1);
     await expect(context.page.getByText("Incapable Elimination")).toBeVisible();
 
     // Clear search
@@ -147,7 +137,7 @@ describe.sequential("source list functionality", () => {
     await searchInput.fill("apro");
     await context.page.waitForTimeout(500);
 
-    expect(await getVisibleSourceCount()).toBe(1);
+    expect(await context.getVisibleSourceCount()).toBe(1);
     await expect(context.page.getByText("Gorgeous Apron")).toBeVisible();
 
     // Search for "leg" should match "Preservative Legislator"
@@ -155,7 +145,7 @@ describe.sequential("source list functionality", () => {
     await searchInput.fill("leg");
     await context.page.waitForTimeout(500);
 
-    expect(await getVisibleSourceCount()).toBe(1);
+    expect(await context.getVisibleSourceCount()).toBe(1);
     await expect(
       context.page.getByText("Preservative Legislator"),
     ).toBeVisible();
@@ -181,7 +171,7 @@ describe.sequential("source list functionality", () => {
     await setFilter("unread");
 
     // Count visible sources - should only show Preservative Legislator (unread)
-    expect(await getVisibleSourceCount()).toBe(1);
+    expect(await context.getVisibleSourceCount()).toBe(1);
 
     // Verify only Preservative Legislator is visible
     await expect(
@@ -196,14 +186,14 @@ describe.sequential("source list functionality", () => {
     await setFilter("all");
 
     // Verify all sources are visible again
-    expect(await getVisibleSourceCount()).toBe(3);
+    expect(await context.getVisibleSourceCount()).toBe(3);
   });
 
   it("should filter to show only read sources", async () => {
     await setFilter("read");
 
     // Count visible sources - should show 2 read sources (Incapable Elimination and Gorgeous Apron)
-    expect(await getVisibleSourceCount()).toBe(2);
+    expect(await context.getVisibleSourceCount()).toBe(2);
 
     // Verify read sources are visible
     await expect(context.page.getByText("Incapable Elimination")).toBeVisible();
@@ -218,6 +208,6 @@ describe.sequential("source list functionality", () => {
     await setFilter("all");
 
     // Verify all sources are visible again
-    expect(await getVisibleSourceCount()).toBe(3);
+    expect(await context.getVisibleSourceCount()).toBe(3);
   });
 });
