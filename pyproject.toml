@@ -14,7 +14,7 @@ package-mode = false
 requires-poetry = ">=2.1.0,<3.0.0"
 
 [tool.poetry.group.dev.dependencies]
-ruff = "^0.9.7"
+ruff = "^0.14.5"
 semgrep = "*"
 shellcheck-py = "*"
 zizmor = "*"
@@ -65,6 +65,9 @@ ignore = [
     "PLR0912", "PLR0913", "PLR0915",
     # magic-value-comparison, too many violations for now
     "PLR2004",
+    # object with __eq__ but not __hash__, OK since we're not using these
+    # in dicts/sets
+    "PLW1641",
     # loop assignment target being overwritten, not a big deal
     "PLW2901",
     # too broad exception type

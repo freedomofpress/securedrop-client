@@ -20,7 +20,7 @@ def test_star_source(functional_test_logged_in_context, qtbot, mocker):
     gui, controller = functional_test_logged_in_context
 
     def check_for_sources():
-        assert len(list(gui.main_view.source_list.source_items.keys()))
+        assert list(gui.main_view.source_list.source_items.keys())
 
     # Select the first source in the source list
     qtbot.waitUntil(check_for_sources, timeout=TIME_RENDER_SOURCE_LIST)

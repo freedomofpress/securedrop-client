@@ -27,7 +27,7 @@ def test_deleted_file_filewidget(functional_test_logged_in_context, qtbot, mocke
     gui, controller = functional_test_logged_in_context
 
     def check_for_sources():
-        assert len(list(gui.main_view.source_list.source_items.keys()))
+        assert list(gui.main_view.source_list.source_items.keys())
 
     # Select the last first in the source list
     qtbot.waitUntil(check_for_sources, timeout=TIME_RENDER_SOURCE_LIST)
