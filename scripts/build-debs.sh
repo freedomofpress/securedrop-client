@@ -63,7 +63,8 @@ $OCI_BIN run --rm $OCI_RUN_ARGUMENTS \
     -v "${BUILDER}:/builder:Z" \
     -v "${BUILD_DEST}:/build:Z" \
     --env NIGHTLY="${NIGHTLY:-}" \
-    --entrypoint "/src/scripts/build-debs-${WHAT}.sh" \
+    --env WHAT="${WHAT}" \
+    --entrypoint "/src/scripts/build-debs-main.sh" \
     $CONTAINER
 
 ls "$BUILD_DEST"

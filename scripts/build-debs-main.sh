@@ -7,13 +7,20 @@ export PIP_PROGRESS_BAR=off
 export CARGO_TERM_COLOR=never
 export CARGO_TERM_PROGRESS_WHEN=never
 
-
 # Update container
 apt-get update && apt-get upgrade --yes
 
 # Make a copy of the source tree since we do destructive operations on it
-cp -R /src/ /srv/securedrop-client
+rsync --exclude=build --exclude=.git --exclude=__pycache__ --exclude=node_modules --exclude=target \
+    --exclude=htmlcov --exclude=app/dist --exclude=app/out \
+    -av /src/ /srv/securedrop-client
 cd /srv/securedrop-client
+
+if [ "${WHAT:-}" = "app" ]; then
+    echo "Given WHAT=app, adding securedrop-app package to debian/control"
+    bash ./debian/add-app-package.sh
+fi
+
 apt-get build-dep . --yes
 
 # Tweak the changelog just a bit
