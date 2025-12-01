@@ -91,6 +91,10 @@ jobs:
       - name: Install node dependencies
         working-directory: app
         run: pnpm install
+      - name: Install Rust-specific dependencies for sd-proxy
+        run: apt-get install --yes build-essential curl libssl-dev pkg-config
+      - name: Install Rust to build sd-proxy
+        uses: dtolnay/rust-toolchain@1.90.0
       - name: Generate and insert test data
         working-directory: app
         run: |
