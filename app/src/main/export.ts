@@ -39,7 +39,7 @@ export enum ExportStatus {
   NO_DEVICE_DETECTED = "NO_DEVICE_DETECTED",
   INVALID_DEVICE_DETECTED = "INVALID_DEVICE_DETECTED", // Multi partitioned, not encrypted, etc
   MULTI_DEVICE_DETECTED = "MULTI_DEVICE_DETECTED", // Not currently supported
-  UKNOWN_DEVICE_DETECTED = "UNKNOWN_DEVICE_DETECTED", // Badly-formatted USB or VeraCrypt/TC
+  UNKNOWN_DEVICE_DETECTED = "UNKNOWN_DEVICE_DETECTED", // Badly-formatted USB or VeraCrypt/TC
 
   DEVICE_LOCKED = "DEVICE_LOCKED", // One valid device detected, and it's locked
   DEVICE_WRITABLE = "DEVICE_WRITABLE", // One valid device detected, and it's unlocked (and mounted)
@@ -261,13 +261,13 @@ export class ArchiveExporter {
           const parentName = path.basename(parentPath);
           const grandParentName = path.basename(grandParentPath);
           arcname = path.join(
-            "export_data",
+            ArchiveExporter.DISK_EXPORT_DIR,
             grandParentName,
             parentName,
             filename,
           );
           if (filename === "transcript.txt") {
-            arcname = path.join("export_data", parentName, filename);
+            arcname = path.join(ArchiveExporter.DISK_EXPORT_DIR, parentName, filename);
           }
         }
 
@@ -331,6 +331,7 @@ export class ArchiveExporter {
     successCallback: () => void,
     errorCallback: () => void,
   ) {
+    this.processStderr = ""; // Reset buffer at start
     // args uses positional values, we intentionally avoid shell.
     const qrexec = "/usr/bin/qrexec-client-vm";
     const args = [
@@ -518,11 +519,12 @@ export class Printer extends ArchiveExporter {
 
   private _onError() {
     this.cleanupTmpdir();
+    const errorMessage = this.processStderr;
     this.process = null;
     this.processStderr = "";
     this.fsm.transition({
       action: "fail",
-      error: new PrintExportError(`Error: ${this.processStderr}`),
+      error: new PrintExportError(`Error: ${errorMessage}`),
     });
   }
 
