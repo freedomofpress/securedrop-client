@@ -29,10 +29,10 @@ jobs:
     outputs:
       artifact_id: ${{ steps.upload.outputs.artifact-id }}
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
         with:
           persist-credentials: false
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
         with:
           persist-credentials: false
           repository: "freedomofpress/securedrop-builder"
@@ -65,13 +65,13 @@ jobs:
         with:
           name: build-bookworm
           path: build-bookworm
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
         with:
           persist-credentials: false
           repository: "freedomofpress/securedrop-apt-test"
           path: "securedrop-apt-test"
           lfs: true
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
         with:
           persist-credentials: false
           repository: "freedomofpress/build-logs"
