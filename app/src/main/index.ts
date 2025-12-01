@@ -10,6 +10,7 @@ import {
 } from "electron-devtools-installer";
 import { Worker } from "worker_threads";
 import fs from "fs";
+import { spawn } from "child_process";
 
 import { DB } from "./database";
 import { Crypto, CryptoConfig } from "./crypto";
@@ -299,6 +300,36 @@ app.whenReady().then(() => {
     clipboard.clear("selection");
     return;
   });
+
+  ipcMain.handle(
+    "openFile",
+    async (_event, itemUuid: string): Promise<void> => {
+      const item = db.getItem(itemUuid);
+      if (!item.filename) {
+        throw new Error(`Item ${itemUuid} has not been downloaded yet`);
+      }
+
+      const filePath = item.filename;
+
+      // Double-check it exists before we open it
+      if (!fs.existsSync(filePath)) {
+        throw new Error(`File not found: ${filePath}`);
+      }
+
+      // Unconditionally open in the sd-viewer dispVM
+      const command = "qvm-open-in-vm";
+      // spawn() does not use a shell so these don't need escaping
+      const args = ["--view-only", "@dispvm:sd-viewer", filePath];
+
+      const process = spawn(command, args);
+      // Log errors but don't wait for the process to finish
+      process.on("error", (error) => {
+        console.error(`Failed to launch qvm-open-in-vm: ${error.message}`);
+      });
+
+      // Return immediately without waiting for the process to finish
+    },
+  );
 
   const mainWindow = createWindow();
 

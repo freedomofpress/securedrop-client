@@ -165,6 +165,7 @@ beforeEach(() => {
     addPendingItemsSeenBatch: vi.fn().mockResolvedValue([]),
     shouldAutoLogin: vi.fn().mockResolvedValue(false),
     clearClipboard: vi.fn().mockResolvedValue(null),
+    openFile: vi.fn().mockResolvedValue(undefined),
   } as ElectronAPI;
 });
 
