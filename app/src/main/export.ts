@@ -267,7 +267,11 @@ export class ArchiveExporter {
             filename,
           );
           if (filename === "transcript.txt") {
-            arcname = path.join(ArchiveExporter.DISK_EXPORT_DIR, parentName, filename);
+            arcname = path.join(
+              ArchiveExporter.DISK_EXPORT_DIR,
+              parentName,
+              filename,
+            );
           }
         }
 
