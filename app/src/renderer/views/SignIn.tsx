@@ -209,7 +209,11 @@ function SignInView() {
                 },
               ]}
             >
-              <Input data-testid="username-input" placeholder="neliebly" />
+              <Input
+                data-testid="username-input"
+                placeholder="neliebly"
+                autoFocus
+              />
             </Form.Item>
 
             <Form.Item
