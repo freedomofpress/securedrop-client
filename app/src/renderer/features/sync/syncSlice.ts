@@ -8,11 +8,13 @@ import { SyncStatus } from "../../../types";
 export interface SyncState {
   error: string | null;
   lastFetchTime: number | null;
+  status: SyncStatus | null;
 }
 
 const initialState: SyncState = {
   error: null,
   lastFetchTime: null,
+  status: null,
 };
 
 // Async thunk for syncing metadata (sources, journalists, and active conversation)
@@ -42,7 +44,7 @@ export const syncMetadata = createAsyncThunk(
       }
     }
 
-    return;
+    return status;
   },
 );
 
@@ -53,11 +55,15 @@ export const syncSlice = createSlice({
     clearError: (state) => {
       state.error = null;
     },
+    clearStatus: (state) => {
+      state.status = null;
+    },
   },
   extraReducers: (builder) => {
     builder
-      .addCase(syncMetadata.fulfilled, (state) => {
+      .addCase(syncMetadata.fulfilled, (state, action) => {
         state.lastFetchTime = Date.now();
+        state.status = action.payload;
       })
       .addCase(syncMetadata.rejected, (state, action) => {
         state.error = action.error.message || "Failed to sync metadata";
@@ -65,8 +71,9 @@ export const syncSlice = createSlice({
   },
 });
 
-export const { clearError } = syncSlice.actions;
+export const { clearError, clearStatus } = syncSlice.actions;
 export const selectSyncError = (state: RootState) => state.sync.error;
+export const selectSyncStatus = (state: RootState) => state.sync.status;
 export const selectlastFetchTime = (state: RootState) =>
   state.sync.lastFetchTime;
 export default syncSlice.reducer;

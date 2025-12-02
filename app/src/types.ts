@@ -46,6 +46,7 @@ export enum SyncStatus {
   NOT_MODIFIED = "not_modified",
   UPDATED = "updated",
   ERROR = "error",
+  FORBIDDEN = "forbidden",
 }
 
 // IPC request for operation requiring auth token

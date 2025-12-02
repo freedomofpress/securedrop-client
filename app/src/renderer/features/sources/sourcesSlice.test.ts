@@ -315,6 +315,7 @@ describe("sourcesSlice", () => {
           loading: false,
           error: null,
           lastFetchTime: null,
+          status: null,
         },
       };
 
@@ -341,6 +342,7 @@ describe("sourcesSlice", () => {
           loading: false,
           error: null,
           lastFetchTime: null,
+          status: null,
         },
       };
 
@@ -367,6 +369,7 @@ describe("sourcesSlice", () => {
           loading: false,
           error: null,
           lastFetchTime: null,
+          status: null,
         },
       };
 
@@ -397,6 +400,7 @@ describe("sourcesSlice", () => {
           loading: false,
           error: null,
           lastFetchTime: null,
+          status: null,
         },
       };
 

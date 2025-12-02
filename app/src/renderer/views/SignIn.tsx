@@ -7,11 +7,12 @@ import { useTranslation } from "react-i18next";
 
 import type { ProxyRequest } from "../../types";
 import { TokenResponseSchema } from "../../schemas";
-import { useAppDispatch } from "../hooks";
+import { useAppDispatch, useAppSelector } from "../hooks";
 import {
   setAuth,
   setUnauth,
   setOffline,
+  clearError,
 } from "../features/session/sessionSlice";
 import type { AuthData } from "../features/session/sessionSlice";
 
@@ -28,6 +29,7 @@ function SignInView() {
   const dispatch = useAppDispatch();
   const navigate = useNavigate();
   const { t } = useTranslation("SignIn");
+  const session = useAppSelector((state) => state.session);
 
   const errorMessageNetwork = t("errors.network");
   const errorMessageCredentials = t("errors.credentials");
@@ -41,6 +43,16 @@ function SignInView() {
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
   const [hasValidationErrors, setHasValidationErrors] =
     useState<boolean>(false);
+
+  // Display error from session state (e.g., session expired)
+  useEffect(() => {
+    if (session.errorMessage) {
+      setAuthError(true);
+      setAuthErrorMessage(session.errorMessage);
+      // Clear the error from session state
+      dispatch(clearError());
+    }
+  }, [session.errorMessage, dispatch]);
 
   const onFinish: FormProps<FormValues>["onFinish"] = async (
     values: FormValues,
@@ -100,14 +112,14 @@ function SignInView() {
         navigate("/");
       } catch (e) {
         console.error("Failed to validate or update session state:", e);
-        dispatch(setUnauth());
+        dispatch(setUnauth(undefined));
 
         setAuthErrorMessage(errorMessageGeneric);
         setAuthError(true);
       }
     } catch (e) {
       console.error("Proxy request failed:", e);
-      dispatch(setUnauth());
+      dispatch(setUnauth(undefined));
 
       setAuthErrorMessage(errorMessageNetwork);
       setAuthError(true);

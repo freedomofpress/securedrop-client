@@ -174,6 +174,7 @@ describe("syncSlice", () => {
           sync: {
             error: null,
             lastFetchTime: null,
+            status: null,
           },
         },
       });
@@ -244,6 +245,40 @@ describe("syncSlice", () => {
 
       // Should NOT have called getSourceWithItems
       expect(mockGetSources).not.toHaveBeenCalled();
+    });
+
+    it("handles 403 forbidden response", async () => {
+      mockSyncMetadata.mockResolvedValue(SyncStatus.FORBIDDEN);
+
+      await (store.dispatch as any)(syncMetadata("invalid-token"));
+
+      const syncState = (store.getState() as any).sync;
+      expect(syncState.status).toBe(SyncStatus.FORBIDDEN);
+      expect(syncState.error).toBeNull();
+      expect(mockSyncMetadata).toHaveBeenCalledWith({
+        authToken: "invalid-token",
+      });
+      expect(mockGetSources).not.toHaveBeenCalled();
+    });
+
+    it("stores sync status when sync is successful", async () => {
+      mockSyncMetadata.mockResolvedValue(SyncStatus.UPDATED);
+
+      await (store.dispatch as any)(syncMetadata("test-token"));
+
+      const syncState = (store.getState() as any).sync;
+      expect(syncState.status).toBe(SyncStatus.UPDATED);
+      expect(syncState.lastFetchTime).toBeGreaterThan(0);
+    });
+
+    it("stores NOT_MODIFIED status when no changes", async () => {
+      mockSyncMetadata.mockResolvedValue(SyncStatus.NOT_MODIFIED);
+
+      await (store.dispatch as any)(syncMetadata("test-token"));
+
+      const syncState = (store.getState() as any).sync;
+      expect(syncState.status).toBe(SyncStatus.NOT_MODIFIED);
+      expect(syncState.lastFetchTime).toBeGreaterThan(0);
     });
   });
 });

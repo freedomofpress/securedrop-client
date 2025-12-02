@@ -187,6 +187,50 @@ describe("syncMetadata", () => {
     );
   });
 
+  it("returns FORBIDDEN status on 403 from getIndex", async () => {
+    mockProxyResponses([
+      {
+        status: 403,
+        error: true,
+        data: { msg: "Forbidden" },
+        headers: new Map(),
+      },
+    ]);
+    const status = await syncModule.syncMetadata(db, "invalid-token");
+    expect(status).toBe(SyncStatus.FORBIDDEN);
+    expect(db.updateBatch).not.toHaveBeenCalled();
+  });
+
+  it("returns FORBIDDEN status on 403 from submitBatch", async () => {
+    const serverIndex: Index = {
+      sources: {
+        [SOURCE_UUID_1]: "abc",
+      },
+      items: {},
+      journalists: {},
+    };
+    db = mockDB();
+    mockProxyResponses([
+      // getIndex succeeds
+      {
+        status: 200,
+        error: false,
+        data: serverIndex,
+        headers: new Map(),
+      },
+      // submitBatch returns 403
+      {
+        status: 403,
+        error: true,
+        data: { msg: "Forbidden" },
+        headers: new Map(),
+      },
+    ]);
+    const status = await syncModule.syncMetadata(db, "expired-token");
+    expect(status).toBe(SyncStatus.FORBIDDEN);
+    expect(db.updateBatch).not.toHaveBeenCalled();
+  });
+
   it("handles error from syncMetadata", async () => {
     // getIndex returns new index
     const serverIndex: Index = {
