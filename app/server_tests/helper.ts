@@ -8,6 +8,49 @@ import { TOTP } from "otpauth";
 import fs from "node:fs";
 import os from "os";
 import path from "path";
+import { spawnSync } from "node:child_process";
+import { fileURLToPath } from "node:url";
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+function setupGpgKeyring(tempDir: string): string {
+  const gpgHomedir = path.join(tempDir, ".gnupg");
+  fs.mkdirSync(gpgHomedir, { recursive: true });
+  fs.chmodSync(gpgHomedir, 0o700);
+
+  const keyPath = path.resolve(
+    __dirname,
+    "data",
+    "test_journalist_key.sec.no_passphrase",
+  );
+
+  if (!fs.existsSync(keyPath)) {
+    throw new Error(
+      "Missing test journalist secret key for server tests: " + keyPath,
+    );
+  }
+
+  const result = spawnSync(
+    "gpg",
+    ["--homedir", gpgHomedir, "--batch", "--yes", "--import", keyPath],
+    { stdio: "pipe" },
+  );
+
+  if (result.error) {
+    throw new Error(
+      `Failed to execute gpg while importing test journalist key: ${result.error.message}`,
+    );
+  }
+
+  if (result.status !== 0) {
+    const stderr = result.stderr?.toString().trim();
+    throw new Error(`gpg import failed for test journalist key: ${stderr}`);
+  }
+
+  console.log(`Imported test journalist secret key into ${gpgHomedir}`);
+  return gpgHomedir;
+}
 
 export class TestContext {
   public app: ElectronApplication;
@@ -32,6 +75,7 @@ export class TestContext {
     const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), "securedrop-e2e-"));
     const dbPath = path.join(tempDir, ".config", "SecureDrop");
     console.log(`Using temporary database directory: ${tempDir}`);
+    const gpgHomedir = setupGpgKeyring(tempDir);
 
     const isCI = Boolean(process.env.CI);
     const args = ["./out/main/index.js", "--no-qubes"];
@@ -46,6 +90,7 @@ export class TestContext {
         ...process.env,
         // Override HOME so the app uses tempDir/.config/SecureDrop for the database
         HOME: tempDir,
+        GNUPGHOME: gpgHomedir,
       },
     });
 
