@@ -78,6 +78,11 @@ export const sourcesSlice = createSlice({
       .addCase(fetchSources.fulfilled, (state, action) => {
         state.loading = false;
         state.sources = action.payload;
+
+        // Update active source UUID in case of deletion
+        if (!state.sources.find((s) => s.uuid === state.activeSourceUuid)) {
+          state.activeSourceUuid = null;
+        }
       })
       .addCase(fetchSources.rejected, (state, action) => {
         state.loading = false;
