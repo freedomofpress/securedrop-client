@@ -45,7 +45,7 @@ jobs:
       - name: Install Rust-specific dependencies
         run: apt-get install --yes build-essential curl libssl-dev pkg-config
         if: ${{ matrix.component == 'proxy' }}
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
         with:
           persist-credentials: false
       # Install Rust, keep in sync with rust-toolchain.toml
@@ -81,7 +81,7 @@ jobs:
       - run: |
           apt-get update && apt-get install --yes git make gnupg sudo pipx
           PIPX_HOME=/opt PIPX_BIN_DIR=/usr/local/bin/ pipx install poetry==$POETRY_VERSION
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
         with:
           persist-credentials: false
       - name: Setup user
@@ -112,7 +112,7 @@ jobs:
           pipx install poetry==$POETRY_VERSION
           pipx ensurepath
           echo "${HOME}/.local/bin" >> ${GITHUB_PATH}
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
         with:
           persist-credentials: false
       - name: Install dependencies
