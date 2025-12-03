@@ -22,4 +22,6 @@ Each component's folder has a README with more detail.
 To learn more about architecture and our rationale behind our Qubes OS approach, see the
 [SecureDrop Workstation readme](https://github.com/freedomofpress/securedrop-workstation/blob/main/README.md).
 
-**IMPORTANT:** This project is currently undergoing a pilot study and should not be used in production environments.
+
+We initially piloted this project with a small number of news organizations; see [our blog post](https://securedrop.org/news/piloting-securedrop-workstation-qubes-os/)
+for additional information. In July 2024, we transitioned SecureDrop Workstation to an open beta with the [1.0.0 release](https://securedrop.org/news/securedrop-workstation-1_0_0-released/).
