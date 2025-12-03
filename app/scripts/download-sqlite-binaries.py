@@ -1,5 +1,8 @@
 #!/usr/bin/env python3
 
+import argparse
+import hashlib
+import json
 import platform
 import re
 import shutil
@@ -10,13 +13,17 @@ import tempfile
 import urllib.request
 from pathlib import Path
 
-PLATFORM_MAP = {"Linux": "linux", "Darwin": "darwin", "Windows": "win32"}
+PLATFORM_MAP = {"Linux": "linux", "Darwin": "darwin"}
 ARCH_MAP = {"x86_64": "x64", "arm64": "arm64", "aarch64": "arm64"}
 
 
 BASE_URL = "https://github.com/WiseLibs/better-sqlite3/releases/download"
+CHECKSUMS_FILE = Path(__file__).parent / "sqlite-checksums.json"
 
-# TODO: implement checksum verification if we use these in production
+
+def load_checksums() -> dict:
+    """Load checksums from JSON file"""
+    return json.loads(CHECKSUMS_FILE.read_text())
 
 
 def get_node_abi() -> str:
@@ -89,6 +96,15 @@ def get_platform_arch():
     return plat, arch
 
 
+def calculate_checksum(file_path) -> str:
+    """Calculate SHA256 checksum of a file"""
+    sha256_hash = hashlib.sha256()
+    with open(file_path, "rb") as f:
+        for byte_block in iter(lambda: f.read(4096), b""):
+            sha256_hash.update(byte_block)
+    return sha256_hash.hexdigest()
+
+
 def build_download_url(runtime, args):
     """Build the download URL for a binary"""
     filename = (
@@ -131,7 +147,38 @@ def find_node_file(directory):
     raise RuntimeError("Could not find .node file in extracted archive")
 
 
-def download_and_extract_binary(runtime, base_path, args):
+def get_checksum_key(runtime, args) -> str:
+    """Get the checksum key based on the download URL pattern"""
+    # Use the tar.gz filename as the key (without .tar.gz extension)
+    url = build_download_url(runtime, args)
+    tar_filename = Path(url).name
+    # Remove .tar.gz extension
+    return tar_filename.replace(".tar.gz", ".node")
+
+
+def verify_node_checksum(node_file_path, runtime, args) -> None:
+    """Verify the checksum of a .node file"""
+    checksum_key = get_checksum_key(runtime, args)
+    checksums = load_checksums()
+
+    try:
+        expected_checksum = checksums[checksum_key]
+    except KeyError:
+        raise RuntimeError(
+            f"No checksum found for {checksum_key}. Run with --update-checksums to add it."
+        )
+
+    actual_checksum = calculate_checksum(node_file_path)
+    if actual_checksum != expected_checksum:
+        raise RuntimeError(
+            f"Checksum mismatch for {checksum_key}!\n"
+            f"  Expected: {expected_checksum}\n"
+            f"  Got:      {actual_checksum}"
+        )
+    print(f"✓ Checksum verified: {checksum_key}")
+
+
+def download_and_extract_binary(runtime, base_path, args, verify_checksum=True):
     """Download and extract a binary for the given runtime"""
     url = build_download_url(runtime, args)
     filename = Path(url).name
@@ -153,6 +200,10 @@ def download_and_extract_binary(runtime, base_path, args):
         # Find the .node file
         node_file = find_node_file(extract_temp)
 
+        # Verify checksum of the .node file
+        if verify_checksum:
+            verify_node_checksum(node_file, runtime, args)
+
         # Copy to final location
         final_path = target_dir / "better_sqlite3.node"
         shutil.copy2(node_file, final_path)
@@ -162,7 +213,29 @@ def download_and_extract_binary(runtime, base_path, args):
     return final_path
 
 
+def update_checksums_file(checksums) -> None:
+    """Update the checksums JSON file"""
+    CHECKSUMS_FILE.write_text(json.dumps(checksums, indent=2, sort_keys=True) + "\n")
+
+    print(f"✓ Updated checksums in {CHECKSUMS_FILE.name}")
+    print()
+    print("New checksums:")
+    for filename, checksum in sorted(checksums.items()):
+        print(f"  {filename}")
+        print(f"    {checksum}")
+
+
 def main():
+    parser = argparse.ArgumentParser(
+        description="Download better-sqlite3 binaries with checksum verification"
+    )
+    parser.add_argument(
+        "--update-checksums",
+        action="store_true",
+        help="Download binaries, calculate checksums, and update checksums file",
+    )
+    args_parsed = parser.parse_args()
+
     print("Downloading better-sqlite3 binaries...")
 
     plat, arch = get_platform_arch()
@@ -187,13 +260,61 @@ def main():
         print("Please run: pnpm install")
         sys.exit(1)
 
+    if args_parsed.update_checksums:
+        print("UPDATE CHECKSUMS MODE")
+        print("Downloading binaries to calculate checksums...")
+        print()
+
+        checksums = {}
+
+        # Generate checksums for all supported platforms and architectures
+        platforms_arches = [
+            (plat, arch) for plat in PLATFORM_MAP.values() for arch in set(ARCH_MAP.values())
+        ]
+
+        for plat, arch in platforms_arches:
+            platform_args = {
+                "plat": plat,
+                "arch": arch,
+                "package_version": args["package_version"],
+            }
+
+            print(f"Processing {plat}-{arch}...")
+
+            # Node.js binary
+            node_args = dict(**platform_args, abi=node_abi)
+            node_path = download_and_extract_binary(
+                "node", base_path, node_args, verify_checksum=False
+            )
+            checksum_key = get_checksum_key("node", node_args)
+            checksums[checksum_key] = calculate_checksum(node_path)
+            print(f"✓ Calculated checksum for {checksum_key}")
+
+            # Electron binary
+            electron_args = dict(**platform_args, abi=electron_abi)
+            electron_path = download_and_extract_binary(
+                "electron", base_path, electron_args, verify_checksum=False
+            )
+            checksum_key = get_checksum_key("electron", electron_args)
+            checksums[checksum_key] = calculate_checksum(electron_path)
+            print(f"✓ Calculated checksum for {checksum_key}")
+
+            print()
+
+        update_checksums_file(checksums)
+        print()
+        print("Now downloading and verifying binaries for current platform...")
+        print()
+
     results = {}
 
     # Download Node.js binary
-    results["node"] = download_and_extract_binary("node", base_path, dict(**args, abi=node_abi))
+    results["node"] = download_and_extract_binary(
+        "node", base_path, dict(**args, abi=node_abi), verify_checksum=True
+    )
     # Download Electron binary
     results["electron"] = download_and_extract_binary(
-        "electron", base_path, dict(**args, abi=electron_abi)
+        "electron", base_path, dict(**args, abi=electron_abi), verify_checksum=True
     )
 
     print()
