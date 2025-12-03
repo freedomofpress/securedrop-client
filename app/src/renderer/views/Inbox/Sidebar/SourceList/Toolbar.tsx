@@ -7,7 +7,6 @@ import {
   ChevronDown,
   ChevronUp,
   Trash,
-  Mail,
 } from "lucide-react";
 import { useTranslation } from "react-i18next";
 
@@ -22,7 +21,6 @@ interface ToolbarProps {
 
   // Action handlers
   onBulkDelete: () => void;
-  onBulkToggleRead: () => void;
 
   // Filter controls
   searchTerm: string;
@@ -41,7 +39,6 @@ const Toolbar = memo(function Toolbar({
   totalCount,
   onSelectAll,
   onBulkDelete,
-  onBulkToggleRead,
   searchTerm,
   filter,
   sortedAsc,
@@ -109,14 +106,6 @@ const Toolbar = memo(function Toolbar({
                 icon={<Trash size={18} />}
                 onClick={onBulkDelete}
                 data-testid="bulk-delete-button"
-              />
-            </Tooltip>
-            <Tooltip title={t("sourcelist.actions.bulkToggleRead")}>
-              <Button
-                type="text"
-                icon={<Mail size={18} />}
-                onClick={onBulkToggleRead}
-                data-testid="bulk-toggle-read-button"
               />
             </Tooltip>
           </>

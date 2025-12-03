@@ -243,9 +243,6 @@ describe("Sources Component", () => {
       expect(
         screen.queryByTestId("bulk-delete-button"),
       ).not.toBeInTheDocument();
-      expect(
-        screen.queryByTestId("bulk-toggle-read-button"),
-      ).not.toBeInTheDocument();
     });
 
     it("shows action buttons when any checkbox is checked", async () => {
@@ -261,7 +258,6 @@ describe("Sources Component", () => {
 
       // Action buttons should now be visible
       expect(screen.getByTestId("bulk-delete-button")).toBeInTheDocument();
-      expect(screen.getByTestId("bulk-toggle-read-button")).toBeInTheDocument();
     });
 
     it("hides action buttons when all checkboxes are unchecked", async () => {
@@ -279,9 +275,6 @@ describe("Sources Component", () => {
       // Action buttons should be hidden again
       expect(
         screen.queryByTestId("bulk-delete-button"),
-      ).not.toBeInTheDocument();
-      expect(
-        screen.queryByTestId("bulk-toggle-read-button"),
       ).not.toBeInTheDocument();
     });
   });

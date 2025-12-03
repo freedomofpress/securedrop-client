@@ -194,10 +194,6 @@ function SourceList() {
     [selectedSources, dispatch, activeSourceUuid, navigate],
   );
 
-  const handleBulkToggleRead = useCallback(() => {
-    console.log("Toggle read status for selected sources:", selectedSources);
-  }, [selectedSources]);
-
   const handleToggleSort = useCallback(() => {
     setSortedAsc((prev) => !prev);
   }, []);
@@ -291,7 +287,6 @@ function SourceList() {
           totalCount={sources.length}
           onSelectAll={handleSelectAll}
           onBulkDelete={handleBulkDelete}
-          onBulkToggleRead={handleBulkToggleRead}
           searchTerm={searchTerm}
           filter={filter}
           sortedAsc={sortedAsc}

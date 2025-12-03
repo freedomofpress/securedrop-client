@@ -6,7 +6,6 @@ import type { filterOption } from "./Toolbar";
 describe("Toolbar Component Memoization", () => {
   const mockOnSelectAll = vi.fn();
   const mockOnBulkDelete = vi.fn();
-  const mockOnBulkToggleRead = vi.fn();
   const mockOnSearchChange = vi.fn();
   const mockOnFilterChange = vi.fn();
   const mockOnToggleSort = vi.fn();
@@ -18,7 +17,6 @@ describe("Toolbar Component Memoization", () => {
     totalCount: 4,
     onSelectAll: mockOnSelectAll,
     onBulkDelete: mockOnBulkDelete,
-    onBulkToggleRead: mockOnBulkToggleRead,
     searchTerm: "",
     filter: "all" as filterOption,
     sortedAsc: false,
