@@ -14,11 +14,37 @@ updates:
     cooldown:
       default-days: 5
     groups:
+      frontend:
+        patterns:
+          - "*react*"
+          - "*redux*"
+          - "antd"
+          - "@ant-design*"
+      electron:
+        patterns: ["*electron*"]
+      eslint:
+        patterns: ["*eslint*"]
+      vite:
+        patterns: ["*vite*"]
       dependencies:
-        patterns: ["*"]
+        exclude-patterns:
+          - "*react*"
+          - "*redux*"
+          - "antd"
+          - "@ant-design*"
+          - "*electron*"
+          - "*eslint*"
+          - "*vite*"
         dependency-type: "production"
       dev-dependencies:
-        patterns: ["*"]
+        exclude-patterns:
+          - "*react*"
+          - "*redux*"
+          - "antd"
+          - "@ant-design*"
+          - "*electron*"
+          - "*eslint*"
+          - "*vite*"
         dependency-type: "development"
 
   # Python development dependencies
