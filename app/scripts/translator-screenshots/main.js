@@ -52,8 +52,6 @@ async function offlineMode(api) {
   await api.getByTestId("select-all-checkbox").click();
   await api.getByTestId("bulk-delete-button").hover();
   await api.takeScreenshots();
-  await api.getByTestId("bulk-toggle-read-button").hover();
-  await api.takeScreenshots();
 }
 
 async function main() {
