@@ -221,6 +221,8 @@ export function useConversationScroll(
       return;
     }
 
+    // TODO: we shouldn't set state in an effect
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setIsAutoScrolling(true);
 
     if (target === "divider" && dividerItemUuid && scrollToDivider()) {
