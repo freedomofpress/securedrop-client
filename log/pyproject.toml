@@ -15,7 +15,7 @@ requires-poetry = ">=2.1.0,<3.0.0"
 package-mode = false
 
 [tool.poetry.group.dev.dependencies]
-mypy = "^1.18.2"
+mypy = "^1.19.0"
 types-redis = "<5"
 types-setuptools = ">=68,<81"
 
