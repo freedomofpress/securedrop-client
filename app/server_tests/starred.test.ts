@@ -68,11 +68,12 @@ describe.sequential("starring sources", () => {
     });
     await context.login();
     await context.runSync();
-  }, 60000);
+  }, 90000); // 90 seconds for server startup + login
 
   afterAll(async () => {
     await context.teardown();
-  }, 30000);
+    await TestContext.stopServer();
+  }, 60000);
 
   it("stars a source locally and queues an event", async () => {
     await setFilter(context, "starred");
