@@ -1,9 +1,11 @@
-import { resolve } from "path";
+import path, { resolve } from "path";
 import { defineConfig, externalizeDepsPlugin } from "electron-vite";
 import react from "@vitejs/plugin-react";
 import tailwindcss from "@tailwindcss/vite";
-import { execSync } from "child_process";
+import { execSync, spawnSync } from "child_process";
 import { randomBytes } from "crypto";
+import fs from "fs";
+import os from "os";
 
 export default defineConfig(({ mode }) => {
   console.log(`Building in ${mode} mode`);
@@ -38,9 +40,27 @@ export default defineConfig(({ mode }) => {
     mainVars["__PROXY_CMD__"] = JSON.stringify(sdProxyCmd);
     mainVars["__VITE_NONCE__"] = JSON.stringify(viteNonce);
     // Load test submission key
-    mainVars["import.meta.env.SD_SUBMISSION_PUBKEY_PATH"] = JSON.stringify(
-      "./src/main/__tests__/files/securedrop.gpg.pub.asc",
+    mainVars["import.meta.env.SD_SUBMISSION_KEY_FPR"] = JSON.stringify(
+      "65A1B5FF195B56353CC63DFFCC40EF1228271441",
     );
+    // Set up a temporary GPG keyring with the secret key imported
+    const gpgHome = fs.mkdtempSync(
+      path.join(fs.realpathSync(os.tmpdir()), "sd-app-gpg"),
+    );
+    const result = spawnSync("gpg", [
+      "--homedir",
+      gpgHome,
+      "--import",
+      "scripts/securedrop-test-key.asc",
+    ]);
+    if (result.error) {
+      throw result.error;
+    } else if (result.status !== 0) {
+      throw new Error(
+        `gpg exited with non-zero code ${result.status}: ${result.stderr}`,
+      );
+    }
+    mainVars["import.meta.env.GNUPGHOME"] = JSON.stringify(gpgHome);
   } else {
     // In production, PROXY_CMD is determined at runtime, and PROXY_ORIGIN is managed by the proxy VM
     mainVars["__PROXY_CMD__"] = '""'; // Empty string

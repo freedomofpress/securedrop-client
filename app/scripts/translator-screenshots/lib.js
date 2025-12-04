@@ -30,7 +30,7 @@ class TranslationScreenshotAPI {
   async launch() {
     console.log("Launching Electron app...");
 
-    const args = ["./out/main/index.js"];
+    const args = ["./out/main/index.js", "--no-qubes"];
     const isCI = Boolean(process.env.CI);
 
     if (isCI) {

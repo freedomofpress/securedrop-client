@@ -74,7 +74,7 @@ describe.sequential("sync against a real server", () => {
     context = await TestContext.setup();
     crypto = Crypto.initialize({
       isQubes: false,
-      journalistPublicKey: "",
+      submissionKeyFingerprint: "",
     });
   }, 40000);
 

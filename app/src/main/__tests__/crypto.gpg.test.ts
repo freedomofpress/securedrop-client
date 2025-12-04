@@ -79,7 +79,7 @@ describe("Crypto with Real GPG", () => {
     crypto = Crypto.initialize({
       isQubes: false,
       gpgHomedir: gpgEnv.homedir,
-      journalistPublicKey: "",
+      submissionKeyFingerprint: "",
     });
     crypto = Crypto.getInstance()!;
 
@@ -396,6 +396,95 @@ and symbols: !@#$%^&*()_+-={}[]|\\:";'<>?,./`;
       await expect(
         encryptMessage(plaintext, recipientPublicKeys),
       ).rejects.toThrow("encrypt error");
+    });
+  });
+
+  describe("exportSubmissionKey", () => {
+    it("should successfully export the submission key", async () => {
+      // Reset and reinitialize with test key
+      (Crypto as any).instance = undefined;
+      crypto = Crypto.initialize({
+        isQubes: false,
+        gpgHomedir: gpgEnv.homedir,
+        submissionKeyFingerprint: testKeyId,
+      });
+
+      const exportedKey = await crypto.exportSubmissionKey();
+
+      // Verify it's a valid PGP public key block
+      expect(exportedKey).toContain("-----BEGIN PGP PUBLIC KEY BLOCK-----");
+      expect(exportedKey).toContain("-----END PGP PUBLIC KEY BLOCK-----");
+
+      // Verify we can read the key with openpgp
+      const key = await openpgp.readKey({ armoredKey: exportedKey });
+      expect(key).toBeTruthy();
+    });
+
+    it("should fail when exporting non-existent key", async () => {
+      // Reset and reinitialize with non-existent fingerprint
+      (Crypto as any).instance = undefined;
+      crypto = Crypto.initialize({
+        isQubes: false,
+        gpgHomedir: gpgEnv.homedir,
+        submissionKeyFingerprint: "0000000000000000",
+      });
+
+      await expect(crypto.exportSubmissionKey()).rejects.toThrow();
+    });
+  });
+
+  describe("getSubmissionKey", () => {
+    it("should cache the submission key after first export", async () => {
+      // Reset and reinitialize
+      (Crypto as any).instance = undefined;
+      crypto = Crypto.initialize({
+        isQubes: false,
+        gpgHomedir: gpgEnv.homedir,
+        submissionKeyFingerprint: testKeyId,
+      });
+
+      // First call should trigger export
+      const key1 = await crypto.getSubmissionKey();
+      expect(key1).toContain("-----BEGIN PGP PUBLIC KEY BLOCK-----");
+
+      // Second call should return cached value (same string instance)
+      const key2 = await crypto.getSubmissionKey();
+      expect(key2).toBe(key1);
+
+      // Verify the key is valid
+      const key = await openpgp.readKey({ armoredKey: key1 });
+      expect(key).toBeTruthy();
+    });
+  });
+
+  describe("encryptSourceMessage", () => {
+    it("should encrypt message to both source and journalist keys", async () => {
+      // Reset and reinitialize
+      (Crypto as any).instance = undefined;
+      crypto = Crypto.initialize({
+        isQubes: false,
+        gpgHomedir: gpgEnv.homedir,
+        submissionKeyFingerprint: testKeyId,
+      });
+
+      const plaintext = "Secret message to source";
+
+      // Export the test key as "source public key"
+      const sourcePublicKey = await crypto.exportSubmissionKey();
+
+      // Encrypt the message
+      const encrypted = await crypto.encryptSourceMessage(
+        plaintext,
+        sourcePublicKey,
+      );
+
+      // Verify it's encrypted
+      expect(encrypted).toContain("-----BEGIN PGP MESSAGE-----");
+      expect(encrypted).toContain("-----END PGP MESSAGE-----");
+
+      // Decrypt with GPG to verify it matches the original plaintext
+      const decrypted = await crypto.decryptMessage(Buffer.from(encrypted));
+      expect(decrypted).toBe(plaintext);
     });
   });
 });
