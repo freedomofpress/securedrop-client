@@ -256,6 +256,7 @@ describe("conversationSlice", () => {
         loading: false,
         error: null,
         lastFetchTime: null,
+        status: null,
       },
     };
 

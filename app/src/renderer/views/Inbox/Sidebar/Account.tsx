@@ -35,7 +35,7 @@ function Account() {
 
   const signOut = () => {
     console.log("signing out");
-    dispatch(setUnauth());
+    dispatch(setUnauth(undefined));
     navigate("/");
   };
 

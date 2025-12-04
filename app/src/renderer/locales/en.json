@@ -103,7 +103,8 @@
     "errors": {
       "network": "Could not reach the SecureDrop server. Please check your Internet and Tor connection and try again.",
       "credentials": "Those credentials didn't work. Please try again, and make sure to use a new two-factor code.",
-      "generic": "That didn't work. Please check everything and try again."
+      "generic": "That didn't work. Please check everything and try again.",
+      "sessionExpired": "Your session expired. Please log in again."
     },
     "version": "SecureDrop App v{{version}}"
   },

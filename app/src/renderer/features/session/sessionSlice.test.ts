@@ -21,6 +21,7 @@ describe("sessionSlice", () => {
   const mockSessionState: SessionState = {
     status: SessionStatus.Auth,
     authData: mockAuthData,
+    errorMessage: undefined,
   };
 
   it("should have the correct initial state", () => {
@@ -30,13 +31,23 @@ describe("sessionSlice", () => {
 
   describe("setUnauth action", () => {
     it("should set the session state to unauth", () => {
-      const result = sessionReducer(mockSessionState, setUnauth());
+      const result = sessionReducer(mockSessionState, setUnauth(undefined));
       expect(result).toEqual(unauthSessionState);
     });
 
     it("should return unauth state when clearing already empty state", () => {
-      const result = sessionReducer(unauthSessionState, setUnauth());
+      const result = sessionReducer(unauthSessionState, setUnauth(undefined));
       expect(result).toEqual(unauthSessionState);
+    });
+
+    it("should set error message when provided", () => {
+      const errorMsg = "Your session expired. Please log in again.";
+      const result = sessionReducer(mockSessionState, setUnauth(errorMsg));
+      expect(result).toEqual({
+        status: SessionStatus.Unauth,
+        authData: undefined,
+        errorMessage: errorMsg,
+      });
     });
   });
 
@@ -67,6 +78,7 @@ describe("sessionSlice", () => {
       expect(result).toEqual({
         status: SessionStatus.Offline,
         authData: undefined,
+        errorMessage: undefined,
       });
     });
 
@@ -75,6 +87,7 @@ describe("sessionSlice", () => {
       expect(result).toEqual({
         status: SessionStatus.Offline,
         authData: undefined,
+        errorMessage: undefined,
       });
       expect(result.authData).toBeUndefined();
     });
@@ -83,6 +96,7 @@ describe("sessionSlice", () => {
       const offlineState: SessionState = {
         status: SessionStatus.Offline,
         authData: undefined,
+        errorMessage: undefined,
       };
       const result = sessionReducer(offlineState, setOffline());
       expect(result).toEqual(offlineState);

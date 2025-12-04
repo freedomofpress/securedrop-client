@@ -18,10 +18,15 @@ import {
 import * as fs from "fs";
 import { Storage } from "../storage";
 
+type IndexResponse =
+  | { status: 200; index: Index }
+  | { status: 304 }
+  | { status: 403 };
+
 async function getServerIndex(
   authToken: string,
   currentVersion: string,
-): Promise<Index | null> {
+): Promise<IndexResponse> {
   const resp = (await proxyJSONRequest({
     method: "GET",
     path_query: "/api/v2/index",
@@ -35,18 +40,21 @@ async function getServerIndex(
   })) as ProxyJSONResponse;
 
   if (resp.error) {
+    if (resp.status === 403) {
+      return { status: 403 };
+    }
     return Promise.reject(
       `Error fetching index from server: ${resp.status}: ${JSON.stringify(resp.data)}`,
     );
   }
 
   if (resp.data) {
-    return IndexSchema.parse(resp.data);
+    return { status: 200, index: IndexSchema.parse(resp.data) };
   }
 
   // Version matches, there's nothing to do!
   if (resp.status == 304) {
-    return null;
+    return { status: 304 };
   } else {
     return Promise.reject(
       `Error fetching index from server: ${resp.status}: no data`,
@@ -54,10 +62,14 @@ async function getServerIndex(
   }
 }
 
+type BatchSubmitResponse =
+  | { status: 200; data: BatchResponse }
+  | { status: 403 };
+
 async function submitBatch(
   authToken: string,
   request: BatchRequest,
-): Promise<BatchResponse> {
+): Promise<BatchSubmitResponse> {
   const resp = (await proxyJSONRequest({
     method: "POST",
     path_query: "/api/v2/data",
@@ -71,13 +83,16 @@ async function submitBatch(
   })) as ProxyJSONResponse;
 
   if (resp.error) {
+    if (resp.status === 403) {
+      return { status: 403 };
+    }
     return Promise.reject(
       `Error fetching data from server: ${resp.status}: ${JSON.stringify(resp.data)}`,
     );
   }
 
   if (resp.data) {
-    return BatchResponseSchema.parse(resp.data);
+    return { status: 200, data: BatchResponseSchema.parse(resp.data) };
   }
   return Promise.reject(
     `Error fetching data from server: ${resp.status}: no data`,
@@ -192,7 +207,12 @@ export async function syncMetadata(
 ): Promise<SyncStatus> {
   const currentVersion = db.getVersion();
   const pendingEvents = db.getPendingEvents();
-  const serverIndex = await getServerIndex(authToken, currentVersion);
+  const indexResponse = await getServerIndex(authToken, currentVersion);
+
+  // Check for 403 Forbidden
+  if (indexResponse.status === 403) {
+    return SyncStatus.FORBIDDEN;
+  }
 
   let syncStatus = SyncStatus.NOT_MODIFIED;
 
@@ -203,12 +223,12 @@ export async function syncMetadata(
     events: pendingEvents,
   };
 
-  if (serverIndex) {
+  if (indexResponse.status === 200) {
     // Reconcile with client's index to get metadata to update
     const clientIndex = db.getIndex();
     const { sources, items, journalists } = reconcileIndex(
       db,
-      serverIndex,
+      indexResponse.index,
       clientIndex,
     );
     request.sources = sources;
@@ -217,13 +237,21 @@ export async function syncMetadata(
   }
 
   // No pending events and no server updates, nothing to sync
-  if (!serverIndex && (!pendingEvents || pendingEvents.length == 0)) {
+  if (
+    indexResponse.status === 304 &&
+    (!pendingEvents || pendingEvents.length == 0)
+  ) {
     return syncStatus;
   }
 
   const batchResponse = await submitBatch(authToken, request);
 
-  db.updateBatch(batchResponse);
+  // Check for 403 Forbidden
+  if (batchResponse.status === 403) {
+    return SyncStatus.FORBIDDEN;
+  }
+
+  db.updateBatch(batchResponse.data);
   syncStatus = SyncStatus.UPDATED;
 
   return syncStatus;
