@@ -40,8 +40,7 @@
         "unstarred": "Unstarred"
       },
       "actions": {
-        "bulkDelete": "Delete selected sources",
-        "bulkToggleRead": "Toggle read status for selected sources"
+        "bulkDelete": "Delete selected sources"
       },
       "deleteDialog": {
         "warning": "If you delete a source's account, they will no longer be able to sign in and send you messages. To communicate with this source in the future, they must create a new account.",

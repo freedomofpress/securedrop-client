@@ -40,8 +40,7 @@
         "unstarred": "Non favoris"
       },
       "actions": {
-        "bulkDelete": "Supprimer les sources sélectionnées",
-        "bulkToggleRead": "Basculer le statut de lecture des sources sélectionnées"
+        "bulkDelete": "Supprimer les sources sélectionnées"
       },
       "deleteDialog": {
         "warning": "Si vous supprimez le compte d'une source, elle ne pourra plus se connecter et vous envoyer des messages. Pour communiquer avec cette source à l'avenir, elle devra créer un nouveau compte.",
