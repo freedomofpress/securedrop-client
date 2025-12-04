@@ -8,30 +8,39 @@ import { TOTP } from "otpauth";
 import fs from "node:fs";
 import os from "os";
 import path from "path";
+import { getServerInstance, stopServerInstance } from "./server";
 
 export class TestContext {
   public app: ElectronApplication;
   public page: Page;
   public tempDir: string;
   public dbPath: string;
+  public serverOrigin: string;
 
   private constructor(
     app: ElectronApplication,
     page: Page,
     tempDir: string,
     dbPath: string,
+    serverOrigin: string,
   ) {
     this.app = app;
     this.page = page;
     this.tempDir = tempDir;
     this.dbPath = dbPath;
+    this.serverOrigin = serverOrigin;
   }
 
   static async setup(): Promise<TestContext> {
+    // Start or get the isolated server instance
+    const server = await getServerInstance();
+    const serverOrigin = server.origin;
+
     // Create a temporary directory for the database
     const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), "securedrop-e2e-"));
     const dbPath = path.join(tempDir, ".config", "SecureDrop");
     console.log(`Using temporary database directory: ${tempDir}`);
+    console.log(`Using server at: ${serverOrigin}`);
 
     const isCI = Boolean(process.env.CI);
     const args = ["./out/main/index.js", "--no-qubes"];
@@ -53,7 +62,7 @@ export class TestContext {
     await page.setViewportSize({ width: 1920, height: 1080 });
     await page.waitForLoadState("networkidle", { timeout: 5000 });
 
-    return new TestContext(app, page, tempDir, dbPath);
+    return new TestContext(app, page, tempDir, dbPath, serverOrigin);
   }
 
   async teardown(): Promise<void> {
@@ -65,6 +74,13 @@ export class TestContext {
     if (this.tempDir && fs.existsSync(this.tempDir)) {
       fs.rmSync(this.tempDir, { recursive: true, force: true });
     }
+  }
+
+  /**
+   * Stops the server instance. Should be called in afterAll() of the last test.
+   */
+  static async stopServer(): Promise<void> {
+    await stopServerInstance();
   }
 
   /**
@@ -120,11 +136,12 @@ export class TestContext {
 
   /**
    * Clicks the sync button and waits for the sync to complete.
+   * Uses network idle detection to know when all API calls have finished.
    */
   async runSync(): Promise<void> {
     await this.page.getByTestId("sync-button").click();
-    // TODO: let's avoid a fixed timeout here
-    await this.page.waitForTimeout(3000);
+    // Wait for network to become idle, indicating sync API calls have completed
+    await this.page.waitForLoadState("networkidle", { timeout: 30000 });
   }
 
   /**

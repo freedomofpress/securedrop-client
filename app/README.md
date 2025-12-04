@@ -97,14 +97,9 @@ pnpm typecheck
 
 #### Server tests
 
-Once you have a SecureDrop server development environment set up, start the server
-using our fixed dataset:
+Ensure that you have a SecureDrop server development environment set up in the folder `../securedrop`. The server tests will start this server for you.
 
-```
-USE_FIXED_DATA="../securedrop-client/app/server_tests/data/data.yaml" make dev
-```
-
-Once it's started, you can run:
+Run the server tests:
 
 ```
 pnpm server-test

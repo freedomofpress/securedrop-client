@@ -76,11 +76,12 @@ describe.sequential("sync against a real server", () => {
       isQubes: false,
       submissionKeyFingerprint: "",
     });
-  }, 40000);
+  }, 90000); // 90 seconds for server startup
 
   afterAll(async () => {
     await context.teardown();
-  }, 30000);
+    await TestContext.stopServer();
+  }, 60000);
 
   it("should start with a fresh empty database", async () => {
     // Wait for the sign-in page to load

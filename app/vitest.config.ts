@@ -1,35 +1,6 @@
 import { defineConfig } from "vitest/config";
 import react from "@vitejs/plugin-react";
 import { resolve } from "path";
-import { execSync } from "child_process";
-
-// Check if we're running server tests by looking at command line args
-const isRunningServerTests =
-  process.argv.includes("--project=server") ||
-  process.argv.some((arg) => arg.includes("server_tests"));
-
-function buildProxyForServerTests() {
-  if (!isRunningServerTests) {
-    // Return empty strings for non-server tests (won't be used anyway)
-    return "";
-  }
-
-  console.log("Building proxy for server tests...");
-
-  // Build the proxy binary
-  execSync("make -C ../proxy build", { stdio: "inherit" });
-
-  // Get the path to the built binary
-  const stdout = execSync("cargo metadata --format-version 1", {
-    encoding: "utf-8",
-  });
-  const metadata = JSON.parse(stdout);
-  const targetDir = metadata.target_directory;
-  const proxyPath = `${targetDir}/debug/securedrop-proxy`;
-  return resolve(proxyPath);
-}
-
-const sdProxyCmd = buildProxyForServerTests();
 
 export default defineConfig({
   plugins: [react()],
@@ -81,11 +52,15 @@ export default defineConfig({
           name: "server", // Tests that require a running server
           include: ["server_tests/**/*.test.ts"],
           globals: true,
-          testTimeout: 30000, // 30s default timeout
-        },
-        define: {
-          __PROXY_CMD__: JSON.stringify(sdProxyCmd),
-          __PROXY_ORIGIN__: JSON.stringify("http://127.0.0.1:8081"),
+          testTimeout: 60000, // 60 seconds default timeout for individual tests
+          // Run test files sequentially to ensure isolated server instances don't conflict
+          // Tests within a file still run sequentially by default
+          pool: "forks",
+          poolOptions: {
+            forks: {
+              singleFork: true, // Run one file at a time
+            },
+          },
         },
       },
     ],
