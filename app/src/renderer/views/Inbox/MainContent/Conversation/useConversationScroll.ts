@@ -29,7 +29,6 @@ export function useConversationScroll(
   const dispatch = useAppDispatch();
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const dividerRef = useRef<HTMLDivElement | null>(null);
-  const [dividerItemUuid, setDividerItemUuid] = useState<string | null>(null);
   const sourceUuidRef = useRef<string | null>(null);
   const itemCountRef = useRef<number>(0);
   const dividerUuidRef = useRef<string | null>(null);
@@ -121,15 +120,13 @@ export function useConversationScroll(
     sourceWithItems,
   ]);
 
-  useEffect(() => {
+  const dividerItemUuid = useMemo(() => {
     if (!sourceWithItems) {
-      setDividerItemUuid(null);
-      return;
+      return null;
     }
 
     if (lastSeenInteractionCount === undefined || items.length === 0) {
-      setDividerItemUuid(null);
-      return;
+      return null;
     }
 
     const threshold =
@@ -145,7 +142,7 @@ export function useConversationScroll(
       return interaction > threshold;
     });
 
-    setDividerItemUuid(firstNewItem ? firstNewItem.uuid : null);
+    return firstNewItem ? firstNewItem.uuid : null;
   }, [items, lastSeenInteractionCount, sourceWithItems]);
 
   useEffect(() => {
