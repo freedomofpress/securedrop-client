@@ -1,4 +1,4 @@
-import { memo } from "react";
+import { memo, useState } from "react";
 import {
   FetchStatus,
   ItemUpdate,
@@ -15,7 +15,14 @@ import "../Item.css";
 import "./File.css";
 
 import { useTranslation } from "react-i18next";
-import { File as FileIcon, Download, LoaderCircle, FileX2 } from "lucide-react";
+import {
+  File as FileIcon,
+  Download,
+  LoaderCircle,
+  FileX2,
+  Printer,
+  Upload,
+} from "lucide-react";
 import { Button, Tooltip } from "antd";
 import {
   FilePdfFilled,
@@ -29,6 +36,7 @@ import {
 } from "@ant-design/icons";
 import FileVideoFilled from "./FileVideoFilled";
 import FileAudioFilled from "./FileAudioFilled";
+import { ExportWizard } from "./Export";
 
 const EXCEL_EXTENSIONS = new Set([
   ".xls",
@@ -336,6 +344,9 @@ const InProgressFile = memo(function InProgressFile({
 });
 
 const CompleteFile = memo(function CompleteFile({ item }: { item: Item }) {
+  const { t } = useTranslation("Item");
+  const [exportWizardOpen, setExportWizardOpen] = useState(false);
+
   const filename = item.filename
     ? item.filename.substring(item.filename.lastIndexOf("/") + 1)
     : "";
@@ -357,24 +368,66 @@ const CompleteFile = memo(function CompleteFile({ item }: { item: Item }) {
     }
   };
 
-  return (
-    <div className="flex items-center justify-start mt-2 mb-2">
-      <Icon style={{ fontSize: 30, color }} className="file-icon" />
-      <div className="ml-2">
-        <Tooltip title={tooltipTitle}>
-          <Button
-            size="small"
-            type="link"
-            className="file-namebtn"
-            onClick={handleOpenFile}
-          >
-            {formattedFilename}
-          </Button>
-        </Tooltip>
+  const handleExportClick = () => {
+    setExportWizardOpen(true);
+  };
 
-        <p className="italic">{fileSize}</p>
+  const handlePrintClick = async () => {
+    console.log("Implement print wizard");
+  };
+
+  const handleExportWizardClose = () => {
+    setExportWizardOpen(false);
+    // Note: ExportWizard handles state cleanup via its useEffect when open changes
+  };
+
+  return (
+    <>
+      <div className="flex items-center justify-between mt-2 mb-2">
+        <div className="flex items-center">
+          <Icon style={{ fontSize: 30, color }} className="file-icon" />
+          <div className="ml-2">
+            <Tooltip title={tooltipTitle}>
+              <Button
+                size="small"
+                type="link"
+                className="file-namebtn"
+                onClick={handleOpenFile}
+              >
+                {formattedFilename}
+              </Button>
+            </Tooltip>
+
+            <p className="italic">{fileSize}</p>
+          </div>
+        </div>
+
+        <div className="flex gap-1">
+          <Tooltip title={t("exportFile")}>
+            <Button
+              type="text"
+              size="small"
+              icon={<Upload size={18} />}
+              onClick={handleExportClick}
+            />
+          </Tooltip>
+          <Tooltip title={t("printFile")}>
+            <Button
+              type="text"
+              size="small"
+              icon={<Printer size={18} />}
+              onClick={handlePrintClick}
+            />
+          </Tooltip>
+        </div>
       </div>
-    </div>
+
+      <ExportWizard
+        item={item}
+        open={exportWizardOpen}
+        onClose={handleExportWizardClose}
+      />
+    </>
   );
 });
 

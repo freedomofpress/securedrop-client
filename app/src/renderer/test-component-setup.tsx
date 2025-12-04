@@ -32,6 +32,28 @@ Object.defineProperty(window, "matchMedia", {
   }),
 });
 
+// Mock window.getComputedStyle for Ant components (Modal uses this)
+Object.defineProperty(window, "getComputedStyle", {
+  writable: true,
+  value: () => ({
+    getPropertyValue: () => "",
+    paddingLeft: "0px",
+    paddingRight: "0px",
+    paddingTop: "0px",
+    paddingBottom: "0px",
+    marginLeft: "0px",
+    marginRight: "0px",
+    marginTop: "0px",
+    marginBottom: "0px",
+    borderLeftWidth: "0px",
+    borderRightWidth: "0px",
+    borderTopWidth: "0px",
+    borderBottomWidth: "0px",
+    width: "0px",
+    height: "0px",
+  }),
+});
+
 afterEach(() => {
   cleanup();
 });

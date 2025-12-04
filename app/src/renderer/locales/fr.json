@@ -112,6 +112,31 @@
     "pause": "Pause",
     "resume": "Reprendre",
     "of": "de",
-    "filenameTooltip": "Nom de fichier disponible après le téléchargement"
+    "filenameTooltip": "Nom de fichier disponible après le téléchargement",
+    "exportFile": "Exporter le fichier",
+    "printFile": "Imprimer le fichier",
+    "exportWizard": {
+      "title": "Exporter le fichier",
+      "preparingExport": "Préparation de l'exportation.",
+      "readyExport": "Prêt à exporter.",
+      "understandRisks": "Comprendre les risques avant d'exporter des fichiers",
+      "malwareTitle": "Logiciels malveillants",
+      "malwareWarning": "Cette station de travail vous permet d'ouvrir des fichiers en toute sécurité. Si vous ouvrez des fichiers sur un autre ordinateur, tout logiciel malveillant intégré peut se propager à votre ordinateur ou réseau. Si vous n'êtes pas sûr de savoir comment gérer ce risque, veuillez imprimer le fichier ou contacter votre administrateur.",
+      "anonymityTitle": "Anonymat",
+      "anonymityWarning": "Les fichiers soumis par les sources peuvent contenir des informations ou des métadonnées cachées qui les identifient. Pour protéger vos sources, veuillez envisager de caviarder les fichiers avant de travailler avec eux sur des ordinateurs connectés au réseau.",
+      "exportInstructions": "Veuillez insérer l'un des lecteurs d'exportation fournis spécifiquement pour le poste de travail SecureDrop.\nSi vous utilisez un lecteur VeraCrypt, déverrouillez-le manuellement avant de continuer.",
+      "unlock": "Entrer la phrase de passe pour le lecteur USB",
+      "passphrase": "Phrase de passe",
+      "pleaseWait": "Veuillez patienter...",
+      "beCareful": "N'oubliez pas d'être prudent lorsque vous travaillez avec des fichiers en dehors de votre poste de travail",
+      "exportSuccess": "Exportation réussie",
+      "exportFailed": "Échec de l'exportation",
+      "unknownError": "Erreur inconnue survenue",
+      "cancel": "Annuler",
+      "back": "Retour",
+      "continue": "Continuer",
+      "close": "Fermer",
+      "done": "Terminé"
+    }
   }
 }
