@@ -136,11 +136,12 @@ export class TestContext {
 
   /**
    * Clicks the sync button and waits for the sync to complete.
+   * Uses network idle detection to know when all API calls have finished.
    */
   async runSync(): Promise<void> {
     await this.page.getByTestId("sync-button").click();
-    // TODO: let's avoid a fixed timeout here
-    await this.page.waitForTimeout(3000);
+    // Wait for network to become idle, indicating sync API calls have completed
+    await this.page.waitForLoadState("networkidle", { timeout: 30000 });
   }
 
   /**
