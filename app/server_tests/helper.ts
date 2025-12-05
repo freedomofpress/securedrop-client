@@ -260,12 +260,11 @@ export class TestHelpers {
 
   async itemExistsInDb(itemUuid: string): Promise<boolean> {
     return this.dbHelper.withDb(async (db) => {
-      try {
-        db.getItem(itemUuid);
+      const item = db.getItem(itemUuid);
+      if (item) {
         return true;
-      } catch {
-        return false;
       }
+      return false;
     });
   }
 

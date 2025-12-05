@@ -84,11 +84,17 @@ export class TaskQueue {
     try {
       console.debug("Processing item: ", item);
 
+      const dbItem = db.getItem(item.id);
+      if (!dbItem) {
+        console.debug("Item not found");
+        return;
+      }
+
       const {
         data: metadata,
         fetch_status: status,
         fetch_progress: progress,
-      } = db.getItem(item.id);
+      } = dbItem;
 
       // Skip items that are complete, terminally failed, paused, or not scheduled
       if (

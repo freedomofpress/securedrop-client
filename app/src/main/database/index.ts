@@ -664,8 +664,11 @@ export class DB {
     return rows.map((r) => r.uuid);
   }
 
-  getItem(itemUuid: string): Item {
-    const row = this.selectItem.get({ uuid: itemUuid }) as ItemRow;
+  getItem(itemUuid: string): Item | null {
+    const row = this.selectItem.get({ uuid: itemUuid });
+    if (!row) {
+      return null;
+    }
     return {
       uuid: row.uuid,
       data: JSON.parse(row.data) as ItemMetadata,

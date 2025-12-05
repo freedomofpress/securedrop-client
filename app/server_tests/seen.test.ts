@@ -48,7 +48,7 @@ describe.sequential("conversation is seen", () => {
 
   async function getItemSeenBy(itemUuid: string): Promise<string[]> {
     return dbHelper.withDb(async (db) => {
-      const item = db.getItem(itemUuid);
+      const item = db.getItem(itemUuid)!;
       return (item.data as ItemMetadata).seen_by;
     });
   }

@@ -114,7 +114,7 @@ const conversationSlice = createSlice({
         const { item: updatedItem } = action.payload;
         if (state.conversation) {
           state.conversation.items = state.conversation.items.map((item, _) => {
-            if (item.uuid === updatedItem.uuid) {
+            if (updatedItem && item.uuid === updatedItem.uuid) {
               return updatedItem;
             }
             return item;

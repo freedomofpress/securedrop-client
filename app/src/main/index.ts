@@ -22,22 +22,25 @@ import { spawn } from "child_process";
 import { DB } from "./database";
 import { Crypto, CryptoConfig } from "./crypto";
 import { proxyJSONRequest } from "./proxy";
-import type {
-  ProxyRequest,
-  ProxyResponse,
-  Source,
-  SourceWithItems,
-  Journalist,
-  AuthedRequest,
-  Item,
-  PendingEventType,
-  SyncStatus,
+import {
+  type ProxyRequest,
+  type ProxyResponse,
+  type Source,
+  type SourceWithItems,
+  type Journalist,
+  type AuthedRequest,
+  type Item,
+  type PendingEventType,
+  type SyncStatus,
+  type DeviceStatus,
+  FetchStatus,
 } from "../types";
 import { syncMetadata } from "./sync";
 import workerPath from "./fetch/worker?modulePath";
 import { Lock } from "./sync/lock";
 import { Config } from "./config";
 import { setUmask } from "./umask";
+import { Exporter } from "./export";
 
 // Set umask so any files written are owner-only read/write (600).
 // This must be done before we create any files or spawn any worker threads.
@@ -207,6 +210,9 @@ app.whenReady().then(() => {
   const menu = Menu.buildFromTemplate(template);
   Menu.setApplicationMenu(menu);
 
+  // Initialize exporter
+  const exporter = new Exporter();
+
   ipcMain.handle(
     "request",
     async (_event, request: ProxyRequest): Promise<ProxyResponse> => {
@@ -228,9 +234,12 @@ app.whenReady().then(() => {
     },
   );
 
-  ipcMain.handle("getItem", async (_event, itemUuid: string): Promise<Item> => {
-    return db.getItem(itemUuid);
-  });
+  ipcMain.handle(
+    "getItem",
+    async (_event, itemUuid: string): Promise<Item | null> => {
+      return db.getItem(itemUuid);
+    },
+  );
 
   ipcMain.handle("getJournalists", async (_event): Promise<Journalist[]> => {
     const journalists = db.getJournalists();
@@ -335,7 +344,7 @@ app.whenReady().then(() => {
     "openFile",
     async (_event, itemUuid: string): Promise<void> => {
       const item = db.getItem(itemUuid);
-      if (!item.filename) {
+      if (!item || !item.filename) {
         throw new Error(`Item ${itemUuid} has not been downloaded yet`);
       }
 
@@ -358,6 +367,37 @@ app.whenReady().then(() => {
       });
 
       // Return immediately without waiting for the process to finish
+    },
+  );
+
+  // Print + export IPCs
+  ipcMain.handle("initiateExport", async (_event): Promise<DeviceStatus> => {
+    return exporter.initiateExport();
+  });
+
+  ipcMain.handle(
+    "export",
+    async (
+      _event,
+      itemUuids: string[],
+      passphrase: string,
+    ): Promise<DeviceStatus> => {
+      const filenames: string[] = [];
+      for (const itemUuid of itemUuids) {
+        const item = db.getItem(itemUuid);
+        if (
+          !item ||
+          !item.filename ||
+          item.fetch_status !== FetchStatus.Complete
+        ) {
+          throw new Error(`Item ${itemUuid} has not been downloaded yet`);
+        }
+        if (!fs.existsSync(item.filename)) {
+          throw new Error(`File not found: ${item.filename}`);
+        }
+        filenames.push(item.filename);
+      }
+      return await exporter.export(filenames, passphrase);
     },
   );
 
