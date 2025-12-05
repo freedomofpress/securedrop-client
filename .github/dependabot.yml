@@ -21,7 +21,11 @@ updates:
           - "antd"
           - "@ant-design*"
       electron:
-        patterns: ["*electron*"]
+        patterns:
+          - "*electron*"
+          # better-sqlite3/node-abi need to upgrade with electron
+          - "node-abi"
+          - "better-sqlite3"
       eslint:
         patterns: ["*eslint*"]
       vite:
@@ -33,6 +37,8 @@ updates:
           - "antd"
           - "@ant-design*"
           - "*electron*"
+          - "node-abi"
+          - "better-sqlite3"
           - "*eslint*"
           - "*vite*"
         dependency-type: "production"
@@ -43,6 +49,8 @@ updates:
           - "antd"
           - "@ant-design*"
           - "*electron*"
+          - "better-sqlite3"
+          - "node-abi"
           - "*eslint*"
           - "*vite*"
         dependency-type: "development"
