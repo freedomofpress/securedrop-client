@@ -499,6 +499,7 @@ export const ExportWizard = memo(function ExportWizard({
       width={600}
       closable={!isNonClosableState}
       maskClosable={!isNonClosableState}
+      getContainer={() => document.getElementById("root") || document.body}
     >
       {renderStateComponent()}
     </Modal>
