@@ -1,7 +1,6 @@
 import {
   mkdtemp as mkdtempCb,
   chmod,
-  rm as rmCb,
   constants,
   promises as fsPromises,
   rmSync,
@@ -14,7 +13,6 @@ import * as tar from "tar";
 
 const mkdtemp = promisify(mkdtempCb);
 const chmodAsync = promisify(chmod);
-const rm = promisify(rmCb);
 
 // All possible strings returned by the qrexec calls to sd-devices. These values come from
 // `print/status.py` and `disk/status.py` in `securedrop-export`
@@ -245,7 +243,8 @@ export class ArchiveExporter {
     const archivePath = path.join(archiveDir, archiveFilename);
 
     let missingCount = 0;
-    const filesToAdd: { src: string; tarPath: string }[] = [];
+    // path on disk => path in archive
+    const filesToAdd = new Map<string, string>();
 
     const isOneOfMultipleFiles = filepaths.length > 1;
 
@@ -275,7 +274,7 @@ export class ArchiveExporter {
           }
         }
 
-        filesToAdd.push({ src: filepath, tarPath: arcname });
+        filesToAdd.set(filepath, arcname);
       } catch {
         missingCount += 1;
         console.debug(
@@ -291,41 +290,43 @@ export class ArchiveExporter {
       );
     }
 
-    // Use tar.create to generate gzipped tarball.
-    // Create staging directory with metadata and symlinks to files
-    const tempDir = path.join(archiveDir, "staging");
-    await fsPromises.mkdir(tempDir, { recursive: true });
-
+    // Create metadata.json content
+    const metadataContent = JSON.stringify(metadata);
+    const tempMetadataFile = path.join(
+      archiveDir,
+      `.${ArchiveExporter.METADATA_FILENAME}.tmp`,
+    );
     try {
-      // Write metadata directly into staging directory
-      await fsPromises.writeFile(
-        path.join(tempDir, ArchiveExporter.METADATA_FILENAME),
-        JSON.stringify(metadata),
-        { encoding: "utf8" },
-      );
+      // Write temporary metadata file
+      await fsPromises.writeFile(tempMetadataFile, metadataContent, {
+        encoding: "utf8",
+      });
 
-      // For each file, create directories and symlink to original file
-      for (const file of filesToAdd) {
-        const destRelative = file.tarPath;
-        const destFull = path.join(tempDir, destRelative);
-        await fsPromises.mkdir(path.dirname(destFull), { recursive: true });
-        await fsPromises.symlink(file.src, destFull);
-      }
-
-      // Create tar.gz from staging directory
-      // The tar package will follow symlinks by default
       await tar.create(
         {
           gzip: true,
           file: archivePath,
-          cwd: tempDir,
           portable: true,
+          follow: false, // don't follow symlinks
+          // Rewrite the path in the archive based on our mapping
+          onWriteEntry(entry) {
+            const targetPath = filesToAdd.get(entry.absolute);
+            if (targetPath) {
+              entry.path = targetPath;
+            } else if (entry.absolute === tempMetadataFile) {
+              entry.path = ArchiveExporter.METADATA_FILENAME;
+            }
+          },
         },
-        ["."],
+        [tempMetadataFile, ...filesToAdd.keys()],
       );
     } finally {
-      // Cleanup staging directory
-      await rm(tempDir, { recursive: true, force: true });
+      // Cleanup temporary metadata file
+      try {
+        await fsPromises.unlink(tempMetadataFile);
+      } catch (_e) {
+        // Ignore errors if file doesn't exist
+      }
     }
     return archivePath;
   }
