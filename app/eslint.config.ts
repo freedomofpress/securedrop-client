@@ -21,7 +21,7 @@ export default tseslint.config(
       eslint.configs.recommended,
       tseslint.configs.recommended,
       importPlugin.flatConfigs.recommended,
-      reactHooks.configs["recommended-latest"],
+      reactHooks.configs.flat["recommended-latest"],
       reactRefresh.configs.recommended,
       eslintConfigPrettier,
       i18next.configs["flat/recommended"],
