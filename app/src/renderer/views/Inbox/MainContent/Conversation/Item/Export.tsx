@@ -1,5 +1,5 @@
 import { memo, useReducer, useEffect } from "react";
-import { type Item } from "../../../../../../types";
+import { type Item, DeviceStatus, ExportStatus } from "../../../../../../types";
 import "../Item.css";
 import "./File.css";
 
@@ -17,7 +17,7 @@ type ExportState =
   | "ERROR";
 
 type ExportAction =
-  | { type: "PREFLIGHT_COMPLETE" }
+  | { type: "PREFLIGHT_COMPLETE"; deviceStatus: DeviceStatus }
   | { type: "START_EXPORT" }
   | { type: "UNLOCK_DEVICE"; payload: string }
   | { type: "SET_PASSPHRASE"; payload: string }
@@ -30,6 +30,7 @@ interface ExportContext {
   state: ExportState;
   filename: string;
   passphrase: string;
+  deviceLocked: boolean;
   errorMessage: string;
 }
 
@@ -37,6 +38,7 @@ const initialContext: ExportContext = {
   state: "PREFLIGHT",
   filename: "",
   passphrase: "",
+  deviceLocked: true,
   errorMessage: "",
 };
 
@@ -48,10 +50,26 @@ function exportReducer(
     case "PREFLIGHT":
       switch (action.type) {
         case "PREFLIGHT_COMPLETE":
-          return {
-            ...context,
-            state: "PREFLIGHT_COMPLETE",
-          };
+          switch (action.deviceStatus) {
+            case ExportStatus.DEVICE_WRITABLE:
+              return {
+                ...context,
+                deviceLocked: false,
+                state: "PREFLIGHT_COMPLETE",
+              };
+            case ExportStatus.DEVICE_LOCKED:
+              return {
+                ...context,
+                deviceLocked: true,
+                state: "PREFLIGHT_COMPLETE",
+              };
+            default:
+              return {
+                ...context,
+                state: "ERROR",
+                // TODO(vicki): set error message based on status
+              };
+          }
         case "CANCEL":
           return initialContext;
         default:
@@ -74,7 +92,12 @@ function exportReducer(
     case "READY":
       switch (action.type) {
         case "START_EXPORT":
-          return { ...context, state: "UNLOCK_DEVICE" };
+          if (context.deviceLocked) {
+            return { ...context, state: "UNLOCK_DEVICE" };
+          } else {
+            return { ...context, state: "EXPORTING" };
+          }
+
         case "GO_BACK":
           return { ...context, state: "PREFLIGHT_COMPLETE" };
         case "CANCEL":
@@ -314,25 +337,27 @@ export const ExportWizard = memo(function ExportWizard({
     }
   }, [open]);
 
-  // TODO(vicki): remove once we trigger preflight for real
-  // Simulate preflight progression
-  useEffect(() => {
-    if (context.state === "PREFLIGHT") {
-      const timer = setTimeout(() => {
-        dispatch({ type: "PREFLIGHT_COMPLETE" });
-      }, 1500); // 1.5 second delay
-
-      return () => clearTimeout(timer);
-    }
-    return;
-  }, [context.state]);
-
   // Handle export logic
   useEffect(() => {
-    if (context.state === "EXPORTING") {
+    if (context.state === "PREFLIGHT") {
+      const initiateExport = async () => {
+        try {
+          const deviceStatus = await window.electronAPI.initiateExport();
+          dispatch({ type: "PREFLIGHT_COMPLETE", deviceStatus: deviceStatus });
+        } catch (error) {
+          console.error("Failed to initiate export: ", error);
+          const errorMessage =
+            error instanceof Error
+              ? error.message
+              : t("exportWizard.unknownError");
+          dispatch({ type: "EXPORT_ERROR", payload: errorMessage });
+        }
+      };
+      initiateExport();
+    } else if (context.state === "EXPORTING") {
       const performExport = async () => {
         try {
-          // TODO(vicki): call export from backend
+          await window.electronAPI.export([item.uuid], context.passphrase);
           dispatch({ type: "EXPORT_SUCCESS" });
         } catch (error) {
           console.error("Failed to export file:", error);
@@ -345,7 +370,7 @@ export const ExportWizard = memo(function ExportWizard({
       };
       performExport();
     }
-  }, [context.state, item.uuid, t]);
+  }, [context.passphrase, context.state, item.uuid, t]);
 
   const handleClose = () => {
     dispatch({ type: "CANCEL" });
@@ -474,6 +499,7 @@ export const ExportWizard = memo(function ExportWizard({
       width={600}
       closable={!isNonClosableState}
       maskClosable={!isNonClosableState}
+      getContainer={() => document.getElementById("root") || document.body}
     >
       {renderStateComponent()}
     </Modal>
