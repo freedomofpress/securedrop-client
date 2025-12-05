@@ -1,5 +1,10 @@
 import { memo, useReducer, useEffect } from "react";
-import { type Item } from "../../../../../../types";
+import {
+  type Item,
+  DeviceStatus,
+  ExportStatus,
+  DeviceErrorStatus,
+} from "../../../../../../types";
 import "../Item.css";
 import "./File.css";
 
@@ -10,50 +15,165 @@ import { Button, Modal, Input } from "antd";
 type ExportState =
   | "PREFLIGHT"
   | "PREFLIGHT_COMPLETE"
-  | "READY"
+  | "INSERT_USB"
   | "UNLOCK_DEVICE"
   | "EXPORTING"
   | "SUCCESS"
+  | "PARTIAL_SUCCESS"
   | "ERROR";
 
 type ExportAction =
-  | { type: "PREFLIGHT_COMPLETE" }
+  | { type: "RETRY_PREFLIGHT" }
+  | { type: "PREFLIGHT_COMPLETE"; deviceStatus: DeviceStatus }
   | { type: "START_EXPORT" }
   | { type: "UNLOCK_DEVICE"; payload: string }
   | { type: "SET_PASSPHRASE"; payload: string }
   | { type: "GO_BACK" }
-  | { type: "EXPORT_SUCCESS" }
-  | { type: "EXPORT_ERROR"; payload: string }
+  | { type: "EXPORT_COMPLETE"; deviceStatus: DeviceStatus }
+  | { type: "EXPORT_ERROR"; payload: string; deviceStatus?: DeviceStatus }
   | { type: "CANCEL" };
 
 interface ExportContext {
   state: ExportState;
   filename: string;
   passphrase: string;
+  deviceLocked: boolean;
   errorMessage: string;
+  deviceStatus?: DeviceStatus;
+  unlockError: boolean;
 }
 
 const initialContext: ExportContext = {
   state: "PREFLIGHT",
   filename: "",
   passphrase: "",
+  deviceLocked: true,
   errorMessage: "",
+  deviceStatus: undefined,
+  unlockError: false,
 };
+
+// Unrecoverable errors that should show error page
+const UNRECOVERABLE_ERRORS = [
+  ExportStatus.ERROR_MOUNT,
+  ExportStatus.ERROR_EXPORT,
+  ExportStatus.DEVICE_ERROR,
+  DeviceErrorStatus.ERROR_MISSING_FILES,
+  DeviceErrorStatus.CALLED_PROCESS_ERROR,
+  DeviceErrorStatus.UNEXPECTED_RETURN_STATUS,
+];
 
 function exportReducer(
   context: ExportContext,
   action: ExportAction,
 ): ExportContext {
+  if (action.type === "EXPORT_ERROR") {
+    return {
+      ...context,
+      state: "ERROR",
+      errorMessage: action.payload,
+      deviceStatus: action.deviceStatus,
+    };
+  }
+  if (action.type === "CANCEL") {
+    return initialContext;
+  }
   switch (context.state) {
     case "PREFLIGHT":
       switch (action.type) {
-        case "PREFLIGHT_COMPLETE":
+        case "PREFLIGHT_COMPLETE": {
+          const status = action.deviceStatus;
+
+          // On device error, show INSERT_USB page with instructions
+          if (
+            status === ExportStatus.NO_DEVICE_DETECTED ||
+            status === ExportStatus.MULTI_DEVICE_DETECTED ||
+            status === ExportStatus.INVALID_DEVICE_DETECTED
+          ) {
+            return {
+              ...context,
+              deviceStatus: status,
+              state: "INSERT_USB",
+            };
+          }
+
+          if (
+            status === ExportStatus.DEVICE_WRITABLE ||
+            status === ExportStatus.DEVICE_LOCKED
+          ) {
+            return {
+              ...context,
+              deviceLocked: status === ExportStatus.DEVICE_LOCKED,
+              deviceStatus: status,
+              state: "PREFLIGHT_COMPLETE",
+            };
+          }
+
+          if (UNRECOVERABLE_ERRORS.includes(status as ExportStatus)) {
+            return {
+              ...context,
+              state: "ERROR",
+              deviceStatus: status,
+              errorMessage: `Error completing export preflight: ${status.toString()}`,
+            };
+          }
+          // Unknown status - treat as error
           return {
             ...context,
-            state: "PREFLIGHT_COMPLETE",
+            state: "ERROR",
+            errorMessage: `Device error: ${status.toString()}`,
           };
-        case "CANCEL":
-          return initialContext;
+        }
+        default:
+          return context;
+      }
+
+    case "INSERT_USB":
+      switch (action.type) {
+        case "RETRY_PREFLIGHT":
+          return {
+            ...context,
+            state: "PREFLIGHT",
+          };
+        case "PREFLIGHT_COMPLETE": {
+          // User may have inserted device, check status again
+          const status = action.deviceStatus;
+          if (
+            status === ExportStatus.NO_DEVICE_DETECTED ||
+            status === ExportStatus.MULTI_DEVICE_DETECTED ||
+            status === ExportStatus.INVALID_DEVICE_DETECTED
+          ) {
+            return {
+              ...context,
+              deviceStatus: status,
+            };
+          }
+
+          // Device is now available - proceed to preflight complete
+          if (
+            status === ExportStatus.DEVICE_WRITABLE ||
+            status === ExportStatus.DEVICE_LOCKED
+          ) {
+            return {
+              ...context,
+              deviceLocked: status === ExportStatus.DEVICE_LOCKED,
+              deviceStatus: status,
+              state: "PREFLIGHT_COMPLETE",
+            };
+          }
+
+          // Unrecoverable error
+          if (UNRECOVERABLE_ERRORS.includes(status as ExportStatus)) {
+            return {
+              ...context,
+              state: "ERROR",
+              deviceStatus: status,
+              errorMessage: `Device error: ${status.toString()}`,
+            };
+          }
+
+          return context;
+        }
         default:
           return context;
       }
@@ -61,24 +181,11 @@ function exportReducer(
     case "PREFLIGHT_COMPLETE":
       switch (action.type) {
         case "START_EXPORT":
-          return {
-            ...context,
-            state: "READY",
-          };
-        case "CANCEL":
-          return initialContext;
-        default:
-          return context;
-      }
-
-    case "READY":
-      switch (action.type) {
-        case "START_EXPORT":
-          return { ...context, state: "UNLOCK_DEVICE" };
-        case "GO_BACK":
-          return { ...context, state: "PREFLIGHT_COMPLETE" };
-        case "CANCEL":
-          return initialContext;
+          if (context.deviceLocked) {
+            return { ...context, state: "UNLOCK_DEVICE" };
+          } else {
+            return { ...context, state: "EXPORTING" };
+          }
         default:
           return context;
       }
@@ -86,41 +193,76 @@ function exportReducer(
     case "UNLOCK_DEVICE":
       switch (action.type) {
         case "SET_PASSPHRASE":
-          return { ...context, passphrase: action.payload };
+          return { ...context, passphrase: action.payload, unlockError: false };
         case "UNLOCK_DEVICE":
           return { ...context, state: "EXPORTING" };
         case "GO_BACK":
-          return { ...context, state: "READY", passphrase: "" };
-        case "CANCEL":
-          return initialContext;
+          return {
+            ...context,
+            state: "PREFLIGHT_COMPLETE",
+            passphrase: "",
+            unlockError: false,
+          };
         default:
           return context;
       }
 
     case "EXPORTING":
       switch (action.type) {
-        case "EXPORT_SUCCESS":
-          return { ...context, state: "SUCCESS" };
-        case "EXPORT_ERROR":
+        case "EXPORT_COMPLETE": {
+          const exportStatus = action.deviceStatus;
+
+          if (exportStatus === ExportStatus.SUCCESS_EXPORT) {
+            return { ...context, state: "SUCCESS", deviceStatus: exportStatus };
+          }
+
+          // Partial success - export succeeded but cleanup issues
+          if (
+            exportStatus === ExportStatus.ERROR_EXPORT_CLEANUP ||
+            exportStatus === ExportStatus.ERROR_UNMOUNT_VOLUME_BUSY
+          ) {
+            return {
+              ...context,
+              state: "PARTIAL_SUCCESS",
+              deviceStatus: exportStatus,
+            };
+          }
+
+          // Retry unlock errors
+          if (
+            exportStatus === ExportStatus.ERROR_UNLOCK_LUKS ||
+            exportStatus === ExportStatus.ERROR_UNLOCK_GENERIC
+          ) {
+            return {
+              ...context,
+              state: "UNLOCK_DEVICE",
+              unlockError: true,
+              passphrase: "",
+              deviceStatus: exportStatus,
+            };
+          }
+
+          // Unrecoverable errors
+          if (UNRECOVERABLE_ERRORS.includes(exportStatus as ExportStatus)) {
+            return {
+              ...context,
+              state: "ERROR",
+              deviceStatus: exportStatus,
+              errorMessage: `Export failed: ${exportStatus.toString()}`,
+            };
+          }
+
+          // Other errors
           return {
             ...context,
             state: "ERROR",
-            errorMessage: action.payload,
+            deviceStatus: exportStatus,
+            errorMessage: `Export failed with status: ${exportStatus.toString()}`,
           };
+        }
         default:
           return context;
       }
-
-    case "SUCCESS":
-    case "ERROR":
-      // Terminal states
-      switch (action.type) {
-        case "CANCEL":
-          return initialContext;
-        default:
-          return context;
-      }
-
     default:
       return context;
   }
@@ -174,10 +316,23 @@ const PreflightState = memo(function PreflightState({
   );
 });
 
-const ReadyState = memo(function ReadyState({
+const InsertUSBState = memo(function InsertUSBState({
   context,
   t,
 }: StateComponentProps) {
+  const getStatusMessage = () => {
+    switch (context.deviceStatus) {
+      case ExportStatus.NO_DEVICE_DETECTED:
+        return t("exportWizard.noDeviceDetected");
+      case ExportStatus.MULTI_DEVICE_DETECTED:
+        return t("exportWizard.multiDeviceDetected");
+      case ExportStatus.INVALID_DEVICE_DETECTED:
+        return t("exportWizard.invalidDeviceDetected");
+      default:
+        return "";
+    }
+  };
+
   return (
     <div>
       <div className="flex items-center gap-3 mb-4">
@@ -191,7 +346,10 @@ const ReadyState = memo(function ReadyState({
       </div>
       <hr className="my-4 border-gray-300" />
       <div className="space-y-4">
-        <p>{t("exportWizard.exportInstructions")}</p>
+        <p>{t("exportWizard.insertUSBInstructions")}</p>
+        {context.deviceStatus && (
+          <p className="text-red-800">{getStatusMessage()}</p>
+        )}
       </div>
     </div>
   );
@@ -206,6 +364,16 @@ const UnlockDeviceState = memo(function UnlockDeviceState({
     dispatch({ type: "SET_PASSPHRASE", payload: e.target.value });
   };
 
+  const getUnlockErrorMessage = () => {
+    if (context.deviceStatus === ExportStatus.ERROR_UNLOCK_LUKS) {
+      return t("exportWizard.errorUnlockLuks");
+    }
+    if (context.deviceStatus === ExportStatus.ERROR_UNLOCK_GENERIC) {
+      return t("exportWizard.errorUnlockGeneric");
+    }
+    return "";
+  };
+
   return (
     <div>
       <div className="flex items-center gap-3 mb-4">
@@ -216,6 +384,9 @@ const UnlockDeviceState = memo(function UnlockDeviceState({
       </div>
       <hr className="my-4 border-gray-300" />
       <div className="space-y-4">
+        {context.unlockError && (
+          <p className="text-red-800">{getUnlockErrorMessage()}</p>
+        )}
         <div>
           <label htmlFor="passphrase" className="block font-medium mb-2">
             {t("exportWizard.passphrase")}
@@ -273,17 +444,81 @@ const SuccessState = memo(function SuccessState({ t }: StateComponentProps) {
   );
 });
 
+const PartialSuccessState = memo(function PartialSuccessState({
+  context,
+  t,
+}: StateComponentProps) {
+  const getWarningMessage = () => {
+    if (context.deviceStatus === ExportStatus.ERROR_EXPORT_CLEANUP) {
+      return t("exportWizard.errorExportCleanup");
+    }
+    if (context.deviceStatus === ExportStatus.ERROR_UNMOUNT_VOLUME_BUSY) {
+      return t("exportWizard.errorUnmountVolumeBusy");
+    }
+    return "";
+  };
+
+  return (
+    <div>
+      <div className="flex items-center gap-3 mb-4">
+        <Inbox size={24} className="text-blue-500" />
+        <div className="ml-3">
+          <h3 className="text-lg font-semibold">
+            {t("exportWizard.exportSuccessWithWarning")}
+          </h3>
+        </div>
+      </div>
+      <hr className="my-4 border-gray-300" />
+      <div className="space-y-4">
+        <div>
+          <p className="text-yellow-800">{getWarningMessage()}</p>
+        </div>
+        <p className="text-gray-600">{t("exportWizard.beCareful")}</p>
+      </div>
+    </div>
+  );
+});
+
 const ErrorState = memo(function ErrorState({
   context,
   t,
 }: StateComponentProps) {
+  const getErrorMessage = () => {
+    // If we have a device status, try to get a user-friendly message
+    if (context.deviceStatus) {
+      switch (context.deviceStatus) {
+        case ExportStatus.ERROR_MOUNT:
+          return t("exportWizard.errorMount");
+        case ExportStatus.ERROR_EXPORT:
+          return t("exportWizard.errorExport");
+        case DeviceErrorStatus.ERROR_MISSING_FILES:
+          return t("exportWizard.errorMissingFiles");
+        case ExportStatus.DEVICE_ERROR:
+          return t("exportWizard.deviceError");
+        case DeviceErrorStatus.CALLED_PROCESS_ERROR:
+        case DeviceErrorStatus.UNEXPECTED_RETURN_STATUS:
+          return t("exportWizard.unexpectedError");
+        default:
+          return context.errorMessage || t("exportWizard.unknownError");
+      }
+    }
+    return context.errorMessage || t("exportWizard.unknownError");
+  };
+
   return (
-    <div className="text-center py-8">
-      <FileX2 className="mx-auto mb-4 text-red-500" size={48} strokeWidth={2} />
-      <h3 className="text-lg font-semibold mb-2 text-red-600">
-        {t("exportWizard.exportFailed")}
-      </h3>
-      <p className="text-gray-600">{context.errorMessage}</p>
+    <div>
+      <div className="flex items-center gap-3 mb-4">
+        <FileX2 size={24} strokeWidth={2} className="text-red-500" />
+        <div className="ml-3">
+          <h3 className="text-lg font-semibold">
+            {t("exportWizard.exportFailed")}
+          </h3>
+        </div>
+      </div>
+      <hr className="my-4 border-gray-300" />
+      <div className="space-y-4">
+        <p className="text-gray-600">{getErrorMessage()}</p>
+      </div>
     </div>
   );
 });
@@ -315,26 +550,37 @@ export const ExportWizard = memo(function ExportWizard({
     }
   }, [open]);
 
-  // TODO(vicki): remove once we trigger preflight for real
-  // Simulate preflight progression
+  // Initiate export preflight checks
   useEffect(() => {
-    if (context.state === "PREFLIGHT") {
-      const timer = setTimeout(() => {
-        dispatch({ type: "PREFLIGHT_COMPLETE" });
-      }, 1500); // 1.5 second delay
-
-      return () => clearTimeout(timer);
+    const initiateExport = async () => {
+      try {
+        const deviceStatus = await window.electronAPI.initiateExport();
+        dispatch({ type: "PREFLIGHT_COMPLETE", deviceStatus: deviceStatus });
+      } catch (error) {
+        console.error("Failed to initiate export: ", error);
+        const errorMessage =
+          error instanceof Error
+            ? error.message
+            : t("exportWizard.unknownError");
+        dispatch({ type: "EXPORT_ERROR", payload: errorMessage });
+      }
+    };
+    if (context.state === "PREFLIGHT" && open) {
+      initiateExport();
     }
-    return;
-  }, [context.state]);
+  }, [open, context.state, t]);
 
-  // Handle export logic
+  // Perform export
   useEffect(() => {
     if (context.state === "EXPORTING") {
       const performExport = async () => {
         try {
-          // TODO(vicki): call export from backend
-          dispatch({ type: "EXPORT_SUCCESS" });
+          const deviceStatus = await window.electronAPI.export(
+            [item.uuid],
+            context.passphrase,
+          );
+          console.log("Export complete: ", deviceStatus);
+          dispatch({ type: "EXPORT_COMPLETE", deviceStatus: deviceStatus });
         } catch (error) {
           console.error("Failed to export file:", error);
           const errorMessage =
@@ -346,7 +592,7 @@ export const ExportWizard = memo(function ExportWizard({
       };
       performExport();
     }
-  }, [context.state, item.uuid, t]);
+  }, [context.state, item.uuid, context.passphrase, t]);
 
   const handleClose = () => {
     dispatch({ type: "CANCEL" });
@@ -361,14 +607,16 @@ export const ExportWizard = memo(function ExportWizard({
         return <PreflightState {...stateProps} />;
       case "PREFLIGHT_COMPLETE":
         return <PreflightState {...stateProps} />;
-      case "READY":
-        return <ReadyState {...stateProps} />;
+      case "INSERT_USB":
+        return <InsertUSBState {...stateProps} />;
       case "UNLOCK_DEVICE":
         return <UnlockDeviceState {...stateProps} />;
       case "EXPORTING":
         return <ExportingState {...stateProps} />;
       case "SUCCESS":
         return <SuccessState {...stateProps} />;
+      case "PARTIAL_SUCCESS":
+        return <PartialSuccessState {...stateProps} />;
       case "ERROR":
         return <ErrorState {...stateProps} />;
       default:
@@ -388,6 +636,23 @@ export const ExportWizard = memo(function ExportWizard({
           </Button>,
         ];
 
+      case "INSERT_USB":
+        // Show cancel button - user needs to insert USB or cancel
+        return [
+          <Button
+            key="continue"
+            type="primary"
+            onClick={() => {
+              dispatch({ type: "RETRY_PREFLIGHT" });
+            }}
+          >
+            {t("exportWizard.retry")}
+          </Button>,
+          <Button key="cancel" onClick={handleClose}>
+            {t("exportWizard.cancel")}
+          </Button>,
+        ];
+
       case "PREFLIGHT_COMPLETE":
         return [
           <Button
@@ -396,23 +661,6 @@ export const ExportWizard = memo(function ExportWizard({
             onClick={() => {
               dispatch({ type: "START_EXPORT" });
             }}
-          >
-            {t("exportWizard.continue")}
-          </Button>,
-          <Button key="cancel" onClick={handleClose}>
-            {t("exportWizard.cancel")}
-          </Button>,
-        ];
-
-      case "READY":
-        return [
-          <Button key="back" onClick={() => dispatch({ type: "GO_BACK" })}>
-            {t("exportWizard.back")}
-          </Button>,
-          <Button
-            key="export"
-            type="primary"
-            onClick={() => dispatch({ type: "START_EXPORT" })}
           >
             {t("exportWizard.continue")}
           </Button>,
@@ -452,6 +700,13 @@ export const ExportWizard = memo(function ExportWizard({
           </Button>,
         ];
 
+      case "PARTIAL_SUCCESS":
+        return [
+          <Button key="close" onClick={handleClose}>
+            {t("exportWizard.done")}
+          </Button>,
+        ];
+
       case "ERROR":
         return [
           <Button key="close" onClick={handleClose}>
@@ -475,6 +730,7 @@ export const ExportWizard = memo(function ExportWizard({
       width={600}
       closable={!isNonClosableState}
       maskClosable={!isNonClosableState}
+      getContainer={() => document.getElementById("root") || document.body}
     >
       {renderStateComponent()}
     </Modal>

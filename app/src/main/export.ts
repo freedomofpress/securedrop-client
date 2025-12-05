@@ -10,65 +10,15 @@ import * as path from "path";
 import { spawn, ChildProcess } from "child_process";
 import { promisify } from "util";
 import * as tar from "tar";
+import {
+  DeviceErrorStatus,
+  DeviceStatus,
+  ExportStatus,
+  PrintStatus,
+} from "../types";
 
 const mkdtemp = promisify(mkdtempCb);
 const chmodAsync = promisify(chmod);
-
-// All possible strings returned by the qrexec calls to sd-devices. These values come from
-// `print/status.py` and `disk/status.py` in `securedrop-export`
-// and must only be changed in coordination with changes released in that component.
-export type DeviceStatus = ExportStatus | PrintStatus | DeviceErrorStatus;
-
-export enum DeviceErrorStatus {
-  // Misc errors
-  CALLED_PROCESS_ERROR = "CALLED_PROCESS_ERROR",
-  ERROR_USB_CONFIGURATION = "ERROR_USB_CONFIGURATION",
-  UNEXPECTED_RETURN_STATUS = "UNEXPECTED_RETURN_STATUS",
-
-  // Client-side error only
-  ERROR_MISSING_FILES = "ERROR_MISSING_FILES", // All files meant for export are missing
-}
-
-export enum ExportStatus {
-  // Success
-  SUCCESS_EXPORT = "SUCCESS_EXPORT",
-
-  // Error
-  NO_DEVICE_DETECTED = "NO_DEVICE_DETECTED",
-  INVALID_DEVICE_DETECTED = "INVALID_DEVICE_DETECTED", // Multi partitioned, not encrypted, etc
-  MULTI_DEVICE_DETECTED = "MULTI_DEVICE_DETECTED", // Not currently supported
-  UNKNOWN_DEVICE_DETECTED = "UNKNOWN_DEVICE_DETECTED", // Badly-formatted USB or VeraCrypt/TC
-
-  DEVICE_LOCKED = "DEVICE_LOCKED", // One valid device detected, and it's locked
-  DEVICE_WRITABLE = "DEVICE_WRITABLE", // One valid device detected, and it's unlocked (and mounted)
-
-  ERROR_UNLOCK_LUKS = "ERROR_UNLOCK_LUKS",
-  ERROR_UNLOCK_GENERIC = "ERROR_UNLOCK_GENERIC",
-  ERROR_MOUNT = "ERROR_MOUNT", // Unlocked but not mounted
-
-  ERROR_EXPORT = "ERROR_EXPORT", // Could not write to disk
-
-  // Export succeeds but drives were not properly closed
-  ERROR_EXPORT_CLEANUP = "ERROR_EXPORT_CLEANUP",
-  ERROR_UNMOUNT_VOLUME_BUSY = "ERROR_UNMOUNT_VOLUME_BUSY",
-
-  DEVICE_ERROR = "DEVICE_ERROR", // Something went wrong while trying to check the device
-}
-
-export enum PrintStatus {
-  // Success
-  PRINT_PREFLIGHT_SUCCESS = "PRINTER_PREFLIGHT_SUCCESS",
-  TEST_SUCCESS = "PRINTER_TEST_SUCCESS",
-  PRINT_SUCCESS = "PRINTER_SUCCESS",
-
-  // Error
-  ERROR_PRINTER_NOT_FOUND = "ERROR_PRINTER_NOT_FOUND",
-  ERROR_PRINT = "ERROR_PRINT",
-  ERROR_UNPRINTABLE_TYPE = "ERROR_UNPRINTABLE_TYPE",
-  ERROR_MIMETYPE_UNSUPPORTED = "ERROR_MIMETYPE_UNSUPPORTED",
-  ERROR_MIMETYPE_DISCOVERY = "ERROR_MIMETYPE_DISCOVERY",
-  ERROR_UNKNOWN = "ERROR_GENERIC", // Unknown printer error, backwards-compatible
-}
 
 export class PrintExportError extends Error {
   status?: DeviceStatus;
@@ -192,6 +142,10 @@ export class ExportStateMachine implements StateMachine<
         if (event.action === "export") {
           next = ExportState.Exporting;
         }
+        // On USB device error, preflight may be re-run
+        if (event.action === "initiateExport") {
+          next = ExportState.ExportPreflight;
+        }
         break;
       case ExportState.Exporting:
         if (event.action === "exportSuccess") {
@@ -297,11 +251,37 @@ export class ArchiveExporter {
       archiveDir,
       `.${ArchiveExporter.METADATA_FILENAME}.tmp`,
     );
+
+    // Collect all unique directory paths that need to be in the archive
+    const directoryPaths = new Set<string>();
+    for (const archivePath of filesToAdd.values()) {
+      let dirPath = path.dirname(archivePath);
+      while (dirPath && dirPath !== ".") {
+        directoryPaths.add(dirPath);
+        dirPath = path.dirname(dirPath);
+      }
+    }
+
+    // Create temporary directories to explicitly include in tarball
+    const tempDirs: string[] = [];
+    const tempDirMapping = new Map<string, string>();
+
     try {
       // Write temporary metadata file
       await fsPromises.writeFile(tempMetadataFile, metadataContent, {
         encoding: "utf8",
       });
+
+      // Create temporary directories with proper permissions
+      for (const dirPath of directoryPaths) {
+        const tempDirPath = path.join(
+          archiveDir,
+          `.tmp-dir-${dirPath.replace(/\//g, "-")}`,
+        );
+        await fsPromises.mkdir(tempDirPath, { mode: 0o700 });
+        tempDirs.push(tempDirPath);
+        tempDirMapping.set(tempDirPath, dirPath);
+      }
 
       await tar.create(
         {
@@ -316,10 +296,15 @@ export class ArchiveExporter {
               entry.path = targetPath;
             } else if (entry.absolute === tempMetadataFile) {
               entry.path = ArchiveExporter.METADATA_FILENAME;
+            } else {
+              const dirTarget = tempDirMapping.get(entry.absolute);
+              if (dirTarget) {
+                entry.path = dirTarget;
+              }
             }
           },
         },
-        [tempMetadataFile, ...filesToAdd.keys()],
+        [tempMetadataFile, ...tempDirs, ...filesToAdd.keys()],
       );
     } finally {
       // Cleanup temporary metadata file
@@ -327,6 +312,14 @@ export class ArchiveExporter {
         await fsPromises.unlink(tempMetadataFile);
       } catch (_e) {
         // Ignore errors if file doesn't exist
+      }
+      // Cleanup temporary directories
+      for (const tempDir of tempDirs) {
+        try {
+          await fsPromises.rmdir(tempDir);
+        } catch (_e) {
+          // Ignore errors if directory doesn't exist
+        }
       }
     }
     return archivePath;
@@ -336,54 +329,63 @@ export class ArchiveExporter {
     archivePath: string,
     successCallback: () => void,
     errorCallback: () => void,
-  ) {
-    this.processStderr = ""; // Reset buffer at start
-    // args uses positional values, we intentionally avoid shell.
-    const qrexec = "/usr/bin/qrexec-client-vm";
-    const args = [
-      "--",
-      "sd-devices",
-      "qubes.OpenInVM",
-      "/usr/lib/qubes/qopen-in-vm",
-      "--view-only",
-      "--",
-      archivePath,
-    ];
+  ): Promise<void> {
+    return new Promise<void>((resolve, reject) => {
+      this.processStderr = ""; // Reset buffer at start
+      // args uses positional values, we intentionally avoid shell.
+      const qrexec = "/usr/bin/qrexec-client-vm";
+      const args = [
+        "--",
+        "sd-devices",
+        "qubes.OpenInVM",
+        "/usr/lib/qubes/qopen-in-vm",
+        "--view-only",
+        "--",
+        archivePath,
+      ];
 
-    // Ensure file exists and is readable
-    try {
-      await fsPromises.access(archivePath, constants.R_OK);
-    } catch (e) {
-      console.log("Archive path not accessible", e);
-      errorCallback();
-      return;
-    }
+      // Ensure file exists and is readable
+      fsPromises
+        .access(archivePath, constants.R_OK)
+        .then(() => {
+          this.process = spawn(qrexec, args, {
+            stdio: ["ignore", "pipe", "pipe"],
+          });
 
-    this.process = spawn(qrexec, args, { stdio: ["ignore", "pipe", "pipe"] });
+          if (!this.process) {
+            console.log("Failed to spawn qrexec-client-vm");
+            errorCallback();
+            reject(new Error("Failed to spawn qrexec-client-vm"));
+            return;
+          }
 
-    if (!this.process) {
-      console.log("Failed to spawn qrexec-client-vm");
-      errorCallback();
-      return;
-    }
+          this.process.stderr?.on("data", (data) => {
+            this.processStderr += data.toString();
+          });
 
-    this.process.stderr?.on("data", (data) => {
-      this.processStderr += data.toString();
-    });
+          this.process.on("error", (err) => {
+            console.log("qrexec spawn error", err);
+            // process spawn failed
+            this.cleanupTmpdir();
+            errorCallback();
+            reject(err);
+          });
 
-    this.process.on("error", async (err) => {
-      console.log("qrexec spawn error", err);
-      // process spawn failed
-      this.cleanupTmpdir();
-      errorCallback();
-    });
-
-    this.process.on("close", (code, _signal) => {
-      if (code === 0) {
-        successCallback();
-      } else {
-        errorCallback();
-      }
+          this.process.on("close", (code, _signal) => {
+            if (code === 0) {
+              successCallback();
+              resolve();
+            } else {
+              errorCallback();
+              reject(new Error(`Process exited with code ${code}`));
+            }
+          });
+        })
+        .catch((e) => {
+          console.log("Archive path not accessible", e);
+          errorCallback();
+          reject(e);
+        });
     });
   }
 
@@ -457,7 +459,6 @@ export class Printer extends ArchiveExporter {
   constructor() {
     super();
     this.fsm = new PrintStateMachine();
-    this.fsm.onError = this._onError.bind(this);
   }
 
   // Initiate print and run preflight checks to make sure that Export VM is started
@@ -575,12 +576,14 @@ export class Exporter extends ArchiveExporter {
   constructor() {
     super();
     this.fsm = new ExportStateMachine();
-    this.fsm.onError = this._onError.bind(this);
   }
 
-  public async runExportPreflightChecks(): Promise<void> {
+  public async initiateExport(): Promise<DeviceStatus> {
     console.log("Beginning export preflight check");
     this.fsm.transition({ action: "initiateExport" });
+
+    let status: DeviceStatus = DeviceErrorStatus.UNEXPECTED_RETURN_STATUS;
+
     try {
       this.tmpdir = await mkdtemp(path.join(os.tmpdir(), "sd-export-"));
       await chmodAsync(this.tmpdir, 0o700);
@@ -593,7 +596,7 @@ export class Exporter extends ArchiveExporter {
 
       await this.runQrexecExport(
         archivePath,
-        () => this._onComplete(true),
+        () => (status = this._onComplete(true)),
         () => this._onError(),
       );
     } catch (err) {
@@ -602,12 +605,14 @@ export class Exporter extends ArchiveExporter {
         error: new PrintExportError(`Export preflight check failed: ${err}`),
       });
     }
+    return status;
   }
 
   public async export(
     filepaths: string[],
     passphrase: string | null,
-  ): Promise<void> {
+  ): Promise<DeviceStatus> {
+    let status: DeviceStatus = DeviceErrorStatus.UNEXPECTED_RETURN_STATUS;
     try {
       console.log(`Begin exporting ${filepaths.length} item(s)`);
       this.fsm.transition({ action: "export" });
@@ -629,7 +634,7 @@ export class Exporter extends ArchiveExporter {
 
       await this.runQrexecExport(
         archivePath,
-        () => this._onComplete(false),
+        () => (status = this._onComplete(false)),
         () => this._onError(),
       );
     } catch (err) {
@@ -637,29 +642,34 @@ export class Exporter extends ArchiveExporter {
         action: "fail",
         error: new PrintExportError(`Export failed: ${err}`),
       });
+      throw err;
     }
+    return status;
   }
 
-  private _onComplete(preflight: boolean) {
+  private _onComplete(preflight: boolean): DeviceStatus {
     this.cleanupTmpdir();
     try {
       const status = this.parseStatus(this.processStderr);
-      if (status === ExportStatus.SUCCESS_EXPORT) {
-        if (preflight) {
-          this.fsm.transition({
-            action: "preflightSuccess",
-          });
-        } else {
-          this.fsm.transition({
-            action: "exportSuccess",
-          });
-        }
-      } else {
+      if (preflight) {
         this.fsm.transition({
-          action: "fail",
-          error: new PrintExportError(`Export failed with status: ${status}`),
+          action: "preflightSuccess",
         });
+        return status;
       }
+      if (status === ExportStatus.SUCCESS_EXPORT) {
+        this.fsm.transition({
+          action: "exportSuccess",
+        });
+        return status;
+      }
+      this.fsm.transition({
+        action: "fail",
+        error: new PrintExportError(
+          `Export failed with unexpected status: ${status}`,
+        ),
+      });
+      return status;
     } catch (err) {
       this.fsm.transition({
         action: "fail",
@@ -667,7 +677,8 @@ export class Exporter extends ArchiveExporter {
           `Export status returned unexpected value ${err}`,
         ),
       });
-      console.log("Export preflight returned unexpected value", err);
+      return DeviceErrorStatus.UNEXPECTED_RETURN_STATUS;
+      console.log("Export returned unexpected value", err);
     } finally {
       this.process = null;
       this.processStderr = "";

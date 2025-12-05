@@ -32,12 +32,14 @@ import type {
   Item,
   PendingEventType,
   SyncStatus,
+  DeviceStatus,
 } from "../types";
 import { syncMetadata } from "./sync";
 import workerPath from "./fetch/worker?modulePath";
 import { Lock } from "./sync/lock";
 import { Config } from "./config";
 import { setUmask } from "./umask";
+import { Exporter } from "./export";
 
 // Set umask so any files written are owner-only read/write (600).
 // This must be done before we create any files or spawn any worker threads.
@@ -207,6 +209,9 @@ app.whenReady().then(() => {
   const menu = Menu.buildFromTemplate(template);
   Menu.setApplicationMenu(menu);
 
+  // Initialize exporter
+  const exporter = new Exporter();
+
   ipcMain.handle(
     "request",
     async (_event, request: ProxyRequest): Promise<ProxyResponse> => {
@@ -358,6 +363,33 @@ app.whenReady().then(() => {
       });
 
       // Return immediately without waiting for the process to finish
+    },
+  );
+
+  // Print + export IPCs
+  ipcMain.handle("initiateExport", async (_event): Promise<DeviceStatus> => {
+    return exporter.initiateExport();
+  });
+
+  ipcMain.handle(
+    "export",
+    async (
+      _event,
+      itemUuids: string[],
+      passphrase: string | null,
+    ): Promise<DeviceStatus> => {
+      const items: Item[] = itemUuids.map((itemUuid) => db.getItem(itemUuid));
+      const filePaths: string[] = [];
+      for (const item of items) {
+        if (!item.filename) {
+          throw new Error(`Item ${item.uuid} has not been downloaded yet`);
+        }
+        if (!fs.existsSync(item.filename)) {
+          throw new Error(`File not found: ${item.filename}`);
+        }
+        filePaths.push(item.filename);
+      }
+      return exporter.export(filePaths, passphrase);
     },
   );
 
