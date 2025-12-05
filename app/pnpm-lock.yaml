@@ -174,6 +174,9 @@ importers:
       jsdom:
         specifier: ^27.2.0
         version: 27.2.0(postcss@8.5.6)
+      node-abi:
+        specifier: ^4.24.0
+        version: 4.24.0
       otpauth:
         specifier: ^9.4.1
         version: 9.4.1
@@ -3783,6 +3786,10 @@ packages:
   node-abi@3.75.0:
     resolution: {integrity: sha512-OhYaY5sDsIka7H7AtijtI9jwGYLyl29eQn/W623DiN/MIv5sUqc4g7BIDThX+gb7di9f6xK02nkp8sdfFWZLTg==}
     engines: {node: '>=10'}
+
+  node-abi@4.24.0:
+    resolution: {integrity: sha512-u2EC1CeNe25uVtX3EZbdQ275c74zdZmmpzrHEQh2aIYqoVjlglfUpOX9YY85x1nlBydEKDVaSmMNhR7N82Qj8A==}
+    engines: {node: '>=22.12.0'}
 
   node-addon-api@1.7.2:
     resolution: {integrity: sha512-ibPK3iA+vaY1eEjESkQkM0BbCqFOaZMiXRTtdB0u7b4djtY6JnsjvPdUHVMg6xQt3B8fpTTWHI9A+ADjM9frzg==}
@@ -9168,6 +9175,10 @@ snapshots:
   node-abi@3.75.0:
     dependencies:
       semver: 7.7.3
+
+  node-abi@4.24.0:
+    dependencies:
+      semver: 7.7.2
 
   node-addon-api@1.7.2:
     optional: true

@@ -63,6 +63,7 @@
     "eslint-plugin-react-refresh": "^0.4.24",
     "globals": "^16.5.0",
     "jsdom": "^27.2.0",
+    "node-abi": "^4.24.0",
     "otpauth": "^9.4.1",
     "prettier": "3.7.4",
     "testcontainers": "^11.9.0",
