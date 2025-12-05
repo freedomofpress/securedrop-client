@@ -112,6 +112,31 @@
     "pause": "Pause",
     "resume": "Resume",
     "of": "of",
-    "filenameTooltip": "Filename available after downloading"
+    "filenameTooltip": "Filename available after downloading",
+    "exportFile": "Export file",
+    "printFile": "Print file",
+    "exportWizard": {
+      "title": "Export File",
+      "preparingExport": "Preparing to export.",
+      "readyExport": "Ready to export.",
+      "understandRisks": "Understand the risks before exporting files",
+      "malwareTitle": "Malware",
+      "malwareWarning": "This workstation lets you open files securely. If you open files on another computer, any embedded malware may spread to your computer or network. If you are unsure how to manage this risk, please print the file, or contact your administrator.",
+      "anonymityTitle": "Anonymity",
+      "anonymityWarning": "Files submitted by sources may contain information or hidden metadata that identifies who they are. To protect your sources, please consider redacting files before working with them on network-connected computers.",
+      "exportInstructions": "Please insert one of the export drives provisioned specifically for the SecureDrop Workstation.\nIf you're using a VeraCrypt drive, unlock it manually before proceeding.",
+      "unlock": "Enter passphrase for USB drive",
+      "passphrase": "Passphrase",
+      "pleaseWait": "Please wait...",
+      "beCareful": "Remember to be careful when working with files outside of your Workstation machine",
+      "exportSuccess": "Export Successful",
+      "exportFailed": "Export Failed",
+      "unknownError": "Unknown error occurred",
+      "cancel": "Cancel",
+      "back": "Back",
+      "continue": "Continue",
+      "close": "Close",
+      "done": "Done"
+    }
   }
 }
