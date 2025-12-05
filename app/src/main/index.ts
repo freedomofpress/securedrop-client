@@ -31,6 +31,9 @@ import workerPath from "./fetch/worker?modulePath";
 import { Lock } from "./sync/lock";
 import { Config } from "./config";
 
+// Set umask so any files written are owner-only read/write (600).
+process.umask(0o077);
+
 // Parse command line arguments
 const args = process.argv.slice(2);
 const noQubes = args.includes("--no-qubes");
