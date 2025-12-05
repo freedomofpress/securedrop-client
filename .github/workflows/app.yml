@@ -186,6 +186,17 @@ jobs:
         uses: dtolnay/rust-toolchain@1.90.0
       - name: Install ffmpeg for video recording
         run: sudo apt-get update && sudo apt-get install -y ffmpeg
+      - name: Prebuild SecureDrop Docker image
+        run: |
+          # Build the Docker image ahead of time so tests don't timeout waiting
+          cd securedrop-server/securedrop
+          docker build \
+            --build-arg=USER_ID="$(id -u)" \
+            --build-arg=USER_NAME="${USER:-root}" \
+            --build-arg=OS_VERSION="noble" \
+            -t "securedrop-slim-noble-py3" \
+            --file "dockerfiles/noble/python3/SlimDockerfile" \
+            .
       - name: Run tests
         run: |
           # Build the proxy Rust code before the tests start

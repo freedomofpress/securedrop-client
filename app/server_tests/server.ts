@@ -94,8 +94,9 @@ export class ServerInstance {
 
   /**
    * Wait for the server to be ready by polling the API.
+   * Timeout is 2 minutes to allow for container startup.
    */
-  private async waitForReady(timeout = 60000): Promise<void> {
+  private async waitForReady(timeout = 120000): Promise<void> {
     const start = Date.now();
     const pollInterval = 2000;
 

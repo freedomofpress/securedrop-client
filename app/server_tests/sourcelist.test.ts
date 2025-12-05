@@ -18,7 +18,7 @@ describe.sequential("source list functionality", () => {
 
   beforeAll(async () => {
     context = await TestContext.setup();
-  }, 90000); // 90 seconds for server startup
+  }, 180000); // 3 minutes for server startup
 
   afterAll(async () => {
     await context.teardown();
