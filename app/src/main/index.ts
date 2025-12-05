@@ -25,11 +25,13 @@ import type {
   Item,
   PendingEventType,
   SyncStatus,
+  DeviceStatus,
 } from "../types";
 import { syncMetadata } from "./sync";
 import workerPath from "./fetch/worker?modulePath";
 import { Lock } from "./sync/lock";
 import { Config } from "./config";
+import { Exporter } from "./export";
 
 // Parse command line arguments
 const args = process.argv.slice(2);
@@ -176,6 +178,9 @@ app.whenReady().then(() => {
   app.on("browser-window-created", (_, window) => {
     optimizer.watchWindowShortcuts(window);
   });
+
+  // Initialize exporter
+  const exporter = new Exporter();
 
   ipcMain.handle(
     "request",
@@ -328,6 +333,29 @@ app.whenReady().then(() => {
       });
 
       // Return immediately without waiting for the process to finish
+    },
+  );
+
+  // Print + export IPCs
+  ipcMain.handle("initiateExport", async (_event): Promise<DeviceStatus> => {
+    return exporter.initiateExport();
+  });
+
+  ipcMain.handle(
+    "export",
+    async (_event, itemUuids: string[], passphrase: string | null) => {
+      const items: Item[] = itemUuids.map((itemUuid) => db.getItem(itemUuid));
+      const filePaths: string[] = [];
+      for (const item of items) {
+        if (!item.filename) {
+          throw new Error(`Item ${item.uuid} has not been downloaded yet`);
+        }
+        if (!fs.existsSync(item.filename)) {
+          throw new Error(`File not found: ${item.filename}`);
+        }
+        filePaths.push(item.filename);
+      }
+      await exporter.export(filePaths, passphrase);
     },
   );
 
