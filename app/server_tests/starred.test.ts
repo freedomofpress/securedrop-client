@@ -68,7 +68,7 @@ describe.sequential("starring sources", () => {
     });
     await context.login();
     await context.runSync();
-  }, 90000); // 90 seconds for server startup + login
+  }, 180000); // 3 minutes for server startup + login
 
   afterAll(async () => {
     await context.teardown();

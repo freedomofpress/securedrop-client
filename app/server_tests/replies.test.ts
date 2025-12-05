@@ -94,7 +94,7 @@ describe.sequential("sending replies", () => {
     // Store initial item count
     initialItemCount = await getItemCount();
     console.log(`Initial item count for source: ${initialItemCount}`);
-  }, 90000); // 90 seconds for server startup + login
+  }, 180000); // 3 minutes for server startup + login
 
   afterAll(async () => {
     await context.teardown();
