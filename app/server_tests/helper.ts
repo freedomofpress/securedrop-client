@@ -142,6 +142,8 @@ export class TestContext {
     await this.page.getByTestId("sync-button").click();
     // Wait for network to become idle, indicating sync API calls have completed
     await this.page.waitForLoadState("networkidle", { timeout: 30000 });
+    // Small delay to ensure database writes are flushed
+    await this.page.waitForTimeout(500);
   }
 
   /**

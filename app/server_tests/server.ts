@@ -17,7 +17,8 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
 const JOURNALIST_INTERFACE_PORT = 8081;
-const CONTAINER_NAME = "securedrop-dev";
+// Container name includes "-0" suffix because OFFSET_PORTS=false means port_offset=0
+const CONTAINER_NAME = "securedrop-dev-0";
 
 // Determine whether to use podman or docker
 const CONTAINER_BIN = process.env.USE_PODMAN ? "podman" : "docker";
