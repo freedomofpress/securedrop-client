@@ -5,6 +5,7 @@ import os from "os";
 import { PathBuilder, Storage } from "./storage";
 import { ItemMetadata } from "../types";
 import { ItemFetchTask } from "./fetch/queue";
+import { setUmask } from "./umask";
 
 describe("PathBuilder", () => {
   describe("constructor", () => {
@@ -189,9 +190,14 @@ describe("PathBuilder", () => {
 describe("Storage", () => {
   let storage: Storage;
   let originalHomedir: () => string;
+  let originalUmask: number;
   let testHomeDir: string;
 
   beforeEach(() => {
+    // Set umask for secure file permissions
+    originalUmask = process.umask();
+    setUmask();
+
     // Create test home directory
     testHomeDir = fs.mkdtempSync(
       path.join(fs.realpathSync(os.tmpdir()), "storage-test-home-"),
@@ -203,6 +209,7 @@ describe("Storage", () => {
   });
 
   afterEach(() => {
+    process.umask(originalUmask);
     os.homedir = originalHomedir;
     if (fs.existsSync(testHomeDir)) {
       fs.rmSync(testHomeDir, { recursive: true, force: true });
@@ -288,6 +295,11 @@ describe("Storage", () => {
       expect(result.path).toBe(
         `${testHomeDir}/.config/SecureDrop/files/source-123/`,
       );
+
+      // Verify directory has correct permissions (0o700)
+      const stats = fs.statSync(result.path);
+      const permissions = stats.mode & 0o777;
+      expect(permissions).toBe(0o700);
     });
 
     it("should reject path traversal in source ID", () => {
@@ -317,6 +329,11 @@ describe("Storage", () => {
       expect(result.path).toBe(
         `${testHomeDir}/.config/SecureDrop/files/source-uuid-456/item-uuid-789/`,
       );
+
+      // Verify directory has correct permissions (0o700)
+      const stats = fs.statSync(result.path);
+      const permissions = stats.mode & 0o777;
+      expect(permissions).toBe(0o700);
     });
 
     it("should reject malicious source ID in metadata", () => {
@@ -392,6 +409,11 @@ describe("Storage", () => {
       expect(fs.existsSync(result.path)).toBe(true);
       expect(result.path).toContain("test-prefix-");
       expect(result.path.startsWith(fs.realpathSync(os.tmpdir()))).toBe(true);
+
+      // Verify directory has correct permissions (0o700)
+      const stats = fs.statSync(result.path);
+      const permissions = stats.mode & 0o777;
+      expect(permissions).toBe(0o700);
     });
 
     it("should create unique directories for each call", () => {
