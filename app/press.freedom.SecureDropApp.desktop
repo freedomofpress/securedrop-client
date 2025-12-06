@@ -1,0 +1,5 @@
+[Desktop Entry]
+Name=SecureDrop App
+Exec=securedrop-app --no-sandbox
+Icon=utilities-terminal
+Type=Application
