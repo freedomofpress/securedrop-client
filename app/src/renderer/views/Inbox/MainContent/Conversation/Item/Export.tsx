@@ -305,6 +305,8 @@ export const ExportWizard = memo(function ExportWizard({
   const filename = item.filename
     ? item.filename.substring(item.filename.lastIndexOf("/") + 1)
     : "";
+  // FIXME, should use dispatch() instead
+  // eslint-disable-next-line react-hooks/immutability
   context.filename = filename;
 
   // Reset state when wizard is closed
