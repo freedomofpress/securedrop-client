@@ -164,9 +164,10 @@ export type ExportEvent =
   | { action: "exportSuccess" }
   | { action: "fail"; error: Error };
 
-export class ExportStateMachine
-  implements StateMachine<ExportState, ExportEvent>
-{
+export class ExportStateMachine implements StateMachine<
+  ExportState,
+  ExportEvent
+> {
   state: ExportState = ExportState.Idle;
   onError?(error: Error): void;
 
