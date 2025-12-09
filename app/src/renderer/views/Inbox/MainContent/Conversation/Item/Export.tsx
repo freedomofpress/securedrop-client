@@ -300,12 +300,13 @@ export const ExportWizard = memo(function ExportWizard({
   onClose,
 }: ExportWizardProps) {
   const { t } = useTranslation("Item");
-  const [context, dispatch] = useReducer(exportReducer, initialContext);
-
   const filename = item.filename
     ? item.filename.substring(item.filename.lastIndexOf("/") + 1)
     : "";
-  context.filename = filename;
+  const [context, dispatch] = useReducer(exportReducer, {
+    ...initialContext,
+    filename: filename,
+  });
 
   // Reset state when wizard is closed
   useEffect(() => {
