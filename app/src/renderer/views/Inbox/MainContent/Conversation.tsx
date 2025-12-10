@@ -125,7 +125,7 @@ const Conversation = memo(function Conversation({
         );
       }
     });
-  }, [sourceWithItems, session.authData?.token, dispatch]);
+  }, [sourceWithItems, session.authData, dispatch]);
 
   useEffect(() => {
     const shortcuts = (e: KeyboardEvent) => {
