@@ -187,6 +187,19 @@ def download_and_extract_binary(runtime, base_path, args, verify_checksum=True):
     target_dir = base_path / f"Release-{runtime}"
     target_dir.mkdir(parents=True, exist_ok=True)
 
+    final_path = target_dir / "better_sqlite3.node"
+
+    # Check if file already exists
+    if final_path.exists():
+        print(f"Binary already exists: {final_path}")
+        if verify_checksum:
+            verify_node_checksum(final_path, runtime, args)
+            print(f"✓ Existing {runtime} binary checksum verified")
+            return final_path
+        else:
+            print(f"✓ Using existing {runtime} binary (checksum verification skipped)")
+            return final_path
+
     with tempfile.TemporaryDirectory() as temp_dir:
         temp_path = Path(temp_dir)
         download_path = temp_path / filename
@@ -205,7 +218,6 @@ def download_and_extract_binary(runtime, base_path, args, verify_checksum=True):
             verify_node_checksum(node_file, runtime, args)
 
         # Copy to final location
-        final_path = target_dir / "better_sqlite3.node"
         shutil.copy2(node_file, final_path)
 
     print(f"✓ Successfully downloaded {runtime} binary")
