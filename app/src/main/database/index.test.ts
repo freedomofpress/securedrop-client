@@ -10,12 +10,14 @@ import {
   SourceMetadata,
 } from "../../types";
 import { Crypto } from "../crypto";
+import { setUmask } from "../umask";
 
 describe("Database Component Tests", () => {
   const testHomeDir = path.join(os.tmpdir(), "test-home");
   const testDbDir = path.join(testHomeDir, ".config", "SecureDrop");
   const testDbPath = path.join(testDbDir, "db.sqlite");
   const originalHomedir = os.homedir;
+  let originalUmask: number;
   let db: DB;
   let crypto: Crypto;
 
@@ -28,6 +30,10 @@ describe("Database Component Tests", () => {
   });
 
   beforeEach(() => {
+    // Set umask for secure file permissions
+    originalUmask = process.umask();
+    setUmask();
+
     if (fs.existsSync(testHomeDir)) {
       fs.rmSync(testHomeDir, { recursive: true, force: true });
     }
@@ -38,6 +44,7 @@ describe("Database Component Tests", () => {
     if (db) {
       db.close();
     }
+    process.umask(originalUmask);
     os.homedir = originalHomedir;
     if (fs.existsSync(testHomeDir)) {
       fs.rmSync(testHomeDir, { recursive: true, force: true });
@@ -65,6 +72,15 @@ describe("Database Component Tests", () => {
     const stats = fs.statSync(testDbPath);
     expect(stats.isFile()).toBe(true);
     expect(stats.size).toBeGreaterThan(0);
+
+    // Verify file has correct permissions (0o600 - owner read/write only)
+    const permissions = stats.mode & 0o777;
+    expect(permissions).toBe(0o600);
+
+    // Verify database directory has correct permissions (0o700)
+    const dirStats = fs.statSync(testDbDir);
+    const dirPermissions = dirStats.mode & 0o777;
+    expect(dirPermissions).toBe(0o700);
   });
 });
 

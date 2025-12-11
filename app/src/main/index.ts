@@ -30,6 +30,11 @@ import { syncMetadata } from "./sync";
 import workerPath from "./fetch/worker?modulePath";
 import { Lock } from "./sync/lock";
 import { Config } from "./config";
+import { setUmask } from "./umask";
+
+// Set umask so any files written are owner-only read/write (600).
+// This must be done before we create any files or spawn any worker threads.
+setUmask();
 
 // Parse command line arguments
 const args = process.argv.slice(2);
