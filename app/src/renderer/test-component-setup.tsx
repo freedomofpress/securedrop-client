@@ -188,6 +188,8 @@ beforeEach(() => {
     shouldAutoLogin: vi.fn().mockResolvedValue(false),
     clearClipboard: vi.fn().mockResolvedValue(null),
     openFile: vi.fn().mockResolvedValue(undefined),
+    initiateExport: vi.fn().mockResolvedValue("DEVICE_LOCKED"),
+    export: vi.fn().mockResolvedValue("SUCCESS_EXPORT"),
   } as ElectronAPI;
 });
 

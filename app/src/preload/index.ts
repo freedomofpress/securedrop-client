@@ -12,6 +12,7 @@ import {
   Item,
   PendingEventType,
   SyncStatus,
+  DeviceStatus,
 } from "../types";
 
 // Log the performance of IPC calls
@@ -114,6 +115,14 @@ const electronAPI = {
   },
   clearClipboard: logIpcCall<void>("clearClipboard", () =>
     ipcRenderer.invoke("clearClipboard"),
+  ),
+  initiateExport: logIpcCall<DeviceStatus>("initiateExport", () =>
+    ipcRenderer.invoke("initiateExport"),
+  ),
+  export: logIpcCall<DeviceStatus>(
+    "export",
+    (itemUuids: string[], passphrase: string | null) =>
+      ipcRenderer.invoke("export", itemUuids, passphrase),
   ),
 };
 
