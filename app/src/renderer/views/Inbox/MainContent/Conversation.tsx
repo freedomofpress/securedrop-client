@@ -5,12 +5,16 @@ import NewMessagesDivider from "./Conversation/NewMessagesDivider";
 import EmptyConversation from "./EmptyConversation";
 import { Form, Input, Button } from "antd";
 import { useTranslation } from "react-i18next";
-import { memo, useMemo, useCallback, useState } from "react";
-import { useAppDispatch } from "../../../hooks";
+import { memo, useMemo, useCallback, useState, useEffect } from "react";
+import { useAppDispatch, useAppSelector } from "../../../hooks";
 import { fetchSources } from "../../../features/sources/sourcesSlice";
-import { fetchConversation } from "../../../features/conversation/conversationSlice";
+import {
+  fetchConversation,
+  updateItemFetchStatus,
+} from "../../../features/conversation/conversationSlice";
 import useConversationScroll from "./Conversation/useConversationScroll";
 import "./Conversation.css";
+import { FetchStatus } from "../../../../types";
 
 interface ConversationProps {
   sourceWithItems: SourceWithItems | null;
@@ -21,6 +25,7 @@ const Conversation = memo(function Conversation({
 }: ConversationProps) {
   const { t } = useTranslation("MainContent");
   const dispatch = useAppDispatch();
+  const session = useAppSelector((state) => state.session);
   const [form] = Form.useForm();
   const [messageValue, setMessageValue] = useState("");
   const {
@@ -89,6 +94,53 @@ const Conversation = memo(function Conversation({
     [acknowledgeNewMessages, dispatch, dividerItemUuid, form, sourceWithItems],
   );
 
+  // Keyboard shortcut: Ctrl+Enter sends reply
+  const sendReply = useCallback(
+    (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+      if (e.ctrlKey && e.key === "Enter") {
+        e.preventDefault();
+        form.submit();
+      }
+    },
+    [form],
+  );
+
+  // Keyboard shortcut: Ctrl+D initiates download for all files
+  const downloadAllFiles = useCallback(() => {
+    if (!sourceWithItems || !session.authData?.token) return;
+
+    const token = session.authData.token;
+    sourceWithItems.items.forEach((item) => {
+      if (
+        item.data.kind === "file" &&
+        item.fetch_status === FetchStatus.Initial
+      ) {
+        dispatch(
+          updateItemFetchStatus({
+            sourceUuid: sourceWithItems.uuid,
+            itemUuid: item.uuid,
+            fetchStatus: FetchStatus.DownloadInProgress,
+            authToken: token,
+          }),
+        );
+      }
+    });
+  }, [sourceWithItems, session.authData, dispatch]);
+
+  useEffect(() => {
+    const shortcuts = (e: KeyboardEvent) => {
+      if (e.ctrlKey && e.key === "d") {
+        e.preventDefault();
+        downloadAllFiles();
+      }
+    };
+
+    document.addEventListener("keydown", shortcuts);
+    return () => {
+      document.removeEventListener("keydown", shortcuts);
+    };
+  }, [downloadAllFiles]);
+
   if (!sourceWithItems) return null;
 
   return (
@@ -136,6 +188,7 @@ const Conversation = memo(function Conversation({
                 placeholder={placeholderText}
                 className="w-full border border-gray-300 rounded-lg p-3 text-gray-900 resize-none focus:outline-none focus:ring-2 focus:ring-blue-500 conversation-textarea"
                 onChange={(e) => setMessageValue(e.target.value)}
+                onKeyDown={sendReply}
               />
             </Form.Item>
             <Button

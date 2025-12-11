@@ -1,5 +1,12 @@
 import "source-map-support/register";
-import { app, BrowserWindow, ipcMain, session, clipboard } from "electron";
+import {
+  app,
+  BrowserWindow,
+  ipcMain,
+  session,
+  clipboard,
+  Menu,
+} from "electron";
 import { join } from "path";
 import { randomBytes } from "crypto";
 import { optimizer, is } from "@electron-toolkit/utils";
@@ -181,6 +188,24 @@ app.whenReady().then(() => {
   app.on("browser-window-created", (_, window) => {
     optimizer.watchWindowShortcuts(window);
   });
+
+  // Set up application menu with keyboard shortcuts
+  const template: Electron.MenuItemConstructorOptions[] = [
+    {
+      label: "Application",
+      submenu: [
+        {
+          label: "Quit",
+          accelerator: "CmdOrCtrl+Q",
+          click: () => {
+            app.quit();
+          },
+        },
+      ],
+    },
+  ];
+  const menu = Menu.buildFromTemplate(template);
+  Menu.setApplicationMenu(menu);
 
   ipcMain.handle(
     "request",
