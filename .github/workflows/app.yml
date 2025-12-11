@@ -186,15 +186,20 @@ jobs:
         uses: dtolnay/rust-toolchain@1.90.0
       - name: Install ffmpeg for video recording
         run: sudo apt-get update && sudo apt-get install -y ffmpeg
+      - name: Prebuild SecureDrop Docker image
+        run: |
+          # Build the Docker image ahead of time so tests don't timeout waiting
+          cd securedrop-server/securedrop
+          docker build \
+            --build-arg=USER_ID="$(id -u)" \
+            --build-arg=USER_NAME="${USER:-root}" \
+            --build-arg=OS_VERSION="noble" \
+            -t "securedrop-slim-noble-py3" \
+            --file "dockerfiles/noble/python3/SlimDockerfile" \
+            .
       - name: Run tests
         run: |
-          # Start the server in the background
-          USE_FIXED_DATA="../app/server_tests/data/data.yaml" make -C securedrop-server dev &
-          # Wait for server to come up
-          echo "Polling with curl --silent until the server is up..."
-          while ! curl --silent --fail --output /dev/null http://127.0.0.1:8081; do sleep 5; done
-
-          # Build the proxy Rust code before the recording starts to reduce delay
+          # Build the proxy Rust code before the tests start
           cargo build
 
           # Start Xvfb on display :99
@@ -219,9 +224,11 @@ jobs:
           }
           trap cleanup EXIT
 
-          # Run tests
+          # Run tests - each test file will start its own isolated server
           cd app
           pnpm server-test
+        env:
+          SERVER_PATH: ${{ github.workspace }}/securedrop-server
       - name: Upload test video
         if: always()
         uses: actions/upload-artifact@v5

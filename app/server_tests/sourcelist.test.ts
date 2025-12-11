@@ -18,11 +18,12 @@ describe.sequential("source list functionality", () => {
 
   beforeAll(async () => {
     context = await TestContext.setup();
-  }, 40000);
+  }, 180000); // 3 minutes for server startup
 
   afterAll(async () => {
     await context.teardown();
-  }, 30000);
+    await TestContext.stopServer();
+  }, 60000);
 
   it("should log in and sync sources", async () => {
     // Log in with test credentials
