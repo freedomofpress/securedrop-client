@@ -29,6 +29,8 @@ export default defineConfig({
           // Unit tests might reference proxy functions, so provide dummy values
           __PROXY_CMD__: JSON.stringify("dummy-proxy-command"),
           __PROXY_ORIGIN__: JSON.stringify("http://dummy-origin"),
+          // Unit tests run in the main/backend process, not renderer
+          __RENDERER_ONLY__: "false",
         },
       },
       {
@@ -37,6 +39,10 @@ export default defineConfig({
           include: ["src/renderer/**/*.test.ts", "src/renderer/**/*.test.tsx"],
           globals: true,
           environment: "jsdom",
+        },
+        define: {
+          // Component tests run in the renderer process
+          __RENDERER_ONLY__: "true",
         },
       },
       {
@@ -61,6 +67,9 @@ export default defineConfig({
               singleFork: true, // Run one file at a time
             },
           },
+        },
+        define: {
+          __RENDERER_ONLY__: "false",
         },
       },
     ],
