@@ -4,6 +4,13 @@
 
 import { z } from "zod";
 
+// Disable zod's JIT in the renderer because it requires eval(), which we
+// disable via CSP. In the backend nodejs process, JIT can remain
+// enabled for better performance.
+if (__RENDERER_ONLY__) {
+  z.config({ jitless: true });
+}
+
 // Bump this constant when this file has been updated to reflect a new minor
 // version of the v2 Journalist API with new request/response shapes.  See the
 // constant of the same name in freedomofpress/securedrop for possible values.

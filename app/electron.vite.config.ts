@@ -94,6 +94,7 @@ export default defineConfig(({ mode }) => {
       define: {
         __APP_VERSION__: JSON.stringify(process.env.npm_package_version),
         __DEV_AUTO_LOGIN__: mode === "development",
+        __RENDERER_ONLY__: "true",
       },
       build: {
         assetsInlineLimit: 0, // Disable inlining assets as data URIs for strict CSP
