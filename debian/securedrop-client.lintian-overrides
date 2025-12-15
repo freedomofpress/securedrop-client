@@ -22,3 +22,7 @@ securedrop-client: script-not-executable
 # This is our virtualenv's interpreter
 securedrop-client: unusual-interpreter
 securedrop-client: wrong-path-for-interpreter
+
+# We override conffile for /etc/
+securedrop-client: control-file-is-empty [conffiles]
+securedrop-client: file-in-etc-not-marked-as-conffile

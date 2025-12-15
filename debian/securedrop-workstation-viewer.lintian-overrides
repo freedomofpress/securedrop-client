@@ -12,3 +12,6 @@ securedrop-workstation-viewer: synopsis-too-long
 
 # We're not shipping CDs, so this is fine
 securedrop-workstation-viewer: package-has-long-file-name
+
+# We override conffile for /etc/
+securedrop-workstation-viewer: control-file-is-empty [conffiles]

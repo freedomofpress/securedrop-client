@@ -23,11 +23,9 @@ securedrop-export: script-not-executable
 securedrop-export: unusual-interpreter
 securedrop-export: wrong-path-for-interpreter
 
-# This is intentional
-securedrop-export: file-in-etc-not-marked-as-conffile [etc/udisks2/tcrypt.conf]
-
-# This is intentional
+# We override conffile for /etc/
 securedrop-export: control-file-is-empty [conffiles]
+securedrop-export: file-in-etc-not-marked-as-conffile
 
 # Preset options are missing from deb-systemd-helper
 securedrop-export: maintainer-script-calls-systemctl

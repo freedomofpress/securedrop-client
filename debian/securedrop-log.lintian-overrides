@@ -31,3 +31,7 @@ securedrop-log: script-not-executable
 # This is our virtualenv's interpreter
 securedrop-log: unusual-interpreter
 securedrop-log: wrong-path-for-interpreter
+
+# We override conffile for /etc/
+securedrop-log: control-file-is-empty [conffiles]
+securedrop-log: file-in-etc-not-marked-as-conffile
