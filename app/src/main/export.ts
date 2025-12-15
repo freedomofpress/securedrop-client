@@ -451,7 +451,7 @@ export class Printer extends ArchiveExporter {
   }
 
   // Initiate print and run preflight checks to make sure that Export VM is started
-  public async initiatePrint(): Promise<void> {
+  public async initiatePrint(): Promise<DeviceStatus> {
     console.log("Initiating print, beginning printer preflight checks");
     this.fsm.transition({ action: "initiatePrint" });
 
@@ -468,14 +468,15 @@ export class Printer extends ArchiveExporter {
       });
 
       await this.runQrexecExport(archivePath);
-      this._onComplete();
+      return this._onComplete();
     } catch (err) {
       console.log("Error creating archive for printer preflight", err);
       this._onError();
+      return DeviceErrorStatus.UNEXPECTED_RETURN_STATUS;
     }
   }
 
-  public async print(filepaths: string[]): Promise<void> {
+  public async print(filepaths: string[]): Promise<DeviceStatus> {
     console.log("Beginning print");
     this.fsm.transition({ action: "print" });
 
@@ -493,10 +494,11 @@ export class Printer extends ArchiveExporter {
       });
 
       await this.runQrexecExport(archivePath);
-      this._onComplete();
+      return this._onComplete();
     } catch (err) {
       console.log("Print failed", err);
       this._onError();
+      return DeviceErrorStatus.UNEXPECTED_RETURN_STATUS;
     }
   }
 
@@ -511,7 +513,7 @@ export class Printer extends ArchiveExporter {
     });
   }
 
-  private _onComplete() {
+  private _onComplete(): DeviceStatus {
     this.cleanupTmpdir();
     try {
       const status = this.parseStatus(this.processStderr);
@@ -525,6 +527,7 @@ export class Printer extends ArchiveExporter {
           error: new PrintExportError(`Problem printing: ${status}`),
         });
       }
+      return status;
     } catch (e) {
       this.fsm.transition({
         action: "fail",
@@ -532,6 +535,7 @@ export class Printer extends ArchiveExporter {
           `Print status returned unexpected value ${e}`,
         ),
       });
+      return DeviceErrorStatus.UNEXPECTED_RETURN_STATUS;
     } finally {
       this.process = null;
       this.processStderr = "";

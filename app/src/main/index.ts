@@ -40,7 +40,7 @@ import workerPath from "./fetch/worker?modulePath";
 import { Lock } from "./sync/lock";
 import { Config } from "./config";
 import { setUmask } from "./umask";
-import { Exporter } from "./export";
+import { Exporter, Printer } from "./export";
 
 // Set umask so any files written are owner-only read/write (600).
 // This must be done before we create any files or spawn any worker threads.
@@ -212,6 +212,7 @@ app.whenReady().then(() => {
 
   // Initialize exporter
   const exporter = new Exporter();
+  const printer = new Printer();
 
   ipcMain.handle(
     "request",
@@ -398,6 +399,28 @@ app.whenReady().then(() => {
         filenames.push(item.filename);
       }
       return await exporter.export(filenames, passphrase);
+    },
+  );
+
+  ipcMain.handle("initiatePrint", async (_event): Promise<DeviceStatus> => {
+    return printer.initiatePrint();
+  });
+
+  ipcMain.handle(
+    "print",
+    async (_event, itemUuids: string[]): Promise<DeviceStatus> => {
+      const items: Item[] = itemUuids.map((itemUuid) => db.getItem(itemUuid));
+      const filePaths: string[] = [];
+      for (const item of items) {
+        if (!item.filename) {
+          throw new Error(`Item ${item.uuid} has not been downloaded yet`);
+        }
+        if (!fs.existsSync(item.filename)) {
+          throw new Error(`File not found: ${item.filename}`);
+        }
+        filePaths.push(item.filename);
+      }
+      return printer.print(filePaths);
     },
   );
 
