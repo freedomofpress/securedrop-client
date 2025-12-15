@@ -124,6 +124,18 @@ const electronAPI = {
     (itemUuids: string[], passphrase: string) =>
       ipcRenderer.invoke("export", itemUuids, passphrase),
   ),
+  initiatePrint: logIpcCall<DeviceStatus>("initiatePrint", () =>
+    ipcRenderer.invoke("initiatePrint"),
+  ),
+  print: logIpcCall<DeviceStatus>("print", (itemUuids: string[]) =>
+    ipcRenderer.invoke("print", itemUuids),
+  ),
+  cancelExport: logIpcCall<void>("cancelExport", () =>
+    ipcRenderer.invoke("cancelExport"),
+  ),
+  cancelPrint: logIpcCall<void>("cancelPrint", () =>
+    ipcRenderer.invoke("cancelPrint"),
+  ),
 };
 
 contextBridge.exposeInMainWorld("electronAPI", electronAPI);

@@ -40,7 +40,7 @@ import workerPath from "./fetch/worker?modulePath";
 import { Lock } from "./sync/lock";
 import { Config } from "./config";
 import { setUmask } from "./umask";
-import { Exporter } from "./export";
+import { Exporter, Printer } from "./export";
 
 // Set umask so any files written are owner-only read/write (600).
 // This must be done before we create any files or spawn any worker threads.
@@ -212,6 +212,7 @@ app.whenReady().then(() => {
 
   // Initialize exporter
   const exporter = new Exporter();
+  const printer = new Printer();
 
   ipcMain.handle(
     "request",
@@ -400,6 +401,36 @@ app.whenReady().then(() => {
       return await exporter.export(filenames, passphrase);
     },
   );
+
+  ipcMain.handle("initiatePrint", async (_event): Promise<DeviceStatus> => {
+    return printer.initiatePrint();
+  });
+
+  ipcMain.handle(
+    "print",
+    async (_event, itemUuids: string[]): Promise<DeviceStatus> => {
+      const filePaths: string[] = [];
+      for (const itemUuid of itemUuids) {
+        const item = db.getItem(itemUuid);
+        if (!item || !item.filename) {
+          throw new Error(`Item ${itemUuid} has not been downloaded yet`);
+        }
+        if (!fs.existsSync(item.filename)) {
+          throw new Error(`File not found: ${item.filename}`);
+        }
+        filePaths.push(item.filename);
+      }
+      return printer.print(filePaths);
+    },
+  );
+
+  ipcMain.handle("cancelExport", async (_event): Promise<void> => {
+    exporter.cancelExport();
+  });
+
+  ipcMain.handle("cancelPrint", async (_event): Promise<void> => {
+    printer.cancelPrint();
+  });
 
   const mainWindow = createWindow();
 
