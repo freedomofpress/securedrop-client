@@ -252,36 +252,11 @@ export class ArchiveExporter {
       `.${ArchiveExporter.METADATA_FILENAME}.tmp`,
     );
 
-    // Collect all unique directory paths that need to be in the archive
-    const directoryPaths = new Set<string>();
-    for (const archivePath of filesToAdd.values()) {
-      let dirPath = path.dirname(archivePath);
-      while (dirPath && dirPath !== ".") {
-        directoryPaths.add(dirPath);
-        dirPath = path.dirname(dirPath);
-      }
-    }
-
-    // Create temporary directories to explicitly include in tarball
-    const tempDirs: string[] = [];
-    const tempDirMapping = new Map<string, string>();
-
     try {
       // Write temporary metadata file
       await fsPromises.writeFile(tempMetadataFile, metadataContent, {
         encoding: "utf8",
       });
-
-      // Create temporary directories with proper permissions
-      for (const dirPath of directoryPaths) {
-        const tempDirPath = path.join(
-          archiveDir,
-          `.tmp-dir-${dirPath.replace(/\//g, "-")}`,
-        );
-        await fsPromises.mkdir(tempDirPath, { mode: 0o700 });
-        tempDirs.push(tempDirPath);
-        tempDirMapping.set(tempDirPath, dirPath);
-      }
 
       await tar.create(
         {
@@ -296,15 +271,10 @@ export class ArchiveExporter {
               entry.path = targetPath;
             } else if (entry.absolute === tempMetadataFile) {
               entry.path = ArchiveExporter.METADATA_FILENAME;
-            } else {
-              const dirTarget = tempDirMapping.get(entry.absolute);
-              if (dirTarget) {
-                entry.path = dirTarget;
-              }
             }
           },
         },
-        [tempMetadataFile, ...tempDirs, ...filesToAdd.keys()],
+        [tempMetadataFile, ...filesToAdd.keys()],
       );
     } finally {
       // Cleanup temporary metadata file
@@ -312,14 +282,6 @@ export class ArchiveExporter {
         await fsPromises.unlink(tempMetadataFile);
       } catch (_e) {
         // Ignore errors if file doesn't exist
-      }
-      // Cleanup temporary directories
-      for (const tempDir of tempDirs) {
-        try {
-          await fsPromises.rmdir(tempDir);
-        } catch (_e) {
-          // Ignore errors if directory doesn't exist
-        }
       }
     }
     return archivePath;

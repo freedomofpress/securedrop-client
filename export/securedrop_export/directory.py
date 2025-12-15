@@ -78,6 +78,11 @@ def safe_extractall(archive_file_path: str, dest_path: str) -> None:
 
         tar.extractall(dest_path)  # noqa: S202
 
+        # Ensure all directories (including implicitly created ones) have 0o700 permissions
+        # We check for path traversal above, so do not need to re-check here.
+        for file_info in tar.getmembers():
+            _check_all_permissions(Path(file_info.name).parent, dest_path)
+
 
 def relative_filepath(filepath: str | Path, base_dir: str | Path) -> Path:
     """
