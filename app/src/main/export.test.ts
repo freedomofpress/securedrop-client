@@ -5,13 +5,13 @@ import * as os from "os";
 import * as tar from "tar";
 import {
   ArchiveExporter,
-  PrintStatus,
   PrintExportError,
   PrintState,
   PrintStateMachine,
   ExportState,
   ExportStateMachine,
 } from "./export";
+import { PrintStatus } from "../types";
 
 // PrintStateMachine transitions
 describe("PrintStateMachine", () => {

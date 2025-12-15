@@ -10,65 +10,15 @@ import * as path from "path";
 import { spawn, ChildProcess } from "child_process";
 import { promisify } from "util";
 import * as tar from "tar";
+import {
+  DeviceErrorStatus,
+  DeviceStatus,
+  ExportStatus,
+  PrintStatus,
+} from "../types";
 
 const mkdtemp = promisify(mkdtempCb);
 const chmodAsync = promisify(chmod);
-
-// All possible strings returned by the qrexec calls to sd-devices. These values come from
-// `print/status.py` and `disk/status.py` in `securedrop-export`
-// and must only be changed in coordination with changes released in that component.
-export type DeviceStatus = ExportStatus | PrintStatus | DeviceErrorStatus;
-
-export enum DeviceErrorStatus {
-  // Misc errors
-  CALLED_PROCESS_ERROR = "CALLED_PROCESS_ERROR",
-  ERROR_USB_CONFIGURATION = "ERROR_USB_CONFIGURATION",
-  UNEXPECTED_RETURN_STATUS = "UNEXPECTED_RETURN_STATUS",
-
-  // Client-side error only
-  ERROR_MISSING_FILES = "ERROR_MISSING_FILES", // All files meant for export are missing
-}
-
-export enum ExportStatus {
-  // Success
-  SUCCESS_EXPORT = "SUCCESS_EXPORT",
-
-  // Error
-  NO_DEVICE_DETECTED = "NO_DEVICE_DETECTED",
-  INVALID_DEVICE_DETECTED = "INVALID_DEVICE_DETECTED", // Multi partitioned, not encrypted, etc
-  MULTI_DEVICE_DETECTED = "MULTI_DEVICE_DETECTED", // Not currently supported
-  UNKNOWN_DEVICE_DETECTED = "UNKNOWN_DEVICE_DETECTED", // Badly-formatted USB or VeraCrypt/TC
-
-  DEVICE_LOCKED = "DEVICE_LOCKED", // One valid device detected, and it's locked
-  DEVICE_WRITABLE = "DEVICE_WRITABLE", // One valid device detected, and it's unlocked (and mounted)
-
-  ERROR_UNLOCK_LUKS = "ERROR_UNLOCK_LUKS",
-  ERROR_UNLOCK_GENERIC = "ERROR_UNLOCK_GENERIC",
-  ERROR_MOUNT = "ERROR_MOUNT", // Unlocked but not mounted
-
-  ERROR_EXPORT = "ERROR_EXPORT", // Could not write to disk
-
-  // Export succeeds but drives were not properly closed
-  ERROR_EXPORT_CLEANUP = "ERROR_EXPORT_CLEANUP",
-  ERROR_UNMOUNT_VOLUME_BUSY = "ERROR_UNMOUNT_VOLUME_BUSY",
-
-  DEVICE_ERROR = "DEVICE_ERROR", // Something went wrong while trying to check the device
-}
-
-export enum PrintStatus {
-  // Success
-  PRINT_PREFLIGHT_SUCCESS = "PRINTER_PREFLIGHT_SUCCESS",
-  TEST_SUCCESS = "PRINTER_TEST_SUCCESS",
-  PRINT_SUCCESS = "PRINTER_SUCCESS",
-
-  // Error
-  ERROR_PRINTER_NOT_FOUND = "ERROR_PRINTER_NOT_FOUND",
-  ERROR_PRINT = "ERROR_PRINT",
-  ERROR_UNPRINTABLE_TYPE = "ERROR_UNPRINTABLE_TYPE",
-  ERROR_MIMETYPE_UNSUPPORTED = "ERROR_MIMETYPE_UNSUPPORTED",
-  ERROR_MIMETYPE_DISCOVERY = "ERROR_MIMETYPE_DISCOVERY",
-  ERROR_UNKNOWN = "ERROR_GENERIC", // Unknown printer error, backwards-compatible
-}
 
 export class PrintExportError extends Error {
   status?: DeviceStatus;
