@@ -52,6 +52,9 @@ export default defineConfig({
           setupFiles: ["integration_tests/setup.ts"],
           globals: true,
         },
+        define: {
+          __RENDERER_ONLY__: "false",
+        },
       },
       {
         test: {
