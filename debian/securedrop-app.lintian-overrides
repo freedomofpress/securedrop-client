@@ -36,3 +36,6 @@ securedrop-app: unstripped-binary-or-object
 
 # Don't care
 securedrop-app: no-manual-page
+
+# We override conffile for /etc/
+securedrop-app: control-file-is-empty [conffiles]

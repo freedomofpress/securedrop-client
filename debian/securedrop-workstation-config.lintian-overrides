@@ -18,3 +18,6 @@ securedrop-workstation-config: no-manual-page
 
 # FIXME: missing a python3 dependency
 securedrop-workstation-config: python3-script-but-no-python3-dep
+
+# We override conffile for /etc/
+securedrop-workstation-config: control-file-is-empty [conffiles]

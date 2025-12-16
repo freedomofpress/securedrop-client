@@ -33,3 +33,7 @@ securedrop-proxy: script-not-executable
 
 # This is our virtualenv's interpreter
 securedrop-proxy: unusual-interpreter
+
+# We override conffile for /etc/
+securedrop-proxy: control-file-is-empty [conffiles]
+securedrop-proxy: file-in-etc-not-marked-as-conffile
