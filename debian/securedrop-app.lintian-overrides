@@ -34,6 +34,9 @@ securedrop-app: package-has-unnecessary-activation-of-ldconfig-trigger
 # We're not stripping debug symbols
 securedrop-app: unstripped-binary-or-object
 
+# chrome-sandbox needs to be setuid
+securedrop-app: elevated-privileges 4755 root/root [usr/lib/securedrop-app/linux-unpacked/chrome-sandbox]
+
 # Don't care
 securedrop-app: no-manual-page
 
