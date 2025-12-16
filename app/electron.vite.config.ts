@@ -14,7 +14,9 @@ export default defineConfig(({ mode }) => {
   const viteNonce =
     mode === "development" ? randomBytes(32).toString("base64") : "";
 
-  const mainVars: Record<string, string> = {};
+  const mainVars: Record<string, string> = {
+    __RENDERER_ONLY__: "false",
+  };
   if (mode === "development" || mode === "test") {
     // Build the proxy: `make -C ../proxy build`
     try {
@@ -94,6 +96,7 @@ export default defineConfig(({ mode }) => {
       define: {
         __APP_VERSION__: JSON.stringify(process.env.npm_package_version),
         __DEV_AUTO_LOGIN__: mode === "development",
+        __RENDERER_ONLY__: "true",
       },
       build: {
         assetsInlineLimit: 0, // Disable inlining assets as data URIs for strict CSP

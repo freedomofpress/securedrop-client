@@ -5,6 +5,7 @@ declare const __PROXY_ORIGIN__: string;
 declare const __PROXY_CMD__: string;
 declare const __DEV_AUTO_LOGIN__: boolean;
 declare const __VITE_NONCE__: string;
+declare const __RENDERER_ONLY__: boolean;
 
 interface ImportMetaEnv {
   readonly SD_SUBMISSION_KEY_FPR: string;
