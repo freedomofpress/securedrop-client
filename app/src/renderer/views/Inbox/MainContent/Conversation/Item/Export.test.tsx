@@ -2,7 +2,12 @@ import { screen, waitFor } from "@testing-library/react";
 import { expect, describe, it, vi, beforeEach, afterEach } from "vitest";
 import userEvent from "@testing-library/user-event";
 import { ExportWizard } from "./Export";
-import { FetchStatus, type Item } from "../../../../../../types";
+import {
+  ExportStatus,
+  FetchStatus,
+  DeviceErrorStatus,
+  type Item,
+} from "../../../../../../types";
 import { renderWithProviders } from "../../../../../test-component-setup";
 
 describe("ExportWizard Component", () => {
@@ -23,6 +28,36 @@ describe("ExportWizard Component", () => {
 
   const mockOnClose = vi.fn();
 
+  const waitForPreflightComplete = async () => {
+    await waitFor(
+      () => {
+        const continueButton = screen.getByRole("button", {
+          name: /continue/i,
+        });
+        expect(continueButton).not.toBeDisabled();
+      },
+      { timeout: 2000 },
+    );
+  };
+
+  const navigateToUnlockDevice = async () => {
+    await waitForPreflightComplete();
+    const continueButton = screen.getByRole("button", { name: /continue/i });
+    await userEvent.click(continueButton);
+
+    await waitFor(() => {
+      expect(screen.getByLabelText("Passphrase")).toBeInTheDocument();
+    });
+  };
+
+  const submitPassphrase = async (passphrase: string) => {
+    const passphraseInput = screen.getByLabelText("Passphrase");
+    await userEvent.type(passphraseInput, passphrase);
+
+    const continueButton = screen.getByRole("button", { name: /continue/i });
+    await userEvent.click(continueButton);
+  };
+
   beforeEach(() => {
     vi.clearAllMocks();
   });
@@ -31,7 +66,7 @@ describe("ExportWizard Component", () => {
     vi.restoreAllMocks();
   });
 
-  describe("Initial State", () => {
+  describe("Initial and Preflight State", () => {
     it("renders nothing when not open", () => {
       renderWithProviders(
         <ExportWizard item={mockItem} open={false} onClose={mockOnClose} />,
@@ -40,17 +75,7 @@ describe("ExportWizard Component", () => {
       expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
     });
 
-    it("renders the modal when open", async () => {
-      renderWithProviders(
-        <ExportWizard item={mockItem} open={true} onClose={mockOnClose} />,
-      );
-
-      await waitFor(() => {
-        expect(screen.getByRole("dialog")).toBeInTheDocument();
-      });
-    });
-
-    it("displays preflight state with risk warnings on initial open", async () => {
+    it("displays preflight state with warnings and disabled Continue button", async () => {
       renderWithProviders(
         <ExportWizard item={mockItem} open={true} onClose={mockOnClose} />,
       );
@@ -60,543 +85,189 @@ describe("ExportWizard Component", () => {
         expect(
           screen.getByText("Understand the risks before exporting files"),
         ).toBeInTheDocument();
-        expect(screen.getByText("Malware")).toBeInTheDocument();
-        expect(screen.getByText("Anonymity")).toBeInTheDocument();
-      });
-    });
-
-    it("displays the filename in preflight state", async () => {
-      renderWithProviders(
-        <ExportWizard item={mockItem} open={true} onClose={mockOnClose} />,
-      );
-
-      await waitFor(() => {
         expect(screen.getByText("testfile.pdf")).toBeInTheDocument();
-      });
-    });
 
-    it("shows Continue and Cancel buttons in preflight state", async () => {
-      renderWithProviders(
-        <ExportWizard item={mockItem} open={true} onClose={mockOnClose} />,
-      );
-
-      await waitFor(() => {
         const continueButton = screen.getByRole("button", {
           name: /continue/i,
         });
-        const cancelButton = screen.getByRole("button", { name: /cancel/i });
-
-        expect(continueButton).toBeInTheDocument();
-        expect(continueButton).toBeDisabled(); // Disabled during preflight
-        expect(cancelButton).toBeInTheDocument();
+        expect(continueButton).toBeDisabled();
+        expect(document.querySelector(".animate-spin")).toBeInTheDocument();
+        expect(screen.queryByLabelText("Close")).not.toBeInTheDocument();
       });
     });
 
-    it("prevents modal from being closed during preflight state", async () => {
+    it("automatically transitions to PREFLIGHT_COMPLETE and enables Continue button", async () => {
       renderWithProviders(
         <ExportWizard item={mockItem} open={true} onClose={mockOnClose} />,
       );
 
-      await waitFor(() => {
-        const dialog = screen.getByRole("dialog");
-        expect(dialog).toBeInTheDocument();
-      });
+      await waitForPreflightComplete();
 
-      // Modal should not have a close button during preflight
-      const closeButton = screen.queryByRole("button", { name: /close/i });
-      expect(closeButton).not.toBeInTheDocument();
-    });
-  });
-
-  describe("Preflight State Machine", () => {
-    it("automatically transitions from PREFLIGHT to PREFLIGHT_COMPLETE after delay", async () => {
-      renderWithProviders(
-        <ExportWizard item={mockItem} open={true} onClose={mockOnClose} />,
-      );
-
-      // Initially in PREFLIGHT state
-      await waitFor(() => {
-        expect(screen.getByText("Preparing to export.")).toBeInTheDocument();
-      });
-
-      // Wait for auto-transition (1.5 seconds + buffer)
-      await waitFor(
-        () => {
-          const continueButton = screen.getByRole("button", {
-            name: /continue/i,
-          });
-          expect(continueButton).not.toBeDisabled();
-        },
-        { timeout: 2000 },
-      );
-    });
-
-    it("shows loading spinner during preflight", async () => {
-      renderWithProviders(
-        <ExportWizard item={mockItem} open={true} onClose={mockOnClose} />,
-      );
-
-      await waitFor(() => {
-        // Check for spinner by checking if there's an element with animate-spin class
-        const spinner = document.querySelector(".animate-spin");
-        expect(spinner).toBeInTheDocument();
-      });
-    });
-  });
-
-  describe("Ready State", () => {
-    it("transitions to READY state after preflight complete and clicking Continue", async () => {
-      renderWithProviders(
-        <ExportWizard item={mockItem} open={true} onClose={mockOnClose} />,
-      );
-
-      // Wait for preflight to complete
-      await waitFor(
-        () => {
-          const continueButton = screen.getByRole("button", {
-            name: /continue/i,
-          });
-          expect(continueButton).not.toBeDisabled();
-        },
-        { timeout: 2000 },
-      );
-
-      // Click Continue
-      const continueButton = screen.getByRole("button", { name: /continue/i });
-      await userEvent.click(continueButton);
-
-      // Should now be in READY state
-      await waitFor(() => {
-        expect(screen.getByText("Ready to export.")).toBeInTheDocument();
-        expect(
-          screen.getByText(/Please insert one of the export drives/i),
-        ).toBeInTheDocument();
-      });
-    });
-
-    it("shows Back, Continue, and Cancel buttons in READY state", async () => {
-      renderWithProviders(
-        <ExportWizard item={mockItem} open={true} onClose={mockOnClose} />,
-      );
-
-      // Wait and click Continue to reach READY state
-      await waitFor(
-        async () => {
-          const continueButton = screen.getByRole("button", {
-            name: /continue/i,
-          });
-          expect(continueButton).not.toBeDisabled();
-          await userEvent.click(continueButton);
-        },
-        { timeout: 2000 },
-      );
-
-      await waitFor(() => {
-        expect(screen.getByText("Ready to export.")).toBeInTheDocument();
-      });
-
-      expect(screen.getByRole("button", { name: /back/i })).toBeInTheDocument();
+      expect(screen.getByText("Preparing to export.")).toBeInTheDocument();
       expect(
         screen.getByRole("button", { name: /continue/i }),
-      ).toBeInTheDocument();
+      ).not.toBeDisabled();
       expect(
         screen.getByRole("button", { name: /cancel/i }),
       ).toBeInTheDocument();
+      expect(
+        screen.queryByRole("button", { name: /back/i }),
+      ).not.toBeInTheDocument();
     });
 
-    it("goes back to PREFLIGHT_COMPLETE when Back button is clicked in READY state", async () => {
+    it("handles preflight failure with error message", async () => {
+      vi.mocked(window.electronAPI.initiateExport).mockRejectedValueOnce(
+        new Error("Failed to connect to export device"),
+      );
+
       renderWithProviders(
         <ExportWizard item={mockItem} open={true} onClose={mockOnClose} />,
       );
 
-      // Reach READY state
-      await waitFor(
-        async () => {
-          const continueButton = screen.getByRole("button", {
-            name: /continue/i,
-          });
-          expect(continueButton).not.toBeDisabled();
-          await userEvent.click(continueButton);
-        },
-        { timeout: 2000 },
+      await waitFor(() => {
+        expect(document.querySelector(".animate-spin")).not.toBeInTheDocument();
+        expect(screen.getByText(/Export Failed/i)).toBeInTheDocument();
+        const closeButtons = screen.getAllByRole("button", { name: /close/i });
+        expect(closeButtons.length).toBeGreaterThanOrEqual(1);
+      });
+    });
+
+    it("transitions to UNLOCK_DEVICE when Continue clicked", async () => {
+      renderWithProviders(
+        <ExportWizard item={mockItem} open={true} onClose={mockOnClose} />,
       );
 
-      await waitFor(() => {
-        expect(screen.getByText("Ready to export.")).toBeInTheDocument();
-      });
+      await navigateToUnlockDevice();
 
-      // Click Back
-      const backButton = screen.getByRole("button", { name: /back/i });
-      await userEvent.click(backButton);
-
-      // Should be back at PREFLIGHT_COMPLETE (which shows same content as PREFLIGHT but enabled button)
-      await waitFor(() => {
-        expect(screen.getByText("Preparing to export.")).toBeInTheDocument();
-      });
+      expect(
+        screen.getByText("Enter passphrase for USB drive"),
+      ).toBeInTheDocument();
     });
   });
 
   describe("Unlock Device State", () => {
-    it("transitions to UNLOCK_DEVICE state when Continue clicked in READY state", async () => {
+    it("shows passphrase input with Continue disabled until passphrase entered", async () => {
       renderWithProviders(
         <ExportWizard item={mockItem} open={true} onClose={mockOnClose} />,
       );
 
-      // Reach READY state
-      await waitFor(
-        async () => {
-          const continueButton = screen.getByRole("button", {
-            name: /continue/i,
-          });
-          expect(continueButton).not.toBeDisabled();
-          await userEvent.click(continueButton);
-        },
-        { timeout: 2000 },
-      );
+      await navigateToUnlockDevice();
 
-      await waitFor(() => {
-        expect(screen.getByText("Ready to export.")).toBeInTheDocument();
-      });
-
-      // Click Continue again to go to unlock
-      const continueButton = screen.getByRole("button", { name: /continue/i });
-      await userEvent.click(continueButton);
-
-      // Should now be in UNLOCK_DEVICE state
-      await waitFor(() => {
-        expect(
-          screen.getByText("Enter passphrase for USB drive"),
-        ).toBeInTheDocument();
-        expect(screen.getByLabelText("Passphrase")).toBeInTheDocument();
-      });
-    });
-
-    it("displays passphrase input field in unlock state", async () => {
-      renderWithProviders(
-        <ExportWizard item={mockItem} open={true} onClose={mockOnClose} />,
-      );
-
-      // Navigate to UNLOCK_DEVICE state
-      await waitFor(
-        async () => {
-          const continueButton = screen.getByRole("button", {
-            name: /continue/i,
-          });
-          expect(continueButton).not.toBeDisabled();
-          await userEvent.click(continueButton);
-        },
-        { timeout: 2000 },
-      );
-
-      await waitFor(async () => {
-        const continueButton = screen.getByRole("button", {
-          name: /continue/i,
-        });
-        await userEvent.click(continueButton);
-      });
-
-      await waitFor(async () => {
-        const continueButton = screen.getByRole("button", {
-          name: /continue/i,
-        });
-        await userEvent.click(continueButton);
-      });
-
-      await waitFor(() => {
-        const passphraseInput = screen.getByLabelText("Passphrase");
-        expect(passphraseInput).toBeInTheDocument();
-        expect(passphraseInput).toHaveAttribute("type", "password");
-      });
-    });
-
-    it("disables Continue button when passphrase is empty", async () => {
-      renderWithProviders(
-        <ExportWizard item={mockItem} open={true} onClose={mockOnClose} />,
-      );
-
-      // Navigate to UNLOCK_DEVICE state
-      await waitFor(
-        async () => {
-          const continueButton = screen.getByRole("button", {
-            name: /continue/i,
-          });
-          expect(continueButton).not.toBeDisabled();
-          await userEvent.click(continueButton);
-        },
-        { timeout: 2000 },
-      );
-
-      await waitFor(async () => {
-        const continueButton = screen.getByRole("button", {
-          name: /continue/i,
-        });
-        await userEvent.click(continueButton);
-      });
-
-      await waitFor(async () => {
-        const continueButton = screen.getByRole("button", {
-          name: /continue/i,
-        });
-        await userEvent.click(continueButton);
-      });
-
-      await waitFor(() => {
-        expect(
-          screen.getByText("Enter passphrase for USB drive"),
-        ).toBeInTheDocument();
-      });
-
-      const continueButton = screen.getByRole("button", { name: /continue/i });
-      expect(continueButton).toBeDisabled();
-    });
-
-    it("enables Continue button when passphrase is entered", async () => {
-      renderWithProviders(
-        <ExportWizard item={mockItem} open={true} onClose={mockOnClose} />,
-      );
-
-      // Navigate to UNLOCK_DEVICE state
-      await waitFor(
-        async () => {
-          const continueButton = screen.getByRole("button", {
-            name: /continue/i,
-          });
-          expect(continueButton).not.toBeDisabled();
-          await userEvent.click(continueButton);
-        },
-        { timeout: 2000 },
-      );
-
-      await waitFor(async () => {
-        const continueButton = screen.getByRole("button", {
-          name: /continue/i,
-        });
-        await userEvent.click(continueButton);
-      });
-
-      await waitFor(async () => {
-        const continueButton = screen.getByRole("button", {
-          name: /continue/i,
-        });
-        await userEvent.click(continueButton);
-      });
-
-      await waitFor(() => {
-        expect(screen.getByLabelText("Passphrase")).toBeInTheDocument();
-      });
-
-      // Type passphrase
       const passphraseInput = screen.getByLabelText("Passphrase");
-      await userEvent.type(passphraseInput, "test-passphrase-123");
+      expect(passphraseInput).toHaveAttribute("type", "password");
+      expect(screen.getByRole("button", { name: /continue/i })).toBeDisabled();
 
-      // Continue button should now be enabled
-      const continueButton = screen.getByRole("button", { name: /continue/i });
-      expect(continueButton).not.toBeDisabled();
+      await userEvent.type(passphraseInput, "test-passphrase");
+
+      expect(
+        screen.getByRole("button", { name: /continue/i }),
+      ).not.toBeDisabled();
     });
 
-    it("goes back to READY state when Back button is clicked in UNLOCK_DEVICE state", async () => {
+    it("navigates back to PREFLIGHT_COMPLETE when Back button clicked", async () => {
       renderWithProviders(
         <ExportWizard item={mockItem} open={true} onClose={mockOnClose} />,
       );
 
-      // Navigate to UNLOCK_DEVICE state
-      await waitFor(
-        async () => {
-          const continueButton = screen.getByRole("button", {
-            name: /continue/i,
-          });
-          expect(continueButton).not.toBeDisabled();
-          await userEvent.click(continueButton);
-        },
-        { timeout: 2000 },
-      );
+      await navigateToUnlockDevice();
 
-      await waitFor(async () => {
-        const continueButton = screen.getByRole("button", {
-          name: /continue/i,
-        });
-        await userEvent.click(continueButton);
-      });
-
-      await waitFor(async () => {
-        const continueButton = screen.getByRole("button", {
-          name: /continue/i,
-        });
-        await userEvent.click(continueButton);
-      });
-
-      await waitFor(() => {
-        expect(screen.getByLabelText("Passphrase")).toBeInTheDocument();
-      });
-
-      // Click Back
       const backButton = screen.getByRole("button", { name: /back/i });
       await userEvent.click(backButton);
 
-      // Should be back at READY state
       await waitFor(() => {
-        expect(screen.getByText("Ready to export.")).toBeInTheDocument();
+        expect(screen.getByText("Preparing to export.")).toBeInTheDocument();
+        expect(
+          screen.getByRole("button", { name: /continue/i }),
+        ).not.toBeDisabled();
+      });
+    });
+
+    it("skips unlock state when device is already writable", async () => {
+      vi.mocked(window.electronAPI.initiateExport).mockResolvedValueOnce(
+        ExportStatus.DEVICE_WRITABLE,
+      );
+
+      renderWithProviders(
+        <ExportWizard item={mockItem} open={true} onClose={mockOnClose} />,
+      );
+
+      await waitForPreflightComplete();
+
+      const continueButton = screen.getByRole("button", { name: /continue/i });
+      await userEvent.click(continueButton);
+
+      await waitFor(() => {
+        expect(
+          screen.queryByText("Enter passphrase for USB drive"),
+        ).not.toBeInTheDocument();
+        expect(
+          screen.queryByText("Please wait...") ||
+            screen.queryByText("Export Successful"),
+        ).toBeInTheDocument();
       });
     });
   });
 
-  // TODO(vicki): add tests for EXPORTING state when API call is implemented
+  describe("Exporting and Success", () => {
+    it("shows exporting state with no buttons during export", async () => {
+      vi.mocked(window.electronAPI.export).mockImplementationOnce(
+        () =>
+          new Promise((resolve) =>
+            setTimeout(() => resolve(ExportStatus.SUCCESS_EXPORT), 200),
+          ),
+      );
 
-  describe("Success State", () => {
-    it("transitions to SUCCESS state after successful export", async () => {
       renderWithProviders(
         <ExportWizard item={mockItem} open={true} onClose={mockOnClose} />,
       );
 
-      // Navigate through all states to trigger export
-      await waitFor(
-        async () => {
-          const continueButton = screen.getByRole("button", {
-            name: /continue/i,
-          });
-          expect(continueButton).not.toBeDisabled();
-          await userEvent.click(continueButton);
-        },
-        { timeout: 2000 },
-      );
-
-      await waitFor(async () => {
-        const continueButton = screen.getByRole("button", {
-          name: /continue/i,
-        });
-        await userEvent.click(continueButton);
-      });
-
-      await waitFor(async () => {
-        const continueButton = screen.getByRole("button", {
-          name: /continue/i,
-        });
-        await userEvent.click(continueButton);
-      });
+      await navigateToUnlockDevice();
+      await submitPassphrase("test-passphrase");
 
       await waitFor(() => {
-        expect(screen.getByLabelText("Passphrase")).toBeInTheDocument();
-      });
-
-      const passphraseInput = screen.getByLabelText("Passphrase");
-      await userEvent.type(passphraseInput, "test-passphrase");
-
-      const continueButton = screen.getByRole("button", { name: /continue/i });
-      await userEvent.click(continueButton);
-
-      // Wait for success state
-      await waitFor(() => {
-        expect(screen.getByText("Export Successful")).toBeInTheDocument();
+        expect(screen.getByText("Please wait...")).toBeInTheDocument();
         expect(
-          screen.getByText(
-            /Remember to be careful when working with files outside/i,
-          ),
-        ).toBeInTheDocument();
+          screen.queryByRole("button", { name: /continue/i }),
+        ).not.toBeInTheDocument();
+        expect(screen.queryByLabelText("Close")).not.toBeInTheDocument();
       });
     });
 
-    it("shows only Done button in success state", async () => {
+    it("calls export API with correct parameters", async () => {
+      const exportMock = vi.mocked(window.electronAPI.export);
+
       renderWithProviders(
         <ExportWizard item={mockItem} open={true} onClose={mockOnClose} />,
       );
 
-      // Navigate to SUCCESS state
-      await waitFor(
-        async () => {
-          const continueButton = screen.getByRole("button", {
-            name: /continue/i,
-          });
-          expect(continueButton).not.toBeDisabled();
-          await userEvent.click(continueButton);
-        },
-        { timeout: 2000 },
-      );
-
-      await waitFor(async () => {
-        const continueButton = screen.getByRole("button", {
-          name: /continue/i,
-        });
-        await userEvent.click(continueButton);
-      });
-
-      await waitFor(async () => {
-        const continueButton = screen.getByRole("button", {
-          name: /continue/i,
-        });
-        await userEvent.click(continueButton);
-      });
+      await navigateToUnlockDevice();
+      const testPassphrase = "my-secure-passphrase-123";
+      await submitPassphrase(testPassphrase);
 
       await waitFor(() => {
-        expect(screen.getByLabelText("Passphrase")).toBeInTheDocument();
+        expect(exportMock).toHaveBeenCalledWith(
+          [mockItem.uuid],
+          testPassphrase,
+        );
       });
+    });
 
-      const passphraseInput = screen.getByLabelText("Passphrase");
-      await userEvent.type(passphraseInput, "test-passphrase");
+    it("shows success state with Done button and closes on click", async () => {
+      renderWithProviders(
+        <ExportWizard item={mockItem} open={true} onClose={mockOnClose} />,
+      );
 
-      const continueButton = screen.getByRole("button", { name: /continue/i });
-      await userEvent.click(continueButton);
+      await navigateToUnlockDevice();
+      await submitPassphrase("test-passphrase");
 
       await waitFor(() => {
         expect(screen.getByText("Export Successful")).toBeInTheDocument();
       });
 
-      // Should only have Done button
       expect(screen.getByRole("button", { name: /done/i })).toBeInTheDocument();
       expect(
         screen.queryByRole("button", { name: /continue/i }),
       ).not.toBeInTheDocument();
-      expect(
-        screen.queryByRole("button", { name: /back/i }),
-      ).not.toBeInTheDocument();
-      expect(
-        screen.queryByRole("button", { name: /cancel/i }),
-      ).not.toBeInTheDocument();
-    });
-
-    it("calls onClose when Done button is clicked", async () => {
-      renderWithProviders(
-        <ExportWizard item={mockItem} open={true} onClose={mockOnClose} />,
-      );
-
-      // Navigate to SUCCESS state
-      await waitFor(
-        async () => {
-          const continueButton = screen.getByRole("button", {
-            name: /continue/i,
-          });
-          expect(continueButton).not.toBeDisabled();
-          await userEvent.click(continueButton);
-        },
-        { timeout: 2000 },
-      );
-
-      await waitFor(async () => {
-        const continueButton = screen.getByRole("button", {
-          name: /continue/i,
-        });
-        await userEvent.click(continueButton);
-      });
-
-      await waitFor(async () => {
-        const continueButton = screen.getByRole("button", {
-          name: /continue/i,
-        });
-        await userEvent.click(continueButton);
-      });
-
-      await waitFor(() => {
-        expect(screen.getByLabelText("Passphrase")).toBeInTheDocument();
-      });
-
-      const passphraseInput = screen.getByLabelText("Passphrase");
-      await userEvent.type(passphraseInput, "test-passphrase");
-
-      const continueButton = screen.getByRole("button", { name: /continue/i });
-      await userEvent.click(continueButton);
-
-      await waitFor(() => {
-        expect(screen.getByText("Export Successful")).toBeInTheDocument();
-      });
 
       const doneButton = screen.getByRole("button", { name: /done/i });
       await userEvent.click(doneButton);
@@ -605,27 +276,13 @@ describe("ExportWizard Component", () => {
     });
   });
 
-  describe("Cancel Functionality", () => {
-    it("calls onClose when Cancel button is clicked", async () => {
+  describe("Cancel and Reset", () => {
+    it("calls onClose when Cancel button clicked", async () => {
       renderWithProviders(
         <ExportWizard item={mockItem} open={true} onClose={mockOnClose} />,
       );
 
-      // Wait for modal to open
-      await waitFor(() => {
-        expect(screen.getByRole("dialog")).toBeInTheDocument();
-      });
-
-      // Wait for preflight to complete
-      await waitFor(
-        () => {
-          const continueButton = screen.getByRole("button", {
-            name: /continue/i,
-          });
-          expect(continueButton).not.toBeDisabled();
-        },
-        { timeout: 2000 },
-      );
+      await waitForPreflightComplete();
 
       const cancelButton = screen.getByRole("button", { name: /cancel/i });
       await userEvent.click(cancelButton);
@@ -633,92 +290,234 @@ describe("ExportWizard Component", () => {
       expect(mockOnClose).toHaveBeenCalledTimes(1);
     });
 
-    it("resets wizard state when modal is closed and reopened", async () => {
+    it("resets state when closed and reopened", async () => {
       const { rerender } = renderWithProviders(
         <ExportWizard item={mockItem} open={true} onClose={mockOnClose} />,
       );
 
-      // Navigate to READY state
-      await waitFor(
-        async () => {
-          const continueButton = screen.getByRole("button", {
-            name: /continue/i,
-          });
-          expect(continueButton).not.toBeDisabled();
-          await userEvent.click(continueButton);
-        },
-        { timeout: 2000 },
-      );
+      await navigateToUnlockDevice();
 
-      await waitFor(() => {
-        expect(screen.getByText("Ready to export.")).toBeInTheDocument();
-      });
-
-      // Close the modal
       rerender(
         <ExportWizard item={mockItem} open={false} onClose={mockOnClose} />,
       );
-
-      // Reopen the modal
       rerender(
         <ExportWizard item={mockItem} open={true} onClose={mockOnClose} />,
       );
 
-      // Should be back at initial PREFLIGHT state
       await waitFor(() => {
         expect(screen.getByText("Preparing to export.")).toBeInTheDocument();
+      });
+    });
+  });
+
+  describe("Device Detection", () => {
+    const deviceErrorTests = [
+      {
+        status: ExportStatus.NO_DEVICE_DETECTED,
+        message: /No USB drives detected/i,
+      },
+      {
+        status: ExportStatus.MULTI_DEVICE_DETECTED,
+        message: /Too many USB drives detected/i,
+      },
+      {
+        status: ExportStatus.INVALID_DEVICE_DETECTED,
+        message: /Either the drive is not encrypted/i,
+      },
+    ];
+
+    deviceErrorTests.forEach(({ status, message }) => {
+      it(`shows error message for ${status}`, async () => {
+        vi.mocked(window.electronAPI.initiateExport).mockResolvedValueOnce(
+          status,
+        );
+
+        renderWithProviders(
+          <ExportWizard item={mockItem} open={true} onClose={mockOnClose} />,
+        );
+
+        // Wait for preflight to complete
+        await waitForPreflightComplete();
+
+        // Click Continue to transition from PREFLIGHT_COMPLETE to INSERT_USB
+        const continueButton = screen.getByRole("button", {
+          name: /continue/i,
+        });
+        await userEvent.click(continueButton);
+
+        // Now we should see the error message and retry button
+        await waitFor(() => {
+          expect(screen.getByText(message)).toBeInTheDocument();
+          expect(
+            screen.getByRole("button", { name: /retry/i }),
+          ).toBeInTheDocument();
+          expect(
+            screen.queryByRole("button", { name: /continue/i }),
+          ).not.toBeInTheDocument();
+        });
+      });
+    });
+
+    it("transitions to UNLOCK_DEVICE when device becomes available after retry", async () => {
+      vi.mocked(window.electronAPI.initiateExport)
+        .mockResolvedValueOnce(ExportStatus.NO_DEVICE_DETECTED)
+        .mockResolvedValueOnce(ExportStatus.DEVICE_LOCKED);
+
+      renderWithProviders(
+        <ExportWizard item={mockItem} open={true} onClose={mockOnClose} />,
+      );
+
+      // Wait for preflight to complete
+      await waitForPreflightComplete();
+
+      // Click Continue to see the error message
+      const continueButton = screen.getByRole("button", { name: /continue/i });
+      await userEvent.click(continueButton);
+
+      await waitFor(() => {
+        expect(screen.getByText(/No USB drives detected/i)).toBeInTheDocument();
+      });
+
+      // Click retry - this should automatically transition to UNLOCK_DEVICE when device is detected
+      const retryButton = screen.getByRole("button", { name: /retry/i });
+      await userEvent.click(retryButton);
+
+      // After retry succeeds with DEVICE_LOCKED, should transition directly to UNLOCK_DEVICE
+      await waitFor(() => {
         expect(
-          screen.getByText("Understand the risks before exporting files"),
+          screen.getByText("Enter passphrase for USB drive"),
         ).toBeInTheDocument();
       });
     });
   });
 
-  describe("ElectronAPI Integration", () => {
-    it("successfully completes export flow (stub implementation)", async () => {
+  describe("Unlock Errors", () => {
+    const unlockErrorTests = [
+      {
+        status: ExportStatus.ERROR_UNLOCK_LUKS,
+        message: /The passphrase provided did not work/i,
+      },
+      {
+        status: ExportStatus.ERROR_UNLOCK_GENERIC,
+        message: /Failed to unlock the drive/i,
+      },
+    ];
+
+    unlockErrorTests.forEach(({ status, message }) => {
+      it(`shows error and stays in unlock state for ${status}`, async () => {
+        vi.mocked(window.electronAPI.export).mockResolvedValueOnce(status);
+
+        renderWithProviders(
+          <ExportWizard item={mockItem} open={true} onClose={mockOnClose} />,
+        );
+
+        await navigateToUnlockDevice();
+        await submitPassphrase("wrong-passphrase");
+
+        await waitFor(() => {
+          expect(screen.getByText(message)).toBeInTheDocument();
+          expect(screen.getByLabelText("Passphrase")).toHaveValue("");
+        });
+      });
+    });
+
+    it("allows retry after unlock error and succeeds", async () => {
+      vi.mocked(window.electronAPI.export)
+        .mockResolvedValueOnce(ExportStatus.ERROR_UNLOCK_LUKS)
+        .mockResolvedValueOnce(ExportStatus.SUCCESS_EXPORT);
+
       renderWithProviders(
         <ExportWizard item={mockItem} open={true} onClose={mockOnClose} />,
       );
 
-      // Navigate through all states to trigger export
-      await waitFor(
-        async () => {
-          const continueButton = screen.getByRole("button", {
-            name: /continue/i,
-          });
-          expect(continueButton).not.toBeDisabled();
-          await userEvent.click(continueButton);
-        },
-        { timeout: 2000 },
-      );
-
-      await waitFor(async () => {
-        const continueButton = screen.getByRole("button", {
-          name: /continue/i,
-        });
-        await userEvent.click(continueButton);
-      });
-
-      await waitFor(async () => {
-        const continueButton = screen.getByRole("button", {
-          name: /continue/i,
-        });
-        await userEvent.click(continueButton);
-      });
+      await navigateToUnlockDevice();
+      await submitPassphrase("wrong-passphrase");
 
       await waitFor(() => {
-        expect(screen.getByLabelText("Passphrase")).toBeInTheDocument();
+        expect(
+          screen.getByText(/The passphrase provided did not work/i),
+        ).toBeInTheDocument();
       });
 
-      const passphraseInput = screen.getByLabelText("Passphrase");
-      await userEvent.type(passphraseInput, "test-passphrase");
+      await submitPassphrase("correct-passphrase");
 
-      const continueButton = screen.getByRole("button", { name: /continue/i });
-      await userEvent.click(continueButton);
-
-      // Wait for success state (export API call is TODO/stubbed currently)
       await waitFor(() => {
         expect(screen.getByText("Export Successful")).toBeInTheDocument();
+      });
+    });
+  });
+
+  describe("Export Errors", () => {
+    const partialSuccessTests = [
+      {
+        status: ExportStatus.ERROR_EXPORT_CLEANUP,
+        message: /some temporary files remain on disk/i,
+      },
+      {
+        status: ExportStatus.ERROR_UNMOUNT_VOLUME_BUSY,
+        message: /USB drive could not be unmounted/i,
+      },
+    ];
+
+    partialSuccessTests.forEach(({ status, message }) => {
+      it(`shows partial success warning for ${status}`, async () => {
+        vi.mocked(window.electronAPI.export).mockResolvedValueOnce(status);
+
+        renderWithProviders(
+          <ExportWizard item={mockItem} open={true} onClose={mockOnClose} />,
+        );
+
+        await navigateToUnlockDevice();
+        await submitPassphrase("test-passphrase");
+
+        await waitFor(() => {
+          expect(
+            screen.getByText(/Export successful, but drive was not locked/i),
+          ).toBeInTheDocument();
+          expect(screen.getByText(message)).toBeInTheDocument();
+          expect(
+            screen.getByRole("button", { name: /done/i }),
+          ).toBeInTheDocument();
+        });
+      });
+    });
+
+    const unrecoverableErrorTests = [
+      { status: ExportStatus.ERROR_MOUNT, message: /Error mounting drive/i },
+      { status: ExportStatus.ERROR_EXPORT, message: /Error during export/i },
+      {
+        status: DeviceErrorStatus.ERROR_MISSING_FILES,
+        message: /Files were moved or missing/i,
+      },
+      {
+        status: ExportStatus.DEVICE_ERROR,
+        message: /Error encountered with this drive/i,
+      },
+      {
+        status: DeviceErrorStatus.UNEXPECTED_RETURN_STATUS,
+        message: /Error encountered. Please contact support/i,
+      },
+    ];
+
+    unrecoverableErrorTests.forEach(({ status, message }) => {
+      it(`shows fatal error for ${status}`, async () => {
+        vi.mocked(window.electronAPI.export).mockResolvedValueOnce(status);
+
+        renderWithProviders(
+          <ExportWizard item={mockItem} open={true} onClose={mockOnClose} />,
+        );
+
+        await navigateToUnlockDevice();
+        await submitPassphrase("test-passphrase");
+
+        await waitFor(() => {
+          expect(screen.getByText("Export Failed")).toBeInTheDocument();
+          expect(screen.getByText(message)).toBeInTheDocument();
+          const closeButtons = screen.getAllByRole("button", {
+            name: /close/i,
+          });
+          expect(closeButtons.length).toBeGreaterThanOrEqual(1);
+        });
       });
     });
   });

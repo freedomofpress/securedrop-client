@@ -9,6 +9,7 @@ import React, { memo } from "react";
 import { setupStore, type RootState } from "./store";
 import "./i18n";
 import type { ElectronAPI } from "../preload/index";
+import { ExportStatus } from "../types";
 
 // Mock global variables
 (global as any).__APP_VERSION__ = "6.6.6-test";
@@ -188,6 +189,8 @@ beforeEach(() => {
     shouldAutoLogin: vi.fn().mockResolvedValue(false),
     clearClipboard: vi.fn().mockResolvedValue(null),
     openFile: vi.fn().mockResolvedValue(undefined),
+    initiateExport: vi.fn().mockResolvedValue(ExportStatus.DEVICE_LOCKED),
+    export: vi.fn().mockResolvedValue(ExportStatus.SUCCESS_EXPORT),
   } as ElectronAPI;
 });
 
