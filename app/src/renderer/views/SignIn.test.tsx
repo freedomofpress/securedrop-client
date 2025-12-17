@@ -144,9 +144,7 @@ describe("SignInView Component", () => {
     // Wait for server response and check for error message
     await waitFor(() => {
       expect(
-        screen.getByText(
-          "Could not reach the SecureDrop server. Please check your Internet and Tor connection and try again.",
-        ),
+        screen.getByText("Could not reach the SecureDrop server."),
       ).toBeInTheDocument();
     });
   });
@@ -187,9 +185,7 @@ describe("SignInView Component", () => {
     // Wait for server response and check for error message
     await waitFor(() => {
       expect(
-        screen.getByText(
-          "Those credentials didn't work. Please try again, and make sure to use a new two-factor code.",
-        ),
+        screen.getByText("Those credentials didn't work."),
       ).toBeInTheDocument();
     });
   });

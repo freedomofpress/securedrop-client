@@ -1,6 +1,7 @@
-import { Button, Input, Form } from "antd";
+import { Button, Input, Form, theme } from "antd";
 import type { FormProps } from "antd";
 import { Eye, EyeOff } from "lucide-react";
+import { CloseOutlined, CloseCircleFilled } from "@ant-design/icons";
 import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router";
 import { useTranslation } from "react-i18next";
@@ -30,16 +31,28 @@ function SignInView() {
   const navigate = useNavigate();
   const { t } = useTranslation("SignIn");
   const session = useAppSelector((state) => state.session);
+  const { token } = theme.useToken();
 
-  const errorMessageNetwork = t("errors.network");
-  const errorMessageCredentials = t("errors.credentials");
-  const errorMessageGeneric = t("errors.generic");
+  const errorMessageNetwork = {
+    header: t("errors.network.header"),
+    body: t("errors.network.body"),
+  };
+  const errorMessageCredentials = {
+    header: t("errors.credentials.header"),
+    body: t("errors.credentials.body"),
+  };
+  const errorMessageGeneric = {
+    header: t("errors.generic.header"),
+    body: t("errors.generic.body"),
+  };
 
   const [form] = Form.useForm();
   const [version, _setVersion] = useState<string>(__APP_VERSION__ || "Unknown");
   const [authError, setAuthError] = useState<boolean>(false);
-  const [authErrorMessage, setAuthErrorMessage] =
-    useState<string>(errorMessageGeneric);
+  const [authErrorMessage, setAuthErrorMessage] = useState<{
+    header: string;
+    body: string;
+  }>(errorMessageGeneric);
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
   const [hasValidationErrors, setHasValidationErrors] =
     useState<boolean>(false);
@@ -48,7 +61,10 @@ function SignInView() {
   useEffect(() => {
     if (session.errorMessage) {
       setAuthError(true);
-      setAuthErrorMessage(session.errorMessage);
+      setAuthErrorMessage({
+        header: session.errorMessage,
+        body: "",
+      });
       // Clear the error from session state
       dispatch(clearError());
     }
@@ -190,10 +206,34 @@ function SignInView() {
 
           <h1 className="mb-6">{t("title")}</h1>
           {authError && (
-            <div className="absolute top-14 left-0 right-0 p-4 bg-red-50 border border-red-200 rounded-lg shadow-lg z-10">
-              <p className="text-sm text-red-700 text-center">
-                {authErrorMessage}
-              </p>
+            <div className="absolute top-14 -left-8 -right-8 p-4 bg-red-50 border border-red-200 rounded-lg z-10">
+              <button
+                onClick={() => setAuthError(false)}
+                className="absolute top-3 right-3 text-gray-400 hover:text-gray-600"
+                aria-label="Close error message"
+              >
+                <CloseOutlined style={{ fontSize: 14 }} />
+              </button>
+              <div className="flex gap-3 items-start">
+                <CloseCircleFilled
+                  style={{ fontSize: 24, color: token.colorError }}
+                  className="flex-shrink-0"
+                />
+                <div>
+                  <p
+                    className="text-sm font-semibold"
+                    style={{ color: token.colorText }}
+                  >
+                    {authErrorMessage.header}
+                  </p>
+                  <p
+                    className="text-sm mt-1"
+                    style={{ color: token.colorText }}
+                  >
+                    {authErrorMessage.body}
+                  </p>
+                </div>
+              </div>
             </div>
           )}
         </div>
@@ -205,7 +245,6 @@ function SignInView() {
             onFinishFailed={onFinishFailed}
             onValuesChange={onValuesChange}
             layout="vertical"
-            className="space-y-6"
             validateTrigger="onSubmit"
             requiredMark={false}
           >
