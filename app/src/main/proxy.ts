@@ -11,6 +11,7 @@ import type {
 
 const DEFAULT_PROXY_VM_NAME = "sd-proxy";
 const DEFAULT_PROXY_CMD_TIMEOUT_MS = 5000 as ms;
+export const MESSAGE_REPLY_DOWNLOAD_TIMEOUT_MS = 20000 as ms;
 
 function parseJSONResponse(response: string): ProxyJSONResponse {
   const result = JSON.parse(response);
@@ -94,6 +95,11 @@ export async function proxyJSONRequestInner(
     });
 
     request.stream = request.stream ?? false;
+    // Only override the proxy's internal 10s timeout if we need more time
+    const timeoutInSeconds = Math.ceil(command.timeout / 1000);
+    if (timeoutInSeconds > 10) {
+      request.timeout = timeoutInSeconds;
+    }
     process.stdin.write(JSON.stringify(request) + "\n");
   });
 }
@@ -105,10 +111,11 @@ export async function proxyStreamRequest(
   writeStream: Writable,
   offset?: number,
   abortSignal?: AbortSignal,
+  timeout?: ms,
 ): Promise<ProxyResponse> {
   return proxyStreamRequestInner(
     request,
-    buildProxyCommand(abortSignal),
+    buildProxyCommand(abortSignal, timeout),
     writeStream,
     offset,
   );
@@ -203,11 +210,19 @@ export async function proxyStreamRequestInner(
       request.headers["Range"] = `bytes=${offset}-`;
     }
     request.stream = true;
+    // Only override the proxy's internal 10s timeout if we need more time
+    const timeoutInSeconds = Math.ceil(command.timeout / 1000);
+    if (timeoutInSeconds > 10) {
+      request.timeout = timeoutInSeconds;
+    }
     process.stdin.write(JSON.stringify(request) + "\n");
   });
 }
 
-function buildProxyCommand(abortSignal?: AbortSignal): ProxyCommand {
+function buildProxyCommand(
+  abortSignal?: AbortSignal,
+  timeout?: ms,
+): ProxyCommand {
   let command = "";
   let commandOptions: string[] = [];
   const env: Map<string, string> = new Map();
@@ -226,7 +241,7 @@ function buildProxyCommand(abortSignal?: AbortSignal): ProxyCommand {
     command: command,
     options: commandOptions,
     env: env,
-    timeout: DEFAULT_PROXY_CMD_TIMEOUT_MS,
+    timeout: timeout || DEFAULT_PROXY_CMD_TIMEOUT_MS,
     abortSignal: abortSignal,
   };
 }
