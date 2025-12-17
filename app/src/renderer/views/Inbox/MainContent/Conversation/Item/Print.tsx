@@ -1,4 +1,4 @@
-import { memo, useReducer, useEffect } from "react";
+import { memo, useReducer, useEffect, useRef } from "react";
 import { type Item, DeviceStatus, PrintStatus } from "../../../../../../types";
 import "../Item.css";
 import "./File.css";
@@ -244,58 +244,109 @@ export const PrintWizard = memo(function PrintWizard({
     filename: filename,
   });
 
+  // Refs to track in-progress operations
+  const preflightInProgress = useRef(false);
+  const printInProgress = useRef(false);
+
   // Reset state when wizard is closed
   useEffect(() => {
     if (!open) {
       dispatch({ type: "CANCEL" });
+      // Reset operation flags when closing
+      preflightInProgress.current = false;
+      printInProgress.current = false;
     }
   }, [open]);
 
   // Initiate print preflight checks on modal open
   useEffect(() => {
+    // Only run if we're in PREFLIGHT state, modal is open, and not already in progress
+    if (context.state !== "PREFLIGHT" || !open || preflightInProgress.current) {
+      return;
+    }
+
+    preflightInProgress.current = true;
+    let isCancelled = false;
+
     const initiatePrint = async () => {
       try {
         const deviceStatus = await window.electronAPI.initiatePrint();
-        if (deviceStatus === PrintStatus.PRINT_PREFLIGHT_SUCCESS) {
-          dispatch({ type: "PREFLIGHT_COMPLETE" });
-        } else {
-          dispatch({
-            type: "PRINT_ERROR",
-            payload: `Print preflight failed: ${deviceStatus.toString()}`,
-            deviceStatus: deviceStatus,
-          });
+        // Only dispatch if operation hasn't been cancelled
+        if (!isCancelled) {
+          if (deviceStatus === PrintStatus.PRINT_PREFLIGHT_SUCCESS) {
+            dispatch({ type: "PREFLIGHT_COMPLETE" });
+          } else {
+            dispatch({
+              type: "PRINT_ERROR",
+              payload: `Print preflight failed: ${deviceStatus.toString()}`,
+              deviceStatus: deviceStatus,
+            });
+          }
         }
       } catch (error) {
-        console.error("Failed to initiate print: ", error);
-        const errorMessage =
-          error instanceof Error ? error.message : t("wizard.unknownError");
-        dispatch({ type: "PRINT_ERROR", payload: errorMessage });
+        if (!isCancelled) {
+          console.error("Failed to initiate print: ", error);
+          const errorMessage =
+            error instanceof Error ? error.message : t("wizard.unknownError");
+          dispatch({ type: "PRINT_ERROR", payload: errorMessage });
+        }
+      } finally {
+        preflightInProgress.current = false;
       }
     };
-    if (context.state === "PREFLIGHT" && open) {
-      initiatePrint();
-    }
+
+    initiatePrint();
+
+    // Cleanup function to mark operation as cancelled. This marks operation as
+    // cancelled in the frontend, but does not cancel the async preflight operation
+    // in the backend.
+    return () => {
+      isCancelled = true;
+    };
   }, [open, context.state, t]);
 
   // Perform print
   useEffect(() => {
-    if (context.state === "PRINTING") {
-      const performPrint = async () => {
-        try {
-          const deviceStatus = await window.electronAPI.print([item.uuid]);
+    // Only run if we're in PRINTING state and not already in progress
+    if (context.state !== "PRINTING" || printInProgress.current) {
+      return;
+    }
+
+    printInProgress.current = true;
+    let isCancelled = false;
+
+    const performPrint = async () => {
+      try {
+        const deviceStatus = await window.electronAPI.print([item.uuid]);
+        // Only dispatch if operation hasn't been cancelled
+        if (!isCancelled) {
           dispatch({ type: "PRINT_COMPLETE", deviceStatus: deviceStatus });
-        } catch (error) {
+        }
+      } catch (error) {
+        if (!isCancelled) {
           console.error("Failed to print file:", error);
           const errorMessage =
             error instanceof Error ? error.message : t("wizard.unknownError");
           dispatch({ type: "PRINT_ERROR", payload: errorMessage });
         }
-      };
-      performPrint();
-    }
+      } finally {
+        printInProgress.current = false;
+      }
+    };
+
+    performPrint();
+
+    // Cleanup function to mark operation as cancelled. This marks operation as
+    // cancelled in the frontend, but does not cancel the async print operation
+    // in the backend.
+    return () => {
+      isCancelled = true;
+    };
   }, [context.state, item.uuid, t]);
 
   const handleClose = () => {
+    // Cancel any ongoing print operation
+    window.electronAPI.cancelPrint();
     dispatch({ type: "CANCEL" });
     onClose();
   };

@@ -130,6 +130,12 @@ const electronAPI = {
   print: logIpcCall<DeviceStatus>("print", (itemUuids: string[]) =>
     ipcRenderer.invoke("print", itemUuids),
   ),
+  cancelExport: logIpcCall<void>("cancelExport", () =>
+    ipcRenderer.invoke("cancelExport"),
+  ),
+  cancelPrint: logIpcCall<void>("cancelPrint", () =>
+    ipcRenderer.invoke("cancelPrint"),
+  ),
 };
 
 contextBridge.exposeInMainWorld("electronAPI", electronAPI);

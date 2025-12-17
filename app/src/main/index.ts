@@ -409,11 +409,11 @@ app.whenReady().then(() => {
   ipcMain.handle(
     "print",
     async (_event, itemUuids: string[]): Promise<DeviceStatus> => {
-      const items: Item[] = itemUuids.map((itemUuid) => db.getItem(itemUuid));
       const filePaths: string[] = [];
-      for (const item of items) {
-        if (!item.filename) {
-          throw new Error(`Item ${item.uuid} has not been downloaded yet`);
+      for (const itemUuid of itemUuids) {
+        const item = db.getItem(itemUuid);
+        if (!item || !item.filename) {
+          throw new Error(`Item ${itemUuid} has not been downloaded yet`);
         }
         if (!fs.existsSync(item.filename)) {
           throw new Error(`File not found: ${item.filename}`);
@@ -423,6 +423,14 @@ app.whenReady().then(() => {
       return printer.print(filePaths);
     },
   );
+
+  ipcMain.handle("cancelExport", async (_event): Promise<void> => {
+    exporter.cancelExport();
+  });
+
+  ipcMain.handle("cancelPrint", async (_event): Promise<void> => {
+    printer.cancelPrint();
+  });
 
   const mainWindow = createWindow();
 

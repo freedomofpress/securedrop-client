@@ -646,6 +646,8 @@ export const ExportWizard = memo(function ExportWizard({
   }, [context.state, item.uuid, context.passphrase, t]);
 
   const handleClose = () => {
+    // Cancel any ongoing export operation
+    window.electronAPI.cancelExport();
     dispatch({ type: "CANCEL" });
     onClose();
   };

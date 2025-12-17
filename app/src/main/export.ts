@@ -49,13 +49,26 @@ export type PrintEvent =
   | { action: "preflightSuccess" }
   | { action: "print" }
   | { action: "printSuccess" }
-  | { action: "fail"; error: Error };
+  | { action: "fail"; error: Error }
+  | { action: "cancel" };
 
 export class PrintStateMachine implements StateMachine<PrintState, PrintEvent> {
   state: PrintState = PrintState.Idle;
   onError?(error: Error): void;
 
   transition(event: PrintEvent) {
+    if (event.action === "fail") {
+      this.state = PrintState.Error;
+      if (this.onError) {
+        this.onError(event.error);
+      }
+      return;
+    }
+    if (event.action === "cancel") {
+      this.state = PrintState.Idle;
+      return;
+    }
+
     const s = this.state;
     let next: PrintState | null = null;
 
@@ -83,12 +96,6 @@ export class PrintStateMachine implements StateMachine<PrintState, PrintEvent> {
         }
         break;
     }
-    if (event.action === "fail") {
-      next = PrintState.Error;
-      if (this.onError) {
-        this.onError(event.error);
-      }
-    }
 
     if (next) {
       this.state = next;
@@ -112,7 +119,8 @@ export type ExportEvent =
   | { action: "preflightSuccess" }
   | { action: "export" }
   | { action: "exportSuccess" }
-  | { action: "fail"; error: Error };
+  | { action: "fail"; error: Error }
+  | { action: "cancel" };
 
 export class ExportStateMachine implements StateMachine<
   ExportState,
@@ -122,6 +130,18 @@ export class ExportStateMachine implements StateMachine<
   onError?(error: Error): void;
 
   transition(event: ExportEvent) {
+    if (event.action === "fail") {
+      this.state = ExportState.Error;
+      if (this.onError) {
+        this.onError(event.error);
+      }
+      return;
+    }
+    if (event.action === "cancel") {
+      this.state = ExportState.Idle;
+      return;
+    }
+
     const s = this.state;
     let next: ExportState | null = null;
 
@@ -152,12 +172,6 @@ export class ExportStateMachine implements StateMachine<
           next = ExportState.Done;
         }
         break;
-    }
-    if (event.action === "fail") {
-      next = ExportState.Error;
-      if (this.onError) {
-        this.onError(event.error);
-      }
     }
 
     if (next) {
@@ -541,6 +555,17 @@ export class Printer extends ArchiveExporter {
       this.processStderr = "";
     }
   }
+
+  public cancelPrint(): void {
+    console.log("Cancelling print operation");
+    if (this.process) {
+      this.process.kill();
+      this.process = null;
+    }
+    this.processStderr = "";
+    this.cleanupTmpdir();
+    this.fsm.transition({ action: "cancel" });
+  }
 }
 
 export class Exporter extends ArchiveExporter {
@@ -665,5 +690,16 @@ export class Exporter extends ArchiveExporter {
       action: "fail",
       error: new PrintExportError(`Error: ${errorMsg}`),
     });
+  }
+
+  public cancelExport(): void {
+    console.log("Cancelling export operation");
+    if (this.process) {
+      this.process.kill();
+      this.process = null;
+    }
+    this.processStderr = "";
+    this.cleanupTmpdir();
+    this.fsm.transition({ action: "cancel" });
   }
 }
