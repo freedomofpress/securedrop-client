@@ -398,9 +398,9 @@ function createQueue(
 function authHeader(authToken: string | undefined): Record<string, string> {
   return authToken
     ? {
-      Accept: "application/json",
-      "Content-Type": "application/json",
-      Authorization: `Token ${authToken}`,
-    }
+        Accept: "application/json",
+        "Content-Type": "application/json",
+        Authorization: `Token ${authToken}`,
+      }
     : {};
 }

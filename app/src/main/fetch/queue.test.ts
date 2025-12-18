@@ -33,7 +33,7 @@ vi.mock("../crypto", async () => {
     Crypto: {
       getInstance: () => mockCrypto,
     },
-    CryptoError: class CryptoError extends Error { },
+    CryptoError: class CryptoError extends Error {},
   };
 });
 

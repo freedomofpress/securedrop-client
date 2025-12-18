@@ -37,11 +37,11 @@ interface KeyObject {
 const sortKeys = (_: string, value: KeyObject) =>
   value instanceof Object && !(value instanceof Array)
     ? Object.keys(value)
-      .sort()
-      .reduce((sorted: KeyObject, key: string) => {
-        sorted[key] = value[key];
-        return sorted;
-      }, {})
+        .sort()
+        .reduce((sorted: KeyObject, key: string) => {
+          sorted[key] = value[key];
+          return sorted;
+        }, {})
     : value;
 
 // Calculate the version (BLAKE2s digest) of the normalized JSON representation
@@ -570,14 +570,14 @@ export class DB {
       hasAttachment: this.isTruthy(row.has_attachment),
       messagePreview: row.last_message_kind
         ? {
-          kind: row.last_message_kind,
-          plaintext:
-            (row.last_message_kind === "file"
-              ? row.last_message_filename?.substring(
-                row.last_message_filename.lastIndexOf("/") + 1,
-              )
-              : row.last_message_plaintext) ?? null,
-        }
+            kind: row.last_message_kind,
+            plaintext:
+              (row.last_message_kind === "file"
+                ? row.last_message_filename?.substring(
+                    row.last_message_filename.lastIndexOf("/") + 1,
+                  )
+                : row.last_message_plaintext) ?? null,
+          }
         : null,
     };
   }
