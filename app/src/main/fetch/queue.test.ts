@@ -33,7 +33,7 @@ vi.mock("../crypto", async () => {
     Crypto: {
       getInstance: () => mockCrypto,
     },
-    CryptoError: class CryptoError extends Error {},
+    CryptoError: class CryptoError extends Error { },
   };
 });
 
@@ -446,6 +446,7 @@ describe("TaskQueue - Two-Phase Download and Decryption", () => {
       expect(db.completeFileItem).toHaveBeenCalledWith(
         "msg1",
         "/securedrop/source1/plaintext.txt",
+        expect.any(Number),
       );
     });
 
@@ -506,9 +507,8 @@ describe("TaskQueue - Two-Phase Download and Decryption", () => {
       expect(db.completeFileItem).toHaveBeenCalledWith(
         "msg1",
         "/securedrop/source1/plaintext.txt",
+        expect.any(Number),
       );
-
-      // Should clean up the file after successful decryption
       expect(fs.promises.unlink).toHaveBeenCalledWith(
         expect.stringContaining("/encrypted.gpg"),
       );
@@ -562,6 +562,7 @@ describe("TaskQueue - Two-Phase Download and Decryption", () => {
       expect(db.completeFileItem).toHaveBeenCalledWith(
         "msg1",
         "/securedrop/source1/plaintext.txt",
+        expect.any(Number),
       );
     });
   });

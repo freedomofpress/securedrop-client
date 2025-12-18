@@ -37,11 +37,11 @@ interface KeyObject {
 const sortKeys = (_: string, value: KeyObject) =>
   value instanceof Object && !(value instanceof Array)
     ? Object.keys(value)
-        .sort()
-        .reduce((sorted: KeyObject, key: string) => {
-          sorted[key] = value[key];
-          return sorted;
-        }, {})
+      .sort()
+      .reduce((sorted: KeyObject, key: string) => {
+        sorted[key] = value[key];
+        return sorted;
+      }, {})
     : value;
 
 // Calculate the version (BLAKE2s digest) of the normalized JSON representation
@@ -210,7 +210,7 @@ export class DB {
     );
     this.deleteItem = this.db.prepare("DELETE FROM items WHERE uuid = @uuid");
     this.selectItem = this.db.prepare(
-      `SELECT uuid, data, plaintext, filename, fetch_status, fetch_progress FROM items WHERE uuid = @uuid`,
+      `SELECT uuid, data, plaintext, filename, fetch_status, fetch_progress, decrypted_size FROM items WHERE uuid = @uuid`,
     );
 
     this.selectAllJournalistVersion = this.db.prepare(
@@ -252,7 +252,7 @@ export class DB {
       WHERE s.uuid = ?
     `);
     this.selectItemsBySourceId = this.db.prepare(`
-      SELECT uuid, data, plaintext, filename, fetch_status, fetch_progress FROM items_projected
+      SELECT uuid, data, plaintext, filename, fetch_status, fetch_progress, decrypted_size FROM items_projected
       WHERE source_uuid = ?
       ORDER BY interaction_count ASC
     `);
@@ -570,14 +570,14 @@ export class DB {
       hasAttachment: this.isTruthy(row.has_attachment),
       messagePreview: row.last_message_kind
         ? {
-            kind: row.last_message_kind,
-            plaintext:
-              (row.last_message_kind === "file"
-                ? row.last_message_filename?.substring(
-                    row.last_message_filename.lastIndexOf("/") + 1,
-                  )
-                : row.last_message_plaintext) ?? null,
-          }
+          kind: row.last_message_kind,
+          plaintext:
+            (row.last_message_kind === "file"
+              ? row.last_message_filename?.substring(
+                row.last_message_filename.lastIndexOf("/") + 1,
+              )
+              : row.last_message_plaintext) ?? null,
+        }
         : null,
     };
   }
@@ -627,6 +627,7 @@ export class DB {
         filename: row.filename,
         fetch_status: row.fetch_status,
         fetch_progress: row.fetch_progress,
+        decrypted_size: row.decrypted_size,
       };
     });
 
@@ -676,6 +677,7 @@ export class DB {
       filename: row.filename,
       fetch_status: row.fetch_status as FetchStatus,
       fetch_progress: row.fetch_progress,
+      decrypted_size: row.decrypted_size,
     };
   }
 
@@ -690,14 +692,17 @@ export class DB {
     });
   }
 
-  completeFileItem(itemUuid: string, filename: string) {
-    const stmt: Statement<{ uuid: string; filename: string }, void> =
-      this.db!.prepare(
-        `UPDATE items SET fetch_progress = null, fetch_status = ${FetchStatus.Complete}, filename = @filename, fetch_last_updated_at = CURRENT_TIMESTAMP WHERE uuid = @uuid`,
-      );
+  completeFileItem(itemUuid: string, filename: string, decryptedSize: number) {
+    const stmt: Statement<
+      { uuid: string; filename: string; decrypted_size: number },
+      void
+    > = this.db!.prepare(
+      `UPDATE items SET fetch_progress = null, fetch_status = ${FetchStatus.Complete}, filename = @filename, decrypted_size = @decrypted_size, fetch_last_updated_at = CURRENT_TIMESTAMP WHERE uuid = @uuid`,
+    );
     stmt.run({
       uuid: itemUuid,
       filename: filename,
+      decrypted_size: decryptedSize,
     });
   }
 

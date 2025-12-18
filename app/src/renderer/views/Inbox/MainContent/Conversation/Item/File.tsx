@@ -350,7 +350,8 @@ const CompleteFile = memo(function CompleteFile({ item }: { item: Item }) {
   const filename = item.filename
     ? item.filename.substring(item.filename.lastIndexOf("/") + 1)
     : "";
-  const fileSize = prettyPrintBytes(item.data.size);
+  // Use decrypted_size if available (after download), otherwise fall back to server-reported size
+  const fileSize = prettyPrintBytes(item.decrypted_size ?? item.data.size);
 
   // Format the filename to cap the length, and show full filename in tooltip if
   // formatted filename is truncated

@@ -920,7 +920,7 @@ describe("Database Method Tests", () => {
     // Set plaintext and filename for items
     db.completePlaintextItem("item1", "reply message 1");
     db.completePlaintextItem("item2", "submission message");
-    db.completeFileItem("item3", "/tmp/file3.txt");
+    db.completeFileItem("item3", "/tmp/file3.txt", 1024);
 
     source = db.getSource("source1");
     expect(source).not.toBeNull();
@@ -975,7 +975,7 @@ describe("Database Method Tests", () => {
     db.completePlaintextItem("item1", "reply message 1");
     db.completePlaintextItem("item2", "message 2");
     db.completePlaintextItem("item3", "message 1");
-    db.completeFileItem("item4", "/tmp/filename.txt");
+    db.completeFileItem("item4", "/tmp/filename.txt", 2048);
 
     const sources = db.getSources();
     const s1 = sources.find((s) => s.uuid === "source1");
