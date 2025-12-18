@@ -869,18 +869,32 @@ export class DB {
     const pendingEvents = rows.map((r) => {
       let target: SourceTarget | ItemTarget;
       if (r.source_uuid) {
+        const source = this.selectUnprojectedSourceVersion.get({
+          uuid: r.source_uuid,
+        });
+        if (!source) {
+          console.warn(
+            `Skipping stale event for nonexistent source ${r.source_uuid}`,
+          );
+          return null;
+        }
         target = {
           source_uuid: r.source_uuid,
-          version:
-            this.selectUnprojectedSourceVersion.get({ uuid: r.source_uuid })
-              ?.version ?? "",
+          version: source.version,
         };
       } else {
+        const item = this.selectUnprojectedItemVersion.get({
+          uuid: r.item_uuid,
+        });
+        if (!item) {
+          console.warn(
+            `Skipping stale event for nonexistent item ${r.item_uuid}`,
+          );
+          return null;
+        }
         target = {
           item_uuid: r.item_uuid,
-          version:
-            this.selectUnprojectedItemVersion.get({ uuid: r.item_uuid })
-              ?.version ?? "",
+          version: item.version,
         };
       }
       return {
@@ -890,7 +904,7 @@ export class DB {
         data: JSON.parse(r.data),
       };
     });
-    return pendingEvents;
+    return pendingEvents.filter((e): e is PendingEvent => e !== null);
   }
 
   // Takes pending events and their statuses from the server and applies
