@@ -126,7 +126,7 @@ describe("PrintWizard Component", () => {
       ).toBeInTheDocument();
     });
 
-    it("transitions to ERROR state on preflight failure", async () => {
+    it("transitions to CONNECT_PRINTER state when no printer found", async () => {
       vi.mocked(window.electronAPI.initiatePrint).mockResolvedValueOnce(
         PrintStatus.ERROR_PRINTER_NOT_FOUND,
       );
@@ -136,8 +136,14 @@ describe("PrintWizard Component", () => {
       );
 
       await waitFor(() => {
-        expect(screen.getByText("Print Failed")).toBeInTheDocument();
+        expect(screen.getByText("Ready to print.")).toBeInTheDocument();
+        expect(
+          screen.getByText(/Please connect a printer to continue/i),
+        ).toBeInTheDocument();
         expect(screen.getByText(/No printer found/i)).toBeInTheDocument();
+        expect(
+          screen.getByRole("button", { name: /retry/i }),
+        ).toBeInTheDocument();
       });
     });
 
@@ -196,40 +202,25 @@ describe("PrintWizard Component", () => {
       await navigateToPrinting();
 
       await waitFor(() => {
-        expect(vi.mocked(window.electronAPI.print)).toHaveBeenCalledWith([
+        expect(vi.mocked(window.electronAPI.print)).toHaveBeenCalledWith(
           mockItem.uuid,
-        ]);
+        );
       });
     });
   });
 
   describe("Success State", () => {
-    it("displays success state with Done button and closes on click", async () => {
+    it("auto-closes modal on successful print", async () => {
       renderWithProviders(
         <PrintWizard item={mockItem} open={true} onClose={mockOnClose} />,
       );
 
       await navigateToPrinting();
 
+      // Wait for success state and auto-close
       await waitFor(() => {
-        expect(screen.getByText("Print Successful")).toBeInTheDocument();
-        expect(
-          screen.getByText(/Remember to be careful when working with files/i),
-        ).toBeInTheDocument();
+        expect(mockOnClose).toHaveBeenCalledTimes(1);
       });
-
-      // Should only have Done button
-      expect(screen.getByRole("button", { name: /done/i })).toBeInTheDocument();
-      expect(
-        screen.queryByRole("button", { name: /continue/i }),
-      ).not.toBeInTheDocument();
-      expect(
-        screen.queryByRole("button", { name: /cancel/i }),
-      ).not.toBeInTheDocument();
-
-      // Click Done and verify onClose is called
-      await userEvent.click(screen.getByRole("button", { name: /done/i }));
-      expect(mockOnClose).toHaveBeenCalledTimes(1);
     });
   });
 
@@ -305,7 +296,7 @@ describe("PrintWizard Component", () => {
   });
 
   describe("Cancel and Reset", () => {
-    it("calls onClose when Cancel button is clicked", async () => {
+    it("calls onClose and cancelPrint IPC when Cancel button is clicked", async () => {
       renderWithProviders(
         <PrintWizard item={mockItem} open={true} onClose={mockOnClose} />,
       );
@@ -313,6 +304,9 @@ describe("PrintWizard Component", () => {
       await waitForPreflightComplete();
       await userEvent.click(screen.getByRole("button", { name: /cancel/i }));
 
+      expect(vi.mocked(window.electronAPI.cancelPrint)).toHaveBeenCalledTimes(
+        1,
+      );
       expect(mockOnClose).toHaveBeenCalledTimes(1);
     });
 
@@ -381,7 +375,7 @@ describe("PrintWizard Component", () => {
   });
 
   describe("Full Print Flow", () => {
-    it("successfully completes entire print flow", async () => {
+    it("successfully completes entire print flow and auto-closes", async () => {
       const initiatePrintMock = vi.mocked(window.electronAPI.initiatePrint);
       const printMock = vi.mocked(window.electronAPI.print);
 
@@ -396,10 +390,10 @@ describe("PrintWizard Component", () => {
 
       await navigateToPrinting();
 
-      // Verify print
+      // Verify print was called and modal auto-closed
       await waitFor(() => {
-        expect(printMock).toHaveBeenCalledWith([mockItem.uuid]);
-        expect(screen.getByText("Print Successful")).toBeInTheDocument();
+        expect(printMock).toHaveBeenCalledWith(mockItem.uuid);
+        expect(mockOnClose).toHaveBeenCalledTimes(1);
       });
     });
   });

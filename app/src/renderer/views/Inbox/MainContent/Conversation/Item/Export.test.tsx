@@ -277,7 +277,7 @@ describe("ExportWizard Component", () => {
   });
 
   describe("Cancel and Reset", () => {
-    it("calls onClose when Cancel button clicked", async () => {
+    it("calls onClose and cancelExport IPC when Cancel button clicked", async () => {
       renderWithProviders(
         <ExportWizard item={mockItem} open={true} onClose={mockOnClose} />,
       );
@@ -287,6 +287,9 @@ describe("ExportWizard Component", () => {
       const cancelButton = screen.getByRole("button", { name: /cancel/i });
       await userEvent.click(cancelButton);
 
+      expect(vi.mocked(window.electronAPI.cancelExport)).toHaveBeenCalledTimes(
+        1,
+      );
       expect(mockOnClose).toHaveBeenCalledTimes(1);
     });
 
