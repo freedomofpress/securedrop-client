@@ -10,12 +10,16 @@ import { Button, Modal } from "antd";
 type PrintState =
   | "PREFLIGHT"
   | "PREFLIGHT_COMPLETE"
+  | "PREFLIGHT_CONNECT_PRINTER"
+  | "CONNECT_PRINTER"
   | "PRINTING"
   | "SUCCESS"
   | "ERROR";
 
 type PrintAction =
-  | { type: "PREFLIGHT_COMPLETE" }
+  | { type: "PREFLIGHT_COMPLETE"; deviceStatus: DeviceStatus }
+  | { type: "RETRY_PREFLIGHT" }
+  | { type: "CONNECT_PRINTER" }
   | { type: "START_PRINT" }
   | { type: "PRINT_COMPLETE"; deviceStatus: DeviceStatus }
   | { type: "PRINT_ERROR"; payload: string; deviceStatus?: DeviceStatus }
@@ -53,10 +57,78 @@ function printReducer(
   switch (context.state) {
     case "PREFLIGHT":
       switch (action.type) {
-        case "PREFLIGHT_COMPLETE":
+        case "PREFLIGHT_COMPLETE": {
+          const printStatus = action.deviceStatus;
+
+          // If printer not found, transition to CONNECT_PRINTER state
+          if (printStatus === PrintStatus.ERROR_PRINTER_NOT_FOUND) {
+            return {
+              ...context,
+              state: "CONNECT_PRINTER",
+              deviceStatus: printStatus,
+            };
+          }
+
+          // If preflight successful, proceed to PREFLIGHT_COMPLETE
+          if (printStatus === PrintStatus.PRINT_PREFLIGHT_SUCCESS) {
+            return {
+              ...context,
+              state: "PREFLIGHT_COMPLETE",
+            };
+          }
+
+          // Any other status is an error
           return {
             ...context,
-            state: "PREFLIGHT_COMPLETE",
+            state: "ERROR",
+            deviceStatus: printStatus,
+            errorMessage: `Print preflight failed with status: ${printStatus.toString()}`,
+          };
+        }
+        default:
+          return context;
+      }
+
+    case "PREFLIGHT_CONNECT_PRINTER":
+      switch (action.type) {
+        case "PREFLIGHT_COMPLETE": {
+          const printStatus = action.deviceStatus;
+
+          // If still no printer, stay in CONNECT_PRINTER state
+          if (printStatus === PrintStatus.ERROR_PRINTER_NOT_FOUND) {
+            return {
+              ...context,
+              state: "CONNECT_PRINTER",
+              deviceStatus: printStatus,
+            };
+          }
+
+          // If preflight successful, proceed to PREFLIGHT_COMPLETE
+          if (printStatus === PrintStatus.PRINT_PREFLIGHT_SUCCESS) {
+            return {
+              ...context,
+              state: "PREFLIGHT_COMPLETE",
+            };
+          }
+
+          // Any other status is an error
+          return {
+            ...context,
+            state: "ERROR",
+            deviceStatus: printStatus,
+            errorMessage: `Print preflight failed with status: ${printStatus.toString()}`,
+          };
+        }
+        default:
+          return context;
+      }
+
+    case "CONNECT_PRINTER":
+      switch (action.type) {
+        case "RETRY_PREFLIGHT":
+          return {
+            ...context,
+            state: "PREFLIGHT_CONNECT_PRINTER",
           };
         default:
           return context;
@@ -143,6 +215,42 @@ const PreflightState = memo(function PreflightState({
   );
 });
 
+const ConnectPrinterState = memo(function ConnectPrinterState({
+  context,
+  t,
+}: StateComponentProps) {
+  return (
+    <div>
+      <div className="flex items-center gap-3 mb-4">
+        {context.state === "PREFLIGHT_CONNECT_PRINTER" ? (
+          <LoaderCircle
+            className={"animate-spin text-blue-500"}
+            size={24}
+            strokeWidth={1}
+          />
+        ) : (
+          <PrinterIcon size={24} className="text-blue-500" />
+        )}
+        <div className="ml-3">
+          <h3 className="text-lg font-semibold">
+            {t("printWizard.readyPrint")}
+          </h3>
+          <p className="text-gray-600">{context.filename}</p>
+        </div>
+      </div>
+      <hr className="my-4 border-gray-300" />
+      <div className="space-y-4">
+        <p>{t("printWizard.connectPrinterInstructions")}</p>
+        {context.deviceStatus === PrintStatus.ERROR_PRINTER_NOT_FOUND && (
+          <p className="text-red-800">
+            {t("printWizard.errorPrinterNotFound")}
+          </p>
+        )}
+      </div>
+    </div>
+  );
+});
+
 const PrintingState = memo(function PrintingState({ t }: StateComponentProps) {
   return (
     <div>
@@ -150,25 +258,6 @@ const PrintingState = memo(function PrintingState({ t }: StateComponentProps) {
         <PrinterIcon size={24} className="text-blue-500" />
         <div className="ml-3">
           <h3 className="text-lg font-semibold">{t("wizard.pleaseWait")}</h3>
-        </div>
-      </div>
-      <hr className="my-4 border-gray-300" />
-      <div className="space-y-4">
-        <h3 className="text-md font-semibold">{t("wizard.beCareful")}</h3>
-      </div>
-    </div>
-  );
-});
-
-const SuccessState = memo(function SuccessState({ t }: StateComponentProps) {
-  return (
-    <div>
-      <div className="flex items-center gap-3 mb-4">
-        <PrinterIcon size={24} className="text-blue-500" />
-        <div className="ml-3">
-          <h3 className="text-lg font-semibold">
-            {t("printWizard.printSuccess")}
-          </h3>
         </div>
       </div>
       <hr className="my-4 border-gray-300" />
@@ -258,10 +347,17 @@ export const PrintWizard = memo(function PrintWizard({
     }
   }, [open]);
 
-  // Initiate print preflight checks on modal open
+  // Initiate print preflight checks on modal open or retry
   useEffect(() => {
-    // Only run if we're in PREFLIGHT state, modal is open, and not already in progress
-    if (context.state !== "PREFLIGHT" || !open || preflightInProgress.current) {
+    // Only run if we're in PREFLIGHT or PREFLIGHT_CONNECT_PRINTER state, modal is open, and not already in progress
+    if (
+      !(
+        context.state === "PREFLIGHT" ||
+        context.state === "PREFLIGHT_CONNECT_PRINTER"
+      ) ||
+      !open ||
+      preflightInProgress.current
+    ) {
       return;
     }
 
@@ -273,15 +369,7 @@ export const PrintWizard = memo(function PrintWizard({
         const deviceStatus = await window.electronAPI.initiatePrint();
         // Only dispatch if operation hasn't been cancelled
         if (!isCancelled) {
-          if (deviceStatus === PrintStatus.PRINT_PREFLIGHT_SUCCESS) {
-            dispatch({ type: "PREFLIGHT_COMPLETE" });
-          } else {
-            dispatch({
-              type: "PRINT_ERROR",
-              payload: `Print preflight failed: ${deviceStatus.toString()}`,
-              deviceStatus: deviceStatus,
-            });
-          }
+          dispatch({ type: "PREFLIGHT_COMPLETE", deviceStatus: deviceStatus });
         }
       } catch (error) {
         if (!isCancelled) {
@@ -317,7 +405,7 @@ export const PrintWizard = memo(function PrintWizard({
 
     const performPrint = async () => {
       try {
-        const deviceStatus = await window.electronAPI.print([item.uuid]);
+        const deviceStatus = await window.electronAPI.print(item.uuid);
         // Only dispatch if operation hasn't been cancelled
         if (!isCancelled) {
           dispatch({ type: "PRINT_COMPLETE", deviceStatus: deviceStatus });
@@ -344,6 +432,14 @@ export const PrintWizard = memo(function PrintWizard({
     };
   }, [context.state, item.uuid, t]);
 
+  // Auto-close on success
+  useEffect(() => {
+    if (context.state === "SUCCESS") {
+      // Auto-close the modal on successful print
+      onClose();
+    }
+  }, [context.state, onClose]);
+
   const handleClose = () => {
     // Cancel any ongoing print operation
     window.electronAPI.cancelPrint();
@@ -356,13 +452,13 @@ export const PrintWizard = memo(function PrintWizard({
 
     switch (context.state) {
       case "PREFLIGHT":
-        return <PreflightState {...stateProps} />;
       case "PREFLIGHT_COMPLETE":
         return <PreflightState {...stateProps} />;
+      case "PREFLIGHT_CONNECT_PRINTER":
+      case "CONNECT_PRINTER":
+        return <ConnectPrinterState {...stateProps} />;
       case "PRINTING":
         return <PrintingState {...stateProps} />;
-      case "SUCCESS":
-        return <SuccessState {...stateProps} />;
       case "ERROR":
         return <ErrorState {...stateProps} />;
       default:
@@ -398,16 +494,39 @@ export const PrintWizard = memo(function PrintWizard({
           </Button>,
         ];
 
+      case "PREFLIGHT_CONNECT_PRINTER":
+        return [
+          <Button key="continue" type="primary" disabled>
+            {t("wizard.continue")}
+          </Button>,
+          <Button key="cancel" onClick={handleClose}>
+            {t("wizard.cancel")}
+          </Button>,
+        ];
+
+      case "CONNECT_PRINTER":
+        return [
+          <Button
+            key="retry"
+            type="primary"
+            onClick={() => {
+              dispatch({ type: "RETRY_PREFLIGHT" });
+            }}
+          >
+            {t("wizard.retry")}
+          </Button>,
+          <Button key="cancel" onClick={handleClose}>
+            {t("wizard.cancel")}
+          </Button>,
+        ];
+
       case "PRINTING":
         // No buttons during print
         return null;
 
       case "SUCCESS":
-        return [
-          <Button key="close" onClick={handleClose}>
-            {t("wizard.done")}
-          </Button>,
-        ];
+        // Auto-closes, no footer needed
+        return null;
 
       case "ERROR":
         return [
@@ -422,7 +541,9 @@ export const PrintWizard = memo(function PrintWizard({
   };
 
   const isNonClosableState =
-    context.state === "PRINTING" || context.state === "PREFLIGHT";
+    context.state === "PRINTING" ||
+    context.state === "PREFLIGHT" ||
+    context.state === "PREFLIGHT_CONNECT_PRINTER";
 
   return (
     <Modal
