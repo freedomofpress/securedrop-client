@@ -12,6 +12,7 @@ import {
   fetchConversation,
   updateItemFetchStatus,
 } from "../../../features/conversation/conversationSlice";
+import { syncMetadata } from "../../../features/sync/syncSlice";
 import useConversationScroll from "./Conversation/useConversationScroll";
 import "./Conversation.css";
 import { FetchStatus } from "../../../../types";
@@ -84,6 +85,11 @@ const Conversation = memo(function Conversation({
         // Update local state immediately with projected changes
         dispatch(fetchSources());
         dispatch(fetchConversation(sourceWithItems.uuid));
+
+        // Trigger sync to send the pending reply to the server
+        if (session.authData && import.meta.env.MODE !== "test") {
+          dispatch(syncMetadata(session.authData.token));
+        }
       } catch (error) {
         console.error("Failed to send reply:", error);
         // Restore the message on error
@@ -91,7 +97,14 @@ const Conversation = memo(function Conversation({
         setMessageValue(values.message);
       }
     },
-    [acknowledgeNewMessages, dispatch, dividerItemUuid, form, sourceWithItems],
+    [
+      acknowledgeNewMessages,
+      dispatch,
+      dividerItemUuid,
+      form,
+      session.authData,
+      sourceWithItems,
+    ],
   );
 
   // Keyboard shortcut: Ctrl+Enter sends reply

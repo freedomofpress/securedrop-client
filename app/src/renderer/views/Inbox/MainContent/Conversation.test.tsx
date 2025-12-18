@@ -160,6 +160,9 @@ describe("Conversation Component Reply Submission", () => {
 
     // Note: Form clearing is handled by form.resetFields() but may not reflect
     // immediately in the test DOM. The important part is that the IPC was called.
+    // Note: syncMetadata auto-trigger is not tested here because it's disabled
+    // in test mode (import.meta.env.MODE === "test"). Server tests verify the
+    // end-to-end sync behavior.
   });
 
   it("should not submit reply when message is empty", async () => {
