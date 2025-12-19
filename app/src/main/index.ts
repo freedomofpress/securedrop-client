@@ -410,7 +410,11 @@ app.whenReady().then(() => {
     "print",
     async (_event, itemUuid: string): Promise<DeviceStatus> => {
       const item = db.getItem(itemUuid);
-      if (!item || !item.filename) {
+      if (
+        !item ||
+        !item.filename ||
+        item.fetch_status !== FetchStatus.Complete
+      ) {
         throw new Error(`Item ${itemUuid} has not been downloaded yet`);
       }
       if (!fs.existsSync(item.filename)) {
