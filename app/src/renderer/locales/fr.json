@@ -100,9 +100,18 @@
       "useOffline": "Utiliser hors ligne"
     },
     "errors": {
-      "network": "Impossible de joindre le serveur SecureDrop. Veuillez vérifier votre connexion Internet et Tor, puis réessayer.",
-      "credentials": "Ces identifiants n'ont pas fonctionné. Veuillez réessayer et assurez-vous d'utiliser un nouveau code d'authentification à deux facteurs.",
-      "generic": "Cela n'a pas fonctionné. Veuillez tout vérifier et réessayer.",
+      "network": {
+        "header": "Impossible de joindre le serveur SecureDrop.",
+        "body": "Veuillez vérifier votre connexion Internet et Tor, puis réessayer."
+      },
+      "credentials": {
+        "header": "Ces identifiants n'ont pas fonctionné.",
+        "body": "Veuillez réessayer et assurez-vous d'utiliser un nouveau code d'authentification à deux facteurs."
+      },
+      "generic": {
+        "header": "Cela n'a pas fonctionné.",
+        "body": "Veuillez tout vérifier et réessayer."
+      },
       "sessionExpired": "Votre session a expiré. Reconnectez-vous."
     },
     "version": "Application SecureDrop v{{version}}"
