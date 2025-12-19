@@ -27,14 +27,12 @@ type PrintAction =
 
 interface PrintContext {
   state: PrintState;
-  filename: string;
   errorMessage: string;
   deviceStatus?: DeviceStatus;
 }
 
 const initialContext: PrintContext = {
   state: "PREFLIGHT",
-  filename: "",
   errorMessage: "",
   deviceStatus: undefined,
 };
@@ -169,6 +167,7 @@ interface StateComponentProps {
 const PreflightState = memo(function PreflightState({
   context,
   t,
+  filename,
 }: StateComponentProps) {
   return (
     <div>
@@ -186,7 +185,7 @@ const PreflightState = memo(function PreflightState({
           <h3 className="text-lg font-semibold">
             {t("printWizard.preparingPrint")}
           </h3>
-          <p className="text-gray-600">{context.filename}</p>
+          <p className="text-gray-600">{filename}</p>
         </div>
       </div>
       <hr className="my-4 border-gray-300" />
@@ -210,6 +209,7 @@ const PreflightState = memo(function PreflightState({
 const ConnectPrinterState = memo(function ConnectPrinterState({
   context,
   t,
+  filename,
 }: StateComponentProps) {
   return (
     <div>
@@ -227,7 +227,7 @@ const ConnectPrinterState = memo(function ConnectPrinterState({
           <h3 className="text-lg font-semibold">
             {t("printWizard.readyPrint")}
           </h3>
-          <p className="text-gray-600">{context.filename}</p>
+          <p className="text-gray-600">{filename}</p>
         </div>
       </div>
       <hr className="my-4 border-gray-300" />
@@ -322,7 +322,6 @@ export const PrintWizard = memo(function PrintWizard({
     : "";
   const [context, dispatch] = useReducer(printReducer, {
     ...initialContext,
-    filename: filename,
   });
 
   // Refs to track in-progress operations
