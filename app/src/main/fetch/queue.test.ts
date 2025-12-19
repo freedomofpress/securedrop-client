@@ -45,6 +45,7 @@ vi.mock("fs", () => ({
       writeFile: vi.fn(),
       readFile: vi.fn(),
       unlink: vi.fn(),
+      stat: vi.fn(() => Promise.resolve({ size: 1024 })),
     },
     createWriteStream: vi.fn(() => new PassThrough()),
   },
