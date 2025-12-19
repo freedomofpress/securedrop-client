@@ -39,6 +39,45 @@ const initialContext: PrintContext = {
   deviceStatus: undefined,
 };
 
+function getStateFromPreflightComplete(
+  context: PrintContext,
+  printStatus: DeviceStatus | undefined,
+): PrintContext {
+  if (!printStatus) {
+    return {
+      ...context,
+      state: "ERROR",
+      errorMessage: "Error getting printer status",
+    };
+  }
+
+  // If still no printer, stay in CONNECT_PRINTER state
+  if (printStatus === PrintStatus.ERROR_PRINTER_NOT_FOUND) {
+    return {
+      ...context,
+      state: "CONNECT_PRINTER",
+      deviceStatus: printStatus,
+    };
+  }
+
+  // If preflight successful and printer was found, proceed to print
+  if (printStatus === PrintStatus.PRINT_PREFLIGHT_SUCCESS) {
+    return {
+      ...context,
+      deviceStatus: printStatus,
+      state: "PRINTING",
+    };
+  }
+
+  // Any other status is an error
+  return {
+    ...context,
+    state: "ERROR",
+    deviceStatus: printStatus,
+    errorMessage: `Print preflight failed with status: ${printStatus.toString()}`,
+  };
+}
+
 function printReducer(
   context: PrintContext,
   action: PrintAction,
@@ -58,67 +97,20 @@ function printReducer(
     case "PREFLIGHT":
       switch (action.type) {
         case "PREFLIGHT_COMPLETE": {
-          const printStatus = action.deviceStatus;
-
-          // If printer not found, transition to CONNECT_PRINTER state
-          if (printStatus === PrintStatus.ERROR_PRINTER_NOT_FOUND) {
-            return {
-              ...context,
-              state: "CONNECT_PRINTER",
-              deviceStatus: printStatus,
-            };
-          }
-
-          // If preflight successful, proceed to PREFLIGHT_COMPLETE
-          if (printStatus === PrintStatus.PRINT_PREFLIGHT_SUCCESS) {
-            return {
-              ...context,
-              state: "PREFLIGHT_COMPLETE",
-            };
-          }
-
-          // Any other status is an error
           return {
             ...context,
-            state: "ERROR",
-            deviceStatus: printStatus,
-            errorMessage: `Print preflight failed with status: ${printStatus.toString()}`,
+            deviceStatus: action.deviceStatus,
+            state: "PREFLIGHT_COMPLETE",
           };
         }
         default:
           return context;
       }
 
-    case "PREFLIGHT_CONNECT_PRINTER":
+    case "PREFLIGHT_COMPLETE":
       switch (action.type) {
-        case "PREFLIGHT_COMPLETE": {
-          const printStatus = action.deviceStatus;
-
-          // If still no printer, stay in CONNECT_PRINTER state
-          if (printStatus === PrintStatus.ERROR_PRINTER_NOT_FOUND) {
-            return {
-              ...context,
-              state: "CONNECT_PRINTER",
-              deviceStatus: printStatus,
-            };
-          }
-
-          // If preflight successful, proceed to PREFLIGHT_COMPLETE
-          if (printStatus === PrintStatus.PRINT_PREFLIGHT_SUCCESS) {
-            return {
-              ...context,
-              state: "PREFLIGHT_COMPLETE",
-            };
-          }
-
-          // Any other status is an error
-          return {
-            ...context,
-            state: "ERROR",
-            deviceStatus: printStatus,
-            errorMessage: `Print preflight failed with status: ${printStatus.toString()}`,
-          };
-        }
+        case "START_PRINT":
+          return getStateFromPreflightComplete(context, context.deviceStatus);
         default:
           return context;
       }
@@ -134,10 +126,10 @@ function printReducer(
           return context;
       }
 
-    case "PREFLIGHT_COMPLETE":
+    case "PREFLIGHT_CONNECT_PRINTER":
       switch (action.type) {
-        case "START_PRINT":
-          return { ...context, state: "PRINTING" };
+        case "PREFLIGHT_COMPLETE":
+          return getStateFromPreflightComplete(context, action.deviceStatus);
         default:
           return context;
       }

@@ -135,6 +135,12 @@ describe("PrintWizard Component", () => {
         <PrintWizard item={mockItem} open={true} onClose={mockOnClose} />,
       );
 
+      // First show PREFLIGHT_COMPLETE state
+      const continueButton = await waitForPreflightComplete();
+      expect(continueButton).not.toBeDisabled();
+      await userEvent.click(continueButton);
+
+      // Now should show the CONNECT_PRINTER state
       await waitFor(() => {
         expect(screen.getByText("Ready to print.")).toBeInTheDocument();
         expect(

@@ -134,6 +134,7 @@
       "unknownError": "Erreur inconnue survenue",
       "cancel": "Annuler",
       "continue": "Continuer",
+      "back": "Retour",
       "close": "Fermer",
       "done": "Terminé"
     },
@@ -161,7 +162,6 @@
       "errorMissingFiles": "Les fichiers ont été déplacés ou sont manquants et n'ont pas pu être exportés.",
       "deviceError": "Erreur rencontrée avec ce lecteur. Consultez votre administrateur pour obtenir de l'aide.",
       "unexpectedError": "Erreur rencontrée. Veuillez contacter le support.",
-      "back": "Retour",
       "retry": "Réessayer"
     },
     "printWizard": {

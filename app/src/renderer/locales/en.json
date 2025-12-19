@@ -135,7 +135,8 @@
       "cancel": "Cancel",
       "continue": "Continue",
       "close": "Close",
-      "done": "Done"
+      "done": "Done",
+      "retry": "Retry"
     },
     "exportWizard": {
       "title": "Export File",
@@ -160,9 +161,7 @@
       "errorExport": "Error during export",
       "errorMissingFiles": "Files were moved or missing and could not be exported.",
       "deviceError": "Error encountered with this drive. See your administrator for help.",
-      "unexpectedError": "Error encountered. Please contact support.",
-      "back": "Back",
-      "retry": "Retry"
+      "unexpectedError": "Error encountered. Please contact support."
     },
     "printWizard": {
       "title": "Print File",
