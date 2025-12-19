@@ -307,12 +307,12 @@ const PreflightState = memo(function PreflightState({
           {t("exportWizard.understandRisks")}
         </h3>
         <div>
-          <p className="font-semibold">{t("exportWizard.malwareTitle")}</p>
-          <p className="text-gray-600">{t("exportWizard.malwareWarning")}</p>
+          <p className="font-semibold">{t("wizard.malwareTitle")}</p>
+          <p className="text-gray-600">{t("wizard.malwareWarning")}</p>
         </div>
         <div>
-          <p className="font-semibold">{t("exportWizard.anonymityTitle")}</p>
-          <p className="text-gray-600">{t("exportWizard.anonymityWarning")}</p>
+          <p className="font-semibold">{t("wizard.anonymityTitle")}</p>
+          <p className="text-gray-600">{t("wizard.anonymityWarning")}</p>
         </div>
       </div>
     </div>
@@ -417,14 +417,12 @@ const ExportingState = memo(function ExportingState({
       <div className="flex items-center gap-3 mb-4">
         <Inbox size={24} className="text-blue-500" />
         <div className="ml-3">
-          <h3 className="text-lg font-semibold">
-            {t("exportWizard.pleaseWait")}
-          </h3>
+          <h3 className="text-lg font-semibold">{t("wizard.pleaseWait")}</h3>
         </div>
       </div>
       <hr className="my-4 border-gray-300" />
       <div className="space-y-4">
-        <h3 className="text-md font-semibold">{t("exportWizard.beCareful")}</h3>
+        <h3 className="text-md font-semibold">{t("wizard.beCareful")}</h3>
       </div>
     </div>
   );
@@ -443,7 +441,7 @@ const SuccessState = memo(function SuccessState({ t }: StateComponentProps) {
       </div>
       <hr className="my-4 border-gray-300" />
       <div className="space-y-4">
-        <h3 className="text-md font-semibold">{t("exportWizard.beCareful")}</h3>
+        <h3 className="text-md font-semibold">{t("wizard.beCareful")}</h3>
       </div>
     </div>
   );
@@ -478,7 +476,7 @@ const PartialSuccessState = memo(function PartialSuccessState({
         <div>
           <p className="text-yellow-800">{getWarningMessage()}</p>
         </div>
-        <p className="text-gray-600">{t("exportWizard.beCareful")}</p>
+        <p className="text-gray-600">{t("wizard.beCareful")}</p>
       </div>
     </div>
   );
@@ -504,10 +502,10 @@ const ErrorState = memo(function ErrorState({
         case DeviceErrorStatus.UNEXPECTED_RETURN_STATUS:
           return t("exportWizard.unexpectedError");
         default:
-          return context.errorMessage || t("exportWizard.unknownError");
+          return context.errorMessage || t("wizard.unknownError");
       }
     }
-    return context.errorMessage || t("exportWizard.unknownError");
+    return context.errorMessage || t("wizard.unknownError");
   };
 
   return (
@@ -589,7 +587,7 @@ export const ExportWizard = memo(function ExportWizard({
       } catch (error) {
         if (!isCancelled) {
           console.error("Failed to initiate export during preflight:", error);
-          const errorMessage = t("exportWizard.unknownError");
+          const errorMessage = t("wizard.unknownError");
           dispatch({ type: "EXPORT_ERROR", payload: errorMessage });
         }
       } finally {
@@ -629,7 +627,7 @@ export const ExportWizard = memo(function ExportWizard({
         }
       } catch {
         if (!isCancelled) {
-          const errorMessage = t("exportWizard.unknownError");
+          const errorMessage = t("wizard.unknownError");
           dispatch({ type: "EXPORT_ERROR", payload: errorMessage });
         }
       } finally {
@@ -648,6 +646,8 @@ export const ExportWizard = memo(function ExportWizard({
   }, [context.state, item.uuid, context.passphrase, t]);
 
   const handleClose = () => {
+    // Cancel any ongoing export operation
+    window.electronAPI.cancelExport();
     dispatch({ type: "CANCEL" });
     onClose();
   };
@@ -683,10 +683,10 @@ export const ExportWizard = memo(function ExportWizard({
       case "PREFLIGHT_INSERT_USB":
         return [
           <Button key="continue" type="primary" disabled>
-            {t("exportWizard.continue")}
+            {t("wizard.continue")}
           </Button>,
           <Button key="cancel" onClick={handleClose}>
-            {t("exportWizard.cancel")}
+            {t("wizard.cancel")}
           </Button>,
         ];
 
@@ -699,10 +699,10 @@ export const ExportWizard = memo(function ExportWizard({
               dispatch({ type: "PREPARE_USB" });
             }}
           >
-            {t("exportWizard.continue")}
+            {t("wizard.continue")}
           </Button>,
           <Button key="cancel" onClick={handleClose}>
-            {t("exportWizard.cancel")}
+            {t("wizard.cancel")}
           </Button>,
         ];
 
@@ -716,17 +716,17 @@ export const ExportWizard = memo(function ExportWizard({
               dispatch({ type: "RETRY_PREFLIGHT" });
             }}
           >
-            {t("exportWizard.retry")}
+            {t("wizard.retry")}
           </Button>,
           <Button key="cancel" onClick={handleClose}>
-            {t("exportWizard.cancel")}
+            {t("wizard.cancel")}
           </Button>,
         ];
 
       case "UNLOCK_DEVICE":
         return [
           <Button key="back" onClick={() => dispatch({ type: "GO_BACK" })}>
-            {t("exportWizard.back")}
+            {t("wizard.back")}
           </Button>,
           <Button
             key="export"
@@ -736,10 +736,10 @@ export const ExportWizard = memo(function ExportWizard({
               dispatch({ type: "UNLOCK_DEVICE", payload: context.passphrase })
             }
           >
-            {t("exportWizard.continue")}
+            {t("wizard.continue")}
           </Button>,
           <Button key="cancel" onClick={handleClose}>
-            {t("exportWizard.cancel")}
+            {t("wizard.cancel")}
           </Button>,
         ];
 
@@ -750,21 +750,21 @@ export const ExportWizard = memo(function ExportWizard({
       case "SUCCESS":
         return [
           <Button key="close" onClick={handleClose}>
-            {t("exportWizard.done")}
+            {t("wizard.done")}
           </Button>,
         ];
 
       case "PARTIAL_SUCCESS":
         return [
           <Button key="close" onClick={handleClose}>
-            {t("exportWizard.done")}
+            {t("wizard.done")}
           </Button>,
         ];
 
       case "ERROR":
         return [
           <Button key="close" onClick={handleClose}>
-            {t("exportWizard.close")}
+            {t("wizard.close")}
           </Button>,
         ];
 
