@@ -323,7 +323,10 @@ export class TaskQueue {
         itemDirectory,
         downloadPath,
       );
-      db.completeFileItem(item.id, finalAbsolutePath);
+      // Get the decrypted file size to display to the user
+      const fileStats = await fs.promises.stat(finalAbsolutePath);
+      const decryptedSize = fileStats.size;
+      db.completeFileItem(item.id, finalAbsolutePath, decryptedSize);
       console.debug(`Successfully decrypted ${metadata.kind} ${item.id}`);
     } catch (error) {
       if (error instanceof CryptoError) {

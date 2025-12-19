@@ -8,7 +8,7 @@ CREATE TABLE items (
   data json,
   plaintext text,
   filename text
-, version text, kind text generated always as (json_extract (data, '$.kind')) stored, is_read integer generated always as (json_extract (data, '$.is_read')) stored, last_updated integer generated always as (json_extract (data, '$.last_updated')) stored, source_uuid text generated always as (json_extract (data, '$.source')), fetch_progress INTEGER, fetch_status INTEGER NOT NULL DEFAULT 0, fetch_last_updated_at timestamp, fetch_retry_attempts integer NOT NULL DEFAULT 0, interaction_count integer generated always as (json_extract (data, '$.interaction_count')));
+, version text, kind text generated always as (json_extract (data, '$.kind')) stored, is_read integer generated always as (json_extract (data, '$.is_read')) stored, last_updated integer generated always as (json_extract (data, '$.last_updated')) stored, source_uuid text generated always as (json_extract (data, '$.source')), fetch_progress INTEGER, fetch_status INTEGER NOT NULL DEFAULT 0, fetch_last_updated_at timestamp, fetch_retry_attempts integer NOT NULL DEFAULT 0, interaction_count integer generated always as (json_extract (data, '$.interaction_count')), decrypted_size INTEGER);
 CREATE TABLE state_history (
     version text,
     updated timestamp default current_timestamp,
@@ -63,7 +63,8 @@ SELECT
     items.fetch_status,
     items.fetch_last_updated_at,
     items.fetch_retry_attempts,
-    items.interaction_count
+    items.interaction_count,
+    items.decrypted_size
 FROM
     items
     -- project ItemDeleted event
@@ -106,7 +107,8 @@ SELECT
     json_extract (
         pending_events.data,
         '$.metadata.interaction_count'
-    ) AS interaction_count
+    ) AS interaction_count,
+    NULL as decrypted_size
 FROM
     pending_events
 WHERE
@@ -133,7 +135,7 @@ WHERE
             )
             AND later.snowflake_id > pending_events.snowflake_id
     )
-/* items_projected(uuid,data,version,plaintext,filename,kind,is_read,last_updated,source_uuid,fetch_progress,fetch_status,fetch_last_updated_at,fetch_retry_attempts,interaction_count) */;
+/* items_projected(uuid,data,version,plaintext,filename,kind,is_read,last_updated,source_uuid,fetch_progress,fetch_status,fetch_last_updated_at,fetch_retry_attempts,interaction_count,decrypted_size) */;
 CREATE VIEW sources_projected AS
 WITH
     -- Select latest starred value from pending_events
