@@ -164,6 +164,7 @@ export async function proxyStreamRequestInner(
           error: new Error(`Process terminated with signal ${signal}`),
           bytesWritten: bytesWritten,
         });
+        return;
       }
       if (code != 0) {
         resolve({
@@ -173,6 +174,7 @@ export async function proxyStreamRequestInner(
           ),
           bytesWritten: bytesWritten,
         });
+        return;
       }
       try {
         // If we receive JSON data, parse and return
