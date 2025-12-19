@@ -95,7 +95,11 @@ describe("TaskQueue - Two-Phase Download and Decryption", () => {
   describe("Message Processing", () => {
     it("should download and decrypt a message successfully on first attempt", async () => {
       const db = createMockDB();
-      const metadata = { kind: "message", source: "source1" } as ItemMetadata;
+      const metadata = {
+        kind: "message",
+        source: "source1",
+        size: 1000,
+      } as ItemMetadata;
 
       // Mock: item is in Initial status
       db.getItem = vi.fn(() => mockItem(metadata, FetchStatus.Initial, 0));
@@ -125,6 +129,8 @@ describe("TaskQueue - Two-Phase Download and Decryption", () => {
         }),
         expect.any(BufferedWriter),
         0,
+        undefined,
+        20000,
       );
 
       // Verify decryption phase
@@ -138,7 +144,11 @@ describe("TaskQueue - Two-Phase Download and Decryption", () => {
 
     it("should download successfully but fail decryption, save to disk, and retry decryption only", async () => {
       const db = createMockDB();
-      const metadata = { kind: "message", source: "source1" } as ItemMetadata;
+      const metadata = {
+        kind: "message",
+        source: "source1",
+        size: 1000,
+      } as ItemMetadata;
 
       // First attempt: Initial status
       db.getItem = vi
@@ -208,7 +218,11 @@ describe("TaskQueue - Two-Phase Download and Decryption", () => {
 
     it("should fail download, retry download and decryption successfully", async () => {
       const db = createMockDB();
-      const metadata = { kind: "message", source: "source1" } as ItemMetadata;
+      const metadata = {
+        kind: "message",
+        source: "source1",
+        size: 1000,
+      } as ItemMetadata;
 
       // First attempt: Initial status, Second attempt: FailedDownloadRetryable
       db.getItem = vi
@@ -261,7 +275,11 @@ describe("TaskQueue - Two-Phase Download and Decryption", () => {
   describe("Reply Processing", () => {
     it("should download and decrypt a reply successfully on first attempt", async () => {
       const db = createMockDB();
-      const metadata = { kind: "reply", source: "source1" } as ItemMetadata;
+      const metadata = {
+        kind: "reply",
+        source: "source1",
+        size: 1000,
+      } as ItemMetadata;
 
       db.getItem = vi.fn(() => mockItem(metadata, FetchStatus.Initial, 0));
 
@@ -287,6 +305,8 @@ describe("TaskQueue - Two-Phase Download and Decryption", () => {
         }),
         expect.any(BufferedWriter),
         0,
+        undefined,
+        20000,
       );
 
       expect(db.completePlaintextItem).toHaveBeenCalledWith(
@@ -297,7 +317,11 @@ describe("TaskQueue - Two-Phase Download and Decryption", () => {
 
     it("should download successfully but fail decryption, save to disk, and retry decryption only", async () => {
       const db = createMockDB();
-      const metadata = { kind: "reply", source: "source1" } as ItemMetadata;
+      const metadata = {
+        kind: "reply",
+        source: "source1",
+        size: 1000,
+      } as ItemMetadata;
 
       db.getItem = vi
         .fn()
@@ -351,7 +375,11 @@ describe("TaskQueue - Two-Phase Download and Decryption", () => {
 
     it("should fail download, retry download and decryption successfully", async () => {
       const db = createMockDB();
-      const metadata = { kind: "reply", source: "source1" } as ItemMetadata;
+      const metadata = {
+        kind: "reply",
+        source: "source1",
+        size: 1000,
+      } as ItemMetadata;
 
       db.getItem = vi
         .fn()
@@ -402,6 +430,7 @@ describe("TaskQueue - Two-Phase Download and Decryption", () => {
         kind: "file",
         source: "source1",
         uuid: "file-uuid-1",
+        size: 1000000,
       } as ItemMetadata;
 
       db.getItem = vi.fn(() => mockItem(metadata, FetchStatus.Initial, 0));
@@ -428,6 +457,8 @@ describe("TaskQueue - Two-Phase Download and Decryption", () => {
         }),
         expect.any(PassThrough),
         0,
+        undefined,
+        55000,
       );
 
       // Verify decryption phase
@@ -457,6 +488,7 @@ describe("TaskQueue - Two-Phase Download and Decryption", () => {
         kind: "file",
         source: "source1",
         uuid: "file-uuid-2",
+        size: 1000000,
       } as ItemMetadata;
 
       // First attempt: Initial status, Second attempt: FailedDecryptionRetryable
@@ -521,6 +553,7 @@ describe("TaskQueue - Two-Phase Download and Decryption", () => {
         kind: "file",
         source: "source1",
         uuid: "file-uuid-3",
+        size: 1000000,
       } as ItemMetadata;
 
       db.getItem = vi
@@ -571,7 +604,11 @@ describe("TaskQueue - Two-Phase Download and Decryption", () => {
   describe("Edge Cases and Error Handling", () => {
     it("should skip items that are already complete", async () => {
       const db = createMockDB();
-      const metadata = { kind: "message", source: "source1" } as ItemMetadata;
+      const metadata = {
+        kind: "message",
+        source: "source1",
+        size: 1000,
+      } as ItemMetadata;
 
       db.getItem = vi.fn(() => mockItem(metadata, FetchStatus.Complete, 0));
 
@@ -586,7 +623,11 @@ describe("TaskQueue - Two-Phase Download and Decryption", () => {
 
     it("should skip items that are terminally failed", async () => {
       const db = createMockDB();
-      const metadata = { kind: "message", source: "source1" } as ItemMetadata;
+      const metadata = {
+        kind: "message",
+        source: "source1",
+        size: 1000,
+      } as ItemMetadata;
 
       db.getItem = vi.fn(() =>
         mockItem(metadata, FetchStatus.FailedTerminal, 0),
@@ -600,7 +641,11 @@ describe("TaskQueue - Two-Phase Download and Decryption", () => {
 
     it("should skip items that are paused", async () => {
       const db = createMockDB();
-      const metadata = { kind: "message", source: "source1" } as ItemMetadata;
+      const metadata = {
+        kind: "message",
+        source: "source1",
+        size: 1000,
+      } as ItemMetadata;
 
       db.getItem = vi.fn(() => mockItem(metadata, FetchStatus.Paused, 0));
 
@@ -612,7 +657,11 @@ describe("TaskQueue - Two-Phase Download and Decryption", () => {
 
     it("should handle server error responses during download", async () => {
       const db = createMockDB();
-      const metadata = { kind: "message", source: "source1" } as ItemMetadata;
+      const metadata = {
+        kind: "message",
+        source: "source1",
+        size: 1000,
+      } as ItemMetadata;
 
       db.getItem = vi.fn(() => mockItem(metadata, FetchStatus.Initial, 0));
 
@@ -633,7 +682,11 @@ describe("TaskQueue - Two-Phase Download and Decryption", () => {
 
     it("should handle file read errors during decryption retry", async () => {
       const db = createMockDB();
-      const metadata = { kind: "message", source: "source1" } as ItemMetadata;
+      const metadata = {
+        kind: "message",
+        source: "source1",
+        size: 1000,
+      } as ItemMetadata;
 
       db.getItem = vi.fn(() =>
         mockItem(metadata, FetchStatus.FailedDecryptionRetryable, 0),
