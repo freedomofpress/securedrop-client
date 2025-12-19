@@ -1009,4 +1009,149 @@ describe("Database Method Tests", () => {
       expect(s4.messagePreview).toBeNull();
     }
   });
+
+  it("getPendingEvents should purge stale events for nonexistent sources", () => {
+    // Create a source and add a pending event for it
+    db.updateSources({
+      source1: mockSourceMetadata("source1"),
+    });
+
+    const snowflakeId = db.addPendingSourceEvent(
+      "source1",
+      PendingEventType.Starred,
+    );
+
+    // Verify the event exists
+    let events = db.getPendingEvents();
+    expect(events.length).toBe(1);
+    expect(events[0].id).toBe(snowflakeId);
+
+    // Delete the source (this creates a stale event)
+    db.deleteSources(["source1"]);
+
+    // Calling getPendingEvents should return empty array and purge the stale event
+    events = db.getPendingEvents();
+    expect(events.length).toBe(0);
+
+    // Verify the stale event was actually purged from the database
+    // by calling getPendingEvents again - it should still be empty
+    events = db.getPendingEvents();
+    expect(events.length).toBe(0);
+  });
+
+  it("getPendingEvents should purge stale events for nonexistent items", () => {
+    // Create a source and item, then add a pending event for the item
+    db.updateSources({
+      source1: mockSourceMetadata("source1"),
+    });
+    db.updateItems({
+      item1: mockItemMetadata("item1", "source1"),
+    });
+
+    const snowflakeId = db.addPendingItemEvent(
+      "item1",
+      PendingEventType.ItemDeleted,
+    );
+
+    // Verify the event exists
+    let events = db.getPendingEvents();
+    expect(events.length).toBe(1);
+    expect(events[0].id).toBe(snowflakeId);
+
+    // Delete the item (this creates a stale event)
+    db.deleteItems(["item1"]);
+
+    // Calling getPendingEvents should return empty array and purge the stale event
+    events = db.getPendingEvents();
+    expect(events.length).toBe(0);
+
+    // Verify the stale event was actually purged from the database
+    events = db.getPendingEvents();
+    expect(events.length).toBe(0);
+  });
+
+  it("getPendingEvents should purge stale events while preserving valid events", () => {
+    // Create two sources with items
+    db.updateSources({
+      source1: mockSourceMetadata("source1"),
+      source2: mockSourceMetadata("source2"),
+    });
+    db.updateItems({
+      item1: mockItemMetadata("item1", "source1"),
+      item2: mockItemMetadata("item2", "source2"),
+    });
+
+    // Add pending events for both
+    const snowflakeSource1 = db.addPendingSourceEvent(
+      "source1",
+      PendingEventType.Starred,
+    );
+    const snowflakeSource2 = db.addPendingSourceEvent(
+      "source2",
+      PendingEventType.Starred,
+    );
+    const snowflakeItem1 = db.addPendingItemEvent(
+      "item1",
+      PendingEventType.Seen,
+    );
+    const snowflakeItem2 = db.addPendingItemEvent(
+      "item2",
+      PendingEventType.Seen,
+    );
+
+    // Verify all events exist
+    let events = db.getPendingEvents();
+    expect(events.length).toBe(4);
+
+    // Delete source1 (and its items), making those events stale
+    db.deleteSources(["source1"]);
+
+    // getPendingEvents should return only events for source2/item2 and purge stale ones
+    events = db.getPendingEvents();
+    expect(events.length).toBe(2);
+
+    const remainingIds = events.map((e) => e.id);
+    expect(remainingIds).toContain(snowflakeSource2);
+    expect(remainingIds).toContain(snowflakeItem2);
+    expect(remainingIds).not.toContain(snowflakeSource1);
+    expect(remainingIds).not.toContain(snowflakeItem1);
+
+    // Verify stale events were purged - subsequent call should return same results
+    events = db.getPendingEvents();
+    expect(events.length).toBe(2);
+  });
+
+  it("getPendingEvents should purge multiple stale events in a single call", () => {
+    // Create sources and items
+    db.updateSources({
+      source1: mockSourceMetadata("source1"),
+      source2: mockSourceMetadata("source2"),
+    });
+    db.updateItems({
+      item1: mockItemMetadata("item1", "source1"),
+      item2: mockItemMetadata("item2", "source2"),
+    });
+
+    // Add multiple pending events
+    db.addPendingSourceEvent("source1", PendingEventType.Starred);
+    db.addPendingSourceEvent("source1", PendingEventType.Unstarred);
+    db.addPendingSourceEvent("source2", PendingEventType.Starred);
+    db.addPendingItemEvent("item1", PendingEventType.Seen);
+    db.addPendingItemEvent("item2", PendingEventType.Seen);
+
+    // Verify all 5 events exist
+    let events = db.getPendingEvents();
+    expect(events.length).toBe(5);
+
+    // Delete both sources, making all events stale
+    db.deleteSources(["source1", "source2"]);
+
+    // All events should be purged
+    events = db.getPendingEvents();
+    expect(events.length).toBe(0);
+
+    // Verify purge was persistent
+    events = db.getPendingEvents();
+    expect(events.length).toBe(0);
+  });
 });
