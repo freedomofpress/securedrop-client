@@ -133,10 +133,11 @@
       "beCareful": "N'oubliez pas d'être prudent lorsque vous travaillez avec des fichiers en dehors de votre poste de travail",
       "unknownError": "Erreur inconnue survenue",
       "cancel": "Annuler",
-      "continue": "Continuer",
       "back": "Retour",
+      "continue": "Continuer",
       "close": "Fermer",
-      "done": "Terminé"
+      "done": "Terminé",
+      "retry": "Réessayer"
     },
     "exportWizard": {
       "title": "Exporter le fichier",
@@ -161,8 +162,7 @@
       "errorExport": "Erreur lors de l'exportation",
       "errorMissingFiles": "Les fichiers ont été déplacés ou sont manquants et n'ont pas pu être exportés.",
       "deviceError": "Erreur rencontrée avec ce lecteur. Consultez votre administrateur pour obtenir de l'aide.",
-      "unexpectedError": "Erreur rencontrée. Veuillez contacter le support.",
-      "retry": "Réessayer"
+      "unexpectedError": "Erreur rencontrée. Veuillez contacter le support."
     },
     "printWizard": {
       "title": "Imprimer le fichier",
