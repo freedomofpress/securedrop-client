@@ -1,6 +1,8 @@
 .PHONY: all
 all: help
 
+SHELL := /bin/bash
+
 # We prefer to use python3.11 if it's available, especially on arm64 based Macs,
 # but we're also OK with just python3 if that's all we've got
 PYTHON := $(if $(shell bash -c "command -v python3.11"), python3.11, python3)
@@ -143,6 +145,7 @@ $(POT): securedrop_client
 		--project="SecureDrop Client" \
 		--msgid-bugs-address=securedrop@freedom.press \
 		--copyright-holder="Freedom of the Press Foundation" \
+		--header-comment=$$'# Translations template for PROJECT.\n# This file is distributed under the same license as the PROJECT project.\n#' \
 		--add-comments="Translators:" \
 		--strip-comments \
 		--add-location=never \
