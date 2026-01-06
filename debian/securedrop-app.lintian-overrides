@@ -11,10 +11,6 @@ securedrop-app: embedded-library tiff [usr/lib/securedrop-app/securedrop-app]
 # Description is in debian/control - this is a false positive
 securedrop-app: extended-description-is-empty
 
-# Node native modules built for musl are not linked against glibc - this is expected
-securedrop-app: library-not-linked-against-libc [usr/lib/securedrop-app/resources/app.asar.unpacked/node_modules/@tailwindcss/oxide-linux-x64-musl/tailwindcss-oxide.linux-x64-musl.node]
-securedrop-app: library-not-linked-against-libc [usr/lib/securedrop-app/resources/app.asar.unpacked/node_modules/lightningcss-linux-x64-musl/lightningcss.linux-x64-musl.node]
-
 # Section will be properly configured before release
 securedrop-app: section-is-dh_make-template
 
