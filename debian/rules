@@ -28,6 +28,7 @@ override_dh_install:
 		rmdir debian/securedrop-app/usr/lib/securedrop-app/linux-unpacked; \
 		rm -rf debian/securedrop-app/usr/lib/securedrop-app/resources/app.asar.unpacked/node_modules/better-sqlite3/deps/; \
 		rm -rf debian/securedrop-app/usr/lib/securedrop-app/resources/app.asar.unpacked/node_modules/better-sqlite3/src/; \
+		rm -rf debian/securedrop-app/usr/lib/securedrop-app/resources/app.asar.unpacked/node_modules/@dbmate/; \
 	fi
 
 override_dh_strip_nondeterminism:

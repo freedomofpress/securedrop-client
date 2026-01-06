@@ -15,7 +15,6 @@ securedrop-app: extended-description-is-empty
 securedrop-app: section-is-dh_make-template
 
 # dbmate is a statically-linked Go binary - this is expected
-securedrop-app: statically-linked-binary [usr/lib/securedrop-app/resources/app.asar.unpacked/node_modules/@dbmate/linux-x64/bin/dbmate]
 securedrop-app: statically-linked-binary [usr/lib/securedrop-app/resources/bin/dbmate]
 
 # Electron bundles all dependencies - undeclared ELF prerequisites are expected
