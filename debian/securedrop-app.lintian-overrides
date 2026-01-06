@@ -21,9 +21,6 @@ securedrop-app: statically-linked-binary [usr/lib/securedrop-app/resources/bin/d
 # Electron bundles all dependencies - undeclared ELF prerequisites are expected
 securedrop-app: undeclared-elf-prerequisites *
 
-# This is a .gyp file (not executable) in node_modules - expected for native modules
-securedrop-app: executable-not-elf-or-script [usr/lib/securedrop-app/resources/app.asar.unpacked/node_modules/better-sqlite3/deps/sqlite3.gyp]
-
 # Electron bundles its own shared libraries, ldconfig not needed
 securedrop-app: package-has-unnecessary-activation-of-ldconfig-trigger
 

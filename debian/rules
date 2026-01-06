@@ -26,6 +26,8 @@ override_dh_install:
 	if dh_listpackages | grep -q '^securedrop-app$$'; then \
 		mv debian/securedrop-app/usr/lib/securedrop-app/linux-unpacked/* debian/securedrop-app/usr/lib/securedrop-app/; \
 		rmdir debian/securedrop-app/usr/lib/securedrop-app/linux-unpacked; \
+		rm -rf debian/securedrop-app/usr/lib/securedrop-app/resources/app.asar.unpacked/node_modules/better-sqlite3/deps/; \
+		rm -rf debian/securedrop-app/usr/lib/securedrop-app/resources/app.asar.unpacked/node_modules/better-sqlite3/src/; \
 	fi
 
 override_dh_strip_nondeterminism:
