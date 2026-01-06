@@ -41,7 +41,7 @@ jobs:
       - name: Build packages
         run: |
           git config --global --add safe.directory '*'
-          NIGHTLY=1 DEBIAN_VERSION=${{ matrix.debian_version }} BUILDER=securedrop-builder \
+          NIGHTLY=1 WHAT=app DEBIAN_VERSION=${{ matrix.debian_version }} BUILDER=securedrop-builder \
             ./scripts/build-debs.sh
       - uses: actions/upload-artifact@v5
         id: upload
