@@ -1,32 +1,32 @@
 # Electron bundles its own copies of system libraries - this is expected for Electron apps
-securedrop-app: embedded-library freetype [usr/lib/securedrop-app/linux-unpacked/securedrop-app]
-securedrop-app: embedded-library lcms2 [usr/lib/securedrop-app/linux-unpacked/securedrop-app]
-securedrop-app: embedded-library libjpeg [usr/lib/securedrop-app/linux-unpacked/securedrop-app]
-securedrop-app: embedded-library libjsoncpp [usr/lib/securedrop-app/linux-unpacked/securedrop-app]
-securedrop-app: embedded-library libpng [usr/lib/securedrop-app/linux-unpacked/securedrop-app]
-securedrop-app: embedded-library openjpeg [usr/lib/securedrop-app/linux-unpacked/securedrop-app]
-securedrop-app: embedded-library srtp [usr/lib/securedrop-app/linux-unpacked/securedrop-app]
-securedrop-app: embedded-library tiff [usr/lib/securedrop-app/linux-unpacked/securedrop-app]
+securedrop-app: embedded-library freetype [usr/lib/securedrop-app/securedrop-app]
+securedrop-app: embedded-library lcms2 [usr/lib/securedrop-app/securedrop-app]
+securedrop-app: embedded-library libjpeg [usr/lib/securedrop-app/securedrop-app]
+securedrop-app: embedded-library libjsoncpp [usr/lib/securedrop-app/securedrop-app]
+securedrop-app: embedded-library libpng [usr/lib/securedrop-app/securedrop-app]
+securedrop-app: embedded-library openjpeg [usr/lib/securedrop-app/securedrop-app]
+securedrop-app: embedded-library srtp [usr/lib/securedrop-app/securedrop-app]
+securedrop-app: embedded-library tiff [usr/lib/securedrop-app/securedrop-app]
 
 # Description is in debian/control - this is a false positive
 securedrop-app: extended-description-is-empty
 
 # Node native modules built for musl are not linked against glibc - this is expected
-securedrop-app: library-not-linked-against-libc [usr/lib/securedrop-app/linux-unpacked/resources/app.asar.unpacked/node_modules/@tailwindcss/oxide-linux-x64-musl/tailwindcss-oxide.linux-x64-musl.node]
-securedrop-app: library-not-linked-against-libc [usr/lib/securedrop-app/linux-unpacked/resources/app.asar.unpacked/node_modules/lightningcss-linux-x64-musl/lightningcss.linux-x64-musl.node]
+securedrop-app: library-not-linked-against-libc [usr/lib/securedrop-app/resources/app.asar.unpacked/node_modules/@tailwindcss/oxide-linux-x64-musl/tailwindcss-oxide.linux-x64-musl.node]
+securedrop-app: library-not-linked-against-libc [usr/lib/securedrop-app/resources/app.asar.unpacked/node_modules/lightningcss-linux-x64-musl/lightningcss.linux-x64-musl.node]
 
 # Section will be properly configured before release
 securedrop-app: section-is-dh_make-template
 
 # dbmate is a statically-linked Go binary - this is expected
-securedrop-app: statically-linked-binary [usr/lib/securedrop-app/linux-unpacked/resources/app.asar.unpacked/node_modules/@dbmate/linux-x64/bin/dbmate]
-securedrop-app: statically-linked-binary [usr/lib/securedrop-app/linux-unpacked/resources/bin/dbmate]
+securedrop-app: statically-linked-binary [usr/lib/securedrop-app/resources/app.asar.unpacked/node_modules/@dbmate/linux-x64/bin/dbmate]
+securedrop-app: statically-linked-binary [usr/lib/securedrop-app/resources/bin/dbmate]
 
 # Electron bundles all dependencies - undeclared ELF prerequisites are expected
 securedrop-app: undeclared-elf-prerequisites *
 
 # This is a .gyp file (not executable) in node_modules - expected for native modules
-securedrop-app: executable-not-elf-or-script [usr/lib/securedrop-app/linux-unpacked/resources/app.asar.unpacked/node_modules/better-sqlite3/deps/sqlite3.gyp]
+securedrop-app: executable-not-elf-or-script [usr/lib/securedrop-app/resources/app.asar.unpacked/node_modules/better-sqlite3/deps/sqlite3.gyp]
 
 # Electron bundles its own shared libraries, ldconfig not needed
 securedrop-app: package-has-unnecessary-activation-of-ldconfig-trigger
@@ -35,7 +35,7 @@ securedrop-app: package-has-unnecessary-activation-of-ldconfig-trigger
 securedrop-app: unstripped-binary-or-object
 
 # chrome-sandbox needs to be setuid
-securedrop-app: elevated-privileges 4755 root/root [usr/lib/securedrop-app/linux-unpacked/chrome-sandbox]
+securedrop-app: elevated-privileges 4755 root/root [usr/lib/securedrop-app/chrome-sandbox]
 
 # Don't care
 securedrop-app: no-manual-page
