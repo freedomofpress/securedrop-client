@@ -11,17 +11,6 @@ import journalistsReducer, {
   type JournalistsState,
 } from "./journalistsSlice";
 
-// Mock electronAPI
-const mockElectronAPI = {
-  getJournalists: vi.fn(),
-};
-
-// Set up window.electronAPI mock
-Object.defineProperty(window, "electronAPI", {
-  value: mockElectronAPI,
-  writable: true,
-});
-
 describe("journalistsSlice", () => {
   const mockJournalists: Journalist[] = [
     {
@@ -169,24 +158,28 @@ describe("journalistsSlice", () => {
     });
 
     it("should call electronAPI.getJournalists when dispatched", async () => {
-      mockElectronAPI.getJournalists.mockResolvedValue(mockJournalists);
+      const getJournalistsSpy = vi
+        .spyOn(window.electronAPI, "getJournalists")
+        .mockResolvedValue(mockJournalists);
 
       const thunk = fetchJournalists();
       const result = await thunk(store.dispatch, store.getState, undefined);
 
-      expect(mockElectronAPI.getJournalists).toHaveBeenCalledTimes(1);
+      expect(getJournalistsSpy).toHaveBeenCalledTimes(1);
       expect(result.type).toBe("journalists/fetchJournalists/fulfilled");
       expect(result.payload).toEqual(mockJournalists);
     });
 
     it("should handle electronAPI rejection", async () => {
       const errorMessage = "IPC call failed";
-      mockElectronAPI.getJournalists.mockRejectedValue(new Error(errorMessage));
+      const getJournalistsSpy = vi
+        .spyOn(window.electronAPI, "getJournalists")
+        .mockRejectedValue(new Error(errorMessage));
 
       const thunk = fetchJournalists();
       const result = await thunk(store.dispatch, store.getState, undefined);
 
-      expect(mockElectronAPI.getJournalists).toHaveBeenCalledTimes(1);
+      expect(getJournalistsSpy).toHaveBeenCalledTimes(1);
       expect(result.type).toBe("journalists/fetchJournalists/rejected");
       if (fetchJournalists.rejected.match(result)) {
         expect(result.error?.message).toBe(errorMessage);

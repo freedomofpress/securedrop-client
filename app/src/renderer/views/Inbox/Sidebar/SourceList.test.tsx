@@ -178,6 +178,21 @@ describe("Sources Component", () => {
     // Mock electronAPI with partial implementation for these tests
     window.electronAPI = {
       getSources: vi.fn().mockResolvedValue(mockSources),
+      getSourceWithItems: vi.fn().mockResolvedValue({
+        uuid: "source-1",
+        data: {
+          fingerprint: "fingerprint-1",
+          is_starred: false,
+          is_seen: false,
+          has_attachment: false,
+          journalist_designation: "alice wonderland",
+          last_updated: "2024-01-15T10:30:00Z",
+          public_key: "key-1",
+          uuid: "source-1",
+        },
+        items: [],
+      }),
+      addPendingSourceEvent: vi.fn().mockResolvedValue(BigInt(1)),
       syncMetadata: vi.fn().mockResolvedValue(undefined),
       onSourceUpdate: vi.fn().mockResolvedValue(undefined),
     } as Partial<typeof window.electronAPI> as typeof window.electronAPI;

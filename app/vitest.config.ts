@@ -39,6 +39,10 @@ export default defineConfig({
           include: ["src/renderer/**/*.test.ts", "src/renderer/**/*.test.tsx"],
           globals: true,
           environment: "jsdom",
+          setupFiles: [
+            "./src/test-setup.ts",
+            "./src/renderer/test-component-setup.tsx",
+          ],
         },
         define: {
           // Component tests run in the renderer process

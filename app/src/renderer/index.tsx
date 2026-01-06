@@ -3,7 +3,6 @@ import { createRoot } from "react-dom/client";
 import { MemoryRouter } from "react-router";
 import { Provider } from "react-redux";
 import { ConfigProvider } from "antd";
-import "@ant-design/v5-patch-for-react-19";
 
 import "./i18n";
 import "./index.css";
