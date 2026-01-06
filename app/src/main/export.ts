@@ -49,13 +49,26 @@ export type PrintEvent =
   | { action: "preflightSuccess" }
   | { action: "print" }
   | { action: "printSuccess" }
-  | { action: "fail"; error: Error };
+  | { action: "fail"; error: Error }
+  | { action: "cancel" };
 
 export class PrintStateMachine implements StateMachine<PrintState, PrintEvent> {
   state: PrintState = PrintState.Idle;
   onError?(error: Error): void;
 
   transition(event: PrintEvent) {
+    if (event.action === "fail") {
+      this.state = PrintState.Error;
+      if (this.onError) {
+        this.onError(event.error);
+      }
+      return;
+    }
+    if (event.action === "cancel") {
+      this.state = PrintState.Idle;
+      return;
+    }
+
     const s = this.state;
     let next: PrintState | null = null;
 
@@ -83,12 +96,6 @@ export class PrintStateMachine implements StateMachine<PrintState, PrintEvent> {
         }
         break;
     }
-    if (event.action === "fail") {
-      next = PrintState.Error;
-      if (this.onError) {
-        this.onError(event.error);
-      }
-    }
 
     if (next) {
       this.state = next;
@@ -112,7 +119,8 @@ export type ExportEvent =
   | { action: "preflightSuccess" }
   | { action: "export" }
   | { action: "exportSuccess" }
-  | { action: "fail"; error: Error };
+  | { action: "fail"; error: Error }
+  | { action: "cancel" };
 
 export class ExportStateMachine implements StateMachine<
   ExportState,
@@ -122,6 +130,18 @@ export class ExportStateMachine implements StateMachine<
   onError?(error: Error): void;
 
   transition(event: ExportEvent) {
+    if (event.action === "fail") {
+      this.state = ExportState.Error;
+      if (this.onError) {
+        this.onError(event.error);
+      }
+      return;
+    }
+    if (event.action === "cancel") {
+      this.state = ExportState.Idle;
+      return;
+    }
+
     const s = this.state;
     let next: ExportState | null = null;
 
@@ -152,12 +172,6 @@ export class ExportStateMachine implements StateMachine<
           next = ExportState.Done;
         }
         break;
-    }
-    if (event.action === "fail") {
-      next = ExportState.Error;
-      if (this.onError) {
-        this.onError(event.error);
-      }
     }
 
     if (next) {
@@ -413,7 +427,7 @@ export class Printer extends ArchiveExporter {
   }
 
   // Initiate print and run preflight checks to make sure that Export VM is started
-  public async initiatePrint(): Promise<void> {
+  public async initiatePrint(): Promise<DeviceStatus> {
     console.log("Initiating print, beginning printer preflight checks");
     this.fsm.transition({ action: "initiatePrint" });
 
@@ -430,14 +444,15 @@ export class Printer extends ArchiveExporter {
       });
 
       await this.runQrexecExport(archivePath);
-      this._onComplete();
+      return this._onComplete();
     } catch (err) {
       console.log("Error creating archive for printer preflight", err);
       this._onError();
+      return DeviceErrorStatus.UNEXPECTED_RETURN_STATUS;
     }
   }
 
-  public async print(filepaths: string[]): Promise<void> {
+  public async print(filepaths: string[]): Promise<DeviceStatus> {
     console.log("Beginning print");
     this.fsm.transition({ action: "print" });
 
@@ -455,10 +470,11 @@ export class Printer extends ArchiveExporter {
       });
 
       await this.runQrexecExport(archivePath);
-      this._onComplete();
+      return this._onComplete();
     } catch (err) {
       console.log("Print failed", err);
       this._onError();
+      return DeviceErrorStatus.UNEXPECTED_RETURN_STATUS;
     }
   }
 
@@ -473,7 +489,7 @@ export class Printer extends ArchiveExporter {
     });
   }
 
-  private _onComplete() {
+  private _onComplete(): DeviceStatus {
     this.cleanupTmpdir();
     try {
       const status = this.parseStatus(this.processStderr);
@@ -487,6 +503,7 @@ export class Printer extends ArchiveExporter {
           error: new PrintExportError(`Problem printing: ${status}`),
         });
       }
+      return status;
     } catch (e) {
       this.fsm.transition({
         action: "fail",
@@ -494,10 +511,22 @@ export class Printer extends ArchiveExporter {
           `Print status returned unexpected value ${e}`,
         ),
       });
+      return DeviceErrorStatus.UNEXPECTED_RETURN_STATUS;
     } finally {
       this.process = null;
       this.processStderr = "";
     }
+  }
+
+  public cancelPrint(): void {
+    console.log("Cancelling print operation");
+    if (this.process) {
+      this.process.kill();
+      this.process = null;
+    }
+    this.processStderr = "";
+    this.cleanupTmpdir();
+    this.fsm.transition({ action: "cancel" });
   }
 }
 
@@ -623,5 +652,16 @@ export class Exporter extends ArchiveExporter {
       action: "fail",
       error: new PrintExportError(`Error: ${errorMsg}`),
     });
+  }
+
+  public cancelExport(): void {
+    console.log("Cancelling export operation");
+    if (this.process) {
+      this.process.kill();
+      this.process = null;
+    }
+    this.processStderr = "";
+    this.cleanupTmpdir();
+    this.fsm.transition({ action: "cancel" });
   }
 }

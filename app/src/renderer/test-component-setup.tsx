@@ -9,7 +9,7 @@ import React, { memo } from "react";
 import { setupStore, type RootState } from "./store";
 import "./i18n";
 import type { ElectronAPI } from "../preload/index";
-import { ExportStatus } from "../types";
+import { ExportStatus, PrintStatus } from "../types";
 
 // Mock global variables
 (global as any).__APP_VERSION__ = "6.6.6-test";
@@ -191,6 +191,12 @@ beforeEach(() => {
     openFile: vi.fn().mockResolvedValue(undefined),
     initiateExport: vi.fn().mockResolvedValue(ExportStatus.DEVICE_LOCKED),
     export: vi.fn().mockResolvedValue(ExportStatus.SUCCESS_EXPORT),
+    initiatePrint: vi
+      .fn()
+      .mockResolvedValue(PrintStatus.PRINT_PREFLIGHT_SUCCESS),
+    print: vi.fn().mockResolvedValue(PrintStatus.PRINT_SUCCESS),
+    cancelExport: vi.fn().mockResolvedValue(null),
+    cancelPrint: vi.fn().mockResolvedValue(null),
   } as ElectronAPI;
 });
 

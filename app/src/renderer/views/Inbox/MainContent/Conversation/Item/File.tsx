@@ -37,6 +37,7 @@ import {
 import FileVideoFilled from "./FileVideoFilled";
 import FileAudioFilled from "./FileAudioFilled";
 import { ExportWizard } from "./Export";
+import { PrintWizard } from "./Print";
 
 const EXCEL_EXTENSIONS = new Set([
   ".xls",
@@ -346,6 +347,7 @@ const InProgressFile = memo(function InProgressFile({
 const CompleteFile = memo(function CompleteFile({ item }: { item: Item }) {
   const { t } = useTranslation("Item");
   const [exportWizardOpen, setExportWizardOpen] = useState(false);
+  const [printWizardOpen, setPrintWizardOpen] = useState(false);
 
   const filename = item.filename
     ? item.filename.substring(item.filename.lastIndexOf("/") + 1)
@@ -373,13 +375,18 @@ const CompleteFile = memo(function CompleteFile({ item }: { item: Item }) {
     setExportWizardOpen(true);
   };
 
-  const handlePrintClick = async () => {
-    console.log("Implement print wizard");
+  const handlePrintClick = () => {
+    setPrintWizardOpen(true);
   };
 
   const handleExportWizardClose = () => {
     setExportWizardOpen(false);
     // Note: ExportWizard handles state cleanup via its useEffect when open changes
+  };
+
+  const handlePrintWizardClose = () => {
+    setPrintWizardOpen(false);
+    // Note: PrintWizard handles state cleanup via its useEffect when open changes
   };
 
   return (
@@ -427,6 +434,11 @@ const CompleteFile = memo(function CompleteFile({ item }: { item: Item }) {
         item={item}
         open={exportWizardOpen}
         onClose={handleExportWizardClose}
+      />
+      <PrintWizard
+        item={item}
+        open={printWizardOpen}
+        onClose={handlePrintWizardClose}
       />
     </>
   );
