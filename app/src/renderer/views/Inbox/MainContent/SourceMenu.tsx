@@ -1,13 +1,18 @@
 import { memo } from "react";
 // import { useTranslation } from "react-i18next";
+import type { SourceWithItems } from "../../../../types";
 import { MenuProps, Dropdown, Button } from "antd";
 import { EllipsisOutlined } from "@ant-design/icons";
 
 interface SourceMenuProps {
   sourceUuid: string;
+  sourceWithItems: SourceWithItems;
 }
 
-const SourceMenu = memo(function SourceMenu({ sourceUuid }: SourceMenuProps) {
+const SourceMenu = memo(function SourceMenu({
+  sourceUuid,
+  sourceWithItems,
+}: SourceMenuProps) {
   const handleMenuClick: MenuProps["onClick"] = (e) => {
     switch (e.key) {
       case "exportTranscript":
@@ -22,14 +27,25 @@ const SourceMenu = memo(function SourceMenu({ sourceUuid }: SourceMenuProps) {
     }
   };
 
+  const hasConversation: boolean = sourceWithItems.items.length > 0;
+
   const items: MenuProps["items"] = [
     {
       key: "exportTranscript",
       label: "Export transcript...",
+      disabled: !hasConversation,
     },
     {
       key: "printTranscript",
       label: "Print transcript...",
+      disabled: !hasConversation,
+    },
+    {
+      type: "divider",
+    },
+    {
+      key: "deleteSource",
+      label: "Delete Source",
     },
   ];
 
