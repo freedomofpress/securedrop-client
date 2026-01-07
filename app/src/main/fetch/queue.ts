@@ -222,12 +222,35 @@ export class TaskQueue {
       `Downloading ${metadata.kind} ${item.id} (size: ${metadata.size} bytes) with timeout: ${timeout}ms`,
     );
 
+    // Progress callback to update database and notify renderer during download
+    // Throttle updates to avoid overwhelming the UI (max once per 200ms)
+    let lastProgressUpdate = 0;
+    const PROGRESS_UPDATE_INTERVAL_MS = 200;
+
+    const onProgress = (bytesWritten: number) => {
+      const now = Date.now();
+      const totalBytesWritten = progress + bytesWritten;
+
+      // Always update the database with current progress
+      db.setDownloadInProgress(item.id, totalBytesWritten);
+
+      // Throttle UI updates to avoid overwhelming the renderer
+      if (
+        this.port &&
+        now - lastProgressUpdate >= PROGRESS_UPDATE_INTERVAL_MS
+      ) {
+        lastProgressUpdate = now;
+        this.port.postMessage(db.getItem(item.id));
+      }
+    };
+
     let downloadResponse = await proxyStreamRequest(
       downloadRequest,
       downloadWriter,
       progress,
       undefined, // abortSignal
       timeout,
+      onProgress,
     );
 
     // If we received JSON response, indicates an error from the server
