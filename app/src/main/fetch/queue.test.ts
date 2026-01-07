@@ -129,8 +129,9 @@ describe("TaskQueue - Two-Phase Download and Decryption", () => {
         }),
         expect.any(BufferedWriter),
         0,
-        undefined,
-        20000,
+        undefined, // abortSignal
+        20000, // timeout
+        expect.any(Function), // onProgress
       );
 
       // Verify decryption phase
@@ -305,8 +306,9 @@ describe("TaskQueue - Two-Phase Download and Decryption", () => {
         }),
         expect.any(BufferedWriter),
         0,
-        undefined,
-        20000,
+        undefined, // abortSignal
+        20000, // timeout
+        expect.any(Function), // onProgress
       );
 
       expect(db.completePlaintextItem).toHaveBeenCalledWith(
@@ -457,8 +459,9 @@ describe("TaskQueue - Two-Phase Download and Decryption", () => {
         }),
         expect.any(PassThrough),
         0,
-        undefined,
-        55000,
+        undefined, // abortSignal
+        55000, // timeout
+        expect.any(Function), // onProgress
       );
 
       // Verify decryption phase
