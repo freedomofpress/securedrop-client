@@ -51,7 +51,7 @@ const Header = memo(function Header({
           </p>
         </div>
       </Flex>
-      // <SourceMenu sourceUuid={sourceUuid} />
+      <SourceMenu sourceUuid={sourceUuid} sourceWithItems={sourceWithItems} />
     </Flex>
   );
 });
