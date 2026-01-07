@@ -3,40 +3,8 @@ import { useTranslation } from "react-i18next";
 import { toTitleCase, formatDateLong } from "../../../utils";
 import Avatar from "../../../components/Avatar";
 import type { SourceWithItems } from "../../../../types";
-import { MenuProps, Dropdown, Button, Flex } from "antd";
-import { EllipsisOutlined } from "@ant-design/icons";
-
-const handleMenuClick: MenuProps['onClick'] = (e) => {
-  switch (e.key) {
-    case "exportTranscript":
-      console.log("export transcript...tk");
-      break;
-
-    case "printTranscript":
-      console.log("print transcript...tk");
-      break;
-    default:
-      break;
-  }
-};
-
-
-const items: MenuProps['items'] = [
-  {
-    key: "exportTranscript",
-    label: "Export transcript...",
-  },
-  {
-    key: "printTranscript",
-    label: "Print transcript...",
-  },
-];
-
-const menuProps = {
-  items,
-  onClick: handleMenuClick,
-};
-
+import { Flex } from "antd";
+import SourceMenu from "./SourceMenu";
 
 interface HeaderProps {
   sourceUuid?: string;
@@ -83,14 +51,7 @@ const Header = memo(function Header({
           </p>
         </div>
       </Flex>
-      <Dropdown menu={menuProps}>
-          <Button
-            type="text"
-            icon={
-              <EllipsisOutlined style={{ color: "gray", fontSize: "24px" }} />
-            }
-          />
-      </Dropdown>
+      // <SourceMenu sourceUuid={sourceUuid} />
     </Flex>
   );
 });
