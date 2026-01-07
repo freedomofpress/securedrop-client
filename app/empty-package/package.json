@@ -1,0 +1,5 @@
+{
+  "name": "empty-package",
+  "version": "1.0.0",
+  "description": "Empty package to replace unused dependencies"
+}
