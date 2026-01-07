@@ -235,7 +235,10 @@ export class TaskQueue {
       db.setDownloadInProgress(item.id, totalBytesWritten);
 
       // Throttle UI updates to avoid overwhelming the renderer
-      if (this.port && now - lastProgressUpdate >= PROGRESS_UPDATE_INTERVAL_MS) {
+      if (
+        this.port &&
+        now - lastProgressUpdate >= PROGRESS_UPDATE_INTERVAL_MS
+      ) {
         lastProgressUpdate = now;
         this.port.postMessage(db.getItem(item.id));
       }
