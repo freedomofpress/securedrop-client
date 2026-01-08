@@ -31,23 +31,6 @@ CREATE TABLE journalists (
     version text
 );
 CREATE INDEX idx_items_fetch_status ON items (fetch_status);
-CREATE TABLE pending_events (
-        snowflake_id TEXT PRIMARY KEY,
-        source_uuid TEXT REFERENCES sources (uuid),
-        -- pending items may not exist in the items table, so
-        -- we don't add the fkey constraint
-        item_uuid TEXT,
-        type TEXT NOT NULL,
-        -- additional event data
-        data json,
-        -- only one of source_uuid OR item_uuid is set
-        CHECK (
-            NOT (
-                source_uuid IS NOT NULL
-                AND item_uuid IS NOT NULL
-            )
-        )
-    );
 CREATE VIEW sources_projected AS
 WITH
     -- Select latest starred value from pending_events
@@ -216,6 +199,24 @@ SELECT
 FROM
     items_projected
 /* sorted_items(uuid,data,version,plaintext,filename,kind,is_read,last_updated,source_uuid,fetch_progress,fetch_status,fetch_last_updated_at,fetch_retry_attempts,interaction_count,decrypted_size,rn) */;
+CREATE TABLE pending_events (
+        snowflake_id TEXT PRIMARY KEY,
+        -- See `schema.md` for details on how these foreign-key relationships
+        -- work over the lifecycles of sources and items versus their pending
+        -- events.
+        source_uuid TEXT REFERENCES sources (uuid) ON DELETE CASCADE,
+        item_uuid TEXT REFERENCES items (uuid) on DELETE CASCADE,
+        type TEXT NOT NULL,
+        -- additional event data
+        data json,
+        -- only one of source_uuid OR item_uuid is set
+        CHECK (
+            NOT (
+                source_uuid IS NOT NULL
+                AND item_uuid IS NOT NULL
+            )
+        )
+    );
 -- Dbmate schema migrations
 INSERT INTO "schema_migrations" (version) VALUES
   ('20250710180544'),
@@ -229,4 +230,5 @@ INSERT INTO "schema_migrations" (version) VALUES
   ('20251024000000'),
   ('20251031152200'),
   ('20251112200039'),
-  ('20251218000000');
+  ('20251218000000'),
+  ('20260107234838');

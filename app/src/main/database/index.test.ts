@@ -528,6 +528,17 @@ describe("Database Method Tests", () => {
     expect(sourceWithItems.items.length).toEqual(2);
     const pendingReplyUuid = sourceWithItems.items[1].uuid;
 
+    // Like `updatePendingEvents()`, insert the reply into `items` to satisfy
+    // `pending_event.item_uuid` → `items.uuid`.
+    db.updateItems({
+      [pendingReplyUuid]: mockItemMetadata(
+        pendingReplyUuid,
+        "source1",
+        "reply",
+        2,
+      ),
+    });
+
     db.addPendingItemEvent(pendingReplyUuid, PendingEventType.ItemDeleted);
     sourceWithItems = db.getSourceWithItems("source1");
     expect(sourceWithItems.items.length).toEqual(1);
@@ -1010,7 +1021,7 @@ describe("Database Method Tests", () => {
     }
   });
 
-  it("getPendingEvents should purge stale events for nonexistent sources", () => {
+  it("deleting a source should cascade to its pending events", () => {
     // Create a source and add a pending event for it
     db.updateSources({
       source1: mockSourceMetadata("source1"),
@@ -1026,20 +1037,15 @@ describe("Database Method Tests", () => {
     expect(events.length).toBe(1);
     expect(events[0].id).toBe(snowflakeId);
 
-    // Delete the source (this creates a stale event)
+    // Delete the source (should cascade to its pending events)
     db.deleteSources(["source1"]);
 
-    // Calling getPendingEvents should return empty array and purge the stale event
-    events = db.getPendingEvents();
-    expect(events.length).toBe(0);
-
-    // Verify the stale event was actually purged from the database
-    // by calling getPendingEvents again - it should still be empty
+    // Pending events for the deleted source should be gone
     events = db.getPendingEvents();
     expect(events.length).toBe(0);
   });
 
-  it("getPendingEvents should purge stale events for nonexistent items", () => {
+  it("deleting an item should cascade to its pending events", () => {
     // Create a source and item, then add a pending event for the item
     db.updateSources({
       source1: mockSourceMetadata("source1"),
@@ -1058,19 +1064,15 @@ describe("Database Method Tests", () => {
     expect(events.length).toBe(1);
     expect(events[0].id).toBe(snowflakeId);
 
-    // Delete the item (this creates a stale event)
+    // Delete the item (should cascade to its pending events)
     db.deleteItems(["item1"]);
 
-    // Calling getPendingEvents should return empty array and purge the stale event
-    events = db.getPendingEvents();
-    expect(events.length).toBe(0);
-
-    // Verify the stale event was actually purged from the database
+    // Pending events for the deleted item should be gone
     events = db.getPendingEvents();
     expect(events.length).toBe(0);
   });
 
-  it("getPendingEvents should purge stale events while preserving valid events", () => {
+  it("cascading deletion should preserve unrelated pending events", () => {
     // Create two sources with items
     db.updateSources({
       source1: mockSourceMetadata("source1"),
@@ -1103,10 +1105,10 @@ describe("Database Method Tests", () => {
     let events = db.getPendingEvents();
     expect(events.length).toBe(4);
 
-    // Delete source1 (and its items), making those events stale
+    // Delete source1 (should cascade to source1 and item1 events)
     db.deleteSources(["source1"]);
 
-    // getPendingEvents should return only events for source2/item2 and purge stale ones
+    // Only events for source2/item2 should remain
     events = db.getPendingEvents();
     expect(events.length).toBe(2);
 
@@ -1115,13 +1117,9 @@ describe("Database Method Tests", () => {
     expect(remainingIds).toContain(snowflakeItem2);
     expect(remainingIds).not.toContain(snowflakeSource1);
     expect(remainingIds).not.toContain(snowflakeItem1);
-
-    // Verify stale events were purged - subsequent call should return same results
-    events = db.getPendingEvents();
-    expect(events.length).toBe(2);
   });
 
-  it("getPendingEvents should purge multiple stale events in a single call", () => {
+  it("cascading deletion should handle multiple sources and events", () => {
     // Create sources and items
     db.updateSources({
       source1: mockSourceMetadata("source1"),
@@ -1143,14 +1141,10 @@ describe("Database Method Tests", () => {
     let events = db.getPendingEvents();
     expect(events.length).toBe(5);
 
-    // Delete both sources, making all events stale
+    // Delete both sources (should cascade to all related events)
     db.deleteSources(["source1", "source2"]);
 
-    // All events should be purged
-    events = db.getPendingEvents();
-    expect(events.length).toBe(0);
-
-    // Verify purge was persistent
+    // All events should be deleted via cascade
     events = db.getPendingEvents();
     expect(events.length).toBe(0);
   });

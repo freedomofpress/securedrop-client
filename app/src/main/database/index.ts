@@ -140,7 +140,6 @@ export class DB {
     void
   >;
   private deletePendingEvent: Statement<{ snowflake_id: string }, void>;
-  private deletePendingEventsBySource: Statement<{ source_uuid: string }, void>;
   private selectPendingEvents: Statement<[], PendingEventRow>;
 
   constructor(crypto: Crypto, dbDir?: string) {
@@ -283,9 +282,6 @@ export class DB {
         `);
     this.deletePendingEvent = this.db.prepare(
       `DELETE FROM pending_events WHERE snowflake_id = @snowflake_id`,
-    );
-    this.deletePendingEventsBySource = this.db.prepare(
-      `DELETE FROM pending_events WHERE source_uuid = @source_uuid`,
     );
     this.selectPendingEvents = this.db.prepare(`
       SELECT snowflake_id, source_uuid, item_uuid, type, data FROM pending_events
@@ -456,8 +452,6 @@ export class DB {
       return item.uuid;
     });
     this.deleteItems(itemUuids);
-    // Delete any pending events for this source (TODO: `ON DELETE CASCADE`)
-    this.deletePendingEventsBySource.run({ source_uuid: sourceUuid });
     // Then, delete the source
     this.deleteSource.run({ uuid: sourceUuid });
   }
@@ -872,7 +866,6 @@ export class DB {
 
   getPendingEvents(): PendingEvent[] {
     const rows: PendingEventRow[] = this.selectPendingEvents.all();
-    const staleEvents: string[] = [];
     const pendingEvents = rows.map((r) => {
       let target: SourceTarget | ItemTarget;
       if (r.source_uuid) {
@@ -880,11 +873,9 @@ export class DB {
           uuid: r.source_uuid,
         });
         if (!source) {
-          console.warn(
-            `Skipping stale event for nonexistent source ${r.source_uuid}`,
+          throw new Error(
+            `Invariant violation: pending event references nonexistent source ${r.source_uuid}`,
           );
-          staleEvents.push(r.snowflake_id);
-          return null;
         }
         target = {
           source_uuid: r.source_uuid,
@@ -895,11 +886,9 @@ export class DB {
           uuid: r.item_uuid,
         });
         if (!item) {
-          console.warn(
-            `Skipping stale event for nonexistent item ${r.item_uuid}`,
+          throw new Error(
+            `Invariant violation: pending event references nonexistent item ${r.item_uuid}`,
           );
-          staleEvents.push(r.snowflake_id);
-          return null;
         }
         target = {
           item_uuid: r.item_uuid,
@@ -914,14 +903,7 @@ export class DB {
       };
     });
 
-    if (staleEvents.length > 0) {
-      console.info(`Purging ${staleEvents.length} stale event(s)`);
-    }
-    for (const id of staleEvents) {
-      this.deletePendingEvent.run({ snowflake_id: id });
-    }
-
-    return pendingEvents.filter((e): e is PendingEvent => e !== null);
+    return pendingEvents;
   }
 
   // Takes pending events and their statuses from the server and applies
