@@ -67,6 +67,15 @@ function Reply({ item }: ReplyProps) {
       <div>
         <div className="flex items-center justify-start mb-1 gap-1">
           <span className="author reply-author">{getAuthorDisplay()}</span>
+        </div>
+        <div
+          className={`reply-box whitespace-pre-wrap relative ${isPendingReply ? "pending" : ""}`}
+        >
+          {isEncrypted ? (
+            <span className="italic text-gray-500">{t("itemEncrypted")}</span>
+          ) : (
+            messageContent
+          )}
           {isPendingReply && (
             <Tooltip title={t("pendingReplyTooltip")}>
               <ClockCircleOutlined
@@ -74,13 +83,6 @@ function Reply({ item }: ReplyProps) {
                 className="pending-reply-icon"
               />
             </Tooltip>
-          )}
-        </div>
-        <div className="reply-box whitespace-pre-wrap">
-          {isEncrypted ? (
-            <span className="italic text-gray-500">{t("itemEncrypted")}</span>
-          ) : (
-            messageContent
           )}
         </div>
       </div>

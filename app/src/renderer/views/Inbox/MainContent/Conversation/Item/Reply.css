@@ -1,3 +1,10 @@
+.reply-box.pending {
+  padding-bottom: 24px;
+}
+
 .pending-reply-icon {
-  color: #faad14;
+  color: rgba(0, 0, 0, 0.45);
+  position: absolute;
+  bottom: 4px;
+  right: 8px;
 }
