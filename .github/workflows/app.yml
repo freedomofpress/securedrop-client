@@ -27,7 +27,12 @@ jobs:
     steps:
       - name: Install base dependencies
         run: |
-          apt-get update && apt-get install --yes git make python3 python3-pip build-essential
+          apt-get update
+          apt-get install --yes \
+            build-essential \
+            git \
+            make \
+            python3 python3-pip
       - name: Checkout repository
         uses: actions/checkout@v6
         with:
