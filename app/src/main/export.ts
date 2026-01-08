@@ -119,7 +119,7 @@ export type ExportEvent =
   | { action: "preflightSuccess" }
   | { action: "export" }
   | { action: "exportSuccess" }
-  | { action: "fail"; error: Error }
+  | { action: "fail"; error: Error; status?: DeviceStatus }
   | { action: "cancel" };
 
 export class ExportStateMachine implements StateMachine<
@@ -130,13 +130,6 @@ export class ExportStateMachine implements StateMachine<
   onError?(error: Error): void;
 
   transition(event: ExportEvent) {
-    if (event.action === "fail") {
-      this.state = ExportState.Error;
-      if (this.onError) {
-        this.onError(event.error);
-      }
-      return;
-    }
     if (event.action === "cancel") {
       this.state = ExportState.Idle;
       return;
@@ -171,13 +164,33 @@ export class ExportStateMachine implements StateMachine<
         if (event.action === "exportSuccess") {
           next = ExportState.Done;
         }
+        // On USB device unlock error, export should be re-run
+        // Reset to preflight complete state
+        if (event.action === "fail") {
+          if (
+            event.status === ExportStatus.ERROR_UNLOCK_GENERIC ||
+            event.status === ExportStatus.ERROR_UNLOCK_LUKS
+          )
+            next = ExportState.ExportPreflightComplete;
+        }
         break;
+    }
+
+    if (!next && event.action === "fail") {
+      next = ExportState.Error;
+      if (this.onError) {
+        this.onError(event.error);
+      }
     }
 
     if (next) {
       this.state = next;
     } else {
-      throw new PrintExportError("invalid state transition");
+      const state = this.state;
+      this.state = ExportState.Error;
+      throw new PrintExportError(
+        `invalid state transition: ${state} -> ${event.action}`,
+      );
     }
   }
 }
@@ -622,6 +635,7 @@ export class Exporter extends ArchiveExporter {
       }
       this.fsm.transition({
         action: "fail",
+        status: status,
         error: new PrintExportError(
           `Export failed with unexpected status: ${status}`,
         ),
