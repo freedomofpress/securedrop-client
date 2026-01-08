@@ -31,23 +31,74 @@ CREATE TABLE journalists (
     version text
 );
 CREATE INDEX idx_items_fetch_status ON items (fetch_status);
-CREATE TABLE pending_events (
-        snowflake_id TEXT PRIMARY KEY,
-        source_uuid TEXT REFERENCES sources (uuid),
-        -- pending items may not exist in the items table, so
-        -- we don't add the fkey constraint
-        item_uuid TEXT,
-        type TEXT NOT NULL,
-        -- additional event data
-        data json,
-        -- only one of source_uuid OR item_uuid is set
-        CHECK (
-            NOT (
-                source_uuid IS NOT NULL
-                AND item_uuid IS NOT NULL
-            )
-        )
-    );
+CREATE VIEW sources_projected AS
+WITH
+    -- Select latest starred value from pending_events
+    latest_starred AS (
+        SELECT
+            source_uuid,
+            CASE
+                WHEN type = 'source_starred' THEN true
+                WHEN type = 'source_unstarred' THEN false
+            END as starred_value
+        FROM
+            (
+                SELECT
+                    source_uuid,
+                    type,
+                    -- Order events to select most recent
+                    ROW_NUMBER() OVER (
+                        PARTITION BY
+                            source_uuid
+                        ORDER BY
+                            snowflake_id DESC
+                    ) AS rn
+                FROM
+                    pending_events
+                WHERE
+                    type IN ('source_starred', 'source_unstarred')
+                    AND source_uuid IS NOT NULL
+            ) latest
+        WHERE
+            rn = 1
+    )
+SELECT
+    sources.uuid,
+    -- project Starred/Unstarred event
+    CASE
+        WHEN latest_starred.starred_value IS NOT NULL THEN json_set (sources.data, '$.is_starred', starred_value)
+        ELSE sources.data
+    END AS data,
+    sources.version,
+    sources.has_attachment,
+    -- project Seen event
+    CASE
+        WHEN EXISTS (
+            SELECT
+                1
+            FROM
+                pending_events
+            WHERE
+                pending_events.source_uuid = sources.uuid
+                AND pending_events.type = 'item_seen'
+        ) THEN 1
+        ELSE sources.is_seen
+    END AS is_seen
+FROM
+    sources
+    LEFT JOIN latest_starred ON latest_starred.source_uuid = sources.uuid
+WHERE
+    -- project SourceDeleted event
+    NOT EXISTS (
+        SELECT
+            1
+        FROM
+            pending_events
+        WHERE
+            pending_events.source_uuid = sources.uuid
+            AND pending_events.type = 'source_deleted'
+    )
+/* sources_projected(uuid,data,version,has_attachment,is_seen) */;
 CREATE VIEW items_projected AS
 SELECT
     items.uuid,
@@ -136,74 +187,6 @@ WHERE
             AND later.snowflake_id > pending_events.snowflake_id
     )
 /* items_projected(uuid,data,version,plaintext,filename,kind,is_read,last_updated,source_uuid,fetch_progress,fetch_status,fetch_last_updated_at,fetch_retry_attempts,interaction_count,decrypted_size) */;
-CREATE VIEW sources_projected AS
-WITH
-    -- Select latest starred value from pending_events
-    latest_starred AS (
-        SELECT
-            source_uuid,
-            CASE
-                WHEN type = 'source_starred' THEN true
-                WHEN type = 'source_unstarred' THEN false
-            END as starred_value
-        FROM
-            (
-                SELECT
-                    source_uuid,
-                    type,
-                    -- Order events to select most recent
-                    ROW_NUMBER() OVER (
-                        PARTITION BY
-                            source_uuid
-                        ORDER BY
-                            snowflake_id DESC
-                    ) AS rn
-                FROM
-                    pending_events
-                WHERE
-                    type IN ('source_starred', 'source_unstarred')
-                    AND source_uuid IS NOT NULL
-            ) latest
-        WHERE
-            rn = 1
-    )
-SELECT
-    sources.uuid,
-    -- project Starred/Unstarred event
-    CASE
-        WHEN latest_starred.starred_value IS NOT NULL THEN json_set (sources.data, '$.is_starred', starred_value)
-        ELSE sources.data
-    END AS data,
-    sources.version,
-    sources.has_attachment,
-    -- project Seen event
-    CASE
-        WHEN EXISTS (
-            SELECT
-                1
-            FROM
-                pending_events
-            WHERE
-                pending_events.source_uuid = sources.uuid
-                AND pending_events.type = 'item_seen'
-        ) THEN 1
-        ELSE sources.is_seen
-    END AS is_seen
-FROM
-    sources
-    LEFT JOIN latest_starred ON latest_starred.source_uuid = sources.uuid
-WHERE
-    -- project SourceDeleted event
-    NOT EXISTS (
-        SELECT
-            1
-        FROM
-            pending_events
-        WHERE
-            pending_events.source_uuid = sources.uuid
-            AND pending_events.type = 'source_deleted'
-    )
-/* sources_projected(uuid,data,version,has_attachment,is_seen) */;
 CREATE VIEW sorted_items AS
 SELECT
     *,
@@ -215,7 +198,25 @@ SELECT
     ) AS rn
 FROM
     items_projected
-/* sorted_items(uuid,data,version,plaintext,filename,kind,is_read,last_updated,source_uuid,fetch_progress,fetch_status,fetch_last_updated_at,fetch_retry_attempts,interaction_count,rn) */;
+/* sorted_items(uuid,data,version,plaintext,filename,kind,is_read,last_updated,source_uuid,fetch_progress,fetch_status,fetch_last_updated_at,fetch_retry_attempts,interaction_count,decrypted_size,rn) */;
+CREATE TABLE pending_events (
+        snowflake_id TEXT PRIMARY KEY,
+        -- See `schema.md` for details on how these foreign-key relationships
+        -- work over the lifecycles of sources and items versus their pending
+        -- events.
+        source_uuid TEXT REFERENCES sources (uuid) ON DELETE CASCADE,
+        item_uuid TEXT REFERENCES items (uuid) on DELETE CASCADE,
+        type TEXT NOT NULL,
+        -- additional event data
+        data json,
+        -- only one of source_uuid OR item_uuid is set
+        CHECK (
+            NOT (
+                source_uuid IS NOT NULL
+                AND item_uuid IS NOT NULL
+            )
+        )
+    );
 -- Dbmate schema migrations
 INSERT INTO "schema_migrations" (version) VALUES
   ('20250710180544'),
@@ -228,4 +229,6 @@ INSERT INTO "schema_migrations" (version) VALUES
   ('20250930191810'),
   ('20251024000000'),
   ('20251031152200'),
-  ('20251112200039');
+  ('20251112200039'),
+  ('20251218000000'),
+  ('20260107234838');
