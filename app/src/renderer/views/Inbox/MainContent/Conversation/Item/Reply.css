@@ -14,6 +14,7 @@
 
 .success-reply-icon {
   color: rgba(0, 0, 0, 0.45);
+  /* NOTE: Keep the 3s duration in sync with the timeout in Reply.tsx */
   animation: fadeOut 3s ease-in-out forwards;
 }
 

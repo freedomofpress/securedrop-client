@@ -46,6 +46,7 @@ function Reply({ item }: ReplyProps) {
       queueMicrotask(() => setShowSuccessAnimation(true));
 
       // Clear the success animation after 3 seconds
+      // NOTE: Keep this duration in sync with the CSS animation in Reply.css
       const timer = setTimeout(() => {
         setShowSuccessAnimation(false);
       }, 3000);
