@@ -22,7 +22,8 @@
     "lastSourceActivity": "Dernière activité de la source",
     "you": "Vous",
     "unknown": "Inconnu",
-    "pendingReplyTooltip": "La réponse est en attente et sera envoyée à la source lors de la prochaine synchronisation"
+    "pendingReplyTooltip": "La réponse est en attente et sera envoyée à la source lors de la prochaine synchronisation",
+    "successReplyTooltip": "Réponse envoyée avec succès"
   },
   "Sidebar": {
     "account": {
