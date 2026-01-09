@@ -1,0 +1,16 @@
+{% if items|length <= 0 %}{% trans %}No messages.{% endtrans %}{% else %}
+  {% for item in items %}
+    {% if item.type == "message" %}
+      {% if loop.changed(item.sender) %}
+{% trans sender=item.sender %}{{ sender }} wrote:{% endtrans +%}
+      {% endif %}
+{{ item.content }}
+    {% elif item.type == "file" %}
+{% trans sender=item.sender %}{{ sender }} sent:{% endtrans +%}
+{% trans filename=item.filename %}File: {{ filename }}{% endtrans +%}
+    {% endif %}
+    {% if not loop.last %}
+------
+    {% endif %}
+  {% endfor %}
+{% endif %}
