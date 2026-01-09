@@ -3,6 +3,7 @@
 import argparse
 import hashlib
 import json
+import os
 import platform
 import re
 import shutil
@@ -320,10 +321,15 @@ def main():
 
     results = {}
 
-    # Download Node.js binary
-    results["node"] = download_and_extract_binary(
-        "node", base_path, dict(**args, abi=node_abi), verify_checksum=True
-    )
+    # Skip downloading the node.js binary for package builds, it's not needed
+    if os.environ.get("DEB_BUILD_OPTIONS") is None:
+        # Download Node.js binary
+        results["node"] = download_and_extract_binary(
+            "node", base_path, dict(**args, abi=node_abi), verify_checksum=True
+        )
+    else:
+        print("Not downloading node.js version for package build")
+
     # Download Electron binary
     results["electron"] = download_and_extract_binary(
         "electron", base_path, dict(**args, abi=electron_abi), verify_checksum=True

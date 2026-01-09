@@ -21,6 +21,16 @@ override_dh_auto_install:
 	dh_apparmor --profile-name=usr.bin.securedrop-client -psecuredrop-client
 	dh_apparmor --profile-name=usr.bin.securedrop-proxy -psecuredrop-proxy
 
+override_dh_install:
+	dh_install
+	if dh_listpackages | grep -q '^securedrop-app$$'; then \
+		mv debian/securedrop-app/usr/lib/securedrop-app/linux-unpacked/* debian/securedrop-app/usr/lib/securedrop-app/; \
+		rmdir debian/securedrop-app/usr/lib/securedrop-app/linux-unpacked; \
+		rm -rf debian/securedrop-app/usr/lib/securedrop-app/resources/app.asar.unpacked/node_modules/better-sqlite3/deps/; \
+		rm -rf debian/securedrop-app/usr/lib/securedrop-app/resources/app.asar.unpacked/node_modules/better-sqlite3/src/; \
+		rm -rf debian/securedrop-app/usr/lib/securedrop-app/resources/app.asar.unpacked/node_modules/@dbmate/; \
+	fi
+
 override_dh_strip_nondeterminism:
 	find ./debian/ -type f -name '*.pyc' -delete
 	find ./debian/ -type d -name '__pycache__' -delete
@@ -48,7 +58,7 @@ override_dh_installsystemd:
 override_dh_fixperms:
 	dh_fixperms
 	if dh_listpackages | grep -q '^securedrop-app$$'; then \
-		chmod 4755 debian/securedrop-app/usr/lib/securedrop-app/linux-unpacked/chrome-sandbox; \
+		chmod 4755 debian/securedrop-app/usr/lib/securedrop-app/chrome-sandbox; \
 	fi
 
 override_dh_shlibdeps:
