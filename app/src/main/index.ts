@@ -42,6 +42,7 @@ import { Config } from "./config";
 import { setUmask } from "./umask";
 import { Exporter, Printer } from "./export";
 import { Storage } from "./storage";
+import { Transcriber } from "./transcriber";
 
 // Set umask so any files written are owner-only read/write (600).
 // This must be done before we create any files or spawn any worker threads.
@@ -375,12 +376,16 @@ app.whenReady().then(() => {
   ipcMain.handle(
     "writeSourceTranscript",
     async (_event, sourceUuid: string): Promise<void> => {
-      // const sourceWithItems = db.getSourceWithItems(sourceUuid);
-      console.log(`TK- write transcript for source ${sourceUuid}`);
+      const sourceWithItems = db.getSourceWithItems(sourceUuid);
       const storage = new Storage();
-      const filePath: string = join(storage.sourceDirectory(sourceUuid).path, "transcript.txt");
-      const test_content = "I am a test transcript";
-      fs.writeFileSync(filePath, test_content, "utf-8");
+      const transcriber = new Transcriber();
+      const fileContent = await transcriber.generateTranscript(sourceWithItems);
+
+      const filePath: string = join(
+        storage.sourceDirectory(sourceUuid).path,
+        "transcript.txt",
+      );
+      fs.writeFileSync(filePath, fileContent, "utf-8");
     },
   );
 

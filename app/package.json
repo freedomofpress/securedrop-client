@@ -85,6 +85,7 @@
     "blakejs": "^1.2.1",
     "dbmate": "^2.28.0",
     "i18next": "^25.3.6",
+    "liquidjs": "^10.24.0",
     "lucide-react": "^0.539.0",
     "openpgp": "^6.2.2",
     "react": "^19.1.1",
