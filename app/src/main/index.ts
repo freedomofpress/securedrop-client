@@ -396,6 +396,18 @@ app.whenReady().then(() => {
     },
   );
 
+  ipcMain.handle(
+    "writeSourceTranscript",
+    async (_event, sourceUuid: string): Promise<void> => {
+      // const sourceWithItems = db.getSourceWithItems(sourceUuid);
+      console.log(`TK- write transcript for source ${sourceUuid}`);
+      const storage = new Storage();
+      const filePath: string = join(storage.sourceDirectory(sourceUuid).path, "transcript.txt");
+      const test_content = "I am a test transcript";
+      fs.writeFileSync(filePath, test_content, "utf-8");
+    },
+  );
+
   // Print + export IPCs
   ipcMain.handle("initiateExport", async (_event): Promise<DeviceStatus> => {
     return exporter.initiateExport();

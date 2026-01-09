@@ -13,9 +13,14 @@ const SourceMenu = memo(function SourceMenu({
   sourceUuid,
   sourceWithItems,
 }: SourceMenuProps) {
-  const handleMenuClick: MenuProps["onClick"] = (e) => {
+  const handleMenuClick: MenuProps["onClick"] = async (e) => {
     switch (e.key) {
       case "exportTranscript":
+        try {
+          await window.electronAPI.writeSourceTranscript(sourceUuid);
+        } catch (error) {
+          console.error("Failed to write transcript:", error);
+        }
         console.log(`export transcript for ${sourceUuid}...tk`);
         break;
 
