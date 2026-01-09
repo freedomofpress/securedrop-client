@@ -2,7 +2,7 @@ import { memo } from "react";
 // import { useTranslation } from "react-i18next";
 import type { SourceWithItems } from "../../../../types";
 import { MenuProps, Dropdown, Button } from "antd";
-import { EllipsisOutlined } from "@ant-design/icons";
+import { MoreOutlined } from "@ant-design/icons";
 
 interface SourceMenuProps {
   sourceUuid: string;
@@ -65,7 +65,7 @@ const SourceMenu = memo(function SourceMenu({
     <Dropdown menu={menuProps}>
       <Button
         type="text"
-        icon={<EllipsisOutlined style={{ color: "gray", fontSize: "24px" }} />}
+        icon={<MoreOutlined style={{ color: "gray", fontSize: "20px" }} />}
       />
     </Dropdown>
   );
