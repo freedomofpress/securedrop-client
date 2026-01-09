@@ -4,6 +4,7 @@ export type ProxyRequest = {
   stream?: boolean;
   body?: string;
   headers: Record<string, string>;
+  timeout?: number;
 };
 
 export type ProxyCommand = {

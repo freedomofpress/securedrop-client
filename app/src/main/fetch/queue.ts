@@ -12,8 +12,12 @@ import {
   ItemMetadata,
   ProxyRequest,
   ProxyStreamResponse,
+  ms,
 } from "../../types";
-import { proxyStreamRequest } from "../proxy";
+import {
+  proxyStreamRequest,
+  MESSAGE_REPLY_DOWNLOAD_TIMEOUT_MS,
+} from "../proxy";
 import { Crypto, CryptoError } from "../crypto";
 import { MessagePort } from "worker_threads";
 import { Storage } from "../storage";
@@ -48,6 +52,34 @@ export class TaskQueue {
 
   getAuthToken(): string {
     return this.authToken ? this.authToken : "";
+  }
+
+  // Calculate a realistic timeout in milliseconds based on the size of the download.
+  // This scales the timeout per file so that it increases as the file size increases.
+  //
+  // Based on Tor metrics, reasonable estimations for download times over Tor:
+  //   50 KiB  (51200 bytes)   =  6   seconds  (8,533 bytes/second)
+  //   1  MiB  (1049000 bytes) =  15  seconds  (~69,905 bytes/second)
+  //
+  // For more information, see:
+  // https://metrics.torproject.org/torperf.html?start=2022-12-06&end=2023-03-06&server=onion
+  //
+  // The timeout returned is larger than the expected download time to account for
+  // network variability. We use 50,000 bytes/second instead of 69,905 bytes/second
+  // and apply a 1.5x adjustment factor.
+  //
+  // Minimum timeout is 25 seconds.
+  private getRealisticTimeout(sizeInBytes: number): ms {
+    const TIMEOUT_BYTES_PER_SECOND = 50_000.0;
+    const TIMEOUT_ADJUSTMENT_FACTOR = 1.5;
+    const TIMEOUT_BASE = 25_000; // 25 seconds in milliseconds
+
+    const timeout = Math.ceil(
+      (sizeInBytes / TIMEOUT_BYTES_PER_SECOND) *
+        TIMEOUT_ADJUSTMENT_FACTOR *
+        1000,
+    );
+    return (timeout + TIMEOUT_BASE) as ms;
   }
 
   // Queries the database for all items that need to be downloaded and queues
@@ -176,10 +208,26 @@ export class TaskQueue {
       headers: authHeader(this.getAuthToken()),
     };
 
+    // Calculate timeout based on item type
+    let timeout: ms;
+    if (metadata.kind === "message" || metadata.kind === "reply") {
+      // Messages and replies use fixed 20 second timeout
+      timeout = MESSAGE_REPLY_DOWNLOAD_TIMEOUT_MS;
+    } else {
+      // Files use dynamic timeout based on size
+      timeout = this.getRealisticTimeout(metadata.size);
+    }
+
+    console.debug(
+      `Downloading ${metadata.kind} ${item.id} (size: ${metadata.size} bytes) with timeout: ${timeout}ms`,
+    );
+
     let downloadResponse = await proxyStreamRequest(
       downloadRequest,
       downloadWriter,
       progress,
+      undefined, // abortSignal
+      timeout,
     );
 
     // If we received JSON response, indicates an error from the server
@@ -362,7 +410,12 @@ function createQueue(
     },
     {
       batchSize: 1,
-      maxTimeout: 60_000,
+      // Queue timeout per task attempt. For the maximum file size of 500MB, the
+      // worst-case download timeout is ~4.2 hours (based on 50 KB/s over Tor).
+      // We set this to 2 hours as a reasonable per-attempt limit, relying on the
+      // 5 retries below to handle worst-case large file downloads. Each retry gets
+      // a fresh timeout, so total potential time is 2 hours × 6 attempts = 12 hours.
+      maxTimeout: 7_200_000, // 2 hours in milliseconds
       maxRetries: 5,
       id: "id",
       // Merge handles tasks scheduled with the same ID
