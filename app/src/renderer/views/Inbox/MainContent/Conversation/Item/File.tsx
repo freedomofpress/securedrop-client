@@ -22,7 +22,7 @@ import {
   Printer,
   Upload,
 } from "lucide-react";
-import { Button, Tooltip } from "antd";
+import { Button, Tooltip, theme } from "antd";
 import {
   FilePdfFilled,
   FileExcelFilled,
@@ -191,6 +191,7 @@ function getFileIconAndColor(filename: string): {
 }
 
 const File = memo(function File({ item, designation, onUpdate }: FileProps) {
+  const { token } = theme.useToken();
   const titleCaseDesignation = toTitleCase(designation);
   const fetchStatus = item.fetch_status;
 
@@ -216,6 +217,12 @@ const File = memo(function File({ item, designation, onUpdate }: FileProps) {
       throw new Error(`Unknown fetch status: ${fetchStatus}`);
   }
 
+  // Apply error border color using theme token when in failed state
+  const errorBorderStyle =
+    fetchStatus === FetchStatus.FailedTerminal
+      ? { borderColor: token.colorErrorBorder }
+      : undefined;
+
   return (
     <div
       className="flex items-start mb-4 justify-start"
@@ -226,9 +233,7 @@ const File = memo(function File({ item, designation, onUpdate }: FileProps) {
         <div className="flex items-center mb-1">
           <span className="author">{titleCaseDesignation ?? ""}</span>
         </div>
-        <div
-          className={`w-80 file-box ${fetchStatus === FetchStatus.FailedTerminal ? "file-box-error" : ""}`}
-        >
+        <div className="w-80 file-box" style={errorBorderStyle}>
           <FileInner item={item} onUpdate={onUpdate} />
         </div>
       </div>
@@ -448,6 +453,7 @@ const CompleteFile = memo(function CompleteFile({ item }: { item: Item }) {
 
 const FailedFile = memo(function FailedFile({ item, onUpdate }: FileViewProps) {
   const { t } = useTranslation("Item");
+  const { token } = theme.useToken();
 
   const retryDownload = () => {
     onUpdate({
@@ -469,7 +475,7 @@ const FailedFile = memo(function FailedFile({ item, onUpdate }: FileViewProps) {
     <div className="flex items-center justify-between pt-2 pb-2">
       <div className="flex items-center">
         <ExclamationCircleTwoTone
-          twoToneColor="#ff4d4f"
+          twoToneColor={token.colorError}
           style={{ fontSize: 30 }}
         />
         <div className="ml-2">
