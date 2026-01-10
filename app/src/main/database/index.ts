@@ -96,6 +96,10 @@ export class DB {
     uuid: string;
     fetch_status: number;
   }>;
+  private updateItemFetchStatusWithReset: Statement<{
+    uuid: string;
+    fetch_status: number;
+  }>;
   private selectItem: Statement<{ uuid: string }, ItemRow>;
 
   private selectAllJournalistVersion: Statement<
@@ -204,6 +208,9 @@ export class DB {
     );
     this.updateItemFetchStatus = this.db.prepare(
       "UPDATE items SET fetch_status = @fetch_status WHERE uuid = @uuid",
+    );
+    this.updateItemFetchStatusWithReset = this.db.prepare(
+      "UPDATE items SET fetch_status = @fetch_status, fetch_progress = 0 WHERE uuid = @uuid",
     );
     this.upsertItem = this.db.prepare(
       "INSERT INTO items (uuid, data, version) VALUES (@uuid, @data, @version) ON CONFLICT(uuid) DO UPDATE SET data=@data, version=@version",
@@ -525,10 +532,21 @@ export class DB {
   }
 
   public updateFetchStatus(itemUuid: string, fetchStatus: number) {
-    this.updateItemFetchStatus.run({
-      uuid: itemUuid,
-      fetch_status: fetchStatus,
-    });
+    // When resetting to Initial or DownloadInProgress, also reset fetch_progress
+    if (
+      fetchStatus === FetchStatus.Initial ||
+      fetchStatus === FetchStatus.DownloadInProgress
+    ) {
+      this.updateItemFetchStatusWithReset.run({
+        uuid: itemUuid,
+        fetch_status: fetchStatus,
+      });
+    } else {
+      this.updateItemFetchStatus.run({
+        uuid: itemUuid,
+        fetch_status: fetchStatus,
+      });
+    }
   }
 
   // Updates journalist metadata in DB. Should be run in a transaction that also

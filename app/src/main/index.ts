@@ -7,7 +7,7 @@ import {
   clipboard,
   Menu,
 } from "electron";
-import { join } from "path";
+import { join, dirname } from "path";
 import { randomBytes } from "crypto";
 import { optimizer, is } from "@electron-toolkit/utils";
 import {
@@ -41,6 +41,7 @@ import { Lock } from "./sync/lock";
 import { Config } from "./config";
 import { setUmask } from "./umask";
 import { Exporter, Printer } from "./export";
+import { Storage } from "./storage";
 
 // Set umask so any files written are owner-only read/write (600).
 // This must be done before we create any files or spawn any worker threads.
@@ -255,6 +256,30 @@ app.whenReady().then(() => {
       fetchStatus: number,
       authToken: string,
     ) => {
+      // When resetting to Initial or DownloadInProgress, clean up partial download files
+      if (
+        fetchStatus === FetchStatus.Initial ||
+        fetchStatus === FetchStatus.DownloadInProgress
+      ) {
+        const item = db.getItem(itemUuid);
+        if (item && item.data.kind === "file") {
+          const storage = new Storage();
+          const downloadDir = storage.downloadFilePath(item.data, {
+            id: itemUuid,
+          });
+          // Delete the entire download directory for this item
+          const dirPath = dirname(downloadDir);
+          try {
+            fs.rmSync(dirPath, { recursive: true, force: true });
+            console.debug(`Cleaned up partial download directory: ${dirPath}`);
+          } catch (err) {
+            console.warn(
+              `Failed to clean up partial download directory ${dirPath}:`,
+              err,
+            );
+          }
+        }
+      }
       db.updateFetchStatus(itemUuid, fetchStatus);
       fetchWorker.postMessage({
         authToken: authToken,
