@@ -4,6 +4,9 @@ import { type SourceWithItems } from "../types";
 
 import { Liquid } from "liquidjs";
 
+// TODO: add filters to get filename "properly" and get journalist account name
+// from uuid in ReplyMetadata
+
 export class Transcriber {
   private engine: Liquid;
 
