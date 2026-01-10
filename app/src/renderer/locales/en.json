@@ -22,7 +22,8 @@
     "lastSourceActivity": "Last source activity",
     "you": "You",
     "unknown": "Unknown",
-    "pendingReplyTooltip": "The reply is pending and will be sent to the source in the next sync"
+    "pendingReplyTooltip": "The reply is pending and will be sent to the source in the next sync",
+    "successReplyTooltip": "Reply sent successfully"
   },
   "Sidebar": {
     "account": {

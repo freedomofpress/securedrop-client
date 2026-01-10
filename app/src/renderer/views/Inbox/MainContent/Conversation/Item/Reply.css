@@ -1,3 +1,31 @@
+.reply-box.with-status-icon {
+  padding-bottom: 24px;
+}
+
+.reply-status-icon {
+  position: absolute;
+  bottom: 4px;
+  right: 8px;
+}
+
 .pending-reply-icon {
-  color: #faad14;
+  color: rgba(0, 0, 0, 0.45);
+}
+
+.success-reply-icon {
+  color: rgba(0, 0, 0, 0.45);
+  /* NOTE: Keep the 3s duration in sync with the timeout in Reply.tsx */
+  animation: fadeOut 3s ease-in-out forwards;
+}
+
+@keyframes fadeOut {
+  0% {
+    opacity: 1;
+  }
+  70% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+  }
 }
