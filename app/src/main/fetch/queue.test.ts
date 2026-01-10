@@ -519,7 +519,7 @@ describe("TaskQueue - Two-Phase Download and Decryption", () => {
 
       // Capture onProgress and simulate chunked progress
       mockProxyStreamRequest.mockImplementation(
-        async (_req, _writer, _offset, _abort, onProgress) => {
+        async (_req, _writer, _offset, _abort, _timeout, onProgress) => {
           onProgress?.(10);
           onProgress?.(20);
           onProgress?.(30);
