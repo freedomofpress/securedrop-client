@@ -525,10 +525,23 @@ export class DB {
   }
 
   public updateFetchStatus(itemUuid: string, fetchStatus: number) {
-    this.updateItemFetchStatus.run({
-      uuid: itemUuid,
-      fetch_status: fetchStatus,
-    });
+    // When resetting to Initial or DownloadInProgress, also reset fetch_progress
+    if (
+      fetchStatus === FetchStatus.Initial ||
+      fetchStatus === FetchStatus.DownloadInProgress
+    ) {
+      this.db!.prepare(
+        "UPDATE items SET fetch_status = @fetch_status, fetch_progress = 0 WHERE uuid = @uuid",
+      ).run({
+        uuid: itemUuid,
+        fetch_status: fetchStatus,
+      });
+    } else {
+      this.updateItemFetchStatus.run({
+        uuid: itemUuid,
+        fetch_status: fetchStatus,
+      });
+    }
   }
 
   // Updates journalist metadata in DB. Should be run in a transaction that also
