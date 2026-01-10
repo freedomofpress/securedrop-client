@@ -104,6 +104,9 @@ export async function proxyJSONRequestInner(
   });
 }
 
+// Callback type for reporting download progress
+export type ProgressCallback = (bytesWritten: number) => void;
+
 // Streams proxy request through sd-proxy, writing stream output to
 // the provided writeStream.
 export async function proxyStreamRequest(
@@ -112,12 +115,14 @@ export async function proxyStreamRequest(
   offset?: number,
   abortSignal?: AbortSignal,
   timeout?: ms,
+  onProgress?: ProgressCallback,
 ): Promise<ProxyResponse> {
   return proxyStreamRequestInner(
     request,
     buildProxyCommand(abortSignal, timeout),
     writeStream,
     offset,
+    onProgress,
   );
 }
 
@@ -126,6 +131,7 @@ export async function proxyStreamRequestInner(
   command: ProxyCommand,
   writeStream: Writable,
   offset?: number,
+  onProgress?: ProgressCallback,
 ): Promise<ProxyResponse> {
   return new Promise((resolve, reject) => {
     // The path in `command.command` is hardcoded and not user input
@@ -147,6 +153,10 @@ export async function proxyStreamRequestInner(
     process.stdout.on("data", (data) => {
       bytesWritten += data.length;
       stdoutChunks.push(data);
+      // Report progress to caller if callback is provided
+      if (onProgress) {
+        onProgress(bytesWritten);
+      }
     });
 
     let stderr = "";
