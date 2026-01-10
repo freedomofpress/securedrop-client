@@ -5,3 +5,15 @@
 .file-namebtn {
   padding-inline-start: 0px;
 }
+
+.file-box-error {
+  border-color: #ffa39e;
+}
+
+.text-error {
+  color: #ff4d4f;
+}
+
+.text-gray-700 {
+  color: #374151;
+}
