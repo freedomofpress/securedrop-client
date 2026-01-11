@@ -27,7 +27,13 @@ jobs:
     steps:
       - name: Install base dependencies
         run: |
-          apt-get update && apt-get install --yes git make python3 python3-pip build-essential
+          apt-get update
+          apt-get install --yes \
+            build-essential \
+            git \
+            make \
+            python3 python3-pip \
+            sqlite3
       - name: Checkout repository
         uses: actions/checkout@v6
         with:
@@ -48,6 +54,12 @@ jobs:
       - name: Lint
         working-directory: app
         run: pnpm lint
+      - name: Check that database schema is up to date
+        working-directory: app
+        run: |
+          mkdir -p "${HOME}/.config/SecureDrop"
+          git config --global --add safe.directory "$GITHUB_WORKSPACE"
+          pnpm dbmate:check
       - name: Test (unit tests)
         working-directory: app
         run: pnpm test
