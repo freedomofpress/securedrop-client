@@ -1,4 +1,4 @@
-import { describe, it, expect } from "vitest";
+import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { renderWithProviders } from "../../../../../test-component-setup";
 import Reply from "./Reply";
 import type {
@@ -8,6 +8,7 @@ import type {
 } from "../../../../../../types";
 import { SessionStatus } from "../../../../../features/session/sessionSlice";
 import type { RootState } from "../../../../../store";
+import { act } from "@testing-library/react";
 
 describe("Reply", () => {
   const mockReplyItem: Item = {
@@ -677,6 +678,137 @@ describe("Reply", () => {
       );
 
       expect(getByTestId("pending-reply-icon")).toBeInTheDocument();
+    });
+  });
+
+  describe("Success Reply Icon (transition from pending to synced)", () => {
+    const authState: Partial<RootState> = {
+      session: {
+        status: SessionStatus.Auth,
+        authData: {
+          expiration: "2025-07-16T19:25:44.388054+00:00",
+          token: "test-token-123",
+          journalistUUID: "journalist-1",
+          journalistFirstName: "Daniel",
+          journalistLastName: "Ellsberg",
+        },
+      },
+      journalists: {
+        journalists: mockJournalists,
+        loading: false,
+        error: null,
+      },
+    };
+
+    const pendingReplyItem: Item = {
+      uuid: "pending-reply-1",
+      data: {
+        kind: "reply",
+        uuid: "pending-reply-1",
+        source: "source-1",
+        size: 1024,
+        journalist_uuid: "", // Empty UUID indicates pending reply
+        is_deleted_by_source: false,
+        seen_by: [],
+        interaction_count: 1,
+      } as ReplyMetadata,
+      plaintext: "This is a pending reply",
+    };
+
+    const syncedReplyItem: Item = {
+      ...pendingReplyItem,
+      data: {
+        ...pendingReplyItem.data,
+        journalist_uuid: "journalist-1", // Now has journalist UUID (synced)
+      } as ReplyMetadata,
+    };
+
+    beforeEach(() => {
+      vi.useFakeTimers();
+    });
+
+    afterEach(() => {
+      vi.useRealTimers();
+    });
+
+    it("should show success icon when reply transitions from pending to synced", async () => {
+      const { rerender, getByTestId, queryByTestId } = renderWithProviders(
+        <Reply item={pendingReplyItem} />,
+        { preloadedState: authState },
+      );
+
+      // Initially shows pending icon
+      expect(getByTestId("pending-reply-icon")).toBeInTheDocument();
+      expect(queryByTestId("success-reply-icon")).not.toBeInTheDocument();
+
+      // Transition to synced state
+      rerender(<Reply item={syncedReplyItem} />);
+
+      // Flush microtask queue to allow state update
+      await act(async () => {
+        await Promise.resolve();
+      });
+
+      // Should now show success icon
+      expect(queryByTestId("pending-reply-icon")).not.toBeInTheDocument();
+      expect(getByTestId("success-reply-icon")).toBeInTheDocument();
+    });
+
+    it("should hide success icon after 3 seconds", async () => {
+      const { rerender, getByTestId, queryByTestId } = renderWithProviders(
+        <Reply item={pendingReplyItem} />,
+        { preloadedState: authState },
+      );
+
+      // Transition to synced state
+      rerender(<Reply item={syncedReplyItem} />);
+
+      // Flush microtask queue to allow state update
+      await act(async () => {
+        await Promise.resolve();
+      });
+
+      // Success icon should be visible
+      expect(getByTestId("success-reply-icon")).toBeInTheDocument();
+
+      // Advance time by 3 seconds
+      act(() => {
+        vi.advanceTimersByTime(3000);
+      });
+
+      // Success icon should be gone
+      expect(queryByTestId("success-reply-icon")).not.toBeInTheDocument();
+    });
+
+    it("should not show success icon for already synced replies", () => {
+      const { queryByTestId } = renderWithProviders(
+        <Reply item={syncedReplyItem} />,
+        { preloadedState: authState },
+      );
+
+      // Should not show any status icon for already synced replies
+      expect(queryByTestId("pending-reply-icon")).not.toBeInTheDocument();
+      expect(queryByTestId("success-reply-icon")).not.toBeInTheDocument();
+    });
+
+    it("should cleanup timer on unmount during animation", () => {
+      const { rerender, unmount } = renderWithProviders(
+        <Reply item={pendingReplyItem} />,
+        { preloadedState: authState },
+      );
+
+      // Transition to synced state
+      rerender(<Reply item={syncedReplyItem} />);
+
+      // Unmount before timer completes
+      unmount();
+
+      // Advance timers - should not throw or cause issues
+      act(() => {
+        vi.advanceTimersByTime(3000);
+      });
+
+      // Test passes if no errors are thrown
     });
   });
 });
