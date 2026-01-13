@@ -27,7 +27,7 @@ export class Transcriber {
       );
       return output;
     } catch (error) {
-      console.error(`Error generating transcript: ${error.message}`);
+      console.error("Error generating transcript: ", error);
       throw error;
     }
   }
