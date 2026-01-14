@@ -12,6 +12,7 @@
   "scripts": {
     "start": "electron-vite preview",
     "dev": "electron-vite dev",
+    "dev-demo": "PROXY_ORIGIN=https://demo-journalist.securedrop.org electron-vite dev -- --login",
     "test": "vitest run --config vitest.config.ts --project=unit --project=component --coverage",
     "integration-test": "vitest run --config vitest.config.ts --project=integration --coverage",
     "server-test": "electron-vite build --mode test && vitest run --config vitest.config.ts --project=server --coverage --no-file-parallelism",
