@@ -1,6 +1,6 @@
 import { memo } from "react";
 // import { useTranslation } from "react-i18next";
-import type { SourceWithItems } from "../../../../types";
+import type { SourceWithItems } from "../../../../../types";
 import { MenuProps, Dropdown, Button } from "antd";
 import { MoreOutlined } from "@ant-design/icons";
 

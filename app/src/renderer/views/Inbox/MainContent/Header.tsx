@@ -4,7 +4,7 @@ import { toTitleCase, formatDateLong } from "../../../utils";
 import Avatar from "../../../components/Avatar";
 import type { SourceWithItems } from "../../../../types";
 import { Flex } from "antd";
-import SourceMenu from "./SourceMenu";
+import SourceMenu from "./Header/SourceMenu";
 
 interface HeaderProps {
   sourceUuid?: string;
