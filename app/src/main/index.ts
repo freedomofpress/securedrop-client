@@ -31,9 +31,9 @@ import {
   type AuthedRequest,
   type Item,
   type PendingEventType,
-  type SyncStatus,
   type DeviceStatus,
   FetchStatus,
+  SyncStatus,
 } from "../types";
 import { syncMetadata } from "./sync";
 import workerPath from "./fetch/worker?modulePath";
@@ -290,13 +290,28 @@ app.whenReady().then(() => {
   ipcMain.handle(
     "syncMetadata",
     async (_event, request: AuthedRequest): Promise<SyncStatus> => {
-      const syncStatus = await syncLock.run(async () => {
-        return await syncMetadata(db, request.authToken);
-      });
-      // Send message to fetch worker to fetch newly synced items, if any
-      fetchWorker.postMessage({
-        authToken: request.authToken,
-      } as AuthedRequest);
+      let syncStatus: SyncStatus;
+      try {
+        syncStatus = await syncLock.run(async () => {
+          return await syncMetadata(db, request.authToken);
+        }, 1000);
+      } catch (error) {
+        // Check if this is a timeout error from the lock
+        if (
+          error instanceof Error &&
+          error.message.includes("Failed to acquire lock within")
+        ) {
+          return SyncStatus.TIMEOUT;
+        }
+        throw error;
+      }
+
+      if (syncStatus === SyncStatus.UPDATED) {
+        fetchWorker.postMessage({
+          authToken: request.authToken,
+        } as AuthedRequest);
+      }
+
       return syncStatus;
     },
   );

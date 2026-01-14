@@ -75,4 +75,69 @@ describe("Lock", () => {
 
     expect(errorCaught).toBe(true);
   });
+
+  it("should acquire lock successfully with timeout if available immediately", async () => {
+    const lock = new Lock();
+    const release = await lock.acquire(1000);
+    expect(release).toBeDefined();
+    release();
+  });
+
+  it("should throw error when timeout expires waiting for lock", async () => {
+    const lock = new Lock();
+
+    // Acquire the lock and hold it for 200ms
+    const firstRelease = await lock.acquire();
+    setTimeout(() => firstRelease(), 200);
+
+    // Try to acquire with a 50ms timeout - should fail
+    await expect(lock.acquire(50)).rejects.toThrow(
+      "Failed to acquire lock within 50ms",
+    );
+  });
+
+  it("should acquire lock before timeout if released in time", async () => {
+    const lock = new Lock();
+
+    // Acquire the lock and hold it for 50ms
+    const firstRelease = await lock.acquire();
+    setTimeout(() => firstRelease(), 50);
+
+    // Try to acquire with a 200ms timeout - should succeed
+    const secondRelease = await lock.acquire(200);
+    expect(secondRelease).toBeDefined();
+    secondRelease();
+  });
+
+  it("should run function successfully with timeout", async () => {
+    const lock = new Lock();
+    let executed = false;
+
+    await lock.run(async () => {
+      executed = true;
+    }, 1000);
+
+    expect(executed).toBe(true);
+  });
+
+  it("should throw error when run() times out waiting for lock", async () => {
+    const lock = new Lock();
+
+    // Start a long-running operation
+    const firstPromise = lock.run(async () => {
+      await new Promise((res) => setTimeout(res, 200));
+    });
+
+    // Try to run with a short timeout - should fail
+    const secondPromise = lock.run(async () => {
+      return "should not execute";
+    }, 50);
+
+    await expect(secondPromise).rejects.toThrow(
+      "Failed to acquire lock within 50ms",
+    );
+
+    // Wait for first operation to complete
+    await firstPromise;
+  });
 });
