@@ -318,6 +318,7 @@ function SourceList() {
       <Modal
         open={deleteModalOpen}
         data-testid="delete-modal"
+        closable={false}
         title={
           <span data-testid="delete-modal-title">
             {selectedSources.size === 1
