@@ -19,11 +19,10 @@ import {
   File as FileIcon,
   Download,
   LoaderCircle,
-  FileX2,
   Printer,
   Upload,
 } from "lucide-react";
-import { Button, Tooltip } from "antd";
+import { Button, Tooltip, theme } from "antd";
 import {
   FilePdfFilled,
   FileExcelFilled,
@@ -33,6 +32,7 @@ import {
   FilePptFilled,
   FileMarkdownFilled,
   FileFilled,
+  ExclamationCircleTwoTone,
 } from "@ant-design/icons";
 import FileVideoFilled from "./FileVideoFilled";
 import FileAudioFilled from "./FileAudioFilled";
@@ -191,6 +191,7 @@ function getFileIconAndColor(filename: string): {
 }
 
 const File = memo(function File({ item, designation, onUpdate }: FileProps) {
+  const { token } = theme.useToken();
   const titleCaseDesignation = toTitleCase(designation);
   const fetchStatus = item.fetch_status;
 
@@ -216,6 +217,12 @@ const File = memo(function File({ item, designation, onUpdate }: FileProps) {
       throw new Error(`Unknown fetch status: ${fetchStatus}`);
   }
 
+  // Apply error border color using theme token when in failed state
+  const errorBorderStyle =
+    fetchStatus === FetchStatus.FailedTerminal
+      ? { borderColor: token.colorErrorBorder }
+      : undefined;
+
   return (
     <div
       className="flex items-start mb-4 justify-start"
@@ -226,7 +233,7 @@ const File = memo(function File({ item, designation, onUpdate }: FileProps) {
         <div className="flex items-center mb-1">
           <span className="author">{titleCaseDesignation ?? ""}</span>
         </div>
-        <div className="file-box w-80">
+        <div className="w-80 file-box" style={errorBorderStyle}>
           <FileInner item={item} onUpdate={onUpdate} />
         </div>
       </div>
@@ -444,18 +451,45 @@ const CompleteFile = memo(function CompleteFile({ item }: { item: Item }) {
   );
 });
 
-const FailedFile = memo(function FailedFile({ item }: { item: Item }) {
+const FailedFile = memo(function FailedFile({ item, onUpdate }: FileViewProps) {
   const { t } = useTranslation("Item");
-  const fileSize = prettyPrintBytes(item.data.size);
+  const { token } = theme.useToken();
+
+  const retryDownload = () => {
+    onUpdate({
+      item_uuid: item.uuid,
+      type: ItemUpdateType.FetchStatus,
+      fetch_status: FetchStatus.DownloadInProgress,
+    });
+  };
+
+  const cancelDownload = () => {
+    onUpdate({
+      item_uuid: item.uuid,
+      type: ItemUpdateType.FetchStatus,
+      fetch_status: FetchStatus.Initial,
+    });
+  };
 
   return (
     <div className="flex items-center justify-between pt-2 pb-2">
       <div className="flex items-center">
-        <FileX2 size={30} strokeWidth={1} className="file-icon" />
+        <ExclamationCircleTwoTone
+          twoToneColor={token.colorError}
+          style={{ fontSize: 30 }}
+        />
         <div className="ml-2">
           <p className="italic">{t("encryptedFile")}</p>
-          <p className="italic">{fileSize}</p>
+          <p className="text-gray-700">{t("downloadFailed")}</p>
         </div>
+      </div>
+      <div className="flex gap-2">
+        <Button type="link" size="small" onClick={retryDownload}>
+          {t("retry")}
+        </Button>
+        <Button type="link" size="small" onClick={cancelDownload}>
+          {t("cancel")}
+        </Button>
       </div>
     </div>
   );

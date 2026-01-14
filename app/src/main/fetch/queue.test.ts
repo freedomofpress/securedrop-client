@@ -762,4 +762,190 @@ describe("TaskQueue - Two-Phase Download and Decryption", () => {
       expect(db.failDownload).toHaveBeenCalledWith("item1");
     });
   });
+
+  describe("Download Retry and Cancel Scenarios", () => {
+    it("should successfully retry a failed download when status is reset to DownloadInProgress with progress=0", async () => {
+      const db = createMockDB();
+      const metadata = {
+        kind: "file",
+        source: "source1",
+        size: 150000000, // 150MB file
+        uuid: "file1",
+      } as ItemMetadata;
+
+      // First attempt: download fails partway through
+      db.getItem = vi
+        .fn()
+        .mockReturnValueOnce(mockItem(metadata, FetchStatus.Initial, 0));
+
+      mockProxyStreamRequest.mockResolvedValueOnce({
+        complete: false,
+        bytesWritten: 100000000, // 100MB downloaded before failure
+        error: new Error("Connection lost"),
+      });
+
+      const queue = new TaskQueue(db);
+
+      // First attempt should fail
+      await expect(queue.process({ id: "file1" }, db)).rejects.toThrow(
+        "Unable to complete stream download",
+      );
+
+      expect(db.failDownload).toHaveBeenCalledWith("file1");
+
+      // Simulate the UI clicking "Retry" - status reset to DownloadInProgress with progress=0
+      // (This would be done by updateFetchStatus in index.ts which resets progress)
+      vi.clearAllMocks();
+
+      db.getItem = vi.fn().mockReturnValue(
+        // Progress is now 0 because updateFetchStatus reset it
+        mockItem(metadata, FetchStatus.DownloadInProgress, 0),
+      );
+
+      // Second attempt should succeed
+      mockProxyStreamRequest.mockResolvedValueOnce({
+        complete: true,
+        bytesWritten: 150000000,
+        sha256sum: "abc123",
+      });
+
+      mockCrypto.decryptFile.mockResolvedValue({
+        decryptedFilePath: "/tmp/decrypted/file.txt",
+        decryptedSize: 145000000,
+      });
+
+      await queue.process({ id: "file1" }, db);
+
+      // Verify it started fresh from offset 0, not from the old progress
+      expect(mockProxyStreamRequest).toHaveBeenCalledWith(
+        expect.objectContaining({
+          path_query: "/api/v1/sources/source1/submissions/file1/download",
+        }),
+        expect.anything(),
+        0, // Should start from 0, not 100000000
+        undefined,
+        expect.any(Number),
+      );
+
+      expect(db.completeFileItem).toHaveBeenCalled();
+    });
+
+    it("should start fresh download after cancel (status reset to Initial)", async () => {
+      const db = createMockDB();
+      const metadata = {
+        kind: "file",
+        source: "source1",
+        size: 200000000, // 200MB file
+        uuid: "file1",
+      } as ItemMetadata;
+
+      // First attempt: download fails
+      db.getItem = vi
+        .fn()
+        .mockReturnValueOnce(mockItem(metadata, FetchStatus.Initial, 0));
+
+      mockProxyStreamRequest.mockResolvedValueOnce({
+        complete: false,
+        bytesWritten: 50000000, // 50MB downloaded
+        error: new Error("Timeout"),
+      });
+
+      const queue = new TaskQueue(db);
+
+      await expect(queue.process({ id: "file1" }, db)).rejects.toThrow(
+        "Unable to complete stream download",
+      );
+
+      expect(db.failDownload).toHaveBeenCalledWith("file1");
+
+      // Simulate user clicking "Cancel" - status reset to Initial with progress=0
+      vi.clearAllMocks();
+
+      db.getItem = vi.fn().mockReturnValue(
+        // Progress is 0 because updateFetchStatus reset it when going to Initial
+        mockItem(metadata, FetchStatus.Initial, 0),
+      );
+
+      // Now user clicks download again
+      mockProxyStreamRequest.mockResolvedValueOnce({
+        complete: true,
+        bytesWritten: 200000000,
+        sha256sum: "def456",
+      });
+
+      mockCrypto.decryptFile.mockResolvedValue({
+        decryptedFilePath: "/tmp/decrypted/file.txt",
+        decryptedSize: 195000000,
+      });
+
+      await queue.process({ id: "file1" }, db);
+
+      // Should start from 0
+      expect(mockProxyStreamRequest).toHaveBeenCalledWith(
+        expect.objectContaining({
+          path_query: "/api/v1/sources/source1/submissions/file1/download",
+        }),
+        expect.anything(),
+        0, // Fresh start from 0
+        undefined,
+        expect.any(Number),
+      );
+
+      expect(db.completeFileItem).toHaveBeenCalled();
+    });
+
+    it("should fail gracefully and allow retry for message downloads", async () => {
+      const db = createMockDB();
+      const metadata = {
+        kind: "message",
+        source: "source1",
+        size: 5000,
+      } as ItemMetadata;
+
+      // First attempt fails
+      db.getItem = vi
+        .fn()
+        .mockReturnValueOnce(mockItem(metadata, FetchStatus.Initial, 0));
+
+      mockProxyStreamRequest.mockResolvedValueOnce({
+        complete: false,
+        bytesWritten: 2500,
+        error: new Error("Network error"),
+      });
+
+      const queue = new TaskQueue(db);
+
+      await expect(queue.process({ id: "msg1" }, db)).rejects.toThrow(
+        "Unable to complete stream download",
+      );
+
+      expect(db.failDownload).toHaveBeenCalledWith("msg1");
+
+      // Retry after status reset
+      vi.clearAllMocks();
+
+      db.getItem = vi
+        .fn()
+        .mockReturnValue(mockItem(metadata, FetchStatus.DownloadInProgress, 0));
+
+      mockProxyStreamRequest.mockResolvedValueOnce({
+        complete: true,
+        bytesWritten: 5000,
+      });
+
+      const encryptedBuffer = Buffer.from("encrypted message");
+      const decryptedContent = "Hello, world!";
+      vi.spyOn(BufferedWriter.prototype, "getBuffer").mockReturnValue(
+        encryptedBuffer,
+      );
+      mockCrypto.decryptMessage.mockResolvedValue(decryptedContent);
+
+      await queue.process({ id: "msg1" }, db);
+
+      expect(db.completePlaintextItem).toHaveBeenCalledWith(
+        "msg1",
+        decryptedContent,
+      );
+    });
+  });
 });
