@@ -17,16 +17,14 @@ if (typeof window !== "undefined") {
   (window as any).__REDUX_STORE__ = store;
 }
 
-window.electronAPI.getCSPNonce().then((nonce) => {
-  createRoot(document.getElementById("root")!).render(
-    <StrictMode>
-      <ConfigProvider csp={{ nonce }}>
-        <Provider store={store}>
-          <MemoryRouter initialEntries={["/"]}>
-            <App />
-          </MemoryRouter>
-        </Provider>
-      </ConfigProvider>
-    </StrictMode>,
-  );
-});
+createRoot(document.getElementById("root")!).render(
+  <StrictMode>
+    <ConfigProvider>
+      <Provider store={store}>
+        <MemoryRouter initialEntries={["/"]}>
+          <App />
+        </MemoryRouter>
+      </Provider>
+    </ConfigProvider>
+  </StrictMode>,
+);
