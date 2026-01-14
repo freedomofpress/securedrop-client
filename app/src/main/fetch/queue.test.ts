@@ -729,13 +729,35 @@ describe("TaskQueue - Two-Phase Download and Decryption", () => {
       db.getItemsToProcess = vi.fn(() => ["message1", "file1", "reply1"]);
       db.getItem = vi.fn((id) => {
         if (id === "message1") {
-          return mockItem({ kind: "message", source: "source1", uuid: "message1" } as ItemMetadata, FetchStatus.Initial);
+          return mockItem(
+            {
+              kind: "message",
+              source: "source1",
+              uuid: "message1",
+            } as ItemMetadata,
+            FetchStatus.Initial,
+          );
         }
         if (id === "reply1") {
-          return mockItem({ kind: "reply", source: "source1", uuid: "reply1" } as ItemMetadata, FetchStatus.Initial);
+          return mockItem(
+            {
+              kind: "reply",
+              source: "source1",
+              uuid: "reply1",
+            } as ItemMetadata,
+            FetchStatus.Initial,
+          );
         }
         if (id === "file1") {
-          return mockItem({ kind: "file", source: "source1", uuid: "file1", size: 1000 } as ItemMetadata, FetchStatus.Initial);
+          return mockItem(
+            {
+              kind: "file",
+              source: "source1",
+              uuid: "file1",
+              size: 1000,
+            } as ItemMetadata,
+            FetchStatus.Initial,
+          );
         }
         return null;
       });
@@ -758,7 +780,10 @@ describe("TaskQueue - Two-Phase Download and Decryption", () => {
       const db = createMockDB();
       db.getItemsToProcess = vi.fn(() => ["item1"]);
       db.getItem = vi.fn(() =>
-        mockItem({ kind: "message", source: "source1", uuid: "item1" } as ItemMetadata, FetchStatus.Initial)
+        mockItem(
+          { kind: "message", source: "source1", uuid: "item1" } as ItemMetadata,
+          FetchStatus.Initial,
+        ),
       );
 
       const queue = new TaskQueue(db);
