@@ -1,0 +1,220 @@
+#!/usr/bin/env python3
+"""
+This script checks translator screenshot coverage against the i18next catalogue.
+It extracts strings from screenshots using OCR and compares them against
+the source strings in src/renderer/locales/en.json.
+"""
+
+import json
+import re
+import sys
+from pathlib import Path
+
+# Minimum number of words required for a string to be checked.
+# Strings with fewer words are skipped.
+MIN_WORDS = 3
+
+try:
+    import pytesseract
+    from PIL import Image
+except ImportError:
+    print("Error: Required packages not installed.", file=sys.stderr)
+    print("Please install: pip install pytesseract Pillow", file=sys.stderr)
+    sys.exit(1)
+
+
+def extract_strings_from_image(image_path: Path) -> list[str]:
+    """Extract all text strings from an image using OCR."""
+    try:
+        image = Image.open(image_path)
+        text = pytesseract.image_to_string(image)
+        # Split into lines and filter out empty strings
+        strings = [line.strip() for line in text.splitlines() if line.strip()]
+        return strings
+    except Exception as e:
+        print(f"Error processing {image_path}: {e}", file=sys.stderr)
+        return []
+
+
+def extract_catalogue_strings(data: dict | list | str, key_path: str = "") -> dict[str, str]:
+    """
+    Recursively extract all string values from the i18next catalogue.
+    Returns a dict mapping key paths to string values.
+    """
+    strings = {}
+
+    if isinstance(data, dict):
+        for key, value in data.items():
+            new_path = f"{key_path}.{key}" if key_path else key
+            strings.update(extract_catalogue_strings(value, new_path))
+    elif isinstance(data, list):
+        for i, item in enumerate(data):
+            new_path = f"{key_path}[{i}]"
+            strings.update(extract_catalogue_strings(item, new_path))
+    elif isinstance(data, str):
+        strings[key_path] = data
+
+    return strings
+
+
+def normalize_string(s: str) -> str:
+    """
+    Normalize a string for comparison by:
+    - Removing HTML tags
+    - Lowercasing
+    - Removing extra whitespace
+    """
+    # Remove HTML tags
+    s = re.sub(r"<[^>]+>", "", s)
+    # Lowercase and normalize whitespace
+    s = " ".join(s.lower().split())
+    return s
+
+
+def count_words(s: str) -> int:
+    """Count the number of words in a string, ignoring interpolations."""
+    # Remove interpolations before counting
+    s = re.sub(r"\{\{[^}]+\}\}", "", s)
+    # Remove HTML tags
+    s = re.sub(r"<[^>]+>", "", s)
+    # Split on whitespace and count non-empty parts
+    return len([word for word in s.split() if word])
+
+
+def source_string_to_pattern(source_string: str) -> re.Pattern:
+    """
+    Convert a source string with i18next interpolations to a regex pattern.
+    - {{count}} becomes \\d+ (matches numbers)
+    - {{variable}} becomes .+ (matches any text)
+    """
+    # Normalize: remove HTML tags, lowercase, normalize whitespace
+    normalized = normalize_string(source_string)
+
+    # Split on interpolation placeholders, keeping the placeholders
+    parts = re.split(r"(\{\{[^}]+\}\})", normalized)
+
+    pattern_parts = []
+    for part in parts:
+        match = re.match(r"\{\{([^}]+)\}\}", part)
+        if match:
+            var_name = match.group(1)
+            # Use \d+ for count variables, .+ for others
+            if "count" in var_name.lower():
+                pattern_parts.append(r"\d+")
+            else:
+                pattern_parts.append(r".+?")
+        else:
+            # Escape regex special characters in literal text
+            pattern_parts.append(re.escape(part))
+
+    return re.compile("".join(pattern_parts))
+
+
+def string_appears_in_screenshots(source_string: str, screenshot_strings: set[str]) -> bool:
+    """
+    Check if a source string appears in the screenshot strings.
+    Uses regex matching to handle i18next interpolations.
+    """
+    # Build regex pattern from source string
+    pattern = source_string_to_pattern(source_string)
+
+    # Skip empty patterns
+    if not pattern.pattern:
+        return True
+
+    # Check for match against screenshot strings
+    for screenshot_string in screenshot_strings:
+        normalized_screenshot = normalize_string(screenshot_string)
+        # Full match
+        if pattern.fullmatch(normalized_screenshot):
+            return True
+        # Pattern found within screenshot string
+        if pattern.search(normalized_screenshot):
+            return True
+        # Screenshot string found within source (for partial matches)
+        if normalized_screenshot and normalized_screenshot in normalize_string(source_string):
+            return True
+
+    return False
+
+
+def main():
+    script_dir = Path(__file__).parent
+    project_root = script_dir.parent
+
+    # Load the i18next catalogue
+    catalogue_path = project_root / "src" / "renderer" / "locales" / "en.json"
+    if not catalogue_path.exists():
+        print(f"Error: Catalogue not found: {catalogue_path}", file=sys.stderr)
+        sys.exit(1)
+
+    with open(catalogue_path, encoding="utf-8") as f:
+        catalogue = json.load(f)
+
+    catalogue_strings = extract_catalogue_strings(catalogue)
+    print(f"Loaded {len(catalogue_strings)} strings from catalogue", file=sys.stderr)
+
+    # Find screenshots directory
+    screenshots_dir = project_root / "translator-screenshots"
+    if not screenshots_dir.exists():
+        print(f"Error: Screenshots directory not found: {screenshots_dir}", file=sys.stderr)
+        sys.exit(1)
+
+    # Find all PNG files
+    png_files = sorted(screenshots_dir.glob("*.png"))
+    if not png_files:
+        print(f"Error: No PNG files found in {screenshots_dir}", file=sys.stderr)
+        sys.exit(1)
+
+    # Extract strings from screenshots
+    screenshot_strings: set[str] = set()
+    for png_file in png_files:
+        print(f"Processing: {png_file.name}", file=sys.stderr)
+        strings = extract_strings_from_image(png_file)
+        screenshot_strings.update(strings)
+
+    print(f"Extracted {len(screenshot_strings)} unique strings from screenshots", file=sys.stderr)
+    print(file=sys.stderr)
+
+    # Find missing strings
+    missing_strings: dict[str, str] = {}
+    skipped_strings: dict[str, str] = {}
+    for key_path, source_string in catalogue_strings.items():
+        if not string_appears_in_screenshots(source_string, screenshot_strings):
+            # String is missing - skip warning if too short, otherwise report it
+            if count_words(source_string) < MIN_WORDS:
+                skipped_strings[key_path] = source_string
+            else:
+                missing_strings[key_path] = source_string
+
+    # Output skipped strings (missing but too short to warn about)
+    if skipped_strings:
+        print(f"Skipped warnings (missing, but fewer than {MIN_WORDS} words):")
+        print("=" * 60)
+        for key_path, source_string in sorted(skipped_strings.items()):
+            print(f"  {key_path}: {source_string!r}")
+        print()
+
+    # Output missing strings
+    if missing_strings:
+        print("Source strings NOT found in screenshots:")
+        print("=" * 60)
+        for key_path, source_string in sorted(missing_strings.items()):
+            print(f"\n{key_path}:")
+            print(f"  {source_string!r}")
+        print()
+
+    # Output summary
+    found_count = len(catalogue_strings) - len(missing_strings) - len(skipped_strings)
+    print(file=sys.stderr)
+    print(f"Total strings: {len(catalogue_strings)}", file=sys.stderr)
+    print(f"Found: {found_count}", file=sys.stderr)
+    print(f"Missing (skipped, < {MIN_WORDS} words): {len(skipped_strings)}", file=sys.stderr)
+    print(f"Missing: {len(missing_strings)}", file=sys.stderr)
+
+    if missing_strings:
+        sys.exit(1)
+
+
+if __name__ == "__main__":
+    main()

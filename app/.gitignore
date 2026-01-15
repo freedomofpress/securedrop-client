@@ -94,4 +94,5 @@ dist/
 
 # securedrop-app specific
 src/test-data.sql
-screenshots
+screenshots/
+/translator-screenshots/
