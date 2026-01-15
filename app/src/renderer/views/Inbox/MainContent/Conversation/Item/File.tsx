@@ -3,6 +3,7 @@ import {
   FetchStatus,
   ItemUpdate,
   ItemUpdateType,
+  type ExportPayload,
   type Item,
 } from "../../../../../../types";
 import {
@@ -362,6 +363,11 @@ const CompleteFile = memo(function CompleteFile({ item }: { item: Item }) {
   // Use decrypted_size if available (after download), otherwise fall back to server-reported size
   const fileSize = prettyPrintBytes(item.decrypted_size ?? item.data.size);
 
+  const exportPayload: ExportPayload = {
+    type: "file",
+    payload: item,
+  };
+
   // Format the filename to cap the length, and show full filename in tooltip if
   // formatted filename is truncated
   const filenameMaxLength = 30;
@@ -438,7 +444,7 @@ const CompleteFile = memo(function CompleteFile({ item }: { item: Item }) {
       </div>
 
       <ExportWizard
-        item={item}
+        item={exportPayload}
         open={exportWizardOpen}
         onClose={handleExportWizardClose}
       />

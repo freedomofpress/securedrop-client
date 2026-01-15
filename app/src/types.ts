@@ -226,6 +226,18 @@ export type FetchDownloadsMessage = {
 
 /** Print + Export types */
 
+export type ExportPayloadTranscript = {
+  type: "transcript";
+  payload: SourceWithItems;
+};
+
+export type ExportPayloadFile = {
+  type: "file";
+  payload: Item;
+};
+
+export type ExportPayload = ExportPayloadTranscript | ExportPayloadFile;
+
 // All possible strings returned by the qrexec calls to sd-devices. These values come from
 // `print/status.py` and `disk/status.py` in `securedrop-export`
 // and must only be changed in coordination with changes released in that component.

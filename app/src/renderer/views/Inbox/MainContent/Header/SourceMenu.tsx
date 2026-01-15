@@ -1,6 +1,6 @@
 import { memo, useState } from "react";
 // import { useTranslation } from "react-i18next";
-import type { SourceWithItems } from "../../../../../types";
+import type { SourceWithItems, ExportPayload } from "../../../../../types";
 import { ExportWizard } from "../Conversation/Item/Export";
 import { MenuProps, Dropdown, Button } from "antd";
 import { MoreOutlined } from "@ant-design/icons";
@@ -71,6 +71,11 @@ const SourceMenu = memo(function SourceMenu({
     return <></>;
   }
 
+  const exportPayload: ExportPayload = {
+    type: "transcript",
+    payload: sourceWithItems,
+  };
+
   return (
     <>
       <Dropdown menu={menuProps}>
@@ -80,7 +85,7 @@ const SourceMenu = memo(function SourceMenu({
         />
       </Dropdown>
       <ExportWizard
-        item={sourceWithItems.items}
+        item={exportPayload}
         open={exportWizardOpen}
         onClose={handleExportWizardClose}
       />
