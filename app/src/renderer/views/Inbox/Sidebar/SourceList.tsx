@@ -328,6 +328,7 @@ function SourceList() {
                 })}
           </span>
         }
+        getContainer={() => document.getElementById("root") || document.body}
         onCancel={handleDeleteModalCancel}
         footer={[
           <Button
