@@ -38,7 +38,9 @@ export default defineConfig(({ mode }) => {
 
     // Get the absolute path to the proxy binary
     const sdProxyCmd = resolve(proxyPath);
-    mainVars["__PROXY_ORIGIN__"] = JSON.stringify("http://localhost:8081/");
+    mainVars["__PROXY_ORIGIN__"] = process.env.PROXY_ORIGIN
+      ? JSON.stringify(process.env.PROXY_ORIGIN)
+      : JSON.stringify("http://localhost:8081/");
     mainVars["__PROXY_CMD__"] = JSON.stringify(sdProxyCmd);
     mainVars["__VITE_NONCE__"] = JSON.stringify(viteNonce);
     // Load test submission key

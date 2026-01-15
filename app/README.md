@@ -28,16 +28,13 @@ On a Debian Bookworm VM, we recommend installing Node and Rust via [nvm](https:/
 pnpm install
 ```
 
-### 2. Generate and Insert Test Data
+### 2. Start Development App Locally
 
-In order to see sources in the interface, you need to generate test data and insert it. The `test-data-generate` script requires that you pass in the path to the `securedrop` repo, and the number of sources you want to generate.
+#### Run App Against Local SecureDrop Server
 
-```bash
-pnpm test-data-generate ../../securedrop 1000
-pnpm test-data-insert
-```
+To run against a local SecureDrop server, first follow the instructions to [run the SecureDrop server in localdev](https://github.com/freedomofpress/securedrop?tab=readme-ov-file#developer-quickstart).
 
-### 3. Start Development Server
+Once the server has been started, you can build and start the Electron app in development mode with:
 
 ```bash
 pnpm dev
@@ -48,6 +45,24 @@ This will:
 - Build the SecureDrop proxy component (requires Rust)
 - Configure environment variables automatically
 - Start the Electron app in development mode
+
+To enable autologin, run with:
+
+```bash
+pnpm dev -- --login
+```
+
+#### Run App Against Demo SecureDrop Server
+
+To run the app against the [Demo SecureDrop instance](https://demo.securedrop.org/), start the app with:
+
+```bash
+pnpm dev-demo
+```
+
+This will start the Electron app with autologin against the demo SecureDrop instance.
+
+You can then access the [Demo Source Interface](https://demo-source.securedrop.org/) to test sending new submissions and reading replies.
 
 ### 3. Available Scripts
 
