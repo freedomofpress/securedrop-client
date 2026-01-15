@@ -18,6 +18,13 @@ import { ExportStatus, PrintStatus } from "../types";
 // extends Vitest's expect with jest-dom matchers
 expect.extend(matchers);
 
+// Mock ResizeObserver for Ant Design components (not available in jsdom)
+global.ResizeObserver = class ResizeObserver {
+  observe() {}
+  unobserve() {}
+  disconnect() {}
+};
+
 // Mock window.matchMedia for Ant components
 Object.defineProperty(window, "matchMedia", {
   writable: true,
