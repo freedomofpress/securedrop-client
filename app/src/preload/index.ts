@@ -124,6 +124,11 @@ const electronAPI = {
   initiateExport: logIpcCall<DeviceStatus>("initiateExport", () =>
     ipcRenderer.invoke("initiateExport"),
   ),
+  exportTranscript: logIpcCall<DeviceStatus>(
+    "exportTranscript",
+    (sourceUuid: string, passphrase: string) =>
+      ipcRenderer.invoke("exportTranscript", sourceUuid, passphrase),
+  ),
   export: logIpcCall<DeviceStatus>(
     "export",
     (itemUuids: string[], passphrase: string) =>

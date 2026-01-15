@@ -397,26 +397,37 @@ app.whenReady().then(() => {
     },
   );
 
+  // Print + export IPCs
+  ipcMain.handle("initiateExport", async (_event): Promise<DeviceStatus> => {
+    return exporter.initiateExport();
+  });
+
   ipcMain.handle(
-    "writeSourceTranscript",
-    async (_event, sourceUuid: string): Promise<void> => {
+    "exportTranscript",
+    async (
+      _event,
+      sourceUuid: string,
+      passphrase: string,
+    ): Promise<DeviceStatus> => {
       const sourceWithItems = db.getSourceWithItems(sourceUuid);
       const storage = new Storage();
       const transcriber = new Transcriber();
-      const fileContent = await transcriber.generateTranscript(sourceWithItems);
 
+      const fileContent = await transcriber.generateTranscript(sourceWithItems);
       const filePath: string = join(
         storage.sourceDirectory(sourceUuid).path,
         "transcript.txt",
       );
       fs.writeFileSync(filePath, fileContent, "utf-8");
+
+      // probably overkill
+      if (!fs.existsSync(filePath)) {
+        throw new Error(`File not found: ${filePath}`);
+      }
+
+      return await exporter.export([filePath], passphrase);
     },
   );
-
-  // Print + export IPCs
-  ipcMain.handle("initiateExport", async (_event): Promise<DeviceStatus> => {
-    return exporter.initiateExport();
-  });
 
   ipcMain.handle(
     "export",

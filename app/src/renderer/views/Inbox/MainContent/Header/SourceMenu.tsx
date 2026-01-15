@@ -18,11 +18,10 @@ const SourceMenu = memo(function SourceMenu({
       case "exportTranscript":
         try {
           setExportWizardOpen(true);
-          await window.electronAPI.writeSourceTranscript(sourceWithItems.uuid);
         } catch (error) {
           console.error("Failed to write transcript:", error);
         }
-        console.log(`export transcript for ${sourceWithItems.uuid}...tk`);
+        console.log(`exporting transcript for ${sourceWithItems.uuid}...tk`);
         break;
 
       case "printTranscript":

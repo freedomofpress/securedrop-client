@@ -189,8 +189,8 @@ beforeEach(() => {
     shouldAutoLogin: vi.fn().mockResolvedValue(false),
     clearClipboard: vi.fn().mockResolvedValue(null),
     openFile: vi.fn().mockResolvedValue(undefined),
-    writeSourceTranscript: vi.fn().mockResolvedValue(undefined),
     initiateExport: vi.fn().mockResolvedValue(ExportStatus.DEVICE_LOCKED),
+    exportTranscript: vi.fn().mockResolvedValue(ExportStatus.SUCCESS_EXPORT),
     export: vi.fn().mockResolvedValue(ExportStatus.SUCCESS_EXPORT),
     initiatePrint: vi
       .fn()
