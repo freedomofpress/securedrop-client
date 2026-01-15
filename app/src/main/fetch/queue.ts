@@ -30,7 +30,8 @@ type DownloadResult = Buffer | string;
 
 export class TaskQueue {
   db: DB;
-  queue: Queue;
+  messageQueue: Queue;
+  fileQueue: Queue;
   authToken?: string;
   port?: MessagePort;
   storage: Storage;
@@ -41,7 +42,14 @@ export class TaskQueue {
     overrideTaskFn?: (task: ItemFetchTask, db: DB) => void,
   ) {
     this.db = db;
-    this.queue = createQueue(
+    this.messageQueue = createQueue(
+      "message-queue",
+      db,
+      overrideTaskFn ? overrideTaskFn : this.process,
+      port,
+    );
+    this.fileQueue = createQueue(
+      "file-queue",
       db,
       overrideTaskFn ? overrideTaskFn : this.process,
       port,
@@ -84,6 +92,11 @@ export class TaskQueue {
 
   // Queries the database for all items that need to be downloaded and queues
   // up download tasks to be processed.
+  // Routes items to the appropriate queue:
+  // - Messages/replies go to messageQueue
+  // - Files go to fileQueue
+  // This allows messages to be fetched while files are downloading, since that
+  // may be a long-running process
   queueFetches(message: AuthedRequest) {
     this.authToken = message.authToken;
     try {
@@ -95,9 +108,22 @@ export class TaskQueue {
         const task: ItemFetchTask = {
           id: itemUUID,
         };
-        this.queue.push(task, (err, _result) => {
+
+        const item = this.db.getItem(itemUUID);
+        if (!item) {
+          continue;
+        }
+
+        const queue =
+          item.data.kind === "file" ? this.fileQueue : this.messageQueue;
+
+        queue.push(task, (err, _result) => {
           if (err) {
-            console.error("Error executing fetch download task: ", task, err);
+            console.error(
+              `Error executing fetch download task in queue: `,
+              task,
+              err,
+            );
             this.db.failDownload(task.id);
             if (this.port) {
               this.port.postMessage(this.db.getItem(task.id));
@@ -418,6 +444,7 @@ export class TaskQueue {
 }
 
 function createQueue(
+  name: string,
   db: DB,
   taskFn: (task: ItemFetchTask, db: DB) => void,
   port?: MessagePort,
@@ -453,12 +480,12 @@ function createQueue(
   );
 
   q.on("error", (error) => {
-    console.error("Error from queue: ", error);
+    console.error(`Error from ${name}: `, error);
   });
 
   q.on("task_failed", (taskId, errorMessage) => {
     console.error(
-      "Task failed and exceeded retry attempts, removing from queue: ",
+      `Task failed and exceeded retry attempts in ${name}, removing from queue: `,
       taskId,
       errorMessage,
     );
