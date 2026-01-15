@@ -14,6 +14,7 @@ This is an Electron-based desktop application that provides a secure interface f
 - Rust toolchain (2021 edition or later; for the proxy component)
 - pnpm package manager
 - System packages `jq`, `pkg-config`, and `openssl`
+- Python [Poetry](https://python-poetry.org/docs/#installing-with-the-official-installer)
 
 On a Debian Bookworm VM, we recommend installing Node and Rust via [nvm](https://github.com/nvm-sh/nvm) and [rustup](https://rustup.rs/), which installs them in your local `PATH`. You can then install `pnpm` via `npm install -g pnpm@latest`.
 
