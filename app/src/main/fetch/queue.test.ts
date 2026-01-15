@@ -1,12 +1,18 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
+import { describe, it, expect, vi, beforeEach, Mock } from "vitest";
 import fs from "fs";
 import os from "os";
 import path from "path";
 import { PassThrough } from "stream";
+import { MessagePort as WorkerMessagePort } from "worker_threads";
 
 import { TaskQueue } from "./queue";
 import { CryptoError } from "../crypto";
-import { FetchStatus, ItemMetadata, Item } from "../../types";
+import {
+  FetchStatus,
+  ItemMetadata,
+  Item,
+  ProxyStreamResponse,
+} from "../../types";
 import { DB } from "../database";
 import { BufferedWriter } from "./bufferedWriter";
 
@@ -61,6 +67,7 @@ function createMockDB() {
   return {
     getItemsToProcess: vi.fn(),
     getItem: vi.fn(),
+    getSource: vi.fn(),
     completePlaintextItem: vi.fn(),
     completeFileItem: vi.fn(),
     setDownloadInProgress: vi.fn(),
@@ -129,8 +136,9 @@ describe("TaskQueue - Two-Phase Download and Decryption", () => {
         }),
         expect.any(BufferedWriter),
         0,
-        undefined,
-        20000,
+        undefined, // abortSignal
+        20000, // timeout
+        expect.any(Function), // onProgress
       );
 
       // Verify decryption phase
@@ -305,8 +313,9 @@ describe("TaskQueue - Two-Phase Download and Decryption", () => {
         }),
         expect.any(BufferedWriter),
         0,
-        undefined,
-        20000,
+        undefined, // abortSignal
+        20000, // timeout
+        expect.any(Function), // onProgress
       );
 
       expect(db.completePlaintextItem).toHaveBeenCalledWith(
@@ -457,8 +466,9 @@ describe("TaskQueue - Two-Phase Download and Decryption", () => {
         }),
         expect.any(PassThrough),
         0,
-        undefined,
-        55000,
+        undefined, // abortSignal
+        55000, // timeout
+        expect.any(Function), // onProgress
       );
 
       // Verify decryption phase
@@ -480,6 +490,58 @@ describe("TaskQueue - Two-Phase Download and Decryption", () => {
         "/securedrop/source1/plaintext.txt",
         expect.any(Number),
       );
+    });
+
+    it("should send throttled progress updates and update db for each chunk", async () => {
+      const db = createMockDB();
+      const metadata = {
+        kind: "file",
+        source: "source1",
+        uuid: "file-uuid-progress",
+      } as ItemMetadata;
+
+      // Always return an item in Initial state for simplicity
+      db.getItem = vi.fn(() => mockItem(metadata, FetchStatus.Initial, 0));
+      db.getSource = vi.fn(() => ({}) as never);
+
+      // Mock crypto decryption success
+      mockCrypto.decryptFile.mockResolvedValue(
+        "/securedrop/source1/plaintext.txt",
+      );
+
+      // Mock Date.now to control throttling intervals
+      const nowSpy = vi
+        .spyOn(Date, "now")
+        .mockReturnValueOnce(200) // first progress -> postMessage
+        .mockReturnValueOnce(250) // within throttle window -> no postMessage
+        .mockReturnValueOnce(500) // outside throttle window -> second postMessage
+        .mockReturnValue(500); // default for any further calls
+
+      // Capture onProgress and simulate chunked progress
+      mockProxyStreamRequest.mockImplementation(
+        async (_req, _writer, _offset, _abort, _timeout, onProgress) => {
+          onProgress?.(10);
+          onProgress?.(20);
+          onProgress?.(30);
+          return { complete: true, bytesWritten: 30 } as ProxyStreamResponse;
+        },
+      );
+
+      const mockPort = { postMessage: vi.fn() } as unknown as WorkerMessagePort;
+      const queue = new TaskQueue(db, mockPort);
+
+      await queue.process({ id: "file-uuid-progress" }, db);
+
+      // First call is the initial setDownloadInProgress, subsequent calls are from onProgress
+      const setDownloadMock = db.setDownloadInProgress as unknown as Mock;
+      const progressCalls = setDownloadMock.mock.calls.slice(1);
+      expect(progressCalls.map((call) => call[1])).toEqual([10, 20, 30]);
+
+      // One throttled progress post plus source update and final item update
+      expect(mockPort.postMessage).toHaveBeenCalledTimes(3);
+      expect(db.getSource).toHaveBeenCalledTimes(1);
+
+      nowSpy.mockRestore();
     });
 
     it("should download successfully but fail decryption, and retry decryption only", async () => {
@@ -823,8 +885,9 @@ describe("TaskQueue - Two-Phase Download and Decryption", () => {
         }),
         expect.anything(),
         0, // Should start from 0, not 100000000
-        undefined,
-        expect.any(Number),
+        undefined, // abortSignal
+        expect.any(Number), // timeout
+        expect.any(Function), // onProgress
       );
 
       expect(db.completeFileItem).toHaveBeenCalled();
@@ -887,8 +950,9 @@ describe("TaskQueue - Two-Phase Download and Decryption", () => {
         }),
         expect.anything(),
         0, // Fresh start from 0
-        undefined,
-        expect.any(Number),
+        undefined, // abortSignal
+        expect.any(Number), //timeout
+        expect.any(Function), // onProgress
       );
 
       expect(db.completeFileItem).toHaveBeenCalled();
