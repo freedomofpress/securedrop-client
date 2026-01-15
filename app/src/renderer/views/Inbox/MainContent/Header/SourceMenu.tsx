@@ -1,27 +1,28 @@
-import { memo } from "react";
+import { memo, useState } from "react";
 // import { useTranslation } from "react-i18next";
 import type { SourceWithItems } from "../../../../../types";
+import { ExportWizard } from "../Conversation/Item/Export";
 import { MenuProps, Dropdown, Button } from "antd";
 import { MoreOutlined } from "@ant-design/icons";
 
 interface SourceMenuProps {
-  sourceUuid: string;
   sourceWithItems: SourceWithItems;
 }
 
 const SourceMenu = memo(function SourceMenu({
-  sourceUuid,
   sourceWithItems,
 }: SourceMenuProps) {
+  const [exportWizardOpen, setExportWizardOpen] = useState(false);
   const handleMenuClick: MenuProps["onClick"] = async (e) => {
     switch (e.key) {
       case "exportTranscript":
         try {
-          await window.electronAPI.writeSourceTranscript(sourceUuid);
+          setExportWizardOpen(true);
+          await window.electronAPI.writeSourceTranscript(sourceWithItems.uuid);
         } catch (error) {
           console.error("Failed to write transcript:", error);
         }
-        console.log(`export transcript for ${sourceUuid}...tk`);
+        console.log(`export transcript for ${sourceWithItems.uuid}...tk`);
         break;
 
       case "printTranscript":
@@ -30,6 +31,11 @@ const SourceMenu = memo(function SourceMenu({
       default:
         break;
     }
+  };
+
+  const handleExportWizardClose = () => {
+    setExportWizardOpen(false);
+    // Note: ExportWizard handles state cleanup via its useEffect when open changes
   };
 
   const hasConversation: boolean = sourceWithItems.items.length > 0;
@@ -62,17 +68,24 @@ const SourceMenu = memo(function SourceMenu({
   // will need translations at some point
   //  const { t, i18n } = useTranslation("MainContent");
 
-  if (!sourceUuid) {
+  if (!sourceWithItems) {
     return <></>;
   }
 
   return (
-    <Dropdown menu={menuProps}>
-      <Button
-        type="text"
-        icon={<MoreOutlined style={{ color: "gray", fontSize: "20px" }} />}
+    <>
+      <Dropdown menu={menuProps}>
+        <Button
+          type="text"
+          icon={<MoreOutlined style={{ color: "gray", fontSize: "20px" }} />}
+        />
+      </Dropdown>
+      <ExportWizard
+        item={sourceWithItems.items}
+        open={exportWizardOpen}
+        onClose={handleExportWizardClose}
       />
-    </Dropdown>
+    </>
   );
 });
 
