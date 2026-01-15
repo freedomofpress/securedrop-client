@@ -13,7 +13,8 @@ This is an Electron-based desktop application that provides a secure interface f
 - Node.js (v22 or later)
 - Rust toolchain (2021 edition or later; for the proxy component)
 - pnpm package manager
-- System packages `jq` and `pkg-config`
+- System packages `jq`, `pkg-config`, and `openssl`
+- Python and [Poetry](https://python-poetry.org/docs/#installing-with-the-official-installer)
 
 On a Debian Bookworm VM, we recommend installing Node and Rust via [nvm](https://github.com/nvm-sh/nvm) and [rustup](https://rustup.rs/), which installs them in your local `PATH`. You can then install `pnpm` via `npm install -g pnpm@latest`.
 
@@ -50,6 +51,13 @@ To enable autologin, run with:
 
 ```bash
 pnpm dev -- --login
+```
+
+If you are running on Qubes OS, you will need to pass in the `--no-qubes` flag in localdev. This ensures the app
+loads development configuration rather than attempting to read config values from QubesDB as expected in the production Qubes Workstation environment.
+
+```bash
+pnpm dev -- --no-qubes
 ```
 
 #### Run App Against Demo SecureDrop Server
