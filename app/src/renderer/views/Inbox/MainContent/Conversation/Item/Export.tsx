@@ -400,6 +400,9 @@ const UnlockDeviceState = memo(function UnlockDeviceState({
             id="passphrase"
             value={context.passphrase}
             onChange={handlePassphraseChange}
+            onPressEnter={() =>
+              dispatch({ type: "UNLOCK_DEVICE", payload: context.passphrase })
+            }
             placeholder={t("exportWizard.passphrase")}
             autoFocus
           />
