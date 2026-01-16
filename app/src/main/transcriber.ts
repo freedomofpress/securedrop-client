@@ -1,4 +1,5 @@
 import { join } from "path";
+import { DB } from "./database";
 
 import { type SourceWithItems } from "../types";
 
@@ -7,16 +8,19 @@ import { Liquid } from "liquidjs";
 // TODO: add filters to get filename "properly" and get journalist account name
 // from uuid in ReplyMetadata
 
-const journalistNameFilter = (uuid: string): string => {
-  return `j.random journalist: ${uuid}`;
+const journalistNameFilter = (uuid: string, db: DB): string => {
+  return db.getJournalistByID(uuid).data.username;
 };
 
 export class Transcriber {
+  db: DB;
   private engine: Liquid;
 
   constructor(
+    db: DB,
     templateRoot: string = join(__dirname, "../../resources/templates/"),
   ) {
+    this.db = db;
     this.engine = new Liquid({
       root: templateRoot,
       extname: ".liquid",
