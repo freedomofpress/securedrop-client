@@ -116,11 +116,6 @@ const electronAPI = {
   clearClipboard: logIpcCall<void>("clearClipboard", () =>
     ipcRenderer.invoke("clearClipboard"),
   ),
-  writeSourceTranscript: logIpcCall<void>(
-    "writeSourceTranscript",
-    (sourceUuid: string) =>
-      ipcRenderer.invoke("writeSourceTranscript", sourceUuid),
-  ),
   initiateExport: logIpcCall<DeviceStatus>("initiateExport", () =>
     ipcRenderer.invoke("initiateExport"),
   ),

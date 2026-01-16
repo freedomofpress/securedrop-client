@@ -554,6 +554,7 @@ export const ExportWizard = memo(function ExportWizard({
       console.log(`exporting ${filename}`);
       break;
     default:
+      filename = "";
       console.error("Unknown export type: ", item);
       break;
   }
@@ -649,6 +650,7 @@ export const ExportWizard = memo(function ExportWizard({
             );
             break;
           default:
+            deviceStatus = DeviceErrorStatus.ERROR_MISSING_FILES; //maybe this needs a new error?
             console.error("Unknown export type: ", item);
             break;
         }
