@@ -7,12 +7,12 @@ import { Liquid } from "liquidjs";
 // TODO: add filters to get filename "properly" and get journalist account name
 // from uuid in ReplyMetadata
 
+const journalistNameFilter = (uuid: string): string => {
+  return `j.random journalist: ${uuid}`;
+};
+
 export class Transcriber {
   private engine: Liquid;
-
-  journalistNameFilter = (uuid: string): string => {
-    return `j.random journalist: ${uuid}`;
-  };
 
   constructor(
     templateRoot: string = join(__dirname, "../../resources/templates/"),
