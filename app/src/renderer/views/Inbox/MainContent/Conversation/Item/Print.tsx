@@ -1,5 +1,9 @@
 import { memo, useReducer, useEffect, useRef } from "react";
-import { type Item, DeviceStatus, PrintStatus } from "../../../../../../types";
+import {
+  type DeviceStatus,
+  PrintStatus,
+  PrintPayload,
+} from "../../../../../../types";
 import "../Item.css";
 import "./File.css";
 
@@ -306,7 +310,7 @@ const ErrorState = memo(function ErrorState({
 });
 
 interface PrintWizardProps {
-  item: Item;
+  item: PrintPayload;
   open: boolean;
   onClose: () => void;
 }
@@ -317,9 +321,24 @@ export const PrintWizard = memo(function PrintWizard({
   onClose,
 }: PrintWizardProps) {
   const { t } = useTranslation("Item");
-  const filename = item.filename
-    ? item.filename.substring(item.filename.lastIndexOf("/") + 1)
-    : "";
+
+  let filename: string;
+  switch (item.type) {
+    case "file":
+      filename = item.payload.filename
+        ? item.payload.filename.substring(
+            item.payload.filename.lastIndexOf("/") + 1,
+          )
+        : "";
+      break;
+    case "transcript":
+      filename = "source transcript";
+      break;
+    default:
+      filename = "";
+      console.error("Unsupported print type: ", item);
+      break;
+  }
   const [context, dispatch] = useReducer(printReducer, {
     ...initialContext,
   });
@@ -396,7 +415,22 @@ export const PrintWizard = memo(function PrintWizard({
 
     const performPrint = async () => {
       try {
-        const deviceStatus = await window.electronAPI.print(item.uuid);
+        let deviceStatus: DeviceStatus;
+        switch (item.type) {
+          case "file":
+            deviceStatus = await window.electronAPI.print(item.payload.uuid);
+            break;
+          case "transcript":
+            deviceStatus = await window.electronAPI.printTranscript(
+              item.payload.uuid,
+            );
+            break;
+          default:
+            deviceStatus = PrintStatus.ERROR_PRINT; //maybe this needs a new error?
+            console.error("Unknown print type: ", item);
+            break;
+        }
+
         // Only dispatch if operation hasn't been cancelled
         if (!isCancelled) {
           dispatch({ type: "PRINT_COMPLETE", deviceStatus: deviceStatus });
@@ -421,7 +455,7 @@ export const PrintWizard = memo(function PrintWizard({
     return () => {
       isCancelled = true;
     };
-  }, [context.state, item.uuid, t]);
+  }, [context.state, item, t]);
 
   // Auto-close on success
   useEffect(() => {

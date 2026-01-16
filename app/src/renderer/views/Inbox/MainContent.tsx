@@ -54,7 +54,7 @@ function MainContent() {
 
   return (
     <div className="flex-1 flex flex-col h-full min-h-0">
-      <div className="sd-bg-primary sd-border-secondary border-b h-12 flex items-center px-4 flex-shrink-0">
+      <div className="sd-bg-primary sd-border-secondary border-b h-12 p-1 px-4">
         <Header
           sourceUuid={sourceUuid}
           loading={loading}
