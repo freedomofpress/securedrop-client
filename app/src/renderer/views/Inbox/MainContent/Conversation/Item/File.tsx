@@ -4,6 +4,7 @@ import {
   ItemUpdate,
   ItemUpdateType,
   type ExportPayload,
+  type PrintPayload,
   type Item,
 } from "../../../../../../types";
 import {
@@ -368,6 +369,11 @@ const CompleteFile = memo(function CompleteFile({ item }: { item: Item }) {
     payload: item,
   };
 
+  const printPayload: PrintPayload = {
+    type: "file",
+    payload: item,
+  };
+
   // Format the filename to cap the length, and show full filename in tooltip if
   // formatted filename is truncated
   const filenameMaxLength = 30;
@@ -449,7 +455,7 @@ const CompleteFile = memo(function CompleteFile({ item }: { item: Item }) {
         onClose={handleExportWizardClose}
       />
       <PrintWizard
-        item={item}
+        item={printPayload}
         open={printWizardOpen}
         onClose={handlePrintWizardClose}
       />

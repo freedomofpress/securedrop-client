@@ -547,11 +547,9 @@ export const ExportWizard = memo(function ExportWizard({
             item.payload.filename.lastIndexOf("/") + 1,
           )
         : "";
-      console.log(`exporting ${filename}`);
       break;
     case "transcript":
       filename = "source transcript";
-      console.log(`exporting ${filename}`);
       break;
     default:
       filename = "";

@@ -460,6 +460,28 @@ app.whenReady().then(() => {
   });
 
   ipcMain.handle(
+    "printTranscript",
+    async (_event, sourceUuid: string): Promise<DeviceStatus> => {
+      const sourceWithItems = db.getSourceWithItems(sourceUuid);
+      const storage = new Storage();
+      const transcriber = new Transcriber();
+
+      const fileContent = await transcriber.generateTranscript(sourceWithItems);
+      const filePath: string = join(
+        storage.sourceDirectory(sourceUuid).path,
+        "transcript.txt",
+      );
+      fs.writeFileSync(filePath, fileContent, "utf-8");
+
+      // probably overkill
+      if (!fs.existsSync(filePath)) {
+        throw new Error(`File not found: ${filePath}`);
+      }
+      return printer.print([filePath]);
+    },
+  );
+
+  ipcMain.handle(
     "print",
     async (_event, itemUuid: string): Promise<DeviceStatus> => {
       const item = db.getItem(itemUuid);
