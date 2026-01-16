@@ -7,7 +7,7 @@ Transcript:
 -----------{% for item in items %}{% case item.data.kind %}{% when "message" %}
 Source wrote: {{ item.plaintext }}
 {% when "reply" %}
-{{ item.data.journalist_uuid }} replied: {{ item.plaintext }}
+{{ item.data.journalist_uuid | journalist_name }} replied: {{ item.plaintext }}
 {% when "file" %}
 Source uploaded file: {% if not item.filename %}[encrypted file]{% else %}{{ item.filename | split: "/" | last}}{% endif %}
 {% else %}

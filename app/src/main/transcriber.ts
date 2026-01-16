@@ -10,6 +10,10 @@ import { Liquid } from "liquidjs";
 export class Transcriber {
   private engine: Liquid;
 
+  journalistNameFilter = (uuid: string): string => {
+    return `j.random journalist: ${uuid}`;
+  };
+
   constructor(
     templateRoot: string = join(__dirname, "../../resources/templates/"),
   ) {
@@ -17,6 +21,7 @@ export class Transcriber {
       root: templateRoot,
       extname: ".liquid",
     });
+    this.engine.registerFilter("journalist_name", journalistNameFilter);
   }
 
   public async generateTranscript(data: SourceWithItems): Promise<string> {
