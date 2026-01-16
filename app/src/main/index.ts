@@ -411,7 +411,7 @@ app.whenReady().then(() => {
     ): Promise<DeviceStatus> => {
       const sourceWithItems = db.getSourceWithItems(sourceUuid);
       const storage = new Storage();
-      const transcriber = new Transcriber(db);
+      const transcriber = new Transcriber();
 
       const fileContent = await transcriber.generateTranscript(sourceWithItems);
       const filePath: string = join(
