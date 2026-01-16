@@ -679,13 +679,13 @@ export class DB {
     });
   }
 
-  getJournalistByID(sourceUuid: string): Journalist {
+  getJournalistByID(journalistUuid: string): Journalist {
     if (!this.db) {
       throw new Error("Database is not open");
     }
-    const journalistRow = this.selectJournalist.get(sourceUuid) as
-      | JournalistRow
-      | undefined;
+    const journalistRow = this.selectJournalist.get({
+      uuid: journalistUuid,
+    }) as JournalistRow | undefined;
 
     if (!journalistRow) {
       throw new Error(`Journalist with UUID ${journalistUuid} not found`);
@@ -696,7 +696,6 @@ export class DB {
     return {
       uuid: journalistRow.uuid,
       data: journalistData as JournalistMetadata,
-      items,
     };
   }
 

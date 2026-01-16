@@ -1,7 +1,6 @@
 import { join } from "path";
 import { DB } from "./database";
-
-import { type SourceWithItems } from "../types";
+import { type SourceWithItems, Journalist } from "../types";
 
 import { Liquid } from "liquidjs";
 
@@ -9,7 +8,10 @@ import { Liquid } from "liquidjs";
 // from uuid in ReplyMetadata
 
 const journalistNameFilter = (uuid: string, db: DB): string => {
-  return db.getJournalistByID(uuid).data.username;
+  console.log(`getting journo info for ${uuid}`);
+  const journalist: Journalist = db.getJournalistByID(uuid);
+  console.log("we got...", journalist);
+  return journalist.data.username;
 };
 
 export class Transcriber {
