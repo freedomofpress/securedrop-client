@@ -1,7 +1,12 @@
 import { memo, useState } from "react";
 // import { useTranslation } from "react-i18next";
-import type { SourceWithItems, ExportPayload } from "../../../../../types";
+import type {
+  SourceWithItems,
+  ExportPayload,
+  PrintPayload,
+} from "../../../../../types";
 import { ExportWizard } from "../Conversation/Item/Export";
+import { PrintWizard } from "../Conversation/Item/Print";
 import { MenuProps, Dropdown, Button } from "antd";
 import { MoreOutlined } from "@ant-design/icons";
 
@@ -13,19 +18,24 @@ const SourceMenu = memo(function SourceMenu({
   sourceWithItems,
 }: SourceMenuProps) {
   const [exportWizardOpen, setExportWizardOpen] = useState(false);
+  const [printWizardOpen, setPrintWizardOpen] = useState(false);
+
   const handleMenuClick: MenuProps["onClick"] = async (e) => {
     switch (e.key) {
       case "exportTranscript":
         try {
           setExportWizardOpen(true);
         } catch (error) {
-          console.error("Failed to write transcript:", error);
+          console.error("Failed to export transcript:", error);
         }
-        console.log(`exporting transcript for ${sourceWithItems.uuid}...tk`);
         break;
 
       case "printTranscript":
-        console.log("print transcript...tk");
+        try {
+          setPrintWizardOpen(true);
+        } catch (error) {
+          console.error("Failed to print transcript:", error);
+        }
         break;
       default:
         break;
@@ -34,7 +44,10 @@ const SourceMenu = memo(function SourceMenu({
 
   const handleExportWizardClose = () => {
     setExportWizardOpen(false);
-    // Note: ExportWizard handles state cleanup via its useEffect when open changes
+  };
+
+  const handlePrintWizardClose = () => {
+    setPrintWizardOpen(false);
   };
 
   const hasConversation: boolean = sourceWithItems.items.length > 0;
@@ -55,7 +68,7 @@ const SourceMenu = memo(function SourceMenu({
     },
     {
       key: "deleteSource",
-      label: "Delete Source",
+      label: "Delete Source - TK",
     },
   ];
 
@@ -76,6 +89,11 @@ const SourceMenu = memo(function SourceMenu({
     payload: sourceWithItems,
   };
 
+  const printPayload: PrintPayload = {
+    type: "transcript",
+    payload: sourceWithItems,
+  };
+
   return (
     <>
       <Dropdown menu={menuProps}>
@@ -88,6 +106,11 @@ const SourceMenu = memo(function SourceMenu({
         item={exportPayload}
         open={exportWizardOpen}
         onClose={handleExportWizardClose}
+      />
+      <PrintWizard
+        item={printPayload}
+        open={printWizardOpen}
+        onClose={handlePrintWizardClose}
       />
     </>
   );
