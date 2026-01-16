@@ -123,6 +123,12 @@ jobs:
           path: app/screenshots/
           retention-days: 30
           if-no-files-found: error
+      - name: Check screenshot coverage
+        working-directory: app
+        run: |
+          apt-get install --yes tesseract-ocr tesseract-ocr-eng
+          pip3 install --break-system-packages pillow pytesseract
+          scripts/translator-screenshots-coverage
 
   integration-tests:
     strategy:
