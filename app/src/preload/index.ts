@@ -137,7 +137,7 @@ const electronAPI = {
   ),
   printTranscript: logIpcCall<DeviceStatus>(
     "printTranscript",
-    (sourceUuid: string) => ipcRenderer.invoke("print", sourceUuid),
+    (sourceUuid: string) => ipcRenderer.invoke("printTranscript", sourceUuid),
   ),
   cancelExport: logIpcCall<void>("cancelExport", () =>
     ipcRenderer.invoke("cancelExport"),
