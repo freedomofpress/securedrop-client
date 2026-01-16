@@ -155,7 +155,7 @@ def main():
     print(f"Loaded {len(catalogue_strings)} strings from catalogue", file=sys.stderr)
 
     # Find screenshots directory
-    screenshots_dir = project_root / "translator-screenshots"
+    screenshots_dir = project_root / "screenshots"
     if not screenshots_dir.exists():
         print(f"Error: Screenshots directory not found: {screenshots_dir}", file=sys.stderr)
         sys.exit(1)
