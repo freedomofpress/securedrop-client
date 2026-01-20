@@ -117,7 +117,7 @@ jobs:
         working-directory: app
         run: xvfb-run --auto-servernum --server-args="-screen 0 1920x1080x24" pnpm translator-screenshots
       - name: Upload screenshots
-        uses: actions/upload-artifact@v5
+        uses: actions/upload-artifact@v6
         with:
           name: translator-screenshots
           path: app/screenshots/
@@ -243,7 +243,7 @@ jobs:
           SERVER_PATH: ${{ github.workspace }}/securedrop-server
       - name: Upload test video
         if: always()
-        uses: actions/upload-artifact@v5
+        uses: actions/upload-artifact@v6
         with:
           name: server-test-recording
           path: server-test-recording.mp4
