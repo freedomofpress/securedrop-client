@@ -1,5 +1,5 @@
 import path, { resolve } from "path";
-import { defineConfig, externalizeDepsPlugin } from "electron-vite";
+import { defineConfig } from "electron-vite";
 import react from "@vitejs/plugin-react";
 import tailwindcss from "@tailwindcss/vite";
 import { execSync, spawnSync } from "child_process";
@@ -76,14 +76,12 @@ export default defineConfig(({ mode }) => {
 
   return {
     main: {
-      plugins: [externalizeDepsPlugin()],
       define: mainVars,
       build: {
         sourcemap: true,
       },
     },
     preload: {
-      plugins: [externalizeDepsPlugin()],
       build: {
         sourcemap: true,
       },
