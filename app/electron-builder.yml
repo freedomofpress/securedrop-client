@@ -12,8 +12,19 @@ files:
 asarUnpack:
   - resources/**
 extraResources:
-  - from: node_modules/@dbmate/linux-x64/bin/dbmate
-    to: bin/dbmate
   - from: src/main/database/migrations
     to: migrations
 npmRebuild: false
+linux:
+  extraResources:
+    - from: node_modules/@dbmate/linux-x64/bin/dbmate
+      to: bin/dbmate
+mac:
+  target:
+    - dmg
+  category: public.app-category.productivity
+  extraResources:
+    - from: node_modules/@dbmate/darwin-arm64/bin/dbmate
+      to: bin/dbmate
+dmg:
+  title: "${productName}-${version}"

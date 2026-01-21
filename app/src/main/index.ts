@@ -7,8 +7,19 @@ import {
   clipboard,
   Menu,
 } from "electron";
-import { join, dirname } from "path";
+import { join, dirname, delimiter } from "path";
 import { randomBytes } from "crypto";
+
+// Add common gpg installation directories to PATH for macOS
+// This must be done before Crypto.initialize() which searches for gpg
+if (process.platform === "darwin") {
+  const gpgPaths = [
+    "/opt/homebrew/bin", // Homebrew on Apple Silicon
+    "/usr/local/bin", // Homebrew on Intel Mac
+    "/usr/local/MacGPG2/bin", // GPG Suite
+  ];
+  process.env.PATH = [...gpgPaths, process.env.PATH].join(delimiter);
+}
 import { optimizer, is } from "@electron-toolkit/utils";
 import {
   installExtension,
