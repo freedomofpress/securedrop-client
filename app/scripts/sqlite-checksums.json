@@ -1,10 +1,10 @@
 {
-  "better-sqlite3-v12.2.0-electron-v136-darwin-arm64.node": "6f5eff2e9049b5f64ff80c03479a47132db14e42ace07551250e9edb3008c26d",
-  "better-sqlite3-v12.2.0-electron-v136-darwin-x64.node": "84e468b8f60b20bcd8c45ac9568832264a01f4674654c77cedc373b49f7537ae",
-  "better-sqlite3-v12.2.0-electron-v136-linux-arm64.node": "dfda11d44b6c74a021306a8f1d0d0dd2fc971c805bac56ff1004ea3cda3b85fa",
-  "better-sqlite3-v12.2.0-electron-v136-linux-x64.node": "02e300168e830aded71fbac261f3e3b2a79f5d08bd3b89c0520a5249a15581ed",
-  "better-sqlite3-v12.2.0-node-v127-darwin-arm64.node": "4889e76e452fda4fadae93ae404cb7af0f8f6911ffbe65d4784fc6d5e78b5823",
-  "better-sqlite3-v12.2.0-node-v127-darwin-x64.node": "7550059d48e67908ef43ec0cdf19c6f50a49815f2ef7f89d987f57ffb56e82c5",
-  "better-sqlite3-v12.2.0-node-v127-linux-arm64.node": "31a50d2a54e0b3820d07d64648536b984f919d9dc6466e301b315805f7a29e15",
-  "better-sqlite3-v12.2.0-node-v127-linux-x64.node": "6ed7d8ea4aab93c9688b796463f8cfad0d2db85e094db4dbe1da1a6355292afd"
+  "better-sqlite3-v12.6.0-electron-v140-darwin-arm64.node": "5ef9eb0727fae9e887802d4fc5aab3ae2abbae2fa22c37d340e5bda3d33b82cc",
+  "better-sqlite3-v12.6.0-electron-v140-darwin-x64.node": "5ef9eb0727fae9e887802d4fc5aab3ae2abbae2fa22c37d340e5bda3d33b82cc",
+  "better-sqlite3-v12.6.0-electron-v140-linux-arm64.node": "5ef9eb0727fae9e887802d4fc5aab3ae2abbae2fa22c37d340e5bda3d33b82cc",
+  "better-sqlite3-v12.6.0-electron-v140-linux-x64.node": "5ef9eb0727fae9e887802d4fc5aab3ae2abbae2fa22c37d340e5bda3d33b82cc",
+  "better-sqlite3-v12.6.0-node-v127-darwin-arm64.node": "e6a901e119c2bdf391d93bc86830898e4c430dbfbe04a0d63ce4dd800a822997",
+  "better-sqlite3-v12.6.0-node-v127-darwin-x64.node": "e6a901e119c2bdf391d93bc86830898e4c430dbfbe04a0d63ce4dd800a822997",
+  "better-sqlite3-v12.6.0-node-v127-linux-arm64.node": "e6a901e119c2bdf391d93bc86830898e4c430dbfbe04a0d63ce4dd800a822997",
+  "better-sqlite3-v12.6.0-node-v127-linux-x64.node": "e6a901e119c2bdf391d93bc86830898e4c430dbfbe04a0d63ce4dd800a822997"
 }
