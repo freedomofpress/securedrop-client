@@ -1,4 +1,5 @@
 import child_process from "node:child_process";
+import path from "node:path";
 import { Writable } from "node:stream";
 
 import type {
@@ -237,8 +238,15 @@ function buildProxyCommand(
   let commandOptions: string[] = [];
   const env: Map<string, string> = new Map();
 
-  if (import.meta.env.MODE == "development" || import.meta.env.MODE == "test") {
+  if (
+    import.meta.env.MODE == "development" ||
+    import.meta.env.MODE == "test" ||
+    import.meta.env.MODE == "mac-demo"
+  ) {
     command = __PROXY_CMD__;
+    if (import.meta.env.MODE == "mac-demo") {
+      command = path.join(process.resourcesPath, "bin", "securedrop-proxy");
+    }
     env.set("SD_PROXY_ORIGIN", __PROXY_ORIGIN__);
     env.set("DISABLE_TOR", "yes");
   } else {
