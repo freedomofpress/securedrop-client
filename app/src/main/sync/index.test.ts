@@ -703,6 +703,11 @@ describe("syncMetadata lock timeout", () => {
 
     // Clean up
     release();
+
+    // Verify the lock remains functional after the timeout by acquiring it again
+    const secondRelease = await syncLock.acquire(100);
+    expect(secondRelease).toBeDefined();
+    secondRelease();
   });
 
   it("should successfully sync when lock is available", async () => {

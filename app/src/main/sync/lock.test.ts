@@ -140,4 +140,32 @@ describe("Lock", () => {
     // Wait for first operation to complete
     await firstPromise;
   });
+
+  it("should remain functional after a timeout occurs", async () => {
+    const lock = new Lock();
+
+    // Acquire the lock and hold it
+    const firstRelease = await lock.acquire();
+
+    // Attempt to acquire with a short timeout - this will fail
+    await expect(lock.acquire(50)).rejects.toThrow(
+      "Failed to acquire lock within 50ms",
+    );
+
+    // Release the first lock
+    firstRelease();
+
+    // The lock should still be functional - this acquire should succeed
+    // If the lock entered a permanently blocked state, this would hang forever
+    const thirdRelease = await lock.acquire(100);
+    expect(thirdRelease).toBeDefined();
+    thirdRelease();
+
+    // Verify we can also use run() after the timeout recovery
+    let executed = false;
+    await lock.run(async () => {
+      executed = true;
+    }, 100);
+    expect(executed).toBe(true);
+  });
 });
