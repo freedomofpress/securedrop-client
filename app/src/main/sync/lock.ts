@@ -1,3 +1,10 @@
+export class LockTimeoutError extends Error {
+  constructor(timeout: number) {
+    super(`Failed to acquire lock within ${timeout}ms`);
+    this.name = "LockTimeoutError";
+  }
+}
+
 export class Lock {
   private mutex: Promise<void>;
 
@@ -20,9 +27,10 @@ export class Lock {
     this.mutex = newMutex;
 
     if (timeout !== undefined) {
+      let timerId: ReturnType<typeof setTimeout>;
       const timeoutPromise = new Promise<never>((_, reject) => {
-        setTimeout(() => {
-          reject(new Error(`Failed to acquire lock within ${timeout}ms`));
+        timerId = setTimeout(() => {
+          reject(new LockTimeoutError(timeout));
         }, timeout);
       });
 
@@ -33,6 +41,10 @@ export class Lock {
         // @ts-expect-error - release is always assigned before this point
         release();
         throw error;
+      } finally {
+        // Clean up the timer to prevent memory leaks
+        // @ts-expect-error - timerId is always assigned before this point
+        clearTimeout(timerId);
       }
     } else {
       await currentMutex;

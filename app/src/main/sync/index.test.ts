@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach, MockInstance } from "vitest";
 import * as syncModule from "../../../src/main/sync";
-import { Lock } from "../../../src/main/sync/lock";
+import { Lock, LockTimeoutError } from "../../../src/main/sync/lock";
 import { DB } from "../../../src/main/database";
 import {
   Index,
@@ -685,10 +685,7 @@ describe("syncMetadata lock timeout", () => {
       }, 100); // 100ms timeout
     } catch (error) {
       // This is the same error handling logic as in index.ts
-      if (
-        error instanceof Error &&
-        error.message.includes("Failed to acquire lock within")
-      ) {
+      if (error instanceof LockTimeoutError) {
         syncStatus = SyncStatus.TIMEOUT;
       } else {
         throw error;

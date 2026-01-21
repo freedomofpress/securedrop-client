@@ -37,7 +37,7 @@ import {
 } from "../types";
 import { syncMetadata } from "./sync";
 import workerPath from "./fetch/worker?modulePath";
-import { Lock } from "./sync/lock";
+import { Lock, LockTimeoutError } from "./sync/lock";
 import { Config } from "./config";
 import { setUmask } from "./umask";
 import { Exporter, Printer } from "./export";
@@ -297,10 +297,7 @@ app.whenReady().then(() => {
         }, 1000);
       } catch (error) {
         // Check if this is a timeout error from the lock
-        if (
-          error instanceof Error &&
-          error.message.includes("Failed to acquire lock within")
-        ) {
+        if (error instanceof LockTimeoutError) {
           return SyncStatus.TIMEOUT;
         }
         throw error;

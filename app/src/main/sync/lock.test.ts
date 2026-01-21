@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { Lock } from "./lock";
+import { Lock, LockTimeoutError } from "./lock";
 
 describe("Lock", () => {
   it("should allow acquiring and releasing the lock", async () => {
@@ -90,10 +90,8 @@ describe("Lock", () => {
     const firstRelease = await lock.acquire();
     setTimeout(() => firstRelease(), 200);
 
-    // Try to acquire with a 50ms timeout - should fail
-    await expect(lock.acquire(50)).rejects.toThrow(
-      "Failed to acquire lock within 50ms",
-    );
+    // Try to acquire with a 50ms timeout - should fail with LockTimeoutError
+    await expect(lock.acquire(50)).rejects.toBeInstanceOf(LockTimeoutError);
   });
 
   it("should acquire lock before timeout if released in time", async () => {
@@ -133,9 +131,7 @@ describe("Lock", () => {
       return "should not execute";
     }, 50);
 
-    await expect(secondPromise).rejects.toThrow(
-      "Failed to acquire lock within 50ms",
-    );
+    await expect(secondPromise).rejects.toBeInstanceOf(LockTimeoutError);
 
     // Wait for first operation to complete
     await firstPromise;
@@ -147,10 +143,8 @@ describe("Lock", () => {
     // Acquire the lock and hold it
     const firstRelease = await lock.acquire();
 
-    // Attempt to acquire with a short timeout - this will fail
-    await expect(lock.acquire(50)).rejects.toThrow(
-      "Failed to acquire lock within 50ms",
-    );
+    // Attempt to acquire with a short timeout - this will fail with LockTimeoutError
+    await expect(lock.acquire(50)).rejects.toBeInstanceOf(LockTimeoutError);
 
     // Release the first lock
     firstRelease();
