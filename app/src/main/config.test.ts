@@ -13,6 +13,7 @@ describe("Config", () => {
     // Clear all environment variables that might affect tests
     delete process.env.QUBES_TEST;
     delete (import.meta.env as any).SD_SUBMISSION_KEY_FPR;
+    delete (import.meta.env as any).QUBES_ENV_SOURCED;
     delete (import.meta.env as any).QUBES_GPG_DOMAIN;
     delete (import.meta.env as any).GNUPGHOME;
     // Clear mock state
