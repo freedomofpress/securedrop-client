@@ -786,31 +786,75 @@ describe("TaskQueue - Two-Phase Download and Decryption", () => {
   });
 
   describe("Queue Integration", () => {
-    it("should queue items for processing", () => {
+    it("should queue messages to messageQueue and files to fileQueue", () => {
       const db = createMockDB();
-      db.getItemsToProcess = vi.fn(() => ["item1", "item2"]);
+      db.getItemsToProcess = vi.fn(() => ["message1", "file1", "reply1"]);
+      db.getItem = vi.fn((id) => {
+        if (id === "message1") {
+          return mockItem(
+            {
+              kind: "message",
+              source: "source1",
+              uuid: "message1",
+            } as ItemMetadata,
+            FetchStatus.Initial,
+          );
+        }
+        if (id === "reply1") {
+          return mockItem(
+            {
+              kind: "reply",
+              source: "source1",
+              uuid: "reply1",
+            } as ItemMetadata,
+            FetchStatus.Initial,
+          );
+        }
+        if (id === "file1") {
+          return mockItem(
+            {
+              kind: "file",
+              source: "source1",
+              uuid: "file1",
+              size: 1000,
+            } as ItemMetadata,
+            FetchStatus.Initial,
+          );
+        }
+        return null;
+      });
 
       const queue = new TaskQueue(db);
-      vi.spyOn(queue.queue, "push");
+      vi.spyOn(queue.messageQueue, "push");
+      vi.spyOn(queue.fileQueue, "push");
 
       queue.queueFetches({ authToken: "test-token" });
 
       expect(db.getItemsToProcess).toHaveBeenCalled();
-      expect(queue.queue.push).toHaveBeenCalledTimes(2);
+      // 2 messages/replies should go to messageQueue
+      expect(queue.messageQueue.push).toHaveBeenCalledTimes(2);
+      // 1 file should go to fileQueue
+      expect(queue.fileQueue.push).toHaveBeenCalledTimes(1);
       expect(queue.authToken).toBe("test-token");
     });
 
     it("should handle queue errors with failDownload", () => {
       const db = createMockDB();
       db.getItemsToProcess = vi.fn(() => ["item1"]);
+      db.getItem = vi.fn(() =>
+        mockItem(
+          { kind: "message", source: "source1", uuid: "item1" } as ItemMetadata,
+          FetchStatus.Initial,
+        ),
+      );
 
       const queue = new TaskQueue(db);
-      vi.spyOn(queue.queue, "push");
+      vi.spyOn(queue.messageQueue, "push");
 
       queue.queueFetches({ authToken: "test-token" });
 
       // Simulate the error callback that gets passed to queue.push
-      const pushCall = vi.mocked(queue.queue.push).mock.calls[0];
+      const pushCall = vi.mocked(queue.messageQueue.push).mock.calls[0];
       expect(pushCall).toBeDefined();
       expect(pushCall[1]).toBeTypeOf("function");
 

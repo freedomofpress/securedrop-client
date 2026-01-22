@@ -30,7 +30,8 @@ type DownloadResult = Buffer | string;
 
 export class TaskQueue {
   db: DB;
-  queue: Queue;
+  messageQueue: Queue;
+  fileQueue: Queue;
   authToken?: string;
   port?: MessagePort;
   storage: Storage;
@@ -41,9 +42,24 @@ export class TaskQueue {
     overrideTaskFn?: (task: ItemFetchTask, db: DB) => void,
   ) {
     this.db = db;
-    this.queue = createQueue(
+    this.messageQueue = createQueue(
+      "message-queue",
       db,
       overrideTaskFn ? overrideTaskFn : this.process,
+      // Max timeout: 1s for messages
+      1_000,
+      port,
+    );
+    this.fileQueue = createQueue(
+      "file-queue",
+      db,
+      overrideTaskFn ? overrideTaskFn : this.process,
+      // Max timeout per task attempt. For the maximum file size of 500MB, the
+      // worst-case download timeout is ~4.2 hours (based on 50 KB/s over Tor).
+      // We set this to 2 hours as a reasonable per-attempt limit, relying on the
+      // 5 retries below to handle worst-case large file downloads. Each retry gets
+      // a fresh timeout, so total potential time is 2 hours × 6 attempts = 12 hours.
+      7_200_000, // 2 hours in milliseconds
       port,
     );
     this.port = port;
@@ -84,6 +100,11 @@ export class TaskQueue {
 
   // Queries the database for all items that need to be downloaded and queues
   // up download tasks to be processed.
+  // Routes items to the appropriate queue:
+  // - Messages/replies go to messageQueue
+  // - Files go to fileQueue
+  // This allows messages to be fetched while files are downloading, since that
+  // may be a long-running process
   queueFetches(message: AuthedRequest) {
     this.authToken = message.authToken;
     try {
@@ -95,9 +116,22 @@ export class TaskQueue {
         const task: ItemFetchTask = {
           id: itemUUID,
         };
-        this.queue.push(task, (err, _result) => {
+
+        const item = this.db.getItem(itemUUID);
+        if (!item) {
+          continue;
+        }
+
+        const queue =
+          item.data.kind === "file" ? this.fileQueue : this.messageQueue;
+
+        queue.push(task, (err, _result) => {
           if (err) {
-            console.error("Error executing fetch download task: ", task, err);
+            console.error(
+              `Error executing fetch download task in queue: `,
+              task,
+              err,
+            );
             this.db.failDownload(task.id);
             if (this.port) {
               this.port.postMessage(this.db.getItem(task.id));
@@ -418,8 +452,10 @@ export class TaskQueue {
 }
 
 function createQueue(
+  name: string,
   db: DB,
   taskFn: (task: ItemFetchTask, db: DB) => void,
+  maxTimeout: number,
   port?: MessagePort,
 ): Queue {
   const q: Queue = new Queue(
@@ -433,12 +469,7 @@ function createQueue(
     },
     {
       batchSize: 1,
-      // Queue timeout per task attempt. For the maximum file size of 500MB, the
-      // worst-case download timeout is ~4.2 hours (based on 50 KB/s over Tor).
-      // We set this to 2 hours as a reasonable per-attempt limit, relying on the
-      // 5 retries below to handle worst-case large file downloads. Each retry gets
-      // a fresh timeout, so total potential time is 2 hours × 6 attempts = 12 hours.
-      maxTimeout: 7_200_000, // 2 hours in milliseconds
+      maxTimeout: maxTimeout,
       maxRetries: 5,
       id: "id",
       // Merge handles tasks scheduled with the same ID
@@ -453,12 +484,12 @@ function createQueue(
   );
 
   q.on("error", (error) => {
-    console.error("Error from queue: ", error);
+    console.error(`Error from ${name}: `, error);
   });
 
   q.on("task_failed", (taskId, errorMessage) => {
     console.error(
-      "Task failed and exceeded retry attempts, removing from queue: ",
+      `Task failed and exceeded retry attempts in ${name}, removing from queue: `,
       taskId,
       errorMessage,
     );
