@@ -10,16 +10,6 @@ import {
 import { join, dirname, delimiter } from "path";
 import { randomBytes } from "crypto";
 
-// Add common gpg installation directories to PATH for macOS
-// This must be done before Crypto.initialize() which searches for gpg
-if (process.platform === "darwin") {
-  const gpgPaths = [
-    "/opt/homebrew/bin", // Homebrew on Apple Silicon
-    "/usr/local/bin", // Homebrew on Intel Mac
-    "/usr/local/MacGPG2/bin", // GPG Suite
-  ];
-  process.env.PATH = [...gpgPaths, process.env.PATH].join(delimiter);
-}
 import { optimizer, is } from "@electron-toolkit/utils";
 import {
   installExtension,
@@ -28,7 +18,8 @@ import {
 } from "electron-devtools-installer";
 import { Worker } from "worker_threads";
 import fs from "fs";
-import { spawn } from "child_process";
+import os from "os";
+import { spawn, spawnSync } from "child_process";
 
 import { DB } from "./database";
 import { Crypto, CryptoConfig } from "./crypto";
@@ -57,6 +48,38 @@ import { Storage } from "./storage";
 // Set umask so any files written are owner-only read/write (600).
 // This must be done before we create any files or spawn any worker threads.
 setUmask();
+
+// For mac-demo mode: set up GPG keyring at runtime
+// Add common GPG installation directories to PATH for macOS
+if (import.meta.env.MODE === "mac-demo") {
+  const gpgPaths = [
+    "/opt/homebrew/bin", // Homebrew on Apple Silicon
+    "/usr/local/bin", // Homebrew on Intel Mac
+    "/usr/local/MacGPG2/bin", // GPG Suite
+  ];
+  process.env.PATH = [...gpgPaths, process.env.PATH].join(delimiter);
+
+  const gpgHome = fs.mkdtempSync(
+    join(fs.realpathSync(os.tmpdir()), "sd-app-gpg-"),
+  );
+  const keyPath = join(
+    process.resourcesPath,
+    "keys",
+    "securedrop-test-key.asc",
+  );
+
+  const result = spawnSync("gpg", ["--homedir", gpgHome, "--import", keyPath]);
+  if (result.error) {
+    throw result.error;
+  } else if (result.status !== 0) {
+    throw new Error(
+      `gpg import failed with code ${result.status}: ${result.stderr}`,
+    );
+  }
+
+  process.env.GNUPGHOME = gpgHome;
+  console.log(`Mac demo mode: GPG keyring initialized at ${gpgHome}`);
+}
 
 // Parse command line arguments
 const args = process.argv.slice(2);
