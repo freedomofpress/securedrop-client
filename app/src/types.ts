@@ -48,6 +48,7 @@ export enum SyncStatus {
   UPDATED = "updated",
   ERROR = "error",
   FORBIDDEN = "forbidden",
+  TIMEOUT = "timeout",
 }
 
 // IPC request for operation requiring auth token

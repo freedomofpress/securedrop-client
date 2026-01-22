@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach, MockInstance } from "vitest";
 import * as syncModule from "../../../src/main/sync";
+import { Lock, LockTimeoutError } from "../../../src/main/sync/lock";
 import { DB } from "../../../src/main/database";
 import {
   Index,
@@ -659,5 +660,62 @@ describe("syncMetadata", () => {
     expect(proxyMock).toHaveBeenCalledTimes(2);
     expect(db.updateBatch).toHaveBeenCalledWith(batch);
     expect(status).toBe(SyncStatus.UPDATED);
+  });
+});
+
+describe("syncMetadata lock timeout", () => {
+  let syncLock: Lock;
+
+  beforeEach(() => {
+    syncLock = new Lock();
+  });
+
+  it("should return TIMEOUT status when lock acquisition times out", async () => {
+    // Simulate the logic from the syncMetadata IPC handler
+    const mockSyncMetadata = vi.fn().mockResolvedValue(SyncStatus.UPDATED);
+
+    // Acquire the lock and hold it to simulate another sync in progress
+    const release = await syncLock.acquire();
+
+    // Try to run syncMetadata with a timeout
+    let syncStatus: SyncStatus;
+    try {
+      syncStatus = await syncLock.run(async () => {
+        return await mockSyncMetadata();
+      }, 100); // 100ms timeout
+    } catch (error) {
+      // This is the same error handling logic as in index.ts
+      if (error instanceof LockTimeoutError) {
+        syncStatus = SyncStatus.TIMEOUT;
+      } else {
+        throw error;
+      }
+    }
+
+    // Should return TIMEOUT status
+    expect(syncStatus).toBe(SyncStatus.TIMEOUT);
+
+    // syncMetadata should never have been called since we couldn't acquire the lock
+    expect(mockSyncMetadata).not.toHaveBeenCalled();
+
+    // Clean up
+    release();
+
+    // Verify the lock remains functional after the timeout by acquiring it again
+    const secondRelease = await syncLock.acquire(100);
+    expect(secondRelease).toBeDefined();
+    secondRelease();
+  });
+
+  it("should successfully sync when lock is available", async () => {
+    const mockSyncMetadata = vi.fn().mockResolvedValue(SyncStatus.UPDATED);
+
+    // Run syncMetadata with lock - should succeed since lock is available
+    const syncStatus = await syncLock.run(async () => {
+      return await mockSyncMetadata();
+    }, 1000);
+
+    expect(syncStatus).toBe(SyncStatus.UPDATED);
+    expect(mockSyncMetadata).toHaveBeenCalledTimes(1);
   });
 });
