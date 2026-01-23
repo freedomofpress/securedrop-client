@@ -148,12 +148,13 @@ app.whenReady().then(() => {
   // Set strict Content Security Policy via HTTP header with nonce
   session.defaultSession.webRequest.onHeadersReceived((details, callback) => {
     let scriptSrc = "script-src 'self'";
-    let styleSrc = `style-src 'self' 'nonce-${cspNonce}'`;
+    // Note: 'unsafe-inline' is required for Ant Design 6's CSS-in-JS which doesn't
+    // fully support CSP nonce for all dynamically generated styles
+    const styleSrc = `style-src 'self' 'unsafe-inline'`;
     let connectSrc = "";
     if (is.dev && process.env["NODE_ENV"] != "production") {
       // Inject vite's nonce for auto-reload
       scriptSrc += ` 'nonce-${viteNonce}'`;
-      styleSrc += ` 'nonce-${viteNonce}'`;
       connectSrc = "connect-src 'self';";
     }
 

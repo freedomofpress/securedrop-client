@@ -77,12 +77,11 @@
     "vitest": "^3.2.4"
   },
   "dependencies": {
-    "@ant-design/v5-patch-for-react-19": "^1.0.3",
     "@electron-toolkit/preload": "^3.0.2",
     "@electron-toolkit/utils": "^4.0.0",
     "@reduxjs/toolkit": "^2.8.2",
     "@sapphire/snowflake": "^3.5.5",
-    "antd": "^5.27.0",
+    "antd": "^6.2.0",
     "better-queue": "^3.8.12",
     "better-sqlite3": "^12.6.0",
     "blakejs": "^1.2.1",
