@@ -8,6 +8,8 @@ import {
   ItemMetadata,
   PendingEventType,
   SourceMetadata,
+  Journalist,
+  JournalistMetadata,
 } from "../../types";
 import { Crypto } from "../crypto";
 import { setUmask } from "../umask";
@@ -139,6 +141,18 @@ describe("Database Method Tests", () => {
     };
   }
 
+  function mockJournalistMetadata(
+    uuid: string,
+    username?: string,
+  ): JournalistMetadata {
+    return {
+      uuid: uuid,
+      username: username ?? "dellsberg",
+      first_name: null,
+      last_name: null,
+    };
+  }
+
   function mockItemMetadata(
     uuid: string,
     source_uuid: string,
@@ -167,6 +181,25 @@ describe("Database Method Tests", () => {
       interaction_count: interaction_count,
     };
   }
+
+  it("getJournalistbyID should return the first matching journalist", () => {
+    // Insert two Journalists
+    db.updateJournalists({
+      journalist1: mockJournalistMetadata("journalist1", "user1"),
+      journalist2: mockJournalistMetadata("journalist2", "user2"),
+    });
+
+    describe("Missing UUID should throw an error", () => {
+      expect(() => db.getJournalistByID("journalist3")).toThrow();
+    });
+
+    let journalist = db.getJournalistByID("journalist1");
+    assertType<Journalist>(journalist);
+    expect(journalist.data.username).toEqual("user1");
+
+    journalist = db.getJournalistByID("journalist2");
+    expect(journalist.data.username).toEqual("user2");
+  });
 
   it("pending SourceDeleted event should remove source in getSources", () => {
     // Insert three sources
