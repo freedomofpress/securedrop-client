@@ -5,14 +5,14 @@ The SecureDrop App is an Electron application written in TypeScript that provide
 The core components of the application are:
 
 - Renderer process: runs the React UI. The renderer comunicates with the application via [Electron IPC](https://www.electronjs.org/docs/latest/tutorial/ipc). The App's IPC API is defined in [preload/index.ts](./src/preload/index.ts).
-- Main process: trusted backend of the Electron application. Performs all database and filesystem access, proxied network requests, and cryptographic operations.
+- Main process: backend of the Electron application. Performs all database and filesystem access, proxied network requests, and cryptographic operations.
 - Fetch Worker: a Node.js worker thread spawned from the main process to handle download and decryption without blocking the main process.
 - Database (SQLite): used for persistent storage of metadata and plaintext message and file information
 
-The application also performs network I/O and decryption:
+The application also performs network I/O and decryption as follows:
 
-- Decryption: all cryptographic operations use GPG for decryption. In development, this is done by shelling out and running `gpg` commands. In the production Qubes environment, all decryption occurs in the `sd-gpg` VM via `qubes-gpg-client`.
-- Network I/O: all network calls are proxied via the [securedrop-proxy](../proxy/). In development, the Rust proxy is built and run in a shell child process. In the production Qubes environment, all network calls go to the Qubes `sd-proxy` VM.
+- Decryption: all cryptographic operations use GPG for decryption. All decryption occurs in the `sd-gpg` VM via `qubes-gpg-client`. (In development, this is done by shelling out and running `gpg` commands. )
+- Network I/O: all network calls are go to the Qubes `sd-proxy` VM and are proxied via the [securedrop-proxy](../proxy/). (In development, the Rust proxy is built and run in a shell child process.)
 
 ## Architecture Diagram
 
@@ -25,7 +25,7 @@ flowchart TB
             ui --> redux
         end
 
-        subgraph main["Main Process (Trusted)"]
+        subgraph main["Main Process"]
             ipc["IPC Handlers"]
 
             subgraph worker["Fetch Worker (Thread)"]
@@ -52,9 +52,9 @@ flowchart TB
 
 ## Component Descriptions
 
-### Renderer Process (Untrusted)
+### Renderer Process
 
-The renderer process runs the React-based user interface. It is considered untrusted and runs in a sandboxed environment with no direct access to the filesystem, database, or network. All privileged operations are performed via IPC calls to the main process.
+The renderer process runs the React-based user interface. It runs in a sandboxed environment with no direct access to the filesystem, database, or network. All operations are performed via IPC calls to the main process.
 
 **Key responsibilities:**
 
@@ -62,15 +62,13 @@ The renderer process runs the React-based user interface. It is considered untru
 - Managing UI state via Redux
 - Dispatching user actions (login, send reply, download file) to the main process
 
-#### Preload Script (Security Bridge)
+#### Preload Script + IPC API
 
-The [preload script](./src/preload/index.ts) runs in a privileged context with access to Node.js APIs but shares the renderer's DOM. It uses Electron's `contextBridge` to expose a safe, limited API (`window.electronAPI`) that the renderer can use to communicate with the main process.
+The [preload script](./src/preload/index.ts) uses Electron's `contextBridge` to expose the IPC API (`window.electronAPI`) that the renderer can use to communicate with the main process.
 
-All IPC calls are wrapped with performance logging. The preload script never exposes raw Node.js or Electron APIs directly to the renderer.
+### Main Process
 
-### Main Process (Trusted)
-
-The main process is the core of the application. It handles all privileged operations including database access, cryptographic operations, file system access, and network requests.
+The main process is the core of the application. It handles all core backend logic including database access, cryptographic operations, file system access, and network requests.
 
 **Key responsibilities:**
 
@@ -95,6 +93,7 @@ The application uses SQLite with the `better-sqlite3` library for persistent sto
 
 **Key features:**
 
+- Stores objects as JSON blobs from the server, using `json_extract` to denormalize certain fields for easier access and querying
 - Schema migrations via `dbmate`
 - Transaction-based updates for consistency
 - Generated columns for computed fields (e.g., `is_read`, `last_updated`)
@@ -114,7 +113,7 @@ All cryptographic operations use GPG for decryption. The application supports tw
 In production, encrypted data from the server is decrypted by the application using the `sd-gpg` VM and Qubes split-gpg functionality. This ensures that:
 
 - Decryption keys only live on the `sd-gpg` VM
-- Decryption is done in the trusted, isolated `sd-gpg` VM
+- Decryption is done in the isolated `sd-gpg` VM
 
 After decryption, plaintext messages are stored in the SQLite database and files are written to disk on the `sd-app` VM with the filepath persisted to SQLite.
 
@@ -158,7 +157,7 @@ It maintains two task queues:
 
 | Queue         | Items             | Timeout                 | Purpose              |
 | ------------- | ----------------- | ----------------------- | -------------------- |
-| Message Queue | Messages, replies | 1 second                | Small text items     |
+| Message Queue | Messages, replies | 1 minute                | Small text items     |
 | File Queue    | File submissions  | Dynamic (up to 2 hours) | Large file downloads |
 
 The worker communicates with the main process via `MessagePort`. When an item is downloaded and decrypted, the worker posts an update message that the main process forwards to the renderer.
