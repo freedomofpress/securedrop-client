@@ -1,6 +1,6 @@
 import { memo, useReducer, useEffect, useRef } from "react";
 import {
-  type Item,
+  type ExportPayload,
   DeviceStatus,
   ExportStatus,
   DeviceErrorStatus,
@@ -530,7 +530,7 @@ const ErrorState = memo(function ErrorState({
 });
 
 interface ExportWizardProps {
-  item: Item;
+  item: ExportPayload;
   open: boolean;
   onClose: () => void;
 }
@@ -541,9 +541,25 @@ export const ExportWizard = memo(function ExportWizard({
   onClose,
 }: ExportWizardProps) {
   const { t } = useTranslation("Item");
-  const filename = item.filename
-    ? item.filename.substring(item.filename.lastIndexOf("/") + 1)
-    : "";
+
+  let filename: string;
+  switch (item.type) {
+    case "file":
+      filename = item.payload.filename
+        ? item.payload.filename.substring(
+            item.payload.filename.lastIndexOf("/") + 1,
+          )
+        : "";
+      break;
+    case "transcript":
+      filename = "source transcript";
+      break;
+    default:
+      filename = "";
+      console.error("Unknown export type: ", item);
+      break;
+  }
+
   const [context, dispatch] = useReducer(exportReducer, {
     ...initialContext,
     filename: filename,
@@ -620,10 +636,25 @@ export const ExportWizard = memo(function ExportWizard({
 
     const performExport = async () => {
       try {
-        const deviceStatus = await window.electronAPI.export(
-          [item.uuid],
-          context.passphrase,
-        );
+        let deviceStatus: DeviceStatus;
+        switch (item.type) {
+          case "file":
+            deviceStatus = await window.electronAPI.export(
+              [item.payload.uuid],
+              context.passphrase,
+            );
+            break;
+          case "transcript":
+            deviceStatus = await window.electronAPI.exportTranscript(
+              item.payload.uuid,
+              context.passphrase,
+            );
+            break;
+          default:
+            deviceStatus = DeviceErrorStatus.ERROR_MISSING_FILES; //maybe this needs a new error?
+            console.error("Unknown export type: ", item);
+            break;
+        }
         // Only dispatch if operation hasn't been cancelled
         if (!isCancelled) {
           dispatch({ type: "EXPORT_COMPLETE", deviceStatus: deviceStatus });
@@ -646,7 +677,7 @@ export const ExportWizard = memo(function ExportWizard({
     return () => {
       isCancelled = true;
     };
-  }, [context.state, item.uuid, context.passphrase, t]);
+  }, [context.state, item, context.passphrase, t]);
 
   const handleClose = () => {
     // Cancel any ongoing export operation
