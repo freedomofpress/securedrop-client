@@ -70,7 +70,7 @@ All IPC calls are wrapped with performance logging. The preload script never exp
 
 ### Main Process (Trusted)
 
-The main process is the such as core of the application. It handles all privileged operations including database access, cryptographic operations, file system access, and network requests.
+The main process is the core of the application. It handles all privileged operations including database access, cryptographic operations, file system access, and network requests.
 
 **Key responsibilities:**
 
@@ -167,7 +167,7 @@ The fetch worker writes directly to the SQLite database and filesystem, spawns d
 
 #### Fetch Status Lifecycle
 
-Items progress through fetch states to allow for resumability and retries:
+Items progress through fetch states to allow for resumability and retries. The worker will automatically retry failed downloads or decryptions until the item is either `Complete` or fails repeatedly, entering `FailedTerminal` state.
 
 ```mermaid
 stateDiagram-v2
@@ -189,7 +189,7 @@ stateDiagram-v2
     FailedDecryptionRetryable --> DecryptionInProgress: retry
 ```
 
-On retryable failures, the encrypted data is preserved on disk so the download doesn't need to be repeated. After 6 retries, items enter the terminal failure state.
+On retryable decryption failures, the encrypted data is preserved on disk so the download doesn't need to be repeated. Downloads are also progressively streamed so that incremental progress can be retried and resumed. After 6 retries, items enter the terminal failure state and are removed from the queue.
 
 ## Server Sync
 
