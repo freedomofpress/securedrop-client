@@ -1,0 +1,119 @@
+import { memo, useState } from "react";
+import { useTranslation } from "react-i18next";
+import type {
+  SourceWithItems,
+  ExportPayload,
+  PrintPayload,
+} from "../../../../../types";
+import { ExportWizard } from "../Conversation/Item/Export";
+import { PrintWizard } from "../Conversation/Item/Print";
+import { MenuProps, Dropdown, Button } from "antd";
+import { MoreOutlined } from "@ant-design/icons";
+
+interface SourceMenuProps {
+  sourceWithItems: SourceWithItems;
+}
+
+const SourceMenu = memo(function SourceMenu({
+  sourceWithItems,
+}: SourceMenuProps) {
+  const { t } = useTranslation("MainContent");
+
+  const [exportWizardOpen, setExportWizardOpen] = useState(false);
+  const [printWizardOpen, setPrintWizardOpen] = useState(false);
+
+  const handleMenuClick: MenuProps["onClick"] = async (e) => {
+    switch (e.key) {
+      case "exportTranscript":
+        try {
+          setExportWizardOpen(true);
+        } catch (error) {
+          console.error("Failed to export transcript:", error);
+        }
+        break;
+
+      case "printTranscript":
+        try {
+          setPrintWizardOpen(true);
+        } catch (error) {
+          console.error("Failed to print transcript:", error);
+        }
+        break;
+      default:
+        break;
+    }
+  };
+
+  const handleExportWizardClose = () => {
+    setExportWizardOpen(false);
+  };
+
+  const handlePrintWizardClose = () => {
+    setPrintWizardOpen(false);
+  };
+
+  const hasConversation: boolean = sourceWithItems.items.length > 0;
+
+  const items: MenuProps["items"] = [
+    {
+      key: "exportTranscript",
+      label: t("menu.exportTranscript"),
+      disabled: !hasConversation,
+    },
+    {
+      key: "printTranscript",
+      label: t("menu.printTranscript"),
+      disabled: !hasConversation,
+    },
+    {
+      type: "divider",
+    },
+    {
+      key: "deleteSource",
+      label: t("menu.deleteSource"),
+      danger: true,
+    },
+  ];
+
+  const menuProps = {
+    items,
+    onClick: handleMenuClick,
+  };
+
+  if (!sourceWithItems) {
+    return <></>;
+  }
+
+  const exportPayload: ExportPayload = {
+    type: "transcript",
+    payload: sourceWithItems,
+  };
+
+  const printPayload: PrintPayload = {
+    type: "transcript",
+    payload: sourceWithItems,
+  };
+
+  return (
+    <>
+      <Dropdown menu={menuProps}>
+        <Button
+          type="text"
+          icon={<MoreOutlined style={{ color: "gray", fontSize: "20px" }} />}
+        />
+      </Dropdown>
+      <ExportWizard
+        item={exportPayload}
+        open={exportWizardOpen}
+        onClose={handleExportWizardClose}
+      />
+      <PrintWizard
+        item={printPayload}
+        open={printWizardOpen}
+        onClose={handlePrintWizardClose}
+      />
+    </>
+  );
+});
+
+export default SourceMenu;
