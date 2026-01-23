@@ -5,6 +5,7 @@
 include!(concat!(env!("OUT_DIR"), "/bindings.rs"));
 
 use anyhow::{bail, Result};
+use libc::free;
 use std::ffi::{CStr, CString};
 use std::ptr;
 
@@ -14,21 +15,28 @@ pub fn read(name: &str) -> Result<String> {
 
     let path_raw = CString::new(path.clone()).unwrap().into_raw();
     let mut len: u32 = 0;
-    // SAFETY: path_raw will owned by the C caller and MUST be retaken.  When
-    // len == 0, value_unsafe = NUL and MUST NOT be passed to CStr::from_ptr().
-    let value_raw = unsafe {
+    // SAFETY: path_raw is owned by Rust and passed as read-only to C, then retaken.
+    // value_ptr must be freed with libc::free() after use.
+    unsafe {
         let db = qdb_open(ptr::null_mut());
-        let value_unsafe = qdb_read(db, path_raw, &mut len);
-        qdb_close(db);
-        let _ = CString::from_raw(path_raw); // retake
+        if db.is_null() {
+            let _ = CString::from_raw(path_raw); // retake ownership to avoid leak
+            bail!("Failed to open QubesDB connection");
+        }
 
-        if len > 0 {
-            CStr::from_ptr(value_unsafe)
+        let value_ptr = qdb_read(db, path_raw, &mut len);
+        let _ = CString::from_raw(path_raw); // retake ownership
+
+        if len > 0 && !value_ptr.is_null() {
+            let value_cstr = CStr::from_ptr(value_ptr);
+            let value = value_cstr.to_owned().into_string()?;
+            free(value_ptr.cast());
+            qdb_close(db);
+            Ok(value)
         } else {
+            free(value_ptr.cast()); // This could be free(NULL), but that's safe
+            qdb_close(db);
             bail!("Could not read from QubesDB: {}", path);
         }
-    };
-
-    let value = value_raw.to_owned().into_string()?;
-    Ok(value)
+    }
 }
