@@ -45,7 +45,7 @@ jobs:
       - name: Install node
         uses: actions/setup-node@v6
         with:
-          node-version: "22.x"
+          node-version: "24.x"
           cache: pnpm
           cache-dependency-path: app/pnpm-lock.yaml
       - name: Install node dependencies
@@ -97,7 +97,7 @@ jobs:
       - name: Install node
         uses: actions/setup-node@v6
         with:
-          node-version: "22.x"
+          node-version: "24.x"
           cache: pnpm
           cache-dependency-path: app/pnpm-lock.yaml
       - name: Install node dependencies
@@ -151,7 +151,7 @@ jobs:
       - name: Install node
         uses: actions/setup-node@v6
         with:
-          node-version: "22.x"
+          node-version: "24.x"
           cache: pnpm
           cache-dependency-path: app/pnpm-lock.yaml
       - name: Install node dependencies
@@ -186,7 +186,7 @@ jobs:
       - name: Install node
         uses: actions/setup-node@v6
         with:
-          node-version: "22.x"
+          node-version: "24.x"
           cache: pnpm
           cache-dependency-path: app/pnpm-lock.yaml
       - name: Install node dependencies
