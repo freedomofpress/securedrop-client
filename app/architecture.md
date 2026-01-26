@@ -50,6 +50,54 @@ flowchart TB
     proxy -->|"Tor network"| server
 ```
 
+## Data Flow
+
+This diagram shows the end-to-end flow of how user actions are submitted to the server via sync, downloaded + decrypted in the app by the fetch workers, and dispatched as updates to the renderer.
+
+```mermaid
+sequenceDiagram
+    autonumber
+    participant R as Renderer Process
+    participant M as Main Process
+    participant W as Fetch Worker
+    participant DB as SQLite DB
+    participant P as sd-proxy
+    participant G as sd-gpg
+    participant S as SecureDrop Server
+
+    Note over R,S: Pending User Action
+    R->>M: IPC: user creates pending event<br/>(ex: star source, send reply, etc.)
+    M->>DB: Insert into pending_events
+    Note right of R:This updates items_projected and sources_projected views<br/> so the pending event is applied in the UI.
+
+    Note over R,S: Metadata Sync
+    M->>M: trigger metadata sync from timer
+    activate M
+    Note right of M: acquire sync lock
+    M->>P: POST /api/v2/data<br/>(server sync request)
+    P->>S: request proxied over Tor network
+    S-->>P: Sync response<br/>(sources, items, confirmations)
+    P-->>M: Response JSON
+    M->>DB: Transaction: upsert sources/items,<br/>delete confirmed pending_events,<br/>update version hash
+    deactivate M
+
+    Note over R,S: Enqueue Fetch
+    M->>W: MessagePort: enqueue items<br/>(new messages/files)
+
+    Note over R,S: Download and Decrypt (async)
+    W->>P: POST /api/v1/sources/<source_uuid>/replies/<reply_uuid>/download<br/>Download ciphertext from server
+    P->>S: request proxied over Tor network
+    S-->>P: Item ciphertext response
+    P-->>W: Item ciphertext response
+    W->>DB: Update fetch_status: DownloadInProgress
+    W->>G: Decrypt ciphertext
+    G-->>W: Plaintext
+    W->>DB: Store plaintext in DB or write unencrypted file to disk<br/>Update fetch_status: Complete
+    W->>M: MessagePort: item updated
+    M->>R: IPC: item update
+    R->>R: Redux dispatch,<br/>re-render UI
+```
+
 ## Component Descriptions
 
 ### Renderer Process
@@ -99,7 +147,7 @@ The application uses SQLite with the `better-sqlite3` library for persistent sto
 - Generated columns for computed fields (e.g., `is_read`, `last_updated`)
 - Views (`sources_projected`, `items_projected`) that project pending events onto current state
 
-Schema is stored in [db.sqlite](./src/main/database/schema.sql) and the interface is defined in [database/index.ts](./src/main/database/index.ts)
+Schema is stored in [db.sqlite](./src/main/database/schema.sql) ([more documentation here](./src/main/database/schema.md)) and the interface is defined in [database/index.ts](./src/main/database/index.ts)
 
 ### Encryption and Decryption
 
@@ -193,6 +241,7 @@ On retryable decryption failures, the encrypted data is preserved on disk so the
 ## Server Sync
 
 The sync process keeps the client synchronized with the SecureDrop server. The client receives updated information from the server and submits its own write events in the same sync flow.
+**See also:** [server-side documentation](https://github.com/freedomofpress/securedrop/blob/develop/API2.md)
 
 ### Sync Flow
 
@@ -220,14 +269,15 @@ The sync process keeps the client synchronized with the SecureDrop server. The c
 
 User actions that modify server state are stored as pending events until confirmed:
 
-| Event Type         | Description                  |
-| ------------------ | ---------------------------- |
-| `source_starred`   | Source starred by journalist |
-| `source_unstarred` | Source unstarred             |
-| `source_deleted`   | Source deleted               |
-| `item_deleted`     | Item deleted                 |
-| `item_seen`        | Reply marked as read         |
-| `reply_sent`       | New reply submitted          |
+| Event Type                    | Description                                               |
+| ----------------------------- | --------------------------------------------------------- |
+| `source_starred`              | Source starred by journalist                              |
+| `source_unstarred`            | Source unstarred                                          |
+| `source_deleted`              | Source deleted                                            |
+| `source_conversation_deleted` | Source conversation (all submissions and replies) deleted |
+| `item_deleted`                | Item deleted                                              |
+| `item_seen`                   | Reply marked as read                                      |
+| `reply_sent`                  | New reply submitted                                       |
 
 Pending events use Snowflake IDs for ordering. The `sources_projected` and `items_projected` database views show the expected state after pending events are applied. This allows the UI to display pending event state even while the events are not yet synced to the server.
 
