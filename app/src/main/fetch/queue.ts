@@ -46,8 +46,8 @@ export class TaskQueue {
       "message-queue",
       db,
       overrideTaskFn ? overrideTaskFn : this.process,
-      // Max timeout: 1s for messages
-      1_000,
+      // Max timeout: 60s for messages
+      60_000,
       port,
     );
     this.fileQueue = createQueue(
