@@ -105,13 +105,17 @@ const electronAPI = {
   openFile: logIpcCall<void>("openFile", (itemUuid: string) =>
     ipcRenderer.invoke("openFile", itemUuid),
   ),
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  onItemUpdate: (callback: (...args: any[]) => void) => {
-    ipcRenderer.on("item-update", (_event, ...args) => callback(...args));
+  onItemUpdate: (callback: (item: Item) => void) => {
+    const listener = (_event: Electron.IpcRendererEvent, item: Item) =>
+      callback(item);
+    ipcRenderer.on("item-update", listener);
+    return () => ipcRenderer.removeListener("item-update", listener);
   },
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  onSourceUpdate: (callback: (...args: any[]) => void) => {
-    ipcRenderer.on("source-update", (_event, ...args) => callback(...args));
+  onSourceUpdate: (callback: (source: Source) => void) => {
+    const listener = (_event: Electron.IpcRendererEvent, source: Source) =>
+      callback(source);
+    ipcRenderer.on("source-update", listener);
+    return () => ipcRenderer.removeListener("source-update", listener);
   },
   clearClipboard: logIpcCall<void>("clearClipboard", () =>
     ipcRenderer.invoke("clearClipboard"),

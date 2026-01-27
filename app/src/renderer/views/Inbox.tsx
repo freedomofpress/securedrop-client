@@ -8,8 +8,10 @@ import {
   selectSyncStatus,
   clearStatus,
 } from "../features/sync/syncSlice";
+import { updateItem } from "../features/conversation/conversationSlice";
+import { updateSource } from "../features/sources/sourcesSlice";
 import { setUnauth } from "../features/session/sessionSlice";
-import { SyncStatus } from "../../types";
+import { SyncStatus, type Item, type Source } from "../../types";
 import { useAppSelector } from "../hooks";
 import Sidebar from "./Inbox/Sidebar";
 import MainContent from "./Inbox/MainContent";
@@ -50,6 +52,22 @@ function InboxView() {
 
   useEffect(() => {
     dispatch(fetchJournalists());
+  }, [dispatch]);
+
+  // Register IPC listeners for real-time updates from the main process
+  useEffect(() => {
+    const unsubscribeItem = window.electronAPI.onItemUpdate((item: Item) => {
+      dispatch(updateItem(item));
+    });
+    const unsubscribeSource = window.electronAPI.onSourceUpdate(
+      (source: Source) => {
+        dispatch(updateSource(source));
+      },
+    );
+    return () => {
+      unsubscribeItem();
+      unsubscribeSource();
+    };
   }, [dispatch]);
 
   return (

@@ -8,12 +8,9 @@ import Message from "./Item/Message";
 import Reply from "./Item/Reply";
 import File from "./Item/File";
 import { useAppDispatch, useAppSelector } from "../../../../hooks";
-import {
-  updateItem,
-  updateItemFetchStatus,
-} from "../../../../features/conversation/conversationSlice";
+import { updateItemFetchStatus } from "../../../../features/conversation/conversationSlice";
 
-import { memo, useEffect, useCallback } from "react";
+import { memo, useCallback } from "react";
 
 interface ItemProps {
   item: Item;
@@ -23,12 +20,6 @@ interface ItemProps {
 const Item = memo(function ItemComponent({ item, designation }: ItemProps) {
   const dispatch = useAppDispatch();
   const session = useAppSelector((state) => state.session);
-
-  useEffect(() => {
-    window.electronAPI.onItemUpdate((item: Item) => {
-      dispatch(updateItem(item));
-    });
-  }, [dispatch]);
 
   const onFetchStatusUpdate = useCallback(
     async (update: ItemUpdate) => {
