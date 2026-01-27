@@ -21,7 +21,8 @@
     "menu": {
       "exportTranscript": "Export Transcript",
       "printTranscript": "Print Transcript",
-      "deleteSource": "Delete Source Account"
+      "deleteSource": "Delete Source Account",
+      "clickToOpen": "Click to open"
     },
     "itemEncrypted": "Message is encrypted...",
     "lastSourceActivity": "Last source activity",

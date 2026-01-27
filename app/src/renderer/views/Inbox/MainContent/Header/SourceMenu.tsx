@@ -7,7 +7,7 @@ import type {
 } from "../../../../../types";
 import { ExportWizard } from "../Conversation/Item/Export";
 import { PrintWizard } from "../Conversation/Item/Print";
-import { MenuProps, Dropdown, Button } from "antd";
+import { MenuProps, Dropdown, Button, Tooltip } from "antd";
 import { MoreOutlined } from "@ant-design/icons";
 
 interface SourceMenuProps {
@@ -96,12 +96,14 @@ const SourceMenu = memo(function SourceMenu({
 
   return (
     <>
-      <Dropdown menu={menuProps}>
-        <Button
-          type="text"
-          icon={<MoreOutlined style={{ color: "gray", fontSize: "20px" }} />}
-        />
-      </Dropdown>
+      <Tooltip title={t("menu.clickToOpen")} placement="left">
+        <Dropdown menu={menuProps} trigger={["click"]}>
+          <Button
+            type="text"
+            icon={<MoreOutlined style={{ color: "gray", fontSize: "20px" }} />}
+          />
+        </Dropdown>
+      </Tooltip>
       <ExportWizard
         item={exportPayload}
         open={exportWizardOpen}
