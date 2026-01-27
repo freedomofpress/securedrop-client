@@ -6,6 +6,7 @@
     "ellipsis": "…"
   },
   "MainContent": {
+    "nonProduction": "WARNING: non-production mode",
     "emptyState": "<bold>Select a source</bold> from the list to read messages, retrieve files, or send responses.",
     "emptyConversation": "This conversation has no messages yet.",
     "loading": {
