@@ -1,9 +1,37 @@
 import { describe, expect, it, afterEach, vi } from "vitest";
+import fs from "fs";
+import path from "path";
+import os from "os";
 import { Journalist, SourceWithItems } from "../types";
-import { renderTranscript } from "./transcriber";
+import { renderTranscript, writeTranscript } from "./transcriber";
 import { DB } from "./database";
+import { setUmask } from "./umask";
 
 describe("Transcriber Component Tests", () => {
+  const testHomeDirPrefix = path.join(os.tmpdir(), "test-home");
+  const testHomeDir: string = fs.mkdtempSync(testHomeDirPrefix);
+  const originalHomedir = os.homedir;
+  let originalUmask: number;
+
+  beforeEach(() => {
+    // Set umask for secure file permissions
+    originalUmask = process.umask();
+    setUmask();
+
+    if (fs.existsSync(testHomeDir)) {
+      fs.rmSync(testHomeDir, { recursive: true, force: true });
+    }
+    os.homedir = () => testHomeDir;
+  });
+
+  afterEach(() => {
+    process.umask(originalUmask);
+    os.homedir = originalHomedir;
+    if (fs.existsSync(testHomeDir)) {
+      fs.rmSync(testHomeDir, { recursive: true, force: true });
+    }
+  });
+
   // Test data
   const mockSourceWithItems: SourceWithItems = {
     uuid: "source-1",
@@ -149,5 +177,38 @@ Interesting message there
     const output: string = await renderTranscript(mockSourceWithItems, db);
     expect(output).toContain(expectedSource);
     expect(output).toContain(expectedTranscript);
+  });
+
+  it("should write a valid transcript file", async () => {
+    const db = createMockDB();
+
+    db.getJournalistByID = vi.fn(() => {
+      return mockJournalist;
+    });
+    db.getSourceWithItems = vi.fn(() => {
+      return mockSourceWithItems;
+    });
+
+    const expectedSource: string = "Source: palpable disquiet";
+    const expectedTranscript: string = `Transcript:
+-----------
+Source wrote:
+sphinx of black quartz, judge my vow
+
+Source uploaded file: filename.ext
+
+Source uploaded file: [encrypted file]
+
+notsuperman replied:
+Interesting message there
+`;
+
+    const output: string = await writeTranscript(mockSourceWithItems.uuid, db);
+    expect(output).toContain("transcript.txt");
+    expect(fs.existsSync(output)).toBe(true);
+    console.log(`BANANA: ${output}`);
+    const fileContents = fs.readFileSync(output, "utf-8");
+    expect(fileContents).toContain(expectedSource);
+    expect(fileContents).toContain(expectedTranscript);
   });
 });

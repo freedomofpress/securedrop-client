@@ -42,7 +42,7 @@ import { Config } from "./config";
 import { setUmask } from "./umask";
 import { Exporter, Printer } from "./export";
 import { Storage } from "./storage";
-import { renderTranscript } from "./transcriber";
+import { writeTranscript } from "./transcriber";
 
 // Set umask so any files written are owner-only read/write (600).
 // This must be done before we create any files or spawn any worker threads.
@@ -421,30 +421,20 @@ app.whenReady().then(() => {
       sourceUuid: string,
       passphrase: string,
     ): Promise<DeviceStatus> => {
-      const sourceWithItems = db.getSourceWithItems(sourceUuid);
-      const storage = new Storage();
-
-      const filePath: string = join(
-        storage.sourceDirectory(sourceUuid).path,
-        "transcript.txt",
-      );
-
       try {
-        const fileContent = await renderTranscript(sourceWithItems, db);
-        fs.writeFileSync(filePath, fileContent, "utf-8");
-      } catch (err) {
-        console.warn(
-          `Failed to write transcript for source: ${sourceUuid}:`,
-          err,
+        const filePath: string = await writeTranscript(sourceUuid, db);
+
+        if (!fs.existsSync(filePath)) {
+          throw new Error(`Transcript file not found: ${filePath}`);
+        }
+        return await exporter.export([filePath], passphrase);
+      } catch (error) {
+        console.error(
+          `Failed to print transcript for source: ${sourceUuid}:`,
+          error,
         );
+        throw error;
       }
-
-      // probably overkill
-      if (!fs.existsSync(filePath)) {
-        throw new Error(`File not found: ${filePath}`);
-      }
-
-      return await exporter.export([filePath], passphrase);
     },
   );
 
@@ -481,29 +471,20 @@ app.whenReady().then(() => {
   ipcMain.handle(
     "printTranscript",
     async (_event, sourceUuid: string): Promise<DeviceStatus> => {
-      const sourceWithItems = db.getSourceWithItems(sourceUuid);
-      const storage = new Storage();
-
-      const filePath: string = join(
-        storage.sourceDirectory(sourceUuid).path,
-        "transcript.txt",
-      );
-
       try {
-        const fileContent = await renderTranscript(sourceWithItems, db);
-        fs.writeFileSync(filePath, fileContent, "utf-8");
-      } catch (err) {
-        console.warn(
-          `Failed to write transcript for source: ${sourceUuid}:`,
-          err,
-        );
-      }
+        const filePath: string = await writeTranscript(sourceUuid, db);
 
-      // probably overkill
-      if (!fs.existsSync(filePath)) {
-        throw new Error(`File not found: ${filePath}`);
+        if (!fs.existsSync(filePath)) {
+          throw new Error(`Transcript file not found: ${filePath}`);
+        }
+        return printer.print([filePath]);
+      } catch (error) {
+        console.error(
+          `Failed to print transcript for source: ${sourceUuid}:`,
+          error,
+        );
+        throw error;
       }
-      return printer.print([filePath]);
     },
   );
 
