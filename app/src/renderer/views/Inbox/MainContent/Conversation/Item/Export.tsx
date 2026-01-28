@@ -650,10 +650,6 @@ export const ExportWizard = memo(function ExportWizard({
               context.passphrase,
             );
             break;
-          default:
-            deviceStatus = DeviceErrorStatus.ERROR_MISSING_FILES; //maybe this needs a new error?
-            console.error("Unknown export type: ", item);
-            break;
         }
         // Only dispatch if operation hasn't been cancelled
         if (!isCancelled) {

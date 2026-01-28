@@ -425,10 +425,6 @@ export const PrintWizard = memo(function PrintWizard({
               item.payload.uuid,
             );
             break;
-          default:
-            deviceStatus = PrintStatus.ERROR_PRINT; //maybe this needs a new error?
-            console.error("Unknown print type: ", item);
-            break;
         }
 
         // Only dispatch if operation hasn't been cancelled
