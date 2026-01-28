@@ -1,5 +1,5 @@
 Source: {{d.data.journalist_designation }}
-Last Updated: {{ d.data.last_updated | date: "%Y-%m-%d %H:%M" }}
+Last Updated: {{ d.data.last_updated | date: "%Y-%m-%d %H:%M %z" }}
 {% if d.items.size <= 0 %}
 No messages.
 {% else %}
@@ -9,7 +9,7 @@ Source wrote:
 {{ item.plaintext }}
 {% when "reply" %}
 {{ item.data.journalist_uuid | getJournalistName }} replied:
-{{ item.plaintext  }}
+{% if not item.plaintext %}[Message is encrypted...]{% else %}{{ item.plaintext }}{% endif %}
 {% when "file" %}
 Source uploaded file: {% if not item.filename %}[encrypted file]{% else %}{{ item.filename | split: "/" | last}}{% endif %}
 {% else %}
