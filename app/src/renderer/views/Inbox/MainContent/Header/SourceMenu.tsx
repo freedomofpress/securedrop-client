@@ -65,14 +65,6 @@ const SourceMenu = memo(function SourceMenu({
       label: t("menu.printTranscript"),
       disabled: !hasConversation,
     },
-    {
-      type: "divider",
-    },
-    {
-      key: "deleteSource",
-      label: t("menu.deleteSource"),
-      danger: true,
-    },
   ];
 
   const menuProps = {
