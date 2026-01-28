@@ -2,7 +2,7 @@ import { describe, expect, it, beforeEach, afterEach } from "vitest";
 import fs from "fs";
 import path from "path";
 import os from "os";
-import { DB } from "./index";
+import { DB, MESSAGE_PREVIEW_LENGTH } from "./index";
 import {
   FetchStatus,
   ItemMetadata,
@@ -1019,6 +1019,67 @@ describe("Database Method Tests", () => {
     if (s4) {
       expect(s4.messagePreview).toBeNull();
     }
+  });
+
+  it("messagePreview.plaintext should be truncated to 200 Unicode code points for long messages", () => {
+    db.updateSources({
+      source1: mockSourceMetadata("source1"),
+    });
+
+    db.updateItems({
+      item1: mockItemMetadata("item1", "source1", "message", 1),
+    });
+
+    // Create a long ASCII-only message (no multi-byte chars) to test basic truncation
+    const longAsciiMessage = "a".repeat(500);
+    db.completePlaintextItem("item1", longAsciiMessage);
+
+    const sources = db.getSources();
+    const source = sources.find((s) => s.uuid === "source1");
+    expect(source).not.toBeNull();
+    expect(source!.messagePreview).not.toBeNull();
+    expect(source!.messagePreview!.plaintext).not.toBeNull();
+    expect(source!.messagePreview!.plaintext!.length).toBe(
+      MESSAGE_PREVIEW_LENGTH,
+    );
+    expect(source!.messagePreview!.plaintext).toBe(
+      "a".repeat(MESSAGE_PREVIEW_LENGTH),
+    );
+
+    // Test getSource (single source query)
+    const singleSource = db.getSource("source1");
+    expect(singleSource).not.toBeNull();
+    expect(singleSource!.messagePreview!.plaintext!.length).toBe(
+      MESSAGE_PREVIEW_LENGTH,
+    );
+  });
+
+  it("messagePreview.plaintext truncation should handle Unicode correctly", () => {
+    db.updateSources({
+      source1: mockSourceMetadata("source1"),
+    });
+
+    db.updateItems({
+      item1: mockItemMetadata("item1", "source1", "message", 1),
+    });
+
+    // Create a message with emojis - each emoji is 1 Unicode code point but 2 JS chars
+    // "👋" is 1 code point, so 200 of them = 200 code points = 400 JS chars
+    const emojiMessage = "👋".repeat(300);
+    db.completePlaintextItem("item1", emojiMessage);
+
+    const sources = db.getSources();
+    const source = sources.find((s) => s.uuid === "source1");
+    expect(source).not.toBeNull();
+    expect(source!.messagePreview).not.toBeNull();
+    expect(source!.messagePreview!.plaintext).not.toBeNull();
+    // SQLite truncates at 200 code points; each emoji = 2 JS chars, so 400 JS length
+    expect(source!.messagePreview!.plaintext!.length).toBe(
+      MESSAGE_PREVIEW_LENGTH * 2,
+    );
+    expect(source!.messagePreview!.plaintext).toBe(
+      "👋".repeat(MESSAGE_PREVIEW_LENGTH),
+    );
   });
 
   it("deleting a source should cascade to its pending events", () => {

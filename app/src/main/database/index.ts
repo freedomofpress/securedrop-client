@@ -30,6 +30,10 @@ import {
 } from "../../types";
 import { Crypto } from "../crypto";
 
+// Truncate message previews to 200 Unicode code points
+// at the database layer; CSS will handle the rest
+export const MESSAGE_PREVIEW_LENGTH = 200;
+
 interface KeyObject {
   [key: string]: object;
 }
@@ -237,7 +241,7 @@ export class DB {
         s.is_seen,
         s.has_attachment,
         i.kind AS last_message_kind,
-        i.plaintext AS last_message_plaintext,
+        substr(i.plaintext, 1, ${MESSAGE_PREVIEW_LENGTH}) AS last_message_plaintext,
         i.filename AS last_message_filename
       FROM sources_projected s
       LEFT JOIN sorted_items i
@@ -245,16 +249,16 @@ export class DB {
         AND i.rn = 1;
     `);
     this.selectSourceById = this.db.prepare(`
-      SELECT 
-        s.uuid, 
-        s.data, 
-        s.is_seen, 
+      SELECT
+        s.uuid,
+        s.data,
+        s.is_seen,
         s.has_attachment,
         i.kind AS last_message_kind,
-        i.plaintext AS last_message_plaintext,
+        substr(i.plaintext, 1, ${MESSAGE_PREVIEW_LENGTH}) AS last_message_plaintext,
         i.filename AS last_message_filename
       FROM sources_projected s
-      LEFT JOIN sorted_items i 
+      LEFT JOIN sorted_items i
         ON s.uuid = i.source_uuid AND i.rn = 1
       WHERE s.uuid = ?
     `);
