@@ -147,6 +147,16 @@ function spawnFetchWorker(mainWindow: BrowserWindow): Worker {
 app.whenReady().then(() => {
   // Set strict Content Security Policy via HTTP header with nonce
   session.defaultSession.webRequest.onHeadersReceived((details, callback) => {
+    // Don't set a CSP for devtools when we're in dev mode
+    if (
+      is.dev &&
+      process.env["NODE_ENV"] != "production" &&
+      (details.url.startsWith("devtools://") ||
+        details.url.startsWith("chrome-extension://"))
+    ) {
+      callback({ responseHeaders: details.responseHeaders });
+      return;
+    }
     let scriptSrc = "script-src 'self'";
     let styleSrc = `style-src 'self' 'nonce-${cspNonce}'`;
     let connectSrc = "";
