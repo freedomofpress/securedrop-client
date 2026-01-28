@@ -11,11 +11,10 @@ import {
   fetchSources,
   selectSources,
   selectSourcesLoading,
-  updateSource,
 } from "../../../features/sources/sourcesSlice";
 import { fetchConversation } from "../../../features/conversation/conversationSlice";
 import Toolbar, { type filterOption } from "./SourceList/Toolbar";
-import { PendingEventType, Source as SourceType } from "../../../../types";
+import { PendingEventType } from "../../../../types";
 
 function SourceList() {
   const { sourceUuid: activeSourceUuid } = useParams<{ sourceUuid?: string }>();
@@ -48,12 +47,6 @@ function SourceList() {
 
   useEffect(() => {
     dispatch(fetchSources());
-  }, [dispatch]);
-
-  useEffect(() => {
-    window.electronAPI.onSourceUpdate((source: SourceType) => {
-      dispatch(updateSource(source));
-    });
   }, [dispatch]);
 
   // Calculate container height for react-window
