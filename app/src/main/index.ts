@@ -47,6 +47,16 @@ import { Storage } from "./storage";
 // This must be done before we create any files or spawn any worker threads.
 setUmask();
 
+// Enforce single instance - quit if another instance is already running.
+// This must be checked early before allocating resources.
+const gotTheLock = app.requestSingleInstanceLock();
+if (!gotTheLock) {
+  console.log(
+    "Another instance of the SecureDrop App is already running; quitting.",
+  );
+  app.quit();
+}
+
 // Parse command line arguments
 const args = process.argv.slice(2);
 const noQubes = args.includes("--no-qubes");
@@ -72,6 +82,23 @@ const cspNonce = randomBytes(32).toString("base64");
 // Get Vite nonce from build-time generated value (injected via define in vite config)
 const viteNonce =
   is.dev && process.env["NODE_ENV"] != "production" ? __VITE_NONCE__ : "";
+
+// Track the main window for second-instance handling
+let mainWindow: BrowserWindow | null = null;
+
+// Focus existing window when a second instance is attempted.
+// This must be registered before app.whenReady() to avoid race conditions.
+app.on("second-instance", () => {
+  if (mainWindow && !mainWindow.isDestroyed()) {
+    // Note: .restore() and .focus() don't appear to work in Qubes
+    // but we can keep the code around regardless since it's the
+    // standard Electron boilerplate.
+    if (mainWindow.isMinimized()) {
+      mainWindow.restore();
+    }
+    mainWindow.focus();
+  }
+});
 
 function createWindow(): BrowserWindow {
   const mainWindow = new BrowserWindow({
@@ -479,7 +506,7 @@ app.whenReady().then(() => {
     printer.cancelPrint();
   });
 
-  const mainWindow = createWindow();
+  mainWindow = createWindow();
 
   const fetchWorker = spawnFetchWorker(mainWindow);
 });
