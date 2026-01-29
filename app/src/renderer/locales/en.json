@@ -25,6 +25,8 @@
       "clickToOpen": "Click to open"
     },
     "itemEncrypted": "Message is encrypted...",
+    "messageFailed": "Failed to decrypt message",
+    "retryFetch": "Retry",
     "lastSourceActivity": "Last source activity",
     "you": "You",
     "unknown": "Unknown",

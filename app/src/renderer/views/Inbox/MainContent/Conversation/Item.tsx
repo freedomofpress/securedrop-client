@@ -48,7 +48,13 @@ const Item = memo(function ItemComponent({ item, designation }: ItemProps) {
 
   const kind = item.data.kind;
   if (kind === "message") {
-    return <Message item={item} designation={designation} />;
+    return (
+      <Message
+        item={item}
+        designation={designation}
+        onUpdate={onFetchStatusUpdate}
+      />
+    );
   }
   if (kind === "file") {
     return (

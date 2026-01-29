@@ -312,6 +312,14 @@ const InProgressFile = memo(function InProgressFile({
     });
   };
 
+  const cancelDownload = () => {
+    onUpdate({
+      item_uuid: item.uuid,
+      type: ItemUpdateType.FetchStatus,
+      fetch_status: FetchStatus.Initial,
+    });
+  };
+
   return (
     <div className="flex items-center justify-start">
       <LoaderCircle
@@ -338,15 +346,20 @@ const InProgressFile = memo(function InProgressFile({
           <p className="italic">
             {progressSize} {t("of")} {fileSize}
           </p>
-          {item.fetch_status === FetchStatus.DownloadInProgress ? (
-            <Button size="small" type="link" onClick={pauseDownload}>
-              {t("pause")}
+          <div className="flex gap-1">
+            {item.fetch_status === FetchStatus.DownloadInProgress ? (
+              <Button size="small" type="link" onClick={pauseDownload}>
+                {t("pause")}
+              </Button>
+            ) : (
+              <Button size="small" type="link" onClick={resumeDownload}>
+                {t("resume")}
+              </Button>
+            )}
+            <Button size="small" type="link" onClick={cancelDownload}>
+              {t("cancel")}
             </Button>
-          ) : (
-            <Button size="small" type="link" onClick={resumeDownload}>
-              {t("resume")}
-            </Button>
-          )}
+          </div>
         </div>
       </div>
     </div>
