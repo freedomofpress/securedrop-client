@@ -217,6 +217,7 @@ describe("journalistsSlice", () => {
         lastFetchTime: null,
         status: null,
       },
+      drafts: { drafts: {} },
     };
 
     it("getJournalistsState should return the entire journalists state", () => {

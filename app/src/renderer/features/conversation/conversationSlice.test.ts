@@ -234,6 +234,9 @@ describe("conversationSlice", () => {
 
     const mockState = {
       session: mockSessionState,
+      drafts: {
+        drafts: {},
+      },
       sources: {
         sources: [],
         activeSourceUuid: null,
