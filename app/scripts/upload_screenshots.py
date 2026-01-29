@@ -257,11 +257,11 @@ def main():
     logger.info(f"Found {len(units)} translation units")
 
     for unit in units:
-        source = unit["context"]
-        if source in screenshot_files:
-            prev = screenshots_to_units.get(source, (set(), None))
-            screenshots_to_units[source] = (prev[0] | {unit["id"]}, prev[1])
-            logger.debug(f"Matched unit {unit['id']} to screenshot key: {source}")
+        key = unit["context"]
+        if key in screenshot_files:
+            prev = screenshots_to_units.get(key, (set(), None))
+            screenshots_to_units[key] = (prev[0] | {unit["id"]}, prev[1])
+            logger.debug(f"Matched unit {unit['id']} to screenshot key: {key}")
 
     # Fetch existing screenshots and match to our files
     logger.info("Fetching existing screenshots...")
@@ -307,14 +307,8 @@ def main():
         else:
             client.replace_screenshot(screenshot_id, filepath)
 
-        # Get currently associated units to avoid duplicate association attempts
-        existing_associations = client.get_screenshot_units(screenshot_id)
-
-        # Associate with units (idempotent - check before associating)
+        # Associate with units (idempotent - rely on associate_unit handling duplicates)
         for unit_id in unit_ids:
-            if unit_id in existing_associations:
-                logger.debug(f"Unit {unit_id} already associated with screenshot {screenshot_id}")
-                continue
             client.associate_unit(screenshot_id, unit_id)
 
     # Report screenshots without matching units (including those that exist in
