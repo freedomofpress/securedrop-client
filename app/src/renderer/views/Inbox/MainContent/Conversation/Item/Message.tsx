@@ -2,6 +2,7 @@ import { memo } from "react";
 import type { Item } from "../../../../../../types";
 import { toTitleCase } from "../../../../../utils";
 import Avatar from "../../../../../components/Avatar";
+import TruncatedText from "../../../../../components/TruncatedText";
 import { useTranslation } from "react-i18next";
 import "../Item.css";
 
@@ -30,7 +31,7 @@ const Message = memo(function Message({ item, designation }: MessageProps) {
           {isEncrypted ? (
             <span className="italic text-gray-500">{t("itemEncrypted")}</span>
           ) : (
-            messageContent
+            <TruncatedText text={messageContent} />
           )}
         </div>
       </div>
