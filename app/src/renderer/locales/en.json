@@ -1,6 +1,9 @@
 {
   "common": {
-    "yesterday": "Yesterday"
+    "yesterday": "Yesterday",
+    "seeMore": "See more",
+    "seeLess": "See less",
+    "ellipsis": "…"
   },
   "MainContent": {
     "emptyState": "<bold>Select a source</bold> from the list to read messages, retrieve files, or send responses.",
