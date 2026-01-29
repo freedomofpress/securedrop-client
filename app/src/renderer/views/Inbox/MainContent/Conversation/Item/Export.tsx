@@ -4,6 +4,7 @@ import {
   DeviceStatus,
   ExportStatus,
   DeviceErrorStatus,
+  FetchStatus,
 } from "../../../../../../types";
 import "../Item.css";
 import "./File.css";
@@ -13,6 +14,7 @@ import { LoaderCircle, FileX2, Inbox, Unlock } from "lucide-react";
 import { Button, Modal, Input } from "antd";
 
 type ExportState =
+  | "CONFIRM_SOURCE"
   | "PREFLIGHT"
   | "PREFLIGHT_COMPLETE"
   | "PREFLIGHT_INSERT_USB"
@@ -37,6 +39,7 @@ type ExportAction =
 
 interface ExportContext {
   state: ExportState;
+  itemType: ExportPayload["type"];
   filename: string;
   passphrase: string;
   deviceLocked: boolean;
@@ -47,6 +50,7 @@ interface ExportContext {
 
 const initialContext: ExportContext = {
   state: "PREFLIGHT",
+  itemType: "file",
   filename: "",
   passphrase: "",
   deviceLocked: true,
@@ -141,9 +145,20 @@ function exportReducer(
     };
   }
   if (action.type === "CANCEL") {
-    return initialContext;
+    return {
+      ...initialContext,
+      itemType: context.itemType,
+      state: context.itemType === "source" ? "CONFIRM_SOURCE" : "PREFLIGHT",
+    };
   }
   switch (context.state) {
+    case "CONFIRM_SOURCE":
+      switch (action.type) {
+        case "START_EXPORT":
+          return { ...context, state: "PREFLIGHT" };
+        default:
+          return context;
+      }
     case "PREFLIGHT":
       switch (action.type) {
         case "PREFLIGHT_COMPLETE":
@@ -275,8 +290,49 @@ interface StateComponentProps {
   context: ExportContext;
   dispatch: React.Dispatch<ExportAction>;
   filename: string;
-  t: (key: string) => string;
+  item: ExportPayload;
+  t: (key: string, options?: Record<string, unknown>) => string;
 }
+
+const ConfirmSourceState = memo(function ConfirmSourceState({
+  item,
+  t,
+}: StateComponentProps) {
+  if (item.type !== "source") return null;
+
+  const fileItems = item.payload.items.filter((i) => i.data.kind === "file");
+  const downloadedCount = fileItems.filter(
+    (i) => i.fetch_status === FetchStatus.Complete,
+  ).length;
+  const undownloadedCount = fileItems.length - downloadedCount;
+
+  return (
+    <div>
+      <div className="flex items-center gap-3 mb-4">
+        <Inbox size={24} className="text-blue-500" />
+        <div className="ml-3">
+          <h3 className="text-lg font-semibold">
+            {t("exportWizard.sourceExportTitle")}
+          </h3>
+        </div>
+      </div>
+      <hr className="my-4 border-gray-300" />
+      <div className="space-y-4">
+        <p>{t("exportWizard.sourceExportDescription")}</p>
+        <p>
+          {t("exportWizard.downloadedFileCount", { count: downloadedCount })}
+        </p>
+        {undownloadedCount > 0 && (
+          <p className="text-yellow-800">
+            {t("exportWizard.undownloadedFileCount", {
+              count: undownloadedCount,
+            })}
+          </p>
+        )}
+      </div>
+    </div>
+  );
+});
 
 const PreflightState = memo(function PreflightState({
   context,
@@ -418,7 +474,11 @@ const ExportingState = memo(function ExportingState({
   return (
     <div>
       <div className="flex items-center gap-3 mb-4">
-        <Inbox size={24} className="text-blue-500" />
+        <LoaderCircle
+          className="animate-spin text-blue-500"
+          size={24}
+          strokeWidth={1}
+        />
         <div className="ml-3">
           <h3 className="text-lg font-semibold">{t("wizard.pleaseWait")}</h3>
         </div>
@@ -552,8 +612,20 @@ export const ExportWizard = memo(function ExportWizard({
         : "";
       break;
     case "transcript":
-      filename = "source transcript";
+      filename = "transcript.txt";
       break;
+    case "source": {
+      const downloadedFilenames = item.payload.items
+        .filter(
+          (i) =>
+            i.data.kind === "file" &&
+            i.fetch_status === FetchStatus.Complete &&
+            i.filename,
+        )
+        .map((i) => i.filename!.substring(i.filename!.lastIndexOf("/") + 1));
+      filename = ["transcript.txt", ...downloadedFilenames].join(", ");
+      break;
+    }
     default:
       filename = "";
       console.error("Unknown export type: ", item);
@@ -562,6 +634,8 @@ export const ExportWizard = memo(function ExportWizard({
 
   const [context, dispatch] = useReducer(exportReducer, {
     ...initialContext,
+    state: item.type === "source" ? "CONFIRM_SOURCE" : "PREFLIGHT",
+    itemType: item.type,
     filename: filename,
   });
 
@@ -650,6 +724,21 @@ export const ExportWizard = memo(function ExportWizard({
               context.passphrase,
             );
             break;
+          case "source": {
+            const downloadedFileUuids = item.payload.items
+              .filter(
+                (i) =>
+                  i.data.kind === "file" &&
+                  i.fetch_status === FetchStatus.Complete,
+              )
+              .map((i) => i.uuid);
+            deviceStatus = await window.electronAPI.exportSource(
+              item.payload.uuid,
+              downloadedFileUuids,
+              context.passphrase,
+            );
+            break;
+          }
         }
         // Only dispatch if operation hasn't been cancelled
         if (!isCancelled) {
@@ -683,9 +772,11 @@ export const ExportWizard = memo(function ExportWizard({
   };
 
   const renderStateComponent = () => {
-    const stateProps = { context, dispatch, filename, t };
+    const stateProps = { context, dispatch, filename, item, t };
 
     switch (context.state) {
+      case "CONFIRM_SOURCE":
+        return <ConfirmSourceState {...stateProps} />;
       case "PREFLIGHT":
       case "PREFLIGHT_COMPLETE":
         return <PreflightState {...stateProps} />;
@@ -709,6 +800,20 @@ export const ExportWizard = memo(function ExportWizard({
 
   const renderFooter = () => {
     switch (context.state) {
+      case "CONFIRM_SOURCE":
+        return [
+          <Button
+            key="continue"
+            type="primary"
+            onClick={() => dispatch({ type: "START_EXPORT" })}
+          >
+            {t("wizard.continue")}
+          </Button>,
+          <Button key="cancel" onClick={handleClose}>
+            {t("wizard.cancel")}
+          </Button>,
+        ];
+
       case "PREFLIGHT":
       case "PREFLIGHT_INSERT_USB":
         return [

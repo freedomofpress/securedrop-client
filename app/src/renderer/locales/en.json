@@ -20,6 +20,7 @@
     },
     "menu": {
       "exportTranscript": "Export Transcript",
+      "exportSource": "Export Transcript and Files",
       "printTranscript": "Print Transcript",
       "deleteSource": "Delete Source Account",
       "clickToOpen": "Click to open"
@@ -172,7 +173,13 @@
       "errorExport": "Error during export",
       "errorMissingFiles": "Files were moved or missing and could not be exported.",
       "deviceError": "Error encountered with this drive. See your administrator for help.",
-      "unexpectedError": "Error encountered. Please contact support."
+      "unexpectedError": "Error encountered. Please contact support.",
+      "sourceExportTitle": "Export Transcript and Files",
+      "sourceExportDescription": "The transcript and all downloaded files will be exported.",
+      "downloadedFileCount_one": "{{count}} downloaded file will be exported",
+      "downloadedFileCount_other": "{{count}} downloaded files will be exported",
+      "undownloadedFileCount_one": "{{count}} file has not been downloaded and will not be exported",
+      "undownloadedFileCount_other": "{{count}} files have not been downloaded and will not be exported"
     },
     "printWizard": {
       "title": "Print File",

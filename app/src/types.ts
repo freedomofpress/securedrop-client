@@ -232,13 +232,18 @@ export type PayloadTranscript = {
   payload: SourceWithItems;
 };
 
+export type PayloadSource = {
+  type: "source";
+  payload: SourceWithItems;
+};
+
 export type PayloadFile = {
   type: "file";
   payload: Item;
 };
 
 // additional payload types, eg. full archives, could go here.
-export type ExportPayload = PayloadTranscript | PayloadFile;
+export type ExportPayload = PayloadTranscript | PayloadSource | PayloadFile;
 
 // for now only transcripts or single files may be printed
 export type PrintPayload = PayloadTranscript | PayloadFile;

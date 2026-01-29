@@ -474,7 +474,7 @@ app.whenReady().then(() => {
         return await exporter.export([filePath], passphrase);
       } catch (error) {
         console.error(
-          `Failed to print transcript for source: ${sourceUuid}:`,
+          `Failed to export transcript for source: ${sourceUuid}:`,
           error,
         );
         throw error;
@@ -505,6 +505,44 @@ app.whenReady().then(() => {
         filenames.push(item.filename);
       }
       return await exporter.export(filenames, passphrase);
+    },
+  );
+
+  ipcMain.handle(
+    "exportSource",
+    async (
+      _event,
+      sourceUuid: string,
+      itemUuids: string[],
+      passphrase: string,
+    ): Promise<DeviceStatus> => {
+      try {
+        const transcriptPath: string = await writeTranscript(sourceUuid, db);
+
+        if (!fs.existsSync(transcriptPath)) {
+          throw new Error(`Transcript file not found: ${transcriptPath}`);
+        }
+
+        const filenames: string[] = [transcriptPath];
+        for (const itemUuid of itemUuids) {
+          const item = db.getItem(itemUuid);
+          if (
+            !item ||
+            !item.filename ||
+            item.fetch_status !== FetchStatus.Complete
+          ) {
+            throw new Error(`Item ${itemUuid} has not been downloaded yet`);
+          }
+          if (!fs.existsSync(item.filename)) {
+            throw new Error(`File not found: ${item.filename}`);
+          }
+          filenames.push(item.filename);
+        }
+        return await exporter.export(filenames, passphrase);
+      } catch (error) {
+        console.error(`Failed to export source: ${sourceUuid}:`, error);
+        throw error;
+      }
     },
   );
 
