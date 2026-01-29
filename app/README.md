@@ -10,7 +10,7 @@ This is an Electron-based desktop application that provides a secure interface f
 
 ## Prerequisites
 
-- Node.js (v22 or later)
+- Node.js v24
 - Rust toolchain (2021 edition or later; for the proxy component)
 - pnpm package manager
 - System packages `jq`, `pkg-config`, and `openssl`

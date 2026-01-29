@@ -13,7 +13,7 @@ RUN apt-get update && apt-get --yes upgrade && apt-get install --yes build-essen
 
 COPY qubes_42.sources /etc/apt/sources.list.d/
 RUN sed -i s/##VERSION_CODENAME##/${DISTRO}/ /etc/apt/sources.list.d/qubes_42.sources
-COPY nodesource-node22.sources /etc/apt/sources.list.d/
+COPY nodesource-node24.sources /etc/apt/sources.list.d/
 
 # Keep in sync with rust-toolchain.toml
 ENV RUST_VERSION 1.90.0

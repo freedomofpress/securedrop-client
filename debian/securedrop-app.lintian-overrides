@@ -3,7 +3,6 @@ securedrop-app: embedded-library freetype [usr/lib/securedrop-app/securedrop-app
 securedrop-app: embedded-library lcms2 [usr/lib/securedrop-app/securedrop-app]
 securedrop-app: embedded-library libjpeg [usr/lib/securedrop-app/securedrop-app]
 securedrop-app: embedded-library libjsoncpp [usr/lib/securedrop-app/securedrop-app]
-securedrop-app: embedded-library libpng [usr/lib/securedrop-app/securedrop-app]
 securedrop-app: embedded-library openjpeg [usr/lib/securedrop-app/securedrop-app]
 securedrop-app: embedded-library srtp [usr/lib/securedrop-app/securedrop-app]
 securedrop-app: embedded-library tiff [usr/lib/securedrop-app/securedrop-app]
