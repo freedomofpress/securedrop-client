@@ -116,13 +116,25 @@ jobs:
       - name: Generate translator screenshots
         working-directory: app
         run: xvfb-run --auto-servernum --server-args="-screen 0 1920x1080x24" pnpm translator-screenshots
-      - name: Upload screenshots
+      - name: Save screenshots
         uses: actions/upload-artifact@v6
         with:
           name: translator-screenshots
           path: app/screenshots/
           retention-days: 30
           if-no-files-found: error
+      - name: Upload screenshots to Weblate and associate with source strings (on main branch only)
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        working-directory: app
+        run: |
+          pip3 install requests
+          python3 scripts/upload_screenshots.py \
+            --project securedrop \
+            --component securedrop-app \
+            screenshots/
+        env:
+          WEBLATE: ${{ vars.WEBLATE }}
+          WEBLATE_API_TOKEN: ${{ secrets.WEBLATE_API_TOKEN }}
 
   integration-tests:
     strategy:
