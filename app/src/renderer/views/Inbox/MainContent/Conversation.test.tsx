@@ -285,6 +285,40 @@ describe("Conversation Component Reply Submission", () => {
   });
 });
 
+describe("Conversation draft persistence", () => {
+  it("should restore a draft from Redux state on mount", async () => {
+    renderWithProviders(
+      <Conversation sourceWithItems={mockSourceWithItems} />,
+      {
+        preloadedState: {
+          drafts: {
+            drafts: { "source-1": "my saved draft" },
+          },
+        },
+      },
+    );
+
+    const textarea = screen.getByTestId("reply-textarea");
+    expect(textarea).toHaveValue("my saved draft");
+  });
+
+  it("should not restore a draft for a different source", async () => {
+    renderWithProviders(
+      <Conversation sourceWithItems={mockSourceWithItems} />,
+      {
+        preloadedState: {
+          drafts: {
+            drafts: { "source-other": "wrong draft" },
+          },
+        },
+      },
+    );
+
+    const textarea = screen.getByTestId("reply-textarea");
+    expect(textarea).toHaveValue("");
+  });
+});
+
 describe("Conversation new message indicator", () => {
   const baseItems = [createMessageItem("item-1", 1)];
 
