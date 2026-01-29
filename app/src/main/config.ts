@@ -85,5 +85,5 @@ function readEnvironment(
   key: string,
   defaultValue?: string,
 ): string | undefined {
-  return import.meta.env[key] || defaultValue;
+  return import.meta.env[key] || process.env[key] || defaultValue;
 }

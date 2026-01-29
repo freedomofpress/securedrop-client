@@ -11,9 +11,30 @@ files:
   - "!{tsconfig.json,tsconfig.node.json,tsconfig.web.json}"
 asarUnpack:
   - resources/**
+  - node_modules/better-sqlite3/**
 extraResources:
-  - from: node_modules/@dbmate/linux-x64/bin/dbmate
-    to: bin/dbmate
   - from: src/main/database/migrations
     to: migrations
 npmRebuild: false
+linux:
+  extraResources:
+    - from: node_modules/@dbmate/linux-x64/bin/dbmate
+      to: bin/dbmate
+mac:
+  target:
+    - dmg
+  category: public.app-category.productivity
+  hardenedRuntime: true
+  gatekeeperAssess: false
+  entitlements: build/entitlements.mac.plist
+  entitlementsInherit: build/entitlements.mac.plist
+  extraResources:
+    - from: node_modules/@dbmate/darwin-arm64/bin/dbmate
+      to: bin/dbmate
+    - from: ../target/release/securedrop-proxy
+      to: bin/securedrop-proxy
+    - from: scripts/securedrop-test-key.asc
+      to: keys/securedrop-test-key.asc
+dmg:
+  sign: true
+  title: "${productName}-${version}"

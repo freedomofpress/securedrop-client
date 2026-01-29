@@ -28,6 +28,7 @@
     "postinstall": "./scripts/download-sqlite-binaries.py",
     "build:unpack": "pnpm run build && electron-builder --dir",
     "build:linux": "pnpm run build && electron-builder --linux",
+    "build:mac-demo": "cargo build --release --manifest-path ../proxy/Cargo.toml && PROXY_ORIGIN=https://demo-journalist.securedrop.org electron-vite build --mode mac-demo && electron-builder --mac",
     "dbmate": "sh -c 'dbmate --url sqlite:$HOME/.config/SecureDrop/db.sqlite --migrations-dir ./src/main/database/migrations --schema-file ./src/main/database/schema.sql \"$@\"' _",
     "dbmate:check": "pnpm run dbmate up && pnpm run dbmate dump && git diff --exit-code ./src/main/database/schema.sql",
     "translator-screenshots": "electron-vite build --mode test && rm -rf ./screenshots && mkdir -p ./screenshots && node ./scripts/translator-screenshots/main.js",

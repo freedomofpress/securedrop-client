@@ -65,6 +65,20 @@ export default defineConfig(({ mode }) => {
       );
     }
     mainVars["import.meta.env.GNUPGHOME"] = JSON.stringify(gpgHome);
+  } else if (mode === "mac-demo") {
+    // Mac demo mode: proxy binary is bundled, GPG keyring is set up at runtime
+    if (!process.env.PROXY_ORIGIN) {
+      throw new Error(
+        "PROXY_ORIGIN environment variable is required for mac-demo mode",
+      );
+    }
+    mainVars["__PROXY_ORIGIN__"] = JSON.stringify(process.env.PROXY_ORIGIN);
+    mainVars["__PROXY_CMD__"] = '""'; // Determined at runtime from bundled binary
+    mainVars["__VITE_NONCE__"] = '""';
+    // Set test submission key fingerprint (GPG keyring created at runtime)
+    mainVars["import.meta.env.SD_SUBMISSION_KEY_FPR"] = JSON.stringify(
+      "65A1B5FF195B56353CC63DFFCC40EF1228271441",
+    );
   } else {
     // In production, PROXY_CMD is determined at runtime, and PROXY_ORIGIN is managed by the proxy VM
     mainVars["__PROXY_CMD__"] = '""'; // Empty string
@@ -102,7 +116,7 @@ export default defineConfig(({ mode }) => {
         assetsInlineLimit: 0, // Disable inlining assets as data URIs for strict CSP
       },
       html:
-        mode === "development"
+        mode === "development" || mode === "mac-demo"
           ? {
               cspNonce: viteNonce,
             }
