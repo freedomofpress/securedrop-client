@@ -119,6 +119,11 @@ const electronAPI = {
   initiateExport: logIpcCall<DeviceStatus>("initiateExport", () =>
     ipcRenderer.invoke("initiateExport"),
   ),
+  exportTranscript: logIpcCall<DeviceStatus>(
+    "exportTranscript",
+    (sourceUuid: string, passphrase: string) =>
+      ipcRenderer.invoke("exportTranscript", sourceUuid, passphrase),
+  ),
   export: logIpcCall<DeviceStatus>(
     "export",
     (itemUuids: string[], passphrase: string) =>
@@ -129,6 +134,10 @@ const electronAPI = {
   ),
   print: logIpcCall<DeviceStatus>("print", (itemUuid: string) =>
     ipcRenderer.invoke("print", itemUuid),
+  ),
+  printTranscript: logIpcCall<DeviceStatus>(
+    "printTranscript",
+    (sourceUuid: string) => ipcRenderer.invoke("printTranscript", sourceUuid),
   ),
   cancelExport: logIpcCall<void>("cancelExport", () =>
     ipcRenderer.invoke("cancelExport"),

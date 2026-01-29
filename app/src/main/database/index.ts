@@ -114,6 +114,8 @@ export class DB {
     { uuid: string; data: string; version: string },
     void
   >;
+  private selectJournalist: Statement<{ uuid: string }, JournalistRow>;
+
   private deleteJournalist: Statement<{ uuid: string }, void>;
 
   private selectAllSources: Statement<[], SourceRow>;
@@ -227,6 +229,11 @@ export class DB {
     this.selectAllJournalistVersion = this.db.prepare(
       "SELECT uuid, version FROM journalists",
     );
+
+    this.selectJournalist = this.db.prepare(
+      "SELECT uuid, data FROM journalists WHERE uuid = @uuid",
+    );
+
     this.upsertJournalist = this.db.prepare(
       "INSERT INTO journalists (uuid, data, version) VALUES (@uuid, @data, @version) ON CONFLICT(uuid) DO UPDATE SET data=@data, version=@version",
     );
@@ -555,7 +562,7 @@ export class DB {
 
   // Updates journalist metadata in DB. Should be run in a transaction that also
   // updates the global index version.
-  private updateJournalists(journalists: {
+  updateJournalists(journalists: {
     [uuid: string]: JournalistMetadata | null;
   }) {
     Object.keys(journalists).forEach((id: string) => {
@@ -674,6 +681,26 @@ export class DB {
         data,
       };
     });
+  }
+
+  getJournalistByID(journalistUuid: string): Journalist {
+    if (!this.db) {
+      throw new Error("Database is not open");
+    }
+    const journalistRow = this.selectJournalist.get({
+      uuid: journalistUuid,
+    }) as JournalistRow | undefined;
+
+    if (!journalistRow) {
+      throw new Error(`Journalist with UUID ${journalistUuid} not found`);
+    }
+
+    const journalistData = JSON.parse(journalistRow.data);
+
+    return {
+      uuid: journalistRow.uuid,
+      data: journalistData as JournalistMetadata,
+    };
   }
 
   // Selects items that are ready to be downloaded + decrypted. This

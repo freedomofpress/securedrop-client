@@ -18,6 +18,12 @@
       "messagePlaceholder": "Message {{designation}}...",
       "newMessagesDivider": "nouveaux messages"
     },
+    "menu": {
+      "exportTranscript": "Exporter la transcription",
+      "printTranscript": "Imprimer la transcription",
+      "deleteSource": "Supprimer le compte de la source",
+      "clickToOpen": "Clicquer pour ouvrir"
+    },
     "itemEncrypted": "Message chiffré...",
     "lastSourceActivity": "Dernière activité de la source",
     "you": "Vous",

@@ -2,7 +2,12 @@ import { screen, waitFor } from "@testing-library/react";
 import { expect, describe, it, vi, beforeEach, afterEach } from "vitest";
 import userEvent from "@testing-library/user-event";
 import { PrintWizard } from "./Print";
-import { PrintStatus, FetchStatus, type Item } from "../../../../../../types";
+import {
+  PrintStatus,
+  FetchStatus,
+  type Item,
+  type PrintPayload,
+} from "../../../../../../types";
 import { renderWithProviders } from "../../../../../test-component-setup";
 
 describe("PrintWizard Component", () => {
@@ -19,6 +24,11 @@ describe("PrintWizard Component", () => {
     },
     fetch_status: FetchStatus.Complete,
     filename: "/path/to/testfile.pdf",
+  };
+
+  const mockPrintPayload: PrintPayload = {
+    type: "file",
+    payload: mockItem,
   };
 
   const mockOnClose = vi.fn();
@@ -49,7 +59,11 @@ describe("PrintWizard Component", () => {
   describe("Initial State", () => {
     it("renders nothing when not open", () => {
       renderWithProviders(
-        <PrintWizard item={mockItem} open={false} onClose={mockOnClose} />,
+        <PrintWizard
+          item={mockPrintPayload}
+          open={false}
+          onClose={mockOnClose}
+        />,
       );
 
       expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
@@ -57,7 +71,11 @@ describe("PrintWizard Component", () => {
 
     it("displays preflight state with all required content when open", async () => {
       renderWithProviders(
-        <PrintWizard item={mockItem} open={true} onClose={mockOnClose} />,
+        <PrintWizard
+          item={mockPrintPayload}
+          open={true}
+          onClose={mockOnClose}
+        />,
       );
 
       await waitFor(() => {
@@ -92,7 +110,11 @@ describe("PrintWizard Component", () => {
       );
 
       renderWithProviders(
-        <PrintWizard item={mockItem} open={true} onClose={mockOnClose} />,
+        <PrintWizard
+          item={mockPrintPayload}
+          open={true}
+          onClose={mockOnClose}
+        />,
       );
 
       await waitFor(() => {
@@ -106,7 +128,11 @@ describe("PrintWizard Component", () => {
   describe("Preflight State Machine", () => {
     it("automatically transitions to PREFLIGHT_COMPLETE on success", async () => {
       renderWithProviders(
-        <PrintWizard item={mockItem} open={true} onClose={mockOnClose} />,
+        <PrintWizard
+          item={mockPrintPayload}
+          open={true}
+          onClose={mockOnClose}
+        />,
       );
 
       await waitFor(() => {
@@ -132,7 +158,11 @@ describe("PrintWizard Component", () => {
       );
 
       renderWithProviders(
-        <PrintWizard item={mockItem} open={true} onClose={mockOnClose} />,
+        <PrintWizard
+          item={mockPrintPayload}
+          open={true}
+          onClose={mockOnClose}
+        />,
       );
 
       // First show PREFLIGHT_COMPLETE state
@@ -159,7 +189,11 @@ describe("PrintWizard Component", () => {
       );
 
       renderWithProviders(
-        <PrintWizard item={mockItem} open={true} onClose={mockOnClose} />,
+        <PrintWizard
+          item={mockPrintPayload}
+          open={true}
+          onClose={mockOnClose}
+        />,
       );
 
       await waitFor(() => {
@@ -178,7 +212,11 @@ describe("PrintWizard Component", () => {
       );
 
       renderWithProviders(
-        <PrintWizard item={mockItem} open={true} onClose={mockOnClose} />,
+        <PrintWizard
+          item={mockPrintPayload}
+          open={true}
+          onClose={mockOnClose}
+        />,
       );
 
       await navigateToPrinting();
@@ -202,14 +240,18 @@ describe("PrintWizard Component", () => {
 
     it("calls print API with correct parameters", async () => {
       renderWithProviders(
-        <PrintWizard item={mockItem} open={true} onClose={mockOnClose} />,
+        <PrintWizard
+          item={mockPrintPayload}
+          open={true}
+          onClose={mockOnClose}
+        />,
       );
 
       await navigateToPrinting();
 
       await waitFor(() => {
         expect(vi.mocked(window.electronAPI.print)).toHaveBeenCalledWith(
-          mockItem.uuid,
+          mockPrintPayload.payload.uuid,
         );
       });
     });
@@ -218,7 +260,11 @@ describe("PrintWizard Component", () => {
   describe("Success State", () => {
     it("auto-closes modal on successful print", async () => {
       renderWithProviders(
-        <PrintWizard item={mockItem} open={true} onClose={mockOnClose} />,
+        <PrintWizard
+          item={mockPrintPayload}
+          open={true}
+          onClose={mockOnClose}
+        />,
       );
 
       await navigateToPrinting();
@@ -250,7 +296,11 @@ describe("PrintWizard Component", () => {
         vi.mocked(window.electronAPI.print).mockResolvedValueOnce(errorStatus);
 
         renderWithProviders(
-          <PrintWizard item={mockItem} open={true} onClose={mockOnClose} />,
+          <PrintWizard
+            item={mockPrintPayload}
+            open={true}
+            onClose={mockOnClose}
+          />,
         );
 
         await navigateToPrinting();
@@ -268,7 +318,11 @@ describe("PrintWizard Component", () => {
       );
 
       renderWithProviders(
-        <PrintWizard item={mockItem} open={true} onClose={mockOnClose} />,
+        <PrintWizard
+          item={mockPrintPayload}
+          open={true}
+          onClose={mockOnClose}
+        />,
       );
 
       await navigateToPrinting();
@@ -284,7 +338,11 @@ describe("PrintWizard Component", () => {
       );
 
       renderWithProviders(
-        <PrintWizard item={mockItem} open={true} onClose={mockOnClose} />,
+        <PrintWizard
+          item={mockPrintPayload}
+          open={true}
+          onClose={mockOnClose}
+        />,
       );
 
       await navigateToPrinting();
@@ -304,7 +362,11 @@ describe("PrintWizard Component", () => {
   describe("Cancel and Reset", () => {
     it("calls onClose and cancelPrint IPC when Cancel button is clicked", async () => {
       renderWithProviders(
-        <PrintWizard item={mockItem} open={true} onClose={mockOnClose} />,
+        <PrintWizard
+          item={mockPrintPayload}
+          open={true}
+          onClose={mockOnClose}
+        />,
       );
 
       await waitForPreflightComplete();
@@ -325,7 +387,11 @@ describe("PrintWizard Component", () => {
       );
 
       const { rerender } = renderWithProviders(
-        <PrintWizard item={mockItem} open={true} onClose={mockOnClose} />,
+        <PrintWizard
+          item={mockPrintPayload}
+          open={true}
+          onClose={mockOnClose}
+        />,
       );
 
       await navigateToPrinting();
@@ -336,10 +402,18 @@ describe("PrintWizard Component", () => {
 
       // Close and reopen modal
       rerender(
-        <PrintWizard item={mockItem} open={false} onClose={mockOnClose} />,
+        <PrintWizard
+          item={mockPrintPayload}
+          open={false}
+          onClose={mockOnClose}
+        />,
       );
       rerender(
-        <PrintWizard item={mockItem} open={true} onClose={mockOnClose} />,
+        <PrintWizard
+          item={mockPrintPayload}
+          open={true}
+          onClose={mockOnClose}
+        />,
       );
 
       // Should be back at initial PREFLIGHT state
@@ -360,9 +434,13 @@ describe("PrintWizard Component", () => {
     ])("displays filename correctly: %s -> %s", async (filename, expected) => {
       const itemWithFilename: Item = { ...mockItem, filename };
 
+      const mockPayloadWithFilename: PrintPayload = {
+        type: "file",
+        payload: itemWithFilename,
+      };
       renderWithProviders(
         <PrintWizard
-          item={itemWithFilename}
+          item={mockPayloadWithFilename}
           open={true}
           onClose={mockOnClose}
         />,
@@ -386,7 +464,11 @@ describe("PrintWizard Component", () => {
       const printMock = vi.mocked(window.electronAPI.print);
 
       renderWithProviders(
-        <PrintWizard item={mockItem} open={true} onClose={mockOnClose} />,
+        <PrintWizard
+          item={mockPrintPayload}
+          open={true}
+          onClose={mockOnClose}
+        />,
       );
 
       // Verify preflight
@@ -398,7 +480,7 @@ describe("PrintWizard Component", () => {
 
       // Verify print was called and modal auto-closed
       await waitFor(() => {
-        expect(printMock).toHaveBeenCalledWith(mockItem.uuid);
+        expect(printMock).toHaveBeenCalledWith(mockPrintPayload.payload.uuid);
         expect(mockOnClose).toHaveBeenCalledTimes(1);
       });
     });

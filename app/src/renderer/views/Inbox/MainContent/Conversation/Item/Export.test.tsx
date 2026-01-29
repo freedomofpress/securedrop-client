@@ -7,6 +7,7 @@ import {
   FetchStatus,
   DeviceErrorStatus,
   type Item,
+  type ExportPayload,
 } from "../../../../../../types";
 import { renderWithProviders } from "../../../../../test-component-setup";
 
@@ -24,6 +25,11 @@ describe("ExportWizard Component", () => {
     },
     fetch_status: FetchStatus.Complete,
     filename: "/path/to/testfile.pdf",
+  };
+
+  const mockFilePayload: ExportPayload = {
+    type: "file",
+    payload: mockItem,
   };
 
   const mockOnClose = vi.fn();
@@ -69,7 +75,11 @@ describe("ExportWizard Component", () => {
   describe("Initial and Preflight State", () => {
     it("renders nothing when not open", () => {
       renderWithProviders(
-        <ExportWizard item={mockItem} open={false} onClose={mockOnClose} />,
+        <ExportWizard
+          item={mockFilePayload}
+          open={false}
+          onClose={mockOnClose}
+        />,
       );
 
       expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
@@ -77,7 +87,11 @@ describe("ExportWizard Component", () => {
 
     it("displays preflight state with warnings and disabled Continue button", async () => {
       renderWithProviders(
-        <ExportWizard item={mockItem} open={true} onClose={mockOnClose} />,
+        <ExportWizard
+          item={mockFilePayload}
+          open={true}
+          onClose={mockOnClose}
+        />,
       );
 
       await waitFor(() => {
@@ -98,7 +112,11 @@ describe("ExportWizard Component", () => {
 
     it("automatically transitions to PREFLIGHT_COMPLETE and enables Continue button", async () => {
       renderWithProviders(
-        <ExportWizard item={mockItem} open={true} onClose={mockOnClose} />,
+        <ExportWizard
+          item={mockFilePayload}
+          open={true}
+          onClose={mockOnClose}
+        />,
       );
 
       await waitForPreflightComplete();
@@ -121,7 +139,11 @@ describe("ExportWizard Component", () => {
       );
 
       renderWithProviders(
-        <ExportWizard item={mockItem} open={true} onClose={mockOnClose} />,
+        <ExportWizard
+          item={mockFilePayload}
+          open={true}
+          onClose={mockOnClose}
+        />,
       );
 
       await waitFor(() => {
@@ -134,7 +156,11 @@ describe("ExportWizard Component", () => {
 
     it("transitions to UNLOCK_DEVICE when Continue clicked", async () => {
       renderWithProviders(
-        <ExportWizard item={mockItem} open={true} onClose={mockOnClose} />,
+        <ExportWizard
+          item={mockFilePayload}
+          open={true}
+          onClose={mockOnClose}
+        />,
       );
 
       await navigateToUnlockDevice();
@@ -148,7 +174,11 @@ describe("ExportWizard Component", () => {
   describe("Unlock Device State", () => {
     it("shows passphrase input with Continue disabled until passphrase entered", async () => {
       renderWithProviders(
-        <ExportWizard item={mockItem} open={true} onClose={mockOnClose} />,
+        <ExportWizard
+          item={mockFilePayload}
+          open={true}
+          onClose={mockOnClose}
+        />,
       );
 
       await navigateToUnlockDevice();
@@ -166,7 +196,11 @@ describe("ExportWizard Component", () => {
 
     it("navigates back to PREFLIGHT_COMPLETE when Back button clicked", async () => {
       renderWithProviders(
-        <ExportWizard item={mockItem} open={true} onClose={mockOnClose} />,
+        <ExportWizard
+          item={mockFilePayload}
+          open={true}
+          onClose={mockOnClose}
+        />,
       );
 
       await navigateToUnlockDevice();
@@ -188,7 +222,11 @@ describe("ExportWizard Component", () => {
       );
 
       renderWithProviders(
-        <ExportWizard item={mockItem} open={true} onClose={mockOnClose} />,
+        <ExportWizard
+          item={mockFilePayload}
+          open={true}
+          onClose={mockOnClose}
+        />,
       );
 
       await waitForPreflightComplete();
@@ -218,7 +256,11 @@ describe("ExportWizard Component", () => {
       );
 
       renderWithProviders(
-        <ExportWizard item={mockItem} open={true} onClose={mockOnClose} />,
+        <ExportWizard
+          item={mockFilePayload}
+          open={true}
+          onClose={mockOnClose}
+        />,
       );
 
       await navigateToUnlockDevice();
@@ -237,7 +279,11 @@ describe("ExportWizard Component", () => {
       const exportMock = vi.mocked(window.electronAPI.export);
 
       renderWithProviders(
-        <ExportWizard item={mockItem} open={true} onClose={mockOnClose} />,
+        <ExportWizard
+          item={mockFilePayload}
+          open={true}
+          onClose={mockOnClose}
+        />,
       );
 
       await navigateToUnlockDevice();
@@ -246,7 +292,7 @@ describe("ExportWizard Component", () => {
 
       await waitFor(() => {
         expect(exportMock).toHaveBeenCalledWith(
-          [mockItem.uuid],
+          [mockFilePayload.payload.uuid],
           testPassphrase,
         );
       });
@@ -254,7 +300,11 @@ describe("ExportWizard Component", () => {
 
     it("shows success state with Done button and closes on click", async () => {
       renderWithProviders(
-        <ExportWizard item={mockItem} open={true} onClose={mockOnClose} />,
+        <ExportWizard
+          item={mockFilePayload}
+          open={true}
+          onClose={mockOnClose}
+        />,
       );
 
       await navigateToUnlockDevice();
@@ -279,7 +329,11 @@ describe("ExportWizard Component", () => {
   describe("Cancel and Reset", () => {
     it("calls onClose and cancelExport IPC when Cancel button clicked", async () => {
       renderWithProviders(
-        <ExportWizard item={mockItem} open={true} onClose={mockOnClose} />,
+        <ExportWizard
+          item={mockFilePayload}
+          open={true}
+          onClose={mockOnClose}
+        />,
       );
 
       await waitForPreflightComplete();
@@ -295,16 +349,28 @@ describe("ExportWizard Component", () => {
 
     it("resets state when closed and reopened", async () => {
       const { rerender } = renderWithProviders(
-        <ExportWizard item={mockItem} open={true} onClose={mockOnClose} />,
+        <ExportWizard
+          item={mockFilePayload}
+          open={true}
+          onClose={mockOnClose}
+        />,
       );
 
       await navigateToUnlockDevice();
 
       rerender(
-        <ExportWizard item={mockItem} open={false} onClose={mockOnClose} />,
+        <ExportWizard
+          item={mockFilePayload}
+          open={false}
+          onClose={mockOnClose}
+        />,
       );
       rerender(
-        <ExportWizard item={mockItem} open={true} onClose={mockOnClose} />,
+        <ExportWizard
+          item={mockFilePayload}
+          open={true}
+          onClose={mockOnClose}
+        />,
       );
 
       await waitFor(() => {
@@ -336,7 +402,11 @@ describe("ExportWizard Component", () => {
         );
 
         renderWithProviders(
-          <ExportWizard item={mockItem} open={true} onClose={mockOnClose} />,
+          <ExportWizard
+            item={mockFilePayload}
+            open={true}
+            onClose={mockOnClose}
+          />,
         );
 
         // Wait for preflight to complete
@@ -367,7 +437,11 @@ describe("ExportWizard Component", () => {
         .mockResolvedValueOnce(ExportStatus.DEVICE_LOCKED);
 
       renderWithProviders(
-        <ExportWizard item={mockItem} open={true} onClose={mockOnClose} />,
+        <ExportWizard
+          item={mockFilePayload}
+          open={true}
+          onClose={mockOnClose}
+        />,
       );
 
       // Wait for preflight to complete
@@ -411,7 +485,11 @@ describe("ExportWizard Component", () => {
         vi.mocked(window.electronAPI.export).mockResolvedValueOnce(status);
 
         renderWithProviders(
-          <ExportWizard item={mockItem} open={true} onClose={mockOnClose} />,
+          <ExportWizard
+            item={mockFilePayload}
+            open={true}
+            onClose={mockOnClose}
+          />,
         );
 
         await navigateToUnlockDevice();
@@ -430,7 +508,11 @@ describe("ExportWizard Component", () => {
         .mockResolvedValueOnce(ExportStatus.SUCCESS_EXPORT);
 
       renderWithProviders(
-        <ExportWizard item={mockItem} open={true} onClose={mockOnClose} />,
+        <ExportWizard
+          item={mockFilePayload}
+          open={true}
+          onClose={mockOnClose}
+        />,
       );
 
       await navigateToUnlockDevice();
@@ -467,7 +549,11 @@ describe("ExportWizard Component", () => {
         vi.mocked(window.electronAPI.export).mockResolvedValueOnce(status);
 
         renderWithProviders(
-          <ExportWizard item={mockItem} open={true} onClose={mockOnClose} />,
+          <ExportWizard
+            item={mockFilePayload}
+            open={true}
+            onClose={mockOnClose}
+          />,
         );
 
         await navigateToUnlockDevice();
@@ -507,7 +593,11 @@ describe("ExportWizard Component", () => {
         vi.mocked(window.electronAPI.export).mockResolvedValueOnce(status);
 
         renderWithProviders(
-          <ExportWizard item={mockItem} open={true} onClose={mockOnClose} />,
+          <ExportWizard
+            item={mockFilePayload}
+            open={true}
+            onClose={mockOnClose}
+          />,
         );
 
         await navigateToUnlockDevice();

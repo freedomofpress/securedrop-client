@@ -190,11 +190,13 @@ beforeEach(() => {
     clearClipboard: vi.fn().mockResolvedValue(null),
     openFile: vi.fn().mockResolvedValue(undefined),
     initiateExport: vi.fn().mockResolvedValue(ExportStatus.DEVICE_LOCKED),
+    exportTranscript: vi.fn().mockResolvedValue(ExportStatus.SUCCESS_EXPORT),
     export: vi.fn().mockResolvedValue(ExportStatus.SUCCESS_EXPORT),
     initiatePrint: vi
       .fn()
       .mockResolvedValue(PrintStatus.PRINT_PREFLIGHT_SUCCESS),
     print: vi.fn().mockResolvedValue(PrintStatus.PRINT_SUCCESS),
+    printTranscript: vi.fn().mockResolvedValue(PrintStatus.PRINT_SUCCESS),
     cancelExport: vi.fn().mockResolvedValue(null),
     cancelPrint: vi.fn().mockResolvedValue(null),
   } as ElectronAPI;
