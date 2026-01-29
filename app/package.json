@@ -9,6 +9,9 @@
     "email": "securedrop@freedom.press"
   },
   "homepage": "https://securedrop.org",
+  "engines": {
+    "node": ">=24"
+  },
   "scripts": {
     "start": "electron-vite preview",
     "dev": "electron-vite dev",
@@ -52,7 +55,7 @@
     "@types/react-window": "^1.8.8",
     "@vitejs/plugin-react": "^5.1.2",
     "@vitest/coverage-v8": "^3.2.4",
-    "electron": "39.2.7",
+    "electron": "40.0.0",
     "electron-builder": "<26.3.1",
     "electron-devtools-installer": "^4.0.0",
     "electron-vite": "^5.0.0",
