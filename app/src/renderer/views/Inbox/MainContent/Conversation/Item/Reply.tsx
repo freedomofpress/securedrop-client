@@ -10,6 +10,7 @@ import { formatJournalistName } from "../../../../../utils";
 import { useAppSelector } from "../../../../../hooks";
 import { Tooltip } from "antd";
 import { ClockCircleOutlined, CheckCircleOutlined } from "@ant-design/icons";
+import TruncatedText from "../../../../../components/TruncatedText";
 import "../Item.css";
 import "./Reply.css";
 
@@ -139,7 +140,7 @@ function Reply({ item }: ReplyProps) {
           {isEncrypted ? (
             <span className="italic text-gray-500">{t("itemEncrypted")}</span>
           ) : (
-            messageContent
+            <TruncatedText text={messageContent} />
           )}
           {renderStatusIcon()}
         </div>
