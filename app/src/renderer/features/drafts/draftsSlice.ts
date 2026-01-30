@@ -6,20 +6,8 @@ export interface DraftsState {
   drafts: Record<string, string>;
 }
 
-function loadDraftsFromStorage(): Record<string, string> {
-  try {
-    const stored = localStorage.getItem("drafts");
-    if (stored) {
-      return JSON.parse(stored);
-    }
-  } catch {
-    // Ignore invalid data
-  }
-  return {};
-}
-
 const initialState: DraftsState = {
-  drafts: loadDraftsFromStorage(),
+  drafts: {},
 };
 
 export const draftsSlice = createSlice({

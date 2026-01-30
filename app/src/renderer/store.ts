@@ -16,23 +16,10 @@ const rootReducer = combineReducers({
 });
 
 export const setupStore = (preloadedState?: Partial<RootState>) => {
-  const store = configureStore({
+  return configureStore({
     reducer: rootReducer,
     preloadedState,
   });
-
-  store.subscribe(() => {
-    try {
-      localStorage.setItem(
-        "drafts",
-        JSON.stringify(store.getState().drafts.drafts),
-      );
-    } catch {
-      // Ignore write failures (e.g. quota exceeded)
-    }
-  });
-
-  return store;
 };
 
 export type RootState = ReturnType<typeof rootReducer>;
