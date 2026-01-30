@@ -5,9 +5,14 @@ import NewMessagesDivider from "./Conversation/NewMessagesDivider";
 import EmptyConversation from "./EmptyConversation";
 import { Form, Input, Button } from "antd";
 import { useTranslation } from "react-i18next";
-import { memo, useMemo, useCallback, useState, useEffect } from "react";
-import { useAppDispatch, useAppSelector } from "../../../hooks";
+import { memo, useMemo, useCallback, useState, useEffect, useRef } from "react";
+import { useAppDispatch, useAppSelector, useDebounce } from "../../../hooks";
 import { fetchSources } from "../../../features/sources/sourcesSlice";
+import {
+  setDraft,
+  clearDraft,
+  selectDraft,
+} from "../../../features/drafts/draftsSlice";
 import {
   fetchConversation,
   updateItemFetchStatus,
@@ -16,6 +21,8 @@ import { syncMetadata } from "../../../features/sync/syncSlice";
 import useConversationScroll from "./Conversation/useConversationScroll";
 import "./Conversation.css";
 import { FetchStatus } from "../../../../types";
+
+const MAX_REPLY_LENGTH = 5000;
 
 interface ConversationProps {
   sourceWithItems: SourceWithItems | null;
@@ -27,8 +34,12 @@ const Conversation = memo(function Conversation({
   const { t } = useTranslation("MainContent");
   const dispatch = useAppDispatch();
   const session = useAppSelector((state) => state.session);
+  const sourceUuid = sourceWithItems?.uuid ?? "";
+  const savedDraft = useAppSelector(selectDraft(sourceUuid));
   const [form] = Form.useForm();
-  const [messageValue, setMessageValue] = useState("");
+  const [messageValue, setMessageValue] = useState(savedDraft);
+  const debouncedMessage = useDebounce(messageValue, 300);
+  const prevSourceUuidRef = useRef(sourceUuid);
   const {
     acknowledgeNewMessages,
     dividerItemUuid,
@@ -38,6 +49,24 @@ const Conversation = memo(function Conversation({
     oldItems,
     scrollContainerRef,
   } = useConversationScroll(sourceWithItems);
+
+  // Restore draft when switching sources (including initial mount)
+  useEffect(() => {
+    if (prevSourceUuidRef.current !== sourceUuid) {
+      prevSourceUuidRef.current = sourceUuid;
+    }
+    setMessageValue(savedDraft);
+    form.setFieldsValue({ message: savedDraft || undefined });
+    // Only run when the source changes, not when savedDraft changes from our own typing
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [sourceUuid]);
+
+  // Persist draft to Redux (debounced)
+  useEffect(() => {
+    if (sourceUuid) {
+      dispatch(setDraft({ sourceUuid, content: debouncedMessage }));
+    }
+  }, [debouncedMessage, sourceUuid, dispatch]);
 
   const designation = useMemo(
     () => sourceWithItems?.data.journalist_designation,
@@ -53,7 +82,10 @@ const Conversation = memo(function Conversation({
   );
 
   const isSendDisabled = useMemo(
-    () => !messageValue || !messageValue.trim(),
+    () =>
+      !messageValue ||
+      !messageValue.trim() ||
+      messageValue.length > MAX_REPLY_LENGTH,
     [messageValue],
   );
 
@@ -64,6 +96,7 @@ const Conversation = memo(function Conversation({
       // Clear the form immediately for better UX
       form.resetFields();
       setMessageValue("");
+      dispatch(clearDraft(sourceWithItems.uuid));
 
       // Calculate the likely interactionCount this reply will be assigned; it
       // may not be correct (e.g. if the conversation was deleted) but it'll display
@@ -194,14 +227,16 @@ const Conversation = memo(function Conversation({
       <div className="flex-shrink-0 p-4 pt-0">
         <Form form={form} layout="vertical" onFinish={handleSubmit}>
           <div className="relative">
-            <Form.Item name="message" style={{ marginBottom: 0 }}>
+            <Form.Item name="message">
               <Input.TextArea
                 data-testid="reply-textarea"
+                maxLength={MAX_REPLY_LENGTH}
                 rows={4}
                 placeholder={placeholderText}
                 className="w-full border border-gray-300 rounded-lg p-3 text-gray-900 resize-none focus:outline-none focus:ring-2 focus:ring-blue-500 conversation-textarea"
                 onChange={(e) => setMessageValue(e.target.value)}
                 onKeyDown={sendReply}
+                showCount
               />
             </Form.Item>
             <Button
