@@ -166,11 +166,13 @@ describe("ArchiveExporter", () => {
       await tar.x({ file: archivePath, cwd: extractDir });
       expect(fs.existsSync(path.join(extractDir, "metadata.json"))).toBe(true);
       expect(
-        fs.existsSync(path.join(extractDir, "export_data", "file1.txt")),
+        fs.existsSync(
+          path.join(extractDir, "export_data", "archive-file1.txt"),
+        ),
       ).toBe(true);
       expect(
         fs.readFileSync(
-          path.join(extractDir, "export_data", "file1.txt"),
+          path.join(extractDir, "export_data", "archive-file1.txt"),
           "utf8",
         ),
       ).toBe(fileContent);
@@ -202,15 +204,76 @@ describe("ArchiveExporter", () => {
       fs.mkdirSync(extractDir);
       await tar.x({ file: archivePath, cwd: extractDir });
 
-      // transcript.txt should be under export_data/parent/transcript.txt
+      // Without sourceName, files go directly under export_data/ with parent prefix
       expect(
         fs.existsSync(
-          path.join(extractDir, "export_data", "parent", "transcript.txt"),
+          path.join(extractDir, "export_data", "parent-transcript.txt"),
         ),
       ).toBe(true);
       expect(
         fs.readFileSync(
-          path.join(extractDir, "export_data", "parent", "transcript.txt"),
+          path.join(extractDir, "export_data", "parent-transcript.txt"),
+          "utf8",
+        ),
+      ).toBe("B");
+
+      expect(
+        fs.existsSync(path.join(extractDir, "export_data", "parent-a.txt")),
+      ).toBe(true);
+      expect(
+        fs.readFileSync(
+          path.join(extractDir, "export_data", "parent-a.txt"),
+          "utf8",
+        ),
+      ).toBe("A");
+      cleanupDir(extractDir);
+    });
+
+    it("creates an archive with sourceName and files under source directory", async () => {
+      const exporter = new ArchiveExporter();
+      const archiveFilename = "test-archive5.tar.gz";
+      const metadata = { foo: "bar" };
+
+      const parentDir = path.join(archiveDir, "parent");
+      fs.mkdirSync(parentDir, { recursive: true });
+      const fileA = path.join(parentDir, "a.txt");
+      const fileB = path.join(parentDir, "transcript.txt");
+      fs.writeFileSync(fileA, "A");
+      fs.writeFileSync(fileB, "B");
+
+      const archivePath = await exporter.createArchive({
+        archiveDir,
+        archiveFilename,
+        metadata,
+        filepaths: [fileA, fileB],
+        sourceName: "jovial_seahorse",
+      });
+
+      expect(fs.existsSync(archivePath)).toBe(true);
+
+      const extractDir = path.join(archiveDir, "extract5");
+      fs.mkdirSync(extractDir);
+      await tar.x({ file: archivePath, cwd: extractDir });
+
+      // With sourceName, files go under export_data/<sourceName>/ with parent prefix
+      expect(
+        fs.existsSync(
+          path.join(
+            extractDir,
+            "export_data",
+            "jovial_seahorse",
+            "parent-transcript.txt",
+          ),
+        ),
+      ).toBe(true);
+      expect(
+        fs.readFileSync(
+          path.join(
+            extractDir,
+            "export_data",
+            "jovial_seahorse",
+            "parent-transcript.txt",
+          ),
           "utf8",
         ),
       ).toBe("B");
@@ -220,9 +283,8 @@ describe("ArchiveExporter", () => {
           path.join(
             extractDir,
             "export_data",
-            path.basename(archiveDir),
-            path.basename(parentDir),
-            "a.txt",
+            "jovial_seahorse",
+            "parent-a.txt",
           ),
         ),
       ).toBe(true);
@@ -231,9 +293,8 @@ describe("ArchiveExporter", () => {
           path.join(
             extractDir,
             "export_data",
-            path.basename(archiveDir),
-            path.basename(parentDir),
-            "a.txt",
+            "jovial_seahorse",
+            "parent-a.txt",
           ),
           "utf8",
         ),

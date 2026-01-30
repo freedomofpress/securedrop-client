@@ -422,7 +422,7 @@ export const PrintWizard = memo(function PrintWizard({
             break;
           case "transcript":
             deviceStatus = await window.electronAPI.printTranscript(
-              item.payload.uuid,
+              item.payload.source_uuid,
             );
             break;
         }

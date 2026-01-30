@@ -229,7 +229,17 @@ export type FetchDownloadsMessage = {
 
 export type PayloadTranscript = {
   type: "transcript";
-  payload: SourceWithItems;
+  payload: {
+    source_uuid: string;
+  };
+};
+
+export type PayloadSource = {
+  type: "source";
+  payload: {
+    source_uuid: string;
+    undownloaded_items: boolean;
+  };
 };
 
 export type PayloadFile = {
@@ -238,7 +248,7 @@ export type PayloadFile = {
 };
 
 // additional payload types, eg. full archives, could go here.
-export type ExportPayload = PayloadTranscript | PayloadFile;
+export type ExportPayload = PayloadTranscript | PayloadSource | PayloadFile;
 
 // for now only transcripts or single files may be printed
 export type PrintPayload = PayloadTranscript | PayloadFile;

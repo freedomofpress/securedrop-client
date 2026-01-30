@@ -13,6 +13,7 @@ import { LoaderCircle, FileX2, Inbox, Unlock } from "lucide-react";
 import { Button, Modal, Input } from "antd";
 
 type ExportState =
+  | "CONFIRM_SOURCE"
   | "PREFLIGHT"
   | "PREFLIGHT_COMPLETE"
   | "PREFLIGHT_INSERT_USB"
@@ -37,7 +38,9 @@ type ExportAction =
 
 interface ExportContext {
   state: ExportState;
+  itemType: ExportPayload["type"];
   filename: string;
+  undownloadedItems: boolean;
   passphrase: string;
   deviceLocked: boolean;
   errorMessage: string;
@@ -47,7 +50,9 @@ interface ExportContext {
 
 const initialContext: ExportContext = {
   state: "PREFLIGHT",
+  itemType: "file",
   filename: "",
+  undownloadedItems: false,
   passphrase: "",
   deviceLocked: true,
   errorMessage: "",
@@ -141,9 +146,20 @@ function exportReducer(
     };
   }
   if (action.type === "CANCEL") {
-    return initialContext;
+    return {
+      ...initialContext,
+      itemType: context.itemType,
+      state: context.itemType === "source" ? "CONFIRM_SOURCE" : "PREFLIGHT",
+    };
   }
   switch (context.state) {
+    case "CONFIRM_SOURCE":
+      switch (action.type) {
+        case "START_EXPORT":
+          return { ...context, state: "PREFLIGHT" };
+        default:
+          return context;
+      }
     case "PREFLIGHT":
       switch (action.type) {
         case "PREFLIGHT_COMPLETE":
@@ -275,8 +291,39 @@ interface StateComponentProps {
   context: ExportContext;
   dispatch: React.Dispatch<ExportAction>;
   filename: string;
-  t: (key: string) => string;
+  item: ExportPayload;
+  t: (key: string, options?: Record<string, unknown>) => string;
 }
+
+const ConfirmSourceState = memo(function ConfirmSourceState({
+  context,
+  t,
+}: StateComponentProps) {
+  return (
+    <div>
+      <div className="flex items-center gap-3 mb-4">
+        <Inbox size={24} className="text-blue-500" />
+        <div className="ml-3">
+          <h3 className="text-lg font-semibold">
+            {t("exportWizard.sourceExportTitle")}
+          </h3>
+        </div>
+      </div>
+      <hr className="my-4 border-gray-300" />
+      <div className="space-y-4">
+        <p>{t("exportWizard.sourceExportDescription")}</p>
+        {context.undownloadedItems && (
+          <div>
+            <p className="text-yellow-800">
+              {t("exportWizard.undownloadedFiles")}
+            </p>
+          </div>
+        )}
+        <p></p>
+      </div>
+    </div>
+  );
+});
 
 const PreflightState = memo(function PreflightState({
   context,
@@ -418,7 +465,11 @@ const ExportingState = memo(function ExportingState({
   return (
     <div>
       <div className="flex items-center gap-3 mb-4">
-        <Inbox size={24} className="text-blue-500" />
+        <LoaderCircle
+          className="animate-spin text-blue-500"
+          size={24}
+          strokeWidth={1}
+        />
         <div className="ml-3">
           <h3 className="text-lg font-semibold">{t("wizard.pleaseWait")}</h3>
         </div>
@@ -552,17 +603,20 @@ export const ExportWizard = memo(function ExportWizard({
         : "";
       break;
     case "transcript":
-      filename = "source transcript";
+      filename = t("exportWizard.transcript");
       break;
-    default:
-      filename = "";
-      console.error("Unknown export type: ", item);
+    case "source":
+      filename = t("exportWizard.transcriptAndFiles");
       break;
   }
 
   const [context, dispatch] = useReducer(exportReducer, {
     ...initialContext,
+    state: item.type === "source" ? "CONFIRM_SOURCE" : "PREFLIGHT",
+    itemType: item.type,
     filename: filename,
+    undownloadedItems:
+      item.type === "source" ? item.payload.undownloaded_items : false,
   });
 
   // Refs to track in-progress operations
@@ -646,10 +700,17 @@ export const ExportWizard = memo(function ExportWizard({
             break;
           case "transcript":
             deviceStatus = await window.electronAPI.exportTranscript(
-              item.payload.uuid,
+              item.payload.source_uuid,
               context.passphrase,
             );
             break;
+          case "source": {
+            deviceStatus = await window.electronAPI.exportSource(
+              item.payload.source_uuid,
+              context.passphrase,
+            );
+            break;
+          }
         }
         // Only dispatch if operation hasn't been cancelled
         if (!isCancelled) {
@@ -683,9 +744,11 @@ export const ExportWizard = memo(function ExportWizard({
   };
 
   const renderStateComponent = () => {
-    const stateProps = { context, dispatch, filename, t };
+    const stateProps = { context, dispatch, filename, item, t };
 
     switch (context.state) {
+      case "CONFIRM_SOURCE":
+        return <ConfirmSourceState {...stateProps} />;
       case "PREFLIGHT":
       case "PREFLIGHT_COMPLETE":
         return <PreflightState {...stateProps} />;
@@ -702,13 +765,25 @@ export const ExportWizard = memo(function ExportWizard({
         return <PartialSuccessState {...stateProps} />;
       case "ERROR":
         return <ErrorState {...stateProps} />;
-      default:
-        return null;
     }
   };
 
   const renderFooter = () => {
     switch (context.state) {
+      case "CONFIRM_SOURCE":
+        return [
+          <Button
+            key="continue"
+            type="primary"
+            onClick={() => dispatch({ type: "START_EXPORT" })}
+          >
+            {t("wizard.continue")}
+          </Button>,
+          <Button key="cancel" onClick={handleClose}>
+            {t("wizard.cancel")}
+          </Button>,
+        ];
+
       case "PREFLIGHT":
       case "PREFLIGHT_INSERT_USB":
         return [
@@ -797,9 +872,6 @@ export const ExportWizard = memo(function ExportWizard({
             {t("wizard.close")}
           </Button>,
         ];
-
-      default:
-        return null;
     }
   };
 
