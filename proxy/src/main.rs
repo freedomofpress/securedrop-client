@@ -42,7 +42,10 @@ struct IncomingRequest {
     timeout: u64,
 }
 
-/// Default timeout for requests; serde requires this be a function
+/// Default timeout for requests; serde requires this be a function.  To avoid
+/// timeout confusion, clients of this proxy SHOULD either:
+/// 1. invoke this proxy with the same or a longer process-level timeout; or
+/// 2. explicitly override the timeout at the request level.
 fn default_timeout() -> u64 {
     10
 }
