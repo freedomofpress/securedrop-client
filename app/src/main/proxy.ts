@@ -11,7 +11,10 @@ import type {
 } from "../types";
 
 const DEFAULT_PROXY_VM_NAME = "sd-proxy";
-const DEFAULT_PROXY_CMD_TIMEOUT_MS = 5000 as ms;
+
+// To avoid timeout confusion, timeouts SHOULD be either the same as or longer
+// than the proxy's request-level timeout.
+const DEFAULT_PROXY_CMD_TIMEOUT_MS = 10000 as ms;
 export const MESSAGE_REPLY_DOWNLOAD_TIMEOUT_MS = 20000 as ms;
 
 function parseJSONResponse(response: string): ProxyJSONResponse {
