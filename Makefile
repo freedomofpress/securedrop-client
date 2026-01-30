@@ -121,6 +121,29 @@ rust-test: ## Run Rust tests
 	cargo test
 	cargo test --features qubesdb
 
+.PHONY: install-deps-app
+install-deps-app: ## Install dependencies needed to run the Electron app
+	# Install nvm and Node v24
+	@if [ ! -d "$$HOME/.nvm" ]; then \
+		curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.3/install.sh | bash; \
+	fi
+	@export NVM_DIR="$$HOME/.nvm" && . "$$NVM_DIR/nvm.sh" && nvm install 24
+	# Install Rust toolchain via rustup
+	@if ! command -v rustup > /dev/null 2>&1; then \
+		curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y; \
+	fi
+	@. "$$HOME/.cargo/env" && rustup default stable
+	# Install pnpm via npm
+	@export NVM_DIR="$$HOME/.nvm" && . "$$NVM_DIR/nvm.sh" && npm install -g pnpm
+	# Install system packages
+	apt-get update && apt-get install -y jq pkg-config libssl-dev python3 python3-pip pipx libglib2.0-0 libnspr4 libnss3 libdbus-1-3 libatk1.0-0 libatk-bridge2.0-0 \
+            libcups2 libcairo2 libgtk-3-0 libgbm1 libasound2 xvfb sqlite3
+	# Install poetry
+	@if ! command -v poetry > /dev/null 2>&1; then \
+		pipx install poetry; \
+	fi
+
+
 # Explanation of the below shell command should it ever break.
 # 1. Set the field separator to ": ##" and any make targets that might appear between : and ##
 # 2. Use sed-like syntax to remove the make targets
