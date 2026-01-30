@@ -72,7 +72,7 @@
         }
       },
       "search": {
-        "placeholder": "Search by name"
+        "placeholder": "Filter by name"
       },
       "sort": {
         "tooltip": "Toggle sort order"
