@@ -89,17 +89,17 @@ describe("Export Archive Tests", () => {
       fs.mkdirSync(extractDir);
       await tar.x({ file: archivePath, cwd: extractDir });
 
-      // Single file should be at export_data/document.txt
+      // Single file should be at export_data/<parentName>-document.txt
       const extractedFile = path.join(
         extractDir,
         "export_data",
-        "document.txt",
+        "archives-document.txt",
       );
       expect(fs.existsSync(extractedFile)).toBe(true);
       expect(fs.readFileSync(extractedFile, "utf8")).toBe("test content");
     });
 
-    it("should organize multiple files with grandparent/parent structure", async () => {
+    it("should place multiple files flat under export_data with parent prefix", async () => {
       const exporter = new ArchiveExporter();
 
       // Create files with proper directory structure
@@ -124,20 +124,16 @@ describe("Export Archive Tests", () => {
       fs.mkdirSync(extractDir);
       await tar.x({ file: archivePath, cwd: extractDir });
 
-      // Multiple files should include grandparent/parent in path
+      // Files should be flat under export_data/ with parentName prefix
       const extracted1 = path.join(
         extractDir,
         "export_data",
-        "journalist-1234",
-        "submission-5678",
-        "document1.txt",
+        "submission-5678-document1.txt",
       );
       const extracted2 = path.join(
         extractDir,
         "export_data",
-        "journalist-1234",
-        "submission-5678",
-        "document2.txt",
+        "submission-5678-document2.txt",
       );
 
       expect(fs.existsSync(extracted1)).toBe(true);
@@ -146,7 +142,7 @@ describe("Export Archive Tests", () => {
       expect(fs.readFileSync(extracted2, "utf8")).toBe("content2");
     });
 
-    it("should handle transcript.txt special case", async () => {
+    it("should handle transcript.txt same as other files", async () => {
       const exporter = new ArchiveExporter();
 
       // Create multiple files including transcript.txt
@@ -171,25 +167,22 @@ describe("Export Archive Tests", () => {
       fs.mkdirSync(extractDir);
       await tar.x({ file: archivePath, cwd: extractDir });
 
-      // transcript.txt should be at export_data/parent/transcript.txt (no grandparent)
+      // transcript.txt should be flat under export_data/ with parent prefix
       const extractedTranscript = path.join(
         extractDir,
         "export_data",
-        "submission-5678",
-        "transcript.txt",
+        "submission-5678-transcript.txt",
       );
       expect(fs.existsSync(extractedTranscript)).toBe(true);
       expect(fs.readFileSync(extractedTranscript, "utf8")).toBe(
         "transcript content",
       );
 
-      // Other file should have full path
+      // Other file should also be flat with parent prefix
       const extractedOther = path.join(
         extractDir,
         "export_data",
-        "journalist-1234",
-        "submission-5678",
-        "document.txt",
+        "submission-5678-document.txt",
       );
       expect(fs.existsSync(extractedOther)).toBe(true);
     });
@@ -327,7 +320,11 @@ describe("Export Archive Tests", () => {
       // Here we verify the tarball structure is valid - the Python code will set final permissions.
 
       // Verify files can be read
-      const extractedFile = path.join(extractDir, "export_data", "test.txt");
+      const extractedFile = path.join(
+        extractDir,
+        "export_data",
+        "archives-test.txt",
+      );
       expect(fs.existsSync(extractedFile)).toBe(true);
       expect(fs.readFileSync(extractedFile, "utf8")).toBe("content");
     });
@@ -374,7 +371,7 @@ print('SUCCESS')
         const extractedFile = path.join(
           extractDir,
           "export_data",
-          "document.txt",
+          "archives-document.txt",
         );
 
         expect(fs.existsSync(extractedMeta)).toBe(true);
@@ -444,19 +441,18 @@ print('SUCCESS')
         });
         expect(result.trim()).toBe("SUCCESS");
 
-        // Verify all files extracted
+        // Verify all files extracted with parent prefix
         expect(fs.existsSync(path.join(extractDir, "metadata.json"))).toBe(
           true,
         );
         expect(
           fs.existsSync(
-            path.join(
-              extractDir,
-              "export_data",
-              "journalist-abc",
-              "submission-xyz",
-              "doc1.txt",
-            ),
+            path.join(extractDir, "export_data", "submission-xyz-doc1.txt"),
+          ),
+        ).toBe(true);
+        expect(
+          fs.existsSync(
+            path.join(extractDir, "export_data", "submission-xyz-doc2.txt"),
           ),
         ).toBe(true);
         expect(
@@ -464,19 +460,7 @@ print('SUCCESS')
             path.join(
               extractDir,
               "export_data",
-              "journalist-abc",
-              "submission-xyz",
-              "doc2.txt",
-            ),
-          ),
-        ).toBe(true);
-        expect(
-          fs.existsSync(
-            path.join(
-              extractDir,
-              "export_data",
-              "submission-xyz",
-              "transcript.txt",
+              "submission-xyz-transcript.txt",
             ),
           ),
         ).toBe(true);
@@ -507,7 +491,7 @@ print('SUCCESS')
       const extractedFile = path.join(
         extractDir,
         "export_data",
-        "file with spaces.txt",
+        "archives-file with spaces.txt",
       );
       expect(fs.existsSync(extractedFile)).toBe(true);
     });

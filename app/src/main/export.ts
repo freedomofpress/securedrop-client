@@ -218,6 +218,7 @@ export class ArchiveExporter {
     archiveFilename: string;
     metadata: Record<string, unknown>;
     filepaths?: string[] | null;
+    sourceName?: string;
   }): Promise<string> {
     const { archiveDir, archiveFilename, metadata } = opts;
     const filepaths = opts.filepaths ?? [];
@@ -228,32 +229,21 @@ export class ArchiveExporter {
     // path on disk => path in archive
     const filesToAdd = new Map<string, string>();
 
-    const isOneOfMultipleFiles = filepaths.length > 1;
-
     for (const filepath of filepaths) {
       try {
         await fsPromises.access(filepath, constants.R_OK);
-        const filename = path.basename(filepath);
+        const parentName = path.basename(path.dirname(filepath));
+        const filename = `${parentName}-${path.basename(filepath)}`;
 
-        let arcname = path.join(ArchiveExporter.DISK_EXPORT_DIR, filename);
-        if (isOneOfMultipleFiles) {
-          const parentPath = path.dirname(filepath);
-          const grandParentPath = path.dirname(parentPath);
-          const parentName = path.basename(parentPath);
-          const grandParentName = path.basename(grandParentPath);
+        let arcname: string;
+        if (opts.sourceName) {
           arcname = path.join(
             ArchiveExporter.DISK_EXPORT_DIR,
-            grandParentName,
-            parentName,
+            opts.sourceName,
             filename,
           );
-          if (filename === "transcript.txt") {
-            arcname = path.join(
-              ArchiveExporter.DISK_EXPORT_DIR,
-              parentName,
-              filename,
-            );
-          }
+        } else {
+          arcname = path.join(ArchiveExporter.DISK_EXPORT_DIR, filename);
         }
 
         filesToAdd.set(filepath, arcname);
@@ -586,6 +576,7 @@ export class Exporter extends ArchiveExporter {
   public async export(
     filepaths: string[],
     passphrase: string | null,
+    sourceName?: string,
   ): Promise<DeviceStatus> {
     let status: DeviceStatus;
     try {
@@ -605,6 +596,7 @@ export class Exporter extends ArchiveExporter {
         archiveFilename: Exporter.DISK_FILENAME,
         metadata,
         filepaths,
+        sourceName,
       });
 
       await this.runQrexecExport(archivePath);

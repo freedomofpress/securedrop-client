@@ -471,7 +471,9 @@ app.whenReady().then(() => {
         if (!fs.existsSync(filePath)) {
           throw new Error(`Transcript file not found: ${filePath}`);
         }
-        return await exporter.export([filePath], passphrase);
+        const sourceWithItems = db.getSourceWithItems(sourceUuid);
+        const sourceName = sourceWithItems.data.journalist_designation;
+        return await exporter.export([filePath], passphrase, sourceName);
       } catch (error) {
         console.error(
           `Failed to export transcript for source: ${sourceUuid}:`,
@@ -490,6 +492,7 @@ app.whenReady().then(() => {
       passphrase: string,
     ): Promise<DeviceStatus> => {
       const filenames: string[] = [];
+      let sourceName: string | undefined;
       for (const itemUuid of itemUuids) {
         const item = db.getItem(itemUuid);
         if (
@@ -503,8 +506,12 @@ app.whenReady().then(() => {
           throw new Error(`File not found: ${item.filename}`);
         }
         filenames.push(item.filename);
+        if (!sourceName) {
+          const source = db.getSourceWithItems(item.data.source);
+          sourceName = source.data.journalist_designation;
+        }
       }
-      return await exporter.export(filenames, passphrase);
+      return await exporter.export(filenames, passphrase, sourceName);
     },
   );
 
@@ -513,7 +520,6 @@ app.whenReady().then(() => {
     async (
       _event,
       sourceUuid: string,
-      itemUuids: string[],
       passphrase: string,
     ): Promise<DeviceStatus> => {
       try {
@@ -523,22 +529,20 @@ app.whenReady().then(() => {
           throw new Error(`Transcript file not found: ${transcriptPath}`);
         }
 
+        const sourceWithItems = db.getSourceWithItems(sourceUuid);
         const filenames: string[] = [transcriptPath];
-        for (const itemUuid of itemUuids) {
-          const item = db.getItem(itemUuid);
+        for (const item of sourceWithItems.items) {
           if (
-            !item ||
-            !item.filename ||
-            item.fetch_status !== FetchStatus.Complete
+            item.data.kind === "file" &&
+            item.fetch_status === FetchStatus.Complete &&
+            item.filename &&
+            fs.existsSync(item.filename)
           ) {
-            throw new Error(`Item ${itemUuid} has not been downloaded yet`);
+            filenames.push(item.filename);
           }
-          if (!fs.existsSync(item.filename)) {
-            throw new Error(`File not found: ${item.filename}`);
-          }
-          filenames.push(item.filename);
         }
-        return await exporter.export(filenames, passphrase);
+        const sourceName = sourceWithItems.data.journalist_designation;
+        return await exporter.export(filenames, passphrase, sourceName);
       } catch (error) {
         console.error(`Failed to export source: ${sourceUuid}:`, error);
         throw error;

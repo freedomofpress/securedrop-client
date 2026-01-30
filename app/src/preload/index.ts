@@ -135,8 +135,8 @@ const electronAPI = {
   ),
   exportSource: logIpcCall<DeviceStatus>(
     "exportSource",
-    (sourceUuid: string, itemUuids: string[], passphrase: string) =>
-      ipcRenderer.invoke("exportSource", sourceUuid, itemUuids, passphrase),
+    (sourceUuid: string, passphrase: string) =>
+      ipcRenderer.invoke("exportSource", sourceUuid, passphrase),
   ),
   initiatePrint: logIpcCall<DeviceStatus>("initiatePrint", () =>
     ipcRenderer.invoke("initiatePrint"),

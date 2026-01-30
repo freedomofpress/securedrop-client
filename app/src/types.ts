@@ -229,12 +229,17 @@ export type FetchDownloadsMessage = {
 
 export type PayloadTranscript = {
   type: "transcript";
-  payload: SourceWithItems;
+  payload: {
+    source_uuid: string;
+  };
 };
 
 export type PayloadSource = {
   type: "source";
-  payload: SourceWithItems;
+  payload: {
+    source_uuid: string;
+    undownloaded_items: boolean;
+  };
 };
 
 export type PayloadFile = {

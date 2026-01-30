@@ -176,10 +176,9 @@
       "unexpectedError": "Error encountered. Please contact support.",
       "sourceExportTitle": "Export Transcript and Files",
       "sourceExportDescription": "The transcript and all downloaded files will be exported.",
-      "downloadedFileCount_one": "{{count}} downloaded file will be exported",
-      "downloadedFileCount_other": "{{count}} downloaded files will be exported",
-      "undownloadedFileCount_one": "{{count}} file has not been downloaded and will not be exported",
-      "undownloadedFileCount_other": "{{count}} files have not been downloaded and will not be exported"
+      "undownloadedFiles": "Some files have not been downloaded and will not be exported",
+      "transcript": "Source Transcript",
+      "transcriptAndFiles": "Source Transcript and Files"
     },
     "printWizard": {
       "title": "Print File",

@@ -1,10 +1,12 @@
 import { memo, useState } from "react";
 import { useTranslation } from "react-i18next";
-import type {
-  SourceWithItems,
-  ExportPayload,
-  PrintPayload,
+import {
+  type SourceWithItems,
+  type ExportPayload,
+  type PrintPayload,
+  FetchStatus,
 } from "../../../../../types";
+
 import { ExportWizard } from "../Conversation/Item/Export";
 import { PrintWizard } from "../Conversation/Item/Print";
 import { MenuProps, Dropdown, Button, Tooltip } from "antd";
@@ -21,12 +23,12 @@ const SourceMenu = memo(function SourceMenu({
 
   const [exportPayload, setExportPayload] = useState<ExportPayload>({
     type: "transcript",
-    payload: sourceWithItems,
+    payload: { source_uuid: sourceWithItems.uuid },
   });
 
   const printPayload: PrintPayload = {
     type: "transcript",
-    payload: sourceWithItems,
+    payload: { source_uuid: sourceWithItems.uuid },
   };
 
   const [exportWizardOpen, setExportWizardOpen] = useState(false);
@@ -38,7 +40,9 @@ const SourceMenu = memo(function SourceMenu({
         try {
           setExportPayload({
             type: "transcript",
-            payload: sourceWithItems,
+            payload: {
+              source_uuid: sourceWithItems.uuid,
+            },
           });
           setExportWizardOpen(true);
         } catch (error) {
@@ -49,7 +53,13 @@ const SourceMenu = memo(function SourceMenu({
         try {
           setExportPayload({
             type: "source",
-            payload: sourceWithItems,
+            payload: {
+              source_uuid: sourceWithItems.uuid,
+              undownloaded_items:
+                sourceWithItems.items.filter(
+                  (i) => i.fetch_status !== FetchStatus.Complete,
+                ).length > 0,
+            },
           });
           setExportWizardOpen(true);
         } catch (error) {

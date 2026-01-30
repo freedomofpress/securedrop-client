@@ -4,7 +4,6 @@ import {
   DeviceStatus,
   ExportStatus,
   DeviceErrorStatus,
-  FetchStatus,
 } from "../../../../../../types";
 import "../Item.css";
 import "./File.css";
@@ -41,6 +40,7 @@ interface ExportContext {
   state: ExportState;
   itemType: ExportPayload["type"];
   filename: string;
+  undownloadedItems: boolean;
   passphrase: string;
   deviceLocked: boolean;
   errorMessage: string;
@@ -52,6 +52,7 @@ const initialContext: ExportContext = {
   state: "PREFLIGHT",
   itemType: "file",
   filename: "",
+  undownloadedItems: false,
   passphrase: "",
   deviceLocked: true,
   errorMessage: "",
@@ -295,17 +296,9 @@ interface StateComponentProps {
 }
 
 const ConfirmSourceState = memo(function ConfirmSourceState({
-  item,
+  context,
   t,
 }: StateComponentProps) {
-  if (item.type !== "source") return null;
-
-  const fileItems = item.payload.items.filter((i) => i.data.kind === "file");
-  const downloadedCount = fileItems.filter(
-    (i) => i.fetch_status === FetchStatus.Complete,
-  ).length;
-  const undownloadedCount = fileItems.length - downloadedCount;
-
   return (
     <div>
       <div className="flex items-center gap-3 mb-4">
@@ -319,16 +312,14 @@ const ConfirmSourceState = memo(function ConfirmSourceState({
       <hr className="my-4 border-gray-300" />
       <div className="space-y-4">
         <p>{t("exportWizard.sourceExportDescription")}</p>
-        <p>
-          {t("exportWizard.downloadedFileCount", { count: downloadedCount })}
-        </p>
-        {undownloadedCount > 0 && (
-          <p className="text-yellow-800">
-            {t("exportWizard.undownloadedFileCount", {
-              count: undownloadedCount,
-            })}
-          </p>
+        {context.undownloadedItems && (
+          <div>
+            <p className="text-yellow-800">
+              {t("exportWizard.undownloadedFiles")}
+            </p>
+          </div>
         )}
+        <p></p>
       </div>
     </div>
   );
@@ -612,23 +603,10 @@ export const ExportWizard = memo(function ExportWizard({
         : "";
       break;
     case "transcript":
-      filename = "transcript.txt";
+      filename = t("exportWizard.transcript");
       break;
-    case "source": {
-      const downloadedFilenames = item.payload.items
-        .filter(
-          (i) =>
-            i.data.kind === "file" &&
-            i.fetch_status === FetchStatus.Complete &&
-            i.filename,
-        )
-        .map((i) => i.filename!.substring(i.filename!.lastIndexOf("/") + 1));
-      filename = ["transcript.txt", ...downloadedFilenames].join(", ");
-      break;
-    }
-    default:
-      filename = "";
-      console.error("Unknown export type: ", item);
+    case "source":
+      filename = t("exportWizard.transcriptAndFiles");
       break;
   }
 
@@ -637,6 +615,8 @@ export const ExportWizard = memo(function ExportWizard({
     state: item.type === "source" ? "CONFIRM_SOURCE" : "PREFLIGHT",
     itemType: item.type,
     filename: filename,
+    undownloadedItems:
+      item.type === "source" ? item.payload.undownloaded_items : false,
   });
 
   // Refs to track in-progress operations
@@ -720,21 +700,13 @@ export const ExportWizard = memo(function ExportWizard({
             break;
           case "transcript":
             deviceStatus = await window.electronAPI.exportTranscript(
-              item.payload.uuid,
+              item.payload.source_uuid,
               context.passphrase,
             );
             break;
           case "source": {
-            const downloadedFileUuids = item.payload.items
-              .filter(
-                (i) =>
-                  i.data.kind === "file" &&
-                  i.fetch_status === FetchStatus.Complete,
-              )
-              .map((i) => i.uuid);
             deviceStatus = await window.electronAPI.exportSource(
-              item.payload.uuid,
-              downloadedFileUuids,
+              item.payload.source_uuid,
               context.passphrase,
             );
             break;
@@ -793,8 +765,6 @@ export const ExportWizard = memo(function ExportWizard({
         return <PartialSuccessState {...stateProps} />;
       case "ERROR":
         return <ErrorState {...stateProps} />;
-      default:
-        return null;
     }
   };
 
@@ -902,9 +872,6 @@ export const ExportWizard = memo(function ExportWizard({
             {t("wizard.close")}
           </Button>,
         ];
-
-      default:
-        return null;
     }
   };
 
