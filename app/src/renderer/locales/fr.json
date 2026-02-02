@@ -132,8 +132,10 @@
     "retry": "Réessayer",
     "cancel": "Annuler",
     "filenameTooltip": "Nom de fichier disponible après le téléchargement",
+    "viewFile": "Voir",
     "exportFile": "Exporter le fichier",
-    "printFile": "Imprimer le fichier",
+    "exportToUSB": "Exporter vers USB",
+    "printFile": "Imprimer",
     "wizard": {
       "malwareTitle": "Logiciels malveillants",
       "malwareWarning": "Cette station de travail vous permet d'ouvrir des fichiers en toute sécurité. Si vous ouvrez des fichiers sur un autre ordinateur, tout logiciel malveillant intégré peut se propager à votre ordinateur ou réseau. Si vous n'êtes pas sûr de savoir comment gérer ce risque, veuillez imprimer le fichier ou contacter votre administrateur.",

@@ -24,7 +24,8 @@ import {
   Printer,
   Upload,
 } from "lucide-react";
-import { Button, Tooltip, theme } from "antd";
+import { Button, Tooltip, theme, Dropdown } from "antd";
+import type { MenuProps } from "antd";
 import {
   FilePdfFilled,
   FileExcelFilled,
@@ -35,6 +36,7 @@ import {
   FileMarkdownFilled,
   FileFilled,
   ExclamationCircleTwoTone,
+  MoreOutlined,
 } from "@ant-design/icons";
 import FileVideoFilled from "./FileVideoFilled";
 import FileAudioFilled from "./FileAudioFilled";
@@ -440,6 +442,24 @@ const CompleteFile = memo(function CompleteFile({ item }: { item: Item }) {
     // Note: PrintWizard handles state cleanup via its useEffect when open changes
   };
 
+  const menuItems: MenuProps['items'] = [
+    {
+      key: 'view',
+      label: t('viewFile'),
+      onClick: handleOpenFile,
+    },
+    {
+      key: 'export',
+      label: t('exportToUSB'),
+      onClick: handleExportClick,
+    },
+    {
+      key: 'print',
+      label: t('printFile'),
+      onClick: handlePrintClick,
+    },
+  ];
+
   return (
     <>
       <div className="flex items-center justify-between mt-2 mb-2">
@@ -462,22 +482,13 @@ const CompleteFile = memo(function CompleteFile({ item }: { item: Item }) {
         </div>
 
         <div className="flex gap-1">
-          <Tooltip title={t("exportFile")}>
+          <Dropdown menu={{ items: menuItems }} placement="bottomRight" trigger={['click']}>
             <Button
               type="text"
               size="small"
-              icon={<Upload size={18} />}
-              onClick={handleExportClick}
+              icon={<MoreOutlined style={{ fontSize: 18 }} />}
             />
-          </Tooltip>
-          <Tooltip title={t("printFile")}>
-            <Button
-              type="text"
-              size="small"
-              icon={<Printer size={18} />}
-              onClick={handlePrintClick}
-            />
-          </Tooltip>
+          </Dropdown>
         </div>
       </div>
 
