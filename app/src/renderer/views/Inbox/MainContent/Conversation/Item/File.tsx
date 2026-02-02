@@ -196,6 +196,7 @@ const File = memo(function File({ item, designation, onUpdate }: FileProps) {
   const { token } = theme.useToken();
   const titleCaseDesignation = toTitleCase(designation);
   const fetchStatus = item.fetch_status;
+  const [isHovered, setIsHovered] = useState(false);
 
   let FileInner;
   switch (fetchStatus) {
@@ -220,10 +221,20 @@ const File = memo(function File({ item, designation, onUpdate }: FileProps) {
   }
 
   // Apply error border color using theme token when in failed state
-  const errorBorderStyle =
-    fetchStatus === FetchStatus.FailedTerminal
-      ? { borderColor: token.colorErrorBorder }
-      : undefined;
+  // Apply hover background color for initial state
+  const fileBoxStyle = {
+    ...(
+      fetchStatus === FetchStatus.FailedTerminal
+        ? { borderColor: token.colorErrorBorder }
+        : undefined
+    ),
+    ...(
+      fetchStatus === FetchStatus.Initial && isHovered
+        ? { backgroundColor: token.colorFillQuaternary }
+        : undefined
+    ),
+    transition: 'background-color 0.2s ease',
+  };
 
   return (
     <div
@@ -235,7 +246,12 @@ const File = memo(function File({ item, designation, onUpdate }: FileProps) {
         <div className="flex items-center mb-1">
           <span className="author">{titleCaseDesignation ?? ""}</span>
         </div>
-        <div className="w-80 file-box" style={errorBorderStyle}>
+        <div
+          className="w-80 file-box"
+          style={fileBoxStyle}
+          onMouseEnter={() => fetchStatus === FetchStatus.Initial && setIsHovered(true)}
+          onMouseLeave={() => fetchStatus === FetchStatus.Initial && setIsHovered(false)}
+        >
           <FileInner item={item} onUpdate={onUpdate} />
         </div>
       </div>
