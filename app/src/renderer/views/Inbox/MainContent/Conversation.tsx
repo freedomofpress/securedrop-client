@@ -5,7 +5,7 @@ import NewMessagesDivider from "./Conversation/NewMessagesDivider";
 import EmptyConversation from "./EmptyConversation";
 import { Form, Input, Button } from "antd";
 import { useTranslation } from "react-i18next";
-import { memo, useMemo, useCallback, useState, useEffect, useRef } from "react";
+import { memo, useMemo, useCallback, useState, useEffect } from "react";
 import { useAppDispatch, useAppSelector, useDebounce } from "../../../hooks";
 import { fetchSources } from "../../../features/sources/sourcesSlice";
 import {
@@ -39,7 +39,6 @@ const Conversation = memo(function Conversation({
   const [form] = Form.useForm();
   const [messageValue, setMessageValue] = useState(savedDraft);
   const debouncedMessage = useDebounce(messageValue, 300);
-  const prevSourceUuidRef = useRef(sourceUuid);
   const {
     acknowledgeNewMessages,
     dividerItemUuid,
@@ -52,9 +51,6 @@ const Conversation = memo(function Conversation({
 
   // Restore draft when switching sources (including initial mount)
   useEffect(() => {
-    if (prevSourceUuidRef.current !== sourceUuid) {
-      prevSourceUuidRef.current = sourceUuid;
-    }
     setMessageValue(savedDraft);
     form.setFieldsValue({ message: savedDraft || undefined });
     // Only run when the source changes, not when savedDraft changes from our own typing

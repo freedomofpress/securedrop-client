@@ -317,6 +317,68 @@ describe("Conversation draft persistence", () => {
     const textarea = screen.getByTestId("reply-textarea");
     expect(textarea).toHaveValue("");
   });
+
+  it("should persist draft to Redux after typing and debounce", async () => {
+    vi.useFakeTimers({ shouldAdvanceTime: true });
+    const { store } = renderWithProviders(
+      <Conversation sourceWithItems={mockSourceWithItems} />,
+    );
+
+    const textarea = screen.getByTestId("reply-textarea");
+    await userEvent.type(textarea, "draft text");
+
+    // Before debounce, draft should not be in Redux yet
+    expect(store.getState().drafts.drafts["source-1"]).toBeUndefined();
+
+    // Advance past debounce delay (300ms)
+    await act(async () => {
+      vi.advanceTimersByTime(300);
+    });
+
+    expect(store.getState().drafts.drafts["source-1"]).toBe("draft text");
+    vi.useRealTimers();
+  });
+
+  it("should preserve draft when switching sources and switching back", async () => {
+    vi.useFakeTimers({ shouldAdvanceTime: true });
+
+    const source2: SourceWithItems = {
+      ...mockSourceWithItems,
+      uuid: "source-2",
+      data: { ...mockSourceWithItems.data, uuid: "source-2" },
+    };
+
+    const { store, rerender } = renderWithProviders(
+      <Conversation sourceWithItems={mockSourceWithItems} />,
+    );
+
+    // Type a message for source-1
+    const textarea = screen.getByTestId("reply-textarea");
+    await userEvent.type(textarea, "source 1 draft");
+
+    // Flush debounce
+    await act(async () => {
+      vi.advanceTimersByTime(300);
+    });
+    expect(store.getState().drafts.drafts["source-1"]).toBe("source 1 draft");
+
+    // Switch to source-2
+    rerender(<Conversation sourceWithItems={source2} />);
+    expect(screen.getByTestId("reply-textarea")).toHaveValue("");
+
+    // Type a message for source-2
+    await userEvent.type(screen.getByTestId("reply-textarea"), "source 2 draft");
+    await act(async () => {
+      vi.advanceTimersByTime(300);
+    });
+    expect(store.getState().drafts.drafts["source-2"]).toBe("source 2 draft");
+
+    // Switch back to source-1
+    rerender(<Conversation sourceWithItems={mockSourceWithItems} />);
+    expect(screen.getByTestId("reply-textarea")).toHaveValue("source 1 draft");
+
+    vi.useRealTimers();
+  });
 });
 
 describe("Conversation new message indicator", () => {
