@@ -1,10 +1,12 @@
 import { memo, useState } from "react";
 import { useTranslation } from "react-i18next";
-import type {
-  SourceWithItems,
-  ExportPayload,
-  PrintPayload,
+import {
+  type SourceWithItems,
+  type ExportPayload,
+  type PrintPayload,
+  FetchStatus,
 } from "../../../../../types";
+
 import { ExportWizard } from "../Conversation/Item/Export";
 import { PrintWizard } from "../Conversation/Item/Print";
 import { MenuProps, Dropdown, Button, Tooltip } from "antd";
@@ -19,6 +21,16 @@ const SourceMenu = memo(function SourceMenu({
 }: SourceMenuProps) {
   const { t } = useTranslation("MainContent");
 
+  const [exportPayload, setExportPayload] = useState<ExportPayload>({
+    type: "transcript",
+    payload: { source_uuid: sourceWithItems.uuid },
+  });
+
+  const printPayload: PrintPayload = {
+    type: "transcript",
+    payload: { source_uuid: sourceWithItems.uuid },
+  };
+
   const [exportWizardOpen, setExportWizardOpen] = useState(false);
   const [printWizardOpen, setPrintWizardOpen] = useState(false);
 
@@ -26,9 +38,32 @@ const SourceMenu = memo(function SourceMenu({
     switch (e.key) {
       case "exportTranscript":
         try {
+          setExportPayload({
+            type: "transcript",
+            payload: {
+              source_uuid: sourceWithItems.uuid,
+            },
+          });
           setExportWizardOpen(true);
         } catch (error) {
-          console.error("Failed to export transcript:", error);
+          console.error("Failed to export:", error);
+        }
+        break;
+      case "exportSource":
+        try {
+          setExportPayload({
+            type: "source",
+            payload: {
+              source_uuid: sourceWithItems.uuid,
+              undownloaded_items:
+                sourceWithItems.items.filter(
+                  (i) => i.fetch_status !== FetchStatus.Complete,
+                ).length > 0,
+            },
+          });
+          setExportWizardOpen(true);
+        } catch (error) {
+          console.error("Failed to export:", error);
         }
         break;
 
@@ -61,6 +96,11 @@ const SourceMenu = memo(function SourceMenu({
       disabled: !hasConversation,
     },
     {
+      key: "exportSource",
+      label: t("menu.exportSource"),
+      disabled: !hasConversation,
+    },
+    {
       key: "printTranscript",
       label: t("menu.printTranscript"),
       disabled: !hasConversation,
@@ -76,16 +116,6 @@ const SourceMenu = memo(function SourceMenu({
     return <></>;
   }
 
-  const exportPayload: ExportPayload = {
-    type: "transcript",
-    payload: sourceWithItems,
-  };
-
-  const printPayload: PrintPayload = {
-    type: "transcript",
-    payload: sourceWithItems,
-  };
-
   return (
     <>
       <Tooltip title={t("menu.clickToOpen")} placement="left">
@@ -97,6 +127,7 @@ const SourceMenu = memo(function SourceMenu({
         </Dropdown>
       </Tooltip>
       <ExportWizard
+        key={exportPayload.type}
         item={exportPayload}
         open={exportWizardOpen}
         onClose={handleExportWizardClose}

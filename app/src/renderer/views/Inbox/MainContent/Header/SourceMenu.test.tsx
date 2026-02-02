@@ -89,7 +89,7 @@ describe("SourceMenu Component", () => {
 
         // there should be an Export Transcript option, but it should be disabled
         const exportTranscriptItem = screen.getByRole("menuitem", {
-          name: /export transcript/i,
+          name: /^export transcript$/i,
         });
         expect(exportTranscriptItem).toBeInTheDocument();
         // expect(exportTranscriptItem).toBeDisabled(); doesn't work here, you need to test for the ant class :(
@@ -151,7 +151,7 @@ describe("SourceMenu Component", () => {
 
         // there is an Export Transcript option, and it is enabled and clickable
         const exportTranscriptItem = screen.getByRole("menuitem", {
-          name: /export transcript/i,
+          name: /^export transcript$/i,
         });
         expect(exportTranscriptItem).toBeInTheDocument();
         expect(exportTranscriptItem).not.toHaveClass(
@@ -182,16 +182,17 @@ describe("SourceMenu Component", () => {
 
         // there is an Export Transcript option, and it is enabled and clickable
         const exportItem = screen.getByRole("menuitem", {
-          name: /export transcript/i,
+          name: /^export transcript$/i,
         });
         expect(exportItem).toBeInTheDocument();
       });
 
       const exportItem = screen.getByRole("menuitem", {
-        name: /export transcript/i,
+        name: /^export transcript$/i,
       });
       await userEvent.click(exportItem);
       await waitFor(() => {
+        // The wizard should open showing the transcript preflight screen
         expect(screen.getByText("Preparing to export.")).toBeInTheDocument();
       });
     });
