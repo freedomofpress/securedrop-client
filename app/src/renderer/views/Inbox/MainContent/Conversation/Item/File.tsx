@@ -17,14 +17,9 @@ import "../Item.css";
 import "./File.css";
 
 import { useTranslation } from "react-i18next";
-import {
-  File as FileIcon,
-  Download,
-  LoaderCircle,
-  Printer,
-  Upload,
-} from "lucide-react";
-import { Button, Tooltip, theme } from "antd";
+import { File as FileIcon, Download, LoaderCircle } from "lucide-react";
+import { Button, Tooltip, theme, Dropdown } from "antd";
+import type { MenuProps } from "antd";
 import {
   FilePdfFilled,
   FileExcelFilled,
@@ -35,6 +30,7 @@ import {
   FileMarkdownFilled,
   FileFilled,
   ExclamationCircleTwoTone,
+  MoreOutlined,
 } from "@ant-design/icons";
 import FileVideoFilled from "./FileVideoFilled";
 import FileAudioFilled from "./FileAudioFilled";
@@ -196,6 +192,7 @@ const File = memo(function File({ item, designation, onUpdate }: FileProps) {
   const { token } = theme.useToken();
   const titleCaseDesignation = toTitleCase(designation);
   const fetchStatus = item.fetch_status;
+  const [isHovered, setIsHovered] = useState(false);
 
   let FileInner;
   switch (fetchStatus) {
@@ -219,11 +216,30 @@ const File = memo(function File({ item, designation, onUpdate }: FileProps) {
       throw new Error(`Unknown fetch status: ${fetchStatus}`);
   }
 
+  const handleClick = () => {
+    if (fetchStatus === FetchStatus.Initial) {
+      onUpdate({
+        item_uuid: item.uuid,
+        type: ItemUpdateType.FetchStatus,
+        fetch_status: FetchStatus.DownloadInProgress,
+      });
+    }
+  };
+
   // Apply error border color using theme token when in failed state
-  const errorBorderStyle =
-    fetchStatus === FetchStatus.FailedTerminal
+  // Apply hover background color for initial state
+  const fileBoxStyle = {
+    ...(fetchStatus === FetchStatus.FailedTerminal
       ? { borderColor: token.colorErrorBorder }
-      : undefined;
+      : undefined),
+    ...(fetchStatus === FetchStatus.Initial && isHovered
+      ? { backgroundColor: token.colorFillQuaternary }
+      : undefined),
+    ...(fetchStatus === FetchStatus.Initial
+      ? { cursor: "pointer" }
+      : undefined),
+    transition: "background-color 0.2s ease",
+  };
 
   return (
     <div
@@ -235,7 +251,17 @@ const File = memo(function File({ item, designation, onUpdate }: FileProps) {
         <div className="flex items-center mb-1">
           <span className="author">{titleCaseDesignation ?? ""}</span>
         </div>
-        <div className="w-80 file-box" style={errorBorderStyle}>
+        <div
+          className="w-80 file-box"
+          style={fileBoxStyle}
+          onClick={handleClick}
+          onMouseEnter={() =>
+            fetchStatus === FetchStatus.Initial && setIsHovered(true)
+          }
+          onMouseLeave={() =>
+            fetchStatus === FetchStatus.Initial && setIsHovered(false)
+          }
+        >
           <FileInner item={item} onUpdate={onUpdate} />
         </div>
       </div>
@@ -408,6 +434,24 @@ const CompleteFile = memo(function CompleteFile({ item }: { item: Item }) {
     // Note: PrintWizard handles state cleanup via its useEffect when open changes
   };
 
+  const menuItems: MenuProps["items"] = [
+    {
+      key: "view",
+      label: t("viewFile"),
+      onClick: handleOpenFile,
+    },
+    {
+      key: "export",
+      label: t("exportToUSB"),
+      onClick: handleExportClick,
+    },
+    {
+      key: "print",
+      label: t("printFile"),
+      onClick: handlePrintClick,
+    },
+  ];
+
   return (
     <>
       <div className="flex items-center justify-between mt-2 mb-2">
@@ -430,22 +474,17 @@ const CompleteFile = memo(function CompleteFile({ item }: { item: Item }) {
         </div>
 
         <div className="flex gap-1">
-          <Tooltip title={t("exportFile")}>
+          <Dropdown
+            menu={{ items: menuItems }}
+            placement="bottomRight"
+            trigger={["click"]}
+          >
             <Button
               type="text"
               size="small"
-              icon={<Upload size={18} />}
-              onClick={handleExportClick}
+              icon={<MoreOutlined style={{ fontSize: 18 }} />}
             />
-          </Tooltip>
-          <Tooltip title={t("printFile")}>
-            <Button
-              type="text"
-              size="small"
-              icon={<Printer size={18} />}
-              onClick={handlePrintClick}
-            />
-          </Tooltip>
+          </Dropdown>
         </div>
       </div>
 
