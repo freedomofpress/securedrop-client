@@ -1,4 +1,15 @@
 {
+  "FirstRunPopup": {
+    "ok": "OK",
+    "newUser": {
+      "title": "Welcome to SecureDrop",
+      "body": "Placeholder text for new user instructions."
+    },
+    "migration": {
+      "title": "Migration Required",
+      "body": "Placeholder text for migration instructions."
+    }
+  },
   "common": {
     "yesterday": "Yesterday",
     "seeMore": "See more",

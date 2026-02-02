@@ -318,3 +318,6 @@ export enum ArchiveStatus {
   ERROR_METADATA_PARSING = "ERROR_METADATA_PARSING",
   ERROR_EXTRACTION = "ERROR_EXTRACTION",
 }
+
+/** First Run types */
+export type FirstRunStatus = "new_user" | "migration" | null;

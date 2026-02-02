@@ -27,6 +27,7 @@ import {
   ItemTarget,
   BatchResponse,
   EventStatus,
+  FirstRunStatus,
 } from "../../types";
 import { Crypto } from "../crypto";
 
@@ -63,6 +64,7 @@ export class DB {
   private url: string | null;
   private snowflake: Snowflake;
   private crypto: Crypto;
+  private firstRunStatus: FirstRunStatus = null;
 
   // Prepared statements
   private selectVersion: Statement<[], { version: string }>;
@@ -165,10 +167,21 @@ export class DB {
       fs.mkdirSync(dbDir, { recursive: true });
     }
 
-    // Create or open the SQLite database
+    // Check if this is a fresh database (first run)
     const dbPath = path.join(dbDir, "db.sqlite");
+    const isNewDatabase = !fs.existsSync(dbPath);
+
+    // Create or open the SQLite database
     const db = new Database(dbPath, { nativeBinding: this.getBinaryPath() });
     db.pragma("journal_mode = WAL");
+
+    // Determine first-run status before migrations run
+    if (isNewDatabase) {
+      const legacyPath = path.join(os.homedir(), ".securedrop_client");
+      this.firstRunStatus = fs.existsSync(legacyPath)
+        ? "migration"
+        : "new_user";
+    }
 
     // Set the database URL for migrations
     this.url = `sqlite:${dbPath}`;
@@ -1001,5 +1014,10 @@ export class DB {
       // Once event is applied, delete from pending events table
       this.deletePendingEvent.run({ snowflake_id: event.snowflake_id });
     }
+  }
+
+  // First-run status: "new_user" or "migration" if DB was just created, null otherwise
+  getFirstRunStatus(): FirstRunStatus {
+    return this.firstRunStatus;
   }
 }

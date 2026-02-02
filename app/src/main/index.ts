@@ -35,6 +35,7 @@ import {
   type Item,
   type PendingEventType,
   type DeviceStatus,
+  type FirstRunStatus,
   FetchStatus,
   SyncStatus,
 } from "../types";
@@ -631,6 +632,13 @@ if (!gotTheLock) {
     ipcMain.handle("cancelPrint", async (_event): Promise<void> => {
       printer.cancelPrint();
     });
+
+    ipcMain.handle(
+      "getFirstRunStatus",
+      async (_event): Promise<FirstRunStatus> => {
+        return db.getFirstRunStatus();
+      },
+    );
 
     const mainWindow = createWindow();
 
