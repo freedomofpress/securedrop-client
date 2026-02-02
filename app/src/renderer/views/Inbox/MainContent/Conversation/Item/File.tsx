@@ -17,13 +17,7 @@ import "../Item.css";
 import "./File.css";
 
 import { useTranslation } from "react-i18next";
-import {
-  File as FileIcon,
-  Download,
-  LoaderCircle,
-  Printer,
-  Upload,
-} from "lucide-react";
+import { File as FileIcon, Download, LoaderCircle } from "lucide-react";
 import { Button, Tooltip, theme, Dropdown } from "antd";
 import type { MenuProps } from "antd";
 import {
@@ -235,22 +229,16 @@ const File = memo(function File({ item, designation, onUpdate }: FileProps) {
   // Apply error border color using theme token when in failed state
   // Apply hover background color for initial state
   const fileBoxStyle = {
-    ...(
-      fetchStatus === FetchStatus.FailedTerminal
-        ? { borderColor: token.colorErrorBorder }
-        : undefined
-    ),
-    ...(
-      fetchStatus === FetchStatus.Initial && isHovered
-        ? { backgroundColor: token.colorFillQuaternary }
-        : undefined
-    ),
-    ...(
-      fetchStatus === FetchStatus.Initial
-        ? { cursor: 'pointer' }
-        : undefined
-    ),
-    transition: 'background-color 0.2s ease',
+    ...(fetchStatus === FetchStatus.FailedTerminal
+      ? { borderColor: token.colorErrorBorder }
+      : undefined),
+    ...(fetchStatus === FetchStatus.Initial && isHovered
+      ? { backgroundColor: token.colorFillQuaternary }
+      : undefined),
+    ...(fetchStatus === FetchStatus.Initial
+      ? { cursor: "pointer" }
+      : undefined),
+    transition: "background-color 0.2s ease",
   };
 
   return (
@@ -267,8 +255,12 @@ const File = memo(function File({ item, designation, onUpdate }: FileProps) {
           className="w-80 file-box"
           style={fileBoxStyle}
           onClick={handleClick}
-          onMouseEnter={() => fetchStatus === FetchStatus.Initial && setIsHovered(true)}
-          onMouseLeave={() => fetchStatus === FetchStatus.Initial && setIsHovered(false)}
+          onMouseEnter={() =>
+            fetchStatus === FetchStatus.Initial && setIsHovered(true)
+          }
+          onMouseLeave={() =>
+            fetchStatus === FetchStatus.Initial && setIsHovered(false)
+          }
         >
           <FileInner item={item} onUpdate={onUpdate} />
         </div>
@@ -442,20 +434,20 @@ const CompleteFile = memo(function CompleteFile({ item }: { item: Item }) {
     // Note: PrintWizard handles state cleanup via its useEffect when open changes
   };
 
-  const menuItems: MenuProps['items'] = [
+  const menuItems: MenuProps["items"] = [
     {
-      key: 'view',
-      label: t('viewFile'),
+      key: "view",
+      label: t("viewFile"),
       onClick: handleOpenFile,
     },
     {
-      key: 'export',
-      label: t('exportToUSB'),
+      key: "export",
+      label: t("exportToUSB"),
       onClick: handleExportClick,
     },
     {
-      key: 'print',
-      label: t('printFile'),
+      key: "print",
+      label: t("printFile"),
       onClick: handlePrintClick,
     },
   ];
@@ -482,7 +474,11 @@ const CompleteFile = memo(function CompleteFile({ item }: { item: Item }) {
         </div>
 
         <div className="flex gap-1">
-          <Dropdown menu={{ items: menuItems }} placement="bottomRight" trigger={['click']}>
+          <Dropdown
+            menu={{ items: menuItems }}
+            placement="bottomRight"
+            trigger={["click"]}
+          >
             <Button
               type="text"
               size="small"
