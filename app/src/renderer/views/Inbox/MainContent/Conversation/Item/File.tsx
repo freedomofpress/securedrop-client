@@ -220,6 +220,16 @@ const File = memo(function File({ item, designation, onUpdate }: FileProps) {
       throw new Error(`Unknown fetch status: ${fetchStatus}`);
   }
 
+  const handleClick = () => {
+    if (fetchStatus === FetchStatus.Initial) {
+      onUpdate({
+        item_uuid: item.uuid,
+        type: ItemUpdateType.FetchStatus,
+        fetch_status: FetchStatus.DownloadInProgress,
+      });
+    }
+  };
+
   // Apply error border color using theme token when in failed state
   // Apply hover background color for initial state
   const fileBoxStyle = {
@@ -231,6 +241,11 @@ const File = memo(function File({ item, designation, onUpdate }: FileProps) {
     ...(
       fetchStatus === FetchStatus.Initial && isHovered
         ? { backgroundColor: token.colorFillQuaternary }
+        : undefined
+    ),
+    ...(
+      fetchStatus === FetchStatus.Initial
+        ? { cursor: 'pointer' }
         : undefined
     ),
     transition: 'background-color 0.2s ease',
@@ -249,6 +264,7 @@ const File = memo(function File({ item, designation, onUpdate }: FileProps) {
         <div
           className="w-80 file-box"
           style={fileBoxStyle}
+          onClick={handleClick}
           onMouseEnter={() => fetchStatus === FetchStatus.Initial && setIsHovered(true)}
           onMouseLeave={() => fetchStatus === FetchStatus.Initial && setIsHovered(false)}
         >
