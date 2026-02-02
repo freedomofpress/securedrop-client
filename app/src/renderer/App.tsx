@@ -5,6 +5,7 @@ import SignInView from "./views/SignIn";
 import { useAppSelector } from "./hooks";
 import { SessionStatus } from "./features/session/sessionSlice";
 import { useTranslation } from "react-i18next";
+import { FirstRunPopup } from "./components/FirstRunPopup";
 
 function App() {
   const { t } = useTranslation("MainContent");
@@ -52,7 +53,12 @@ const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
     session.status == SessionStatus.Auth ||
     session.status == SessionStatus.Offline
   ) {
-    return children;
+    return (
+      <>
+        <FirstRunPopup />
+        {children}
+      </>
+    );
   }
 
   return <Navigate to="/sign-in" replace />;
