@@ -4,6 +4,7 @@ import journalistsSlice from "./features/journalists/journalistsSlice";
 import sourcesSlice from "./features/sources/sourcesSlice";
 import conversationSlice from "./features/conversation/conversationSlice";
 import syncSlice from "./features/sync/syncSlice";
+import draftsSlice from "./features/drafts/draftsSlice";
 
 const rootReducer = combineReducers({
   session: sessionSlice,
@@ -11,6 +12,7 @@ const rootReducer = combineReducers({
   sources: sourcesSlice,
   conversation: conversationSlice,
   sync: syncSlice,
+  drafts: draftsSlice,
 });
 
 export const setupStore = (preloadedState?: Partial<RootState>) => {

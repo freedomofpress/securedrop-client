@@ -317,6 +317,7 @@ describe("sourcesSlice", () => {
           lastFetchTime: null,
           status: null,
         },
+        drafts: { drafts: {} },
       };
 
       expect(selectSources(state)).toEqual(mockSources);
@@ -344,6 +345,7 @@ describe("sourcesSlice", () => {
           lastFetchTime: null,
           status: null,
         },
+        drafts: { drafts: {} },
       };
 
       expect(selectActiveSourceUuid(state)).toBe("source-1");
@@ -371,6 +373,7 @@ describe("sourcesSlice", () => {
           lastFetchTime: null,
           status: null,
         },
+        drafts: { drafts: {} },
       };
 
       expect(selectSourcesLoading(state)).toBe(true);
