@@ -367,7 +367,10 @@ describe("Conversation draft persistence", () => {
     expect(screen.getByTestId("reply-textarea")).toHaveValue("");
 
     // Type a message for source-2
-    await userEvent.type(screen.getByTestId("reply-textarea"), "source 2 draft");
+    await userEvent.type(
+      screen.getByTestId("reply-textarea"),
+      "source 2 draft",
+    );
     await act(async () => {
       vi.advanceTimersByTime(300);
     });
