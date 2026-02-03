@@ -17,19 +17,30 @@ describe("Message Component Memoization", () => {
     },
     plaintext: "Hello, this is a message",
   };
+  const mockOnUpdate = vi.fn();
 
-  const cases: Array<[{ item: Item; designation: string }, number]> = [
+  const cases: Array<
+    [{ item: Item; designation: string; onUpdate: () => void }, number]
+  > = [
     // Initial render
-    [{ item: mockItem, designation: "Test Source" }, 1],
+    [{ item: mockItem, designation: "Test Source", onUpdate: mockOnUpdate }, 1],
     // Same props - should not re-render
-    [{ item: mockItem, designation: "Test Source" }, 1],
+    [{ item: mockItem, designation: "Test Source", onUpdate: mockOnUpdate }, 1],
     // Change designation - should re-render
-    [{ item: mockItem, designation: "Different Source" }, 2],
+    [
+      {
+        item: mockItem,
+        designation: "Different Source",
+        onUpdate: mockOnUpdate,
+      },
+      2,
+    ],
     // Change item plaintext - should re-render
     [
       {
         item: { ...mockItem, plaintext: "Different message" },
         designation: "Different Source",
+        onUpdate: mockOnUpdate,
       },
       3,
     ],
@@ -38,6 +49,7 @@ describe("Message Component Memoization", () => {
       {
         item: { ...mockItem, plaintext: undefined },
         designation: "Different Source",
+        onUpdate: mockOnUpdate,
       },
       4,
     ],
