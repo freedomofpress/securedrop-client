@@ -1,4 +1,6 @@
-CREATE TABLE IF NOT EXISTS "schema_migrations" (version varchar(128) primary key);
+-- migrate:up
+
+-- Sources table
 CREATE TABLE sources (
     uuid TEXT PRIMARY KEY,
     data JSON,
@@ -6,6 +8,8 @@ CREATE TABLE sources (
     is_seen INTEGER GENERATED ALWAYS AS (json_extract(data, '$.is_seen')) STORED,
     has_attachment INTEGER GENERATED ALWAYS AS (json_extract(data, '$.has_attachment')) STORED
 );
+
+-- Items table
 CREATE TABLE items (
     uuid TEXT PRIMARY KEY,
     data JSON,
@@ -23,16 +27,22 @@ CREATE TABLE items (
     interaction_count INTEGER GENERATED ALWAYS AS (json_extract(data, '$.interaction_count')),
     decrypted_size INTEGER
 );
+
+-- Journalists table
 CREATE TABLE journalists (
     uuid TEXT PRIMARY KEY,
     data JSON,
     version TEXT
 );
+
+-- State history table
 CREATE TABLE state_history (
     version TEXT,
     updated TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     id INTEGER PRIMARY KEY AUTOINCREMENT
 );
+
+-- Pending events table
 CREATE TABLE pending_events (
     snowflake_id TEXT PRIMARY KEY,
     source_uuid TEXT REFERENCES sources(uuid) ON DELETE CASCADE,
@@ -41,12 +51,23 @@ CREATE TABLE pending_events (
     data JSON,
     CHECK (NOT (source_uuid IS NOT NULL AND item_uuid IS NOT NULL))
 );
+
+-- State view
 CREATE VIEW state AS
 SELECT *
 FROM state_history
 ORDER BY id DESC
-LIMIT 1
-/* state(version,updated,id) */;
+LIMIT 1;
+
+-- Sources projected view
+/*
+This view projects pending events onto sources:
+- Select latest starred value from pending_events
+- Order events to select most recent
+- project Starred/Unstarred event
+- project Seen event
+- project SourceDeleted event
+*/
 CREATE VIEW sources_projected AS
 WITH latest_starred AS (
     SELECT
@@ -93,8 +114,18 @@ WHERE NOT EXISTS (
     FROM pending_events
     WHERE pending_events.source_uuid = sources.uuid
         AND pending_events.type = 'source_deleted'
-)
-/* sources_projected(uuid,data,version,has_attachment,is_seen) */;
+);
+
+-- Items projected view
+/*
+This view projects pending events onto items:
+- project ItemDeleted event
+- project SourceDeleted, SourceConversationDeleted event
+- project ReplySent event
+- Check that there is no later overriding deletion
+  - SourceDeleted or SourceConversationDeleted
+  - ItemDeleted
+*/
 CREATE VIEW items_projected AS
 SELECT
     items.uuid,
@@ -159,8 +190,9 @@ WHERE pending_events.type = 'reply_sent'
             )
         )
         AND later.snowflake_id > pending_events.snowflake_id
-    )
-/* items_projected(uuid,data,version,plaintext,filename,kind,is_read,last_updated,source_uuid,fetch_progress,fetch_status,fetch_last_updated_at,fetch_retry_attempts,interaction_count,decrypted_size) */;
+    );
+
+-- Sorted items view
 CREATE VIEW sorted_items AS
 SELECT
     *,
@@ -168,14 +200,23 @@ SELECT
         PARTITION BY source_uuid
         ORDER BY interaction_count DESC
     ) AS rn
-FROM items_projected
-/* sorted_items(uuid,data,version,plaintext,filename,kind,is_read,last_updated,source_uuid,fetch_progress,fetch_status,fetch_last_updated_at,fetch_retry_attempts,interaction_count,decrypted_size,rn) */;
+FROM items_projected;
+
+-- Performance indexes
 CREATE INDEX idx_items_kind ON items(kind);
 CREATE INDEX idx_items_is_read ON items(is_read);
 CREATE INDEX idx_items_last_updated ON items(last_updated);
 CREATE INDEX idx_sources_uuid ON sources(uuid);
 CREATE INDEX idx_items_source_uuid ON items(source_uuid);
 CREATE INDEX idx_items_fetch_status ON items(fetch_status);
--- Dbmate schema migrations
-INSERT INTO "schema_migrations" (version) VALUES
-  ('20260203225412');
+
+-- migrate:down
+DROP VIEW IF EXISTS sorted_items;
+DROP VIEW IF EXISTS items_projected;
+DROP VIEW IF EXISTS sources_projected;
+DROP VIEW IF EXISTS state;
+DROP TABLE IF EXISTS pending_events;
+DROP TABLE IF EXISTS state_history;
+DROP TABLE IF EXISTS journalists;
+DROP TABLE IF EXISTS items;
+DROP TABLE IF EXISTS sources;
