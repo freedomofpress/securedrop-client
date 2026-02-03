@@ -147,6 +147,7 @@ jobs:
         # TODO: workstation-config pulls in systemd, which doesn't work
         # TODO: workstation-viewer pulls in grsec and qubes packages
         package:
+          - app
           - client
           - export
           - keyring
