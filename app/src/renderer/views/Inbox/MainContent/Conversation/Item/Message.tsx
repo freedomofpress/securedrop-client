@@ -7,6 +7,7 @@ import {
 } from "../../../../../../types";
 import { toTitleCase } from "../../../../../utils";
 import Avatar from "../../../../../components/Avatar";
+import TruncatedText from "../../../../../components/TruncatedText";
 import { useTranslation } from "react-i18next";
 import { RotateCw } from "lucide-react";
 import { Button, Tooltip, theme } from "antd";
@@ -73,7 +74,7 @@ const Message = memo(function Message({
           ) : isEncrypted ? (
             <span className="italic text-gray-500">{t("itemEncrypted")}</span>
           ) : (
-            messageContent
+            <TruncatedText text={messageContent} />
           )}
         </div>
       </div>
