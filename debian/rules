@@ -14,22 +14,18 @@ override_dh_auto_install:
 	bash ./debian/setup-venv.sh export
 	bash ./debian/setup-venv.sh log
 	cargo build --release --locked --features qubesdb
-	if dh_listpackages | grep -q '^securedrop-app$$'; then \
-		bash ./debian/build-app.sh; \
-	fi
+	bash ./debian/build-app.sh
 	dh_auto_install
 	dh_apparmor --profile-name=usr.bin.securedrop-client -psecuredrop-client
 	dh_apparmor --profile-name=usr.bin.securedrop-proxy -psecuredrop-proxy
 
 override_dh_install:
 	dh_install
-	if dh_listpackages | grep -q '^securedrop-app$$'; then \
-		mv debian/securedrop-app/usr/lib/securedrop-app/linux-unpacked/* debian/securedrop-app/usr/lib/securedrop-app/; \
-		rmdir debian/securedrop-app/usr/lib/securedrop-app/linux-unpacked; \
-		rm -rf debian/securedrop-app/usr/lib/securedrop-app/resources/app.asar.unpacked/node_modules/better-sqlite3/deps/; \
-		rm -rf debian/securedrop-app/usr/lib/securedrop-app/resources/app.asar.unpacked/node_modules/better-sqlite3/src/; \
-		rm -rf debian/securedrop-app/usr/lib/securedrop-app/resources/app.asar.unpacked/node_modules/@dbmate/; \
-	fi
+	mv debian/securedrop-app/usr/lib/securedrop-app/linux-unpacked/* debian/securedrop-app/usr/lib/securedrop-app/
+	rmdir debian/securedrop-app/usr/lib/securedrop-app/linux-unpacked
+	rm -rf debian/securedrop-app/usr/lib/securedrop-app/resources/app.asar.unpacked/node_modules/better-sqlite3/deps/
+	rm -rf debian/securedrop-app/usr/lib/securedrop-app/resources/app.asar.unpacked/node_modules/better-sqlite3/src/
+	rm -rf debian/securedrop-app/usr/lib/securedrop-app/resources/app.asar.unpacked/node_modules/@dbmate/
 
 override_dh_strip_nondeterminism:
 	find ./debian/ -type f -name '*.pyc' -delete
@@ -57,20 +53,10 @@ override_dh_installsystemd:
 # https://github.com/chromium/chromium/blob/836ab130/sandbox/linux/README.md#setuid2
 override_dh_fixperms:
 	dh_fixperms
-	if dh_listpackages | grep -q '^securedrop-app$$'; then \
-		chmod 4755 debian/securedrop-app/usr/lib/securedrop-app/chrome-sandbox; \
-	fi
+	chmod 4755 debian/securedrop-app/usr/lib/securedrop-app/chrome-sandbox
 
 override_dh_shlibdeps:
-	if dh_listpackages | grep -q '^securedrop-app$$'; then \
-		dh_shlibdeps --exclude=securedrop-app; \
-	else \
-		dh_shlibdeps; \
-	fi
+	dh_shlibdeps --exclude=securedrop-app
 
 override_dh_strip:
-	if dh_listpackages | grep -q '^securedrop-app$$'; then \
-		dh_strip --exclude=securedrop-app; \
-	else \
-		dh_strip; \
-	fi
+	dh_strip --exclude=securedrop-app

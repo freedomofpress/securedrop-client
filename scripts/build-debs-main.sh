@@ -16,11 +16,6 @@ rsync --exclude=build --exclude=.git --exclude=__pycache__ --exclude=node_module
     -av /src/ /srv/securedrop-client
 cd /srv/securedrop-client
 
-if [ "${WHAT:-}" = "app" ]; then
-    echo "Given WHAT=app, adding securedrop-app package to debian/control"
-    bash ./debian/add-app-package.sh
-fi
-
 apt-get build-dep . --yes
 
 # Tweak the changelog just a bit

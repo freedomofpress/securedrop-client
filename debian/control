@@ -2,10 +2,15 @@ Source: securedrop-client
 Section: unknown
 Priority: optional
 Maintainer: SecureDrop Team <securedrop@freedom.press>
-Build-Depends: debhelper-compat (= 11), dh-apparmor, dh-exec, python3-venv, libssl-dev, pkg-config, libclang-dev, qubesdb-dev
+Build-Depends: debhelper-compat (= 11), dh-apparmor, dh-exec, python3-venv, libssl-dev, pkg-config, libclang-dev, qubesdb-dev, nodejs
 Standards-Version: 3.9.8
 Homepage: https://github.com/freedomofpress/securedrop-client
 X-Python3-Version: >= 3.5
+
+Package: securedrop-app
+Architecture: any
+Depends: ${shlibs:Depends}, ${misc:Depends}
+Description: SecureDrop App for journalists
 
 Package: securedrop-client
 Architecture: any
