@@ -1,9 +1,10 @@
-import { useState, useEffect, useMemo, useCallback, useRef } from "react";
+import { useState, useEffect, useMemo, useCallback } from "react";
 import { useParams, useNavigate } from "react-router";
-import { FixedSizeList as List } from "react-window";
+import { List } from "react-window";
 import { useTranslation } from "react-i18next";
 import { Modal, Button } from "antd";
 
+import type { RowComponentProps } from "react-window";
 import Source from "./SourceList/Source";
 import LoadingIndicator from "../../../components/LoadingIndicator";
 import { useDebounce, useAppDispatch, useAppSelector } from "../../../hooks";
@@ -14,7 +15,42 @@ import {
 } from "../../../features/sources/sourcesSlice";
 import { fetchConversation } from "../../../features/conversation/conversationSlice";
 import Toolbar, { type filterOption } from "./SourceList/Toolbar";
-import { PendingEventType } from "../../../../types";
+import { PendingEventType, type Source as SourceType } from "../../../../types";
+
+interface SourceRowProps {
+  filteredSources: SourceType[];
+  selectedSources: Set<string>;
+  activeSourceUuid: string | undefined;
+  onSelect: (sourceId: string, checked: boolean) => void;
+  onToggleStar: (sourceId: string, currentlyStarred: boolean) => void;
+}
+
+// nosemgrep: react-component-missing-memo -- memo is ineffective here because shared rowProps (selectedSources) change reference on every selection; the child <Source> is already memo'd
+function SourceRow({
+  index,
+  style,
+  filteredSources,
+  selectedSources,
+  activeSourceUuid,
+  onSelect,
+  onToggleStar,
+}: RowComponentProps<SourceRowProps>) {
+  const source = filteredSources[index];
+  const isSelected = selectedSources.has(source.uuid);
+  const isActive = activeSourceUuid === source.uuid;
+
+  return (
+    <div style={style}>
+      <Source
+        source={source}
+        isSelected={isSelected}
+        isActive={isActive}
+        onSelect={onSelect}
+        onToggleStar={onToggleStar}
+      />
+    </div>
+  );
+}
 
 function SourceList() {
   const { sourceUuid: activeSourceUuid } = useParams<{ sourceUuid?: string }>();
@@ -32,8 +68,6 @@ function SourceList() {
   const [filter, setFilter] = useState<filterOption>("all");
   const [searchTerm, setSearchTerm] = useState("");
   const [dropdownOpen, setDropdownOpen] = useState(false);
-  const [containerHeight, setContainerHeight] = useState(1000); // Larger default for testing
-  const containerRef = useRef<HTMLDivElement>(null);
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
   const [deleteModalLoading, setDeleteModalLoading] = useState(false);
   const [deleteCounts, setDeleteCounts] = useState<{
@@ -48,20 +82,6 @@ function SourceList() {
   useEffect(() => {
     dispatch(fetchSources());
   }, [dispatch]);
-
-  // Calculate container height for react-window
-  useEffect(() => {
-    const updateHeight = () => {
-      if (containerRef.current) {
-        const rect = containerRef.current.getBoundingClientRect();
-        setContainerHeight(rect.height);
-      }
-    };
-
-    updateHeight();
-    window.addEventListener("resize", updateHeight);
-    return () => window.removeEventListener("resize", updateHeight);
-  }, []);
 
   // Handle select all checkbox
   const handleSelectAll = useCallback(
@@ -242,34 +262,6 @@ function SourceList() {
       });
   }, [sources, debouncedSearchTerm, filter, sortedAsc]);
 
-  // Item renderer for react-window
-  const ItemRenderer = useCallback(
-    ({ index, style }: { index: number; style: React.CSSProperties }) => {
-      const source = filteredSources[index];
-      const isSelected = selectedSources.has(source.uuid);
-      const isActive = activeSourceUuid === source.uuid;
-
-      return (
-        <div style={style}>
-          <Source
-            source={source}
-            isSelected={isSelected}
-            isActive={isActive}
-            onSelect={handleSourceSelect}
-            onToggleStar={handleToggleStar}
-          />
-        </div>
-      );
-    },
-    [
-      filteredSources,
-      selectedSources,
-      activeSourceUuid,
-      handleSourceSelect,
-      handleToggleStar,
-    ],
-  );
-
   return (
     <div className="flex-1 flex flex-col min-h-0">
       {/* Toolbar with controls and actions */}
@@ -292,19 +284,21 @@ function SourceList() {
       </div>
 
       {/* Sources list */}
-      <div ref={containerRef} className="flex-1 min-h-0 relative">
+      <div className="flex-1 min-h-0 relative">
         {filteredSources.length === 0 && loading && <LoadingIndicator />}
-        <div className="absolute inset-0">
-          <List
-            height={containerHeight}
-            width="100%"
-            itemCount={filteredSources.length}
-            itemSize={72} // Height of each source item
-            className="select-none"
-          >
-            {ItemRenderer}
-          </List>
-        </div>
+        <List
+          rowCount={filteredSources.length}
+          rowHeight={72}
+          rowComponent={SourceRow}
+          rowProps={{
+            filteredSources,
+            selectedSources,
+            activeSourceUuid,
+            onSelect: handleSourceSelect,
+            onToggleStar: handleToggleStar,
+          }}
+          className="absolute inset-0 select-none"
+        />
       </div>
 
       {/* Delete confirmation modal */}

@@ -15,6 +15,39 @@ import { ExportStatus, PrintStatus } from "../types";
 (global as any).__APP_VERSION__ = "6.6.6-test";
 (global as any).__DEV_AUTO_LOGIN__ = false;
 
+// Mock ResizeObserver for react-window
+global.ResizeObserver = class {
+  callback: ResizeObserverCallback;
+  observedTargets = new Set<Element>();
+  constructor(callback: ResizeObserverCallback) {
+    this.callback = callback;
+  }
+  observe(target: Element) {
+    if (this.observedTargets.has(target)) return;
+    this.observedTargets.add(target);
+    setTimeout(() => {
+      this.callback(
+        [
+          {
+            target,
+            contentRect: { height: 600, width: 400 } as DOMRectReadOnly,
+            borderBoxSize: [{ blockSize: 600, inlineSize: 400 }],
+            contentBoxSize: [{ blockSize: 600, inlineSize: 400 }],
+            devicePixelContentBoxSize: [{ blockSize: 600, inlineSize: 400 }],
+          } as ResizeObserverEntry,
+        ],
+        this,
+      );
+    }, 0);
+  }
+  unobserve(target: Element) {
+    this.observedTargets.delete(target);
+  }
+  disconnect() {
+    this.observedTargets.clear();
+  }
+};
+
 // extends Vitest's expect with jest-dom matchers
 expect.extend(matchers);
 
