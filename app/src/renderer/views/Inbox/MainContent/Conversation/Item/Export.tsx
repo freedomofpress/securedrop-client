@@ -884,7 +884,7 @@ export const ExportWizard = memo(function ExportWizard({
       onCancel={handleClose}
       footer={renderFooter()}
       width={600}
-      closable={!isNonClosableState}
+      closable={false}
       maskClosable={!isNonClosableState}
       getContainer={() => document.getElementById("root") || document.body}
     >
