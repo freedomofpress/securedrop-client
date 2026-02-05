@@ -13,7 +13,7 @@ This is an Electron-based desktop application that provides a secure interface f
 - Node.js v24
 - Rust toolchain (2021 edition or later; for the proxy component)
 - pnpm package manager
-- System packages `jq`, `pkg-config`, and `openssl`
+- System packages `jq`, `pkg-config`, `sqlite3`, and `openssl`
 - Python and [Poetry](https://python-poetry.org/docs/#installing-with-the-official-installer)
 
 On a Debian Bookworm VM, we recommend installing Node and Rust via [nvm](https://github.com/nvm-sh/nvm) and [rustup](https://rustup.rs/), which installs them in your local `PATH`. You can then install `pnpm` via `npm install -g pnpm@latest`.
@@ -23,13 +23,32 @@ On a Debian Bookworm VM, we recommend installing Node and Rust via [nvm](https:/
 
 ## Quick Start
 
-### 1. Install Dependencies
+### 1. Install System Packages
+
+Install the required system packages (`jq`, `pkg-config`, `openssl`, `python3`, `sqlite3`, and Electron dependencies):
+
+```bash
+sudo apt-get update && sudo apt-get install -y \
+    jq pkg-config libssl-dev python3 python3-pip pipx \
+    libglib2.0-0 libnspr4 libnss3 libdbus-1-3 libatk1.0-0 libatk-bridge2.0-0 \
+    libcups2 libcairo2 libgtk-3-0 libgbm1 libasound2 xvfb sqlite3
+```
+
+### 2. Install Dependencies
+
+From the repository root, install Node, Rust, pnpm, and Poetry automatically:
+
+```bash
+make install-deps-app
+```
+
+Then install the app's Node dependencies:
 
 ```bash
 pnpm install
 ```
 
-### 2. Start Development App Locally
+### 3. Start Development App Locally
 
 #### Run App Against Local SecureDrop Server
 
@@ -72,7 +91,7 @@ This will start the Electron app with autologin against the demo SecureDrop inst
 
 You can then access the [Demo Source Interface](https://demo-source.securedrop.org/) to test sending new submissions and reading replies.
 
-### 3. Available Scripts
+### 4. Available Scripts
 
 - `pnpm dev` - Start in development mode
 - `pnpm start` - Start in production mode
