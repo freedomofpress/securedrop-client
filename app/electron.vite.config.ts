@@ -110,6 +110,7 @@ export default defineConfig(({ mode }) => {
       define: {
         __APP_VERSION__: JSON.stringify(process.env.npm_package_version),
         __DEV_AUTO_LOGIN__: mode === "development",
+        __IS_PRODUCTION__: mode === "production",
         __RENDERER_ONLY__: "true",
       },
       build: {

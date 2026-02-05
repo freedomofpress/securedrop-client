@@ -14,6 +14,7 @@ import { ExportStatus, PrintStatus } from "../types";
 // Mock global variables
 (global as any).__APP_VERSION__ = "6.6.6-test";
 (global as any).__DEV_AUTO_LOGIN__ = false;
+(global as any).__IS_PRODUCTION__ = false;
 
 // extends Vitest's expect with jest-dom matchers
 expect.extend(matchers);

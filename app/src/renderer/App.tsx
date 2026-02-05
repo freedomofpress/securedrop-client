@@ -4,29 +4,38 @@ import InboxView from "./views/Inbox";
 import SignInView from "./views/SignIn";
 import { useAppSelector } from "./hooks";
 import { SessionStatus } from "./features/session/sessionSlice";
+import { useTranslation } from "react-i18next";
 
 function App() {
+  const { t } = useTranslation("MainContent");
   return (
-    <Routes>
-      <Route
-        index
-        path="/"
-        element={
-          <ProtectedRoute>
-            <InboxView />
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/source/:sourceUuid"
-        element={
-          <ProtectedRoute>
-            <InboxView />
-          </ProtectedRoute>
-        }
-      />
-      <Route path="/sign-in" element={<SignInView />} />
-    </Routes>
+    <>
+      {!__IS_PRODUCTION__ && (
+        <div className="bg-red-800 text-white text-center p-1">
+          {t("nonProduction")}
+        </div>
+      )}
+      <Routes>
+        <Route
+          index
+          path="/"
+          element={
+            <ProtectedRoute>
+              <InboxView />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/source/:sourceUuid"
+          element={
+            <ProtectedRoute>
+              <InboxView />
+            </ProtectedRoute>
+          }
+        />
+        <Route path="/sign-in" element={<SignInView />} />
+      </Routes>
+    </>
   );
 }
 
