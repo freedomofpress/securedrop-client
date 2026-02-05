@@ -204,6 +204,14 @@ class DownloadJob(SingleObjectApiJob):
                 type(db_object),
                 db_object.uuid,
             ) from e
+        except Exception as e:
+            logger.error("Failed to mark file as decrypted")
+            logger.debug(f"Failed to mark file as decrypted: {e}")
+            raise DownloadDecryptionException(
+                f"Failed to mark file as decrypted: {os.path.basename(filepath)}",
+                type(db_object),
+                db_object.uuid,
+            ) from e
 
     @classmethod
     def _check_file_integrity(cls, etag: str, file_path: str) -> bool:
