@@ -1,5 +1,47 @@
 # Changelog
 
+## 0.18.0-rc1
+
+This release introduces the new SecureDrop App, which is a rewrite of the
+SecureDrop Client using a new framework (Electron), a more efficient sync
+system, plus many UX improvements and new features.
+
+The non-App related changes in this release are:
+
+* Add missing shebang to "securedrop.Proxy" (#2773)
+* Set permissions on implicitly created directories on archive extraction (#2919)
+* Implement conffile override hack for all packages (#2913)
+* Remove arti packaging (#2693)
+* Remove unused securedrop-qubesdb-tools package (#2696)
+* Remove stock entries from paxctld.conf (#2918)
+* Dependency updates:
+  * Upgrade flate2 to remove adler dependency (#2679, #2689)
+  * Upgrade vcrpy to 8.1.0 (#2909)
+  * Bump urllib3 from 2.5.0 to 2.6.3 (#2892, #2991)
+  * Bump werkzeug from 3.0.6 to 3.1.5 in /proxy (#2900, #3011)
+  * Bump ruff from 0.9.7 to 0.14.11 (#2828, #2901, #2989)
+  * Bump protobuf from 6.33.0 to 6.33.5 (#3061)
+  * Bump python-multipart from 0.0.20 to 0.0.22 (#3024)
+  * Bump semgrep from 1.142.0 to 1.147.0 (#2839, #2857, #2971)
+  * Bump zizmor from 1.12.1 to 1.16.3 (#2698, #2810)
+  * Bump mypy from 1.17.1 to 1.19.0 in /log (#2700, #2872)
+  * Bump pytest from 9.0.1 to 9.0.2 in /proxy (#2922)
+  * Bump actions/setup-node from 4 to 6 (#2682, #2746, #2762)
+  * Bump actions/setup-python from 5 to 6 (#2683)
+  * Bump actions/checkout from 5 to 6 (#2856)
+  * Bump actions/download-artifact from 5 to 7 (#2782, #2941)
+  * Bump actions/upload-artifact from 4 to 6 (#2784, #2942)
+  * Bump actions/cache from 4 to 5 (#2944)
+  * Various development dependencies (#2490, #2684, #2685, #2686, #2815)
+* Internal and development:
+  * Add architecture decision record (ADR) (#2938)
+  * README: Replace comment on project maturity (#2867)
+  * Vertical-align environment diagrams for easier visual comparison (#2736)
+  * Fix incorrect use of assert func.called_ in tests (#2850)
+  * Centralize semgrep installation, configure for app, add rules for SQLi (#2798)
+  * Nightlies workflow improvements (#2719, #2721, #2952, #2958, #3015, #3067)
+
+
 ## 0.17.1
 
 This release closes a potential path traversal attack that could result in a
