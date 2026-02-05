@@ -532,12 +532,10 @@ def test_FileDownloadJob_decryption_error(
     assert mock_decrypt.called
 
 
-def test_FileDownloadJob_decryption_db_timeout(
-    mocker, homedir, session, session_maker
-):
+def test_FileDownloadJob_decryption_db_timeout(mocker, homedir, session, session_maker):
     """
-    After GPG decryption succeeds, _decrypt can encounter an exception while 
-    committing the mark_as_decrypted state and attempting to acquire the SQLite 
+    After GPG decryption succeeds, _decrypt can encounter an exception while
+    committing the mark_as_decrypted state and attempting to acquire the SQLite
     DB lock. This non-CryptoError exception should be handled and wrapped in
     DownloadDecryptionException to be properly handled by the failure handler.
     """
