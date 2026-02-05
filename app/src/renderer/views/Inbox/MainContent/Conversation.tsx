@@ -227,7 +227,6 @@ const Conversation = memo(function Conversation({
               <Input.TextArea
                 data-testid="reply-textarea"
                 maxLength={MAX_REPLY_LENGTH}
-                rows={4}
                 placeholder={placeholderText}
                 className="w-full border border-gray-300 rounded-lg p-3 text-gray-900 resize-none focus:outline-none focus:ring-2 focus:ring-blue-500 conversation-textarea"
                 onChange={(e) => setMessageValue(e.target.value)}
