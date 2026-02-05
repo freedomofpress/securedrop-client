@@ -2,6 +2,15 @@
   padding-right: 40px;
 }
 
+.conversation-textarea textarea {
+  field-sizing: content;
+  min-height: calc(1lh + 24px); /* 2 lines + padding */
+  max-height: calc(15lh + 24px); /* 15 lines + padding */
+  overflow-y: auto !important;
+  resize: none !important;
+  padding: 10px;
+}
+
 .conversation-send-btn {
   position: absolute;
   right: 10px;
