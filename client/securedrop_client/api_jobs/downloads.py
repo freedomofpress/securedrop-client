@@ -6,6 +6,7 @@ import os
 from tempfile import NamedTemporaryFile
 from typing import Any
 
+from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm.exc import NoResultFound
 from sqlalchemy.orm.session import Session
 
@@ -168,11 +169,25 @@ class DownloadJob(SingleObjectApiJob):
             mark_as_downloaded(type(db_object), db_object.uuid, session)
             logger.info(f"File downloaded to {destination}")
             return destination
+        except DownloadChecksumMismatchException as e:
+            raise e
         except (ValueError, FileNotFoundError, RuntimeError, BaseError) as e:
             logger.error("Download failed")
             logger.debug(f"Download failed: {e}")
             raise DownloadDecryptionException(
                 f"Failed to download {db_object.uuid}", type(db_object), db_object.uuid
+            ) from e
+        except SQLAlchemyError as e:
+            logger.error("Failed to mark object as downloaded")
+            logger.debug("Failed to mark object as downloaded: {e}")
+            raise DownloadDecryptionException(
+                f"Failed to mark {db_object.uuid} as downloaded", type(db_object), db_object.uuid
+            ) from e
+        except Exception as e:
+            logger.error("Unknown download error")
+            logger.debug("Unknown download error: {e}")
+            raise DownloadDecryptionException(
+                f"Unknown download error for {db_object.uuid}", type(db_object), db_object.uuid
             ) from e
 
     def _decrypt(self, filepath: str, db_object: File | Message | Reply, session: Session) -> None:
@@ -201,6 +216,22 @@ class DownloadJob(SingleObjectApiJob):
             session.commit()
             raise DownloadDecryptionException(
                 f"Failed to decrypt file: {os.path.basename(filepath)}",
+                type(db_object),
+                db_object.uuid,
+            ) from e
+        except SQLAlchemyError as e:
+            logger.error("Failed to mark file as decrypted")
+            logger.debug(f"Failed to mark file as decrypted: {e}")
+            raise DownloadDecryptionException(
+                f"Failed to mark file as decrypted: {os.path.basename(filepath)}",
+                type(db_object),
+                db_object.uuid,
+            ) from e
+        except Exception as e:
+            logger.error("Unknown decryption error")
+            logger.debug(f"Unknown decryption error: {e}")
+            raise DownloadDecryptionException(
+                f"Unknown decryption failure: {os.path.basename(filepath)}",
                 type(db_object),
                 db_object.uuid,
             ) from e
