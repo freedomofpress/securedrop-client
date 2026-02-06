@@ -1,7 +1,8 @@
-import { screen, waitFor } from "@testing-library/react";
+import { screen, waitFor, fireEvent } from "@testing-library/react";
 import { expect, describe, it, vi, beforeEach, afterEach } from "vitest";
 import userEvent from "@testing-library/user-event";
 import React from "react";
+import { Routes, Route } from "react-router";
 import SourceList from "./SourceList";
 import type { Source as SourceType } from "../../../../types";
 import { PendingEventType } from "../../../../types";
@@ -188,18 +189,29 @@ describe("Sources Component", () => {
   });
 
   // Helper function to render SourceList with Redux state
-  const renderSourceList = (sources = mockSources, loading = false) => {
-    return renderWithProviders(<SourceList />, {
-      preloadedState: {
-        sources: {
-          sources,
-          activeSourceUuid: null,
-          loading,
-          error: null,
-          conversationIndicators: {},
+  const renderSourceList = (
+    sources = mockSources,
+    loading = false,
+    initialRoute = "/",
+  ) => {
+    return renderWithProviders(
+      <Routes>
+        <Route path="/" element={<SourceList />} />
+        <Route path="/source/:sourceUuid" element={<SourceList />} />
+      </Routes>,
+      {
+        initialEntries: [initialRoute],
+        preloadedState: {
+          sources: {
+            sources,
+            activeSourceUuid: null,
+            loading,
+            error: null,
+            conversationIndicators: {},
+          },
         },
       },
-    });
+    );
   };
 
   describe("Default behavior", () => {
@@ -937,6 +949,135 @@ describe("Sources Component", () => {
         expect(checkbox1).not.toBeChecked();
         expect(checkbox2).not.toBeChecked();
       });
+    });
+  });
+
+  describe("Keyboard shortcut (Ctrl+Delete)", () => {
+    beforeEach(() => {
+      window.electronAPI.addPendingSourceEvent = vi
+        .fn()
+        .mockResolvedValue(BigInt(123));
+    });
+
+    it("opens delete modal when Ctrl+Delete is pressed with sources selected", async () => {
+      renderSourceList();
+
+      await waitFor(() => {
+        expect(screen.getByTestId("source-source-1")).toBeInTheDocument();
+      });
+
+      // Select a source
+      await userEvent.click(screen.getByTestId("source-checkbox-source-1"));
+
+      // Press Ctrl+Delete
+      fireEvent.keyDown(document, { key: "Delete", ctrlKey: true });
+
+      // Modal should be open
+      await waitFor(() => {
+        expect(screen.getByTestId("delete-modal")).toBeInTheDocument();
+      });
+    });
+
+    it("does not open delete modal when Ctrl+Delete is pressed with no sources selected and no active source", async () => {
+      renderSourceList();
+
+      await waitFor(() => {
+        expect(screen.getByTestId("source-source-1")).toBeInTheDocument();
+      });
+
+      // Press Ctrl+Delete without selecting any sources
+      fireEvent.keyDown(document, { key: "Delete", ctrlKey: true });
+
+      // Modal should not be open
+      expect(screen.queryByTestId("delete-modal")).not.toBeInTheDocument();
+    });
+
+    it("auto-selects active source on Ctrl+Delete and unselects on cancel", async () => {
+      renderSourceList(mockSources, false, "/source/source-1");
+
+      await waitFor(() => {
+        expect(screen.getByTestId("source-source-1")).toBeInTheDocument();
+      });
+
+      // Press Ctrl+Delete without selecting any sources - should auto-select active source
+      fireEvent.keyDown(document, { key: "Delete", ctrlKey: true });
+
+      // Modal should be open with the active source checked
+      await waitFor(() => {
+        expect(screen.getByTestId("delete-modal")).toBeInTheDocument();
+      });
+      expect(screen.getByTestId("source-checkbox-source-1")).toBeChecked();
+
+      // Cancel the modal - source should be unselected again
+      await userEvent.click(screen.getByTestId("delete-modal-cancel-button"));
+
+      await waitFor(() => {
+        expect(
+          screen.getByTestId("source-checkbox-source-1"),
+        ).not.toBeChecked();
+      });
+    });
+
+    it("does not open delete modal when Delete is pressed without Ctrl", async () => {
+      renderSourceList();
+
+      await waitFor(() => {
+        expect(screen.getByTestId("source-source-1")).toBeInTheDocument();
+      });
+
+      // Select a source
+      await userEvent.click(screen.getByTestId("source-checkbox-source-1"));
+
+      // Press Delete without Ctrl
+      fireEvent.keyDown(document, { key: "Delete", ctrlKey: false });
+
+      // Modal should not be open
+      expect(screen.queryByTestId("delete-modal")).not.toBeInTheDocument();
+    });
+
+    it("does not trigger when typing in an input field", async () => {
+      renderSourceList();
+
+      await waitFor(() => {
+        expect(screen.getByTestId("source-source-1")).toBeInTheDocument();
+      });
+
+      // Select a source
+      await userEvent.click(screen.getByTestId("source-checkbox-source-1"));
+
+      // Focus the search input and fire keydown on it
+      const searchInput = screen.getByTestId("source-search-input");
+      searchInput.focus();
+
+      // Press Ctrl+Delete while focused on input
+      fireEvent.keyDown(searchInput, { key: "Delete", ctrlKey: true });
+
+      // Modal should not be open
+      expect(screen.queryByTestId("delete-modal")).not.toBeInTheDocument();
+    });
+
+    it("does not re-trigger when modal is already open", async () => {
+      renderSourceList();
+
+      await waitFor(() => {
+        expect(screen.getByTestId("source-source-1")).toBeInTheDocument();
+      });
+
+      // Select a source
+      await userEvent.click(screen.getByTestId("source-checkbox-source-1"));
+
+      // Open modal via button
+      await userEvent.click(screen.getByTestId("bulk-delete-button"));
+
+      await waitFor(() => {
+        expect(screen.getByTestId("delete-modal")).toBeInTheDocument();
+      });
+
+      // Press Ctrl+Delete again - should not cause issues
+      fireEvent.keyDown(document, { key: "Delete", ctrlKey: true });
+
+      // Modal should still be open (not re-triggered)
+      expect(screen.getByTestId("delete-modal")).toBeInTheDocument();
     });
   });
 

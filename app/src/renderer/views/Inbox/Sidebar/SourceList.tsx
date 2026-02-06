@@ -34,6 +34,7 @@ function SourceList() {
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [containerHeight, setContainerHeight] = useState(1000); // Larger default for testing
   const containerRef = useRef<HTMLDivElement>(null);
+  const autoSelectedRef = useRef(false);
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
   const [deleteModalLoading, setDeleteModalLoading] = useState(false);
   const [deleteCounts, setDeleteCounts] = useState<{
@@ -109,51 +110,102 @@ function SourceList() {
     [dispatch],
   );
 
-  const handleBulkDelete = useCallback(async () => {
-    if (selectedSources.size === 0) {
-      return;
-    }
+  const handleBulkDelete = useCallback(
+    async (overrideSources?: Set<string>) => {
+      // Guard: onClick handlers pass a React event as the first arg, ignore it
+      const sourcesToDelete =
+        overrideSources instanceof Set ? overrideSources : selectedSources;
+      if (sourcesToDelete.size === 0) {
+        return;
+      }
 
-    setDeleteModalOpen(true);
-    setDeleteModalLoading(true);
+      // Update selectedSources state if an override was provided
+      if (overrideSources instanceof Set) {
+        setSelectedSources(overrideSources);
+      }
 
-    try {
-      // Fetch all source items to count messages, files, and replies
-      let totalMessages = 0;
-      let totalFiles = 0;
-      let totalReplies = 0;
+      setDeleteModalOpen(true);
+      setDeleteModalLoading(true);
 
-      for (const sourceUuid of selectedSources) {
-        const sourceWithItems =
-          await window.electronAPI.getSourceWithItems(sourceUuid);
-        if (sourceWithItems) {
-          // Count messages, files, and replies
-          for (const item of sourceWithItems.items) {
-            if (item.data.kind === "message") {
-              totalMessages++;
-            } else if (item.data.kind === "file") {
-              totalFiles++;
-            } else if (item.data.kind === "reply") {
-              totalReplies++;
+      try {
+        // Fetch all source items to count messages, files, and replies
+        let totalMessages = 0;
+        let totalFiles = 0;
+        let totalReplies = 0;
+
+        for (const sourceUuid of sourcesToDelete) {
+          const sourceWithItems =
+            await window.electronAPI.getSourceWithItems(sourceUuid);
+          if (sourceWithItems) {
+            // Count messages, files, and replies
+            for (const item of sourceWithItems.items) {
+              if (item.data.kind === "message") {
+                totalMessages++;
+              } else if (item.data.kind === "file") {
+                totalFiles++;
+              } else if (item.data.kind === "reply") {
+                totalReplies++;
+              }
             }
           }
         }
-      }
 
-      setDeleteCounts({
-        messages: totalMessages,
-        files: totalFiles,
-        replies: totalReplies,
-      });
-    } catch (error) {
-      console.error("Error fetching source items:", error);
-      setDeleteCounts({ messages: 0, files: 0, replies: 0 });
-    } finally {
-      setDeleteModalLoading(false);
-    }
-  }, [selectedSources]);
+        setDeleteCounts({
+          messages: totalMessages,
+          files: totalFiles,
+          replies: totalReplies,
+        });
+      } catch (error) {
+        console.error("Error fetching source items:", error);
+        setDeleteCounts({ messages: 0, files: 0, replies: 0 });
+      } finally {
+        setDeleteModalLoading(false);
+      }
+    },
+    [selectedSources],
+  );
+
+  // Keyboard shortcut: Ctrl+Delete opens deletion dialog
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Don't trigger if modal is already open
+      if (deleteModalOpen) {
+        return;
+      }
+      // Don't trigger when typing in an input or textarea
+      const target = e.target as HTMLElement;
+      if (target.tagName === "INPUT" || target.tagName === "TEXTAREA") {
+        return;
+      }
+      if (e.ctrlKey && e.key === "Delete") {
+        if (selectedSources.size > 0) {
+          e.preventDefault();
+          handleBulkDelete();
+        } else if (activeSourceUuid) {
+          // Auto-select the active source and trigger deletion
+          e.preventDefault();
+          autoSelectedRef.current = true;
+          handleBulkDelete(new Set([activeSourceUuid]));
+        }
+      }
+    };
+
+    document.addEventListener("keydown", handleKeyDown);
+    return () => {
+      document.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [
+    selectedSources.size,
+    handleBulkDelete,
+    deleteModalOpen,
+    activeSourceUuid,
+  ]);
 
   const handleDeleteModalCancel = useCallback(() => {
+    if (autoSelectedRef.current) {
+      setSelectedSources(new Set());
+      autoSelectedRef.current = false;
+    }
     setDeleteModalOpen(false);
   }, []);
 
@@ -182,6 +234,7 @@ function SourceList() {
       // Uncheck all boxes
       setSelectedSources(new Set());
       setAllSelected(false);
+      autoSelectedRef.current = false;
       setDeleteModalOpen(false);
     },
     [selectedSources, dispatch, activeSourceUuid, navigate],
