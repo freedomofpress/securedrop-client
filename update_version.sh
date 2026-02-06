@@ -16,6 +16,7 @@ fi
 
 sed -i'' -r -e "s/^__version__ = \"(.*?)\"/__version__ = \"${NEW_VERSION}\"/" client/securedrop_client/__init__.py
 sed -i'' -r -e "s/^__version__ = \"(.*?)\"/__version__ = \"${NEW_VERSION}\"/" export/securedrop_export/__init__.py
+sed -i'' -r -e 's/"version": ".*?"/"version": "'"${NEW_VERSION}"'"/' app/package.json
 
 # Normalize version, convert any - to ~, e.g. 0.9.0-rc1 to 0.9.0~rc1
 DEB_VERSION=$(echo "$NEW_VERSION" | sed 's/-/~/g')
