@@ -84,7 +84,10 @@ def read_gzip_header_filename(filename: str) -> str:
             original_filename = str(fb, "utf-8")
 
     check_path_traversal(original_filename)
-    return original_filename
+    name = Path(original_filename).name
+    if not name:
+        raise ValueError(f"Extracted filename is only a directory: {original_filename}")
+    return name
 
 
 class GpgHelper:
