@@ -1,6 +1,8 @@
 [advisories]
 # advisory IDs to ignore e.g. ["RUSTSEC-2019-0001", ...]
-ignore = []
+ignore = [
+    "RUSTSEC-2025-0134" # rustls-pemfile is unmaintained (#2893)
+]
 
 # Output Configuration
 [output]
