@@ -458,22 +458,23 @@ boltons = ">=20.0.0"
 
 [[package]]
 name = "glom"
-version = "22.1.0"
+version = "25.12.0"
 description = "A declarative object transformer and formatter, for conglomerating nested data."
 optional = false
 python-versions = "*"
 groups = ["dev"]
 files = [
-    {file = "glom-22.1.0-py2.py3-none-any.whl", hash = "sha256:5339da206bf3532e01a83a35aca202960ea885156986d190574b779598e9e772"},
-    {file = "glom-22.1.0.tar.gz", hash = "sha256:1510c6587a8f9c64a246641b70033cbc5ebde99f02ad245693678038e821aeb5"},
+    {file = "glom-25.12.0-py3-none-any.whl", hash = "sha256:b9f21e77f71a6576a43864e85066b8cc3f0f778d0d50961563f8981377a6dcb1"},
+    {file = "glom-25.12.0.tar.gz", hash = "sha256:1ae7da88be3693df40ad27bdf57a765a55c075c86c971bcddd67927403eb0069"},
 ]
 
 [package.dependencies]
 attrs = "*"
 boltons = ">=19.3.0"
-face = ">=20.1.0"
+face = ">=20.1.1"
 
 [package.extras]
+toml = ["tomli ; python_version < \"3.11\""]
 yaml = ["PyYAML"]
 
 [[package]]
@@ -1503,19 +1504,35 @@ files = [
 ]
 
 [[package]]
+name = "semantic-version"
+version = "2.10.0"
+description = "A library implementing the 'SemVer' scheme."
+optional = false
+python-versions = ">=2.7"
+groups = ["dev"]
+files = [
+    {file = "semantic_version-2.10.0-py2.py3-none-any.whl", hash = "sha256:de78a3b8e0feda74cabc54aab2da702113e33ac9d9eb9d2389bcf1f58b7d9177"},
+    {file = "semantic_version-2.10.0.tar.gz", hash = "sha256:bdabb6d336998cbb378d4b9db3a4b56a1e3235701dc05ea2690d9a997ed5041c"},
+]
+
+[package.extras]
+dev = ["Django (>=1.11)", "check-manifest", "colorama (<=0.4.1) ; python_version == \"3.4\"", "coverage", "flake8", "nose2", "readme-renderer (<25.0) ; python_version == \"3.4\"", "tox", "wheel", "zest.releaser[recommended]"]
+doc = ["Sphinx", "sphinx-rtd-theme"]
+
+[[package]]
 name = "semgrep"
-version = "1.148.0"
+version = "1.151.0"
 description = "Lightweight static analysis for many languages. Find bug variants with patterns that look like source code."
 optional = false
 python-versions = ">=3.10"
 groups = ["dev"]
 files = [
-    {file = "semgrep-1.148.0-cp310.cp311.cp312.cp313.cp314.py310.py311.py312.py313.py314-none-macosx_10_14_x86_64.whl", hash = "sha256:d86025c3266a186df208c4c2cdfdcd7ec1c4243360763722b9f0cedb3eab1019"},
-    {file = "semgrep-1.148.0-cp310.cp311.cp312.cp313.cp314.py310.py311.py312.py313.py314-none-macosx_11_0_arm64.whl", hash = "sha256:7328c08f1092e1976e54215bc78ddd2a18da2780b275328d364272ecbcaeeeda"},
-    {file = "semgrep-1.148.0-cp310.cp311.cp312.cp313.cp314.py310.py311.py312.py313.py314-none-musllinux_1_0_aarch64.manylinux2014_aarch64.whl", hash = "sha256:44852c5e859eacafdaad39f8ead5dfa2473fe66049eb4499bd1ff93c44e60cc5"},
-    {file = "semgrep-1.148.0-cp310.cp311.cp312.cp313.cp314.py310.py311.py312.py313.py314-none-musllinux_1_0_x86_64.manylinux2014_x86_64.whl", hash = "sha256:2591cedef984685f6d3e2b7185eefa73242c4540f1f5f0bf8bb576afe1e57468"},
-    {file = "semgrep-1.148.0-cp310.cp311.cp312.cp313.cp314.py310.py311.py312.py313.py314-none-win_amd64.whl", hash = "sha256:369505ddb91f438670b564f76093beca78a41e6b7dbf99655f5ffe4fafec64dd"},
-    {file = "semgrep-1.148.0.tar.gz", hash = "sha256:c690b9b922639d7ab50a45797716d1e40d57e104fe53c53cea38e61fccfe6d37"},
+    {file = "semgrep-1.151.0-cp310.cp311.cp312.cp313.cp314.py310.py311.py312.py313.py314-none-macosx_10_14_x86_64.whl", hash = "sha256:f4e15e3346bee1216c0bfe8f89456bd63e6ebfab4ab7be57067db02bcc0b2e14"},
+    {file = "semgrep-1.151.0-cp310.cp311.cp312.cp313.cp314.py310.py311.py312.py313.py314-none-macosx_11_0_arm64.whl", hash = "sha256:7e500831cc53bfc55e7c1a8a0dd63d28d06d31c88e6ca8ead12c878cf3ddcd2c"},
+    {file = "semgrep-1.151.0-cp310.cp311.cp312.cp313.cp314.py310.py311.py312.py313.py314-none-musllinux_1_0_aarch64.manylinux2014_aarch64.whl", hash = "sha256:c9d61dc8c24615bfaedb3c08bd40d328ab3d33ca1f15600f8179ef61de599694"},
+    {file = "semgrep-1.151.0-cp310.cp311.cp312.cp313.cp314.py310.py311.py312.py313.py314-none-musllinux_1_0_x86_64.manylinux2014_x86_64.whl", hash = "sha256:2ffe0351049ce466953043a4a01f91c56ea1acfd179c9ade0c0ff17d2b2861aa"},
+    {file = "semgrep-1.151.0-cp310.cp311.cp312.cp313.cp314.py310.py311.py312.py313.py314-none-win_amd64.whl", hash = "sha256:9a63d9b29eac99a0a916466cd8de7fd1f1a9fab16b5ae8afe3dd6496292505d6"},
+    {file = "semgrep-1.151.0.tar.gz", hash = "sha256:2f82ea173811727a5d64df5490f4d2154a75abe570882524996eebd588264fe0"},
 ]
 
 [package.dependencies]
@@ -1525,7 +1542,7 @@ click = ">=8.1.8,<8.2.0"
 click-option-group = ">=0.5,<1.0"
 colorama = ">=0.4.0,<0.5.0"
 exceptiongroup = ">=1.2.0,<1.3.0"
-glom = ">=22.1,<23.0"
+glom = ">=23.3"
 jsonschema = ">=4.25.1,<4.26.0"
 mcp = "1.23.3"
 opentelemetry-api = ">=1.37.0,<1.38.0"
@@ -1535,11 +1552,13 @@ opentelemetry-instrumentation-threading = ">=0.58b0,<1.0"
 opentelemetry-sdk = ">=1.37.0,<1.38.0"
 packaging = ">=21.0"
 peewee = ">=3.14,<4.0"
+pyjwt = {version = ">=2.4,<3.0", extras = ["crypto"]}
 pywin32 = {version = "311", markers = "sys_platform == \"win32\""}
 requests = ">=2.22,<3.0"
 rich = ">=13.5.2,<13.6.0"
 "ruamel.yaml" = ">=0.18.15"
 "ruamel.yaml.clib" = "0.2.14"
+semantic-version = ">=2.10.0,<2.11.0"
 tomli = ">=2.0.1,<2.1.0"
 typing-extensions = ">=4.2,<5.0"
 urllib3 = ">=2.0,<3.0"
