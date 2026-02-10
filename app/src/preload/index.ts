@@ -9,6 +9,7 @@ import {
   type SourceWithItems,
   type Journalist,
   type AuthedRequest,
+  type FirstRunStatus,
   Item,
   PendingEventType,
   SyncStatus,
@@ -153,6 +154,9 @@ const electronAPI = {
   ),
   cancelPrint: logIpcCall<void>("cancelPrint", () =>
     ipcRenderer.invoke("cancelPrint"),
+  ),
+  getFirstRunStatus: logIpcCall<FirstRunStatus>("getFirstRunStatus", () =>
+    ipcRenderer.invoke("getFirstRunStatus"),
   ),
 };
 

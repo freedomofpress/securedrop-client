@@ -198,6 +198,7 @@ beforeEach(() => {
     printTranscript: vi.fn().mockResolvedValue(PrintStatus.PRINT_SUCCESS),
     cancelExport: vi.fn().mockResolvedValue(null),
     cancelPrint: vi.fn().mockResolvedValue(null),
+    getFirstRunStatus: vi.fn().mockResolvedValue(null),
   } as ElectronAPI;
 });
 

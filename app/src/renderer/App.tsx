@@ -4,6 +4,7 @@ import InboxView from "./views/Inbox";
 import SignInView from "./views/SignIn";
 import { useAppSelector } from "./hooks";
 import { SessionStatus } from "./features/session/sessionSlice";
+import { FirstRunPopup } from "./components/FirstRunPopup";
 
 function App() {
   return (
@@ -43,7 +44,12 @@ const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
     session.status == SessionStatus.Auth ||
     session.status == SessionStatus.Offline
   ) {
-    return children;
+    return (
+      <>
+        <FirstRunPopup />
+        {children}
+      </>
+    );
   }
 
   return <Navigate to="/sign-in" replace />;
