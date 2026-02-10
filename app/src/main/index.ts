@@ -51,6 +51,12 @@ import { writeTranscript } from "./transcriber";
 // This must be done before we create any files or spawn any worker threads.
 setUmask();
 
+// Handle --version flag early, before any other initialization
+if (process.argv.includes("--version")) {
+  console.log(`SecureDrop App v${app.getVersion()}`);
+  process.exit(0);
+}
+
 // Enforce single instance - quit if another instance is already running.
 // This must be checked early before allocating resources.
 const gotTheLock = app.requestSingleInstanceLock();
