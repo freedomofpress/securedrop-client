@@ -4,6 +4,7 @@ import { Routes, Route } from "react-router";
 import MainContent from "./MainContent";
 import type { SourceWithItems } from "../../../types";
 import { renderWithProviders } from "../../test-component-setup";
+import { fetchConversation } from "../../features/conversation/conversationSlice";
 
 // Mock components
 vi.mock("./MainContent/EmptyState", () => ({
@@ -133,8 +134,9 @@ describe("MainContent Component", () => {
   });
 
   describe("Loading State", () => {
-    it("shows loading state when conversation is being fetched", async () => {
-      renderWithProviders(
+    it("keeps previous conversation visible while loading a new source", async () => {
+      // Start with source-1 fully loaded
+      const { store } = renderWithProviders(
         <Routes>
           <Route path="/source/:sourceUuid" element={<MainContent />} />
         </Routes>,
@@ -142,17 +144,51 @@ describe("MainContent Component", () => {
           initialEntries: ["/source/source-1"],
           preloadedState: {
             conversation: {
-              conversation: null,
-              loading: true,
+              conversation: mockSourceWithItems,
+              loading: false,
               error: null,
-              lastFetchTime: null,
+              lastFetchTime: Date.now(),
             },
           },
         },
       );
 
-      expect(screen.getByText("Loading...")).toBeInTheDocument();
-      expect(screen.getByText("Loading source details...")).toBeInTheDocument();
+      // Verify source-1 is displayed
+      expect(screen.getByTestId("conversation")).toBeInTheDocument();
+      expect(screen.getByTestId("conversation-source-uuid")).toHaveTextContent(
+        "source-1",
+      );
+      expect(screen.getByTestId("conversation-items-count")).toHaveTextContent(
+        "2",
+      );
+
+      // Simulate switching to source-2: dispatch fetchConversation which sets loading=true
+      // and the selector will return null since conversation.uuid !== "source-1"
+      // (the pending thunk changes loading to true)
+      const mockSource2 = vi.fn().mockImplementation(
+        () =>
+          new Promise(() => {
+            /* never resolves — simulates in-flight fetch */
+          }),
+      );
+      (window as any).electronAPI.getSourceWithItems = mockSource2;
+      store.dispatch(fetchConversation("source-2"));
+
+      await waitFor(() => {
+        expect(store.getState().conversation.loading).toBe(true);
+      });
+
+      // The previous source-1 conversation should still be visible
+      expect(screen.getByTestId("conversation")).toBeInTheDocument();
+      expect(screen.getByTestId("conversation-source-uuid")).toHaveTextContent(
+        "source-1",
+      );
+      expect(screen.getByTestId("conversation-items-count")).toHaveTextContent(
+        "2",
+      );
+
+      // No loading flash should appear
+      expect(screen.queryByText("Loading...")).not.toBeInTheDocument();
     });
   });
 
@@ -272,8 +308,9 @@ describe("MainContent Component", () => {
       });
     });
 
-    it("uses loading state from Redux", async () => {
-      renderWithProviders(
+    it("shows previous source header while loading a new source", async () => {
+      // Start with source-1 fully loaded
+      const { store } = renderWithProviders(
         <Routes>
           <Route path="/source/:sourceUuid" element={<MainContent />} />
         </Routes>,
@@ -281,16 +318,39 @@ describe("MainContent Component", () => {
           initialEntries: ["/source/source-1"],
           preloadedState: {
             conversation: {
-              conversation: null,
-              loading: true,
+              conversation: mockSourceWithItems,
+              loading: false,
               error: null,
-              lastFetchTime: null,
+              lastFetchTime: Date.now(),
             },
           },
         },
       );
 
-      expect(screen.getByText("Loading...")).toBeInTheDocument();
+      // Verify source-1 header is displayed
+      expect(screen.getByTestId("avatar")).toHaveTextContent(
+        "Alice Wonderland",
+      );
+
+      // Simulate switching to source-2
+      const mockSource2 = vi.fn().mockImplementation(
+        () =>
+          new Promise(() => {
+            /* never resolves */
+          }),
+      );
+      (window as any).electronAPI.getSourceWithItems = mockSource2;
+      store.dispatch(fetchConversation("source-2"));
+
+      await waitFor(() => {
+        expect(store.getState().conversation.loading).toBe(true);
+      });
+
+      // Header should still show source-1's designation, not "Loading..."
+      expect(screen.queryByText("Loading...")).not.toBeInTheDocument();
+      expect(screen.getByTestId("avatar")).toHaveTextContent(
+        "Alice Wonderland",
+      );
     });
   });
 });

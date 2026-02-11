@@ -1,6 +1,5 @@
 import { useParams } from "react-router";
-import { useEffect, useMemo } from "react";
-import { useTranslation } from "react-i18next";
+import { useEffect, useMemo, useState } from "react";
 
 import { useAppDispatch, useAppSelector } from "../../hooks";
 import {
@@ -8,6 +7,7 @@ import {
   selectConversation,
   selectConversationLoading,
 } from "../../features/conversation/conversationSlice";
+import type { SourceWithItems } from "../../../types";
 import EmptyState from "./MainContent/EmptyState";
 import Conversation from "./MainContent/Conversation";
 import Header from "./MainContent/Header";
@@ -15,12 +15,24 @@ import Header from "./MainContent/Header";
 function MainContent() {
   const { sourceUuid } = useParams<{ sourceUuid?: string }>();
   const dispatch = useAppDispatch();
-  const { t } = useTranslation("MainContent");
 
   const sourceWithItems = useAppSelector((state) =>
     sourceUuid ? selectConversation(state, sourceUuid) : null,
   );
   const loading = useAppSelector(selectConversationLoading);
+
+  // Keep the previous sourceWithItems visible while loading the next one.
+  const [prevSourceWithItems, setPrevSourceWithItems] =
+    useState<SourceWithItems | null>(null);
+  if (sourceWithItems && sourceWithItems !== prevSourceWithItems) {
+    setPrevSourceWithItems(sourceWithItems);
+  } else if (!sourceUuid && prevSourceWithItems !== null) {
+    setPrevSourceWithItems(null);
+  }
+
+  // Use current data if available, otherwise fall back to previous while loading
+  const displayedSourceWithItems =
+    sourceWithItems ?? (loading ? prevSourceWithItems : null);
 
   // Fetch the source with its items
   useEffect(() => {
@@ -30,35 +42,25 @@ function MainContent() {
   }, [dispatch, sourceUuid]);
 
   const content = useMemo(() => {
-    // If we have a source UUID, show the source content
-    if (sourceUuid) {
-      if (sourceWithItems) {
-        // Source and items exists, display
-        return <Conversation sourceWithItems={sourceWithItems} />;
-      } else if (loading) {
-        // Loading
-        return <p>{t("loading.content")}</p>;
-      } else {
-        // Source not found
-        return <p>{t("sourceNotFound.content")}</p>;
-      }
+    // If we have a source, show the source content
+    if (sourceUuid && displayedSourceWithItems) {
+      return <Conversation sourceWithItems={displayedSourceWithItems} />;
     } else {
-      // Show empty state when no source is selected
+      // Otherwise show empty state
       return (
         <div className="flex flex-1 items-center justify-center w-full h-full">
           <EmptyState />
         </div>
       );
     }
-  }, [sourceUuid, loading, sourceWithItems, t]);
+  }, [sourceUuid, displayedSourceWithItems]);
 
   return (
     <div className="flex-1 flex flex-col h-full min-h-0">
       <div className="sd-bg-primary sd-border-secondary border-b h-12 p-1 px-4">
         <Header
           sourceUuid={sourceUuid}
-          loading={loading}
-          sourceWithItems={sourceWithItems}
+          sourceWithItems={displayedSourceWithItems}
         />
       </div>
       <div className="flex-1 flex w-full sd-bg-secondary min-h-0">

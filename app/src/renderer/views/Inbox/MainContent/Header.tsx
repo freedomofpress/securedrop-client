@@ -8,27 +8,17 @@ import SourceMenu from "./Header/SourceMenu";
 
 interface HeaderProps {
   sourceUuid?: string;
-  loading: boolean;
   sourceWithItems: SourceWithItems | null;
 }
 
 const Header = memo(function Header({
   sourceUuid,
-  loading,
   sourceWithItems,
 }: HeaderProps) {
   const { t, i18n } = useTranslation("MainContent");
 
-  if (!sourceUuid) {
+  if (!sourceUuid || !sourceWithItems) {
     return <></>;
-  }
-
-  if (loading && !sourceWithItems) {
-    return <p>{t("loading.header")}</p>;
-  }
-
-  if (!sourceWithItems) {
-    return <p>{t("sourceNotFound.header")}</p>;
   }
 
   const designation = toTitleCase(sourceWithItems.data.journalist_designation);

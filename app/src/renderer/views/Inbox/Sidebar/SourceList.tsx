@@ -5,12 +5,10 @@ import { useTranslation } from "react-i18next";
 import { Modal, Button } from "antd";
 
 import Source from "./SourceList/Source";
-import LoadingIndicator from "../../../components/LoadingIndicator";
 import { useDebounce, useAppDispatch, useAppSelector } from "../../../hooks";
 import {
   fetchSources,
   selectSources,
-  selectSourcesLoading,
 } from "../../../features/sources/sourcesSlice";
 import { fetchConversation } from "../../../features/conversation/conversationSlice";
 import Toolbar, { type filterOption } from "./SourceList/Toolbar";
@@ -23,7 +21,6 @@ function SourceList() {
   const { t } = useTranslation("Sidebar");
 
   const sources = useAppSelector(selectSources);
-  const loading = useAppSelector(selectSourcesLoading);
   const [selectedSources, setSelectedSources] = useState<Set<string>>(
     new Set(),
   );
@@ -293,7 +290,6 @@ function SourceList() {
 
       {/* Sources list */}
       <div ref={containerRef} className="flex-1 min-h-0 relative">
-        {filteredSources.length === 0 && loading && <LoadingIndicator />}
         <div className="absolute inset-0">
           <List
             height={containerHeight}
