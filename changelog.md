@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.17.2
+
+* Update Rust `bytes` crate to 1.11.1 to address CVE-2026-25541 (#3069)
+* Miscellaneous:
+  * Remove current year from messages.pot
+
 ## 0.17.1
 
 This release closes a potential path traversal attack that could result in a
