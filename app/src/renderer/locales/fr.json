@@ -32,7 +32,8 @@
     "you": "Vous",
     "unknown": "Inconnu",
     "pendingReplyTooltip": "La réponse est en attente et sera envoyée à la source lors de la prochaine synchronisation",
-    "successReplyTooltip": "Réponse envoyée avec succès"
+    "successReplyTooltip": "Réponse envoyée avec succès",
+    "seenReplyTooltip": "La réponse a été vue par la source"
   },
   "Sidebar": {
     "account": {

@@ -12,20 +12,10 @@
   color: rgba(0, 0, 0, 0.45);
 }
 
-.success-reply-icon {
+.sent-reply-icon {
   color: rgba(0, 0, 0, 0.45);
-  /* NOTE: Keep the 3s duration in sync with the timeout in Reply.tsx */
-  animation: fadeOut 3s ease-in-out forwards;
 }
 
-@keyframes fadeOut {
-  0% {
-    opacity: 1;
-  }
-  70% {
-    opacity: 1;
-  }
-  100% {
-    opacity: 0;
-  }
+.seen-reply-icon {
+  color: rgba(0, 0, 0, 0.45);
 }
