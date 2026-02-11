@@ -1,13 +1,12 @@
 import { useParams } from "react-router";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo } from "react";
 
 import { useAppDispatch, useAppSelector } from "../../hooks";
 import {
   fetchConversation,
   selectConversation,
-  selectConversationLoading,
+  selectLastConversation,
 } from "../../features/conversation/conversationSlice";
-import type { SourceWithItems } from "../../../types";
 import EmptyState from "./MainContent/EmptyState";
 import Conversation from "./MainContent/Conversation";
 import Header from "./MainContent/Header";
@@ -19,20 +18,13 @@ function MainContent() {
   const sourceWithItems = useAppSelector((state) =>
     sourceUuid ? selectConversation(state, sourceUuid) : null,
   );
-  const loading = useAppSelector(selectConversationLoading);
 
-  // Keep the previous sourceWithItems visible while loading the next one.
-  const [prevSourceWithItems, setPrevSourceWithItems] =
-    useState<SourceWithItems | null>(null);
-  if (sourceWithItems && sourceWithItems !== prevSourceWithItems) {
-    setPrevSourceWithItems(sourceWithItems);
-  } else if (!sourceUuid && prevSourceWithItems !== null) {
-    setPrevSourceWithItems(null);
-  }
+  const lastConversation = useAppSelector(selectLastConversation);
 
-  // Use current data if available, otherwise fall back to previous while loading
+  // Use current data if available, otherwise fall back to the last loaded
+  // conversation while a source is selected.
   const displayedSourceWithItems =
-    sourceWithItems ?? (loading ? prevSourceWithItems : null);
+    sourceWithItems ?? (sourceUuid ? lastConversation : null);
 
   // Fetch the source with its items
   useEffect(() => {

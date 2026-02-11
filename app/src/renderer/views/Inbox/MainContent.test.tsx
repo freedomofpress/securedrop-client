@@ -1,10 +1,23 @@
-import { screen, waitFor } from "@testing-library/react";
+import { screen, waitFor, act } from "@testing-library/react";
 import { expect, describe, it, vi, beforeEach, afterEach } from "vitest";
-import { Routes, Route } from "react-router";
+import { Routes, Route, useNavigate } from "react-router";
+import { useEffect } from "react";
 import MainContent from "./MainContent";
 import type { SourceWithItems } from "../../../types";
 import { renderWithProviders } from "../../test-component-setup";
 import { fetchConversation } from "../../features/conversation/conversationSlice";
+
+const testNav: { current: ReturnType<typeof useNavigate> | null } = {
+  current: null,
+};
+
+function NavigateHelper() {
+  const navigate = useNavigate();
+  useEffect(() => {
+    testNav.current = navigate;
+  }, [navigate]);
+  return null;
+}
 
 // Mock components
 vi.mock("./MainContent/EmptyState", () => ({
@@ -88,6 +101,7 @@ describe("MainContent Component", () => {
     // Mock electronAPI
     (window as any).electronAPI = {
       getSourceWithItems: vi.fn().mockResolvedValue(mockSourceWithItems),
+      addPendingItemsSeenBatch: vi.fn().mockResolvedValue(undefined),
     };
   });
 
@@ -162,16 +176,21 @@ describe("MainContent Component", () => {
         "2",
       );
 
-      // Simulate switching to source-2: dispatch fetchConversation which sets loading=true
-      // and the selector will return null since conversation.uuid !== "source-1"
-      // (the pending thunk changes loading to true)
-      const mockSource2 = vi.fn().mockImplementation(
-        () =>
-          new Promise(() => {
-            /* never resolves — simulates in-flight fetch */
-          }),
-      );
-      (window as any).electronAPI.getSourceWithItems = mockSource2;
+      const originalGetSourceWithItems = (window as any).electronAPI
+        .getSourceWithItems;
+      const mockSourceWithConditional = vi
+        .fn()
+        .mockImplementation((sourceUuid: string) => {
+          if (sourceUuid === "source-2") {
+            // Never resolves — simulates an in-flight fetch for source-2 only
+            return new Promise(() => {});
+          }
+          // Delegate all other sources (e.g., source-1) to the original implementation
+          return originalGetSourceWithItems(sourceUuid);
+        });
+      (window as any).electronAPI.getSourceWithItems =
+        mockSourceWithConditional;
+
       store.dispatch(fetchConversation("source-2"));
 
       await waitFor(() => {
@@ -186,9 +205,6 @@ describe("MainContent Component", () => {
       expect(screen.getByTestId("conversation-items-count")).toHaveTextContent(
         "2",
       );
-
-      // No loading flash should appear
-      expect(screen.queryByText("Loading...")).not.toBeInTheDocument();
     });
   });
 
@@ -203,8 +219,7 @@ describe("MainContent Component", () => {
 
       await waitFor(() => {
         // The component shows loading initially, then error state
-        // Since we're mocking an error, it should show source not found
-        // But based on the test output, let's check what it actually shows
+        // Here, it should show source not found
         expect(screen.queryByTestId("conversation")).not.toBeInTheDocument();
       });
     });
@@ -312,7 +327,15 @@ describe("MainContent Component", () => {
       // Start with source-1 fully loaded
       const { store } = renderWithProviders(
         <Routes>
-          <Route path="/source/:sourceUuid" element={<MainContent />} />
+          <Route
+            path="/source/:sourceUuid"
+            element={
+              <>
+                <NavigateHelper />
+                <MainContent />
+              </>
+            }
+          />
         </Routes>,
         {
           initialEntries: ["/source/source-1"],
@@ -327,27 +350,50 @@ describe("MainContent Component", () => {
         },
       );
 
+      // Wait for the initial source-1 fetch to fully complete
+      await waitFor(() => {
+        expect(store.getState().conversation.loading).toBe(false);
+        expect(store.getState().conversation.conversation?.uuid).toBe(
+          "source-1",
+        );
+      });
+
       // Verify source-1 header is displayed
       expect(screen.getByTestId("avatar")).toHaveTextContent(
         "Alice Wonderland",
       );
 
-      // Simulate switching to source-2
-      const mockSource2 = vi.fn().mockImplementation(
-        () =>
-          new Promise(() => {
-            /* never resolves */
-          }),
-      );
-      (window as any).electronAPI.getSourceWithItems = mockSource2;
-      store.dispatch(fetchConversation("source-2"));
+      // Mock getSourceWithItems to never resolve for source-2,
+      // so selectConversation(state, "source-2") returns null while loading
+      (window as any).electronAPI.getSourceWithItems = vi
+        .fn()
+        .mockImplementation(
+          () =>
+            new Promise(() => {
+              /* never resolves */
+            }),
+        );
 
-      await waitFor(() => {
-        expect(store.getState().conversation.loading).toBe(true);
+      // Navigate to source-2 so the route param changes
+      act(() => {
+        testNav.current!("/source/source-2");
       });
 
-      // Header should still show source-1's designation, not "Loading..."
-      expect(screen.queryByText("Loading...")).not.toBeInTheDocument();
+      // Previous conversation should still be visible
+      expect(screen.getByTestId("conversation")).toBeInTheDocument();
+      expect(screen.getByTestId("avatar")).toHaveTextContent(
+        "Alice Wonderland",
+      );
+      expect(screen.queryByTestId("empty-state")).not.toBeInTheDocument();
+
+      // Wait for the fetch to be dispatched (useEffect fires after navigation)
+      await waitFor(() => {
+        expect(
+          (window as any).electronAPI.getSourceWithItems,
+        ).toHaveBeenCalledWith("source-2");
+      });
+
+      // Header should still show source-1's designation via fallback
       expect(screen.getByTestId("avatar")).toHaveTextContent(
         "Alice Wonderland",
       );
