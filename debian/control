@@ -33,6 +33,10 @@ Description: Submission export scripts for SecureDrop Workstation
  export submissions from the client to external storage, via the sd-export
  Qube.
 
+Package: securedrop-gpg-config
+Architecture: all
+Description: Configures a GPG backend for use in the Qubes split-GPG context
+
 Package: securedrop-keyring
 Architecture: all
 Description: Provides an apt keyring for SecureDrop-related packages, so the master signing key used for SecureDrop packages can be updated via apt.
