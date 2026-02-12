@@ -12,6 +12,7 @@ import {
   ItemMetadata,
   ProxyRequest,
   ProxyStreamResponse,
+  bytes,
   ms,
 } from "../../types";
 import {
@@ -85,13 +86,13 @@ export class TaskQueue {
   // and apply a 1.5x adjustment factor.
   //
   // Minimum timeout is 25 seconds.
-  private getRealisticTimeout(sizeInBytes: number): ms {
+  private getRealisticTimeout(size: bytes): ms {
     const TIMEOUT_BYTES_PER_SECOND = 50_000.0;
     const TIMEOUT_ADJUSTMENT_FACTOR = 1.5;
     const TIMEOUT_BASE = 25_000; // 25 seconds in milliseconds
 
     const timeout = Math.ceil(
-      (sizeInBytes / TIMEOUT_BYTES_PER_SECOND) *
+      (size / TIMEOUT_BYTES_PER_SECOND) *
         TIMEOUT_ADJUSTMENT_FACTOR *
         1000,
     );
@@ -249,7 +250,7 @@ export class TaskQueue {
       timeout = MESSAGE_REPLY_DOWNLOAD_TIMEOUT_MS;
     } else {
       // Files use dynamic timeout based on size
-      timeout = this.getRealisticTimeout(metadata.size);
+      timeout = this.getRealisticTimeout(metadata.size as bytes);
     }
 
     console.debug(

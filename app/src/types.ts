@@ -39,6 +39,7 @@ export type JSONObject = {
 
 export type JSONValue = JSONPrimitive | JSONArray | JSONObject;
 
+export type bytes = number & { readonly __unit: "bytes" };
 export type ms = number & { readonly __unit: "ms" };
 
 /** Sync types */
