@@ -18,7 +18,8 @@ Description: SecureDrop App for journalists
 
 Package: securedrop-client
 Architecture: any
-Depends: ${shlibs:Depends}, ${misc:Depends}, python3, python3-pyqt5, python3-pyqt5.qtsvg, python3-qubesdb, desktop-file-utils
+Depends: ${shlibs:Depends}, ${misc:Depends}, python3, python3-pyqt5,
+ python3-pyqt5.qtsvg, python3-qubesdb, desktop-file-utils, qubes-gpg-split
 Description: securedrop client for qubes workstation
 
 Package: securedrop-export
@@ -32,6 +33,11 @@ Description: Submission export scripts for SecureDrop Workstation
  This package provides scripts used by the SecureDrop Qubes Workstation to
  export submissions from the client to external storage, via the sd-export
  Qube.
+
+Package: securedrop-gpg-config
+Architecture: all
+Depends: qubes-gpg-split, systemd
+Description: Configures a GPG backend for use in the Qubes split-GPG context
 
 Package: securedrop-keyring
 Architecture: all
