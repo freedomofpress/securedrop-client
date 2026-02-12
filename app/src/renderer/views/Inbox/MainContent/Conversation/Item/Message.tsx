@@ -50,7 +50,7 @@ const Message = memo(function Message({
         <div className="flex items-center mb-1">
           <span className="author">{titleCaseDesignation}</span>
         </div>
-        <div className="message-box whitespace-pre-wrap">
+        <div className="message-box whitespace-pre-wrap overflow-hidden">
           {isFailed ? (
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">

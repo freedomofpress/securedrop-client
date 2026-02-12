@@ -135,7 +135,7 @@ function Reply({ item }: ReplyProps) {
           <span className="author reply-author">{getAuthorDisplay()}</span>
         </div>
         <div
-          className={`reply-box whitespace-pre-wrap relative ${showStatusIcon ? "with-status-icon" : ""}`}
+          className={`reply-box whitespace-pre-wrap overflow-hidden relative ${showStatusIcon ? "with-status-icon" : ""}`}
         >
           {isEncrypted ? (
             <span className="italic text-gray-500">{t("itemEncrypted")}</span>
