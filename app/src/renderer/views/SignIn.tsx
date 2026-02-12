@@ -118,6 +118,9 @@ function SignInView() {
             journalistUUID: resp.journalist_uuid,
             journalistFirstName: resp.journalist_first_name,
             journalistLastName: resp.journalist_last_name,
+            lastHintedVersion: resp.hints.version,
+            lastHintedSources: resp.hints.sources,
+            lastHintedItems: resp.hints.items,
           } as AuthData),
         );
 
