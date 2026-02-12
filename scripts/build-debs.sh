@@ -59,10 +59,18 @@ BUILD_DEST=$(mktemp -d)
 # Optionally build other packages in the future, default to "main" packages
 WHAT="${WHAT:-main}"
 
+FAST="${FAST:-}"
+FAST_CACHE_ARGUMENTS=""
+if [[ -n $FAST ]]; then
+    FAST_CACHE_ARGUMENTS="-v sd-client-builder-cache-${DEBIAN_VERSION}:/cache:Z --env CARGO_TARGET_DIR=/cache/rust"
+fi
+
 $OCI_BIN run --rm $OCI_RUN_ARGUMENTS \
     -v "${BUILDER}:/builder:Z" \
     -v "${BUILD_DEST}:/build:Z" \
+    $FAST_CACHE_ARGUMENTS \
     --env NIGHTLY="${NIGHTLY:-}" \
+    --env FAST="${FAST}" \
     --env WHAT="${WHAT}" \
     --entrypoint "/src/scripts/build-debs-main.sh" \
     $CONTAINER
@@ -72,7 +80,6 @@ ls "$BUILD_DEST"
 mkdir -p build
 cp ${BUILD_DEST}/* build/
 
-FAST="${FAST:-}"
 if [[ -z $FAST ]]; then
     CONTAINER2="fpf.local/sd-client-lintian"
     $OCI_BIN build scripts/lintian -t $CONTAINER2
