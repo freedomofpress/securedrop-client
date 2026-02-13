@@ -9,7 +9,12 @@ import type {
   ProxyStreamResponse,
   ms,
 } from "../types";
-import { proxyJSONRequest, proxyStreamRequest } from "./proxy";
+import {
+  proxyJSONRequest,
+  proxyJSONRequestInner,
+  proxyStreamRequest,
+  DEFAULT_PROXY_CMD_TIMEOUT_MS,
+} from "./proxy";
 import { PassThrough } from "node:stream";
 
 vi.mock("child_process");
@@ -183,6 +188,109 @@ describe("Test executing proxy with JSON requests", () => {
     await expect(proxyExec).rejects.toThrowError(
       "Process terminated with signal SIGTERM",
     );
+  });
+
+  it("converts ProxyCommand timeout from milliseconds to seconds for the proxy request", async () => {
+    const command: ProxyCommand = {
+      command: "",
+      options: [],
+      env: new Map(),
+      timeout: 30_000 as ms,
+    };
+
+    const request: ProxyRequest = {
+      method: "GET",
+      path_query: "/api/v2/sources",
+      headers: {},
+    };
+
+    let written = "";
+    process.stdin = new Writable({
+      write(chunk, _encoding, callback) {
+        written += chunk.toString();
+        callback();
+      },
+    });
+
+    const proxyExec = proxyJSONRequestInner(request, command);
+
+    // Resolve the request so the promise settles
+    const response = { status: 200, headers: {}, body: {} };
+    process.stdout?.emit("data", JSON.stringify(response));
+    process.emit("close", 0);
+    await proxyExec;
+
+    const sent = JSON.parse(written.trim());
+    // ProxyCommand.timeout is in milliseconds (30_000)
+    expect(command.timeout).toBe(30_000);
+    // But the proxy receives seconds (30)
+    expect(sent.timeout).toBe(30);
+  });
+
+  it("uses the default timeout in seconds when command.timeout equals the default", async () => {
+    const command: ProxyCommand = {
+      command: "",
+      options: [],
+      env: new Map(),
+      timeout: DEFAULT_PROXY_CMD_TIMEOUT_MS,
+    };
+
+    const request: ProxyRequest = {
+      method: "GET",
+      path_query: "/api/v2/sources",
+      headers: {},
+    };
+
+    let written = "";
+    process.stdin = new Writable({
+      write(chunk, _encoding, callback) {
+        written += chunk.toString();
+        callback();
+      },
+    });
+
+    const proxyExec = proxyJSONRequestInner(request, command);
+
+    const response = { status: 200, headers: {}, body: {} };
+    process.stdout?.emit("data", JSON.stringify(response));
+    process.emit("close", 0);
+    await proxyExec;
+
+    const sent = JSON.parse(written.trim());
+    expect(sent.timeout).toBe(Math.ceil(DEFAULT_PROXY_CMD_TIMEOUT_MS / 1000));
+  });
+
+  it("uses the command timeout when it exceeds the default", async () => {
+    const command: ProxyCommand = {
+      command: "",
+      options: [],
+      env: new Map(),
+      timeout: 45_000 as ms,
+    };
+
+    const request: ProxyRequest = {
+      method: "GET",
+      path_query: "/api/v2/sources",
+      headers: {},
+    };
+
+    let written = "";
+    process.stdin = new Writable({
+      write(chunk, _encoding, callback) {
+        written += chunk.toString();
+        callback();
+      },
+    });
+
+    const proxyExec = proxyJSONRequestInner(request, command);
+
+    const response = { status: 200, headers: {}, body: {} };
+    process.stdout?.emit("data", JSON.stringify(response));
+    process.emit("close", 0);
+    await proxyExec;
+
+    const sent = JSON.parse(written.trim());
+    expect(sent.timeout).toBe(45);
   });
 });
 

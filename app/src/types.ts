@@ -4,7 +4,7 @@ export type ProxyRequest = {
   stream?: boolean;
   body?: string;
   headers: Record<string, string>;
-  timeout?: number;
+  timeout?: sec;
 };
 
 export type ProxyCommand = {
@@ -41,6 +41,7 @@ export type JSONValue = JSONPrimitive | JSONArray | JSONObject;
 
 export type bytes = number & { readonly __unit: "bytes" };
 export type ms = number & { readonly __unit: "ms" };
+export type sec = number & { readonly __unit: "sec" };
 
 /** Sync types */
 

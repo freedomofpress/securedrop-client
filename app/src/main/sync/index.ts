@@ -29,18 +29,22 @@ async function getServerIndex(
   currentVersion: string,
   records?: number,
 ): Promise<IndexResponse> {
-  const resp = (await proxyJSONRequest({
-    method: "GET",
-    path_query: "/api/v2/index",
-    headers: {
-      Accept: "application/json",
-      "Content-Type": "application/json",
-      Authorization: `Token ${authToken}`,
-      "If-None-Match": currentVersion,
-      Prefer: `securedrop=${API_MINOR_VERSION}`,
+  const timeout = estimateTimeout(IndexSchema, records);
+  const resp = (await proxyJSONRequest(
+    {
+      method: "GET",
+      path_query: "/api/v2/index",
+      headers: {
+        Accept: "application/json",
+        "Content-Type": "application/json",
+        Authorization: `Token ${authToken}`,
+        "If-None-Match": currentVersion,
+        Prefer: `securedrop=${API_MINOR_VERSION}`,
+      },
     },
-    timeout: estimateTimeout(IndexSchema, records),
-  })) as ProxyJSONResponse;
+    undefined, // abortSignal
+    timeout,
+  )) as ProxyJSONResponse;
 
   if (resp.error) {
     if (resp.status === 403) {
@@ -76,19 +80,23 @@ async function submitBatch(
   // (sources + items) >> (journalists + events), so the former is good enough
   // for estimation.
   const records = (request.sources?.length || 0) + (request.items?.length || 0);
+  const timeout = estimateTimeout(BatchResponseSchema, records);
 
-  const resp = (await proxyJSONRequest({
-    method: "POST",
-    path_query: "/api/v2/data",
-    headers: {
-      Accept: "application/json",
-      "Content-Type": "application/json",
-      Authorization: `Token ${authToken}`,
-      Prefer: `securedrop=${API_MINOR_VERSION}`,
+  const resp = (await proxyJSONRequest(
+    {
+      method: "POST",
+      path_query: "/api/v2/data",
+      headers: {
+        Accept: "application/json",
+        "Content-Type": "application/json",
+        Authorization: `Token ${authToken}`,
+        Prefer: `securedrop=${API_MINOR_VERSION}`,
+      },
+      body: JSON.stringify(BatchRequestSchema.parse(request)),
     },
-    body: JSON.stringify(BatchRequestSchema.parse(request)),
-    timeout: estimateTimeout(BatchResponseSchema, records),
-  })) as ProxyJSONResponse;
+    undefined, // abortSignal
+    timeout,
+  )) as ProxyJSONResponse;
 
   if (resp.error) {
     if (resp.status === 403) {
