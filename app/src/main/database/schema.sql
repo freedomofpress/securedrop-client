@@ -47,54 +47,12 @@ FROM state_history
 ORDER BY id DESC
 LIMIT 1
 /* state(version,updated,id) */;
-CREATE VIEW sources_projected AS
-WITH latest_starred AS (
-    SELECT
-        source_uuid,
-        CASE
-            WHEN type = 'source_starred' THEN true
-            WHEN type = 'source_unstarred' THEN false
-        END AS starred_value
-    FROM (
-        SELECT
-            source_uuid,
-            type,
-            ROW_NUMBER() OVER (
-                PARTITION BY source_uuid
-                ORDER BY snowflake_id DESC
-            ) AS rn
-        FROM pending_events
-        WHERE type IN ('source_starred', 'source_unstarred')
-            AND source_uuid IS NOT NULL
-    ) latest
-    WHERE rn = 1
-)
-SELECT
-    sources.uuid,
-    CASE
-        WHEN latest_starred.starred_value IS NOT NULL THEN json_set(sources.data, '$.is_starred', starred_value)
-        ELSE sources.data
-    END AS data,
-    sources.version,
-    sources.has_attachment,
-    CASE
-        WHEN EXISTS (
-            SELECT 1
-            FROM pending_events
-            WHERE pending_events.source_uuid = sources.uuid
-                AND pending_events.type = 'item_seen'
-        ) THEN 1
-        ELSE sources.is_seen
-    END AS is_seen
-FROM sources
-LEFT JOIN latest_starred ON latest_starred.source_uuid = sources.uuid
-WHERE NOT EXISTS (
-    SELECT 1
-    FROM pending_events
-    WHERE pending_events.source_uuid = sources.uuid
-        AND pending_events.type = 'source_deleted'
-)
-/* sources_projected(uuid,data,version,has_attachment,is_seen) */;
+CREATE INDEX idx_items_kind ON items(kind);
+CREATE INDEX idx_items_is_read ON items(is_read);
+CREATE INDEX idx_items_last_updated ON items(last_updated);
+CREATE INDEX idx_sources_uuid ON sources(uuid);
+CREATE INDEX idx_items_source_uuid ON items(source_uuid);
+CREATE INDEX idx_items_fetch_status ON items(fetch_status);
 CREATE VIEW items_projected AS
 SELECT
     items.uuid,
@@ -161,6 +119,57 @@ WHERE pending_events.type = 'reply_sent'
         AND later.snowflake_id > pending_events.snowflake_id
     )
 /* items_projected(uuid,data,version,plaintext,filename,kind,is_read,last_updated,source_uuid,fetch_progress,fetch_status,fetch_last_updated_at,fetch_retry_attempts,interaction_count,decrypted_size) */;
+CREATE VIEW sources_projected AS
+WITH latest_starred AS (
+    SELECT
+        source_uuid,
+        CASE
+            WHEN type = 'source_starred' THEN true
+            WHEN type = 'source_unstarred' THEN false
+        END AS starred_value
+    FROM (
+        SELECT
+            source_uuid,
+            type,
+            ROW_NUMBER() OVER (
+                PARTITION BY source_uuid
+                ORDER BY snowflake_id DESC
+            ) AS rn
+        FROM pending_events
+        WHERE type IN ('source_starred', 'source_unstarred')
+            AND source_uuid IS NOT NULL
+    ) latest
+    WHERE rn = 1
+)
+SELECT
+    sources.uuid,
+    CASE
+        WHEN latest_starred.starred_value IS NOT NULL THEN json_set(sources.data, '$.is_starred', starred_value)
+        ELSE sources.data
+    END AS data,
+    sources.version,
+    sources.has_attachment,
+    CASE
+        WHEN sources.is_seen THEN 1
+        WHEN EXISTS (
+            SELECT 1 FROM items_projected ip
+            WHERE ip.source_uuid = sources.uuid AND ip.is_read = 0
+        ) THEN 0
+        WHEN NOT EXISTS (
+            SELECT 1 FROM items_projected ip
+            WHERE ip.source_uuid = sources.uuid
+        ) THEN 0
+        ELSE 1
+    END AS is_seen
+FROM sources
+LEFT JOIN latest_starred ON latest_starred.source_uuid = sources.uuid
+WHERE NOT EXISTS (
+    SELECT 1
+    FROM pending_events
+    WHERE pending_events.source_uuid = sources.uuid
+        AND pending_events.type = 'source_deleted'
+)
+/* sources_projected(uuid,data,version,has_attachment,is_seen) */;
 CREATE VIEW sorted_items AS
 SELECT
     *,
@@ -170,12 +179,7 @@ SELECT
     ) AS rn
 FROM items_projected
 /* sorted_items(uuid,data,version,plaintext,filename,kind,is_read,last_updated,source_uuid,fetch_progress,fetch_status,fetch_last_updated_at,fetch_retry_attempts,interaction_count,decrypted_size,rn) */;
-CREATE INDEX idx_items_kind ON items(kind);
-CREATE INDEX idx_items_is_read ON items(is_read);
-CREATE INDEX idx_items_last_updated ON items(last_updated);
-CREATE INDEX idx_sources_uuid ON sources(uuid);
-CREATE INDEX idx_items_source_uuid ON items(source_uuid);
-CREATE INDEX idx_items_fetch_status ON items(fetch_status);
 -- Dbmate schema migrations
 INSERT INTO "schema_migrations" (version) VALUES
-  ('20260203225412');
+  ('20260203225412'),
+  ('20260213000000');
