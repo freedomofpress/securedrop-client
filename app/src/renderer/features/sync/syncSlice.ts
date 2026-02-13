@@ -4,6 +4,7 @@ import { fetchConversation } from "../conversation/conversationSlice";
 import { fetchJournalists } from "../journalists/journalistsSlice";
 import { fetchSources } from "../sources/sourcesSlice";
 import { SyncStatus } from "../../../types";
+import type { AuthData } from "../session/sessionSlice";
 
 export interface SyncState {
   error: string | null;
@@ -20,10 +21,13 @@ const initialState: SyncState = {
 // Async thunk for syncing metadata (sources, journalists, and active conversation)
 export const syncMetadata = createAsyncThunk(
   "sync/syncMetadata",
-  async (authToken: string | undefined, { getState, dispatch }) => {
+  async (authData: AuthData, { getState, dispatch }) => {
+    const hintedRecords =
+      (authData.lastHintedSources || 0) + (authData.lastHintedItems || 0);
     // Sync metadata with the server
     const status: SyncStatus = await window.electronAPI.syncMetadata({
-      authToken,
+      authToken: authData.token,
+      hintedRecords,
     });
 
     // If there are updates from sync, fetch downstream state

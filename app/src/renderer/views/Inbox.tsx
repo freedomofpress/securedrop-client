@@ -24,7 +24,7 @@ function InboxView() {
 
   const sync = useCallback(() => {
     if (session.authData && import.meta.env.MODE != "test") {
-      dispatch(syncMetadata(session.authData.token));
+      dispatch(syncMetadata(session.authData));
     }
   }, [dispatch, session.authData]);
 

@@ -14,6 +14,8 @@ import {
   BatchResponse,
 } from "../../../src/types";
 import * as proxyModule from "../../../src/main/proxy";
+import { estimateTimeout } from "../../../src/main/timeouts";
+import { IndexSchema, BatchResponseSchema } from "../../../src/schemas";
 import * as fs from "fs";
 
 vi.mock("fs", () => ({
@@ -172,6 +174,49 @@ describe("syncMetadata", () => {
     expect(proxyMock).toHaveBeenCalledTimes(2);
     // Should update sources and items with new data
     expect(db.updateBatch).toHaveBeenCalledWith(batch);
+  });
+
+  it("passes estimated timeouts to proxyJSONRequest", async () => {
+    const serverIndex: Index = {
+      sources: {
+        [SOURCE_UUID_1]: "abc",
+      },
+      items: {
+        [ITEM_UUID_1]: "def",
+      },
+      journalists: {
+        [JOURNALIST_UUID_1]: "ghi",
+      },
+    };
+    const batch: BatchResponse = {
+      sources: {
+        [SOURCE_UUID_1]: mockSourceMetadata(SOURCE_UUID_1),
+      },
+      items: {
+        [ITEM_UUID_1]: mockItemMetadata(ITEM_UUID_1, SOURCE_UUID_1),
+      },
+      journalists: {
+        [JOURNALIST_UUID_1]: mockJournalistMetadata(JOURNALIST_UUID_1),
+      },
+      events: {},
+    };
+    db = mockDB();
+    const proxyMock = mockProxyResponses([
+      { status: 200, error: false, data: serverIndex, headers: new Map() },
+      { status: 200, error: false, data: batch, headers: new Map() },
+    ]);
+
+    const hintedRecords = 500;
+    await syncModule.syncMetadata(db, "", hintedRecords);
+
+    // getServerIndex call: timeout estimated from IndexSchema with hintedRecords records
+    const indexTimeout = proxyMock.mock.calls[0][2];
+    expect(indexTimeout).toBe(estimateTimeout(IndexSchema, hintedRecords));
+
+    // submitBatch call: timeout estimated from BatchResponseSchema with record count
+    // 1 source + 1 item = 2 records (journalists not counted)
+    const batchTimeout = proxyMock.mock.calls[1][2];
+    expect(batchTimeout).toBe(estimateTimeout(BatchResponseSchema, 2));
   });
 
   it("handles error from getIndex", async () => {

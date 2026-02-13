@@ -8,13 +8,14 @@ import type {
   ProxyCommand,
   ProxyJSONResponse,
   ms,
+  sec,
 } from "../types";
 
 const DEFAULT_PROXY_VM_NAME = "sd-proxy";
 
 // To avoid timeout confusion, timeouts SHOULD be either the same as or longer
 // than the proxy's request-level timeout.
-const DEFAULT_PROXY_CMD_TIMEOUT_MS = 10000 as ms;
+export const DEFAULT_PROXY_CMD_TIMEOUT_MS = 10000 as ms;
 export const MESSAGE_REPLY_DOWNLOAD_TIMEOUT_MS = 20000 as ms;
 
 function parseJSONResponse(response: string): ProxyJSONResponse {
@@ -51,8 +52,12 @@ function parseJSONResponse(response: string): ProxyJSONResponse {
 export async function proxyJSONRequest(
   request: ProxyRequest,
   abortSignal?: AbortSignal,
+  timeout?: ms,
 ): Promise<ProxyJSONResponse> {
-  return proxyJSONRequestInner(request, buildProxyCommand(abortSignal));
+  return proxyJSONRequestInner(
+    request,
+    buildProxyCommand(abortSignal, timeout),
+  );
 }
 
 export async function proxyJSONRequestInner(
@@ -99,11 +104,12 @@ export async function proxyJSONRequestInner(
     });
 
     request.stream = request.stream ?? false;
-    // Only override the proxy's internal 10s timeout if we need more time
-    const timeoutInSeconds = Math.ceil(command.timeout / 1000);
-    if (timeoutInSeconds > 10) {
-      request.timeout = timeoutInSeconds;
-    }
+
+    // Use the longer of the command- or request-level timeout, in seconds.
+    const timeoutInSeconds = Math.floor(command.timeout / 1000);
+    const defaultInSeconds = Math.floor(DEFAULT_PROXY_CMD_TIMEOUT_MS / 1000);
+    request.timeout = Math.max(timeoutInSeconds, defaultInSeconds) as sec;
+
     process.stdin.write(JSON.stringify(request) + "\n");
   });
 }
@@ -224,11 +230,12 @@ export async function proxyStreamRequestInner(
       request.headers["Range"] = `bytes=${offset}-`;
     }
     request.stream = true;
-    // Only override the proxy's internal 10s timeout if we need more time
-    const timeoutInSeconds = Math.ceil(command.timeout / 1000);
-    if (timeoutInSeconds > 10) {
-      request.timeout = timeoutInSeconds;
-    }
+
+    // Use the longer of the command- or request-level timeout, in seconds.
+    const timeoutInSeconds = Math.floor(command.timeout / 1000);
+    const defaultInSeconds = Math.floor(DEFAULT_PROXY_CMD_TIMEOUT_MS / 1000);
+    request.timeout = Math.max(timeoutInSeconds, defaultInSeconds) as sec;
+
     process.stdin.write(JSON.stringify(request) + "\n");
   });
 }
