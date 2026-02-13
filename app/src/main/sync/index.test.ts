@@ -48,7 +48,10 @@ function mockDB({
     getItem: vi.fn((_itemID) => null),
     deleteItems: vi.fn((_itemIDs) => {}),
     deleteSources: vi.fn((_sourceIDs) => {}),
-    updateBatch: vi.fn((_metadata) => {}),
+    updateBatch: vi.fn((_metadata) => ({
+      deleted_items: [],
+      deleted_sources: [],
+    })),
     getItemFileData: vi.fn(() => itemFileData),
     getPendingEvents: vi.fn(() => pendingEvents),
   } as unknown as DB;

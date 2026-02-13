@@ -492,19 +492,24 @@ export class DB {
     })(journalists);
   }
 
-  updateBatch(batchResponse: BatchResponse) {
-    this.db!.transaction((batch: BatchResponse) => {
+  updateBatch(batchResponse: BatchResponse): {
+    deleted_items: Item[];
+    deleted_sources: string[];
+  } {
+    return this.db!.transaction((batch: BatchResponse) => {
       this.updatePendingEvents(batch.events);
-      this.updateItems(batch.items);
-      this.updateSources(batch.sources);
+      const deleted_items = this.updateItems(batch.items);
+      const deleted_sources = this.updateSources(batch.sources);
       this.updateJournalists(batch.journalists);
       this.updateVersion();
+      return { deleted_items, deleted_sources };
     })(batchResponse);
   }
 
   // Updates source versions in DB. Should be run in a transaction that also
   // updates the global index version.
-  updateSources(sources: { [uuid: string]: SourceMetadata | null }) {
+  updateSources(sources: { [uuid: string]: SourceMetadata | null }): string[] {
+    const deletedSourceUuids: string[] = [];
     Object.keys(sources).forEach((sourceid: string) => {
       const metadata = sources[sourceid];
       if (metadata) {
@@ -517,14 +522,17 @@ export class DB {
           version: version,
         });
       } else {
+        deletedSourceUuids.push(sourceid);
         this.deleteSourceAndItems(sourceid);
       }
     });
+    return deletedSourceUuids;
   }
 
   // Updates item versions in DB. Should be run in a transaction that also
   // updates the global index version.
-  updateItems(items: { [uuid: string]: ItemMetadata | null }) {
+  updateItems(items: { [uuid: string]: ItemMetadata | null }): Item[] {
+    const deletedItems: Item[] = [];
     Object.keys(items).forEach((itemid: string) => {
       const metadata = items[itemid];
       if (metadata) {
@@ -537,9 +545,14 @@ export class DB {
           version: version,
         });
       } else {
+        const item = this.getItem(itemid);
+        if (item) {
+          deletedItems.push(item);
+        }
         this.deleteItem.run({ uuid: itemid });
       }
     });
+    return deletedItems;
   }
 
   public updateFetchStatus(itemUuid: string, fetchStatus: number) {

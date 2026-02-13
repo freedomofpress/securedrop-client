@@ -121,7 +121,7 @@ export function reconcileIndex(
     (source) => !Object.keys(serverIndex.sources).includes(source),
   );
   if (sourcesToDelete.length > 0) {
-    db.deleteSources(sourcesToDelete);
+    deleteSources(db, sourcesToDelete);
   }
 
   const itemsToUpdate: string[] = [];
@@ -167,6 +167,36 @@ export function reconcileIndex(
   };
 }
 
+// Remove a source's directory from the filesystem
+function deleteSourceFs(storage: Storage, sourceID: string) {
+  const sourceDirectory = storage.sourceDirectory(sourceID, false).path;
+  if (fs.existsSync(sourceDirectory)) {
+    fs.rmSync(sourceDirectory, { recursive: true, force: true });
+  }
+}
+
+// Remove an item's raw file and directory from the filesystem
+function deleteItemFs(storage: Storage, item: Item) {
+  if (item.filename && fs.existsSync(item.filename)) {
+    fs.rmSync(item.filename, { force: true });
+  }
+  const itemDirectory = storage.itemDirectory(item.data, false);
+  if (fs.existsSync(itemDirectory.path)) {
+    fs.rmSync(itemDirectory.path, { recursive: true, force: true });
+  }
+}
+
+// Delete sources and source items from DB and delete any files
+// persisted to disk from the filesystem
+function deleteSources(db: DB, sourceIDs: string[]) {
+  const storage = new Storage();
+  // Perform fs cleanup
+  for (const sourceID of sourceIDs) {
+    deleteSourceFs(storage, sourceID);
+  }
+  db.deleteSources(sourceIDs);
+}
+
 // Delete items from DB and delete any files persisted to disk from
 // the filesystem.
 function deleteItems(db: DB, itemIDs: string[]) {
@@ -182,15 +212,7 @@ function deleteItems(db: DB, itemIDs: string[]) {
     if (!item) {
       continue;
     }
-    // Clean up the raw file
-    if (item.filename) {
-      fs.rmSync(item.filename, { force: true });
-    }
-    // and the item folder too
-    const itemDirectory = storage.itemDirectory(item.data);
-    if (fs.existsSync(itemDirectory.path)) {
-      fs.rmSync(itemDirectory.path, { recursive: true, force: true });
-    }
+    deleteItemFs(storage, item);
   }
 
   db.deleteItems(itemIDs);
@@ -251,7 +273,17 @@ export async function syncMetadata(
     return SyncStatus.FORBIDDEN;
   }
 
-  db.updateBatch(batchResponse.data);
+  const { deleted_items, deleted_sources } = db.updateBatch(batchResponse.data);
+
+  // Clean up filesystem for items/sources deleted via batch response
+  const storage = new Storage();
+  for (const itemID of deleted_items) {
+    deleteItemFs(storage, itemID);
+  }
+  for (const sourceID of deleted_sources) {
+    deleteSourceFs(storage, sourceID);
+  }
+
   syncStatus = SyncStatus.UPDATED;
 
   return syncStatus;
