@@ -10,35 +10,28 @@ import { renderWithProviders } from "../../../test-component-setup";
 
 // Mock react-window to render all items instead of virtualizing
 vi.mock("react-window", () => ({
-  FixedSizeList: ({
-    children: ItemRenderer,
-    itemCount,
-    height,
+  List: <RowProps extends object>({
+    rowComponent: RowComponent,
+    rowCount,
+    rowProps,
     className,
   }: {
-    children: ({
-      index,
-      style,
-      isScrolling,
-    }: {
-      index: number;
-      style: React.CSSProperties;
-      isScrolling?: boolean;
-    }) => React.ReactNode;
-    itemCount: number;
-    height: number;
-    itemSize?: number; // Optional since we don't use it in the mock
-    className: string;
+    rowComponent: (
+      props: { index: number; style: React.CSSProperties } & RowProps,
+    ) => React.ReactNode;
+    rowCount: number;
+    rowHeight: number;
+    rowProps: RowProps;
+    className?: string;
   }) => (
     <div
       data-testid="virtualized-list"
-      data-item-count={itemCount}
-      style={{ height }}
+      data-item-count={rowCount}
       className={className}
     >
-      {Array.from({ length: itemCount }, (_, index) => (
+      {Array.from({ length: rowCount }, (_, index) => (
         <div key={index}>
-          {ItemRenderer({ index, style: {}, isScrolling: false })}
+          <RowComponent index={index} style={{}} {...rowProps} />
         </div>
       ))}
     </div>
