@@ -256,9 +256,9 @@ describe("conversationSlice", () => {
         lastFetchTime: 123456789,
       },
       sync: {
-        loading: false,
         error: null,
-        lastFetchTime: null,
+        lastSyncStarted: null,
+        lastSyncFinished: null,
         status: null,
       },
     };

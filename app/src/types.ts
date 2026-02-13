@@ -58,6 +58,7 @@ export enum SyncStatus {
 export type AuthedRequest = {
   authToken: string;
   hintedRecords?: number;
+  hintedVersion?: string;
 };
 
 // Re-export some types that are derived from zod schemas

@@ -312,9 +312,9 @@ describe("sourcesSlice", () => {
         },
         conversation: mockConversationState,
         sync: {
-          loading: false,
           error: null,
-          lastFetchTime: null,
+          lastSyncStarted: null,
+          lastSyncFinished: null,
           status: null,
         },
         drafts: { drafts: {} },
@@ -340,9 +340,9 @@ describe("sourcesSlice", () => {
         },
         conversation: mockConversationState,
         sync: {
-          loading: false,
           error: null,
-          lastFetchTime: null,
+          lastSyncStarted: null,
+          lastSyncFinished: null,
           status: null,
         },
         drafts: { drafts: {} },
@@ -368,9 +368,9 @@ describe("sourcesSlice", () => {
         },
         conversation: mockConversationState,
         sync: {
-          loading: false,
           error: null,
-          lastFetchTime: null,
+          lastSyncStarted: null,
+          lastSyncFinished: null,
           status: null,
         },
         drafts: { drafts: {} },
@@ -400,9 +400,9 @@ describe("sourcesSlice", () => {
         },
         conversation: mockConversationState,
         sync: {
-          loading: false,
           error: null,
-          lastFetchTime: null,
+          lastSyncStarted: null,
+          lastSyncFinished: null,
           status: null,
         },
       };

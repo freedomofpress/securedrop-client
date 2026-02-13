@@ -105,6 +105,7 @@ describe("syncSlice", () => {
       expect(mockSyncMetadata).toHaveBeenCalledWith({
         authToken,
         hintedRecords: 0,
+        hintedVersion: undefined,
       });
       expect(mockSyncMetadata).toHaveBeenCalledTimes(1);
       expect(mockGetSources).toHaveBeenCalledTimes(1);
@@ -113,7 +114,7 @@ describe("syncSlice", () => {
       const sourcesState = (store.getState() as any).sources;
       expect(sourcesState.sources).toEqual(mockSources);
       expect(syncState.error).toBeNull();
-      expect(syncState.lastFetchTime).toBeGreaterThan(0);
+      expect(syncState.lastSyncFinished).toBeGreaterThan(0);
     });
 
     it("handles sync failure with invalid auth token", async () => {
@@ -127,6 +128,7 @@ describe("syncSlice", () => {
       expect(mockSyncMetadata).toHaveBeenCalledWith({
         authToken: "invalid-token",
         hintedRecords: 0,
+        hintedVersion: undefined,
       });
       expect(mockGetSources).not.toHaveBeenCalled();
 
@@ -191,7 +193,8 @@ describe("syncSlice", () => {
           },
           sync: {
             error: null,
-            lastFetchTime: null,
+            lastSyncStarted: null,
+            lastSyncFinished: null,
             status: null,
           },
         },
@@ -278,6 +281,7 @@ describe("syncSlice", () => {
       expect(mockSyncMetadata).toHaveBeenCalledWith({
         authToken: "invalid-token",
         hintedRecords: 0,
+        hintedVersion: undefined,
       });
       expect(mockGetSources).not.toHaveBeenCalled();
     });
@@ -289,7 +293,7 @@ describe("syncSlice", () => {
 
       const syncState = (store.getState() as any).sync;
       expect(syncState.status).toBe(SyncStatus.UPDATED);
-      expect(syncState.lastFetchTime).toBeGreaterThan(0);
+      expect(syncState.lastSyncFinished).toBeGreaterThan(0);
     });
 
     it("stores NOT_MODIFIED status when no changes", async () => {
@@ -299,7 +303,65 @@ describe("syncSlice", () => {
 
       const syncState = (store.getState() as any).sync;
       expect(syncState.status).toBe(SyncStatus.NOT_MODIFIED);
-      expect(syncState.lastFetchTime).toBeGreaterThan(0);
+      expect(syncState.lastSyncFinished).toBeGreaterThan(0);
+    });
+
+    it("passes hintedVersion on first sync after login", async () => {
+      const authData = {
+        ...mockAuthData("test-token"),
+        lastHintedVersion: "abc123",
+        lastHintedSources: 5,
+        lastHintedItems: 10,
+      };
+
+      // lastSyncStarted is null before any sync
+      expect((store.getState() as any).sync.lastSyncStarted).toBeNull();
+
+      await (store.dispatch as any)(syncMetadata(authData));
+
+      expect(mockSyncMetadata).toHaveBeenCalledWith({
+        authToken: "test-token",
+        hintedRecords: 15,
+        hintedVersion: "abc123",
+      });
+
+      // lastSyncStarted is now set
+      expect((store.getState() as any).sync.lastSyncStarted).toBeGreaterThan(0);
+    });
+
+    it("omits hintedVersion on subsequent syncs", async () => {
+      const authData = {
+        ...mockAuthData("test-token"),
+        lastHintedVersion: "abc123",
+        lastHintedSources: 5,
+        lastHintedItems: 10,
+      };
+
+      // First sync — should include hintedVersion
+      await (store.dispatch as any)(syncMetadata(authData));
+      expect(mockSyncMetadata).toHaveBeenCalledWith(
+        expect.objectContaining({ hintedVersion: "abc123" }),
+      );
+
+      mockSyncMetadata.mockClear();
+
+      // Second sync — lastSyncStarted is now set, so hintedVersion is omitted
+      await (store.dispatch as any)(syncMetadata(authData));
+      expect(mockSyncMetadata).toHaveBeenCalledWith({
+        authToken: "test-token",
+        hintedRecords: 15,
+        hintedVersion: undefined,
+      });
+    });
+
+    it("omits hintedVersion when authData has no lastHintedVersion", async () => {
+      await (store.dispatch as any)(syncMetadata(mockAuthData("test-token")));
+
+      expect(mockSyncMetadata).toHaveBeenCalledWith({
+        authToken: "test-token",
+        hintedRecords: 0,
+        hintedVersion: undefined,
+      });
     });
   });
 });

@@ -212,9 +212,9 @@ describe("journalistsSlice", () => {
         lastFetchTime: null,
       },
       sync: {
-        loading: false,
         error: null,
-        lastFetchTime: null,
+        lastSyncStarted: null,
+        lastSyncFinished: null,
         status: null,
       },
       drafts: { drafts: {} },

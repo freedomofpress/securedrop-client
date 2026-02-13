@@ -212,6 +212,17 @@ function deleteItems(db: DB, itemIDs: string[]) {
   db.deleteItems(itemIDs);
 }
 
+// Returns true if the database is already at the hinted version and there are
+// no pending events to flush.  This check MAY be used immediately after login
+// to save a round trip.  However, since the hinted version is updated only at
+// login, this check MUST NOT be used to skip any other sync, or the client will
+// never update during this session!
+export function shouldSkipSync(db: DB, hintedVersion?: string): boolean {
+  const nothingIncoming = db.getVersion() === hintedVersion;
+  const nothingOutgoing = db.getPendingEvents().length === 0;
+  return nothingIncoming && nothingOutgoing;
+}
+
 // Executes metadata sync with SecureDrop server, updating
 // the current version and persisting updated source, reply,
 // and submission metadata to the DB.
