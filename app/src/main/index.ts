@@ -370,7 +370,11 @@ if (!gotTheLock) {
         let syncStatus: SyncStatus;
         try {
           syncStatus = await syncLock.run(async () => {
-            return await syncMetadata(db, request.authToken);
+            return await syncMetadata(
+              db,
+              request.authToken,
+              request.hintedRecords,
+            );
           }, 1000);
         } catch (error) {
           // Check if this is a timeout error from the lock

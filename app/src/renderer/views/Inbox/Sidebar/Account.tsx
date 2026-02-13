@@ -46,7 +46,7 @@ function Account() {
 
   const sync = () => {
     console.log("syncing metadata");
-    dispatch(syncMetadata(session.authData?.token));
+    dispatch(syncMetadata({ authToken: session.authData?.token }));
   };
 
   return (

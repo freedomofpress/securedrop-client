@@ -52,10 +52,11 @@ export enum SyncStatus {
   TIMEOUT = "timeout",
 }
 
-// IPC request for operation requiring auth token
+// IPC request for operations while authenticated against a server
 // ex: syncMetadata, fetchDownloads
 export type AuthedRequest = {
   authToken: string;
+  hintedRecords?: number;
 };
 
 // Re-export some types that are derived from zod schemas

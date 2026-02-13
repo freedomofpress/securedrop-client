@@ -14,6 +14,7 @@ import {
   BatchResponseSchema,
   BatchRequestSchema,
 } from "../../schemas";
+import { estimateTimeout } from "../timeouts";
 
 import * as fs from "fs";
 import { Storage } from "../storage";
@@ -26,6 +27,7 @@ type IndexResponse =
 async function getServerIndex(
   authToken: string,
   currentVersion: string,
+  records?: number,
 ): Promise<IndexResponse> {
   const resp = (await proxyJSONRequest({
     method: "GET",
@@ -37,6 +39,7 @@ async function getServerIndex(
       "If-None-Match": currentVersion,
       Prefer: `securedrop=${API_MINOR_VERSION}`,
     },
+    timeout: estimateTimeout(IndexSchema, records),
   })) as ProxyJSONResponse;
 
   if (resp.error) {
@@ -70,6 +73,10 @@ async function submitBatch(
   authToken: string,
   request: BatchRequest,
 ): Promise<BatchSubmitResponse> {
+  // (sources + items) >> (journalists + events), so the former is good enough
+  // for estimation.
+  const records = (request.sources?.length || 0) + (request.items?.length || 0);
+
   const resp = (await proxyJSONRequest({
     method: "POST",
     path_query: "/api/v2/data",
@@ -80,6 +87,7 @@ async function submitBatch(
       Prefer: `securedrop=${API_MINOR_VERSION}`,
     },
     body: JSON.stringify(BatchRequestSchema.parse(request)),
+    timeout: estimateTimeout(BatchResponseSchema, records),
   })) as ProxyJSONResponse;
 
   if (resp.error) {
@@ -204,10 +212,15 @@ function deleteItems(db: DB, itemIDs: string[]) {
 export async function syncMetadata(
   db: DB,
   authToken: string,
+  hintedRecords?: number,
 ): Promise<SyncStatus> {
   const currentVersion = db.getVersion();
   const pendingEvents = db.getPendingEvents();
-  const indexResponse = await getServerIndex(authToken, currentVersion);
+  const indexResponse = await getServerIndex(
+    authToken,
+    currentVersion,
+    hintedRecords,
+  );
 
   // Check for 403 Forbidden
   if (indexResponse.status === 403) {

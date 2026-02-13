@@ -20,10 +20,17 @@ const initialState: SyncState = {
 // Async thunk for syncing metadata (sources, journalists, and active conversation)
 export const syncMetadata = createAsyncThunk(
   "sync/syncMetadata",
-  async (authToken: string | undefined, { getState, dispatch }) => {
+  async (
+    {
+      authToken,
+      hintedRecords,
+    }: { authToken: string | undefined; hintedRecords?: number },
+    { getState, dispatch },
+  ) => {
     // Sync metadata with the server
     const status: SyncStatus = await window.electronAPI.syncMetadata({
       authToken,
+      hintedRecords,
     });
 
     // If there are updates from sync, fetch downstream state

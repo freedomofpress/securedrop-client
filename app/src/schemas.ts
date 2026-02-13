@@ -16,6 +16,8 @@ if (__RENDERER_ONLY__) {
 // constant of the same name in freedomofpress/securedrop for possible values.
 export const API_MINOR_VERSION = 4; // 2.x
 
+export const registry = z.registry<{ recordSize: number }>();
+
 export const UUIDSchema = z.uuid({ version: "v4" });
 
 // Response from /api/v1/token
@@ -83,19 +85,29 @@ export const JournalistMetadataSchema = z.object({
 });
 
 // Index, maps UUIDs to version strings
-export const IndexSchema = z.object({
-  sources: z.record(UUIDSchema, z.string()),
-  items: z.record(UUIDSchema, z.string()),
-  journalists: z.record(UUIDSchema, z.string()),
-});
+export const IndexSchema = z
+  .object({
+    sources: z.record(UUIDSchema, z.string()),
+    items: z.record(UUIDSchema, z.string()),
+    journalists: z.record(UUIDSchema, z.string()),
+  })
+  .describe("Index")
+  .register(registry, {
+    recordSize: 106, // bytes: UUID (36 characters) + hash (64 characters) + JSON
+  });
 
 // Metadata, maps UUIDs to full metadata objects
-export const BatchResponseSchema = z.object({
-  sources: z.record(UUIDSchema, SourceMetadataSchema.nullable()),
-  items: z.record(UUIDSchema, ItemMetadataSchema.nullable()),
-  journalists: z.record(UUIDSchema, JournalistMetadataSchema.nullable()),
-  events: z.record(z.string(), z.tuple([z.number(), z.string().nullable()])),
-});
+export const BatchResponseSchema = z
+  .object({
+    sources: z.record(UUIDSchema, SourceMetadataSchema.nullable()),
+    items: z.record(UUIDSchema, ItemMetadataSchema.nullable()),
+    journalists: z.record(UUIDSchema, JournalistMetadataSchema.nullable()),
+    events: z.record(z.string(), z.tuple([z.number(), z.string().nullable()])),
+  })
+  .describe("BatchResponse")
+  .register(registry, {
+    recordSize: 1_000, // bytes (rounded up; remember, this is independent of the underlying file size!)
+  });
 
 /**
  * Zod schemas for server requests
