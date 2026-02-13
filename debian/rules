@@ -56,7 +56,8 @@ override_dh_fixperms:
 	chmod 4755 debian/securedrop-app/usr/lib/securedrop-app/chrome-sandbox
 
 override_dh_shlibdeps:
-	dh_shlibdeps --exclude=securedrop-app
+	dh_shlibdeps -psecuredrop-app -ldebian/securedrop-app/usr/lib/securedrop-app
+	dh_shlibdeps --remaining-packages --exclude=securedrop-app
 
 override_dh_strip:
 	dh_strip --exclude=securedrop-app
