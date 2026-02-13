@@ -384,7 +384,20 @@ describe("Database Method Tests", () => {
       expect(source.isRead).toBe(false);
     }
 
-    db.addPendingSourceEvent("source1", PendingEventType.Seen);
+    db.updateItems({
+      item1: mockItemMetadata("item1", "source1"),
+      item2: mockItemMetadata("item2", "source1"),
+      item3: mockItemMetadata("item3", "source1"),
+    });
+
+    // Partially marking items seen should not update source Seen state
+    db.addPendingItemsSeenBatch("source1", ["item1", "item2"]);
+    for (const source of sources) {
+      expect(source.isRead).toBe(false);
+    }
+
+    // Marking all items as seen should update Seen state
+    db.addPendingItemsSeenBatch("source1", ["item3"]);
     sources = db.getSources();
     for (const source of sources) {
       if (source.uuid === "source1") {

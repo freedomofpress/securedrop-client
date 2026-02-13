@@ -1,6 +1,7 @@
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
 import { Item, type SourceWithItems } from "../../../types";
 import type { RootState } from "../../store";
+import { fetchSources } from "../sources/sourcesSlice";
 
 export interface ConversationState {
   conversation: SourceWithItems | null;
@@ -18,7 +19,7 @@ const initialState: ConversationState = {
 
 export const fetchConversation = createAsyncThunk(
   "conversation/fetchConversation",
-  async (sourceUuid: string, { getState }) => {
+  async (sourceUuid: string, { getState, dispatch }) => {
     const sourceWithItems =
       await window.electronAPI.getSourceWithItems(sourceUuid);
 
@@ -42,6 +43,7 @@ export const fetchConversation = createAsyncThunk(
       .map((item) => item.uuid);
     if (itemUuids.length > 0) {
       await window.electronAPI.addPendingItemsSeenBatch(sourceUuid, itemUuids);
+      dispatch(fetchSources());
     }
 
     return { sourceUuid, sourceWithItems };
