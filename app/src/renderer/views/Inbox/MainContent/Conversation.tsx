@@ -117,7 +117,7 @@ const Conversation = memo(function Conversation({
 
         // Trigger sync to send the pending reply to the server
         if (session.authData && import.meta.env.MODE !== "test") {
-          dispatch(syncMetadata({ authToken: session.authData.token }));
+          dispatch(syncMetadata(session.authData));
         }
       } catch (error) {
         console.error("Failed to send reply:", error);
