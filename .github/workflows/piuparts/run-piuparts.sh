@@ -1,6 +1,7 @@
 #!/bin/bash
 set -euxo pipefail
 # Runs inside the container
+
 apt-get update && apt-get install --yes piuparts docker.io
 
 # Move things in this folder so the docker build can find them
