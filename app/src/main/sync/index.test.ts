@@ -708,6 +708,39 @@ describe("syncMetadata", () => {
   });
 });
 
+describe("shouldSkipSync", () => {
+  it("returns true when db version matches hinted version", () => {
+    const db = mockDB();
+    db.getVersion = vi.fn(() => "v5");
+    expect(syncModule.shouldSkipSync(db, "v5")).toBe(true);
+  });
+
+  it("returns false when versions match but there are pending events", () => {
+    const db = mockDB();
+    db.getVersion = vi.fn(() => "v5");
+    db.getPendingEvents = vi.fn(() => [{ type: "reply", data: "test" }] as any);
+    expect(syncModule.shouldSkipSync(db, "v5")).toBe(false);
+  });
+
+  it("returns false when db version differs from hinted version", () => {
+    const db = mockDB();
+    db.getVersion = vi.fn(() => "v5");
+    expect(syncModule.shouldSkipSync(db, "v6")).toBe(false);
+  });
+
+  it("returns false when hinted version is undefined", () => {
+    const db = mockDB();
+    db.getVersion = vi.fn(() => "v5");
+    expect(syncModule.shouldSkipSync(db, undefined)).toBe(false);
+  });
+
+  it("returns false on initial sync when db has no version", () => {
+    const db = mockDB();
+    db.getVersion = vi.fn(() => ""); // initial state
+    expect(syncModule.shouldSkipSync(db, "v1")).toBe(false);
+  });
+});
+
 describe("syncMetadata lock timeout", () => {
   let syncLock: Lock;
 

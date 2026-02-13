@@ -8,13 +8,15 @@ import type { AuthData } from "../session/sessionSlice";
 
 export interface SyncState {
   error: string | null;
-  lastFetchTime: number | null;
+  lastSyncStarted: number | null;
+  lastSyncFinished: number | null;
   status: SyncStatus | null;
 }
 
 const initialState: SyncState = {
   error: null,
-  lastFetchTime: null,
+  lastSyncStarted: null,
+  lastSyncFinished: null,
   status: null,
 };
 
@@ -24,10 +26,21 @@ export const syncMetadata = createAsyncThunk(
   async (authData: AuthData, { getState, dispatch }) => {
     const hintedRecords =
       (authData.lastHintedSources || 0) + (authData.lastHintedItems || 0);
+
+    // Only pass the hinted version (to see if we're already up to date and can
+    // skip sync) if this is the very first sync after login.
+    const state = getState() as RootState;
+    const hintedVersion = state.sync.lastSyncStarted
+      ? undefined
+      : authData.lastHintedVersion;
+
+    dispatch(markSyncStarted());
+
     // Sync metadata with the server
     const status: SyncStatus = await window.electronAPI.syncMetadata({
       authToken: authData.token,
       hintedRecords,
+      hintedVersion,
     });
 
     // If there are updates from sync, fetch downstream state
@@ -62,11 +75,14 @@ export const syncSlice = createSlice({
     clearStatus: (state) => {
       state.status = null;
     },
+    markSyncStarted: (state) => {
+      state.lastSyncStarted = Date.now();
+    },
   },
   extraReducers: (builder) => {
     builder
       .addCase(syncMetadata.fulfilled, (state, action) => {
-        state.lastFetchTime = Date.now();
+        state.lastSyncFinished = Date.now();
         state.status = action.payload;
       })
       .addCase(syncMetadata.rejected, (state, action) => {
@@ -75,9 +91,9 @@ export const syncSlice = createSlice({
   },
 });
 
-export const { clearError, clearStatus } = syncSlice.actions;
+export const { clearError, clearStatus, markSyncStarted } = syncSlice.actions;
 export const selectSyncError = (state: RootState) => state.sync.error;
 export const selectSyncStatus = (state: RootState) => state.sync.status;
-export const selectlastFetchTime = (state: RootState) =>
-  state.sync.lastFetchTime;
+export const selectLastSyncFinished = (state: RootState) =>
+  state.sync.lastSyncFinished;
 export default syncSlice.reducer;
