@@ -13,7 +13,11 @@ import {
 } from "../../../features/sources/sourcesSlice";
 import { fetchConversation } from "../../../features/conversation/conversationSlice";
 import Toolbar, { type filterOption } from "./SourceList/Toolbar";
-import { PendingEventType, type Source as SourceType } from "../../../../types";
+import {
+  PendingEventType,
+  SearchResult,
+  type Source as SourceType,
+} from "../../../../types";
 
 interface SourceRowProps {
   filteredSources: SourceType[];
@@ -75,10 +79,22 @@ function SourceList() {
 
   // Debounce search term to avoid excessive filtering
   const debouncedSearchTerm = useDebounce(searchTerm, 300);
+  const [searchResults, setSearchResults] = useState<SearchResult[] | null>(
+    null,
+  );
 
   useEffect(() => {
     dispatch(fetchSources());
   }, [dispatch]);
+
+  // Perform search via IPC when search term changes
+  useEffect(() => {
+    if (!debouncedSearchTerm.trim()) {
+      setSearchResults(null);
+      return;
+    }
+    window.electronAPI.search(debouncedSearchTerm).then(setSearchResults);
+  }, [debouncedSearchTerm]);
 
   // Handle select all checkbox
   const handleSelectAll = useCallback(
@@ -221,18 +237,37 @@ function SourceList() {
 
   // Filter and sort sources based on the selected filter and sort order
   const filteredSources = useMemo(() => {
-    return sources
-      .filter((source) => {
-        // First filter by search term
-        const matchesSearch = source.data.journalist_designation
-          .toLowerCase()
-          .includes(debouncedSearchTerm.toLowerCase());
+    // Map search results to source objects
+    let searchedSources: SourceType[] = [];
+    if (searchResults !== null) {
+      // Dedupe by sourceUuid, keeping the highest-ranked result per source
+      const sourcesByUuid = new Map(sources.map((s) => [s.uuid, s]));
+      const seen = new Set<string>();
 
-        if (!matchesSearch) {
-          return false;
+      for (const sr of searchResults) {
+        if (seen.has(sr.sourceUuid)) continue;
+        seen.add(sr.sourceUuid);
+        const source = sourcesByUuid.get(sr.sourceUuid);
+        if (!source) continue;
+        if (
+          sr.type === "message" ||
+          sr.type === "reply" ||
+          sr.type === "file"
+        ) {
+          searchedSources.push({
+            ...source,
+            messagePreview: { kind: sr.type, plaintext: sr.snippet },
+          });
+        } else {
+          searchedSources.push(source);
         }
+      }
+    } else {
+      searchedSources = sources;
+    }
 
-        // Then filter by the selected filter option
+    return searchedSources
+      .filter((source) => {
         switch (filter) {
           case "unread":
             return !source.isRead;
@@ -244,7 +279,7 @@ function SourceList() {
             return !source.data.is_starred;
           case "all":
           default:
-            return true; // "all" filter shows everything
+            return true;
         }
       })
       .sort((a, b) => {
@@ -252,12 +287,12 @@ function SourceList() {
         const dateB = new Date(b.data.last_updated).getTime();
 
         if (sortedAsc) {
-          return dateA - dateB; // Ascending: oldest first
+          return dateA - dateB;
         } else {
-          return dateB - dateA; // Descending: newest first
+          return dateB - dateA;
         }
       });
-  }, [sources, debouncedSearchTerm, filter, sortedAsc]);
+  }, [sources, searchResults, filter, sortedAsc]);
 
   return (
     <div className="flex-1 flex flex-col min-h-0">

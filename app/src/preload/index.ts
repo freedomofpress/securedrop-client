@@ -9,6 +9,7 @@ import {
   type SourceWithItems,
   type Journalist,
   type AuthedRequest,
+  type SearchResult,
   Item,
   PendingEventType,
   SyncStatus,
@@ -67,6 +68,9 @@ const electronAPI = {
   ),
   getJournalists: logIpcCall<Journalist[]>("getJournalists", () =>
     ipcRenderer.invoke("getJournalists"),
+  ),
+  search: logIpcCall<SearchResult[]>("search", (query: string) =>
+    ipcRenderer.invoke("search", query),
   ),
   getSystemLanguage: logIpcCall<string>("getSystemLanguage", () =>
     ipcRenderer.invoke("getSystemLanguage"),

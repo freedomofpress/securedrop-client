@@ -3,7 +3,7 @@ import { expect, describe, it, vi, beforeEach, afterEach } from "vitest";
 import userEvent from "@testing-library/user-event";
 import React from "react";
 import SourceList from "./SourceList";
-import type { Source as SourceType } from "../../../../types";
+import type { SearchResult, Source as SourceType } from "../../../../types";
 import { PendingEventType } from "../../../../types";
 import type { SourceProps } from "./SourceList/Source";
 import { renderWithProviders } from "../../../test-component-setup";
@@ -164,6 +164,33 @@ describe("Sources Component", () => {
     },
   ];
 
+  const mockSearchResults: SearchResult[] = [
+    {
+      sourceUuid: "source-1",
+      type: "source",
+      snippet: "alice wonderland",
+      itemUuid: null,
+    },
+    {
+      sourceUuid: "source-2",
+      type: "source",
+      snippet: "bob builder",
+      itemUuid: null,
+    },
+    {
+      sourceUuid: "source-3",
+      type: "source",
+      snippet: "charlie chaplin",
+      itemUuid: null,
+    },
+    {
+      sourceUuid: "source-4",
+      type: "source",
+      snippet: "diana ross",
+      itemUuid: null,
+    },
+  ];
+
   beforeEach(() => {
     // Reset mocks
     vi.clearAllMocks();
@@ -171,6 +198,15 @@ describe("Sources Component", () => {
     // Mock electronAPI with partial implementation for these tests
     window.electronAPI = {
       getSources: vi.fn().mockResolvedValue(mockSources),
+      search: vi
+        .fn()
+        .mockImplementation((query: string) =>
+          Promise.resolve(
+            mockSearchResults.filter((r) =>
+              r.snippet?.toLowerCase().includes(query.toLowerCase()),
+            ),
+          ),
+        ),
       syncMetadata: vi.fn().mockResolvedValue(undefined),
       onSourceUpdate: vi.fn().mockResolvedValue(undefined),
     } as Partial<typeof window.electronAPI> as typeof window.electronAPI;

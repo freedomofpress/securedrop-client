@@ -35,6 +35,7 @@ import {
   type Item,
   type PendingEventType,
   type DeviceStatus,
+  type SearchResult,
   FetchStatus,
   SyncStatus,
 } from "../types";
@@ -322,6 +323,13 @@ if (!gotTheLock) {
       const journalists = db.getJournalists();
       return journalists;
     });
+
+    ipcMain.handle(
+      "search",
+      async (_event, query: string): Promise<SearchResult[]> => {
+        return db.search(query);
+      },
+    );
 
     ipcMain.handle(
       "updateFetchStatus",

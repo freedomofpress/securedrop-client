@@ -322,3 +322,12 @@ export enum ArchiveStatus {
   ERROR_METADATA_PARSING = "ERROR_METADATA_PARSING",
   ERROR_EXTRACTION = "ERROR_EXTRACTION",
 }
+
+/** Search types */
+
+export type SearchResult = {
+  sourceUuid: string;
+  itemUuid: string | null;
+  snippet: string | null;
+  type: "message" | "reply" | "file" | "source";
+};
