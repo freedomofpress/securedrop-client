@@ -1,6 +1,5 @@
 import type { Item, ReplyMetadata } from "../../../../../../types";
 import { useTranslation } from "react-i18next";
-import { useState, useEffect, useRef } from "react";
 import {
   getSessionState,
   SessionStatus,
@@ -9,13 +8,13 @@ import { getJournalistById } from "../../../../../features/journalists/journalis
 import { formatJournalistName } from "../../../../../utils";
 import { useAppSelector } from "../../../../../hooks";
 import { Tooltip } from "antd";
-import { ClockCircleOutlined, CheckCircleOutlined } from "@ant-design/icons";
+import { Clock, Check, CheckCheck } from "lucide-react";
 import TruncatedText from "../../../../../components/TruncatedText";
 import "../Item.css";
 import "./Reply.css";
 
 // Reply sync states
-type ReplySyncState = "pending" | "success" | "synced";
+type ReplySyncState = "pending" | "sent" | "seen";
 
 interface ReplyProps {
   item: Item;
@@ -31,45 +30,17 @@ function Reply({ item }: ReplyProps) {
   // Cast item.data to ReplyMetadata since we know this is a reply
   const replyData = item.data as ReplyMetadata;
 
-  // Check if this is a pending reply (journalist_uuid is empty until server processes it)
-  const isPendingReply = replyData.journalist_uuid === "";
-
-  // Track whether we should show the success animation
-  // This is set when a reply transitions from pending to synced
-  const [showSuccessAnimation, setShowSuccessAnimation] = useState(false);
-  const prevIsPendingRef = useRef(isPendingReply);
-
-  // Detect transition from pending to synced and trigger success animation
-  useEffect(() => {
-    // Only trigger if transitioning from pending to synced
-    if (prevIsPendingRef.current && !isPendingReply) {
-      // Use queueMicrotask to avoid synchronous setState within effect
-      queueMicrotask(() => setShowSuccessAnimation(true));
-
-      // Clear the success animation after 3 seconds
-      // NOTE: Keep this duration in sync with the CSS animation in Reply.css
-      const timer = setTimeout(() => {
-        setShowSuccessAnimation(false);
-      }, 3000);
-
-      prevIsPendingRef.current = isPendingReply;
-      return () => clearTimeout(timer);
-    }
-
-    prevIsPendingRef.current = isPendingReply;
-    return undefined;
-  }, [isPendingReply]);
-
-  // Derive the sync state from the current state
-  const syncState: ReplySyncState = isPendingReply
-    ? "pending"
-    : showSuccessAnimation
-      ? "success"
-      : "synced";
+  // Derive the sync state
+  const syncState: ReplySyncState =
+    replyData.journalist_uuid === ""
+      ? "pending"
+      : replyData.is_deleted_by_source
+        ? "seen"
+        : "sent";
 
   // Get the journalist by ID (only for non-pending replies)
   const journalist = useAppSelector((state) =>
-    !isPendingReply
+    syncState !== "pending"
       ? getJournalistById(state, replyData.journalist_uuid)
       : undefined,
   );
@@ -77,7 +48,7 @@ function Reply({ item }: ReplyProps) {
   // Determine what to display for the author
   const getAuthorDisplay = () => {
     // Handle pending replies (journalist_uuid is empty)
-    if (isPendingReply) {
+    if (syncState === "pending") {
       return t("you");
     }
 
@@ -97,33 +68,44 @@ function Reply({ item }: ReplyProps) {
     return journalist ? formatJournalistName(journalist.data) : t("unknown");
   };
 
-  // Determine if we need extra padding for the status icon
-  const showStatusIcon = syncState !== "synced";
-
-  // Render the appropriate status icon based on sync state
-  const renderStatusIcon = () => {
-    if (syncState === "pending") {
-      return (
-        <Tooltip title={t("pendingReplyTooltip")}>
-          <ClockCircleOutlined
-            data-testid="pending-reply-icon"
-            className="reply-status-icon pending-reply-icon"
-          />
-        </Tooltip>
-      );
+  // Get the status icon and tooltip text based on sync state
+  const statusIcon = (() => {
+    switch (syncState) {
+      case "pending":
+        return {
+          tooltip: t("pendingReplyTooltip"),
+          icon: (
+            <Clock
+              data-testid="pending-reply-icon"
+              className="reply-status-icon pending-reply-icon"
+              size={14}
+            />
+          ),
+        };
+      case "sent":
+        return {
+          tooltip: t("successReplyTooltip"),
+          icon: (
+            <Check
+              data-testid="sent-reply-icon"
+              className="reply-status-icon sent-reply-icon"
+              size={14}
+            />
+          ),
+        };
+      case "seen":
+        return {
+          tooltip: t("seenReplyTooltip"),
+          icon: (
+            <CheckCheck
+              data-testid="seen-reply-icon"
+              className="reply-status-icon seen-reply-icon"
+              size={14}
+            />
+          ),
+        };
     }
-    if (syncState === "success") {
-      return (
-        <Tooltip title={t("successReplyTooltip")}>
-          <CheckCircleOutlined
-            data-testid="success-reply-icon"
-            className="reply-status-icon success-reply-icon"
-          />
-        </Tooltip>
-      );
-    }
-    return null;
-  };
+  })();
 
   return (
     <div
@@ -134,16 +116,16 @@ function Reply({ item }: ReplyProps) {
         <div className="flex items-center justify-start mb-1 gap-1">
           <span className="author reply-author">{getAuthorDisplay()}</span>
         </div>
-        <div
-          className={`reply-box whitespace-pre-wrap overflow-hidden relative ${showStatusIcon ? "with-status-icon" : ""}`}
-        >
-          {isEncrypted ? (
-            <span className="italic text-gray-500">{t("itemEncrypted")}</span>
-          ) : (
-            <TruncatedText text={messageContent} />
-          )}
-          {renderStatusIcon()}
-        </div>
+        <Tooltip title={statusIcon.tooltip} placement="bottomRight">
+          <div className="reply-box whitespace-pre-wrap overflow-hidden relative with-status-icon">
+            {isEncrypted ? (
+              <span className="italic text-gray-500">{t("itemEncrypted")}</span>
+            ) : (
+              <TruncatedText text={messageContent} />
+            )}
+            {statusIcon.icon}
+          </div>
+        </Tooltip>
       </div>
     </div>
   );

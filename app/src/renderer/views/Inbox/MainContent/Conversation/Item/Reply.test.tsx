@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
+import { describe, it, expect } from "vitest";
 import { renderWithProviders } from "../../../../../test-component-setup";
 import Reply from "./Reply";
 import type {
@@ -8,7 +8,6 @@ import type {
 } from "../../../../../../types";
 import { SessionStatus } from "../../../../../features/session/sessionSlice";
 import type { RootState } from "../../../../../store";
-import { act } from "@testing-library/react";
 
 describe("Reply", () => {
   const mockReplyItem: Item = {
@@ -681,7 +680,7 @@ describe("Reply", () => {
     });
   });
 
-  describe("Success Reply Icon (transition from pending to synced)", () => {
+  describe("Persistent status icons", () => {
     const authState: Partial<RootState> = {
       session: {
         status: SessionStatus.Auth,
@@ -715,100 +714,85 @@ describe("Reply", () => {
       plaintext: "This is a pending reply",
     };
 
-    const syncedReplyItem: Item = {
-      ...pendingReplyItem,
+    const sentReplyItem: Item = {
+      uuid: "sent-reply-1",
       data: {
-        ...pendingReplyItem.data,
-        journalist_uuid: "journalist-1", // Now has journalist UUID (synced)
+        kind: "reply",
+        uuid: "sent-reply-1",
+        source: "source-1",
+        size: 1024,
+        journalist_uuid: "journalist-1",
+        is_deleted_by_source: false,
+        seen_by: [],
+        interaction_count: 1,
       } as ReplyMetadata,
+      plaintext: "This is a sent reply",
     };
 
-    beforeEach(() => {
-      vi.useFakeTimers();
-    });
+    const seenReplyItem: Item = {
+      uuid: "seen-reply-1",
+      data: {
+        kind: "reply",
+        uuid: "seen-reply-1",
+        source: "source-1",
+        size: 1024,
+        journalist_uuid: "journalist-1",
+        is_deleted_by_source: true, // Source has seen and deleted it
+        seen_by: [],
+        interaction_count: 1,
+      } as ReplyMetadata,
+      plaintext: "This is a seen reply",
+    };
 
-    afterEach(() => {
-      vi.useRealTimers();
-    });
-
-    it("should show success icon when reply transitions from pending to synced", async () => {
-      const { rerender, getByTestId, queryByTestId } = renderWithProviders(
+    it("should show pending icon for pending replies", () => {
+      const { getByTestId, queryByTestId } = renderWithProviders(
         <Reply item={pendingReplyItem} />,
         { preloadedState: authState },
       );
 
-      // Initially shows pending icon
       expect(getByTestId("pending-reply-icon")).toBeInTheDocument();
-      expect(queryByTestId("success-reply-icon")).not.toBeInTheDocument();
+      expect(queryByTestId("sent-reply-icon")).not.toBeInTheDocument();
+      expect(queryByTestId("seen-reply-icon")).not.toBeInTheDocument();
+    });
 
-      // Transition to synced state
-      rerender(<Reply item={syncedReplyItem} />);
+    it("should show sent icon for synced replies not yet seen by source", () => {
+      const { getByTestId, queryByTestId } = renderWithProviders(
+        <Reply item={sentReplyItem} />,
+        { preloadedState: authState },
+      );
 
-      // Flush microtask queue to allow state update
-      await act(async () => {
-        await Promise.resolve();
-      });
-
-      // Should now show success icon
+      expect(getByTestId("sent-reply-icon")).toBeInTheDocument();
       expect(queryByTestId("pending-reply-icon")).not.toBeInTheDocument();
-      expect(getByTestId("success-reply-icon")).toBeInTheDocument();
+      expect(queryByTestId("seen-reply-icon")).not.toBeInTheDocument();
     });
 
-    it("should hide success icon after 3 seconds", async () => {
-      const { rerender, getByTestId, queryByTestId } = renderWithProviders(
-        <Reply item={pendingReplyItem} />,
+    it("should show seen icon when source has seen the reply", () => {
+      const { getByTestId, queryByTestId } = renderWithProviders(
+        <Reply item={seenReplyItem} />,
         { preloadedState: authState },
       );
 
-      // Transition to synced state
-      rerender(<Reply item={syncedReplyItem} />);
-
-      // Flush microtask queue to allow state update
-      await act(async () => {
-        await Promise.resolve();
-      });
-
-      // Success icon should be visible
-      expect(getByTestId("success-reply-icon")).toBeInTheDocument();
-
-      // Advance time by 3 seconds
-      act(() => {
-        vi.advanceTimersByTime(3000);
-      });
-
-      // Success icon should be gone
-      expect(queryByTestId("success-reply-icon")).not.toBeInTheDocument();
-    });
-
-    it("should not show success icon for already synced replies", () => {
-      const { queryByTestId } = renderWithProviders(
-        <Reply item={syncedReplyItem} />,
-        { preloadedState: authState },
-      );
-
-      // Should not show any status icon for already synced replies
+      expect(getByTestId("seen-reply-icon")).toBeInTheDocument();
       expect(queryByTestId("pending-reply-icon")).not.toBeInTheDocument();
-      expect(queryByTestId("success-reply-icon")).not.toBeInTheDocument();
+      expect(queryByTestId("sent-reply-icon")).not.toBeInTheDocument();
     });
 
-    it("should cleanup timer on unmount during animation", () => {
-      const { rerender, unmount } = renderWithProviders(
-        <Reply item={pendingReplyItem} />,
+    it("should show sent icon when is_deleted_by_source is false", () => {
+      const notDeletedItem: Item = {
+        ...sentReplyItem,
+        data: {
+          ...(sentReplyItem.data as ReplyMetadata),
+          is_deleted_by_source: false,
+        } as ReplyMetadata,
+      };
+
+      const { getByTestId, queryByTestId } = renderWithProviders(
+        <Reply item={notDeletedItem} />,
         { preloadedState: authState },
       );
 
-      // Transition to synced state
-      rerender(<Reply item={syncedReplyItem} />);
-
-      // Unmount before timer completes
-      unmount();
-
-      // Advance timers - should not throw or cause issues
-      act(() => {
-        vi.advanceTimersByTime(3000);
-      });
-
-      // Test passes if no errors are thrown
+      expect(getByTestId("sent-reply-icon")).toBeInTheDocument();
+      expect(queryByTestId("seen-reply-icon")).not.toBeInTheDocument();
     });
   });
 });
