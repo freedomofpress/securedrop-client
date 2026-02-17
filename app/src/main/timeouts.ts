@@ -52,7 +52,7 @@ export function estimateTimeout(schema: z.Schema, records?: number): ms {
   const timeout = getRealisticTimeout(size, DEFAULT_PROXY_CMD_TIMEOUT_MS);
 
   console.debug(
-    `Expecting ${schema.description} of ${records} records to be about ${size} bytes within ${timeout} ms`,
+    `Expecting ${schema.description} of ~${records} records to be ~${size} bytes within ~${timeout} ms`,
   );
   return timeout;
 }
