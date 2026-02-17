@@ -8,14 +8,6 @@
   "MainContent": {
     "emptyState": "<bold>Sélectionnez une source</bold> dans la liste pour lire les messages, récupérer les fichiers ou envoyer des réponses.",
     "emptyConversation": "Cette conversation n'a pas encore de messages.",
-    "loading": {
-      "header": "Chargement...",
-      "content": "Chargement des détails de la source..."
-    },
-    "sourceNotFound": {
-      "header": "Source introuvable",
-      "content": "Source introuvable"
-    },
     "conversation": {
       "sendButton": "Envoyer",
       "messagePlaceholder": "Message {{designation}}...",

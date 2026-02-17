@@ -9,14 +9,6 @@
     "nonProduction": "WARNING: non-production mode",
     "emptyState": "<bold>Select a source</bold> from the list to read messages, retrieve files, or send responses.",
     "emptyConversation": "This conversation has no messages yet.",
-    "loading": {
-      "header": "Loading...",
-      "content": "Loading source details..."
-    },
-    "sourceNotFound": {
-      "header": "Source Not Found",
-      "content": "Source not found"
-    },
     "conversation": {
       "sendButton": "Send",
       "messagePlaceholder": "Message {{designation}}...",

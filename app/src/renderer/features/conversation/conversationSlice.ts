@@ -133,6 +133,8 @@ export const selectConversation = (state: RootState, sourceUuid: string) =>
   state.conversation.conversation?.uuid === sourceUuid
     ? state.conversation.conversation
     : null;
+export const selectLastConversation = (state: RootState) =>
+  state.conversation.conversation;
 export const selectConversationLoading = (state: RootState) =>
   state.conversation.loading;
 

@@ -1,12 +1,11 @@
 import { useParams } from "react-router";
 import { useEffect, useMemo } from "react";
-import { useTranslation } from "react-i18next";
 
 import { useAppDispatch, useAppSelector } from "../../hooks";
 import {
   fetchConversation,
   selectConversation,
-  selectConversationLoading,
+  selectLastConversation,
 } from "../../features/conversation/conversationSlice";
 import EmptyState from "./MainContent/EmptyState";
 import Conversation from "./MainContent/Conversation";
@@ -15,12 +14,17 @@ import Header from "./MainContent/Header";
 function MainContent() {
   const { sourceUuid } = useParams<{ sourceUuid?: string }>();
   const dispatch = useAppDispatch();
-  const { t } = useTranslation("MainContent");
 
   const sourceWithItems = useAppSelector((state) =>
     sourceUuid ? selectConversation(state, sourceUuid) : null,
   );
-  const loading = useAppSelector(selectConversationLoading);
+
+  const lastConversation = useAppSelector(selectLastConversation);
+
+  // Use current data if available, otherwise fall back to the last loaded
+  // conversation while a source is selected.
+  const displayedSourceWithItems =
+    sourceWithItems ?? (sourceUuid ? lastConversation : null);
 
   // Fetch the source with its items
   useEffect(() => {
@@ -30,35 +34,25 @@ function MainContent() {
   }, [dispatch, sourceUuid]);
 
   const content = useMemo(() => {
-    // If we have a source UUID, show the source content
-    if (sourceUuid) {
-      if (sourceWithItems) {
-        // Source and items exists, display
-        return <Conversation sourceWithItems={sourceWithItems} />;
-      } else if (loading) {
-        // Loading
-        return <p>{t("loading.content")}</p>;
-      } else {
-        // Source not found
-        return <p>{t("sourceNotFound.content")}</p>;
-      }
+    // If we have a source, show the source content
+    if (sourceUuid && displayedSourceWithItems) {
+      return <Conversation sourceWithItems={displayedSourceWithItems} />;
     } else {
-      // Show empty state when no source is selected
+      // Otherwise show empty state
       return (
         <div className="flex flex-1 items-center justify-center w-full h-full">
           <EmptyState />
         </div>
       );
     }
-  }, [sourceUuid, loading, sourceWithItems, t]);
+  }, [sourceUuid, displayedSourceWithItems]);
 
   return (
     <div className="flex-1 flex flex-col h-full min-h-0">
       <div className="sd-bg-primary sd-border-secondary border-b h-12 p-1 px-4">
         <Header
           sourceUuid={sourceUuid}
-          loading={loading}
-          sourceWithItems={sourceWithItems}
+          sourceWithItems={displayedSourceWithItems}
         />
       </div>
       <div className="flex-1 flex w-full sd-bg-secondary min-h-0">
