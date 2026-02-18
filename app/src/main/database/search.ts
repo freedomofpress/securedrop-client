@@ -1,5 +1,5 @@
 import Database, { Statement } from "better-sqlite3";
-import { SearchResult } from "../types";
+import { SearchResult } from "../../types";
 
 type SearchRow = {
   source_uuid: string;
@@ -41,6 +41,8 @@ export class Search {
     },
     void
   >;
+  private selectItemStmt: Statement<[string], IndexItemRow>;
+  private selectSourceStmt: Statement<[string], IndexSourceRow>;
 
   constructor(db: Database.Database) {
     this.db = db;
@@ -82,6 +84,19 @@ export class Search {
         @source_uuid, NULL, 'source', @content
       )
     `);
+
+    this.selectItemStmt = this.db.prepare(`
+      SELECT i.source_uuid,
+             json_extract(i.data, '$.kind') AS kind,
+             i.plaintext, i.filename
+      FROM items i
+      WHERE i.uuid = ?
+    `);
+
+    this.selectSourceStmt = this.db.prepare(`
+      SELECT json_extract(data, '$.journalist_designation') AS source_name
+      FROM sources WHERE uuid = ?
+    `);
   }
 
   search(
@@ -114,16 +129,7 @@ export class Search {
   }
 
   indexItem(itemUuid: string): void {
-    const row = this.db
-      .prepare(
-        `SELECT i.source_uuid,
-              json_extract(i.data, '$.kind') AS kind,
-              i.plaintext, i.filename
-       FROM items i
-       WHERE i.uuid = ?`,
-      )
-      .get(itemUuid) as IndexItemRow | undefined;
-
+    const row = this.selectItemStmt.get(itemUuid);
     if (!row) return;
 
     const content = row.plaintext ?? row.filename;
@@ -138,13 +144,7 @@ export class Search {
   }
 
   indexSource(sourceUuid: string): void {
-    const row = this.db
-      .prepare(
-        `SELECT json_extract(data, '$.journalist_designation') AS source_name
-       FROM sources WHERE uuid = ?`,
-      )
-      .get(sourceUuid) as IndexSourceRow | undefined;
-
+    const row = this.selectSourceStmt.get(sourceUuid);
     if (!row) return;
 
     this.upsertSourceStmt.run({
@@ -159,5 +159,9 @@ export class Search {
 
   removeItem(itemUuid: string): void {
     this.deleteByItemStmt.run(itemUuid);
+  }
+
+  close(): void {
+    this.db?.close();
   }
 }

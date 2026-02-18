@@ -30,7 +30,7 @@ import {
   SearchResult,
 } from "../../types";
 import { Crypto } from "../crypto";
-import { Search } from "../search";
+import { Search } from "./search";
 
 // Truncate message previews to 200 Unicode code points
 // at the database layer; CSS will handle the rest
