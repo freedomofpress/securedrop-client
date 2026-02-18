@@ -38,7 +38,7 @@ import {
   FetchStatus,
   SyncStatus,
 } from "../types";
-import { syncMetadata } from "./sync";
+import { syncMetadata, shouldSkipSync } from "./sync";
 import workerPath from "./fetch/worker?modulePath";
 import { Lock, LockTimeoutError } from "./sync/lock";
 import { Config } from "./config";
@@ -367,6 +367,11 @@ if (!gotTheLock) {
     ipcMain.handle(
       "syncMetadata",
       async (_event, request: AuthedRequest): Promise<SyncStatus> => {
+        if (shouldSkipSync(db, request.hintedVersion)) {
+          console.debug(`Already at ${request.hintedVersion}; skipping sync`);
+          return SyncStatus.NOT_MODIFIED;
+        }
+
         let syncStatus: SyncStatus;
         try {
           syncStatus = await syncLock.run(async () => {
