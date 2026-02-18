@@ -201,6 +201,12 @@ describe("SignInView Component", () => {
         journalist_uuid: "7f19192d-c8e3-4518-9d4a-26cb39bc8662",
         token:
           "IlNrR0lza1M1TDd6TC1HbVBOTEFlQ1YwSHkxNkplX00wbEN1amlCZ2wtTVEi.aHfglw.XM077FlEYyESuwl_JLeMqPSZsyg",
+        hints: {
+          version:
+            "a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2",
+          sources: 3,
+          items: 10,
+        },
       },
       status: 200,
       headers: {

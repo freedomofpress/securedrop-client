@@ -3,8 +3,18 @@ import { configureStore } from "@reduxjs/toolkit";
 import { Source as SourceType, SyncStatus } from "../../../types";
 import syncSlice, { syncMetadata } from "./syncSlice";
 import sourcesSlice from "../sources/sourcesSlice";
-import sessionSlice from "../session/sessionSlice";
+import sessionSlice, { type AuthData } from "../session/sessionSlice";
 import conversationSlice from "../conversation/conversationSlice";
+
+function mockAuthData(token: string): AuthData {
+  return {
+    expiration: "",
+    token,
+    journalistUUID: "550e8400-e29b-41d4-a716-446655440000",
+    journalistFirstName: null,
+    journalistLastName: null,
+  };
+}
 
 // Mock data matching the structure from test-component-setup.tsx
 const mockSources: SourceType[] = [
@@ -89,10 +99,13 @@ describe("syncSlice", () => {
   describe("syncMetadata async thunk", () => {
     it("handles successful sync with auth token", async () => {
       const authToken = "test-auth-token";
-      const action = syncMetadata(authToken);
+      const action = syncMetadata(mockAuthData(authToken));
       await (store.dispatch as any)(action);
 
-      expect(mockSyncMetadata).toHaveBeenCalledWith({ authToken });
+      expect(mockSyncMetadata).toHaveBeenCalledWith({
+        authToken,
+        hintedRecords: 0,
+      });
       expect(mockSyncMetadata).toHaveBeenCalledTimes(1);
       expect(mockGetSources).toHaveBeenCalledTimes(1);
 
@@ -103,13 +116,18 @@ describe("syncSlice", () => {
       expect(syncState.lastFetchTime).toBeGreaterThan(0);
     });
 
-    it("handles sync failure without auth token", async () => {
+    it("handles sync failure with invalid auth token", async () => {
       const errorMessage = "Authentication required";
       mockSyncMetadata.mockRejectedValue(new Error(errorMessage));
 
-      await (store.dispatch as any)(syncMetadata(undefined));
+      await (store.dispatch as any)(
+        syncMetadata(mockAuthData("invalid-token")),
+      );
 
-      expect(mockSyncMetadata).toHaveBeenCalledWith({ authToken: undefined });
+      expect(mockSyncMetadata).toHaveBeenCalledWith({
+        authToken: "invalid-token",
+        hintedRecords: 0,
+      });
       expect(mockGetSources).not.toHaveBeenCalled();
 
       const syncState = (store.getState() as any).sync;
@@ -122,7 +140,7 @@ describe("syncSlice", () => {
       const errorMessage = "Failed to sync metadata";
       mockSyncMetadata.mockRejectedValue(new Error(errorMessage));
 
-      const action = syncMetadata("test-token");
+      const action = syncMetadata(mockAuthData("test-token"));
       await (store.dispatch as any)(action);
 
       expect(mockSyncMetadata).toHaveBeenCalledTimes(1);
@@ -138,7 +156,7 @@ describe("syncSlice", () => {
       const errorMessage = "Failed to get sources";
       mockGetSources.mockRejectedValue(new Error(errorMessage));
 
-      const action = syncMetadata("test-token");
+      const action = syncMetadata(mockAuthData("test-token"));
       await (store.dispatch as any)(action);
 
       expect(mockSyncMetadata).toHaveBeenCalledTimes(1);
@@ -188,7 +206,7 @@ describe("syncSlice", () => {
         items: [],
       });
 
-      await (store.dispatch as any)(syncMetadata("test-token"));
+      await (store.dispatch as any)(syncMetadata(mockAuthData("test-token")));
 
       // Should have called getSourceWithItems for the active source only
       expect(mockGetSourceWithItems).toHaveBeenCalledWith(activeSourceUuid);
@@ -203,7 +221,7 @@ describe("syncSlice", () => {
       const mockGetSourceWithItems = vi.fn();
       (window as any).electronAPI.getSourceWithItems = mockGetSourceWithItems;
 
-      await (store.dispatch as any)(syncMetadata("test-token"));
+      await (store.dispatch as any)(syncMetadata(mockAuthData("test-token")));
 
       // Should NOT have called getSourceWithItems since no active source
       expect(mockGetSourceWithItems).not.toHaveBeenCalled();
@@ -216,7 +234,7 @@ describe("syncSlice", () => {
     it("handles network timeout error during sync", async () => {
       mockSyncMetadata.mockRejectedValue(new Error("Network timeout"));
 
-      await (store.dispatch as any)(syncMetadata("valid-token"));
+      await (store.dispatch as any)(syncMetadata(mockAuthData("valid-token")));
 
       const syncState = (store.getState() as any).sync;
       const sourcesState = (store.getState() as any).sources;
@@ -231,7 +249,7 @@ describe("syncSlice", () => {
     it("handles non-Error rejection for syncMetadata", async () => {
       mockSyncMetadata.mockRejectedValue("String error");
 
-      const action = syncMetadata("test-token");
+      const action = syncMetadata(mockAuthData("test-token"));
       await (store.dispatch as any)(action);
 
       const syncState = (store.getState() as any).sync;
@@ -241,7 +259,7 @@ describe("syncSlice", () => {
     it("skips source fetch on no-update sync", async () => {
       mockSyncMetadata.mockResolvedValue(SyncStatus.NOT_MODIFIED);
 
-      await (store.dispatch as any)(syncMetadata("test-token"));
+      await (store.dispatch as any)(syncMetadata(mockAuthData("test-token")));
 
       // Should NOT have called getSourceWithItems
       expect(mockGetSources).not.toHaveBeenCalled();
@@ -250,13 +268,16 @@ describe("syncSlice", () => {
     it("handles 403 forbidden response", async () => {
       mockSyncMetadata.mockResolvedValue(SyncStatus.FORBIDDEN);
 
-      await (store.dispatch as any)(syncMetadata("invalid-token"));
+      await (store.dispatch as any)(
+        syncMetadata(mockAuthData("invalid-token")),
+      );
 
       const syncState = (store.getState() as any).sync;
       expect(syncState.status).toBe(SyncStatus.FORBIDDEN);
       expect(syncState.error).toBeNull();
       expect(mockSyncMetadata).toHaveBeenCalledWith({
         authToken: "invalid-token",
+        hintedRecords: 0,
       });
       expect(mockGetSources).not.toHaveBeenCalled();
     });
@@ -264,7 +285,7 @@ describe("syncSlice", () => {
     it("stores sync status when sync is successful", async () => {
       mockSyncMetadata.mockResolvedValue(SyncStatus.UPDATED);
 
-      await (store.dispatch as any)(syncMetadata("test-token"));
+      await (store.dispatch as any)(syncMetadata(mockAuthData("test-token")));
 
       const syncState = (store.getState() as any).sync;
       expect(syncState.status).toBe(SyncStatus.UPDATED);
@@ -274,7 +295,7 @@ describe("syncSlice", () => {
     it("stores NOT_MODIFIED status when no changes", async () => {
       mockSyncMetadata.mockResolvedValue(SyncStatus.NOT_MODIFIED);
 
-      await (store.dispatch as any)(syncMetadata("test-token"));
+      await (store.dispatch as any)(syncMetadata(mockAuthData("test-token")));
 
       const syncState = (store.getState() as any).sync;
       expect(syncState.status).toBe(SyncStatus.NOT_MODIFIED);

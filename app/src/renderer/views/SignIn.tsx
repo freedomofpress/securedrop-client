@@ -7,7 +7,7 @@ import { useNavigate } from "react-router";
 import { useTranslation } from "react-i18next";
 
 import type { ProxyRequest } from "../../types";
-import { TokenResponseSchema } from "../../schemas";
+import { API_MINOR_VERSION, TokenResponseSchema } from "../../schemas";
 import { useAppDispatch, useAppSelector } from "../hooks";
 import {
   setAuth,
@@ -89,7 +89,9 @@ function SignInView() {
           passphrase: values.passphrase,
           one_time_code: values.oneTimeCode,
         }),
-        headers: {},
+        headers: {
+          Prefer: `securedrop=${API_MINOR_VERSION}`,
+        },
       } as ProxyRequest);
 
       // If the status is not 200, fail
@@ -118,6 +120,9 @@ function SignInView() {
             journalistUUID: resp.journalist_uuid,
             journalistFirstName: resp.journalist_first_name,
             journalistLastName: resp.journalist_last_name,
+            lastHintedVersion: resp.hints.version,
+            lastHintedSources: resp.hints.sources,
+            lastHintedItems: resp.hints.items,
           } as AuthData),
         );
 

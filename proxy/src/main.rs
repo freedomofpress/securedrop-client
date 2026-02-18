@@ -39,7 +39,7 @@ struct IncomingRequest {
     headers: HashMap<String, String>,
     body: Option<String>,
     #[serde(default = "default_timeout")]
-    timeout: u64,
+    timeout: u64, // sec
 }
 
 /// Default timeout for requests; serde requires this be a function.  To avoid

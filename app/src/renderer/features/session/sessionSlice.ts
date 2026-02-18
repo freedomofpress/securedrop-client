@@ -14,6 +14,9 @@ interface AuthData {
   journalistUUID: string;
   journalistFirstName: string | null;
   journalistLastName: string | null;
+  lastHintedVersion?: string;
+  lastHintedSources?: number;
+  lastHintedItems?: number;
 }
 
 interface SessionState {

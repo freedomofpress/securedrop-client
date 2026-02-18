@@ -45,8 +45,13 @@ function Account() {
   };
 
   const sync = () => {
+    if (!session.authData) {
+      console.warn("Missing authenticated session; skipping sync");
+      return;
+    }
+
     console.log("syncing metadata");
-    dispatch(syncMetadata(session.authData?.token));
+    dispatch(syncMetadata(session.authData));
   };
 
   return (

@@ -14,9 +14,14 @@ if (__RENDERER_ONLY__) {
 // Bump this constant when this file has been updated to reflect a new minor
 // version of the v2 Journalist API with new request/response shapes.  See the
 // constant of the same name in freedomofpress/securedrop for possible values.
-export const API_MINOR_VERSION = 3; // 2.x
+export const API_MINOR_VERSION = 4; // 2.x
 
 export const UUIDSchema = z.uuid({ version: "v4" });
+
+export interface SizedSchema {
+  recordSize: number;
+  description: string;
+}
 
 // Response from /api/v1/token
 export const TokenResponseSchema = z.object({
@@ -25,6 +30,11 @@ export const TokenResponseSchema = z.object({
   journalist_uuid: UUIDSchema,
   journalist_first_name: z.nullable(z.string()),
   journalist_last_name: z.nullable(z.string()),
+  hints: z.object({
+    version: z.string(),
+    sources: z.number(),
+    items: z.number(),
+  }),
 });
 
 export const SourceMetadataSchema = z.object({
@@ -84,6 +94,12 @@ export const IndexSchema = z.object({
   journalists: z.record(UUIDSchema, z.string()),
 });
 
+// Interface for size calculations
+export const IndexSized: SizedSchema = {
+  recordSize: 106, // bytes: UUID (36 characters) + hash (64 characters) + JSON
+  description: "index",
+};
+
 // Metadata, maps UUIDs to full metadata objects
 export const BatchResponseSchema = z.object({
   sources: z.record(UUIDSchema, SourceMetadataSchema.nullable()),
@@ -91,6 +107,12 @@ export const BatchResponseSchema = z.object({
   journalists: z.record(UUIDSchema, JournalistMetadataSchema.nullable()),
   events: z.record(z.string(), z.tuple([z.number(), z.string().nullable()])),
 });
+
+// Interface for size calculations
+export const BatchResponseSized: SizedSchema = {
+  recordSize: 1_000, // bytes (rounded up; remember, this is independent of the underlying file size!)
+  description: "batch response",
+};
 
 /**
  * Zod schemas for server requests
