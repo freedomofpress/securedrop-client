@@ -59,6 +59,8 @@ describe("Database Component Tests", () => {
     expect(db).toBeDefined();
     expect(fs.existsSync(testDbPath)).toBe(true);
     expect(db["db"]!.pragma("journal_mode", { simple: true })).toBe("wal");
+    expect(db["db"]!.pragma("secure_delete", { simple: true })).toBe(1);
+    expect(db["db"]!.pragma("auto_vacuum", { simple: true })).toBe(1);
   });
 
   it("should handle database closure", () => {
