@@ -168,6 +168,12 @@ export class DB {
     // Create or open the SQLite database
     const dbPath = path.join(dbDir, "db.sqlite");
     const db = new Database(dbPath, { nativeBinding: this.getBinaryPath() });
+
+    // enable security pragmas
+    db.pragma("secure_delete = ON");
+    db.pragma("auto_vacuum = FULL");
+
+    // WAL mode must be set after auto_vacuum
     db.pragma("journal_mode = WAL");
 
     // Set the database URL for migrations
