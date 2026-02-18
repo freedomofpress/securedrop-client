@@ -1,6 +1,5 @@
-import { z } from "zod";
 import { bytes, ms } from "../types";
-import { registry } from "../schemas";
+import type { SizedSchema } from "../schemas";
 import { DEFAULT_PROXY_CMD_TIMEOUT_MS } from "./proxy";
 
 // Calculate a realistic timeout in milliseconds based on the size of the total
@@ -30,20 +29,14 @@ export function getRealisticTimeout(size: bytes, floor = 25_000 as ms): ms {
 }
 
 // Estimate the size of a request/response schema based on its expected size per
-// record.  The schema MUST be registered with this metadata.
-export function estimateSize(schema: z.Schema, records: number): bytes {
-  const meta = registry.get(schema);
-  if (!meta) {
-    throw new Error("Can't estimate size for unregistered schema");
-  }
-
-  const recordSize = meta.recordSize;
-  return (records * recordSize) as bytes;
+// record.
+export function estimateSize(schema: SizedSchema, records: number): bytes {
+  return (records * schema.recordSize) as bytes;
 }
 
 // Estimate a timeout for a request/response schema based on its expected size
 // per record.
-export function estimateTimeout(schema: z.Schema, records?: number): ms {
+export function estimateTimeout(schema: SizedSchema, records?: number): ms {
   if (!records) {
     records = 0;
   }

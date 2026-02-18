@@ -1,7 +1,6 @@
 import { describe, it, expect } from "vitest";
-import { z } from "zod";
 import { bytes, ms } from "../types";
-import { IndexSchema, BatchResponseSchema } from "../schemas";
+import { IndexSized, BatchResponseSized } from "../schemas";
 import { DEFAULT_PROXY_CMD_TIMEOUT_MS } from "./proxy";
 import { getRealisticTimeout, estimateSize, estimateTimeout } from "./timeouts";
 
@@ -37,51 +36,44 @@ describe("getRealisticTimeout", () => {
 });
 
 describe("estimateSize", () => {
-  it("estimates IndexSchema size based on record count", () => {
-    const size = estimateSize(IndexSchema, 100);
-    // IndexSchema recordSize is 106
+  it("estimates IndexSized size based on record count", () => {
+    const size = estimateSize(IndexSized, 100);
+    // IndexSized recordSize is 106
     expect(size).toBe(10_600);
   });
 
-  it("estimates BatchResponseSchema size based on record count", () => {
-    const size = estimateSize(BatchResponseSchema, 50);
-    // BatchResponseSchema recordSize is 1000
+  it("estimates BatchResponseSized size based on record count", () => {
+    const size = estimateSize(BatchResponseSized, 50);
+    // BatchResponseSized recordSize is 1000
     expect(size).toBe(50_000);
   });
 
   it("returns zero for zero records", () => {
-    const size = estimateSize(IndexSchema, 0);
+    const size = estimateSize(IndexSized, 0);
     expect(size).toBe(0);
-  });
-
-  it("throws for unregistered schemas", () => {
-    const unregistered = z.object({ foo: z.string() });
-    expect(() => estimateSize(unregistered, 10)).toThrow(
-      "Can't estimate size for unregistered schema",
-    );
   });
 });
 
 describe("estimateTimeout", () => {
   it("returns at least DEFAULT_PROXY_CMD_TIMEOUT_MS for zero records", () => {
-    const timeout = estimateTimeout(IndexSchema, 0);
+    const timeout = estimateTimeout(IndexSized, 0);
     expect(timeout).toBe(DEFAULT_PROXY_CMD_TIMEOUT_MS);
   });
 
   it("returns at least DEFAULT_PROXY_CMD_TIMEOUT_MS when records is undefined", () => {
-    const timeout = estimateTimeout(IndexSchema);
+    const timeout = estimateTimeout(IndexSized);
     expect(timeout).toBe(DEFAULT_PROXY_CMD_TIMEOUT_MS);
   });
 
   it("increases with record count", () => {
-    const small = estimateTimeout(IndexSchema, 10);
-    const large = estimateTimeout(IndexSchema, 10_000);
+    const small = estimateTimeout(IndexSized, 10);
+    const large = estimateTimeout(IndexSized, 10_000);
     expect(large).toBeGreaterThan(small);
   });
 
-  it("is larger for BatchResponseSchema than IndexSchema at the same record count", () => {
-    const indexTimeout = estimateTimeout(IndexSchema, 100);
-    const batchTimeout = estimateTimeout(BatchResponseSchema, 100);
+  it("is larger for BatchResponseSized than IndexSized at the same record count", () => {
+    const indexTimeout = estimateTimeout(IndexSized, 100);
+    const batchTimeout = estimateTimeout(BatchResponseSized, 100);
     expect(batchTimeout).toBeGreaterThan(indexTimeout);
   });
 });

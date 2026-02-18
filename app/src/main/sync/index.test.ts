@@ -15,7 +15,7 @@ import {
 } from "../../../src/types";
 import * as proxyModule from "../../../src/main/proxy";
 import { estimateTimeout } from "../../../src/main/timeouts";
-import { IndexSchema, BatchResponseSchema } from "../../../src/schemas";
+import { IndexSized, BatchResponseSized } from "../../../src/schemas";
 import * as fs from "fs";
 
 vi.mock("fs", () => ({
@@ -211,12 +211,12 @@ describe("syncMetadata", () => {
 
     // getServerIndex call: timeout estimated from IndexSchema with hintedRecords records
     const indexTimeout = proxyMock.mock.calls[0][2];
-    expect(indexTimeout).toBe(estimateTimeout(IndexSchema, hintedRecords));
+    expect(indexTimeout).toBe(estimateTimeout(IndexSized, hintedRecords));
 
-    // submitBatch call: timeout estimated from BatchResponseSchema with record count
+    // submitBatch call: timeout estimated from BatchResponseSized with record count
     // 1 source + 1 item = 2 records (journalists not counted)
     const batchTimeout = proxyMock.mock.calls[1][2];
-    expect(batchTimeout).toBe(estimateTimeout(BatchResponseSchema, 2));
+    expect(batchTimeout).toBe(estimateTimeout(BatchResponseSized, 2));
   });
 
   it("handles error from getIndex", async () => {

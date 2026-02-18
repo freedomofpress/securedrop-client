@@ -11,7 +11,9 @@ import { DB } from "../database";
 import {
   API_MINOR_VERSION,
   IndexSchema,
+  IndexSized,
   BatchResponseSchema,
+  BatchResponseSized,
   BatchRequestSchema,
 } from "../../schemas";
 import { estimateTimeout } from "../timeouts";
@@ -29,7 +31,7 @@ async function getServerIndex(
   currentVersion: string,
   records?: number,
 ): Promise<IndexResponse> {
-  const timeout = estimateTimeout(IndexSchema, records);
+  const timeout = estimateTimeout(IndexSized, records);
   const resp = (await proxyJSONRequest(
     {
       method: "GET",
@@ -80,7 +82,7 @@ async function submitBatch(
   // (sources + items) >> (journalists + events), so the former is good enough
   // for estimation.
   const records = (request.sources?.length || 0) + (request.items?.length || 0);
-  const timeout = estimateTimeout(BatchResponseSchema, records);
+  const timeout = estimateTimeout(BatchResponseSized, records);
 
   const resp = (await proxyJSONRequest(
     {
