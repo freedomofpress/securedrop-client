@@ -76,6 +76,7 @@ function Account() {
             icon={<LogOut size={16} />}
             size="small"
             onClick={signOut}
+            data-testid="sign-out-button"
           >
             {t("account.signOut")}
           </Button>
