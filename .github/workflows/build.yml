@@ -150,6 +150,7 @@ jobs:
           - app
           - client
           - export
+          - gpg-config
           - keyring
           - log
           - proxy
