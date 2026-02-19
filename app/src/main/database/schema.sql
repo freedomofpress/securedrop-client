@@ -61,7 +61,15 @@ SELECT
     items.plaintext,
     items.filename,
     items.kind,
-    items.is_read,
+    CASE
+        WHEN items.is_read THEN 1
+        WHEN EXISTS (
+            SELECT 1 FROM pending_events
+            WHERE pending_events.item_uuid = items.uuid
+                AND pending_events.type = 'item_seen'
+        ) THEN 1
+        ELSE 0
+    END AS is_read,
     items.last_updated,
     items.source_uuid,
     items.fetch_progress,
@@ -91,7 +99,7 @@ SELECT
     json_extract(pending_events.data, '$.plaintext') AS plaintext,
     NULL AS filename,
     'reply' AS kind,
-    NULL AS is_read,
+    1 AS is_read,
     NULL AS last_updated,
     json_extract(pending_events.data, '$.metadata.source') AS source_uuid,
     NULL AS fetch_progress,
