@@ -51,7 +51,7 @@ class TranslationExtractor {
   processInterpolation(text, variables = {}) {
     // Default variables that might be used
     const defaultVars = {
-      version: "0.0.1", // From package.json
+      version: "0.0.1", // From package.json5
       designation: "test-source",
       ...variables,
     };
