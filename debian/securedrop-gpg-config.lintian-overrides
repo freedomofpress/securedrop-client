@@ -1,0 +1,15 @@
+# We don't care about man pages
+securedrop-gpg-config: no-manual-page
+
+# We override conffile for /etc/
+securedrop-gpg-config: control-file-is-empty [conffiles]
+
+# profile.d scripts do not need exec bit (they are sourced)
+securedrop-gpg-config: script-not-executable [etc/profile.d/sd-gpg-hide-prompt.sh]
+securedrop-gpg-config: file-in-etc-not-marked-as-conffile [etc/profile.d/sd-gpg-hide-prompt.sh]
+
+# Not needed
+securedrop-gpg-config: extended-description-is-empty
+
+# FIXME: section shouldn't be "unknown"
+securedrop-gpg-config: section-is-dh_make-template
