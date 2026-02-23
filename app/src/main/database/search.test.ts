@@ -3,6 +3,7 @@ import path from "path";
 import fs from "fs";
 import os from "os";
 import { DB } from "./index";
+import { buildQuery } from "./search";
 import { Crypto } from "../crypto";
 import { PendingEventType } from "../../types";
 import type { SourceMetadata, ItemMetadata } from "../../types";
@@ -47,6 +48,82 @@ function mockItem(
     interaction_count: 1,
   };
 }
+
+describe("buildQuery", () => {
+  it("returns null for empty string", () => {
+    expect(buildQuery("")).toBeNull();
+  });
+
+  it("returns null for whitespace-only input", () => {
+    expect(buildQuery("   ")).toBeNull();
+  });
+
+  it("returns null for input with only special characters", () => {
+    expect(buildQuery("'\"*()")).toBeNull();
+  });
+
+  it("wraps a single term with quotes and a prefix wildcard", () => {
+    expect(buildQuery("hello")).toBe('"hello"*');
+  });
+
+  it("wraps multiple unquoted terms individually", () => {
+    expect(buildQuery("hello world")).toBe('"hello"* "world"*');
+  });
+
+  it("normalizes extra whitespace between unquoted terms", () => {
+    expect(buildQuery("  hello   world  ")).toBe('"hello"* "world"*');
+  });
+
+  it("keeps a quoted phrase as a single term with a prefix wildcard", () => {
+    expect(buildQuery('"hello world"')).toBe('"hello world"*');
+  });
+
+  it("handles multiple quoted phrases", () => {
+    expect(buildQuery('"hello bob" "goodbye alice"')).toBe(
+      '"hello bob"* "goodbye alice"*',
+    );
+  });
+
+  it("handles quoted phrases mixed with unquoted terms", () => {
+    expect(buildQuery('"hello world" secret')).toBe('"hello world"* "secret"*');
+    expect(buildQuery('secret "hello world"')).toBe('"secret"* "hello world"*');
+    expect(buildQuery('before "mid dle" after')).toBe(
+      '"before"* "mid dle"* "after"*',
+    );
+  });
+
+  it("treats an unclosed quote as a phrase", () => {
+    expect(buildQuery('"hello world')).toBe('"hello world"*');
+    expect(buildQuery('start "unclosed')).toBe('"start"* "unclosed"*');
+  });
+
+  it("skips empty quoted phrases", () => {
+    expect(buildQuery('""')).toBeNull();
+    expect(buildQuery('"" hello')).toBe('"hello"*');
+    expect(buildQuery('hello ""')).toBe('"hello"*');
+  });
+
+  it("sanitizes * in unquoted text", () => {
+    expect(buildQuery("hello*world")).toBe('"hello"* "world"*');
+  });
+
+  it("sanitizes parentheses in unquoted text", () => {
+    expect(buildQuery("(hello)")).toBe('"hello"*');
+    expect(buildQuery("hello(world)")).toBe('"hello"* "world"*');
+  });
+
+  it("sanitizes apostrophes in unquoted text by splitting on them", () => {
+    // ' is replaced with a space, so "it's" becomes two tokens
+    expect(buildQuery("it's")).toBe('"it"* "s"*');
+  });
+
+  it("sanitizes special chars inside a quoted phrase", () => {
+    // * inside quotes becomes a space; the phrase is still kept together
+    expect(buildQuery('"hello*world"')).toBe('"hello world"*');
+    // () inside quotes become spaces and are trimmed away
+    expect(buildQuery('"(parenthesized)"')).toBe('"parenthesized"*');
+  });
+});
 
 describe("Search", () => {
   let db: DB;

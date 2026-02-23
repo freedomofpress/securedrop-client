@@ -19,6 +19,61 @@ type IndexSourceRow = {
   source_name: string;
 };
 
+/**
+ * Build an FTS5 query from a user-supplied search string.
+ *
+ * - Quoted substrings (e.g. `"hello world"`) are kept together as a phrase
+ *   and matched with a trailing prefix wildcard: `"hello world"*`
+ * - Unquoted tokens are split and prefix matched: `"hello"* "world"*`
+ * - An unclosed opening quote is treated as a phrase until end of input
+ * - Special query characters (`'`, `"`, `*`, `(`, `)`) are sanitized to prevent query injection
+ */
+export function buildQuery(input: string): string | null {
+  const trimmed = input.trim();
+  if (!trimmed) {
+    return null;
+  }
+
+  const terms: string[] = [];
+  let i = 0;
+
+  while (i < trimmed.length) {
+    if (trimmed[i] === '"') {
+      // Quoted phrase: find the closing quote
+      const close = trimmed.indexOf('"', i + 1);
+      let phraseContent: string;
+
+      if (close === -1) {
+        // Unclosed quote — treat the rest of the string as a phrase
+        phraseContent = trimmed.slice(i + 1);
+        i = trimmed.length;
+      } else {
+        phraseContent = trimmed.slice(i + 1, close);
+        i = close + 1;
+      }
+      const sanitized = phraseContent.replace(/['"*()]/g, " ").trim();
+      if (sanitized) {
+        terms.push(`"${sanitized}"*`);
+      }
+    } else {
+      // Unquoted section: collect up to the next quote (or end of string)
+      const nextQuote = trimmed.indexOf('"', i);
+      const chunk =
+        nextQuote === -1 ? trimmed.slice(i) : trimmed.slice(i, nextQuote);
+      i = nextQuote === -1 ? trimmed.length : nextQuote;
+
+      // Replace special chars with spaces, then split into tokens
+      chunk
+        .replace(/['*()]/g, " ")
+        .split(/\s+/)
+        .filter(Boolean)
+        .forEach((token) => terms.push(`"${token}"*`));
+    }
+  }
+
+  return terms.length > 0 ? terms.join(" ") : null;
+}
+
 export class Search {
   private db: Database.Database;
 
@@ -104,20 +159,10 @@ export class Search {
     limit: number = 20,
     offset: number = 0,
   ): SearchResult[] {
-    if (!query.trim()) {
+    const ftsQuery = buildQuery(query);
+    if (!ftsQuery) {
       return [];
     }
-
-    // Escape special FTS5 characters and append * for prefix matching
-    const sanitized = query.replace(/['"*()]/g, " ").trim();
-    if (!sanitized) {
-      return [];
-    }
-
-    const ftsQuery = sanitized
-      .split(/\s+/)
-      .map((term) => `"${term}"*`)
-      .join(" ");
 
     const rows = this.searchStmt.all(ftsQuery, limit, offset);
     return rows.map((row) => ({
@@ -130,10 +175,17 @@ export class Search {
 
   indexItem(itemUuid: string): void {
     const row = this.selectItemStmt.get(itemUuid);
-    if (!row) return;
+    if (!row) {
+      return;
+    }
 
-    const content = row.plaintext ?? row.filename;
-    if (!content) return;
+    // Index either message plaintext or filename without path
+    const content =
+      row.plaintext ??
+      row.filename?.substring(row.filename.lastIndexOf("/") + 1);
+    if (!content) {
+      return;
+    }
 
     this.upsertItemStmt.run({
       source_uuid: row.source_uuid,
@@ -145,7 +197,9 @@ export class Search {
 
   indexSource(sourceUuid: string): void {
     const row = this.selectSourceStmt.get(sourceUuid);
-    if (!row) return;
+    if (!row) {
+      return;
+    }
 
     this.upsertSourceStmt.run({
       source_uuid: sourceUuid,

@@ -163,8 +163,7 @@ rules:
         - vuln
 
   # Rule: Enforce database operation centralization
-  # All database operations must go through the DB class in src/main/database/index.ts
-  # or the Search class in src/main/database/search.ts
+  # All database operations must go through the DB module.
   # This ensures consistent security practices and makes auditing easier.
   - id: better-sqlite3-centralize-db-operations
     pattern: $DB.prepare(...)

@@ -87,14 +87,14 @@ function SourceList() {
     dispatch(fetchSources());
   }, [dispatch]);
 
-  // Perform search via IPC when search term changes
+  // Perform search via IPC when search term changes or sources update
   useEffect(() => {
     if (!debouncedSearchTerm.trim()) {
       setSearchResults(null);
       return;
     }
     window.electronAPI.search(debouncedSearchTerm).then(setSearchResults);
-  }, [debouncedSearchTerm]);
+  }, [debouncedSearchTerm, sources]);
 
   // Handle select all checkbox
   const handleSelectAll = useCallback(
@@ -245,10 +245,14 @@ function SourceList() {
       const seen = new Set<string>();
 
       for (const sr of searchResults) {
-        if (seen.has(sr.sourceUuid)) continue;
+        if (seen.has(sr.sourceUuid)) {
+          continue;
+        }
         seen.add(sr.sourceUuid);
         const source = sourcesByUuid.get(sr.sourceUuid);
-        if (!source) continue;
+        if (!source) {
+          continue;
+        }
         if (
           sr.type === "message" ||
           sr.type === "reply" ||
