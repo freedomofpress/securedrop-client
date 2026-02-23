@@ -186,7 +186,7 @@ export function reconcileIndex(
 }
 
 // Remove a source's directory from the filesystem
-function deleteSourceFs(storage: Storage, sourceID: string) {
+export function deleteSourceFs(storage: Storage, sourceID: string) {
   const sourceDirectory = storage.sourceDirectory(sourceID, false).path;
   if (fs.existsSync(sourceDirectory)) {
     fs.rmSync(sourceDirectory, { recursive: true, force: true });
@@ -194,7 +194,7 @@ function deleteSourceFs(storage: Storage, sourceID: string) {
 }
 
 // Remove an item's raw file and directory from the filesystem
-function deleteItemFs(storage: Storage, item: Item) {
+export function deleteItemFs(storage: Storage, item: Item) {
   if (item.filename && fs.existsSync(item.filename)) {
     fs.rmSync(item.filename, { force: true });
   }
