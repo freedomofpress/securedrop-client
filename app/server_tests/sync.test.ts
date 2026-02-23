@@ -76,7 +76,7 @@ describe.sequential("sync against a real server", () => {
       isQubes: false,
       submissionKeyFingerprint: "",
     });
-  }, 180000); // 3 minutes for server startup
+  }, 300000); // 5 minutes for server startup
 
   afterAll(async () => {
     await context.teardown();

@@ -232,7 +232,7 @@ export class TestHelpers {
   async navigateToSource(sourceUuid: string): Promise<void> {
     // Check if the conversation is already visible (source might already be selected)
     const conversationContainer = this.context.page.getByTestId(
-      "conversation-items-container",
+      "conversation-container",
     );
     const isAlreadyVisible = await conversationContainer
       .isVisible()

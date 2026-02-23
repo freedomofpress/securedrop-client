@@ -192,7 +192,10 @@ const Conversation = memo(function Conversation({
   }
 
   return (
-    <div className="flex flex-col h-full w-full min-h-0">
+    <div
+      className="flex flex-col h-full w-full min-h-0"
+      data-testid="conversation-container"
+    >
       <div className="flex-1 min-h-0 relative">
         {hasItems ? (
           <div
