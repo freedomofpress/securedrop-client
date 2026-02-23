@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach, MockInstance } from "vitest";
 import * as syncModule from "../../../src/main/sync";
+import { Storage } from "../../../src/main/storage";
 import { Lock, LockTimeoutError } from "../../../src/main/sync/lock";
 import { DB } from "../../../src/main/database";
 import {
@@ -50,7 +51,10 @@ function mockDB({
     getItem: vi.fn((_itemID) => null),
     deleteItems: vi.fn((_itemIDs) => {}),
     deleteSources: vi.fn((_sourceIDs) => {}),
-    updateBatch: vi.fn((_metadata) => {}),
+    updateBatch: vi.fn((_metadata) => ({
+      deleted_items: [],
+      deleted_sources: [],
+    })),
     getItemFileData: vi.fn(() => itemFileData),
     getPendingEvents: vi.fn(() => pendingEvents),
   } as unknown as DB;
@@ -572,6 +576,51 @@ describe("syncMetadata", () => {
     });
   });
 
+  it("deletes source directory from filesystem when source is deleted on server", async () => {
+    // Client index has both sources
+    const clientIndex: Index = {
+      sources: {
+        [SOURCE_UUID_1]: "v1",
+        [SOURCE_UUID_2]: "v1",
+      },
+      items: {},
+      journalists: {},
+    };
+
+    // Server index no longer has SOURCE_UUID_2: it has been deleted
+    const serverIndex: Index = {
+      sources: {
+        [SOURCE_UUID_1]: "v1",
+      },
+      items: {},
+      journalists: {},
+    };
+
+    db = mockDB({ index: clientIndex });
+
+    mockProxyResponses([
+      {
+        status: 200,
+        error: false,
+        data: serverIndex,
+        headers: new Map(),
+      },
+      {
+        status: 200,
+        error: false,
+        data: { sources: {}, items: {}, journalists: {}, events: {} },
+        headers: new Map(),
+      },
+    ]);
+
+    await syncModule.syncMetadata(db, "");
+
+    expect(fs.rmSync).toHaveBeenCalledWith(
+      `/mock-home/.config/SecureDrop/files/${SOURCE_UUID_2}/`,
+      { recursive: true, force: true },
+    );
+  });
+
   it("sends pending events in batch and updates when accepted", async () => {
     // Server index is up-to-date, but there are pending events
     const pendingEvents: PendingEvent[] = [
@@ -738,6 +787,32 @@ describe("shouldSkipSync", () => {
     const db = mockDB();
     db.getVersion = vi.fn(() => ""); // initial state
     expect(syncModule.shouldSkipSync(db, "v1")).toBe(false);
+  });
+});
+
+describe("deleteSourceFs", () => {
+  beforeEach(() => {
+    vi.resetAllMocks();
+  });
+
+  it("deletes source directory when it exists", () => {
+    const storage = new Storage();
+
+    syncModule.deleteSourceFs(storage, SOURCE_UUID_1);
+
+    expect(fs.rmSync).toHaveBeenCalledWith(
+      `/mock-home/.config/SecureDrop/files/${SOURCE_UUID_1}/`,
+      { recursive: true, force: true },
+    );
+  });
+
+  it("does nothing when source directory does not exist", () => {
+    vi.mocked(fs.existsSync).mockReturnValue(false);
+    const storage = new Storage();
+
+    syncModule.deleteSourceFs(storage, SOURCE_UUID_1);
+
+    expect(fs.rmSync).not.toHaveBeenCalled();
   });
 });
 

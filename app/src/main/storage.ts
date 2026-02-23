@@ -97,14 +97,19 @@ export class Storage {
     return this.tmp.join("download", metadata.source, item.id, "encrypted.gpg");
   }
 
-  sourceDirectory(sourceID: string): PathBuilder {
+  sourceDirectory(sourceID: string, mkdir: boolean = true): PathBuilder {
     const dir = this.persistent.getSubBuilder(sourceID);
-    fs.mkdirSync(dir.path, { recursive: true });
+    if (mkdir) {
+      fs.mkdirSync(dir.path, { recursive: true });
+    }
+
     return dir;
   }
 
-  itemDirectory(item: ItemMetadata): PathBuilder {
-    const dir = this.sourceDirectory(item.source).getSubBuilder(item.uuid);
+  itemDirectory(item: ItemMetadata, mkdir: boolean = true): PathBuilder {
+    const dir = this.sourceDirectory(item.source, mkdir).getSubBuilder(
+      item.uuid,
+    );
     fs.mkdirSync(dir.path, { recursive: true });
     return dir;
   }

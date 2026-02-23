@@ -33,12 +33,12 @@ import {
   type Journalist,
   type AuthedRequest,
   type Item,
-  type PendingEventType,
   type DeviceStatus,
   FetchStatus,
+  PendingEventType,
   SyncStatus,
 } from "../types";
-import { syncMetadata, shouldSkipSync } from "./sync";
+import { syncMetadata, shouldSkipSync, deleteSourceFs } from "./sync";
 import workerPath from "./fetch/worker?modulePath";
 import { Lock, LockTimeoutError } from "./sync/lock";
 import { Config } from "./config";
@@ -372,24 +372,17 @@ if (!gotTheLock) {
           return SyncStatus.NOT_MODIFIED;
         }
 
-        let syncStatus: SyncStatus;
-        try {
-          syncStatus = await syncLock.run(async () => {
-            return await syncMetadata(
-              db,
-              request.authToken,
-              request.hintedRecords,
-            );
-          }, 1000);
-        } catch (error) {
-          // Check if this is a timeout error from the lock
-          if (error instanceof LockTimeoutError) {
-            return SyncStatus.TIMEOUT;
-          }
-          throw error;
-        }
+        let syncStatus = await syncWithLock(syncLock, db, request);
 
         if (syncStatus === SyncStatus.UPDATED) {
+          // Check to see if there are still pending events
+          // If so, attempt a second sync. This may happen
+          // when there are multiple events per source
+          if (db.getPendingEvents().length > 0) {
+            syncStatus = await syncWithLock(syncLock, db, request);
+          }
+
+          // Trigger fetch worker for new replies
           fetchWorker.postMessage({
             authToken: request.authToken,
           } as AuthedRequest);
@@ -411,7 +404,15 @@ if (!gotTheLock) {
         sourceUuid: string,
         type: PendingEventType,
       ): Promise<string> => {
-        return db.addPendingSourceEvent(sourceUuid, type);
+        const snowflakeID = db.addPendingSourceEvent(sourceUuid, type);
+        // Immediately delete any source files from the fs on pending deletion
+        if (
+          type === PendingEventType.SourceDeleted ||
+          type === PendingEventType.SourceConversationDeleted
+        ) {
+          deleteSourceFs(new Storage(), sourceUuid);
+        }
+        return snowflakeID;
       },
     );
 
@@ -653,4 +654,24 @@ if (!gotTheLock) {
   app.on("before-quit", () => {
     db.close();
   });
+}
+
+async function syncWithLock(
+  syncLock: Lock,
+  db: DB,
+  request: AuthedRequest,
+): Promise<SyncStatus> {
+  let syncStatus: SyncStatus;
+  try {
+    syncStatus = await syncLock.run(async () => {
+      return await syncMetadata(db, request.authToken, request.hintedRecords);
+    }, 1000);
+  } catch (error) {
+    // Check if this is a timeout error from the lock
+    if (error instanceof LockTimeoutError) {
+      return SyncStatus.TIMEOUT;
+    }
+    throw error;
+  }
+  return syncStatus;
 }
