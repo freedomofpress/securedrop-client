@@ -71,6 +71,10 @@ function SourceList() {
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
   const [deleteModalLoading, setDeleteModalLoading] = useState(false);
+  // Sources targeted for deletion
+  const [pendingDeleteSources, setPendingDeleteSources] = useState<Set<string>>(
+    new Set(),
+  );
   const [deleteCounts, setDeleteCounts] = useState<{
     messages: number;
     files: number;
@@ -142,11 +146,13 @@ function SourceList() {
     [dispatch],
   );
 
-  const handleBulkDelete = useCallback(async () => {
-    if (selectedSources.size === 0) {
+  // Opens the delete confirmation modal for the given set of sources.
+  const openDeleteModal = useCallback(async (sources: Set<string>) => {
+    if (sources.size === 0) {
       return;
     }
 
+    setPendingDeleteSources(sources);
     setDeleteModalOpen(true);
     setDeleteModalLoading(true);
 
@@ -156,7 +162,7 @@ function SourceList() {
       let totalFiles = 0;
       let totalReplies = 0;
 
-      for (const sourceUuid of selectedSources) {
+      for (const sourceUuid of sources) {
         const sourceWithItems =
           await window.electronAPI.getSourceWithItems(sourceUuid);
         if (sourceWithItems) {
@@ -184,22 +190,56 @@ function SourceList() {
     } finally {
       setDeleteModalLoading(false);
     }
-  }, [selectedSources]);
+  }, []);
+
+  // Bulk delete button: opens modal for the currently checked sources
+  const handleBulkDelete = useCallback(async () => {
+    await openDeleteModal(new Set(selectedSources));
+  }, [selectedSources, openDeleteModal]);
+
+  // Keyboard shortcut: Ctrl+Delete deletes the current source if there is one
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (!e.ctrlKey || e.key !== "Delete") {
+        return;
+      }
+      // Don't trigger if modal is already open
+      if (deleteModalOpen) {
+        return;
+      }
+      // Don't trigger when typing in an input or textarea
+      const target = e.target as HTMLElement;
+      if (target.tagName === "INPUT" || target.tagName === "TEXTAREA") {
+        return;
+      }
+
+      if (activeSourceUuid) {
+        e.preventDefault();
+        void openDeleteModal(new Set([activeSourceUuid]));
+      }
+    };
+
+    document.addEventListener("keydown", handleKeyDown);
+    return () => {
+      document.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [openDeleteModal, deleteModalOpen, activeSourceUuid]);
 
   const handleDeleteModalCancel = useCallback(() => {
+    setPendingDeleteSources(new Set());
     setDeleteModalOpen(false);
   }, []);
 
   const handleDeleteAction = useCallback(
     async (eventType: PendingEventType) => {
-      for (const sourceUuid of selectedSources) {
+      for (const sourceUuid of pendingDeleteSources) {
         await window.electronAPI.addPendingSourceEvent(sourceUuid, eventType);
       }
       // If we deleted an account and it was the currently active source, navigate away
       if (
         eventType === PendingEventType.SourceDeleted &&
         activeSourceUuid &&
-        selectedSources.has(activeSourceUuid)
+        pendingDeleteSources.has(activeSourceUuid)
       ) {
         navigate("/");
       }
@@ -212,12 +252,21 @@ function SourceList() {
       }
       // Update local state immediately with projected changes
       dispatch(fetchSources());
-      // Uncheck all boxes
-      setSelectedSources(new Set());
-      setAllSelected(false);
+      // Remove the deleted sources from the checkbox selection if they were checked
+      setSelectedSources((prev) => {
+        const next = new Set(prev);
+        for (const uuid of pendingDeleteSources) {
+          next.delete(uuid);
+        }
+        if (next.size === 0) {
+          setAllSelected(false);
+        }
+        return next;
+      });
+      setPendingDeleteSources(new Set());
       setDeleteModalOpen(false);
     },
-    [selectedSources, dispatch, activeSourceUuid, navigate],
+    [pendingDeleteSources, dispatch, activeSourceUuid, navigate],
   );
 
   const handleToggleSort = useCallback(() => {
@@ -343,10 +392,10 @@ function SourceList() {
         closable={false}
         title={
           <span data-testid="delete-modal-title">
-            {selectedSources.size === 1
+            {pendingDeleteSources.size === 1
               ? t("sourcelist.deleteDialog.single.message")
               : t("sourcelist.deleteDialog.multiple.message", {
-                  count: selectedSources.size,
+                  count: pendingDeleteSources.size,
                 })}
           </span>
         }
@@ -369,7 +418,7 @@ function SourceList() {
               handleDeleteAction(PendingEventType.SourceConversationDeleted)
             }
           >
-            {selectedSources.size === 1
+            {pendingDeleteSources.size === 1
               ? t("sourcelist.deleteDialog.single.keepAccountButton")
               : t("sourcelist.deleteDialog.multiple.keepAccountsButton")}
           </Button>,
@@ -380,7 +429,7 @@ function SourceList() {
             danger
             onClick={() => handleDeleteAction(PendingEventType.SourceDeleted)}
           >
-            {selectedSources.size === 1
+            {pendingDeleteSources.size === 1
               ? t("sourcelist.deleteDialog.single.deleteAccountButton")
               : t("sourcelist.deleteDialog.multiple.deleteAccountsButton")}
           </Button>,
