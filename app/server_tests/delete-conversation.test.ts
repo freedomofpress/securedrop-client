@@ -92,11 +92,8 @@ describe.sequential("deleting source conversation", () => {
   });
 
   it("can send new reply after conversation deletion", async () => {
-    // Navigate to the source
+    // Navigate to the source (conversation should be empty after deletion)
     await helpers.navigateToSource(TARGET_SOURCE.uuid);
-
-    // Wait for conversation to load (should be empty)
-    await context.page.waitForTimeout(500);
 
     const uiItemCountBefore = await helpers.getConversationItemCount();
 

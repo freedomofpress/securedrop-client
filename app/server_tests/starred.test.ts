@@ -1,7 +1,7 @@
 import { describe, it, beforeAll, afterAll } from "vitest";
 import { expect } from "@playwright/test";
 
-import { TestContext } from "./helper";
+import { TestContext, pollUntil } from "./helper";
 import { DB } from "../src/main/database";
 import { Crypto } from "../src/main/crypto";
 import { PendingEventType } from "../src/types";
@@ -12,11 +12,11 @@ const TARGET_SOURCE = {
 };
 
 async function setFilter(context: TestContext, filter: string): Promise<void> {
-  const filterDropdown = context.page.getByTestId("filter-dropdown");
-  await filterDropdown.click();
-  await context.page.waitForTimeout(300);
-  await context.page.getByTestId(`filter-${filter}`).click();
-  await context.page.waitForTimeout(500);
+  await context.page.getByTestId("filter-dropdown").click();
+  const filterOption = context.page.getByTestId(`filter-${filter}`);
+  await filterOption.waitFor({ state: "visible", timeout: 3000 });
+  await filterOption.click();
+  await filterOption.waitFor({ state: "hidden", timeout: 3000 });
 }
 
 describe.sequential("starring sources", () => {
@@ -56,8 +56,13 @@ describe.sequential("starring sources", () => {
   }
 
   async function toggleStar(): Promise<void> {
+    const wasStarred = await isSourceStarred();
     await context.page.getByTestId(`star-button-${TARGET_SOURCE.uuid}`).click();
-    await context.page.waitForTimeout(500);
+    await pollUntil(
+      () => isSourceStarred(),
+      (starred) => starred !== wasStarred,
+      3000,
+    );
   }
 
   beforeAll(async () => {

@@ -13,6 +13,24 @@ import { DB } from "../src/main/database";
 import { Crypto } from "../src/main/crypto";
 import { PendingEventType } from "../src/types";
 
+export async function pollUntil<T>(
+  fn: () => Promise<T>,
+  predicate: (result: T) => boolean,
+  timeout = 5000,
+  interval = 100,
+): Promise<T> {
+  const deadline = Date.now() + timeout;
+  let lastResult: T | undefined;
+  while (Date.now() < deadline) {
+    lastResult = await fn();
+    if (predicate(lastResult)) {
+      return lastResult;
+    }
+    await new Promise((resolve) => setTimeout(resolve, interval));
+  }
+  throw new Error(`pollUntil timed out after ${timeout}ms`);
+}
+
 export class TestContext {
   public app: ElectronApplication;
   public page: Page;
@@ -63,7 +81,7 @@ export class TestContext {
 
     const page = await app.firstWindow();
     await page.setViewportSize({ width: 1920, height: 1080 });
-    await page.waitForLoadState("networkidle", { timeout: 5000 });
+    await page.getByTestId("username-input").waitFor({ timeout: 30000 });
 
     return new TestContext(app, page, tempDir, dbPath, serverOrigin);
   }
@@ -95,11 +113,10 @@ export class TestContext {
     });
 
     let code = totp.generate();
+    const totpFile = `/tmp/app-server_tests-totp-${process.pid}`;
     let lastOTP;
     try {
-      lastOTP = fs
-        .readFileSync("/tmp/app-server_tests-totp", "utf-8")
-        .toString();
+      lastOTP = fs.readFileSync(totpFile, "utf-8").toString();
     } catch (_error) {
       lastOTP = "";
     }
@@ -109,37 +126,67 @@ export class TestContext {
       code = totp.generate();
     }
 
-    // Store the code for future comparison across all instances
-    fs.writeFileSync("/tmp/app-server_tests-totp", code);
+    // Store the code for future comparison
+    fs.writeFileSync(totpFile, code);
     return code;
   }
 
-  async login(): Promise<void> {
-    // Wait for the sign-in page to load
+  async login(username: string = "journalist"): Promise<void> {
     await expect(this.page.getByTestId("username-input")).toBeVisible({
-      timeout: 5000,
+      timeout: 30000,
     });
 
-    // Fill in credentials
-    await this.page.getByTestId("username-input").fill("journalist");
-    await this.page
-      .getByTestId("passphrase-input")
-      .fill("correct horse battery staple profanity oil chewy");
+    for (let attempt = 0; attempt < 3; attempt++) {
+      await this.page.getByTestId("username-input").fill(username);
+      await this.page
+        .getByTestId("passphrase-input")
+        .fill("correct horse battery staple profanity oil chewy");
 
-    const otpCode = await this.generateTOTP();
-    await this.page.getByTestId("one-time-code-input").fill(otpCode);
+      const otpCode = await this.generateTOTP();
+      await this.page.getByTestId("one-time-code-input").fill(otpCode);
 
-    // Submit login
-    await this.page.getByTestId("sign-in-button").click();
-    await this.page.waitForLoadState("networkidle", { timeout: 5000 });
+      // Submit login
+      await this.page.getByTestId("sign-in-button").click();
 
-    // Verify we're logged in by checking for sync button
-    await expect(this.page.getByTestId("sync-button")).toBeVisible();
+      try {
+        // Wait for successful login (sync button appears)
+        await expect(this.page.getByTestId("sync-button")).toBeVisible({
+          timeout: 15000,
+        });
+        return;
+      } catch {
+        // If we're still on the login page the credentials were rejected —
+        // most likely the TOTP code expired at the window boundary.
+        const onLoginPage = await this.page
+          .getByTestId("username-input")
+          .isVisible();
+        if (onLoginPage) {
+          console.warn(
+            `Login attempt ${attempt + 1} failed (TOTP may have expired), retrying...`,
+          );
+          continue;
+        }
+        throw new Error(
+          "Login failed: not on login page but sync button not visible",
+        );
+      }
+    }
+
+    throw new Error("Login failed after 3 attempts");
+  }
+
+  async logout(): Promise<void> {
+    await this.page.getByTestId("sign-out-button").click();
+    await expect(this.page.getByTestId("username-input")).toBeVisible({
+      timeout: 15000,
+    });
   }
 
   /**
    * Clicks the sync button and waits for the sync to complete.
    * Uses network idle detection to know when all API calls have finished.
+   * DB writes in the main process happen synchronously via IPC, so they are
+   * complete by the time networkidle fires.
    */
   async runSync(): Promise<void> {
     await this.page.getByTestId("sync-button").click();
@@ -182,30 +229,31 @@ export class TestHelpers {
     private dbHelper: ReturnType<typeof createDbHelper>,
   ) {}
 
-  async navigateToSource(
-    sourceUuid: string,
-    expectVisible = false,
-  ): Promise<void> {
-    await this.context.page.getByTestId(`source-${sourceUuid}`).click();
-    await this.context.page.waitForTimeout(500);
-    if (expectVisible) {
-      await expect(
-        this.context.page.getByTestId("conversation-items-container"),
-      ).toBeVisible({ timeout: 5000 });
-    } else {
-      // Wait for conversation area to be active (may be empty if items deleted)
-      await this.context.page.waitForTimeout(500);
+  async navigateToSource(sourceUuid: string): Promise<void> {
+    // Check if the conversation is already visible (source might already be selected)
+    const conversationContainer = this.context.page.getByTestId(
+      "conversation-items-container",
+    );
+    const isAlreadyVisible = await conversationContainer
+      .isVisible()
+      .catch(() => false);
+
+    if (!isAlreadyVisible) {
+      // Click to select the source
+      await this.context.page.getByTestId(`source-${sourceUuid}`).click();
+      // Wait for conversation to load
+      await expect(conversationContainer).toBeVisible({ timeout: 5000 });
     }
   }
 
   async selectSource(uuid: string): Promise<void> {
-    await this.context.page.getByTestId(`source-checkbox-${uuid}`).click();
-    await this.context.page.waitForTimeout(300);
+    const checkbox = this.context.page.getByTestId(`source-checkbox-${uuid}`);
+    await checkbox.click();
+    await expect(checkbox).toBeChecked({ timeout: 3000 });
   }
 
   async openDeleteModal(): Promise<void> {
     await this.context.page.getByTestId("bulk-delete-button").click();
-    await this.context.page.waitForTimeout(500);
     // Wait for modal content to be visible (the wrapper element may be hidden)
     await expect(
       this.context.page.getByTestId("delete-modal-content"),
@@ -218,20 +266,30 @@ export class TestHelpers {
     await this.context.page
       .getByTestId("delete-modal-delete-account-button")
       .click();
-    await this.context.page.waitForTimeout(500);
+    // Wait for the modal to close before proceeding
+    await expect(
+      this.context.page.getByTestId("delete-modal-content"),
+    ).not.toBeVisible({ timeout: 5000 });
   }
 
   async clickDeleteConversation(): Promise<void> {
     await this.context.page
       .getByTestId("delete-modal-delete-conversation-button")
       .click();
-    await this.context.page.waitForTimeout(500);
+    // Wait for the modal to close before proceeding
+    await expect(
+      this.context.page.getByTestId("delete-modal-content"),
+    ).not.toBeVisible({ timeout: 5000 });
   }
 
   async sendReply(message: string): Promise<void> {
+    const countBefore = await this.getConversationItemCount();
     await this.context.page.getByTestId("reply-textarea").fill(message);
     await this.context.page.getByTestId("send-button").click();
-    await this.context.page.waitForTimeout(500);
+    // Wait for the optimistic update to appear in the conversation
+    await expect(
+      this.context.page.locator('[data-testid^="item-"]'),
+    ).toHaveCount(countBefore + 1, { timeout: 5000 });
   }
 
   async getConversationItemCount(): Promise<number> {
@@ -285,5 +343,23 @@ export class TestHelpers {
             "item_uuid" in event.target ? event.target.item_uuid : undefined,
         }));
     });
+  }
+
+  async getPendingEventsCount(): Promise<number> {
+    return this.dbHelper.withDb(async (db) => {
+      return db.getPendingEvents().length;
+    });
+  }
+
+  async waitForPendingEvents(
+    type: PendingEventType,
+    expectedCount: number,
+    timeout = 5000,
+  ): Promise<void> {
+    await pollUntil(
+      () => this.getPendingEventsByType(type),
+      (events) => events.length === expectedCount,
+      timeout,
+    );
   }
 }

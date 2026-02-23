@@ -1,7 +1,7 @@
 import { describe, it, beforeAll, afterAll } from "vitest";
 import { expect } from "@playwright/test";
 
-import { TestContext, createDbHelper, TestHelpers } from "./helper";
+import { TestContext, createDbHelper, TestHelpers, pollUntil } from "./helper";
 import { Crypto } from "../src/main/crypto";
 import { PendingEventType, ItemMetadata } from "../src/types";
 
@@ -78,12 +78,14 @@ describe.sequential("conversation is seen", () => {
 
   it("marks items as seen locally when viewing conversation", async () => {
     // Navigate to the target source conversation
-    await helpers.navigateToSource(TARGET_SOURCE.uuid, true);
+    await helpers.navigateToSource(TARGET_SOURCE.uuid);
 
-    // Wait for pending events to be created
-    await context.page.waitForTimeout(1000);
+    await pollUntil(
+      () => getSeenPendingEventsForTargetSource(),
+      (events) => events.length >= UNSEEN_ITEMS.length,
+      5000,
+    );
 
-    // Verify pending seen events were created for unseen items
     const pendingEvents = await getSeenPendingEventsForTargetSource();
     const pendingItemUuids = pendingEvents.map((e) => e.itemUuid);
 
@@ -118,10 +120,9 @@ describe.sequential("conversation is seen", () => {
     await navigateAway();
 
     // Navigate back to the same source
-    await helpers.navigateToSource(TARGET_SOURCE.uuid, true);
+    await helpers.navigateToSource(TARGET_SOURCE.uuid);
 
-    // Wait for any potential pending events
-    await context.page.waitForTimeout(1000);
+    await context.page.waitForTimeout(500);
 
     // Verify no new pending events are created for target source (idempotent)
     const pendingEvents = await getSeenPendingEventsForTargetSource();

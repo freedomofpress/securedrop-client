@@ -22,7 +22,7 @@ describe.sequential("deleting items", () => {
   let initialItemCount: number;
 
   async function deleteItem(itemUuid: string): Promise<void> {
-    // Use IPC to add pending item event since UI may not have delete button per item
+    // Use IPC to add pending item event
     await context.page.evaluate(
       ({ uuid, eventType }) => {
         return (
@@ -38,7 +38,6 @@ describe.sequential("deleting items", () => {
       },
       { uuid: itemUuid, eventType: PendingEventType.ItemDeleted },
     );
-    await context.page.waitForTimeout(500);
   }
 
   beforeAll(async () => {
@@ -70,6 +69,8 @@ describe.sequential("deleting items", () => {
 
     // Delete the item
     await deleteItem(itemToDelete);
+
+    await helpers.waitForPendingEvents(PendingEventType.ItemDeleted, 1);
 
     // Verify a pending event was created
     const pendingEvents = await helpers.getPendingEventsByType(
@@ -113,6 +114,8 @@ describe.sequential("deleting items", () => {
     // Delete remaining item
     const itemToDelete = ITEMS_TO_DELETE[1];
     await deleteItem(itemToDelete);
+
+    await helpers.waitForPendingEvents(PendingEventType.ItemDeleted, 1);
 
     // Verify pending event was created
     let pendingEvents = await helpers.getPendingEventsByType(
