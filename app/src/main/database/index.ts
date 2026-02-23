@@ -27,8 +27,10 @@ import {
   ItemTarget,
   BatchResponse,
   EventStatus,
+  SearchResult,
 } from "../../types";
 import { Crypto } from "../crypto";
+import { Search } from "./search";
 
 // Truncate message previews to 200 Unicode code points
 // at the database layer; CSS will handle the rest
@@ -63,6 +65,7 @@ export class DB {
   private url: string | null;
   private snowflake: Snowflake;
   private crypto: Crypto;
+  private searchIndex: Search;
 
   // Prepared statements
   private selectVersion: Statement<[], { version: string }>;
@@ -182,6 +185,9 @@ export class DB {
 
     // Run migrations (before we prepare any statements based on the latest schema)
     this.runMigrations();
+
+    // Initialize search index
+    this.searchIndex = new Search(db);
 
     // Prepare statements
     this.selectVersion = this.db.prepare("SELECT version FROM state");
@@ -406,6 +412,10 @@ export class DB {
     this.url = null;
   }
 
+  search(query: string): SearchResult[] {
+    return this.searchIndex.search(query);
+  }
+
   // Select rows from a table where the specified column matches any value in an array.
   // Allows for multi-select with an array of IDs
   // Any new table/column must be added to the allowlist here as a string literal type to
@@ -465,6 +475,7 @@ export class DB {
   deleteItems(items: string[]) {
     this.db!.transaction((items: string[]) => {
       for (const itemID of items) {
+        this.searchIndex.removeItem(itemID);
         this.deleteItem.run({ uuid: itemID });
       }
       this.updateVersion();
@@ -472,7 +483,9 @@ export class DB {
   }
 
   deleteSourceAndItems(sourceUuid: string) {
-    // First, delete all source items
+    // First, remove all search index entries for this source
+    this.searchIndex.removeSource(sourceUuid);
+    // Delete all source items
     const items = this.selectItemsBySourceId.all(sourceUuid);
     const itemUuids: string[] = items.map((item) => {
       return item.uuid;
@@ -529,6 +542,7 @@ export class DB {
           data: info,
           version: version,
         });
+        this.searchIndex.indexSource(sourceid);
       } else {
         deletedSourceUuids.push(sourceid);
         this.deleteSourceAndItems(sourceid);
@@ -765,6 +779,7 @@ export class DB {
       uuid: itemUuid,
       plaintext: plaintext,
     });
+    this.searchIndex.indexItem(itemUuid);
   }
 
   completeFileItem(itemUuid: string, filename: string, decryptedSize: number) {
@@ -779,6 +794,7 @@ export class DB {
       filename: filename,
       decrypted_size: decryptedSize,
     });
+    this.searchIndex.indexItem(itemUuid);
   }
 
   terminallyFailItem(itemUuid: string) {

@@ -163,15 +163,15 @@ rules:
         - vuln
 
   # Rule: Enforce database operation centralization
-  # All database operations must go through the DB class in src/main/database/index.ts
+  # All database operations must go through the DB module.
   # This ensures consistent security practices and makes auditing easier.
   - id: better-sqlite3-centralize-db-operations
     pattern: $DB.prepare(...)
     paths:
       exclude:
-        - "**/*/src/main/database/index.ts"
+        - "**/*/src/main/database/*.ts"
     message: >-
-      Database operations must be centralized in src/main/database/index.ts for security and maintainability.
+      Database operations must be centralized in src/main/database/*.ts for security and maintainability.
       All SQL queries should go through the DB class methods.
 
       Do not use db.prepare() directly outside the database module.
