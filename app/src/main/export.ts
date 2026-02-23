@@ -170,8 +170,9 @@ export class ExportStateMachine implements StateMachine<
           if (
             event.status === ExportStatus.ERROR_UNLOCK_GENERIC ||
             event.status === ExportStatus.ERROR_UNLOCK_LUKS
-          )
+          ) {
             next = ExportState.ExportPreflightComplete;
+          }
         }
         break;
     }
@@ -375,10 +376,11 @@ export class ArchiveExporter {
         .map((l) => l.trim())
         .filter(Boolean);
       const last = lines.length > 0 ? lines[lines.length - 1] : "";
-      if (!last)
+      if (!last) {
         throw new PrintExportError(
           "No final line in sd-devices status response",
         );
+      }
 
       if (Object.values(ExportStatus).includes(last as ExportStatus)) {
         return last as ExportStatus;

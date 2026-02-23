@@ -204,7 +204,9 @@ describe("Crypto Integration Tests", () => {
       } as never);
 
       mockFs.unlink.mockImplementation((_path, callback) => {
-        if (callback) callback(null);
+        if (callback) {
+          callback(null);
+        }
       });
 
       mockFs.existsSync.mockReturnValue(true);

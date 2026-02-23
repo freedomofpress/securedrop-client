@@ -415,7 +415,9 @@ export class DB {
     column: "snowflake_id",
     values: (string | number)[],
   ): T[] {
-    if (values.length === 0) return [];
+    if (values.length === 0) {
+      return [];
+    }
 
     // Build placeholders (?, ?, ?, ...)
     const placeholders = values.map(() => "?").join(", ");
@@ -589,10 +591,15 @@ export class DB {
 
   // Helper function for truthy values
   private isTruthy(value: unknown): boolean {
-    if (typeof value === "boolean") return value;
-    if (typeof value === "number") return value !== 0;
-    if (typeof value === "string")
+    if (typeof value === "boolean") {
+      return value;
+    }
+    if (typeof value === "number") {
+      return value !== 0;
+    }
+    if (typeof value === "string") {
       return value.toLowerCase() === "true" || value === "1";
+    }
     return Boolean(value);
   }
 

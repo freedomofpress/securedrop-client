@@ -24,7 +24,9 @@ global.ResizeObserver = class {
     this.callback = callback;
   }
   observe(target: Element) {
-    if (this.observedTargets.has(target)) return;
+    if (this.observedTargets.has(target)) {
+      return;
+    }
     this.observedTargets.add(target);
     setTimeout(() => {
       this.callback(
