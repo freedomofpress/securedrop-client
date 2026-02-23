@@ -87,7 +87,9 @@ const Conversation = memo(function Conversation({
 
   const handleSubmit = useCallback(
     async (values: { message: string }) => {
-      if (!sourceWithItems || !values.message?.trim()) return;
+      if (!sourceWithItems || !values.message?.trim()) {
+        return;
+      }
 
       // Clear the form immediately for better UX
       form.resetFields();
@@ -149,7 +151,9 @@ const Conversation = memo(function Conversation({
 
   // Keyboard shortcut: Ctrl+D initiates download for all files
   const downloadAllFiles = useCallback(() => {
-    if (!sourceWithItems || !session.authData?.token) return;
+    if (!sourceWithItems || !session.authData?.token) {
+      return;
+    }
 
     const token = session.authData.token;
     sourceWithItems.items.forEach((item) => {
@@ -183,7 +187,9 @@ const Conversation = memo(function Conversation({
     };
   }, [downloadAllFiles]);
 
-  if (!sourceWithItems) return null;
+  if (!sourceWithItems) {
+    return null;
+  }
 
   return (
     <div className="flex flex-col h-full w-full min-h-0">

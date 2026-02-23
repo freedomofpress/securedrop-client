@@ -164,7 +164,9 @@ export function formatJournalistName(journalist: JournalistMetadata): string {
  * Pretty-print file size in human-readable format
  */
 export function prettyPrintBytes(bytes: number): string {
-  if (bytes <= 0) return "0 B";
+  if (bytes <= 0) {
+    return "0 B";
+  }
   const k = 1024;
   const sizes = ["B", "KB", "MB", "GB", "TB", "PB"];
   const i = Math.floor(Math.log(bytes) / Math.log(k));
@@ -186,7 +188,9 @@ export function formatFilename(
   maxLength: number,
   endLength: number,
 ): string {
-  if (filename.length <= maxLength) return filename;
+  if (filename.length <= maxLength) {
+    return filename;
+  }
 
   const dotIndex = filename.lastIndexOf(".");
   const hasExtension = dotIndex > 0 && dotIndex < filename.length - 1;
