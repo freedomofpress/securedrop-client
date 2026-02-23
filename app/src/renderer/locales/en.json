@@ -45,7 +45,13 @@
     "pendingReplyTooltip": "The reply is pending and will be sent to the source in the next sync",
     "successReplyTooltip": "Reply sent successfully",
     "seenReplyTooltip": "Reply seen and deleted by source",
-    "alreadyRunning": "The SecureDrop Inbox is already running"
+    "alreadyRunning": "The SecureDrop Inbox is already running",
+    "deleteItemModal": {
+      "title": "Delete item?",
+      "content": "Are you sure you want to delete this item? Deleting is not reversible and will affect all users.",
+      "cancel": "Cancel",
+      "delete": "Delete"
+    }
   },
   "Sidebar": {
     "account": {
