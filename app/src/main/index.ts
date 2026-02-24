@@ -117,6 +117,7 @@ if (!gotTheLock) {
   // Parse command line arguments
   const args = process.argv.slice(2);
   const noQubes = args.includes("--no-qubes");
+  const noFirstRun = args.includes("--no-first-run");
   const shouldAutoLogin = args.includes("--login");
 
   const config = Config.load(noQubes);
@@ -654,6 +655,9 @@ if (!gotTheLock) {
     ipcMain.handle(
       "getFirstRunStatus",
       async (_event): Promise<FirstRunStatus> => {
+        if (noFirstRun) {
+          return null;
+        }
         return db.getFirstRunStatus();
       },
     );

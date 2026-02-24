@@ -46,7 +46,7 @@ export class TestContext {
     console.log(`Using server at: ${serverOrigin}`);
 
     const isCI = Boolean(process.env.CI);
-    const args = ["./out/main/index.js", "--no-qubes"];
+    const args = ["./out/main/index.js", "--no-qubes", "--no-first-run"];
 
     if (isCI) {
       args.push("--no-sandbox");
