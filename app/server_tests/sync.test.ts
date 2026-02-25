@@ -76,7 +76,7 @@ describe.sequential("sync against a real server", () => {
       isQubes: false,
       submissionKeyFingerprint: "",
     });
-  }, 180000); // 3 minutes for server startup
+  }, 300000); // 5 minutes for server startup
 
   afterAll(async () => {
     await context.teardown();
@@ -86,12 +86,15 @@ describe.sequential("sync against a real server", () => {
   it("should start with a fresh empty database", async () => {
     // Wait for the sign-in page to load
     await expect(context.page.getByTestId("username-input")).toBeVisible({
-      timeout: 5000,
+      timeout: 30000,
     });
 
     await context.page.getByTestId("use-offline-button").click();
 
-    await context.page.waitForLoadState("networkidle", { timeout: 5000 });
+    // Wait for the offline/main view to be ready
+    await expect(
+      context.page.getByText("Select a source from the list"),
+    ).toBeVisible({ timeout: 10000 });
 
     // Verify no sources in UI by looking at the source checkboxes
     const sourceCheckboxes = context.page.locator(
@@ -99,11 +102,6 @@ describe.sequential("sync against a real server", () => {
     );
     const count = await sourceCheckboxes.count();
     expect(count).toBe(0);
-
-    // Verify empty state message
-    await expect(
-      context.page.getByText("Select a source from the list"),
-    ).toBeVisible();
 
     // Verify database is empty
     const db = new DB(crypto, context.dbPath);
@@ -117,9 +115,8 @@ describe.sequential("sync against a real server", () => {
   });
 
   it("should successfully log in with valid credentials", async () => {
-    // Navigate back to sign-in page
+    // Navigate back to sign-in page; login() will wait for the form to appear
     await context.page.getByTestId("signin-form-button").click();
-    await context.page.waitForLoadState("networkidle", { timeout: 5000 });
 
     // Log in with test credentials
     await context.login();

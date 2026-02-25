@@ -1,7 +1,7 @@
 import { describe, it, beforeAll, afterAll } from "vitest";
 import { expect } from "@playwright/test";
 
-import { TestContext } from "./helper";
+import { createDbHelper, TestContext, TestHelpers } from "./helper";
 import { DB } from "../src/main/database";
 import { Crypto } from "../src/main/crypto";
 import { PendingEventType, ReplySentData } from "../src/types";
@@ -13,6 +13,7 @@ const TARGET_SOURCE = {
 
 describe.sequential("sending replies", () => {
   let context: TestContext;
+  let helpers: TestHelpers;
   let crypto: Crypto;
   let initialItemCount: number;
 
@@ -58,28 +59,14 @@ describe.sequential("sending replies", () => {
     return await items.count();
   }
 
-  async function navigateToSource(): Promise<void> {
-    // Check if the conversation is already visible (source might already be selected)
-    const conversationContainer = context.page.getByTestId(
-      "conversation-items-container",
-    );
-    const isAlreadyVisible = await conversationContainer
-      .isVisible()
-      .catch(() => false);
-
-    if (!isAlreadyVisible) {
-      // Click to select the source
-      await context.page.getByTestId(`source-${TARGET_SOURCE.uuid}`).click();
-      await context.page.waitForTimeout(500);
-      // Wait for conversation to load
-      await expect(conversationContainer).toBeVisible({ timeout: 5000 });
-    }
-  }
-
   async function sendReply(message: string): Promise<void> {
+    const countBefore = await getConversationItemCount();
     await context.page.getByTestId("reply-textarea").fill(message);
     await context.page.getByTestId("send-button").click();
-    await context.page.waitForTimeout(500);
+    await expect(context.page.locator('[data-testid^="item-"]')).toHaveCount(
+      countBefore + 1,
+      { timeout: 5000 },
+    );
   }
 
   beforeAll(async () => {
@@ -88,13 +75,16 @@ describe.sequential("sending replies", () => {
       isQubes: false,
       submissionKeyFingerprint: "",
     });
+
+    const dbHelper = createDbHelper(crypto, context.dbPath);
+    helpers = new TestHelpers(context, dbHelper);
     await context.login();
     await context.runSync();
 
     // Store initial item count
     initialItemCount = await getItemCount();
     console.log(`Initial item count for source: ${initialItemCount}`);
-  }, 180000); // 3 minutes for server startup + login
+  }, 300000); // 5 minutes for server startup + login
 
   afterAll(async () => {
     await context.teardown();
@@ -103,7 +93,7 @@ describe.sequential("sending replies", () => {
 
   it("sends a reply locally and queues an event", async () => {
     // Navigate to the source's conversation
-    await navigateToSource();
+    await helpers.navigateToSource(TARGET_SOURCE.uuid);
 
     const uiItemCountBefore = await getConversationItemCount();
     console.log(`UI item count before reply: ${uiItemCountBefore}`);
@@ -142,7 +132,7 @@ describe.sequential("sending replies", () => {
 
   it("handles multiple replies before sync", async () => {
     // Ensure we're on the source conversation
-    await navigateToSource();
+    await helpers.navigateToSource(TARGET_SOURCE.uuid);
 
     const uiItemCountBefore = await getConversationItemCount();
 

@@ -185,7 +185,7 @@ if (!gotTheLock) {
     worker.on("message", (result) => {
       console.debug("Message from worker: ", result);
       // Check if worker update is Source or Item
-      if ("messagePreview" in result) {
+      if (result && "messagePreview" in result) {
         mainWindow.webContents.send("source-update", result);
       } else {
         mainWindow.webContents.send("item-update", result);

@@ -5,20 +5,17 @@ import { TestContext } from "./helper";
 describe.sequential("source list functionality", () => {
   let context: TestContext;
 
-  /**
-   * Helper function to set the filter dropdown to a specific value
-   */
   async function setFilter(filter: string): Promise<void> {
-    const filterDropdown = context.page.getByTestId("filter-dropdown");
-    await filterDropdown.click();
-    await context.page.waitForTimeout(300);
-    await context.page.getByTestId(`filter-${filter}`).click();
-    await context.page.waitForTimeout(500);
+    await context.page.getByTestId("filter-dropdown").click();
+    const filterOption = context.page.getByTestId(`filter-${filter}`);
+    await filterOption.waitFor({ state: "visible", timeout: 3000 });
+    await filterOption.click();
+    await filterOption.waitFor({ state: "hidden", timeout: 3000 });
   }
 
   beforeAll(async () => {
     context = await TestContext.setup();
-  }, 180000); // 3 minutes for server startup
+  }, 300000); // 5 minutes for server startup
 
   afterAll(async () => {
     await context.teardown();
@@ -50,12 +47,13 @@ describe.sequential("source list functionality", () => {
     // Initially all 3 sources should be visible
     expect(await context.getVisibleSourceCount()).toBe(3);
 
+    const sourceCheckboxes = context.page.locator(
+      '[data-testid^="source-checkbox-"]',
+    );
+
     // Search for "gorgeous" - should match "Gorgeous Apron"
     await searchInput.fill("gorgeous");
-    await context.page.waitForTimeout(500); // Wait for debounce/filtering
-
-    // Verify only one source is visible
-    expect(await context.getVisibleSourceCount()).toBe(1);
+    await expect(sourceCheckboxes).toHaveCount(1, { timeout: 3000 });
     await expect(context.page.getByText("Gorgeous Apron")).toBeVisible();
     await expect(
       context.page.getByText("Incapable Elimination"),
@@ -67,9 +65,7 @@ describe.sequential("source list functionality", () => {
     // Search for "elimination" - should match "Incapable Elimination"
     await searchInput.clear();
     await searchInput.fill("elimination");
-    await context.page.waitForTimeout(500);
-
-    expect(await context.getVisibleSourceCount()).toBe(1);
+    await expect(sourceCheckboxes).toHaveCount(1, { timeout: 3000 });
     await expect(context.page.getByText("Incapable Elimination")).toBeVisible();
     await expect(context.page.getByText("Gorgeous Apron")).not.toBeVisible();
     await expect(
@@ -79,9 +75,7 @@ describe.sequential("source list functionality", () => {
     // Search for "preservative" - should match "Preservative Legislator"
     await searchInput.clear();
     await searchInput.fill("preservative");
-    await context.page.waitForTimeout(500);
-
-    expect(await context.getVisibleSourceCount()).toBe(1);
+    await expect(sourceCheckboxes).toHaveCount(1, { timeout: 3000 });
     await expect(
       context.page.getByText("Preservative Legislator"),
     ).toBeVisible();
@@ -92,9 +86,7 @@ describe.sequential("source list functionality", () => {
 
     // Clear search - all sources should be visible again
     await searchInput.clear();
-    await context.page.waitForTimeout(500);
-
-    expect(await context.getVisibleSourceCount()).toBe(3);
+    await expect(sourceCheckboxes).toHaveCount(3, { timeout: 3000 });
     await expect(context.page.getByText("Incapable Elimination")).toBeVisible();
     await expect(context.page.getByText("Gorgeous Apron")).toBeVisible();
     await expect(
@@ -103,28 +95,25 @@ describe.sequential("source list functionality", () => {
 
     // Search with no matches
     await searchInput.fill("nonexistent");
-    await context.page.waitForTimeout(500);
-
-    expect(await context.getVisibleSourceCount()).toBe(0);
+    await expect(sourceCheckboxes).toHaveCount(0, { timeout: 3000 });
   });
 
   it("should search case-insensitively", async () => {
     const searchInput = context.page.getByTestId("source-search-input");
+    const sourceCheckboxes = context.page.locator(
+      '[data-testid^="source-checkbox-"]',
+    );
 
     // Test uppercase search
     await searchInput.clear();
     await searchInput.fill("GORGEOUS");
-    await context.page.waitForTimeout(500);
-
-    expect(await context.getVisibleSourceCount()).toBe(1);
+    await expect(sourceCheckboxes).toHaveCount(1, { timeout: 3000 });
     await expect(context.page.getByText("Gorgeous Apron")).toBeVisible();
 
     // Test mixed case search
     await searchInput.clear();
     await searchInput.fill("InCaPaBlE");
-    await context.page.waitForTimeout(500);
-
-    expect(await context.getVisibleSourceCount()).toBe(1);
+    await expect(sourceCheckboxes).toHaveCount(1, { timeout: 3000 });
     await expect(context.page.getByText("Incapable Elimination")).toBeVisible();
 
     // Clear search
@@ -133,20 +122,19 @@ describe.sequential("source list functionality", () => {
 
   it("should search by partial codename", async () => {
     const searchInput = context.page.getByTestId("source-search-input");
+    const sourceCheckboxes = context.page.locator(
+      '[data-testid^="source-checkbox-"]',
+    );
 
     // Search for partial word "apro" should match "Gorgeous Apron"
     await searchInput.fill("apro");
-    await context.page.waitForTimeout(500);
-
-    expect(await context.getVisibleSourceCount()).toBe(1);
+    await expect(sourceCheckboxes).toHaveCount(1, { timeout: 3000 });
     await expect(context.page.getByText("Gorgeous Apron")).toBeVisible();
 
     // Search for "leg" should match "Preservative Legislator"
     await searchInput.clear();
     await searchInput.fill("leg");
-    await context.page.waitForTimeout(500);
-
-    expect(await context.getVisibleSourceCount()).toBe(1);
+    await expect(sourceCheckboxes).toHaveCount(1, { timeout: 3000 });
     await expect(
       context.page.getByText("Preservative Legislator"),
     ).toBeVisible();
