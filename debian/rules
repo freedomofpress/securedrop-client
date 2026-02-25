@@ -14,6 +14,10 @@ override_dh_auto_install:
 	bash ./debian/setup-venv.sh export
 	bash ./debian/setup-venv.sh log
 	cargo build --release --locked --features qubesdb
+ifdef FAST
+	mkdir -p target/release
+	cp $${CARGO_TARGET_DIR}/release/securedrop-proxy target/release/
+endif
 	bash ./debian/build-app.sh
 	dh_auto_install
 	dh_apparmor --profile-name=usr.bin.securedrop-client -psecuredrop-client
