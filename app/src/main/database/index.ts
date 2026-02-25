@@ -153,7 +153,7 @@ export class DB {
     void
   >;
   private deletePendingEvent: Statement<{ snowflake_id: string }, void>;
-  private selectPendingEvents: Statement<[], PendingEventRow>;
+  private selectPendingEvents: Statement<[{ limit: number }], PendingEventRow>;
 
   constructor(crypto: Crypto, dbDir?: string) {
     this.crypto = crypto;
@@ -314,7 +314,7 @@ export class DB {
       `DELETE FROM pending_events WHERE snowflake_id = @snowflake_id`,
     );
     this.selectPendingEvents = this.db.prepare(`
-      SELECT snowflake_id, source_uuid, item_uuid, type, data FROM pending_events
+      SELECT snowflake_id, source_uuid, item_uuid, type, data FROM pending_events ORDER BY snowflake_id ASC LIMIT @limit
     `);
   }
 
@@ -956,7 +956,7 @@ export class DB {
   }
 
   getPendingEvents(): PendingEvent[] {
-    const rows: PendingEventRow[] = this.selectPendingEvents.all();
+    const rows: PendingEventRow[] = this.selectPendingEvents.all({ limit: 50 });
     const pendingEvents = rows.map((r) => {
       let target: SourceTarget | ItemTarget;
       if (r.source_uuid) {
