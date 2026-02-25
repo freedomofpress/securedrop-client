@@ -3,3 +3,4 @@ securedrop-client source: ancient-python-version-field
 securedrop-client source: custom-compression-in-debian-source-options
 securedrop-client source: debhelper-but-no-misc-depends
 securedrop-client source: missing-license-paragraph-in-dep5-copyright
+securedrop-client source: custom-compression-in-debian-rules

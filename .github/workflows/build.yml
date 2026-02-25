@@ -72,7 +72,7 @@ jobs:
           lfs: true
       - name: Build packages
         run: |
-          DEBIAN_VERSION=${{ matrix.debian_version }} WHAT=${{ matrix.what }} BUILDER=securedrop-builder FAST=1 ./scripts/build-debs.sh
+          DEBIAN_VERSION=${{ matrix.debian_version }} WHAT=${{ matrix.what }} BUILDER=securedrop-builder ./scripts/build-debs.sh
       - uses: actions/upload-artifact@v6
         id: upload
         with:
