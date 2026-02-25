@@ -115,6 +115,7 @@ export default defineConfig(({ mode }) => {
       },
       build: {
         assetsInlineLimit: 0, // Disable inlining assets as data URIs for strict CSP
+        sourcemap: true,
       },
       html:
         mode === "development" || mode === "mac-demo"
