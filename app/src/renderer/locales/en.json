@@ -1,4 +1,15 @@
 {
+  "FirstRunPopup": {
+    "ok": "OK",
+    "newUser": {
+      "title": "Welcome to SecureDrop",
+      "body": "Messages and documents sent to you via SecureDrop will show up here. Initial data synchronization may take several minutes.<br><br>You can press <kbd>Ctrl+?</kbd> for help at any time. For further questions, consult your system administrator or reach out to SecureDrop support via Signal. Documentation and instructions for accessing support are available at workstation.securedrop.org, which can be accessed from a different computer."
+    },
+    "migration": {
+      "title": "Welcome to the new SecureDrop App",
+      "body": "The application has been rewritten from the ground up to make it faster and to add long-requested features. Initial data synchronization may take several minutes. Any previously downloaded files will need to be re-downloaded.<br><br>If you encounter an issue or would like to use the original SecureDrop Client, you can access it for a limited time via Qubes Menu ▸ ⚙️ ▸ Other ▸ SecureDrop Client (legacy). If you need to return to the old Client, please reach out to SecureDrop support via Signal and tell us about the issues you encountered so we can address them.<br><br>You can press <kbd>Ctrl+?</kbd> for help at any time. For further questions, consult your system administrator or reach out to SecureDrop support via Signal. Documentation and instructions for accessing support are available at workstation.securedrop.org, which can be accessed from a different computer."
+    }
+  },
   "common": {
     "yesterday": "Yesterday",
     "seeMore": "See more",

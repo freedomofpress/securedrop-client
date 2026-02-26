@@ -331,3 +331,6 @@ export type SearchResult = {
   snippet: string | null;
   type: "message" | "reply" | "file" | "source";
 };
+
+/** First Run types */
+export type FirstRunStatus = "new_user" | "migration" | null;
