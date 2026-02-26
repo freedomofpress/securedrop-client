@@ -37,6 +37,9 @@
   },
   "keywords": [],
   "license": "AGPL-3.0-or-later",
+  "//": {
+    "electron-builder": "pinned to 26.3.0 because of regressions: https://github.com/freedomofpress/securedrop-client/issues/2996"
+  },
   "devDependencies": {
     "@electron-toolkit/eslint-config-prettier": "^3.0.0",
     "@electron-toolkit/eslint-config-ts": "^3.1.0",
