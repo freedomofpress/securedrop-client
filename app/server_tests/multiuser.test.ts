@@ -41,10 +41,7 @@ describe.sequential("multi-user session handling", () => {
   // User 1 actions
 
   it("user 1: sends a reply and syncs it to the server", async () => {
-    await context.page.getByTestId(`source-${REPLY_SOURCE.uuid}`).click();
-    await expect(
-      context.page.getByTestId("conversation-items-container"),
-    ).toBeVisible({ timeout: 5000 });
+    await helpers.navigateToSource(REPLY_SOURCE.uuid);
 
     const replyText = "Multi-user test reply from journalist";
     await context.page.getByTestId("reply-textarea").fill(replyText);
@@ -65,10 +62,7 @@ describe.sequential("multi-user session handling", () => {
 
   it("user 1: writes an unsent draft reply in the reply textarea", async () => {
     // Navigate to the reply source
-    await context.page.getByTestId(`source-${REPLY_SOURCE.uuid}`).click();
-    await expect(
-      context.page.getByTestId("conversation-items-container"),
-    ).toBeVisible({ timeout: 5000 });
+    await helpers.navigateToSource(REPLY_SOURCE.uuid);
 
     const draftText =
       "This draft was never sent and should be cleared on user switch";
@@ -99,10 +93,7 @@ describe.sequential("multi-user session handling", () => {
 
   it("draft state is cleared: reply textarea is empty after user switch", async () => {
     // Navigate to the same source user 1 had a draft in
-    await context.page.getByTestId(`source-${REPLY_SOURCE.uuid}`).click();
-    await expect(
-      context.page.getByTestId("conversation-items-container"),
-    ).toBeVisible({ timeout: 5000 });
+    await helpers.navigateToSource(REPLY_SOURCE.uuid);
 
     // Textarea must be empty – user 1's draft must not carry over
     await expect(context.page.getByTestId("reply-textarea")).toHaveValue("");
