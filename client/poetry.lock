@@ -1635,14 +1635,14 @@ pymysql = ["pymysql"]
 
 [[package]]
 name = "translate-toolkit"
-version = "3.19.1"
+version = "3.19.2"
 description = "Tools and API for translation and localization engineering."
 optional = false
 python-versions = ">=3.11"
 groups = ["dev"]
 files = [
-    {file = "translate_toolkit-3.19.1-py3-none-any.whl", hash = "sha256:398c42bd211cec52856fb15d387e070f1a1444e5ff4692c5726ec8c079cf3c9e"},
-    {file = "translate_toolkit-3.19.1.tar.gz", hash = "sha256:9dedb0fec957e13e3b3a7e2312c4e848c84ebdae0f0f14f911bd6005f3ea3284"},
+    {file = "translate_toolkit-3.19.2-py3-none-any.whl", hash = "sha256:1074e73b369f0d3b42df54dd75e9daf6995e9cc2709b34223bc5cc1a0eff46a1"},
+    {file = "translate_toolkit-3.19.2.tar.gz", hash = "sha256:8ebd778070de9bbe243de6216f172573f6564b09649fb45029d92022907e7446"},
 ]
 
 [package.dependencies]
