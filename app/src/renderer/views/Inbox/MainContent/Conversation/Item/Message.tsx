@@ -1,4 +1,4 @@
-import { memo } from "react";
+import { memo, useState } from "react";
 import {
   FetchStatus,
   ItemUpdateType,
@@ -18,12 +18,14 @@ interface MessageProps {
   item: Item;
   designation: string;
   onUpdate: (update: ItemUpdate) => void;
+  deleteButton: React.ReactNode;
 }
 
 const Message = memo(function Message({
   item,
   designation,
   onUpdate,
+  deleteButton,
 }: MessageProps) {
   const { t } = useTranslation("MainContent");
   const { token } = theme.useToken();
@@ -31,6 +33,7 @@ const Message = memo(function Message({
   const isFailed = item.fetch_status === FetchStatus.FailedTerminal;
   const isEncrypted = !item.plaintext;
   const messageContent = item.plaintext || "";
+  const [isHovered, setIsHovered] = useState(false);
 
   const retryFetch = () => {
     onUpdate({
@@ -44,38 +47,51 @@ const Message = memo(function Message({
     <div
       className="flex items-start mb-4 justify-start"
       data-testid={`item-${item.uuid}`}
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => setIsHovered(false)}
     >
       <Avatar designation={titleCaseDesignation} isActive={false} />
       <div className="ml-3">
         <div className="flex items-center mb-1">
           <span className="author">{titleCaseDesignation}</span>
         </div>
-        <div className="message-box whitespace-pre-wrap overflow-hidden">
-          {isFailed ? (
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <ExclamationCircleTwoTone
-                  twoToneColor={token.colorError}
-                  style={{ fontSize: 16 }}
-                />
-                <span className="italic text-gray-500">
-                  {t("messageFailed")}
-                </span>
+        <div className="flex items-center gap-1">
+          <div
+            className="message-box whitespace-pre-wrap overflow-hidden"
+            style={{ marginRight: 0 }}
+          >
+            {isFailed ? (
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <ExclamationCircleTwoTone
+                    twoToneColor={token.colorError}
+                    style={{ fontSize: 16 }}
+                  />
+                  <span className="italic text-gray-500">
+                    {t("messageFailed")}
+                  </span>
+                </div>
+                <Tooltip title={t("retryFetch")}>
+                  <Button
+                    type="text"
+                    size="small"
+                    icon={<RotateCw size={14} />}
+                    onClick={retryFetch}
+                  />
+                </Tooltip>
               </div>
-              <Tooltip title={t("retryFetch")}>
-                <Button
-                  type="text"
-                  size="small"
-                  icon={<RotateCw size={14} />}
-                  onClick={retryFetch}
-                />
-              </Tooltip>
-            </div>
-          ) : isEncrypted ? (
-            <span className="italic text-gray-500">{t("itemEncrypted")}</span>
-          ) : (
-            <TruncatedText text={messageContent} />
-          )}
+            ) : isEncrypted ? (
+              <span className="italic text-gray-500">{t("itemEncrypted")}</span>
+            ) : (
+              <TruncatedText text={messageContent} />
+            )}
+          </div>
+          <div
+            className="flex-shrink-0 transition-opacity"
+            style={{ opacity: isHovered ? 1 : 0 }}
+          >
+            {deleteButton}
+          </div>
         </div>
       </div>
     </div>
