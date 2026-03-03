@@ -22,6 +22,7 @@ import shlex
 import subprocess
 from collections.abc import Iterator
 from pathlib import Path
+from typing import Self
 
 import polib
 from translate.tools.pocompile import convertmo
@@ -51,7 +52,7 @@ class CatalogVerifier:
         self.po = polib.pofile(str(path / "LC_MESSAGES" / f"{domain}.po"))
         self.mo = polib.mofile(str(path / "LC_MESSAGES" / f"{domain}.mo"))
 
-    def __enter__(self) -> "CatalogVerifier":
+    def __enter__(self) -> Self:
         """Prepare to generate the new .mo file to diff."""
 
         self.mo_target = Path(f"{self.mo.fpath}.new")
