@@ -47,7 +47,17 @@
       "signOut": "Sign out",
       "offlineMode": "Offline Mode",
       "signIn": "Sign in",
-      "signedIn": "Signed in"
+      "signedIn": "Signed in",
+      "syncNow": "Sync now",
+      "Help": "Help",
+      "getHelp": "Get help",
+      "keyboardShortcuts": "Keyboard Shortcuts",
+      "aboutSecureDrop": "About SecureDrop",
+      "Quit": "Quit",
+      "quitModalTitle": "Close application?",
+      "quitModalContent": "Unsent replies may be lost",
+      "quitModalCancel": "Cancel",
+      "quitModalOK": "Yes, Quit"
     },
     "sourcelist": {
       "filters": {
