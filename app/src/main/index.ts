@@ -325,6 +325,14 @@ if (!gotTheLock) {
       const exporter = new Exporter();
       const printer = new Printer();
 
+      ipcMain.handle("quitApp", () => {
+        app.quit();
+      });
+
+      ipcMain.handle("getAppVersion", async (_event): Promise<string> => {
+        return app.getVersion();
+      });
+
       ipcMain.handle(
         "request",
         async (_event, request: ProxyRequest): Promise<ProxyResponse> => {
