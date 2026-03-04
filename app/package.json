@@ -37,6 +37,9 @@
   },
   "keywords": [],
   "license": "AGPL-3.0-or-later",
+  "//": {
+    "electron-builder": "pinned to 26.3.0 because of regressions: https://github.com/freedomofpress/securedrop-client/issues/2996"
+  },
   "devDependencies": {
     "@ant-design/v5-patch-for-react-19": "^1.0.3",
     "@electron-toolkit/eslint-config-prettier": "^3.0.0",
