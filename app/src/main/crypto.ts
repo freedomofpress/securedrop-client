@@ -6,6 +6,12 @@ import * as openpgp from "openpgp";
 import * as fs from "fs";
 import * as path from "path";
 import { PathBuilder, Storage, UnsafePathComponent } from "./storage";
+import { ms } from "../types";
+
+// For key export & message decryption, which might need to wait for sd-gpg to start
+const SHELL_TIMEOUT = 30000 as ms;
+// Have a larger timeout for decrypting files, which could take longer if they're huge
+const FILE_SHELL_TIMEOUT = 120000 as ms;
 
 export interface CryptoConfig {
   isQubes: boolean;
@@ -107,7 +113,10 @@ export class Crypto {
     cmd.push("--export", "--armor", this.submissionKeyFingerprint);
 
     return new Promise((resolve, reject) => {
-      const process = spawn(cmd[0], cmd.slice(1), { env: this.getGpgEnv() });
+      const process = spawn(cmd[0], cmd.slice(1), {
+        env: this.getGpgEnv(),
+        timeout: SHELL_TIMEOUT,
+      });
       let stdout = "";
       let stderr = "";
 
@@ -154,7 +163,10 @@ export class Crypto {
     cmd.push("--decrypt");
 
     return new Promise((resolve, reject) => {
-      const gpgProcess = spawn(cmd[0], cmd.slice(1), { env: this.getGpgEnv() });
+      const gpgProcess = spawn(cmd[0], cmd.slice(1), {
+        env: this.getGpgEnv(),
+        timeout: SHELL_TIMEOUT,
+      });
 
       let stdout = Buffer.alloc(0);
       let stderr = Buffer.alloc(0);
@@ -221,7 +233,10 @@ export class Crypto {
       const gpgOutputFile = fs.createWriteStream(tempGpgOutput);
       let stderr = Buffer.alloc(0);
 
-      const gpgProcess = spawn(cmd[0], cmd.slice(1), { env: this.getGpgEnv() });
+      const gpgProcess = spawn(cmd[0], cmd.slice(1), {
+        env: this.getGpgEnv(),
+        timeout: FILE_SHELL_TIMEOUT,
+      });
 
       // Stream GPG output directly to temporary file (no memory accumulation)
       gpgProcess.stdout.pipe(gpgOutputFile);
