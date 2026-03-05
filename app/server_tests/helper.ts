@@ -107,7 +107,7 @@ export class TestContext {
   /**
    * Generates a fresh TOTP code since the server will reject reused codes
    */
-  private async generateTOTP(): Promise<string> {
+  async generateTOTP(): Promise<string> {
     const totp = new TOTP({
       secret: "JHCOGO7VCER3EJ4L",
     });
@@ -132,6 +132,7 @@ export class TestContext {
   }
 
   async login(username: string = "journalist"): Promise<void> {
+    // Wait for the sign-in page to load
     await expect(this.page.getByTestId("username-input")).toBeVisible({
       timeout: 30000,
     });
@@ -177,8 +178,9 @@ export class TestContext {
 
   async logout(): Promise<void> {
     await this.page.getByTestId("sign-out-button").click();
+    await this.page.waitForLoadState("networkidle", { timeout: 5000 });
     await expect(this.page.getByTestId("username-input")).toBeVisible({
-      timeout: 15000,
+      timeout: 5000,
     });
   }
 
