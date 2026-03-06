@@ -5,7 +5,14 @@ import NewMessagesDivider from "./Conversation/NewMessagesDivider";
 import EmptyConversation from "./EmptyConversation";
 import { Form, Input, Button } from "antd";
 import { useTranslation } from "react-i18next";
-import { memo, useMemo, useCallback, useState, useEffect } from "react";
+import {
+  memo,
+  useMemo,
+  useCallback,
+  useState,
+  useEffect,
+  type ReactElement,
+} from "react";
 import { useAppDispatch, useAppSelector, useDebounce } from "../../../hooks";
 import { fetchSources } from "../../../features/sources/sourcesSlice";
 import {
@@ -21,12 +28,41 @@ import { syncMetadata } from "../../../features/sync/syncSlice";
 import useConversationScroll from "./Conversation/useConversationScroll";
 import "./Conversation.css";
 import { FetchStatus } from "../../../../types";
+import { List } from "react-window";
+import type { RowComponentProps } from "react-window";
 
 const MAX_REPLY_LENGTH = 5000;
 
 interface ConversationProps {
   sourceWithItems: SourceWithItems | null;
 }
+
+type VirtualRow =
+  | { kind: "item"; item: SourceWithItems["items"][number] }
+  | { kind: "divider" };
+
+interface ConversationRowProps {
+  virtualRows: VirtualRow[];
+  designation: string;
+}
+
+const ConversationRow = memo(function ConversationRow({
+  index,
+  style,
+  virtualRows,
+  designation,
+}: RowComponentProps<ConversationRowProps>): ReactElement {
+  const row = virtualRows[index];
+  return (
+    <div style={style} className="px-4">
+      {row.kind === "divider" ? (
+        <NewMessagesDivider />
+      ) : (
+        <Item item={row.item} designation={designation} />
+      )}
+    </div>
+  );
+});
 
 const Conversation = memo(function Conversation({
   sourceWithItems,
@@ -41,12 +77,13 @@ const Conversation = memo(function Conversation({
   const debouncedMessage = useDebounce(messageValue, 300);
   const {
     acknowledgeNewMessages,
+    dividerIndex,
     dividerItemUuid,
-    dividerRef,
+    dynamicRowHeight,
     hasItems,
+    listRef,
     newItems,
     oldItems,
-    scrollContainerRef,
   } = useConversationScroll(sourceWithItems);
 
   // Restore draft when switching sources (including initial mount)
@@ -187,6 +224,15 @@ const Conversation = memo(function Conversation({
     };
   }, [downloadAllFiles]);
 
+  const virtualRows = useMemo((): VirtualRow[] => {
+    const rows: VirtualRow[] = oldItems.map((item) => ({ kind: "item", item }));
+    if (dividerIndex !== null) {
+      rows.push({ kind: "divider" });
+    }
+    newItems.forEach((item) => rows.push({ kind: "item", item }));
+    return rows;
+  }, [oldItems, newItems, dividerIndex]);
+
   if (!sourceWithItems) {
     return null;
   }
@@ -198,31 +244,16 @@ const Conversation = memo(function Conversation({
     >
       <div className="flex-1 min-h-0 relative">
         {hasItems ? (
-          <div
-            ref={scrollContainerRef}
-            className="absolute inset-0 overflow-y-auto overflow-x-hidden p-4 pb-0"
+          <List
             data-testid="conversation-items-container"
-          >
-            {oldItems.map((item) => (
-              <Item
-                key={item.uuid}
-                item={item}
-                designation={designation || ""}
-              />
-            ))}
-            {newItems.length > 0 && (
-              <>
-                <NewMessagesDivider ref={dividerRef} />
-                {newItems.map((item) => (
-                  <Item
-                    key={item.uuid}
-                    item={item}
-                    designation={designation || ""}
-                  />
-                ))}
-              </>
-            )}
-          </div>
+            rowCount={virtualRows.length}
+            rowHeight={dynamicRowHeight}
+            rowComponent={(props) => <ConversationRow {...props} />}
+            rowProps={{ virtualRows, designation: designation || "" }}
+            listRef={listRef}
+            style={{ height: "100%" }}
+            className="pt-4"
+          />
         ) : (
           <div className="flex items-center justify-center h-full">
             <EmptyConversation />
