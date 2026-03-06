@@ -287,11 +287,16 @@ if (!gotTheLock) {
       },
     ];
     const menu = Menu.buildFromTemplate(template);
+    // Menu.setApplicationMenu(menu);
     Menu.setApplicationMenu(menu);
 
     // Initialize exporter
     const exporter = new Exporter();
     const printer = new Printer();
+
+    ipcMain.handle("quitApp", () => {
+      app.quit();
+    });
 
     ipcMain.handle(
       "request",
