@@ -236,6 +236,7 @@ beforeEach(() => {
     cancelPrint: vi.fn().mockResolvedValue(null),
     search: vi.fn().mockResolvedValue([]),
     getFirstRunStatus: vi.fn().mockResolvedValue(null),
+    quitApp: vi.fn().mockResolvedValue(null),
   } as ElectronAPI;
 });
 
