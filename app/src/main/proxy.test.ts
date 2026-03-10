@@ -415,6 +415,23 @@ describe("Test executing proxy with streaming requests", () => {
     await expect(proxyExec).rejects.toThrowError("stdin write failed");
   });
 
+  it("proxy stream should handle exception from onProgress callback", async () => {
+    const proxyExec = proxyStreamRequest(
+      {} as ProxyRequest,
+      writeStream,
+      undefined,
+      undefined,
+      undefined,
+      () => {
+        throw new Error("progress callback failed");
+      },
+    );
+
+    process.stdout?.emit("data", Buffer.from("chunk"));
+
+    await expect(proxyExec).rejects.toThrowError("progress callback failed");
+  });
+
   it("proxy should handle SIGTERM", async () => {
     const proxyExec = proxyStreamRequest({} as ProxyRequest, writeStream);
 
