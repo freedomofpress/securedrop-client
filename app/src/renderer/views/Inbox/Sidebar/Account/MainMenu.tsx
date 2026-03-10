@@ -1,16 +1,25 @@
 import { useNavigate } from "react-router";
-import { memo, useState } from "react";
+import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Typography, Space, Modal, MenuProps, Dropdown } from "antd";
-import { ChevronDown, ChevronUp, User } from "lucide-react";
+import {
+  RefreshCw,
+  CircleQuestionMark,
+  LogIn,
+  LogOut,
+  ChevronDown,
+  ChevronUp,
+  Power,
+} from "lucide-react";
 
 import { useAppDispatch, useAppSelector } from "../../../../hooks";
 import { setUnauth } from "../../../../features/session/sessionSlice";
 import { getJournalistById } from "../../../../features/journalists/journalistsSlice";
 import { syncMetadata } from "../../../../features/sync/syncSlice";
 import { formatJournalistName } from "../../../../utils";
+import SyncDicator from "./SyncDicator";
 
-const MainMenu = memo(function MainMenu() {
+function MainMenu() {
   const { t } = useTranslation("Sidebar");
 
   const navigate = useNavigate();
@@ -105,6 +114,7 @@ const MainMenu = memo(function MainMenu() {
       key: "syncNow",
       label: t("account.syncNow"),
       extra: "Ctrl+R",
+      icon: <RefreshCw strokeWidth={1.5} />,
       disabled: !session.authData,
     },
     {
@@ -113,6 +123,7 @@ const MainMenu = memo(function MainMenu() {
     {
       key: "aboutSubMenu",
       label: t("account.Help"),
+      icon: <CircleQuestionMark strokeWidth={1.5} />,
       children: [
         {
           key: "helpHelp",
@@ -136,17 +147,20 @@ const MainMenu = memo(function MainMenu() {
       ? {
           key: "signOut",
           label: t("account.signOut"),
+          icon: <LogOut strokeWidth={1.5} />,
           extra: "Ctrl+Shift+O",
         }
       : {
           key: "signIn",
           label: t("account.signIn"),
+          icon: <LogIn strokeWidth={1.5} />,
           extra: "Ctrl+Shift+I",
         },
 
     {
       key: "closeApp",
       label: t("account.Quit"),
+      icon: <Power strokeWidth={1.5} />,
       extra: "Ctrl+Shift+Q",
     },
   ];
@@ -168,12 +182,12 @@ const MainMenu = memo(function MainMenu() {
           <Space>
             {session.authData ? (
               <>
-                <User />
+                <SyncDicator />
                 <Typography.Text>{getCurrentJournalistName()}</Typography.Text>
               </>
             ) : (
               <>
-                <User color="#c0c0c0" />
+                <SyncDicator />
                 <Typography.Text type="warning">
                   {t("account.offlineMode")}
                 </Typography.Text>
@@ -185,6 +199,6 @@ const MainMenu = memo(function MainMenu() {
       </Dropdown>
     </>
   );
-});
+}
 
 export default MainMenu;
