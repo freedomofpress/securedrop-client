@@ -120,19 +120,35 @@ if (!gotTheLock) {
   const noFirstRun = args.includes("--no-first-run");
   const shouldAutoLogin = args.includes("--login");
 
-  const config = Config.load(noQubes);
+  function initializeMainDependencies(noQubesMode: boolean): {
+    db: DB;
+    cryptoConfig: CryptoConfig;
+  } {
+    try {
+      const config = Config.load(noQubesMode);
 
-  // Create crypto config + initialize
-  const cryptoConfig: CryptoConfig = {
-    submissionKeyFingerprint: config.sd_submission_key_fpr,
-    isQubes: config.is_qubes,
-    gpgHomedir: config.gnupghome || undefined,
-    qubesGpgDomain: config.qubes_gpg_domain,
-  };
+      // Create crypto config + initialize
+      const configForCrypto: CryptoConfig = {
+        submissionKeyFingerprint: config.sd_submission_key_fpr,
+        isQubes: config.is_qubes,
+        gpgHomedir: config.gnupghome || undefined,
+        qubesGpgDomain: config.qubes_gpg_domain,
+      };
 
-  const crypto = Crypto.initialize(cryptoConfig);
+      const crypto = Crypto.initialize(configForCrypto);
+      const appDb = new DB(crypto);
 
-  const db = new DB(crypto);
+      return {
+        db: appDb,
+        cryptoConfig: configForCrypto,
+      };
+    } catch (error) {
+      console.error("Failed to initialize SecureDrop App:", error);
+      process.exit(1);
+    }
+  }
+
+  const { db, cryptoConfig } = initializeMainDependencies(noQubes);
 
   // Generate a CSP nonce for this session (used by Ant Design)
   const cspNonce = randomBytes(32).toString("base64");
