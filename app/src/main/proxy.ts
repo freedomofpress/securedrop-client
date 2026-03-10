@@ -173,7 +173,11 @@ export async function proxyStreamRequestInner(
       stdoutChunks.push(data);
       // Report progress to caller if callback is provided
       if (onProgress) {
-        onProgress(bytesWritten);
+        try {
+          onProgress(bytesWritten);
+        } catch (error) {
+          reject(error);
+        }
       }
     });
 
