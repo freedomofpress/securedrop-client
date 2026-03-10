@@ -867,6 +867,66 @@ describe("TaskQueue - Two-Phase Download and Decryption", () => {
 
       expect(db.failDownload).toHaveBeenCalledWith("item1");
     });
+
+    it("should not throw if failDownload throws in queue error callback", () => {
+      const db = createMockDB();
+      db.getItemsToProcess = vi.fn(() => ["item1"]);
+      db.getItem = vi.fn(() =>
+        mockItem(
+          { kind: "message", source: "source1", uuid: "item1" } as ItemMetadata,
+          FetchStatus.Initial,
+        ),
+      );
+      db.failDownload = vi.fn(() => {
+        throw new Error("failDownload failed");
+      });
+
+      const queue = new TaskQueue(db);
+      vi.spyOn(queue.messageQueue, "push");
+
+      queue.queueFetches({ authToken: "test-token" });
+
+      const pushCall = vi.mocked(queue.messageQueue.push).mock.calls[0];
+      const errorCallback = pushCall[1] as (
+        err: Error | null,
+        result?: unknown,
+      ) => void;
+
+      expect(() => errorCallback(new Error("Task failed"))).not.toThrow();
+      expect(db.failDownload).toHaveBeenCalledWith("item1");
+    });
+
+    it("should not throw if postMessage throws in queue error callback", () => {
+      const db = createMockDB();
+      db.getItemsToProcess = vi.fn(() => ["item1"]);
+      db.getItem = vi.fn(() =>
+        mockItem(
+          { kind: "message", source: "source1", uuid: "item1" } as ItemMetadata,
+          FetchStatus.Initial,
+        ),
+      );
+
+      const mockPort = {
+        postMessage: vi.fn(() => {
+          throw new Error("postMessage failed");
+        }),
+      } as unknown as WorkerMessagePort;
+
+      const queue = new TaskQueue(db, mockPort);
+      vi.spyOn(queue.messageQueue, "push");
+
+      queue.queueFetches({ authToken: "test-token" });
+
+      const pushCall = vi.mocked(queue.messageQueue.push).mock.calls[0];
+      const errorCallback = pushCall[1] as (
+        err: Error | null,
+        result?: unknown,
+      ) => void;
+
+      expect(() => errorCallback(new Error("Task failed"))).not.toThrow();
+      expect(mockPort.postMessage).toHaveBeenCalled();
+      expect(db.failDownload).toHaveBeenCalledWith("item1");
+    });
   });
 
   describe("Download Retry and Cancel Scenarios", () => {
