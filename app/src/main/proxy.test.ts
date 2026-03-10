@@ -397,6 +397,24 @@ describe("Test executing proxy with streaming requests", () => {
     await expect(proxyExec).rejects.toThrowError("error");
   });
 
+  it("proxy stream should handle stdin stream error", async () => {
+    const proxyExec = proxyStreamRequest({} as ProxyRequest, writeStream);
+
+    process.stdin?.emit("error", new Error("broken pipe"));
+
+    await expect(proxyExec).rejects.toThrowError("broken pipe");
+  });
+
+  it("proxy stream should handle sync exception from stdin.write", async () => {
+    vi.spyOn(process.stdin!, "write").mockImplementation(() => {
+      throw new Error("stdin write failed");
+    });
+
+    const proxyExec = proxyStreamRequest({} as ProxyRequest, writeStream);
+
+    await expect(proxyExec).rejects.toThrowError("stdin write failed");
+  });
+
   it("proxy should handle SIGTERM", async () => {
     const proxyExec = proxyStreamRequest({} as ProxyRequest, writeStream);
 
