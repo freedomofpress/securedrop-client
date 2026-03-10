@@ -927,6 +927,46 @@ describe("TaskQueue - Two-Phase Download and Decryption", () => {
       expect(mockPort.postMessage).toHaveBeenCalled();
       expect(db.failDownload).toHaveBeenCalledWith("item1");
     });
+
+    it("should not throw if terminallyFailItem throws in task_failed handler", () => {
+      const db = createMockDB();
+      db.terminallyFailItem = vi.fn(() => {
+        throw new Error("terminallyFailItem failed");
+      });
+
+      const queue = new TaskQueue(db);
+
+      expect(() => {
+        queue.messageQueue.emit("task_failed", "item1", new Error("boom"));
+      }).not.toThrow();
+
+      expect(db.terminallyFailItem).toHaveBeenCalledWith("item1");
+    });
+
+    it("should not throw if postMessage throws in task_failed handler", () => {
+      const db = createMockDB();
+      db.getItem = vi.fn(() =>
+        mockItem(
+          { kind: "message", source: "source1", uuid: "item1" } as ItemMetadata,
+          FetchStatus.FailedTerminal,
+        ),
+      );
+
+      const mockPort = {
+        postMessage: vi.fn(() => {
+          throw new Error("postMessage failed");
+        }),
+      } as unknown as WorkerMessagePort;
+
+      const queue = new TaskQueue(db, mockPort);
+
+      expect(() => {
+        queue.messageQueue.emit("task_failed", "item1", new Error("boom"));
+      }).not.toThrow();
+
+      expect(db.terminallyFailItem).toHaveBeenCalledWith("item1");
+      expect(mockPort.postMessage).toHaveBeenCalled();
+    });
   });
 
   describe("Download Retry and Cancel Scenarios", () => {

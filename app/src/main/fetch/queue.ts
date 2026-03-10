@@ -481,9 +481,23 @@ function createQueue(
       taskId,
       errorMessage,
     );
-    db.terminallyFailItem(taskId);
+    try {
+      db.terminallyFailItem(taskId);
+    } catch (failError) {
+      console.error(
+        `Error terminally failing item ${taskId} in ${name}:`,
+        failError,
+      );
+    }
     if (port) {
-      port.postMessage(db.getItem(taskId));
+      try {
+        port.postMessage(db.getItem(taskId));
+      } catch (postError) {
+        console.error(
+          `Error posting task_failed update for item ${taskId} in ${name}:`,
+          postError,
+        );
+      }
     }
   });
 
