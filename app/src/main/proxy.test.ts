@@ -180,6 +180,24 @@ describe("Test executing proxy with JSON requests", () => {
     await expect(proxyExec).rejects.toThrowError("error");
   });
 
+  it("proxy should handle stdin stream error", async () => {
+    const proxyExec = proxyJSONRequest({} as ProxyRequest);
+
+    process.stdin?.emit("error", new Error("broken pipe"));
+
+    await expect(proxyExec).rejects.toThrowError("broken pipe");
+  });
+
+  it("proxy should handle sync exception from stdin.write", async () => {
+    vi.spyOn(process.stdin!, "write").mockImplementation(() => {
+      throw new Error("stdin write failed");
+    });
+
+    const proxyExec = proxyJSONRequest({} as ProxyRequest);
+
+    await expect(proxyExec).rejects.toThrowError("stdin write failed");
+  });
+
   it("proxy should handle SIGTERM", async () => {
     const proxyExec = proxyJSONRequest({} as ProxyRequest);
 
