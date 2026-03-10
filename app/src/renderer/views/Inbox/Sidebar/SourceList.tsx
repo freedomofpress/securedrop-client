@@ -93,11 +93,32 @@ function SourceList() {
 
   // Perform search via IPC when search term changes or sources update
   useEffect(() => {
+    let cancelled = false;
+
     if (!debouncedSearchTerm.trim()) {
       setSearchResults(null);
       return;
     }
-    window.electronAPI.search(debouncedSearchTerm).then(setSearchResults);
+
+    const performSearch = async () => {
+      try {
+        const results = await window.electronAPI.search(debouncedSearchTerm);
+        if (!cancelled) {
+          setSearchResults(results);
+        }
+      } catch (error) {
+        console.error("Failed to search sources:", error);
+        if (!cancelled) {
+          setSearchResults(null);
+        }
+      }
+    };
+
+    void performSearch();
+
+    return () => {
+      cancelled = true;
+    };
   }, [debouncedSearchTerm, sources]);
 
   // Handle select all checkbox
