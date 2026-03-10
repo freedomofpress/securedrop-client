@@ -681,6 +681,9 @@ if (!gotTheLock) {
     const mainWindow = createWindow();
 
     const fetchWorker = spawnFetchWorker(mainWindow);
+  }).catch((error) => {
+    console.error("Unhandled error during app startup:", error);
+    app.exit(1);
   });
 
   app.on("window-all-closed", () => {
