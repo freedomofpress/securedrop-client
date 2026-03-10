@@ -106,9 +106,23 @@ export class TaskQueue {
               task,
               err,
             );
-            this.db.failDownload(task.id);
+            try {
+              this.db.failDownload(task.id);
+            } catch (failError) {
+              console.error(
+                `Error failing download in queue callback for item ${task.id}:`,
+                failError,
+              );
+            }
             if (this.port) {
-              this.port.postMessage(this.db.getItem(task.id));
+              try {
+                this.port.postMessage(this.db.getItem(task.id));
+              } catch (postError) {
+                console.error(
+                  `Error posting queue callback update for item ${task.id}:`,
+                  postError,
+                );
+              }
             }
           }
         });
