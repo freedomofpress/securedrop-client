@@ -231,343 +231,440 @@ if (!gotTheLock) {
   // This method will be called when Electron has finished
   // initialization and is ready to create browser windows.
   // Some APIs can only be used after this event occurs.
-  app.whenReady().then(() => {
-    // Set strict Content Security Policy via HTTP header with nonce
-    session.defaultSession.webRequest.onHeadersReceived((details, callback) => {
-      // Don't set a CSP for devtools when we're in dev mode
-      if (
-        is.dev &&
-        process.env["NODE_ENV"] != "production" &&
-        (details.url.startsWith("devtools://") ||
-          details.url.startsWith("chrome-extension://"))
-      ) {
-        callback({ responseHeaders: details.responseHeaders });
-        return;
-      }
-      let scriptSrc = "script-src 'self'";
-      let styleSrc = `style-src 'self' 'nonce-${cspNonce}'`;
-      let connectSrc = "";
-      if (is.dev && process.env["NODE_ENV"] != "production") {
-        // Inject vite's nonce for auto-reload
-        scriptSrc += ` 'nonce-${viteNonce}'`;
-        styleSrc += ` 'nonce-${viteNonce}'`;
-        connectSrc = "connect-src 'self';";
+  app
+    .whenReady()
+    .then(() => {
+      // Set strict Content Security Policy via HTTP header with nonce
+      session.defaultSession.webRequest.onHeadersReceived(
+        (details, callback) => {
+          // Don't set a CSP for devtools when we're in dev mode
+          if (
+            is.dev &&
+            process.env["NODE_ENV"] != "production" &&
+            (details.url.startsWith("devtools://") ||
+              details.url.startsWith("chrome-extension://"))
+          ) {
+            callback({ responseHeaders: details.responseHeaders });
+            return;
+          }
+          let scriptSrc = "script-src 'self'";
+          let styleSrc = `style-src 'self' 'nonce-${cspNonce}'`;
+          let connectSrc = "";
+          if (is.dev && process.env["NODE_ENV"] != "production") {
+            // Inject vite's nonce for auto-reload
+            scriptSrc += ` 'nonce-${viteNonce}'`;
+            styleSrc += ` 'nonce-${viteNonce}'`;
+            connectSrc = "connect-src 'self';";
+          }
+
+          callback({
+            responseHeaders: {
+              ...details.responseHeaders,
+              "Content-Security-Policy": [
+                "default-src 'none'; " +
+                  scriptSrc +
+                  "; " +
+                  styleSrc +
+                  "; " +
+                  "img-src 'self'; " +
+                  "font-src 'self'; " +
+                  connectSrc,
+              ],
+            },
+          });
+        },
+      );
+      // Load developer tools
+      if (is.dev) {
+        installExtension([REACT_DEVELOPER_TOOLS, REDUX_DEVTOOLS])
+          .then(([react, redux]) =>
+            console.log(`Added extensions: ${react.name}, ${redux.name}`),
+          )
+          .catch((err) =>
+            console.log("An error occurred during extension setup: ", err),
+          );
       }
 
-      callback({
-        responseHeaders: {
-          ...details.responseHeaders,
-          "Content-Security-Policy": [
-            "default-src 'none'; " +
-              scriptSrc +
-              "; " +
-              styleSrc +
-              "; " +
-              "img-src 'self'; " +
-              "font-src 'self'; " +
-              connectSrc,
+      const syncLock = new Lock();
+
+      // Default open or close DevTools by F12 in development
+      // and ignore CommandOrControl + R in production.
+      // see https://github.com/alex8088/electron-toolkit/tree/master/packages/utils
+      app.on("browser-window-created", (_, window) => {
+        optimizer.watchWindowShortcuts(window);
+      });
+
+      // Set up application menu with keyboard shortcuts
+      const template: Electron.MenuItemConstructorOptions[] = [
+        {
+          label: "Application",
+          submenu: [
+            {
+              label: "Quit",
+              accelerator: "CmdOrCtrl+Q",
+              click: () => {
+                app.quit();
+              },
+            },
           ],
         },
+      ];
+      const menu = Menu.buildFromTemplate(template);
+      Menu.setApplicationMenu(menu);
+
+      // Initialize exporter
+      const exporter = new Exporter();
+      const printer = new Printer();
+
+      ipcMain.handle(
+        "request",
+        async (_event, request: ProxyRequest): Promise<ProxyResponse> => {
+          const result = await proxyJSONRequest(request);
+          return result;
+        },
+      );
+
+      ipcMain.handle("getSources", async (_event): Promise<Source[]> => {
+        const sources = db.getSources();
+        return sources;
       });
-    });
-    // Load developer tools
-    if (is.dev) {
-      installExtension([REACT_DEVELOPER_TOOLS, REDUX_DEVTOOLS])
-        .then(([react, redux]) =>
-          console.log(`Added extensions: ${react.name}, ${redux.name}`),
-        )
-        .catch((err) =>
-          console.log("An error occurred during extension setup: ", err),
-        );
-    }
 
-    const syncLock = new Lock();
+      ipcMain.handle(
+        "getSourceWithItems",
+        async (_event, sourceUuid: string): Promise<SourceWithItems> => {
+          const sourceWithItems = db.getSourceWithItems(sourceUuid);
+          return sourceWithItems;
+        },
+      );
 
-    // Default open or close DevTools by F12 in development
-    // and ignore CommandOrControl + R in production.
-    // see https://github.com/alex8088/electron-toolkit/tree/master/packages/utils
-    app.on("browser-window-created", (_, window) => {
-      optimizer.watchWindowShortcuts(window);
-    });
+      ipcMain.handle(
+        "getItem",
+        async (_event, itemUuid: string): Promise<Item | null> => {
+          return db.getItem(itemUuid);
+        },
+      );
 
-    // Set up application menu with keyboard shortcuts
-    const template: Electron.MenuItemConstructorOptions[] = [
-      {
-        label: "Application",
-        submenu: [
-          {
-            label: "Quit",
-            accelerator: "CmdOrCtrl+Q",
-            click: () => {
-              app.quit();
-            },
-          },
-        ],
-      },
-    ];
-    const menu = Menu.buildFromTemplate(template);
-    Menu.setApplicationMenu(menu);
+      ipcMain.handle(
+        "getJournalists",
+        async (_event): Promise<Journalist[]> => {
+          const journalists = db.getJournalists();
+          return journalists;
+        },
+      );
 
-    // Initialize exporter
-    const exporter = new Exporter();
-    const printer = new Printer();
+      ipcMain.handle(
+        "search",
+        async (_event, query: string): Promise<SearchResult[]> => {
+          return db.search(query);
+        },
+      );
 
-    ipcMain.handle(
-      "request",
-      async (_event, request: ProxyRequest): Promise<ProxyResponse> => {
-        const result = await proxyJSONRequest(request);
-        return result;
-      },
-    );
-
-    ipcMain.handle("getSources", async (_event): Promise<Source[]> => {
-      const sources = db.getSources();
-      return sources;
-    });
-
-    ipcMain.handle(
-      "getSourceWithItems",
-      async (_event, sourceUuid: string): Promise<SourceWithItems> => {
-        const sourceWithItems = db.getSourceWithItems(sourceUuid);
-        return sourceWithItems;
-      },
-    );
-
-    ipcMain.handle(
-      "getItem",
-      async (_event, itemUuid: string): Promise<Item | null> => {
-        return db.getItem(itemUuid);
-      },
-    );
-
-    ipcMain.handle("getJournalists", async (_event): Promise<Journalist[]> => {
-      const journalists = db.getJournalists();
-      return journalists;
-    });
-
-    ipcMain.handle(
-      "search",
-      async (_event, query: string): Promise<SearchResult[]> => {
-        return db.search(query);
-      },
-    );
-
-    ipcMain.handle(
-      "updateFetchStatus",
-      async (
-        _event,
-        itemUuid: string,
-        fetchStatus: number,
-        authToken: string,
-      ) => {
-        // When resetting to Initial or DownloadInProgress, clean up partial download files
-        if (
-          fetchStatus === FetchStatus.Initial ||
-          fetchStatus === FetchStatus.DownloadInProgress
-        ) {
-          const item = db.getItem(itemUuid);
-          if (item && item.data.kind === "file") {
-            const storage = new Storage();
-            const downloadDir = storage.downloadFilePath(item.data, {
-              id: itemUuid,
-            });
-            // Delete the entire download directory for this item
-            const dirPath = dirname(downloadDir);
-            try {
-              fs.rmSync(dirPath, { recursive: true, force: true });
-              console.debug(
-                `Cleaned up partial download directory: ${dirPath}`,
-              );
-            } catch (err) {
-              console.warn(
-                `Failed to clean up partial download directory ${dirPath}:`,
-                err,
-              );
+      ipcMain.handle(
+        "updateFetchStatus",
+        async (
+          _event,
+          itemUuid: string,
+          fetchStatus: number,
+          authToken: string,
+        ) => {
+          // When resetting to Initial or DownloadInProgress, clean up partial download files
+          if (
+            fetchStatus === FetchStatus.Initial ||
+            fetchStatus === FetchStatus.DownloadInProgress
+          ) {
+            const item = db.getItem(itemUuid);
+            if (item && item.data.kind === "file") {
+              const storage = new Storage();
+              const downloadDir = storage.downloadFilePath(item.data, {
+                id: itemUuid,
+              });
+              // Delete the entire download directory for this item
+              const dirPath = dirname(downloadDir);
+              try {
+                fs.rmSync(dirPath, { recursive: true, force: true });
+                console.debug(
+                  `Cleaned up partial download directory: ${dirPath}`,
+                );
+              } catch (err) {
+                console.warn(
+                  `Failed to clean up partial download directory ${dirPath}:`,
+                  err,
+                );
+              }
             }
           }
-        }
-        db.updateFetchStatus(itemUuid, fetchStatus);
-        fetchWorker.postMessage({
-          authToken: authToken,
-        } as AuthedRequest);
-      },
-    );
-
-    ipcMain.handle(
-      "syncMetadata",
-      async (_event, request: AuthedRequest): Promise<SyncStatus> => {
-        if (shouldSkipSync(db, request.hintedVersion)) {
-          console.debug(`Already at ${request.hintedVersion}; skipping sync`);
-          return SyncStatus.NOT_MODIFIED;
-        }
-
-        let syncStatus = await syncWithLock(syncLock, db, request);
-
-        if (syncStatus === SyncStatus.UPDATED) {
-          // Check to see if there are still pending events
-          // If so, attempt a second sync. This may happen
-          // when there are multiple events per source
-          if (db.getPendingEvents().length > 0) {
-            syncStatus = await syncWithLock(syncLock, db, request);
-          }
-
-          // Trigger fetch worker for new replies
+          db.updateFetchStatus(itemUuid, fetchStatus);
           fetchWorker.postMessage({
-            authToken: request.authToken,
+            authToken: authToken,
           } as AuthedRequest);
-        }
+        },
+      );
 
-        return syncStatus;
-      },
-    );
-
-    ipcMain.handle("getSystemLanguage", async (_event): Promise<string> => {
-      const systemLanguage = process.env.LANG || app.getLocale() || "en";
-      return systemLanguage;
-    });
-
-    ipcMain.handle(
-      "addPendingSourceEvent",
-      async (
-        _event,
-        sourceUuid: string,
-        type: PendingEventType,
-      ): Promise<string> => {
-        const snowflakeID = db.addPendingSourceEvent(sourceUuid, type);
-        // Immediately delete any source files from the fs on pending deletion
-        if (
-          type === PendingEventType.SourceDeleted ||
-          type === PendingEventType.SourceConversationDeleted
-        ) {
-          deleteSourceFs(new Storage(), sourceUuid);
-        }
-        return snowflakeID;
-      },
-    );
-
-    ipcMain.handle(
-      "addPendingReplySentEvent",
-      async (
-        _event,
-        text: string,
-        sourceUuid: string,
-        interactionCount: number,
-      ): Promise<string> => {
-        return db.addPendingReplySentEvent(text, sourceUuid, interactionCount);
-      },
-    );
-
-    ipcMain.handle(
-      "addPendingItemEvent",
-      async (
-        _event,
-        itemUuid: string,
-        type: PendingEventType,
-      ): Promise<string> => {
-        return db.addPendingItemEvent(itemUuid, type);
-      },
-    );
-
-    ipcMain.handle(
-      "addPendingItemsSeenBatch",
-      async (
-        _event,
-        sourceUuid: string,
-        itemUuids: string[],
-      ): Promise<bigint[]> => {
-        return db.addPendingItemsSeenBatch(sourceUuid, itemUuids);
-      },
-    );
-
-    ipcMain.handle("shouldAutoLogin", async (_event): Promise<boolean> => {
-      // Only honor auto-login in development mode
-      return is.dev && shouldAutoLogin;
-    });
-
-    ipcMain.handle("getCSPNonce", async (_event): Promise<string> => {
-      return cspNonce;
-    });
-
-    ipcMain.handle("clearClipboard", async (_event): Promise<void> => {
-      clipboard.clear();
-      clipboard.clear("selection");
-      return;
-    });
-
-    ipcMain.handle(
-      "openFile",
-      async (_event, itemUuid: string): Promise<void> => {
-        const item = db.getItem(itemUuid);
-        if (!item || !item.filename) {
-          throw new Error(`Item ${itemUuid} has not been downloaded yet`);
-        }
-
-        const filePath = item.filename;
-
-        // Double-check it exists before we open it
-        if (!fs.existsSync(filePath)) {
-          throw new Error(`File not found: ${filePath}`);
-        }
-
-        // Unconditionally open in the sd-viewer dispVM
-        const command = "qvm-open-in-vm";
-        // spawn() does not use a shell so these don't need escaping
-        const args = ["--view-only", "@dispvm:sd-viewer", filePath];
-
-        const process = spawn(command, args);
-        // Log errors but don't wait for the process to finish
-        process.on("error", (error) => {
-          console.error(`Failed to launch qvm-open-in-vm: ${error.message}`);
-        });
-
-        // Return immediately without waiting for the process to finish
-      },
-    );
-
-    // Print + export IPCs
-    ipcMain.handle("initiateExport", async (_event): Promise<DeviceStatus> => {
-      return exporter.initiateExport();
-    });
-
-    ipcMain.handle(
-      "exportTranscript",
-      async (
-        _event,
-        sourceUuid: string,
-        passphrase: string,
-      ): Promise<DeviceStatus> => {
-        try {
-          const filePath: string = await writeTranscript(sourceUuid, db);
-
-          if (!fs.existsSync(filePath)) {
-            throw new Error(`Transcript file not found: ${filePath}`);
+      ipcMain.handle(
+        "syncMetadata",
+        async (_event, request: AuthedRequest): Promise<SyncStatus> => {
+          if (shouldSkipSync(db, request.hintedVersion)) {
+            console.debug(`Already at ${request.hintedVersion}; skipping sync`);
+            return SyncStatus.NOT_MODIFIED;
           }
-          const source = db.getSource(sourceUuid);
-          if (!source) {
-            throw new Error(`Source not found: ${sourceUuid}`);
+
+          let syncStatus = await syncWithLock(syncLock, db, request);
+
+          if (syncStatus === SyncStatus.UPDATED) {
+            // Check to see if there are still pending events
+            // If so, attempt a second sync. This may happen
+            // when there are multiple events per source
+            if (db.getPendingEvents().length > 0) {
+              syncStatus = await syncWithLock(syncLock, db, request);
+            }
+
+            // Trigger fetch worker for new replies
+            fetchWorker.postMessage({
+              authToken: request.authToken,
+            } as AuthedRequest);
           }
-          const sourceName = source.data.journalist_designation;
-          return await exporter.export([filePath], passphrase, sourceName);
-        } catch (error) {
-          console.error(
-            `Failed to export transcript for source: ${sourceUuid}:`,
-            error,
+
+          return syncStatus;
+        },
+      );
+
+      ipcMain.handle("getSystemLanguage", async (_event): Promise<string> => {
+        const systemLanguage = process.env.LANG || app.getLocale() || "en";
+        return systemLanguage;
+      });
+
+      ipcMain.handle(
+        "addPendingSourceEvent",
+        async (
+          _event,
+          sourceUuid: string,
+          type: PendingEventType,
+        ): Promise<string> => {
+          const snowflakeID = db.addPendingSourceEvent(sourceUuid, type);
+          // Immediately delete any source files from the fs on pending deletion
+          if (
+            type === PendingEventType.SourceDeleted ||
+            type === PendingEventType.SourceConversationDeleted
+          ) {
+            deleteSourceFs(new Storage(), sourceUuid);
+          }
+          return snowflakeID;
+        },
+      );
+
+      ipcMain.handle(
+        "addPendingReplySentEvent",
+        async (
+          _event,
+          text: string,
+          sourceUuid: string,
+          interactionCount: number,
+        ): Promise<string> => {
+          return db.addPendingReplySentEvent(
+            text,
+            sourceUuid,
+            interactionCount,
           );
-          throw error;
-        }
-      },
-    );
+        },
+      );
 
-    ipcMain.handle(
-      "export",
-      async (
-        _event,
-        itemUuids: string[],
-        passphrase: string,
-      ): Promise<DeviceStatus> => {
-        const filenames: string[] = [];
-        let sourceName: string | undefined;
-        for (const itemUuid of itemUuids) {
+      ipcMain.handle(
+        "addPendingItemEvent",
+        async (
+          _event,
+          itemUuid: string,
+          type: PendingEventType,
+        ): Promise<string> => {
+          return db.addPendingItemEvent(itemUuid, type);
+        },
+      );
+
+      ipcMain.handle(
+        "addPendingItemsSeenBatch",
+        async (
+          _event,
+          sourceUuid: string,
+          itemUuids: string[],
+        ): Promise<bigint[]> => {
+          return db.addPendingItemsSeenBatch(sourceUuid, itemUuids);
+        },
+      );
+
+      ipcMain.handle("shouldAutoLogin", async (_event): Promise<boolean> => {
+        // Only honor auto-login in development mode
+        return is.dev && shouldAutoLogin;
+      });
+
+      ipcMain.handle("getCSPNonce", async (_event): Promise<string> => {
+        return cspNonce;
+      });
+
+      ipcMain.handle("clearClipboard", async (_event): Promise<void> => {
+        clipboard.clear();
+        clipboard.clear("selection");
+        return;
+      });
+
+      ipcMain.handle(
+        "openFile",
+        async (_event, itemUuid: string): Promise<void> => {
+          const item = db.getItem(itemUuid);
+          if (!item || !item.filename) {
+            throw new Error(`Item ${itemUuid} has not been downloaded yet`);
+          }
+
+          const filePath = item.filename;
+
+          // Double-check it exists before we open it
+          if (!fs.existsSync(filePath)) {
+            throw new Error(`File not found: ${filePath}`);
+          }
+
+          // Unconditionally open in the sd-viewer dispVM
+          const command = "qvm-open-in-vm";
+          // spawn() does not use a shell so these don't need escaping
+          const args = ["--view-only", "@dispvm:sd-viewer", filePath];
+
+          const process = spawn(command, args);
+          // Log errors but don't wait for the process to finish
+          process.on("error", (error) => {
+            console.error(`Failed to launch qvm-open-in-vm: ${error.message}`);
+          });
+
+          // Return immediately without waiting for the process to finish
+        },
+      );
+
+      // Print + export IPCs
+      ipcMain.handle(
+        "initiateExport",
+        async (_event): Promise<DeviceStatus> => {
+          return exporter.initiateExport();
+        },
+      );
+
+      ipcMain.handle(
+        "exportTranscript",
+        async (
+          _event,
+          sourceUuid: string,
+          passphrase: string,
+        ): Promise<DeviceStatus> => {
+          try {
+            const filePath: string = await writeTranscript(sourceUuid, db);
+
+            if (!fs.existsSync(filePath)) {
+              throw new Error(`Transcript file not found: ${filePath}`);
+            }
+            const sourceWithItems = db.getSourceWithItems(sourceUuid);
+            const sourceName = sourceWithItems.data.journalist_designation;
+            return await exporter.export([filePath], passphrase, sourceName);
+          } catch (error) {
+            console.error(
+              `Failed to export transcript for source: ${sourceUuid}:`,
+              error,
+            );
+            throw error;
+          }
+        },
+      );
+
+      ipcMain.handle(
+        "export",
+        async (
+          _event,
+          itemUuids: string[],
+          passphrase: string,
+        ): Promise<DeviceStatus> => {
+          const filenames: string[] = [];
+          let sourceName: string | undefined;
+          for (const itemUuid of itemUuids) {
+            const item = db.getItem(itemUuid);
+            if (
+              !item ||
+              !item.filename ||
+              item.fetch_status !== FetchStatus.Complete
+            ) {
+              throw new Error(`Item ${itemUuid} has not been downloaded yet`);
+            }
+            if (!fs.existsSync(item.filename)) {
+              throw new Error(`File not found: ${item.filename}`);
+            }
+            filenames.push(item.filename);
+            if (!sourceName) {
+              const source = db.getSourceWithItems(item.data.source);
+              sourceName = source.data.journalist_designation;
+            }
+          }
+          return await exporter.export(filenames, passphrase, sourceName);
+        },
+      );
+
+      ipcMain.handle(
+        "exportSource",
+        async (
+          _event,
+          sourceUuid: string,
+          passphrase: string,
+        ): Promise<DeviceStatus> => {
+          try {
+            const transcriptPath: string = await writeTranscript(
+              sourceUuid,
+              db,
+            );
+
+            if (!fs.existsSync(transcriptPath)) {
+              throw new Error(`Transcript file not found: ${transcriptPath}`);
+            }
+
+            const sourceWithItems = db.getSourceWithItems(sourceUuid);
+            const filenames: string[] = [transcriptPath];
+            for (const item of sourceWithItems.items) {
+              if (
+                item.data.kind === "file" &&
+                item.fetch_status === FetchStatus.Complete &&
+                item.filename &&
+                fs.existsSync(item.filename)
+              ) {
+                filenames.push(item.filename);
+              }
+            }
+            const sourceName = sourceWithItems.data.journalist_designation;
+            return await exporter.export(filenames, passphrase, sourceName);
+          } catch (error) {
+            console.error(`Failed to export source: ${sourceUuid}:`, error);
+            throw error;
+          }
+        },
+      );
+
+      ipcMain.handle("initiatePrint", async (_event): Promise<DeviceStatus> => {
+        return printer.initiatePrint();
+      });
+
+      ipcMain.handle(
+        "printTranscript",
+        async (_event, sourceUuid: string): Promise<DeviceStatus> => {
+          try {
+            const filePath: string = await writeTranscript(sourceUuid, db);
+
+            if (!fs.existsSync(filePath)) {
+              throw new Error(`Transcript file not found: ${filePath}`);
+            }
+            return printer.print([filePath]);
+          } catch (error) {
+            console.error(
+              `Failed to print transcript for source: ${sourceUuid}:`,
+              error,
+            );
+            throw error;
+          }
+        },
+      );
+
+      ipcMain.handle(
+        "print",
+        async (_event, itemUuid: string): Promise<DeviceStatus> => {
           const item = db.getItem(itemUuid);
           if (
             !item ||
@@ -579,121 +676,36 @@ if (!gotTheLock) {
           if (!fs.existsSync(item.filename)) {
             throw new Error(`File not found: ${item.filename}`);
           }
-          filenames.push(item.filename);
-          if (!sourceName) {
-            const source = db.getSource(item.data.source);
-            if (!source) {
-              throw new Error(`Source not found: ${item.data.source}`);
-            }
-            sourceName = source.data.journalist_designation;
+          return printer.print([item.filename]);
+        },
+      );
+
+      ipcMain.handle("cancelExport", async (_event): Promise<void> => {
+        exporter.cancelExport();
+      });
+
+      ipcMain.handle("cancelPrint", async (_event): Promise<void> => {
+        printer.cancelPrint();
+      });
+
+      ipcMain.handle(
+        "getFirstRunStatus",
+        async (_event): Promise<FirstRunStatus> => {
+          if (noFirstRun) {
+            return null;
           }
-        }
-        return await exporter.export(filenames, passphrase, sourceName);
-      },
-    );
+          return db.getFirstRunStatus();
+        },
+      );
 
-    ipcMain.handle(
-      "exportSource",
-      async (
-        _event,
-        sourceUuid: string,
-        passphrase: string,
-      ): Promise<DeviceStatus> => {
-        try {
-          const transcriptPath: string = await writeTranscript(sourceUuid, db);
+      const mainWindow = createWindow();
 
-          if (!fs.existsSync(transcriptPath)) {
-            throw new Error(`Transcript file not found: ${transcriptPath}`);
-          }
-
-          const sourceWithItems = db.getSourceWithItems(sourceUuid);
-          const filenames: string[] = [transcriptPath];
-          for (const item of sourceWithItems.items) {
-            if (
-              item.data.kind === "file" &&
-              item.fetch_status === FetchStatus.Complete &&
-              item.filename &&
-              fs.existsSync(item.filename)
-            ) {
-              filenames.push(item.filename);
-            }
-          }
-          const sourceName = sourceWithItems.data.journalist_designation;
-          return await exporter.export(filenames, passphrase, sourceName);
-        } catch (error) {
-          console.error(`Failed to export source: ${sourceUuid}:`, error);
-          throw error;
-        }
-      },
-    );
-
-    ipcMain.handle("initiatePrint", async (_event): Promise<DeviceStatus> => {
-      return printer.initiatePrint();
+      const fetchWorker = spawnFetchWorker(mainWindow);
+    })
+    .catch((error) => {
+      console.error("Unhandled error during app startup:", error);
+      app.exit(1);
     });
-
-    ipcMain.handle(
-      "printTranscript",
-      async (_event, sourceUuid: string): Promise<DeviceStatus> => {
-        try {
-          const filePath: string = await writeTranscript(sourceUuid, db);
-
-          if (!fs.existsSync(filePath)) {
-            throw new Error(`Transcript file not found: ${filePath}`);
-          }
-          return printer.print([filePath]);
-        } catch (error) {
-          console.error(
-            `Failed to print transcript for source: ${sourceUuid}:`,
-            error,
-          );
-          throw error;
-        }
-      },
-    );
-
-    ipcMain.handle(
-      "print",
-      async (_event, itemUuid: string): Promise<DeviceStatus> => {
-        const item = db.getItem(itemUuid);
-        if (
-          !item ||
-          !item.filename ||
-          item.fetch_status !== FetchStatus.Complete
-        ) {
-          throw new Error(`Item ${itemUuid} has not been downloaded yet`);
-        }
-        if (!fs.existsSync(item.filename)) {
-          throw new Error(`File not found: ${item.filename}`);
-        }
-        return printer.print([item.filename]);
-      },
-    );
-
-    ipcMain.handle("cancelExport", async (_event): Promise<void> => {
-      exporter.cancelExport();
-    });
-
-    ipcMain.handle("cancelPrint", async (_event): Promise<void> => {
-      printer.cancelPrint();
-    });
-
-    ipcMain.handle(
-      "getFirstRunStatus",
-      async (_event): Promise<FirstRunStatus> => {
-        if (noFirstRun) {
-          return null;
-        }
-        return db.getFirstRunStatus();
-      },
-    );
-
-    const mainWindow = createWindow();
-
-    const fetchWorker = spawnFetchWorker(mainWindow);
-  }).catch((error) => {
-    console.error("Unhandled error during app startup:", error);
-    app.exit(1);
-  });
 
   app.on("window-all-closed", () => {
     app.quit();

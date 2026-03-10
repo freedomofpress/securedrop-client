@@ -1333,7 +1333,9 @@ describe("Sources Component", () => {
         ).toBeInTheDocument();
       });
 
-      await userEvent.click(screen.getByTestId("delete-modal-delete-account-button"));
+      await userEvent.click(
+        screen.getByTestId("delete-modal-delete-account-button"),
+      );
 
       await waitFor(() => {
         expect(window.electronAPI.addPendingSourceEvent).toHaveBeenCalledWith(
