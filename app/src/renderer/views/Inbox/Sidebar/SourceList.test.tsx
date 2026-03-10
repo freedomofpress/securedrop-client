@@ -477,6 +477,37 @@ describe("Sources Component", () => {
       expect(screen.getByTestId("source-source-3")).toBeInTheDocument();
       expect(screen.getByTestId("source-source-4")).toBeInTheDocument();
     });
+
+    it("handles rejected search request without crashing", async () => {
+      const consoleErrorSpy = vi
+        .spyOn(console, "error")
+        .mockImplementation(() => {});
+      window.electronAPI.search = vi
+        .fn()
+        .mockRejectedValue(new Error("Search IPC failure"));
+
+      renderSourceList();
+
+      await waitFor(() => {
+        expect(screen.getByTestId("source-source-1")).toBeInTheDocument();
+      });
+
+      const searchInput = screen.getByTestId("source-search-input");
+      await userEvent.type(searchInput, "alice");
+
+      await waitFor(() => {
+        expect(window.electronAPI.search).toHaveBeenCalledWith("alice");
+        expect(consoleErrorSpy).toHaveBeenCalledWith(
+          "Failed to search sources:",
+          expect.any(Error),
+        );
+      });
+
+      // Ensure the component remains rendered and interactive on failure
+      expect(screen.getByTestId("source-source-1")).toBeInTheDocument();
+
+      consoleErrorSpy.mockRestore();
+    });
   });
 
   describe("Filter dropdown functionality", () => {
