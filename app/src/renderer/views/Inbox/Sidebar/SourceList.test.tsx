@@ -1243,5 +1243,80 @@ describe("Sources Component", () => {
       // Verify all three calls were made
       expect(window.electronAPI.addPendingSourceEvent).toHaveBeenCalledTimes(3);
     });
+
+    it("handles addPendingSourceEvent rejection when toggling star", async () => {
+      const consoleErrorSpy = vi
+        .spyOn(console, "error")
+        .mockImplementation(() => {});
+      window.electronAPI.addPendingSourceEvent = vi
+        .fn()
+        .mockRejectedValue(new Error("IPC failure"));
+
+      const unstarredSource = {
+        ...mockSources[0],
+        data: { ...mockSources[0].data, is_starred: false },
+      };
+
+      renderSourceList([unstarredSource]);
+
+      await waitFor(() => {
+        expect(screen.getByTestId("source-source-1")).toBeInTheDocument();
+      });
+
+      await userEvent.click(screen.getByTestId("star-button-source-1"));
+
+      await waitFor(() => {
+        expect(window.electronAPI.addPendingSourceEvent).toHaveBeenCalledWith(
+          "source-1",
+          PendingEventType.Starred,
+        );
+        expect(consoleErrorSpy).toHaveBeenCalledWith(
+          "Failed to toggle source star state:",
+          expect.any(Error),
+        );
+      });
+
+      consoleErrorSpy.mockRestore();
+    });
+
+    it("handles addPendingSourceEvent rejection during delete action", async () => {
+      const consoleErrorSpy = vi
+        .spyOn(console, "error")
+        .mockImplementation(() => {});
+      window.electronAPI.addPendingSourceEvent = vi
+        .fn()
+        .mockRejectedValue(new Error("IPC failure"));
+
+      renderSourceList();
+
+      await waitFor(() => {
+        expect(screen.getByTestId("source-source-1")).toBeInTheDocument();
+      });
+
+      await userEvent.click(screen.getByTestId("source-checkbox-source-1"));
+      await userEvent.click(screen.getByTestId("bulk-delete-button"));
+
+      await waitFor(() => {
+        expect(
+          screen.getByTestId("delete-modal-delete-account-button"),
+        ).toBeInTheDocument();
+      });
+
+      await userEvent.click(screen.getByTestId("delete-modal-delete-account-button"));
+
+      await waitFor(() => {
+        expect(window.electronAPI.addPendingSourceEvent).toHaveBeenCalledWith(
+          "source-1",
+          PendingEventType.SourceDeleted,
+        );
+        expect(consoleErrorSpy).toHaveBeenCalledWith(
+          "Failed to delete source(s):",
+          expect.any(Error),
+        );
+        expect(screen.getByTestId("delete-modal")).toBeInTheDocument();
+      });
+
+      consoleErrorSpy.mockRestore();
+    });
   });
 });
