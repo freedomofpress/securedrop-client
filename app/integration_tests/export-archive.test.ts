@@ -3,7 +3,7 @@ import * as fs from "fs";
 import * as path from "path";
 import * as os from "os";
 import * as tar from "tar";
-import { ArchiveExporter } from "../src/main/export";
+import { ArchiveExporter, EXPORT_QUBE } from "../src/main/export";
 import { execSync } from "child_process";
 
 // Test Export Archive creation with securedrop_export
@@ -25,7 +25,7 @@ describe("Export Archive Tests", () => {
 
   describe("Metadata validation", () => {
     it("should create tarball with metadata.json at root", async () => {
-      const exporter = new ArchiveExporter();
+      const exporter = new ArchiveExporter(EXPORT_QUBE);
       const metadata = { device: "disk", foo: "bar" };
 
       const archivePath = await exporter.createArchive({
@@ -48,7 +48,7 @@ describe("Export Archive Tests", () => {
     });
 
     it("should include encryption_key in metadata when provided", async () => {
-      const exporter = new ArchiveExporter();
+      const exporter = new ArchiveExporter(EXPORT_QUBE);
       const passphrase = "test-passphrase-123";
       const metadata = {
         device: "disk",
@@ -74,7 +74,7 @@ describe("Export Archive Tests", () => {
 
   describe("File path structure", () => {
     it("should place single file under export_data/", async () => {
-      const exporter = new ArchiveExporter();
+      const exporter = new ArchiveExporter(EXPORT_QUBE);
       const testFile = path.join(archiveDir, "document.txt");
       fs.writeFileSync(testFile, "test content");
 
@@ -100,7 +100,7 @@ describe("Export Archive Tests", () => {
     });
 
     it("should place multiple files flat under export_data with parent prefix", async () => {
-      const exporter = new ArchiveExporter();
+      const exporter = new ArchiveExporter(EXPORT_QUBE);
 
       // Create files with proper directory structure
       const sourceDir = path.join(tmpDir, "source");
@@ -143,7 +143,7 @@ describe("Export Archive Tests", () => {
     });
 
     it("should handle transcript.txt same as other files", async () => {
-      const exporter = new ArchiveExporter();
+      const exporter = new ArchiveExporter(EXPORT_QUBE);
 
       // Create multiple files including transcript.txt
       const sourceDir = path.join(tmpDir, "source");
@@ -190,7 +190,7 @@ describe("Export Archive Tests", () => {
 
   describe("Path security validations (safe_extractall requirements)", () => {
     it("should only contain relative paths", async () => {
-      const exporter = new ArchiveExporter();
+      const exporter = new ArchiveExporter(EXPORT_QUBE);
       const testFile = path.join(archiveDir, "test.txt");
       fs.writeFileSync(testFile, "content");
 
@@ -219,7 +219,7 @@ describe("Export Archive Tests", () => {
     });
 
     it("should not contain path traversal sequences", async () => {
-      const exporter = new ArchiveExporter();
+      const exporter = new ArchiveExporter(EXPORT_QUBE);
       const testFile = path.join(archiveDir, "test.txt");
       fs.writeFileSync(testFile, "content");
 
@@ -259,7 +259,7 @@ describe("Export Archive Tests", () => {
     });
 
     it("should resolve to within extraction directory when extracted", async () => {
-      const exporter = new ArchiveExporter();
+      const exporter = new ArchiveExporter(EXPORT_QUBE);
       const testFile = path.join(archiveDir, "test.txt");
       fs.writeFileSync(testFile, "content");
 
@@ -298,7 +298,7 @@ describe("Export Archive Tests", () => {
 
   describe("File permissions", () => {
     it("should create tarball that extracts with proper permissions", async () => {
-      const exporter = new ArchiveExporter();
+      const exporter = new ArchiveExporter(EXPORT_QUBE);
       const testFile = path.join(archiveDir, "test.txt");
       fs.writeFileSync(testFile, "content");
 
@@ -332,7 +332,7 @@ describe("Export Archive Tests", () => {
 
   describe("Python safe_extractall compatibility", () => {
     it("should successfully extract with Python safe_extractall", async () => {
-      const exporter = new ArchiveExporter();
+      const exporter = new ArchiveExporter(EXPORT_QUBE);
       const testFile = path.join(archiveDir, "document.txt");
       fs.writeFileSync(testFile, "test content");
 
@@ -396,7 +396,7 @@ print('SUCCESS')
     });
 
     it("should extract multiple files with Python safe_extractall", async () => {
-      const exporter = new ArchiveExporter();
+      const exporter = new ArchiveExporter(EXPORT_QUBE);
 
       // Create multiple files
       const sourceDir = path.join(tmpDir, "source");
@@ -473,7 +473,7 @@ print('SUCCESS')
 
   describe("Edge cases", () => {
     it("should handle files with special characters in names", async () => {
-      const exporter = new ArchiveExporter();
+      const exporter = new ArchiveExporter(EXPORT_QUBE);
       const testFile = path.join(archiveDir, "file with spaces.txt");
       fs.writeFileSync(testFile, "content");
 
@@ -497,7 +497,7 @@ print('SUCCESS')
     });
 
     it("should create valid tarball with no files (metadata only)", async () => {
-      const exporter = new ArchiveExporter();
+      const exporter = new ArchiveExporter(EXPORT_QUBE);
 
       const archivePath = await exporter.createArchive({
         archiveDir,
