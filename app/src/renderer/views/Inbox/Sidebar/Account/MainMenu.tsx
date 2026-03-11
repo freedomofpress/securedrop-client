@@ -1,7 +1,7 @@
 import { useNavigate } from "react-router";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Typography, Space, Modal, MenuProps, Dropdown } from "antd";
+import { Typography, Space, Modal, MenuProps, Dropdown, Button } from "antd";
 import {
   RefreshCw,
   CircleQuestionMark,
@@ -26,6 +26,19 @@ function MainMenu() {
   const session = useAppSelector((state) => state.session);
   const dispatch = useAppDispatch();
   const [modal, contextHolder] = Modal.useModal();
+  const [isAboutModalOpen, setIsAboutModalOpen] = useState<boolean>(false);
+  const [aboutModalContent, setAboutModalContent] = useState<React.ReactNode>(null);
+
+
+  // TODO: add designed content once available
+  const helpContent = <div>I am help content!<p>more...</p><p>More.....</p></div>;
+  const aboutContent = <div>I am about content</div>;
+  const keysContent = <div>I am a list of keyboard shortcuts</div>;
+
+  const showAboutModal = (content: React.ReactNode) => {
+    setAboutModalContent(content);
+    setIsAboutModalOpen(true);
+  };
 
   // Get the current journalist
   const currentJournalist = useAppSelector((state) =>
@@ -104,8 +117,17 @@ function MainMenu() {
       case "closeApp":
         closeApp();
         break;
+      case "helpHelp":
+        showAboutModal(helpContent);
+        break;
+      case "helpKeys":
+        showAboutModal(keysContent);
+        break;
+      case "helpAbout":
+        showAboutModal(aboutContent);
+        break;
       default:
-        console.warn(`Undefined menu key: ${e.key}`);
+        console.warn(`Undefined menu item: ${e.key}`);
         break;
     }
   };
@@ -198,6 +220,20 @@ function MainMenu() {
           </Space>
         </a>
       </Dropdown>
+      <Modal
+        getContainer={() => document.getElementById("root") || document.body}
+        title=""
+        closable={false}
+        open={isAboutModalOpen}
+        onCancel={() => setIsAboutModalOpen(false)}
+        footer={[
+          <Button key="back" onClick={() => setIsAboutModalOpen(false)}>
+          {t("account.aboutClose")}
+          </Button>
+          ]}
+        >
+        {aboutModalContent}
+      </Modal>
       {contextHolder}
     </>
   );

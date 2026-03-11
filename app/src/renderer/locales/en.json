@@ -57,7 +57,8 @@
       "quitModalTitle": "Close application?",
       "quitModalContent": "Unsent replies may be lost",
       "quitModalCancel": "Cancel",
-      "quitModalOK": "Yes, Quit"
+      "quitModalOK": "Yes, Quit",
+      "aboutClose": "Close"
     },
     "sourcelist": {
       "filters": {
