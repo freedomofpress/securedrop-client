@@ -101,7 +101,7 @@
     "better-sqlite3": "^12.6.0",
     "blakejs": "^1.2.1",
     "dbmate": "^2.29.3",
-    "liquidjs": "^10.24.0",
+    "liquidjs": "^10.25.0",
     "openpgp": "^6.3.0",
     "source-map-support": "^0.5.21",
     "tar": "^7.5.8",
