@@ -26,15 +26,13 @@ def main():
     stdin = sys.stdin.buffer  # python3
     rd = redis.Redis()
 
-    # the first line is always the remote vm name
-    untrusted_line = stdin.readline()
     qrexec_remote = os.getenv("QREXEC_REMOTE_DOMAIN")
     if not qrexec_remote:
         print("ERROR: QREXEC_REMOTE_DOMAIN not set", file=sys.stderr)
         sys.exit(1)
 
     while True:
-        untrusted_line = stdin.readline()
+        untrusted_line = stdin.readline(1000)
         if untrusted_line == b"":
             break
 
