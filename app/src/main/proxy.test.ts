@@ -180,6 +180,24 @@ describe("Test executing proxy with JSON requests", () => {
     await expect(proxyExec).rejects.toThrowError("error");
   });
 
+  it("proxy should handle stdin stream error", async () => {
+    const proxyExec = proxyJSONRequest({} as ProxyRequest);
+
+    process.stdin?.emit("error", new Error("broken pipe"));
+
+    await expect(proxyExec).rejects.toThrowError("broken pipe");
+  });
+
+  it("proxy should handle sync exception from stdin.write", async () => {
+    vi.spyOn(process.stdin!, "write").mockImplementation(() => {
+      throw new Error("stdin write failed");
+    });
+
+    const proxyExec = proxyJSONRequest({} as ProxyRequest);
+
+    await expect(proxyExec).rejects.toThrowError("stdin write failed");
+  });
+
   it("proxy should handle SIGTERM", async () => {
     const proxyExec = proxyJSONRequest({} as ProxyRequest);
 
@@ -377,6 +395,41 @@ describe("Test executing proxy with streaming requests", () => {
     }, 10);
 
     await expect(proxyExec).rejects.toThrowError("error");
+  });
+
+  it("proxy stream should handle stdin stream error", async () => {
+    const proxyExec = proxyStreamRequest({} as ProxyRequest, writeStream);
+
+    process.stdin?.emit("error", new Error("broken pipe"));
+
+    await expect(proxyExec).rejects.toThrowError("broken pipe");
+  });
+
+  it("proxy stream should handle sync exception from stdin.write", async () => {
+    vi.spyOn(process.stdin!, "write").mockImplementation(() => {
+      throw new Error("stdin write failed");
+    });
+
+    const proxyExec = proxyStreamRequest({} as ProxyRequest, writeStream);
+
+    await expect(proxyExec).rejects.toThrowError("stdin write failed");
+  });
+
+  it("proxy stream should handle exception from onProgress callback", async () => {
+    const proxyExec = proxyStreamRequest(
+      {} as ProxyRequest,
+      writeStream,
+      undefined,
+      undefined,
+      undefined,
+      () => {
+        throw new Error("progress callback failed");
+      },
+    );
+
+    process.stdout?.emit("data", Buffer.from("chunk"));
+
+    await expect(proxyExec).rejects.toThrowError("progress callback failed");
   });
 
   it("proxy should handle SIGTERM", async () => {

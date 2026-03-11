@@ -103,6 +103,10 @@ export async function proxyJSONRequestInner(
       reject(error);
     });
 
+    process.stdin.on("error", (error) => {
+      reject(error);
+    });
+
     request.stream = request.stream ?? false;
 
     // Use the longer of the command- or request-level timeout, in seconds.
@@ -110,7 +114,11 @@ export async function proxyJSONRequestInner(
     const defaultInSeconds = Math.floor(DEFAULT_PROXY_CMD_TIMEOUT_MS / 1000);
     request.timeout = Math.max(timeoutInSeconds, defaultInSeconds) as sec;
 
-    process.stdin.write(JSON.stringify(request) + "\n");
+    try {
+      process.stdin.write(JSON.stringify(request) + "\n");
+    } catch (error) {
+      reject(error);
+    }
   });
 }
 
@@ -165,7 +173,11 @@ export async function proxyStreamRequestInner(
       stdoutChunks.push(data);
       // Report progress to caller if callback is provided
       if (onProgress) {
-        onProgress(bytesWritten);
+        try {
+          onProgress(bytesWritten);
+        } catch (error) {
+          reject(error);
+        }
       }
     });
 
@@ -226,6 +238,10 @@ export async function proxyStreamRequestInner(
       reject(`Proxy process error: ${err}`);
     });
 
+    process.stdin.on("error", (error) => {
+      reject(error);
+    });
+
     if (offset && offset != 0) {
       request.headers["Range"] = `bytes=${offset}-`;
     }
@@ -236,7 +252,11 @@ export async function proxyStreamRequestInner(
     const defaultInSeconds = Math.floor(DEFAULT_PROXY_CMD_TIMEOUT_MS / 1000);
     request.timeout = Math.max(timeoutInSeconds, defaultInSeconds) as sec;
 
-    process.stdin.write(JSON.stringify(request) + "\n");
+    try {
+      process.stdin.write(JSON.stringify(request) + "\n");
+    } catch (error) {
+      reject(error);
+    }
   });
 }
 
