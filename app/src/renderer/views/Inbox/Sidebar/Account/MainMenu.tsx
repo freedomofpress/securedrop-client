@@ -25,7 +25,7 @@ function MainMenu() {
   const navigate = useNavigate();
   const session = useAppSelector((state) => state.session);
   const dispatch = useAppDispatch();
-  const confirm = Modal.confirm;
+  const [modal, contextHolder] = Modal.useModal();
 
   // Get the current journalist
   const currentJournalist = useAppSelector((state) =>
@@ -72,7 +72,8 @@ function MainMenu() {
   };
 
   const closeApp = () => {
-    confirm({
+    modal.confirm({
+      getContainer: false,
       title: t("account.quitModalTitle"),
       content: t("account.quitModalContent"),
       cancelText: t("account.quitModalCancel"),
@@ -197,6 +198,7 @@ function MainMenu() {
           </Space>
         </a>
       </Dropdown>
+      {contextHolder}
     </>
   );
 }
