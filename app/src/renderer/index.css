@@ -46,3 +46,8 @@ object {
 .ant-btn-icon > svg.lucide {
   vertical-align: middle;
 }
+
+/* add some negative space for dropdown menu items with key combos */
+.ant-dropdown-menu-title-content-with-extra {
+  column-gap: 40px;
+}
