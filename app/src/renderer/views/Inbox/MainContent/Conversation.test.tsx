@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { act, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import React from "react";
 import Conversation from "./Conversation";
 import {
   testMemoization,
@@ -8,6 +9,81 @@ import {
 } from "../../../test-component-setup";
 import { SessionStatus } from "../../../features/session/sessionSlice";
 import type { ItemUpdate, SourceWithItems } from "../../../../types";
+
+Element.prototype.scrollTo = vi.fn(function (
+  this: Element,
+  optionsOrX?: ScrollToOptions | number,
+) {
+  if (
+    typeof optionsOrX === "object" &&
+    optionsOrX !== null &&
+    "top" in optionsOrX &&
+    optionsOrX.top !== undefined
+  ) {
+    (this as HTMLElement).scrollTop = optionsOrX.top;
+  }
+}) as unknown as typeof Element.prototype.scrollTo;
+
+vi.mock("react-window", () => {
+  return {
+    List: ({
+      rowComponent: RowComponent,
+      rowCount,
+      rowProps,
+      listRef,
+    }: {
+      rowComponent: (props: {
+        index: number;
+        style: React.CSSProperties;
+        [k: string]: unknown;
+      }) => React.ReactNode;
+      rowCount: number;
+      rowHeight: unknown;
+      rowProps: Record<string, unknown>;
+      listRef?: (api: unknown) => void;
+      [k: string]: unknown;
+    }) => {
+      const containerRef = React.useRef<HTMLDivElement>(null);
+      React.useEffect(() => {
+        if (listRef && containerRef.current) {
+          const el = containerRef.current;
+          listRef({
+            get element() {
+              return el;
+            },
+            scrollToRow({ align }: { _index?: number; align?: string }) {
+              if (el) {
+                if (align === "end") {
+                  el.scrollTop = el.scrollHeight;
+                }
+              }
+            },
+          });
+        }
+      }, [listRef]);
+      return (
+        <div ref={containerRef} data-testid="conversation-items-container">
+          {Array.from({ length: rowCount }, (_, i) => (
+            <div key={i}>
+              <RowComponent index={i} style={{}} {...rowProps} />
+            </div>
+          ))}
+        </div>
+      );
+    },
+    useDynamicRowHeight: () =>
+      React.useMemo(
+        () => ({
+          getAverageRowHeight: () => 400,
+          getRowHeight: () => 400,
+          setRowHeight: () => {},
+          observeRowElements: () => () => {},
+        }),
+        [],
+      ),
+    useListCallbackRef: () => React.useState<null>(null),
+  };
+});
 
 const mockSourceWithItems: SourceWithItems = {
   uuid: "source-1",

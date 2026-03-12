@@ -186,6 +186,9 @@ if (!gotTheLock) {
 
     worker.on("message", (result) => {
       console.debug("Message from worker: ", result);
+      if (!result) {
+        return;
+      }
       // Check if worker update is Source or Item
       if (result && "messagePreview" in result) {
         mainWindow.webContents.send("source-update", result);
@@ -523,8 +526,11 @@ if (!gotTheLock) {
           if (!fs.existsSync(filePath)) {
             throw new Error(`Transcript file not found: ${filePath}`);
           }
-          const sourceWithItems = db.getSourceWithItems(sourceUuid);
-          const sourceName = sourceWithItems.data.journalist_designation;
+          const source = db.getSource(sourceUuid);
+          if (!source) {
+            throw new Error(`Source not found: ${sourceUuid}`);
+          }
+          const sourceName = source.data.journalist_designation;
           return await exporter.export([filePath], passphrase, sourceName);
         } catch (error) {
           console.error(
@@ -559,7 +565,10 @@ if (!gotTheLock) {
           }
           filenames.push(item.filename);
           if (!sourceName) {
-            const source = db.getSourceWithItems(item.data.source);
+            const source = db.getSource(item.data.source);
+            if (!source) {
+              throw new Error(`Source not found: ${item.data.source}`);
+            }
             sourceName = source.data.journalist_designation;
           }
         }
