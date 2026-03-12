@@ -16,6 +16,19 @@ extraResources:
   - from: src/main/database/migrations
     to: migrations
 npmRebuild: false
+electronFuses:
+  runAsNode: false
+  # We don't use cookies but if we enable this it's going to prompt for a keychain password
+  # enableCookieEncryption: false
+  enableNodeCliInspectArguments: false
+  enableNodeOptionsEnvironmentVariable: false
+  # TODO: once we switch to a custom protocol, we should disable file://
+  # grantFileProtocolExtraPrivileges: false
+  # We don't use custom V8 snapshots
+  # loadBrowserProcessSpecificV8Snapshot: false
+  # The asar stuff is only useful on Windows/macOS with codesigning
+  # enableEmbeddedAsarIntegrityValidation: false
+  # onlyLoadAppFromAsar: false
 linux:
   extraResources:
     - from: node_modules/@dbmate/linux-x64/bin/dbmate
