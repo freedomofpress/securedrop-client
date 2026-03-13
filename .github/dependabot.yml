@@ -5,14 +5,14 @@ updates:
     schedule:
       interval: "weekly"
     cooldown:
-      default-days: 5
+      default-days: 7
 
   - package-ecosystem: npm
     directory: "/app"
     schedule:
       interval: "weekly"
     cooldown:
-      default-days: 5
+      default-days: 7
     groups:
       frontend:
         patterns:
@@ -61,7 +61,7 @@ updates:
     schedule:
       interval: "weekly"
     cooldown:
-      default-days: 5
+      default-days: 7
     allow:
       - dependency-type: "development"
   - package-ecosystem: "pip"
@@ -69,7 +69,7 @@ updates:
     schedule:
       interval: "weekly"
     cooldown:
-      default-days: 5
+      default-days: 7
     allow:
       - dependency-type: "development"
     ignore:
@@ -83,7 +83,7 @@ updates:
     schedule:
       interval: "weekly"
     cooldown:
-      default-days: 5
+      default-days: 7
     allow:
       - dependency-type: "development"
     groups:
@@ -95,7 +95,7 @@ updates:
     schedule:
       interval: "weekly"
     cooldown:
-      default-days: 5
+      default-days: 7
     allow:
       - dependency-type: "development"
     groups:
@@ -107,7 +107,7 @@ updates:
     schedule:
       interval: "weekly"
     cooldown:
-      default-days: 5
+      default-days: 7
     allow:
       - dependency-type: "development"
     groups:
