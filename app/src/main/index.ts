@@ -298,6 +298,10 @@ if (!gotTheLock) {
       app.quit();
     });
 
+    ipcMain.handle("getAppVersion", async (_event): Promise<string> => {
+      return app.getVersion();
+    });
+
     ipcMain.handle(
       "request",
       async (_event, request: ProxyRequest): Promise<ProxyResponse> => {

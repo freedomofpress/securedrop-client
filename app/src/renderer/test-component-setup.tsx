@@ -237,6 +237,7 @@ beforeEach(() => {
     search: vi.fn().mockResolvedValue([]),
     getFirstRunStatus: vi.fn().mockResolvedValue(null),
     quitApp: vi.fn().mockResolvedValue(null),
+    getAppVersion: vi.fn().mockResolvedValue("testVersion"),
   } as ElectronAPI;
 });
 

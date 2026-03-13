@@ -1,7 +1,15 @@
+import { useState, useEffect } from 'react';
 import logoImage from "../../../../../../resources/images/logo.png";
 
 // Help Modal Content
 function AboutHelp() {
+  const [version, setVersion] = useState<string>('');
+
+  useEffect(() => {
+    window.electronAPI.getAppVersion().then((v:string) => {
+      setVersion(v);
+    });
+  }, []);
 
   return (
     <>
@@ -25,7 +33,7 @@ function AboutHelp() {
         {/* Version row */}
         <div className="flex items-center gap-[10px] mb-[16px]">
           <span className="text-[13px] font-semibold text-[#181d27]">Version</span>
-          <span className="bg-[#e6f4ff] text-[#1677ff] border border-[#91caff] rounded-[4px] px-[8px] text-[13px] font-semibold leading-[22px]">v0.18.0-rc1</span>
+          <span className="bg-[#e6f4ff] text-[#1677ff] border border-[#91caff] rounded-[4px] px-[8px] text-[13px] font-semibold leading-[22px]">{version}</span>
         </div>
 
         {/* Divider */}
