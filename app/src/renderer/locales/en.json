@@ -60,8 +60,17 @@
       "quitModalOK": "Yes, Quit",
       "aboutClose": "Close"
     },
-    "help": {
-      "keyboardShortcutsTitle": "Keyboard shortcuts"
+    "helpModals": {
+      "keyboardShortcutsTitle": "Keyboard shortcuts",
+      "aboutAppTitle": "SecureDrop Client",
+      "aboutAppDesc": "Secure communications for journalists and sources",
+      "aboutAppVersion": "Version",
+      "aboutMoreTitle": "More Information",
+      "aboutMoreContent": "https://securedrop.org/app",
+      "aboutRepoTitle": "Source code",
+      "aboutRepoContent": "https://github.com/freedomofpress/securedrop-client",
+      "aboutLicence": "SecureDrop is open source and released under the GNU Affero General Public License v3.",
+      "aboutCopyright": "© 2013–2026 Aaron Swartz, James Dolan, Freedom of the Press Foundation, and SecureDrop contributors"
     },
     "sourcelist": {
       "filters": {

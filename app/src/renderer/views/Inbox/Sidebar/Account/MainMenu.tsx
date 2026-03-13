@@ -30,11 +30,12 @@ function MainMenu() {
   const dispatch = useAppDispatch();
   const [modal, contextHolder] = Modal.useModal();
   const [isAboutModalOpen, setIsAboutModalOpen] = useState<boolean>(false);
-  const [aboutModalContent, setAboutModalContent] = useState<React.ReactNode>(null);
+  const [aboutModalContent, setAboutModalContent] =
+    useState<React.ReactNode>(null);
 
-  const helpContent = <HelpHelp/>;
-  const aboutContent = <AboutHelp/>;
-  const keysContent = <KeyboardHelp/>;
+  const helpContent = <HelpHelp />;
+  const aboutContent = <AboutHelp />;
+  const keysContent = <KeyboardHelp />;
 
   const showAboutModal = (content: React.ReactNode) => {
     setAboutModalContent(content);
@@ -237,10 +238,10 @@ function MainMenu() {
             onClick={() => setIsAboutModalOpen(false)}
             type="primary"
           >
-          {t("account.aboutClose")}
-          </Button>
-          ]}
-        >
+            {t("account.aboutClose")}
+          </Button>,
+        ]}
+      >
         {aboutModalContent}
       </Modal>
       {contextHolder}

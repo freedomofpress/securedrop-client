@@ -1,11 +1,5 @@
-
 function HelpHelp() {
-
-  return (
-    <>
-     <h1>HELP!</h1>
-  </>
-  );
+  return <></>;
 }
 
 export default HelpHelp;
