@@ -149,10 +149,12 @@ function MainMenu() {
       label: t("account.Help"),
       icon: <CircleQuestionMark strokeWidth={1.5} />,
       children: [
+        /*
         {
           key: "helpHelp",
           label: t("account.getHelp"),
         },
+        */
         {
           key: "helpKeys",
           label: t("account.keyboardShortcuts"),
@@ -223,6 +225,8 @@ function MainMenu() {
       </Dropdown>
       <Modal
         getContainer={() => document.getElementById("root") || document.body}
+        wrapClassName="about-modal-container"
+        className="about-modal-content"
         title=""
         closable={false}
         open={isAboutModalOpen}

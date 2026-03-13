@@ -51,3 +51,11 @@ object {
 .ant-dropdown-menu-title-content-with-extra {
   column-gap: 40px;
 }
+
+/* remove padding around the help/about modals - add it back for the footers */
+.about-modal-container .ant-modal-content {
+  padding: 0px ;
+}
+.about-modal-content .ant-modal-footer {
+  padding: 0 24px 24px 24px;
+}

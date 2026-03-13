@@ -60,6 +60,9 @@
       "quitModalOK": "Yes, Quit",
       "aboutClose": "Close"
     },
+    "help": {
+      "keyboardShortcutsTitle": "Keyboard shortcuts"
+    },
     "sourcelist": {
       "filters": {
         "all": "All",
