@@ -1,9 +1,9 @@
 import { Hexagon } from "lucide-react";
-
+import { memo } from 'react';
 import { useAppSelector } from "../../../../hooks";
 import { selectSyncStatus } from "../../../../features/sync/syncSlice";
 
-const HexWithHalo = ({ color = "green", size = 16 }) => {
+const HexWithHalo = memo(({ color = "green", size = 16 }) => {
   return (
     <Hexagon
       style={{ filter: `drop-shadow(0px 0px 2px ${color})` }}
@@ -13,7 +13,7 @@ const HexWithHalo = ({ color = "green", size = 16 }) => {
       strokeWidth={0}
     />
   );
-};
+});
 
 const GrayIcon = () => <HexWithHalo color="gray" />;
 const GreenIcon = () => <HexWithHalo color="#0908" />;
