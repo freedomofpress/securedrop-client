@@ -18,6 +18,9 @@ import { getJournalistById } from "../../../../features/journalists/journalistsS
 import { syncMetadata } from "../../../../features/sync/syncSlice";
 import { formatJournalistName } from "../../../../utils";
 import SyncDicator from "./SyncDicator";
+import KeyboardHelp from "./KeyboardHelp";
+import AboutHelp from "./AboutHelp";
+import HelpHelp from "./HelpHelp";
 
 function MainMenu() {
   const { t } = useTranslation("Sidebar");
@@ -29,11 +32,9 @@ function MainMenu() {
   const [isAboutModalOpen, setIsAboutModalOpen] = useState<boolean>(false);
   const [aboutModalContent, setAboutModalContent] = useState<React.ReactNode>(null);
 
-
-  // TODO: add designed content once available
-  const helpContent = <div>I am help content!<p>more...</p><p>More.....</p></div>;
-  const aboutContent = <div>I am about content</div>;
-  const keysContent = <div>I am a list of keyboard shortcuts</div>;
+  const helpContent = <HelpHelp/>;
+  const aboutContent = <AboutHelp/>;
+  const keysContent = <KeyboardHelp/>;
 
   const showAboutModal = (content: React.ReactNode) => {
     setAboutModalContent(content);
@@ -227,7 +228,11 @@ function MainMenu() {
         open={isAboutModalOpen}
         onCancel={() => setIsAboutModalOpen(false)}
         footer={[
-          <Button key="back" onClick={() => setIsAboutModalOpen(false)}>
+          <Button
+            key="back"
+            onClick={() => setIsAboutModalOpen(false)}
+            type="primary"
+          >
           {t("account.aboutClose")}
           </Button>
           ]}
