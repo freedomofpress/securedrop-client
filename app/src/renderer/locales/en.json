@@ -61,7 +61,7 @@
       "aboutClose": "Close"
     },
     "helpModals": {
-      "keyboardShortcutsTitle": "Keyboard shortcuts",
+      "keyboardTitle": "Keyboard shortcuts",
       "aboutAppTitle": "SecureDrop Client",
       "aboutAppDesc": "Secure communications for journalists and sources",
       "aboutAppVersion": "Version",

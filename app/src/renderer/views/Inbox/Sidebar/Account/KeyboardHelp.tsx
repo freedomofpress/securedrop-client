@@ -64,7 +64,7 @@ function KeyboardHelp() {
       <div className="flex items-center gap-[8px] px-[24px] pt-[16px] pb-[12px] border-b border-[#f0f0f0]">
         {/* Keyboard icon */}
         <span className="text-[16px] font-semibold text-[#181d27]">
-          {t("help.keyboardShortcutsTitle")}
+          {t("helpModals.keyboardTitle")}
         </span>
       </div>
 

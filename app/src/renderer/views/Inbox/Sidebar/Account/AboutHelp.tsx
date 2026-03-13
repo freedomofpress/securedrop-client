@@ -57,7 +57,7 @@ function AboutHelp() {
               {t("helpModals.aboutMoreTitle")}
             </span>
             <span className="text-[14px] text-[#8c8c8c] break-all">
-              {t("helpmodals.aboutMoreContent")}
+              {t("helpModals.aboutMoreContent")}
             </span>
           </div>
           <div className="flex items-start ">
