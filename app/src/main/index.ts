@@ -40,7 +40,7 @@ import {
   PendingEventType,
   SyncStatus,
 } from "../types";
-import { syncMetadata, shouldSkipSync, deleteSourceFs } from "./sync";
+import { syncMetadata, shouldSkipSync } from "./sync";
 import workerPath from "./fetch/worker?modulePath";
 import { Lock, LockTimeoutError } from "./sync/lock";
 import { Config } from "./config";
@@ -145,7 +145,7 @@ if (!gotTheLock) {
       };
 
       const crypto = Crypto.initialize(configForCrypto);
-      const appDb = new DB(crypto);
+      const appDb = new DB(crypto, undefined, storage);
 
       return {
         db: appDb,
