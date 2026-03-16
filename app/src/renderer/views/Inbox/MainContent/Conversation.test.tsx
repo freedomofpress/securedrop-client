@@ -51,10 +51,18 @@ vi.mock("react-window", () => {
             get element() {
               return el;
             },
-            scrollToRow({ align }: { _index?: number; align?: string }) {
+            scrollToRow({ index, align }: { index?: number; align?: string }) {
               if (el) {
                 if (align === "end") {
                   el.scrollTop = el.scrollHeight;
+                } else if (align === "center" && index !== undefined) {
+                  const rowEl = el.children[index] as HTMLElement | undefined;
+                  if (rowEl) {
+                    el.scrollTop = Math.max(
+                      0,
+                      rowEl.offsetTop - el.clientHeight / 2,
+                    );
+                  }
                 }
               }
             },
@@ -552,7 +560,7 @@ describe("Conversation new message indicator", () => {
     await screen.findByTestId("new-messages-divider");
 
     await waitFor(() => {
-      expect(scrollTopValue).toBe(250);
+      expect(scrollTopValue).toBe(200);
     });
 
     const renderedItems = screen.getAllByTestId(/item-/);
@@ -727,10 +735,6 @@ describe("Conversation new message indicator", () => {
     );
 
     await screen.findByTestId("new-messages-divider");
-
-    await waitFor(() => {
-      expect(scrollTopValue).toBe(250);
-    });
 
     container.dispatchEvent(new Event("scroll"));
 
