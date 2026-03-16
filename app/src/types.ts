@@ -170,6 +170,7 @@ export type ItemRow = {
   fetch_status: number; // FetchStatus enum
   fetch_progress: number;
   decrypted_size?: number;
+  is_read?: number; // projected value from items_projected view
 };
 
 // Database representation

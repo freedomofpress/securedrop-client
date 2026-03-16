@@ -237,6 +237,7 @@ export async function syncMetadata(
     request.items = items;
     request.journalists = journalists;
   }
+  console.log("Batch request: ", JSON.stringify(request));
 
   // No pending events and no server updates, nothing to sync
   if (
@@ -247,6 +248,7 @@ export async function syncMetadata(
   }
 
   const batchResponse = await submitBatch(authToken, request);
+  console.log("Batch response: ", JSON.stringify(batchResponse));
 
   // Check for 403 Forbidden
   if (batchResponse.status === 403) {

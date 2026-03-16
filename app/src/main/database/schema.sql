@@ -53,6 +53,19 @@ CREATE INDEX idx_items_last_updated ON items(last_updated);
 CREATE INDEX idx_sources_uuid ON sources(uuid);
 CREATE INDEX idx_items_source_uuid ON items(source_uuid);
 CREATE INDEX idx_items_fetch_status ON items(fetch_status);
+CREATE VIRTUAL TABLE search_index USING fts5 (
+    source_uuid UNINDEXED,
+    item_uuid UNINDEXED,
+    type UNINDEXED,
+    content,
+    tokenize = 'unicode61'
+)
+/* search_index(source_uuid,item_uuid,type,content) */;
+CREATE TABLE IF NOT EXISTS 'search_index_data'(id INTEGER PRIMARY KEY, block BLOB);
+CREATE TABLE IF NOT EXISTS 'search_index_idx'(segid, term, pgno, PRIMARY KEY(segid, term)) WITHOUT ROWID;
+CREATE TABLE IF NOT EXISTS 'search_index_content'(id INTEGER PRIMARY KEY, c0, c1, c2, c3);
+CREATE TABLE IF NOT EXISTS 'search_index_docsize'(id INTEGER PRIMARY KEY, sz BLOB);
+CREATE TABLE IF NOT EXISTS 'search_index_config'(k PRIMARY KEY, v) WITHOUT ROWID;
 CREATE VIEW items_projected AS
 SELECT
     items.uuid,
@@ -67,6 +80,12 @@ SELECT
             SELECT 1 FROM pending_events
             WHERE pending_events.item_uuid = items.uuid
                 AND pending_events.type = 'item_seen'
+        ) THEN 1
+        WHEN EXISTS (
+            SELECT 1 FROM pending_events
+            WHERE pending_events.source_uuid = items.source_uuid
+                AND pending_events.type = 'source_conversation_seen'
+                AND CAST(json_extract(pending_events.data, '$.upper_bound') AS INTEGER) >= items.interaction_count
         ) THEN 1
         ELSE 0
     END AS is_read,
@@ -187,19 +206,6 @@ SELECT
     ) AS rn
 FROM items_projected
 /* sorted_items(uuid,data,version,plaintext,filename,kind,is_read,last_updated,source_uuid,fetch_progress,fetch_status,fetch_last_updated_at,fetch_retry_attempts,interaction_count,decrypted_size,rn) */;
-CREATE VIRTUAL TABLE search_index USING fts5 (
-    source_uuid UNINDEXED,
-    item_uuid UNINDEXED,
-    type UNINDEXED,
-    content,
-    tokenize = 'unicode61'
-)
-/* search_index(source_uuid,item_uuid,type,content) */;
-CREATE TABLE IF NOT EXISTS 'search_index_data'(id INTEGER PRIMARY KEY, block BLOB);
-CREATE TABLE IF NOT EXISTS 'search_index_idx'(segid, term, pgno, PRIMARY KEY(segid, term)) WITHOUT ROWID;
-CREATE TABLE IF NOT EXISTS 'search_index_content'(id INTEGER PRIMARY KEY, c0, c1, c2, c3);
-CREATE TABLE IF NOT EXISTS 'search_index_docsize'(id INTEGER PRIMARY KEY, sz BLOB);
-CREATE TABLE IF NOT EXISTS 'search_index_config'(k PRIMARY KEY, v) WITHOUT ROWID;
 CREATE TRIGGER items_kind_immutable
 BEFORE UPDATE OF data ON items
 FOR EACH ROW
@@ -213,4 +219,5 @@ INSERT INTO "schema_migrations" (version) VALUES
   ('20260203225412'),
   ('20260213000000'),
   ('20260217000000'),
+  ('20260316000000'),
   ('20260326182530');

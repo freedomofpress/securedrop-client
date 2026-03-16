@@ -647,8 +647,8 @@ describe("syncMetadata", () => {
     const pendingEvents: PendingEvent[] = [
       {
         id: "1",
-        type: PendingEventType.Seen,
-        target: { item_uuid: ITEM_UUID_1, version: "" },
+        type: PendingEventType.Starred,
+        target: { source_uuid: SOURCE_UUID_1, version: "" },
         data: null,
       },
       {
@@ -729,7 +729,7 @@ describe("syncMetadata", () => {
     const pendingEvents: PendingEvent[] = [
       {
         id: "1",
-        type: PendingEventType.Seen,
+        type: PendingEventType.ItemDeleted,
         target: {
           item_uuid: ITEM_UUID_1,
           version: "",
