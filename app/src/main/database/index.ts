@@ -145,14 +145,13 @@ export class DB {
     },
     void
   >;
-  private upsertPendingSeenItemEvent: Statement<
-    {
-      snowflake_id: bigint;
-      source_uuid: string;
-      item_uuid: string;
-      type: string;
-    },
-    void
+  private selectSourceConversationSeenEvent: Statement<
+    { source_uuid: string },
+    { snowflake_id: string; data: string }
+  >;
+  private selectUnseenItemsCount: Statement<
+    { source_uuid: string; upper_bound: number },
+    { count: number }
   >;
   private deletePendingEvent: Statement<{ snowflake_id: string }, void>;
   private selectPendingEvents: Statement<[{ limit: number }], PendingEventRow>;
@@ -295,7 +294,7 @@ export class DB {
       WHERE s.uuid = ?
     `);
     this.selectItemsBySourceId = this.db.prepare(`
-      SELECT uuid, data, plaintext, filename, fetch_status, fetch_progress, decrypted_size FROM items_projected
+      SELECT uuid, data, plaintext, filename, fetch_status, fetch_progress, decrypted_size, is_read FROM items_projected
       WHERE source_uuid = ?
       ORDER BY interaction_count ASC
     `);
@@ -311,18 +310,18 @@ export class DB {
       INSERT INTO pending_events (snowflake_id, item_uuid, type, data) VALUES(@snowflake_id, @item_uuid, @type, @data)
     `);
 
-    this.upsertPendingSeenItemEvent = this.db.prepare(`
-      INSERT INTO pending_events (snowflake_id, item_uuid, type)
-      SELECT @snowflake_id, @item_uuid, @type
-      WHERE EXISTS (
-        SELECT 1 FROM items
-        WHERE uuid = @item_uuid AND source_uuid = @source_uuid
-      )
-      AND NOT EXISTS (
-        SELECT 1 FROM pending_events
-        WHERE item_uuid = @item_uuid AND type = @type
-      )
-        `);
+    this.selectSourceConversationSeenEvent = this.db.prepare(`
+      SELECT snowflake_id, data FROM pending_events
+      WHERE source_uuid = @source_uuid AND type = 'source_conversation_seen'
+    `);
+    this.selectUnseenItemsCount = this.db.prepare(`
+      SELECT
+        COUNT(*) AS count
+      FROM items
+      WHERE source_uuid = @source_uuid
+        AND interaction_count <= @upper_bound
+        AND is_read = 0
+    `);
     this.deletePendingEvent = this.db.prepare(
       `DELETE FROM pending_events WHERE snowflake_id = @snowflake_id`,
     );
@@ -702,6 +701,9 @@ export class DB {
 
     const items = itemRows.map((row) => {
       const data = JSON.parse(row.data) as ItemMetadata;
+      if (row.is_read !== undefined && "is_read" in data) {
+        (data as { is_read: boolean }).is_read = this.isTruthy(row.is_read);
+      }
       return {
         uuid: row.uuid,
         data,
@@ -941,30 +943,43 @@ export class DB {
     return snowflakeID;
   }
 
-  addPendingItemsSeenBatch(sourceUuid: string, itemUuids: string[]): bigint[] {
+  addPendingSourceConversationSeen(
+    sourceUuid: string,
+    upperBound: number,
+  ): string | null {
     return this.db!.transaction(() => {
-      const snowflakeIds: bigint[] = [];
-
-      for (const itemUuid of itemUuids) {
-        const snowflakeId = this.snowflake.generate({ timestamp: Date.now() });
-
-        // Conditionally insert Seen event only if:
-        // 1. Item belongs to the specified source
-        // 2. No Seen event exists for this item yet
-        const info = this.upsertPendingSeenItemEvent.run({
-          snowflake_id: snowflakeId,
-          source_uuid: sourceUuid,
-          item_uuid: itemUuid,
-          type: PendingEventType.Seen,
-        });
-
-        // Only add to results if the insert actually happened
-        if (info.changes > 0) {
-          snowflakeIds.push(snowflakeId);
-        }
+      const unseen = this.selectUnseenItemsCount.get({
+        source_uuid: sourceUuid,
+        upper_bound: upperBound,
+      })!;
+      if (unseen.count == 0) {
+        return null;
       }
 
-      return snowflakeIds;
+      const existing = this.selectSourceConversationSeenEvent.get({
+        source_uuid: sourceUuid,
+      });
+
+      if (existing) {
+        const existingUpperBound = (
+          JSON.parse(existing.data) as { upper_bound: number }
+        ).upper_bound;
+        if (existingUpperBound >= upperBound) {
+          return null;
+        }
+        this.deletePendingEvent.run({ snowflake_id: existing.snowflake_id });
+      }
+
+      const snowflakeId = this.snowflake
+        .generate({ timestamp: Date.now() })
+        .toString();
+      this.insertSourcePendingEvent.run({
+        snowflake_id: snowflakeId,
+        source_uuid: sourceUuid,
+        type: PendingEventType.SourceConversationSeen,
+        data: JSON.stringify({ upper_bound: upperBound }),
+      });
+      return snowflakeId;
     })();
   }
 

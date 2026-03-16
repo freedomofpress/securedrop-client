@@ -20,30 +20,18 @@ const UNSEEN_ITEMS = [
   "96325861-741a-41eb-91b5-bb1ff34f3e70", // message, seen_by: []
 ];
 
-// Items already seen by the test journalist
-const ALREADY_SEEN_ITEMS = [
-  "adca50a5-9f70-49db-a5ae-0c184b54c6ed", // reply, seen_by includes journalist
-];
-
 describe.sequential("conversation is seen", () => {
   let context: TestContext;
   let helpers: TestHelpers;
   let dbHelper: ReturnType<typeof createDbHelper>;
 
-  // All items from the target source (for filtering pending events)
-  const TARGET_SOURCE_ITEMS = [
-    ...UNSEEN_ITEMS,
-    ...ALREADY_SEEN_ITEMS,
-    "cc1be744-8a71-4e52-92e7-51315b6cb643", // reply from dellsberg, seen_by: [dellsberg]
-  ];
-
-  async function getSeenPendingEventsForTargetSource(): Promise<
-    Array<{ id: string; itemUuid?: string }>
+  async function getConversationSeenEventForTargetSource(): Promise<
+    Array<{ id: string; sourceUuid?: string }>
   > {
-    const events = await helpers.getPendingEventsByType(PendingEventType.Seen);
-    return events.filter(
-      (event) => event.itemUuid && TARGET_SOURCE_ITEMS.includes(event.itemUuid),
+    const events = await helpers.getPendingEventsByType(
+      PendingEventType.SourceConversationSeen,
     );
+    return events.filter((event) => event.sourceUuid === TARGET_SOURCE.uuid);
   }
 
   async function getItemSeenBy(itemUuid: string): Promise<string[]> {
@@ -54,7 +42,6 @@ describe.sequential("conversation is seen", () => {
   }
 
   async function navigateAway(): Promise<void> {
-    // Click on a different source to navigate away
     const otherSource = "60a49b24-1a75-4daf-b0fa-125c1ce0d723";
     await helpers.navigateToSource(otherSource);
   }
@@ -76,36 +63,24 @@ describe.sequential("conversation is seen", () => {
     await TestContext.stopServer();
   }, 60000);
 
-  it("marks items as seen locally when viewing conversation", async () => {
-    // Navigate to the target source conversation
+  it("creates a SourceConversationSeen pending event when viewing conversation", async () => {
     await helpers.navigateToSource(TARGET_SOURCE.uuid);
 
     await pollUntil(
-      () => getSeenPendingEventsForTargetSource(),
-      (events) => events.length >= UNSEEN_ITEMS.length,
+      () => getConversationSeenEventForTargetSource(),
+      (events) => events.length === 1,
       5000,
     );
 
-    const pendingEvents = await getSeenPendingEventsForTargetSource();
-    const pendingItemUuids = pendingEvents.map((e) => e.itemUuid);
-
-    // Should have events for unseen items
-    for (const itemUuid of UNSEEN_ITEMS) {
-      expect(pendingItemUuids).toContain(itemUuid);
-    }
-
-    // Should NOT have events for already seen items (by this journalist)
-    for (const itemUuid of ALREADY_SEEN_ITEMS) {
-      expect(pendingItemUuids).not.toContain(itemUuid);
-    }
+    const pendingEvents = await getConversationSeenEventForTargetSource();
+    expect(pendingEvents).toHaveLength(1);
   });
 
-  it("syncs seen events with the server", async () => {
-    // Run sync to push seen events to the server
+  it("syncs SourceConversationSeen event with the server", async () => {
     await context.runSync();
 
-    // Verify pending seen events were cleared
-    const pendingEvents = await getSeenPendingEventsForTargetSource();
+    // Verify pending event was cleared after sync
+    const pendingEvents = await getConversationSeenEventForTargetSource();
     expect(pendingEvents).toHaveLength(0);
 
     // Verify items in DB now have the journalist's UUID in seen_by
@@ -115,17 +90,14 @@ describe.sequential("conversation is seen", () => {
     }
   });
 
-  it("does not duplicate seen events on revisit", async () => {
-    // Navigate away from source
+  it("does not duplicate SourceConversationSeen event on revisit", async () => {
     await navigateAway();
-
-    // Navigate back to the same source
     await helpers.navigateToSource(TARGET_SOURCE.uuid);
-
     await context.page.waitForTimeout(500);
 
-    // Verify no new pending events are created for target source (idempotent)
-    const pendingEvents = await getSeenPendingEventsForTargetSource();
+    // After sync already cleared items, revisiting should create no new event
+    // (all items now have is_read=true from server, so upper_bound is already covered)
+    const pendingEvents = await getConversationSeenEventForTargetSource();
     expect(pendingEvents).toHaveLength(0);
   });
 });
