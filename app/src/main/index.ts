@@ -40,7 +40,7 @@ import {
   PendingEventType,
   SyncStatus,
 } from "../types";
-import { syncMetadata, shouldSkipSync, deleteSourceFs } from "./sync";
+import { syncMetadata, shouldSkipSync } from "./sync";
 import workerPath from "./fetch/worker?modulePath";
 import { Lock, LockTimeoutError } from "./sync/lock";
 import { Config } from "./config";
@@ -131,8 +131,9 @@ if (!gotTheLock) {
   };
 
   const crypto = Crypto.initialize(cryptoConfig);
+  const storage = new Storage();
 
-  const db = new DB(crypto);
+  const db = new DB(crypto, undefined, storage);
 
   // Generate a CSP nonce for this session (used by Ant Design)
   const cspNonce = randomBytes(32).toString("base64");
@@ -420,7 +421,7 @@ if (!gotTheLock) {
           type === PendingEventType.SourceDeleted ||
           type === PendingEventType.SourceConversationDeleted
         ) {
-          deleteSourceFs(new Storage(), sourceUuid);
+          storage.deleteSourceFs(sourceUuid);
         }
         return snowflakeID;
       },
@@ -445,6 +446,12 @@ if (!gotTheLock) {
         itemUuid: string,
         type: PendingEventType,
       ): Promise<string> => {
+        if (type === PendingEventType.ItemDeleted) {
+          const item = db.getItem(itemUuid);
+          if (item) {
+            storage.deleteItemFs(item);
+          }
+        }
         return db.addPendingItemEvent(itemUuid, type);
       },
     );

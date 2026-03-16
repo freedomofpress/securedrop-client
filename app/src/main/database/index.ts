@@ -32,6 +32,7 @@ import {
 } from "../../types";
 import { Crypto } from "../crypto";
 import { Search } from "./search";
+import { Storage } from "../storage";
 
 // Truncate message previews to 200 Unicode code points
 // at the database layer; CSS will handle the rest
@@ -66,6 +67,7 @@ export class DB {
   private url: string | null;
   private snowflake: Snowflake;
   private crypto: Crypto;
+  private storage: Storage | null;
   private searchIndex: Search;
   private firstRunStatus: FirstRunStatus = null;
 
@@ -157,8 +159,9 @@ export class DB {
   private deletePendingEvent: Statement<{ snowflake_id: string }, void>;
   private selectPendingEvents: Statement<[], PendingEventRow>;
 
-  constructor(crypto: Crypto, dbDir?: string) {
+  constructor(crypto: Crypto, dbDir?: string, storage?: Storage) {
     this.crypto = crypto;
+    this.storage = storage ?? null;
     this.snowflake = new Snowflake(new Date("2000-01-01T00:00:00.000Z"));
 
     if (!dbDir) {
@@ -488,6 +491,12 @@ export class DB {
   deleteItems(items: string[]) {
     this.db!.transaction((items: string[]) => {
       for (const itemID of items) {
+        if (this.storage) {
+          const item = this.getItem(itemID);
+          if (item) {
+            this.storage.deleteItemFs(item);
+          }
+        }
         this.searchIndex.removeItem(itemID);
         this.deleteItem.run({ uuid: itemID });
       }
@@ -496,7 +505,9 @@ export class DB {
   }
 
   deleteSourceAndItems(sourceUuid: string) {
-    // First, remove all search index entries for this source
+    // Delete source files from filesystem
+    this.storage?.deleteSourceFs(sourceUuid);
+    // Remove all search index entries for this source
     this.searchIndex.removeSource(sourceUuid);
     // Delete all source items
     const items = this.selectItemsBySourceId.all(sourceUuid);

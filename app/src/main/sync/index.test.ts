@@ -790,15 +790,16 @@ describe("shouldSkipSync", () => {
   });
 });
 
-describe("deleteSourceFs", () => {
+describe("Storage.deleteSourceFs", () => {
   beforeEach(() => {
     vi.resetAllMocks();
   });
 
   it("deletes source directory when it exists", () => {
+    vi.mocked(fs.existsSync).mockReturnValue(true);
     const storage = new Storage();
 
-    syncModule.deleteSourceFs(storage, SOURCE_UUID_1);
+    storage.deleteSourceFs(SOURCE_UUID_1);
 
     expect(fs.rmSync).toHaveBeenCalledWith(
       `/mock-home/.config/SecureDrop/files/${SOURCE_UUID_1}/`,
@@ -810,7 +811,7 @@ describe("deleteSourceFs", () => {
     vi.mocked(fs.existsSync).mockReturnValue(false);
     const storage = new Storage();
 
-    syncModule.deleteSourceFs(storage, SOURCE_UUID_1);
+    storage.deleteSourceFs(SOURCE_UUID_1);
 
     expect(fs.rmSync).not.toHaveBeenCalled();
   });
