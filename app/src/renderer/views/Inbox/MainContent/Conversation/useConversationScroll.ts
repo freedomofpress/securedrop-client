@@ -9,7 +9,6 @@ import {
 import { useListCallbackRef, useDynamicRowHeight } from "react-window";
 import type { ListImperativeAPI, DynamicRowHeight } from "react-window";
 
-const NEW_MESSAGE_SCROLL_OFFSET = 150;
 const NEW_MESSAGE_SEEN_THRESHOLD = 12;
 
 type PendingScrollTarget = "divider" | "bottom" | null;
@@ -34,6 +33,7 @@ export function useConversationScroll(
   const itemCountRef = useRef<number>(0);
   const dividerUuidRef = useRef<string | null>(null);
   const pendingScrollTargetRef = useRef<PendingScrollTarget>(null);
+
   const [_isAutoScrolling, setIsAutoScrollingState] = useState(false);
   const isAutoScrollingValueRef = useRef(false);
   const setIsAutoScrolling = useCallback(
@@ -102,12 +102,8 @@ export function useConversationScroll(
     return maxSeen;
   }, [journalistUUID, sourceWithItems]);
 
-  const initialLastSeenInteractionCount = useMemo(() => {
-    if (historicalLastSeenInteractionCount !== null) {
-      return historicalLastSeenInteractionCount;
-    }
-    return latestInteractionCount;
-  }, [historicalLastSeenInteractionCount, latestInteractionCount]);
+  const initialLastSeenInteractionCount =
+    historicalLastSeenInteractionCount ?? latestInteractionCount;
 
   useEffect(() => {
     if (!sourceWithItems || lastSeenInteractionCount !== undefined) {
@@ -194,45 +190,41 @@ export function useConversationScroll(
 
   const dividerIndex = dividerItemUuid !== null ? oldItems.length : null;
 
+  const scrollToRowWithRetry = useCallback(
+    (index: number, align: "start" | "center" | "end", maxRetries: number) => {
+      if (!listAPI) {
+        return false;
+      }
+      const scroll = (attempt: number) => {
+        listAPI.scrollToRow({ index, align, behavior: "instant" });
+        if (attempt < maxRetries) {
+          requestAnimationFrame(() => scroll(attempt + 1));
+        }
+      };
+      requestAnimationFrame(() => scroll(1));
+      return true;
+    },
+    [listAPI],
+  );
+
   const scrollToDivider = useCallback(() => {
-    if (!listAPI || dividerIndex === null) {
+    if (dividerIndex === null) {
       return false;
     }
-    const el = listAPI.element;
-    if (!el) {
-      return false;
-    }
-    let offset = 0;
-    for (let i = 0; i < dividerIndex; i++) {
-      offset +=
-        dynamicRowHeight.getRowHeight(i) ??
-        dynamicRowHeight.getAverageRowHeight();
-    }
-    el.scrollTo({ top: Math.max(0, offset - NEW_MESSAGE_SCROLL_OFFSET) });
-    return true;
-  }, [listAPI, dividerIndex, dynamicRowHeight]);
+    return scrollToRowWithRetry(dividerIndex, "center", 5);
+  }, [dividerIndex, scrollToRowWithRetry]);
 
   const scrollToBottom = useCallback(() => {
-    if (!listAPI) {
-      return false;
-    }
     const totalRows =
       oldItems.length + (dividerIndex !== null ? 1 : 0) + newItems.length;
     if (totalRows === 0) {
       return false;
     }
-    listAPI.scrollToRow({ index: totalRows - 1, align: "end" });
-    return true;
-  }, [listAPI, oldItems.length, newItems.length, dividerIndex]);
+    return scrollToRowWithRetry(totalRows - 1, "end", 5);
+  }, [oldItems.length, newItems.length, dividerIndex, scrollToRowWithRetry]);
 
   const scheduleAutoScrollReset = useCallback(() => {
-    const reset = () => setIsAutoScrolling(false);
-
-    if (typeof window !== "undefined" && window.requestAnimationFrame) {
-      window.requestAnimationFrame(reset);
-    } else {
-      setTimeout(reset, 0);
-    }
+    requestAnimationFrame(() => setIsAutoScrolling(false));
   }, [setIsAutoScrolling]);
 
   const acknowledgeNewMessages = useCallback(() => {
