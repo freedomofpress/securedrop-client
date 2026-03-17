@@ -44,13 +44,34 @@ function mockDB({
   index = { sources: {}, items: {}, journalists: {} },
   itemFileData = {},
   pendingEvents = [],
+  storage,
+}: {
+  index?: Index;
+  itemFileData?: object;
+  pendingEvents?: PendingEvent[];
+  storage?: Storage;
 } = {}) {
-  return {
+  const db = {
     getVersion: vi.fn(() => "v1"),
     getIndex: vi.fn(() => index),
     getItem: vi.fn((_itemID) => null),
-    deleteItems: vi.fn((_itemIDs) => {}),
-    deleteSources: vi.fn((_sourceIDs) => {}),
+    deleteItems: vi.fn((itemIDs: string[]) => {
+      if (storage) {
+        for (const itemID of itemIDs) {
+          const item = db.getItem(itemID);
+          if (item) {
+            storage.deleteItemFs(item);
+          }
+        }
+      }
+    }),
+    deleteSources: vi.fn((sourceIDs: string[]) => {
+      if (storage) {
+        for (const sourceID of sourceIDs) {
+          storage.deleteSourceFs(sourceID);
+        }
+      }
+    }),
     updateBatch: vi.fn((_metadata) => ({
       deleted_items: [],
       deleted_sources: [],
@@ -58,6 +79,7 @@ function mockDB({
     getItemFileData: vi.fn(() => itemFileData),
     getPendingEvents: vi.fn(() => pendingEvents),
   } as unknown as DB;
+  return db;
 }
 
 function mockSourceMetadata(uuid: string): SourceMetadata {
@@ -403,6 +425,7 @@ describe("syncMetadata", () => {
 
     db = mockDB({
       index: clientIndex,
+      storage: new Storage(),
     });
 
     // Mock getItem to return data for ITEM_UUID_2 so cleanup can happen
@@ -596,7 +619,7 @@ describe("syncMetadata", () => {
       journalists: {},
     };
 
-    db = mockDB({ index: clientIndex });
+    db = mockDB({ index: clientIndex, storage: new Storage() });
 
     mockProxyResponses([
       {
@@ -790,15 +813,16 @@ describe("shouldSkipSync", () => {
   });
 });
 
-describe("deleteSourceFs", () => {
+describe("Storage.deleteSourceFs", () => {
   beforeEach(() => {
     vi.resetAllMocks();
   });
 
   it("deletes source directory when it exists", () => {
+    vi.mocked(fs.existsSync).mockReturnValue(true);
     const storage = new Storage();
 
-    syncModule.deleteSourceFs(storage, SOURCE_UUID_1);
+    storage.deleteSourceFs(SOURCE_UUID_1);
 
     expect(fs.rmSync).toHaveBeenCalledWith(
       `/mock-home/.config/SecureDrop/files/${SOURCE_UUID_1}/`,
@@ -810,7 +834,7 @@ describe("deleteSourceFs", () => {
     vi.mocked(fs.existsSync).mockReturnValue(false);
     const storage = new Storage();
 
-    syncModule.deleteSourceFs(storage, SOURCE_UUID_1);
+    storage.deleteSourceFs(SOURCE_UUID_1);
 
     expect(fs.rmSync).not.toHaveBeenCalled();
   });

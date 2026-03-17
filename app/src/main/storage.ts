@@ -1,6 +1,6 @@
 import * as fs from "fs";
 import os from "os";
-import { ItemMetadata } from "../types";
+import { Item, ItemMetadata } from "../types";
 import { ItemFetchTask } from "./fetch/queue";
 
 /// Newtype for when we know a path component is potentially unsafe,
@@ -120,5 +120,22 @@ export class Storage {
     // a unique name that doesn't introduce a path traversal.
     const tempDir = fs.mkdtempSync(this.tmp.join(prefix));
     return new PathBuilder(tempDir + "/");
+  }
+
+  deleteSourceFs(sourceID: string): void {
+    const sourceDirectory = this.sourceDirectory(sourceID, false).path;
+    if (fs.existsSync(sourceDirectory)) {
+      fs.rmSync(sourceDirectory, { recursive: true, force: true });
+    }
+  }
+
+  deleteItemFs(item: Item): void {
+    if (item.filename && fs.existsSync(item.filename)) {
+      fs.rmSync(item.filename, { force: true });
+    }
+    const itemDirectory = this.itemDirectory(item.data, false);
+    if (fs.existsSync(itemDirectory.path)) {
+      fs.rmSync(itemDirectory.path, { recursive: true, force: true });
+    }
   }
 }
