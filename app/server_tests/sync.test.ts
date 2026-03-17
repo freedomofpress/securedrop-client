@@ -116,7 +116,14 @@ describe.sequential("sync against a real server", () => {
 
   it("should successfully log in with valid credentials", async () => {
     // Navigate back to sign-in page; login() will wait for the form to appear
-    await context.page.getByTestId("signin-form-button").click();
+    await expect(context.page.getByTestId("journalist-menu")).toBeVisible({
+      timeout: 30000,
+    });
+    await context.page.getByTestId("journalist-menu").click();
+    await expect(
+      context.page.getByRole("menuitem", { name: /^sign in/i }),
+    ).toBeVisible({ timeout: 5000 });
+    await context.page.getByRole("menuitem", { name: /^sign in/i }).click();
 
     // Log in with test credentials
     await context.login();

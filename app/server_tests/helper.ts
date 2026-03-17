@@ -150,10 +150,9 @@ export class TestContext {
       await this.page.getByTestId("sign-in-button").click();
 
       try {
-        // Wait for successful login (sync button appears)
-        await expect(this.page.getByTestId("sync-button")).toBeVisible({
-          timeout: 15000,
-        });
+        // Wait for successful login (journalist-menu)
+        await this.page.waitForLoadState("domcontentloaded");
+        await expect(this.page.getByTestId("journalist-menu")).toBeVisible();
         return;
       } catch {
         // If we're still on the login page the credentials were rejected —
@@ -168,7 +167,7 @@ export class TestContext {
           continue;
         }
         throw new Error(
-          "Login failed: not on login page but sync button not visible",
+          "Login failed: not on login page but journalist menu dropdown not visible",
         );
       }
     }
@@ -177,7 +176,11 @@ export class TestContext {
   }
 
   async logout(): Promise<void> {
-    await this.page.getByTestId("sign-out-button").click();
+    await this.page.getByTestId("journalist-menu").click();
+    await expect(
+      this.page.getByRole("menuitem", { name: /^sign out/i }),
+    ).toBeVisible({ timeout: 5000 });
+    await this.page.getByRole("menuitem", { name: /^sign out/i }).click();
     await this.page.waitForLoadState("networkidle", { timeout: 5000 });
     await expect(this.page.getByTestId("username-input")).toBeVisible({
       timeout: 5000,
@@ -185,13 +188,18 @@ export class TestContext {
   }
 
   /**
-   * Clicks the sync button and waits for the sync to complete.
+   * Selects sync now in menu and waits for the sync to complete.
    * Uses network idle detection to know when all API calls have finished.
    * DB writes in the main process happen synchronously via IPC, so they are
    * complete by the time networkidle fires.
    */
   async runSync(): Promise<void> {
-    await this.page.getByTestId("sync-button").click();
+    await this.page.getByTestId("journalist-menu").click();
+    await expect(
+      this.page.getByRole("menuitem", { name: /^sync now/i }),
+    ).toBeVisible({ timeout: 5000 });
+    await this.page.getByRole("menuitem", { name: /^sync now/i }).click();
+
     // Wait for network to become idle, indicating sync API calls have completed
     await this.page.waitForLoadState("networkidle", { timeout: 30000 });
     // Small delay to ensure database writes are flushed
