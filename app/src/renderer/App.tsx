@@ -12,7 +12,7 @@ function App() {
   return (
     <>
       {!__IS_PRODUCTION__ && (
-        <div className="bg-red-800 text-white text-center p-1">
+        <div className="fixed bottom-1 left-1 z-50 bg-red-700 text-white text-xs font-bold py-1 px-4 leading-tight rounded">
           {t("nonProduction")}
         </div>
       )}
