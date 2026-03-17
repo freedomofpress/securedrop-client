@@ -63,19 +63,28 @@ if (process.argv.includes("--version")) {
 // This must be checked early before allocating resources.
 const gotTheLock = app.requestSingleInstanceLock();
 if (!gotTheLock) {
-  app.whenReady().then(() => {
-    dialog
-      .showMessageBox({
-        type: "info",
-        title: "SecureDrop App",
-        // TODO: ideally this would be localized
-        message: "The SecureDrop App is already running.",
-        buttons: ["OK"],
-      })
-      .then(() => {
-        app.quit();
-      });
-  });
+  app
+    .whenReady()
+    .then(() => {
+      dialog
+        .showMessageBox({
+          type: "info",
+          title: "SecureDrop App",
+          // TODO: ideally this would be localized
+          message: "The SecureDrop App is already running.",
+          buttons: ["OK"],
+        })
+        .then(() => {
+          app.quit();
+        });
+    })
+    .catch((error) => {
+      console.error(
+        "Failed to show 'already running' dialog during app startup:",
+        error,
+      );
+      process.exit(1);
+    });
 } else {
   // For mac-demo mode: set up GPG keyring at runtime
   // Add common GPG installation directories to PATH for macOS
