@@ -14,6 +14,9 @@ from securedrop_client.export_status import ExportError, ExportStatus
 
 logger = logging.getLogger(__name__)
 
+PRINT_QUBE = "sd-printers"
+EXPORT_QUBE = "sd-devices"
+
 
 class Export(QObject):
     """
@@ -71,7 +74,10 @@ class Export(QObject):
                 metadata=self._PRINTER_PREFLIGHT_METADATA,
             )
             self._run_qrexec_export(
-                archive_path, self._on_print_preflight_complete, self._on_print_prefight_error
+                PRINT_QUBE,
+                archive_path,
+                self._on_print_preflight_complete,
+                self._on_print_prefight_error,
             )
         except ExportError as e:
             logger.error(f"Error creating archive: {e}")
@@ -94,7 +100,10 @@ class Export(QObject):
             )
             # Emits status via on_process_completed()
             self._run_qrexec_export(
-                archive_path, self._on_export_process_complete, self._on_export_process_error
+                EXPORT_QUBE,
+                archive_path,
+                self._on_export_process_complete,
+                self._on_export_process_error,
             )
         except ExportError:
             logger.error("Export preflight check failed during archive creation")
@@ -125,7 +134,10 @@ class Export(QObject):
 
             # Emits status through callbacks
             self._run_qrexec_export(
-                archive_path, self._on_export_process_complete, self._on_export_process_error
+                EXPORT_QUBE,
+                archive_path,
+                self._on_export_process_complete,
+                self._on_export_process_error,
             )
 
         except OSError as e:
@@ -144,7 +156,11 @@ class Export(QObject):
                 self.export_state_changed.emit(ExportStatus.ERROR_EXPORT)
 
     def _run_qrexec_export(
-        self, archive_path: str, success_callback: Callable, error_callback: Callable
+        self,
+        backend_qube: str,
+        archive_path: str,
+        success_callback: Callable,
+        error_callback: Callable,
     ) -> None:
         """
         Send the archive to the Export VM, where the archive will be processed.
@@ -170,7 +186,7 @@ class Export(QObject):
         qrexec = "/usr/bin/qrexec-client-vm"
         args = [
             quote("--"),
-            quote("sd-devices"),
+            quote(backend_qube),
             quote("qubes.OpenInVM"),
             quote("/usr/lib/qubes/qopen-in-vm"),
             quote("--view-only"),
@@ -330,7 +346,9 @@ class Export(QObject):
                 metadata=self._PRINT_METADATA,
                 filepaths=filepaths,
             )
-            self._run_qrexec_export(archive_path, self._on_print_complete, self._on_print_error)
+            self._run_qrexec_export(
+                PRINT_QUBE, archive_path, self._on_print_complete, self._on_print_error
+            )
 
         except OSError as e:
             logger.error("Print failed")

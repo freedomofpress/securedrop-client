@@ -6,7 +6,7 @@ from unittest import mock
 import pytest
 from PyQt5.QtTest import QSignalSpy
 
-from securedrop_client.export import Export
+from securedrop_client.export import EXPORT_QUBE, PRINT_QUBE, Export
 from securedrop_client.export_status import ExportStatus
 from tests import factory
 
@@ -23,6 +23,19 @@ _QREXEC_EXPORT_COMMAND = (
         f"{_PATH_TO_PRETEND_ARCHIVE}",
     ],
 )
+_QREXEC_PRINT_COMMAND = (
+    "/usr/bin/qrexec-client-vm",
+    [
+        "--",
+        "sd-printers",
+        "qubes.OpenInVM",
+        "/usr/lib/qubes/qopen-in-vm",
+        "--view-only",
+        "--",
+        f"{_PATH_TO_PRETEND_ARCHIVE}",
+    ],
+)
+
 _MOCK_FILEDIR = "/tmp/mock_tmpdir/"
 
 # A few different status values to be used in test paramaterization
@@ -77,7 +90,7 @@ class TestDevice:
             self.device.run_printer_preflight_checks()
 
             mock_qproc.start.assert_called_once()
-            assert mock_qproc.start.call_args[0] == _QREXEC_EXPORT_COMMAND, (
+            assert mock_qproc.start.call_args[0] == _QREXEC_PRINT_COMMAND, (
                 f"Actual: {mock_qproc.start.call_args[0]}"
             )
 
@@ -123,7 +136,7 @@ class TestDevice:
             self.device.print([self.mock_file_location])
 
             mock_qproc.start.assert_called_once()
-            assert mock_qproc.start.call_args[0] == _QREXEC_EXPORT_COMMAND
+            assert mock_qproc.start.call_args[0] == _QREXEC_PRINT_COMMAND
 
             self.device._create_archive.assert_called_once_with(
                 archive_dir=self.mock_tmpdir,
@@ -269,6 +282,7 @@ class TestDevice:
             mock_qproc.readAllStandardError.return_value.data.return_value = f"{status}\n".encode()
 
             self.device._run_qrexec_export(
+                EXPORT_QUBE,
                 _PATH_TO_PRETEND_ARCHIVE,
                 self.device._on_export_process_complete,
                 self.device._on_export_process_error,
@@ -292,6 +306,7 @@ class TestDevice:
             mock_qproc.readAllStandardError.return_value.data.return_value = f"{status}\n".encode()
 
             self.device._run_qrexec_export(
+                PRINT_QUBE,
                 _PATH_TO_PRETEND_ARCHIVE,
                 self.device._on_print_preflight_complete,
                 self.device._on_print_prefight_error,
