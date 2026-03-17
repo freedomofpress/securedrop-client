@@ -1,5 +1,4 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import type { MutableRefObject } from "react";
 import type { Item, SourceWithItems } from "../../../../../types";
 import { useAppDispatch, useAppSelector } from "../../../../hooks";
 import {
@@ -7,15 +6,17 @@ import {
   markConversationLastSeen,
   selectConversationLastSeen,
 } from "../../../../features/sources/sourcesSlice";
+import { useListCallbackRef, useDynamicRowHeight } from "react-window";
+import type { ListImperativeAPI, DynamicRowHeight } from "react-window";
 
-const NEW_MESSAGE_SCROLL_OFFSET = 150;
 const NEW_MESSAGE_SEEN_THRESHOLD = 12;
 
 type PendingScrollTarget = "divider" | "bottom" | null;
 
 export interface ConversationScrollState {
-  scrollContainerRef: MutableRefObject<HTMLDivElement | null>;
-  dividerRef: MutableRefObject<HTMLDivElement | null>;
+  listRef: (api: ListImperativeAPI | null) => void;
+  dynamicRowHeight: DynamicRowHeight;
+  dividerIndex: number | null;
   dividerItemUuid: string | null;
   hasItems: boolean;
   oldItems: Item[];
@@ -27,12 +28,12 @@ export function useConversationScroll(
   sourceWithItems: SourceWithItems | null,
 ): ConversationScrollState {
   const dispatch = useAppDispatch();
-  const scrollContainerRef = useRef<HTMLDivElement>(null);
-  const dividerRef = useRef<HTMLDivElement | null>(null);
+  const [listAPI, listRef] = useListCallbackRef();
   const sourceUuidRef = useRef<string | null>(null);
   const itemCountRef = useRef<number>(0);
   const dividerUuidRef = useRef<string | null>(null);
   const pendingScrollTargetRef = useRef<PendingScrollTarget>(null);
+
   const [_isAutoScrolling, setIsAutoScrollingState] = useState(false);
   const isAutoScrollingValueRef = useRef(false);
   const setIsAutoScrolling = useCallback(
@@ -44,6 +45,11 @@ export function useConversationScroll(
   );
 
   const activeSourceUuid = sourceWithItems?.uuid ?? null;
+  const dynamicRowHeight = useDynamicRowHeight({
+    defaultRowHeight: 100,
+    key: activeSourceUuid ?? undefined,
+  });
+
   const journalistUUID = useAppSelector(
     (state) => state.session.authData?.journalistUUID ?? null,
   );
@@ -96,12 +102,8 @@ export function useConversationScroll(
     return maxSeen;
   }, [journalistUUID, sourceWithItems]);
 
-  const initialLastSeenInteractionCount = useMemo(() => {
-    if (historicalLastSeenInteractionCount !== null) {
-      return historicalLastSeenInteractionCount;
-    }
-    return latestInteractionCount;
-  }, [historicalLastSeenInteractionCount, latestInteractionCount]);
+  const initialLastSeenInteractionCount =
+    historicalLastSeenInteractionCount ?? latestInteractionCount;
 
   useEffect(() => {
     if (!sourceWithItems || lastSeenInteractionCount !== undefined) {
@@ -170,34 +172,59 @@ export function useConversationScroll(
     dividerUuidRef.current = dividerItemUuid;
   }, [dividerItemUuid, itemCount, sourceWithItems]);
 
+  const { oldItems, newItems } = useMemo(() => {
+    if (!dividerItemUuid) {
+      return { oldItems: items, newItems: [] as typeof items };
+    }
+
+    const idx = items.findIndex((item) => item.uuid === dividerItemUuid);
+    if (idx === -1) {
+      return { oldItems: items, newItems: [] as typeof items };
+    }
+
+    return {
+      oldItems: items.slice(0, idx),
+      newItems: items.slice(idx),
+    };
+  }, [dividerItemUuid, items]);
+
+  const dividerIndex = dividerItemUuid !== null ? oldItems.length : null;
+
+  const scrollToRowWithRetry = useCallback(
+    (index: number, align: "start" | "center" | "end", maxRetries: number) => {
+      if (!listAPI) {
+        return false;
+      }
+      const scroll = (attempt: number) => {
+        listAPI.scrollToRow({ index, align, behavior: "instant" });
+        if (attempt < maxRetries) {
+          requestAnimationFrame(() => scroll(attempt + 1));
+        }
+      };
+      requestAnimationFrame(() => scroll(1));
+      return true;
+    },
+    [listAPI],
+  );
+
   const scrollToDivider = useCallback(() => {
-    const scrollEl = scrollContainerRef.current;
-    const dividerEl = dividerRef.current;
-    if (!scrollEl || !dividerEl) {
+    if (dividerIndex === null) {
       return false;
     }
-    const target = Math.max(dividerEl.offsetTop - NEW_MESSAGE_SCROLL_OFFSET, 0);
-    scrollEl.scrollTop = target;
-    return true;
-  }, []);
+    return scrollToRowWithRetry(dividerIndex, "center", 5);
+  }, [dividerIndex, scrollToRowWithRetry]);
 
   const scrollToBottom = useCallback(() => {
-    const scrollEl = scrollContainerRef.current;
-    if (!scrollEl) {
+    const totalRows =
+      oldItems.length + (dividerIndex !== null ? 1 : 0) + newItems.length;
+    if (totalRows === 0) {
       return false;
     }
-    scrollEl.scrollTop = scrollEl.scrollHeight;
-    return true;
-  }, []);
+    return scrollToRowWithRetry(totalRows - 1, "end", 5);
+  }, [oldItems.length, newItems.length, dividerIndex, scrollToRowWithRetry]);
 
   const scheduleAutoScrollReset = useCallback(() => {
-    const reset = () => setIsAutoScrolling(false);
-
-    if (typeof window !== "undefined" && window.requestAnimationFrame) {
-      window.requestAnimationFrame(reset);
-    } else {
-      setTimeout(reset, 0);
-    }
+    requestAnimationFrame(() => setIsAutoScrolling(false));
   }, [setIsAutoScrolling]);
 
   const acknowledgeNewMessages = useCallback(() => {
@@ -249,49 +276,28 @@ export function useConversationScroll(
   ]);
 
   useEffect(() => {
-    const scrollEl = scrollContainerRef.current;
-    if (!scrollEl || !dividerItemUuid) {
+    const el = listAPI?.element;
+    if (!el || !dividerItemUuid) {
       return;
     }
-
     const handleScroll = () => {
       if (isAutoScrollingValueRef.current) {
         return;
       }
       const distanceToBottom =
-        scrollEl.scrollHeight - (scrollEl.scrollTop + scrollEl.clientHeight);
+        el.scrollHeight - (el.scrollTop + el.clientHeight);
       if (distanceToBottom <= NEW_MESSAGE_SEEN_THRESHOLD) {
         acknowledgeNewMessages();
       }
     };
-
-    scrollEl.addEventListener("scroll", handleScroll);
-    return () => {
-      scrollEl.removeEventListener("scroll", handleScroll);
-    };
-  }, [acknowledgeNewMessages, dividerItemUuid]);
-
-  const { oldItems, newItems } = useMemo(() => {
-    if (!dividerItemUuid) {
-      return { oldItems: items, newItems: [] as typeof items };
-    }
-
-    const dividerIndex = items.findIndex(
-      (item) => item.uuid === dividerItemUuid,
-    );
-    if (dividerIndex === -1) {
-      return { oldItems: items, newItems: [] as typeof items };
-    }
-
-    return {
-      oldItems: items.slice(0, dividerIndex),
-      newItems: items.slice(dividerIndex),
-    };
-  }, [dividerItemUuid, items]);
+    el.addEventListener("scroll", handleScroll);
+    return () => el.removeEventListener("scroll", handleScroll);
+  }, [listAPI, acknowledgeNewMessages, dividerItemUuid]);
 
   return {
-    scrollContainerRef,
-    dividerRef,
+    listRef: listRef as (api: ListImperativeAPI | null) => void,
+    dynamicRowHeight,
+    dividerIndex,
     dividerItemUuid,
     hasItems,
     oldItems,
