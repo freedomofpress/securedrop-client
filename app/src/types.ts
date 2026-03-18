@@ -120,6 +120,7 @@ export type SourceWithItems = {
   uuid: string;
   data: SourceMetadata;
   items: Item[];
+  hasMoreHistoricalItems?: boolean;
 };
 
 export type Journalist = {

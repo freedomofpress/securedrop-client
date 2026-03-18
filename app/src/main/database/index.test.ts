@@ -1258,6 +1258,123 @@ describe("Database Method Tests", () => {
     expect(events.length).toBe(0);
   });
 
+  describe("getSourceWithItems pagination", () => {
+    beforeEach(() => {
+      db.updateSources({ source1: mockSourceMetadata("source1") });
+      // Insert 5 items with interaction_counts 1..5
+      db.updateItems({
+        item1: {
+          ...mockItemMetadata("item1", "source1"),
+          interaction_count: 1,
+        },
+        item2: {
+          ...mockItemMetadata("item2", "source1"),
+          interaction_count: 2,
+        },
+        item3: {
+          ...mockItemMetadata("item3", "source1"),
+          interaction_count: 3,
+        },
+        item4: {
+          ...mockItemMetadata("item4", "source1"),
+          interaction_count: 4,
+        },
+        item5: {
+          ...mockItemMetadata("item5", "source1"),
+          interaction_count: 5,
+        },
+      });
+    });
+
+    it("returns all items in ASC order when no options given", () => {
+      const { items, hasMoreHistoricalItems } =
+        db.getSourceWithItems("source1");
+      expect(items.map((i) => i.uuid)).toEqual([
+        "item1",
+        "item2",
+        "item3",
+        "item4",
+        "item5",
+      ]);
+      expect(hasMoreHistoricalItems).toBeUndefined();
+    });
+
+    it("returns the most-recent N items in ASC order when limit is given", () => {
+      const { items, hasMoreHistoricalItems } = db.getSourceWithItems(
+        "source1",
+        { limit: 3 },
+      );
+      // Most recent 3 by interaction_count = item3, item4, item5; returned ASC
+      expect(items.map((i) => i.uuid)).toEqual(["item3", "item4", "item5"]);
+      expect(hasMoreHistoricalItems).toBe(true);
+    });
+
+    it("hasMoreHistoricalItems is false when limit >= total items", () => {
+      const { items, hasMoreHistoricalItems } = db.getSourceWithItems(
+        "source1",
+        { limit: 5 },
+      );
+      expect(items).toHaveLength(5);
+      expect(hasMoreHistoricalItems).toBe(false);
+    });
+
+    it("hasMoreHistoricalItems is false when limit exceeds total items", () => {
+      const { items, hasMoreHistoricalItems } = db.getSourceWithItems(
+        "source1",
+        { limit: 10 },
+      );
+      expect(items).toHaveLength(5);
+      expect(hasMoreHistoricalItems).toBe(false);
+    });
+
+    it("returns items before beforeInteractionCount in ASC order", () => {
+      // Items with interaction_count < 4 = item1, item2, item3; most recent 2 = item2, item3
+      const { items, hasMoreHistoricalItems } = db.getSourceWithItems(
+        "source1",
+        { limit: 2, beforeInteractionCount: 4 },
+      );
+      expect(items.map((i) => i.uuid)).toEqual(["item2", "item3"]);
+      expect(hasMoreHistoricalItems).toBe(true);
+    });
+
+    it("hasMoreHistoricalItems is false when beforeInteractionCount page is exhausted", () => {
+      // Items with interaction_count < 4 = item1, item2, item3; limit 3 => all 3
+      const { items, hasMoreHistoricalItems } = db.getSourceWithItems(
+        "source1",
+        { limit: 3, beforeInteractionCount: 4 },
+      );
+      expect(items.map((i) => i.uuid)).toEqual(["item1", "item2", "item3"]);
+      expect(hasMoreHistoricalItems).toBe(false);
+    });
+
+    it("returns empty list when beforeInteractionCount is <= smallest interaction_count", () => {
+      const { items, hasMoreHistoricalItems } = db.getSourceWithItems(
+        "source1",
+        { limit: 3, beforeInteractionCount: 1 },
+      );
+      expect(items).toHaveLength(0);
+      expect(hasMoreHistoricalItems).toBe(false);
+    });
+
+    it("limit of 1 returns only the most recent item", () => {
+      const { items, hasMoreHistoricalItems } = db.getSourceWithItems(
+        "source1",
+        { limit: 1 },
+      );
+      expect(items.map((i) => i.uuid)).toEqual(["item5"]);
+      expect(hasMoreHistoricalItems).toBe(true);
+    });
+
+    it("returns empty list with hasMoreHistoricalItems false for source with no items", () => {
+      db.updateSources({ empty: mockSourceMetadata("empty") });
+      const { items, hasMoreHistoricalItems } = db.getSourceWithItems("empty", {
+        limit: 5,
+      });
+      expect(items).toHaveLength(0);
+      expect(hasMoreHistoricalItems).toBe(false);
+    });
+  });
+
   describe("updateFetchStatus", () => {
     it("should reset fetch_progress to 0 when updating to Initial status", () => {
       db.updateSources({

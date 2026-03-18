@@ -15,6 +15,9 @@ import {
 } from "../../../features/drafts/draftsSlice";
 import {
   fetchConversation,
+  fetchOlderConversationItems,
+  selectHasMoreHistoricalItems,
+  selectOlderItemsLoading,
   updateItemFetchStatus,
 } from "../../../features/conversation/conversationSlice";
 import { syncMetadata } from "../../../features/sync/syncSlice";
@@ -34,6 +37,8 @@ const Conversation = memo(function Conversation({
   const { t } = useTranslation("MainContent");
   const dispatch = useAppDispatch();
   const session = useAppSelector((state) => state.session);
+  const hasMoreHistoricalItems = useAppSelector(selectHasMoreHistoricalItems);
+  const olderItemsLoading = useAppSelector(selectOlderItemsLoading);
   const sourceUuid = sourceWithItems?.uuid ?? "";
   const savedDraft = useAppSelector(selectDraft(sourceUuid));
   const [form] = Form.useForm();
@@ -186,6 +191,36 @@ const Conversation = memo(function Conversation({
       document.removeEventListener("keydown", shortcuts);
     };
   }, [downloadAllFiles]);
+
+  // Load older messages when the user scrolls near the top
+  useEffect(() => {
+    const scrollEl = scrollContainerRef.current;
+    if (!scrollEl) {
+      return;
+    }
+
+    const handleScroll = () => {
+      if (
+        scrollEl.scrollTop <= 50 &&
+        hasMoreHistoricalItems &&
+        !olderItemsLoading &&
+        sourceWithItems
+      ) {
+        dispatch(fetchOlderConversationItems(sourceWithItems.uuid));
+      }
+    };
+
+    scrollEl.addEventListener("scroll", handleScroll);
+    return () => {
+      scrollEl.removeEventListener("scroll", handleScroll);
+    };
+  }, [
+    dispatch,
+    hasMoreHistoricalItems,
+    olderItemsLoading,
+    scrollContainerRef,
+    sourceWithItems,
+  ]);
 
   if (!sourceWithItems) {
     return null;

@@ -36,6 +36,7 @@ import { Search } from "./search";
 // Truncate message previews to 200 Unicode code points
 // at the database layer; CSS will handle the rest
 export const MESSAGE_PREVIEW_LENGTH = 200;
+const DEFAULT_ITEM_LIMIT = 100;
 
 interface KeyObject {
   [key: string]: object;
@@ -125,7 +126,11 @@ export class DB {
 
   private selectAllSources: Statement<[], SourceRow>;
   private selectSourceById: Statement<[string], SourceRow>;
-  private selectItemsBySourceId: Statement<[string], ItemRow>;
+  private selectItemsBySourceId: Statement<[string, number], ItemRow>;
+  private selectItemsBySourceIdBefore: Statement<
+    [string, number, number],
+    ItemRow
+  >;
   private selectAllJournalists: Statement<[], JournalistRow>;
   private insertSourcePendingEvent: Statement<
     {
@@ -297,7 +302,14 @@ export class DB {
     this.selectItemsBySourceId = this.db.prepare(`
       SELECT uuid, data, plaintext, filename, fetch_status, fetch_progress, decrypted_size FROM items_projected
       WHERE source_uuid = ?
-      ORDER BY interaction_count ASC
+      ORDER BY interaction_count DESC
+      LIMIT ?
+    `);
+    this.selectItemsBySourceIdBefore = this.db.prepare(`
+      SELECT uuid, data, plaintext, filename, fetch_status, fetch_progress, decrypted_size FROM items_projected
+      WHERE source_uuid = ? AND interaction_count < ?
+      ORDER BY interaction_count DESC
+      LIMIT ?
     `);
     this.selectAllJournalists = this.db.prepare(`
       SELECT uuid, data FROM journalists
@@ -499,11 +511,20 @@ export class DB {
     // First, remove all search index entries for this source
     this.searchIndex.removeSource(sourceUuid);
     // Delete all source items
-    const items = this.selectItemsBySourceId.all(sourceUuid);
-    const itemUuids: string[] = items.map((item) => {
-      return item.uuid;
-    });
-    this.deleteItems(itemUuids);
+    while (true) {
+      const items = this.selectItemsBySourceId.all(
+        sourceUuid,
+        DEFAULT_ITEM_LIMIT,
+      );
+      if (!items || items.length === 0) {
+        break;
+      }
+      const itemUuids: string[] = items.map((item) => {
+        return item.uuid;
+      });
+      this.deleteItems(itemUuids);
+    }
+
     // Then, delete the source
     this.deleteSource.run({ uuid: sourceUuid });
   }
@@ -683,7 +704,10 @@ export class DB {
     });
   }
 
-  getSourceWithItems(sourceUuid: string): SourceWithItems {
+  getSourceWithItems(
+    sourceUuid: string,
+    options?: { limit?: number; beforeInteractionCount?: number },
+  ): SourceWithItems {
     if (!this.db) {
       throw new Error("Database is not open");
     }
@@ -698,7 +722,25 @@ export class DB {
 
     const sourceData = JSON.parse(sourceRow.data);
 
-    const itemRows = this.selectItemsBySourceId.all(sourceUuid);
+    let limit = DEFAULT_ITEM_LIMIT;
+    if (options?.limit) {
+      limit = options?.limit;
+    }
+    // Fetch limit+1 rows to detect if there are more historical items
+    const fetchLimit = limit + 1;
+    let rows: ItemRow[];
+    if (options?.beforeInteractionCount) {
+      rows = this.selectItemsBySourceIdBefore.all(
+        sourceUuid,
+        options.beforeInteractionCount,
+        fetchLimit,
+      );
+    } else {
+      rows = this.selectItemsBySourceId.all(sourceUuid, fetchLimit);
+    }
+    const hasMoreHistoricalItems = rows.length > limit;
+    // Take at most `limit` rows (DESC order), then reverse to ASC for display
+    const itemRows = rows.slice(0, limit).reverse();
 
     const items = itemRows.map((row) => {
       const data = JSON.parse(row.data) as ItemMetadata;
@@ -717,6 +759,7 @@ export class DB {
       uuid: sourceRow.uuid,
       data: sourceData as SourceMetadata,
       items,
+      hasMoreHistoricalItems,
     };
   }
 

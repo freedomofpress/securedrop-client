@@ -128,6 +128,8 @@ describe("MainContent Component", () => {
             loading: false,
             error: null,
             lastFetchTime: null,
+            hasMoreHistoricalItems: false,
+            olderItemsLoading: false,
           },
         },
       },
@@ -162,6 +164,8 @@ describe("MainContent Component", () => {
               loading: false,
               error: null,
               lastFetchTime: Date.now(),
+              hasMoreHistoricalItems: false,
+              olderItemsLoading: false,
             },
           },
         },
@@ -259,7 +263,9 @@ describe("MainContent Component", () => {
 
       // Wait for the effect to run
       await waitFor(() => {
-        expect(mockGetSourceWithItems).toHaveBeenCalledWith("source-1");
+        expect(mockGetSourceWithItems).toHaveBeenCalledWith("source-1", {
+          limit: 100,
+        });
       });
     });
   });
@@ -345,6 +351,8 @@ describe("MainContent Component", () => {
               loading: false,
               error: null,
               lastFetchTime: Date.now(),
+              hasMoreHistoricalItems: false,
+              olderItemsLoading: false,
             },
           },
         },
@@ -390,7 +398,7 @@ describe("MainContent Component", () => {
       await waitFor(() => {
         expect(
           (window as any).electronAPI.getSourceWithItems,
-        ).toHaveBeenCalledWith("source-2");
+        ).toHaveBeenCalledWith("source-2", { limit: 100 });
       });
 
       // Header should still show source-1's designation via fallback

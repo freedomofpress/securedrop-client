@@ -131,6 +131,8 @@ describe("conversationSlice", () => {
         loading: false,
         error: null,
         lastFetchTime: null,
+        hasMoreHistoricalItems: false,
+        olderItemsLoading: false,
       });
     });
   });
@@ -143,6 +145,8 @@ describe("conversationSlice", () => {
         loading: false,
         error: "Some error message",
         lastFetchTime: null,
+        hasMoreHistoricalItems: false,
+        olderItemsLoading: false,
       };
 
       const action = clearError();
@@ -162,6 +166,8 @@ describe("conversationSlice", () => {
         loading: false,
         error: null,
         lastFetchTime: 123456789,
+        hasMoreHistoricalItems: false,
+        olderItemsLoading: false,
       };
 
       const action = clearConversation();
@@ -176,7 +182,9 @@ describe("conversationSlice", () => {
     it("handles successful fetch", async () => {
       await (store.dispatch as any)(fetchConversation("source-1"));
 
-      expect(mockGetSourceWithItems).toHaveBeenCalledWith("source-1");
+      expect(mockGetSourceWithItems).toHaveBeenCalledWith("source-1", {
+        limit: 100,
+      });
       expect(mockGetSourceWithItems).toHaveBeenCalledTimes(1);
 
       const state = (store.getState() as any).conversation;
@@ -254,6 +262,8 @@ describe("conversationSlice", () => {
         loading: false,
         error: "Test error",
         lastFetchTime: 123456789,
+        hasMoreHistoricalItems: false,
+        olderItemsLoading: false,
       },
       sync: {
         error: null,

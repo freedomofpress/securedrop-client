@@ -61,8 +61,10 @@ const electronAPI = {
   ),
   getSourceWithItems: logIpcCall<SourceWithItems>(
     "getSourceWithItems",
-    (sourceUuid: string) =>
-      ipcRenderer.invoke("getSourceWithItems", sourceUuid),
+    (
+      sourceUuid: string,
+      options?: { limit?: number; beforeInteractionCount?: number },
+    ) => ipcRenderer.invoke("getSourceWithItems", sourceUuid, options),
   ),
   getItem: logIpcCall<Item | null>("getItem", (itemUuid: string) =>
     ipcRenderer.invoke("getItem", itemUuid),

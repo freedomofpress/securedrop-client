@@ -8,6 +8,8 @@ export interface ConversationState {
   loading: boolean;
   error: string | null;
   lastFetchTime: number | null;
+  hasMoreHistoricalItems: boolean;
+  olderItemsLoading: boolean;
 }
 
 const initialState: ConversationState = {
@@ -15,13 +17,19 @@ const initialState: ConversationState = {
   loading: false,
   error: null,
   lastFetchTime: null,
+  hasMoreHistoricalItems: false,
+  olderItemsLoading: false,
 };
+
+const CONVERSATION_PAGE_SIZE = 100;
 
 export const fetchConversation = createAsyncThunk(
   "conversation/fetchConversation",
   async (sourceUuid: string, { getState, dispatch }) => {
-    const sourceWithItems =
-      await window.electronAPI.getSourceWithItems(sourceUuid);
+    const sourceWithItems = await window.electronAPI.getSourceWithItems(
+      sourceUuid,
+      { limit: CONVERSATION_PAGE_SIZE },
+    );
 
     // Read journalist UUID if auth data is available in state
     const state = getState() as RootState;
@@ -47,6 +55,45 @@ export const fetchConversation = createAsyncThunk(
     }
 
     return { sourceUuid, sourceWithItems };
+  },
+);
+
+export const fetchOlderConversationItems = createAsyncThunk(
+  "conversation/fetchOlderConversationItems",
+  async (sourceUuid: string, { getState, dispatch }) => {
+    const state = getState() as RootState;
+    const conversation = state.conversation.conversation;
+    if (!conversation || conversation.uuid !== sourceUuid) {
+      return null;
+    }
+
+    const oldestItem = conversation.items[0];
+    const beforeInteractionCount = oldestItem?.data.interaction_count;
+
+    const sourceWithItems = await window.electronAPI.getSourceWithItems(
+      sourceUuid,
+      { limit: CONVERSATION_PAGE_SIZE, beforeInteractionCount },
+    );
+
+    // Mark any unseen older items as seen
+    const journalistUUID = state?.session?.authData?.journalistUUID;
+    const itemUuids = sourceWithItems.items
+      .filter((item) => {
+        if (journalistUUID) {
+          return !item.data.seen_by.includes(journalistUUID);
+        } else if (item.data.kind !== "reply") {
+          return !item.data.is_read;
+        } else {
+          return true;
+        }
+      })
+      .map((item) => item.uuid);
+    if (itemUuids.length > 0) {
+      await window.electronAPI.addPendingItemsSeenBatch(sourceUuid, itemUuids);
+      dispatch(fetchSources());
+    }
+
+    return sourceWithItems;
   },
 );
 
@@ -82,6 +129,8 @@ const conversationSlice = createSlice({
     clearConversation: (state) => {
       state.conversation = null;
       state.lastFetchTime = null;
+      state.hasMoreHistoricalItems = false;
+      state.olderItemsLoading = false;
     },
     updateItem: (state, action) => {
       const updatedItem: Item = action.payload;
@@ -106,11 +155,32 @@ const conversationSlice = createSlice({
         state.error = null;
         const { sourceWithItems } = action.payload;
         state.conversation = sourceWithItems;
+        state.hasMoreHistoricalItems =
+          sourceWithItems.hasMoreHistoricalItems ?? false;
         state.lastFetchTime = Date.now();
       })
       .addCase(fetchConversation.rejected, (state, action) => {
         state.loading = false;
         state.error = action.error.message || "Failed to fetch conversation";
+      })
+      .addCase(fetchOlderConversationItems.pending, (state) => {
+        state.olderItemsLoading = true;
+      })
+      .addCase(fetchOlderConversationItems.fulfilled, (state, action) => {
+        state.olderItemsLoading = false;
+        if (!action.payload || !state.conversation) {
+          return;
+        }
+        const { items, hasMoreHistoricalItems } = action.payload;
+        const existingUuids = new Set(
+          state.conversation.items.map((i) => i.uuid),
+        );
+        const olderItems = items.filter((i) => !existingUuids.has(i.uuid));
+        state.conversation.items = [...olderItems, ...state.conversation.items];
+        state.hasMoreHistoricalItems = hasMoreHistoricalItems ?? false;
+      })
+      .addCase(fetchOlderConversationItems.rejected, (state) => {
+        state.olderItemsLoading = false;
       })
       .addCase(updateItemFetchStatus.fulfilled, (state, action) => {
         const { item: updatedItem } = action.payload;
@@ -139,5 +209,9 @@ export const selectLastConversation = (state: RootState) =>
   state.conversation.conversation;
 export const selectConversationLoading = (state: RootState) =>
   state.conversation.loading;
+export const selectHasMoreHistoricalItems = (state: RootState) =>
+  state.conversation.hasMoreHistoricalItems;
+export const selectOlderItemsLoading = (state: RootState) =>
+  state.conversation.olderItemsLoading;
 
 export default conversationSlice.reducer;
