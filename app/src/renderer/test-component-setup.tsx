@@ -219,7 +219,7 @@ beforeEach(() => {
     addPendingSourceEvent: vi.fn().mockResolvedValue(BigInt(123)),
     addPendingReplySentEvent: vi.fn().mockResolvedValue(BigInt(456)),
     addPendingItemEvent: vi.fn().mockResolvedValue(BigInt(789)),
-    addPendingItemsSeenBatch: vi.fn().mockResolvedValue([]),
+    addPendingSourceConversationSeen: vi.fn().mockResolvedValue(null),
     shouldAutoLogin: vi.fn().mockResolvedValue(false),
     clearClipboard: vi.fn().mockResolvedValue(null),
     openFile: vi.fn().mockResolvedValue(undefined),
