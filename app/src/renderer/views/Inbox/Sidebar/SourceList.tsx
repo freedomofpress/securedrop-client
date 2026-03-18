@@ -93,11 +93,32 @@ function SourceList() {
 
   // Perform search via IPC when search term changes or sources update
   useEffect(() => {
+    let cancelled = false;
+
     if (!debouncedSearchTerm.trim()) {
       setSearchResults(null);
       return;
     }
-    window.electronAPI.search(debouncedSearchTerm).then(setSearchResults);
+
+    const performSearch = async () => {
+      try {
+        const results = await window.electronAPI.search(debouncedSearchTerm);
+        if (!cancelled) {
+          setSearchResults(results);
+        }
+      } catch (error) {
+        console.error("Failed to search sources:", error);
+        if (!cancelled) {
+          setSearchResults(null);
+        }
+      }
+    };
+
+    void performSearch();
+
+    return () => {
+      cancelled = true;
+    };
   }, [debouncedSearchTerm, sources]);
 
   // Handle select all checkbox
@@ -138,10 +159,14 @@ function SourceList() {
       const eventType = currentlyStarred
         ? PendingEventType.Unstarred
         : PendingEventType.Starred;
-      await window.electronAPI.addPendingSourceEvent(sourceId, eventType);
+      try {
+        await window.electronAPI.addPendingSourceEvent(sourceId, eventType);
 
-      // Update local state immediately with projected changes
-      dispatch(fetchSources());
+        // Update local state immediately with projected changes
+        dispatch(fetchSources());
+      } catch (error) {
+        console.error("Failed to toggle source star state:", error);
+      }
     },
     [dispatch],
   );
@@ -232,39 +257,43 @@ function SourceList() {
 
   const handleDeleteAction = useCallback(
     async (eventType: PendingEventType) => {
-      for (const sourceUuid of pendingDeleteSources) {
-        await window.electronAPI.addPendingSourceEvent(sourceUuid, eventType);
-      }
-      // If we deleted an account and it was the currently active source, navigate away
-      if (
-        eventType === PendingEventType.SourceDeleted &&
-        activeSourceUuid &&
-        pendingDeleteSources.has(activeSourceUuid)
-      ) {
-        navigate("/");
-      }
-      // If we deleted a conversation and there's an active source, refresh the conversation
-      if (
-        eventType === PendingEventType.SourceConversationDeleted &&
-        activeSourceUuid
-      ) {
-        dispatch(fetchConversation(activeSourceUuid));
-      }
-      // Update local state immediately with projected changes
-      dispatch(fetchSources());
-      // Remove the deleted sources from the checkbox selection if they were checked
-      setSelectedSources((prev) => {
-        const next = new Set(prev);
-        for (const uuid of pendingDeleteSources) {
-          next.delete(uuid);
+      try {
+        for (const sourceUuid of pendingDeleteSources) {
+          await window.electronAPI.addPendingSourceEvent(sourceUuid, eventType);
         }
-        if (next.size === 0) {
-          setAllSelected(false);
+        // If we deleted an account and it was the currently active source, navigate away
+        if (
+          eventType === PendingEventType.SourceDeleted &&
+          activeSourceUuid &&
+          pendingDeleteSources.has(activeSourceUuid)
+        ) {
+          navigate("/");
         }
-        return next;
-      });
-      setPendingDeleteSources(new Set());
-      setDeleteModalOpen(false);
+        // If we deleted a conversation and there's an active source, refresh the conversation
+        if (
+          eventType === PendingEventType.SourceConversationDeleted &&
+          activeSourceUuid
+        ) {
+          dispatch(fetchConversation(activeSourceUuid));
+        }
+        // Update local state immediately with projected changes
+        dispatch(fetchSources());
+        // Remove the deleted sources from the checkbox selection if they were checked
+        setSelectedSources((prev) => {
+          const next = new Set(prev);
+          for (const uuid of pendingDeleteSources) {
+            next.delete(uuid);
+          }
+          if (next.size === 0) {
+            setAllSelected(false);
+          }
+          return next;
+        });
+        setPendingDeleteSources(new Set());
+        setDeleteModalOpen(false);
+      } catch (error) {
+        console.error("Failed to delete source(s):", error);
+      }
     },
     [pendingDeleteSources, dispatch, activeSourceUuid, navigate],
   );

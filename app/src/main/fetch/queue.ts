@@ -106,9 +106,23 @@ export class TaskQueue {
               task,
               err,
             );
-            this.db.failDownload(task.id);
+            try {
+              this.db.failDownload(task.id);
+            } catch (failError) {
+              console.error(
+                `Error failing download in queue callback for item ${task.id}:`,
+                failError,
+              );
+            }
             if (this.port) {
-              this.port.postMessage(this.db.getItem(task.id));
+              try {
+                this.port.postMessage(this.db.getItem(task.id));
+              } catch (postError) {
+                console.error(
+                  `Error posting queue callback update for item ${task.id}:`,
+                  postError,
+                );
+              }
             }
           }
         });
@@ -467,9 +481,23 @@ function createQueue(
       taskId,
       errorMessage,
     );
-    db.terminallyFailItem(taskId);
+    try {
+      db.terminallyFailItem(taskId);
+    } catch (failError) {
+      console.error(
+        `Error terminally failing item ${taskId} in ${name}:`,
+        failError,
+      );
+    }
     if (port) {
-      port.postMessage(db.getItem(taskId));
+      try {
+        port.postMessage(db.getItem(taskId));
+      } catch (postError) {
+        console.error(
+          `Error posting task_failed update for item ${taskId} in ${name}:`,
+          postError,
+        );
+      }
     }
   });
 
