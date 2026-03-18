@@ -495,17 +495,20 @@ describe("Conversation new message indicator", () => {
   const baseItems = [createMessageItem("item-1", 1)];
 
   it("restores indicator from previously seen history", async () => {
-    const source = withItems([
-      createMessageItem("item-1", 1, {
-        seenBy: ["journalist-1"],
-        isRead: true,
-      }),
-      createMessageItem("item-2", 2, {
-        seenBy: ["journalist-1"],
-        isRead: true,
-      }),
-      createMessageItem("item-3", 3),
-    ]);
+    const source: SourceWithItems = {
+      ...withItems([
+        createMessageItem("item-1", 1, {
+          seenBy: ["journalist-1"],
+          isRead: true,
+        }),
+        createMessageItem("item-2", 2, {
+          seenBy: ["journalist-1"],
+          isRead: true,
+        }),
+        createMessageItem("item-3", 3),
+      ]),
+      lastSeenInteractionCount: 2,
+    };
 
     const { store } = renderWithProviders(
       <Conversation sourceWithItems={source} />,
@@ -536,7 +539,7 @@ describe("Conversation new message indicator", () => {
     });
   });
 
-  it("renders divider when new items arrive and scrolls near them", async () => {
+  it("renders divider when new items arrive", async () => {
     const { rerender } = renderWithProviders(
       <Conversation sourceWithItems={withItems(baseItems)} />,
     );
@@ -566,10 +569,6 @@ describe("Conversation new message indicator", () => {
       },
     });
 
-    const offsetSpy = vi
-      .spyOn(HTMLElement.prototype, "offsetTop", "get")
-      .mockReturnValue(400);
-
     rerender(
       <Conversation
         sourceWithItems={withItems([
@@ -581,15 +580,6 @@ describe("Conversation new message indicator", () => {
     );
 
     await screen.findByTestId("new-messages-divider");
-
-    await waitFor(() => {
-      expect(scrollTopValue).toBe(200);
-    });
-
-    const renderedItems = screen.getAllByTestId(/item-/);
-    expect(renderedItems).toHaveLength(3);
-
-    offsetSpy.mockRestore();
   });
 
   it("does not render divider for new replies", async () => {

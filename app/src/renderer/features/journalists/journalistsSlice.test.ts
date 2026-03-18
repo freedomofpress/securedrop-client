@@ -10,6 +10,7 @@ import journalistsReducer, {
   getJournalistsError,
   type JournalistsState,
 } from "./journalistsSlice";
+import type { RootState } from "../../store";
 
 // Mock electronAPI
 const mockElectronAPI = {
@@ -195,7 +196,7 @@ describe("journalistsSlice", () => {
   });
 
   describe("selectors", () => {
-    const mockRootState = {
+    const mockRootState: RootState = {
       journalists: loadedState,
       session: {} as any, // Mock other state slices
       sources: {
@@ -210,6 +211,8 @@ describe("journalistsSlice", () => {
         loading: false,
         error: null,
         lastFetchTime: null,
+        hasMoreHistoricalItems: false,
+        olderItemsLoading: false,
       },
       sync: {
         error: null,
