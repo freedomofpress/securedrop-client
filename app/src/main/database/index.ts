@@ -96,6 +96,10 @@ export class DB {
     { version: string }
   >;
   private selectItemsProcessable: Statement<[], { uuid: string }>;
+  private selectUnprojectedItemsBySource: Statement<
+    { source_uuid: string },
+    { uuid: string }
+  >;
   private upsertItem: Statement<
     { uuid: string; data: string; version: string },
     void
@@ -154,7 +158,9 @@ export class DB {
     { count: number }
   >;
   private deletePendingEvent: Statement<{ snowflake_id: string }, void>;
-  private selectPendingEvents: Statement<[{ limit: number }], PendingEventRow>;
+  private selectPendingEvents: Statement<[], PendingEventRow>;
+  private deletePendingEventsBySource: Statement<{ source_uuid: string }, void>;
+  private deletePendingEventsByItem: Statement<{ item_uuid: string }, void>;
 
   constructor(crypto: Crypto, dbDir?: string) {
     this.crypto = crypto;
@@ -232,6 +238,9 @@ export class DB {
         (kind = 'file' AND fetch_status in (${FetchStatus.DownloadInProgress}, ${FetchStatus.DecryptionInProgress}, ${FetchStatus.FailedDownloadRetryable}, ${FetchStatus.FailedDecryptionRetryable}))
         OR
         (kind <> 'file' AND fetch_status in (${FetchStatus.Initial}, ${FetchStatus.DownloadInProgress}, ${FetchStatus.DecryptionInProgress}, ${FetchStatus.FailedDownloadRetryable}, ${FetchStatus.FailedDecryptionRetryable}))`,
+    );
+    this.selectUnprojectedItemsBySource = this.db.prepare(
+      "SELECT uuid FROM items WHERE source_uuid = @source_uuid",
     );
     this.upsertItem = this.db.prepare(
       "INSERT INTO items (uuid, data, version) VALUES (@id, @data, @version) ON CONFLICT(uuid) DO UPDATE SET data=@data, version=@version",
@@ -328,6 +337,10 @@ export class DB {
     this.selectPendingEvents = this.db.prepare(`
       SELECT snowflake_id, source_uuid, item_uuid, type, data FROM pending_events ORDER BY snowflake_id ASC LIMIT @limit
     `);
+    this.deletePendingEventsBySource = this.db.prepare(`
+      DELETE FROM pending_events WHERE source_uuid = @source_uuid`);
+    this.deletePendingEventsByItem = this.db.prepare(`
+      DELETE FROM pending_events WHERE item_uuid = @item_uuid`);
   }
 
   // Detect runtime environment
@@ -488,6 +501,7 @@ export class DB {
     this.db!.transaction((items: string[]) => {
       for (const itemID of items) {
         this.searchIndex.removeItem(itemID);
+        this.deletePendingEventsByItem.run({ item_uuid: itemID });
         this.deleteItem.run({ uuid: itemID });
       }
       this.updateVersion();
@@ -497,11 +511,15 @@ export class DB {
   deleteSourceAndItems(sourceUuid: string) {
     // First, remove all search index entries for this source
     this.searchIndex.removeSource(sourceUuid);
-    // Delete all source items
-    const items = this.selectItemsBySourceId.all(sourceUuid);
-    const itemUuids: string[] = items.map((item) => {
-      return item.uuid;
-    });
+    // Delete any pending events for this source
+    this.deletePendingEventsBySource.run({ source_uuid: sourceUuid });
+    // Delete all source items, querying from unprojected view to not
+    // orphan pending deleted items
+    const itemUuids = this.selectUnprojectedItemsBySource
+      .all({
+        source_uuid: sourceUuid,
+      })
+      .map((row) => row.uuid);
     this.deleteItems(itemUuids);
     // Then, delete the source
     this.deleteSource.run({ uuid: sourceUuid });

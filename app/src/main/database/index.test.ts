@@ -388,20 +388,19 @@ describe("Database Method Tests", () => {
     }
 
     db.updateItems({
-      item1: mockItemMetadata("item1", "source1"),
-      item2: mockItemMetadata("item2", "source1"),
-      item3: mockItemMetadata("item3", "source1"),
+      item1: mockItemMetadata("item1", "source1", "message", 1),
+      item2: mockItemMetadata("item2", "source1", "message", 2),
+      item3: mockItemMetadata("item3", "source1", "message", 3),
     });
 
     // Partially marking items seen should not update source Seen state
-    db.addPendingItemEvent("item1", PendingEventType.Seen);
-    db.addPendingItemEvent("item2", PendingEventType.Seen);
+    db.addPendingSourceConversationSeen("source1", 2);
     for (const source of sources) {
       expect(source.isRead).toBe(false);
     }
 
     // Marking all items as seen should update Seen state
-    db.addPendingItemEvent("item3", PendingEventType.Seen);
+    db.addPendingSourceConversationSeen("source1", 3);
     sources = db.getSources();
     for (const source of sources) {
       if (source.uuid === "source1") {
@@ -1159,8 +1158,8 @@ describe("Database Method Tests", () => {
       source2: mockSourceMetadata("source2"),
     });
     db.updateItems({
-      item1: mockItemMetadata("item1", "source1"),
-      item2: mockItemMetadata("item2", "source2"),
+      item1: mockItemMetadata("item1", "source1", "message", 1),
+      item2: mockItemMetadata("item2", "source2", "message", 1),
     });
 
     // Add pending events for both
@@ -1174,11 +1173,11 @@ describe("Database Method Tests", () => {
     );
     const snowflakeItem1 = db.addPendingItemEvent(
       "item1",
-      PendingEventType.Seen,
+      PendingEventType.ItemDeleted,
     );
     const snowflakeItem2 = db.addPendingItemEvent(
       "item2",
-      PendingEventType.Seen,
+      PendingEventType.ItemDeleted,
     );
 
     // Verify all events exist
@@ -1214,8 +1213,8 @@ describe("Database Method Tests", () => {
     db.addPendingSourceEvent("source1", PendingEventType.Starred);
     db.addPendingSourceEvent("source1", PendingEventType.Unstarred);
     db.addPendingSourceEvent("source2", PendingEventType.Starred);
-    db.addPendingItemEvent("item1", PendingEventType.Seen);
-    db.addPendingItemEvent("item2", PendingEventType.Seen);
+    db.addPendingItemEvent("item1", PendingEventType.ItemDeleted);
+    db.addPendingItemEvent("item2", PendingEventType.ItemDeleted);
 
     // Verify all 5 events exist
     let events = db.getPendingEvents();
