@@ -212,6 +212,8 @@ if (!gotTheLock) {
     return worker;
   }
 
+  let fetchWorker: Worker | null = null;
+
   // This method will be called when Electron has finished
   // initialization and is ready to create browser windows.
   // Some APIs can only be used after this event occurs.
@@ -371,7 +373,7 @@ if (!gotTheLock) {
           }
         }
         db.updateFetchStatus(itemUuid, fetchStatus);
-        fetchWorker.postMessage({
+        fetchWorker?.postMessage({
           authToken: authToken,
         } as AuthedRequest);
       },
@@ -396,7 +398,7 @@ if (!gotTheLock) {
           }
 
           // Trigger fetch worker for new replies
-          fetchWorker.postMessage({
+          fetchWorker?.postMessage({
             authToken: request.authToken,
           } as AuthedRequest);
         }
@@ -673,7 +675,7 @@ if (!gotTheLock) {
 
     const mainWindow = createWindow();
 
-    const fetchWorker = spawnFetchWorker(mainWindow);
+    fetchWorker = spawnFetchWorker(mainWindow);
   });
 
   app.on("window-all-closed", () => {
@@ -682,6 +684,9 @@ if (!gotTheLock) {
 
   app.on("before-quit", () => {
     db.close();
+    if (fetchWorker) {
+      void fetchWorker.terminate();
+    }
   });
 }
 
