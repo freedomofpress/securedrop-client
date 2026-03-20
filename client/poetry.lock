@@ -1635,14 +1635,14 @@ pymysql = ["pymysql"]
 
 [[package]]
 name = "translate-toolkit"
-version = "3.19.1"
+version = "3.19.3"
 description = "Tools and API for translation and localization engineering."
 optional = false
 python-versions = ">=3.11"
 groups = ["dev"]
 files = [
-    {file = "translate_toolkit-3.19.1-py3-none-any.whl", hash = "sha256:398c42bd211cec52856fb15d387e070f1a1444e5ff4692c5726ec8c079cf3c9e"},
-    {file = "translate_toolkit-3.19.1.tar.gz", hash = "sha256:9dedb0fec957e13e3b3a7e2312c4e848c84ebdae0f0f14f911bd6005f3ea3284"},
+    {file = "translate_toolkit-3.19.3-py3-none-any.whl", hash = "sha256:d5133e3c16d241e0828f0f5822103588e199108db5887f65425ae7bc17228b73"},
+    {file = "translate_toolkit-3.19.3.tar.gz", hash = "sha256:a12120f7567e338ac9f3cebc8506e142c9783e182628ebd08303903e1ad54da6"},
 ]
 
 [package.dependencies]
@@ -1696,14 +1696,14 @@ files = [
 
 [[package]]
 name = "types-python-dateutil"
-version = "2.9.0.20260124"
+version = "2.9.0.20260305"
 description = "Typing stubs for python-dateutil"
 optional = false
-python-versions = ">=3.9"
+python-versions = ">=3.10"
 groups = ["dev"]
 files = [
-    {file = "types_python_dateutil-2.9.0.20260124-py3-none-any.whl", hash = "sha256:f802977ae08bf2260142e7ca1ab9d4403772a254409f7bbdf652229997124951"},
-    {file = "types_python_dateutil-2.9.0.20260124.tar.gz", hash = "sha256:7d2db9f860820c30e5b8152bfe78dbdf795f7d1c6176057424e8b3fdd1f581af"},
+    {file = "types_python_dateutil-2.9.0.20260305-py3-none-any.whl", hash = "sha256:a3be9ca444d38cadabd756cfbb29780d8b338ae2a3020e73c266a83cc3025dd7"},
+    {file = "types_python_dateutil-2.9.0.20260305.tar.gz", hash = "sha256:389717c9f64d8f769f36d55a01873915b37e97e52ce21928198d210fbd393c8b"},
 ]
 
 [[package]]
