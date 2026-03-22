@@ -125,6 +125,7 @@ interface FileProps {
   item: Item;
   designation: string;
   onUpdate: (update: ItemUpdate) => void;
+  deleteButton: React.ReactNode;
 }
 
 function getFileIconAndColor(filename: string): {
@@ -188,7 +189,12 @@ function getFileIconAndColor(filename: string): {
   return { Icon: FileFilled, color: "#8C8C8C" };
 }
 
-const File = memo(function File({ item, designation, onUpdate }: FileProps) {
+const File = memo(function File({
+  item,
+  designation,
+  onUpdate,
+  deleteButton,
+}: FileProps) {
   const { token } = theme.useToken();
   const titleCaseDesignation = toTitleCase(designation);
   const fetchStatus = item.fetch_status;
@@ -245,24 +251,28 @@ const File = memo(function File({ item, designation, onUpdate }: FileProps) {
     <div
       className="flex items-start mb-4 justify-start"
       data-testid={`item-${item.uuid}`}
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => setIsHovered(false)}
     >
       <Avatar designation={titleCaseDesignation ?? ""} isActive={false} />
       <div className="ml-3">
         <div className="flex items-center mb-1">
           <span className="author">{titleCaseDesignation ?? ""}</span>
         </div>
-        <div
-          className="w-80 file-box"
-          style={fileBoxStyle}
-          onClick={handleClick}
-          onMouseEnter={() =>
-            fetchStatus === FetchStatus.Initial && setIsHovered(true)
-          }
-          onMouseLeave={() =>
-            fetchStatus === FetchStatus.Initial && setIsHovered(false)
-          }
-        >
-          <FileInner item={item} onUpdate={onUpdate} />
+        <div className="flex items-center gap-1">
+          <div
+            className="w-80 file-box"
+            style={fileBoxStyle}
+            onClick={handleClick}
+          >
+            <FileInner item={item} onUpdate={onUpdate} />
+          </div>
+          <div
+            className="flex-shrink-0 transition-opacity"
+            style={{ opacity: isHovered ? 1 : 0 }}
+          >
+            {deleteButton}
+          </div>
         </div>
       </div>
     </div>

@@ -1,3 +1,4 @@
+import { useState } from "react";
 import type { Item, ReplyMetadata } from "../../../../../../types";
 import { useTranslation } from "react-i18next";
 import {
@@ -18,11 +19,13 @@ type ReplySyncState = "pending" | "sent" | "seen";
 
 interface ReplyProps {
   item: Item;
+  deleteButton: React.ReactNode;
 }
 
-function Reply({ item }: ReplyProps) {
+function Reply({ item, deleteButton }: ReplyProps) {
   const { t } = useTranslation("MainContent");
   const sessionState = useAppSelector(getSessionState);
+  const [isHovered, setIsHovered] = useState(false);
 
   const isEncrypted = !item.plaintext;
   const messageContent = item.plaintext || "";
@@ -111,21 +114,36 @@ function Reply({ item }: ReplyProps) {
     <div
       className="flex items-start mb-4 justify-end"
       data-testid={`item-${item.uuid}`}
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => setIsHovered(false)}
     >
       <div>
         <div className="flex items-center justify-start mb-1 gap-1">
           <span className="author reply-author">{getAuthorDisplay()}</span>
         </div>
-        <Tooltip title={statusIcon.tooltip} placement="bottomRight">
-          <div className="reply-box whitespace-pre-wrap overflow-hidden relative with-status-icon">
-            {isEncrypted ? (
-              <span className="italic text-gray-500">{t("itemEncrypted")}</span>
-            ) : (
-              <TruncatedText text={messageContent} />
-            )}
-            {statusIcon.icon}
+        <div className="flex items-center gap-1">
+          <div
+            className="flex-shrink-0 transition-opacity"
+            style={{ opacity: isHovered ? 1 : 0 }}
+          >
+            {deleteButton}
           </div>
-        </Tooltip>
+          <Tooltip title={statusIcon.tooltip} placement="bottomRight">
+            <div
+              className="reply-box whitespace-pre-wrap overflow-hidden relative with-status-icon"
+              style={{ marginLeft: 0 }}
+            >
+              {isEncrypted ? (
+                <span className="italic text-gray-500">
+                  {t("itemEncrypted")}
+                </span>
+              ) : (
+                <TruncatedText text={messageContent} />
+              )}
+              {statusIcon.icon}
+            </div>
+          </Tooltip>
+        </div>
       </div>
     </div>
   );
