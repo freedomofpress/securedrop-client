@@ -532,6 +532,56 @@ def test_FileDownloadJob_decryption_error(
     assert mock_decrypt.called
 
 
+def test_FileDownloadJob_decryption_db_timeout(mocker, homedir, session, session_maker):
+    """
+    After GPG decryption succeeds, _decrypt can encounter an exception while
+    committing the mark_as_decrypted state and attempting to acquire the SQLite
+    DB lock. This non-CryptoError exception should be handled and wrapped in
+    DownloadDecryptionException to be properly handled by the failure handler.
+    """
+    source = factory.Source()
+    file_ = factory.File(source=source, is_downloaded=None, is_decrypted=None)
+    session.add(source)
+    session.add(file_)
+    session.commit()
+
+    gpg = GpgHelper(homedir, session_maker, is_qubes=False)
+
+    # GPG decryption succeeds
+    mock_decrypt = patch_decrypt(mocker, homedir, gpg, file_.filename)
+
+    # But mark_as_decrypted raises (e.g., SQLite DB locked by concurrent sync)
+    mocker.patch(
+        "securedrop_client.api_jobs.downloads.mark_as_decrypted",
+        side_effect=RuntimeError("database is locked"),
+    )
+
+    def fake_download(
+        sdk_obj: SdkSubmission, timeout: int, progress: ProgressProxy
+    ) -> tuple[str, str]:
+        full_path = os.path.join(homedir, "data", "mock")
+        with open(full_path, "wb") as f:
+            f.write(b"wat")
+        # sha256 of b'wat'
+        return (
+            "sha256:f00a787f7492a95e165b470702f4fe9373583fbdc025b2c8bdf0262cc48fcff4",
+            full_path,
+        )
+
+    api_client = mocker.MagicMock()
+    api_client.default_request_timeout = mocker.MagicMock()
+    api_client.download_submission = fake_download
+
+    job = FileDownloadJob(file_.uuid, os.path.join(homedir, "data"), gpg)
+
+    # The exception should be wrapped in DownloadDecryptionException so that
+    # on_file_download_failure can extract the UUID and emit file_missing.
+    with pytest.raises(DownloadDecryptionException):
+        job.call_api(api_client, session)
+
+    assert mock_decrypt.called
+
+
 def test_FileDownloadJob_raises_on_path_traversal_attack(
     mocker, homedir, session, session_maker, download_error_codes
 ):
