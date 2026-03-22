@@ -14,6 +14,28 @@ export interface CryptoConfig {
   submissionKeyFingerprint: string;
 }
 
+// Strictly validate GPG's stderr to prevent injection attacks (gpg.fail) where it exits with a zero status code.
+// We need to handle:
+// 1) File decryption, encrypted to just the journalist key
+// 2) Message decryption, encrypted to just the journalist key
+// 3) Reply decryption, encrypted to both the source and journalist keys. In this case, the source key
+//    may or may not be imported in to the keyring (the legacy client imported source keys).
+
+// File decryption (1 recipient) or message decryption (1 recipient) or reply decryption with source key in keyring (2 recipients)
+const GPG_STDERR_KNOWN_KEY =
+  /^(gpg: encrypted with \w+ key, ID [0-9A-Fa-f]+, created \d{4}-\d{2}-\d{2}\n\s+"[^"]*"\n){1,2}$/;
+// Reply decryption: journalist key (known) + source key not in keyring (anonymous)
+const GPG_STDERR_KNOWN_AND_ANONYMOUS =
+  /^(gpg: encrypted with \w+ key, ID [0-9A-Fa-f]+, created \d{4}-\d{2}-\d{2}\n\s+"[^"]*"\n)(gpg: encrypted with \w+ key, ID [0-9A-Fa-f]+\n)$/;
+
+function isExpectedGpgStderr(stderr: string): boolean {
+  const normalized = stderr.trimEnd() + "\n";
+  return (
+    GPG_STDERR_KNOWN_KEY.test(normalized) ||
+    GPG_STDERR_KNOWN_AND_ANONYMOUS.test(normalized)
+  );
+}
+
 export class CryptoError extends Error {
   constructor(
     message: string,
@@ -130,6 +152,12 @@ export class Crypto {
           reject(
             new Error(`Process exited with non-zero code ${code}: ${stderr}`),
           );
+        } else if (stderr.trim()) {
+          reject(
+            new Error(
+              `Received stderr when exporting ${this.submissionKeyFingerprint}: ${stderr}`,
+            ),
+          );
         } else if (!stdout.trim()) {
           reject(
             new Error(
@@ -174,11 +202,18 @@ export class Crypto {
       });
 
       gpgProcess.on("close", async (code) => {
+        const errorMessage = stderr.toString("utf8");
         if (code !== 0) {
-          const errorMessage = stderr.toString("utf8");
           reject(
             new CryptoError(
               `GPG decryption failed (exit code ${code}): ${errorMessage}`,
+            ),
+          );
+          return;
+        } else if (errorMessage.trim() && !isExpectedGpgStderr(errorMessage)) {
+          reject(
+            new CryptoError(
+              `GPG decryption emitted stderr: ${errorMessage.trim()}`,
             ),
           );
           return;
@@ -233,14 +268,23 @@ export class Crypto {
 
       gpgProcess.on("close", async (code) => {
         gpgOutputFile.end();
+        const errorMessage = stderr.toString("utf8");
 
         if (code !== 0) {
           // Clean up temp directory on error
           fs.rmSync(tempDir.path, { recursive: true, force: true });
-          const errorMessage = stderr.toString("utf8");
           reject(
             new CryptoError(
               `GPG file decryption failed (exit code ${code}): ${errorMessage}`,
+            ),
+          );
+          return;
+        } else if (errorMessage.trim() && !isExpectedGpgStderr(errorMessage)) {
+          // Clean up temp directory on error
+          fs.rmSync(tempDir.path, { recursive: true, force: true });
+          reject(
+            new CryptoError(
+              `GPG file decryption emitted stderr: ${errorMessage.trim()}`,
             ),
           );
           return;
