@@ -95,8 +95,8 @@ class TestDevice:
             mock_archive.return_value = _PATH_TO_PRETEND_ARCHIVE
             mock_qproc = mock_qprocess.return_value
             mock_qproc.start = mock.MagicMock()
-            mock_qproc.start.side_effect = (
-                lambda proc, args: self.device._on_print_preflight_complete()
+            mock_qproc.start.side_effect = lambda proc, args: (
+                self.device._on_print_preflight_complete()
             )  # This ain't doin it
             mock_qproc.readAllStandardError.data.return_value = b"Not a real status\n"
 
@@ -194,8 +194,8 @@ class TestDevice:
             mock_archive.return_value = _PATH_TO_PRETEND_ARCHIVE
             mock_qproc = mock_qprocess.return_value
             mock_qproc.start = mock.MagicMock()
-            mock_qproc.start.side_effect = (
-                lambda proc, args: self.device._on_export_process_complete()
+            mock_qproc.start.side_effect = lambda proc, args: (
+                self.device._on_export_process_complete()
             )
             mock_qproc.readAllStandardError = mock.MagicMock()
             mock_qproc.readAllStandardError.data.return_value = b"Houston, we have a problem\n"
@@ -263,8 +263,8 @@ class TestDevice:
             mock_qproc = mock_qprocess.return_value
             mock_qproc.finished = mock.MagicMock()
             mock_qproc.start = mock.MagicMock()
-            mock_qproc.start.side_effect = (
-                lambda proc, args: self.device._on_export_process_complete()
+            mock_qproc.start.side_effect = lambda proc, args: (
+                self.device._on_export_process_complete()
             )
             mock_qproc.readAllStandardError.return_value.data.return_value = f"{status}\n".encode()
 
@@ -286,8 +286,8 @@ class TestDevice:
             mock_qproc = mock_qprocess.return_value
             mock_qproc.finished = mock.MagicMock()
             mock_qproc.start = mock.MagicMock()
-            mock_qproc.start.side_effect = (
-                lambda proc, args: self.device._on_print_preflight_complete()
+            mock_qproc.start.side_effect = lambda proc, args: (
+                self.device._on_print_preflight_complete()
             )
             mock_qproc.readAllStandardError.return_value.data.return_value = f"{status}\n".encode()
 
