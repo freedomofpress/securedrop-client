@@ -73,7 +73,7 @@ jobs:
       - name: Build packages
         run: |
           DEBIAN_VERSION=${{ matrix.debian_version }} WHAT=${{ matrix.what }} BUILDER=securedrop-builder ./scripts/build-debs.sh
-      - uses: actions/upload-artifact@v6
+      - uses: actions/upload-artifact@v7
         id: upload
         with:
           name: build-${{ matrix.what }}-${{ matrix.debian_version }}
@@ -105,7 +105,7 @@ jobs:
       - name: Build packages
         run: |
           DEBIAN_VERSION=${{ matrix.debian_version }} WHAT=${{ matrix.what }} BUILDER=securedrop-builder ./scripts/build-debs.sh
-      - uses: actions/upload-artifact@v6
+      - uses: actions/upload-artifact@v7
         id: upload
         with:
           name: build2-${{ matrix.what }}-${{ matrix.debian_version }}
