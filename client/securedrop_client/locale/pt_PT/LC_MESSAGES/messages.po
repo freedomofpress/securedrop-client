@@ -7,15 +7,15 @@ msgid ""
 msgstr ""
 "Project-Id-Version: SecureDrop Client 0.6.0\n"
 "Report-Msgid-Bugs-To: securedrop@freedom.press\n"
-"PO-Revision-Date: 2023-04-23 18:13+0000\n"
-"Last-Translator: deeplow <deeplower@protonmail.com>\n"
+"PO-Revision-Date: 2026-02-21 06:39+0000\n"
+"Last-Translator: aaloo <aaloo@riseup.net>\n"
 "Language-Team: Portuguese (Portugal) <https://weblate.securedrop.org/projects/securedrop/securedrop-client/pt_PT/>\n"
 "Language: pt_PT\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=n > 1;\n"
-"X-Generator: Weblate 4.14.1\n"
+"X-Generator: Weblate 5.16\n"
 "Generated-By: Babel 2.9.1\n"
 
 #, python-brace-format
@@ -123,10 +123,10 @@ msgid "Last Refresh: never"
 msgstr "Última Atualização: nunca"
 
 msgid "DELETE SOURCES"
-msgstr ""
+msgstr "FONTES APAGADAS"
 
 msgid "Delete selected source accounts. Ctrl+click sources below to select multiple sources."
-msgstr ""
+msgstr "Apague contas de fontes selecionadas. Para selecionar múltiplas fontes, segure Ctrl + clique nas fontes abaixo."
 
 #, python-brace-format
 msgid "{}"
@@ -160,10 +160,10 @@ msgid "Send a response"
 msgstr "Envie uma resposta"
 
 msgid "Or, select multiple sources with Ctrl+click."
-msgstr ""
+msgstr "Ou seleciona múltiplas fontes com Ctrl + clique."
 
 msgid "Multiple Sources Selected"
-msgstr ""
+msgstr "Múltiplas Fontes Selecionadas"
 
 msgid "Select or de-select sources using Ctrl+click, Shift+click, or by dragging the mouse."
 msgstr ""
@@ -420,26 +420,25 @@ msgstr "Consulte o administrador do sistema para obter ajuda."
 msgid "This file type cannot be printed."
 msgstr ""
 
-#, fuzzy, python-brace-format
-#| msgid "YES, DELETE ENTIRE SOURCE ACCOUNT"
+#, python-brace-format
 msgid "YES, DELETE ENTIRE SOURCE ACCOUNT"
 msgid_plural "YES, DELETE {number} SOURCE ACCOUNTS"
-msgstr[0] "SIM, ELIMINAR COMPLETAMENTE A CONTA DA FONTE"
-msgstr[1] "SIM, ELIMINAR COMPLETAMENTE A CONTA DA FONTE"
+msgstr[0] "SIM, APAGAR TODA CONTA DA FONTE"
+msgstr[1] "SIM, APAGAR {number} CONTAS DE FONTES"
 
 msgid "Are you sure this is what you want?"
 msgstr "Tem a certeza de que é isto que quer?"
 
 #, python-brace-format
 msgid "{text} (wait {delay} sec)"
-msgstr ""
+msgstr "{text} (espere {delay} segundos)"
 
 msgid "Notice: All sources have been selected!"
-msgstr ""
+msgstr "Aviso: Todas fontes foram selecionadas!"
 
 #, python-brace-format
 msgid "Delete entire account for: {source_or_sources}?"
-msgstr ""
+msgstr "Apagar toda conta para: {source_or_sources}?"
 
 msgid "When the entire account for a source is deleted:"
 msgstr "Quando a conta de uma fonte é completamente eliminada:"
@@ -455,10 +454,10 @@ msgstr "Todos os ficheiros e mensagens da fonte serão também destruídos."
 
 #, python-brace-format
 msgid "{sources} ... plus {count} additional sources"
-msgstr ""
+msgstr "{sources} ... mais {count} fontes adicionais"
 
 msgid "No sources have been selected."
-msgstr ""
+msgstr "Nenhuma fonte foi selecionada."
 
 #~ msgid "SUBMIT"
 #~ msgstr "SUBMETER"
