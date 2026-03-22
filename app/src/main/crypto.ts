@@ -6,6 +6,10 @@ import * as openpgp from "openpgp";
 import * as fs from "fs";
 import * as path from "path";
 import { PathBuilder, Storage, UnsafePathComponent } from "./storage";
+import { ms } from "../types";
+
+// Allow 3 minutes for decryption, which might need to wait for sd-gpg to start
+const SHELL_TIMEOUT = 1_800_00 as ms;
 
 export interface CryptoConfig {
   isQubes: boolean;
@@ -78,14 +82,17 @@ export class Crypto {
     }
   }
 
-  /**
-   * Get the environment for running GPG
-   */
-  private getGpgEnv(): NodeJS.ProcessEnv {
+  private getSpawnOptions() {
+    let env;
     if (this.isQubes && this.qubesGpgDomain) {
-      return { ...process.env, QUBES_GPG_DOMAIN: this.qubesGpgDomain };
+      env = { ...process.env, QUBES_GPG_DOMAIN: this.qubesGpgDomain };
+    } else {
+      env = process.env;
     }
-    return process.env;
+    return {
+      env: env,
+      timeout: SHELL_TIMEOUT,
+    };
   }
 
   /**
@@ -107,7 +114,7 @@ export class Crypto {
     cmd.push("--export", "--armor", this.submissionKeyFingerprint);
 
     return new Promise((resolve, reject) => {
-      const process = spawn(cmd[0], cmd.slice(1), { env: this.getGpgEnv() });
+      const process = spawn(cmd[0], cmd.slice(1), this.getSpawnOptions());
       let stdout = "";
       let stderr = "";
 
@@ -154,7 +161,7 @@ export class Crypto {
     cmd.push("--decrypt");
 
     return new Promise((resolve, reject) => {
-      const gpgProcess = spawn(cmd[0], cmd.slice(1), { env: this.getGpgEnv() });
+      const gpgProcess = spawn(cmd[0], cmd.slice(1), this.getSpawnOptions());
 
       let stdout = Buffer.alloc(0);
       let stderr = Buffer.alloc(0);
@@ -221,7 +228,7 @@ export class Crypto {
       const gpgOutputFile = fs.createWriteStream(tempGpgOutput);
       let stderr = Buffer.alloc(0);
 
-      const gpgProcess = spawn(cmd[0], cmd.slice(1), { env: this.getGpgEnv() });
+      const gpgProcess = spawn(cmd[0], cmd.slice(1), this.getSpawnOptions());
 
       // Stream GPG output directly to temporary file (no memory accumulation)
       gpgProcess.stdout.pipe(gpgOutputFile);
