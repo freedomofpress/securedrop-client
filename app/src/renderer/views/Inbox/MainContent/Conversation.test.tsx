@@ -508,9 +508,9 @@ describe("Conversation new message indicator", () => {
       ).toEqual({ lastSeenInteractionCount: 2 });
     });
 
-    expect(
-      await screen.findByTestId("new-messages-divider"),
-    ).toBeInTheDocument();
+    await waitFor(() => {
+      expect(screen.queryByTestId("new-messages-divider")).toBeInTheDocument();
+    });
   });
 
   it("renders divider when new items arrive and scrolls near them", async () => {
