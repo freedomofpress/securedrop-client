@@ -110,7 +110,9 @@ export class Storage {
     const dir = this.sourceDirectory(item.source, mkdir).getSubBuilder(
       item.uuid,
     );
-    fs.mkdirSync(dir.path, { recursive: true });
+    if (mkdir) {
+      fs.mkdirSync(dir.path, { recursive: true });
+    }
     return dir;
   }
 
@@ -130,9 +132,6 @@ export class Storage {
   }
 
   deleteItemFs(item: Item): void {
-    if (item.filename && fs.existsSync(item.filename)) {
-      fs.rmSync(item.filename, { force: true });
-    }
     const itemDirectory = this.itemDirectory(item.data, false);
     if (fs.existsSync(itemDirectory.path)) {
       fs.rmSync(itemDirectory.path, { recursive: true, force: true });

@@ -502,14 +502,15 @@ export class DB {
   }
 
   // Delete source and any source items from the DB and search index
-  // Must be called from transaction context
   private deleteSourceAndItems(sourceUuid: string): void {
-    this.searchIndex.removeSource(sourceUuid);
-    const items = this.selectItemsBySourceId
-      .all(sourceUuid)
-      .map((item) => item.uuid);
-    this.deleteItems(items);
-    this.deleteSource.run({ uuid: sourceUuid });
+    return this.db!.transaction((sourceUuid: string) => {
+      this.searchIndex.removeSource(sourceUuid);
+      const items = this.selectItemsBySourceId
+        .all(sourceUuid)
+        .map((item) => item.uuid);
+      this.deleteItems(items);
+      this.deleteSource.run({ uuid: sourceUuid });
+    })(sourceUuid);
   }
 
   protected deleteSources(sources: string[]): void {
@@ -548,18 +549,22 @@ export class DB {
     [uuid: string]: SourceMetadata | null;
   }): string[] {
     const deletedSourceUuids: string[] = [];
-    Object.keys(sources).forEach((sourceid: string) => {
-      const metadata = sources[sourceid];
-      if (metadata) {
-        const info = JSON.stringify(metadata, sortKeys);
-        const version = computeVersion(info);
-        this.upsertSource.run({ uuid: sourceid, data: info, version });
-        this.searchIndex.indexSource(sourceid);
-      } else {
-        deletedSourceUuids.push(sourceid);
-        this.deleteSourceAndItems(sourceid);
-      }
-    });
+    this.db!.transaction(
+      (sources: { [uuid: string]: SourceMetadata | null }) => {
+        Object.keys(sources).forEach((sourceid: string) => {
+          const metadata = sources[sourceid];
+          if (metadata) {
+            const info = JSON.stringify(metadata, sortKeys);
+            const version = computeVersion(info);
+            this.upsertSource.run({ uuid: sourceid, data: info, version });
+            this.searchIndex.indexSource(sourceid);
+          } else {
+            deletedSourceUuids.push(sourceid);
+            this.deleteSourceAndItems(sourceid);
+          }
+        });
+      },
+    )(sources);
     return deletedSourceUuids;
   }
 
@@ -567,20 +572,22 @@ export class DB {
     [uuid: string]: ItemMetadata | null;
   }): Item[] {
     const deletedItems: Item[] = [];
-    Object.keys(items).forEach((itemid: string) => {
-      const metadata = items[itemid];
-      if (metadata) {
-        const blob = JSON.stringify(metadata, sortKeys);
-        const version = computeVersion(blob);
-        this.upsertItem.run({ uuid: itemid, data: blob, version });
-      } else {
-        const item = this.getItem(itemid);
-        if (item) {
-          deletedItems.push(item);
+    this.db!.transaction((items: { [uuid: string]: ItemMetadata | null }) => {
+      Object.keys(items).forEach((itemid: string) => {
+        const metadata = items[itemid];
+        if (metadata) {
+          const blob = JSON.stringify(metadata, sortKeys);
+          const version = computeVersion(blob);
+          this.upsertItem.run({ uuid: itemid, data: blob, version });
+        } else {
+          const item = this.getItem(itemid);
+          if (item) {
+            deletedItems.push(item);
+          }
+          this.deleteItem.run({ uuid: itemid });
         }
-        this.deleteItem.run({ uuid: itemid });
-      }
-    });
+      });
+    })(items);
     return deletedItems;
   }
 
@@ -607,20 +614,24 @@ export class DB {
   protected updateJournalists(journalists: {
     [uuid: string]: JournalistMetadata | null;
   }) {
-    Object.keys(journalists).forEach((id: string) => {
-      const metadata = journalists[id];
-      if (metadata) {
-        const blob = JSON.stringify(metadata, sortKeys);
-        const version = computeVersion(blob);
-        this.upsertJournalist.run({
-          uuid: id,
-          data: blob,
-          version: version,
+    this.db!.transaction(
+      (journalists: { [uuid: string]: JournalistMetadata | null }) => {
+        Object.keys(journalists).forEach((id: string) => {
+          const metadata = journalists[id];
+          if (metadata) {
+            const blob = JSON.stringify(metadata, sortKeys);
+            const version = computeVersion(blob);
+            this.upsertJournalist.run({
+              uuid: id,
+              data: blob,
+              version: version,
+            });
+          } else {
+            this.deleteJournalist.run({ uuid: id });
+          }
         });
-      } else {
-        this.deleteJournalist.run({ uuid: id });
-      }
-    });
+      },
+    )(journalists);
   }
 
   // Helper function for truthy values
