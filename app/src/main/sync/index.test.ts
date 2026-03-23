@@ -462,10 +462,7 @@ describe("syncMetadata", () => {
     expect(proxyMock).toHaveBeenCalledTimes(2);
     expect(db.deleteItems).toHaveBeenCalledWith([ITEM_UUID_2]);
     expect(db.updateBatch).toHaveBeenCalledWith(metadata);
-    expect(fs.rmSync).toHaveBeenCalledTimes(2);
-    expect(fs.rmSync).toHaveBeenCalledWith("/securedrop/plaintext.txt", {
-      force: true,
-    });
+    expect(fs.rmSync).toHaveBeenCalledTimes(1);
     expect(fs.rmSync).toHaveBeenCalledWith(
       `/mock-home/.config/SecureDrop/files/${SOURCE_UUID_1}/${ITEM_UUID_2}/`,
       {
