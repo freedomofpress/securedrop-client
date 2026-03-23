@@ -2,7 +2,8 @@ import { describe, expect, it, beforeEach, afterEach } from "vitest";
 import fs from "fs";
 import path from "path";
 import os from "os";
-import { DB, MESSAGE_PREVIEW_LENGTH } from "./index";
+import { MESSAGE_PREVIEW_LENGTH } from "./index";
+import { Datastore } from "../datastore";
 import {
   FetchStatus,
   ItemMetadata,
@@ -12,6 +13,7 @@ import {
   JournalistMetadata,
 } from "../../types";
 import { Crypto } from "../crypto";
+import { Storage } from "../storage";
 import { setUmask } from "../umask";
 
 describe("Database Component Tests", () => {
@@ -20,7 +22,7 @@ describe("Database Component Tests", () => {
   const testDbPath = path.join(testDbDir, "db.sqlite");
   const originalHomedir = os.homedir;
   let originalUmask: number;
-  let db: DB;
+  let db: Datastore;
   let crypto: Crypto;
 
   beforeAll(() => {
@@ -54,7 +56,7 @@ describe("Database Component Tests", () => {
   });
 
   it("should create database with correct setup", () => {
-    db = new DB(crypto);
+    db = new Datastore(crypto, new Storage());
 
     expect(db).toBeDefined();
     expect(fs.existsSync(testDbPath)).toBe(true);
@@ -64,7 +66,7 @@ describe("Database Component Tests", () => {
   });
 
   it("should handle database closure", () => {
-    db = new DB(crypto);
+    db = new Datastore(crypto, new Storage());
     expect(db).toBeDefined();
 
     db.close();
@@ -72,7 +74,7 @@ describe("Database Component Tests", () => {
   });
 
   it("should create valid database file", () => {
-    db = new DB(crypto);
+    db = new Datastore(crypto, new Storage());
     const stats = fs.statSync(testDbPath);
     expect(stats.isFile()).toBe(true);
     expect(stats.size).toBeGreaterThan(0);
@@ -91,7 +93,7 @@ describe("Database Component Tests", () => {
 describe("Database Method Tests", () => {
   const testHomeDir = path.join(os.tmpdir(), "test-home");
   const originalHomedir = os.homedir;
-  let db: DB;
+  let db: Datastore;
   let crypto: Crypto;
 
   beforeAll(() => {
@@ -114,7 +116,7 @@ describe("Database Method Tests", () => {
       fs.rmSync(testHomeDir, { recursive: true, force: true });
     }
     os.homedir = () => testHomeDir;
-    db = new DB(crypto);
+    db = new Datastore(crypto, new Storage());
   });
 
   afterEach(() => {

@@ -22,7 +22,7 @@ import fs from "fs";
 import os from "os";
 import { spawn, spawnSync } from "child_process";
 
-import { DB } from "./database";
+import { Datastore } from "./datastore";
 import { Crypto, CryptoConfig } from "./crypto";
 import { proxyJSONRequest } from "./proxy";
 import {
@@ -130,7 +130,8 @@ if (!gotTheLock) {
   const shouldAutoLogin = args.includes("--login");
 
   function initializeMainDependencies(noQubesMode: boolean): {
-    db: DB;
+    db: Datastore;
+    storage: Storage;
     cryptoConfig: CryptoConfig;
   } {
     try {
@@ -145,11 +146,13 @@ if (!gotTheLock) {
       };
 
       const crypto = Crypto.initialize(configForCrypto);
-      const appDb = new DB(crypto, undefined, storage);
+      const storage = new Storage();
+      const appDb = new Datastore(crypto, storage);
 
       return {
         db: appDb,
         cryptoConfig: configForCrypto,
+        storage: storage,
       };
     } catch (error) {
       console.error("Failed to initialize SecureDrop App:", error);
@@ -157,7 +160,7 @@ if (!gotTheLock) {
     }
   }
 
-  const { db, cryptoConfig } = initializeMainDependencies(noQubes);
+  const { db, cryptoConfig, storage } = initializeMainDependencies(noQubes);
 
   // Generate a CSP nonce for this session (used by Ant Design)
   const cspNonce = randomBytes(32).toString("base64");
@@ -455,7 +458,7 @@ if (!gotTheLock) {
             type === PendingEventType.SourceDeleted ||
             type === PendingEventType.SourceConversationDeleted
           ) {
-            deleteSourceFs(new Storage(), sourceUuid);
+            storage.deleteSourceFs(sourceUuid);
           }
           return snowflakeID;
         },
@@ -484,6 +487,12 @@ if (!gotTheLock) {
           itemUuid: string,
           type: PendingEventType,
         ): Promise<string> => {
+          if (type === PendingEventType.ItemDeleted) {
+            const item = db.getItem(itemUuid);
+            if (item) {
+              storage.deleteItemFs(item);
+            }
+          }
           return db.addPendingItemEvent(itemUuid, type);
         },
       );
@@ -727,7 +736,7 @@ if (!gotTheLock) {
 
 async function syncWithLock(
   syncLock: Lock,
-  db: DB,
+  db: Datastore,
   request: AuthedRequest,
 ): Promise<SyncStatus> {
   let syncStatus: SyncStatus;

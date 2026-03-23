@@ -7,6 +7,7 @@ import {
   SyncStatus,
 } from "../../types";
 import { DB } from "../database";
+import { Datastore } from "../datastore";
 import {
   API_MINOR_VERSION,
   IndexSchema,
@@ -116,7 +117,7 @@ async function submitBatch(
 // Given the server index and the client's index, return the sources and items
 // that need to be synced. Also deletes items that are not in the server index.
 export function reconcileIndex(
-  db: DB,
+  db: Datastore,
   serverIndex: Index,
   clientIndex: Index,
 ): BatchRequest {
@@ -198,7 +199,7 @@ export function shouldSkipSync(db: DB, hintedVersion?: string): boolean {
 // Note: metadata sync may eventually only update an in-memory
 // fetch/download queue rather than persisting to DB.
 export async function syncMetadata(
-  db: DB,
+  db: Datastore,
   authToken: string,
   hintedRecords?: number,
 ): Promise<SyncStatus> {

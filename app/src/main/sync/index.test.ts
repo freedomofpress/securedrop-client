@@ -2,7 +2,7 @@ import { describe, it, expect, vi, beforeEach, MockInstance } from "vitest";
 import * as syncModule from "../../../src/main/sync";
 import { Storage } from "../../../src/main/storage";
 import { Lock, LockTimeoutError } from "../../../src/main/sync/lock";
-import { DB } from "../../../src/main/database";
+import { Datastore } from "../../../src/main/datastore";
 import {
   Index,
   ProxyJSONResponse,
@@ -72,13 +72,14 @@ function mockDB({
         }
       }
     }),
+    deleteJournalists: vi.fn(),
     updateBatch: vi.fn((_metadata) => ({
       deleted_items: [],
       deleted_sources: [],
     })),
     getItemFileData: vi.fn(() => itemFileData),
     getPendingEvents: vi.fn(() => pendingEvents),
-  } as unknown as DB;
+  } as unknown as Datastore;
   return db;
 }
 
@@ -118,7 +119,7 @@ function mockJournalistMetadata(uuid: string): JournalistMetadata {
 }
 
 describe("syncMetadata", () => {
-  let db: DB;
+  let db: Datastore;
 
   function mockProxyResponses(responses: ProxyJSONResponse[]): MockInstance {
     const mock = vi.spyOn(proxyModule, "proxyJSONRequest");
