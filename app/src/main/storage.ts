@@ -125,16 +125,30 @@ export class Storage {
   }
 
   deleteSourceFs(sourceID: string): void {
-    const sourceDirectory = this.sourceDirectory(sourceID, false).path;
-    if (fs.existsSync(sourceDirectory)) {
-      fs.rmSync(sourceDirectory, { recursive: true, force: true });
+    try {
+      const sourceDirectory = this.sourceDirectory(sourceID, false).path;
+      if (fs.existsSync(sourceDirectory)) {
+        fs.rmSync(sourceDirectory, { recursive: true, force: true });
+      }
+    } catch (err) {
+      console.error("Failed to delete source from filesystem: ", {
+        sourceID,
+        error: err,
+      });
     }
   }
 
   deleteItemFs(item: Item): void {
-    const itemDirectory = this.itemDirectory(item.data, false);
-    if (fs.existsSync(itemDirectory.path)) {
-      fs.rmSync(itemDirectory.path, { recursive: true, force: true });
+    try {
+      const itemDirectory = this.itemDirectory(item.data, false);
+      if (fs.existsSync(itemDirectory.path)) {
+        fs.rmSync(itemDirectory.path, { recursive: true, force: true });
+      }
+    } catch (err) {
+      console.error("Failed to delete item from filesystem", {
+        item: item.uuid,
+        error: err,
+      });
     }
   }
 }

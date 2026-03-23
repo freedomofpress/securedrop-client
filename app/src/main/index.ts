@@ -458,14 +458,7 @@ if (!gotTheLock) {
             type === PendingEventType.SourceDeleted ||
             type === PendingEventType.SourceConversationDeleted
           ) {
-            try {
-              storage.deleteSourceFs(sourceUuid);
-            } catch (err) {
-              console.error(
-                "Failed to delete source from filesystem on pending deletion event: ",
-                { sourceUuid, error: err },
-              );
-            }
+            storage.deleteSourceFs(sourceUuid);
           }
           return snowflakeID;
         },
@@ -497,14 +490,7 @@ if (!gotTheLock) {
           if (type === PendingEventType.ItemDeleted) {
             const item = db.getItem(itemUuid);
             if (item) {
-              try {
-                storage.deleteItemFs(item);
-              } catch (err) {
-                console.error(
-                  "Failed to delete item from filesystem on pending deletion event: ",
-                  { itemUuid, error: err },
-                );
-              }
+              storage.deleteItemFs(item);
             }
           }
           return db.addPendingItemEvent(itemUuid, type);
