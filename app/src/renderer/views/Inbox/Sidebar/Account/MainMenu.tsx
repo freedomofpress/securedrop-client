@@ -25,6 +25,7 @@ function MainMenu() {
 
   const navigate = useNavigate();
   const session = useAppSelector((state) => state.session);
+  const drafts = useAppSelector((state) => state.drafts);
   const dispatch = useAppDispatch();
   const [modal, contextHolder] = Modal.useModal();
   const [isAboutModalOpen, setIsAboutModalOpen] = useState<boolean>(false);
@@ -63,23 +64,19 @@ function MainMenu() {
 
   // menu action functions
   const signOut = () => {
-    console.log("signing out");
     dispatch(setUnauth(undefined));
     navigate("/");
   };
 
   const signIn = () => {
-    console.log("navigating to sign in");
     navigate("/sign-in");
   };
 
   const sync = () => {
     if (!session.authData) {
-      console.warn("Missing authenticated session; skipping sync");
       return;
     }
 
-    console.log("syncing metadata");
     dispatch(syncMetadata(session.authData));
   };
 
@@ -87,16 +84,17 @@ function MainMenu() {
     modal.confirm({
       getContainer: false,
       title: t("account.quitModalTitle"),
-      content: t("account.quitModalContent"),
+      content: t(
+        Object.keys(drafts.drafts).length > 0
+          ? "account.quitWithDrafts"
+          : "account.quitNoDrafts",
+      ),
       cancelText: t("account.quitModalCancel"),
       okText: t("account.quitModalOK"),
       onOk() {
-        console.log("Closing application");
         window.electronAPI.quitApp();
       },
-      onCancel() {
-        console.log("Cancelling application close");
-      },
+      onCancel() {},
     });
 
     return;

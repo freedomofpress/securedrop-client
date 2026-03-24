@@ -55,7 +55,8 @@
       "aboutSecureDrop": "About SecureDrop",
       "Quit": "Quit",
       "quitModalTitle": "Close application?",
-      "quitModalContent": "Unsent replies may be lost",
+      "quitWithDrafts": "Draft replies may be lost.",
+      "quitNoDrafts": "",
       "quitModalCancel": "Cancel",
       "quitModalOK": "Yes, Quit",
       "aboutClose": "Close"
