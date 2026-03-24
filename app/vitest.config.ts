@@ -5,6 +5,12 @@ import { resolve } from "path";
 export default defineConfig({
   plugins: [react()],
   test: {
+    pool: "forks",
+    poolOptions: {
+      forks: {
+        maxForks: 4,
+      },
+    },
     setupFiles: [
       "./src/test-setup.ts",
       "./src/renderer/test-component-setup.tsx",
