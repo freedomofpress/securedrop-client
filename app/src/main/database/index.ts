@@ -162,7 +162,7 @@ export class DB {
   private deletePendingEventsBySource: Statement<{ source_uuid: string }, void>;
   private deletePendingEventsByItem: Statement<{ item_uuid: string }, void>;
 
-  constructor(crypto: Crypto, dbDir?: string) {
+  protected constructor(crypto: Crypto, dbDir?: string) {
     this.crypto = crypto;
     this.snowflake = new Snowflake(new Date("2000-01-01T00:00:00.000Z"));
 
