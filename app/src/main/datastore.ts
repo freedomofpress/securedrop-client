@@ -79,4 +79,12 @@ export class Datastore extends DB {
     }
     return result;
   }
+
+  deleteSourceFs(sourceID: string): void {
+    return this.storage.deleteSourceFs(sourceID);
+  }
+
+  deleteItemFs(item: Item): void {
+    return this.storage.deleteItemFs(item);
+  }
 }

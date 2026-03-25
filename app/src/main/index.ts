@@ -131,7 +131,6 @@ if (!gotTheLock) {
 
   function initializeMainDependencies(noQubesMode: boolean): {
     db: Datastore;
-    storage: Storage;
     cryptoConfig: CryptoConfig;
   } {
     try {
@@ -152,7 +151,6 @@ if (!gotTheLock) {
       return {
         db: appDb,
         cryptoConfig: configForCrypto,
-        storage: storage,
       };
     } catch (error) {
       console.error("Failed to initialize SecureDrop App:", error);
@@ -160,7 +158,7 @@ if (!gotTheLock) {
     }
   }
 
-  const { db, cryptoConfig, storage } = initializeMainDependencies(noQubes);
+  const { db, cryptoConfig } = initializeMainDependencies(noQubes);
 
   // Generate a CSP nonce for this session (used by Ant Design)
   const cspNonce = randomBytes(32).toString("base64");
@@ -458,7 +456,7 @@ if (!gotTheLock) {
             type === PendingEventType.SourceDeleted ||
             type === PendingEventType.SourceConversationDeleted
           ) {
-            storage.deleteSourceFs(sourceUuid);
+            db.deleteSourceFs(sourceUuid);
           }
           return snowflakeID;
         },
@@ -490,7 +488,7 @@ if (!gotTheLock) {
           if (type === PendingEventType.ItemDeleted) {
             const item = db.getItem(itemUuid);
             if (item) {
-              storage.deleteItemFs(item);
+              db.deleteItemFs(item);
             }
           }
           return db.addPendingItemEvent(itemUuid, type);
