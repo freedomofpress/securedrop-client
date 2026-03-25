@@ -485,30 +485,35 @@ export class DB {
     this.insertVersion.run(newVersion);
   }
 
-  deleteItems(items: string[]) {
-    this.db!.transaction((items: string[]) => {
+  protected deleteItems(items: string[]): Item[] {
+    return this.db!.transaction((items: string[]) => {
+      const deletedItems: Item[] = [];
       for (const itemID of items) {
+        const item = this.getItem(itemID);
+        if (item) {
+          deletedItems.push(item);
+        }
         this.searchIndex.removeItem(itemID);
         this.deleteItem.run({ uuid: itemID });
       }
       this.updateVersion();
+      return deletedItems;
     })(items);
   }
 
-  deleteSourceAndItems(sourceUuid: string) {
-    // First, remove all search index entries for this source
-    this.searchIndex.removeSource(sourceUuid);
-    // Delete all source items
-    const items = this.selectItemsBySourceId.all(sourceUuid);
-    const itemUuids: string[] = items.map((item) => {
-      return item.uuid;
-    });
-    this.deleteItems(itemUuids);
-    // Then, delete the source
-    this.deleteSource.run({ uuid: sourceUuid });
+  // Delete source and any source items from the DB and search index
+  private deleteSourceAndItems(sourceUuid: string): void {
+    return this.db!.transaction((sourceUuid: string) => {
+      this.searchIndex.removeSource(sourceUuid);
+      const items = this.selectItemsBySourceId
+        .all(sourceUuid)
+        .map((item) => item.uuid);
+      this.deleteItems(items);
+      this.deleteSource.run({ uuid: sourceUuid });
+    })(sourceUuid);
   }
 
-  deleteSources(sources: string[]) {
+  protected deleteSources(sources: string[]): void {
     this.db!.transaction((sources: string[]) => {
       for (const sourceID of sources) {
         this.deleteSourceAndItems(sourceID);
@@ -517,7 +522,7 @@ export class DB {
     })(sources);
   }
 
-  deleteJournalists(journalists: string[]) {
+  protected deleteJournalists(journalists: string[]): void {
     this.db!.transaction((journalists: string[]) => {
       for (const journalistID of journalists) {
         this.deleteJournalist.run({ uuid: journalistID });
@@ -526,7 +531,7 @@ export class DB {
     })(journalists);
   }
 
-  updateBatch(batchResponse: BatchResponse): {
+  protected updateBatch(batchResponse: BatchResponse): {
     deleted_items: Item[];
     deleted_sources: string[];
   } {
@@ -540,53 +545,49 @@ export class DB {
     })(batchResponse);
   }
 
-  // Updates source versions in DB. Should be run in a transaction that also
-  // updates the global index version.
-  updateSources(sources: { [uuid: string]: SourceMetadata | null }): string[] {
+  protected updateSources(sources: {
+    [uuid: string]: SourceMetadata | null;
+  }): string[] {
     const deletedSourceUuids: string[] = [];
-    Object.keys(sources).forEach((sourceid: string) => {
-      const metadata = sources[sourceid];
-      if (metadata) {
-        // Updating the full source: update metadata and re-compute source version
-        const info = JSON.stringify(metadata, sortKeys);
-        const version = computeVersion(info);
-        this.upsertSource.run({
-          uuid: sourceid,
-          data: info,
-          version: version,
+    this.db!.transaction(
+      (sources: { [uuid: string]: SourceMetadata | null }) => {
+        Object.keys(sources).forEach((sourceid: string) => {
+          const metadata = sources[sourceid];
+          if (metadata) {
+            const info = JSON.stringify(metadata, sortKeys);
+            const version = computeVersion(info);
+            this.upsertSource.run({ uuid: sourceid, data: info, version });
+            this.searchIndex.indexSource(sourceid);
+          } else {
+            deletedSourceUuids.push(sourceid);
+            this.deleteSourceAndItems(sourceid);
+          }
         });
-        this.searchIndex.indexSource(sourceid);
-      } else {
-        deletedSourceUuids.push(sourceid);
-        this.deleteSourceAndItems(sourceid);
-      }
-    });
+      },
+    )(sources);
     return deletedSourceUuids;
   }
 
-  // Updates item versions in DB. Should be run in a transaction that also
-  // updates the global index version.
-  updateItems(items: { [uuid: string]: ItemMetadata | null }): Item[] {
+  protected updateItems(items: {
+    [uuid: string]: ItemMetadata | null;
+  }): Item[] {
     const deletedItems: Item[] = [];
-    Object.keys(items).forEach((itemid: string) => {
-      const metadata = items[itemid];
-      if (metadata) {
-        const blob = JSON.stringify(metadata, sortKeys);
-        const version = computeVersion(blob);
-
-        this.upsertItem.run({
-          uuid: itemid,
-          data: blob,
-          version: version,
-        });
-      } else {
-        const item = this.getItem(itemid);
-        if (item) {
-          deletedItems.push(item);
+    this.db!.transaction((items: { [uuid: string]: ItemMetadata | null }) => {
+      Object.keys(items).forEach((itemid: string) => {
+        const metadata = items[itemid];
+        if (metadata) {
+          const blob = JSON.stringify(metadata, sortKeys);
+          const version = computeVersion(blob);
+          this.upsertItem.run({ uuid: itemid, data: blob, version });
+        } else {
+          const item = this.getItem(itemid);
+          if (item) {
+            deletedItems.push(item);
+          }
+          this.deleteItem.run({ uuid: itemid });
         }
-        this.deleteItem.run({ uuid: itemid });
-      }
-    });
+      });
+    })(items);
     return deletedItems;
   }
 
@@ -610,23 +611,27 @@ export class DB {
 
   // Updates journalist metadata in DB. Should be run in a transaction that also
   // updates the global index version.
-  updateJournalists(journalists: {
+  protected updateJournalists(journalists: {
     [uuid: string]: JournalistMetadata | null;
   }) {
-    Object.keys(journalists).forEach((id: string) => {
-      const metadata = journalists[id];
-      if (metadata) {
-        const blob = JSON.stringify(metadata, sortKeys);
-        const version = computeVersion(blob);
-        this.upsertJournalist.run({
-          uuid: id,
-          data: blob,
-          version: version,
+    this.db!.transaction(
+      (journalists: { [uuid: string]: JournalistMetadata | null }) => {
+        Object.keys(journalists).forEach((id: string) => {
+          const metadata = journalists[id];
+          if (metadata) {
+            const blob = JSON.stringify(metadata, sortKeys);
+            const version = computeVersion(blob);
+            this.upsertJournalist.run({
+              uuid: id,
+              data: blob,
+              version: version,
+            });
+          } else {
+            this.deleteJournalist.run({ uuid: id });
+          }
         });
-      } else {
-        this.deleteJournalist.run({ uuid: id });
-      }
-    });
+      },
+    )(journalists);
   }
 
   // Helper function for truthy values

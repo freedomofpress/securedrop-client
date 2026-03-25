@@ -1,6 +1,6 @@
 import * as fs from "fs";
 import os from "os";
-import { ItemMetadata } from "../types";
+import { Item, ItemMetadata } from "../types";
 import { ItemFetchTask } from "./fetch/queue";
 
 /// Newtype for when we know a path component is potentially unsafe,
@@ -110,7 +110,9 @@ export class Storage {
     const dir = this.sourceDirectory(item.source, mkdir).getSubBuilder(
       item.uuid,
     );
-    fs.mkdirSync(dir.path, { recursive: true });
+    if (mkdir) {
+      fs.mkdirSync(dir.path, { recursive: true });
+    }
     return dir;
   }
 
@@ -120,5 +122,33 @@ export class Storage {
     // a unique name that doesn't introduce a path traversal.
     const tempDir = fs.mkdtempSync(this.tmp.join(prefix));
     return new PathBuilder(tempDir + "/");
+  }
+
+  deleteSourceFs(sourceID: string): void {
+    try {
+      const sourceDirectory = this.sourceDirectory(sourceID, false).path;
+      if (fs.existsSync(sourceDirectory)) {
+        fs.rmSync(sourceDirectory, { recursive: true, force: true });
+      }
+    } catch (err) {
+      console.error("Failed to delete source from filesystem: ", {
+        sourceID,
+        error: err,
+      });
+    }
+  }
+
+  deleteItemFs(item: Item): void {
+    try {
+      const itemDirectory = this.itemDirectory(item.data, false);
+      if (fs.existsSync(itemDirectory.path)) {
+        fs.rmSync(itemDirectory.path, { recursive: true, force: true });
+      }
+    } catch (err) {
+      console.error("Failed to delete item from filesystem", {
+        item: item.uuid,
+        error: err,
+      });
+    }
   }
 }

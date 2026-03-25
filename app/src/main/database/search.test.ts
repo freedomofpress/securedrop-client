@@ -2,9 +2,10 @@ import { describe, it, expect, beforeEach, afterEach } from "vitest";
 import path from "path";
 import fs from "fs";
 import os from "os";
-import { DB } from "./index";
+import { Datastore } from "../datastore";
 import { buildQuery } from "./search";
 import { Crypto } from "../crypto";
+import { Storage } from "../storage";
 import { PendingEventType } from "../../types";
 import type { SourceMetadata, ItemMetadata } from "../../types";
 
@@ -126,12 +127,12 @@ describe("buildQuery", () => {
 });
 
 describe("Search", () => {
-  let db: DB;
+  let db: Datastore;
   let tmpDir: string;
 
   beforeEach(() => {
     tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "sd-search-test-"));
-    db = new DB({} as Crypto, tmpDir);
+    db = new Datastore({} as Crypto, new Storage(), tmpDir);
   });
 
   afterEach(() => {

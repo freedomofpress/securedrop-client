@@ -2,7 +2,7 @@ import { describe, it, expect, vi, beforeEach, MockInstance } from "vitest";
 import * as syncModule from "../../../src/main/sync";
 import { Storage } from "../../../src/main/storage";
 import { Lock, LockTimeoutError } from "../../../src/main/sync/lock";
-import { DB } from "../../../src/main/database";
+import { Datastore } from "../../../src/main/datastore";
 import {
   Index,
   ProxyJSONResponse,
@@ -44,20 +44,43 @@ function mockDB({
   index = { sources: {}, items: {}, journalists: {} },
   itemFileData = {},
   pendingEvents = [],
+  storage,
+}: {
+  index?: Index;
+  itemFileData?: object;
+  pendingEvents?: PendingEvent[];
+  storage?: Storage;
 } = {}) {
-  return {
+  const db = {
     getVersion: vi.fn(() => "v1"),
     getIndex: vi.fn(() => index),
     getItem: vi.fn((_itemID) => null),
-    deleteItems: vi.fn((_itemIDs) => {}),
-    deleteSources: vi.fn((_sourceIDs) => {}),
+    deleteItems: vi.fn((itemIDs: string[]) => {
+      if (storage) {
+        for (const itemID of itemIDs) {
+          const item = db.getItem(itemID);
+          if (item) {
+            storage.deleteItemFs(item);
+          }
+        }
+      }
+    }),
+    deleteSources: vi.fn((sourceIDs: string[]) => {
+      if (storage) {
+        for (const sourceID of sourceIDs) {
+          storage.deleteSourceFs(sourceID);
+        }
+      }
+    }),
+    deleteJournalists: vi.fn(),
     updateBatch: vi.fn((_metadata) => ({
       deleted_items: [],
       deleted_sources: [],
     })),
     getItemFileData: vi.fn(() => itemFileData),
     getPendingEvents: vi.fn(() => pendingEvents),
-  } as unknown as DB;
+  } as unknown as Datastore;
+  return db;
 }
 
 function mockSourceMetadata(uuid: string): SourceMetadata {
@@ -96,7 +119,7 @@ function mockJournalistMetadata(uuid: string): JournalistMetadata {
 }
 
 describe("syncMetadata", () => {
-  let db: DB;
+  let db: Datastore;
 
   function mockProxyResponses(responses: ProxyJSONResponse[]): MockInstance {
     const mock = vi.spyOn(proxyModule, "proxyJSONRequest");
@@ -403,6 +426,7 @@ describe("syncMetadata", () => {
 
     db = mockDB({
       index: clientIndex,
+      storage: new Storage(),
     });
 
     // Mock getItem to return data for ITEM_UUID_2 so cleanup can happen
@@ -438,10 +462,7 @@ describe("syncMetadata", () => {
     expect(proxyMock).toHaveBeenCalledTimes(2);
     expect(db.deleteItems).toHaveBeenCalledWith([ITEM_UUID_2]);
     expect(db.updateBatch).toHaveBeenCalledWith(metadata);
-    expect(fs.rmSync).toHaveBeenCalledTimes(2);
-    expect(fs.rmSync).toHaveBeenCalledWith("/securedrop/plaintext.txt", {
-      force: true,
-    });
+    expect(fs.rmSync).toHaveBeenCalledTimes(1);
     expect(fs.rmSync).toHaveBeenCalledWith(
       `/mock-home/.config/SecureDrop/files/${SOURCE_UUID_1}/${ITEM_UUID_2}/`,
       {
@@ -596,7 +617,7 @@ describe("syncMetadata", () => {
       journalists: {},
     };
 
-    db = mockDB({ index: clientIndex });
+    db = mockDB({ index: clientIndex, storage: new Storage() });
 
     mockProxyResponses([
       {
@@ -790,15 +811,16 @@ describe("shouldSkipSync", () => {
   });
 });
 
-describe("deleteSourceFs", () => {
+describe("Storage.deleteSourceFs", () => {
   beforeEach(() => {
     vi.resetAllMocks();
   });
 
   it("deletes source directory when it exists", () => {
+    vi.mocked(fs.existsSync).mockReturnValue(true);
     const storage = new Storage();
 
-    syncModule.deleteSourceFs(storage, SOURCE_UUID_1);
+    storage.deleteSourceFs(SOURCE_UUID_1);
 
     expect(fs.rmSync).toHaveBeenCalledWith(
       `/mock-home/.config/SecureDrop/files/${SOURCE_UUID_1}/`,
@@ -810,7 +832,7 @@ describe("deleteSourceFs", () => {
     vi.mocked(fs.existsSync).mockReturnValue(false);
     const storage = new Storage();
 
-    syncModule.deleteSourceFs(storage, SOURCE_UUID_1);
+    storage.deleteSourceFs(SOURCE_UUID_1);
 
     expect(fs.rmSync).not.toHaveBeenCalled();
   });

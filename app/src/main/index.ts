@@ -22,7 +22,7 @@ import fs from "fs";
 import os from "os";
 import { spawn, spawnSync } from "child_process";
 
-import { DB } from "./database";
+import { Datastore } from "./datastore";
 import { Crypto, CryptoConfig } from "./crypto";
 import { proxyJSONRequest } from "./proxy";
 import {
@@ -40,7 +40,7 @@ import {
   PendingEventType,
   SyncStatus,
 } from "../types";
-import { syncMetadata, shouldSkipSync, deleteSourceFs } from "./sync";
+import { syncMetadata, shouldSkipSync } from "./sync";
 import workerPath from "./fetch/worker?modulePath";
 import { Lock, LockTimeoutError } from "./sync/lock";
 import { Config } from "./config";
@@ -130,7 +130,7 @@ if (!gotTheLock) {
   const shouldAutoLogin = args.includes("--login");
 
   function initializeMainDependencies(noQubesMode: boolean): {
-    db: DB;
+    db: Datastore;
     cryptoConfig: CryptoConfig;
   } {
     try {
@@ -145,7 +145,8 @@ if (!gotTheLock) {
       };
 
       const crypto = Crypto.initialize(configForCrypto);
-      const appDb = new DB(crypto);
+      const storage = new Storage();
+      const appDb = new Datastore(crypto, storage);
 
       return {
         db: appDb,
@@ -457,7 +458,7 @@ if (!gotTheLock) {
             type === PendingEventType.SourceDeleted ||
             type === PendingEventType.SourceConversationDeleted
           ) {
-            deleteSourceFs(new Storage(), sourceUuid);
+            db.deleteSourceFs(sourceUuid);
           }
           return snowflakeID;
         },
@@ -486,6 +487,12 @@ if (!gotTheLock) {
           itemUuid: string,
           type: PendingEventType,
         ): Promise<string> => {
+          if (type === PendingEventType.ItemDeleted) {
+            const item = db.getItem(itemUuid);
+            if (item) {
+              db.deleteItemFs(item);
+            }
+          }
           return db.addPendingItemEvent(itemUuid, type);
         },
       );
@@ -732,7 +739,7 @@ if (!gotTheLock) {
 
 async function syncWithLock(
   syncLock: Lock,
-  db: DB,
+  db: Datastore,
   request: AuthedRequest,
 ): Promise<SyncStatus> {
   let syncStatus: SyncStatus;
