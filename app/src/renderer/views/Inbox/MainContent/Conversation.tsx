@@ -248,7 +248,7 @@ const Conversation = memo(function Conversation({
             data-testid="conversation-items-container"
             rowCount={virtualRows.length}
             rowHeight={dynamicRowHeight}
-            rowComponent={(props) => <ConversationRow {...props} />}
+            rowComponent={ConversationRow}
             rowProps={{ virtualRows, designation: designation || "" }}
             listRef={listRef}
             style={{ height: "100%" }}
