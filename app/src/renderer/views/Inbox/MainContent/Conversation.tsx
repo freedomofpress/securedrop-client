@@ -39,9 +39,9 @@ interface ConversationRowProps {
   designation: string;
 }
 
-// nosemgrep: react-component-missing-memo -- memo is ineffective here
-// because shared rowProps change reference on every selection and
-// the child <Item> is already memo'd
+// memo is ineffective here because shared rowProps change reference on every selection
+// and the child <Item> is already memo'd
+// nosemgrep: react-component-missing-memo
 function ConversationRow({
   index,
   style,
