@@ -62,6 +62,18 @@ describe("PathBuilder", () => {
         "Invalid path component: path/to/file",
       );
     });
+
+    it("should reject control characters", () => {
+      expect(() => builder.validate("file\x00name")).toThrow(
+        "Path component contains control characters",
+      );
+      expect(() => builder.validate("file\nname")).toThrow(
+        "Path component contains control characters",
+      );
+      expect(() => builder.validate("file\x7fname")).toThrow(
+        "Path component contains control characters",
+      );
+    });
   });
 
   describe("getSubBuilder", () => {
