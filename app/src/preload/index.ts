@@ -39,6 +39,10 @@ function logIpcCall<T>(name: string, fn: (...args: any[]) => Promise<T>) {
 }
 
 const electronAPI = {
+  getAppVersion: logIpcCall<string>("getAppVersion", () =>
+    ipcRenderer.invoke("getAppVersion"),
+  ),
+  quitApp: logIpcCall<string>("quitApp", () => ipcRenderer.invoke("quitApp")),
   request: logIpcCall<ProxyJSONResponse>("request", (request: ProxyRequest) =>
     ipcRenderer.invoke("request", request),
   ),

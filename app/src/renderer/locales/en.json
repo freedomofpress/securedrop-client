@@ -47,7 +47,37 @@
       "signOut": "Sign out",
       "offlineMode": "Offline Mode",
       "signIn": "Sign in",
-      "signedIn": "Signed in"
+      "signedIn": "Signed in",
+      "syncNow": "Sync now",
+      "Help": "Help",
+      "getHelp": "Get help",
+      "keyboardShortcuts": "Keyboard Shortcuts",
+      "aboutSecureDrop": "About SecureDrop",
+      "Quit": "Quit",
+      "quitModalTitle": "Close application?",
+      "quitWithDrafts": "Draft replies may be lost.",
+      "quitNoDrafts": "",
+      "quitModalCancel": "Cancel",
+      "quitModalOK": "Yes, Quit",
+      "aboutClose": "Close"
+    },
+    "helpModals": {
+      "keyboardTitle": "Keyboard shortcuts",
+      "aboutAppTitle": "SecureDrop Client",
+      "aboutAppDesc": "Secure communications for journalists and sources",
+      "aboutAppVersion": "Version",
+      "aboutMoreTitle": "More Information",
+      "aboutMoreContent": "https://securedrop.org/app",
+      "aboutRepoTitle": "Source code",
+      "aboutRepoContent": "https://github.com/freedomofpress/securedrop-client",
+      "aboutLicence": "SecureDrop is open source and released under the GNU Affero General Public License v3.",
+      "aboutCopyright": "© 2013–2026 Aaron Swartz, James Dolan, Freedom of the Press Foundation, and SecureDrop contributors"
+    },
+    "syncStatus": {
+      "notloggedin": "Sync: not logged in",
+      "ok": "Sync: OK",
+      "warning": "Sync: warning",
+      "error": "Sync: error"
     },
     "sourcelist": {
       "filters": {
