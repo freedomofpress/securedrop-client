@@ -10,7 +10,9 @@ import {
 import * as path from "path";
 import * as fs from "fs";
 import * as openpgp from "openpgp";
-import { execSync } from "child_process";
+import { execSync, spawn } from "child_process";
+import { EventEmitter } from "events";
+import { PassThrough } from "stream";
 import { Crypto, CryptoError, encryptMessage } from "../crypto";
 import {
   createGpgTestEnvironment,
@@ -20,6 +22,8 @@ import {
   type GpgTestEnvironment,
 } from "./setup-gpg-tests";
 import { PathBuilder, Storage } from "../storage";
+
+vi.mock("child_process", { spy: true });
 
 // Verify GPG is available - fail tests if not
 const isGpgAvailable = verifyGpgAvailable();
@@ -497,6 +501,63 @@ and symbols: !@#$%^&*()_+-={}[]|\\:";'<>?,./`;
 
       const decryptedMessage = await crypto.decryptMessage(encryptedContent);
       expect(decryptedMessage).toBe(originalMessage);
+    });
+  });
+
+  describe("GPG stderr failure modes (mocked spawn)", () => {
+    afterEach(() => {
+      vi.restoreAllMocks();
+    });
+
+    function makeMockProcess() {
+      const proc = new EventEmitter() as any;
+      proc.stdout = new PassThrough();
+      proc.stderr = new EventEmitter();
+      proc.stdin = { write: vi.fn(), end: vi.fn() };
+      return proc;
+    }
+
+    it("throws CryptoError when GPG exits 0 with unexpected stderr (decryptMessage)", async () => {
+      const proc = makeMockProcess();
+      vi.mocked(spawn).mockReturnValueOnce(proc);
+
+      const promise = crypto.decryptMessage(Buffer.from("fake encrypted data"));
+
+      proc.stderr.emit(
+        "data",
+        Buffer.from("gpg: WARNING: unexpected warning\n"),
+      );
+      proc.emit("close", 0, null);
+
+      await expect(promise).rejects.toBeInstanceOf(CryptoError);
+      await expect(promise).rejects.toThrow(/GPG decryption emitted stderr/);
+    });
+
+    it("throws CryptoError when GPG exits 0 with unexpected stderr (decryptFile)", async () => {
+      const proc = makeMockProcess();
+      vi.mocked(spawn).mockReturnValueOnce(proc);
+
+      const promise = crypto.decryptFile(
+        storage,
+        itemDirectory,
+        "/fake/path.gpg",
+      );
+
+      proc.stderr.emit(
+        "data",
+        Buffer.from("gpg: WARNING: unexpected warning\n"),
+      );
+      // End stdout so the pipe closes the output WriteStream before we emit the process
+      // close event, avoiding a race between the lazy fs.createWriteStream open and the
+      // rmSync cleanup in the error path.
+      proc.stdout.end();
+      await new Promise<void>((resolve) => setImmediate(resolve));
+      proc.emit("close", 0, null);
+
+      await expect(promise).rejects.toBeInstanceOf(CryptoError);
+      await expect(promise).rejects.toThrow(
+        /GPG file decryption emitted stderr/,
+      );
     });
   });
 
