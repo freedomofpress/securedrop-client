@@ -16,6 +16,7 @@ export default defineConfig(({ mode }) => {
 
   const mainVars: Record<string, string> = {
     __RENDERER_ONLY__: "false",
+    __IS_PRODUCTION__: String(mode === "production"),
   };
   if (mode === "development" || mode === "test") {
     // Build the proxy: `make -C ../proxy build`

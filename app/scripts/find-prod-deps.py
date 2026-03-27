@@ -13,6 +13,8 @@ SEARCH_DIRS = ["src/main", "src/renderer", "src/preload"]
 IMPORT_RE = re.compile(
     r"""(?:from\s+|import\s*[\(\s]|require\s*\()['"](@[\w.-]+/[\w.-]+|[\w][\w.-]*)"""
 )
+# Packages that really aren't prod but the script can't detect that
+NOT_PROD = ["electron-devtools-installer"]
 
 
 def is_test_file(path: Path) -> bool:
@@ -29,7 +31,7 @@ def find_packages(root: Path, known_packages: set[str]) -> set[str]:
                 continue
             text = ts_file.read_text()
             for match in IMPORT_RE.findall(text):
-                if match in known_packages:
+                if match in known_packages and match not in NOT_PROD:
                     pkgs.add(match)
     return pkgs
 
