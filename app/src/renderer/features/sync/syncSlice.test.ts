@@ -249,6 +249,16 @@ describe("syncSlice", () => {
       expect(mockGetSources).not.toHaveBeenCalled();
     });
 
+    it("sets ERROR status when sync thunk rejects", async () => {
+      mockSyncMetadata.mockRejectedValue(new Error("items.kind is immutable"));
+
+      await (store.dispatch as any)(syncMetadata(mockAuthData("test-token")));
+
+      const syncState = (store.getState() as any).sync;
+      expect(syncState.status).toBe(SyncStatus.ERROR);
+      expect(syncState.error).toBe("items.kind is immutable");
+    });
+
     it("handles non-Error rejection for syncMetadata", async () => {
       mockSyncMetadata.mockRejectedValue("String error");
 
