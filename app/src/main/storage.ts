@@ -38,6 +38,15 @@ export class PathBuilder {
     if (part.includes("/") || part === ".." || part === "." || part === "") {
       throw new Error(`Invalid path component: ${part}`);
     }
+    // Reject terminal control characters; the server strips them so they should
+    // only appear in the case of a compromised server. Alone they can't do much but
+    // in theory could exploit someone looking at logs in a terminal.
+    if (/\p{Cc}/u.test(part)) {
+      // n.b. JSON.stringify escapes the control characters
+      throw new Error(
+        `Path component contains control characters: ${JSON.stringify(part)}`,
+      );
+    }
     return part;
   }
 
