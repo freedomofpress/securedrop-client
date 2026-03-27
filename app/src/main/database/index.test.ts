@@ -1,4 +1,4 @@
-import { describe, expect, it, beforeEach, afterEach } from "vitest";
+import { describe, expect, it, beforeAll, beforeEach, afterEach } from "vitest";
 import fs from "fs";
 import path from "path";
 import os from "os";
@@ -77,5 +77,64 @@ describe("Database Component Tests", () => {
     const dirStats = fs.statSync(testDbDir);
     const dirPermissions = dirStats.mode & 0o777;
     expect(dirPermissions).toBe(0o700);
+  });
+
+  describe("items_kind_immutable trigger", () => {
+    it("allows TOFU initial write", () => {
+      db = new DB(crypto);
+      const rawDb = db["db"]!;
+
+      rawDb
+        .prepare("INSERT INTO items (uuid, data) VALUES (?, NULL)")
+        .run("item-tofu");
+
+      expect(() =>
+        rawDb.prepare("UPDATE items SET data = ? WHERE uuid = ?").run(
+          JSON.stringify({
+            kind: "message",
+            uuid: "item-tofu",
+            source: "s",
+            size: 0,
+            is_read: false,
+            seen_by: [],
+            interaction_count: 0,
+          }),
+          "item-tofu",
+        ),
+      ).not.toThrow();
+    });
+
+    it("rejects a change of kind from 'message' to 'file'", () => {
+      db = new DB(crypto);
+      const rawDb = db["db"]!;
+
+      rawDb.prepare("INSERT INTO items (uuid, data) VALUES (?, ?)").run(
+        "item-msg",
+        JSON.stringify({
+          kind: "message",
+          uuid: "item-msg",
+          source: "s",
+          size: 0,
+          is_read: false,
+          seen_by: [],
+          interaction_count: 0,
+        }),
+      );
+
+      expect(() =>
+        rawDb.prepare("UPDATE items SET data = ? WHERE uuid = ?").run(
+          JSON.stringify({
+            kind: "file",
+            uuid: "item-msg",
+            source: "s",
+            size: 0,
+            is_read: false,
+            seen_by: [],
+            interaction_count: 0,
+          }),
+          "item-msg",
+        ),
+      ).toThrow("items.kind is immutable");
+    });
   });
 });
