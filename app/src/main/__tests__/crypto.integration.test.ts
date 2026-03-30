@@ -1,5 +1,6 @@
 import { describe, it, expect, beforeEach, vi, afterEach } from "vitest";
 import { spawn } from "child_process";
+import { EventEmitter } from "events";
 import * as fs from "fs";
 import { Crypto, CryptoError } from "../crypto";
 import { Storage, PathBuilder, UnsafePathComponent } from "../storage";
@@ -195,9 +196,14 @@ describe("Crypto Integration Tests", () => {
   describe("File Decryption", () => {
     beforeEach(() => {
       // Mock filesystem operations
-      mockFs.createWriteStream.mockReturnValue({
+      const mockWriteStream = Object.assign(new EventEmitter(), {
         end: vi.fn(),
-      } as never);
+        destroy: vi.fn(function (this: EventEmitter) {
+          setImmediate(() => this.emit("close"));
+        }),
+        writable: true,
+      });
+      mockFs.createWriteStream.mockReturnValue(mockWriteStream as never);
 
       mockFs.createReadStream.mockReturnValue({
         pipe: vi.fn(),

@@ -1,6 +1,6 @@
 import { spawn } from "child_process";
 import { createGunzip } from "zlib";
-import { pipeline } from "stream/promises";
+import { pipeline, finished } from "stream/promises";
 
 import * as openpgp from "openpgp";
 import * as fs from "fs";
@@ -16,6 +16,34 @@ export interface CryptoConfig {
   gpgHomedir?: string;
   qubesGpgDomain?: string;
   submissionKeyFingerprint: string;
+}
+
+// Strictly validate GPG's stderr to prevent injection attacks (gpg.fail) where it exits with a zero status code.
+// We need to handle:
+// 1) File decryption, encrypted to just the journalist key
+// 2) Message decryption, encrypted to just the journalist key
+// 3) Reply decryption, encrypted to both the source and journalist keys. In this case, the source key
+//    may or may not be imported in to the keyring (the legacy client imported source keys).
+
+// These are hardcoded English, which should be fine since there are no other locales in sd-gpg.
+// File decryption (1 recipient) or message decryption (1 recipient) or reply decryption with source key in keyring (2 recipients)
+// GPG versions differ in how they describe the key: older versions use "4096-bit RSA key", newer use "rsa4096 key".
+const GPG_STDERR_KNOWN_KEY =
+  /^(gpg: encrypted with (?:4096-bit RSA|rsa4096) key, ID [0-9A-Fa-f]+, created \d{4}-\d{2}-\d{2}\n\s+"[^"]*"\n){1,2}$/;
+// Reply decryption: source key not in keyring (anonymous) + journalist key (known).
+// GPG may output the anonymous key before or after the known key depending on the version.
+const GPG_STDERR_ANONYMOUS_THEN_KNOWN =
+  /^(gpg: encrypted with RSA key, ID [0-9A-Fa-f]+\n)(gpg: encrypted with (?:4096-bit RSA|rsa4096) key, ID [0-9A-Fa-f]+, created \d{4}-\d{2}-\d{2}\n\s+"[^"]*"\n)$/;
+const GPG_STDERR_KNOWN_THEN_ANONYMOUS =
+  /^(gpg: encrypted with (?:4096-bit RSA|rsa4096) key, ID [0-9A-Fa-f]+, created \d{4}-\d{2}-\d{2}\n\s+"[^"]*"\n)(gpg: encrypted with RSA key, ID [0-9A-Fa-f]+\n)$/;
+
+function isExpectedGpgStderr(stderr: string): boolean {
+  const normalized = stderr.trimEnd() + "\n";
+  return (
+    GPG_STDERR_KNOWN_KEY.test(normalized) ||
+    GPG_STDERR_ANONYMOUS_THEN_KNOWN.test(normalized) ||
+    GPG_STDERR_KNOWN_THEN_ANONYMOUS.test(normalized)
+  );
 }
 
 export class CryptoError extends Error {
@@ -137,6 +165,14 @@ export class Crypto {
           reject(
             new Error(`Process exited with non-zero code ${code}: ${stderr}`),
           );
+        } else if (stderr.trim()) {
+          reject(
+            // n.b. use JSON.stringify() to sanitize the error since it's not what we expect
+            // and could be the result of some sort of injection attack
+            new Error(
+              `Received stderr when exporting ${this.submissionKeyFingerprint}: ${JSON.stringify(stderr)}`,
+            ),
+          );
         } else if (!stdout.trim()) {
           reject(
             new Error(
@@ -181,13 +217,22 @@ export class Crypto {
       });
 
       gpgProcess.on("close", async (code, signal) => {
+        const errorMessage = stderr.toString("utf8");
         if (signal) {
           reject(new Error(`Process terminated with signal ${signal}`));
         } else if (code !== 0) {
-          const errorMessage = stderr.toString("utf8");
           reject(
             new CryptoError(
               `GPG decryption failed (exit code ${code}): ${errorMessage}`,
+            ),
+          );
+          return;
+        } else if (errorMessage.trim() && !isExpectedGpgStderr(errorMessage)) {
+          reject(
+            // n.b. use JSON.stringify() to sanitize the error since it's not what we expect
+            // and could be the result of some sort of injection attack
+            new CryptoError(
+              `GPG decryption emitted stderr: ${JSON.stringify(errorMessage.trim())}`,
             ),
           );
           return;
@@ -240,18 +285,41 @@ export class Crypto {
         stderr = Buffer.concat([stderr, chunk]);
       });
 
+      // Destroy the write stream and wait for it to fully close before deleting
+      // the temp directory, to avoid a race between a pending fs.open and rmSync.
+      const destroyAndCleanup = async () => {
+        gpgOutputFile.destroy();
+        try {
+          await finished(gpgOutputFile);
+        } catch {
+          // ignore stream errors during cleanup
+        }
+        fs.rmSync(tempDir.path, { recursive: true, force: true });
+      };
+
       gpgProcess.on("close", async (code, signal) => {
         gpgOutputFile.end();
+        const errorMessage = stderr.toString("utf8");
 
         if (signal) {
+          await destroyAndCleanup();
           reject(new Error(`Process terminated with signal ${signal}`));
+          return;
         } else if (code !== 0) {
-          // Clean up temp directory on error
-          fs.rmSync(tempDir.path, { recursive: true, force: true });
-          const errorMessage = stderr.toString("utf8");
+          await destroyAndCleanup();
           reject(
             new CryptoError(
               `GPG file decryption failed (exit code ${code}): ${errorMessage}`,
+            ),
+          );
+          return;
+        } else if (errorMessage.trim() && !isExpectedGpgStderr(errorMessage)) {
+          await destroyAndCleanup();
+          reject(
+            // n.b. use JSON.stringify() to sanitize the error since it's not what we expect
+            // and could be the result of some sort of injection attack
+            new CryptoError(
+              `GPG file decryption emitted stderr: ${JSON.stringify(errorMessage.trim())}`,
             ),
           );
           return;
@@ -286,9 +354,8 @@ export class Crypto {
         }
       });
 
-      gpgProcess.on("error", (error) => {
-        gpgOutputFile.destroy();
-        fs.rmSync(tempDir.path, { recursive: true, force: true });
+      gpgProcess.on("error", async (error) => {
+        await destroyAndCleanup();
         reject(
           new CryptoError(
             `Failed to start GPG process for file decryption: ${error.message}`,

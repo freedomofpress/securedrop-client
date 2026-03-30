@@ -89,7 +89,7 @@ export function createGpgTestEnvironment(): GpgTestEnvironment {
   const createTestKey = (name: string, email: string): string => {
     const keyGenInput = `
 Key-Type: RSA
-Key-Length: 2048
+Key-Length: 4096
 Name-Real: ${name}
 Name-Email: ${email}
 Expire-Date: 0

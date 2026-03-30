@@ -10,6 +10,9 @@ import {
 import * as path from "path";
 import * as fs from "fs";
 import * as openpgp from "openpgp";
+import { execSync, spawn } from "child_process";
+import { EventEmitter } from "events";
+import { PassThrough } from "stream";
 import { Crypto, CryptoError, encryptMessage } from "../crypto";
 import {
   createGpgTestEnvironment,
@@ -19,6 +22,8 @@ import {
   type GpgTestEnvironment,
 } from "./setup-gpg-tests";
 import { PathBuilder, Storage } from "../storage";
+
+vi.mock("child_process", { spy: true });
 
 // Verify GPG is available - fail tests if not
 const isGpgAvailable = verifyGpgAvailable();
@@ -454,6 +459,100 @@ and symbols: !@#$%^&*()_+-={}[]|\\:";'<>?,./`;
       // Verify the key is valid
       const key = await openpgp.readKey({ armoredKey: key1 });
       expect(key).toBeTruthy();
+    });
+  });
+
+  describe("Message Decryption with source public key in keyring", () => {
+    // Tests the scenario where the journalist has imported the source's public key,
+    // so GPG emits two "encrypted with ... created ..." known-key blocks in stderr.
+    let sourcePublicKey: string;
+    let journalistPublicKey: string;
+
+    beforeAll(() => {
+      const testFilesDir = path.join(__dirname, "files");
+      sourcePublicKey = fs.readFileSync(
+        path.join(testFilesDir, "test-key.gpg.pub.asc"),
+        "utf8",
+      );
+
+      // Import source public key into journalist keyring so GPG recognises both recipients
+      gpgEnv.importKey(sourcePublicKey);
+
+      // Export journalist public key for use in encryptMessage
+      journalistPublicKey = execSync(
+        `gpg --homedir "${gpgEnv.homedir}" --armor --export ${testKeyId}`,
+        { encoding: "utf8" },
+      );
+    });
+
+    it("should decrypt a message encrypted to both journalist and source keys", async () => {
+      const originalMessage =
+        "Secret message with source public key in journalist keyring";
+
+      // Encrypt to both keys; since both are known to GPG, stderr will contain
+      // two known-key blocks ("encrypted with ... created ... / UID")
+      const encryptedContent = Buffer.from(
+        await encryptMessage(originalMessage, [
+          journalistPublicKey,
+          sourcePublicKey,
+        ]),
+        "utf-8",
+      );
+
+      const decryptedMessage = await crypto.decryptMessage(encryptedContent);
+      expect(decryptedMessage).toBe(originalMessage);
+    });
+  });
+
+  describe("GPG stderr failure modes (mocked spawn)", () => {
+    afterEach(() => {
+      vi.restoreAllMocks();
+    });
+
+    function makeMockProcess() {
+      const proc = new EventEmitter() as any;
+      proc.stdout = new PassThrough();
+      proc.stderr = new EventEmitter();
+      proc.stdin = { write: vi.fn(), end: vi.fn() };
+      return proc;
+    }
+
+    it("throws CryptoError when GPG exits 0 with unexpected stderr (decryptMessage)", async () => {
+      const proc = makeMockProcess();
+      vi.mocked(spawn).mockReturnValueOnce(proc);
+
+      const promise = crypto.decryptMessage(Buffer.from("fake encrypted data"));
+
+      proc.stderr.emit(
+        "data",
+        Buffer.from("gpg: WARNING: unexpected warning\n"),
+      );
+      proc.emit("close", 0, null);
+
+      await expect(promise).rejects.toBeInstanceOf(CryptoError);
+      await expect(promise).rejects.toThrow(/GPG decryption emitted stderr/);
+    });
+
+    it("throws CryptoError when GPG exits 0 with unexpected stderr (decryptFile)", async () => {
+      const proc = makeMockProcess();
+      vi.mocked(spawn).mockReturnValueOnce(proc);
+
+      const promise = crypto.decryptFile(
+        storage,
+        itemDirectory,
+        "/fake/path.gpg",
+      );
+
+      proc.stderr.emit(
+        "data",
+        Buffer.from("gpg: WARNING: unexpected warning\n"),
+      );
+      proc.emit("close", 0, null);
+
+      await expect(promise).rejects.toBeInstanceOf(CryptoError);
+      await expect(promise).rejects.toThrow(
+        /GPG file decryption emitted stderr/,
+      );
     });
   });
 
