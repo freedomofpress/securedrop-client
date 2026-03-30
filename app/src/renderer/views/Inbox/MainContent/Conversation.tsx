@@ -5,14 +5,7 @@ import NewMessagesDivider from "./Conversation/NewMessagesDivider";
 import EmptyConversation from "./EmptyConversation";
 import { Form, Input, Button } from "antd";
 import { useTranslation } from "react-i18next";
-import {
-  memo,
-  useMemo,
-  useCallback,
-  useState,
-  useEffect,
-  type ReactElement,
-} from "react";
+import { memo, useMemo, useCallback, useState, useEffect } from "react";
 import { useAppDispatch, useAppSelector, useDebounce } from "../../../hooks";
 import { fetchSources } from "../../../features/sources/sourcesSlice";
 import {
@@ -46,12 +39,15 @@ interface ConversationRowProps {
   designation: string;
 }
 
-const ConversationRow = memo(function ConversationRow({
+// memo is ineffective here because shared rowProps change reference on every selection
+// and the child <Item> is already memo'd
+// nosemgrep: react-component-missing-memo
+function ConversationRow({
   index,
   style,
   virtualRows,
   designation,
-}: RowComponentProps<ConversationRowProps>): ReactElement {
+}: RowComponentProps<ConversationRowProps>) {
   const row = virtualRows[index];
   return (
     <div style={style} className="px-4">
@@ -62,7 +58,7 @@ const ConversationRow = memo(function ConversationRow({
       )}
     </div>
   );
-});
+}
 
 const Conversation = memo(function Conversation({
   sourceWithItems,
@@ -248,7 +244,7 @@ const Conversation = memo(function Conversation({
             data-testid="conversation-items-container"
             rowCount={virtualRows.length}
             rowHeight={dynamicRowHeight}
-            rowComponent={(props) => <ConversationRow {...props} />}
+            rowComponent={ConversationRow}
             rowProps={{ virtualRows, designation: designation || "" }}
             listRef={listRef}
             style={{ height: "100%" }}

@@ -468,6 +468,29 @@ describe("Conversation draft persistence", () => {
   });
 });
 
+describe("Conversation TruncatedText expands", () => {
+  const longText = "a".repeat(3500);
+
+  it("stays expanded when Conversation re-renders", async () => {
+    const source = withItems([
+      { ...createMessageItem("item-1", 1), plaintext: longText },
+    ]);
+
+    const { rerender } = renderWithProviders(
+      <Conversation sourceWithItems={source} />,
+    );
+
+    await userEvent.click(screen.getByText("See more"));
+    expect(screen.getByText("See less")).toBeDefined();
+
+    // Trigger a re-render to simulate the update on row height change
+    rerender(<Conversation sourceWithItems={source} />);
+
+    expect(screen.queryByText("See more")).toBeNull();
+    expect(screen.getByText("See less")).toBeDefined();
+  });
+});
+
 describe("Conversation new message indicator", () => {
   const baseItems = [createMessageItem("item-1", 1)];
 
