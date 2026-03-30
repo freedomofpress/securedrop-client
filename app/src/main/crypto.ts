@@ -1,6 +1,6 @@
 import { spawn } from "child_process";
 import { createGunzip } from "zlib";
-import { pipeline } from "stream/promises";
+import { pipeline, finished } from "stream/promises";
 
 import * as openpgp from "openpgp";
 import * as fs from "fs";
@@ -285,15 +285,28 @@ export class Crypto {
         stderr = Buffer.concat([stderr, chunk]);
       });
 
+      // Destroy the write stream and wait for it to fully close before deleting
+      // the temp directory, to avoid a race between a pending fs.open and rmSync.
+      const destroyAndCleanup = async () => {
+        gpgOutputFile.destroy();
+        try {
+          await finished(gpgOutputFile);
+        } catch {
+          // ignore stream errors during cleanup
+        }
+        fs.rmSync(tempDir.path, { recursive: true, force: true });
+      };
+
       gpgProcess.on("close", async (code, signal) => {
         gpgOutputFile.end();
         const errorMessage = stderr.toString("utf8");
 
         if (signal) {
+          await destroyAndCleanup();
           reject(new Error(`Process terminated with signal ${signal}`));
+          return;
         } else if (code !== 0) {
-          // Clean up temp directory on error
-          fs.rmSync(tempDir.path, { recursive: true, force: true });
+          await destroyAndCleanup();
           reject(
             new CryptoError(
               `GPG file decryption failed (exit code ${code}): ${errorMessage}`,
@@ -301,8 +314,7 @@ export class Crypto {
           );
           return;
         } else if (errorMessage.trim() && !isExpectedGpgStderr(errorMessage)) {
-          // Clean up temp directory on error
-          fs.rmSync(tempDir.path, { recursive: true, force: true });
+          await destroyAndCleanup();
           reject(
             // n.b. use JSON.stringify() to sanitize the error since it's not what we expect
             // and could be the result of some sort of injection attack
@@ -342,9 +354,8 @@ export class Crypto {
         }
       });
 
-      gpgProcess.on("error", (error) => {
-        gpgOutputFile.destroy();
-        fs.rmSync(tempDir.path, { recursive: true, force: true });
+      gpgProcess.on("error", async (error) => {
+        await destroyAndCleanup();
         reject(
           new CryptoError(
             `Failed to start GPG process for file decryption: ${error.message}`,

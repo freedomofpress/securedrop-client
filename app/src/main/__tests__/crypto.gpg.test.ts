@@ -547,11 +547,6 @@ and symbols: !@#$%^&*()_+-={}[]|\\:";'<>?,./`;
         "data",
         Buffer.from("gpg: WARNING: unexpected warning\n"),
       );
-      // End stdout so the pipe closes the output WriteStream before we emit the process
-      // close event, avoiding a race between the lazy fs.createWriteStream open and the
-      // rmSync cleanup in the error path.
-      proc.stdout.end();
-      await new Promise<void>((resolve) => setImmediate(resolve));
       proc.emit("close", 0, null);
 
       await expect(promise).rejects.toBeInstanceOf(CryptoError);
