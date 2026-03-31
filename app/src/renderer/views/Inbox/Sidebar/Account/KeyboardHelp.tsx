@@ -1,45 +1,23 @@
 import { useTranslation } from "react-i18next";
+import { shortcuts } from "../../../../shortcuts/shortcutDefinitions";
 
 // Keyboard Shortcuts Modal Content
 function KeyboardHelp() {
   const { t } = useTranslation("Sidebar");
 
-  // TODO: This should be generated from actual defined shortcuts
-  const shortcuts = [
-    {
-      heading: "Composing",
-      items: [
-        { desc: "Send reply", keys: [["Ctrl", "Enter"]] },
-        { desc: "Discard draft and close compose", keys: [["Esc"]] },
-      ],
-    },
-    {
-      heading: "Files",
-      items: [
-        { desc: "Download all files in conversation", keys: [["Ctrl", "D"]] },
-      ],
-    },
-    {
-      heading: "Sources",
-      items: [
-        { desc: "Delete selected sources", keys: [["Ctrl", "Delete"]] },
-        { desc: "Focus source search", keys: [["Ctrl", "F"]] },
-      ],
-    },
-    {
-      heading: "Navigation",
-      items: [
-        { desc: "Next source", keys: [["↓"]] },
-        { desc: "Previous source", keys: [["↑"]] },
-        { desc: "Move focus forward", keys: [["Tab"]] },
-        { desc: "Move focus backward", keys: [["Shift", "Tab"]] },
-      ],
-    },
-    {
-      heading: "Application",
-      items: [{ desc: "Quit SecureDrop", keys: [["Ctrl", "Q"]] }],
-    },
-  ];
+  // Group shortcuts by categoryKey, preserving definition order
+  const grouped: {
+    categoryKey: string;
+    items: (typeof shortcuts)[number][];
+  }[] = [];
+  for (const s of shortcuts) {
+    let group = grouped.find((g) => g.categoryKey === s.categoryKey);
+    if (!group) {
+      group = { categoryKey: s.categoryKey, items: [] };
+      grouped.push(group);
+    }
+    group.items.push(s);
+  }
 
   const renderKeys = (keyGroups: string[][]) => {
     return keyGroups.map((chord, ci) => (
@@ -70,25 +48,27 @@ function KeyboardHelp() {
 
       {/* Body */}
       <div className="px-[24px] pt-[16px] pb-[4px]">
-        {shortcuts.map((group, gi) => (
-          <div key={gi}>
+        {grouped.map((group, gi) => (
+          <div key={group.categoryKey}>
             <div
               className={`text-[11px] font-bold uppercase tracking-[0.06em] text-[#8c8c8c] mb-[2px] ${gi > 0 ? "mt-[4px]" : ""}`}
             >
-              {group.heading}
+              {t(group.categoryKey)}
             </div>
-            {group.items.map((item, ii) => (
+            {group.items.map((item) => (
               <div
-                key={ii}
+                key={item.id}
                 className="flex items-center justify-between py-[5px]"
               >
-                <span className="text-[13px] text-[#414651]">{item.desc}</span>
+                <span className="text-[13px] text-[#414651]">
+                  {t(item.descriptionKey)}
+                </span>
                 <div className="flex items-center gap-[4px] shrink-0">
-                  {renderKeys(item.keys)}
+                  {renderKeys(item.displayKeys)}
                 </div>
               </div>
             ))}
-            {gi < shortcuts.length - 1 && (
+            {gi < grouped.length - 1 && (
               <div className="h-[1px] bg-[#f0f0f0] my-[8px]"></div>
             )}
           </div>

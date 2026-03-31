@@ -6,7 +6,6 @@ import {
   ipcMain,
   session,
   clipboard,
-  Menu,
 } from "electron";
 import { join, dirname, delimiter } from "path";
 import { randomBytes } from "crypto";
@@ -162,6 +161,10 @@ if (!gotTheLock) {
   const viteNonce =
     is.dev && process.env["NODE_ENV"] != "production" ? __VITE_NONCE__ : "";
 
+  // Set to true by the `before-quit` event so the close intercept allows
+  // programmatic quit (IPC quitApp, OS signals, etc.)
+  let isQuitting = false;
+
   function createWindow(): BrowserWindow {
     const mainWindow = new BrowserWindow({
       width: is.dev && process.env["NODE_ENV"] != "production" ? 1500 : 1200,
@@ -196,6 +199,18 @@ if (!gotTheLock) {
     } else {
       mainWindow.loadFile(join(__dirname, "../renderer/index.html"));
     }
+
+    // Intercept the window close button (X) to show the quit confirmation
+    // modal in the renderer instead of quitting immediately.
+    // When app.quit() is called (e.g. from the renderer's quitApp IPC),
+    // the `before-quit` event sets `isQuitting` so the close handler lets
+    // it through.
+    mainWindow.on("close", (e) => {
+      if (!isQuitting && !mainWindow.isDestroyed()) {
+        e.preventDefault();
+        mainWindow.webContents.send("quit-requested");
+      }
+    });
 
     return mainWindow;
   }
@@ -303,24 +318,6 @@ if (!gotTheLock) {
       app.on("browser-window-created", (_, window) => {
         optimizer.watchWindowShortcuts(window);
       });
-
-      // Set up application menu with keyboard shortcuts
-      const template: Electron.MenuItemConstructorOptions[] = [
-        {
-          label: "Application",
-          submenu: [
-            {
-              label: "Quit",
-              accelerator: "CmdOrCtrl+Q",
-              click: () => {
-                app.quit();
-              },
-            },
-          ],
-        },
-      ];
-      const menu = Menu.buildFromTemplate(template);
-      Menu.setApplicationMenu(menu);
 
       // Initialize exporter
       const exporter = new Exporter();
@@ -736,6 +733,7 @@ if (!gotTheLock) {
   });
 
   app.on("before-quit", () => {
+    isQuitting = true;
     db.close();
     if (fetchWorker) {
       void fetchWorker.terminate();

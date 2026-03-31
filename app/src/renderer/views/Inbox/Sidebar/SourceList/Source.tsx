@@ -1,7 +1,7 @@
 import { Checkbox, Button, Tooltip } from "antd";
 import { Star, Paperclip } from "lucide-react";
 import { useTranslation } from "react-i18next";
-import { memo, useMemo, useCallback } from "react";
+import { memo, useMemo, useCallback, type KeyboardEvent } from "react";
 import { useNavigate } from "react-router";
 
 import StarFilled from "./StarFilled";
@@ -57,13 +57,27 @@ const Source = memo(function Source({
     }
   }, [isActive, navigate, source.uuid, dispatch]);
 
+  const handleKeyDown = useCallback(
+    (e: KeyboardEvent<HTMLDivElement>) => {
+      if (e.key === "Enter" || e.key === " ") {
+        e.preventDefault();
+        handleClick();
+      }
+    },
+    [handleClick],
+  );
+
   return (
     <div
-      className={`flex items-center px-4 py-3 border-b border-gray-100 cursor-pointer transition-colors duration-150 ease-in-out
+      className={`flex items-center px-4 py-3 border-b border-gray-100 cursor-pointer transition-colors duration-150 ease-in-out h-full outline-0 focus:ring-2 focus:ring-inset focus:ring-blue-300
         ${isActive ? "bg-blue-500 text-white hover:bg-blue-600" : "hover:bg-gray-50"}
         ${isSelected && !isActive ? "bg-blue-25" : ""}
 `}
       onClick={handleClick}
+      onKeyDown={handleKeyDown}
+      tabIndex={0}
+      role="option"
+      aria-selected={isActive}
       data-testid={`source-${source.uuid}`}
       data-selected={isSelected}
       data-active={isActive}

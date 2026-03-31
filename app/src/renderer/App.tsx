@@ -6,6 +6,7 @@ import { useAppSelector } from "./hooks";
 import { SessionStatus } from "./features/session/sessionSlice";
 import { useTranslation } from "react-i18next";
 import { FirstRunPopup } from "./components/FirstRunPopup";
+import QuitModal from "./components/QuitModal";
 
 function App() {
   const { t } = useTranslation("MainContent");
@@ -16,6 +17,7 @@ function App() {
           {t("nonProduction")}
         </div>
       )}
+      <QuitModal />
       <Routes>
         <Route
           index

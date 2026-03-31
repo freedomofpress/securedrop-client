@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo, useCallback } from "react";
 import { useParams, useNavigate } from "react-router";
-import { List } from "react-window";
+import { List, useListRef } from "react-window";
 import { useTranslation } from "react-i18next";
 import { Modal, Button } from "antd";
 
@@ -18,6 +18,8 @@ import {
   SearchResult,
   type Source as SourceType,
 } from "../../../../types";
+import { useSidebarShortcuts, useShortcut } from "../../../shortcuts";
+import type { FocusedPanel } from "../../Inbox";
 
 interface SourceRowProps {
   filteredSources: SourceType[];
@@ -54,11 +56,12 @@ function SourceRow({
   );
 }
 
-function SourceList() {
+function SourceList({ focusedPanel }: { focusedPanel: FocusedPanel }) {
   const { sourceUuid: activeSourceUuid } = useParams<{ sourceUuid?: string }>();
   const dispatch = useAppDispatch();
   const navigate = useNavigate();
   const { t } = useTranslation("Sidebar");
+  const listRef = useListRef(null);
 
   const sources = useAppSelector(selectSources);
   const [selectedSources, setSelectedSources] = useState<Set<string>>(
@@ -222,33 +225,17 @@ function SourceList() {
     await openDeleteModal(new Set(selectedSources));
   }, [selectedSources, openDeleteModal]);
 
-  // Keyboard shortcut: Ctrl+Delete deletes the current source if there is one
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (!e.ctrlKey || e.key !== "Delete") {
-        return;
-      }
-      // Don't trigger if modal is already open
-      if (deleteModalOpen) {
-        return;
-      }
-      // Don't trigger when typing in an input or textarea
-      const target = e.target as HTMLElement;
-      if (target.tagName === "INPUT" || target.tagName === "TEXTAREA") {
-        return;
-      }
-
-      if (activeSourceUuid) {
-        e.preventDefault();
+  // Keyboard shortcut: Ctrl+Delete deletes the current source
+  useShortcut(
+    "deleteSource",
+    () => {
+      if (!deleteModalOpen && activeSourceUuid) {
         void openDeleteModal(new Set([activeSourceUuid]));
       }
-    };
-
-    document.addEventListener("keydown", handleKeyDown);
-    return () => {
-      document.removeEventListener("keydown", handleKeyDown);
-    };
-  }, [openDeleteModal, deleteModalOpen, activeSourceUuid]);
+    },
+    undefined,
+    [openDeleteModal, deleteModalOpen, activeSourceUuid],
+  );
 
   const handleDeleteModalCancel = useCallback(() => {
     setPendingDeleteSources(new Set());
@@ -376,6 +363,57 @@ function SourceList() {
       });
   }, [sources, searchResults, filter, sortedAsc]);
 
+  // Helper to get all source option elements in the list
+  const getSourceOptions = useCallback((): HTMLElement[] => {
+    const container = listRef.current?.element;
+    if (!container) {
+      return [];
+    }
+    return Array.from(
+      container.querySelectorAll<HTMLElement>('[role="option"]'),
+    );
+  }, [listRef]);
+
+  // Move focus to the previous source row
+  const handleSourceUp = useCallback(() => {
+    const options = getSourceOptions();
+    if (options.length === 0) {
+      return;
+    }
+    const currentIndex = options.findIndex(
+      (el) =>
+        el === document.activeElement || el.contains(document.activeElement),
+    );
+    const nextIndex = currentIndex <= 0 ? options.length - 1 : currentIndex - 1;
+    options[nextIndex].focus();
+  }, [getSourceOptions]);
+
+  // Move focus to the next source row
+  const handleSourceDown = useCallback(() => {
+    const options = getSourceOptions();
+    if (options.length === 0) {
+      return;
+    }
+    const currentIndex = options.findIndex(
+      (el) =>
+        el === document.activeElement || el.contains(document.activeElement),
+    );
+    const nextIndex = currentIndex >= options.length - 1 ? 0 : currentIndex + 1;
+    options[nextIndex].focus();
+  }, [getSourceOptions]);
+
+  useSidebarShortcuts({
+    onSourceUp: handleSourceUp,
+    onSourceDown: handleSourceDown,
+    onSourceSelect: useCallback(() => {
+      // Enter/Space on focused source is handled by Source.tsx's onKeyDown
+    }, []),
+    onDeleteCheckedSources: useCallback(() => {
+      void handleBulkDelete();
+    }, [handleBulkDelete]),
+    enabled: focusedPanel === "sidebar",
+  });
+
   return (
     <div className="flex-1 flex flex-col min-h-0">
       {/* Toolbar with controls and actions */}
@@ -400,6 +438,8 @@ function SourceList() {
       {/* Sources list */}
       <div className="flex-1 min-h-0 flex flex-col">
         <List
+          listRef={listRef}
+          role="listbox"
           rowCount={filteredSources.length}
           rowHeight={72}
           rowComponent={SourceRow}

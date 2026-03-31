@@ -3,7 +3,7 @@
     "ok": "OK",
     "newUser": {
       "title": "Welcome to SecureDrop",
-      "body": "Messages and documents sent to you via SecureDrop will show up here. Initial data synchronization may take several minutes.<br><br>You can press <kbd>Ctrl+?</kbd> for help at any time. For further questions, consult your system administrator or reach out to SecureDrop support via Signal. Documentation and instructions for accessing support are available at workstation.securedrop.org, which can be accessed from a different computer."
+      "body": "Messages and documents sent to you via SecureDrop will show up here. Initial data synchronization may take several minutes.<br><br>You can press <kbd>F1</kbd> for help at any time. For further questions, consult your system administrator or reach out to SecureDrop support via Signal. Documentation and instructions for accessing support are available at workstation.securedrop.org, which can be accessed from a different computer."
     },
     "migration": {
       "title": "Welcome to the new SecureDrop App",
@@ -54,11 +54,6 @@
       "keyboardShortcuts": "Keyboard Shortcuts",
       "aboutSecureDrop": "About SecureDrop",
       "Quit": "Quit",
-      "quitModalTitle": "Close application?",
-      "quitWithDrafts": "Draft replies may be lost.",
-      "quitNoDrafts": "",
-      "quitModalCancel": "Cancel",
-      "quitModalOK": "Yes, Quit",
       "aboutClose": "Close"
     },
     "helpModals": {
@@ -123,6 +118,28 @@
       "encryptedFile": "Encrypted File",
       "encryptedMessage": "Encrypted Message",
       "toggleStar": "Toggle star"
+    },
+    "shortcuts": {
+      "quit": "Quit SecureDrop",
+      "focusSidebar": "Focus sidebar",
+      "focusMainContent": "Focus main content",
+      "openHelp": "Open keyboard shortcuts",
+      "sync": "Sync now",
+      "signOut": "Sign out",
+      "sourceUp": "Previous source",
+      "sourceDown": "Next source",
+      "sourceSelect": "Open focused source",
+      "deleteCheckedSources": "Delete checked sources",
+      "deleteSource": "Delete selected source",
+      "sendReply": "Send reply",
+      "downloadAll": "Download all files",
+      "categories": {
+        "application": "Application",
+        "navigation": "Navigation",
+        "sources": "Sources",
+        "composing": "Composing",
+        "files": "Files"
+      }
     }
   },
   "SignIn": {
@@ -236,5 +253,12 @@
       "errorMimetypeDiscovery": "Could not determine the file type.",
       "errorUnknown": "An unknown error occurred while printing."
     }
+  },
+  "QuitModal": {
+    "title": "Close application?",
+    "withDrafts": "Draft replies may be lost.",
+    "noDrafts": "",
+    "cancel": "Cancel",
+    "ok": "Yes, Quit"
   }
 }

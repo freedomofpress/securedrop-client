@@ -37,6 +37,7 @@ vi.mock("react-window", () => ({
       ))}
     </div>
   ),
+  useListRef: () => ({ current: null }),
 }));
 
 // Mock the Source component
@@ -225,8 +226,11 @@ describe("Sources Component", () => {
   ) => {
     return renderWithProviders(
       <Routes>
-        <Route path="/" element={<SourceList />} />
-        <Route path="/source/:sourceUuid" element={<SourceList />} />
+        <Route path="/" element={<SourceList focusedPanel="sidebar" />} />
+        <Route
+          path="/source/:sourceUuid"
+          element={<SourceList focusedPanel="sidebar" />}
+        />
       </Routes>,
       {
         initialEntries: [initialRoute],
@@ -1028,7 +1032,11 @@ describe("Sources Component", () => {
       });
 
       // Press Ctrl+Delete
-      fireEvent.keyDown(document, { key: "Delete", ctrlKey: true });
+      fireEvent.keyDown(document, {
+        key: "Delete",
+        code: "Delete",
+        ctrlKey: true,
+      });
 
       // Modal should be open
       await waitFor(() => {
@@ -1048,7 +1056,11 @@ describe("Sources Component", () => {
       expect(screen.getByTestId("source-checkbox-source-2")).toBeChecked();
 
       // Press Ctrl+Delete - modal opens for active source (source-1)
-      fireEvent.keyDown(document, { key: "Delete", ctrlKey: true });
+      fireEvent.keyDown(document, {
+        key: "Delete",
+        code: "Delete",
+        ctrlKey: true,
+      });
 
       await waitFor(() => {
         expect(screen.getByTestId("delete-modal")).toBeInTheDocument();
@@ -1067,7 +1079,11 @@ describe("Sources Component", () => {
       });
 
       // Press Ctrl+Delete with no active source
-      fireEvent.keyDown(document, { key: "Delete", ctrlKey: true });
+      fireEvent.keyDown(document, {
+        key: "Delete",
+        code: "Delete",
+        ctrlKey: true,
+      });
 
       // Modal should not be open
       expect(screen.queryByTestId("delete-modal")).not.toBeInTheDocument();
@@ -1084,7 +1100,11 @@ describe("Sources Component", () => {
       expect(screen.getByTestId("source-checkbox-source-1")).not.toBeChecked();
 
       // Press Ctrl+Delete - modal opens but checkbox is untouched
-      fireEvent.keyDown(document, { key: "Delete", ctrlKey: true });
+      fireEvent.keyDown(document, {
+        key: "Delete",
+        code: "Delete",
+        ctrlKey: true,
+      });
 
       await waitFor(() => {
         expect(screen.getByTestId("delete-modal")).toBeInTheDocument();
@@ -1104,7 +1124,11 @@ describe("Sources Component", () => {
       });
 
       // Press Delete without Ctrl
-      fireEvent.keyDown(document, { key: "Delete", ctrlKey: false });
+      fireEvent.keyDown(document, {
+        key: "Delete",
+        code: "Delete",
+        ctrlKey: false,
+      });
 
       // Modal should not be open
       expect(screen.queryByTestId("delete-modal")).not.toBeInTheDocument();
@@ -1122,7 +1146,11 @@ describe("Sources Component", () => {
       searchInput.focus();
 
       // Press Ctrl+Delete while focused on input
-      fireEvent.keyDown(searchInput, { key: "Delete", ctrlKey: true });
+      fireEvent.keyDown(searchInput, {
+        key: "Delete",
+        code: "Delete",
+        ctrlKey: true,
+      });
 
       // Modal should not be open
       expect(screen.queryByTestId("delete-modal")).not.toBeInTheDocument();
@@ -1136,14 +1164,22 @@ describe("Sources Component", () => {
       });
 
       // Open modal via keyboard shortcut
-      fireEvent.keyDown(document, { key: "Delete", ctrlKey: true });
+      fireEvent.keyDown(document, {
+        key: "Delete",
+        code: "Delete",
+        ctrlKey: true,
+      });
 
       await waitFor(() => {
         expect(screen.getByTestId("delete-modal")).toBeInTheDocument();
       });
 
       // Press Ctrl+Delete again - should not cause issues
-      fireEvent.keyDown(document, { key: "Delete", ctrlKey: true });
+      fireEvent.keyDown(document, {
+        key: "Delete",
+        code: "Delete",
+        ctrlKey: true,
+      });
 
       // Modal should still be open (not re-triggered)
       expect(screen.getByTestId("delete-modal")).toBeInTheDocument();

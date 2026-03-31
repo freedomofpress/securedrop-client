@@ -17,23 +17,25 @@ import { setUnauth } from "../../../../features/session/sessionSlice";
 import { getJournalistById } from "../../../../features/journalists/journalistsSlice";
 import { syncMetadata } from "../../../../features/sync/syncSlice";
 import SyncDicator from "./SyncDicator";
-import KeyboardHelp from "./KeyboardHelp";
 import AboutHelp from "./AboutHelp";
+import { requestQuit } from "../../../../components/quitRequester";
+import { requestHelp } from "../../../../components/helpRequester";
+import {
+  getShortcut,
+  formatDisplayKeys,
+} from "../../../../shortcuts/shortcutDefinitions";
 
 function MainMenu() {
   const { t } = useTranslation("Sidebar");
 
   const navigate = useNavigate();
   const session = useAppSelector((state) => state.session);
-  const drafts = useAppSelector((state) => state.drafts);
   const dispatch = useAppDispatch();
-  const [modal, contextHolder] = Modal.useModal();
   const [isAboutModalOpen, setIsAboutModalOpen] = useState<boolean>(false);
   const [aboutModalContent, setAboutModalContent] =
     useState<React.ReactNode>(null);
 
   const aboutContent = <AboutHelp />;
-  const keysContent = <KeyboardHelp />;
 
   const showAboutModal = (content: React.ReactNode) => {
     setAboutModalContent(content);
@@ -81,23 +83,7 @@ function MainMenu() {
   };
 
   const closeApp = () => {
-    modal.confirm({
-      getContainer: false,
-      title: t("account.quitModalTitle"),
-      content: t(
-        Object.keys(drafts.drafts).length > 0
-          ? "account.quitWithDrafts"
-          : "account.quitNoDrafts",
-      ),
-      cancelText: t("account.quitModalCancel"),
-      okText: t("account.quitModalOK"),
-      onOk() {
-        window.electronAPI.quitApp();
-      },
-      onCancel() {},
-    });
-
-    return;
+    requestQuit();
   };
 
   const handleMenuClick: MenuProps["onClick"] = async (e) => {
@@ -115,7 +101,7 @@ function MainMenu() {
         closeApp();
         break;
       case "helpKeys":
-        showAboutModal(keysContent);
+        requestHelp();
         break;
       case "helpAbout":
         showAboutModal(aboutContent);
@@ -130,7 +116,7 @@ function MainMenu() {
     {
       key: "syncNow",
       label: t("account.syncNow"),
-      extra: "Ctrl+R",
+      extra: formatDisplayKeys(getShortcut("sync")),
       icon: <RefreshCw strokeWidth={1.5} />,
       disabled: !session.authData,
     },
@@ -161,7 +147,7 @@ function MainMenu() {
           key: "signOut",
           label: t("account.signOut"),
           icon: <LogOut strokeWidth={1.5} />,
-          extra: "Ctrl+Shift+O",
+          extra: formatDisplayKeys(getShortcut("signOut")),
         }
       : {
           key: "signIn",
@@ -174,7 +160,7 @@ function MainMenu() {
       key: "closeApp",
       label: t("account.Quit"),
       icon: <Power strokeWidth={1.5} />,
-      extra: "Ctrl+Shift+Q",
+      extra: formatDisplayKeys(getShortcut("quit")),
     },
   ];
 
@@ -234,7 +220,6 @@ function MainMenu() {
       >
         {aboutModalContent}
       </Modal>
-      {contextHolder}
     </>
   );
 }

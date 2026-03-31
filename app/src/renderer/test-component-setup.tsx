@@ -109,6 +109,7 @@ beforeEach(() => {
       .mockRejectedValue(new Error("mock not implemented")),
     onItemUpdate: vi.fn().mockReturnValue(() => {}),
     onSourceUpdate: vi.fn().mockReturnValue(() => {}),
+    onQuitRequested: vi.fn().mockReturnValue(() => {}),
     getItem: vi.fn().mockRejectedValue(new Error("mock not implemented")),
     getSources: vi.fn().mockResolvedValue([
       {

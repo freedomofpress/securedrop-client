@@ -130,6 +130,11 @@ const electronAPI = {
     ipcRenderer.on("source-update", listener);
     return () => ipcRenderer.removeListener("source-update", listener);
   },
+  onQuitRequested: (callback: () => void) => {
+    const listener = () => callback();
+    ipcRenderer.on("quit-requested", listener);
+    return () => ipcRenderer.removeListener("quit-requested", listener);
+  },
   clearClipboard: logIpcCall<void>("clearClipboard", () =>
     ipcRenderer.invoke("clearClipboard"),
   ),
