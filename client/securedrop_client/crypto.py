@@ -84,6 +84,12 @@ def read_gzip_header_filename(filename: str) -> str:
             original_filename = str(fb, "utf-8")
 
     check_path_traversal(original_filename)
+
+    # Ensure this is a single file and not a path
+    if original_filename != Path(original_filename).name:
+        # Otherwise, treat it as an unrecoverable fault for this file:
+        raise ValueError("Unsafe file name; aborting further processing")
+
     return original_filename
 
 
