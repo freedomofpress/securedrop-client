@@ -2,9 +2,10 @@ import { describe, it, beforeAll, afterAll } from "vitest";
 import { expect } from "@playwright/test";
 
 import { TestContext, pollUntil } from "./helper";
-import { DB } from "../src/main/database";
 import { Crypto } from "../src/main/crypto";
 import { PendingEventType } from "../src/types";
+import { Datastore } from "../src/main/datastore";
+import { Storage } from "../src/main/storage";
 
 const TARGET_SOURCE = {
   uuid: "60a49b24-1a75-4daf-b0fa-125c1ce0d723",
@@ -23,8 +24,8 @@ describe.sequential("starring sources", () => {
   let context: TestContext;
   let crypto: Crypto;
 
-  function withDb<T>(callback: (db: DB) => Promise<T> | T): Promise<T> {
-    const db = new DB(crypto, context.dbPath);
+  function withDb<T>(callback: (db: Datastore) => Promise<T> | T): Promise<T> {
+    const db = new Datastore(crypto, new Storage(), context.dbPath);
     return Promise.resolve(callback(db)).finally(() => db.close());
   }
 

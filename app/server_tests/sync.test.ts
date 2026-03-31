@@ -1,8 +1,9 @@
 import { describe, it, beforeAll, afterAll } from "vitest";
 import { expect } from "@playwright/test";
 import { TestContext } from "./helper";
-import { DB } from "../src/main/database";
 import { Crypto } from "../src/main/crypto";
+import { Storage } from "../src/main/storage";
+import { Datastore } from "../src/main/datastore";
 
 // Expected database index after sync (from data.yaml)
 const EXPECTED_INDEX = {
@@ -104,7 +105,7 @@ describe.sequential("sync against a real server", () => {
     expect(count).toBe(0);
 
     // Verify database is empty
-    const db = new DB(crypto, context.dbPath);
+    const db = new Datastore(crypto, new Storage(), context.dbPath);
     const index = db.getIndex();
 
     expect(Object.keys(index.sources).length).toBe(0);
@@ -160,7 +161,7 @@ describe.sequential("sync against a real server", () => {
     await expect(context.page.getByText("Gorgeous Apron")).toBeVisible();
 
     // Query the database to verify it matches expected index
-    const db = new DB(crypto, context.dbPath);
+    const db = new Datastore(crypto, new Storage(), context.dbPath);
     const index = db.getIndex();
     firstSyncVersion = db.getVersion();
 
@@ -181,7 +182,7 @@ describe.sequential("sync against a real server", () => {
     expect(sourceCount).toBe(3);
 
     // Verify database version stayed the same (idempotent)
-    const db = new DB(crypto, context.dbPath);
+    const db = new Datastore(crypto, new Storage(), context.dbPath);
     const secondVersion = db.getVersion();
     expect(secondVersion).toBe(firstSyncVersion);
     expect(secondVersion).toBe(EXPECTED_VERSION);

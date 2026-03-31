@@ -504,13 +504,13 @@ if (!gotTheLock) {
       );
 
       ipcMain.handle(
-        "addPendingItemsSeenBatch",
+        "addPendingSourceConversationSeen",
         async (
           _event,
           sourceUuid: string,
-          itemUuids: string[],
-        ): Promise<bigint[]> => {
-          return db.addPendingItemsSeenBatch(sourceUuid, itemUuids);
+          upperBound: number,
+        ): Promise<string | null> => {
+          return db.addPendingSourceConversationSeen(sourceUuid, upperBound);
         },
       );
 

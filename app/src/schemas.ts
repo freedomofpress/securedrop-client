@@ -141,7 +141,7 @@ export enum PendingEventType {
   SourceConversationDeleted = "source_conversation_deleted",
   Starred = "source_starred",
   Unstarred = "source_unstarred",
-  Seen = "item_seen",
+  SourceConversationSeen = "source_conversation_seen",
 }
 
 const BasePendingEvent = {
@@ -149,15 +149,26 @@ const BasePendingEvent = {
   target: z.union([SourceTargetSchema, ItemTargetSchema]),
 };
 
+const SourceConversationSeenDataSchema = z.object({ upper_bound: z.number() });
+
 export const PendingEventSchema = z.discriminatedUnion("type", [
   z.object({
     ...BasePendingEvent,
     type: z.literal(PendingEventType.ReplySent),
     data: ReplySentDataSchema,
   }),
+  z.object({
+    ...BasePendingEvent,
+    type: z.literal(PendingEventType.SourceConversationSeen),
+    data: SourceConversationSeenDataSchema,
+  }),
   // All other event types
   ...Object.values(PendingEventType)
-    .filter((v) => v !== PendingEventType.ReplySent)
+    .filter(
+      (v) =>
+        v !== PendingEventType.ReplySent &&
+        v !== PendingEventType.SourceConversationSeen,
+    )
     .map((v) => {
       return z.object({
         ...BasePendingEvent,

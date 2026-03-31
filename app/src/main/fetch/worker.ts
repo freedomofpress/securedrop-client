@@ -1,9 +1,10 @@
 import { parentPort, workerData } from "worker_threads";
 
-import { DB } from "../database";
 import { TaskQueue } from "./queue";
 import { AuthedRequest } from "../../types";
 import { Crypto } from "../crypto";
+import { Datastore } from "../datastore";
+import { Storage } from "../storage";
 
 console.log("Starting fetch worker...");
 
@@ -21,7 +22,7 @@ if (!workerData.cryptoConfig) {
 console.log("Initializing crypto with config:", workerData.cryptoConfig);
 const crypto = Crypto.initialize(workerData.cryptoConfig);
 
-const db = new DB(crypto);
+const db = new Datastore(crypto, new Storage());
 const q = new TaskQueue(db, port);
 
 port.on("message", (message: AuthedRequest) => {

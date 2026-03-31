@@ -9,11 +9,146 @@ import {
   SourceMetadata,
   Journalist,
   JournalistMetadata,
+  SubmissionMetadata,
 } from "../types";
 import { Crypto } from "./crypto";
 import { Datastore } from "./datastore";
 import { Storage } from "./storage";
 import { MESSAGE_PREVIEW_LENGTH } from "./database";
+import { setUmask } from "./umask";
+
+describe("DB Component Tests", () => {
+  const testHomeDir = path.join(os.tmpdir(), "test-home");
+  const testDbDir = path.join(testHomeDir, ".config", "SecureDrop");
+  const testDbPath = path.join(testDbDir, "db.sqlite");
+  const originalHomedir = os.homedir;
+  let originalUmask: number;
+  let db: Datastore;
+  let crypto: Crypto;
+
+  beforeAll(() => {
+    (Crypto as any).instance = undefined;
+    crypto = Crypto.initialize({
+      isQubes: false,
+      submissionKeyFingerprint: "",
+    });
+  });
+
+  beforeEach(() => {
+    // Set umask for secure file permissions
+    originalUmask = process.umask();
+    setUmask();
+
+    if (fs.existsSync(testHomeDir)) {
+      fs.rmSync(testHomeDir, { recursive: true, force: true });
+    }
+    os.homedir = () => testHomeDir;
+  });
+
+  afterEach(() => {
+    if (db) {
+      db.close();
+    }
+    process.umask(originalUmask);
+    os.homedir = originalHomedir;
+    if (fs.existsSync(testHomeDir)) {
+      fs.rmSync(testHomeDir, { recursive: true, force: true });
+    }
+  });
+
+  it("should create database with correct setup", () => {
+    db = new Datastore(crypto, new Storage());
+
+    expect(db).toBeDefined();
+    expect(fs.existsSync(testDbPath)).toBe(true);
+    expect(db["db"]!.pragma("journal_mode", { simple: true })).toBe("wal");
+    expect(db["db"]!.pragma("secure_delete", { simple: true })).toBe(1);
+    expect(db["db"]!.pragma("auto_vacuum", { simple: true })).toBe(1);
+  });
+
+  it("should handle database closure", () => {
+    db = new Datastore(crypto, new Storage());
+    expect(db).toBeDefined();
+
+    db.close();
+    expect(() => db.close()).not.toThrow();
+  });
+
+  it("should create valid database file", () => {
+    db = new Datastore(crypto, new Storage());
+    const stats = fs.statSync(testDbPath);
+    expect(stats.isFile()).toBe(true);
+    expect(stats.size).toBeGreaterThan(0);
+
+    // Verify file has correct permissions (0o600 - owner read/write only)
+    const permissions = stats.mode & 0o777;
+    expect(permissions).toBe(0o600);
+
+    // Verify database directory has correct permissions (0o700)
+    const dirStats = fs.statSync(testDbDir);
+    const dirPermissions = dirStats.mode & 0o777;
+    expect(dirPermissions).toBe(0o700);
+  });
+
+  describe("items_kind_immutable trigger", () => {
+    it("allows TOFU initial write", () => {
+      db = new Datastore(crypto, new Storage());
+      const rawDb = db["db"]!;
+
+      rawDb
+        .prepare("INSERT INTO items (uuid, data) VALUES (?, NULL)")
+        .run("item-tofu");
+
+      expect(() =>
+        rawDb.prepare("UPDATE items SET data = ? WHERE uuid = ?").run(
+          JSON.stringify({
+            kind: "message",
+            uuid: "item-tofu",
+            source: "s",
+            size: 0,
+            is_read: false,
+            seen_by: [],
+            interaction_count: 0,
+          }),
+          "item-tofu",
+        ),
+      ).not.toThrow();
+    });
+
+    it("rejects a change of kind from 'message' to 'file'", () => {
+      db = new Datastore(crypto, new Storage());
+      const rawDb = db["db"]!;
+
+      rawDb.prepare("INSERT INTO items (uuid, data) VALUES (?, ?)").run(
+        "item-msg",
+        JSON.stringify({
+          kind: "message",
+          uuid: "item-msg",
+          source: "s",
+          size: 0,
+          is_read: false,
+          seen_by: [],
+          interaction_count: 0,
+        }),
+      );
+
+      expect(() =>
+        rawDb.prepare("UPDATE items SET data = ? WHERE uuid = ?").run(
+          JSON.stringify({
+            kind: "file",
+            uuid: "item-msg",
+            source: "s",
+            size: 0,
+            is_read: false,
+            seen_by: [],
+            interaction_count: 0,
+          }),
+          "item-msg",
+        ),
+      ).toThrow("items.kind is immutable");
+    });
+  });
+});
 
 describe("Datastore Method Tests", () => {
   const testHomeDir = path.join(os.tmpdir(), "test-home");
@@ -314,19 +449,19 @@ describe("Datastore Method Tests", () => {
     }
 
     db.updateItems({
-      item1: mockItemMetadata("item1", "source1"),
-      item2: mockItemMetadata("item2", "source1"),
-      item3: mockItemMetadata("item3", "source1"),
+      item1: mockItemMetadata("item1", "source1", "message", 1),
+      item2: mockItemMetadata("item2", "source1", "message", 2),
+      item3: mockItemMetadata("item3", "source1", "message", 3),
     });
 
     // Partially marking items seen should not update source Seen state
-    db.addPendingItemsSeenBatch("source1", ["item1", "item2"]);
+    db.addPendingSourceConversationSeen("source1", 2);
     for (const source of sources) {
       expect(source.isRead).toBe(false);
     }
 
     // Marking all items as seen should update Seen state
-    db.addPendingItemsSeenBatch("source1", ["item3"]);
+    db.addPendingSourceConversationSeen("source1", 3);
     sources = db.getSources();
     for (const source of sources) {
       if (source.uuid === "source1") {
@@ -541,190 +676,159 @@ describe("Datastore Method Tests", () => {
     expect(sourceWithItems.items[0].uuid).toBe("item2");
   });
 
-  it("addPendingItemsSeenBatch should create Seen events for all items in source", () => {
+  it("addPendingSourceConversationSeen should create a SourceConversationSeen event", () => {
     db.updateSources({
       source1: mockSourceMetadata("source1"),
     });
-
     db.updateItems({
-      item1: mockItemMetadata("item1", "source1"),
-      item2: mockItemMetadata("item2", "source1"),
-      item3: mockItemMetadata("item3", "source1"),
+      item1: mockItemMetadata("item1", "source1", "message", 1),
     });
 
-    const snowflakeIds = db.addPendingItemsSeenBatch("source1", [
-      "item1",
-      "item2",
-      "item3",
-    ]);
+    const snowflakeId = db.addPendingSourceConversationSeen("source1", 5);
 
-    // Should create 3 events for 3 items
-    expect(snowflakeIds.length).toEqual(3);
+    expect(snowflakeId).not.toBeNull();
 
-    // All snowflake IDs should be unique
-    const uniqueIds = new Set(snowflakeIds);
-    expect(uniqueIds.size).toEqual(3);
+    const events = db.getPendingEvents();
+    expect(events.length).toEqual(1);
+    expect(events[0].type).toEqual(PendingEventType.SourceConversationSeen);
+    expect((events[0].data as { upper_bound: number }).upper_bound).toEqual(5);
+    expect(
+      "source_uuid" in events[0].target &&
+        events[0].target.source_uuid === "source1",
+    ).toBe(true);
   });
 
-  it("addPendingItemsSeenBatch should be idempotent - no duplicates on second call", () => {
+  it("addPendingSourceConversationSeen is idempotent", () => {
     db.updateSources({
       source1: mockSourceMetadata("source1"),
     });
-
     db.updateItems({
-      item1: mockItemMetadata("item1", "source1"),
-      item2: mockItemMetadata("item2", "source1"),
-      item3: mockItemMetadata("item3", "source1"),
+      item1: mockItemMetadata("item1", "source1", "message", 1),
     });
 
-    // First call should create 3 events
-    const firstCallIds = db.addPendingItemsSeenBatch("source1", [
-      "item1",
-      "item2",
-      "item3",
-    ]);
-    expect(firstCallIds.length).toEqual(3);
+    const first = db.addPendingSourceConversationSeen("source1", 5);
+    expect(first).not.toBeNull();
 
-    // Second call should create 0 events (all items already have Seen events)
-    const secondCallIds = db.addPendingItemsSeenBatch("source1", [
-      "item1",
-      "item2",
-      "item3",
-    ]);
-    expect(secondCallIds.length).toEqual(0);
+    // Same upper_bound: no-op
+    const second = db.addPendingSourceConversationSeen("source1", 5);
+    expect(second).toBeNull();
+
+    // Lower upper_bound: no-op
+    const third = db.addPendingSourceConversationSeen("source1", 3);
+    expect(third).toBeNull();
+
+    // Only one pending event should exist
+    const events = db.getPendingEvents();
+    expect(events.length).toEqual(1);
   });
 
-  it("addPendingItemsSeenBatch should only create events for new items after sync", () => {
+  it("addPendingSourceConversationSeen replaces event when upper_bound increases", () => {
     db.updateSources({
       source1: mockSourceMetadata("source1"),
     });
-
     db.updateItems({
-      item1: mockItemMetadata("item1", "source1"),
-      item2: mockItemMetadata("item2", "source1"),
+      item1: mockItemMetadata("item1", "source1", "message", 1),
     });
 
-    // First call creates events for 2 items
-    const firstCallIds = db.addPendingItemsSeenBatch("source1", [
-      "item1",
-      "item2",
-    ]);
-    expect(firstCallIds.length).toEqual(2);
+    const first = db.addPendingSourceConversationSeen("source1", 5);
+    expect(first).not.toBeNull();
 
-    // Add a new item
-    db.updateItems({
-      item3: mockItemMetadata("item3", "source1"),
-    });
+    // Higher upper_bound: replaces old event
+    const second = db.addPendingSourceConversationSeen("source1", 10);
+    expect(second).not.toBeNull();
+    expect(second).not.toEqual(first);
 
-    // Second call should only create event for the new item
-    const secondCallIds = db.addPendingItemsSeenBatch("source1", [
-      "item1",
-      "item2",
-      "item3",
-    ]);
-    expect(secondCallIds.length).toEqual(1);
+    // Only one event should exist with the new upper_bound
+    const events = db.getPendingEvents();
+    expect(events.length).toEqual(1);
+    expect((events[0].data as { upper_bound: number }).upper_bound).toEqual(10);
   });
 
-  it("addPendingItemsSeenBatch should only affect specified source", () => {
+  it("addPendingSourceConversationSeen only affects specified source", () => {
     db.updateSources({
       source1: mockSourceMetadata("source1"),
       source2: mockSourceMetadata("source2"),
     });
-
     db.updateItems({
-      item1: mockItemMetadata("item1", "source1"),
-      item2: mockItemMetadata("item2", "source1"),
-      item3: mockItemMetadata("item3", "source2"),
-      item4: mockItemMetadata("item4", "source2"),
+      item1: mockItemMetadata("item1", "source1", "message", 1),
+      item2: mockItemMetadata("item2", "source2", "message", 1),
     });
 
-    // Mark source1 items as seen
-    const source1Ids = db.addPendingItemsSeenBatch("source1", [
-      "item1",
-      "item2",
-    ]);
-    expect(source1Ids.length).toEqual(2);
+    db.addPendingSourceConversationSeen("source1", 5);
+    db.addPendingSourceConversationSeen("source2", 3);
 
-    // source2 items should still be unseen
-    const source2Ids = db.addPendingItemsSeenBatch("source2", [
-      "item3",
-      "item4",
-    ]);
-    expect(source2Ids.length).toEqual(2);
+    const events = db.getPendingEvents();
+    expect(events.length).toEqual(2);
+
+    const source1Event = events.find(
+      (e) => "source_uuid" in e.target && e.target.source_uuid === "source1",
+    );
+    const source2Event = events.find(
+      (e) => "source_uuid" in e.target && e.target.source_uuid === "source2",
+    );
+    expect((source1Event!.data as { upper_bound: number }).upper_bound).toEqual(
+      5,
+    );
+    expect((source2Event!.data as { upper_bound: number }).upper_bound).toEqual(
+      3,
+    );
   });
 
-  it("addPendingItemsSeenBatch should return empty array for source with no items", () => {
+  it("addPendingSourceConversationSeen projects items as is_read in items_projected", () => {
     db.updateSources({
       source1: mockSourceMetadata("source1"),
     });
+    db.updateItems({
+      item1: mockItemMetadata("item1", "source1", "message", 3),
+      item2: mockItemMetadata("item2", "source1", "message", 5),
+      item3: mockItemMetadata("item3", "source1", "message", 7),
+    });
 
-    const snowflakeIds = db.addPendingItemsSeenBatch("source1", []);
-    expect(snowflakeIds.length).toEqual(0);
+    // Mark up to interaction_count=5 as seen
+    db.addPendingSourceConversationSeen("source1", 5);
+
+    const sourceWithItems = db.getSourceWithItems("source1");
+    const byUuid = Object.fromEntries(
+      sourceWithItems.items.map((i) => [i.uuid, i]),
+    );
+
+    // item1 (count=3) and item2 (count=5) should be read, item3 (count=7) should not
+    expect(
+      (byUuid["item1"].data as unknown as SubmissionMetadata).is_read,
+    ).toBe(true);
+    expect(
+      (byUuid["item2"].data as unknown as SubmissionMetadata).is_read,
+    ).toBe(true);
+    expect(
+      (byUuid["item3"].data as unknown as SubmissionMetadata).is_read,
+    ).toBe(false);
   });
 
-  it("addPendingItemsSeenBatch should only create events for specified items", () => {
+  it("addPendingSourceConversationSeen skips event when all items at upperBound are already read in DB", () => {
     db.updateSources({
       source1: mockSourceMetadata("source1"),
     });
-
     db.updateItems({
-      item1: mockItemMetadata("item1", "source1"),
-      item2: mockItemMetadata("item2", "source1"),
-      item3: mockItemMetadata("item3", "source1"),
+      item1: {
+        ...mockItemMetadata("item1", "source1", "message", 3),
+        is_read: true,
+      } as SubmissionMetadata,
+      item2: {
+        ...mockItemMetadata("item2", "source1", "message", 5),
+        is_read: true,
+      } as SubmissionMetadata,
+      item3: {
+        ...mockItemMetadata("item3", "source1", "message", 7),
+        is_read: false,
+      } as SubmissionMetadata,
     });
 
-    // Only mark item1 and item3 as seen, not item2
-    const snowflakeIds = db.addPendingItemsSeenBatch("source1", [
-      "item1",
-      "item3",
-    ]);
+    // All items with interaction_count <= 5 are already read in the DB
+    const result = db.addPendingSourceConversationSeen("source1", 5);
+    expect(result).toBeNull();
 
-    // Should only create 2 events
-    expect(snowflakeIds.length).toEqual(2);
-
-    // Calling again with all items should only create event for item2
-    const secondCallIds = db.addPendingItemsSeenBatch("source1", [
-      "item1",
-      "item2",
-      "item3",
-    ]);
-    expect(secondCallIds.length).toEqual(1);
-  });
-
-  it("addPendingItemsSeenBatch should handle empty itemUuids array", () => {
-    db.updateSources({
-      source1: mockSourceMetadata("source1"),
-    });
-
-    db.updateItems({
-      item1: mockItemMetadata("item1", "source1"),
-      item2: mockItemMetadata("item2", "source1"),
-    });
-
-    // Passing empty array should create no events
-    const snowflakeIds = db.addPendingItemsSeenBatch("source1", []);
-    expect(snowflakeIds.length).toEqual(0);
-  });
-
-  it("addPendingItemsSeenBatch should ignore items not in the source", () => {
-    db.updateSources({
-      source1: mockSourceMetadata("source1"),
-      source2: mockSourceMetadata("source2"),
-    });
-
-    db.updateItems({
-      item1: mockItemMetadata("item1", "source1"),
-      item2: mockItemMetadata("item2", "source2"),
-    });
-
-    // Try to mark item2 as seen, but it belongs to source2
-    const snowflakeIds = db.addPendingItemsSeenBatch("source1", [
-      "item1",
-      "item2",
-    ]);
-
-    // Should only create event for item1
-    expect(snowflakeIds.length).toEqual(1);
+    const events = db.getPendingEvents();
+    expect(events.length).toEqual(0);
   });
 
   it("getPendingEvents should return all pending events with correct structure", async () => {
@@ -739,7 +843,6 @@ describe("Datastore Method Tests", () => {
       "source1",
       PendingEventType.Starred,
     );
-    console.log("source Snowflake: ", snowflakeSource);
     const snowflakeItem = db.addPendingItemEvent(
       "item1",
       PendingEventType.ItemDeleted,
@@ -752,7 +855,6 @@ describe("Datastore Method Tests", () => {
 
     const events = db.getPendingEvents();
     expect(events.length).toBe(3);
-    console.log("events: ", events);
 
     const sourceEvent = events.find((e) => e.id === snowflakeSource);
     expect(sourceEvent).toBeDefined();
@@ -1115,8 +1217,8 @@ describe("Datastore Method Tests", () => {
       source2: mockSourceMetadata("source2"),
     });
     db.updateItems({
-      item1: mockItemMetadata("item1", "source1"),
-      item2: mockItemMetadata("item2", "source2"),
+      item1: mockItemMetadata("item1", "source1", "message", 1),
+      item2: mockItemMetadata("item2", "source2", "message", 1),
     });
 
     // Add pending events for both
@@ -1130,11 +1232,11 @@ describe("Datastore Method Tests", () => {
     );
     const snowflakeItem1 = db.addPendingItemEvent(
       "item1",
-      PendingEventType.Seen,
+      PendingEventType.ItemDeleted,
     );
     const snowflakeItem2 = db.addPendingItemEvent(
       "item2",
-      PendingEventType.Seen,
+      PendingEventType.ItemDeleted,
     );
 
     // Verify all events exist
@@ -1170,8 +1272,8 @@ describe("Datastore Method Tests", () => {
     db.addPendingSourceEvent("source1", PendingEventType.Starred);
     db.addPendingSourceEvent("source1", PendingEventType.Unstarred);
     db.addPendingSourceEvent("source2", PendingEventType.Starred);
-    db.addPendingItemEvent("item1", PendingEventType.Seen);
-    db.addPendingItemEvent("item2", PendingEventType.Seen);
+    db.addPendingItemEvent("item1", PendingEventType.ItemDeleted);
+    db.addPendingItemEvent("item2", PendingEventType.ItemDeleted);
 
     // Verify all 5 events exist
     let events = db.getPendingEvents();

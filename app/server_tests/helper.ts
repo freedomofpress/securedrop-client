@@ -9,8 +9,9 @@ import fs from "node:fs";
 import os from "os";
 import path from "path";
 import { getServerInstance, stopServerInstance } from "./server";
-import { DB } from "../src/main/database";
+import { Datastore } from "../src/main/datastore";
 import { Crypto } from "../src/main/crypto";
+import { Storage } from "../src/main/storage";
 import { PendingEventType } from "../src/types";
 
 export async function pollUntil<T>(
@@ -223,8 +224,8 @@ export class TestContext {
  */
 export function createDbHelper(crypto: Crypto, dbPath: string) {
   return {
-    withDb<T>(callback: (db: DB) => Promise<T> | T): Promise<T> {
-      const db = new DB(crypto, dbPath);
+    withDb<T>(callback: (db: Datastore) => Promise<T> | T): Promise<T> {
+      const db = new Datastore(crypto, new Storage(), dbPath);
       return Promise.resolve(callback(db)).finally(() => db.close());
     },
   };

@@ -19,31 +19,23 @@ const initialState: ConversationState = {
 
 export const fetchConversation = createAsyncThunk(
   "conversation/fetchConversation",
-  async (sourceUuid: string, { getState, dispatch }) => {
+  async (sourceUuid: string, { dispatch }) => {
     const sourceWithItems =
       await window.electronAPI.getSourceWithItems(sourceUuid);
 
-    // Read journalist UUID if auth data is available in state
-    const state = getState() as RootState;
-    const journalistUUID = state?.session?.authData?.journalistUUID;
-
-    // Mark all items in this conversation as seen
-    const itemUuids = sourceWithItems.items
-      .filter((item) => {
-        if (journalistUUID) {
-          return !item.data.seen_by.includes(journalistUUID);
-        } else if (item.data.kind !== "reply") {
-          // Fall back to using the `is_read` field if journalist UUID is not available
-          return !item.data.is_read;
-        } else {
-          // For replies, default to adding seen item
-          return true;
-        }
-      })
-      .map((item) => item.uuid);
-    if (itemUuids.length > 0) {
-      await window.electronAPI.addPendingItemsSeenBatch(sourceUuid, itemUuids);
-      dispatch(fetchSources());
+    // Mark all items in this conversation as seen via a single SourceConversationSeen event
+    const maxInteractionCount = sourceWithItems.items.reduce(
+      (max, item) => Math.max(max, item.data.interaction_count ?? 0),
+      0,
+    );
+    if (maxInteractionCount > 0) {
+      const created = await window.electronAPI.addPendingSourceConversationSeen(
+        sourceUuid,
+        maxInteractionCount,
+      );
+      if (created) {
+        dispatch(fetchSources());
+      }
     }
 
     return { sourceUuid, sourceWithItems };
