@@ -7,6 +7,11 @@ import { SessionStatus } from "../../../../features/session/sessionSlice";
 import { RootState } from "../../../../store";
 import { SyncStatus, JournalistMetadata } from "../../../../../types";
 import MainMenu from "./MainMenu";
+import { requestHelp } from "../../../../components/helpRequester";
+
+vi.mock("../../../../components/helpRequester", () => ({
+  requestHelp: vi.fn(),
+}));
 
 // Mock useNavigate
 const mockNavigate = vi.fn();
@@ -254,12 +259,7 @@ describe("Journalist Menu Component", () => {
       });
       await userEvent.click(keebItem);
 
-      await waitFor(() => {
-        const keebModal = screen.getByRole("dialog");
-        const keebModalContent = screen.getByText(/Composing/i);
-        expect(keebModal).toBeInTheDocument();
-        expect(keebModalContent).toBeVisible();
-      });
+      expect(requestHelp).toHaveBeenCalled();
     });
 
     it("Sign out should work", async () => {

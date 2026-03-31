@@ -78,6 +78,28 @@
       "encryptedFile": "Fichier Crypté",
       "encryptedMessage": "Message Crypté",
       "toggleStar": "Basculer le favori"
+    },
+    "shortcuts": {
+      "quit": "Quitter SecureDrop",
+      "focusSidebar": "Aller à la barre latérale",
+      "focusMainContent": "Aller au contenu principal",
+      "openHelp": "Ouvrir les raccourcis clavier",
+      "sync": "Synchroniser maintenant",
+      "signOut": "Se déconnecter",
+      "sourceUp": "Source précédente",
+      "sourceDown": "Source suivante",
+      "sourceSelect": "Sélectionner la source active",
+      "deleteCheckedSources": "Supprimer les sources cochées",
+      "deleteSource": "Supprimer la source sélectionnée",
+      "sendReply": "Envoyer la réponse",
+      "downloadAll": "Télécharger tous les fichiers",
+      "categories": {
+        "application": "Application",
+        "navigation": "Navigation",
+        "sources": "Sources",
+        "composing": "Rédaction",
+        "files": "Fichiers"
+      }
     }
   },
   "SignIn": {
@@ -186,5 +208,12 @@
       "errorMimetypeDiscovery": "Impossible de déterminer le type de fichier.",
       "errorUnknown": "Une erreur inconnue s'est produite lors de l'impression."
     }
+  },
+  "QuitModal": {
+    "title": "Fermer l'application ?",
+    "withDrafts": "Les brouillons de réponses pourraient être perdus.",
+    "noDrafts": "",
+    "cancel": "Annuler",
+    "ok": "Oui, quitter"
   }
 }

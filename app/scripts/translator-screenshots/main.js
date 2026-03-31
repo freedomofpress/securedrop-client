@@ -48,6 +48,9 @@ async function offlineMode(api) {
   await api.getByTestId("star-button-*").hover();
   await api.takeScreenshots();
 
+  // Dismiss the tooltip by moving the mouse away before clicking
+  await api.dismissTooltips();
+
   // select all operations
   await api.getByTestId("select-all-checkbox").click();
   await api.getByTestId("bulk-delete-button").hover();

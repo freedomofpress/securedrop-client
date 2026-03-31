@@ -18,7 +18,7 @@ import { MESSAGE_PREVIEW_LENGTH } from "./database";
 import { setUmask } from "./umask";
 
 describe("DB Component Tests", () => {
-  const testHomeDir = path.join(os.tmpdir(), "test-home");
+  const testHomeDir = path.join(os.tmpdir(), "test-home-db");
   const testDbDir = path.join(testHomeDir, ".config", "SecureDrop");
   const testDbPath = path.join(testDbDir, "db.sqlite");
   const originalHomedir = os.homedir;
@@ -151,7 +151,7 @@ describe("DB Component Tests", () => {
 });
 
 describe("Datastore Method Tests", () => {
-  const testHomeDir = path.join(os.tmpdir(), "test-home");
+  const testHomeDir = path.join(os.tmpdir(), "test-home-datastore");
   const originalHomedir = os.homedir;
   let db: Datastore;
   let crypto: Crypto;

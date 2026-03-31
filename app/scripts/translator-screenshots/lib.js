@@ -79,6 +79,14 @@ class TranslationScreenshotAPI {
   }
 
   /**
+   * Move the mouse to a neutral position to dismiss any visible tooltips
+   */
+  async dismissTooltips() {
+    await this.page.mouse.move(0, 0);
+    await this.page.waitForTimeout(500);
+  }
+
+  /**
    * Get element by test ID
    * @param {string} testId - data-testid attribute value, use * for wildcard suffix
    * @returns {Object} Element wrapper with helper methods
