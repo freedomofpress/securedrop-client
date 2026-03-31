@@ -89,6 +89,7 @@ export const syncSlice = createSlice({
       })
       .addCase(syncMetadata.rejected, (state, action) => {
         state.error = action.error.message || "Failed to sync metadata";
+        state.status = SyncStatus.ERROR;
       });
   },
 });
