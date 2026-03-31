@@ -153,7 +153,7 @@ export class DB {
     { source_uuid: string },
     { snowflake_id: string; data: string }
   >;
-  private selectUnseenItemsCount: Statement<
+  private selectUnprojectedUnseenItemsCount: Statement<
     { source_uuid: string; upper_bound: number },
     { count: number }
   >;
@@ -323,7 +323,7 @@ export class DB {
       SELECT snowflake_id, data FROM pending_events
       WHERE source_uuid = @source_uuid AND type = 'source_conversation_seen'
     `);
-    this.selectUnseenItemsCount = this.db.prepare(`
+    this.selectUnprojectedUnseenItemsCount = this.db.prepare(`
       SELECT
         COUNT(*) AS count
       FROM items
@@ -975,7 +975,7 @@ export class DB {
     upperBound: number,
   ): string | null {
     return this.db!.transaction(() => {
-      const unseen = this.selectUnseenItemsCount.get({
+      const unseen = this.selectUnprojectedUnseenItemsCount.get({
         source_uuid: sourceUuid,
         upper_bound: upperBound,
       })!;

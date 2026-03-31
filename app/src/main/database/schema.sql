@@ -66,6 +66,14 @@ CREATE TABLE IF NOT EXISTS 'search_index_idx'(segid, term, pgno, PRIMARY KEY(seg
 CREATE TABLE IF NOT EXISTS 'search_index_content'(id INTEGER PRIMARY KEY, c0, c1, c2, c3);
 CREATE TABLE IF NOT EXISTS 'search_index_docsize'(id INTEGER PRIMARY KEY, sz BLOB);
 CREATE TABLE IF NOT EXISTS 'search_index_config'(k PRIMARY KEY, v) WITHOUT ROWID;
+CREATE TRIGGER items_kind_immutable
+BEFORE UPDATE OF data ON items
+FOR EACH ROW
+WHEN json_extract(OLD.data, '$.kind') IS NOT NULL
+    AND json_extract(NEW.data, '$.kind') IS NOT json_extract(OLD.data, '$.kind')
+BEGIN
+    SELECT RAISE(ABORT, 'items.kind is immutable');
+END;
 CREATE VIEW items_projected AS
 SELECT
     items.uuid,
@@ -206,18 +214,10 @@ SELECT
     ) AS rn
 FROM items_projected
 /* sorted_items(uuid,data,version,plaintext,filename,kind,is_read,last_updated,source_uuid,fetch_progress,fetch_status,fetch_last_updated_at,fetch_retry_attempts,interaction_count,decrypted_size,rn) */;
-CREATE TRIGGER items_kind_immutable
-BEFORE UPDATE OF data ON items
-FOR EACH ROW
-WHEN json_extract(OLD.data, '$.kind') IS NOT NULL
-    AND json_extract(NEW.data, '$.kind') IS NOT json_extract(OLD.data, '$.kind')
-BEGIN
-    SELECT RAISE(ABORT, 'items.kind is immutable');
-END;
 -- Dbmate schema migrations
 INSERT INTO "schema_migrations" (version) VALUES
   ('20260203225412'),
   ('20260213000000'),
   ('20260217000000'),
-  ('20260316000000'),
-  ('20260326182530');
+  ('20260326182530'),
+  ('20260331000000');
