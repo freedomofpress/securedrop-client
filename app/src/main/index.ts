@@ -12,11 +12,6 @@ import { join, dirname, delimiter } from "path";
 import { randomBytes } from "crypto";
 
 import { optimizer, is } from "@electron-toolkit/utils";
-import {
-  installExtension,
-  REDUX_DEVTOOLS,
-  REACT_DEVELOPER_TOOLS,
-} from "electron-devtools-installer";
 import { Worker } from "worker_threads";
 import fs from "fs";
 import os from "os";
@@ -287,8 +282,11 @@ if (!gotTheLock) {
         },
       );
       // Load developer tools
-      if (is.dev) {
-        installExtension([REACT_DEVELOPER_TOOLS, REDUX_DEVTOOLS])
+      if (is.dev && !__IS_PRODUCTION__) {
+        import("electron-devtools-installer")
+          .then(({ installExtension, REACT_DEVELOPER_TOOLS, REDUX_DEVTOOLS }) =>
+            installExtension([REACT_DEVELOPER_TOOLS, REDUX_DEVTOOLS]),
+          )
           .then(([react, redux]) =>
             console.log(`Added extensions: ${react.name}, ${redux.name}`),
           )
