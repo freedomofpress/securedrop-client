@@ -11,14 +11,19 @@ import type { ListImperativeAPI, DynamicRowHeight } from "react-window";
 
 const NEW_MESSAGE_SEEN_THRESHOLD = 12;
 
-type PendingScrollTarget = "divider" | "bottom" | null;
+type PendingScrollTarget =
+  | "bottom"
+  | { kind: "index"; rowIndex: number }
+  | null;
 
 export interface ConversationScrollState {
   listRef: (api: ListImperativeAPI | null) => void;
+  scrollElement: HTMLElement | null;
   dynamicRowHeight: DynamicRowHeight;
   dividerIndex: number | null;
   dividerItemUuid: string | null;
   hasItems: boolean;
+  heightsReady: boolean;
   oldItems: Item[];
   newItems: Item[];
   acknowledgeNewMessages: () => void;
@@ -31,7 +36,7 @@ export function useConversationScroll(
   const [listAPI, listRef] = useListCallbackRef();
   const sourceUuidRef = useRef<string | null>(null);
   const itemCountRef = useRef<number>(0);
-  const dividerUuidRef = useRef<string | null>(null);
+  const firstItemUuidRef = useRef<string | null>(null);
   const pendingScrollTargetRef = useRef<PendingScrollTarget>(null);
 
   const [_isAutoScrolling, setIsAutoScrollingState] = useState(false);
@@ -50,14 +55,24 @@ export function useConversationScroll(
     key: activeSourceUuid ?? undefined,
   });
 
-  const journalistUUID = useAppSelector(
-    (state) => state.session.authData?.journalistUUID ?? null,
-  );
-  const lastSeenInteractionCount = useAppSelector((state) =>
-    activeSourceUuid
-      ? selectConversationLastSeen(state, activeSourceUuid)
-      : undefined,
-  );
+  // Use heightsReady state to only set items to visible once the rows have
+  // been sized
+  const [heightsReady, setHeightsReady] = useState(false);
+  useEffect(() => {
+    // TODO: shouldn't set state in a hook
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setHeightsReady(false);
+
+    // First raf: initial render + useDynamicRowHeight measures row heights
+    const raf1 = requestAnimationFrame(() => {
+      // Second raf: rows are resized, so now we can display
+      const raf2 = requestAnimationFrame(() => {
+        setHeightsReady(true);
+      });
+      return () => cancelAnimationFrame(raf2);
+    });
+    return () => cancelAnimationFrame(raf1);
+  }, [activeSourceUuid]);
 
   const items = useMemo<Item[]>(
     () => (sourceWithItems ? sourceWithItems.items : []),
@@ -65,45 +80,14 @@ export function useConversationScroll(
   );
   const itemCount = items.length;
   const hasItems = itemCount > 0;
+  const lastSeenInteractionCount = useAppSelector((state) =>
+    activeSourceUuid
+      ? selectConversationLastSeen(state, activeSourceUuid)
+      : undefined,
+  );
   const latestInteractionCount = useMemo(() => {
     return sourceWithItems?.items.at(-1)?.data.interaction_count ?? null;
   }, [sourceWithItems?.items]);
-
-  const historicalLastSeenInteractionCount = useMemo(() => {
-    if (!sourceWithItems) {
-      return null;
-    }
-
-    let maxSeen: number | null = null;
-    for (const item of sourceWithItems.items) {
-      const interaction = item.data.interaction_count;
-      if (interaction == null) {
-        continue;
-      }
-
-      let hasBeenSeen = false;
-      if (journalistUUID) {
-        hasBeenSeen = item.data.seen_by.includes(journalistUUID);
-      } else if (item.data.kind !== "reply") {
-        hasBeenSeen = item.data.is_read;
-      } else {
-        hasBeenSeen = true;
-      }
-
-      if (!hasBeenSeen) {
-        continue;
-      }
-
-      if (maxSeen === null || interaction > maxSeen) {
-        maxSeen = interaction;
-      }
-    }
-
-    return maxSeen;
-  }, [journalistUUID, sourceWithItems]);
-
-  const initialLastSeenInteractionCount =
-    historicalLastSeenInteractionCount ?? latestInteractionCount;
 
   useEffect(() => {
     if (!sourceWithItems || lastSeenInteractionCount !== undefined) {
@@ -112,16 +96,20 @@ export function useConversationScroll(
     dispatch(
       initializeConversationIndicator({
         sourceUuid: sourceWithItems.uuid,
-        lastSeenInteractionCount: initialLastSeenInteractionCount,
+        // If lastSeenInteractionCount is null/undefined, fall back to latest interaction
+        // count so we show most recent message on first-time open.
+        lastSeenInteractionCount:
+          sourceWithItems.lastSeenInteractionCount ?? latestInteractionCount,
       }),
     );
   }, [
     dispatch,
-    initialLastSeenInteractionCount,
     lastSeenInteractionCount,
+    latestInteractionCount,
     sourceWithItems,
   ]);
 
+  // If there are new, unseen messages, get the UUID for the "new messages" divider
   const dividerItemUuid = useMemo(() => {
     if (!sourceWithItems) {
       return null;
@@ -147,31 +135,6 @@ export function useConversationScroll(
     return firstNewItem ? firstNewItem.uuid : null;
   }, [items, lastSeenInteractionCount, sourceWithItems]);
 
-  useEffect(() => {
-    if (!sourceWithItems) {
-      dividerUuidRef.current = null;
-      sourceUuidRef.current = null;
-      itemCountRef.current = 0;
-      pendingScrollTargetRef.current = null;
-      return;
-    }
-
-    const prevSourceUuid = sourceUuidRef.current;
-    const prevCount = itemCountRef.current;
-
-    if (prevSourceUuid !== sourceWithItems.uuid) {
-      pendingScrollTargetRef.current = dividerItemUuid ? "divider" : "bottom";
-    } else if (dividerItemUuid && dividerItemUuid !== dividerUuidRef.current) {
-      pendingScrollTargetRef.current = "divider";
-    } else if (itemCount > prevCount && !dividerItemUuid) {
-      pendingScrollTargetRef.current = "bottom";
-    }
-
-    sourceUuidRef.current = sourceWithItems.uuid;
-    itemCountRef.current = itemCount;
-    dividerUuidRef.current = dividerItemUuid;
-  }, [dividerItemUuid, itemCount, sourceWithItems]);
-
   const { oldItems, newItems } = useMemo(() => {
     if (!dividerItemUuid) {
       return { oldItems: items, newItems: [] as typeof items };
@@ -190,6 +153,48 @@ export function useConversationScroll(
 
   const dividerIndex = dividerItemUuid !== null ? oldItems.length : null;
 
+  // Set the scroll target:
+  // If switching to this conversation and there is a new messages divider,
+  // we scroll to the divider. If there are no new messages, we default to bottom.
+  // On historical load, we restore the scroll by centering the last visible row
+  useEffect(() => {
+    if (!sourceWithItems) {
+      sourceUuidRef.current = null;
+      itemCountRef.current = 0;
+      firstItemUuidRef.current = null;
+      pendingScrollTargetRef.current = null;
+      return;
+    }
+
+    const prevSourceUuid = sourceUuidRef.current;
+    const prevCount = itemCountRef.current;
+    const prevFirstItemUuid = firstItemUuidRef.current;
+    const newFirstItemUuid = sourceWithItems.items[0]?.uuid ?? null;
+
+    if (prevSourceUuid !== sourceWithItems.uuid) {
+      pendingScrollTargetRef.current = dividerIndex
+        ? { kind: "index", rowIndex: dividerIndex }
+        : "bottom";
+    } else if (itemCount > prevCount) {
+      if (
+        prevFirstItemUuid !== null &&
+        newFirstItemUuid !== prevFirstItemUuid
+      ) {
+        // On historical load (prepends items to top), restore the scroll
+        // position by scrolling to what was previously the first visible row.
+        const numPrepended = itemCount - prevCount;
+        pendingScrollTargetRef.current = {
+          kind: "index",
+          rowIndex: numPrepended,
+        };
+      }
+    }
+
+    sourceUuidRef.current = sourceWithItems.uuid;
+    itemCountRef.current = itemCount;
+    firstItemUuidRef.current = newFirstItemUuid;
+  }, [dividerIndex, dividerItemUuid, itemCount, sourceWithItems]);
+
   const scrollToRowWithRetry = useCallback(
     (index: number, align: "start" | "center" | "end", maxRetries: number) => {
       if (!listAPI) {
@@ -206,22 +211,6 @@ export function useConversationScroll(
     },
     [listAPI],
   );
-
-  const scrollToDivider = useCallback(() => {
-    if (dividerIndex === null) {
-      return false;
-    }
-    return scrollToRowWithRetry(dividerIndex, "center", 5);
-  }, [dividerIndex, scrollToRowWithRetry]);
-
-  const scrollToBottom = useCallback(() => {
-    const totalRows =
-      oldItems.length + (dividerIndex !== null ? 1 : 0) + newItems.length;
-    if (totalRows === 0) {
-      return false;
-    }
-    return scrollToRowWithRetry(totalRows - 1, "end", 5);
-  }, [oldItems.length, newItems.length, dividerIndex, scrollToRowWithRetry]);
 
   const scheduleAutoScrollReset = useCallback(() => {
     requestAnimationFrame(() => setIsAutoScrolling(false));
@@ -248,17 +237,27 @@ export function useConversationScroll(
       return;
     }
 
+    let rowIndex: number;
+    let align: "start" | "center" | "end";
+
+    if (target === "bottom") {
+      const totalRows =
+        oldItems.length + (dividerIndex !== null ? 1 : 0) + newItems.length;
+      if (totalRows === 0) {
+        return;
+      }
+      rowIndex = totalRows - 1;
+      align = "end";
+    } else {
+      rowIndex = target.rowIndex;
+      align = "center";
+    }
+
     // TODO: we shouldn't set state in an effect
     // eslint-disable-next-line react-hooks/set-state-in-effect
     setIsAutoScrolling(true);
 
-    if (target === "divider" && dividerItemUuid && scrollToDivider()) {
-      pendingScrollTargetRef.current = null;
-      scheduleAutoScrollReset();
-      return;
-    }
-
-    if (target === "bottom" && scrollToBottom()) {
+    if (scrollToRowWithRetry(rowIndex, align, 5)) {
       pendingScrollTargetRef.current = null;
       scheduleAutoScrollReset();
       return;
@@ -266,13 +265,14 @@ export function useConversationScroll(
 
     setIsAutoScrolling(false);
   }, [
-    dividerItemUuid,
+    dividerIndex,
     hasItems,
     itemCount,
+    newItems.length,
+    oldItems.length,
     scheduleAutoScrollReset,
     setIsAutoScrolling,
-    scrollToBottom,
-    scrollToDivider,
+    scrollToRowWithRetry,
   ]);
 
   useEffect(() => {
@@ -296,10 +296,12 @@ export function useConversationScroll(
 
   return {
     listRef: listRef as (api: ListImperativeAPI | null) => void,
+    scrollElement: listAPI?.element ?? null,
     dynamicRowHeight,
     dividerIndex,
     dividerItemUuid,
     hasItems,
+    heightsReady,
     oldItems,
     newItems,
     acknowledgeNewMessages,

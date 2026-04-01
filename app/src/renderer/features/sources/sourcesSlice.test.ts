@@ -18,7 +18,9 @@ import sessionSlice, {
   SessionStatus,
   type SessionState,
 } from "../session/sessionSlice";
-import conversationSlice from "../conversation/conversationSlice";
+import conversationSlice, {
+  ConversationState,
+} from "../conversation/conversationSlice";
 
 // Mock data matching the structure from test-component-setup.tsx
 const mockSources: SourceType[] = [
@@ -288,11 +290,13 @@ describe("sourcesSlice", () => {
       authData: undefined,
     };
 
-    const mockConversationState = {
+    const mockConversationState: ConversationState = {
       conversation: null,
       loading: false,
       error: null,
       lastFetchTime: null,
+      hasMoreHistoricalItems: false,
+      olderItemsLoading: false,
     };
 
     it("selectSources returns sources array", () => {

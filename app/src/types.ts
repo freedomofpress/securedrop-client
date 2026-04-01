@@ -120,6 +120,8 @@ export type SourceWithItems = {
   uuid: string;
   data: SourceMetadata;
   items: Item[];
+  hasMoreHistoricalItems?: boolean;
+  lastSeenInteractionCount?: number | null;
 };
 
 export type Journalist = {

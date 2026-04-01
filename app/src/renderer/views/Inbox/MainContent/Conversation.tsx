@@ -16,6 +16,9 @@ import {
 } from "../../../features/drafts/draftsSlice";
 import {
   fetchConversation,
+  fetchOlderConversationItems,
+  selectHasMoreHistoricalItems,
+  selectOlderItemsLoading,
   updateItemFetchStatus,
 } from "../../../features/conversation/conversationSlice";
 import { syncMetadata } from "../../../features/sync/syncSlice";
@@ -67,6 +70,8 @@ const Conversation = memo(function Conversation({
   const { t } = useTranslation("MainContent");
   const dispatch = useAppDispatch();
   const session = useAppSelector((state) => state.session);
+  const hasMoreHistoricalItems = useAppSelector(selectHasMoreHistoricalItems);
+  const olderItemsLoading = useAppSelector(selectOlderItemsLoading);
   const sourceUuid = sourceWithItems?.uuid ?? "";
   const savedDraft = useAppSelector(selectDraft(sourceUuid));
   const [form] = Form.useForm();
@@ -78,9 +83,11 @@ const Conversation = memo(function Conversation({
     dividerItemUuid,
     dynamicRowHeight,
     hasItems,
+    heightsReady,
     listRef,
     newItems,
     oldItems,
+    scrollElement,
   } = useConversationScroll(sourceWithItems);
 
   // Restore draft when switching sources (including initial mount)
@@ -213,6 +220,35 @@ const Conversation = memo(function Conversation({
     return rows;
   }, [oldItems, newItems, dividerIndex]);
 
+  // Load older messages when the user scrolls near the top
+  useEffect(() => {
+    if (!scrollElement) {
+      return;
+    }
+
+    const handleScroll = () => {
+      if (
+        scrollElement.scrollTop <= 50 &&
+        hasMoreHistoricalItems &&
+        !olderItemsLoading &&
+        sourceWithItems
+      ) {
+        dispatch(fetchOlderConversationItems(sourceWithItems.uuid));
+      }
+    };
+
+    scrollElement.addEventListener("scroll", handleScroll);
+    return () => {
+      scrollElement.removeEventListener("scroll", handleScroll);
+    };
+  }, [
+    dispatch,
+    hasMoreHistoricalItems,
+    olderItemsLoading,
+    scrollElement,
+    sourceWithItems,
+  ]);
+
   if (!sourceWithItems) {
     return null;
   }
@@ -231,7 +267,10 @@ const Conversation = memo(function Conversation({
             rowComponent={ConversationRow}
             rowProps={{ virtualRows, designation: designation || "" }}
             listRef={listRef}
-            style={{ height: "100%" }}
+            style={{
+              height: "100%",
+              visibility: heightsReady ? "visible" : "hidden",
+            }}
             className="pt-4"
           />
         ) : (

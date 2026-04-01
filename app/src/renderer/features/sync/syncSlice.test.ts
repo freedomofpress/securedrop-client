@@ -212,7 +212,9 @@ describe("syncSlice", () => {
       await (store.dispatch as any)(syncMetadata(mockAuthData("test-token")));
 
       // Should have called getSourceWithItems for the active source only
-      expect(mockGetSourceWithItems).toHaveBeenCalledWith(activeSourceUuid);
+      expect(mockGetSourceWithItems).toHaveBeenCalledWith(activeSourceUuid, {
+        limit: 100,
+      });
       expect(mockGetSourceWithItems).toHaveBeenCalledTimes(1);
 
       // Sources should be updated

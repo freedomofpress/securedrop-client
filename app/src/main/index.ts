@@ -346,8 +346,16 @@ if (!gotTheLock) {
 
       ipcMain.handle(
         "getSourceWithItems",
-        async (_event, sourceUuid: string): Promise<SourceWithItems> => {
-          const sourceWithItems = db.getSourceWithItems(sourceUuid);
+        async (
+          _event,
+          sourceUuid: string,
+          options?: {
+            limit?: number;
+            beforeInteractionCount?: number;
+            journalistUuid?: string;
+          },
+        ): Promise<SourceWithItems> => {
+          const sourceWithItems = db.getSourceWithItems(sourceUuid, options);
           return sourceWithItems;
         },
       );
