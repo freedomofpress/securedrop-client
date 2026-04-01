@@ -1,6 +1,6 @@
-# SecureDrop App Architecture
+# SecureDrop Inbox Architecture
 
-The SecureDrop App is an Electron application written in TypeScript that provides a user interface for the [SecureDrop Workstation](https://github.com/freedomofpress/securedrop-workstation/tree/main) on Qubes OS, allowing users to securely download and decrypt messages and submissions from sources and send replies. For comprehensive documentation on the entire system, see the Workstation documentation.
+The SecureDrop Inbox is an Electron application written in TypeScript that provides a user interface for the [SecureDrop Workstation](https://github.com/freedomofpress/securedrop-workstation/tree/main) on Qubes OS, allowing users to securely download and decrypt messages and submissions from sources and send replies. For comprehensive documentation on the entire system, see the Workstation documentation.
 
 The core components of the application are:
 

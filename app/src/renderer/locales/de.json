@@ -1,0 +1,48 @@
+{
+  "MainContent": {
+    "menu": {
+      "exportTranscript": "Transkript exportieren",
+      "printTranscript": "Transkript drucken"
+    }
+  },
+  "Sidebar": {
+    "account": {
+      "signIn": "Anmelden",
+      "Quit": "Beenden"
+    }
+  },
+  "SignIn": {
+    "username": {
+      "label": "Benutzername"
+    },
+    "passphrase": {
+      "label": "Passphrase"
+    },
+    "twoFactorCode": {
+      "label": "Zwei-Faktor-Code"
+    },
+    "errors": {
+      "sessionExpired": "Ihre Sitzung ist abgelaufen. Bitte melden Sie sich erneut an."
+    }
+  },
+  "Item": {
+    "exportWizard": {
+      "exportFailed": "Export fehlgeschlagen",
+      "noDeviceDetected": "Keine USB-Laufwerke erkannt",
+      "multiDeviceDetected": "Zu viele USB-Laufwerke erkannt; bitte stecke ein unterstütztes Laufwerk ein.",
+      "errorUnlockLuks": "Die angegebene Passphrase hat nicht funktioniert. Bitte versuchen Sie es erneut.",
+      "errorExportCleanup": "Die Dateien wurden erfolgreich exportiert, aber einige temporäre Dateien bleiben auf der Festplatte. Starte neu, um sie zu entfernen.",
+      "errorUnmountVolumeBusy": "Die Dateien wurden erfolgreich exportiert, aber das USB-Laufwerk konnte nicht ausgehängt werden.",
+      "errorMount": "Fehler bei der Einbindung des Laufwerks",
+      "errorExport": "Fehler beim Export",
+      "errorMissingFiles": "Dateien wurden verschoben oder fehlen und konnten nicht exportiert werden.",
+      "deviceError": "Bei diesem Laufwerk ist ein Fehler aufgetreten. Bitte deinen Administrator um Hilfe.",
+      "unexpectedError": "Es ist ein Fehler aufgetreten. Bitte kontaktiere den Support.",
+      "unlock": "Passphrase für USB-Laufwerk eingeben",
+      "passphrase": "Passphrase"
+    },
+    "printWizard": {
+      "errorUnprintableType": "Dieser Dateityp kann nicht geprintet werden."
+    }
+  }
+}

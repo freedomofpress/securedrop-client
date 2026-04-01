@@ -16,7 +16,6 @@
     "menu": {
       "exportTranscript": "Exporter la transcription",
       "printTranscript": "Imprimer la transcription",
-      "deleteSource": "Supprimer le compte de la source",
       "clickToOpen": "Clicquer pour ouvrir"
     },
     "itemEncrypted": "Message chiffré...",
@@ -32,7 +31,8 @@
       "signOut": "Se déconnecter",
       "offlineMode": "Mode hors ligne",
       "signIn": "Se connecter",
-      "signedIn": "Connecté"
+      "signedIn": "Connecté",
+      "Quit": "Fermer"
     },
     "sourcelist": {
       "filters": {
@@ -138,8 +138,7 @@
         "body": "Veuillez tout vérifier et réessayer."
       },
       "sessionExpired": "Votre session a expiré. Reconnectez-vous."
-    },
-    "version": "Application SecureDrop v{{version}}"
+    }
   },
   "Item": {
     "encryptedFile": "Fichier Crypté",
@@ -151,7 +150,6 @@
     "cancel": "Annuler",
     "filenameTooltip": "Nom de fichier disponible après le téléchargement",
     "viewFile": "Voir",
-    "exportFile": "Exporter le fichier",
     "exportToUSB": "Exporter vers USB",
     "printFile": "Imprimer",
     "wizard": {
@@ -175,24 +173,24 @@
       "readyExport": "Prêt à exporter.",
       "understandRisks": "Comprendre les risques avant d'exporter des fichiers",
       "insertUSBInstructions": "Veuillez insérer l'un des lecteurs d'exportation fournis spécifiquement pour le poste de travail SecureDrop. Si vous utilisez un lecteur VeraCrypt, déverrouillez-le manuellement avant de continuer.",
-      "unlock": "Entrer la phrase de passe pour le lecteur USB",
+      "unlock": "Saisir la phrase de passe de la clé USB",
       "passphrase": "Phrase de passe",
       "exportSuccess": "Exportation réussie",
       "exportSuccessWithWarning": "Exportation réussie, mais le lecteur n'a pas été verrouillé",
-      "exportFailed": "Échec de l'exportation",
-      "noDeviceDetected": "Aucun lecteur USB détecté",
-      "multiDeviceDetected": "Trop de lecteurs USB détectés; veuillez insérer un seul lecteur pris en charge.",
+      "exportFailed": "Échec d'exportation",
+      "noDeviceDetected": "Aucune clé USB n'a été détectée",
+      "multiDeviceDetected": "Trop de clés USB ont été détectées ; insérez une seule clé prise en charge.",
       "invalidDeviceDetected": "Soit le lecteur n'est pas chiffré, soit il y a un autre problème. S'il s'agit d'un lecteur VeraCrypt, veuillez le déverrouiller depuis la VM sd-devices, puis réessayez.",
       "unknownDeviceDetected": "Périphérique USB inconnu détecté.",
-      "errorUnlockLuks": "La phrase de passe fournie n'a pas fonctionné. Veuillez réessayer.",
+      "errorUnlockLuks": "La phrase de passe est erronée. Réessayez.",
       "errorUnlockGeneric": "Échec du déverrouillage du lecteur. Veuillez réessayer.",
-      "errorExportCleanup": "Les fichiers ont été exportés avec succès, mais certains fichiers temporaires restent sur le disque. Redémarrez pour les supprimer.",
-      "errorUnmountVolumeBusy": "Les fichiers ont été exportés avec succès, mais le lecteur USB n'a pas pu être démonté.",
-      "errorMount": "Erreur lors du montage du lecteur",
-      "errorExport": "Erreur lors de l'exportation",
-      "errorMissingFiles": "Les fichiers ont été déplacés ou sont manquants et n'ont pas pu être exportés.",
-      "deviceError": "Erreur rencontrée avec ce lecteur. Consultez votre administrateur pour obtenir de l'aide.",
-      "unexpectedError": "Erreur rencontrée. Veuillez contacter le support."
+      "errorExportCleanup": "Les fichiers ont été exportés, mais certains fichiers temporaires restent sur le disque. Redémarrez l'ordinateur afin de les supprimer.",
+      "errorUnmountVolumeBusy": "Les fichiers ont été exportés, mais la clé USB n'a pas pu être démontée.",
+      "errorMount": "Erreur de montage du lecteur",
+      "errorExport": "Erreur d'exportation",
+      "errorMissingFiles": "Des fichiers ont été déplacés ou manquaient et n'ont pas pu être exportés.",
+      "deviceError": "Erreur est survenue avec cette clé. Consultez votre administrateur pour obtenir de l'aide.",
+      "unexpectedError": "Une erreur est survenue. Contactez l'assistance."
     },
     "printWizard": {
       "title": "Imprimer le fichier",

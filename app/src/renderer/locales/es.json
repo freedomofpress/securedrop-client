@@ -1,0 +1,34 @@
+{
+  "MainContent": {
+    "menu": {
+      "exportTranscript": "Exportar la transcripción",
+      "printTranscript": "Imprimir la transcripción"
+    }
+  },
+  "Sidebar": {
+    "account": {
+      "Quit": "Salir"
+    }
+  },
+  "SignIn": {
+    "username": {
+      "label": "Nombre de Usuario"
+    },
+    "passphrase": {
+      "label": "Frase de contraseña"
+    },
+    "twoFactorCode": {
+      "label": "Código de autenticación de dos factores"
+    },
+    "errors": {
+      "sessionExpired": "Tu sesión expiró. Por favor iníciala de nuevo."
+    }
+  },
+  "Item": {
+    "exportWizard": {
+      "errorUnlockLuks": "La frase de contraseña ingresada no funcionó. Por favor inténtalo de nuevo.",
+      "unlock": "Ingresar frase de contraseña para unidad USB",
+      "passphrase": "Frase de contraseña"
+    }
+  }
+}
