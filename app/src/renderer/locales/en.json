@@ -256,7 +256,7 @@
   },
   "QuitModal": {
     "title": "Close application?",
-    "withDrafts": "Draft replies may be lost.",
+    "withDrafts": "Draft replies will not be saved.",
     "noDrafts": "",
     "cancel": "Cancel",
     "ok": "Yes, Quit"
