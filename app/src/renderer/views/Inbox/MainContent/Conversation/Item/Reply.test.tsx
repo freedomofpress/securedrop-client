@@ -70,7 +70,7 @@ describe("Reply", () => {
 
     it("should display journalist full name when available", () => {
       const { getByText } = renderWithProviders(
-        <Reply item={mockReplyItem} />,
+        <Reply item={mockReplyItem} deleteButton={<span />} />,
         { preloadedState: unauthState },
       );
 
@@ -87,7 +87,7 @@ describe("Reply", () => {
       };
 
       const { getByText } = renderWithProviders(
-        <Reply item={itemWithJournalist2} />,
+        <Reply item={itemWithJournalist2} deleteButton={<span />} />,
         { preloadedState: unauthState },
       );
 
@@ -104,7 +104,7 @@ describe("Reply", () => {
       };
 
       const { getByText } = renderWithProviders(
-        <Reply item={itemWithJournalist3} />,
+        <Reply item={itemWithJournalist3} deleteButton={<span />} />,
         { preloadedState: unauthState },
       );
 
@@ -121,7 +121,7 @@ describe("Reply", () => {
       };
 
       const { getByText } = renderWithProviders(
-        <Reply item={itemWithUnknownJournalist} />,
+        <Reply item={itemWithUnknownJournalist} deleteButton={<span />} />,
         { preloadedState: unauthState },
       );
 
@@ -144,7 +144,7 @@ describe("Reply", () => {
 
     it("should display journalist name", () => {
       const { getByText } = renderWithProviders(
-        <Reply item={mockReplyItem} />,
+        <Reply item={mockReplyItem} deleteButton={<span />} />,
         { preloadedState: offlineState },
       );
 
@@ -153,7 +153,7 @@ describe("Reply", () => {
 
     it("should not display 'You' even if journalist matches offline user", () => {
       const { queryByText, getByText } = renderWithProviders(
-        <Reply item={mockReplyItem} />,
+        <Reply item={mockReplyItem} deleteButton={<span />} />,
         { preloadedState: offlineState },
       );
 
@@ -183,7 +183,7 @@ describe("Reply", () => {
 
     it("should display 'You' when current user is the author", () => {
       const { getByText } = renderWithProviders(
-        <Reply item={mockReplyItem} />, // journalist_uuid is "journalist-1"
+        <Reply item={mockReplyItem} deleteButton={<span />} />, // journalist_uuid is "journalist-1"
         { preloadedState: authState },
       );
 
@@ -200,7 +200,7 @@ describe("Reply", () => {
       };
 
       const { getByText, queryByText } = renderWithProviders(
-        <Reply item={itemFromOtherJournalist} />,
+        <Reply item={itemFromOtherJournalist} deleteButton={<span />} />,
         { preloadedState: authState },
       );
 
@@ -228,7 +228,7 @@ describe("Reply", () => {
       };
 
       const { getByText, queryByText } = renderWithProviders(
-        <Reply item={mockReplyItem} />, // journalist_uuid is "journalist-1" (Daniel Ellsberg)
+        <Reply item={mockReplyItem} deleteButton={<span />} />, // journalist_uuid is "journalist-1" (Daniel Ellsberg)
         { preloadedState: authStateAsJournalist2 },
       );
 
@@ -246,7 +246,7 @@ describe("Reply", () => {
       };
 
       const { getByText, queryByText } = renderWithProviders(
-        <Reply item={itemWithUnknownJournalist} />,
+        <Reply item={itemWithUnknownJournalist} deleteButton={<span />} />,
         { preloadedState: authState },
       );
 
@@ -270,7 +270,7 @@ describe("Reply", () => {
       };
 
       const { getByText } = renderWithProviders(
-        <Reply item={mockReplyItem} />,
+        <Reply item={mockReplyItem} deleteButton={<span />} />,
         { preloadedState: emptyJournalistsState },
       );
 
@@ -297,7 +297,7 @@ describe("Reply", () => {
       };
 
       const { getByText } = renderWithProviders(
-        <Reply item={mockReplyItem} />, // journalist_uuid is "journalist-1"
+        <Reply item={mockReplyItem} deleteButton={<span />} />, // journalist_uuid is "journalist-1"
         { preloadedState: emptyJournalistsAuthState },
       );
 
@@ -324,7 +324,7 @@ describe("Reply", () => {
       };
 
       const { getByText } = renderWithProviders(
-        <Reply item={mockReplyItem} />, // journalist_uuid is "journalist-1"
+        <Reply item={mockReplyItem} deleteButton={<span />} />, // journalist_uuid is "journalist-1"
         { preloadedState: loadingState },
       );
 
@@ -351,7 +351,7 @@ describe("Reply", () => {
       };
 
       const { getByText, queryByText } = renderWithProviders(
-        <Reply item={mockReplyItem} />, // journalist_uuid is "journalist-1"
+        <Reply item={mockReplyItem} deleteButton={<span />} />, // journalist_uuid is "journalist-1"
         { preloadedState: emptyJournalistsAuthState },
       );
 
@@ -397,7 +397,7 @@ describe("Reply", () => {
         };
 
         const { getByText } = renderWithProviders(
-          <Reply item={pendingReplyItem} />,
+          <Reply item={pendingReplyItem} deleteButton={<span />} />,
           { preloadedState: authState },
         );
 
@@ -424,7 +424,7 @@ describe("Reply", () => {
         };
 
         const { getByText } = renderWithProviders(
-          <Reply item={pendingReplyItem} />,
+          <Reply item={pendingReplyItem} deleteButton={<span />} />,
           { preloadedState: authState },
         );
 
@@ -451,7 +451,7 @@ describe("Reply", () => {
         };
 
         const { getByText } = renderWithProviders(
-          <Reply item={pendingReplyItem} />,
+          <Reply item={pendingReplyItem} deleteButton={<span />} />,
           { preloadedState: authState },
         );
 
@@ -478,7 +478,7 @@ describe("Reply", () => {
         };
 
         const { getByText } = renderWithProviders(
-          <Reply item={pendingReplyItem} />,
+          <Reply item={pendingReplyItem} deleteButton={<span />} />,
           { preloadedState: authState },
         );
 
@@ -501,7 +501,7 @@ describe("Reply", () => {
         };
 
         const { getByText } = renderWithProviders(
-          <Reply item={pendingReplyItem} />,
+          <Reply item={pendingReplyItem} deleteButton={<span />} />,
           { preloadedState: offlineState },
         );
 
@@ -524,7 +524,7 @@ describe("Reply", () => {
         };
 
         const { getByText } = renderWithProviders(
-          <Reply item={pendingReplyItem} />,
+          <Reply item={pendingReplyItem} deleteButton={<span />} />,
           { preloadedState: unauthState },
         );
 
@@ -554,7 +554,7 @@ describe("Reply", () => {
 
     it("should display plaintext message when available", () => {
       const { getByText } = renderWithProviders(
-        <Reply item={mockReplyItem} />,
+        <Reply item={mockReplyItem} deleteButton={<span />} />,
         { preloadedState: authState },
       );
 
@@ -568,7 +568,7 @@ describe("Reply", () => {
       };
 
       const { getByText } = renderWithProviders(
-        <Reply item={encryptedReply} />,
+        <Reply item={encryptedReply} deleteButton={<span />} />,
         { preloadedState: authState },
       );
 
@@ -582,7 +582,7 @@ describe("Reply", () => {
       };
 
       const { getByText } = renderWithProviders(
-        <Reply item={encryptedReply} />,
+        <Reply item={encryptedReply} deleteButton={<span />} />,
         { preloadedState: authState },
       );
 
@@ -627,7 +627,7 @@ describe("Reply", () => {
 
     it("should display pending icon for pending replies", () => {
       const { getByTestId } = renderWithProviders(
-        <Reply item={pendingReplyItem} />,
+        <Reply item={pendingReplyItem} deleteButton={<span />} />,
         { preloadedState: authState },
       );
 
@@ -636,7 +636,7 @@ describe("Reply", () => {
 
     it("should not display pending icon for regular replies", () => {
       const { queryByTestId } = renderWithProviders(
-        <Reply item={mockReplyItem} />, // Has journalist_uuid
+        <Reply item={mockReplyItem} deleteButton={<span />} />, // Has journalist_uuid
         { preloadedState: authState },
       );
 
@@ -645,7 +645,7 @@ describe("Reply", () => {
 
     it("should display pending icon with tooltip", () => {
       const { getByTestId } = renderWithProviders(
-        <Reply item={pendingReplyItem} />,
+        <Reply item={pendingReplyItem} deleteButton={<span />} />,
         { preloadedState: authState },
       );
 
@@ -672,7 +672,7 @@ describe("Reply", () => {
       };
 
       const { getByTestId } = renderWithProviders(
-        <Reply item={pendingReplyItem} />,
+        <Reply item={pendingReplyItem} deleteButton={<span />} />,
         { preloadedState: offlineState },
       );
 
@@ -746,7 +746,7 @@ describe("Reply", () => {
 
     it("should show pending icon for pending replies", () => {
       const { getByTestId, queryByTestId } = renderWithProviders(
-        <Reply item={pendingReplyItem} />,
+        <Reply item={pendingReplyItem} deleteButton={<span />} />,
         { preloadedState: authState },
       );
 
@@ -757,7 +757,7 @@ describe("Reply", () => {
 
     it("should show sent icon for synced replies not yet seen by source", () => {
       const { getByTestId, queryByTestId } = renderWithProviders(
-        <Reply item={sentReplyItem} />,
+        <Reply item={sentReplyItem} deleteButton={<span />} />,
         { preloadedState: authState },
       );
 
@@ -768,7 +768,7 @@ describe("Reply", () => {
 
     it("should show seen icon when source has seen the reply", () => {
       const { getByTestId, queryByTestId } = renderWithProviders(
-        <Reply item={seenReplyItem} />,
+        <Reply item={seenReplyItem} deleteButton={<span />} />,
         { preloadedState: authState },
       );
 
@@ -787,7 +787,7 @@ describe("Reply", () => {
       };
 
       const { getByTestId, queryByTestId } = renderWithProviders(
-        <Reply item={notDeletedItem} />,
+        <Reply item={notDeletedItem} deleteButton={<span />} />,
         { preloadedState: authState },
       );
 

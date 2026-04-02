@@ -1,5 +1,5 @@
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
-import { Item, type SourceWithItems } from "../../../types";
+import { Item, PendingEventType, type SourceWithItems } from "../../../types";
 import type { RootState } from "../../store";
 import { fetchSources } from "../sources/sourcesSlice";
 
@@ -108,6 +108,25 @@ export const updateItemFetchStatus = createAsyncThunk(
   },
 );
 
+export const deleteItem = createAsyncThunk(
+  "conversation/deleteItem",
+  async ({
+    sourceUuid,
+    itemUuid,
+  }: {
+    sourceUuid: string;
+    itemUuid: string;
+  }) => {
+    await window.electronAPI.addPendingItemEvent(
+      itemUuid,
+      PendingEventType.ItemDeleted,
+    );
+    const sourceWithItems =
+      await window.electronAPI.getSourceWithItems(sourceUuid);
+    return { sourceWithItems };
+  },
+);
+
 const conversationSlice = createSlice({
   name: "conversation",
   initialState,
@@ -181,6 +200,11 @@ const conversationSlice = createSlice({
             return item;
           });
         }
+        state.lastFetchTime = Date.now();
+      })
+      .addCase(deleteItem.fulfilled, (state, action) => {
+        const { sourceWithItems } = action.payload;
+        state.conversation = sourceWithItems;
         state.lastFetchTime = Date.now();
       });
   },

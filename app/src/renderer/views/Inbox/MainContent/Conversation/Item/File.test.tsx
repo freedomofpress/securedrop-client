@@ -5,6 +5,7 @@ import { FetchStatus, type Item } from "../../../../../../types";
 
 describe("File Component Memoization", () => {
   const mockOnUpdate = vi.fn();
+  const mockDeleteButton = <span />;
   const mockItem: Item = {
     uuid: "item-1",
     data: {
@@ -20,18 +21,43 @@ describe("File Component Memoization", () => {
   };
 
   const cases: Array<
-    [{ item: Item; designation: string; onUpdate: () => void }, number]
+    [
+      {
+        item: Item;
+        designation: string;
+        onUpdate: () => void;
+        deleteButton: React.ReactNode;
+      },
+      number,
+    ]
   > = [
     // Initial render
-    [{ item: mockItem, designation: "Test Source", onUpdate: mockOnUpdate }, 1],
+    [
+      {
+        item: mockItem,
+        designation: "Test Source",
+        onUpdate: mockOnUpdate,
+        deleteButton: mockDeleteButton,
+      },
+      1,
+    ],
     // Same props - should not re-render
-    [{ item: mockItem, designation: "Test Source", onUpdate: mockOnUpdate }, 1],
+    [
+      {
+        item: mockItem,
+        designation: "Test Source",
+        onUpdate: mockOnUpdate,
+        deleteButton: mockDeleteButton,
+      },
+      1,
+    ],
     // Change designation - should re-render
     [
       {
         item: mockItem,
         designation: "Different Source",
         onUpdate: mockOnUpdate,
+        deleteButton: mockDeleteButton,
       },
       2,
     ],
@@ -41,6 +67,7 @@ describe("File Component Memoization", () => {
         item: { ...mockItem, uuid: "item-2" },
         designation: "Different Source",
         onUpdate: mockOnUpdate,
+        deleteButton: mockDeleteButton,
       },
       3,
     ],
@@ -54,6 +81,7 @@ describe("File Component Memoization", () => {
         },
         designation: "Different Source",
         onUpdate: mockOnUpdate,
+        deleteButton: mockDeleteButton,
       },
       4,
     ],
