@@ -13,23 +13,41 @@
   },
   "SignIn": {
     "username": {
-      "label": "Benutzername"
+      "label": "Benutzername",
+      "minLength": "Dieser Benutzername wird nicht funktionieren. Er sollte mindestens 3 Zeichen lang sein."
     },
     "passphrase": {
-      "label": "Passphrase"
+      "label": "Passphrase",
+      "invalidLength": "Diese Passphrase wird nicht funktionieren. Sie sollte zwischen 14 und 128 Zeichen lang sein."
     },
     "twoFactorCode": {
       "label": "Zwei-Faktor-Code"
     },
     "errors": {
+      "network": {
+        "header": "Der SecureDrop-Server konnte nicht erreicht werden.",
+        "body": "Bitte überprüfen Sie Ihre Internet- sowie die Tor-Verbindung und versuchen Sie es erneut."
+      },
+      "credentials": {
+        "header": "Diese Anmeldedaten haben nicht funktioniert.",
+        "body": "Bitte versuchen Sie es erneut und stellen Sie sicher, dass Sie einen neuen 2-Faktor-Code verwenden."
+      },
+      "generic": {
+        "header": "Das hat nicht funktioniert.",
+        "body": "Bitte überprüfen Sie alles und versuchen Sie es erneut."
+      },
       "sessionExpired": "Ihre Sitzung ist abgelaufen. Bitte melden Sie sich erneut an."
     }
   },
   "Item": {
+    "wizard": {
+      "beCareful": "Seien Sie vorsichtig, wenn Sie mit Dateien außerhalb Ihres Workstation-Rechners arbeiten."
+    },
     "exportWizard": {
       "exportFailed": "Export fehlgeschlagen",
       "noDeviceDetected": "Keine USB-Laufwerke erkannt",
       "multiDeviceDetected": "Zu viele USB-Laufwerke erkannt; bitte stecke ein unterstütztes Laufwerk ein.",
+      "invalidDeviceDetected": "Das Laufwerk ist entweder nicht verschlüsselt oder es liegt ein anderer Fehler vor. Falls es ein VeraCrypt-Laufwerk ist, müssen Sie es in der sd-devices VM entsperren, bevor Sie es erneut verwenden können.",
       "errorUnlockLuks": "Die angegebene Passphrase hat nicht funktioniert. Bitte versuchen Sie es erneut.",
       "errorExportCleanup": "Die Dateien wurden erfolgreich exportiert, aber einige temporäre Dateien bleiben auf der Festplatte. Starte neu, um sie zu entfernen.",
       "errorUnmountVolumeBusy": "Die Dateien wurden erfolgreich exportiert, aber das USB-Laufwerk konnte nicht ausgehängt werden.",
@@ -38,6 +56,8 @@
       "errorMissingFiles": "Dateien wurden verschoben oder fehlen und konnten nicht exportiert werden.",
       "deviceError": "Bei diesem Laufwerk ist ein Fehler aufgetreten. Bitte deinen Administrator um Hilfe.",
       "unexpectedError": "Es ist ein Fehler aufgetreten. Bitte kontaktiere den Support.",
+      "exportSuccessWithWarning": "Export erfolgreich, aber Laufwerk wurde nicht gesperrt",
+      "insertUSBInstructions": "Bitte lege eines der speziell für die SecureDrop Workstation bereitgestellten Exportlaufwerke ein. Wenn du ein VeraCrypt-Laufwerk verwendest, entriegele es manuell, bevor du fortfährst.",
       "unlock": "Passphrase für USB-Laufwerk eingeben",
       "passphrase": "Passphrase"
     },
