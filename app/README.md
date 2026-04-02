@@ -1,4 +1,4 @@
-# SecureDrop App
+# SecureDrop Inbox
 
 A pre-alpha re-implementation of the SecureDrop Client for Qubes, built with modern web technologies.
 

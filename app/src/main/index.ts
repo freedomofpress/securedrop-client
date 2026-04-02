@@ -49,7 +49,7 @@ setUmask();
 
 // Handle --version flag early, before any other initialization
 if (process.argv.includes("--version")) {
-  console.log(`SecureDrop App v${app.getVersion()}`);
+  console.log(`SecureDrop Inbox v${app.getVersion()}`);
   process.exit(0);
 }
 
@@ -63,9 +63,9 @@ if (!gotTheLock) {
       dialog
         .showMessageBox({
           type: "info",
-          title: "SecureDrop App",
+          title: "SecureDrop Inbox",
           // TODO: ideally this would be localized
-          message: "The SecureDrop App is already running.",
+          message: "The SecureDrop Inbox is already running.",
           buttons: ["OK"],
         })
         .then(() => {
@@ -147,7 +147,7 @@ if (!gotTheLock) {
         cryptoConfig: configForCrypto,
       };
     } catch (error) {
-      console.error("Failed to initialize SecureDrop App:", error);
+      console.error("Failed to initialize SecureDrop Inbox:", error);
       process.exit(1);
     }
   }
@@ -171,7 +171,7 @@ if (!gotTheLock) {
       height: 900,
       minWidth: 1200,
       minHeight: 900,
-      title: "SecureDrop App",
+      title: "SecureDrop Inbox",
       icon: join(__dirname, "../renderer/resources/icon.png"),
       show: false,
       autoHideMenuBar: true,

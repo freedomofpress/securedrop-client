@@ -1,0 +1,51 @@
+{
+  "MainContent": {
+    "menu": {
+      "exportTranscript": "Exportar la transcripción",
+      "printTranscript": "Imprimir la transcripción"
+    }
+  },
+  "Sidebar": {
+    "account": {
+      "Quit": "Salir"
+    }
+  },
+  "SignIn": {
+    "username": {
+      "label": "Nombre de Usuario",
+      "minLength": "Ese nombre de usuario no funcionará. Debería tener al menos un largo de 3 caracteres."
+    },
+    "passphrase": {
+      "label": "Frase de contraseña",
+      "invalidLength": "Esa frase de contraseña no funcionará. Debería tener entre 14 y 128 caracteres de largo."
+    },
+    "twoFactorCode": {
+      "label": "Código de autenticación de dos factores"
+    },
+    "errors": {
+      "network": {
+        "header": "No se pudo alcanzar al servidor SecureDrop.",
+        "body": "Por favor comprueba tus conexiones a Internet y Tor e inténtalo de nuevo."
+      },
+      "credentials": {
+        "header": "Esas credenciales no funcionaron.",
+        "body": "Por favor inténtalo de nuevo, y asegúrate de usar un nuevo código de autenticación de dos factores."
+      },
+      "generic": {
+        "header": "Eso no funcionó.",
+        "body": "Por favor comprueba todo e inténtalo de nuevo."
+      },
+      "sessionExpired": "Tu sesión expiró. Por favor iníciala de nuevo."
+    }
+  },
+  "Item": {
+    "wizard": {
+      "beCareful": "Recuerda ser cuidadoso cuando trabajes con archivos fuera de tu estación de trabajo."
+    },
+    "exportWizard": {
+      "errorUnlockLuks": "La frase de contraseña ingresada no funcionó. Por favor inténtalo de nuevo.",
+      "unlock": "Ingresar frase de contraseña para unidad USB",
+      "passphrase": "Frase de contraseña"
+    }
+  }
+}

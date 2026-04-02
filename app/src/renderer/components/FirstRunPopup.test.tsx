@@ -17,7 +17,9 @@ describe("FirstRunPopup Component", () => {
     renderWithProviders(<FirstRunPopup />);
 
     await waitFor(() => {
-      expect(screen.getByText("Welcome to SecureDrop")).toBeInTheDocument();
+      expect(
+        screen.getByText("Welcome to SecureDrop Inbox"),
+      ).toBeInTheDocument();
     });
 
     expect(
@@ -37,7 +39,7 @@ describe("FirstRunPopup Component", () => {
 
     await waitFor(() => {
       expect(
-        screen.getByText("Welcome to the new SecureDrop App"),
+        screen.getByText("Welcome to the new SecureDrop Inbox"),
       ).toBeInTheDocument();
     });
 
@@ -60,9 +62,11 @@ describe("FirstRunPopup Component", () => {
     });
 
     // Modal should not be visible
-    expect(screen.queryByText("Welcome to SecureDrop")).not.toBeInTheDocument();
     expect(
-      screen.queryByText("Welcome to the new SecureDrop App"),
+      screen.queryByText("Welcome to SecureDrop Inbox"),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByText("Welcome to the new SecureDrop Inbox"),
     ).not.toBeInTheDocument();
   });
 
@@ -75,7 +79,9 @@ describe("FirstRunPopup Component", () => {
     renderWithProviders(<FirstRunPopup />);
 
     await waitFor(() => {
-      expect(screen.getByText("Welcome to SecureDrop")).toBeInTheDocument();
+      expect(
+        screen.getByText("Welcome to SecureDrop Inbox"),
+      ).toBeInTheDocument();
     });
 
     const okButton = screen.getByRole("button", { name: "OK" });

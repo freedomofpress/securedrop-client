@@ -13,7 +13,7 @@ describe("SignInView Component", () => {
     await waitFor(() => {
       expect(screen.getByText("Sign in to SecureDrop")).toBeInTheDocument();
       expect(
-        screen.getByText("SecureDrop App v6.6.6-test"),
+        screen.getByText("SecureDrop Inbox v6.6.6-test"),
       ).toBeInTheDocument();
     });
   });
