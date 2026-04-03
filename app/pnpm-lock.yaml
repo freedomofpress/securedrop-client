@@ -13,7 +13,7 @@ importers:
     dependencies:
       '@electron-toolkit/utils':
         specifier: ^4.0.0
-        version: 4.0.0(electron@40.0.0)
+        version: 4.0.0(electron@40.8.5)
       '@sapphire/snowflake':
         specifier: ^3.5.5
         version: 3.5.5
@@ -59,7 +59,7 @@ importers:
         version: 3.1.0(eslint@9.39.2(jiti@2.6.1))(typescript@5.9.3)
       '@electron-toolkit/preload':
         specifier: ^3.0.2
-        version: 3.0.2(electron@40.0.0)
+        version: 3.0.2(electron@40.8.5)
       '@electron-toolkit/tsconfig':
         specifier: ^2.0.0
         version: 2.0.0(@types/node@24.10.1)
@@ -112,8 +112,8 @@ importers:
         specifier: ^5.29.3
         version: 5.29.3(react-dom@19.2.3(react@19.2.3))(react@19.2.3)
       electron:
-        specifier: 40.0.0
-        version: 40.0.0
+        specifier: ^40.7.0
+        version: 40.8.5
       electron-builder:
         specifier: <26.3.1
         version: 26.3.0(electron-builder-squirrel-windows@26.0.12)
@@ -2527,8 +2527,8 @@ packages:
     resolution: {integrity: sha512-bO3y10YikuUwUuDUQRM4KfwNkKhnpVO7IPdbsrejwN9/AABJzzTQ4GeHwyzNSrVO+tEH3/Np255a3sVZpZDjvg==}
     engines: {node: '>=8.0.0'}
 
-  electron@40.0.0:
-    resolution: {integrity: sha512-UyBy5yJ0/wm4gNugCtNPjvddjAknMTuXR2aCHioXicH7aKRKGDBPp4xqTEi/doVcB3R+MN3wfU9o8d/9pwgK2A==}
+  electron@40.8.5:
+    resolution: {integrity: sha512-pgTY/VPQKaiU4sTjfU96iyxCXrFm4htVPCMRT4b7q9ijNTRgtLmLvcmzp2G4e7xDrq9p7OLHSmu1rBKFf6Y1/A==}
     engines: {node: '>= 12.20.55'}
     hasBin: true
 
@@ -5574,17 +5574,17 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
-  '@electron-toolkit/preload@3.0.2(electron@40.0.0)':
+  '@electron-toolkit/preload@3.0.2(electron@40.8.5)':
     dependencies:
-      electron: 40.0.0
+      electron: 40.8.5
 
   '@electron-toolkit/tsconfig@2.0.0(@types/node@24.10.1)':
     dependencies:
       '@types/node': 24.10.1
 
-  '@electron-toolkit/utils@4.0.0(electron@40.0.0)':
+  '@electron-toolkit/utils@4.0.0(electron@40.8.5)':
     dependencies:
-      electron: 40.0.0
+      electron: 40.8.5
 
   '@electron/asar@3.2.18':
     dependencies:
@@ -6115,7 +6115,7 @@ snapshots:
 
   '@npmcli/fs@4.0.0':
     dependencies:
-      semver: 7.7.3
+      semver: 7.7.4
 
   '@npmcli/move-file@2.0.1':
     dependencies:
@@ -7794,7 +7794,7 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
-  electron@40.0.0:
+  electron@40.8.5:
     dependencies:
       '@electron/get': 2.0.3
       '@types/node': 24.10.1
@@ -8439,7 +8439,7 @@ snapshots:
       es6-error: 4.1.1
       matcher: 3.0.0
       roarr: 2.15.4
-      semver: 7.7.3
+      semver: 7.7.4
       serialize-error: 7.0.1
     optional: true
 
@@ -9235,7 +9235,7 @@ snapshots:
 
   node-api-version@0.2.1:
     dependencies:
-      semver: 7.7.3
+      semver: 7.7.4
 
   node-eta@0.9.0: {}
 
@@ -9247,7 +9247,7 @@ snapshots:
       make-fetch-happen: 14.0.3
       nopt: 8.1.0
       proc-log: 5.0.0
-      semver: 7.7.3
+      semver: 7.7.4
       tar: 7.5.8
       tinyglobby: 0.2.15
       which: 5.0.0
