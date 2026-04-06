@@ -1,5 +1,17 @@
 # Changelog
 
+## 0.17.4
+
+This release contains multiple security fixes, all of which are low or
+informational priority. We are not aware of any exploitation in the wild for
+any vulnerability.
+
+* Move printers out of sd-devices into a dedicated sd-printers VM
+* Prevent sd-proxy DoS from infinite stdin
+* Prevent sd-log DoS from infinite stdin
+
+(The 0.17.3 version number was skipped.)
+
 ## 0.17.2
 
 * Update Rust `bytes` crate to 1.11.1 to address CVE-2026-25541 (#3069)
