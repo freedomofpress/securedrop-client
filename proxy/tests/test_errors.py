@@ -46,6 +46,16 @@ def test_input_missing_keys(proxy_request):
     )
 
 
+def test_very_large_input(proxy_request):
+    test_input = b"AAAAA" * 10_000_000
+    result = proxy_request(input=test_input)
+    assert result.returncode == 1
+    assert (
+        result.stderr.decode().strip()
+        == '{"error":"stdin is over the max bytes (5000000), aborting"}'
+    )
+
+
 def test_invalid_origin(proxy_request):
     test_input = {
         "method": "GET",

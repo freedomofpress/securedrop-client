@@ -6,8 +6,8 @@ use reqwest::header::HeaderMap;
 use reqwest::{Client, Method, Proxy, Response};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
-use std::io;
-use std::io::Write;
+use std::io::{self, Read};
+use std::io::{BufRead, Write};
 use std::process::ExitCode;
 use std::str::FromStr;
 use std::time::Duration;
@@ -27,6 +27,10 @@ use config_env as config;
 // This is the only setting we need to read via `config`.  We should refactor this more extensibly if we ever need multiple.
 const ENV_CONFIG: &str = "SD_PROXY_ORIGIN";
 const DISABLE_TOR: &str = "DISABLE_TOR";
+
+// Read a max of 5MB from stdin. This should be much higher than what a
+// server w/ 1k sources needs (~300KB), but still low enough to prevent a DoS.
+const STDIN_LIMIT: u64 = 5_000_000;
 
 /// Incoming HTTP requests (as JSON) received over stdin
 #[derive(Deserialize, Debug)]
@@ -118,9 +122,16 @@ async fn proxy() -> Result<()> {
     // Get the hostname from the environment or QubesDB
     let origin = config::read(ENV_CONFIG)?;
 
-    // Read incoming request from stdin (must be on single line)
+    // Read incoming request from stdin
     let mut buffer = String::new();
-    io::stdin().read_line(&mut buffer)?;
+    // Limit stdin to 5MB; this should be much bigger than
+    io::stdin()
+        .lock()
+        .take(STDIN_LIMIT)
+        .read_line(&mut buffer)?;
+    if buffer.len() == STDIN_LIMIT as usize && !buffer.ends_with('\n') {
+        bail!("stdin is over the max bytes ({STDIN_LIMIT}), aborting");
+    }
     let incoming_request: IncomingRequest = serde_json::from_str(&buffer)?;
     // We construct the URL by first parsing the origin and then appending the
     // path query. This forces the path query to be part of the path and prevents
