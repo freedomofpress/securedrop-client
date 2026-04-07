@@ -53,7 +53,8 @@
       "keyboardShortcuts": "Keyboard Shortcuts",
       "aboutSecureDrop": "About SecureDrop",
       "Quit": "Quit",
-      "aboutClose": "Close"
+      "aboutClose": "Close",
+      "aboutOK": "OK"
     },
     "helpModals": {
       "keyboardTitle": "Keyboard shortcuts",
@@ -64,8 +65,8 @@
       "aboutMoreContent": "https://securedrop.org/inbox",
       "aboutRepoTitle": "Source code",
       "aboutRepoContent": "https://github.com/freedomofpress/securedrop-client",
-      "aboutLicence": "SecureDrop is open source and released under the GNU Affero General Public License v3.",
-      "aboutCopyright": "© 2013–2026 Aaron Swartz, James Dolan, Freedom of the Press Foundation, and SecureDrop contributors"
+      "aboutCopyright": "© 2013–2026 Aaron Swartz, James Dolan, Freedom of the Press Foundation, and SecureDrop contributors.",
+      "aboutLicence": "SecureDrop is open source and released under the GNU Affero General Public License v3."
     },
     "syncStatus": {
       "notloggedin": "Sync: not logged in",
@@ -253,10 +254,12 @@
     }
   },
   "QuitModal": {
-    "title": "Close application?",
-    "withDrafts": "Draft replies will not be saved.",
+    "title": "Quit SecureDrop Inbox?",
+    "withDrafts": "Draft replies be discarded.",
     "noDrafts": "",
+    "goBack": "Go Back",
     "cancel": "Cancel",
-    "ok": "Yes, Quit"
+    "Quit": "Quit",
+    "discardAndQuit": "Discard and Quit"
   }
 }
