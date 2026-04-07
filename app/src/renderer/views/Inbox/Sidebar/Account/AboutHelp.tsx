@@ -72,13 +72,7 @@ function AboutHelp() {
 
         {/* Divider */}
         <div className="h-[1px] bg-[#f0f0f0] mb-[16px]"></div>
-
-        {/* License */}
-        <span className="text-[12px] text-[#8c8c8c] leading-[1.5]">
-          {t("helpModals.aboutLicence")}
-        </span>
       </div>
-
       {/* Footer */}
       <div className="px-[16px] py-[12px] border-t border-[#f0f0f0] flex items-center justify-between gap-[12px]">
         <span className="text-[12px] text-[#8c8c8c] leading-[1.4]">

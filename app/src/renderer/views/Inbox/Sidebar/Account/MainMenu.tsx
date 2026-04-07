@@ -191,7 +191,7 @@ function MainMenu() {
             ) : (
               <>
                 <SyncDicator />
-                <Typography.Text type="warning">
+                <Typography.Text type="secondary">
                   {t("account.offlineMode")}
                 </Typography.Text>
               </>
@@ -214,7 +214,7 @@ function MainMenu() {
             onClick={() => setIsAboutModalOpen(false)}
             type="primary"
           >
-            {t("account.aboutClose")}
+            {t("account.aboutOK")}
           </Button>,
         ]}
       >

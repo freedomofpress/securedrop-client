@@ -30,7 +30,7 @@ function KeyboardHelpModal() {
       onCancel={() => setIsOpen(false)}
       footer={[
         <Button key="back" onClick={() => setIsOpen(false)} type="primary">
-          {t("account.aboutClose")}
+          {t("account.aboutOK")}
         </Button>,
       ]}
     >
