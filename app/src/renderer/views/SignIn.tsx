@@ -94,10 +94,22 @@ function SignInView() {
         },
       } as ProxyRequest);
 
-      // If the status is not 200, fail
-      if (res.status !== 200) {
+      // If the credentials were rejected, fail
+      if (res.status == 403) {
         console.error("Authentication failed:", res.data);
         setAuthErrorMessage(errorMessageCredentials);
+        setAuthError(true);
+        return;
+      }
+
+      // If it's a non-200 status code, fail too
+      // TODO: use a dedicated error message here that exposes the code
+      if (res.status != 200) {
+        console.error(
+          `Authentication failed with HTTP status ${res.status}`,
+          res.data,
+        );
+        setAuthErrorMessage(errorMessageGeneric);
         setAuthError(true);
         return;
       }
