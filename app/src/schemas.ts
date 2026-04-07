@@ -30,11 +30,11 @@ export const TokenResponseSchema = z.object({
   journalist_uuid: UUIDSchema,
   journalist_first_name: z.nullable(z.string()),
   journalist_last_name: z.nullable(z.string()),
-  hints: z.object({
+  hints: z.optional(z.object({
     version: z.string(),
     sources: z.number(),
     items: z.number(),
-  }),
+  })),
 });
 
 export const SourceMetadataSchema = z.object({
