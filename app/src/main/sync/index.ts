@@ -193,6 +193,12 @@ export function shouldSkipSync(db: DB, hintedVersion?: string): boolean {
   return nothingIncoming && nothingOutgoing;
 }
 
+export function hasProcessableFetches(
+  db: Pick<DB, "getItemsToProcess">,
+): boolean {
+  return db.getItemsToProcess().length > 0;
+}
+
 // Executes metadata sync with SecureDrop server, updating
 // the current version and persisting updated source, reply,
 // and submission metadata to the DB.

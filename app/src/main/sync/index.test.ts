@@ -55,6 +55,7 @@ function mockDB({
     getVersion: vi.fn(() => "v1"),
     getIndex: vi.fn(() => index),
     getItem: vi.fn((_itemID) => null),
+    getItemsToProcess: vi.fn(() => []),
     deleteItems: vi.fn((itemIDs: string[]) => {
       if (storage) {
         for (const itemID of itemIDs) {
@@ -808,6 +809,22 @@ describe("shouldSkipSync", () => {
     const db = mockDB();
     db.getVersion = vi.fn(() => ""); // initial state
     expect(syncModule.shouldSkipSync(db, "v1")).toBe(false);
+  });
+});
+
+describe("hasProcessableFetches", () => {
+  it("returns true when the database has processable items", () => {
+    const db = mockDB();
+    db.getItemsToProcess = vi.fn(() => [ITEM_UUID_1]);
+
+    expect(syncModule.hasProcessableFetches(db)).toBe(true);
+  });
+
+  it("returns false when the database has no processable items", () => {
+    const db = mockDB();
+    db.getItemsToProcess = vi.fn(() => []);
+
+    expect(syncModule.hasProcessableFetches(db)).toBe(false);
   });
 });
 
