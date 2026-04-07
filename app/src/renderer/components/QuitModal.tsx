@@ -14,11 +14,14 @@ function QuitModal() {
       getContainer: false,
       autoFocusButton: "ok",
       title: t("title"),
+      icon: null,
       content: t(
         Object.keys(drafts.drafts).length > 0 ? "withDrafts" : "noDrafts",
       ),
-      cancelText: t("cancel"),
-      okText: t("ok"),
+      cancelText: t("goBack"),
+      okText: t(
+        Object.keys(drafts.drafts).length > 0 ? "discardAndQuit" : "Quit",
+      ),
       onOk() {
         window.electronAPI.quitApp();
       },
