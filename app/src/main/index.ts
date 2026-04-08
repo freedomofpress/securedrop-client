@@ -34,7 +34,7 @@ import {
   PendingEventType,
   SyncStatus,
 } from "../types";
-import { hasProcessableFetches, syncMetadata, shouldSkipSync } from "./sync";
+import { syncMetadata, shouldSkipSync } from "./sync";
 import workerPath from "./fetch/worker?modulePath";
 import { Lock, LockTimeoutError } from "./sync/lock";
 import { Config } from "./config";
@@ -251,7 +251,7 @@ if (!gotTheLock) {
   let fetchWorker: Worker | null = null;
 
   function wakeFetchWorkerIfNeeded(authToken: string): void {
-    if (!fetchWorker || !hasProcessableFetches(db)) {
+    if (!fetchWorker) {
       return;
     }
 

@@ -70,7 +70,6 @@ const testState = vi.hoisted(() => {
     syncModule: {
       syncMetadata: vi.fn(),
       shouldSkipSync: vi.fn(),
-      hasProcessableFetches: vi.fn(),
     },
     proxyJSONRequest: vi.fn(),
     lockRun: vi.fn(async (fn: () => unknown) => await fn()),
@@ -190,8 +189,6 @@ describe("syncMetadata IPC handler", () => {
     testState.syncModule.syncMetadata.mockResolvedValue(
       SyncStatus.NOT_MODIFIED,
     );
-    testState.syncModule.hasProcessableFetches.mockReset();
-    testState.syncModule.hasProcessableFetches.mockReturnValue(true);
 
     testState.proxyJSONRequest.mockReset();
     testState.lockRun.mockReset();
@@ -208,7 +205,7 @@ describe("syncMetadata IPC handler", () => {
     vi.clearAllMocks();
   });
 
-  it("re-wakes the fetch worker when sync returns NOT_MODIFIED and processable items remain", async () => {
+  it("re-wakes the fetch worker when sync returns NOT_MODIFIED", async () => {
     await loadMainProcessModule();
 
     const handler = getSyncMetadataHandler();
@@ -222,14 +219,13 @@ describe("syncMetadata IPC handler", () => {
     expect(status).toBe(SyncStatus.NOT_MODIFIED);
     expect(testState.syncModule.shouldSkipSync).toHaveBeenCalledTimes(1);
     expect(testState.syncModule.syncMetadata).toHaveBeenCalledTimes(1);
-    expect(testState.syncModule.hasProcessableFetches).toHaveBeenCalledTimes(1);
     expect(testState.workerInstances).toHaveLength(1);
     expect(testState.workerInstances[0]?.postMessage).toHaveBeenCalledWith({
       authToken: "resume-token",
     });
   });
 
-  it("re-wakes the fetch worker on the skip-sync fast path when processable items remain", async () => {
+  it("re-wakes the fetch worker on the skip-sync fast path", async () => {
     testState.syncModule.shouldSkipSync.mockReturnValue(true);
 
     await loadMainProcessModule();
@@ -245,7 +241,6 @@ describe("syncMetadata IPC handler", () => {
     expect(status).toBe(SyncStatus.NOT_MODIFIED);
     expect(testState.syncModule.shouldSkipSync).toHaveBeenCalledTimes(1);
     expect(testState.syncModule.syncMetadata).not.toHaveBeenCalled();
-    expect(testState.syncModule.hasProcessableFetches).toHaveBeenCalledTimes(1);
     expect(testState.workerInstances).toHaveLength(1);
     expect(testState.workerInstances[0]?.postMessage).toHaveBeenCalledWith({
       authToken: "skip-token",

@@ -812,22 +812,6 @@ describe("shouldSkipSync", () => {
   });
 });
 
-describe("hasProcessableFetches", () => {
-  it("returns true when the database has processable items", () => {
-    const db = mockDB();
-    db.getItemsToProcess = vi.fn(() => [ITEM_UUID_1]);
-
-    expect(syncModule.hasProcessableFetches(db)).toBe(true);
-  });
-
-  it("returns false when the database has no processable items", () => {
-    const db = mockDB();
-    db.getItemsToProcess = vi.fn(() => []);
-
-    expect(syncModule.hasProcessableFetches(db)).toBe(false);
-  });
-});
-
 describe("Storage.deleteSourceFs", () => {
   beforeEach(() => {
     vi.resetAllMocks();
