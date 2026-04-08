@@ -55,6 +55,7 @@ function mockDB({
     getVersion: vi.fn(() => "v1"),
     getIndex: vi.fn(() => index),
     getItem: vi.fn((_itemID) => null),
+    getItemsToProcess: vi.fn(() => []),
     deleteItems: vi.fn((itemIDs: string[]) => {
       if (storage) {
         for (const itemID of itemIDs) {

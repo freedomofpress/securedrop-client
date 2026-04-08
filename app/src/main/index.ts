@@ -250,6 +250,14 @@ if (!gotTheLock) {
 
   let fetchWorker: Worker | null = null;
 
+  function wakeFetchWorkerIfNeeded(authToken: string): void {
+    if (!fetchWorker) {
+      return;
+    }
+
+    fetchWorker.postMessage({ authToken } as AuthedRequest);
+  }
+
   // This method will be called when Electron has finished
   // initialization and is ready to create browser windows.
   // Some APIs can only be used after this event occurs.
@@ -428,6 +436,7 @@ if (!gotTheLock) {
         async (_event, request: AuthedRequest): Promise<SyncStatus> => {
           if (shouldSkipSync(db, request.hintedVersion)) {
             console.debug(`Already at ${request.hintedVersion}; skipping sync`);
+            wakeFetchWorkerIfNeeded(request.authToken);
             return SyncStatus.NOT_MODIFIED;
           }
 
@@ -440,12 +449,9 @@ if (!gotTheLock) {
             if (db.getPendingEvents().length > 0) {
               syncStatus = await syncWithLock(syncLock, db, request);
             }
-
-            // Trigger fetch worker for new replies
-            fetchWorker?.postMessage({
-              authToken: request.authToken,
-            } as AuthedRequest);
           }
+
+          wakeFetchWorkerIfNeeded(request.authToken);
 
           return syncStatus;
         },
