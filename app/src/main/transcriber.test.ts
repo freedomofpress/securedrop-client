@@ -121,7 +121,8 @@ describe("Transcriber Component Tests", () => {
 
   function createMockDB() {
     return {
-      getJournalistByID: vi.fn(),
+      getJournalists: vi.fn(),
+      getSourceWithItems: vi.fn(),
     } as unknown as DB;
   }
 
@@ -132,7 +133,7 @@ describe("Transcriber Component Tests", () => {
   it("should return a valid transcript with all message and replies", async () => {
     const db = createMockDB();
 
-    db.getJournalistByID = vi.fn(() => mockJournalist);
+    db.getJournalists = vi.fn(() => [mockJournalist]);
 
     const expectedSource: string = "Source: palpable disquiet";
     const expectedTranscript: string = `Transcript:
@@ -153,12 +154,10 @@ Interesting message there
     expect(output).toContain(expectedTranscript);
   });
 
-  it("should gracefully handle  errors when looking up journalists", async () => {
+  it("should gracefully handle unknown journalists", async () => {
     const db = createMockDB();
 
-    db.getJournalistByID = vi.fn(() => {
-      throw new Error("mocked error");
-    });
+    db.getJournalists = vi.fn(() => []);
 
     const expectedSource: string = "Source: palpable disquiet";
     const expectedTranscript: string = `Transcript:
@@ -182,12 +181,8 @@ Interesting message there
   it("should write a valid transcript file", async () => {
     const db = createMockDB();
 
-    db.getJournalistByID = vi.fn(() => {
-      return mockJournalist;
-    });
-    db.getSourceWithItems = vi.fn(() => {
-      return mockSourceWithItems;
-    });
+    db.getJournalists = vi.fn(() => [mockJournalist]);
+    db.getSourceWithItems = vi.fn(() => mockSourceWithItems);
 
     const expectedSource: string = "Source: palpable disquiet";
     const expectedTranscript: string = `Transcript:
