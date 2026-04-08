@@ -1,5 +1,53 @@
 # Changelog
 
+## 1.0.0-rc1
+
+This release introduces the new SecureDrop Inbox, which is a rewrite of the
+SecureDrop Client using a new framework (Electron), a more efficient sync
+system, plus many UX improvements and new features.
+
+The non-Inbox related changes in this release are:
+
+* Add missing shebang to "securedrop.Proxy" (#2773)
+* Add `gpg-config` package to replace salt logic (#3096, #3118)
+* Set permissions on implicitly created directories on archive extraction (#2919)
+* Implement conffile override hack for all packages (#2913)
+* Remove arti packaging (#2693)
+* Remove unused securedrop-qubesdb-tools package (#2696)
+* Remove stock entries from paxctld.conf (#2918)
+* Dependency updates:
+  * Bump actions/cache from 4 to 5 (#2944)
+  * Bump actions/checkout from 5 to 6 (#2856)
+  * Bump actions/download-artifact from 5 to 7 (#2782, #2941)
+  * Bump actions/setup-node from 4 to 6 (#2682, #2746, #2762)
+  * Bump actions/setup-python from 5 to 6 (#2683)
+  * Bump actions/upload-artifact from 4 to 6 (#2784, #2942)
+  * Bump bytes from 1.5.0 to 1.11.1 (#3069)
+  * Bump flask from 3.0.3 to 3.1.3 in /proxy (#3136)
+  * Bump mypy from 1.17.1 to 1.19.0 in /log (#2700, #2872)
+  * Bump protobuf from 6.33.0 to 6.33.5 (#3061)
+  * Bump python-multipart from 0.0.20 to 0.0.22 (#3024)
+  * Bump ruff from 0.9.7 to 0.14.11 (#2828, #2901, #2989)
+  * Bump semgrep from 1.142.0 to 1.152.0 (#2839, #2857, #2971, #3123)
+  * Bump urllib3 from 2.5.0 to 2.6.3 (#2892, #2991)
+  * Bump werkzeug from 3.0.6 to 3.1.5 in /proxy (#2900, #3011)
+  * Bump zizmor from 1.12.1 to 1.16.3 (#2698, #2810)
+  * Update rust toolchain to 1.90.0 (#2777)
+  * Upgrade flate2 to remove adler dependency (#2679)
+  * Upgrade vcrpy to 8.1.0 (#2909)
+  * Various development dependencies (#2490, #2684, #2685, #2686, #2815, #2922, #2949, #2950, #3088)
+* Internal and development:
+  * Add architecture decision record (ADR) (#2938)
+  * Add explicit dependency on qubes-gpg-split (#3138)
+  * README: Replace comment on project maturity (#2867)
+  * Vertical-align environment diagrams for easier visual comparison (#2736)
+  * Fix incorrect use of assert func.called_ in tests (#2850)
+  * Centralize semgrep installation, configure for app, add rules for SQLi (#2798)
+  * Nightlies workflow improvements (#2719, #2721, #2952, #2958, #3015, #3067)
+  * Speed up package builds when FAST=1 (#3115, #3130)
+  * Run piuparts in Trixie for compatibility with ubuntu-latest runner's docker. (#3103)
+  * Raise dependabot cooldown to 7 days (#3151)
+
 ## 0.17.4
 
 This release contains multiple security fixes, all of which are low or
