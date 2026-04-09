@@ -202,6 +202,8 @@ export enum FetchStatus {
   FailedDecryptionRetryable = 6,
   // Exceeded max retries, considered terminally failed
   FailedTerminal = 7,
+  // User explicitly cancelled the download
+  Cancelled = 8,
 }
 
 // EventStatus codes returned from the server

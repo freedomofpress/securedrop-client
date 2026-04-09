@@ -1288,7 +1288,7 @@ describe("Datastore Method Tests", () => {
   });
 
   describe("updateFetchStatus", () => {
-    it("should reset fetch_progress to 0 when updating to Initial status", () => {
+    it("should reset fetch_progress to 0 when cancelling", () => {
       db.updateSources({
         source1: mockSourceMetadata("source1"),
       });
@@ -1303,16 +1303,16 @@ describe("Datastore Method Tests", () => {
       let item = db.getItem("item1");
       expect(item?.fetch_progress).toBe(50000);
 
-      // Now update status to Initial (simulating Cancel)
-      db.updateFetchStatus("item1", FetchStatus.Initial);
+      // User cancels
+      db.updateFetchStatus("item1", FetchStatus.Cancelled);
 
       // Verify progress was reset to 0
       item = db.getItem("item1");
-      expect(item?.fetch_status).toBe(FetchStatus.Initial);
+      expect(item?.fetch_status).toBe(FetchStatus.Cancelled);
       expect(item?.fetch_progress).toBe(0);
     });
 
-    it("should reset fetch_progress to 0 when updating to DownloadInProgress status", () => {
+    it("should preserve fetch_progress when updating to DownloadInProgress status", () => {
       db.updateSources({
         source1: mockSourceMetadata("source1"),
       });
@@ -1320,22 +1320,22 @@ describe("Datastore Method Tests", () => {
         item1: mockItemMetadata("item1", "source1", "file"),
       });
 
-      // Simulate a failed download with progress
+      // Simulate a paused download with progress
       db.setDownloadInProgress("item1", 100000);
-      db.failDownload("item1");
+      db.pauseItem("item1");
 
-      // Verify progress was preserved during failure
+      // Verify progress was preserved during pause
       let item = db.getItem("item1");
       expect(item?.fetch_progress).toBe(100000);
-      expect(item?.fetch_status).toBe(FetchStatus.FailedDownloadRetryable);
+      expect(item?.fetch_status).toBe(FetchStatus.Paused);
 
-      // Now update status to DownloadInProgress (simulating Retry)
+      // Now resume (Paused -> DownloadInProgress)
       db.updateFetchStatus("item1", FetchStatus.DownloadInProgress);
 
-      // Verify progress was reset to 0
+      // Verify progress is preserved so download can resume from where it left off
       item = db.getItem("item1");
       expect(item?.fetch_status).toBe(FetchStatus.DownloadInProgress);
-      expect(item?.fetch_progress).toBe(0);
+      expect(item?.fetch_progress).toBe(100000);
     });
 
     it("should NOT reset fetch_progress when updating to other statuses", () => {
@@ -1373,11 +1373,11 @@ describe("Datastore Method Tests", () => {
       let item = db.getItem("item1");
       expect(item?.fetch_status).toBe(FetchStatus.FailedTerminal);
 
-      // Reset to Initial (Cancel) should reset progress
-      db.updateFetchStatus("item1", FetchStatus.Initial);
+      // Cancel should reset progress
+      db.updateFetchStatus("item1", FetchStatus.Cancelled);
 
       item = db.getItem("item1");
-      expect(item?.fetch_status).toBe(FetchStatus.Initial);
+      expect(item?.fetch_status).toBe(FetchStatus.Cancelled);
       expect(item?.fetch_progress).toBe(0);
 
       // Now it can be processed again
