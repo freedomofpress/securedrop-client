@@ -7,7 +7,7 @@ import {
   session,
   clipboard,
 } from "electron";
-import { join, dirname, delimiter } from "path";
+import { join, delimiter } from "path";
 import { randomBytes } from "crypto";
 
 import { optimizer, is } from "@electron-toolkit/utils";
@@ -398,31 +398,13 @@ if (!gotTheLock) {
           fetchStatus: number,
           authToken: string,
         ) => {
-          // When resetting to Initial or DownloadInProgress, clean up partial download files
+          // If the user is pausing or cancelling, abort any in-progress download
+          // before updating the DB so the worker doesn't overwrite the new status
           if (
-            fetchStatus === FetchStatus.Initial ||
-            fetchStatus === FetchStatus.DownloadInProgress
+            fetchStatus === FetchStatus.Paused ||
+            fetchStatus === FetchStatus.Cancelled
           ) {
-            const item = db.getItem(itemUuid);
-            if (item && item.data.kind === "file") {
-              const storage = new Storage();
-              const downloadDir = storage.downloadFilePath(item.data, {
-                id: itemUuid,
-              });
-              // Delete the entire download directory for this item
-              const dirPath = dirname(downloadDir);
-              try {
-                fs.rmSync(dirPath, { recursive: true, force: true });
-                console.debug(
-                  `Cleaned up partial download directory: ${dirPath}`,
-                );
-              } catch (err) {
-                console.warn(
-                  `Failed to clean up partial download directory ${dirPath}:`,
-                  err,
-                );
-              }
-            }
+            fetchWorker?.postMessage({ type: "cancel", itemId: itemUuid });
           }
           db.updateFetchStatus(itemUuid, fetchStatus);
           fetchWorker?.postMessage({
