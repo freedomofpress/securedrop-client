@@ -1,8 +1,9 @@
 import { describe, it, expect, vi, beforeEach, Mock } from "vitest";
+import { createHash } from "node:crypto";
 import fs from "fs";
 import os from "os";
 import path from "path";
-import { PassThrough } from "stream";
+import { PassThrough, Readable } from "stream";
 import { MessagePort as WorkerMessagePort } from "worker_threads";
 
 import { TaskQueue } from "./queue";
@@ -20,6 +21,7 @@ import { BufferedWriter } from "./bufferedWriter";
 const mockProxyStreamRequest = vi.hoisted(() => {
   return vi.fn();
 });
+const MOCK_FILE_CONTENT = vi.hoisted(() => Buffer.from("fake file content"));
 vi.mock("../proxy", async () => {
   const actual = await vi.importActual("../proxy");
   return {
@@ -54,6 +56,7 @@ vi.mock("fs", () => ({
       stat: vi.fn(() => Promise.resolve({ size: 1024 })),
     },
     createWriteStream: vi.fn(() => new PassThrough()),
+    createReadStream: vi.fn(() => Readable.from([MOCK_FILE_CONTENT])),
   },
   existsSync: vi.fn(() => true),
   realpathSync: vi.fn((path) => path),
@@ -61,6 +64,14 @@ vi.mock("fs", () => ({
   mkdirSync: vi.fn(),
   rmSync: vi.fn(),
 }));
+
+// SHA-256 of MOCK_FILE_CONTENT — matches what the mocked createReadStream returns
+const FILE_ETAG = etagFor(MOCK_FILE_CONTENT);
+
+// Helper to build the "sha256:<hex>" ETag for a given buffer
+function etagFor(buf: Buffer): string {
+  return `sha256:${createHash("sha256").update(buf).digest("hex")}`;
+}
 
 // Helper to create mock DB with specific methods
 function createMockDB() {
@@ -111,12 +122,6 @@ describe("TaskQueue - Two-Phase Download and Decryption", () => {
       // Mock: item is in Initial status
       db.getItem = vi.fn(() => mockItem(metadata, FetchStatus.Initial, 0));
 
-      // Mock successful download
-      mockProxyStreamRequest.mockResolvedValue({
-        complete: true,
-        bytesWritten: 100,
-      });
-
       // Mock successful decryption
       const encryptedBuffer = Buffer.from("encrypted message data");
       const decryptedContent = "decrypted message content";
@@ -124,6 +129,13 @@ describe("TaskQueue - Two-Phase Download and Decryption", () => {
         encryptedBuffer,
       );
       mockCrypto.decryptMessage.mockResolvedValue(decryptedContent);
+
+      // Mock successful download
+      mockProxyStreamRequest.mockResolvedValue({
+        complete: true,
+        bytesWritten: 100,
+        sha256sum: etagFor(encryptedBuffer),
+      });
 
       const queue = new TaskQueue(db);
       await queue.process({ id: "msg1" }, db);
@@ -166,16 +178,17 @@ describe("TaskQueue - Two-Phase Download and Decryption", () => {
           mockItem(metadata, FetchStatus.FailedDecryptionRetryable, 0),
         );
 
-      // Mock successful download
-      mockProxyStreamRequest.mockResolvedValue({
-        complete: true,
-        bytesWritten: 100,
-      });
-
       const encryptedBuffer = Buffer.from("encrypted message data");
       vi.spyOn(BufferedWriter.prototype, "getBuffer").mockReturnValue(
         encryptedBuffer,
       );
+
+      // Mock successful download
+      mockProxyStreamRequest.mockResolvedValue({
+        complete: true,
+        bytesWritten: 100,
+        sha256sum: etagFor(encryptedBuffer),
+      });
 
       // Mock decryption failure on first attempt
       mockCrypto.decryptMessage.mockRejectedValueOnce(
@@ -258,17 +271,18 @@ describe("TaskQueue - Two-Phase Download and Decryption", () => {
       expect(db.failDownload).toHaveBeenCalledWith("msg1");
 
       // Second attempt - download and decrypt successfully
-      mockProxyStreamRequest.mockResolvedValueOnce({
-        complete: true,
-        bytesWritten: 100,
-      });
-
       const encryptedBuffer = Buffer.from("encrypted message data");
       const decryptedContent = "decrypted message content";
       vi.spyOn(BufferedWriter.prototype, "getBuffer").mockReturnValue(
         encryptedBuffer,
       );
       mockCrypto.decryptMessage.mockResolvedValue(decryptedContent);
+
+      mockProxyStreamRequest.mockResolvedValueOnce({
+        complete: true,
+        bytesWritten: 100,
+        sha256sum: etagFor(encryptedBuffer),
+      });
 
       await queue.process({ id: "msg1" }, db);
 
@@ -291,17 +305,18 @@ describe("TaskQueue - Two-Phase Download and Decryption", () => {
 
       db.getItem = vi.fn(() => mockItem(metadata, FetchStatus.Initial, 0));
 
-      mockProxyStreamRequest.mockResolvedValue({
-        complete: true,
-        bytesWritten: 100,
-      });
-
       const encryptedBuffer = Buffer.from("encrypted reply data");
       const decryptedContent = "decrypted reply content";
       vi.spyOn(BufferedWriter.prototype, "getBuffer").mockReturnValue(
         encryptedBuffer,
       );
       mockCrypto.decryptMessage.mockResolvedValue(decryptedContent);
+
+      mockProxyStreamRequest.mockResolvedValue({
+        complete: true,
+        bytesWritten: 100,
+        sha256sum: etagFor(encryptedBuffer),
+      });
 
       const queue = new TaskQueue(db);
       await queue.process({ id: "reply1" }, db);
@@ -339,15 +354,16 @@ describe("TaskQueue - Two-Phase Download and Decryption", () => {
           mockItem(metadata, FetchStatus.FailedDecryptionRetryable, 0),
         );
 
-      mockProxyStreamRequest.mockResolvedValue({
-        complete: true,
-        bytesWritten: 100,
-      });
-
       const encryptedBuffer = Buffer.from("encrypted reply data");
       vi.spyOn(BufferedWriter.prototype, "getBuffer").mockReturnValue(
         encryptedBuffer,
       );
+
+      mockProxyStreamRequest.mockResolvedValue({
+        complete: true,
+        bytesWritten: 100,
+        sha256sum: etagFor(encryptedBuffer),
+      });
 
       // First attempt - decryption fails
       mockCrypto.decryptMessage.mockRejectedValueOnce(
@@ -411,17 +427,18 @@ describe("TaskQueue - Two-Phase Download and Decryption", () => {
       expect(db.failDownload).toHaveBeenCalledWith("reply1");
 
       // Second attempt - success
-      mockProxyStreamRequest.mockResolvedValueOnce({
-        complete: true,
-        bytesWritten: 100,
-      });
-
       const encryptedBuffer = Buffer.from("encrypted reply data");
       const decryptedContent = "decrypted reply content";
       vi.spyOn(BufferedWriter.prototype, "getBuffer").mockReturnValue(
         encryptedBuffer,
       );
       mockCrypto.decryptMessage.mockResolvedValue(decryptedContent);
+
+      mockProxyStreamRequest.mockResolvedValueOnce({
+        complete: true,
+        bytesWritten: 100,
+        sha256sum: etagFor(encryptedBuffer),
+      });
 
       await queue.process({ id: "reply1" }, db);
 
@@ -448,6 +465,7 @@ describe("TaskQueue - Two-Phase Download and Decryption", () => {
       mockProxyStreamRequest.mockResolvedValue({
         complete: true,
         bytesWritten: 100,
+        sha256sum: FILE_ETAG,
       });
 
       // Mock successful decryption
@@ -523,7 +541,11 @@ describe("TaskQueue - Two-Phase Download and Decryption", () => {
           onProgress?.(10);
           onProgress?.(20);
           onProgress?.(30);
-          return { complete: true, bytesWritten: 30 } as ProxyStreamResponse;
+          return {
+            complete: true,
+            bytesWritten: 30,
+            sha256sum: FILE_ETAG,
+          } as ProxyStreamResponse;
         },
       );
 
@@ -565,6 +587,7 @@ describe("TaskQueue - Two-Phase Download and Decryption", () => {
       mockProxyStreamRequest.mockResolvedValue({
         complete: true,
         bytesWritten: 100,
+        sha256sum: FILE_ETAG,
       });
 
       // Mock decryption failure on first attempt
@@ -646,6 +669,7 @@ describe("TaskQueue - Two-Phase Download and Decryption", () => {
       mockProxyStreamRequest.mockResolvedValueOnce({
         complete: true,
         bytesWritten: 100,
+        sha256sum: FILE_ETAG,
       });
 
       mockCrypto.decryptFile.mockResolvedValue(
@@ -1012,7 +1036,7 @@ describe("TaskQueue - Two-Phase Download and Decryption", () => {
       mockProxyStreamRequest.mockResolvedValueOnce({
         complete: true,
         bytesWritten: 150000000,
-        sha256sum: "abc123",
+        sha256sum: FILE_ETAG,
       });
 
       mockCrypto.decryptFile.mockResolvedValue({
@@ -1077,7 +1101,7 @@ describe("TaskQueue - Two-Phase Download and Decryption", () => {
       mockProxyStreamRequest.mockResolvedValueOnce({
         complete: true,
         bytesWritten: 200000000,
-        sha256sum: "def456",
+        sha256sum: FILE_ETAG,
       });
 
       mockCrypto.decryptFile.mockResolvedValue({
@@ -1136,11 +1160,6 @@ describe("TaskQueue - Two-Phase Download and Decryption", () => {
         .fn()
         .mockReturnValue(mockItem(metadata, FetchStatus.DownloadInProgress, 0));
 
-      mockProxyStreamRequest.mockResolvedValueOnce({
-        complete: true,
-        bytesWritten: 5000,
-      });
-
       const encryptedBuffer = Buffer.from("encrypted message");
       const decryptedContent = "Hello, world!";
       vi.spyOn(BufferedWriter.prototype, "getBuffer").mockReturnValue(
@@ -1148,12 +1167,210 @@ describe("TaskQueue - Two-Phase Download and Decryption", () => {
       );
       mockCrypto.decryptMessage.mockResolvedValue(decryptedContent);
 
+      mockProxyStreamRequest.mockResolvedValueOnce({
+        complete: true,
+        bytesWritten: 5000,
+        sha256sum: etagFor(encryptedBuffer),
+      });
+
       await queue.process({ id: "msg1" }, db);
 
       expect(db.completePlaintextItem).toHaveBeenCalledWith(
         "msg1",
         decryptedContent,
       );
+    });
+  });
+
+  describe("ETag checksum verification", () => {
+    // The server sends ETags in "sha256:<hexdigest>" format.
+
+    it("should succeed when message ETag matches downloaded content", async () => {
+      const db = createMockDB();
+      const metadata = {
+        kind: "message",
+        source: "source1",
+        size: 1000,
+      } as ItemMetadata;
+
+      db.getItem = vi.fn(() => mockItem(metadata, FetchStatus.Initial, 0));
+
+      const encryptedBuffer = Buffer.from("encrypted message data");
+      const hex = createHash("sha256").update(encryptedBuffer).digest("hex");
+
+      mockProxyStreamRequest.mockResolvedValue({
+        complete: true,
+        bytesWritten: encryptedBuffer.length,
+        sha256sum: `sha256:${hex}`,
+      });
+
+      vi.spyOn(BufferedWriter.prototype, "getBuffer").mockReturnValue(
+        encryptedBuffer,
+      );
+      mockCrypto.decryptMessage.mockResolvedValue("decrypted content");
+
+      const queue = new TaskQueue(db);
+      await queue.process({ id: "msg1" }, db);
+
+      expect(db.completePlaintextItem).toHaveBeenCalledWith(
+        "msg1",
+        "decrypted content",
+      );
+      expect(db.failDownload).not.toHaveBeenCalled();
+    });
+
+    it("should fail terminally when message ETag does not match", async () => {
+      const db = createMockDB();
+      const metadata = {
+        kind: "message",
+        source: "source1",
+        size: 1000,
+      } as ItemMetadata;
+
+      db.getItem = vi.fn(() => mockItem(metadata, FetchStatus.Initial, 0));
+
+      const encryptedBuffer = Buffer.from("encrypted message data");
+
+      mockProxyStreamRequest.mockResolvedValue({
+        complete: true,
+        bytesWritten: encryptedBuffer.length,
+        sha256sum:
+          "sha256:0000000000000000000000000000000000000000000000000000000000000000",
+      });
+
+      vi.spyOn(BufferedWriter.prototype, "getBuffer").mockReturnValue(
+        encryptedBuffer,
+      );
+
+      const queue = new TaskQueue(db);
+      await expect(queue.process({ id: "msg1" }, db)).rejects.toThrow(
+        "ETag checksum mismatch",
+      );
+
+      expect(db.terminallyFailItem).toHaveBeenCalledWith("msg1");
+      // Should not attempt decryption
+      expect(db.setDecryptionInProgress).not.toHaveBeenCalled();
+      expect(mockCrypto.decryptMessage).not.toHaveBeenCalled();
+    });
+
+    it("should succeed when file ETag matches downloaded content", async () => {
+      const db = createMockDB();
+      const metadata = {
+        kind: "file",
+        source: "source1",
+        uuid: "file1",
+        size: 1000000,
+      } as ItemMetadata;
+
+      db.getItem = vi.fn(() => mockItem(metadata, FetchStatus.Initial, 0));
+
+      mockProxyStreamRequest.mockResolvedValue({
+        complete: true,
+        bytesWritten: 1000000,
+        sha256sum: FILE_ETAG,
+      });
+
+      mockCrypto.decryptFile.mockResolvedValue("/securedrop/source1/file.txt");
+
+      const queue = new TaskQueue(db);
+      await queue.process({ id: "file1" }, db);
+
+      const expectedDownloadPath = path.join(
+        os.tmpdir(),
+        "download",
+        "source1",
+        "file1",
+        "encrypted.gpg",
+      );
+      expect(fs.createReadStream).toHaveBeenCalledWith(expectedDownloadPath);
+      expect(db.completeFileItem).toHaveBeenCalled();
+      expect(db.failDownload).not.toHaveBeenCalled();
+    });
+
+    it("should fail terminally when file ETag does not match", async () => {
+      const db = createMockDB();
+      const metadata = {
+        kind: "file",
+        source: "source1",
+        uuid: "file1",
+        size: 1000000,
+      } as ItemMetadata;
+
+      db.getItem = vi.fn(() => mockItem(metadata, FetchStatus.Initial, 0));
+
+      mockProxyStreamRequest.mockResolvedValue({
+        complete: true,
+        bytesWritten: 1000000,
+        sha256sum:
+          "sha256:0000000000000000000000000000000000000000000000000000000000000000",
+      });
+
+      const queue = new TaskQueue(db);
+      await expect(queue.process({ id: "file1" }, db)).rejects.toThrow(
+        "ETag checksum mismatch",
+      );
+
+      expect(db.terminallyFailItem).toHaveBeenCalledWith("file1");
+      expect(db.setDecryptionInProgress).not.toHaveBeenCalled();
+      expect(mockCrypto.decryptFile).not.toHaveBeenCalled();
+    });
+
+    it("should fail terminally when ETag is missing", async () => {
+      const db = createMockDB();
+      const metadata = {
+        kind: "message",
+        source: "source1",
+        size: 1000,
+      } as ItemMetadata;
+
+      db.getItem = vi.fn(() => mockItem(metadata, FetchStatus.Initial, 0));
+
+      mockProxyStreamRequest.mockResolvedValue({
+        complete: true,
+        bytesWritten: 100,
+        // no sha256sum
+      });
+
+      vi.spyOn(BufferedWriter.prototype, "getBuffer").mockReturnValue(
+        Buffer.from("encrypted message data"),
+      );
+
+      const queue = new TaskQueue(db);
+      await expect(queue.process({ id: "msg1" }, db)).rejects.toThrow(
+        "Missing ETag checksum",
+      );
+
+      expect(db.terminallyFailItem).toHaveBeenCalledWith("msg1");
+      expect(db.setDecryptionInProgress).not.toHaveBeenCalled();
+    });
+
+    it("should fail terminally when ETag has an invalid or unsupported format", async () => {
+      const db = createMockDB();
+      const metadata = {
+        kind: "message",
+        source: "source1",
+        size: 1000,
+      } as ItemMetadata;
+
+      db.getItem = vi.fn(() => mockItem(metadata, FetchStatus.Initial, 0));
+
+      mockProxyStreamRequest.mockResolvedValue({
+        complete: true,
+        bytesWritten: 100,
+        sha256sum: "md5:d8e8fca2dc0f896fd7cb4cb0031ba249",
+      });
+
+      vi.spyOn(BufferedWriter.prototype, "getBuffer").mockReturnValue(
+        Buffer.from("encrypted message data"),
+      );
+
+      const queue = new TaskQueue(db);
+      await expect(queue.process({ id: "msg1" }, db)).rejects.toThrow(
+        "Invalid or unsupported ETag format",
+      );
+
+      expect(db.terminallyFailItem).toHaveBeenCalledWith("msg1");
+      expect(db.setDecryptionInProgress).not.toHaveBeenCalled();
     });
   });
 });
