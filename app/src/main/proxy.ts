@@ -1,6 +1,7 @@
 import child_process from "node:child_process";
 import path from "node:path";
 import { Writable } from "node:stream";
+import { finished } from "node:stream/promises";
 
 import type {
   ProxyRequest,
@@ -196,6 +197,12 @@ export async function proxyStreamRequestInner(
 
     process.on("close", async (code, signal) => {
       writeStream.end();
+      try {
+        await finished(writeStream, { readable: false });
+      } catch (err) {
+        reject(`Error flushing write stream: ${err}`);
+        return;
+      }
 
       if (signal) {
         resolve({
