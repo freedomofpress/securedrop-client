@@ -1,0 +1,265 @@
+{
+  "Sidebar": {
+    "sourcelist": {
+      "sort": {
+        "tooltip": "[!Toggle sort order!]"
+      },
+      "deleteDialog": {
+        "single": {
+          "message": "[!!!!!!Do you want to delete the source's account or just the conversation?!!!!!!]",
+          "keepAccountButton": "[!Delete Conversation!]",
+          "deleteAccountButton": "[!Delete Account!]"
+        },
+        "multiple": {
+          "keepAccountsButton": "[!!Delete Conversations!!]",
+          "deleteAccountsButton": "[!Delete Accounts!]",
+          "message": "[!!!!!!!!Do you want to delete these {{count}} source accounts or just the conversations?!!!!!!!!]"
+        },
+        "cancelButton": "[Cancel]",
+        "messageCount_one": "[!{{count}} message!]",
+        "messageCount_other": "[!{{count}} messages!]",
+        "countingItems": "[!!!Calculating items to delete...!!!]",
+        "replyCount_one": "[!{{count}} reply!]",
+        "replyCount_other": "[!{{count}} replies!]",
+        "itemCountsHeader": "[!This will delete:!]",
+        "fileCount_one": "[!{{count}} file!]",
+        "fileCount_other": "[!{{count}} files!]",
+        "warning": "[!!!!!!!!!!!!!!!!!If you delete a source's account, they will no longer be able to sign in and send you messages. To communicate with this source in the future, they must create a new account.!!!!!!!!!!!!!!!!!]"
+      },
+      "filters": {
+        "starred": "[Starred]",
+        "unread": "[Unread]",
+        "read": "[Read]",
+        "unstarred": "[Unstarred]",
+        "all": "[All]"
+      },
+      "search": {
+        "placeholder": "[Search]"
+      },
+      "actions": {
+        "bulkDelete": "[!!Delete selected sources!!]"
+      }
+    },
+    "account": {
+      "signIn": "[Sign in]",
+      "signOut": "[Sign out]",
+      "syncNow": "[Sync now]",
+      "offlineMode": "[!Offline Mode!]",
+      "aboutOK": "[OK]",
+      "Help": "[Help]",
+      "aboutClose": "[Close]",
+      "Quit": "[Quit]",
+      "keyboardShortcuts": "[!Keyboard Shortcuts!]",
+      "signedIn": "[Signed in]",
+      "aboutSecureDrop": "[!About SecureDrop!]"
+    },
+    "shortcuts": {
+      "deleteSource": "[!!Delete selected source!!]",
+      "quit": "[!Quit SecureDrop!]",
+      "sendReply": "[!Send reply!]",
+      "focusMainContent": "[!Focus main content!]",
+      "sourceDown": "[!Next source!]",
+      "downloadAll": "[!Download all files!]",
+      "deleteCheckedSources": "[!!Delete checked sources!!]",
+      "sourceSelect": "[!Open focused source!]",
+      "categories": {
+        "application": "[!Application!]",
+        "composing": "[Composing]",
+        "navigation": "[!Navigation!]",
+        "sources": "[Sources]",
+        "files": "[Files]"
+      },
+      "signOut": "[Sign out]",
+      "openHelp": "[!!Open keyboard shortcuts!!]",
+      "sync": "[Sync now]",
+      "sourceUp": "[!Previous source!]",
+      "focusSidebar": "[!Focus sidebar!]"
+    },
+    "source": {
+      "encryptedMessage": "[!Encrypted Message!]",
+      "toggleStar": "[!Toggle star!]",
+      "encryptedFile": "[!Encrypted File!]"
+    },
+    "syncStatus": {
+      "notloggedin": "[!Sync: not logged in!]",
+      "ok": "[Sync: OK]",
+      "error": "[!Sync: error!]",
+      "warning": "[!Sync: warning!]"
+    },
+    "helpModals": {
+      "aboutRepoTitle": "[!Source code!]",
+      "aboutLicence": "[!!!!!!!!SecureDrop is open source and released under the GNU Affero General Public License v3.!!!!!!!!]",
+      "keyboardTitle": "[!Keyboard shortcuts!]",
+      "aboutCopyright": "[!!!!!!!!!!© 2013–2026 Aaron Swartz, James Dolan, Freedom of the Press Foundation, and SecureDrop contributors.!!!!!!!!!!]",
+      "aboutAppDesc": "[!!!!Secure communications for journalists and sources!!!!]",
+      "aboutMoreContent": "[!!https://securedrop.org/inbox!!]",
+      "aboutAppVersion": "[Version]",
+      "aboutMoreTitle": "[!More Information!]",
+      "aboutAppTitle": "[!SecureDrop Inbox!]",
+      "aboutRepoContent": "[!!!!!https://github.com/freedomofpress/securedrop-client!!!!!]"
+    }
+  },
+  "Item": {
+    "exportWizard": {
+      "unknownDeviceDetected": "[!!Unknown USB device detected.!!]",
+      "noDeviceDetected": "[!!No USB drives detected!!]",
+      "errorUnmountVolumeBusy": "[!!!!!!!Files were exported successfully, but the USB drive could not be unmounted.!!!!!!!]",
+      "undownloadedFiles": "[!!!!!!Some files have not been downloaded and will not be exported!!!!!!]",
+      "insertUSBInstructions": "[!!!!!!!!!!!!!!!!Please insert one of the export drives provisioned specifically for the SecureDrop Workstation. If you're using a VeraCrypt drive, unlock it manually before proceeding.!!!!!!!!!!!!!!!!]",
+      "passphrase": "[!Passphrase!]",
+      "readyExport": "[!Ready to export.!]",
+      "sourceExportTitle": "[!!Export Transcript and Files!!]",
+      "preparingExport": "[!!Preparing to export.!!]",
+      "invalidDeviceDetected": "[!!!!!!!!!!!!!!!!Either the drive is not encrypted or there is something else wrong with it. If this is a VeraCrypt drive, please unlock it from within the sd-devices VM, then try again.!!!!!!!!!!!!!!!!]",
+      "unlock": "[!!!Enter passphrase for USB drive!!!]",
+      "errorExportCleanup": "[!!!!!!!!!Files were exported successfully, but some temporary files remain on disk. Reboot to remove them.!!!!!!!!!]",
+      "exportSuccess": "[!Export Successful!]",
+      "sourceExportDescription": "[!!!!!The transcript and all downloaded files will be exported.!!!!!]",
+      "errorExport": "[!Error during export!]",
+      "unexpectedError": "[!!!!Error encountered. Please contact support.!!!!]",
+      "deviceError": "[!!!!!!Error encountered with this drive. See your administrator for help.!!!!!!]",
+      "errorUnlockGeneric": "[!!!!Failed to unlock the drive. Please try again.!!!!]",
+      "errorUnlockLuks": "[!!!!!The passphrase provided did not work. Please try again.!!!!!]",
+      "exportFailed": "[!Export Failed!]",
+      "exportSuccessWithWarning": "[!!!!Export successful, but drive was not locked!!!!]",
+      "title": "[!Export File!]",
+      "transcript": "[!Source Transcript!]",
+      "errorMissingFiles": "[!!!!!Files were moved or missing and could not be exported.!!!!!]",
+      "understandRisks": "[!!!!Understand the risks before exporting files!!!!]",
+      "multiDeviceDetected": "[!!!!!!Too many USB drives detected; please insert one supported drive.!!!!!!]",
+      "transcriptAndFiles": "[!!Source Transcript and Files!!]",
+      "errorMount": "[!!Error mounting drive!!]"
+    },
+    "printWizard": {
+      "understandRisks": "[!!!!Understand the risks before printing files!!!!]",
+      "errorMimetypeUnsupported": "[!!!!The file format is not supported for printing.!!!!]",
+      "connectPrinterInstructions": "[!!!!!!!!!Please connect a printer to continue. Once connected, click Retry to check for the printer again.!!!!!!!!!]",
+      "preparingPrint": "[!Preparing to print.!]",
+      "errorUnknown": "[!!!!An unknown error occurred while printing.!!!!]",
+      "errorMimetypeDiscovery": "[!!!Could not determine the file type.!!!]",
+      "printFailed": "[!Print Failed!]",
+      "errorUnprintableType": "[!!!This file type cannot be printed.!!!]",
+      "readyPrint": "[!Ready to print.!]",
+      "title": "[!Print File!]",
+      "errorPrinterNotFound": "[!!!!!!!No printer found. Please check that a printer is connected and configured.!!!!!!!]",
+      "errorPrint": "[!!!!An error occurred while printing the file.!!!!]"
+    },
+    "exportToUSB": "[!Export to USB!]",
+    "wizard": {
+      "anonymityTitle": "[Anonymity]",
+      "malwareWarning": "[!!!!!!!!!!!!!!!!!!!!!!!!This workstation lets you open files securely. If you open files on another computer, any embedded malware may spread to your computer or network. If you are unsure how to manage this risk, please print the file, or contact your administrator.!!!!!!!!!!!!!!!!!!!!!!!!]",
+      "close": "[Close]",
+      "anonymityWarning": "[!!!!!!!!!!!!!!!!!!!!!Files submitted by sources may contain information or hidden metadata that identifies who they are. To protect your sources, please consider redacting files before working with them on network-connected computers.!!!!!!!!!!!!!!!!!!!!!]",
+      "unknownError": "[!!Unknown error occurred!!]",
+      "malwareTitle": "[Malware]",
+      "retry": "[Retry]",
+      "continue": "[Continue]",
+      "pleaseWait": "[!Please wait...!]",
+      "done": "[Done]",
+      "beCareful": "[!!!!!!!!Remember to be careful when working with files outside of your Workstation machine!!!!!!!!]",
+      "back": "[Back]",
+      "cancel": "[Cancel]"
+    },
+    "cancel": "[Cancel]",
+    "printFile": "[Print]",
+    "retry": "[Retry]",
+    "viewFile": "[View]",
+    "encryptedFile": "[!Encrypted File!]",
+    "of": "[of]",
+    "pause": "[Pause]",
+    "filenameTooltip": "[!!!Filename available after downloading!!!]",
+    "downloadFailed": "[!Download Failed!]",
+    "resume": "[Resume]"
+  },
+  "SignIn": {
+    "title": "[!!Sign in to SecureDrop!!]",
+    "passphrase": {
+      "label": "[!Passphrase!]",
+      "required": "[!!Please enter your passphrase.!!]",
+      "invalidLength": "[!!!!!!!That passphrase won't work. It should be between 14 and 128 characters long.!!!!!!!]"
+    },
+    "button": {
+      "signingIn": "[!Signing in...!]",
+      "signIn": "[Sign in]",
+      "useOffline": "[!Use offline!]"
+    },
+    "errors": {
+      "sessionExpired": "[!!!!Your session expired. Please log in again.!!!!]",
+      "credentials": {
+        "header": "[!!!Those credentials didn't work.!!!]",
+        "body": "[!!!!!!Please try again, and make sure to use a new two-factor code.!!!!!!]"
+      },
+      "generic": {
+        "body": "[!!!Please check everything and try again.!!!]",
+        "header": "[!That didn't work.!]"
+      },
+      "network": {
+        "header": "[!!!Could not reach the SecureDrop server.!!!]",
+        "body": "[!!!!!!Please check your Internet and Tor connection and try again.!!!!!!]"
+      }
+    },
+    "version": "[!!SecureDrop Inbox v{{version}}!!]",
+    "username": {
+      "required": "[!!Please enter your username.!!]",
+      "minLength": "[!!!!!!That username won't work. It should be at least 3 characters long.!!!!!!]",
+      "label": "[Username]"
+    },
+    "twoFactorCode": {
+      "label": "[!Two-Factor Code!]",
+      "required": "[!!!Please enter your two-factor code.!!!]",
+      "invalidFormat": "[!!!!Your two-factor code must be exactly 6 digits.!!!!]"
+    }
+  },
+  "QuitModal": {
+    "cancel": "[Cancel]",
+    "withDrafts": "[!!Draft replies be discarded.!!]",
+    "Quit": "[Quit]",
+    "discardAndQuit": "[!Discard and Quit!]",
+    "goBack": "[Go Back]",
+    "title": "[!!Quit SecureDrop Inbox?!!]",
+    "noDrafts": ""
+  },
+  "MainContent": {
+    "menu": {
+      "exportTranscript": "[!Export Transcript!]",
+      "printTranscript": "[!Print Transcript!]",
+      "exportSource": "[!!Export Transcript and Files!!]",
+      "clickToOpen": "[!Click to open!]"
+    },
+    "conversation": {
+      "sendButton": "[Send]",
+      "newMessagesDivider": "[!new messages!]",
+      "messagePlaceholder": "[!!Message {{designation}}...!!]"
+    },
+    "emptyState": "[!!!!!!!!!<bold>Select a source</bold> from the list to read messages, retrieve files, or send responses.!!!!!!!!!]",
+    "alreadyRunning": "[!!!The SecureDrop Inbox is already running!!!]",
+    "messageFailed": "[!!Failed to decrypt message!!]",
+    "seenReplyTooltip": "[!!!Reply seen and deleted by source!!!]",
+    "pendingReplyTooltip": "[!!!!!!The reply is pending and will be sent to the source in the next sync!!!!!!]",
+    "successReplyTooltip": "[!!Reply sent successfully!!]",
+    "retryFetch": "[Retry]",
+    "itemEncrypted": "[!!Message is encrypted...!!]",
+    "lastSourceActivity": "[!!Last source activity!!]",
+    "emptyConversation": "[!!!This conversation has no messages yet.!!!]",
+    "nonProduction": "[!!WARNING: non-production mode!!]",
+    "you": "[You]",
+    "unknown": "[Unknown]"
+  },
+  "common": {
+    "seeLess": "[See less]",
+    "seeMore": "[See more]",
+    "yesterday": "[Yesterday]",
+    "ellipsis": "[…]"
+  },
+  "FirstRunPopup": {
+    "ok": "[OK]",
+    "newUser": {
+      "title": "[!!Welcome to SecureDrop Inbox!!]",
+      "body": "[!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!Messages and documents sent to you via SecureDrop will show up here. Initial data synchronization may take several minutes.<br><br>You can press <kbd>F1</kbd> for help at any time. For further questions, consult your system administrator or reach out to SecureDrop support via Signal. Documentation and instructions for accessing support are available at securedrop.org/inbox, which can be accessed from a different computer.!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!]"
+    },
+    "migration": {
+      "body": "[!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!The application has been rewritten from the ground up to make it faster and to add long-requested features. Initial data synchronization may take several minutes. Any previously downloaded files will need to be re-downloaded.<br><br>If you encounter an issue or would like to use the original SecureDrop Client, you can access it for a limited time via Qubes Menu ▸ ⚙️ ▸ Other ▸ SecureDrop Client (legacy). If you need to return to the old Client, please reach out to SecureDrop support via Signal and tell us about the issues you encountered so we can address them.<br><br>You can press <kbd>F1</kbd> for help at any time. For further questions, consult your system administrator or reach out to SecureDrop support via Signal. Documentation and instructions for accessing support are available at securedrop.org/inbox, which can be accessed from a different computer.!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!]",
+      "title": "[!!!Welcome to the new SecureDrop Inbox!!!]"
+    }
+  }
+}
