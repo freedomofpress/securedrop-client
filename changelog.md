@@ -48,6 +48,13 @@ The non-Inbox related changes in this release are:
   * Run piuparts in Trixie for compatibility with ubuntu-latest runner's docker. (#3103)
   * Raise dependabot cooldown to 7 days (#3151)
 
+## 0.17.5
+
+This release contains a low-priority security fix. We are not aware of any
+exploitation in the wild.
+
+* Fix path injection in `read_gzip_header_filename()` (CVE-2026-35465)
+
 ## 0.17.4
 
 This release contains multiple security fixes, all of which are low or
