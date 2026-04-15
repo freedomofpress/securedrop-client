@@ -349,6 +349,66 @@ describe("Datastore Method Tests", () => {
     expect(sourceWithItems.items.length).toEqual(3);
   });
 
+  it("pending SourceDeleted should mark source items as ScheduledDeletion without deleting rows", () => {
+    db.updateSources({
+      source1: mockSourceMetadata("source1"),
+      source2: mockSourceMetadata("source2"),
+    });
+
+    db.updateItems({
+      source1Item1: mockItemMetadata("source1Item1", "source1", "file"),
+      source1Item2: mockItemMetadata("source1Item2", "source1"),
+      source2Item1: mockItemMetadata("source2Item1", "source2"),
+    });
+
+    db.completePlaintextItem("source1Item2", "plaintext");
+
+    db.addPendingSourceEvent("source1", PendingEventType.SourceDeleted);
+
+    const source1Item1 = db.getItem("source1Item1");
+    const source1Item2 = db.getItem("source1Item2");
+    const source2Item1 = db.getItem("source2Item1");
+
+    expect(source1Item1?.fetch_status).toBe(FetchStatus.ScheduledDeletion);
+    expect(source1Item2?.fetch_status).toBe(FetchStatus.ScheduledDeletion);
+    expect(source2Item1?.fetch_status).toBe(FetchStatus.Initial);
+    expect(source1Item1).not.toBeNull();
+    expect(source1Item2).not.toBeNull();
+  });
+
+  it("pending SourceConversationDeleted should mark only that source items as ScheduledDeletion", () => {
+    db.updateSources({
+      source1: mockSourceMetadata("source1"),
+      source2: mockSourceMetadata("source2"),
+    });
+
+    db.updateItems({
+      source1Item1: mockItemMetadata("source1Item1", "source1", "file"),
+      source1Item2: mockItemMetadata("source1Item2", "source1"),
+      source2Item1: mockItemMetadata("source2Item1", "source2", "file"),
+    });
+
+    db.setDownloadInProgress("source1Item1", 9000);
+    db.setDownloadInProgress("source2Item1", 12000);
+
+    db.addPendingSourceEvent(
+      "source1",
+      PendingEventType.SourceConversationDeleted,
+    );
+
+    const source1Item1 = db.getItem("source1Item1");
+    const source1Item2 = db.getItem("source1Item2");
+    const source2Item1 = db.getItem("source2Item1");
+
+    expect(source1Item1?.fetch_status).toBe(FetchStatus.ScheduledDeletion);
+    expect(source1Item1?.fetch_progress).toBe(9000);
+    expect(source1Item2?.fetch_status).toBe(FetchStatus.ScheduledDeletion);
+    expect(source2Item1?.fetch_status).toBe(FetchStatus.DownloadInProgress);
+    expect(source2Item1?.fetch_progress).toBe(12000);
+    expect(source1Item1).not.toBeNull();
+    expect(source1Item2).not.toBeNull();
+  });
+
   it("pending Starred event should star sources", () => {
     // Insert three sources
     db.updateSources({
