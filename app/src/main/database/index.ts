@@ -115,6 +115,10 @@ export class DB {
     uuid: string;
     fetch_status: number;
   }>;
+  private updateItemsFetchStatusBySource: Statement<{
+    source_uuid: string;
+    fetch_status: number;
+  }>;
   private selectItem: Statement<{ uuid: string }, ItemRow>;
 
   private selectAllJournalistVersion: Statement<
@@ -256,6 +260,9 @@ export class DB {
     );
     this.updateItemFetchStatusWithReset = this.db.prepare(
       "UPDATE items SET fetch_status = @fetch_status, fetch_progress = 0 WHERE uuid = @uuid",
+    );
+    this.updateItemsFetchStatusBySource = this.db.prepare(
+      "UPDATE items SET fetch_status = @fetch_status WHERE source_uuid = @source_uuid",
     );
     this.upsertItem = this.db.prepare(
       "INSERT INTO items (uuid, data, version) VALUES (@uuid, @data, @version) ON CONFLICT(uuid) DO UPDATE SET data=@data, version=@version",
@@ -967,21 +974,38 @@ export class DB {
     stmt.run({ uuid: itemUuid });
   }
 
+  private markSourceItemsScheduledDeletion(sourceUuid: string) {
+    this.updateItemsFetchStatusBySource.run({
+      source_uuid: sourceUuid,
+      fetch_status: FetchStatus.ScheduledDeletion,
+    });
+  }
+
   addPendingSourceEvent(
     sourceUuid: string,
     type: PendingEventType,
     data?: PendingEventData,
   ): string {
-    const snowflakeID = this.snowflake
-      .generate({ timestamp: Date.now() })
-      .toString();
-    this.insertSourcePendingEvent.run({
-      snowflake_id: snowflakeID,
-      source_uuid: sourceUuid,
-      type: type,
-      data: data ? JSON.stringify(data) : null,
-    });
-    return snowflakeID;
+    return this.db!.transaction(() => {
+      const snowflakeID = this.snowflake
+        .generate({ timestamp: Date.now() })
+        .toString();
+
+      if (
+        type === PendingEventType.SourceDeleted ||
+        type === PendingEventType.SourceConversationDeleted
+      ) {
+        this.markSourceItemsScheduledDeletion(sourceUuid);
+      }
+
+      this.insertSourcePendingEvent.run({
+        snowflake_id: snowflakeID,
+        source_uuid: sourceUuid,
+        type: type,
+        data: data ? JSON.stringify(data) : null,
+      });
+      return snowflakeID;
+    })();
   }
 
   async addPendingReplySentEvent(
