@@ -208,6 +208,8 @@ export enum FetchStatus {
   FailedTerminal = 7,
   // User explicitly cancelled the download
   Cancelled = 8,
+  // Item is pending deletion and must not be fetched again
+  ScheduledDeletion = 9,
 }
 
 // EventStatus codes returned from the server

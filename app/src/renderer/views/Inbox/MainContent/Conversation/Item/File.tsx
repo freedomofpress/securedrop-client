@@ -205,6 +205,7 @@ const File = memo(function File({ item, designation, onUpdate }: FileProps) {
     case FetchStatus.FailedDownloadRetryable:
     case FetchStatus.FailedDecryptionRetryable:
     case FetchStatus.Paused:
+    case FetchStatus.ScheduledDeletion:
       FileInner = InProgressFile;
       break;
     case FetchStatus.Complete:
