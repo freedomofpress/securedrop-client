@@ -719,6 +719,60 @@ describe("TaskQueue - Two-Phase Download and Decryption", () => {
       expect(db.setDecryptionInProgress).not.toHaveBeenCalled();
     });
 
+    it("should skip items that are terminally failed", async () => {
+      const db = createMockDB();
+      const metadata = {
+        kind: "message",
+        source: "source1",
+        size: 1000,
+      } as ItemMetadata;
+
+      db.getItem = vi.fn(() =>
+        mockItem(metadata, FetchStatus.FailedTerminal, 0),
+      );
+
+      const queue = new TaskQueue(db);
+      await queue.process({ id: "msg1" }, db);
+
+      expect(mockProxyStreamRequest).not.toHaveBeenCalled();
+    });
+
+    it("should skip items that are paused", async () => {
+      const db = createMockDB();
+      const metadata = {
+        kind: "message",
+        source: "source1",
+        size: 1000,
+      } as ItemMetadata;
+
+      db.getItem = vi.fn(() => mockItem(metadata, FetchStatus.Paused, 0));
+
+      const queue = new TaskQueue(db);
+      await queue.process({ id: "msg1" }, db);
+
+      expect(mockProxyStreamRequest).not.toHaveBeenCalled();
+    });
+
+    it("should skip items that are scheduled for deletion", async () => {
+      const db = createMockDB();
+      const metadata = {
+        kind: "message",
+        source: "source1",
+        size: 1000,
+      } as ItemMetadata;
+
+      db.getItem = vi.fn(() =>
+        mockItem(metadata, FetchStatus.ScheduledDeletion, 0),
+      );
+
+      const queue = new TaskQueue(db);
+      await queue.process({ id: "msg1" }, db);
+
+      expect(mockProxyStreamRequest).not.toHaveBeenCalled();
+      expect(db.setDownloadInProgress).not.toHaveBeenCalled();
+      expect(db.setDecryptionInProgress).not.toHaveBeenCalled();
+    });
+
     it("should handle server error responses during download", async () => {
       const db = createMockDB();
       const metadata = {

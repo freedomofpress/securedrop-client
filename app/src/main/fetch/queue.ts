@@ -168,12 +168,14 @@ export class TaskQueue {
         fetch_progress: progress,
       } = dbItem;
 
-      // Skip items that are complete, terminally failed, paused, or cancelled
+      // Skip items that are complete, terminally failed, paused, cancelled,
+      // scheduled for deletion, or otherwise not in a processable state.
       if (
         status == FetchStatus.Complete ||
         status == FetchStatus.FailedTerminal ||
         status == FetchStatus.Paused ||
-        status == FetchStatus.Cancelled
+        status == FetchStatus.Cancelled ||
+        status == FetchStatus.ScheduledDeletion
       ) {
         console.debug("Item task is not in an processable state, skipping...");
         return;

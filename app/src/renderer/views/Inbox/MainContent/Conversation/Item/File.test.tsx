@@ -57,6 +57,18 @@ describe("File Component Memoization", () => {
       },
       4,
     ],
+    [
+      {
+        item: {
+          ...mockItem,
+          uuid: "item-2",
+          fetch_status: FetchStatus.ScheduledDeletion,
+        },
+        designation: "Different Source",
+        onUpdate: mockOnUpdate,
+      },
+      5,
+    ],
   ];
 
   it("should handle memoization correctly", testMemoization(File, cases));

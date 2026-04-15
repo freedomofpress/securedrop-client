@@ -1361,6 +1361,23 @@ describe("Datastore Method Tests", () => {
       expect(item?.fetch_progress).toBe(75000);
     });
 
+    it("should NOT reset fetch_progress when updating to ScheduledDeletion", () => {
+      db.updateSources({
+        source1: mockSourceMetadata("source1"),
+      });
+      db.updateItems({
+        item1: mockItemMetadata("item1", "source1", "file"),
+      });
+
+      db.setDownloadInProgress("item1", 42000);
+
+      db.updateFetchStatus("item1", FetchStatus.ScheduledDeletion);
+
+      const item = db.getItem("item1");
+      expect(item?.fetch_status).toBe(FetchStatus.ScheduledDeletion);
+      expect(item?.fetch_progress).toBe(42000);
+    });
+
     it("should allow retry after terminal failure when status is reset", () => {
       db.updateSources({
         source1: mockSourceMetadata("source1"),
