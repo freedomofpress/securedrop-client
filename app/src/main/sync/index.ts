@@ -132,8 +132,9 @@ export function reconcileIndex(
   });
   // Check for sources to delete, which are ones that the client has which
   // are no longer on the server.
+  const serverSourceSet = new Set(Object.keys(serverIndex.sources));
   const sourcesToDelete = Object.keys(clientIndex.sources).filter(
-    (source) => !Object.keys(serverIndex.sources).includes(source),
+    (source) => !serverSourceSet.has(source),
   );
   if (sourcesToDelete.length > 0) {
     db.deleteSources(sourcesToDelete);
@@ -149,8 +150,9 @@ export function reconcileIndex(
     }
   });
   // Also check for items to delete
+  const serverItemSet = new Set(Object.keys(serverIndex.items));
   const itemsToDelete = Object.keys(clientIndex.items).filter(
-    (item) => !Object.keys(serverIndex.items).includes(item),
+    (item) => !serverItemSet.has(item),
   );
   if (itemsToDelete.length > 0) {
     db.deleteItems(itemsToDelete);
@@ -167,8 +169,9 @@ export function reconcileIndex(
     }
   });
   // Also check for journalists to delete
+  const serverJournalistSet = new Set(Object.keys(serverIndex.journalists));
   const journalistsToDelete = Object.keys(clientIndex.journalists).filter(
-    (journalist) => !Object.keys(serverIndex.journalists).includes(journalist),
+    (journalist) => !serverJournalistSet.has(journalist),
   );
   if (journalistsToDelete.length > 0) {
     db.deleteJournalists(journalistsToDelete);

@@ -106,6 +106,7 @@ export class DB {
     void
   >;
   private deleteItem: Statement<{ uuid: string }, void>;
+  private deleteItemMany: Statement<{ uuids_json: string }, void>;
   private updateItemFetchStatus: Statement<{
     uuid: string;
     fetch_status: number;
@@ -115,6 +116,7 @@ export class DB {
     fetch_status: number;
   }>;
   private selectItem: Statement<{ uuid: string }, ItemRow>;
+  private selectItemMany: Statement<{ uuids_json: string }, ItemRow>;
 
   private selectAllJournalistVersion: Statement<
     [],
@@ -165,7 +167,10 @@ export class DB {
   private deletePendingEvent: Statement<{ snowflake_id: string }, void>;
   private selectPendingEvents: Statement<[{ limit: number }], PendingEventRow>;
   private deletePendingEventsBySource: Statement<{ source_uuid: string }, void>;
-  private deletePendingEventsByItem: Statement<{ item_uuid: string }, void>;
+  private deletePendingEventsByItemMany: Statement<
+    { item_uuids_json: string },
+    void
+  >;
 
   protected constructor(crypto: Crypto, dbDir?: string) {
     this.crypto = crypto;
@@ -260,8 +265,14 @@ export class DB {
       "INSERT INTO items (uuid, data, version) VALUES (@uuid, @data, @version) ON CONFLICT(uuid) DO UPDATE SET data=@data, version=@version",
     );
     this.deleteItem = this.db.prepare("DELETE FROM items WHERE uuid = @uuid");
+    this.deleteItemMany = this.db.prepare(
+      "DELETE FROM items WHERE uuid IN (SELECT value FROM json_each(@uuids_json))",
+    );
     this.selectItem = this.db.prepare(
       `SELECT uuid, data, plaintext, filename, fetch_status, fetch_progress, decrypted_size FROM items WHERE uuid = @uuid`,
+    );
+    this.selectItemMany = this.db.prepare(
+      `SELECT uuid, data, plaintext, filename, fetch_status, fetch_progress, decrypted_size FROM items WHERE uuid IN (SELECT value FROM json_each(@uuids_json))`,
     );
 
     this.selectAllJournalistVersion = this.db.prepare(
@@ -346,13 +357,14 @@ export class DB {
     this.deletePendingEvent = this.db.prepare(
       `DELETE FROM pending_events WHERE snowflake_id = @snowflake_id`,
     );
+    this.deletePendingEventsByItemMany = this.db.prepare(
+      "DELETE FROM pending_events WHERE item_uuid IN (SELECT value FROM json_each(@item_uuids_json))",
+    );
     this.selectPendingEvents = this.db.prepare(`
       SELECT snowflake_id, source_uuid, item_uuid, type, data FROM pending_events ORDER BY snowflake_id ASC LIMIT @limit
     `);
     this.deletePendingEventsBySource = this.db.prepare(`
       DELETE FROM pending_events WHERE source_uuid = @source_uuid`);
-    this.deletePendingEventsByItem = this.db.prepare(`
-      DELETE FROM pending_events WHERE item_uuid = @item_uuid`);
   }
 
   // Detect runtime environment
@@ -509,20 +521,23 @@ export class DB {
     this.insertVersion.run(newVersion);
   }
 
-  protected deleteItems(items: string[]): Item[] {
+  protected deleteItems(items: string[]) {
+    if (items.length === 0) {
+      return;
+    }
     return this.db!.transaction((items: string[]) => {
-      const deletedItems: Item[] = [];
-      for (const itemID of items) {
-        const item = this.getItem(itemID);
-        if (item) {
-          deletedItems.push(item);
-        }
-        this.searchIndex.removeItem(itemID);
-        this.deletePendingEventsByItem.run({ item_uuid: itemID });
-        this.deleteItem.run({ uuid: itemID });
+      // Search index updates are per-item (in-memory, unavoidable)
+      for (const id of items) {
+        this.searchIndex.removeItem(id);
       }
+
+      // Batch delete pending events and items
+      this.deleteItemMany.run({ uuids_json: JSON.stringify(items) });
+      this.deletePendingEventsByItemMany.run({
+        item_uuids_json: JSON.stringify(items),
+      });
+
       this.updateVersion();
-      return deletedItems;
     })(items);
   }
 
@@ -874,6 +889,25 @@ export class DB {
       fetch_progress: row.fetch_progress,
       decrypted_size: row.decrypted_size,
     };
+  }
+
+  getItems(itemUuids: string[]): Item[] {
+    const rows = this.selectItemMany.all({
+      uuids_json: JSON.stringify(itemUuids),
+    });
+    return rows
+      ? rows.map((row) => {
+          return {
+            uuid: row.uuid,
+            data: JSON.parse(row.data) as ItemMetadata,
+            plaintext: row.plaintext,
+            filename: row.filename,
+            fetch_status: row.fetch_status as FetchStatus,
+            fetch_progress: row.fetch_progress,
+            decrypted_size: row.decrypted_size,
+          };
+        })
+      : [];
   }
 
   completePlaintextItem(itemUuid: string, plaintext: string) {

@@ -7,7 +7,7 @@ export interface ConversationIndicatorState {
 }
 
 export interface SourcesState {
-  sources: SourceType[];
+  sources: Record<string, SourceType>;
   activeSourceUuid: string | null;
   loading: boolean;
   error: string | null;
@@ -15,7 +15,7 @@ export interface SourcesState {
 }
 
 const initialState: SourcesState = {
-  sources: [],
+  sources: {},
   activeSourceUuid: null,
   loading: false,
   error: null,
@@ -46,12 +46,7 @@ export const sourcesSlice = createSlice({
     },
     updateSource: (state, action) => {
       const updatedSource: SourceType = action.payload;
-      state.sources = state.sources.map((source, _) => {
-        if (source.uuid === updatedSource.uuid) {
-          return updatedSource;
-        }
-        return source;
-      });
+      state.sources[updatedSource.uuid] = updatedSource;
     },
     initializeConversationIndicator: (state, action) => {
       const { sourceUuid, lastSeenInteractionCount } = action.payload;
@@ -77,10 +72,12 @@ export const sourcesSlice = createSlice({
       })
       .addCase(fetchSources.fulfilled, (state, action) => {
         state.loading = false;
-        state.sources = action.payload;
+        state.sources = Object.fromEntries(
+          action.payload.map((s) => [s.uuid, s]),
+        );
 
         // Update active source UUID in case of deletion
-        if (!state.sources.find((s) => s.uuid === state.activeSourceUuid)) {
+        if (state.activeSourceUuid && !state.sources[state.activeSourceUuid]) {
           state.activeSourceUuid = null;
         }
       })
@@ -99,7 +96,8 @@ export const {
   initializeConversationIndicator,
   markConversationLastSeen,
 } = sourcesSlice.actions;
-export const selectSources = (state: RootState) => state.sources.sources;
+export const selectSources = (state: RootState) =>
+  Object.values(state.sources.sources);
 export const selectActiveSourceUuid = (state: RootState) =>
   state.sources.activeSourceUuid;
 export const selectSourcesLoading = (state: RootState) => state.sources.loading;
