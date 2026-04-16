@@ -13,7 +13,6 @@ import {
   FetchStatus,
   ItemMetadata,
   ProxyRequest,
-  ProxyResponse,
   ProxyStreamResponse,
   bytes,
   ms,
@@ -120,15 +119,6 @@ export class TaskQueue {
       return;
     }
     this.queueFetches({ authToken: this.authToken });
-  }
-
-  abortDownloadsForSource(sourceUuid: string) {
-    for (const [itemId, entry] of this.activeDownloads) {
-      if (entry.sourceUuid === sourceUuid) {
-        entry.controller.abort();
-        this.activeDownloads.delete(itemId);
-      }
-    }
   }
 
   private isScheduledForDeletion(itemId: string, db: DB): boolean {

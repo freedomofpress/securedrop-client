@@ -1278,10 +1278,11 @@ describe("TaskQueue - Two-Phase Download and Decryption", () => {
 
       db.getItem = vi.fn(() => mockItem(metadata, FetchStatus.Initial, 0));
 
+      const encryptedContent = Buffer.from("encrypted");
       mockProxyStreamRequest.mockResolvedValue({
         complete: true,
         bytesWritten: 100,
-        sha256sum: "abc",
+        sha256sum: etagFor(encryptedContent),
       });
 
       const encryptedBuffer = Buffer.from("encrypted");
@@ -1314,10 +1315,11 @@ describe("TaskQueue - Two-Phase Download and Decryption", () => {
 
       db.getItem = vi.fn(() => mockItem(metadata, FetchStatus.Initial, 0));
 
+      const encryptedBuffer = Buffer.from("encrypted");
       mockProxyStreamRequest.mockResolvedValue({
         complete: true,
         bytesWritten: 100,
-        sha256sum: "abc",
+        sha256sum: etagFor(encryptedBuffer),
       });
 
       const encryptedBuffer = Buffer.from("encrypted");
@@ -1351,13 +1353,12 @@ describe("TaskQueue - Two-Phase Download and Decryption", () => {
 
       db.getItem = vi.fn(() => mockItem(metadata, FetchStatus.Initial, 0));
 
+      const encryptedBuffer = Buffer.from("encrypted");
       mockProxyStreamRequest.mockResolvedValue({
         complete: true,
         bytesWritten: 100,
-        sha256sum: "abc",
+        sha256sum: etagFor(encryptedBuffer),
       });
-
-      const encryptedBuffer = Buffer.from("encrypted");
       vi.spyOn(BufferedWriter.prototype, "getBuffer").mockReturnValue(
         encryptedBuffer,
       );
@@ -1390,14 +1391,15 @@ describe("TaskQueue - Two-Phase Download and Decryption", () => {
           mockItem(metadata, FetchStatus.ScheduledDeletion, 0),
         );
 
+      const encryptedBuffer = Buffer.from("encrypted");
       mockProxyStreamRequest.mockResolvedValue({
         complete: true,
         bytesWritten: 100,
-        sha256sum: "abc",
+        sha256sum: etagFor(encryptedBuffer),
       });
 
       vi.spyOn(BufferedWriter.prototype, "getBuffer").mockReturnValue(
-        Buffer.from("encrypted"),
+        encryptedBuffer,
       );
 
       const queue = new TaskQueue(db);
@@ -1429,14 +1431,15 @@ describe("TaskQueue - Two-Phase Download and Decryption", () => {
           mockItem(metadata, FetchStatus.ScheduledDeletion, 0),
         );
 
+      const encryptedBuffer = Buffer.from("encrypted");
       mockProxyStreamRequest.mockResolvedValue({
         complete: true,
         bytesWritten: 100,
-        sha256sum: "abc",
+        sha256sum: etagFor(encryptedBuffer),
       });
 
       vi.spyOn(BufferedWriter.prototype, "getBuffer").mockReturnValue(
-        Buffer.from("encrypted"),
+        encryptedBuffer,
       );
       mockCrypto.decryptMessage.mockResolvedValue("decrypted plaintext");
 
@@ -1472,7 +1475,7 @@ describe("TaskQueue - Two-Phase Download and Decryption", () => {
       mockProxyStreamRequest.mockResolvedValue({
         complete: true,
         bytesWritten: 1000,
-        sha256sum: "abc",
+        sha256sum: FILE_ETAG,
       });
 
       mockCrypto.decryptFile.mockResolvedValue("/tmp/decrypted/file.txt");
