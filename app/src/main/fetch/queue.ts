@@ -1,5 +1,6 @@
 import Queue from "better-queue";
 
+import { createHash } from "node:crypto";
 import fs from "fs";
 import path from "path";
 import { Writable } from "stream";
@@ -294,10 +295,61 @@ export class TaskQueue {
       );
     }
 
+    await this.verifyEtag(
+      item,
+      db,
+      metadata,
+      downloadResponse.sha256sum,
+      downloadWriter,
+      downloadFilePath,
+    );
+
     if (metadata.kind === "message" || metadata.kind === "reply") {
       return (downloadWriter as BufferedWriter).getBuffer();
     }
     return downloadFilePath;
+  }
+
+  // Verify ETag checksum for transport integrity purposes, otherwise fail terminally
+  private async verifyEtag(
+    item: ItemFetchTask,
+    db: DB,
+    metadata: ItemMetadata,
+    etagRaw: string | undefined,
+    downloadWriter: Writable,
+    downloadFilePath: string,
+  ): Promise<void> {
+    if (!etagRaw) {
+      db.terminallyFailItem(item.id);
+      throw new Error(`Missing ETag checksum for ${metadata.kind} ${item.id}`);
+    }
+    const colonIdx = etagRaw.indexOf(":");
+    if (colonIdx === -1 || etagRaw.slice(0, colonIdx) !== "sha256") {
+      db.terminallyFailItem(item.id);
+      throw new Error(
+        `Invalid or unsupported ETag format for ${metadata.kind} ${item.id}: ${etagRaw}`,
+      );
+    }
+    const expectedHex = etagRaw.slice(colonIdx + 1);
+
+    const hash = createHash("sha256");
+    if (metadata.kind === "message" || metadata.kind === "reply") {
+      hash.update((downloadWriter as BufferedWriter).getBuffer());
+    } else {
+      // Stream the file to avoid loading a large file entirely into memory
+      const readStream = fs.createReadStream(downloadFilePath);
+      for await (const chunk of readStream) {
+        hash.update(chunk);
+      }
+    }
+    const actualHash = hash.digest("hex");
+
+    if (actualHash !== expectedHex) {
+      db.terminallyFailItem(item.id);
+      throw new Error(
+        `ETag checksum mismatch for ${metadata.kind} ${item.id}: expected ${expectedHex}, got ${actualHash}`,
+      );
+    }
   }
 
   private async decrypt(
