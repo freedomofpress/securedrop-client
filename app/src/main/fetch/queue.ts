@@ -31,6 +31,14 @@ export type ItemFetchTask = {
 
 type DownloadResult = Buffer | string;
 
+// Thrown when a download is intentionally aborted (paused or cancelled by the user).
+// This is not an error condition and should not cause the item to be marked as failed.
+class DownloadCancelledError extends Error {
+  constructor() {
+    super("Download was cancelled");
+  }
+}
+
 export class TaskQueue {
   db: DB;
   messageQueue: Queue;
@@ -38,6 +46,7 @@ export class TaskQueue {
   authToken?: string;
   port?: MessagePort;
   storage: Storage;
+  activeDownloads: Map<string, AbortController> = new Map();
 
   constructor(
     db: DB,
@@ -71,6 +80,14 @@ export class TaskQueue {
 
   getAuthToken(): string {
     return this.authToken ? this.authToken : "";
+  }
+
+  // Aborts any in-progress download for the given item.
+  cancelDownload(itemId: string) {
+    const controller = this.activeDownloads.get(itemId);
+    if (controller) {
+      controller.abort();
+    }
   }
 
   // Queries the database for all items that need to be downloaded and queues
@@ -151,11 +168,12 @@ export class TaskQueue {
         fetch_progress: progress,
       } = dbItem;
 
-      // Skip items that are complete, terminally failed, paused, or not scheduled
+      // Skip items that are complete, terminally failed, paused, or cancelled
       if (
         status == FetchStatus.Complete ||
         status == FetchStatus.FailedTerminal ||
-        status == FetchStatus.Paused
+        status == FetchStatus.Paused ||
+        status == FetchStatus.Cancelled
       ) {
         console.debug("Item task is not in an processable state, skipping...");
         return;
@@ -169,7 +187,20 @@ export class TaskQueue {
         status === FetchStatus.DownloadInProgress ||
         status === FetchStatus.FailedDownloadRetryable
       ) {
-        downloadResult = await this.download(item, db, metadata, progress || 0);
+        try {
+          downloadResult = await this.download(
+            item,
+            db,
+            metadata,
+            progress || 0,
+          );
+        } catch (e) {
+          if (e instanceof DownloadCancelledError) {
+            // Download was intentionally paused or cancelled — not a failure
+            return;
+          }
+          throw e;
+        }
         nextStatus = FetchStatus.DecryptionInProgress;
       }
 
@@ -199,17 +230,14 @@ export class TaskQueue {
     }
   };
 
-  private async download(
+  private async prepareDownload(
     item: ItemFetchTask,
-    db: DB,
     metadata: ItemMetadata,
     progress: number,
-  ): Promise<DownloadResult> {
-    console.debug(`Starting download for ${metadata.kind} ${item.id}`);
-    db.setDownloadInProgress(item.id);
-
+  ): Promise<{ path: string; writer: Writable; progress: number }> {
     let downloadFilePath: string = "";
     let downloadWriter: Writable;
+    let resumeProgress = 0;
 
     if (metadata.kind === "message" || metadata.kind === "reply") {
       // For messages/replies: use BufferedWriter (in-memory only)
@@ -219,10 +247,69 @@ export class TaskQueue {
       downloadFilePath = this.storage.downloadFilePath(metadata, item);
       const downloadDir = path.dirname(downloadFilePath);
       await fs.promises.mkdir(downloadDir, { recursive: true });
-      downloadWriter = fs.createWriteStream(downloadFilePath);
+      if (progress > 0) {
+        // Re-read the resume position from disk — it's the source of truth,
+        // in case the DB is out of sync with what was actually written.
+        try {
+          const stats = await fs.promises.stat(downloadFilePath);
+          resumeProgress = stats.size;
+        } catch (error: unknown) {
+          if ((error as NodeJS.ErrnoException).code !== "ENOENT") {
+            throw error;
+          }
+          // File doesn't exist, start from the beginning
+        }
+      }
+      // If we have some progress to resume, append from where the file ends,
+      // otherwise truncate and start anew.
+      downloadWriter = fs.createWriteStream(downloadFilePath, {
+        flags: resumeProgress > 0 ? "a" : "w",
+      });
     } else {
       throw new Error(`Unsupported item kind: ${metadata.kind}`);
     }
+    return {
+      path: downloadFilePath,
+      writer: downloadWriter,
+      progress: resumeProgress,
+    };
+  }
+
+  private async download(
+    item: ItemFetchTask,
+    db: DB,
+    metadata: ItemMetadata,
+    progress: number,
+  ): Promise<DownloadResult> {
+    console.debug(`Starting download for ${metadata.kind} ${item.id}`);
+    const abortController = new AbortController();
+    this.activeDownloads.set(item.id, abortController);
+    try {
+      db.setDownloadInProgress(item.id);
+      return await this.innerDownload(
+        item,
+        db,
+        metadata,
+        progress,
+        abortController,
+      );
+    } finally {
+      this.activeDownloads.delete(item.id);
+    }
+  }
+
+  private async innerDownload(
+    item: ItemFetchTask,
+    db: DB,
+    metadata: ItemMetadata,
+    originalProgress: number,
+    abortController: AbortController,
+  ): Promise<DownloadResult> {
+    const {
+      path: downloadFilePath,
+      writer: downloadWriter,
+      progress,
+    } = await this.prepareDownload(item, metadata, originalProgress);
 
     const queryPath = `/api/v1/sources/${metadata.source}/${metadata.kind == "reply" ? "replies" : "submissions"}/${item.id}/download`;
     const downloadRequest: ProxyRequest = {
@@ -254,8 +341,10 @@ export class TaskQueue {
       const now = Date.now();
       const totalBytesWritten = progress + bytesWritten;
 
-      // Always update the database with current progress
-      db.setDownloadInProgress(item.id, totalBytesWritten);
+      // Don't override the DB status if the download has been cancelled
+      if (!abortController.signal.aborted) {
+        db.setDownloadInProgress(item.id, totalBytesWritten);
+      }
 
       // Throttle UI updates to avoid overwhelming the renderer
       if (
@@ -271,7 +360,7 @@ export class TaskQueue {
       downloadRequest,
       downloadWriter,
       progress,
-      undefined, // abortSignal
+      abortController.signal,
       timeout,
       onProgress,
     );
@@ -287,6 +376,12 @@ export class TaskQueue {
     downloadResponse = downloadResponse as ProxyStreamResponse;
 
     if (!downloadResponse.complete) {
+      // If the abort signal was triggered, the download was intentionally
+      // stopped by the user (pause or cancel) — don't mark the item as failed
+      if (abortController.signal.aborted) {
+        throw new DownloadCancelledError();
+      }
+
       const bytesWritten = progress + downloadResponse.bytesWritten;
       db.setDownloadInProgress(item.id, bytesWritten);
       db.failDownload(item.id);

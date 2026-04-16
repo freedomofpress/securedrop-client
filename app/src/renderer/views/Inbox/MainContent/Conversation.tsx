@@ -192,7 +192,8 @@ const Conversation = memo(function Conversation({
     sourceWithItems.items.forEach((item) => {
       if (
         item.data.kind === "file" &&
-        item.fetch_status === FetchStatus.Initial
+        (item.fetch_status === FetchStatus.Initial ||
+          item.fetch_status === FetchStatus.Cancelled)
       ) {
         dispatch(
           updateItemFetchStatus({
