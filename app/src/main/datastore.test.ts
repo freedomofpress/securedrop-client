@@ -290,15 +290,15 @@ describe("Datastore Method Tests", () => {
     expect(sources.map((s) => s.uuid)).toEqual(["source1", "source2"]);
   });
 
-  it("pending SourceConversationDeleted should remove all items", () => {
+  it("pending SourceConversationTruncated should remove items up to and including upper_bound", () => {
     db.updateSources({
       source1: mockSourceMetadata("source1"),
     });
 
     db.updateItems({
-      item1: mockItemMetadata("item1", "source1"),
-      item2: mockItemMetadata("item2", "source1"),
-      item3: mockItemMetadata("item3", "source1"),
+      item1: mockItemMetadata("item1", "source1", "message", 1),
+      item2: mockItemMetadata("item2", "source1", "message", 2),
+      item3: mockItemMetadata("item3", "source1", "message", 3),
     });
 
     let sourceWithItems = db.getSourceWithItems("source1");
@@ -306,25 +306,22 @@ describe("Datastore Method Tests", () => {
 
     db.addPendingSourceEvent(
       "source1",
-      PendingEventType.SourceConversationDeleted,
+      PendingEventType.SourceConversationTruncated,
+      { upper_bound: 2 },
     );
     sourceWithItems = db.getSourceWithItems("source1");
-    expect(sourceWithItems.items.length).toEqual(0);
-
-    db.updateSources({
-      source2: mockSourceMetadata("source2"),
-    });
+    expect(sourceWithItems.items.length).toEqual(1);
   });
 
-  it("pending SourceConversationDeleted event should only affect given source", () => {
+  it("pending SourceConversationTruncated event should only affect given source", () => {
     db.updateSources({
       source1: mockSourceMetadata("source1"),
     });
 
     db.updateItems({
-      item1: mockItemMetadata("item1", "source1"),
-      item2: mockItemMetadata("item2", "source1"),
-      item3: mockItemMetadata("item3", "source1"),
+      item1: mockItemMetadata("item1", "source1", "message", 1),
+      item2: mockItemMetadata("item2", "source1", "message", 2),
+      item3: mockItemMetadata("item3", "source1", "message", 3),
     });
 
     let sourceWithItems = db.getSourceWithItems("source1");
@@ -332,7 +329,8 @@ describe("Datastore Method Tests", () => {
 
     db.addPendingSourceEvent(
       "source1",
-      PendingEventType.SourceConversationDeleted,
+      PendingEventType.SourceConversationTruncated,
+      { upper_bound: 3 },
     );
     sourceWithItems = db.getSourceWithItems("source1");
     expect(sourceWithItems.items.length).toEqual(0);
@@ -343,9 +341,9 @@ describe("Datastore Method Tests", () => {
     });
 
     db.updateItems({
-      item1: mockItemMetadata("item1", "source2"),
-      item2: mockItemMetadata("item2", "source2"),
-      item3: mockItemMetadata("item3", "source2"),
+      item1: mockItemMetadata("item1", "source2", "message", 1),
+      item2: mockItemMetadata("item2", "source2", "message", 2),
+      item3: mockItemMetadata("item3", "source2", "message", 3),
     });
     sourceWithItems = db.getSourceWithItems("source2");
     expect(sourceWithItems.items.length).toEqual(3);
@@ -553,14 +551,14 @@ describe("Datastore Method Tests", () => {
     expect(sourceWithItems.items.length).toEqual(2);
   });
 
-  it("pending ReplySent and pending SourceConversationDeleted should delete all items in conversation", async () => {
+  it("pending ReplySent and pending SourceConversationTruncated should delete all items in conversation", async () => {
     db.updateSources({
       source1: mockSourceMetadata("source1"),
     });
 
     db.updateItems({
-      item1: mockItemMetadata("item1", "source1"),
-      item2: mockItemMetadata("item2", "source1"),
+      item1: mockItemMetadata("item1", "source1", "message", 1),
+      item2: mockItemMetadata("item2", "source1", "message", 2),
     });
 
     await db.addPendingReplySentEvent("reply text", "source1", 3);
@@ -569,25 +567,27 @@ describe("Datastore Method Tests", () => {
 
     db.addPendingSourceEvent(
       "source1",
-      PendingEventType.SourceConversationDeleted,
+      PendingEventType.SourceConversationTruncated,
+      { upper_bound: 3 },
     );
     sourceWithItems = db.getSourceWithItems("source1");
     expect(sourceWithItems.items.length).toEqual(0);
   });
 
-  it("pending SourceConversationDeleted and ReplySent should show reply", async () => {
+  it("pending SourceConversationTruncated and ReplySent should show reply", async () => {
     db.updateSources({
       source1: mockSourceMetadata("source1"),
     });
 
     db.updateItems({
-      item1: mockItemMetadata("item1", "source1"),
-      item2: mockItemMetadata("item2", "source1"),
+      item1: mockItemMetadata("item1", "source1", "message", 1),
+      item2: mockItemMetadata("item2", "source1", "message", 2),
     });
 
     const snowflake1 = db.addPendingSourceEvent(
       "source1",
-      PendingEventType.SourceConversationDeleted,
+      PendingEventType.SourceConversationTruncated,
+      { upper_bound: 2 },
     );
     let sourceWithItems = db.getSourceWithItems("source1");
     expect(sourceWithItems.items.length).toEqual(0);
@@ -595,7 +595,7 @@ describe("Datastore Method Tests", () => {
     const snowflake2 = await db.addPendingReplySentEvent(
       "reply text",
       "source1",
-      1,
+      3,
     );
     expect(snowflake2 > snowflake1);
     sourceWithItems = db.getSourceWithItems("source1");
@@ -1040,7 +1040,7 @@ describe("Datastore Method Tests", () => {
     }
   });
 
-  it("getSources should return sources with correct last_message_kind, last_message_plaintext, and last_message_filename", () => {
+  it("getSources should return sources with correct last_message_kind, last_message_plaintext, last_message_filename, and last_interaction_count", () => {
     db.updateSources({
       source1: mockSourceMetadata("source1"),
       source2: mockSourceMetadata("source2"),
@@ -1057,7 +1057,7 @@ describe("Datastore Method Tests", () => {
       item4: mockItemMetadata("item4", "source2", "file", 2),
       // source3 items
       item5: mockItemMetadata("item5", "source3", "message", 1),
-      item6: mockItemMetadata("item6", "source3", "message", 2),
+      item6: mockItemMetadata("item6", "source3", "message", 5),
     });
 
     db.completePlaintextItem("item1", "reply message 1");
@@ -1076,6 +1076,7 @@ describe("Datastore Method Tests", () => {
       expect(s1.messagePreview).not.toBeNull();
       expect(s1.messagePreview?.kind).toBe("message");
       expect(s1.messagePreview?.plaintext).toBe("message 2");
+      expect(s1.lastInteractionCount).toBe(2);
     }
 
     expect(s2).not.toBeNull();
@@ -1083,6 +1084,7 @@ describe("Datastore Method Tests", () => {
       expect(s2.messagePreview).not.toBeNull();
       expect(s2.messagePreview?.kind).toBe("file");
       expect(s2.messagePreview?.plaintext).toBe("filename.txt");
+      expect(s2.lastInteractionCount).toBe(2);
     }
 
     expect(s3).not.toBeNull();
@@ -1090,6 +1092,7 @@ describe("Datastore Method Tests", () => {
       expect(s3.messagePreview).not.toBeNull();
       expect(s3.messagePreview?.kind).toBe("message");
       expect(s3.messagePreview?.plaintext).toBeNull();
+      expect(s3.lastInteractionCount).toBe(5);
     }
 
     expect(s4).not.toBeNull();

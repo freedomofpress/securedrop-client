@@ -246,7 +246,16 @@ function SourceList({ focusedPanel }: { focusedPanel: FocusedPanel }) {
     async (eventType: PendingEventType) => {
       try {
         for (const sourceUuid of pendingDeleteSources) {
-          await window.electronAPI.addPendingSourceEvent(sourceUuid, eventType);
+          const sourceToDelete = sources.find((x) => x.uuid === sourceUuid);
+          await window.electronAPI.addPendingSourceEvent(
+            sourceUuid,
+            eventType,
+            eventType === PendingEventType.SourceConversationTruncated
+              ? {
+                  upper_bound: sourceToDelete?.lastInteractionCount ?? 0,
+                }
+              : undefined,
+          );
         }
         // If we deleted an account and it was the currently active source, navigate away
         if (
@@ -258,7 +267,7 @@ function SourceList({ focusedPanel }: { focusedPanel: FocusedPanel }) {
         }
         // If we deleted a conversation and there's an active source, refresh the conversation
         if (
-          eventType === PendingEventType.SourceConversationDeleted &&
+          eventType === PendingEventType.SourceConversationTruncated &&
           activeSourceUuid
         ) {
           dispatch(fetchConversation(activeSourceUuid));
@@ -282,7 +291,7 @@ function SourceList({ focusedPanel }: { focusedPanel: FocusedPanel }) {
         console.error("Failed to delete source(s):", error);
       }
     },
-    [pendingDeleteSources, dispatch, activeSourceUuid, navigate],
+    [pendingDeleteSources, dispatch, activeSourceUuid, navigate, sources],
   );
 
   const handleToggleSort = useCallback(() => {
@@ -484,7 +493,7 @@ function SourceList({ focusedPanel }: { focusedPanel: FocusedPanel }) {
             data-testid="delete-modal-delete-conversation-button"
             type="primary"
             onClick={() =>
-              handleDeleteAction(PendingEventType.SourceConversationDeleted)
+              handleDeleteAction(PendingEventType.SourceConversationTruncated)
             }
           >
             {pendingDeleteSources.size === 1
