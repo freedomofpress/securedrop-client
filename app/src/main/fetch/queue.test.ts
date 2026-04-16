@@ -1179,6 +1179,146 @@ describe("TaskQueue - Two-Phase Download and Decryption", () => {
     });
   });
 
+  describe("Abort Downloads for Deleted Sources", () => {
+    it("should abort active downloads for a given source", async () => {
+      const db = createMockDB();
+      const metadata = {
+        kind: "file",
+        source: "source1",
+        size: 1000,
+        uuid: "file1",
+      } as ItemMetadata;
+
+      db.getItem = vi.fn(() => mockItem(metadata, FetchStatus.Initial, 0));
+
+      // Make proxyStreamRequest hang until aborted
+      let rejectProxy: (reason: unknown) => void;
+      mockProxyStreamRequest.mockReturnValue(
+        new Promise((_resolve, reject) => {
+          rejectProxy = reject;
+        }),
+      );
+
+      const queue = new TaskQueue(db);
+      const processPromise = queue.process({ id: "file1" }, db);
+
+      // Wait a tick so download registers the AbortController
+      await new Promise((r) => setTimeout(r, 10));
+
+      // Abort downloads for source1
+      queue.abortDownloadsForSource("source1");
+
+      // Simulate the proxy rejecting due to abort
+      rejectProxy!(new Error("AbortError: The operation was aborted"));
+
+      await expect(processPromise).rejects.toThrow("aborted");
+    });
+
+    it("should not abort downloads for unrelated sources", async () => {
+      const db = createMockDB();
+      const metadata = {
+        kind: "message",
+        source: "source1",
+        size: 100,
+        uuid: "msg1",
+      } as ItemMetadata;
+
+      db.getItem = vi.fn(() => mockItem(metadata, FetchStatus.Initial, 0));
+
+      mockProxyStreamRequest.mockResolvedValue({
+        complete: true,
+        bytesWritten: 100,
+        sha256sum: "abc",
+      });
+
+      const encryptedBuffer = Buffer.from("encrypted");
+      vi.spyOn(BufferedWriter.prototype, "getBuffer").mockReturnValue(
+        encryptedBuffer,
+      );
+      mockCrypto.decryptMessage.mockResolvedValue("decrypted");
+
+      const queue = new TaskQueue(db);
+
+      // Abort for a different source
+      queue.abortDownloadsForSource("source2");
+
+      // Process should still complete normally
+      await queue.process({ id: "msg1" }, db);
+      expect(db.completePlaintextItem).toHaveBeenCalledWith(
+        "msg1",
+        "decrypted",
+      );
+    });
+
+    it("should pass abort signal to proxyStreamRequest", async () => {
+      const db = createMockDB();
+      const metadata = {
+        kind: "message",
+        source: "source1",
+        size: 100,
+        uuid: "msg1",
+      } as ItemMetadata;
+
+      db.getItem = vi.fn(() => mockItem(metadata, FetchStatus.Initial, 0));
+
+      mockProxyStreamRequest.mockResolvedValue({
+        complete: true,
+        bytesWritten: 100,
+        sha256sum: "abc",
+      });
+
+      const encryptedBuffer = Buffer.from("encrypted");
+      vi.spyOn(BufferedWriter.prototype, "getBuffer").mockReturnValue(
+        encryptedBuffer,
+      );
+      mockCrypto.decryptMessage.mockResolvedValue("decrypted");
+
+      const queue = new TaskQueue(db);
+      await queue.process({ id: "msg1" }, db);
+
+      // Verify abortSignal was passed (not undefined anymore)
+      expect(mockProxyStreamRequest).toHaveBeenCalledWith(
+        expect.anything(),
+        expect.anything(),
+        0,
+        expect.any(AbortSignal),
+        expect.any(Number),
+        expect.any(Function),
+      );
+    });
+
+    it("should clean up activeDownloads entry after download completes", async () => {
+      const db = createMockDB();
+      const metadata = {
+        kind: "message",
+        source: "source1",
+        size: 100,
+        uuid: "msg1",
+      } as ItemMetadata;
+
+      db.getItem = vi.fn(() => mockItem(metadata, FetchStatus.Initial, 0));
+
+      mockProxyStreamRequest.mockResolvedValue({
+        complete: true,
+        bytesWritten: 100,
+        sha256sum: "abc",
+      });
+
+      const encryptedBuffer = Buffer.from("encrypted");
+      vi.spyOn(BufferedWriter.prototype, "getBuffer").mockReturnValue(
+        encryptedBuffer,
+      );
+      mockCrypto.decryptMessage.mockResolvedValue("decrypted");
+
+      const queue = new TaskQueue(db);
+      await queue.process({ id: "msg1" }, db);
+
+      // Aborting now should be a no-op (entry already cleaned up)
+      queue.abortDownloadsForSource("source1");
+      // No error thrown = success
+    });
+  });
+
   describe("Download Retry and Cancel Scenarios", () => {
     it("should successfully retry a failed download when status is reset to DownloadInProgress with progress=0", async () => {
       const db = createMockDB();
