@@ -155,7 +155,10 @@ describe("TaskQueue - Two-Phase Download and Decryption", () => {
 
       // Verify decryption phase
       expect(db.setDecryptionInProgress).toHaveBeenCalledWith("msg1");
-      expect(mockCrypto.decryptMessage).toHaveBeenCalledWith(encryptedBuffer);
+      expect(mockCrypto.decryptMessage).toHaveBeenCalledWith(
+        encryptedBuffer,
+        expect.any(AbortSignal),
+      );
       expect(db.completePlaintextItem).toHaveBeenCalledWith(
         "msg1",
         decryptedContent,
@@ -538,6 +541,7 @@ describe("TaskQueue - Two-Phase Download and Decryption", () => {
         expect.any(Object), // storage
         expect.any(Object), // itemDirectory
         downloadPath,
+        expect.any(AbortSignal),
       );
       expect(db.completeFileItem).toHaveBeenCalledWith(
         "msg1",
