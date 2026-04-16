@@ -131,6 +131,11 @@ export class TaskQueue {
     }
   }
 
+  private isScheduledForDeletion(itemId: string, db: DB): boolean {
+    const item = db.getItem(itemId);
+    return !item || item.fetch_status === FetchStatus.ScheduledDeletion;
+  }
+
   // Queries the database for all items that need to be downloaded and queues
   // up download tasks to be processed.
   // Routes items to the appropriate queue:
@@ -248,6 +253,14 @@ export class TaskQueue {
           throw e;
         }
         nextStatus = FetchStatus.DecryptionInProgress;
+      }
+
+      // Re-check: if the item was marked for deletion during download, stop.
+      if (this.isScheduledForDeletion(item.id, db)) {
+        console.debug(
+          `Item ${item.id} scheduled for deletion after download, skipping decryption...`,
+        );
+        return;
       }
 
       // Phase 2: Decryption (or failed decryption retries)
@@ -544,6 +557,11 @@ export class TaskQueue {
     try {
       const decryptedContent = await crypto.decryptMessage(buffer);
 
+      // Re-check: if the item was deleted during decryption, drop the result
+      if (this.isScheduledForDeletion(item.id, db)) {
+        return;
+      }
+
       // Store the decrypted plaintext and mark item as complete
       db.completePlaintextItem(item.id, decryptedContent);
     } catch (error) {
@@ -582,6 +600,11 @@ export class TaskQueue {
       const buffer = await fs.promises.readFile(downloadPath);
       const decryptedContent = await crypto.decryptMessage(buffer);
 
+      // Re-check: if the item was deleted during decryption, drop the result
+      if (this.isScheduledForDeletion(item.id, db)) {
+        return;
+      }
+
       // Store the decrypted plaintext and mark item as complete
       db.completePlaintextItem(item.id, decryptedContent);
     } catch (error) {
@@ -612,6 +635,12 @@ export class TaskQueue {
         itemDirectory,
         downloadPath,
       );
+
+      // Re-check: if the item was deleted during decryption, drop the result
+      if (this.isScheduledForDeletion(item.id, db)) {
+        return;
+      }
+
       // Get the decrypted file size to display to the user
       const fileStats = await fs.promises.stat(finalAbsolutePath);
       const decryptedSize = fileStats.size;
