@@ -75,6 +75,7 @@ import type {
   SourceTarget,
   ItemTarget,
   PendingEvent,
+  PendingEventData,
 } from "./schemas";
 import { PendingEventType } from "./schemas";
 
@@ -91,6 +92,7 @@ export type {
   SourceTarget,
   ItemTarget,
   PendingEvent,
+  PendingEventData,
 };
 
 export { PendingEventType };
@@ -109,6 +111,7 @@ export type Source = {
   isRead: boolean;
   hasAttachment: boolean;
   messagePreview: MessagePreview | null;
+  lastInteractionCount?: number | null;
 };
 
 export type MessagePreview = {
@@ -151,6 +154,7 @@ export type SourceRow = {
   last_message_kind?: "message" | "reply" | "file";
   last_message_plaintext?: string;
   last_message_filename?: string;
+  last_interaction_count?: number;
 };
 
 export type Item = {
@@ -215,8 +219,6 @@ export enum EventStatus {
   NotFound = 404,
   NotImplemented = 501,
 }
-
-export type PendingEventData = ReplySentData;
 
 export type ReplySentData = {
   uuid: string;

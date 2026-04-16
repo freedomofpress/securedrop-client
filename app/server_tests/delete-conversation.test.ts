@@ -58,7 +58,7 @@ describe.sequential("deleting source conversation", () => {
 
     // Verify pending event was created
     const pendingEvents = await helpers.getPendingEventsByType(
-      PendingEventType.SourceConversationDeleted,
+      PendingEventType.SourceConversationTruncated,
     );
     expect(pendingEvents).toHaveLength(1);
     expect(pendingEvents[0].sourceUuid).toBe(TARGET_SOURCE.uuid);
@@ -74,7 +74,7 @@ describe.sequential("deleting source conversation", () => {
 
     // Verify pending events are cleared
     const pendingEvents = await helpers.getPendingEventsByType(
-      PendingEventType.SourceConversationDeleted,
+      PendingEventType.SourceConversationTruncated,
     );
     expect(pendingEvents).toHaveLength(0);
 

@@ -138,7 +138,7 @@ export enum PendingEventType {
   ReplySent = "reply_sent",
   ItemDeleted = "item_deleted",
   SourceDeleted = "source_deleted",
-  SourceConversationDeleted = "source_conversation_deleted",
+  SourceConversationTruncated = "source_conversation_truncated",
   Starred = "source_starred",
   Unstarred = "source_unstarred",
   SourceConversationSeen = "source_conversation_seen",
@@ -151,6 +151,15 @@ const BasePendingEvent = {
 
 const SourceConversationSeenDataSchema = z.object({ upper_bound: z.number() });
 
+const SourceConversationTruncatedDataSchema = z.object({
+  upper_bound: z.number(),
+});
+
+export const PendingEventDataSchema = z.union([
+  SourceConversationSeenDataSchema,
+  SourceConversationTruncatedDataSchema,
+]);
+
 export const PendingEventSchema = z.discriminatedUnion("type", [
   z.object({
     ...BasePendingEvent,
@@ -162,12 +171,18 @@ export const PendingEventSchema = z.discriminatedUnion("type", [
     type: z.literal(PendingEventType.SourceConversationSeen),
     data: SourceConversationSeenDataSchema,
   }),
+  z.object({
+    ...BasePendingEvent,
+    type: z.literal(PendingEventType.SourceConversationTruncated),
+    data: SourceConversationTruncatedDataSchema,
+  }),
   // All other event types
   ...Object.values(PendingEventType)
     .filter(
       (v) =>
         v !== PendingEventType.ReplySent &&
-        v !== PendingEventType.SourceConversationSeen,
+        v !== PendingEventType.SourceConversationSeen &&
+        v !== PendingEventType.SourceConversationTruncated,
     )
     .map((v) => {
       return z.object({
@@ -198,3 +213,4 @@ export type BatchRequest = z.infer<typeof BatchRequestSchema>;
 export type SourceTarget = z.infer<typeof SourceTargetSchema>;
 export type ItemTarget = z.infer<typeof ItemTargetSchema>;
 export type PendingEvent = z.infer<typeof PendingEventSchema>;
+export type PendingEventData = z.infer<typeof PendingEventDataSchema>;
