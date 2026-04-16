@@ -262,8 +262,8 @@ export type ExportPayload = PayloadTranscript | PayloadSource | PayloadFile;
 // for now only transcripts or single files may be printed
 export type PrintPayload = PayloadTranscript | PayloadFile;
 
-// All possible strings returned by the qrexec calls to sd-devices. These values come from
-// `print/status.py` and `disk/status.py` in `securedrop-export`
+// All possible strings returned by the qrexec calls to sd-devices or sd-printers.
+// These values come from `print/status.py` and `disk/status.py` in `securedrop-export`
 // and must only be changed in coordination with changes released in that component.
 export type DeviceStatus =
   | ExportStatus
