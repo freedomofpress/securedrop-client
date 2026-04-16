@@ -1315,6 +1315,57 @@ describe("Datastore Method Tests", () => {
     );
   });
 
+  it("getItemsToProcess should return a bounded set of processable messages and files", () => {
+    db.updateSources({
+      source1: mockSourceMetadata("source1"),
+    });
+
+    db.updateItems({
+      message1: mockItemMetadata("message1", "source1", "message", 1),
+      message2: mockItemMetadata("message2", "source1", "message", 2),
+      message3: mockItemMetadata("message3", "source1", "message", 3),
+      file1: mockItemMetadata("file1", "source1", "file", 4),
+      file2: mockItemMetadata("file2", "source1", "file", 5),
+      file3: mockItemMetadata("file3", "source1", "file", 6),
+    });
+
+    db.setDownloadInProgress("file1", 10);
+    db.setDownloadInProgress("file2", 20);
+    db.setDownloadInProgress("file3", 30);
+
+    const itemsToProcess = db.getItemsToProcess({
+      messageLimit: 2,
+      fileLimit: 1,
+    });
+
+    expect(itemsToProcess).toEqual(["message1", "message2", "file1"]);
+  });
+
+  it("getItemsToProcess should exclude ScheduledDeletion items", () => {
+    db.updateSources({
+      source1: mockSourceMetadata("source1"),
+    });
+
+    db.updateItems({
+      message1: mockItemMetadata("message1", "source1", "message", 1),
+      message2: mockItemMetadata("message2", "source1", "message", 2),
+      file1: mockItemMetadata("file1", "source1", "file", 3),
+      file2: mockItemMetadata("file2", "source1", "file", 4),
+    });
+
+    db.setDownloadInProgress("file1", 10);
+    db.setDownloadInProgress("file2", 20);
+    db.updateFetchStatus("message2", FetchStatus.ScheduledDeletion);
+    db.updateFetchStatus("file2", FetchStatus.ScheduledDeletion);
+
+    const itemsToProcess = db.getItemsToProcess({
+      messageLimit: 5,
+      fileLimit: 5,
+    });
+
+    expect(itemsToProcess).toEqual(["message1", "file1"]);
+  });
+
   it("deleting a source should cascade to its pending events", () => {
     // Create a source and add a pending event for it
     db.updateSources({

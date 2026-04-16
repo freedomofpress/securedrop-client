@@ -39,6 +39,9 @@ class DownloadCancelledError extends Error {
   }
 }
 
+const MESSAGE_QUEUE_BATCH_LIMIT = 25;
+const FILE_QUEUE_BATCH_LIMIT = 2;
+
 export class TaskQueue {
   db: DB;
   messageQueue: Queue;
@@ -100,7 +103,10 @@ export class TaskQueue {
   queueFetches(message: AuthedRequest) {
     this.authToken = message.authToken;
     try {
-      const itemsToProcess = this.db.getItemsToProcess();
+      const itemsToProcess = this.db.getItemsToProcess({
+        messageLimit: MESSAGE_QUEUE_BATCH_LIMIT,
+        fileLimit: FILE_QUEUE_BATCH_LIMIT,
+      });
       if (itemsToProcess.length > 0) {
         console.debug("Items to process: ", itemsToProcess);
       }
