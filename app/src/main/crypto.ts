@@ -192,12 +192,21 @@ export class Crypto {
    * @param encryptedContent - The encrypted message content
    * @returns Promise<string> - The decrypted plaintext
    */
-  async decryptMessage(encryptedContent: Buffer): Promise<string> {
+  async decryptMessage(
+    encryptedContent: Buffer,
+    signal?: AbortSignal,
+  ): Promise<string> {
     const cmd = this.getGpgCommand();
     cmd.push("--decrypt");
 
     return new Promise((resolve, reject) => {
       const gpgProcess = spawn(cmd[0], cmd.slice(1), this.getSpawnOptions());
+
+      // Kill the process if the abort signal fires
+      const abortListener = () => {
+        gpgProcess.kill();
+      };
+      signal?.addEventListener("abort", abortListener, { once: true });
 
       let stdout = Buffer.alloc(0);
       let stderr = Buffer.alloc(0);
@@ -216,10 +225,18 @@ export class Crypto {
         stderr = Buffer.concat([stderr, chunk]);
       });
 
-      gpgProcess.on("close", async (code, signal) => {
+      gpgProcess.on("close", async (code, exitSignal) => {
+        signal?.removeEventListener("abort", abortListener);
         const errorMessage = stderr.toString("utf8");
-        if (signal) {
-          reject(new Error(`Process terminated with signal ${signal}`));
+        if (signal?.aborted) {
+          const err = new Error("Decryption was cancelled");
+          err.name = "AbortError";
+          reject(err);
+          return;
+        }
+        if (exitSignal) {
+          reject(new Error(`Process terminated with signal ${exitSignal}`));
+          return;
         } else if (code !== 0) {
           reject(
             new CryptoError(
@@ -243,6 +260,7 @@ export class Crypto {
       });
 
       gpgProcess.on("error", (error) => {
+        signal?.removeEventListener("abort", abortListener);
         reject(
           new CryptoError(
             `Failed to start GPG process: ${error.message}`,
@@ -263,6 +281,7 @@ export class Crypto {
     storage: Storage,
     itemDirectory: PathBuilder,
     filepath: string,
+    signal?: AbortSignal,
   ): Promise<string> {
     const cmd = this.getGpgCommand();
     cmd.push("--decrypt", filepath);
@@ -276,6 +295,12 @@ export class Crypto {
       let stderr = Buffer.alloc(0);
 
       const gpgProcess = spawn(cmd[0], cmd.slice(1), this.getSpawnOptions());
+
+      // Kill the process if the abort signal fires
+      const abortListener = () => {
+        gpgProcess.kill();
+      };
+      signal?.addEventListener("abort", abortListener, { once: true });
 
       // Stream GPG output directly to temporary file (no memory accumulation)
       gpgProcess.stdout.pipe(gpgOutputFile);
@@ -297,13 +322,21 @@ export class Crypto {
         fs.rmSync(tempDir.path, { recursive: true, force: true });
       };
 
-      gpgProcess.on("close", async (code, signal) => {
+      gpgProcess.on("close", async (code, exitSignal) => {
+        signal?.removeEventListener("abort", abortListener);
         gpgOutputFile.end();
         const errorMessage = stderr.toString("utf8");
 
-        if (signal) {
+        if (signal?.aborted) {
           await destroyAndCleanup();
-          reject(new Error(`Process terminated with signal ${signal}`));
+          const err = new Error("Decryption was cancelled");
+          err.name = "AbortError";
+          reject(err);
+          return;
+        }
+        if (exitSignal) {
+          await destroyAndCleanup();
+          reject(new Error(`Process terminated with signal ${exitSignal}`));
           return;
         } else if (code !== 0) {
           await destroyAndCleanup();
@@ -355,6 +388,7 @@ export class Crypto {
       });
 
       gpgProcess.on("error", async (error) => {
+        signal?.removeEventListener("abort", abortListener);
         await destroyAndCleanup();
         reject(
           new CryptoError(
