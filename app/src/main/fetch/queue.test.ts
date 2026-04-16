@@ -1938,4 +1938,143 @@ describe("TaskQueue - Two-Phase Download and Decryption", () => {
       expect(db.setDecryptionInProgress).not.toHaveBeenCalled();
     });
   });
+
+  describe("Large Backlog Regression", () => {
+    it("refill should drain a large backlog by re-querying after each task completes", () => {
+      const db = createMockDB();
+
+      // Simulate a large backlog: first call returns a batch, second returns more, third returns empty
+      db.getItemsToProcess = vi
+        .fn()
+        .mockReturnValueOnce(["msg1", "msg2", "msg3"])
+        .mockReturnValueOnce(["msg4", "msg5"])
+        .mockReturnValueOnce([]);
+
+      db.getItem = vi.fn((uuid: string) =>
+        mockItem(
+          {
+            kind: "message",
+            source: "source1",
+            size: 100,
+            uuid,
+          } as ItemMetadata,
+          FetchStatus.Initial,
+          0,
+        ),
+      );
+
+      const queue = new TaskQueue(db);
+      queue.authToken = "test-token";
+
+      // First call: initial queueFetches loads batch 1
+      queue.queueFetches({ authToken: "test-token" });
+      expect(db.getItemsToProcess).toHaveBeenCalledTimes(1);
+
+      // Simulate task completion triggers refill → loads batch 2
+      queue.messageQueue.emit("task_finish", "msg1", {});
+      expect(db.getItemsToProcess).toHaveBeenCalledTimes(2);
+
+      // Another completion → loads batch 3 (empty, backlog drained)
+      queue.messageQueue.emit("task_finish", "msg4", {});
+      expect(db.getItemsToProcess).toHaveBeenCalledTimes(3);
+    });
+
+    it("deletion during large backlog should prevent new items from being queued", () => {
+      const db = createMockDB();
+
+      // First call returns items, second call (after deletion) returns nothing
+      db.getItemsToProcess = vi
+        .fn()
+        .mockReturnValueOnce(["msg1", "msg2"])
+        .mockReturnValueOnce([]);
+
+      const msg1Meta = {
+        kind: "message",
+        source: "source1",
+        size: 100,
+        uuid: "msg1",
+      } as ItemMetadata;
+
+      db.getItem = vi.fn((uuid: string) => {
+        if (uuid === "msg1") {
+          // After deletion, item is ScheduledDeletion
+          return mockItem(msg1Meta, FetchStatus.ScheduledDeletion, 0);
+        }
+        return mockItem(
+          {
+            kind: "message",
+            source: "source1",
+            size: 100,
+            uuid,
+          } as ItemMetadata,
+          FetchStatus.Initial,
+          0,
+        );
+      });
+
+      const queue = new TaskQueue(db);
+      queue.authToken = "test-token";
+
+      // Initial queueing
+      queue.queueFetches({ authToken: "test-token" });
+
+      // Source gets deleted — items marked ScheduledDeletion in DB.
+      // On next refill, getItemsToProcess returns empty because all items
+      // are ScheduledDeletion and excluded by the bounded query.
+      queue.messageQueue.emit("task_finish", "msg1", {});
+
+      // Second call to getItemsToProcess returned [] — nothing new queued
+      expect(db.getItemsToProcess).toHaveBeenCalledTimes(2);
+    });
+
+    it("abort should cancel all active downloads for a deleted source across a backlog", async () => {
+      const db = createMockDB();
+
+      // Two files from the same source actively downloading
+      const fileMeta = (uuid: string) =>
+        ({
+          kind: "file",
+          source: "source1",
+          size: 10000,
+          uuid,
+        }) as ItemMetadata;
+
+      db.getItem = vi
+        .fn()
+        .mockReturnValueOnce(
+          mockItem(fileMeta("file1"), FetchStatus.Initial, 0),
+        )
+        .mockReturnValueOnce(
+          mockItem(fileMeta("file2"), FetchStatus.Initial, 0),
+        );
+
+      // Make downloads hang until aborted
+      const rejects: Array<(reason: unknown) => void> = [];
+      mockProxyStreamRequest.mockImplementation(
+        () =>
+          new Promise((_resolve, reject) => {
+            rejects.push(reject);
+          }),
+      );
+
+      const queue = new TaskQueue(db);
+
+      const p1 = queue.process({ id: "file1" }, db);
+      const p2 = queue.process({ id: "file2" }, db);
+
+      // Wait for downloads to register
+      await new Promise((r) => setTimeout(r, 10));
+
+      // Abort all downloads for source1
+      queue.abortDownloadsForSource("source1");
+
+      // Reject the hanging promises to simulate abort
+      for (const reject of rejects) {
+        reject(new Error("AbortError: The operation was aborted"));
+      }
+
+      await expect(p1).rejects.toThrow("aborted");
+      await expect(p2).rejects.toThrow("aborted");
+    });
+  });
 });
