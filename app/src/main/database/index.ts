@@ -182,6 +182,11 @@ export class DB {
     void
   >;
   private deletePendingEventsByItem: Statement<{ item_uuid: string }, void>;
+  private selectSourcesScheduledForDeletion: Statement<
+    [],
+    { source_uuid: string }
+  >;
+  private selectItemsScheduledForDeletion: Statement<[], { uuid: string }>;
 
   protected constructor(crypto: Crypto, dbDir?: string) {
     this.crypto = crypto;
@@ -387,6 +392,13 @@ export class DB {
          )`);
     this.deletePendingEventsByItem = this.db.prepare(`
       DELETE FROM pending_events WHERE item_uuid = @item_uuid`);
+    this.selectSourcesScheduledForDeletion = this.db.prepare(`
+      SELECT DISTINCT source_uuid FROM pending_events
+      WHERE type IN ('${PendingEventType.SourceDeleted}', '${PendingEventType.SourceConversationDeleted}')
+    `);
+    this.selectItemsScheduledForDeletion = this.db.prepare(`
+      SELECT uuid FROM items WHERE fetch_status = ${FetchStatus.ScheduledDeletion}
+    `);
   }
 
   // Detect runtime environment
@@ -603,24 +615,37 @@ export class DB {
     deleted_sources: string[];
   } {
     return this.db!.transaction((batch: BatchResponse) => {
+      const pendingDeletionSources = this.getSourcesScheduledForDeletion();
       this.updatePendingEvents(batch.events);
-      const deleted_items = this.updateItems(batch.items);
-      const deleted_sources = this.updateSources(batch.sources);
+      const deleted_items = this.updateItems(
+        batch.items,
+        pendingDeletionSources,
+      );
+      const deleted_sources = this.updateSources(
+        batch.sources,
+        pendingDeletionSources,
+      );
       this.updateJournalists(batch.journalists);
       this.updateVersion();
       return { deleted_items, deleted_sources };
     })(batchResponse);
   }
 
-  protected updateSources(sources: {
-    [uuid: string]: SourceMetadata | null;
-  }): string[] {
+  protected updateSources(
+    sources: {
+      [uuid: string]: SourceMetadata | null;
+    },
+    pendingDeletionSources?: Set<string>,
+  ): string[] {
     const deletedSourceUuids: string[] = [];
     this.db!.transaction(
       (sources: { [uuid: string]: SourceMetadata | null }) => {
         Object.keys(sources).forEach((sourceid: string) => {
           const metadata = sources[sourceid];
           if (metadata) {
+            if (pendingDeletionSources?.has(sourceid)) {
+              return;
+            }
             const info = JSON.stringify(metadata, sortKeys);
             const version = computeVersion(info);
             this.upsertSource.run({ uuid: sourceid, data: info, version });
@@ -635,14 +660,20 @@ export class DB {
     return deletedSourceUuids;
   }
 
-  protected updateItems(items: {
-    [uuid: string]: ItemMetadata | null;
-  }): Item[] {
+  protected updateItems(
+    items: {
+      [uuid: string]: ItemMetadata | null;
+    },
+    pendingDeletionSources?: Set<string>,
+  ): Item[] {
     const deletedItems: Item[] = [];
     this.db!.transaction((items: { [uuid: string]: ItemMetadata | null }) => {
       Object.keys(items).forEach((itemid: string) => {
         const metadata = items[itemid];
         if (metadata) {
+          if (pendingDeletionSources?.has(metadata.source)) {
+            return;
+          }
           const blob = JSON.stringify(metadata, sortKeys);
           const version = computeVersion(blob);
           this.upsertItem.run({ uuid: itemid, data: blob, version });
@@ -1185,6 +1216,16 @@ export class DB {
     });
 
     return pendingEvents;
+  }
+
+  getSourcesScheduledForDeletion(): Set<string> {
+    const rows = this.selectSourcesScheduledForDeletion.all();
+    return new Set(rows.map((r) => r.source_uuid));
+  }
+
+  getItemsScheduledForDeletion(): Set<string> {
+    const rows = this.selectItemsScheduledForDeletion.all();
+    return new Set(rows.map((r) => r.uuid));
   }
 
   // Takes pending events and their statuses from the server and applies

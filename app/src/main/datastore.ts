@@ -40,18 +40,27 @@ export class Datastore extends DB {
     super.deleteJournalists(journalists);
   }
 
-  override updateItems(items: { [uuid: string]: ItemMetadata | null }): Item[] {
-    const deletedItems = super.updateItems(items);
+  override updateItems(
+    items: { [uuid: string]: ItemMetadata | null },
+    pendingDeletionSources?: Set<string>,
+  ): Item[] {
+    const deletedItems = super.updateItems(items, pendingDeletionSources);
     for (const item of deletedItems) {
       this.storage.deleteItemFs(item);
     }
     return deletedItems;
   }
 
-  override updateSources(sources: {
-    [uuid: string]: SourceMetadata | null;
-  }): string[] {
-    const deletedSourceUuids = super.updateSources(sources);
+  override updateSources(
+    sources: {
+      [uuid: string]: SourceMetadata | null;
+    },
+    pendingDeletionSources?: Set<string>,
+  ): string[] {
+    const deletedSourceUuids = super.updateSources(
+      sources,
+      pendingDeletionSources,
+    );
     for (const uuid of deletedSourceUuids) {
       this.storage.deleteSourceFs(uuid);
     }
