@@ -13,6 +13,7 @@ import {
   FetchStatus,
   ItemMetadata,
   ProxyRequest,
+  ProxyResponse,
   ProxyStreamResponse,
   bytes,
   ms,
@@ -49,7 +50,10 @@ export class TaskQueue {
   authToken?: string;
   port?: MessagePort;
   storage: Storage;
-  activeDownloads: Map<string, AbortController> = new Map();
+  activeDownloads = new Map<
+    string,
+    { sourceUuid: string; controller: AbortController }
+  >();
 
   constructor(
     db: DB,
@@ -96,9 +100,18 @@ export class TaskQueue {
 
   // Aborts any in-progress download for the given item.
   cancelDownload(itemId: string) {
-    const controller = this.activeDownloads.get(itemId);
-    if (controller) {
-      controller.abort();
+    const entry = this.activeDownloads.get(itemId);
+    if (entry) {
+      entry.controller.abort();
+    }
+  }
+
+  abortDownloadsForSource(sourceUuid: string) {
+    for (const [itemId, entry] of this.activeDownloads) {
+      if (entry.sourceUuid === sourceUuid) {
+        entry.controller.abort();
+        this.activeDownloads.delete(itemId);
+      }
     }
   }
 
@@ -107,6 +120,15 @@ export class TaskQueue {
       return;
     }
     this.queueFetches({ authToken: this.authToken });
+  }
+
+  abortDownloadsForSource(sourceUuid: string) {
+    for (const [itemId, entry] of this.activeDownloads) {
+      if (entry.sourceUuid === sourceUuid) {
+        entry.controller.abort();
+        this.activeDownloads.delete(itemId);
+      }
+    }
   }
 
   // Queries the database for all items that need to be downloaded and queues
@@ -307,7 +329,10 @@ export class TaskQueue {
   ): Promise<DownloadResult> {
     console.debug(`Starting download for ${metadata.kind} ${item.id}`);
     const abortController = new AbortController();
-    this.activeDownloads.set(item.id, abortController);
+    this.activeDownloads.set(item.id, {
+      sourceUuid: metadata.source,
+      controller: abortController,
+    });
     try {
       db.setDownloadInProgress(item.id);
       return await this.innerDownload(
