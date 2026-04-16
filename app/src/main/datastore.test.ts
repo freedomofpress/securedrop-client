@@ -376,7 +376,7 @@ describe("Datastore Method Tests", () => {
     expect(source1Item2).not.toBeNull();
   });
 
-  it("pending SourceConversationDeleted should mark only that source items as ScheduledDeletion", () => {
+  it("pending SourceConversationTruncated should mark only that source items as ScheduledDeletion", () => {
     db.updateSources({
       source1: mockSourceMetadata("source1"),
       source2: mockSourceMetadata("source2"),
@@ -393,7 +393,7 @@ describe("Datastore Method Tests", () => {
 
     db.addPendingSourceEvent(
       "source1",
-      PendingEventType.SourceConversationDeleted,
+      PendingEventType.SourceConversationTruncated,
     );
 
     const source1Item1 = db.getItem("source1Item1");
@@ -974,7 +974,7 @@ describe("Datastore Method Tests", () => {
     expect(unrelatedEvent!.target).toHaveProperty("source_uuid", "source2");
   });
 
-  it("pending SourceConversationDeleted should purge all pending events for that source scope", async () => {
+  it("pending SourceConversationTruncated should purge all pending events for that source scope", async () => {
     db.updateSources({
       source1: mockSourceMetadata("source1"),
       source2: mockSourceMetadata("source2"),
@@ -1000,7 +1000,7 @@ describe("Datastore Method Tests", () => {
 
     const deleteEventId = db.addPendingSourceEvent(
       "source1",
-      PendingEventType.SourceConversationDeleted,
+      PendingEventType.SourceConversationTruncated,
     );
 
     const events = db.getPendingEvents();
@@ -1008,7 +1008,9 @@ describe("Datastore Method Tests", () => {
 
     const deleteEvent = events.find((e) => e.id === deleteEventId);
     expect(deleteEvent).toBeDefined();
-    expect(deleteEvent!.type).toBe(PendingEventType.SourceConversationDeleted);
+    expect(deleteEvent!.type).toBe(
+      PendingEventType.SourceConversationTruncated,
+    );
     expect(deleteEvent!.target).toHaveProperty("source_uuid", "source1");
 
     const remainingSourceEvent = events.find(
@@ -1752,13 +1754,13 @@ describe("Datastore Method Tests", () => {
       // Delete conversation (not the whole source)
       db.addPendingSourceEvent(
         "source1",
-        PendingEventType.SourceConversationDeleted,
+        PendingEventType.SourceConversationTruncated,
       );
 
       // Events purged except the delete event itself
       const events = db.getPendingEvents();
       expect(events.length).toBe(1);
-      expect(events[0].type).toBe(PendingEventType.SourceConversationDeleted);
+      expect(events[0].type).toBe(PendingEventType.SourceConversationTruncated);
 
       // All items marked ScheduledDeletion
       for (let i = 1; i <= 30; i++) {

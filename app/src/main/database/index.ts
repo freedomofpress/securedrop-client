@@ -391,7 +391,7 @@ export class DB {
       DELETE FROM pending_events WHERE item_uuid = @item_uuid`);
     this.selectSourcesScheduledForDeletion = this.db.prepare(`
       SELECT DISTINCT source_uuid FROM pending_events
-      WHERE type IN ('${PendingEventType.SourceDeleted}', '${PendingEventType.SourceConversationDeleted}')
+      WHERE type IN ('${PendingEventType.SourceDeleted}', '${PendingEventType.SourceConversationTruncated}')
     `);
     this.selectItemsScheduledForDeletion = this.db.prepare(`
       SELECT uuid FROM items WHERE fetch_status = ${FetchStatus.ScheduledDeletion}
@@ -1059,7 +1059,7 @@ export class DB {
 
       if (
         type === PendingEventType.SourceDeleted ||
-        type === PendingEventType.SourceConversationDeleted
+        type === PendingEventType.SourceConversationTruncated
       ) {
         this.purgePendingEventsForSource(sourceUuid);
         this.markSourceItemsScheduledDeletion(sourceUuid);
