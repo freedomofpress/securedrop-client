@@ -1264,7 +1264,8 @@ describe("TaskQueue - Two-Phase Download and Decryption", () => {
       // Simulate the proxy rejecting due to abort
       rejectProxy!(new Error("AbortError: The operation was aborted"));
 
-      await expect(processPromise).rejects.toThrow("aborted");
+      // Abort is treated as a graceful cancellation, not an error
+      await expect(processPromise).resolves.toBeUndefined();
     });
 
     it("should not abort downloads for unrelated sources", async () => {
@@ -1322,7 +1323,6 @@ describe("TaskQueue - Two-Phase Download and Decryption", () => {
         sha256sum: etagFor(encryptedBuffer),
       });
 
-      const encryptedBuffer = Buffer.from("encrypted");
       vi.spyOn(BufferedWriter.prototype, "getBuffer").mockReturnValue(
         encryptedBuffer,
       );
@@ -2076,8 +2076,9 @@ describe("TaskQueue - Two-Phase Download and Decryption", () => {
         reject(new Error("AbortError: The operation was aborted"));
       }
 
-      await expect(p1).rejects.toThrow("aborted");
-      await expect(p2).rejects.toThrow("aborted");
+      // Abort is treated as a graceful cancellation, not an error
+      await expect(p1).resolves.toBeUndefined();
+      await expect(p2).resolves.toBeUndefined();
     });
   });
 });
