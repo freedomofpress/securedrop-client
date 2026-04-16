@@ -263,7 +263,7 @@ export class DB {
     this.selectFileItemsProcessable = this.db.prepare(
       `SELECT uuid FROM items
       WHERE kind = 'file'
-        AND fetch_status in (${FetchStatus.DownloadInProgress}, ${FetchStatus.DecryptionInProgress}, ${FetchStatus.FailedDownloadRetryable}, ${FetchStatus.FailedDownloadRetryable})
+        AND fetch_status in (${FetchStatus.Initial}, ${FetchStatus.DownloadInProgress}, ${FetchStatus.DecryptionInProgress}, ${FetchStatus.FailedDownloadRetryable}, ${FetchStatus.FailedDecryptionRetryable})
       ORDER BY interaction_count ASC, uuid ASC
       LIMIT @limit`,
     );

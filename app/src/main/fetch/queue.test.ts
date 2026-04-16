@@ -1064,6 +1064,121 @@ describe("TaskQueue - Two-Phase Download and Decryption", () => {
     });
   });
 
+  describe("Queue Refill", () => {
+    it("should refill queues after a message task finishes", () => {
+      const db = createMockDB();
+      db.getItemsToProcess = vi.fn(() => []);
+      db.getItem = vi.fn(() => null);
+
+      const queue = new TaskQueue(db);
+      queue.authToken = "test-token";
+
+      // Emit task_finish on the message queue
+      queue.messageQueue.emit("task_finish", "item1", {});
+
+      // refillQueues should have called queueFetches → getItemsToProcess
+      expect(db.getItemsToProcess).toHaveBeenCalledWith({
+        messageLimit: 25,
+        fileLimit: 2,
+      });
+    });
+
+    it("should refill queues after a file task finishes", () => {
+      const db = createMockDB();
+      db.getItemsToProcess = vi.fn(() => []);
+      db.getItem = vi.fn(() => null);
+
+      const queue = new TaskQueue(db);
+      queue.authToken = "test-token";
+
+      queue.fileQueue.emit("task_finish", "file1", {});
+
+      expect(db.getItemsToProcess).toHaveBeenCalledWith({
+        messageLimit: 25,
+        fileLimit: 2,
+      });
+    });
+
+    it("should refill queues after a task terminally fails", () => {
+      const db = createMockDB();
+      db.getItemsToProcess = vi.fn(() => []);
+      db.getItem = vi.fn(() => null);
+
+      const queue = new TaskQueue(db);
+      queue.authToken = "test-token";
+
+      queue.messageQueue.emit("task_failed", "item1", new Error("boom"));
+
+      // Refill triggered after terminal failure
+      expect(db.getItemsToProcess).toHaveBeenCalledWith({
+        messageLimit: 25,
+        fileLimit: 2,
+      });
+    });
+
+    it("should not refill if no auth token is set", () => {
+      const db = createMockDB();
+      db.getItemsToProcess = vi.fn(() => []);
+
+      const queue = new TaskQueue(db);
+      // authToken is undefined
+
+      queue.messageQueue.emit("task_finish", "item1", {});
+
+      expect(db.getItemsToProcess).not.toHaveBeenCalled();
+    });
+
+    it("should enqueue new items returned by refill", () => {
+      const db = createMockDB();
+      // First call returns nothing (initial state), second returns new items
+      db.getItemsToProcess = vi
+        .fn()
+        .mockReturnValueOnce(["msg2", "msg3"])
+        .mockReturnValueOnce([]);
+      db.getItem = vi.fn((id) =>
+        mockItem(
+          { kind: "message", source: "source1", uuid: id } as ItemMetadata,
+          FetchStatus.Initial,
+        ),
+      );
+
+      const queue = new TaskQueue(db);
+      queue.authToken = "test-token";
+      vi.spyOn(queue.messageQueue, "push");
+
+      // Simulate a task finishing, which triggers refill
+      queue.messageQueue.emit("task_finish", "msg1", {});
+
+      // Refill should have pushed the newly returned items
+      expect(queue.messageQueue.push).toHaveBeenCalledTimes(2);
+      expect(queue.messageQueue.push).toHaveBeenCalledWith(
+        { id: "msg2" },
+        expect.any(Function),
+      );
+      expect(queue.messageQueue.push).toHaveBeenCalledWith(
+        { id: "msg3" },
+        expect.any(Function),
+      );
+    });
+
+    it("should stop refilling when database returns no more items", () => {
+      const db = createMockDB();
+      db.getItemsToProcess = vi.fn(() => []);
+      db.getItem = vi.fn(() => null);
+
+      const queue = new TaskQueue(db);
+      queue.authToken = "test-token";
+      vi.spyOn(queue.messageQueue, "push");
+      vi.spyOn(queue.fileQueue, "push");
+
+      queue.fileQueue.emit("task_finish", "file1", {});
+
+      // DB returned empty, so no items should be pushed
+      expect(queue.messageQueue.push).not.toHaveBeenCalled();
+      expect(queue.fileQueue.push).not.toHaveBeenCalled();
+    });
+  });
+
   describe("Download Retry and Cancel Scenarios", () => {
     it("should successfully retry a failed download when status is reset to DownloadInProgress with progress=0", async () => {
       const db = createMockDB();
