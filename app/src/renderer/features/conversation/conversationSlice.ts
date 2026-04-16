@@ -1,10 +1,15 @@
-import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
+import {
+  createSlice,
+  createAsyncThunk,
+  createSelector,
+} from "@reduxjs/toolkit";
 import { Item, type SourceWithItems } from "../../../types";
 import type { RootState } from "../../store";
 import { fetchSources } from "../sources/sourcesSlice";
 
 export interface ConversationState {
-  conversation: SourceWithItems | null;
+  sourceMetadata: Omit<SourceWithItems, "items"> | null;
+  itemsById: Record<string, Item>;
   loading: boolean;
   error: string | null;
   lastFetchTime: number | null;
@@ -13,7 +18,8 @@ export interface ConversationState {
 }
 
 const initialState: ConversationState = {
-  conversation: null,
+  sourceMetadata: null,
+  itemsById: {},
   loading: false,
   error: null,
   lastFetchTime: null,
@@ -54,12 +60,12 @@ export const fetchOlderConversationItems = createAsyncThunk(
   "conversation/fetchOlderConversationItems",
   async (sourceUuid: string, { getState, dispatch }) => {
     const state = getState() as RootState;
-    const conversation = state.conversation.conversation;
-    if (!conversation || conversation.uuid !== sourceUuid) {
+    const { sourceMetadata, itemsById } = state.conversation;
+    if (!sourceMetadata || sourceMetadata.uuid !== sourceUuid) {
       return null;
     }
 
-    const oldestItem = conversation.items[0];
+    const oldestItem = Object.values(itemsById)[0];
     const beforeInteractionCount = oldestItem?.data.interaction_count;
 
     const sourceWithItems = await window.electronAPI.getSourceWithItems(
@@ -116,20 +122,16 @@ const conversationSlice = createSlice({
       state.error = null;
     },
     clearConversation: (state) => {
-      state.conversation = null;
+      state.sourceMetadata = null;
+      state.itemsById = {};
       state.lastFetchTime = null;
       state.hasMoreHistoricalItems = false;
       state.olderItemsLoading = false;
     },
     updateItem: (state, action) => {
       const updatedItem: Item = action.payload;
-      if (state.conversation) {
-        state.conversation.items = state.conversation.items.map((item, _) => {
-          if (item.uuid === updatedItem.uuid) {
-            return updatedItem;
-          }
-          return item;
-        });
+      if (state.itemsById[updatedItem.uuid]) {
+        state.itemsById[updatedItem.uuid] = updatedItem;
       }
     },
   },
@@ -143,7 +145,17 @@ const conversationSlice = createSlice({
         state.loading = false;
         state.error = null;
         const { sourceWithItems } = action.payload;
-        state.conversation = sourceWithItems;
+        const { uuid, data, hasMoreHistoricalItems, lastSeenInteractionCount } =
+          sourceWithItems;
+        state.sourceMetadata = {
+          uuid,
+          data,
+          hasMoreHistoricalItems,
+          lastSeenInteractionCount,
+        };
+        state.itemsById = Object.fromEntries(
+          sourceWithItems.items.map((i) => [i.uuid, i]),
+        );
         state.hasMoreHistoricalItems =
           sourceWithItems.hasMoreHistoricalItems ?? false;
         state.lastFetchTime = Date.now();
@@ -157,29 +169,26 @@ const conversationSlice = createSlice({
       })
       .addCase(fetchOlderConversationItems.fulfilled, (state, action) => {
         state.olderItemsLoading = false;
-        if (!action.payload || !state.conversation) {
+        if (!action.payload || !state.sourceMetadata) {
           return;
         }
         const { items, hasMoreHistoricalItems } = action.payload;
-        const existingUuids = new Set(
-          state.conversation.items.map((i) => i.uuid),
+        // Prepend older items by inserting them before existing entries.
+        // Object insertion order is preserved, so Object.values() returns
+        // older items first — matching the original array prepend behavior.
+        const olderById = Object.fromEntries(
+          items.filter((i) => !state.itemsById[i.uuid]).map((i) => [i.uuid, i]),
         );
-        const olderItems = items.filter((i) => !existingUuids.has(i.uuid));
-        state.conversation.items = [...olderItems, ...state.conversation.items];
+        state.itemsById = { ...olderById, ...state.itemsById };
         state.hasMoreHistoricalItems = hasMoreHistoricalItems ?? false;
       })
       .addCase(fetchOlderConversationItems.rejected, (state) => {
         state.olderItemsLoading = false;
       })
       .addCase(updateItemFetchStatus.fulfilled, (state, action) => {
-        const { item: updatedItem } = action.payload;
-        if (state.conversation) {
-          state.conversation.items = state.conversation.items.map((item, _) => {
-            if (updatedItem && item.uuid === updatedItem.uuid) {
-              return updatedItem;
-            }
-            return item;
-          });
+        const updatedItem = action.payload.item;
+        if (updatedItem && state.itemsById[updatedItem.uuid]) {
+          state.itemsById[updatedItem.uuid] = updatedItem;
         }
         state.lastFetchTime = Date.now();
       });
@@ -189,13 +198,36 @@ const conversationSlice = createSlice({
 export const { clearError, clearConversation, updateItem } =
   conversationSlice.actions;
 
-// Selectors
-export const selectConversation = (state: RootState, sourceUuid: string) =>
-  state.conversation.conversation?.uuid === sourceUuid
-    ? state.conversation.conversation
-    : null;
-export const selectLastConversation = (state: RootState) =>
-  state.conversation.conversation;
+// Internal selectors for createSelector inputs
+const selectSourceMetadata = (state: RootState) =>
+  state.conversation.sourceMetadata;
+const selectItemsById = (state: RootState) => state.conversation.itemsById;
+
+// Reconstructs SourceWithItems from normalized state; memoized so components
+// only re-render when sourceMetadata or itemsById actually changes.
+export const selectConversation = createSelector(
+  selectSourceMetadata,
+  selectItemsById,
+  (_state: RootState, sourceUuid: string) => sourceUuid,
+  (metadata, itemsById, sourceUuid): SourceWithItems | null => {
+    if (!metadata || metadata.uuid !== sourceUuid) {
+      return null;
+    }
+    return { ...metadata, items: Object.values(itemsById) };
+  },
+);
+
+export const selectLastConversation = createSelector(
+  selectSourceMetadata,
+  selectItemsById,
+  (metadata, itemsById): SourceWithItems | null => {
+    if (!metadata) {
+      return null;
+    }
+    return { ...metadata, items: Object.values(itemsById) };
+  },
+);
+
 export const selectConversationLoading = (state: RootState) =>
   state.conversation.loading;
 export const selectHasMoreHistoricalItems = (state: RootState) =>

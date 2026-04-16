@@ -21,12 +21,16 @@ export class Datastore extends DB {
     this.storage = storage;
   }
 
-  override deleteItems(items: string[]): Item[] {
-    const deletedItems = super.deleteItems(items);
-    for (const item of deletedItems) {
-      this.storage.deleteItemFs(item);
+  override deleteItems(items: string[]) {
+    const DELETE_BATCH_SIZE = 500;
+    for (let i = 0; i < items.length; i += DELETE_BATCH_SIZE) {
+      const batch = items.slice(i, i + DELETE_BATCH_SIZE);
+      const deletedItems = super.getItems(batch);
+      super.deleteItems(batch);
+      for (const item of deletedItems) {
+        this.storage.deleteItemFs(item);
+      }
     }
-    return deletedItems;
   }
 
   override deleteSources(sources: string[]): void {
