@@ -170,6 +170,10 @@ export class DB {
   private deletePendingEvent: Statement<{ snowflake_id: string }, void>;
   private selectPendingEvents: Statement<[{ limit: number }], PendingEventRow>;
   private deletePendingEventsBySource: Statement<{ source_uuid: string }, void>;
+  private deletePendingEventsBySourceScope: Statement<
+    { source_uuid: string },
+    void
+  >;
   private deletePendingEventsByItem: Statement<{ item_uuid: string }, void>;
 
   protected constructor(crypto: Crypto, dbDir?: string) {
@@ -361,6 +365,12 @@ export class DB {
     `);
     this.deletePendingEventsBySource = this.db.prepare(`
       DELETE FROM pending_events WHERE source_uuid = @source_uuid`);
+    this.deletePendingEventsBySourceScope = this.db.prepare(`
+      DELETE FROM pending_events
+      WHERE source_uuid = @source_uuid
+         OR item_uuid IN (
+           SELECT uuid FROM items WHERE source_uuid = @source_uuid
+         )`);
     this.deletePendingEventsByItem = this.db.prepare(`
       DELETE FROM pending_events WHERE item_uuid = @item_uuid`);
   }
@@ -981,6 +991,12 @@ export class DB {
     });
   }
 
+  private purgePendingEventsForSource(sourceUuid: string) {
+    this.deletePendingEventsBySourceScope.run({
+      source_uuid: sourceUuid,
+    });
+  }
+
   addPendingSourceEvent(
     sourceUuid: string,
     type: PendingEventType,
@@ -995,6 +1011,7 @@ export class DB {
         type === PendingEventType.SourceDeleted ||
         type === PendingEventType.SourceConversationDeleted
       ) {
+        this.purgePendingEventsForSource(sourceUuid);
         this.markSourceItemsScheduledDeletion(sourceUuid);
       }
 
