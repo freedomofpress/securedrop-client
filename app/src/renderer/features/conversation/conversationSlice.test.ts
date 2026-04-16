@@ -128,7 +128,9 @@ describe("conversationSlice", () => {
     it("has correct initial state", () => {
       const state = (store.getState() as any).conversation;
       expect(state).toEqual({
-        conversation: null,
+        sourceMetadata: null,
+        itemsById: {},
+        itemIds: [],
         loading: false,
         error: null,
         lastFetchTime: null,
@@ -142,7 +144,9 @@ describe("conversationSlice", () => {
     it("clears the error state", () => {
       // First, set an error state
       const initialState: ConversationState = {
-        conversation: null,
+        sourceMetadata: null,
+        itemsById: {},
+        itemIds: [],
         loading: false,
         error: "Some error message",
         lastFetchTime: null,
@@ -154,7 +158,7 @@ describe("conversationSlice", () => {
       const newState = conversationSlice(initialState, action);
 
       expect(newState.error).toBeNull();
-      expect(newState.conversation).toBeNull();
+      expect(newState.sourceMetadata).toBeNull();
       expect(newState.loading).toBe(false);
       expect(newState.lastFetchTime).toBeNull();
     });
@@ -163,7 +167,14 @@ describe("conversationSlice", () => {
   describe("clearConversation action", () => {
     it("clears the current conversation", () => {
       const initialState: ConversationState = {
-        conversation: mockSourceWithItems,
+        sourceMetadata: {
+          uuid: mockSourceWithItems.uuid,
+          data: mockSourceWithItems.data,
+        },
+        itemsById: Object.fromEntries(
+          mockSourceWithItems.items.map((i) => [i.uuid, i]),
+        ),
+        itemIds: mockSourceWithItems.items.map((i) => i.uuid),
         loading: false,
         error: null,
         lastFetchTime: 123456789,
@@ -174,7 +185,8 @@ describe("conversationSlice", () => {
       const action = clearConversation();
       const newState = conversationSlice(initialState, action);
 
-      expect(newState.conversation).toBeNull();
+      expect(newState.sourceMetadata).toBeNull();
+      expect(newState.itemsById).toEqual({});
       expect(newState.lastFetchTime).toBeNull();
     });
   });
@@ -189,7 +201,13 @@ describe("conversationSlice", () => {
       expect(mockGetSourceWithItems).toHaveBeenCalledTimes(1);
 
       const state = (store.getState() as any).conversation;
-      expect(state.conversation).toEqual(mockSourceWithItems);
+      expect(selectConversation(store.getState() as any, "source-1")).toEqual({
+        uuid: mockSourceWithItems.uuid,
+        data: mockSourceWithItems.data,
+        hasMoreHistoricalItems: undefined,
+        lastSeenInteractionCount: undefined,
+      });
+      expect(state.itemIds).toEqual(mockSourceWithItems.items.map((i) => i.uuid));
       expect(state.loading).toBe(false);
       expect(state.error).toBeNull();
       expect(state.lastFetchTime).toBeGreaterThan(0);
@@ -204,7 +222,7 @@ describe("conversationSlice", () => {
       expect(mockGetSourceWithItems).toHaveBeenCalledTimes(1);
 
       const state = (store.getState() as any).conversation;
-      expect(state.conversation).toBeNull();
+      expect(state.sourceMetadata).toBeNull();
       expect(state.loading).toBe(false);
       expect(state.error).toBe(errorMessage);
     });
@@ -247,7 +265,7 @@ describe("conversationSlice", () => {
         drafts: {},
       },
       sources: {
-        sources: [],
+        sources: {},
         activeSourceUuid: null,
         loading: false,
         error: null,
@@ -259,7 +277,14 @@ describe("conversationSlice", () => {
         error: null,
       },
       conversation: {
-        conversation: mockSourceWithItems,
+        sourceMetadata: {
+          uuid: mockSourceWithItems.uuid,
+          data: mockSourceWithItems.data,
+        },
+        itemsById: Object.fromEntries(
+          mockSourceWithItems.items.map((i) => [i.uuid, i]),
+        ),
+        itemIds: mockSourceWithItems.items.map((i) => i.uuid),
         loading: false,
         error: "Test error",
         lastFetchTime: 123456789,
@@ -275,9 +300,10 @@ describe("conversationSlice", () => {
     };
 
     it("selectConversation returns conversation for matching UUID", () => {
-      expect(selectConversation(mockState, "source-1")).toEqual(
-        mockSourceWithItems,
-      );
+      expect(selectConversation(mockState, "source-1")).toEqual({
+        uuid: mockSourceWithItems.uuid,
+        data: mockSourceWithItems.data,
+      });
       expect(selectConversation(mockState, "source-2")).toBeNull();
       expect(selectConversation(mockState, "nonexistent")).toBeNull();
     });
@@ -322,7 +348,12 @@ describe("conversationSlice", () => {
 
       const state = (store.getState() as any).conversation;
       expect(state.error).toBeNull();
-      expect(state.conversation).toEqual(mockSourceWithItems);
+      expect(selectConversation(store.getState() as any, "source-1")).toEqual({
+        uuid: mockSourceWithItems.uuid,
+        data: mockSourceWithItems.data,
+        hasMoreHistoricalItems: undefined,
+        lastSeenInteractionCount: undefined,
+      });
     });
 
     it("updates lastFetchTime on successful operations", async () => {
@@ -362,7 +393,12 @@ describe("conversationSlice", () => {
 
       const state = (store.getState() as any).conversation;
       // Only the last conversation should be stored
-      expect(state.conversation).toEqual(mockSourceWithItems2);
+      expect(selectConversation(store.getState() as any, "source-2")).toEqual({
+        uuid: mockSourceWithItems2.uuid,
+        data: mockSourceWithItems2.data,
+        hasMoreHistoricalItems: undefined,
+        lastSeenInteractionCount: undefined,
+      });
       expect(state.loading).toBe(false);
     });
   });

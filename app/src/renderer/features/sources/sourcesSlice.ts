@@ -1,4 +1,4 @@
-import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
+import { createSlice, createAsyncThunk, createSelector } from "@reduxjs/toolkit";
 import type { RootState } from "../../store";
 import type { Source as SourceType } from "../../../types";
 
@@ -7,7 +7,8 @@ export interface ConversationIndicatorState {
 }
 
 export interface SourcesState {
-  sources: SourceType[];
+  sources: Record<string, SourceType>;
+  sourceIds: string[];
   activeSourceUuid: string | null;
   loading: boolean;
   error: string | null;
@@ -15,7 +16,8 @@ export interface SourcesState {
 }
 
 const initialState: SourcesState = {
-  sources: [],
+  sources: {},
+  sourceIds: [],
   activeSourceUuid: null,
   loading: false,
   error: null,
@@ -46,12 +48,7 @@ export const sourcesSlice = createSlice({
     },
     updateSource: (state, action) => {
       const updatedSource: SourceType = action.payload;
-      state.sources = state.sources.map((source, _) => {
-        if (source.uuid === updatedSource.uuid) {
-          return updatedSource;
-        }
-        return source;
-      });
+      state.sources[updatedSource.uuid] = updatedSource;
     },
     initializeConversationIndicator: (state, action) => {
       const { sourceUuid, lastSeenInteractionCount } = action.payload;
@@ -77,10 +74,13 @@ export const sourcesSlice = createSlice({
       })
       .addCase(fetchSources.fulfilled, (state, action) => {
         state.loading = false;
-        state.sources = action.payload;
+        state.sources = Object.fromEntries(
+          action.payload.map((s) => [s.uuid, s]),
+        );
+        state.sourceIds = action.payload.map((s) => s.uuid);
 
         // Update active source UUID in case of deletion
-        if (!state.sources.find((s) => s.uuid === state.activeSourceUuid)) {
+        if (state.activeSourceUuid && !state.sources[state.activeSourceUuid]) {
           state.activeSourceUuid = null;
         }
       })
@@ -99,7 +99,17 @@ export const {
   initializeConversationIndicator,
   markConversationLastSeen,
 } = sourcesSlice.actions;
-export const selectSources = (state: RootState) => state.sources.sources;
+// selectSourceIds is stable across per-source data updates (updateSource
+// only modifies sources[uuid], not sourceIds). Consumers that only need the
+// ordered list of IDs — e.g. to render list structure while each row selects
+// its own source — should prefer selectSourceIds over selectSources.
+export const selectSourceIds = (state: RootState) => state.sources.sourceIds;
+const selectSourcesById = (state: RootState) => state.sources.sources;
+export const selectSources = createSelector(
+  selectSourceIds,
+  selectSourcesById,
+  (ids, byId) => ids.map((id) => byId[id]).filter(Boolean) as SourceType[],
+);
 export const selectActiveSourceUuid = (state: RootState) =>
   state.sources.activeSourceUuid;
 export const selectSourcesLoading = (state: RootState) => state.sources.loading;

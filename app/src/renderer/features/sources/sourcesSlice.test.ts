@@ -102,7 +102,8 @@ describe("sourcesSlice", () => {
     it("has correct initial state", () => {
       const state = (store.getState() as any).sources;
       expect(state).toEqual({
-        sources: [],
+        sources: {},
+        sourceIds: [],
         activeSourceUuid: null,
         loading: false,
         error: null,
@@ -115,7 +116,8 @@ describe("sourcesSlice", () => {
     it("clears the error state", () => {
       // First, set an error state
       const initialState: SourcesState = {
-        sources: [],
+        sources: {},
+        sourceIds: [],
         activeSourceUuid: null,
         loading: false,
         error: "Some error message",
@@ -126,7 +128,7 @@ describe("sourcesSlice", () => {
       const newState = sourcesSlice(initialState, action);
 
       expect(newState.error).toBeNull();
-      expect(newState.sources).toEqual([]);
+      expect(newState.sources).toEqual({});
       expect(newState.activeSourceUuid).toBeNull();
       expect(newState.loading).toBe(false);
     });
@@ -135,7 +137,8 @@ describe("sourcesSlice", () => {
   describe("setActiveSource action", () => {
     it("sets the active source UUID", () => {
       const initialState: SourcesState = {
-        sources: [],
+        sources: {},
+        sourceIds: [],
         activeSourceUuid: null,
         loading: false,
         error: null,
@@ -152,7 +155,8 @@ describe("sourcesSlice", () => {
   describe("clearActiveSource action", () => {
     it("clears the active source UUID", () => {
       const initialState: SourcesState = {
-        sources: [],
+        sources: {},
+        sourceIds: [],
         activeSourceUuid: "source-1",
         loading: false,
         error: null,
@@ -169,7 +173,8 @@ describe("sourcesSlice", () => {
   describe("conversation indicator actions", () => {
     it("initializes indicator once per source", () => {
       const initialState: SourcesState = {
-        sources: [],
+        sources: {},
+        sourceIds: [],
         activeSourceUuid: null,
         loading: false,
         error: null,
@@ -201,7 +206,8 @@ describe("sourcesSlice", () => {
 
     it("marks conversation last seen with latest count", () => {
       const initialState: SourcesState = {
-        sources: [],
+        sources: {},
+        sourceIds: [],
         activeSourceUuid: null,
         loading: false,
         error: null,
@@ -241,7 +247,9 @@ describe("sourcesSlice", () => {
       expect(mockGetSources).toHaveBeenCalledTimes(1);
 
       const state = (store.getState() as any).sources;
-      expect(state.sources).toEqual(mockSources);
+      expect(state.sources).toEqual(
+        Object.fromEntries(mockSources.map((s) => [s.uuid, s])),
+      );
       expect(state.loading).toBe(false);
       expect(state.error).toBeNull();
     });
@@ -255,7 +263,7 @@ describe("sourcesSlice", () => {
       expect(mockGetSources).toHaveBeenCalledTimes(1);
 
       const state = (store.getState() as any).sources;
-      expect(state.sources).toEqual([]);
+      expect(state.sources).toEqual({});
       expect(state.loading).toBe(false);
       expect(state.error).toBe(errorMessage);
     });
@@ -291,7 +299,9 @@ describe("sourcesSlice", () => {
     };
 
     const mockConversationState: ConversationState = {
-      conversation: null,
+      sourceMetadata: null,
+      itemsById: {},
+      itemIds: [],
       loading: false,
       error: null,
       lastFetchTime: null,
@@ -303,7 +313,8 @@ describe("sourcesSlice", () => {
       const state = {
         session: mockSessionState,
         sources: {
-          sources: mockSources,
+          sources: Object.fromEntries(mockSources.map((s) => [s.uuid, s])),
+          sourceIds: mockSources.map((s) => s.uuid),
           activeSourceUuid: null,
           loading: false,
           error: null,
@@ -331,7 +342,7 @@ describe("sourcesSlice", () => {
       const state = {
         session: mockSessionState,
         sources: {
-          sources: mockSources,
+          sources: Object.fromEntries(mockSources.map((s) => [s.uuid, s])),
           activeSourceUuid: "source-1",
           loading: false,
           error: null,
@@ -359,7 +370,7 @@ describe("sourcesSlice", () => {
       const state = {
         session: mockSessionState,
         sources: {
-          sources: [],
+          sources: {},
           activeSourceUuid: null,
           loading: true,
           error: null,
@@ -387,7 +398,7 @@ describe("sourcesSlice", () => {
       const state = {
         session: mockSessionState,
         sources: {
-          sources: [],
+          sources: {},
           activeSourceUuid: null,
           loading: false,
           error: null,
@@ -430,7 +441,9 @@ describe("sourcesSlice", () => {
 
       // Final state should have sources
       const state = (store.getState() as any).sources;
-      expect(state.sources).toEqual(mockSources);
+      expect(state.sources).toEqual(
+        Object.fromEntries(mockSources.map((s) => [s.uuid, s])),
+      );
       expect(state.loading).toBe(false);
     });
 
@@ -444,7 +457,9 @@ describe("sourcesSlice", () => {
       expect(mockGetSources).toHaveBeenCalledTimes(2);
 
       const state = (store.getState() as any).sources;
-      expect(state.sources).toEqual(mockSources);
+      expect(state.sources).toEqual(
+        Object.fromEntries(mockSources.map((s) => [s.uuid, s])),
+      );
       expect(state.loading).toBe(false);
       expect(state.error).toBeNull();
     });
@@ -458,7 +473,7 @@ describe("sourcesSlice", () => {
 
       const state = (store.getState() as any).sources;
       expect(state.error).toBe("Network timeout");
-      expect(state.sources).toEqual([]);
+      expect(state.sources).toEqual({});
       expect(state.loading).toBe(false);
 
       expect(mockGetSources).toHaveBeenCalledTimes(1);
@@ -500,7 +515,9 @@ describe("sourcesSlice", () => {
 
       const state = (store.getState() as any).sources;
       expect(state.error).toBeNull();
-      expect(state.sources).toEqual(mockSources);
+      expect(state.sources).toEqual(
+        Object.fromEntries(mockSources.map((s) => [s.uuid, s])),
+      );
     });
   });
 });

@@ -1,4 +1,4 @@
-import type { SourceWithItems } from "../../../../types";
+import type { Item, SourceWithItems } from "../../../../types";
 import { toTitleCase } from "../../../utils";
 import Item from "./Conversation/Item";
 import NewMessagesDivider from "./Conversation/NewMessagesDivider";
@@ -7,6 +7,7 @@ import { Form, Input, Button } from "antd";
 import { useTranslation } from "react-i18next";
 import { memo, useMemo, useCallback, useState, useEffect } from "react";
 import { useAppDispatch, useAppSelector, useDebounce } from "../../../hooks";
+import { useStore } from "react-redux";
 import { useShortcut } from "../../../shortcuts";
 import { fetchSources } from "../../../features/sources/sourcesSlice";
 import {
@@ -19,23 +20,26 @@ import {
   fetchOlderConversationItems,
   selectHasMoreHistoricalItems,
   selectOlderItemsLoading,
+  selectItemIds,
+  selectItemsById,
   updateItemFetchStatus,
 } from "../../../features/conversation/conversationSlice";
 import { syncMetadata } from "../../../features/sync/syncSlice";
 import useConversationScroll from "./Conversation/useConversationScroll";
 import "./Conversation.css";
 import { FetchStatus } from "../../../../types";
+import type { RootState } from "../../../store";
 import { List } from "react-window";
 import type { RowComponentProps } from "react-window";
 
 const MAX_REPLY_LENGTH = 5000;
 
 interface ConversationProps {
-  sourceWithItems: SourceWithItems | null;
+  sourceWithItems: Omit<SourceWithItems, "items"> | null;
 }
 
 type VirtualRow =
-  | { kind: "item"; item: SourceWithItems["items"][number] }
+  | { kind: "item"; itemId: string }
   | { kind: "divider" };
 
 interface ConversationRowProps {
@@ -43,8 +47,8 @@ interface ConversationRowProps {
   designation: string;
 }
 
-// memo is ineffective here because shared rowProps change reference on every selection
-// and the child <Item> is already memo'd
+// Each row selects its own item from the store so only the specific row
+// re-renders on per-item updates (download progress, IPC ticks).
 // nosemgrep: react-component-missing-memo
 function ConversationRow({
   index,
@@ -53,13 +57,18 @@ function ConversationRow({
   designation,
 }: RowComponentProps<ConversationRowProps>) {
   const row = virtualRows[index];
+  const itemId = row.kind === "item" ? row.itemId : null;
+  const item = useAppSelector((state: RootState) =>
+    itemId ? state.conversation.itemsById[itemId] : undefined,
+  );
+
   return (
     <div style={style} className="px-4">
       {row.kind === "divider" ? (
         <NewMessagesDivider />
-      ) : (
-        <Item item={row.item} designation={designation} />
-      )}
+      ) : item ? (
+        <Item item={item} designation={designation} />
+      ) : null}
     </div>
   );
 }
@@ -69,6 +78,7 @@ const Conversation = memo(function Conversation({
 }: ConversationProps) {
   const { t } = useTranslation("MainContent");
   const dispatch = useAppDispatch();
+  const store = useStore<RootState>();
   const session = useAppSelector((state) => state.session);
   const hasMoreHistoricalItems = useAppSelector(selectHasMoreHistoricalItems);
   const olderItemsLoading = useAppSelector(selectOlderItemsLoading);
@@ -77,6 +87,21 @@ const Conversation = memo(function Conversation({
   const [form] = Form.useForm();
   const [messageValue, setMessageValue] = useState(savedDraft);
   const debouncedMessage = useDebounce(messageValue, 300);
+
+  // Stable ordered item IDs — only changes when items are added or removed,
+  // not on per-item updates like download progress ticks.
+  const itemIds = useAppSelector(selectItemIds);
+
+  // Snapshot of item data for the current itemIds; recomputed only when
+  // itemIds changes (not on every itemsById tick).
+  const items = useMemo((): Item[] => {
+    const { itemsById } = store.getState().conversation;
+    return itemIds
+      .map((id) => itemsById[id])
+      .filter((item): item is Item => item !== undefined);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [itemIds, store]);
+
   const {
     acknowledgeNewMessages,
     dividerIndex,
@@ -85,12 +110,12 @@ const Conversation = memo(function Conversation({
     hasItems,
     heightsReady,
     listRef,
-    newItems,
-    oldItems,
+    newItemIds,
+    oldItemIds,
     scrollElement,
     showNewMessagesButton,
     scrollToBottom,
-  } = useConversationScroll(sourceWithItems);
+  } = useConversationScroll(sourceWithItems, items);
 
   // Restore draft when switching sources (including initial mount)
   useEffect(() => {
@@ -139,11 +164,16 @@ const Conversation = memo(function Conversation({
       setMessageValue("");
       dispatch(clearDraft(sourceWithItems.uuid));
 
+      // Read current item data at submit time rather than capturing stale closure.
+      const { itemIds: currentIds, itemsById: currentById } =
+        store.getState().conversation;
+      const lastId = currentIds.at(-1);
+      const lastItem = lastId ? currentById[lastId] : undefined;
+
       // Calculate the likely interactionCount this reply will be assigned; it
       // may not be correct (e.g. if the conversation was deleted) but it'll display
       // in the correct order while pending and then get adjusted on the server.
-      const nextInteractionCount =
-        (sourceWithItems.items.at(-1)?.data.interaction_count || 0) + 1;
+      const nextInteractionCount = (lastItem?.data.interaction_count || 0) + 1;
 
       try {
         await window.electronAPI.addPendingReplySentEvent(
@@ -178,6 +208,7 @@ const Conversation = memo(function Conversation({
       form,
       session.authData,
       sourceWithItems,
+      store,
     ],
   );
 
@@ -191,9 +222,13 @@ const Conversation = memo(function Conversation({
     }
 
     const token = session.authData.token;
-    sourceWithItems.items.forEach((item) => {
+    // Read current item data at call time.
+    const { itemIds: currentIds, itemsById: currentById } =
+      store.getState().conversation;
+    currentIds.forEach((id) => {
+      const item = currentById[id];
       if (
-        item.data.kind === "file" &&
+        item?.data.kind === "file" &&
         (item.fetch_status === FetchStatus.Initial ||
           item.fetch_status === FetchStatus.Cancelled)
       ) {
@@ -207,7 +242,7 @@ const Conversation = memo(function Conversation({
         );
       }
     });
-  }, [sourceWithItems, session.authData, dispatch]);
+  }, [sourceWithItems, session.authData, dispatch, store]);
 
   // Keyboard shortcut: Ctrl+D downloads all files
   useShortcut("downloadAll", () => downloadAllFiles(), undefined, [
@@ -215,13 +250,13 @@ const Conversation = memo(function Conversation({
   ]);
 
   const virtualRows = useMemo((): VirtualRow[] => {
-    const rows: VirtualRow[] = oldItems.map((item) => ({ kind: "item", item }));
+    const rows: VirtualRow[] = oldItemIds.map((id) => ({ kind: "item", itemId: id }));
     if (dividerIndex !== null) {
       rows.push({ kind: "divider" });
     }
-    newItems.forEach((item) => rows.push({ kind: "item", item }));
+    newItemIds.forEach((id) => rows.push({ kind: "item", itemId: id }));
     return rows;
-  }, [oldItems, newItems, dividerIndex]);
+  }, [oldItemIds, newItemIds, dividerIndex]);
 
   // Load older messages when the user scrolls near the top
   useEffect(() => {

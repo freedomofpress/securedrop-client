@@ -184,8 +184,10 @@ export class DB {
   >;
   private deletePendingEvent: Statement<{ snowflake_id: string }, void>;
   private selectPendingEvents: Statement<[{ limit: number }], PendingEventRow>;
-  private deletePendingEventsBySourceScope: Statement<
-    { source_uuid: string },
+  private deletePendingEventsBySourceScope: Statement<{ source_uuid: string }>;
+  private deletePendingEventsBySource: Statement<{ source_uuid: string }, void>;
+  private deletePendingEventsByItemMany: Statement<
+    { item_uuids_json: string },
     void
   >;
 
@@ -391,6 +393,9 @@ export class DB {
     this.deletePendingEvent = this.db.prepare(
       `DELETE FROM pending_events WHERE snowflake_id = @snowflake_id`,
     );
+    this.deletePendingEventsByItemMany = this.db.prepare(
+      "DELETE FROM pending_events WHERE item_uuid IN (SELECT value FROM json_each(@item_uuids_json))",
+    );
     this.selectPendingEvents = this.db.prepare(`
       SELECT snowflake_id, source_uuid, item_uuid, type, data FROM pending_events ORDER BY snowflake_id ASC LIMIT @limit
     `);
@@ -400,6 +405,8 @@ export class DB {
          OR item_uuid IN (
            SELECT uuid FROM items WHERE source_uuid = @source_uuid
          )`);
+    this.deletePendingEventsBySource = this.db.prepare(`
+      DELETE FROM pending_events WHERE source_uuid = @source_uuid`);
   }
 
   // Detect runtime environment
@@ -560,32 +567,24 @@ export class DB {
     if (items.length === 0) {
       return [];
     }
+
     return this.db!.transaction((items: string[]) => {
       const DELETE_BATCH_SIZE = 500;
-      const deletedItems: Item[] = [];
       for (let i = 0; i < items.length; i += DELETE_BATCH_SIZE) {
         const batch = items.slice(i, i + DELETE_BATCH_SIZE);
-        const uuids_json = JSON.stringify(batch);
-        // Batch fetch before delete so callers can act on deleted items
-        const rows = this.selectItemMany.all({ uuids_json }) as ItemRow[];
-        rows.forEach((row) => {
-          deletedItems.push({
-            uuid: row.uuid,
-            data: JSON.parse(row.data) as ItemMetadata,
-            plaintext: row.plaintext,
-            filename: row.filename,
-            fetch_status: row.fetch_status as FetchStatus,
-            fetch_progress: row.fetch_progress,
-            decrypted_size: row.decrypted_size,
-          });
+        // Search index updates are per-item (in-memory, unavoidable)
+        for (const id of batch) {
+          this.searchIndex.removeItem(id);
+        }
+
+        // Batch delete pending events and items
+        this.deleteItemMany.run({ uuids_json: JSON.stringify(batch) });
+        this.deletePendingEventsByItemMany.run({
+          item_uuids_json: JSON.stringify(batch),
         });
-        // Delete from search index
-        this.searchIndex.removeItemMany(uuids_json);
-        // Delete the items. This cascades to delete pending_events as well.
-        this.deleteItemMany.run({ uuids_json });
       }
+
       this.updateVersion();
-      return deletedItems;
     })(items);
   }
 
@@ -938,6 +937,25 @@ export class DB {
       fetch_progress: row.fetch_progress,
       decrypted_size: row.decrypted_size,
     };
+  }
+
+  getItems(itemUuids: string[]): Item[] {
+    const rows = this.selectItemMany.all({
+      uuids_json: JSON.stringify(itemUuids),
+    });
+    return rows
+      ? rows.map((row) => {
+          return {
+            uuid: row.uuid,
+            data: JSON.parse(row.data) as ItemMetadata,
+            plaintext: row.plaintext,
+            filename: row.filename,
+            fetch_status: row.fetch_status as FetchStatus,
+            fetch_progress: row.fetch_progress,
+            decrypted_size: row.decrypted_size,
+          };
+        })
+      : [];
   }
 
   completePlaintextItem(itemUuid: string, plaintext: string) {

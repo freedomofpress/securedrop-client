@@ -22,15 +22,16 @@ export class Datastore extends DB {
     this.storage = storage;
   }
 
-  async deleteItemsAsync(items: string[]): Promise<Item[]> {
-    const deletedItems = super.deleteItems(items);
-    // TODO: Consider routing FS deletions to the fetch worker so that FS I/O
-    // never runs on the main process event loop.
-    for (let i = 0; i < deletedItems.length; i += this.DELETE_BATCH_SIZE) {
-      const batch = deletedItems.slice(i, i + this.DELETE_BATCH_SIZE);
-      await Promise.all(batch.map((item) => this.storage.deleteItemFs(item)));
+  override deleteItems(items: string[]) {
+    const FETCH_BATCH_SIZE = 500;
+    for (let i = 0; i < items.length; i += FETCH_BATCH_SIZE) {
+      const batch = items.slice(i, i + FETCH_BATCH_SIZE);
+      const deletedItems = super.getItems(batch);
+      for (const item of deletedItems) {
+        this.storage.deleteItemFs(item);
+      }
     }
-    return deletedItems;
+    super.deleteItems(items);
   }
 
   async deleteSourcesAsync(sources: string[]): Promise<void> {

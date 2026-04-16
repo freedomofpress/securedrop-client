@@ -240,7 +240,7 @@ describe("Sources Component", () => {
         initialEntries: [initialRoute],
         preloadedState: {
           sources: {
-            sources,
+            sources: Object.fromEntries(sources.map((s) => [s.uuid, s])),
             activeSourceUuid: null,
             loading,
             error: null,

@@ -2,6 +2,7 @@ import { useParams } from "react-router";
 import { useEffect, useMemo } from "react";
 
 import { useAppDispatch, useAppSelector } from "../../hooks";
+import type { SourceWithItems } from "../../../types";
 import {
   fetchConversation,
   selectConversation,

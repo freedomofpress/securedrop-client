@@ -8,7 +8,7 @@ import SourceMenu from "./Header/SourceMenu";
 
 interface HeaderProps {
   sourceUuid?: string;
-  sourceWithItems: SourceWithItems | null;
+  sourceWithItems: Omit<SourceWithItems, "items"> | null;
 }
 
 const Header = memo(function Header({

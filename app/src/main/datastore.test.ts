@@ -1441,6 +1441,8 @@ describe("Datastore Method Tests", () => {
     // Pending events for the deleted item should be gone
     events = db.getPendingEvents();
     expect(events.length).toBe(0);
+
+    expect(db.getItem("item1")).toBe(null);
   });
 
   it("cascading deletion should preserve unrelated pending events", async () => {
@@ -1824,6 +1826,30 @@ describe("Datastore Method Tests", () => {
         fileLimit: 100,
       });
       expect(processable.length).toBe(0);
+    });
+  });
+
+  describe("getItems", () => {
+    it("returns matching items by UUID", () => {
+      db.updateSources({ source1: mockSourceMetadata("source1") });
+      db.updateItems({
+        item1: mockItemMetadata("item1", "source1", "message"),
+        item2: mockItemMetadata("item2", "source1", "message"),
+        item3: mockItemMetadata("item3", "source1", "message"),
+      });
+
+      const items = db.getItems(["item1", "item3"]);
+      expect(items).toHaveLength(2);
+      expect(items.map((i) => i.uuid)).toEqual(
+        expect.arrayContaining(["item1", "item3"]),
+      );
+    });
+
+    it("returns empty array when no UUIDs match", () => {
+      db.updateSources({ source1: mockSourceMetadata("source1") });
+      db.updateItems({ item1: mockItemMetadata("item1", "source1") });
+
+      expect(db.getItems(["nonexistent"])).toEqual([]);
     });
   });
 });

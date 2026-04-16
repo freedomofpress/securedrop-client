@@ -1,14 +1,16 @@
-import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
 import {
-  Item,
-  NONPROCESSABLE_FETCH_STATUSES,
-  type SourceWithItems,
-} from "../../../types";
+  createSlice,
+  createAsyncThunk,
+  createSelector,
+} from "@reduxjs/toolkit";
+import { Item, type SourceWithItems } from "../../../types";
 import type { RootState } from "../../store";
 import { fetchSources } from "../sources/sourcesSlice";
 
 export interface ConversationState {
-  conversation: SourceWithItems | null;
+  sourceMetadata: Omit<SourceWithItems, "items"> | null;
+  itemsById: Record<string, Item>;
+  itemIds: string[];
   loading: boolean;
   error: string | null;
   lastFetchTime: number | null;
@@ -17,7 +19,9 @@ export interface ConversationState {
 }
 
 const initialState: ConversationState = {
-  conversation: null,
+  sourceMetadata: null,
+  itemsById: {},
+  itemIds: [],
   loading: false,
   error: null,
   lastFetchTime: null,
@@ -58,12 +62,13 @@ export const fetchOlderConversationItems = createAsyncThunk(
   "conversation/fetchOlderConversationItems",
   async (sourceUuid: string, { getState, dispatch }) => {
     const state = getState() as RootState;
-    const conversation = state.conversation.conversation;
-    if (!conversation || conversation.uuid !== sourceUuid) {
+    const { sourceMetadata, itemIds, itemsById } = state.conversation;
+    if (!sourceMetadata || sourceMetadata.uuid !== sourceUuid) {
       return null;
     }
 
-    const oldestItem = conversation.items[0];
+    const oldestItemId = itemIds[0];
+    const oldestItem = oldestItemId ? itemsById[oldestItemId] : undefined;
     const beforeInteractionCount = oldestItem?.data.interaction_count;
 
     const sourceWithItems = await window.electronAPI.getSourceWithItems(
@@ -120,31 +125,17 @@ const conversationSlice = createSlice({
       state.error = null;
     },
     clearConversation: (state) => {
-      state.conversation = null;
+      state.sourceMetadata = null;
+      state.itemsById = {};
+      state.itemIds = [];
       state.lastFetchTime = null;
       state.hasMoreHistoricalItems = false;
       state.olderItemsLoading = false;
     },
     updateItem: (state, action) => {
       const updatedItem: Item = action.payload;
-      if (state.conversation) {
-        state.conversation.items = state.conversation.items.map((item) => {
-          if (item.uuid !== updatedItem.uuid) {
-            return item;
-          }
-
-          // Check that the update does not transition from a terminal state, indicating
-          // a stale update. If so, ignore.
-
-          if (
-            item.fetch_status &&
-            NONPROCESSABLE_FETCH_STATUSES.has(item.fetch_status)
-          ) {
-            return item;
-          }
-
-          return updatedItem;
-        });
+      if (state.itemsById[updatedItem.uuid]) {
+        state.itemsById[updatedItem.uuid] = updatedItem;
       }
     },
   },
@@ -158,7 +149,18 @@ const conversationSlice = createSlice({
         state.loading = false;
         state.error = null;
         const { sourceWithItems } = action.payload;
-        state.conversation = sourceWithItems;
+        const { uuid, data, hasMoreHistoricalItems, lastSeenInteractionCount } =
+          sourceWithItems;
+        state.sourceMetadata = {
+          uuid,
+          data,
+          hasMoreHistoricalItems,
+          lastSeenInteractionCount,
+        };
+        state.itemsById = Object.fromEntries(
+          sourceWithItems.items.map((i) => [i.uuid, i]),
+        );
+        state.itemIds = sourceWithItems.items.map((i) => i.uuid);
         state.hasMoreHistoricalItems =
           sourceWithItems.hasMoreHistoricalItems ?? false;
         state.lastFetchTime = Date.now();
@@ -172,29 +174,26 @@ const conversationSlice = createSlice({
       })
       .addCase(fetchOlderConversationItems.fulfilled, (state, action) => {
         state.olderItemsLoading = false;
-        if (!action.payload || !state.conversation) {
+        if (!action.payload || !state.sourceMetadata) {
           return;
         }
         const { items, hasMoreHistoricalItems } = action.payload;
-        const existingUuids = new Set(
-          state.conversation.items.map((i) => i.uuid),
-        );
-        const olderItems = items.filter((i) => !existingUuids.has(i.uuid));
-        state.conversation.items = [...olderItems, ...state.conversation.items];
+        const newItems = items.filter((i) => !state.itemsById[i.uuid]);
+        const olderById = Object.fromEntries(newItems.map((i) => [i.uuid, i]));
+        state.itemsById = { ...olderById, ...state.itemsById };
+        state.itemIds = [
+          ...newItems.map((i) => i.uuid),
+          ...state.itemIds,
+        ];
         state.hasMoreHistoricalItems = hasMoreHistoricalItems ?? false;
       })
       .addCase(fetchOlderConversationItems.rejected, (state) => {
         state.olderItemsLoading = false;
       })
       .addCase(updateItemFetchStatus.fulfilled, (state, action) => {
-        const { item: updatedItem } = action.payload;
-        if (state.conversation) {
-          state.conversation.items = state.conversation.items.map((item, _) => {
-            if (updatedItem && item.uuid === updatedItem.uuid) {
-              return updatedItem;
-            }
-            return item;
-          });
+        const updatedItem = action.payload.item;
+        if (updatedItem && state.itemsById[updatedItem.uuid]) {
+          state.itemsById[updatedItem.uuid] = updatedItem;
         }
         state.lastFetchTime = Date.now();
       });
@@ -204,13 +203,35 @@ const conversationSlice = createSlice({
 export const { clearError, clearConversation, updateItem } =
   conversationSlice.actions;
 
-// Selectors
-export const selectConversation = (state: RootState, sourceUuid: string) =>
-  state.conversation.conversation?.uuid === sourceUuid
-    ? state.conversation.conversation
-    : null;
-export const selectLastConversation = (state: RootState) =>
-  state.conversation.conversation;
+// Selectors — keep inputs narrow so components only re-render when their
+// specific slice of state changes. selectItemIds is stable across per-item
+// updates (download progress, IPC ticks); selectItemsById changes on every
+// update and is intentionally NOT an input to the conversation selectors.
+const selectSourceMetadata = (state: RootState) =>
+  state.conversation.sourceMetadata;
+export const selectItemsById = (state: RootState) =>
+  state.conversation.itemsById;
+export const selectItemIds = (state: RootState) => state.conversation.itemIds;
+
+// Returns source metadata without items; stable across per-item updates.
+// Components that need item data should subscribe to selectItemIds and select
+// individual items via selectItemsById.
+export const selectConversation = createSelector(
+  selectSourceMetadata,
+  (_state: RootState, sourceUuid: string) => sourceUuid,
+  (metadata, sourceUuid): Omit<SourceWithItems, "items"> | null => {
+    if (!metadata || metadata.uuid !== sourceUuid) {
+      return null;
+    }
+    return metadata;
+  },
+);
+
+export const selectLastConversation = createSelector(
+  selectSourceMetadata,
+  (metadata): Omit<SourceWithItems, "items"> | null => metadata,
+);
+
 export const selectConversationLoading = (state: RootState) =>
   state.conversation.loading;
 export const selectHasMoreHistoricalItems = (state: RootState) =>

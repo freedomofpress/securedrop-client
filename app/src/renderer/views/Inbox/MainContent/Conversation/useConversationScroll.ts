@@ -24,15 +24,16 @@ export interface ConversationScrollState {
   dividerItemUuid: string | null;
   hasItems: boolean;
   heightsReady: boolean;
-  oldItems: Item[];
-  newItems: Item[];
+  oldItemIds: string[];
+  newItemIds: string[];
   acknowledgeNewMessages: () => void;
   showNewMessagesButton: boolean;
   scrollToBottom: () => void;
 }
 
 export function useConversationScroll(
-  sourceWithItems: SourceWithItems | null,
+  sourceMetadata: Omit<SourceWithItems, "items"> | null,
+  items: Item[],
 ): ConversationScrollState {
   const dispatch = useAppDispatch();
   const [listAPI, listRef] = useListCallbackRef();
@@ -53,7 +54,7 @@ export function useConversationScroll(
     [setIsAutoScrollingState],
   );
 
-  const activeSourceUuid = sourceWithItems?.uuid ?? null;
+  const activeSourceUuid = sourceMetadata?.uuid ?? null;
   const dynamicRowHeight = useDynamicRowHeight({
     defaultRowHeight: 100,
     key: activeSourceUuid ?? undefined,
@@ -78,10 +79,6 @@ export function useConversationScroll(
     return () => cancelAnimationFrame(raf1);
   }, [activeSourceUuid]);
 
-  const items = useMemo<Item[]>(
-    () => (sourceWithItems ? sourceWithItems.items : []),
-    [sourceWithItems],
-  );
   const itemCount = items.length;
   const hasItems = itemCount > 0;
   const lastSeenInteractionCount = useAppSelector((state) =>
@@ -90,32 +87,32 @@ export function useConversationScroll(
       : undefined,
   );
   const latestInteractionCount = useMemo(() => {
-    return sourceWithItems?.items.at(-1)?.data.interaction_count ?? null;
-  }, [sourceWithItems?.items]);
+    return items.at(-1)?.data.interaction_count ?? null;
+  }, [items]);
 
   useEffect(() => {
-    if (!sourceWithItems || lastSeenInteractionCount !== undefined) {
+    if (!sourceMetadata || lastSeenInteractionCount !== undefined) {
       return;
     }
     dispatch(
       initializeConversationIndicator({
-        sourceUuid: sourceWithItems.uuid,
+        sourceUuid: sourceMetadata.uuid,
         // If lastSeenInteractionCount is null/undefined, fall back to latest interaction
         // count so we show most recent message on first-time open.
         lastSeenInteractionCount:
-          sourceWithItems.lastSeenInteractionCount ?? latestInteractionCount,
+          sourceMetadata.lastSeenInteractionCount ?? latestInteractionCount,
       }),
     );
   }, [
     dispatch,
     lastSeenInteractionCount,
     latestInteractionCount,
-    sourceWithItems,
+    sourceMetadata,
   ]);
 
   // If there are new, unseen messages, get the UUID for the "new messages" divider
   const dividerItemUuid = useMemo(() => {
-    if (!sourceWithItems) {
+    if (!sourceMetadata) {
       return null;
     }
 
@@ -137,32 +134,32 @@ export function useConversationScroll(
     });
 
     return firstNewItem ? firstNewItem.uuid : null;
-  }, [items, lastSeenInteractionCount, sourceWithItems]);
+  }, [items, lastSeenInteractionCount, sourceMetadata]);
 
-  const { oldItems, newItems } = useMemo(() => {
+  const { oldItemIds, newItemIds } = useMemo(() => {
     if (!dividerItemUuid) {
-      return { oldItems: items, newItems: [] as typeof items };
+      return { oldItemIds: items.map((i) => i.uuid), newItemIds: [] as string[] };
     }
 
     const idx = items.findIndex((item) => item.uuid === dividerItemUuid);
     if (idx === -1) {
-      return { oldItems: items, newItems: [] as typeof items };
+      return { oldItemIds: items.map((i) => i.uuid), newItemIds: [] as string[] };
     }
 
     return {
-      oldItems: items.slice(0, idx),
-      newItems: items.slice(idx),
+      oldItemIds: items.slice(0, idx).map((i) => i.uuid),
+      newItemIds: items.slice(idx).map((i) => i.uuid),
     };
   }, [dividerItemUuid, items]);
 
-  const dividerIndex = dividerItemUuid !== null ? oldItems.length : null;
+  const dividerIndex = dividerItemUuid !== null ? oldItemIds.length : null;
 
   // Set the scroll target:
   // If switching to this conversation and there is a new messages divider,
   // we scroll to the divider. If there are no new messages, we default to bottom.
   // On historical load, we restore the scroll by centering the last visible row
   useEffect(() => {
-    if (!sourceWithItems) {
+    if (!sourceMetadata) {
       sourceUuidRef.current = null;
       itemCountRef.current = 0;
       firstItemUuidRef.current = null;
@@ -173,9 +170,9 @@ export function useConversationScroll(
     const prevSourceUuid = sourceUuidRef.current;
     const prevCount = itemCountRef.current;
     const prevFirstItemUuid = firstItemUuidRef.current;
-    const newFirstItemUuid = sourceWithItems.items[0]?.uuid ?? null;
+    const newFirstItemUuid = items[0]?.uuid ?? null;
 
-    if (prevSourceUuid !== sourceWithItems.uuid) {
+    if (prevSourceUuid !== sourceMetadata.uuid) {
       pendingScrollTargetRef.current = dividerIndex
         ? { kind: "index", rowIndex: dividerIndex }
         : "bottom";
@@ -208,10 +205,10 @@ export function useConversationScroll(
       }
     }
 
-    sourceUuidRef.current = sourceWithItems.uuid;
+    sourceUuidRef.current = sourceMetadata.uuid;
     itemCountRef.current = itemCount;
     firstItemUuidRef.current = newFirstItemUuid;
-  }, [dividerIndex, dividerItemUuid, itemCount, sourceWithItems]);
+  }, [dividerIndex, dividerItemUuid, itemCount, sourceMetadata, items]);
 
   const scrollToRowWithRetry = useCallback(
     (index: number, align: "start" | "center" | "end", maxRetries: number) => {
@@ -235,7 +232,7 @@ export function useConversationScroll(
   }, [setIsAutoScrolling]);
 
   const acknowledgeNewMessages = useCallback(() => {
-    if (!sourceWithItems) {
+    if (!sourceMetadata) {
       return;
     }
     if (latestInteractionCount === null) {
@@ -243,11 +240,11 @@ export function useConversationScroll(
     }
     dispatch(
       markConversationLastSeen({
-        sourceUuid: sourceWithItems.uuid,
+        sourceUuid: sourceMetadata.uuid,
         interactionCount: latestInteractionCount,
       }),
     );
-  }, [dispatch, latestInteractionCount, sourceWithItems]);
+  }, [dispatch, latestInteractionCount, sourceMetadata]);
 
   useEffect(() => {
     const target = pendingScrollTargetRef.current;
@@ -260,7 +257,7 @@ export function useConversationScroll(
 
     if (target === "bottom") {
       const totalRows =
-        oldItems.length + (dividerIndex !== null ? 1 : 0) + newItems.length;
+        oldItemIds.length + (dividerIndex !== null ? 1 : 0) + newItemIds.length;
       if (totalRows === 0) {
         return;
       }
@@ -286,8 +283,8 @@ export function useConversationScroll(
     dividerIndex,
     hasItems,
     itemCount,
-    newItems.length,
-    oldItems.length,
+    newItemIds.length,
+    oldItemIds.length,
     scheduleAutoScrollReset,
     setIsAutoScrolling,
     scrollToRowWithRetry,
@@ -335,8 +332,8 @@ export function useConversationScroll(
     dividerItemUuid,
     hasItems,
     heightsReady,
-    oldItems,
-    newItems,
+    oldItemIds,
+    newItemIds,
     acknowledgeNewMessages,
     showNewMessagesButton,
     scrollToBottom,

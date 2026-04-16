@@ -1,11 +1,17 @@
 import { memo, useState, useMemo } from "react";
 import { useTranslation } from "react-i18next";
+import { useStore } from "react-redux";
 import {
   type SourceWithItems,
   type ExportPayload,
   type PrintPayload,
   FetchStatus,
 } from "../../../../../types";
+import {
+  selectItemIds,
+} from "../../../../features/conversation/conversationSlice";
+import { useAppSelector } from "../../../../hooks";
+import type { RootState } from "../../../../store";
 
 import { ExportWizard } from "../Conversation/Item/Export";
 import { PrintWizard } from "../Conversation/Item/Print";
@@ -13,13 +19,14 @@ import { MenuProps, Dropdown, Button, Tooltip } from "antd";
 import { MoreOutlined } from "@ant-design/icons";
 
 interface SourceMenuProps {
-  sourceWithItems: SourceWithItems;
+  sourceWithItems: Omit<SourceWithItems, "items">;
 }
 
 const SourceMenu = memo(function SourceMenu({
   sourceWithItems,
 }: SourceMenuProps) {
   const { t } = useTranslation("MainContent");
+  const store = useStore<RootState>();
 
   const [exportType, setExportType] = useState<"transcript" | "source">(
     "transcript",
@@ -53,6 +60,11 @@ const SourceMenu = memo(function SourceMenu({
   const [exportWizardOpen, setExportWizardOpen] = useState(false);
   const [printWizardOpen, setPrintWizardOpen] = useState(false);
 
+  // Subscribe to itemIds (stable on data updates) rather than the full items
+  // array, so SourceMenu only re-renders when items are added or removed.
+  const itemIds = useAppSelector(selectItemIds);
+  const hasConversation = itemIds.length > 0;
+
   const handleMenuClick: MenuProps["onClick"] = async (e) => {
     switch (e.key) {
       case "exportTranscript":
@@ -66,8 +78,19 @@ const SourceMenu = memo(function SourceMenu({
         break;
       case "exportSource":
         try {
-          setExportType("source");
-          setExportWizardKey((k) => k + 1);
+          // Read item data from store at click time to avoid stale closure.
+          const { itemIds: currentIds, itemsById } =
+            store.getState().conversation;
+          const undownloaded_items = currentIds.some(
+            (id) => itemsById[id]?.fetch_status !== FetchStatus.Complete,
+          );
+          setExportPayload({
+            type: "source",
+            payload: {
+              source_uuid: sourceWithItems.uuid,
+              undownloaded_items,
+            },
+          });
           setExportWizardOpen(true);
         } catch (error) {
           console.error("Failed to export:", error);
@@ -93,8 +116,6 @@ const SourceMenu = memo(function SourceMenu({
   const handlePrintWizardClose = () => {
     setPrintWizardOpen(false);
   };
-
-  const hasConversation: boolean = sourceWithItems.items.length > 0;
 
   const items: MenuProps["items"] = [
     {

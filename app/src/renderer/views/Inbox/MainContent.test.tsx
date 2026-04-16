@@ -102,6 +102,8 @@ describe("MainContent Component", () => {
     (window as any).electronAPI = {
       getSourceWithItems: vi.fn().mockResolvedValue(mockSourceWithItems),
       addPendingItemsSeenBatch: vi.fn().mockResolvedValue(undefined),
+      addPendingSourceConversationSeen: vi.fn().mockResolvedValue(null),
+      getSources: vi.fn().mockResolvedValue([]),
     };
   });
 
@@ -124,7 +126,19 @@ describe("MainContent Component", () => {
         initialEntries: [initialRoute],
         preloadedState: {
           conversation: {
-            conversation: sourceUuid ? conversationData[sourceUuid] : null,
+            sourceMetadata:
+              sourceUuid && conversationData[sourceUuid]
+                ? {
+                    uuid: conversationData[sourceUuid].uuid,
+                    data: conversationData[sourceUuid].data,
+                  }
+                : null,
+            itemsById:
+              sourceUuid && conversationData[sourceUuid]
+                ? Object.fromEntries(
+                    conversationData[sourceUuid].items.map((i) => [i.uuid, i]),
+                  )
+                : {},
             loading: false,
             error: null,
             lastFetchTime: null,
@@ -160,7 +174,13 @@ describe("MainContent Component", () => {
           initialEntries: ["/source/source-1"],
           preloadedState: {
             conversation: {
-              conversation: mockSourceWithItems,
+              sourceMetadata: {
+                uuid: mockSourceWithItems.uuid,
+                data: mockSourceWithItems.data,
+              },
+              itemsById: Object.fromEntries(
+                mockSourceWithItems.items.map((i) => [i.uuid, i]),
+              ),
               loading: false,
               error: null,
               lastFetchTime: Date.now(),
@@ -347,7 +367,13 @@ describe("MainContent Component", () => {
           initialEntries: ["/source/source-1"],
           preloadedState: {
             conversation: {
-              conversation: mockSourceWithItems,
+              sourceMetadata: {
+                uuid: mockSourceWithItems.uuid,
+                data: mockSourceWithItems.data,
+              },
+              itemsById: Object.fromEntries(
+                mockSourceWithItems.items.map((i) => [i.uuid, i]),
+              ),
               loading: false,
               error: null,
               lastFetchTime: Date.now(),
@@ -361,7 +387,7 @@ describe("MainContent Component", () => {
       // Wait for the initial source-1 fetch to fully complete
       await waitFor(() => {
         expect(store.getState().conversation.loading).toBe(false);
-        expect(store.getState().conversation.conversation?.uuid).toBe(
+        expect(store.getState().conversation.sourceMetadata?.uuid).toBe(
           "source-1",
         );
       });

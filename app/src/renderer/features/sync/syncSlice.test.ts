@@ -112,7 +112,9 @@ describe("syncSlice", () => {
 
       const syncState = (store.getState() as any).sync;
       const sourcesState = (store.getState() as any).sources;
-      expect(sourcesState.sources).toEqual(mockSources);
+      expect(sourcesState.sources).toEqual(
+        Object.fromEntries(mockSources.map((s) => [s.uuid, s])),
+      );
       expect(syncState.error).toBeNull();
       expect(syncState.lastSyncFinished).toBeGreaterThan(0);
     });
@@ -134,7 +136,7 @@ describe("syncSlice", () => {
 
       const syncState = (store.getState() as any).sync;
       const sourcesState = (store.getState() as any).sources;
-      expect(sourcesState.sources).toEqual([]);
+      expect(sourcesState.sources).toEqual({});
       expect(syncState.error).toBe(errorMessage);
     });
 
@@ -150,7 +152,7 @@ describe("syncSlice", () => {
 
       const syncState = (store.getState() as any).sync;
       const sourcesState = (store.getState() as any).sources;
-      expect(sourcesState.sources).toEqual([]);
+      expect(sourcesState.sources).toEqual({});
       expect(syncState.error).toBe(errorMessage);
     });
 
@@ -166,7 +168,7 @@ describe("syncSlice", () => {
 
       const syncState = (store.getState() as any).sync;
       const sourcesState = (store.getState() as any).sources;
-      expect(sourcesState.sources).toEqual([]);
+      expect(sourcesState.sources).toEqual({});
       expect(syncState.error).toBeNull(); // Sync succeeded, sources fetch failed
       expect(sourcesState.error).toBe(errorMessage); // Error is in sources slice
     });
@@ -184,7 +186,7 @@ describe("syncSlice", () => {
         },
         preloadedState: {
           sources: {
-            sources: [],
+            sources: {},
             activeSourceUuid: activeSourceUuid,
             error: null,
             lastFetchTime: null,
@@ -219,7 +221,9 @@ describe("syncSlice", () => {
 
       // Sources should be updated
       const sourcesState = (store.getState() as any).sources;
-      expect(sourcesState.sources).toEqual(mockSources);
+      expect(sourcesState.sources).toEqual(
+        Object.fromEntries(mockSources.map((s) => [s.uuid, s])),
+      );
     });
 
     it("does not fetch conversations when no active source", async () => {
@@ -233,7 +237,9 @@ describe("syncSlice", () => {
 
       // Sources should still be updated in the store
       const sourcesState = (store.getState() as any).sources;
-      expect(sourcesState.sources).toEqual(mockSources);
+      expect(sourcesState.sources).toEqual(
+        Object.fromEntries(mockSources.map((s) => [s.uuid, s])),
+      );
     });
 
     it("handles network timeout error during sync", async () => {
@@ -244,7 +250,7 @@ describe("syncSlice", () => {
       const syncState = (store.getState() as any).sync;
       const sourcesState = (store.getState() as any).sources;
       expect(syncState.error).toBe("Network timeout");
-      expect(sourcesState.sources).toEqual([]);
+      expect(sourcesState.sources).toEqual({});
 
       // syncMetadata should be called but getSources should not be called due to network failure
       expect(mockSyncMetadata).toHaveBeenCalledTimes(1);

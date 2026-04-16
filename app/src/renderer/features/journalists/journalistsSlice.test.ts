@@ -200,14 +200,15 @@ describe("journalistsSlice", () => {
       journalists: loadedState,
       session: {} as any, // Mock other state slices
       sources: {
-        sources: [],
+        sources: {},
         activeSourceUuid: null,
         loading: false,
         error: null,
         conversationIndicators: {},
       },
       conversation: {
-        conversation: null,
+        sourceMetadata: null,
+        itemsById: {},
         loading: false,
         error: null,
         lastFetchTime: null,
