@@ -15,6 +15,7 @@ import {
   PendingEventType,
   SyncStatus,
   DeviceStatus,
+  PendingEventData,
 } from "../types";
 
 // Log the performance of IPC calls
@@ -88,8 +89,8 @@ const electronAPI = {
   ),
   addPendingSourceEvent: logIpcCall<bigint>(
     "addPendingSourceEvent",
-    (sourceUuid: string, type: PendingEventType) =>
-      ipcRenderer.invoke("addPendingSourceEvent", sourceUuid, type),
+    (sourceUuid: string, type: PendingEventType, data?: PendingEventData) =>
+      ipcRenderer.invoke("addPendingSourceEvent", sourceUuid, type, data),
   ),
   addPendingReplySentEvent: logIpcCall<bigint>(
     "addPendingReplySentEvent",

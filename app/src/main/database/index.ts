@@ -29,6 +29,7 @@ import {
   EventStatus,
   SearchResult,
   FirstRunStatus,
+  PendingEventData,
 } from "../../types";
 import { Crypto } from "../crypto";
 import { Search } from "./search";
@@ -287,7 +288,8 @@ export class DB {
         s.has_attachment,
         i.kind AS last_message_kind,
         substr(i.plaintext, 1, ${MESSAGE_PREVIEW_LENGTH}) AS last_message_plaintext,
-        i.filename AS last_message_filename
+        i.filename AS last_message_filename,
+        i.interaction_count AS last_interaction_count
       FROM sources_projected s
       LEFT JOIN sorted_items i
         ON s.uuid = i.source_uuid
@@ -301,7 +303,8 @@ export class DB {
         s.has_attachment,
         i.kind AS last_message_kind,
         substr(i.plaintext, 1, ${MESSAGE_PREVIEW_LENGTH}) AS last_message_plaintext,
-        i.filename AS last_message_filename
+        i.filename AS last_message_filename,
+        i.interaction_count AS last_interaction_count
       FROM sources_projected s
       LEFT JOIN sorted_items i
         ON s.uuid = i.source_uuid AND i.rn = 1
@@ -699,6 +702,7 @@ export class DB {
                 : row.last_message_plaintext) ?? null,
           }
         : null,
+      lastInteractionCount: row.last_interaction_count ?? null,
     };
   }
 
@@ -966,7 +970,11 @@ export class DB {
     stmt.run({ uuid: itemUuid });
   }
 
-  addPendingSourceEvent(sourceUuid: string, type: PendingEventType): string {
+  addPendingSourceEvent(
+    sourceUuid: string,
+    type: PendingEventType,
+    data?: PendingEventData,
+  ): string {
     const snowflakeID = this.snowflake
       .generate({ timestamp: Date.now() })
       .toString();
@@ -974,7 +982,7 @@ export class DB {
       snowflake_id: snowflakeID,
       source_uuid: sourceUuid,
       type: type,
-      data: null,
+      data: data ? JSON.stringify(data) : null,
     });
     return snowflakeID;
   }

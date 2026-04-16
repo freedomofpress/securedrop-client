@@ -33,6 +33,7 @@ import {
   FetchStatus,
   PendingEventType,
   SyncStatus,
+  PendingEventData,
 } from "../types";
 import { syncMetadata, shouldSkipSync } from "./sync";
 import workerPath from "./fetch/worker?modulePath";
@@ -468,15 +469,24 @@ if (!gotTheLock) {
           _event,
           sourceUuid: string,
           type: PendingEventType,
+          data?: PendingEventData,
         ): Promise<string> => {
-          const snowflakeID = db.addPendingSourceEvent(sourceUuid, type);
           // Immediately delete any source files from the fs on pending deletion
-          if (
-            type === PendingEventType.SourceDeleted ||
-            type === PendingEventType.SourceConversationDeleted
-          ) {
+          if (type === PendingEventType.SourceDeleted) {
             db.deleteSourceFs(sourceUuid);
           }
+          // For truncation, delete all truncated item files from the fs
+          if (type === PendingEventType.SourceConversationTruncated) {
+            if (data?.upper_bound) {
+              const items = db.getSourceWithItems(sourceUuid, {
+                beforeInteractionCount: data?.upper_bound + 1,
+              }).items;
+              for (const item of items) {
+                db.deleteItemFs(item);
+              }
+            }
+          }
+          const snowflakeID = db.addPendingSourceEvent(sourceUuid, type, data);
           return snowflakeID;
         },
       );

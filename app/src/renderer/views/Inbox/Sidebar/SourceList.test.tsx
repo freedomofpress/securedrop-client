@@ -112,6 +112,7 @@ describe("Sources Component", () => {
       isRead: false,
       hasAttachment: false,
       messagePreview: null,
+      lastInteractionCount: 6,
     },
     {
       uuid: "source-2",
@@ -131,6 +132,7 @@ describe("Sources Component", () => {
         kind: "message",
         plaintext: "Hello from Bob,",
       },
+      lastInteractionCount: 5,
     },
     {
       uuid: "source-3",
@@ -147,6 +149,7 @@ describe("Sources Component", () => {
       isRead: false,
       hasAttachment: false,
       messagePreview: null,
+      lastInteractionCount: 6,
     },
     {
       uuid: "source-4",
@@ -163,6 +166,7 @@ describe("Sources Component", () => {
       isRead: true,
       hasAttachment: false,
       messagePreview: null,
+      lastInteractionCount: 7,
     },
   ];
 
@@ -856,11 +860,12 @@ describe("Sources Component", () => {
         expect(window.electronAPI.addPendingSourceEvent).toHaveBeenCalledWith(
           "source-1",
           PendingEventType.SourceDeleted,
+          undefined,
         );
       });
     });
 
-    it("calls addPendingSourceEvent with SourceConversationDeleted when Delete Conversation is clicked", async () => {
+    it("calls addPendingSourceEvent with SourceConversationTruncated when Delete Conversation is clicked", async () => {
       renderSourceList();
 
       await waitFor(() => {
@@ -889,7 +894,8 @@ describe("Sources Component", () => {
       await waitFor(() => {
         expect(window.electronAPI.addPendingSourceEvent).toHaveBeenCalledWith(
           "source-1",
-          PendingEventType.SourceConversationDeleted,
+          PendingEventType.SourceConversationTruncated,
+          { upper_bound: 6 },
         );
       });
     });
@@ -928,14 +934,17 @@ describe("Sources Component", () => {
         expect(addPendingSourceEvent).toHaveBeenCalledWith(
           "source-1",
           PendingEventType.SourceDeleted,
+          undefined,
         );
         expect(addPendingSourceEvent).toHaveBeenCalledWith(
           "source-2",
           PendingEventType.SourceDeleted,
+          undefined,
         );
         expect(addPendingSourceEvent).toHaveBeenCalledWith(
           "source-3",
           PendingEventType.SourceDeleted,
+          undefined,
         );
       });
     });
@@ -1377,6 +1386,7 @@ describe("Sources Component", () => {
         expect(window.electronAPI.addPendingSourceEvent).toHaveBeenCalledWith(
           "source-1",
           PendingEventType.SourceDeleted,
+          undefined,
         );
         expect(consoleErrorSpy).toHaveBeenCalledWith(
           "Failed to delete source(s):",
