@@ -124,7 +124,7 @@ rules:
 
   # Rule: Ban ALL dynamic content in prepare() statements
   # Only allow template literals with safe constants (FetchStatus, EventStatus,
-  # MESSAGE_PREVIEW_LENGTH).
+  # PendingEventType, MESSAGE_PREVIEW_LENGTH).
   # Exception: selectWhereIn method uses TypeScript string literal types for safety.
   - id: better-sqlite3-ban-dynamic-content
     patterns:
@@ -132,6 +132,7 @@ rules:
       # Exclude safe constants
       - pattern-not: $DB.prepare(`...${FetchStatus.$FIELD}...`)
       - pattern-not: $DB.prepare(`...${EventStatus.$FIELD}...`)
+      - pattern-not: $DB.prepare(`...${PendingEventType.$FIELD}...`)
       - pattern-not: $DB.prepare(`...${MESSAGE_PREVIEW_LENGTH}...`)
       # Exclude selectWhereIn which is validated by using string literal types
       - pattern-not-inside: |
@@ -147,7 +148,7 @@ rules:
         - CORRECT: db.prepare('SELECT * FROM users WHERE name = @name').get({ name })
         - WRONG: db.prepare(`SELECT * FROM users WHERE id = ${userId}`)
 
-      Exception: FetchStatus and EventStatus enum values are allowed as they are compile-time constants.
+      Exception: FetchStatus, EventStatus, and PendingEventType enum values are allowed as they are compile-time constants.
 
       Note: selectWhereIn uses TypeScript string literal types for compile-time safety.
     languages:
