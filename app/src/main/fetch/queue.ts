@@ -408,14 +408,22 @@ export class TaskQueue {
       }
     };
 
-    let downloadResponse = await proxyStreamRequest(
-      downloadRequest,
-      downloadWriter,
-      progress,
-      abortController.signal,
-      timeout,
-      onProgress,
-    );
+    let downloadResponse;
+    try {
+      downloadResponse = await proxyStreamRequest(
+        downloadRequest,
+        downloadWriter,
+        progress,
+        abortController.signal,
+        timeout,
+        onProgress,
+      );
+    } catch (e) {
+      if (abortController.signal.aborted) {
+        throw new DownloadCancelledError();
+      }
+      throw e;
+    }
 
     // If we received JSON response, indicates an error from the server
     if ("data" in downloadResponse && downloadResponse.error) {
@@ -628,6 +636,13 @@ export class TaskQueue {
 
       // Re-check: if the item was deleted during decryption, drop the result
       if (this.isScheduledForDeletion(item.id, db)) {
+        try {
+          await fs.promises.unlink(finalAbsolutePath);
+        } catch (error) {
+          console.warn(
+            `Failed to clean up decrypted file after deletion: ${error}`,
+          );
+        }
         return;
       }
 

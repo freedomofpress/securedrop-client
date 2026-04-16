@@ -268,15 +268,12 @@ export class DB {
     this.selectFileItemsProcessable = this.db.prepare(
       `SELECT uuid FROM items
       WHERE kind = 'file'
-        AND fetch_status in (${FetchStatus.Initial}, ${FetchStatus.DownloadInProgress}, ${FetchStatus.DecryptionInProgress}, ${FetchStatus.FailedDownloadRetryable}, ${FetchStatus.FailedDecryptionRetryable})
+        AND fetch_status in (${FetchStatus.DownloadInProgress}, ${FetchStatus.DecryptionInProgress}, ${FetchStatus.FailedDownloadRetryable}, ${FetchStatus.FailedDecryptionRetryable})
       ORDER BY interaction_count ASC, uuid ASC
       LIMIT @limit`,
     );
     this.selectUnprojectedItemsBySource = this.db.prepare(
       "SELECT uuid FROM items WHERE source_uuid = @source_uuid",
-    );
-    this.upsertItem = this.db.prepare(
-      "INSERT INTO items (uuid, data, version) VALUES (@id, @data, @version) ON CONFLICT(uuid) DO UPDATE SET data=@data, version=@version",
     );
     this.updateItemFetchStatus = this.db.prepare(
       "UPDATE items SET fetch_status = @fetch_status WHERE uuid = @uuid",
