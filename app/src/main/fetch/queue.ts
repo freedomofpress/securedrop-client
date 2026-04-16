@@ -79,6 +79,15 @@ export class TaskQueue {
     );
     this.port = port;
     this.storage = new Storage();
+
+    // After each completed or terminally-failed task, try to top up the
+    // queue from the database so large backlogs drain without waiting for
+    // the next sync tick.
+    const refill = () => this.refillQueues();
+    this.messageQueue.on("task_finish", refill);
+    this.messageQueue.on("task_failed", refill);
+    this.fileQueue.on("task_finish", refill);
+    this.fileQueue.on("task_failed", refill);
   }
 
   getAuthToken(): string {
@@ -91,6 +100,13 @@ export class TaskQueue {
     if (controller) {
       controller.abort();
     }
+  }
+
+  private refillQueues() {
+    if (!this.authToken) {
+      return;
+    }
+    this.queueFetches({ authToken: this.authToken });
   }
 
   // Queries the database for all items that need to be downloaded and queues
