@@ -886,7 +886,10 @@ describe("TaskQueue - Two-Phase Download and Decryption", () => {
 
       queue.queueFetches({ authToken: "test-token" });
 
-      expect(db.getItemsToProcess).toHaveBeenCalled();
+      expect(db.getItemsToProcess).toHaveBeenCalledWith({
+        messageLimit: 25,
+        fileLimit: 2,
+      });
       // 2 messages/replies should go to messageQueue
       expect(queue.messageQueue.push).toHaveBeenCalledTimes(2);
       // 1 file should go to fileQueue
@@ -982,6 +985,42 @@ describe("TaskQueue - Two-Phase Download and Decryption", () => {
       expect(() => errorCallback(new Error("Task failed"))).not.toThrow();
       expect(mockPort.postMessage).toHaveBeenCalled();
       expect(db.failDownload).toHaveBeenCalledWith("item1");
+    });
+
+    it("should queue only the bounded set returned by getItemsToProcess", () => {
+      const db = createMockDB();
+      db.getItemsToProcess = vi.fn(() => ["message1", "message2", "file1"]);
+      db.getItem = vi.fn((id) => {
+        if (id === "file1") {
+          return mockItem(
+            {
+              kind: "file",
+              source: "source1",
+              uuid: "file1",
+              size: 1000,
+            } as ItemMetadata,
+            FetchStatus.DownloadInProgress,
+          );
+        }
+
+        return mockItem(
+          {
+            kind: "message",
+            source: "source1",
+            uuid: id,
+          } as ItemMetadata,
+          FetchStatus.Initial,
+        );
+      });
+
+      const queue = new TaskQueue(db);
+      vi.spyOn(queue.messageQueue, "push");
+      vi.spyOn(queue.fileQueue, "push");
+
+      queue.queueFetches({ authToken: "test-token" });
+
+      expect(queue.messageQueue.push).toHaveBeenCalledTimes(2);
+      expect(queue.fileQueue.push).toHaveBeenCalledTimes(1);
     });
 
     it("should not throw if terminallyFailItem throws in task_failed handler", () => {

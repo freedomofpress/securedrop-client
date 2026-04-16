@@ -97,7 +97,14 @@ export class DB {
     { uuid: string },
     { version: string }
   >;
-  private selectItemsProcessable: Statement<[], { uuid: string }>;
+  private selectMessageItemsProcessable: Statement<
+    { limit: number },
+    { uuid: string }
+  >;
+  private selectFileItemsProcessable: Statement<
+    { limit: number },
+    { uuid: string }
+  >;
   private selectUnprojectedItemsBySource: Statement<
     { source_uuid: string },
     { uuid: string }
@@ -246,12 +253,19 @@ export class DB {
     this.selectUnprojectedItemVersion = this.db.prepare(
       "SELECT version FROM items WHERE uuid = @uuid",
     );
-    this.selectItemsProcessable = this.db.prepare(
+    this.selectMessageItemsProcessable = this.db.prepare(
       `SELECT uuid FROM items
-      WHERE
-        (kind = 'file' AND fetch_status in (${FetchStatus.DownloadInProgress}, ${FetchStatus.DecryptionInProgress}, ${FetchStatus.FailedDownloadRetryable}, ${FetchStatus.FailedDecryptionRetryable}))
-        OR
-        (kind <> 'file' AND fetch_status in (${FetchStatus.Initial}, ${FetchStatus.DownloadInProgress}, ${FetchStatus.DecryptionInProgress}, ${FetchStatus.FailedDownloadRetryable}, ${FetchStatus.FailedDecryptionRetryable}))`,
+      WHERE kind <> 'file'
+        AND fetch_status in (${FetchStatus.Initial}, ${FetchStatus.DownloadInProgress}, ${FetchStatus.DecryptionInProgress}, ${FetchStatus.FailedDownloadRetryable}, ${FetchStatus.FailedDecryptionRetryable})
+      ORDER BY interaction_count ASC, uuid ASC
+      LIMIT @limit`,
+    );
+    this.selectFileItemsProcessable = this.db.prepare(
+      `SELECT uuid FROM items
+      WHERE kind = 'file'
+        AND fetch_status in (${FetchStatus.DownloadInProgress}, ${FetchStatus.DecryptionInProgress}, ${FetchStatus.FailedDownloadRetryable}, ${FetchStatus.FailedDownloadRetryable})
+      ORDER BY interaction_count ASC, uuid ASC
+      LIMIT @limit`,
     );
     this.selectUnprojectedItemsBySource = this.db.prepare(
       "SELECT uuid FROM items WHERE source_uuid = @source_uuid",
@@ -873,12 +887,20 @@ export class DB {
   // Selects items that are ready to be downloaded + decrypted. This
   // is all messages, and files that have been initiated from the client
   // by being put into FetchStatus.DownloadInProgress
-  getItemsToProcess(): string[] {
+  getItemsToProcess(limits: {
+    messageLimit: number;
+    fileLimit: number;
+  }): string[] {
     type Row = {
       uuid: string;
     };
-    const rows = this.selectItemsProcessable.all() as Array<Row>;
-    return rows.map((r) => r.uuid);
+    const messageRows = this.selectMessageItemsProcessable.all({
+      limit: limits.messageLimit,
+    }) as Array<Row>;
+    const fileRows = this.selectFileItemsProcessable.all({
+      limit: limits.fileLimit,
+    }) as Array<Row>;
+    return [...messageRows, ...fileRows].map((r) => r.uuid);
   }
 
   getItem(itemUuid: string): Item | null {
