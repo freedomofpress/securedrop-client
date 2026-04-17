@@ -456,9 +456,23 @@ if (!gotTheLock) {
           // Immediately delete any source files from the fs on pending deletion
           if (type === PendingEventType.SourceDeleted) {
             db.deleteSourceFs(sourceUuid);
+            // Abort any in-flight downloads for this source in the fetch worker
+            if (fetchWorker) {
+              fetchWorker.postMessage({
+                type: "abortSourceFetch",
+                sourceUuid,
+              });
+            }
           }
-          // For truncation, delete all truncated item files from the fs
+          // For truncation, abort in-flight downloads and delete truncated item files from the fs
           if (type === PendingEventType.SourceConversationTruncated) {
+            // Abort any in-flight downloads for this source in the fetch worker
+            if (fetchWorker) {
+              fetchWorker.postMessage({
+                type: "abortSourceFetch",
+                sourceUuid,
+              });
+            }
             if (data?.upper_bound) {
               const items = db.getSourceWithItems(sourceUuid, {
                 beforeInteractionCount: data?.upper_bound + 1,

@@ -121,8 +121,13 @@ export function reconcileIndex(
   serverIndex: Index,
   clientIndex: Index,
 ): BatchRequest {
+  const pendingDeletionSources = db.getSourcesScheduledForDeletion();
+
   const sourcesToUpdate: string[] = [];
   Object.keys(serverIndex.sources).forEach((sourceID) => {
+    if (pendingDeletionSources.has(sourceID)) {
+      return;
+    }
     if (
       !clientIndex.sources[sourceID] ||
       serverIndex.sources[sourceID] != clientIndex.sources[sourceID]
@@ -140,7 +145,11 @@ export function reconcileIndex(
   }
 
   const itemsToUpdate: string[] = [];
+  const pendingDeletionItems = db.getItemsScheduledForDeletion();
   Object.keys(serverIndex.items).forEach((itemID) => {
+    if (pendingDeletionItems.has(itemID)) {
+      return;
+    }
     if (
       !clientIndex.items[itemID] ||
       serverIndex.items[itemID] != clientIndex.items[itemID]

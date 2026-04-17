@@ -155,7 +155,10 @@ describe("TaskQueue - Two-Phase Download and Decryption", () => {
 
       // Verify decryption phase
       expect(db.setDecryptionInProgress).toHaveBeenCalledWith("msg1");
-      expect(mockCrypto.decryptMessage).toHaveBeenCalledWith(encryptedBuffer);
+      expect(mockCrypto.decryptMessage).toHaveBeenCalledWith(
+        encryptedBuffer,
+        expect.any(AbortSignal),
+      );
       expect(db.completePlaintextItem).toHaveBeenCalledWith(
         "msg1",
         decryptedContent,
@@ -171,9 +174,18 @@ describe("TaskQueue - Two-Phase Download and Decryption", () => {
       } as ItemMetadata;
 
       // First attempt: Initial status
+      // Calls: getItem(initial), getItem(post-download re-check), decrypt fails (no post-decrypt re-check)
+      // Second attempt: getItem(retry), getItem(post-download re-check), getItem(post-decrypt re-check)
       db.getItem = vi
         .fn()
         .mockReturnValueOnce(mockItem(metadata, FetchStatus.Initial, 0))
+        .mockReturnValueOnce(mockItem(metadata, FetchStatus.Initial, 0))
+        .mockReturnValueOnce(
+          mockItem(metadata, FetchStatus.FailedDecryptionRetryable, 0),
+        )
+        .mockReturnValueOnce(
+          mockItem(metadata, FetchStatus.FailedDecryptionRetryable, 0),
+        )
         .mockReturnValueOnce(
           mockItem(metadata, FetchStatus.FailedDecryptionRetryable, 0),
         );
@@ -245,10 +257,17 @@ describe("TaskQueue - Two-Phase Download and Decryption", () => {
         size: 1000,
       } as ItemMetadata;
 
-      // First attempt: Initial status, Second attempt: FailedDownloadRetryable
+      // First attempt: Initial status, download fails (throws, no re-checks)
+      // Second attempt: getItem(retry), getItem(post-download re-check), getItem(post-decrypt re-check)
       db.getItem = vi
         .fn()
         .mockReturnValueOnce(mockItem(metadata, FetchStatus.Initial, 0))
+        .mockReturnValueOnce(
+          mockItem(metadata, FetchStatus.FailedDownloadRetryable, 50),
+        )
+        .mockReturnValueOnce(
+          mockItem(metadata, FetchStatus.FailedDownloadRetryable, 50),
+        )
         .mockReturnValueOnce(
           mockItem(metadata, FetchStatus.FailedDownloadRetryable, 50),
         );
@@ -347,9 +366,19 @@ describe("TaskQueue - Two-Phase Download and Decryption", () => {
         size: 1000,
       } as ItemMetadata;
 
+      // First attempt: download succeeds, decrypt fails (no post-decrypt re-check on throw)
+      // Calls: getItem(initial), getItem(post-download re-check), decrypt fails
+      // Second attempt: getItem(retry), getItem(post-download re-check), getItem(post-decrypt re-check)
       db.getItem = vi
         .fn()
         .mockReturnValueOnce(mockItem(metadata, FetchStatus.Initial, 0))
+        .mockReturnValueOnce(mockItem(metadata, FetchStatus.Initial, 0))
+        .mockReturnValueOnce(
+          mockItem(metadata, FetchStatus.FailedDecryptionRetryable, 0),
+        )
+        .mockReturnValueOnce(
+          mockItem(metadata, FetchStatus.FailedDecryptionRetryable, 0),
+        )
         .mockReturnValueOnce(
           mockItem(metadata, FetchStatus.FailedDecryptionRetryable, 0),
         );
@@ -406,9 +435,17 @@ describe("TaskQueue - Two-Phase Download and Decryption", () => {
         size: 1000,
       } as ItemMetadata;
 
+      // First attempt: download fails (throws, no re-checks)
+      // Second attempt: getItem(retry), getItem(post-download re-check), getItem(post-decrypt re-check)
       db.getItem = vi
         .fn()
         .mockReturnValueOnce(mockItem(metadata, FetchStatus.Initial, 0))
+        .mockReturnValueOnce(
+          mockItem(metadata, FetchStatus.FailedDownloadRetryable, 30),
+        )
+        .mockReturnValueOnce(
+          mockItem(metadata, FetchStatus.FailedDownloadRetryable, 30),
+        )
         .mockReturnValueOnce(
           mockItem(metadata, FetchStatus.FailedDownloadRetryable, 30),
         );
@@ -504,6 +541,7 @@ describe("TaskQueue - Two-Phase Download and Decryption", () => {
         expect.any(Object), // storage
         expect.any(Object), // itemDirectory
         downloadPath,
+        expect.any(AbortSignal),
       );
       expect(db.completeFileItem).toHaveBeenCalledWith(
         "msg1",
@@ -578,11 +616,22 @@ describe("TaskQueue - Two-Phase Download and Decryption", () => {
         size: 1000000,
       } as ItemMetadata;
 
-      // First attempt: DownloadInProgress status, Second attempt: FailedDecryptionRetryable
+      // First attempt: download succeeds, decrypt fails (no post-decrypt re-check on throw)
+      // Calls: getItem(initial), getItem(post-download re-check), decrypt fails
+      // Second attempt: getItem(retry), getItem(post-download re-check), getItem(post-decrypt re-check)
       db.getItem = vi
         .fn()
         .mockReturnValueOnce(
           mockItem(metadata, FetchStatus.DownloadInProgress, 0),
+        )
+        .mockReturnValueOnce(
+          mockItem(metadata, FetchStatus.DownloadInProgress, 0),
+        )
+        .mockReturnValueOnce(
+          mockItem(metadata, FetchStatus.FailedDecryptionRetryable, 0),
+        )
+        .mockReturnValueOnce(
+          mockItem(metadata, FetchStatus.FailedDecryptionRetryable, 0),
         )
         .mockReturnValueOnce(
           mockItem(metadata, FetchStatus.FailedDecryptionRetryable, 0),
@@ -647,10 +696,18 @@ describe("TaskQueue - Two-Phase Download and Decryption", () => {
         size: 1000000,
       } as ItemMetadata;
 
+      // First attempt: download fails (throws, no re-checks)
+      // Second attempt: getItem(retry), getItem(post-download re-check), getItem(post-decrypt re-check)
       db.getItem = vi
         .fn()
         .mockReturnValueOnce(
           mockItem(metadata, FetchStatus.DownloadInProgress, 0),
+        )
+        .mockReturnValueOnce(
+          mockItem(metadata, FetchStatus.FailedDownloadRetryable, 30),
+        )
+        .mockReturnValueOnce(
+          mockItem(metadata, FetchStatus.FailedDownloadRetryable, 30),
         )
         .mockReturnValueOnce(
           mockItem(metadata, FetchStatus.FailedDownloadRetryable, 30),
@@ -710,6 +767,60 @@ describe("TaskQueue - Two-Phase Download and Decryption", () => {
       } as ItemMetadata;
 
       db.getItem = vi.fn(() => mockItem(metadata, status, 0));
+
+      const queue = new TaskQueue(db);
+      await queue.process({ id: "msg1" }, db);
+
+      expect(mockProxyStreamRequest).not.toHaveBeenCalled();
+      expect(db.setDownloadInProgress).not.toHaveBeenCalled();
+      expect(db.setDecryptionInProgress).not.toHaveBeenCalled();
+    });
+
+    it("should skip items that are terminally failed", async () => {
+      const db = createMockDB();
+      const metadata = {
+        kind: "message",
+        source: "source1",
+        size: 1000,
+      } as ItemMetadata;
+
+      db.getItem = vi.fn(() =>
+        mockItem(metadata, FetchStatus.FailedTerminal, 0),
+      );
+
+      const queue = new TaskQueue(db);
+      await queue.process({ id: "msg1" }, db);
+
+      expect(mockProxyStreamRequest).not.toHaveBeenCalled();
+    });
+
+    it("should skip items that are paused", async () => {
+      const db = createMockDB();
+      const metadata = {
+        kind: "message",
+        source: "source1",
+        size: 1000,
+      } as ItemMetadata;
+
+      db.getItem = vi.fn(() => mockItem(metadata, FetchStatus.Paused, 0));
+
+      const queue = new TaskQueue(db);
+      await queue.process({ id: "msg1" }, db);
+
+      expect(mockProxyStreamRequest).not.toHaveBeenCalled();
+    });
+
+    it("should skip items that are scheduled for deletion", async () => {
+      const db = createMockDB();
+      const metadata = {
+        kind: "message",
+        source: "source1",
+        size: 1000,
+      } as ItemMetadata;
+
+      db.getItem = vi.fn(() =>
+        mockItem(metadata, FetchStatus.ScheduledDeletion, 0),
+      );
 
       const queue = new TaskQueue(db);
       await queue.process({ id: "msg1" }, db);
@@ -832,7 +943,10 @@ describe("TaskQueue - Two-Phase Download and Decryption", () => {
 
       queue.queueFetches({ authToken: "test-token" });
 
-      expect(db.getItemsToProcess).toHaveBeenCalled();
+      expect(db.getItemsToProcess).toHaveBeenCalledWith({
+        messageLimit: 25,
+        fileLimit: 2,
+      });
       // 2 messages/replies should go to messageQueue
       expect(queue.messageQueue.push).toHaveBeenCalledTimes(2);
       // 1 file should go to fileQueue
@@ -930,6 +1044,42 @@ describe("TaskQueue - Two-Phase Download and Decryption", () => {
       expect(db.failDownload).toHaveBeenCalledWith("item1");
     });
 
+    it("should queue only the bounded set returned by getItemsToProcess", () => {
+      const db = createMockDB();
+      db.getItemsToProcess = vi.fn(() => ["message1", "message2", "file1"]);
+      db.getItem = vi.fn((id) => {
+        if (id === "file1") {
+          return mockItem(
+            {
+              kind: "file",
+              source: "source1",
+              uuid: "file1",
+              size: 1000,
+            } as ItemMetadata,
+            FetchStatus.DownloadInProgress,
+          );
+        }
+
+        return mockItem(
+          {
+            kind: "message",
+            source: "source1",
+            uuid: id,
+          } as ItemMetadata,
+          FetchStatus.Initial,
+        );
+      });
+
+      const queue = new TaskQueue(db);
+      vi.spyOn(queue.messageQueue, "push");
+      vi.spyOn(queue.fileQueue, "push");
+
+      queue.queueFetches({ authToken: "test-token" });
+
+      expect(queue.messageQueue.push).toHaveBeenCalledTimes(2);
+      expect(queue.fileQueue.push).toHaveBeenCalledTimes(1);
+    });
+
     it("should not throw if terminallyFailItem throws in task_failed handler", () => {
       const db = createMockDB();
       db.terminallyFailItem = vi.fn(() => {
@@ -968,6 +1118,439 @@ describe("TaskQueue - Two-Phase Download and Decryption", () => {
 
       expect(db.terminallyFailItem).toHaveBeenCalledWith("item1");
       expect(mockPort.postMessage).toHaveBeenCalled();
+    });
+  });
+
+  describe("Queue Refill", () => {
+    it("should refill queues after a message task finishes", () => {
+      const db = createMockDB();
+      db.getItemsToProcess = vi.fn(() => []);
+      db.getItem = vi.fn(() => null);
+
+      const queue = new TaskQueue(db);
+      queue.authToken = "test-token";
+
+      // Emit task_finish on the message queue
+      queue.messageQueue.emit("task_finish", "item1", {});
+
+      // refillQueues should have called queueFetches → getItemsToProcess
+      expect(db.getItemsToProcess).toHaveBeenCalledWith({
+        messageLimit: 25,
+        fileLimit: 2,
+      });
+    });
+
+    it("should refill queues after a file task finishes", () => {
+      const db = createMockDB();
+      db.getItemsToProcess = vi.fn(() => []);
+      db.getItem = vi.fn(() => null);
+
+      const queue = new TaskQueue(db);
+      queue.authToken = "test-token";
+
+      queue.fileQueue.emit("task_finish", "file1", {});
+
+      expect(db.getItemsToProcess).toHaveBeenCalledWith({
+        messageLimit: 25,
+        fileLimit: 2,
+      });
+    });
+
+    it("should refill queues after a task terminally fails", () => {
+      const db = createMockDB();
+      db.getItemsToProcess = vi.fn(() => []);
+      db.getItem = vi.fn(() => null);
+
+      const queue = new TaskQueue(db);
+      queue.authToken = "test-token";
+
+      queue.messageQueue.emit("task_failed", "item1", new Error("boom"));
+
+      // Refill triggered after terminal failure
+      expect(db.getItemsToProcess).toHaveBeenCalledWith({
+        messageLimit: 25,
+        fileLimit: 2,
+      });
+    });
+
+    it("should not refill if no auth token is set", () => {
+      const db = createMockDB();
+      db.getItemsToProcess = vi.fn(() => []);
+
+      const queue = new TaskQueue(db);
+      // authToken is undefined
+
+      queue.messageQueue.emit("task_finish", "item1", {});
+
+      expect(db.getItemsToProcess).not.toHaveBeenCalled();
+    });
+
+    it("should enqueue new items returned by refill", () => {
+      const db = createMockDB();
+      // First call returns nothing (initial state), second returns new items
+      db.getItemsToProcess = vi
+        .fn()
+        .mockReturnValueOnce(["msg2", "msg3"])
+        .mockReturnValueOnce([]);
+      db.getItem = vi.fn((id) =>
+        mockItem(
+          { kind: "message", source: "source1", uuid: id } as ItemMetadata,
+          FetchStatus.Initial,
+        ),
+      );
+
+      const queue = new TaskQueue(db);
+      queue.authToken = "test-token";
+      vi.spyOn(queue.messageQueue, "push");
+
+      // Simulate a task finishing, which triggers refill
+      queue.messageQueue.emit("task_finish", "msg1", {});
+
+      // Refill should have pushed the newly returned items
+      expect(queue.messageQueue.push).toHaveBeenCalledTimes(2);
+      expect(queue.messageQueue.push).toHaveBeenCalledWith(
+        { id: "msg2" },
+        expect.any(Function),
+      );
+      expect(queue.messageQueue.push).toHaveBeenCalledWith(
+        { id: "msg3" },
+        expect.any(Function),
+      );
+    });
+
+    it("should stop refilling when database returns no more items", () => {
+      const db = createMockDB();
+      db.getItemsToProcess = vi.fn(() => []);
+      db.getItem = vi.fn(() => null);
+
+      const queue = new TaskQueue(db);
+      queue.authToken = "test-token";
+      vi.spyOn(queue.messageQueue, "push");
+      vi.spyOn(queue.fileQueue, "push");
+
+      queue.fileQueue.emit("task_finish", "file1", {});
+
+      // DB returned empty, so no items should be pushed
+      expect(queue.messageQueue.push).not.toHaveBeenCalled();
+      expect(queue.fileQueue.push).not.toHaveBeenCalled();
+    });
+  });
+
+  describe("Abort Downloads for Deleted Sources", () => {
+    it("should abort active downloads for a given source", async () => {
+      const db = createMockDB();
+      const metadata = {
+        kind: "file",
+        source: "source1",
+        size: 1000,
+        uuid: "file1",
+      } as ItemMetadata;
+
+      db.getItem = vi.fn(() => mockItem(metadata, FetchStatus.Initial, 0));
+
+      // Make proxyStreamRequest hang until aborted
+      let rejectProxy: (reason: unknown) => void;
+      mockProxyStreamRequest.mockReturnValue(
+        new Promise((_resolve, reject) => {
+          rejectProxy = reject;
+        }),
+      );
+
+      const queue = new TaskQueue(db);
+      const processPromise = queue.process({ id: "file1" }, db);
+
+      // Wait a tick so download registers the AbortController
+      await new Promise((r) => setTimeout(r, 10));
+
+      // Abort downloads for source1
+      queue.abortSourceFetch("source1");
+
+      // Simulate the proxy rejecting due to abort
+      rejectProxy!(new Error("AbortError: The operation was aborted"));
+
+      // Abort is treated as a graceful cancellation, not an error
+      await expect(processPromise).resolves.toBeUndefined();
+    });
+
+    it("should not abort downloads for unrelated sources", async () => {
+      const db = createMockDB();
+      const metadata = {
+        kind: "message",
+        source: "source1",
+        size: 100,
+        uuid: "msg1",
+      } as ItemMetadata;
+
+      db.getItem = vi.fn(() => mockItem(metadata, FetchStatus.Initial, 0));
+
+      const encryptedContent = Buffer.from("encrypted");
+      mockProxyStreamRequest.mockResolvedValue({
+        complete: true,
+        bytesWritten: 100,
+        sha256sum: etagFor(encryptedContent),
+      });
+
+      const encryptedBuffer = Buffer.from("encrypted");
+      vi.spyOn(BufferedWriter.prototype, "getBuffer").mockReturnValue(
+        encryptedBuffer,
+      );
+      mockCrypto.decryptMessage.mockResolvedValue("decrypted");
+
+      const queue = new TaskQueue(db);
+
+      // Abort for a different source
+      queue.abortSourceFetch("source2");
+
+      // Process should still complete normally
+      await queue.process({ id: "msg1" }, db);
+      expect(db.completePlaintextItem).toHaveBeenCalledWith(
+        "msg1",
+        "decrypted",
+      );
+    });
+
+    it("should pass abort signal to proxyStreamRequest", async () => {
+      const db = createMockDB();
+      const metadata = {
+        kind: "message",
+        source: "source1",
+        size: 100,
+        uuid: "msg1",
+      } as ItemMetadata;
+
+      db.getItem = vi.fn(() => mockItem(metadata, FetchStatus.Initial, 0));
+
+      const encryptedBuffer = Buffer.from("encrypted");
+      mockProxyStreamRequest.mockResolvedValue({
+        complete: true,
+        bytesWritten: 100,
+        sha256sum: etagFor(encryptedBuffer),
+      });
+
+      vi.spyOn(BufferedWriter.prototype, "getBuffer").mockReturnValue(
+        encryptedBuffer,
+      );
+      mockCrypto.decryptMessage.mockResolvedValue("decrypted");
+
+      const queue = new TaskQueue(db);
+      await queue.process({ id: "msg1" }, db);
+
+      // Verify abortSignal was passed (not undefined anymore)
+      expect(mockProxyStreamRequest).toHaveBeenCalledWith(
+        expect.anything(),
+        expect.anything(),
+        0,
+        expect.any(AbortSignal),
+        expect.any(Number),
+        expect.any(Function),
+      );
+    });
+
+    it("should clean up activeDownloads entry after download completes", async () => {
+      const db = createMockDB();
+      const metadata = {
+        kind: "message",
+        source: "source1",
+        size: 100,
+        uuid: "msg1",
+      } as ItemMetadata;
+
+      db.getItem = vi.fn(() => mockItem(metadata, FetchStatus.Initial, 0));
+
+      const encryptedBuffer = Buffer.from("encrypted");
+      mockProxyStreamRequest.mockResolvedValue({
+        complete: true,
+        bytesWritten: 100,
+        sha256sum: etagFor(encryptedBuffer),
+      });
+      vi.spyOn(BufferedWriter.prototype, "getBuffer").mockReturnValue(
+        encryptedBuffer,
+      );
+      mockCrypto.decryptMessage.mockResolvedValue("decrypted");
+
+      const queue = new TaskQueue(db);
+      await queue.process({ id: "msg1" }, db);
+
+      // Aborting now should be a no-op (entry already cleaned up)
+      queue.abortSourceFetch("source1");
+      // No error thrown = success
+    });
+  });
+
+  describe("Mid-flight Deletion Races", () => {
+    it("should skip decryption if item is deleted after download", async () => {
+      const db = createMockDB();
+      const metadata = {
+        kind: "message",
+        source: "source1",
+        size: 100,
+        uuid: "msg1",
+      } as ItemMetadata;
+
+      // First getItem returns processable item, second (re-check) returns ScheduledDeletion
+      db.getItem = vi
+        .fn()
+        .mockReturnValueOnce(mockItem(metadata, FetchStatus.Initial, 0))
+        .mockReturnValueOnce(
+          mockItem(metadata, FetchStatus.ScheduledDeletion, 0),
+        );
+
+      const encryptedBuffer = Buffer.from("encrypted");
+      mockProxyStreamRequest.mockResolvedValue({
+        complete: true,
+        bytesWritten: 100,
+        sha256sum: etagFor(encryptedBuffer),
+      });
+
+      vi.spyOn(BufferedWriter.prototype, "getBuffer").mockReturnValue(
+        encryptedBuffer,
+      );
+
+      const queue = new TaskQueue(db);
+      await queue.process({ id: "msg1" }, db);
+
+      // Decryption should never have been attempted
+      expect(mockCrypto.decryptMessage).not.toHaveBeenCalled();
+      expect(db.completePlaintextItem).not.toHaveBeenCalled();
+    });
+
+    it("should drop decryption result if item is deleted during message decryption", async () => {
+      const db = createMockDB();
+      const metadata = {
+        kind: "message",
+        source: "source1",
+        size: 100,
+        uuid: "msg1",
+      } as ItemMetadata;
+
+      // First call: processable, second (post-download re-check): still processable,
+      // third (post-decryption re-check): deleted
+      db.getItem = vi
+        .fn()
+        .mockReturnValueOnce(mockItem(metadata, FetchStatus.Initial, 0))
+        .mockReturnValueOnce(
+          mockItem(metadata, FetchStatus.DecryptionInProgress, 0),
+        )
+        .mockReturnValueOnce(
+          mockItem(metadata, FetchStatus.ScheduledDeletion, 0),
+        );
+
+      const encryptedBuffer = Buffer.from("encrypted");
+      mockProxyStreamRequest.mockResolvedValue({
+        complete: true,
+        bytesWritten: 100,
+        sha256sum: etagFor(encryptedBuffer),
+      });
+
+      vi.spyOn(BufferedWriter.prototype, "getBuffer").mockReturnValue(
+        encryptedBuffer,
+      );
+      mockCrypto.decryptMessage.mockResolvedValue("decrypted plaintext");
+
+      const queue = new TaskQueue(db);
+      await queue.process({ id: "msg1" }, db);
+
+      // Decryption ran but the result was not persisted
+      expect(mockCrypto.decryptMessage).toHaveBeenCalled();
+      expect(db.completePlaintextItem).not.toHaveBeenCalled();
+    });
+
+    it("should drop decryption result if item is deleted during file decryption", async () => {
+      const db = createMockDB();
+      const metadata = {
+        kind: "file",
+        source: "source1",
+        size: 1000,
+        uuid: "file1",
+      } as ItemMetadata;
+
+      // First call: processable, second (post-download re-check): still processable,
+      // third (post-decryption re-check): deleted
+      db.getItem = vi
+        .fn()
+        .mockReturnValueOnce(mockItem(metadata, FetchStatus.Initial, 0))
+        .mockReturnValueOnce(
+          mockItem(metadata, FetchStatus.DecryptionInProgress, 0),
+        )
+        .mockReturnValueOnce(
+          mockItem(metadata, FetchStatus.ScheduledDeletion, 0),
+        );
+
+      mockProxyStreamRequest.mockResolvedValue({
+        complete: true,
+        bytesWritten: 1000,
+        sha256sum: FILE_ETAG,
+      });
+
+      mockCrypto.decryptFile.mockResolvedValue("/tmp/decrypted/file.txt");
+
+      const queue = new TaskQueue(db);
+      await queue.process({ id: "file1" }, db);
+
+      // Decryption ran but completion was not written to DB
+      expect(mockCrypto.decryptFile).toHaveBeenCalled();
+      expect(db.completeFileItem).not.toHaveBeenCalled();
+    });
+
+    it("should drop retry decryption result if item is deleted during retry", async () => {
+      const db = createMockDB();
+      const metadata = {
+        kind: "message",
+        source: "source1",
+        size: 100,
+        uuid: "msg1",
+      } as ItemMetadata;
+
+      // Status is FailedDecryptionRetryable (retry path, no download phase)
+      // First call: processable retry state,
+      // second (post-download re-check): still processable,
+      // third (post-decryption re-check): deleted
+      db.getItem = vi
+        .fn()
+        .mockReturnValueOnce(
+          mockItem(metadata, FetchStatus.FailedDecryptionRetryable, 0),
+        )
+        .mockReturnValueOnce(
+          mockItem(metadata, FetchStatus.FailedDecryptionRetryable, 0),
+        )
+        .mockReturnValueOnce(
+          mockItem(metadata, FetchStatus.ScheduledDeletion, 0),
+        );
+
+      mockCrypto.decryptMessage.mockResolvedValue("decrypted plaintext");
+      fs.promises.readFile = vi
+        .fn()
+        .mockResolvedValue(Buffer.from("encrypted"));
+
+      const queue = new TaskQueue(db);
+      await queue.process({ id: "msg1" }, db);
+
+      // Decryption ran but the result was not persisted
+      expect(mockCrypto.decryptMessage).toHaveBeenCalled();
+      expect(db.completePlaintextItem).not.toHaveBeenCalled();
+    });
+
+    it("should not re-check if item was not downloadable", async () => {
+      const db = createMockDB();
+      const metadata = {
+        kind: "message",
+        source: "source1",
+        size: 100,
+        uuid: "msg1",
+      } as ItemMetadata;
+
+      // Item is already scheduled for deletion — skipped immediately
+      db.getItem = vi.fn(() =>
+        mockItem(metadata, FetchStatus.ScheduledDeletion, 0),
+      );
+
+      const queue = new TaskQueue(db);
+      await queue.process({ id: "msg1" }, db);
+
+      // Should have been skipped at the initial check
+      expect(mockProxyStreamRequest).not.toHaveBeenCalled();
+      expect(mockCrypto.decryptMessage).not.toHaveBeenCalled();
+      expect(db.completePlaintextItem).not.toHaveBeenCalled();
     });
   });
 
@@ -1360,6 +1943,146 @@ describe("TaskQueue - Two-Phase Download and Decryption", () => {
 
       expect(db.terminallyFailItem).toHaveBeenCalledWith("msg1");
       expect(db.setDecryptionInProgress).not.toHaveBeenCalled();
+    });
+  });
+
+  describe("Large Backlog Regression", () => {
+    it("refill should drain a large backlog by re-querying after each task completes", () => {
+      const db = createMockDB();
+
+      // Simulate a large backlog: first call returns a batch, second returns more, third returns empty
+      db.getItemsToProcess = vi
+        .fn()
+        .mockReturnValueOnce(["msg1", "msg2", "msg3"])
+        .mockReturnValueOnce(["msg4", "msg5"])
+        .mockReturnValueOnce([]);
+
+      db.getItem = vi.fn((uuid: string) =>
+        mockItem(
+          {
+            kind: "message",
+            source: "source1",
+            size: 100,
+            uuid,
+          } as ItemMetadata,
+          FetchStatus.Initial,
+          0,
+        ),
+      );
+
+      const queue = new TaskQueue(db);
+      queue.authToken = "test-token";
+
+      // First call: initial queueFetches loads batch 1
+      queue.queueFetches({ authToken: "test-token" });
+      expect(db.getItemsToProcess).toHaveBeenCalledTimes(1);
+
+      // Simulate task completion triggers refill → loads batch 2
+      queue.messageQueue.emit("task_finish", "msg1", {});
+      expect(db.getItemsToProcess).toHaveBeenCalledTimes(2);
+
+      // Another completion → loads batch 3 (empty, backlog drained)
+      queue.messageQueue.emit("task_finish", "msg4", {});
+      expect(db.getItemsToProcess).toHaveBeenCalledTimes(3);
+    });
+
+    it("deletion during large backlog should prevent new items from being queued", () => {
+      const db = createMockDB();
+
+      // First call returns items, second call (after deletion) returns nothing
+      db.getItemsToProcess = vi
+        .fn()
+        .mockReturnValueOnce(["msg1", "msg2"])
+        .mockReturnValueOnce([]);
+
+      const msg1Meta = {
+        kind: "message",
+        source: "source1",
+        size: 100,
+        uuid: "msg1",
+      } as ItemMetadata;
+
+      db.getItem = vi.fn((uuid: string) => {
+        if (uuid === "msg1") {
+          // After deletion, item is ScheduledDeletion
+          return mockItem(msg1Meta, FetchStatus.ScheduledDeletion, 0);
+        }
+        return mockItem(
+          {
+            kind: "message",
+            source: "source1",
+            size: 100,
+            uuid,
+          } as ItemMetadata,
+          FetchStatus.Initial,
+          0,
+        );
+      });
+
+      const queue = new TaskQueue(db);
+      queue.authToken = "test-token";
+
+      // Initial queueing
+      queue.queueFetches({ authToken: "test-token" });
+
+      // Source gets deleted — items marked ScheduledDeletion in DB.
+      // On next refill, getItemsToProcess returns empty because all items
+      // are ScheduledDeletion and excluded by the bounded query.
+      queue.messageQueue.emit("task_finish", "msg1", {});
+
+      // Second call to getItemsToProcess returned [] — nothing new queued
+      expect(db.getItemsToProcess).toHaveBeenCalledTimes(2);
+    });
+
+    it("abort should cancel all active downloads for a deleted source across a backlog", async () => {
+      const db = createMockDB();
+
+      // Two files from the same source actively downloading
+      const fileMeta = (uuid: string) =>
+        ({
+          kind: "file",
+          source: "source1",
+          size: 10000,
+          uuid,
+        }) as ItemMetadata;
+
+      db.getItem = vi
+        .fn()
+        .mockReturnValueOnce(
+          mockItem(fileMeta("file1"), FetchStatus.Initial, 0),
+        )
+        .mockReturnValueOnce(
+          mockItem(fileMeta("file2"), FetchStatus.Initial, 0),
+        );
+
+      // Make downloads hang until aborted
+      const rejects: Array<(reason: unknown) => void> = [];
+      mockProxyStreamRequest.mockImplementation(
+        () =>
+          new Promise((_resolve, reject) => {
+            rejects.push(reject);
+          }),
+      );
+
+      const queue = new TaskQueue(db);
+
+      const p1 = queue.process({ id: "file1" }, db);
+      const p2 = queue.process({ id: "file2" }, db);
+
+      // Wait for downloads to register
+      await new Promise((r) => setTimeout(r, 10));
+
+      // Abort all downloads for source1
+      queue.abortSourceFetch("source1");
+
+      // Reject the hanging promises to simulate abort
+      for (const reject of rejects) {
+        reject(new Error("AbortError: The operation was aborted"));
+      }
+
+      // Abort is treated as a graceful cancellation, not an error
+      await expect(p1).resolves.toBeUndefined();
+      await expect(p2).resolves.toBeUndefined();
     });
   });
 });
