@@ -628,11 +628,8 @@ export class DB {
   }
 
   public updateFetchStatus(itemUuid: string, fetchStatus: number) {
-    // When resetting to Initial or DownloadInProgress, also reset fetch_progress
-    if (
-      fetchStatus === FetchStatus.Initial ||
-      fetchStatus === FetchStatus.DownloadInProgress
-    ) {
+    // When cancelling, reset fetch_progress so the next download starts fresh
+    if (fetchStatus === FetchStatus.Cancelled) {
       this.updateItemFetchStatusWithReset.run({
         uuid: itemUuid,
         fetch_status: fetchStatus,

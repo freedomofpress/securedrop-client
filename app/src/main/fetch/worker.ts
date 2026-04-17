@@ -25,6 +25,15 @@ const crypto = Crypto.initialize(workerData.cryptoConfig);
 const db = new Datastore(crypto, new Storage());
 const q = new TaskQueue(db, port);
 
-port.on("message", (message: AuthedRequest) => {
-  q.queueFetches(message);
+type CancelMessage = {
+  type: "cancel";
+  itemId: string;
+};
+
+port.on("message", (message: AuthedRequest | CancelMessage) => {
+  if ("type" in message && message.type === "cancel") {
+    q.cancelDownload(message.itemId);
+  } else {
+    q.queueFetches(message as AuthedRequest);
+  }
 });

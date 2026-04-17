@@ -197,6 +197,7 @@ const File = memo(function File({ item, designation, onUpdate }: FileProps) {
   let FileInner;
   switch (fetchStatus) {
     case FetchStatus.Initial:
+    case FetchStatus.Cancelled:
       FileInner = InitialFile;
       break;
     case FetchStatus.DownloadInProgress:
@@ -217,7 +218,10 @@ const File = memo(function File({ item, designation, onUpdate }: FileProps) {
   }
 
   const handleClick = () => {
-    if (fetchStatus === FetchStatus.Initial) {
+    if (
+      fetchStatus === FetchStatus.Initial ||
+      fetchStatus === FetchStatus.Cancelled
+    ) {
       onUpdate({
         item_uuid: item.uuid,
         type: ItemUpdateType.FetchStatus,
@@ -227,15 +231,18 @@ const File = memo(function File({ item, designation, onUpdate }: FileProps) {
   };
 
   // Apply error border color using theme token when in failed state
-  // Apply hover background color for initial state
+  // Apply hover background color for initial state (or cancelled)
   const fileBoxStyle = {
     ...(fetchStatus === FetchStatus.FailedTerminal
       ? { borderColor: token.colorErrorBorder }
       : undefined),
-    ...(fetchStatus === FetchStatus.Initial && isHovered
+    ...((fetchStatus === FetchStatus.Initial ||
+      fetchStatus === FetchStatus.Cancelled) &&
+    isHovered
       ? { backgroundColor: token.colorFillQuaternary }
       : undefined),
-    ...(fetchStatus === FetchStatus.Initial
+    ...(fetchStatus === FetchStatus.Initial ||
+    fetchStatus === FetchStatus.Cancelled
       ? { cursor: "pointer" }
       : undefined),
     transition: "background-color 0.2s ease",
@@ -256,10 +263,14 @@ const File = memo(function File({ item, designation, onUpdate }: FileProps) {
           style={fileBoxStyle}
           onClick={handleClick}
           onMouseEnter={() =>
-            fetchStatus === FetchStatus.Initial && setIsHovered(true)
+            (fetchStatus === FetchStatus.Initial ||
+              fetchStatus === FetchStatus.Cancelled) &&
+            setIsHovered(true)
           }
           onMouseLeave={() =>
-            fetchStatus === FetchStatus.Initial && setIsHovered(false)
+            (fetchStatus === FetchStatus.Initial ||
+              fetchStatus === FetchStatus.Cancelled) &&
+            setIsHovered(false)
           }
         >
           <FileInner item={item} onUpdate={onUpdate} />
@@ -342,7 +353,7 @@ const InProgressFile = memo(function InProgressFile({
     onUpdate({
       item_uuid: item.uuid,
       type: ItemUpdateType.FetchStatus,
-      fetch_status: FetchStatus.Initial,
+      fetch_status: FetchStatus.Cancelled,
     });
   };
 
@@ -531,7 +542,7 @@ const FailedFile = memo(function FailedFile({ item, onUpdate }: FileViewProps) {
     onUpdate({
       item_uuid: item.uuid,
       type: ItemUpdateType.FetchStatus,
-      fetch_status: FetchStatus.Initial,
+      fetch_status: FetchStatus.Cancelled,
     });
   };
 
