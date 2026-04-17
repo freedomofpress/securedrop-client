@@ -28,8 +28,8 @@ const q = new TaskQueue(db, port);
 port.on("message", (message: FetchWorkerMessage) => {
   if ("type" in message && message.type === "cancel") {
     q.cancelDownload(message.itemId);
-  } else if ("type" in message && message.type === "abortSourceDownloads") {
-    q.abortDownloadsForSource(message.sourceUuid);
+  } else if ("type" in message && message.type === "abortSourceFetch") {
+    q.abortSourceFetch(message.sourceUuid);
   } else {
     q.queueFetches(message as AuthedRequest);
   }

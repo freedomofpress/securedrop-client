@@ -109,7 +109,7 @@ export class TaskQueue {
     }
   }
 
-  abortDownloadsForSource(sourceUuid: string) {
+  abortSourceFetch(sourceUuid: string) {
     for (const [itemId, entry] of this.activeDownloads) {
       if (entry.sourceUuid === sourceUuid) {
         entry.controller.abort();

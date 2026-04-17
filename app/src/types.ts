@@ -61,9 +61,9 @@ export type AuthedRequest = {
   hintedVersion?: string;
 };
 
-// Message sent to the fetch worker to abort all active downloads for a source
-export type AbortSourceDownloads = {
-  type: "abortSourceDownloads";
+// Message sent to the fetch worker to abort all active downloads and decryptions for a source
+export type AbortSourceFetch = {
+  type: "abortSourceFetch";
   sourceUuid: string;
 };
 
@@ -76,7 +76,7 @@ export type CancelDownload = {
 // Union of all message types the fetch worker can receive
 export type FetchWorkerMessage =
   | AuthedRequest
-  | AbortSourceDownloads
+  | AbortSourceFetch
   | CancelDownload;
 
 // Re-export some types that are derived from zod schemas
