@@ -459,7 +459,7 @@ if (!gotTheLock) {
             // Abort any in-flight downloads for this source in the fetch worker
             if (fetchWorker) {
               fetchWorker.postMessage({
-                type: "abortSourceDownloads",
+                type: "abortSourceFetch",
                 sourceUuid,
               });
             }
@@ -469,7 +469,7 @@ if (!gotTheLock) {
             // Abort any in-flight downloads for this source in the fetch worker
             if (fetchWorker) {
               fetchWorker.postMessage({
-                type: "abortSourceDownloads",
+                type: "abortSourceFetch",
                 sourceUuid,
               });
             }

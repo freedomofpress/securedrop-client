@@ -1263,7 +1263,7 @@ describe("TaskQueue - Two-Phase Download and Decryption", () => {
       await new Promise((r) => setTimeout(r, 10));
 
       // Abort downloads for source1
-      queue.abortDownloadsForSource("source1");
+      queue.abortSourceFetch("source1");
 
       // Simulate the proxy rejecting due to abort
       rejectProxy!(new Error("AbortError: The operation was aborted"));
@@ -1299,7 +1299,7 @@ describe("TaskQueue - Two-Phase Download and Decryption", () => {
       const queue = new TaskQueue(db);
 
       // Abort for a different source
-      queue.abortDownloadsForSource("source2");
+      queue.abortSourceFetch("source2");
 
       // Process should still complete normally
       await queue.process({ id: "msg1" }, db);
@@ -1372,7 +1372,7 @@ describe("TaskQueue - Two-Phase Download and Decryption", () => {
       await queue.process({ id: "msg1" }, db);
 
       // Aborting now should be a no-op (entry already cleaned up)
-      queue.abortDownloadsForSource("source1");
+      queue.abortSourceFetch("source1");
       // No error thrown = success
     });
   });
@@ -2073,7 +2073,7 @@ describe("TaskQueue - Two-Phase Download and Decryption", () => {
       await new Promise((r) => setTimeout(r, 10));
 
       // Abort all downloads for source1
-      queue.abortDownloadsForSource("source1");
+      queue.abortSourceFetch("source1");
 
       // Reject the hanging promises to simulate abort
       for (const reject of rejects) {
