@@ -3,18 +3,10 @@ productName: securedrop-app
 directories:
   buildResources: build
 files:
-  - "!**/.vscode/*"
-  - "!screenshots/*"
-  - "!src/*"
-  - "!integration_tests/*"
-  - "!server_tests/*"
-  - "!scripts/*"
-  - "!electron.vite.config.{js,ts,mjs,cjs}"
-  - "!{vitest.config.ts,tailwind.config.ts}"
-  - "!{.eslintcache,eslint.config.ts,.prettierignore,.prettierrc.yaml,dev-app-update.yml}"
-  - "!{CHANGELOG.md,README.md,architecture.md}"
-  - "!{.env,.env.*,.npmrc,pnpm-lock.yaml,pnpm-workspace.yaml}"
-  - "!{tsconfig.json,tsconfig.node.json,tsconfig.web.json}"
+  - out/**
+  - resources/**
+  - package.json
+  - node_modules/**
 asarUnpack:
   - resources/**
   - node_modules/better-sqlite3/**
