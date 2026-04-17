@@ -1,5 +1,14 @@
 # Changelog
 
+## 1.0.0-rc2
+
+* Fix cancellation and pause/resume (#3207)
+* Add support for sd-printers in Inbox (#3227)
+* Use SourceConversationTruncated event (#3232)
+* Have Inbox check etag of downloads for transport integrity (#3223)
+* Enable en_XA pseduolocale for testing (#3222)
+* Deleting source mid-download/decryption aborts gracefully (#3242)
+
 ## 1.0.0-rc1
 
 This release introduces the new SecureDrop Inbox, which is a rewrite of the

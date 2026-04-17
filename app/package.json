@@ -1,6 +1,6 @@
 {
   "name": "securedrop-app",
-  "version": "1.0.0-rc1",
+  "version": "1.0.0-rc2",
   "description": "Graphical desktop app for SecureDrop",
   "productName": "SecureDrop",
   "main": "./out/main/index.js",
