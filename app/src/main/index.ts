@@ -464,8 +464,15 @@ if (!gotTheLock) {
               });
             }
           }
-          // For truncation, delete all truncated item files from the fs
+          // For truncation, abort in-flight downloads and delete truncated item files from the fs
           if (type === PendingEventType.SourceConversationTruncated) {
+            // Abort any in-flight downloads for this source in the fetch worker
+            if (fetchWorker) {
+              fetchWorker.postMessage({
+                type: "abortSourceDownloads",
+                sourceUuid,
+              });
+            }
             if (data?.upper_bound) {
               const items = db.getSourceWithItems(sourceUuid, {
                 beforeInteractionCount: data?.upper_bound + 1,
