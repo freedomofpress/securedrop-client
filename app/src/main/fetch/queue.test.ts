@@ -1539,7 +1539,7 @@ describe("TaskQueue - Two-Phase Download and Decryption", () => {
         uuid: "msg1",
       } as ItemMetadata;
 
-      // Item is already complete — skipped immediately
+      // Item is already scheduled for deletion — skipped immediately
       db.getItem = vi.fn(() =>
         mockItem(metadata, FetchStatus.ScheduledDeletion, 0),
       );

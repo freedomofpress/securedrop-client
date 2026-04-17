@@ -305,6 +305,8 @@ export class Crypto {
 
       const gpgProcess = spawn(cmd[0], cmd.slice(1), this.getSpawnOptions());
 
+      let isSettled = false;
+
       // Kill the process if the abort signal fires
       const abortListener = () => {
         gpgProcess.kill();
@@ -326,10 +328,14 @@ export class Crypto {
 
       // Handle the case where the signal was already aborted before we registered the listener
       if (signal?.aborted) {
+        signal?.removeEventListener("abort", abortListener);
+        isSettled = true;
         gpgProcess.kill();
-        const err = new Error("Decryption was cancelled");
-        err.name = "AbortError";
-        reject(err);
+        void destroyAndCleanup().finally(() => {
+          const err = new Error("Decryption was cancelled");
+          err.name = "AbortError";
+          reject(err);
+        });
         return;
       }
 
@@ -342,6 +348,10 @@ export class Crypto {
       });
 
       gpgProcess.on("close", async (code, exitSignal) => {
+        if (isSettled) {
+          return;
+        }
+
         signal?.removeEventListener("abort", abortListener);
         gpgOutputFile.end();
         const errorMessage = stderr.toString("utf8");
@@ -350,15 +360,18 @@ export class Crypto {
           await destroyAndCleanup();
           const err = new Error("Decryption was cancelled");
           err.name = "AbortError";
+          isSettled = true;
           reject(err);
           return;
         }
         if (exitSignal) {
           await destroyAndCleanup();
+          isSettled = true;
           reject(new Error(`Process terminated with signal ${exitSignal}`));
           return;
         } else if (code !== 0) {
           await destroyAndCleanup();
+          isSettled = true;
           reject(
             new CryptoError(
               `GPG file decryption failed (exit code ${code}): ${errorMessage}`,
@@ -367,6 +380,7 @@ export class Crypto {
           return;
         } else if (errorMessage.trim() && !isExpectedGpgStderr(errorMessage)) {
           await destroyAndCleanup();
+          isSettled = true;
           reject(
             // n.b. use JSON.stringify() to sanitize the error since it's not what we expect
             // and could be the result of some sort of injection attack
@@ -393,10 +407,12 @@ export class Crypto {
           // Clean up temporary GPG output file
           fs.unlink(tempGpgOutput, () => {});
 
+          isSettled = true;
           resolve(finalAbsolutePath);
         } catch (error) {
           // Clean up temp directory on error
           fs.rmSync(tempDir.path, { recursive: true, force: true });
+          isSettled = true;
           reject(
             new CryptoError(
               "Failed to decompress decrypted file",

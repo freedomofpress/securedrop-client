@@ -226,7 +226,7 @@ export class TaskQueue {
         status == FetchStatus.Cancelled ||
         status == FetchStatus.ScheduledDeletion
       ) {
-        console.debug("Item task is not in an processable state, skipping...");
+        console.debug("Item task is not in a processable state, skipping...");
         return;
       }
 

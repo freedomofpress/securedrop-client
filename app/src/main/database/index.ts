@@ -126,6 +126,11 @@ export class DB {
     source_uuid: string;
     fetch_status: number;
   }>;
+  private updateItemsFetchStatusBySourceUpTo: Statement<{
+    source_uuid: string;
+    upper_bound: number;
+    fetch_status: number;
+  }>;
   private selectItem: Statement<{ uuid: string }, ItemRow>;
 
   private selectAllJournalistVersion: Statement<
@@ -283,6 +288,9 @@ export class DB {
     );
     this.updateItemsFetchStatusBySource = this.db.prepare(
       "UPDATE items SET fetch_status = @fetch_status WHERE source_uuid = @source_uuid",
+    );
+    this.updateItemsFetchStatusBySourceUpTo = this.db.prepare(
+      "UPDATE items SET fetch_status = @fetch_status WHERE source_uuid = @source_uuid AND interaction_count <= @upper_bound",
     );
     this.upsertItem = this.db.prepare(
       "INSERT INTO items (uuid, data, version) VALUES (@uuid, @data, @version) ON CONFLICT(uuid) DO UPDATE SET data=@data, version=@version",
@@ -1041,6 +1049,17 @@ export class DB {
     });
   }
 
+  private markSourceItemsScheduledDeletionUpTo(
+    sourceUuid: string,
+    upperBound: number,
+  ) {
+    this.updateItemsFetchStatusBySourceUpTo.run({
+      source_uuid: sourceUuid,
+      upper_bound: upperBound,
+      fetch_status: FetchStatus.ScheduledDeletion,
+    });
+  }
+
   private purgePendingEventsForSource(sourceUuid: string) {
     this.deletePendingEventsBySourceScope.run({
       source_uuid: sourceUuid,
@@ -1057,12 +1076,17 @@ export class DB {
         .generate({ timestamp: Date.now() })
         .toString();
 
-      if (
-        type === PendingEventType.SourceDeleted ||
-        type === PendingEventType.SourceConversationTruncated
-      ) {
+      if (type === PendingEventType.SourceDeleted) {
         this.purgePendingEventsForSource(sourceUuid);
         this.markSourceItemsScheduledDeletion(sourceUuid);
+      } else if (type === PendingEventType.SourceConversationTruncated) {
+        this.purgePendingEventsForSource(sourceUuid);
+        if (data?.upper_bound !== undefined) {
+          this.markSourceItemsScheduledDeletionUpTo(
+            sourceUuid,
+            data.upper_bound,
+          );
+        }
       }
 
       this.insertSourcePendingEvent.run({

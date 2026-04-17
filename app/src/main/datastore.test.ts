@@ -383,26 +383,34 @@ describe("Datastore Method Tests", () => {
     });
 
     db.updateItems({
-      source1Item1: mockItemMetadata("source1Item1", "source1", "file"),
-      source1Item2: mockItemMetadata("source1Item2", "source1"),
+      source1Item1: mockItemMetadata("source1Item1", "source1", "file", 1),
+      source1Item2: mockItemMetadata("source1Item2", "source1", "message", 1),
+      source1Item3: mockItemMetadata("source1Item3", "source1", "message", 2),
       source2Item1: mockItemMetadata("source2Item1", "source2", "file"),
     });
 
     db.setDownloadInProgress("source1Item1", 9000);
     db.setDownloadInProgress("source2Item1", 12000);
 
+    // Truncate only items up to interaction_count 1
     db.addPendingSourceEvent(
       "source1",
       PendingEventType.SourceConversationTruncated,
+      { upper_bound: 1 },
     );
 
     const source1Item1 = db.getItem("source1Item1");
     const source1Item2 = db.getItem("source1Item2");
+    const source1Item3 = db.getItem("source1Item3");
     const source2Item1 = db.getItem("source2Item1");
 
+    // Items within upper_bound are marked ScheduledDeletion
     expect(source1Item1?.fetch_status).toBe(FetchStatus.ScheduledDeletion);
     expect(source1Item1?.fetch_progress).toBe(9000);
     expect(source1Item2?.fetch_status).toBe(FetchStatus.ScheduledDeletion);
+    // Item above upper_bound is unaffected
+    expect(source1Item3?.fetch_status).toBe(FetchStatus.Initial);
+    // Unrelated source is unaffected
     expect(source2Item1?.fetch_status).toBe(FetchStatus.DownloadInProgress);
     expect(source2Item1?.fetch_progress).toBe(12000);
     expect(source1Item1).not.toBeNull();
@@ -1751,10 +1759,11 @@ describe("Datastore Method Tests", () => {
         db.addPendingItemEvent(`msg${i}`, PendingEventType.ItemDeleted);
       }
 
-      // Delete conversation (not the whole source)
+      // Delete conversation (not the whole source), covering all 30 items
       db.addPendingSourceEvent(
         "source1",
         PendingEventType.SourceConversationTruncated,
+        { upper_bound: 30 },
       );
 
       // Events purged except the delete event itself
