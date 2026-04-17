@@ -10,6 +10,7 @@ import {
   PrintStateMachine,
   ExportState,
   ExportStateMachine,
+  EXPORT_QUBE,
 } from "./export";
 import { PrintStatus } from "../types";
 
@@ -79,7 +80,11 @@ describe("ExportStateMachine", () => {
 
 // ArchiveExporter.parseStatus
 describe("ArchiveExporter", () => {
-  class TestExporter extends ArchiveExporter {}
+  class TestExporter extends ArchiveExporter {
+    constructor() {
+      super(EXPORT_QUBE);
+    }
+  }
 
   it("should parse known status from processStderr", () => {
     const exporter = new TestExporter();
@@ -121,7 +126,7 @@ describe("ArchiveExporter", () => {
     });
 
     it("creates an archive with metadata.json only", async () => {
-      const exporter = new ArchiveExporter();
+      const exporter = new ArchiveExporter(EXPORT_QUBE);
       const archiveFilename = "test-archive.tar.gz";
       const metadata = { foo: "bar" };
 
@@ -145,7 +150,7 @@ describe("ArchiveExporter", () => {
     });
 
     it("creates an archive with metadata.json and one file", async () => {
-      const exporter = new ArchiveExporter();
+      const exporter = new ArchiveExporter(EXPORT_QUBE);
       const archiveFilename = "test-archive2.tar.gz";
       const metadata = { foo: "bar" };
       const fileContent = "hello world";
@@ -180,7 +185,7 @@ describe("ArchiveExporter", () => {
     });
 
     it("creates an archive with multiple files and correct structure", async () => {
-      const exporter = new ArchiveExporter();
+      const exporter = new ArchiveExporter(EXPORT_QUBE);
       const archiveFilename = "test-archive3.tar.gz";
       const metadata = { foo: "bar" };
 
@@ -230,7 +235,7 @@ describe("ArchiveExporter", () => {
     });
 
     it("creates an archive with sourceName and files under source directory", async () => {
-      const exporter = new ArchiveExporter();
+      const exporter = new ArchiveExporter(EXPORT_QUBE);
       const archiveFilename = "test-archive5.tar.gz";
       const metadata = { foo: "bar" };
 
@@ -303,7 +308,7 @@ describe("ArchiveExporter", () => {
     });
 
     it("does not include missing files and removes metadata if all missing", async () => {
-      const exporter = new ArchiveExporter();
+      const exporter = new ArchiveExporter(EXPORT_QUBE);
       const archiveFilename = "test-archive4.tar.gz";
       const metadata = { foo: "bar" };
       const missingFile = path.join(archiveDir, "doesnotexist.txt");

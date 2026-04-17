@@ -20,6 +20,9 @@ import {
 const mkdtemp = promisify(mkdtempCb);
 const chmodAsync = promisify(chmod);
 
+export const PRINT_QUBE = "sd-printers";
+export const EXPORT_QUBE = "sd-devices";
+
 export class PrintExportError extends Error {
   status?: DeviceStatus;
   constructor(message: string, status?: DeviceStatus) {
@@ -204,6 +207,11 @@ export class ArchiveExporter {
   process: ChildProcess | null = null;
   processStderr: string = "";
   tmpdir: string | null = null;
+  backendQube: string;
+
+  constructor(backendQube: string) {
+    this.backendQube = backendQube;
+  }
 
   /**
    * Create an archive to be sent to the Export VM.
@@ -312,7 +320,7 @@ export class ArchiveExporter {
       const qrexec = "/usr/bin/qrexec-client-vm";
       const args = [
         "--",
-        "sd-devices",
+        this.backendQube,
         "qubes.OpenInVM",
         "/usr/lib/qubes/qopen-in-vm",
         "--view-only",
@@ -378,7 +386,7 @@ export class ArchiveExporter {
       const last = lines.length > 0 ? lines[lines.length - 1] : "";
       if (!last) {
         throw new PrintExportError(
-          "No final line in sd-devices status response",
+          `No final line in ${this.backendQube} status response`,
         );
       }
 
@@ -427,7 +435,7 @@ export class Printer extends ArchiveExporter {
   private fsm: PrintStateMachine;
 
   constructor() {
-    super();
+    super(PRINT_QUBE);
     this.fsm = new PrintStateMachine();
   }
 
@@ -546,7 +554,7 @@ export class Exporter extends ArchiveExporter {
   private fsm: ExportStateMachine;
 
   constructor() {
-    super();
+    super(EXPORT_QUBE);
     this.fsm = new ExportStateMachine();
   }
 
