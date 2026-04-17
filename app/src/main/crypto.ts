@@ -208,6 +208,15 @@ export class Crypto {
       };
       signal?.addEventListener("abort", abortListener, { once: true });
 
+      // Handle the case where the signal was already aborted before we registered the listener
+      if (signal?.aborted) {
+        gpgProcess.kill();
+        const err = new Error("Decryption was cancelled");
+        err.name = "AbortError";
+        reject(err);
+        return;
+      }
+
       let stdout = Buffer.alloc(0);
       let stderr = Buffer.alloc(0);
 
@@ -300,15 +309,6 @@ export class Crypto {
       const abortListener = () => {
         gpgProcess.kill();
       };
-      signal?.addEventListener("abort", abortListener, { once: true });
-
-      // Stream GPG output directly to temporary file (no memory accumulation)
-      gpgProcess.stdout.pipe(gpgOutputFile);
-
-      // Collect stderr (error messages)
-      gpgProcess.stderr.on("data", (chunk) => {
-        stderr = Buffer.concat([stderr, chunk]);
-      });
 
       // Destroy the write stream and wait for it to fully close before deleting
       // the temp directory, to avoid a race between a pending fs.open and rmSync.
@@ -321,6 +321,25 @@ export class Crypto {
         }
         fs.rmSync(tempDir.path, { recursive: true, force: true });
       };
+
+      signal?.addEventListener("abort", abortListener, { once: true });
+
+      // Handle the case where the signal was already aborted before we registered the listener
+      if (signal?.aborted) {
+        gpgProcess.kill();
+        const err = new Error("Decryption was cancelled");
+        err.name = "AbortError";
+        reject(err);
+        return;
+      }
+
+      // Stream GPG output directly to temporary file (no memory accumulation)
+      gpgProcess.stdout.pipe(gpgOutputFile);
+
+      // Collect stderr (error messages)
+      gpgProcess.stderr.on("data", (chunk) => {
+        stderr = Buffer.concat([stderr, chunk]);
+      });
 
       gpgProcess.on("close", async (code, exitSignal) => {
         signal?.removeEventListener("abort", abortListener);
