@@ -349,6 +349,74 @@ describe("Datastore Method Tests", () => {
     expect(sourceWithItems.items.length).toEqual(3);
   });
 
+  it("pending SourceDeleted should mark source items as ScheduledDeletion without deleting rows", () => {
+    db.updateSources({
+      source1: mockSourceMetadata("source1"),
+      source2: mockSourceMetadata("source2"),
+    });
+
+    db.updateItems({
+      source1Item1: mockItemMetadata("source1Item1", "source1", "file"),
+      source1Item2: mockItemMetadata("source1Item2", "source1"),
+      source2Item1: mockItemMetadata("source2Item1", "source2"),
+    });
+
+    db.completePlaintextItem("source1Item2", "plaintext");
+
+    db.addPendingSourceEvent("source1", PendingEventType.SourceDeleted);
+
+    const source1Item1 = db.getItem("source1Item1");
+    const source1Item2 = db.getItem("source1Item2");
+    const source2Item1 = db.getItem("source2Item1");
+
+    expect(source1Item1?.fetch_status).toBe(FetchStatus.ScheduledDeletion);
+    expect(source1Item2?.fetch_status).toBe(FetchStatus.ScheduledDeletion);
+    expect(source2Item1?.fetch_status).toBe(FetchStatus.Initial);
+    expect(source1Item1).not.toBeNull();
+    expect(source1Item2).not.toBeNull();
+  });
+
+  it("pending SourceConversationTruncated should mark only that source items as ScheduledDeletion", () => {
+    db.updateSources({
+      source1: mockSourceMetadata("source1"),
+      source2: mockSourceMetadata("source2"),
+    });
+
+    db.updateItems({
+      source1Item1: mockItemMetadata("source1Item1", "source1", "file", 1),
+      source1Item2: mockItemMetadata("source1Item2", "source1", "message", 1),
+      source1Item3: mockItemMetadata("source1Item3", "source1", "message", 2),
+      source2Item1: mockItemMetadata("source2Item1", "source2", "file"),
+    });
+
+    db.setDownloadInProgress("source1Item1", 9000);
+    db.setDownloadInProgress("source2Item1", 12000);
+
+    // Truncate only items up to interaction_count 1
+    db.addPendingSourceEvent(
+      "source1",
+      PendingEventType.SourceConversationTruncated,
+      { upper_bound: 1 },
+    );
+
+    const source1Item1 = db.getItem("source1Item1");
+    const source1Item2 = db.getItem("source1Item2");
+    const source1Item3 = db.getItem("source1Item3");
+    const source2Item1 = db.getItem("source2Item1");
+
+    // Items within upper_bound are marked ScheduledDeletion
+    expect(source1Item1?.fetch_status).toBe(FetchStatus.ScheduledDeletion);
+    expect(source1Item1?.fetch_progress).toBe(9000);
+    expect(source1Item2?.fetch_status).toBe(FetchStatus.ScheduledDeletion);
+    // Item above upper_bound is unaffected
+    expect(source1Item3?.fetch_status).toBe(FetchStatus.Initial);
+    // Unrelated source is unaffected
+    expect(source2Item1?.fetch_status).toBe(FetchStatus.DownloadInProgress);
+    expect(source2Item1?.fetch_progress).toBe(12000);
+    expect(source1Item1).not.toBeNull();
+    expect(source1Item2).not.toBeNull();
+  });
+
   it("pending Starred event should star sources", () => {
     // Insert three sources
     db.updateSources({
@@ -874,6 +942,101 @@ describe("Datastore Method Tests", () => {
     expect(replyEvent!.data).toHaveProperty("plaintext", "reply text");
   });
 
+  it("pending SourceDeleted should purge all pending events for that source and its items", async () => {
+    db.updateSources({
+      source1: mockSourceMetadata("source1"),
+      source2: mockSourceMetadata("source2"),
+    });
+    db.updateItems({
+      item1: mockItemMetadata("item1", "source1", "message", 1),
+      item2: mockItemMetadata("item2", "source1", "message", 2),
+      item3: mockItemMetadata("item3", "source2", "message", 1),
+    });
+
+    db.addPendingSourceEvent("source1", PendingEventType.Starred);
+    db.addPendingSourceConversationSeen("source1", 2);
+    db.addPendingItemEvent("item1", PendingEventType.ItemDeleted);
+    db.addPendingItemEvent("item2", PendingEventType.ItemDeleted);
+    await db.addPendingReplySentEvent("reply text", "source1", 3);
+    const unrelated = db.addPendingSourceEvent(
+      "source2",
+      PendingEventType.Starred,
+    );
+
+    const deleteEventId = db.addPendingSourceEvent(
+      "source1",
+      PendingEventType.SourceDeleted,
+    );
+
+    const events = db.getPendingEvents();
+    expect(events.length).toBe(2);
+
+    const deleteEvent = events.find((e) => e.id === deleteEventId);
+    expect(deleteEvent).toBeDefined();
+    expect(deleteEvent!.type).toBe(PendingEventType.SourceDeleted);
+    expect(deleteEvent!.target).toHaveProperty("source_uuid", "source1");
+
+    const unrelatedEvent = events.find((e) => e.id === unrelated);
+    expect(unrelatedEvent).toBeDefined();
+    expect(unrelatedEvent!.type).toBe(PendingEventType.Starred);
+    expect(unrelatedEvent!.target).toHaveProperty("source_uuid", "source2");
+  });
+
+  it("pending SourceConversationTruncated should purge all pending events for that source scope", async () => {
+    db.updateSources({
+      source1: mockSourceMetadata("source1"),
+      source2: mockSourceMetadata("source2"),
+    });
+    db.updateItems({
+      item1: mockItemMetadata("item1", "source1", "message", 1),
+      item2: mockItemMetadata("item2", "source1", "message", 2),
+      item3: mockItemMetadata("item3", "source2", "message", 1),
+    });
+
+    db.addPendingSourceEvent("source1", PendingEventType.Unstarred);
+    db.addPendingSourceConversationSeen("source1", 2);
+    db.addPendingItemEvent("item1", PendingEventType.ItemDeleted);
+    await db.addPendingReplySentEvent("reply text", "source1", 3);
+    const unrelatedSourceEvent = db.addPendingSourceEvent(
+      "source2",
+      PendingEventType.Starred,
+    );
+    const unrelatedItemEvent = db.addPendingItemEvent(
+      "item3",
+      PendingEventType.ItemDeleted,
+    );
+
+    const deleteEventId = db.addPendingSourceEvent(
+      "source1",
+      PendingEventType.SourceConversationTruncated,
+    );
+
+    const events = db.getPendingEvents();
+    expect(events.length).toBe(3);
+
+    const deleteEvent = events.find((e) => e.id === deleteEventId);
+    expect(deleteEvent).toBeDefined();
+    expect(deleteEvent!.type).toBe(
+      PendingEventType.SourceConversationTruncated,
+    );
+    expect(deleteEvent!.target).toHaveProperty("source_uuid", "source1");
+
+    const remainingSourceEvent = events.find(
+      (e) => e.id === unrelatedSourceEvent,
+    );
+    expect(remainingSourceEvent).toBeDefined();
+    expect(remainingSourceEvent!.type).toBe(PendingEventType.Starred);
+    expect(remainingSourceEvent!.target).toHaveProperty(
+      "source_uuid",
+      "source2",
+    );
+
+    const remainingItemEvent = events.find((e) => e.id === unrelatedItemEvent);
+    expect(remainingItemEvent).toBeDefined();
+    expect(remainingItemEvent!.type).toBe(PendingEventType.ItemDeleted);
+    expect(remainingItemEvent!.target).toHaveProperty("item_uuid", "item3");
+  });
+
   it("updatePendingEvents should remove successful events from pending_events", () => {
     db.updateSources({
       source1: mockSourceMetadata("source1"),
@@ -1162,6 +1325,57 @@ describe("Datastore Method Tests", () => {
     );
   });
 
+  it("getItemsToProcess should return a bounded set of processable messages and files", () => {
+    db.updateSources({
+      source1: mockSourceMetadata("source1"),
+    });
+
+    db.updateItems({
+      message1: mockItemMetadata("message1", "source1", "message", 1),
+      message2: mockItemMetadata("message2", "source1", "message", 2),
+      message3: mockItemMetadata("message3", "source1", "message", 3),
+      file1: mockItemMetadata("file1", "source1", "file", 4),
+      file2: mockItemMetadata("file2", "source1", "file", 5),
+      file3: mockItemMetadata("file3", "source1", "file", 6),
+    });
+
+    db.setDownloadInProgress("file1", 10);
+    db.setDownloadInProgress("file2", 20);
+    db.setDownloadInProgress("file3", 30);
+
+    const itemsToProcess = db.getItemsToProcess({
+      messageLimit: 2,
+      fileLimit: 1,
+    });
+
+    expect(itemsToProcess).toEqual(["message1", "message2", "file1"]);
+  });
+
+  it("getItemsToProcess should exclude ScheduledDeletion items", () => {
+    db.updateSources({
+      source1: mockSourceMetadata("source1"),
+    });
+
+    db.updateItems({
+      message1: mockItemMetadata("message1", "source1", "message", 1),
+      message2: mockItemMetadata("message2", "source1", "message", 2),
+      file1: mockItemMetadata("file1", "source1", "file", 3),
+      file2: mockItemMetadata("file2", "source1", "file", 4),
+    });
+
+    db.setDownloadInProgress("file1", 10);
+    db.setDownloadInProgress("file2", 20);
+    db.updateFetchStatus("message2", FetchStatus.ScheduledDeletion);
+    db.updateFetchStatus("file2", FetchStatus.ScheduledDeletion);
+
+    const itemsToProcess = db.getItemsToProcess({
+      messageLimit: 5,
+      fileLimit: 5,
+    });
+
+    expect(itemsToProcess).toEqual(["message1", "file1"]);
+  });
+
   it("deleting a source should cascade to its pending events", () => {
     // Create a source and add a pending event for it
     db.updateSources({
@@ -1361,6 +1575,23 @@ describe("Datastore Method Tests", () => {
       expect(item?.fetch_progress).toBe(75000);
     });
 
+    it("should NOT reset fetch_progress when updating to ScheduledDeletion", () => {
+      db.updateSources({
+        source1: mockSourceMetadata("source1"),
+      });
+      db.updateItems({
+        item1: mockItemMetadata("item1", "source1", "file"),
+      });
+
+      db.setDownloadInProgress("item1", 42000);
+
+      db.updateFetchStatus("item1", FetchStatus.ScheduledDeletion);
+
+      const item = db.getItem("item1");
+      expect(item?.fetch_status).toBe(FetchStatus.ScheduledDeletion);
+      expect(item?.fetch_progress).toBe(42000);
+    });
+
     it("should allow retry after terminal failure when status is reset", () => {
       db.updateSources({
         source1: mockSourceMetadata("source1"),
@@ -1389,6 +1620,169 @@ describe("Datastore Method Tests", () => {
       item = db.getItem("item1");
       expect(item?.fetch_status).toBe(FetchStatus.DownloadInProgress);
       expect(item?.fetch_progress).toBe(0);
+    });
+  });
+
+  describe("Large Backlog Regression", () => {
+    it("bounded queueing should drain a large backlog across multiple refills", () => {
+      db.updateSources({
+        source1: mockSourceMetadata("source1"),
+      });
+
+      // Simulate 100 messages and 10 files from a prolific source
+      const items: Record<string, ItemMetadata> = {};
+      for (let i = 1; i <= 100; i++) {
+        items[`msg${i}`] = mockItemMetadata(`msg${i}`, "source1", "message", i);
+      }
+      for (let i = 1; i <= 10; i++) {
+        items[`file${i}`] = mockItemMetadata(
+          `file${i}`,
+          "source1",
+          "file",
+          100 + i,
+        );
+      }
+      db.updateItems(items);
+
+      // Files need download progress set to be processable
+      for (let i = 1; i <= 10; i++) {
+        db.setDownloadInProgress(`file${i}`, i * 100);
+      }
+
+      // First batch: bounded to 25 messages and 2 files
+      const batch1 = db.getItemsToProcess({ messageLimit: 25, fileLimit: 2 });
+      expect(batch1.length).toBe(27);
+      expect(batch1.filter((id) => id.startsWith("msg")).length).toBe(25);
+      expect(batch1.filter((id) => id.startsWith("file")).length).toBe(2);
+
+      // Mark the first batch as complete so they leave the processable pool
+      for (const id of batch1) {
+        if (id.startsWith("msg")) {
+          db.completePlaintextItem(id, "decrypted");
+        } else {
+          db.completeFileItem(id, `/tmp/${id}.txt`, 1024);
+        }
+      }
+
+      // Second batch: next 25 messages and 2 files
+      const batch2 = db.getItemsToProcess({ messageLimit: 25, fileLimit: 2 });
+      expect(batch2.length).toBe(27);
+      expect(batch2.filter((id) => id.startsWith("msg")).length).toBe(25);
+      expect(batch2.filter((id) => id.startsWith("file")).length).toBe(2);
+
+      // No overlap with batch 1
+      expect(batch2.filter((id) => batch1.includes(id)).length).toBe(0);
+    });
+
+    it("deleting a source should mark all backlog items as ScheduledDeletion and purge events", async () => {
+      db.updateSources({
+        source1: mockSourceMetadata("source1"),
+        source2: mockSourceMetadata("source2"),
+      });
+
+      // Create a large backlog for source1 with various fetch statuses
+      const items: Record<string, ItemMetadata> = {};
+      for (let i = 1; i <= 50; i++) {
+        items[`msg${i}`] = mockItemMetadata(`msg${i}`, "source1", "message", i);
+      }
+      items["unrelated1"] = mockItemMetadata(
+        "unrelated1",
+        "source2",
+        "message",
+        1,
+      );
+      db.updateItems(items);
+
+      // Set some items to various in-progress states
+      db.setDownloadInProgress("msg1", 100);
+      db.updateFetchStatus("msg2", FetchStatus.DecryptionInProgress);
+      db.completePlaintextItem("msg3", "already decrypted");
+
+      // Create many pending events for source1
+      db.addPendingSourceEvent("source1", PendingEventType.Starred);
+      db.addPendingSourceConversationSeen("source1", 50);
+      for (let i = 4; i <= 10; i++) {
+        db.addPendingItemEvent(`msg${i}`, PendingEventType.ItemDeleted);
+      }
+      await db.addPendingReplySentEvent("reply text", "source1", 51);
+
+      // Add an unrelated event for source2
+      db.addPendingSourceEvent("source2", PendingEventType.Starred);
+
+      // Delete source1 — triggers purge and ScheduledDeletion marking
+      db.addPendingSourceEvent("source1", PendingEventType.SourceDeleted);
+
+      // All pending events for source1 should be purged, only delete + source2 remain
+      const events = db.getPendingEvents();
+      const source1Events = events.filter(
+        (e) => "source_uuid" in e.target && e.target.source_uuid === "source1",
+      );
+      const source2Events = events.filter(
+        (e) => "source_uuid" in e.target && e.target.source_uuid === "source2",
+      );
+      expect(source1Events.length).toBe(1);
+      expect(source1Events[0].type).toBe(PendingEventType.SourceDeleted);
+      expect(source2Events.length).toBe(1);
+
+      // All source1 items should be ScheduledDeletion (regardless of prior status)
+      for (let i = 1; i <= 50; i++) {
+        const item = db.getItem(`msg${i}`);
+        expect(item?.fetch_status).toBe(FetchStatus.ScheduledDeletion);
+      }
+
+      // Unrelated source2 item is unaffected
+      const unrelated = db.getItem("unrelated1");
+      expect(unrelated?.fetch_status).toBe(FetchStatus.Initial);
+
+      // No ScheduledDeletion items should appear in processable results
+      const processable = db.getItemsToProcess({
+        messageLimit: 100,
+        fileLimit: 100,
+      });
+      expect(processable).toEqual(["unrelated1"]);
+    });
+
+    it("conversation deletion should also exclude items from future queue intake", async () => {
+      db.updateSources({
+        source1: mockSourceMetadata("source1"),
+      });
+
+      const items: Record<string, ItemMetadata> = {};
+      for (let i = 1; i <= 30; i++) {
+        items[`msg${i}`] = mockItemMetadata(`msg${i}`, "source1", "message", i);
+      }
+      db.updateItems(items);
+
+      // Create events that will be purged
+      db.addPendingSourceEvent("source1", PendingEventType.Starred);
+      for (let i = 1; i <= 5; i++) {
+        db.addPendingItemEvent(`msg${i}`, PendingEventType.ItemDeleted);
+      }
+
+      // Delete conversation (not the whole source), covering all 30 items
+      db.addPendingSourceEvent(
+        "source1",
+        PendingEventType.SourceConversationTruncated,
+        { upper_bound: 30 },
+      );
+
+      // Events purged except the delete event itself
+      const events = db.getPendingEvents();
+      expect(events.length).toBe(1);
+      expect(events[0].type).toBe(PendingEventType.SourceConversationTruncated);
+
+      // All items marked ScheduledDeletion
+      for (let i = 1; i <= 30; i++) {
+        const item = db.getItem(`msg${i}`);
+        expect(item?.fetch_status).toBe(FetchStatus.ScheduledDeletion);
+      }
+
+      // Nothing processable from this source
+      const processable = db.getItemsToProcess({
+        messageLimit: 100,
+        fileLimit: 100,
+      });
+      expect(processable.length).toBe(0);
     });
   });
 });

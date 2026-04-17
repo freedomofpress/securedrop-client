@@ -39,6 +39,9 @@ class DownloadCancelledError extends Error {
   }
 }
 
+const MESSAGE_QUEUE_BATCH_LIMIT = 25;
+const FILE_QUEUE_BATCH_LIMIT = 2;
+
 export class TaskQueue {
   db: DB;
   messageQueue: Queue;
@@ -46,7 +49,14 @@ export class TaskQueue {
   authToken?: string;
   port?: MessagePort;
   storage: Storage;
-  activeDownloads: Map<string, AbortController> = new Map();
+  activeDownloads = new Map<
+    string,
+    { sourceUuid: string; controller: AbortController }
+  >();
+  activeDecryptions = new Map<
+    string,
+    { sourceUuid: string; controller: AbortController }
+  >();
 
   constructor(
     db: DB,
@@ -76,6 +86,15 @@ export class TaskQueue {
     );
     this.port = port;
     this.storage = new Storage();
+
+    // After each completed or terminally-failed task, try to top up the
+    // queue from the database so large backlogs drain without waiting for
+    // the next sync tick.
+    const refill = () => this.refillQueues();
+    this.messageQueue.on("task_finish", refill);
+    this.messageQueue.on("task_failed", refill);
+    this.fileQueue.on("task_finish", refill);
+    this.fileQueue.on("task_failed", refill);
   }
 
   getAuthToken(): string {
@@ -84,10 +103,37 @@ export class TaskQueue {
 
   // Aborts any in-progress download for the given item.
   cancelDownload(itemId: string) {
-    const controller = this.activeDownloads.get(itemId);
-    if (controller) {
-      controller.abort();
+    const entry = this.activeDownloads.get(itemId);
+    if (entry) {
+      entry.controller.abort();
     }
+  }
+
+  abortSourceFetch(sourceUuid: string) {
+    for (const [itemId, entry] of this.activeDownloads) {
+      if (entry.sourceUuid === sourceUuid) {
+        entry.controller.abort();
+        this.activeDownloads.delete(itemId);
+      }
+    }
+    for (const [itemId, entry] of this.activeDecryptions) {
+      if (entry.sourceUuid === sourceUuid) {
+        entry.controller.abort();
+        this.activeDecryptions.delete(itemId);
+      }
+    }
+  }
+
+  private refillQueues() {
+    if (!this.authToken) {
+      return;
+    }
+    this.queueFetches({ authToken: this.authToken });
+  }
+
+  private isScheduledForDeletion(itemId: string, db: DB): boolean {
+    const item = db.getItem(itemId);
+    return !item || item.fetch_status === FetchStatus.ScheduledDeletion;
   }
 
   // Queries the database for all items that need to be downloaded and queues
@@ -100,7 +146,10 @@ export class TaskQueue {
   queueFetches(message: AuthedRequest) {
     this.authToken = message.authToken;
     try {
-      const itemsToProcess = this.db.getItemsToProcess();
+      const itemsToProcess = this.db.getItemsToProcess({
+        messageLimit: MESSAGE_QUEUE_BATCH_LIMIT,
+        fileLimit: FILE_QUEUE_BATCH_LIMIT,
+      });
       if (itemsToProcess.length > 0) {
         console.debug("Items to process: ", itemsToProcess);
       }
@@ -168,14 +217,16 @@ export class TaskQueue {
         fetch_progress: progress,
       } = dbItem;
 
-      // Skip items that are complete, terminally failed, paused, or cancelled
+      // Skip items that are complete, terminally failed, paused, cancelled,
+      // scheduled for deletion, or otherwise not in a processable state.
       if (
         status == FetchStatus.Complete ||
         status == FetchStatus.FailedTerminal ||
         status == FetchStatus.Paused ||
-        status == FetchStatus.Cancelled
+        status == FetchStatus.Cancelled ||
+        status == FetchStatus.ScheduledDeletion
       ) {
-        console.debug("Item task is not in an processable state, skipping...");
+        console.debug("Item task is not in a processable state, skipping...");
         return;
       }
 
@@ -204,12 +255,28 @@ export class TaskQueue {
         nextStatus = FetchStatus.DecryptionInProgress;
       }
 
+      // Re-check: if the item was marked for deletion during download, stop.
+      if (this.isScheduledForDeletion(item.id, db)) {
+        console.debug(
+          `Item ${item.id} scheduled for deletion after download, skipping decryption...`,
+        );
+        return;
+      }
+
       // Phase 2: Decryption (or failed decryption retries)
       if (
         nextStatus === FetchStatus.DecryptionInProgress ||
         nextStatus === FetchStatus.FailedDecryptionRetryable
       ) {
-        await this.decrypt(item, db, metadata, downloadResult);
+        try {
+          await this.decrypt(item, db, metadata, downloadResult);
+        } catch (e) {
+          if (e instanceof DownloadCancelledError) {
+            // Decryption was intentionally aborted — not a failure
+            return;
+          }
+          throw e;
+        }
       } else {
         // Handle unexpected statuses
         console.debug(
@@ -283,7 +350,10 @@ export class TaskQueue {
   ): Promise<DownloadResult> {
     console.debug(`Starting download for ${metadata.kind} ${item.id}`);
     const abortController = new AbortController();
-    this.activeDownloads.set(item.id, abortController);
+    this.activeDownloads.set(item.id, {
+      sourceUuid: metadata.source,
+      controller: abortController,
+    });
     try {
       db.setDownloadInProgress(item.id);
       return await this.innerDownload(
@@ -356,14 +426,22 @@ export class TaskQueue {
       }
     };
 
-    let downloadResponse = await proxyStreamRequest(
-      downloadRequest,
-      downloadWriter,
-      progress,
-      abortController.signal,
-      timeout,
-      onProgress,
-    );
+    let downloadResponse;
+    try {
+      downloadResponse = await proxyStreamRequest(
+        downloadRequest,
+        downloadWriter,
+        progress,
+        abortController.signal,
+        timeout,
+        onProgress,
+      );
+    } catch (e) {
+      if (abortController.signal.aborted) {
+        throw new DownloadCancelledError();
+      }
+      throw e;
+    }
 
     // If we received JSON response, indicates an error from the server
     if ("data" in downloadResponse && downloadResponse.error) {
@@ -458,11 +536,23 @@ export class TaskQueue {
       throw new Error("Crypto not initialized in fetch worker, cannot decrypt");
     }
 
+    const abortController = new AbortController();
+    this.activeDecryptions.set(item.id, {
+      sourceUuid: metadata.source,
+      controller: abortController,
+    });
+
     // Set status to decryption in progress
     db.setDecryptionInProgress(item.id);
     try {
       if (metadata.kind === "file") {
-        await this.decryptFile(item, db, crypto, metadata);
+        await this.decryptFile(
+          item,
+          db,
+          crypto,
+          metadata,
+          abortController.signal,
+        );
         return;
       }
       if (downloadResult) {
@@ -472,13 +562,25 @@ export class TaskQueue {
           crypto,
           metadata,
           downloadResult as Buffer,
+          abortController.signal,
         );
       } else {
-        await this.decryptRetry(item, db, crypto, metadata);
+        await this.decryptRetry(
+          item,
+          db,
+          crypto,
+          metadata,
+          abortController.signal,
+        );
       }
     } catch (error) {
+      if ((error as Error).name === "AbortError") {
+        throw new DownloadCancelledError();
+      }
       db.failDecryption(item.id);
       throw error;
+    } finally {
+      this.activeDecryptions.delete(item.id);
     }
   }
 
@@ -491,29 +593,41 @@ export class TaskQueue {
     crypto: Crypto,
     metadata: ItemMetadata,
     buffer: Buffer,
+    signal?: AbortSignal,
   ) {
     try {
-      const decryptedContent = await crypto.decryptMessage(buffer);
+      const decryptedContent = await crypto.decryptMessage(buffer, signal);
+
+      // Re-check: if the item was deleted during decryption, drop the result
+      if (this.isScheduledForDeletion(item.id, db)) {
+        return;
+      }
 
       // Store the decrypted plaintext and mark item as complete
       db.completePlaintextItem(item.id, decryptedContent);
     } catch (error) {
-      if (error instanceof CryptoError) {
-        console.warn(
-          `Failed to decrypt ${metadata.kind} ${item.id}: ${error.message}`,
-        );
-      }
-      // Ensure data is persisted to disk for retries
-      try {
-        const downloadFilePath = this.storage.downloadFilePath(metadata, item);
-        const downloadDir = path.dirname(downloadFilePath);
-        await fs.promises.mkdir(downloadDir, { recursive: true });
-        await fs.promises.writeFile(downloadFilePath, buffer);
-        console.debug(
-          `Saved encrypted buffer data to disk for retry: ${downloadFilePath}`,
-        );
-      } catch (saveError) {
-        console.warn(`Failed to save encrypted data to disk: ${saveError}`);
+      // Don't save to disk if the decryption was intentionally aborted
+      if ((error as Error).name !== "AbortError") {
+        if (error instanceof CryptoError) {
+          console.warn(
+            `Failed to decrypt ${metadata.kind} ${item.id}: ${error.message}`,
+          );
+        }
+        // Ensure data is persisted to disk for retries
+        try {
+          const downloadFilePath = this.storage.downloadFilePath(
+            metadata,
+            item,
+          );
+          const downloadDir = path.dirname(downloadFilePath);
+          await fs.promises.mkdir(downloadDir, { recursive: true });
+          await fs.promises.writeFile(downloadFilePath, buffer);
+          console.debug(
+            `Saved encrypted buffer data to disk for retry: ${downloadFilePath}`,
+          );
+        } catch (saveError) {
+          console.warn(`Failed to save encrypted data to disk: ${saveError}`);
+        }
       }
       throw error;
     }
@@ -527,15 +641,24 @@ export class TaskQueue {
     db: DB,
     crypto: Crypto,
     metadata: ItemMetadata,
+    signal?: AbortSignal,
   ) {
     const downloadPath = this.storage.downloadFilePath(metadata, item);
     try {
       const buffer = await fs.promises.readFile(downloadPath);
-      const decryptedContent = await crypto.decryptMessage(buffer);
+      const decryptedContent = await crypto.decryptMessage(buffer, signal);
+
+      // Re-check: if the item was deleted during decryption, drop the result
+      if (this.isScheduledForDeletion(item.id, db)) {
+        return;
+      }
 
       // Store the decrypted plaintext and mark item as complete
       db.completePlaintextItem(item.id, decryptedContent);
     } catch (error) {
+      if ((error as Error).name === "AbortError") {
+        throw error;
+      }
       throw new Error(`Failed to load encrypted data from disk: ${error}`);
     }
 
@@ -554,6 +677,7 @@ export class TaskQueue {
     db: DB,
     crypto: Crypto,
     metadata: ItemMetadata,
+    signal?: AbortSignal,
   ) {
     const downloadPath = this.storage.downloadFilePath(metadata, item);
     const itemDirectory = this.storage.itemDirectory(metadata);
@@ -562,7 +686,21 @@ export class TaskQueue {
         this.storage,
         itemDirectory,
         downloadPath,
+        signal,
       );
+
+      // Re-check: if the item was deleted during decryption, drop the result
+      if (this.isScheduledForDeletion(item.id, db)) {
+        try {
+          await fs.promises.unlink(finalAbsolutePath);
+        } catch (error) {
+          console.warn(
+            `Failed to clean up decrypted file after deletion: ${error}`,
+          );
+        }
+        return;
+      }
+
       // Get the decrypted file size to display to the user
       const fileStats = await fs.promises.stat(finalAbsolutePath);
       const decryptedSize = fileStats.size;

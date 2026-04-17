@@ -97,7 +97,14 @@ export class DB {
     { uuid: string },
     { version: string }
   >;
-  private selectItemsProcessable: Statement<[], { uuid: string }>;
+  private selectMessageItemsProcessable: Statement<
+    { limit: number },
+    { uuid: string }
+  >;
+  private selectFileItemsProcessable: Statement<
+    { limit: number },
+    { uuid: string }
+  >;
   private selectUnprojectedItemsBySource: Statement<
     { source_uuid: string },
     { uuid: string }
@@ -113,6 +120,15 @@ export class DB {
   }>;
   private updateItemFetchStatusWithReset: Statement<{
     uuid: string;
+    fetch_status: number;
+  }>;
+  private updateItemsFetchStatusBySource: Statement<{
+    source_uuid: string;
+    fetch_status: number;
+  }>;
+  private updateItemsFetchStatusBySourceUpTo: Statement<{
+    source_uuid: string;
+    upper_bound: number;
     fetch_status: number;
   }>;
   private selectItem: Statement<{ uuid: string }, ItemRow>;
@@ -166,7 +182,16 @@ export class DB {
   private deletePendingEvent: Statement<{ snowflake_id: string }, void>;
   private selectPendingEvents: Statement<[{ limit: number }], PendingEventRow>;
   private deletePendingEventsBySource: Statement<{ source_uuid: string }, void>;
+  private deletePendingEventsBySourceScope: Statement<
+    { source_uuid: string },
+    void
+  >;
   private deletePendingEventsByItem: Statement<{ item_uuid: string }, void>;
+  private selectSourcesScheduledForDeletion: Statement<
+    [],
+    { source_uuid: string }
+  >;
+  private selectItemsScheduledForDeletion: Statement<[], { uuid: string }>;
 
   protected constructor(crypto: Crypto, dbDir?: string) {
     this.crypto = crypto;
@@ -238,24 +263,34 @@ export class DB {
     this.selectUnprojectedItemVersion = this.db.prepare(
       "SELECT version FROM items WHERE uuid = @uuid",
     );
-    this.selectItemsProcessable = this.db.prepare(
+    this.selectMessageItemsProcessable = this.db.prepare(
       `SELECT uuid FROM items
-      WHERE
-        (kind = 'file' AND fetch_status in (${FetchStatus.DownloadInProgress}, ${FetchStatus.DecryptionInProgress}, ${FetchStatus.FailedDownloadRetryable}, ${FetchStatus.FailedDecryptionRetryable}))
-        OR
-        (kind <> 'file' AND fetch_status in (${FetchStatus.Initial}, ${FetchStatus.DownloadInProgress}, ${FetchStatus.DecryptionInProgress}, ${FetchStatus.FailedDownloadRetryable}, ${FetchStatus.FailedDecryptionRetryable}))`,
+      WHERE kind <> 'file'
+        AND fetch_status in (${FetchStatus.Initial}, ${FetchStatus.DownloadInProgress}, ${FetchStatus.DecryptionInProgress}, ${FetchStatus.FailedDownloadRetryable}, ${FetchStatus.FailedDecryptionRetryable})
+      ORDER BY interaction_count ASC, uuid ASC
+      LIMIT @limit`,
+    );
+    this.selectFileItemsProcessable = this.db.prepare(
+      `SELECT uuid FROM items
+      WHERE kind = 'file'
+        AND fetch_status in (${FetchStatus.DownloadInProgress}, ${FetchStatus.DecryptionInProgress}, ${FetchStatus.FailedDownloadRetryable}, ${FetchStatus.FailedDecryptionRetryable})
+      ORDER BY interaction_count ASC, uuid ASC
+      LIMIT @limit`,
     );
     this.selectUnprojectedItemsBySource = this.db.prepare(
       "SELECT uuid FROM items WHERE source_uuid = @source_uuid",
-    );
-    this.upsertItem = this.db.prepare(
-      "INSERT INTO items (uuid, data, version) VALUES (@id, @data, @version) ON CONFLICT(uuid) DO UPDATE SET data=@data, version=@version",
     );
     this.updateItemFetchStatus = this.db.prepare(
       "UPDATE items SET fetch_status = @fetch_status WHERE uuid = @uuid",
     );
     this.updateItemFetchStatusWithReset = this.db.prepare(
       "UPDATE items SET fetch_status = @fetch_status, fetch_progress = 0 WHERE uuid = @uuid",
+    );
+    this.updateItemsFetchStatusBySource = this.db.prepare(
+      "UPDATE items SET fetch_status = @fetch_status WHERE source_uuid = @source_uuid",
+    );
+    this.updateItemsFetchStatusBySourceUpTo = this.db.prepare(
+      "UPDATE items SET fetch_status = @fetch_status WHERE source_uuid = @source_uuid AND interaction_count <= @upper_bound",
     );
     this.upsertItem = this.db.prepare(
       "INSERT INTO items (uuid, data, version) VALUES (@uuid, @data, @version) ON CONFLICT(uuid) DO UPDATE SET data=@data, version=@version",
@@ -354,8 +389,21 @@ export class DB {
     `);
     this.deletePendingEventsBySource = this.db.prepare(`
       DELETE FROM pending_events WHERE source_uuid = @source_uuid`);
+    this.deletePendingEventsBySourceScope = this.db.prepare(`
+      DELETE FROM pending_events
+      WHERE source_uuid = @source_uuid
+         OR item_uuid IN (
+           SELECT uuid FROM items WHERE source_uuid = @source_uuid
+         )`);
     this.deletePendingEventsByItem = this.db.prepare(`
       DELETE FROM pending_events WHERE item_uuid = @item_uuid`);
+    this.selectSourcesScheduledForDeletion = this.db.prepare(`
+      SELECT DISTINCT source_uuid FROM pending_events
+      WHERE type IN ('${PendingEventType.SourceDeleted}', '${PendingEventType.SourceConversationTruncated}')
+    `);
+    this.selectItemsScheduledForDeletion = this.db.prepare(`
+      SELECT uuid FROM items WHERE fetch_status = ${FetchStatus.ScheduledDeletion}
+    `);
   }
 
   // Detect runtime environment
@@ -572,24 +620,37 @@ export class DB {
     deleted_sources: string[];
   } {
     return this.db!.transaction((batch: BatchResponse) => {
+      const pendingDeletionSources = this.getSourcesScheduledForDeletion();
       this.updatePendingEvents(batch.events);
-      const deleted_items = this.updateItems(batch.items);
-      const deleted_sources = this.updateSources(batch.sources);
+      const deleted_items = this.updateItems(
+        batch.items,
+        pendingDeletionSources,
+      );
+      const deleted_sources = this.updateSources(
+        batch.sources,
+        pendingDeletionSources,
+      );
       this.updateJournalists(batch.journalists);
       this.updateVersion();
       return { deleted_items, deleted_sources };
     })(batchResponse);
   }
 
-  protected updateSources(sources: {
-    [uuid: string]: SourceMetadata | null;
-  }): string[] {
+  protected updateSources(
+    sources: {
+      [uuid: string]: SourceMetadata | null;
+    },
+    pendingDeletionSources?: Set<string>,
+  ): string[] {
     const deletedSourceUuids: string[] = [];
     this.db!.transaction(
       (sources: { [uuid: string]: SourceMetadata | null }) => {
         Object.keys(sources).forEach((sourceid: string) => {
           const metadata = sources[sourceid];
           if (metadata) {
+            if (pendingDeletionSources?.has(sourceid)) {
+              return;
+            }
             const info = JSON.stringify(metadata, sortKeys);
             const version = computeVersion(info);
             this.upsertSource.run({ uuid: sourceid, data: info, version });
@@ -604,14 +665,20 @@ export class DB {
     return deletedSourceUuids;
   }
 
-  protected updateItems(items: {
-    [uuid: string]: ItemMetadata | null;
-  }): Item[] {
+  protected updateItems(
+    items: {
+      [uuid: string]: ItemMetadata | null;
+    },
+    pendingDeletionSources?: Set<string>,
+  ): Item[] {
     const deletedItems: Item[] = [];
     this.db!.transaction((items: { [uuid: string]: ItemMetadata | null }) => {
       Object.keys(items).forEach((itemid: string) => {
         const metadata = items[itemid];
         if (metadata) {
+          if (pendingDeletionSources?.has(metadata.source)) {
+            return;
+          }
           const blob = JSON.stringify(metadata, sortKeys);
           const version = computeVersion(blob);
           this.upsertItem.run({ uuid: itemid, data: blob, version });
@@ -856,12 +923,20 @@ export class DB {
   // Selects items that are ready to be downloaded + decrypted. This
   // is all messages, and files that have been initiated from the client
   // by being put into FetchStatus.DownloadInProgress
-  getItemsToProcess(): string[] {
+  getItemsToProcess(limits: {
+    messageLimit: number;
+    fileLimit: number;
+  }): string[] {
     type Row = {
       uuid: string;
     };
-    const rows = this.selectItemsProcessable.all() as Array<Row>;
-    return rows.map((r) => r.uuid);
+    const messageRows = this.selectMessageItemsProcessable.all({
+      limit: limits.messageLimit,
+    }) as Array<Row>;
+    const fileRows = this.selectFileItemsProcessable.all({
+      limit: limits.fileLimit,
+    }) as Array<Row>;
+    return [...messageRows, ...fileRows].map((r) => r.uuid);
   }
 
   getItem(itemUuid: string): Item | null {
@@ -967,21 +1042,61 @@ export class DB {
     stmt.run({ uuid: itemUuid });
   }
 
+  private markSourceItemsScheduledDeletion(sourceUuid: string) {
+    this.updateItemsFetchStatusBySource.run({
+      source_uuid: sourceUuid,
+      fetch_status: FetchStatus.ScheduledDeletion,
+    });
+  }
+
+  private markSourceItemsScheduledDeletionUpTo(
+    sourceUuid: string,
+    upperBound: number,
+  ) {
+    this.updateItemsFetchStatusBySourceUpTo.run({
+      source_uuid: sourceUuid,
+      upper_bound: upperBound,
+      fetch_status: FetchStatus.ScheduledDeletion,
+    });
+  }
+
+  private purgePendingEventsForSource(sourceUuid: string) {
+    this.deletePendingEventsBySourceScope.run({
+      source_uuid: sourceUuid,
+    });
+  }
+
   addPendingSourceEvent(
     sourceUuid: string,
     type: PendingEventType,
     data?: PendingEventData,
   ): string {
-    const snowflakeID = this.snowflake
-      .generate({ timestamp: Date.now() })
-      .toString();
-    this.insertSourcePendingEvent.run({
-      snowflake_id: snowflakeID,
-      source_uuid: sourceUuid,
-      type: type,
-      data: data ? JSON.stringify(data) : null,
-    });
-    return snowflakeID;
+    return this.db!.transaction(() => {
+      const snowflakeID = this.snowflake
+        .generate({ timestamp: Date.now() })
+        .toString();
+
+      if (type === PendingEventType.SourceDeleted) {
+        this.purgePendingEventsForSource(sourceUuid);
+        this.markSourceItemsScheduledDeletion(sourceUuid);
+      } else if (type === PendingEventType.SourceConversationTruncated) {
+        this.purgePendingEventsForSource(sourceUuid);
+        if (data?.upper_bound !== undefined) {
+          this.markSourceItemsScheduledDeletionUpTo(
+            sourceUuid,
+            data.upper_bound,
+          );
+        }
+      }
+
+      this.insertSourcePendingEvent.run({
+        snowflake_id: snowflakeID,
+        source_uuid: sourceUuid,
+        type: type,
+        data: data ? JSON.stringify(data) : null,
+      });
+      return snowflakeID;
+    })();
   }
 
   async addPendingReplySentEvent(
@@ -1122,6 +1237,16 @@ export class DB {
     });
 
     return pendingEvents;
+  }
+
+  getSourcesScheduledForDeletion(): Set<string> {
+    const rows = this.selectSourcesScheduledForDeletion.all();
+    return new Set(rows.map((r) => r.source_uuid));
+  }
+
+  getItemsScheduledForDeletion(): Set<string> {
+    const rows = this.selectItemsScheduledForDeletion.all();
+    return new Set(rows.map((r) => r.uuid));
   }
 
   // Takes pending events and their statuses from the server and applies
