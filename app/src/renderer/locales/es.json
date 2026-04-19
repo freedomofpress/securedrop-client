@@ -2,25 +2,147 @@
   "MainContent": {
     "menu": {
       "exportTranscript": "Exportar la transcripción",
-      "printTranscript": "Imprimir la transcripción"
-    }
+      "printTranscript": "Imprimir la transcripción",
+      "exportSource": "",
+      "clickToOpen": ""
+    },
+    "conversation": {
+      "sendButton": "",
+      "newMessagesDivider": "",
+      "messagePlaceholder": ""
+    },
+    "emptyState": "",
+    "alreadyRunning": "",
+    "messageFailed": "",
+    "seenReplyTooltip": "",
+    "pendingReplyTooltip": "",
+    "successReplyTooltip": "",
+    "retryFetch": "",
+    "itemEncrypted": "",
+    "lastSourceActivity": "",
+    "emptyConversation": "",
+    "nonProduction": "",
+    "you": "",
+    "unknown": ""
   },
   "Sidebar": {
     "account": {
-      "Quit": "Salir"
+      "Quit": "Salir",
+      "signIn": "",
+      "signOut": "",
+      "syncNow": "",
+      "offlineMode": "",
+      "aboutOK": "",
+      "Help": "",
+      "aboutClose": "",
+      "keyboardShortcuts": "",
+      "signedIn": "",
+      "aboutSecureDrop": ""
+    },
+    "sourcelist": {
+      "sort": {
+        "tooltip": ""
+      },
+      "deleteDialog": {
+        "single": {
+          "message": "",
+          "keepAccountButton": "",
+          "deleteAccountButton": ""
+        },
+        "multiple": {
+          "keepAccountsButton": "",
+          "deleteAccountsButton": "",
+          "message": ""
+        },
+        "cancelButton": "",
+        "messageCount_one": "",
+        "messageCount_many": "",
+        "messageCount_other": "",
+        "countingItems": "",
+        "replyCount_one": "",
+        "replyCount_many": "",
+        "replyCount_other": "",
+        "itemCountsHeader": "",
+        "fileCount_one": "",
+        "fileCount_many": "",
+        "fileCount_other": "",
+        "warning": ""
+      },
+      "filters": {
+        "starred": "",
+        "unread": "",
+        "read": "",
+        "unstarred": "",
+        "all": ""
+      },
+      "search": {
+        "placeholder": ""
+      },
+      "actions": {
+        "bulkDelete": ""
+      }
+    },
+    "shortcuts": {
+      "deleteSource": "",
+      "quit": "",
+      "sendReply": "",
+      "focusMainContent": "",
+      "sourceDown": "",
+      "downloadAll": "",
+      "deleteCheckedSources": "",
+      "sourceSelect": "",
+      "categories": {
+        "application": "",
+        "composing": "",
+        "navigation": "",
+        "sources": "",
+        "files": ""
+      },
+      "signOut": "",
+      "openHelp": "",
+      "sync": "",
+      "sourceUp": "",
+      "focusSidebar": ""
+    },
+    "source": {
+      "encryptedMessage": "",
+      "toggleStar": "",
+      "encryptedFile": ""
+    },
+    "syncStatus": {
+      "notloggedin": "",
+      "ok": "",
+      "error": "",
+      "warning": ""
+    },
+    "helpModals": {
+      "aboutRepoTitle": "",
+      "aboutLicence": "",
+      "keyboardTitle": "",
+      "aboutCopyright": "",
+      "aboutAppDesc": "",
+      "aboutMoreContent": "",
+      "aboutAppVersion": "",
+      "aboutMoreTitle": "",
+      "aboutAppTitle": "",
+      "aboutRepoContent": ""
     }
   },
   "SignIn": {
     "username": {
       "label": "Nombre de Usuario",
-      "minLength": "Ese nombre de usuario no funcionará. Debería tener al menos un largo de 3 caracteres."
+      "minLength": "Ese nombre de usuario no funcionará. Debería tener al menos un largo de 3 caracteres.",
+      "required": ""
     },
     "passphrase": {
       "label": "Frase de contraseña",
-      "invalidLength": "Esa frase de contraseña no funcionará. Debería tener entre 14 y 128 caracteres de largo."
+      "invalidLength": "Esa frase de contraseña no funcionará. Debería tener entre 14 y 128 caracteres de largo.",
+      "required": ""
     },
     "twoFactorCode": {
-      "label": "Código de autenticación de dos factores"
+      "label": "Código de autenticación de dos factores",
+      "required": "",
+      "invalidFormat": ""
     },
     "errors": {
       "network": {
@@ -36,16 +158,111 @@
         "body": "Por favor comprueba todo e inténtalo de nuevo."
       },
       "sessionExpired": "Tu sesión expiró. Por favor iníciala de nuevo."
-    }
+    },
+    "title": "",
+    "button": {
+      "signingIn": "",
+      "signIn": "",
+      "useOffline": ""
+    },
+    "version": ""
   },
   "Item": {
     "wizard": {
-      "beCareful": "Recuerda ser cuidadoso cuando trabajes con archivos fuera de tu estación de trabajo."
+      "beCareful": "Recuerda ser cuidadoso cuando trabajes con archivos fuera de tu estación de trabajo.",
+      "anonymityTitle": "",
+      "malwareWarning": "",
+      "close": "",
+      "anonymityWarning": "",
+      "unknownError": "",
+      "malwareTitle": "",
+      "retry": "",
+      "continue": "",
+      "pleaseWait": "",
+      "done": "",
+      "back": "",
+      "cancel": ""
     },
     "exportWizard": {
       "errorUnlockLuks": "La frase de contraseña ingresada no funcionó. Por favor inténtalo de nuevo.",
       "unlock": "Ingresar frase de contraseña para unidad USB",
-      "passphrase": "Frase de contraseña"
+      "passphrase": "Frase de contraseña",
+      "unknownDeviceDetected": "",
+      "noDeviceDetected": "",
+      "errorUnmountVolumeBusy": "",
+      "undownloadedFiles": "",
+      "insertUSBInstructions": "",
+      "readyExport": "",
+      "sourceExportTitle": "",
+      "preparingExport": "",
+      "invalidDeviceDetected": "",
+      "errorExportCleanup": "",
+      "exportSuccess": "",
+      "sourceExportDescription": "",
+      "errorExport": "",
+      "unexpectedError": "",
+      "deviceError": "",
+      "errorUnlockGeneric": "",
+      "exportFailed": "",
+      "exportSuccessWithWarning": "",
+      "title": "",
+      "transcript": "",
+      "errorMissingFiles": "",
+      "understandRisks": "",
+      "multiDeviceDetected": "",
+      "transcriptAndFiles": "",
+      "errorMount": ""
+    },
+    "printWizard": {
+      "understandRisks": "",
+      "errorMimetypeUnsupported": "",
+      "connectPrinterInstructions": "",
+      "preparingPrint": "",
+      "errorUnknown": "",
+      "errorMimetypeDiscovery": "",
+      "printFailed": "",
+      "errorUnprintableType": "",
+      "readyPrint": "",
+      "title": "",
+      "errorPrinterNotFound": "",
+      "errorPrint": ""
+    },
+    "exportToUSB": "",
+    "cancel": "",
+    "printFile": "",
+    "retry": "",
+    "viewFile": "",
+    "encryptedFile": "",
+    "of": "",
+    "pause": "",
+    "filenameTooltip": "",
+    "downloadFailed": "",
+    "resume": ""
+  },
+  "QuitModal": {
+    "cancel": "",
+    "withDrafts": "",
+    "Quit": "",
+    "discardAndQuit": "",
+    "noDrafts": "",
+    "goBack": "",
+    "title": ""
+  },
+  "common": {
+    "seeLess": "",
+    "seeMore": "",
+    "yesterday": "",
+    "ellipsis": ""
+  },
+  "FirstRunPopup": {
+    "ok": "",
+    "newUser": {
+      "title": "",
+      "body": ""
+    },
+    "migration": {
+      "body": "",
+      "title": ""
     }
   }
 }
