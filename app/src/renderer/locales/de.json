@@ -2,26 +2,144 @@
   "MainContent": {
     "menu": {
       "exportTranscript": "Transkript exportieren",
-      "printTranscript": "Transkript drucken"
-    }
+      "printTranscript": "Transkript drucken",
+      "exportSource": "Transkript und Dateien exportieren",
+      "clickToOpen": "Zum Öffnen bitte anklicken"
+    },
+    "conversation": {
+      "sendButton": "Senden",
+      "newMessagesDivider": "Neue Nachrichten",
+      "messagePlaceholder": "Nachricht {{designation}}..."
+    },
+    "emptyState": "<bold>Wähle eine Quelle</bold> aus der Liste aus, um Nachrichten zu lesen, Dateien abzurufen oder Antworten zu senden.",
+    "alreadyRunning": "Der SecureDrop-Posteingang ist bereits in Betrieb",
+    "messageFailed": "Die Entschlüsselung der Nachricht ist fehlgeschlagen",
+    "seenReplyTooltip": "Antwort von der Quelle gesehen und gelöscht",
+    "pendingReplyTooltip": "Die Antwort steht noch aus und wird bei der nächsten Synchronisierung an die Quelle gesendet",
+    "successReplyTooltip": "Antwort erfolgreich gesendet",
+    "retryFetch": "Erneut versuchen",
+    "itemEncrypted": "Die Nachricht ist verschlüsselt…",
+    "lastSourceActivity": "Letzte Aktivität in der Quelle",
+    "emptyConversation": "In diesem Chat gibt es noch keine Nachrichten.",
+    "nonProduction": "WARNUNG: Nicht-Produktionsmodus",
+    "you": "Du",
+    "unknown": "Unbekannt"
   },
   "Sidebar": {
     "account": {
       "signIn": "Anmelden",
-      "Quit": "Beenden"
+      "Quit": "Beenden",
+      "signOut": "Abmelden",
+      "syncNow": "Jetzt synchronisieren",
+      "offlineMode": "Offline Modus",
+      "aboutOK": "OK",
+      "Help": "Hilfe",
+      "aboutClose": "Schliessen",
+      "keyboardShortcuts": "Tastenkombinationen",
+      "signedIn": "Angemeldet",
+      "aboutSecureDrop": "Über SecureDrop"
+    },
+    "sourcelist": {
+      "sort": {
+        "tooltip": "Sortierreihenfolge ändern"
+      },
+      "deleteDialog": {
+        "single": {
+          "message": "Möchtest du das Konto des Absenders oder nur die Unterhaltung löschen?",
+          "keepAccountButton": "Unterhaltung löschen",
+          "deleteAccountButton": "Konto löschen"
+        },
+        "multiple": {
+          "keepAccountsButton": "Unterhaltungen löschen",
+          "deleteAccountsButton": "Konten löschen",
+          "message": "Möchtest du diese {{count}} Quellkonten oder nur die Unterhaltungen löschen?"
+        },
+        "cancelButton": "Abbrechen",
+        "messageCount_one": "{{count}} Nachricht",
+        "messageCount_other": "{{count}} Nachrichten",
+        "countingItems": "Elemente zum Löschen werden ermittelt…",
+        "replyCount_one": "{{count}} Antwort",
+        "replyCount_other": "{{count}} Antworten",
+        "itemCountsHeader": "Folgende Elemente werden gelöscht:",
+        "fileCount_one": "{{count}} Datei",
+        "fileCount_other": "{{count}} Dateien",
+        "warning": "Wenn du das Konto einer Informationsquelle löschst, kann sich diese nicht mehr anmelden und dir keine Nachrichten mehr senden. Um in Zukunft mit dieser Informationsquelle zu kommunizieren, muss sie ein neues Konto erstellen."
+      },
+      "filters": {
+        "starred": "Markiert",
+        "unread": "Ungelesen",
+        "read": "Gelesen",
+        "unstarred": "Unmarkiert",
+        "all": "Alles"
+      },
+      "search": {
+        "placeholder": "Suchen"
+      },
+      "actions": {
+        "bulkDelete": "Ausgewählte Quellen löschen"
+      }
+    },
+    "shortcuts": {
+      "deleteSource": "Ausgewählte Quelle löschen",
+      "quit": "SecureDrop verlassen",
+      "sendReply": "Antwort senden",
+      "focusMainContent": "Fokus Hauptinhalt",
+      "sourceDown": "Nächste Quelle",
+      "downloadAll": "Alle Dateien herunterladen",
+      "deleteCheckedSources": "Markierte Quellen löschen",
+      "sourceSelect": "Öffne fokussierte Quelle",
+      "categories": {
+        "application": "Anwendung",
+        "composing": "Zusammenstellung",
+        "navigation": "Navigation",
+        "sources": "Quellen",
+        "files": "Dateien"
+      },
+      "signOut": "Abmelden",
+      "openHelp": "Tastenkombinationen anzeigen",
+      "sync": "Jetzt synchronisieren",
+      "sourceUp": "Vorherige Quelle",
+      "focusSidebar": "Fokus Seitenleiste"
+    },
+    "source": {
+      "encryptedMessage": "Verschlüsselte Nachricht",
+      "toggleStar": "Markierung ändern",
+      "encryptedFile": "Verschlüsselte Datei"
+    },
+    "syncStatus": {
+      "notloggedin": "Sync: Nicht angemeldet",
+      "ok": "Sync: OK",
+      "error": "Sync: fehler",
+      "warning": "Sync: warnung"
+    },
+    "helpModals": {
+      "aboutRepoTitle": "Quellcode",
+      "aboutLicence": "SecureDrop ist Open Source und wird unter der GNU Affero General Public License v3 veröffentlicht.",
+      "keyboardTitle": "Tastenkombinationen",
+      "aboutCopyright": "© 2013–2026 Aaron Swartz, James Dolan, Freedom of the Press Foundation, und SecureDrop Mitwirkende.",
+      "aboutAppDesc": "Sichere Kommunikation für Journalisten und Informationsquellen",
+      "aboutMoreContent": "https://securedrop.org/inbox",
+      "aboutAppVersion": "Version",
+      "aboutMoreTitle": "Weitere Informationen",
+      "aboutAppTitle": "SecureDrop Posteingang",
+      "aboutRepoContent": "https://github.com/freedomofpress/securedrop-client"
     }
   },
   "SignIn": {
     "username": {
       "label": "Benutzername",
-      "minLength": "Dieser Benutzername wird nicht funktionieren. Er sollte mindestens 3 Zeichen lang sein."
+      "minLength": "Dieser Benutzername wird nicht funktionieren. Er sollte mindestens 3 Zeichen lang sein.",
+      "required": "Bitte Benutzernamen eingeben."
     },
     "passphrase": {
       "label": "Passphrase",
-      "invalidLength": "Diese Passphrase wird nicht funktionieren. Sie sollte zwischen 14 und 128 Zeichen lang sein."
+      "invalidLength": "Diese Passphrase wird nicht funktionieren. Sie sollte zwischen 14 und 128 Zeichen lang sein.",
+      "required": "Bitte Passphrase eingeben."
     },
     "twoFactorCode": {
-      "label": "Zwei-Faktor-Code"
+      "label": "Zwei-Faktor-Code",
+      "required": "Bitte Zwei-Faktor-Code eingeben.",
+      "invalidFormat": "Der Zwei-Faktor-Code muss genau 6 Ziffern lang sein."
     },
     "errors": {
       "network": {
@@ -37,11 +155,30 @@
         "body": "Bitte überprüfen Sie alles und versuchen Sie es erneut."
       },
       "sessionExpired": "Ihre Sitzung ist abgelaufen. Bitte melden Sie sich erneut an."
-    }
+    },
+    "title": "Bei SecureDrop anmelden",
+    "button": {
+      "signingIn": "Anmeldung…",
+      "signIn": "Anmelden",
+      "useOffline": "Offline verwenden"
+    },
+    "version": "SecureDrop Posteingang v{{version}}"
   },
   "Item": {
     "wizard": {
-      "beCareful": "Seien Sie vorsichtig, wenn Sie mit Dateien außerhalb Ihres Workstation-Rechners arbeiten."
+      "beCareful": "Seien Sie vorsichtig, wenn Sie mit Dateien außerhalb Ihres Workstation-Rechners arbeiten",
+      "anonymityTitle": "Anonymität",
+      "malwareWarning": "An diesem Arbeitsplatz kannst du Dateien sicher öffnen. Wenn du Dateien auf einem anderen Computer öffnest, kann sich darin enthaltene Schadsoftware auf deinen Computer oder dein Netzwerk ausbreiten. Wenn du dir nicht sicher bist, wie du mit diesem Risiko umgehen sollst, drucke die Datei bitte aus oder wende dich an deinen Administrator.",
+      "close": "Schliessen",
+      "anonymityWarning": "Von Informationsquellen übermittelte Dateien können Informationen oder versteckte Metadaten enthalten, die Rückschlüsse auf ihre Identität zulassen. Um deine Quellen zu schützen, solltest du in Erwägung ziehen, Dateien zu bearbeiten, bevor du sie auf Computern nutzt, die mit dem Netzwerk verbunden sind.",
+      "unknownError": "Unbekannter Fehler aufgetreten",
+      "malwareTitle": "Schadsoftware",
+      "retry": "Erneut versuchen",
+      "continue": "Fortsetzen",
+      "pleaseWait": "Bitte warten…",
+      "done": "Fertig",
+      "back": "Zurück",
+      "cancel": "Abbrechen"
     },
     "exportWizard": {
       "exportFailed": "Export fehlgeschlagen",
@@ -59,10 +196,70 @@
       "exportSuccessWithWarning": "Export erfolgreich, aber Laufwerk wurde nicht gesperrt",
       "insertUSBInstructions": "Bitte lege eines der speziell für die SecureDrop Workstation bereitgestellten Exportlaufwerke ein. Wenn du ein VeraCrypt-Laufwerk verwendest, entriegele es manuell, bevor du fortfährst.",
       "unlock": "Passphrase für USB-Laufwerk eingeben",
-      "passphrase": "Passphrase"
+      "passphrase": "Passphrase",
+      "unknownDeviceDetected": "Unbekanntes USB-Gerät erkannt.",
+      "undownloadedFiles": "Einige Dateien wurden nicht heruntergeladen und werden nicht exportiert",
+      "readyExport": "Bereit zum Exportieren.",
+      "sourceExportTitle": "Transkript und Dateien exportieren",
+      "preparingExport": "Vorbereitung des Exports.",
+      "exportSuccess": "Export erfolgreich",
+      "sourceExportDescription": "Das Transkript und alle heruntergeladenen Dateien werden exportiert.",
+      "errorUnlockGeneric": "Das Laufwerk konnte nicht entsperrt werden. Bitte versuche es erneut.",
+      "title": "Datei exportieren",
+      "transcript": "Quelltranskript",
+      "understandRisks": "Informiere dich über die Risiken, bevor du Dateien exportierst",
+      "transcriptAndFiles": "Quelltranskript und -Dateien"
     },
     "printWizard": {
-      "errorUnprintableType": "Dieser Dateityp kann nicht geprintet werden."
+      "errorUnprintableType": "Dieser Dateityp kann nicht geprintet werden.",
+      "understandRisks": "Informiere dich über die Risiken, bevor du Dateien druckst",
+      "errorMimetypeUnsupported": "Dieses Dateiformat wird beim Drucken nicht unterstützt.",
+      "connectPrinterInstructions": "Bitte schließe einen Drucker an, um fortzufahren. Sobald der Drucker angeschlossen ist, klicke auf „Erneut versuchen“, um erneut nach dem Drucker zu suchen.",
+      "preparingPrint": "Druck wird vorbereitet.",
+      "errorUnknown": "Beim Drucken ist ein unbekannter Fehler aufgetreten.",
+      "errorMimetypeDiscovery": "Der Dateityp konnte nicht ermittelt werden.",
+      "printFailed": "Druck fehlgeschlagen",
+      "readyPrint": "Bereit zum Drucken.",
+      "title": "Datei drucken",
+      "errorPrinterNotFound": "Es wurde kein Drucker gefunden. Bitte überprüfe, ob ein Drucker angeschlossen und konfiguriert ist.",
+      "errorPrint": "Beim Drucken der Datei ist ein Fehler aufgetreten."
+    },
+    "exportToUSB": "Auf USB exportieren",
+    "cancel": "Abbrechen",
+    "printFile": "Drucken",
+    "retry": "Erneut versuchen",
+    "viewFile": "Anzeigen",
+    "encryptedFile": "Verschlüsselte Datei",
+    "of": "of",
+    "pause": "Pause",
+    "filenameTooltip": "Dateiname nach dem Herunterladen verfügbar",
+    "downloadFailed": "Download fehlgeschlagen",
+    "resume": "Wiederaufnahme"
+  },
+  "QuitModal": {
+    "cancel": "Abbrechen",
+    "withDrafts": "Entwürfe von Antworten werden gelöscht.",
+    "Quit": "Beenden",
+    "discardAndQuit": "Verwerfen und beenden",
+    "noDrafts": "",
+    "goBack": "Gehe zurück",
+    "title": "SecureDrop-Posteingang verlassen?"
+  },
+  "common": {
+    "seeLess": "Weniger anzeigen",
+    "seeMore": "Mehr erfahren",
+    "yesterday": "Gestern",
+    "ellipsis": "…"
+  },
+  "FirstRunPopup": {
+    "ok": "OK",
+    "newUser": {
+      "title": "Willkommen im Posteingang von SecureDrop",
+      "body": "Nachrichten und Dokumente, die dir über SecureDrop gesendet wurden, werden hier angezeigt. Die anfängliche Datensynchronisierung kann einige Minuten dauern.<br><br>Du kannst jederzeit <kbd>F1</kbd> drücken, um Hilfe zu erhalten. Bei weiteren Fragen wende dich bitte an deinen Systemadministrator oder kontaktiere den SecureDrop-Support über Signal. Dokumentation und Anleitungen für den Zugang zum Support findest du unter securedrop.org/inbox, auf das du auch von einem anderen Computer aus zugreifen kannst."
+    },
+    "migration": {
+      "body": "Die Anwendung wurde von Grund auf neu programmiert, um sie schneller zu machen und seit langem gewünschte Funktionen hinzuzufügen. Die anfängliche Datensynchronisierung kann einige Minuten dauern. Zuvor heruntergeladene Dateien müssen erneut heruntergeladen werden.<br><br>Solltest du auf ein Problem stoßen oder den ursprünglichen SecureDrop-Client verwenden möchten, kannst du für einen begrenzten Zeitraum über das Qubes-Menü ▸ ⚙️ darauf zugreifen ▸ Sonstiges ▸ SecureDrop-Client (Legacy). Wenn du zum alten Client zurückkehren musst, wende dich bitte über Signal an den SecureDrop-Support und teile uns die aufgetretenen Probleme mit, damit wir sie beheben können.<br><br>Du kannst jederzeit <kbd>F1</kbd> drücken, um Hilfe zu erhalten. Bei weiteren Fragen wende dich bitte an deinen Systemadministrator oder kontaktiere den SecureDrop-Support über Signal. Dokumentation und Anleitungen für den Support findest du unter securedrop.org/inbox, auf das du von einem anderen Computer aus zugreifen kannst.",
+      "title": "Willkommen im neuen Posteingang von SecureDrop"
     }
   }
 }
