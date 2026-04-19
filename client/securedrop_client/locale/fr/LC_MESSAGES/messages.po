@@ -7,15 +7,15 @@ msgid ""
 msgstr ""
 "Project-Id-Version: SecureDrop Client 0.8.1\n"
 "Report-Msgid-Bugs-To: securedrop@freedom.press\n"
-"PO-Revision-Date: 2025-07-02 15:37+0000\n"
-"Last-Translator: AO Localization Lab <ao@localizationlab.org>\n"
+"PO-Revision-Date: 2026-04-14 21:56+0000\n"
+"Last-Translator: \"AO yahoe.001\" <ao_yahoe.001@users.noreply.weblate.securedrop.org>\n"
 "Language-Team: French <https://weblate.securedrop.org/projects/securedrop/securedrop-client/fr/>\n"
 "Language: fr\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=n > 1;\n"
-"X-Generator: Weblate 5.11.1\n"
+"X-Generator: Weblate 5.16.2\n"
 "Generated-By: Babel 2.10.3\n"
 
 #, python-brace-format
@@ -103,7 +103,7 @@ msgid "Export All"
 msgstr "Tout exporter"
 
 msgid "<h2>Some files will not be exported</h2>Some files from this source have not yet been downloaded, and will not be exported.<br /><br />To export the currently downloaded files, click \"Continue.\""
-msgstr "<h2>Certains fichiers ne seront pas exportés.</h2>Certains fichiers de cette source n’ont pas encore été téléchargés et ne seront pas exportés.<br /><br />Pour exporter les fichiers téléchargés actuellement, cliquez sur « Poursuivre »."
+msgstr "<h2>Certains fichiers ne seront pas exportés</h2>Certains fichiers de cette source n’ont pas encore été téléchargés et ne seront pas exportés.<br /><br />Pour exporter les fichiers téléchargés actuellement, cliquez sur « Poursuivre »."
 
 msgid "all files and transcript"
 msgstr "tous les fichiers et la transcription"
@@ -148,7 +148,7 @@ msgid "This is where you will read messages, reply to sources, and work with fil
 msgstr "Vous pourrez lire les messages ici, répondre aux sources et travailler sur les fichiers."
 
 msgid "Select a source from the list, to:"
-msgstr "Sélectionnez une source de la liste, pour :"
+msgstr "Choisissez une source de la liste, pour :"
 
 msgid "Read a conversation"
 msgstr "Lire une conversation"
@@ -330,19 +330,19 @@ msgid "Too many USB drives detected; please insert one supported drive."
 msgstr "Trop de clés USB ont été détectées ; insérez une seule clé prise en charge."
 
 msgid "Either the drive is not encrypted or there is something else wrong with it.<br />If this is a VeraCrypt drive, please unlock it from within the sd-devices VM, then try again."
-msgstr "Soit le lecteur n’est pas chiffré, soit il présente un autre problème.<br />S’il s’agit d’un lecteur VeraCrypt, déverrouillez-le dans la MV VM sd-devices, puis réessayez."
+msgstr "Soit la clé USB n’est pas chiffré, soit elle présente un autre problème.<br />S’il s’agit d’une clé USB VeraCrypt, déverrouillez-la dans la MV sd-devices, puis réessayez."
 
 msgid "The drive is ready for export."
-msgstr "Cette clé prête pour l’exportation."
+msgstr "La clé USB est prête pour l’exportation."
 
 msgid "The drive is locked."
-msgstr "La clé est verrouillée."
+msgstr "La clé USB est verrouillée."
 
 msgid "The passphrase provided did not work. Please try again."
 msgstr "La phrase de passe est erronée. Réessayez."
 
 msgid "Error mounting drive"
-msgstr "Erreur de montage du lecteur"
+msgstr "Erreur de montage de la clé USB"
 
 msgid "Error during export"
 msgstr "Erreur d’exportation"
@@ -357,7 +357,7 @@ msgid "Export successful"
 msgstr "L’exportation est réussie"
 
 msgid "Error encountered with this drive. See your administrator for help."
-msgstr "Erreur est survenue avec cette clé. Consultez votre administrateur pour obtenir de l’aide."
+msgstr "Une erreur est survenue pour cette clé USB. Contactez votre administrateur pour obtenir de l’aide."
 
 msgid "Files were moved or missing and could not be exported."
 msgstr "Des fichiers ont été déplacés ou manquaient et n’ont pas pu être exportés."
@@ -380,13 +380,13 @@ msgid "Export Failed"
 msgstr "Échec d’exportation"
 
 msgid "Please insert one of the export drives provisioned specifically for the SecureDrop Workstation.<br />If you're using a VeraCrypt drive, unlock it manually before proceeding."
-msgstr "Insérez l'un des lecteurs d'exportation prévus spécifiquement pour la station de travail SecureDrop.<br />Si vous utilisez un lecteur VeraCrypt, déverrouillez-le manuellement avant de poursuivre."
+msgstr "Insérez l'un des clés USB d'exportation prévus pour la station de travail SecureDrop.<br />Si vous utilisez une clé USB VeraCrypt, déverrouillez-la manuellement avant de poursuivre."
 
 msgid "Remember to be careful when working with files outside of your Workstation machine."
 msgstr "Faites preuve de prudence en traitant les fichiers sur un ordinateur autre que votre poste de travail."
 
 msgid "Export sucessful, but drive was not locked"
-msgstr "L’exportation est réussie, mais le lecteur n’a pas été verrouillé"
+msgstr "L’exportation est réussie, mais la clé USB n’a pas été verrouillée"
 
 msgid "Working..."
 msgstr "En traitement…"
