@@ -1,0 +1,265 @@
+{
+  "Sidebar": {
+    "sourcelist": {
+      "sort": {
+        "tooltip": ""
+      },
+      "deleteDialog": {
+        "single": {
+          "message": "",
+          "keepAccountButton": "",
+          "deleteAccountButton": ""
+        },
+        "multiple": {
+          "keepAccountsButton": "",
+          "deleteAccountsButton": "",
+          "message": ""
+        },
+        "cancelButton": "",
+        "messageCount_one": "",
+        "messageCount_other": "",
+        "countingItems": "",
+        "replyCount_one": "",
+        "replyCount_other": "",
+        "itemCountsHeader": "",
+        "fileCount_one": "",
+        "fileCount_other": "",
+        "warning": ""
+      },
+      "filters": {
+        "starred": "",
+        "unread": "",
+        "read": "",
+        "unstarred": "",
+        "all": ""
+      },
+      "search": {
+        "placeholder": ""
+      },
+      "actions": {
+        "bulkDelete": ""
+      }
+    },
+    "account": {
+      "signIn": "",
+      "signOut": "",
+      "syncNow": "",
+      "offlineMode": "",
+      "aboutOK": "",
+      "Help": "",
+      "aboutClose": "",
+      "Quit": "",
+      "keyboardShortcuts": "",
+      "signedIn": "",
+      "aboutSecureDrop": ""
+    },
+    "shortcuts": {
+      "deleteSource": "",
+      "quit": "",
+      "sendReply": "",
+      "focusMainContent": "",
+      "sourceDown": "",
+      "downloadAll": "",
+      "deleteCheckedSources": "",
+      "sourceSelect": "",
+      "categories": {
+        "application": "",
+        "composing": "",
+        "navigation": "",
+        "sources": "",
+        "files": ""
+      },
+      "signOut": "",
+      "openHelp": "",
+      "sync": "",
+      "sourceUp": "",
+      "focusSidebar": ""
+    },
+    "source": {
+      "encryptedMessage": "",
+      "toggleStar": "",
+      "encryptedFile": ""
+    },
+    "syncStatus": {
+      "notloggedin": "",
+      "ok": "",
+      "error": "",
+      "warning": ""
+    },
+    "helpModals": {
+      "aboutRepoTitle": "",
+      "aboutLicence": "",
+      "keyboardTitle": "",
+      "aboutCopyright": "",
+      "aboutAppDesc": "",
+      "aboutMoreContent": "",
+      "aboutAppVersion": "",
+      "aboutMoreTitle": "",
+      "aboutAppTitle": "",
+      "aboutRepoContent": ""
+    }
+  },
+  "Item": {
+    "exportWizard": {
+      "unknownDeviceDetected": "",
+      "noDeviceDetected": "",
+      "errorUnmountVolumeBusy": "",
+      "undownloadedFiles": "",
+      "insertUSBInstructions": "",
+      "passphrase": "",
+      "readyExport": "",
+      "sourceExportTitle": "",
+      "preparingExport": "",
+      "invalidDeviceDetected": "",
+      "unlock": "",
+      "errorExportCleanup": "",
+      "exportSuccess": "",
+      "sourceExportDescription": "",
+      "errorExport": "",
+      "unexpectedError": "",
+      "deviceError": "",
+      "errorUnlockGeneric": "",
+      "errorUnlockLuks": "",
+      "exportFailed": "",
+      "exportSuccessWithWarning": "",
+      "title": "",
+      "transcript": "",
+      "errorMissingFiles": "",
+      "understandRisks": "",
+      "multiDeviceDetected": "",
+      "transcriptAndFiles": "",
+      "errorMount": ""
+    },
+    "printWizard": {
+      "understandRisks": "",
+      "errorMimetypeUnsupported": "",
+      "connectPrinterInstructions": "",
+      "preparingPrint": "",
+      "errorUnknown": "",
+      "errorMimetypeDiscovery": "",
+      "printFailed": "",
+      "errorUnprintableType": "",
+      "readyPrint": "",
+      "title": "",
+      "errorPrinterNotFound": "",
+      "errorPrint": ""
+    },
+    "exportToUSB": "",
+    "wizard": {
+      "anonymityTitle": "",
+      "malwareWarning": "",
+      "close": "",
+      "anonymityWarning": "",
+      "unknownError": "",
+      "malwareTitle": "",
+      "retry": "",
+      "continue": "",
+      "pleaseWait": "",
+      "done": "",
+      "beCareful": "",
+      "back": "",
+      "cancel": ""
+    },
+    "cancel": "",
+    "printFile": "",
+    "retry": "",
+    "viewFile": "",
+    "encryptedFile": "",
+    "of": "",
+    "pause": "",
+    "filenameTooltip": "",
+    "downloadFailed": "",
+    "resume": ""
+  },
+  "SignIn": {
+    "title": "",
+    "passphrase": {
+      "label": "",
+      "required": "",
+      "invalidLength": ""
+    },
+    "button": {
+      "signingIn": "",
+      "signIn": "",
+      "useOffline": ""
+    },
+    "errors": {
+      "sessionExpired": "",
+      "credentials": {
+        "header": "",
+        "body": ""
+      },
+      "generic": {
+        "body": "",
+        "header": ""
+      },
+      "network": {
+        "header": "",
+        "body": ""
+      }
+    },
+    "version": "",
+    "username": {
+      "required": "",
+      "minLength": "",
+      "label": ""
+    },
+    "twoFactorCode": {
+      "label": "",
+      "required": "",
+      "invalidFormat": ""
+    }
+  },
+  "QuitModal": {
+    "cancel": "",
+    "withDrafts": "",
+    "Quit": "",
+    "discardAndQuit": "",
+    "noDrafts": "",
+    "goBack": "",
+    "title": ""
+  },
+  "MainContent": {
+    "menu": {
+      "exportTranscript": "",
+      "printTranscript": "",
+      "exportSource": "",
+      "clickToOpen": ""
+    },
+    "conversation": {
+      "sendButton": "",
+      "newMessagesDivider": "",
+      "messagePlaceholder": ""
+    },
+    "emptyState": "",
+    "alreadyRunning": "",
+    "messageFailed": "",
+    "seenReplyTooltip": "",
+    "pendingReplyTooltip": "",
+    "successReplyTooltip": "",
+    "retryFetch": "",
+    "itemEncrypted": "",
+    "lastSourceActivity": "",
+    "emptyConversation": "",
+    "nonProduction": "",
+    "you": "",
+    "unknown": ""
+  },
+  "common": {
+    "seeLess": "",
+    "seeMore": "",
+    "yesterday": "",
+    "ellipsis": ""
+  },
+  "FirstRunPopup": {
+    "ok": "",
+    "newUser": {
+      "title": "",
+      "body": ""
+    },
+    "migration": {
+      "body": "",
+      "title": ""
+    }
+  }
+}
