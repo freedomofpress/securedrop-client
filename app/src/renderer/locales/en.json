@@ -255,7 +255,7 @@
   },
   "QuitModal": {
     "title": "Quit SecureDrop Inbox?",
-    "withDrafts": "Draft replies be discarded.",
+    "withDrafts": "Draft replies will be discarded.",
     "noDrafts": "",
     "goBack": "Go Back",
     "cancel": "Cancel",
