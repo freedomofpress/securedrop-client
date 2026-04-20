@@ -4,6 +4,7 @@ import { createHash } from "node:crypto";
 import fs from "fs";
 import path from "path";
 import { Writable } from "stream";
+import { log } from "../log";
 
 import { BufferedWriter } from "./bufferedWriter";
 import { DB } from "../database";
@@ -151,7 +152,7 @@ export class TaskQueue {
         fileLimit: FILE_QUEUE_BATCH_LIMIT,
       });
       if (itemsToProcess.length > 0) {
-        console.debug("Items to process: ", itemsToProcess);
+        log.debug(`Items to process: ${JSON.stringify(itemsToProcess)}`);
       }
       for (const itemUUID of itemsToProcess) {
         const task: ItemFetchTask = {
@@ -168,26 +169,22 @@ export class TaskQueue {
 
         queue.push(task, (err, _result) => {
           if (err) {
-            console.error(
-              `Error executing fetch download task in queue: `,
-              task,
-              err,
+            log.error(
+              `Error executing fetch download task in queue: ${JSON.stringify(task)} ${err}`,
             );
             try {
               this.db.failDownload(task.id);
             } catch (failError) {
-              console.error(
-                `Error failing download in queue callback for item ${task.id}:`,
-                failError,
+              log.error(
+                `Error failing download in queue callback for item ${task.id}: ${failError}`,
               );
             }
             if (this.port) {
               try {
                 this.port.postMessage(this.db.getItem(task.id));
               } catch (postError) {
-                console.error(
-                  `Error posting queue callback update for item ${task.id}:`,
-                  postError,
+                log.error(
+                  `Error posting queue callback update for item ${task.id}: ${postError}`,
                 );
               }
             }
@@ -195,7 +192,7 @@ export class TaskQueue {
         });
       }
     } catch (e) {
-      console.error("Error queueing fetches: ", e);
+      log.error(`Error queueing fetches: ${e}`);
     }
   }
 
@@ -203,11 +200,11 @@ export class TaskQueue {
   // decrypting data to plaintext stored in the DB or to a file on disk.
   process = async (item: ItemFetchTask, db: DB) => {
     try {
-      console.debug("Processing item: ", item);
+      log.debug(`Processing item: ${JSON.stringify(item)}`);
 
       const dbItem = db.getItem(item.id);
       if (!dbItem) {
-        console.debug("Item not found");
+        log.debug("Item not found");
         return;
       }
 
@@ -226,7 +223,7 @@ export class TaskQueue {
         status == FetchStatus.Cancelled ||
         status == FetchStatus.ScheduledDeletion
       ) {
-        console.debug("Item task is not in a processable state, skipping...");
+        log.debug("Item task is not in a processable state, skipping...");
         return;
       }
 
@@ -257,7 +254,7 @@ export class TaskQueue {
 
       // Re-check: if the item was marked for deletion during download, stop.
       if (this.isScheduledForDeletion(item.id, db)) {
-        console.debug(
+        log.debug(
           `Item ${item.id} scheduled for deletion after download, skipping decryption...`,
         );
         return;
@@ -279,7 +276,7 @@ export class TaskQueue {
         }
       } else {
         // Handle unexpected statuses
-        console.debug(
+        log.debug(
           `Unexpected status ${nextStatus} for item ${item.id}, skipping...`,
         );
       }
@@ -348,7 +345,7 @@ export class TaskQueue {
     metadata: ItemMetadata,
     progress: number,
   ): Promise<DownloadResult> {
-    console.debug(`Starting download for ${metadata.kind} ${item.id}`);
+    log.debug(`Starting download for ${metadata.kind} ${item.id}`);
     const abortController = new AbortController();
     this.activeDownloads.set(item.id, {
       sourceUuid: metadata.source,
@@ -398,7 +395,7 @@ export class TaskQueue {
       timeout = getRealisticTimeout(metadata.size as bytes);
     }
 
-    console.debug(
+    log.debug(
       `Downloading ${metadata.kind} ${item.id} (size: ${metadata.size} bytes) with timeout: ${timeout}ms`,
     );
 
@@ -609,7 +606,7 @@ export class TaskQueue {
       // Don't save to disk if the decryption was intentionally aborted
       if ((error as Error).name !== "AbortError") {
         if (error instanceof CryptoError) {
-          console.warn(
+          log.warn(
             `Failed to decrypt ${metadata.kind} ${item.id}: ${error.message}`,
           );
         }
@@ -622,11 +619,11 @@ export class TaskQueue {
           const downloadDir = path.dirname(downloadFilePath);
           await fs.promises.mkdir(downloadDir, { recursive: true });
           await fs.promises.writeFile(downloadFilePath, buffer);
-          console.debug(
+          log.debug(
             `Saved encrypted buffer data to disk for retry: ${downloadFilePath}`,
           );
         } catch (saveError) {
-          console.warn(`Failed to save encrypted data to disk: ${saveError}`);
+          log.warn(`Failed to save encrypted data to disk: ${saveError}`);
         }
       }
       throw error;
@@ -666,7 +663,7 @@ export class TaskQueue {
     try {
       await fs.promises.unlink(downloadPath);
     } catch (error) {
-      console.warn(`Failed to clean up encrypted file: ${error}`);
+      log.warn(`Failed to clean up encrypted file: ${error}`);
     }
   }
 
@@ -694,7 +691,7 @@ export class TaskQueue {
         try {
           await fs.promises.unlink(finalAbsolutePath);
         } catch (error) {
-          console.warn(
+          log.warn(
             `Failed to clean up decrypted file after deletion: ${error}`,
           );
         }
@@ -705,10 +702,10 @@ export class TaskQueue {
       const fileStats = await fs.promises.stat(finalAbsolutePath);
       const decryptedSize = fileStats.size;
       db.completeFileItem(item.id, finalAbsolutePath, decryptedSize);
-      console.debug(`Successfully decrypted ${metadata.kind} ${item.id}`);
+      log.debug(`Successfully decrypted ${metadata.kind} ${item.id}`);
     } catch (error) {
       if (error instanceof CryptoError) {
-        console.warn(
+        log.warn(
           `Failed to decrypt ${metadata.kind} ${item.id}: ${error.message}`,
         );
       }
@@ -719,7 +716,7 @@ export class TaskQueue {
     try {
       await fs.promises.unlink(downloadPath);
     } catch (error) {
-      console.warn(`Failed to clean up encrypted file: ${error}`);
+      log.warn(`Failed to clean up encrypted file: ${error}`);
     }
   }
 }
@@ -757,30 +754,26 @@ function createQueue(
   );
 
   q.on("error", (error) => {
-    console.error(`Error from ${name}: `, error);
+    log.error(`Error from ${name}: ${error}`);
   });
 
   q.on("task_failed", (taskId, errorMessage) => {
-    console.error(
-      `Task failed and exceeded retry attempts in ${name}, removing from queue: `,
-      taskId,
-      errorMessage,
+    log.error(
+      `Task failed and exceeded retry attempts in ${name}, removing from queue: ${taskId} ${errorMessage}`,
     );
     try {
       db.terminallyFailItem(taskId);
     } catch (failError) {
-      console.error(
-        `Error terminally failing item ${taskId} in ${name}:`,
-        failError,
+      log.error(
+        `Error terminally failing item ${taskId} in ${name}: ${failError}`,
       );
     }
     if (port) {
       try {
         port.postMessage(db.getItem(taskId));
       } catch (postError) {
-        console.error(
-          `Error posting task_failed update for item ${taskId} in ${name}:`,
-          postError,
+        log.error(
+          `Error posting task_failed update for item ${taskId} in ${name}: ${postError}`,
         );
       }
     }

@@ -1,5 +1,6 @@
 import { bytes, ms } from "../types";
 import type { SizedSchema } from "../schemas";
+import { log } from "./log";
 import { DEFAULT_PROXY_CMD_TIMEOUT_MS } from "./proxy";
 
 // Calculate a realistic timeout in milliseconds based on the size of the total
@@ -44,7 +45,7 @@ export function estimateTimeout(schema: SizedSchema, records?: number): ms {
   const size = estimateSize(schema, records);
   const timeout = getRealisticTimeout(size, DEFAULT_PROXY_CMD_TIMEOUT_MS);
 
-  console.debug(
+  log.debug(
     `Expecting ${schema.description} of ~${records} records to be ~${size} bytes within ~${timeout} ms`,
   );
   return timeout;

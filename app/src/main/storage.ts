@@ -2,6 +2,7 @@ import * as fs from "fs";
 import os from "os";
 import { Item, ItemMetadata } from "../types";
 import { ItemFetchTask } from "./fetch/queue";
+import { log } from "./log";
 
 /// Newtype for when we know a path component is potentially unsafe,
 /// which prevents it from being used in anything except PathBuilder
@@ -140,10 +141,9 @@ export class Storage {
         fs.rmSync(sourceDirectory, { recursive: true, force: true });
       }
     } catch (err) {
-      console.error("Failed to delete source from filesystem: ", {
-        sourceID,
-        error: err,
-      });
+      log.error(
+        `Failed to delete source from filesystem: sourceID=${sourceID} error=${err}`,
+      );
     }
   }
 
@@ -154,10 +154,9 @@ export class Storage {
         fs.rmSync(itemDirectory.path, { recursive: true, force: true });
       }
     } catch (err) {
-      console.error("Failed to delete item from filesystem", {
-        item: item.uuid,
-        error: err,
-      });
+      log.error(
+        `Failed to delete item from filesystem: item=${item.uuid} error=${err}`,
+      );
     }
   }
 }

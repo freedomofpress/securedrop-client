@@ -43,6 +43,7 @@ import { setUmask } from "./umask";
 import { Exporter, Printer } from "./export";
 import { Storage } from "./storage";
 import { writeTranscript } from "./transcriber";
+import { log } from "./log";
 
 // Set umask so any files written are owner-only read/write (600).
 // This must be done before we create any files or spawn any worker threads.
@@ -74,9 +75,8 @@ if (!gotTheLock) {
         });
     })
     .catch((error) => {
-      console.error(
-        "Failed to show 'already running' dialog during app startup:",
-        error,
+      log.error(
+        `Failed to show 'already running' dialog during app startup: ${error}`,
       );
       process.exit(1);
     });
@@ -115,7 +115,7 @@ if (!gotTheLock) {
     }
 
     process.env.GNUPGHOME = gpgHome;
-    console.log(`Mac demo mode: GPG keyring initialized at ${gpgHome}`);
+    log.info(`Mac demo mode: GPG keyring initialized at ${gpgHome}`);
   }
 
   // Parse command line arguments
@@ -148,7 +148,7 @@ if (!gotTheLock) {
         cryptoConfig: configForCrypto,
       };
     } catch (error) {
-      console.error("Failed to initialize SecureDrop Inbox:", error);
+      log.error(`Failed to initialize SecureDrop Inbox: ${error}`);
       process.exit(1);
     }
   }
@@ -222,7 +222,7 @@ if (!gotTheLock) {
     });
 
     worker.on("message", (result) => {
-      console.debug("Message from worker: ", result);
+      log.debug(`Message from worker: ${JSON.stringify(result)}`);
       if (!result) {
         return;
       }
@@ -235,15 +235,15 @@ if (!gotTheLock) {
     });
 
     worker.on("error", (err) => {
-      console.log("Error from worker: ", err);
+      log.error(`Error from worker: ${err}`);
     });
 
     worker.on("exit", (err) => {
-      console.log("Worker exited with code ", err);
+      log.warn(`Worker exited with code ${err}`);
     });
 
     worker.on("messageerror", (err) => {
-      console.log("Message error from worker: ", err);
+      log.error(`Message error from worker: ${err}`);
     });
 
     return worker;
@@ -312,10 +312,10 @@ if (!gotTheLock) {
             installExtension([REACT_DEVELOPER_TOOLS, REDUX_DEVTOOLS]),
           )
           .then(([react, redux]) =>
-            console.log(`Added extensions: ${react.name}, ${redux.name}`),
+            log.debug(`Added extensions: ${react.name}, ${redux.name}`),
           )
           .catch((err) =>
-            console.log("An error occurred during extension setup: ", err),
+            log.warn(`An error occurred during extension setup: ${err}`),
           );
       }
 
@@ -418,7 +418,7 @@ if (!gotTheLock) {
         "syncMetadata",
         async (_event, request: AuthedRequest): Promise<SyncStatus> => {
           if (shouldSkipSync(db, request.hintedVersion)) {
-            console.debug(`Already at ${request.hintedVersion}; skipping sync`);
+            log.debug(`Already at ${request.hintedVersion}; skipping sync`);
             wakeFetchWorkerIfNeeded(request.authToken);
             return SyncStatus.NOT_MODIFIED;
           }
@@ -569,7 +569,7 @@ if (!gotTheLock) {
           const process = spawn(command, args);
           // Log errors but don't wait for the process to finish
           process.on("error", (error) => {
-            console.error(`Failed to launch qvm-open-in-vm: ${error.message}`);
+            log.error(`Failed to launch qvm-open-in-vm: ${error.message}`);
           });
 
           // Return immediately without waiting for the process to finish
@@ -601,9 +601,8 @@ if (!gotTheLock) {
             const sourceName = sourceWithItems.data.journalist_designation;
             return await exporter.export([filePath], passphrase, sourceName);
           } catch (error) {
-            console.error(
-              `Failed to export transcript for source: ${sourceUuid}:`,
-              error,
+            log.error(
+              `Failed to export transcript for source: ${sourceUuid}: ${error}`,
             );
             throw error;
           }
@@ -673,7 +672,7 @@ if (!gotTheLock) {
             const sourceName = sourceWithItems.data.journalist_designation;
             return await exporter.export(filenames, passphrase, sourceName);
           } catch (error) {
-            console.error(`Failed to export source: ${sourceUuid}:`, error);
+            log.error(`Failed to export source: ${sourceUuid}: ${error}`);
             throw error;
           }
         },
@@ -694,9 +693,8 @@ if (!gotTheLock) {
             }
             return printer.print([filePath]);
           } catch (error) {
-            console.error(
-              `Failed to print transcript for source: ${sourceUuid}:`,
-              error,
+            log.error(
+              `Failed to print transcript for source: ${sourceUuid}: ${error}`,
             );
             throw error;
           }
@@ -744,7 +742,7 @@ if (!gotTheLock) {
       fetchWorker = spawnFetchWorker(mainWindow);
     })
     .catch((error) => {
-      console.error("Unhandled error during app startup:", error);
+      log.error(`Unhandled error during app startup: ${error}`);
       app.exit(1);
     });
 
