@@ -37,17 +37,10 @@ if input("OK to push and create PR? [y/N]").lower() != "y":
     sys.exit()
 subprocess.check_call(["git", "push", "-u", remote, branch])
 body = f"""\
-## Status
-
-Ready for review
-
-## Description of Changes
-
 Backport of #{args.pr}.
 
 ## Testing
 
-* [ ] CI is passing
 * [ ] base is `{base}`
 * [ ] Only contains changes from #{args.pr}.
 """
