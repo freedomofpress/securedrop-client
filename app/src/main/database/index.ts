@@ -264,17 +264,19 @@ export class DB {
       "SELECT version FROM items WHERE uuid = @uuid",
     );
     this.selectMessageItemsProcessable = this.db.prepare(
-      `SELECT uuid FROM items
+      `SELECT items.uuid FROM items
+      JOIN sources ON items.source_uuid = sources.uuid
       WHERE kind <> 'file'
         AND fetch_status in (${FetchStatus.Initial}, ${FetchStatus.DownloadInProgress}, ${FetchStatus.DecryptionInProgress}, ${FetchStatus.FailedDownloadRetryable}, ${FetchStatus.FailedDecryptionRetryable})
-      ORDER BY interaction_count ASC, uuid ASC
+      ORDER BY json_extract(sources.data, '$.last_updated') DESC, interaction_count DESC, items.uuid ASC
       LIMIT @limit`,
     );
     this.selectFileItemsProcessable = this.db.prepare(
-      `SELECT uuid FROM items
+      `SELECT items.uuid FROM items
+      JOIN sources ON items.source_uuid = sources.uuid
       WHERE kind = 'file'
         AND fetch_status in (${FetchStatus.DownloadInProgress}, ${FetchStatus.DecryptionInProgress}, ${FetchStatus.FailedDownloadRetryable}, ${FetchStatus.FailedDecryptionRetryable})
-      ORDER BY interaction_count ASC, uuid ASC
+      ORDER BY json_extract(sources.data, '$.last_updated') DESC, interaction_count DESC, items.uuid ASC
       LIMIT @limit`,
     );
     this.selectUnprojectedItemsBySource = this.db.prepare(
