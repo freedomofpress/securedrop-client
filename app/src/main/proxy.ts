@@ -2,6 +2,7 @@ import child_process from "node:child_process";
 import path from "node:path";
 import { Writable } from "node:stream";
 import { finished } from "node:stream/promises";
+import { log } from "./log";
 
 import type {
   ProxyRequest,
@@ -35,7 +36,7 @@ function parseJSONResponse(response: string): ProxyJSONResponse {
         body = JSON.parse(body);
       }
     } catch (e) {
-      console.log(
+      log.warn(
         `Failed to parse response body as JSON: ${result["status"]}: ${result["body"]}: ${e}`,
       );
     }

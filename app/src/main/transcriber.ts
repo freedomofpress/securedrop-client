@@ -3,6 +3,7 @@ import fs from "fs";
 import { DB } from "./database";
 import { Storage } from "./storage";
 import { type SourceWithItems, Journalist } from "../types";
+import { log } from "./log";
 
 import { Liquid } from "liquidjs";
 
@@ -18,7 +19,7 @@ export async function renderTranscript(data: SourceWithItems, db: DB) {
       const journalist: Journalist = db.getJournalistByID(uuid);
       return journalist.data.username || "Unknown journalist";
     } catch (error) {
-      console.error("Error looking up journalist ", error);
+      log.error(`Error looking up journalist: ${error}`);
       return "Unknown journalist";
     }
   });
@@ -35,7 +36,7 @@ export async function renderTranscript(data: SourceWithItems, db: DB) {
     );
     return output;
   } catch (error) {
-    console.error("Error generating transcript: ", error);
+    log.error(`Error generating transcript: ${error}`);
     throw error;
   }
 }
@@ -57,10 +58,7 @@ export async function writeTranscript(
     fs.writeFileSync(filePath, fileContent, "utf-8");
     return filePath;
   } catch (error) {
-    console.error(
-      `Failed to write transcript for source: ${sourceUuid}:`,
-      error,
-    );
+    log.error(`Failed to write transcript for source: ${sourceUuid}: ${error}`);
     throw error;
   }
 }

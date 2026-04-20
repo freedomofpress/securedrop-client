@@ -1,4 +1,5 @@
 import { spawnSync } from "child_process";
+import { log } from "./log";
 
 /**
  * Config loads configuration at runtime from QubesDB (if available),
@@ -13,7 +14,7 @@ export class Config {
 
   public static load(noQubes: boolean): Config {
     const isQubes = noQubes ? !noQubes : detectQubes();
-    console.log("Loading with isQubes: ", isQubes);
+    log.info(`Loading with isQubes: ${isQubes}`);
     return {
       qubes_gpg_domain: read(isQubes, "QUBES_GPG_DOMAIN", ""),
       sd_submission_key_fpr: read(isQubes, "SD_SUBMISSION_KEY_FPR"),

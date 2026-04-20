@@ -5,8 +5,9 @@ import { AuthedRequest, FetchWorkerMessage } from "../../types";
 import { Crypto } from "../crypto";
 import { Datastore } from "../datastore";
 import { Storage } from "../storage";
+import { log } from "../log";
 
-console.log("Starting fetch worker...");
+log.info("Starting fetch worker...");
 
 if (!parentPort) {
   throw new Error("Must run as a worker thread");
@@ -19,7 +20,7 @@ if (!workerData.cryptoConfig) {
   throw new Error("Worker missing crypto config");
 }
 
-console.log("Initializing crypto with config:", workerData.cryptoConfig);
+log.info("Initializing crypto for fetch worker");
 const crypto = Crypto.initialize(workerData.cryptoConfig);
 
 const db = new Datastore(crypto, new Storage());

@@ -3,6 +3,7 @@ import os from "os";
 import path from "path";
 import { execSync } from "child_process";
 import Database, { Statement } from "better-sqlite3";
+import { log } from "../log";
 import blake from "blakejs";
 import { Snowflake } from "@sapphire/snowflake";
 
@@ -430,7 +431,7 @@ export class DB {
       `Release-${runtime}`,
       "better_sqlite3.node",
     );
-    console.log(
+    log.info(
       `Loading better-sqlite3 from ${binaryPath} (packaged: ${isPackaged})`,
     );
     return binaryPath;
@@ -485,11 +486,11 @@ export class DB {
         "up",
       ].join(" ");
 
-      console.log("Running migrations:", command);
+      log.info(`Running migrations: ${command}`);
       execSync(command, { stdio: "inherit" });
-      console.log("Migrations completed successfully");
+      log.info("Migrations completed successfully");
     } catch (error) {
-      console.error("Migration failed:", error);
+      log.error(`Migration failed: ${error}`);
       throw new Error(`Migration failed: ${error}`);
     }
   }

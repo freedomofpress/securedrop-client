@@ -10,6 +10,7 @@ import * as path from "path";
 import { spawn, ChildProcess } from "child_process";
 import { promisify } from "util";
 import * as tar from "tar";
+import { log } from "./log";
 import {
   DeviceErrorStatus,
   DeviceStatus,
@@ -258,7 +259,7 @@ export class ArchiveExporter {
         filesToAdd.set(filepath, arcname);
       } catch {
         missingCount += 1;
-        console.debug(
+        log.debug(
           `'${filepath}' does not exist, and will not be included in archive`,
         );
       }
@@ -337,7 +338,7 @@ export class ArchiveExporter {
           });
 
           if (!this.process) {
-            console.log("Failed to spawn qrexec-client-vm");
+            log.error("Failed to spawn qrexec-client-vm");
             reject(new Error("Failed to spawn qrexec-client-vm"));
             return;
           }
@@ -347,7 +348,7 @@ export class ArchiveExporter {
           });
 
           this.process.on("error", (err) => {
-            console.log("qrexec spawn error", err);
+            log.error(`qrexec spawn error: ${err}`);
             reject(err);
           });
 
@@ -360,7 +361,7 @@ export class ArchiveExporter {
           });
         })
         .catch((e) => {
-          console.log("Archive path not accessible", e);
+          log.error(`Archive path not accessible: ${e}`);
           reject(e);
         });
     });
@@ -376,7 +377,7 @@ export class ArchiveExporter {
       );
     }
 
-    console.debug(`Parsing response from process: ${outputUntrusted}`);
+    log.debug(`Parsing response from process: ${outputUntrusted}`);
     try {
       // final line is the status string
       const lines = outputUntrusted
@@ -414,7 +415,7 @@ export class ArchiveExporter {
       try {
         rmSync(this.tmpdir, { recursive: true, force: true });
       } catch (e) {
-        console.log("Failed to cleanup tmpdir", e);
+        log.warn(`Failed to cleanup tmpdir: ${e}`);
       } finally {
         this.tmpdir = null;
       }
@@ -441,7 +442,7 @@ export class Printer extends ArchiveExporter {
 
   // Initiate print and run preflight checks to make sure that Export VM is started
   public async initiatePrint(): Promise<DeviceStatus> {
-    console.log("Initiating print, beginning printer preflight checks");
+    log.info("Initiating print, beginning printer preflight checks");
     this.fsm.transition({ action: "initiatePrint" });
 
     try {
@@ -459,14 +460,14 @@ export class Printer extends ArchiveExporter {
       await this.runQrexecExport(archivePath);
       return this._onComplete();
     } catch (err) {
-      console.log("Error creating archive for printer preflight", err);
+      log.error(`Error creating archive for printer preflight: ${err}`);
       this._onError();
       return DeviceErrorStatus.UNEXPECTED_RETURN_STATUS;
     }
   }
 
   public async print(filepaths: string[]): Promise<DeviceStatus> {
-    console.log("Beginning print");
+    log.info("Beginning print");
     this.fsm.transition({ action: "print" });
 
     try {
@@ -485,7 +486,7 @@ export class Printer extends ArchiveExporter {
       await this.runQrexecExport(archivePath);
       return this._onComplete();
     } catch (err) {
-      console.log("Print failed", err);
+      log.error(`Print failed: ${err}`);
       this._onError();
       return DeviceErrorStatus.UNEXPECTED_RETURN_STATUS;
     }
@@ -532,7 +533,7 @@ export class Printer extends ArchiveExporter {
   }
 
   public cancelPrint(): void {
-    console.log("Cancelling print operation");
+    log.info("Cancelling print operation");
     if (this.process) {
       this.process.kill();
       this.process = null;
@@ -559,7 +560,7 @@ export class Exporter extends ArchiveExporter {
   }
 
   public async initiateExport(): Promise<DeviceStatus> {
-    console.log("Beginning export preflight check");
+    log.info("Beginning export preflight check");
     this.fsm.transition({ action: "initiateExport" });
 
     let status: DeviceStatus = DeviceErrorStatus.UNEXPECTED_RETURN_STATUS;
@@ -577,7 +578,7 @@ export class Exporter extends ArchiveExporter {
       await this.runQrexecExport(archivePath);
       status = this._onComplete(true);
     } catch (err) {
-      console.log("Export preflight check failed", err);
+      log.error(`Export preflight check failed: ${err}`);
       this._onError();
     }
     return status;
@@ -590,7 +591,7 @@ export class Exporter extends ArchiveExporter {
   ): Promise<DeviceStatus> {
     let status: DeviceStatus;
     try {
-      console.log(`Begin exporting ${filepaths.length} item(s)`);
+      log.info(`Begin exporting ${filepaths.length} item(s)`);
       this.fsm.transition({ action: "export" });
 
       const metadata = { ...Exporter.DISK_METADATA } as Record<string, unknown>;
@@ -612,7 +613,7 @@ export class Exporter extends ArchiveExporter {
       await this.runQrexecExport(archivePath);
       status = this._onComplete(false);
     } catch (err) {
-      console.log("Export failed", err);
+      log.error(`Export failed: ${err}`);
       this._onError();
       throw err;
     }
@@ -650,7 +651,7 @@ export class Exporter extends ArchiveExporter {
           `Export status returned unexpected value ${err}`,
         ),
       });
-      console.log("Export returned unexpected value", err);
+      log.warn(`Export returned unexpected value: ${err}`);
       return DeviceErrorStatus.UNEXPECTED_RETURN_STATUS;
     } finally {
       this.process = null;
@@ -671,7 +672,7 @@ export class Exporter extends ArchiveExporter {
   }
 
   public cancelExport(): void {
-    console.log("Cancelling export operation");
+    log.info("Cancelling export operation");
     if (this.process) {
       this.process.kill();
       this.process = null;
