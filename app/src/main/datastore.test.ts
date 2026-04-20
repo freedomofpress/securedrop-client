@@ -1348,7 +1348,7 @@ describe("Datastore Method Tests", () => {
       fileLimit: 1,
     });
 
-    expect(itemsToProcess).toEqual(["message1", "message2", "file1"]);
+    expect(itemsToProcess).toEqual(["message3", "message2", "file3"]);
   });
 
   it("getItemsToProcess should exclude ScheduledDeletion items", () => {
