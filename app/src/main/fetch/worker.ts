@@ -5,6 +5,9 @@ import { AuthedRequest, FetchWorkerMessage } from "../../types";
 import { Crypto } from "../crypto";
 import { Datastore } from "../datastore";
 import { Storage } from "../storage";
+import { initLogging } from "../log";
+
+initLogging();
 
 console.log("Starting fetch worker...");
 

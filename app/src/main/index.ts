@@ -43,10 +43,13 @@ import { setUmask } from "./umask";
 import { Exporter, Printer } from "./export";
 import { Storage } from "./storage";
 import { writeTranscript } from "./transcriber";
+import { initLogging } from "./log";
 
 // Set umask so any files written are owner-only read/write (600).
 // This must be done before we create any files or spawn any worker threads.
 setUmask();
+
+initLogging();
 
 // Handle --version flag early, before any other initialization
 if (process.argv.includes("--version")) {
