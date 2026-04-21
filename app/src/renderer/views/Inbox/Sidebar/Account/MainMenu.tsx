@@ -190,7 +190,7 @@ function MainMenu() {
             ) : (
               <>
                 <SyncDicator />
-                <Typography.Text type="secondary">
+                <Typography.Text style={{ color: "#575757" }}>
                   {t("account.offlineMode")}
                 </Typography.Text>
               </>
@@ -208,12 +208,8 @@ function MainMenu() {
         open={isAboutModalOpen}
         onCancel={() => setIsAboutModalOpen(false)}
         footer={[
-          <Button
-            key="back"
-            onClick={() => setIsAboutModalOpen(false)}
-            type="primary"
-          >
-            {t("account.aboutOK")}
+          <Button key="back" onClick={() => setIsAboutModalOpen(false)}>
+            {t("account.aboutClose")}
           </Button>,
         ]}
       >
