@@ -30,6 +30,7 @@ import {
   type DeviceStatus,
   type SearchResult,
   type FirstRunStatus,
+  type ms,
   FetchStatus,
   PendingEventType,
   SyncStatus,
@@ -343,7 +344,11 @@ if (!gotTheLock) {
       ipcMain.handle(
         "request",
         async (_event, request: ProxyRequest): Promise<ProxyResponse> => {
-          const result = await proxyJSONRequest(request);
+          const result = await proxyJSONRequest(
+            request,
+            undefined,
+            60_000 as ms,
+          );
           return result;
         },
       );
