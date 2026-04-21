@@ -421,7 +421,7 @@ if (!gotTheLock) {
         "syncMetadata",
         async (_event, request: AuthedRequest): Promise<SyncStatus> => {
           if (shouldSkipSync(db, request.hintedVersion)) {
-            console.debug(`Already at ${request.hintedVersion}; skipping sync`);
+            console.log(`Already at ${request.hintedVersion}; skipping sync`);
             wakeFetchWorkerIfNeeded(request.authToken);
             return SyncStatus.NOT_MODIFIED;
           }
