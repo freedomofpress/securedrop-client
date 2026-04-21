@@ -65,8 +65,7 @@
       "aboutMoreContent": "https://securedrop.org/inbox",
       "aboutRepoTitle": "Source code",
       "aboutRepoContent": "https://github.com/freedomofpress/securedrop-client",
-      "aboutCopyright": "© 2013–2026 Aaron Swartz, James Dolan, Freedom of the Press Foundation, and SecureDrop contributors.",
-      "aboutLicence": "SecureDrop is open source and released under the GNU Affero General Public License v3."
+      "aboutCopyright": "© 2013–2026 Aaron Swartz, James Dolan, Freedom of the Press Foundation, and SecureDrop contributors. Released under the AGPL-3.0."
     },
     "syncStatus": {
       "notloggedin": "Sync: not logged in",
@@ -258,7 +257,6 @@
     "withDrafts": "Draft replies be discarded.",
     "noDrafts": "",
     "goBack": "Go Back",
-    "cancel": "Cancel",
     "Quit": "Quit",
     "discardAndQuit": "Discard and Quit"
   }
