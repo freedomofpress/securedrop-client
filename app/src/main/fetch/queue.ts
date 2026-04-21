@@ -31,11 +31,13 @@ export type ItemFetchTask = {
 
 type DownloadResult = Buffer | string;
 
-// Thrown when a download is intentionally aborted (paused or cancelled by the user).
-// This is not an error condition and should not cause the item to be marked as failed.
+// Thrown when a download is intentionally aborted (cancelled or paused by the user).
+// This is not an error condition and should not cause the item to be marked as failed,
+// but download of the item should not be attempted again until explicitly
+// resumed by the user.
 class DownloadCancelledError extends Error {
   constructor() {
-    super("Download was cancelled");
+    super("Download is cancelled or paused");
   }
 }
 
@@ -348,6 +350,16 @@ export class TaskQueue {
     metadata: ItemMetadata,
     progress: number,
   ): Promise<DownloadResult> {
+    const currentItem = db.getItem(item.id);
+    if (
+      // Bail if the download has been explicitly halted.  We need it to be
+      // explicitly resumed either by the back end via `resumeItem()` or by the
+      // front end via `updateFetchStatus()` before we continue downloading it.
+      currentItem?.fetch_status === FetchStatus.Paused ||
+      currentItem?.fetch_status === FetchStatus.Cancelled
+    ) {
+      throw new DownloadCancelledError();
+    }
     console.debug(`Starting download for ${metadata.kind} ${item.id}`);
     const abortController = new AbortController();
     this.activeDownloads.set(item.id, {
