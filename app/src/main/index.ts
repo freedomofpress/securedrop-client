@@ -401,6 +401,7 @@ if (!gotTheLock) {
         ) => {
           // If the user is pausing or cancelling, abort any in-progress download
           // before updating the DB so the worker doesn't overwrite the new status
+          console.log(`Marking ${itemUuid} as ${FetchStatus[fetchStatus]}`);
           if (
             fetchStatus === FetchStatus.Paused ||
             fetchStatus === FetchStatus.Cancelled
