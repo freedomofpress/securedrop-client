@@ -1,4 +1,4 @@
-import { memo, useState } from "react";
+import { memo, useState, useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import {
   type SourceWithItems,
@@ -21,10 +21,31 @@ const SourceMenu = memo(function SourceMenu({
 }: SourceMenuProps) {
   const { t } = useTranslation("MainContent");
 
-  const [exportPayload, setExportPayload] = useState<ExportPayload>({
-    type: "transcript",
-    payload: { source_uuid: sourceWithItems.uuid },
-  });
+  const [exportType, setExportType] = useState<"transcript" | "source">(
+    "transcript",
+  );
+  const [exportWizardKey, setExportWizardKey] = useState(0);
+
+  const exportPayload = useMemo((): ExportPayload => {
+    if (exportType === "source") {
+      return {
+        type: "source",
+        payload: {
+          source_uuid: sourceWithItems.uuid,
+          undownloaded_items:
+            sourceWithItems.items.filter(
+              (i) =>
+                i.data.kind === "file" &&
+                i.fetch_status !== FetchStatus.Complete,
+            ).length > 0,
+        },
+      };
+    }
+    return {
+      type: "transcript",
+      payload: { source_uuid: sourceWithItems.uuid },
+    };
+  }, [exportType, sourceWithItems]);
 
   const printPayload: PrintPayload = {
     type: "transcript",
@@ -38,12 +59,8 @@ const SourceMenu = memo(function SourceMenu({
     switch (e.key) {
       case "exportTranscript":
         try {
-          setExportPayload({
-            type: "transcript",
-            payload: {
-              source_uuid: sourceWithItems.uuid,
-            },
-          });
+          setExportType("transcript");
+          setExportWizardKey((k) => k + 1);
           setExportWizardOpen(true);
         } catch (error) {
           console.error("Failed to export:", error);
@@ -51,16 +68,8 @@ const SourceMenu = memo(function SourceMenu({
         break;
       case "exportSource":
         try {
-          setExportPayload({
-            type: "source",
-            payload: {
-              source_uuid: sourceWithItems.uuid,
-              undownloaded_items:
-                sourceWithItems.items.filter(
-                  (i) => i.fetch_status !== FetchStatus.Complete,
-                ).length > 0,
-            },
-          });
+          setExportType("source");
+          setExportWizardKey((k) => k + 1);
           setExportWizardOpen(true);
         } catch (error) {
           console.error("Failed to export:", error);
@@ -127,7 +136,7 @@ const SourceMenu = memo(function SourceMenu({
         </Dropdown>
       </Tooltip>
       <ExportWizard
-        key={exportPayload.type}
+        key={exportWizardKey}
         item={exportPayload}
         open={exportWizardOpen}
         onClose={handleExportWizardClose}

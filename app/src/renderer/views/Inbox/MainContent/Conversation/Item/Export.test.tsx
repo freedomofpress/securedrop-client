@@ -532,6 +532,100 @@ describe("ExportWizard Component", () => {
     });
   });
 
+  describe("Source Export", () => {
+    const mockSourcePayload: ExportPayload = {
+      type: "source",
+      payload: {
+        source_uuid: "source-uuid-1",
+        undownloaded_items: false,
+      },
+    };
+
+    it("shows CONFIRM_SOURCE state first when exporting a source", async () => {
+      renderWithProviders(
+        <ExportWizard
+          item={mockSourcePayload}
+          open={true}
+          onClose={mockOnClose}
+        />,
+      );
+
+      await waitFor(() => {
+        expect(
+          screen.getByText("Export Transcript and Files"),
+        ).toBeInTheDocument();
+        expect(
+          screen.getByText(
+            "The transcript and all downloaded files will be exported.",
+          ),
+        ).toBeInTheDocument();
+      });
+    });
+
+    it("does not show the undownloaded warning when all files are downloaded", async () => {
+      renderWithProviders(
+        <ExportWizard
+          item={mockSourcePayload}
+          open={true}
+          onClose={mockOnClose}
+        />,
+      );
+
+      await waitFor(() => {
+        expect(
+          screen.queryByText("Some files will not be exported"),
+        ).not.toBeInTheDocument();
+      });
+    });
+
+    it("shows undownloaded warning when source has undownloaded files", async () => {
+      const payloadWithUndownloaded: ExportPayload = {
+        type: "source",
+        payload: {
+          source_uuid: "source-uuid-1",
+          undownloaded_items: true,
+        },
+      };
+
+      renderWithProviders(
+        <ExportWizard
+          item={payloadWithUndownloaded}
+          open={true}
+          onClose={mockOnClose}
+        />,
+      );
+
+      await waitFor(() => {
+        expect(
+          screen.getByText(/Some files have not been downloaded/),
+        ).toBeInTheDocument();
+      });
+    });
+
+    it("transitions to PREFLIGHT when Continue is clicked from CONFIRM_SOURCE", async () => {
+      renderWithProviders(
+        <ExportWizard
+          item={mockSourcePayload}
+          open={true}
+          onClose={mockOnClose}
+        />,
+      );
+
+      await waitFor(() => {
+        expect(
+          screen.getByText("Export Transcript and Files"),
+        ).toBeInTheDocument();
+      });
+
+      const continueButton = screen.getByRole("button", { name: /continue/i });
+      await userEvent.click(continueButton);
+
+      await waitFor(() => {
+        expect(screen.getByText("Preparing to export.")).toBeInTheDocument();
+      });
+    });
+  });
+
   describe("Export Errors", () => {
     const partialSuccessTests = [
       {
