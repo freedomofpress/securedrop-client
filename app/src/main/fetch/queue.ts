@@ -355,6 +355,10 @@ export class TaskQueue {
       controller: abortController,
     });
     try {
+      const currentItem = db.getItem(item.id);
+      console.log(
+        `Starting download ${currentItem?.uuid} (currently ${FetchStatus[currentItem?.fetch_status || -1]})`,
+      );
       db.setDownloadInProgress(item.id);
       return await this.innerDownload(
         item,
