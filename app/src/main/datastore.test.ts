@@ -389,8 +389,8 @@ describe("Datastore Method Tests", () => {
       source2Item1: mockItemMetadata("source2Item1", "source2", "file"),
     });
 
-    db.setDownloadInProgress("source1Item1", 9000);
-    db.setDownloadInProgress("source2Item1", 12000);
+    db.updateDownloadInProgress("source1Item1", 9000);
+    db.updateDownloadInProgress("source2Item1", 12000);
 
     // Truncate only items up to interaction_count 1
     db.addPendingSourceEvent(
@@ -1339,9 +1339,9 @@ describe("Datastore Method Tests", () => {
       file3: mockItemMetadata("file3", "source1", "file", 6),
     });
 
-    db.setDownloadInProgress("file1", 10);
-    db.setDownloadInProgress("file2", 20);
-    db.setDownloadInProgress("file3", 30);
+    db.updateDownloadInProgress("file1", 10);
+    db.updateDownloadInProgress("file2", 20);
+    db.updateDownloadInProgress("file3", 30);
 
     const itemsToProcess = db.getItemsToProcess({
       messageLimit: 2,
@@ -1363,8 +1363,8 @@ describe("Datastore Method Tests", () => {
       file2: mockItemMetadata("file2", "source1", "file", 4),
     });
 
-    db.setDownloadInProgress("file1", 10);
-    db.setDownloadInProgress("file2", 20);
+    db.updateDownloadInProgress("file1", 10);
+    db.updateDownloadInProgress("file2", 20);
     db.updateFetchStatus("message2", FetchStatus.ScheduledDeletion);
     db.updateFetchStatus("file2", FetchStatus.ScheduledDeletion);
 
@@ -1514,7 +1514,7 @@ describe("Datastore Method Tests", () => {
       });
 
       // Simulate a partial download by setting progress
-      db.setDownloadInProgress("item1", 50000);
+      db.updateDownloadInProgress("item1", 50000);
 
       // Verify progress was set
       let item = db.getItem("item1");
@@ -1538,7 +1538,7 @@ describe("Datastore Method Tests", () => {
       });
 
       // Simulate a paused download with progress
-      db.setDownloadInProgress("item1", 100000);
+      db.updateDownloadInProgress("item1", 100000);
       db.pauseItem("item1");
 
       // Verify progress was preserved during pause
@@ -1564,7 +1564,7 @@ describe("Datastore Method Tests", () => {
       });
 
       // Set some progress
-      db.setDownloadInProgress("item1", 75000);
+      db.updateDownloadInProgress("item1", 75000);
 
       // Update to Paused status
       db.updateFetchStatus("item1", FetchStatus.Paused);
@@ -1583,13 +1583,38 @@ describe("Datastore Method Tests", () => {
         item1: mockItemMetadata("item1", "source1", "file"),
       });
 
-      db.setDownloadInProgress("item1", 42000);
+      db.updateDownloadInProgress("item1", 42000);
 
       db.updateFetchStatus("item1", FetchStatus.ScheduledDeletion);
 
       const item = db.getItem("item1");
       expect(item?.fetch_status).toBe(FetchStatus.ScheduledDeletion);
       expect(item?.fetch_progress).toBe(42000);
+    });
+
+    it("should NOT resurrect cancelled download when updating progress", () => {
+      db.updateSources({
+        source1: mockSourceMetadata("source1"),
+      });
+      db.updateItems({
+        item1: mockItemMetadata("item1", "source1", "file"),
+      });
+
+      db.startDownloadInProgress("item1");
+      db.updateDownloadInProgress("item1", 42000);
+      let item = db.getItem("item1");
+      expect(item?.fetch_status).toBe(FetchStatus.DownloadInProgress);
+      expect(item?.fetch_progress).toBe(42000);
+
+      db.updateFetchStatus("item1", FetchStatus.Cancelled);
+
+      const result = db.updateDownloadInProgress("item1", 48000);
+
+      expect(result).toBe(false);
+
+      item = db.getItem("item1");
+      expect(item?.fetch_status).toBe(FetchStatus.Cancelled);
+      expect(item?.fetch_progress).toBe(0);
     });
 
     it("should allow retry after terminal failure when status is reset", () => {
@@ -1601,7 +1626,7 @@ describe("Datastore Method Tests", () => {
       });
 
       // Simulate a terminal failure with progress
-      db.setDownloadInProgress("item1", 50000);
+      db.updateDownloadInProgress("item1", 50000);
       db.terminallyFailItem("item1");
 
       let item = db.getItem("item1");
@@ -1646,7 +1671,7 @@ describe("Datastore Method Tests", () => {
 
       // Files need download progress set to be processable
       for (let i = 1; i <= 10; i++) {
-        db.setDownloadInProgress(`file${i}`, i * 100);
+        db.updateDownloadInProgress(`file${i}`, i * 100);
       }
 
       // First batch: bounded to 25 messages and 2 files
@@ -1694,7 +1719,7 @@ describe("Datastore Method Tests", () => {
       db.updateItems(items);
 
       // Set some items to various in-progress states
-      db.setDownloadInProgress("msg1", 100);
+      db.updateDownloadInProgress("msg1", 100);
       db.updateFetchStatus("msg2", FetchStatus.DecryptionInProgress);
       db.completePlaintextItem("msg3", "already decrypted");
 
