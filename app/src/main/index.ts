@@ -772,10 +772,12 @@ async function syncWithLock(
   let syncStatus: SyncStatus;
   try {
     syncStatus = await syncLock.run(async () => {
+      console.log("Acquired lock, syncing metadata");
       return await syncMetadata(db, request.authToken, request.hintedRecords);
     }, 1000);
   } catch (error) {
     // Check if this is a timeout error from the lock
+    console.log("Failed to acquire lock");
     if (error instanceof LockTimeoutError) {
       return SyncStatus.TIMEOUT;
     }
