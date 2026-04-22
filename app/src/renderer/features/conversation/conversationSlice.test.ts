@@ -1,10 +1,11 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { configureStore } from "@reduxjs/toolkit";
-import type { SourceWithItems } from "../../../types";
+import { FetchStatus, type SourceWithItems } from "../../../types";
 import conversationSlice, {
   fetchConversation,
   clearError,
   clearConversation,
+  updateItem,
   selectConversation,
   selectConversationLoading,
   type ConversationState,
@@ -363,6 +364,105 @@ describe("conversationSlice", () => {
       // Only the last conversation should be stored
       expect(state.conversation).toEqual(mockSourceWithItems2);
       expect(state.loading).toBe(false);
+    });
+  });
+
+  describe("updateItem reducer — worker updates", () => {
+    const fileItem = {
+      uuid: "file-1",
+      data: {
+        kind: "file" as const,
+        uuid: "file-1",
+        source: "source-1",
+        size: 1024,
+        is_read: false,
+        seen_by: [],
+        interaction_count: 1,
+      },
+      fetch_progress: 0,
+      fetch_status: FetchStatus.DownloadInProgress,
+    };
+
+    const sourceWithFile: SourceWithItems = {
+      ...mockSourceWithItems,
+      items: [fileItem],
+    };
+
+    const stateWithFile: ConversationState = {
+      conversation: sourceWithFile,
+      loading: false,
+      error: null,
+      lastFetchTime: null,
+      hasMoreHistoricalItems: false,
+      olderItemsLoading: false,
+    };
+
+    it("does not resurrect a Cancelled item", () => {
+      const canceledState: ConversationState = {
+        ...stateWithFile,
+        conversation: {
+          ...sourceWithFile,
+          items: [{ ...fileItem, fetch_status: FetchStatus.Cancelled }],
+        },
+      };
+      const staleUpdate = {
+        ...fileItem,
+        fetch_status: FetchStatus.DownloadInProgress,
+      };
+      const newState = conversationSlice(
+        canceledState,
+        updateItem(staleUpdate),
+      );
+      expect(newState.conversation?.items[0].fetch_status).toBe(
+        FetchStatus.Cancelled,
+      );
+    });
+
+    it("applies legitimate terminal transitions from the worker", () => {
+      const inProgressState: ConversationState = {
+        ...stateWithFile,
+        conversation: {
+          ...sourceWithFile,
+          items: [
+            { ...fileItem, fetch_status: FetchStatus.DownloadInProgress },
+          ],
+        },
+      };
+      // Worker marks download as terminally failed
+      const failedUpdate = {
+        ...fileItem,
+        fetch_status: FetchStatus.FailedTerminal,
+      };
+      const newState = conversationSlice(
+        inProgressState,
+        updateItem(failedUpdate),
+      );
+      expect(newState.conversation?.items[0].fetch_status).toBe(
+        FetchStatus.FailedTerminal,
+      );
+    });
+
+    it("applies Complete status update from the worker", () => {
+      const inProgressState: ConversationState = {
+        ...stateWithFile,
+        conversation: {
+          ...sourceWithFile,
+          items: [
+            { ...fileItem, fetch_status: FetchStatus.DecryptionInProgress },
+          ],
+        },
+      };
+      const completedUpdate = {
+        ...fileItem,
+        fetch_status: FetchStatus.Complete,
+      };
+      const newState = conversationSlice(
+        inProgressState,
+        updateItem(completedUpdate),
+      );
+      expect(newState.conversation?.items[0].fetch_status).toBe(
+        FetchStatus.Complete,
+      );
     });
   });
 });

@@ -230,6 +230,14 @@ export enum FetchStatus {
   ScheduledDeletion = 9,
 }
 
+export const NONPROCESSABLE_FETCH_STATUSES = new Set<FetchStatus>([
+  FetchStatus.Complete,
+  FetchStatus.Paused,
+  FetchStatus.FailedTerminal,
+  FetchStatus.Cancelled,
+  FetchStatus.ScheduledDeletion,
+]);
+
 // EventStatus codes returned from the server
 export enum EventStatus {
   Processing = 102,

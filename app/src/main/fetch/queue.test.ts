@@ -81,7 +81,8 @@ function createMockDB() {
     getSource: vi.fn(),
     completePlaintextItem: vi.fn(),
     completeFileItem: vi.fn(),
-    setDownloadInProgress: vi.fn(),
+    startDownloadInProgress: vi.fn(),
+    updateDownloadInProgress: vi.fn(() => true),
     setDecryptionInProgress: vi.fn(),
     setSourceMessagePreview: vi.fn(),
     failDownload: vi.fn(),
@@ -141,7 +142,7 @@ describe("TaskQueue - Two-Phase Download and Decryption", () => {
       await queue.process({ id: "msg1" }, db);
 
       // Verify download phase
-      expect(db.setDownloadInProgress).toHaveBeenCalledWith("msg1");
+      expect(db.startDownloadInProgress).toHaveBeenCalledWith("msg1");
       expect(mockProxyStreamRequest).toHaveBeenCalledWith(
         expect.objectContaining({
           path_query: "/api/v1/sources/source1/submissions/msg1/download",
@@ -214,7 +215,7 @@ describe("TaskQueue - Two-Phase Download and Decryption", () => {
         `Decryption failed`,
       );
 
-      expect(db.setDownloadInProgress).toHaveBeenCalledWith("msg1");
+      expect(db.startDownloadInProgress).toHaveBeenCalledWith("msg1");
       expect(db.setDecryptionInProgress).toHaveBeenCalledWith("msg1");
       expect(db.failDecryption).toHaveBeenCalledWith("msg1");
 
@@ -285,8 +286,8 @@ describe("TaskQueue - Two-Phase Download and Decryption", () => {
         "Unable to complete stream download",
       );
 
-      expect(db.setDownloadInProgress).toHaveBeenCalledWith("msg1");
-      expect(db.setDownloadInProgress).toHaveBeenCalledWith("msg1", 50); // Progress update
+      expect(db.startDownloadInProgress).toHaveBeenCalledWith("msg1");
+      expect(db.updateDownloadInProgress).toHaveBeenCalledWith("msg1", 50); // Progress update
       expect(db.failDownload).toHaveBeenCalledWith("msg1");
 
       // Second attempt - download and decrypt successfully
@@ -516,7 +517,7 @@ describe("TaskQueue - Two-Phase Download and Decryption", () => {
       await queue.process({ id: "msg1" }, db);
 
       // Verify download phase
-      expect(db.setDownloadInProgress).toHaveBeenCalledWith("msg1");
+      expect(db.startDownloadInProgress).toHaveBeenCalledWith("msg1");
       expect(mockProxyStreamRequest).toHaveBeenCalledWith(
         expect.objectContaining({
           path_query: "/api/v1/sources/source1/submissions/msg1/download",
@@ -595,9 +596,8 @@ describe("TaskQueue - Two-Phase Download and Decryption", () => {
 
       await queue.process({ id: "file-uuid-progress" }, db);
 
-      // First call is the initial setDownloadInProgress, subsequent calls are from onProgress
-      const setDownloadMock = db.setDownloadInProgress as unknown as Mock;
-      const progressCalls = setDownloadMock.mock.calls.slice(1);
+      const updateDownloadMock = db.updateDownloadInProgress as unknown as Mock;
+      const progressCalls = updateDownloadMock.mock.calls;
       expect(progressCalls.map((call) => call[1])).toEqual([10, 20, 30]);
 
       // One throttled progress post plus source update and final item update
@@ -663,7 +663,7 @@ describe("TaskQueue - Two-Phase Download and Decryption", () => {
         expect.any(Object),
       );
 
-      expect(db.setDownloadInProgress).toHaveBeenCalledWith("msg1");
+      expect(db.startDownloadInProgress).toHaveBeenCalledWith("msg1");
       expect(db.setDecryptionInProgress).toHaveBeenCalledWith("msg1");
       expect(db.failDecryption).toHaveBeenCalledWith("msg1");
 
@@ -726,8 +726,8 @@ describe("TaskQueue - Two-Phase Download and Decryption", () => {
         "Unable to complete stream download",
       );
 
-      expect(db.setDownloadInProgress).toHaveBeenCalledWith("msg1");
-      expect(db.setDownloadInProgress).toHaveBeenCalledWith("msg1", 50); // Progress update
+      expect(db.startDownloadInProgress).toHaveBeenCalledWith("msg1");
+      expect(db.updateDownloadInProgress).toHaveBeenCalledWith("msg1", 50); // Progress update
       expect(db.failDownload).toHaveBeenCalledWith("msg1");
 
       // Second attempt - download and decrypt successfully
@@ -772,7 +772,7 @@ describe("TaskQueue - Two-Phase Download and Decryption", () => {
       await queue.process({ id: "msg1" }, db);
 
       expect(mockProxyStreamRequest).not.toHaveBeenCalled();
-      expect(db.setDownloadInProgress).not.toHaveBeenCalled();
+      expect(db.startDownloadInProgress).not.toHaveBeenCalled();
       expect(db.setDecryptionInProgress).not.toHaveBeenCalled();
     });
 
@@ -826,7 +826,7 @@ describe("TaskQueue - Two-Phase Download and Decryption", () => {
       await queue.process({ id: "msg1" }, db);
 
       expect(mockProxyStreamRequest).not.toHaveBeenCalled();
-      expect(db.setDownloadInProgress).not.toHaveBeenCalled();
+      expect(db.startDownloadInProgress).not.toHaveBeenCalled();
       expect(db.setDecryptionInProgress).not.toHaveBeenCalled();
     });
 
