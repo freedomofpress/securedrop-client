@@ -43,10 +43,13 @@ import { setUmask } from "./umask";
 import { Exporter, Printer } from "./export";
 import { Storage } from "./storage";
 import { writeTranscript } from "./transcriber";
+import { initLogging } from "./log";
 
 // Set umask so any files written are owner-only read/write (600).
 // This must be done before we create any files or spawn any worker threads.
 setUmask();
+
+initLogging();
 
 // Handle --version flag early, before any other initialization
 if (process.argv.includes("--version")) {
@@ -418,7 +421,7 @@ if (!gotTheLock) {
         "syncMetadata",
         async (_event, request: AuthedRequest): Promise<SyncStatus> => {
           if (shouldSkipSync(db, request.hintedVersion)) {
-            console.debug(`Already at ${request.hintedVersion}; skipping sync`);
+            console.log(`Already at ${request.hintedVersion}; skipping sync`);
             wakeFetchWorkerIfNeeded(request.authToken);
             return SyncStatus.NOT_MODIFIED;
           }

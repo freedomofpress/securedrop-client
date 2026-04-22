@@ -376,7 +376,7 @@ export class ArchiveExporter {
       );
     }
 
-    console.debug(`Parsing response from process: ${outputUntrusted}`);
+    console.log(`Parsing response from process: ${outputUntrusted}`);
     try {
       // final line is the status string
       const lines = outputUntrusted

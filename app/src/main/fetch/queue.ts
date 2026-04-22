@@ -203,7 +203,7 @@ export class TaskQueue {
   // decrypting data to plaintext stored in the DB or to a file on disk.
   process = async (item: ItemFetchTask, db: DB) => {
     try {
-      console.debug("Processing item: ", item);
+      console.log("Processing item: ", item);
 
       const dbItem = db.getItem(item.id);
       if (!dbItem) {
@@ -398,7 +398,7 @@ export class TaskQueue {
       timeout = getRealisticTimeout(metadata.size as bytes);
     }
 
-    console.debug(
+    console.log(
       `Downloading ${metadata.kind} ${item.id} (size: ${metadata.size} bytes) with timeout: ${timeout}ms`,
     );
 
@@ -705,7 +705,7 @@ export class TaskQueue {
       const fileStats = await fs.promises.stat(finalAbsolutePath);
       const decryptedSize = fileStats.size;
       db.completeFileItem(item.id, finalAbsolutePath, decryptedSize);
-      console.debug(`Successfully decrypted ${metadata.kind} ${item.id}`);
+      console.log(`Successfully decrypted ${metadata.kind} ${item.id}`);
     } catch (error) {
       if (error instanceof CryptoError) {
         console.warn(
