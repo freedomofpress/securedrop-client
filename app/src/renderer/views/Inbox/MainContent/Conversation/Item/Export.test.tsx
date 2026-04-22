@@ -573,7 +573,7 @@ describe("ExportWizard Component", () => {
 
       await waitFor(() => {
         expect(
-          screen.queryByText("Some files will not be exported"),
+          screen.queryByText("Some files have not been downloaded"),
         ).not.toBeInTheDocument();
       });
     });
