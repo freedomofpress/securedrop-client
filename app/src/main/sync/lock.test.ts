@@ -162,4 +162,35 @@ describe("Lock", () => {
     }, 100);
     expect(executed).toBe(true);
   });
+
+  it("does not allows concurrent access when a timed-out waiter unblocks the next waiter", async () => {
+    const lock = new Lock();
+    let call1Active = false;
+    let concurrentAccess = false;
+
+    // Call 1 holds the lock for 200ms
+    const call1 = lock.run(async () => {
+      call1Active = true;
+      await new Promise((res) => setTimeout(res, 200));
+      call1Active = false;
+    });
+
+    // Call 2 times out after 50ms while call 1 still holds the lock.
+    // On timeout, the lock incorrectly calls release() on call 2's mutex,
+    // which unblocks call 3 even though call 1 hasn't finished.
+    const call2 = lock.run(async () => {}, 50).catch(() => {});
+
+    // Call 3 is queued behind call 2 and gets incorrectly unblocked at ~50ms.
+    const call3 = lock.run(async () => {
+      if (call1Active) {
+        concurrentAccess = true;
+      }
+    });
+
+    await Promise.all([call1, call2, call3]);
+
+    // Should be false, but the bug causes call 2's timeout to release its mutex
+    // and unblock call 3 before call 1 has finished
+    expect(concurrentAccess).toBe(false);
+  });
 });

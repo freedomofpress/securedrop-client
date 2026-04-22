@@ -37,9 +37,10 @@ export class Lock {
       try {
         await Promise.race([currentMutex, timeoutPromise]);
       } catch (error) {
-        // On timeout, release the mutex so subsequent acquires don't block forever
+        // On timeout, chain our mutex to the previous holder so downstream
+        // waiters still wait for the actual lock holder to finish
         // @ts-expect-error - release is always assigned before this point
-        release();
+        currentMutex.then(release);
         throw error;
       } finally {
         // Clean up the timer to prevent memory leaks
