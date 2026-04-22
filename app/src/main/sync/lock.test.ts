@@ -163,7 +163,7 @@ describe("Lock", () => {
     expect(executed).toBe(true);
   });
 
-  it("allows concurrent access when a timed-out waiter unblocks the next waiter", async () => {
+  it("does not allows concurrent access when a timed-out waiter unblocks the next waiter", async () => {
     const lock = new Lock();
     let call1Active = false;
     let concurrentAccess = false;
