@@ -6,7 +6,7 @@ import {
   testMemoization,
   renderWithProviders,
 } from "../../../../test-component-setup";
-import type { SourceWithItems } from "../../../../../types";
+import { FetchStatus, type SourceWithItems } from "../../../../../types";
 
 describe("SourceMenu Component", () => {
   beforeEach(() => {
@@ -196,6 +196,88 @@ describe("SourceMenu Component", () => {
         expect(screen.getByText("Preparing to export.")).toBeInTheDocument();
       });
     });
+    it("shows undownloaded warning when source has undownloaded file items", async () => {
+      const sourceWithUndownloadedFile: SourceWithItems = {
+        ...s,
+        items: [
+          ...s.items,
+          {
+            uuid: "file-1",
+            data: {
+              kind: "file",
+              uuid: "file-1",
+              source: "source-1",
+              size: 2048,
+              seen_by: [],
+              is_read: false,
+              interaction_count: 2,
+            },
+            fetch_status: FetchStatus.Initial,
+          },
+        ],
+      };
+
+      renderWithProviders(
+        <SourceMenu sourceWithItems={sourceWithUndownloadedFile} />,
+      );
+      const menuButton = screen.getByRole("button");
+      await userEvent.click(menuButton);
+
+      const exportSourceItem = screen.getByRole("menuitem", {
+        name: /export transcript and files/i,
+      });
+      await userEvent.click(exportSourceItem);
+
+      await waitFor(() => {
+        expect(
+          screen.getByText(/Some files have not been downloaded/),
+        ).toBeInTheDocument();
+      });
+    });
+
+    it("does not show undownloaded warning when only message items have non-complete fetch status", async () => {
+      const sourceWithUndownloadedMessage: SourceWithItems = {
+        ...s,
+        items: [
+          {
+            uuid: "msg-1",
+            data: {
+              kind: "message",
+              uuid: "msg-1",
+              source: "source-1",
+              size: 512,
+              seen_by: [],
+              is_read: false,
+              interaction_count: 1,
+            },
+            fetch_status: FetchStatus.Initial,
+          },
+        ],
+      };
+
+      renderWithProviders(
+        <SourceMenu sourceWithItems={sourceWithUndownloadedMessage} />,
+      );
+      const menuButton = screen.getByRole("button");
+      await userEvent.click(menuButton);
+
+      const exportSourceItem = screen.getByRole("menuitem", {
+        name: /export transcript and files/i,
+      });
+      await userEvent.click(exportSourceItem);
+
+      await waitFor(() => {
+        expect(
+          screen.getByText(
+            "The transcript and all downloaded files will be exported.",
+          ),
+        ).toBeInTheDocument();
+        expect(
+          screen.queryByText("Some files have not been downloaded"),
+        ).not.toBeInTheDocument();
+      });
+    });
+
     it("opens the Print Wizard when Print Transcript is clicked ", async () => {
       renderWithProviders(<SourceMenu sourceWithItems={s} />);
       const menuButton = screen.getByRole("button");
