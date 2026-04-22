@@ -1,7 +1,3 @@
-.conversation-textarea {
-  padding-right: 40px;
-}
-
 .conversation-textarea textarea {
   field-sizing: content;
   min-height: calc(1lh + 24px); /* 2 lines + padding */
@@ -9,6 +5,7 @@
   overflow-y: auto !important;
   resize: none !important;
   padding: 10px;
+  padding-right: 55px;
 }
 
 .conversation-send-btn {
