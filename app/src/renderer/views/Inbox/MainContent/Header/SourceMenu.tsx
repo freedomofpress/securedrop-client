@@ -32,12 +32,10 @@ const SourceMenu = memo(function SourceMenu({
         type: "source",
         payload: {
           source_uuid: sourceWithItems.uuid,
-          undownloaded_items:
-            sourceWithItems.items.filter(
-              (i) =>
-                i.data.kind === "file" &&
-                i.fetch_status !== FetchStatus.Complete,
-            ).length > 0,
+          undownloaded_items: sourceWithItems.items.some(
+            (i) =>
+              i.data.kind === "file" && i.fetch_status !== FetchStatus.Complete,
+          ),
         },
       };
     }
