@@ -18,6 +18,7 @@ import {
   Journalist,
   JournalistRow,
   FetchStatus,
+  NONPROCESSABLE_FETCH_STATUSES,
   Item,
   PendingEventType,
   ReplySentData,
@@ -1005,22 +1006,25 @@ export class DB {
     stmt.run({ uuid: itemUuid });
   }
 
-  setDownloadInProgress(itemUuid: string, progress?: number) {
-    if (progress !== undefined) {
-      const stmt: Statement<{ uuid: string; progress: number }, void> =
-        this.db!.prepare(
-          `UPDATE items SET fetch_progress = @progress, fetch_status = ${FetchStatus.DownloadInProgress}, fetch_last_updated_at = CURRENT_TIMESTAMP WHERE uuid = @uuid`,
-        );
-      stmt.run({
-        uuid: itemUuid,
-        progress: progress,
-      });
-    } else {
-      const stmt: Statement<{ uuid: string }, void> = this.db!.prepare(
-        `UPDATE items SET fetch_status = ${FetchStatus.DownloadInProgress}, fetch_last_updated_at = CURRENT_TIMESTAMP WHERE uuid = @uuid`,
+  startDownloadInProgress(itemUuid: string) {
+    const stmt: Statement<{ uuid: string }, void> = this.db!.prepare(
+      `UPDATE items SET fetch_status = ${FetchStatus.DownloadInProgress}, fetch_last_updated_at = CURRENT_TIMESTAMP WHERE uuid = @uuid`,
+    );
+    stmt.run({ uuid: itemUuid });
+  }
+
+  // Updates a download in progress if it is still in a processable state. Returns true
+  // if the update was successful, and false if no rows were updated.
+  updateDownloadInProgress(itemUuid: string, progress: number): boolean {
+    const stmt: Statement<{ uuid: string; progress: number }, void> =
+      this.db!.prepare(
+        `UPDATE items SET fetch_progress = @progress, fetch_status = ${FetchStatus.DownloadInProgress}, fetch_last_updated_at = CURRENT_TIMESTAMP WHERE uuid = @uuid AND fetch_status NOT IN (${[...NONPROCESSABLE_FETCH_STATUSES].join(", ")})`,
       );
-      stmt.run({ uuid: itemUuid });
-    }
+    const result = stmt.run({
+      uuid: itemUuid,
+      progress: progress,
+    });
+    return result.changes !== 0;
   }
 
   setDecryptionInProgress(itemUuid: string) {

@@ -12,6 +12,7 @@ import {
   AuthedRequest,
   FetchStatus,
   ItemMetadata,
+  NONPROCESSABLE_FETCH_STATUSES,
   ProxyRequest,
   ProxyStreamResponse,
   bytes,
@@ -131,9 +132,15 @@ export class TaskQueue {
     this.queueFetches({ authToken: this.authToken });
   }
 
-  private isScheduledForDeletion(itemId: string, db: DB): boolean {
+  // Check that item is still in processable state: not cancelled, paused
+  // complete, or scheduled for deletion
+  private isProcessable(itemId: string, db: DB): boolean {
     const item = db.getItem(itemId);
-    return !item || item.fetch_status === FetchStatus.ScheduledDeletion;
+    return (
+      item !== null &&
+      item?.fetch_status !== undefined &&
+      !NONPROCESSABLE_FETCH_STATUSES.has(item.fetch_status)
+    );
   }
 
   // Queries the database for all items that need to be downloaded and queues
@@ -205,9 +212,15 @@ export class TaskQueue {
     try {
       console.log("Processing item: ", item);
 
+      // Skip items that are complete, terminally failed, paused, cancelled,
+      // scheduled for deletion, or otherwise not in a processable state.
       const dbItem = db.getItem(item.id);
-      if (!dbItem) {
-        console.debug("Item not found");
+      if (
+        !dbItem ||
+        dbItem.fetch_status === undefined ||
+        NONPROCESSABLE_FETCH_STATUSES.has(dbItem.fetch_status)
+      ) {
+        console.debug("Item task is not in a processable state, skipping...");
         return;
       }
 
@@ -216,19 +229,6 @@ export class TaskQueue {
         fetch_status: status,
         fetch_progress: progress,
       } = dbItem;
-
-      // Skip items that are complete, terminally failed, paused, cancelled,
-      // scheduled for deletion, or otherwise not in a processable state.
-      if (
-        status == FetchStatus.Complete ||
-        status == FetchStatus.FailedTerminal ||
-        status == FetchStatus.Paused ||
-        status == FetchStatus.Cancelled ||
-        status == FetchStatus.ScheduledDeletion
-      ) {
-        console.debug("Item task is not in a processable state, skipping...");
-        return;
-      }
 
       // Phase 1: Download
       let downloadResult: DownloadResult | undefined;
@@ -256,9 +256,9 @@ export class TaskQueue {
       }
 
       // Re-check: if the item was marked for deletion during download, stop.
-      if (this.isScheduledForDeletion(item.id, db)) {
+      if (!this.isProcessable(item.id, db)) {
         console.debug(
-          `Item ${item.id} scheduled for deletion after download, skipping decryption...`,
+          `Item ${item.id} in non-processable state after download, skipping decryption...`,
         );
         return;
       }
@@ -355,7 +355,7 @@ export class TaskQueue {
       controller: abortController,
     });
     try {
-      db.setDownloadInProgress(item.id);
+      db.startDownloadInProgress(item.id);
       return await this.innerDownload(
         item,
         db,
@@ -413,7 +413,9 @@ export class TaskQueue {
 
       // Don't override the DB status if the download has been cancelled
       if (!abortController.signal.aborted) {
-        db.setDownloadInProgress(item.id, totalBytesWritten);
+        if (!db.updateDownloadInProgress(item.id, totalBytesWritten)) {
+          return;
+        }
       }
 
       // Throttle UI updates to avoid overwhelming the renderer
@@ -461,7 +463,7 @@ export class TaskQueue {
       }
 
       const bytesWritten = progress + downloadResponse.bytesWritten;
-      db.setDownloadInProgress(item.id, bytesWritten);
+      db.updateDownloadInProgress(item.id, bytesWritten);
       db.failDownload(item.id);
       throw new Error(
         `Unable to complete stream download, wrote ${downloadResponse.bytesWritten} bytes: ${downloadResponse.error?.message}`,
@@ -599,7 +601,7 @@ export class TaskQueue {
       const decryptedContent = await crypto.decryptMessage(buffer, signal);
 
       // Re-check: if the item was deleted during decryption, drop the result
-      if (this.isScheduledForDeletion(item.id, db)) {
+      if (!this.isProcessable(item.id, db)) {
         return;
       }
 
@@ -649,7 +651,7 @@ export class TaskQueue {
       const decryptedContent = await crypto.decryptMessage(buffer, signal);
 
       // Re-check: if the item was deleted during decryption, drop the result
-      if (this.isScheduledForDeletion(item.id, db)) {
+      if (!this.isProcessable(item.id, db)) {
         return;
       }
 
@@ -690,7 +692,7 @@ export class TaskQueue {
       );
 
       // Re-check: if the item was deleted during decryption, drop the result
-      if (this.isScheduledForDeletion(item.id, db)) {
+      if (!this.isProcessable(item.id, db)) {
         try {
           await fs.promises.unlink(finalAbsolutePath);
         } catch (error) {
