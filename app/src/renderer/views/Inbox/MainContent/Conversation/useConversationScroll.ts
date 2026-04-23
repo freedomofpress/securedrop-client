@@ -27,6 +27,8 @@ export interface ConversationScrollState {
   oldItems: Item[];
   newItems: Item[];
   acknowledgeNewMessages: () => void;
+  showNewMessagesButton: boolean;
+  scrollToBottom: () => void;
 }
 
 export function useConversationScroll(
@@ -41,6 +43,8 @@ export function useConversationScroll(
 
   const [_isAutoScrolling, setIsAutoScrollingState] = useState(false);
   const isAutoScrollingValueRef = useRef(false);
+  const isAtBottomRef = useRef(true);
+  const [showNewMessagesButton, setShowNewMessagesButton] = useState(false);
   const setIsAutoScrolling = useCallback(
     (nextValue: boolean) => {
       isAutoScrollingValueRef.current = nextValue;
@@ -175,6 +179,9 @@ export function useConversationScroll(
       pendingScrollTargetRef.current = dividerIndex
         ? { kind: "index", rowIndex: dividerIndex }
         : "bottom";
+      isAtBottomRef.current = true;
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setShowNewMessagesButton(false);
     } else if (itemCount > prevCount) {
       if (
         prevFirstItemUuid !== null &&
@@ -187,6 +194,17 @@ export function useConversationScroll(
           kind: "index",
           rowIndex: numPrepended,
         };
+      } else if (prevCount > 0) {
+        // New messages appended at the bottom while the user is scrolled up
+        const lastItem = sourceWithItems.items.at(-1);
+
+        if (lastItem?.data.kind === "reply") {
+          // Auto-scroll to bottom if it is a user-sent reply
+          pendingScrollTargetRef.current = "bottom";
+        } else if (!isAtBottomRef.current) {
+          // Otherwise, show the "new messages" button if we are not at the bottom
+          setShowNewMessagesButton(true);
+        }
       }
     }
 
@@ -275,9 +293,11 @@ export function useConversationScroll(
     scrollToRowWithRetry,
   ]);
 
+  // Track whether the user is at the bottom to show/hide new messages button
+  // and acknowledge newly seen messages
   useEffect(() => {
     const el = listAPI?.element;
-    if (!el || !dividerItemUuid) {
+    if (!el) {
       return;
     }
     const handleScroll = () => {
@@ -286,13 +306,26 @@ export function useConversationScroll(
       }
       const distanceToBottom =
         el.scrollHeight - (el.scrollTop + el.clientHeight);
-      if (distanceToBottom <= NEW_MESSAGE_SEEN_THRESHOLD) {
-        acknowledgeNewMessages();
+      isAtBottomRef.current = distanceToBottom <= NEW_MESSAGE_SEEN_THRESHOLD;
+      if (isAtBottomRef.current) {
+        if (dividerItemUuid) {
+          acknowledgeNewMessages();
+        }
+        setShowNewMessagesButton(false);
       }
     };
     el.addEventListener("scroll", handleScroll);
     return () => el.removeEventListener("scroll", handleScroll);
   }, [listAPI, acknowledgeNewMessages, dividerItemUuid]);
+
+  const scrollToBottom = useCallback(() => {
+    const totalRows =
+      oldItems.length + (dividerIndex !== null ? 1 : 0) + newItems.length;
+    if (totalRows > 0) {
+      scrollToRowWithRetry(totalRows - 1, "end", 3);
+    }
+    setShowNewMessagesButton(false);
+  }, [dividerIndex, newItems.length, oldItems.length, scrollToRowWithRetry]);
 
   return {
     listRef: listRef as (api: ListImperativeAPI | null) => void,
@@ -305,6 +338,8 @@ export function useConversationScroll(
     oldItems,
     newItems,
     acknowledgeNewMessages,
+    showNewMessagesButton,
+    scrollToBottom,
   };
 }
 
