@@ -127,7 +127,7 @@ jobs:
         run: |
           apt-get update && apt-get install --yes diffoscope-minimal xz-utils \
             --no-install-recommends
-      - uses: actions/download-artifact@v7
+      - uses: actions/download-artifact@v8
         with:
           pattern: "*main-${{ matrix.debian_version }}"
       - name: diffoscope
@@ -164,7 +164,7 @@ jobs:
         with:
           persist-credentials: false
 
-      - uses: actions/download-artifact@v7
+      - uses: actions/download-artifact@v8
         with:
           path: build
           pattern: "build-main-${{ matrix.debian_version }}"
