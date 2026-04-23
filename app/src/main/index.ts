@@ -34,6 +34,7 @@ import {
   PendingEventType,
   SyncStatus,
   PendingEventData,
+  type ms,
 } from "../types";
 import { syncMetadata, shouldSkipSync } from "./sync";
 import workerPath from "./fetch/worker?modulePath";
@@ -343,10 +344,16 @@ if (!gotTheLock) {
         return app.getVersion();
       });
 
+      // TODO: Remove this generic IPC and instead replace it with a dedicated login one
+      // since that's the only thing that uses it
       ipcMain.handle(
         "request",
         async (_event, request: ProxyRequest): Promise<ProxyResponse> => {
-          const result = await proxyJSONRequest(request);
+          const result = await proxyJSONRequest(
+            request,
+            undefined,
+            30_000 as ms,
+          );
           return result;
         },
       );
