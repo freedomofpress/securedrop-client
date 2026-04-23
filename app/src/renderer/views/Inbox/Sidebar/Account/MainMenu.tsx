@@ -153,7 +153,6 @@ function MainMenu() {
           key: "signIn",
           label: t("account.signIn"),
           icon: <LogIn strokeWidth={1.5} />,
-          extra: "Ctrl+Shift+I",
         },
 
     {
