@@ -34,7 +34,8 @@ type ExportAction =
   | { type: "START_EXPORT" }
   | { type: "EXPORT_COMPLETE"; deviceStatus: DeviceStatus }
   | { type: "EXPORT_ERROR"; payload: string; deviceStatus?: DeviceStatus }
-  | { type: "CANCEL" };
+  | { type: "CANCEL" }
+  | { type: "UPDATE_UNDOWNLOADED_ITEMS"; value: boolean };
 
 interface ExportContext {
   state: ExportState;
@@ -144,6 +145,9 @@ function exportReducer(
       deviceStatus: action.deviceStatus,
       passphrase: "",
     };
+  }
+  if (action.type === "UPDATE_UNDOWNLOADED_ITEMS") {
+    return { ...context, undownloadedItems: action.value };
   }
   if (action.type === "CANCEL") {
     return {
@@ -632,6 +636,13 @@ export const ExportWizard = memo(function ExportWizard({
       exportInProgress.current = false;
     }
   }, [open]);
+
+  // Sync undownloaded_items to update when items have been downloaded
+  const undownloadedItems =
+    item.type === "source" ? item.payload.undownloaded_items : false;
+  useEffect(() => {
+    dispatch({ type: "UPDATE_UNDOWNLOADED_ITEMS", value: undownloadedItems });
+  }, [undownloadedItems]);
 
   // Initiate export preflight checks
   useEffect(() => {
