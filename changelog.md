@@ -1,5 +1,18 @@
 # Changelog
 
+## 1.0.0-rc3
+
+* Exclude unneeded files from asar (#3244)
+* Pipe securedrop-app output to syslog (#3256)
+* Fetch messages and replies ordered by source.last_updated (#3253)
+* Fix export wizard undownloaded files warning (#3267)
+* Do not resurrect cancelled downloads (#3272)
+* Fix sync lock bug (#3273)
+* Fix reply tooltip + send button (#3266)
+* Remove signing shortcut from offline mode (#3280)
+* Raise login timeout to 30 seconds (#3286)
+* Autoscroll or show new messages button (#3285)
+
 ## 1.0.0-rc2
 
 * Fix cancellation and pause/resume (#3207)
