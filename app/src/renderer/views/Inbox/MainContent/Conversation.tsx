@@ -88,6 +88,8 @@ const Conversation = memo(function Conversation({
     newItems,
     oldItems,
     scrollElement,
+    showNewMessagesButton,
+    scrollToBottom,
   } = useConversationScroll(sourceWithItems);
 
   // Restore draft when switching sources (including initial mount)
@@ -278,6 +280,16 @@ const Conversation = memo(function Conversation({
           <div className="flex items-center justify-center h-full">
             <EmptyConversation />
           </div>
+        )}
+        {showNewMessagesButton && (
+          <Button
+            data-testid="new-messages-button"
+            size="small"
+            onClick={scrollToBottom}
+            className="new-messages-notification-btn"
+          >
+            {t("conversation.newMessagesDivider")} ↓
+          </Button>
         )}
       </div>
       <div className="flex-shrink-0 p-4 pt-0">

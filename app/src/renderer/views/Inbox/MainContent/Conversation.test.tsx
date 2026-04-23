@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
+import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { act, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import React from "react";
@@ -762,5 +762,197 @@ describe("Conversation new message indicator", () => {
       delete (window as any).requestAnimationFrame;
     }
     offsetSpy.mockRestore();
+  });
+});
+
+describe("Conversation autoscroll and new messages button", () => {
+  const baseItems = [createMessageItem("item-1", 1)];
+  let rafCallbacks: FrameRequestCallback[];
+  let originalRAF: typeof window.requestAnimationFrame;
+
+  beforeEach(() => {
+    originalRAF = window.requestAnimationFrame;
+    rafCallbacks = [];
+    (window as any).requestAnimationFrame = vi.fn(
+      (cb: FrameRequestCallback) => {
+        rafCallbacks.push(cb);
+        return 0;
+      },
+    ) as typeof window.requestAnimationFrame;
+  });
+
+  afterEach(() => {
+    window.requestAnimationFrame = originalRAF;
+  });
+
+  const flushAllRAF = async () => {
+    let passes = 0;
+    while (rafCallbacks.length > 0 && passes < 20) {
+      const batch = [...rafCallbacks];
+      rafCallbacks.length = 0;
+      await act(async () => {
+        batch.forEach((cb) => cb(0));
+      });
+      passes++;
+    }
+  };
+
+  // Sets scroll properties on the container, completes the initial auto-scroll
+  // via RAF flush, then simulates the user scrolling up so new items trigger
+  // the button / auto-scroll logic instead of being silently ignored.
+  const setupScrolledUp = async (container: HTMLDivElement) => {
+    let scrollTopValue = 0;
+    Object.defineProperty(container, "scrollHeight", {
+      configurable: true,
+      value: 1000,
+    });
+    Object.defineProperty(container, "clientHeight", {
+      configurable: true,
+      value: 400,
+    });
+    Object.defineProperty(container, "scrollTop", {
+      configurable: true,
+      get: () => scrollTopValue,
+      set: (value: number) => {
+        scrollTopValue = value;
+      },
+    });
+
+    // Complete the initial auto-scroll so isAutoScrolling resets to false,
+    // which allows subsequent manual scroll events to be processed.
+    await flushAllRAF();
+
+    // Simulate user scrolling up (distanceToBottom = 1000 - 500 = 500 > threshold)
+    await act(async () => {
+      scrollTopValue = 100;
+      container.dispatchEvent(new Event("scroll"));
+    });
+  };
+
+  it("shows new messages button when a new message arrives while scrolled up", async () => {
+    const { rerender } = renderWithProviders(
+      <Conversation sourceWithItems={withItems(baseItems)} />,
+    );
+
+    const container = screen.getByTestId(
+      "conversation-items-container",
+    ) as HTMLDivElement;
+    await setupScrolledUp(container);
+
+    expect(screen.queryByTestId("new-messages-button")).not.toBeInTheDocument();
+
+    rerender(
+      <Conversation
+        sourceWithItems={withItems([
+          ...baseItems,
+          createMessageItem("item-2", 2),
+        ])}
+      />,
+    );
+
+    await waitFor(() => {
+      expect(screen.getByTestId("new-messages-button")).toBeInTheDocument();
+    });
+  });
+
+  it("auto-scrolls to bottom instead of showing button when a reply arrives while scrolled up", async () => {
+    const { rerender } = renderWithProviders(
+      <Conversation sourceWithItems={withItems(baseItems)} />,
+    );
+
+    const container = screen.getByTestId(
+      "conversation-items-container",
+    ) as HTMLDivElement;
+    await setupScrolledUp(container);
+
+    rerender(
+      <Conversation
+        sourceWithItems={withItems([
+          ...baseItems,
+          createReplyItem("reply-1", 2),
+        ])}
+      />,
+    );
+
+    await waitFor(() => {
+      expect(
+        screen.queryByTestId("new-messages-button"),
+      ).not.toBeInTheDocument();
+    });
+
+    // After RAFs fire, the container should have scrolled to the bottom
+    await flushAllRAF();
+    expect(container.scrollTop).toBe(container.scrollHeight);
+  });
+
+  it("hides new messages button and scrolls to bottom when clicked", async () => {
+    const { rerender } = renderWithProviders(
+      <Conversation sourceWithItems={withItems(baseItems)} />,
+    );
+
+    const container = screen.getByTestId(
+      "conversation-items-container",
+    ) as HTMLDivElement;
+    await setupScrolledUp(container);
+
+    rerender(
+      <Conversation
+        sourceWithItems={withItems([
+          ...baseItems,
+          createMessageItem("item-2", 2),
+        ])}
+      />,
+    );
+
+    await waitFor(() => {
+      expect(screen.getByTestId("new-messages-button")).toBeInTheDocument();
+    });
+
+    await userEvent.click(screen.getByTestId("new-messages-button"));
+
+    await waitFor(() => {
+      expect(
+        screen.queryByTestId("new-messages-button"),
+      ).not.toBeInTheDocument();
+    });
+
+    // After RAFs fire, the container should have scrolled to the bottom
+    await flushAllRAF();
+    expect(container.scrollTop).toBe(container.scrollHeight);
+  });
+
+  it("hides new messages button when user scrolls to the bottom", async () => {
+    const { rerender } = renderWithProviders(
+      <Conversation sourceWithItems={withItems(baseItems)} />,
+    );
+
+    const container = screen.getByTestId(
+      "conversation-items-container",
+    ) as HTMLDivElement;
+    await setupScrolledUp(container);
+
+    rerender(
+      <Conversation
+        sourceWithItems={withItems([
+          ...baseItems,
+          createMessageItem("item-2", 2),
+        ])}
+      />,
+    );
+
+    await waitFor(() => {
+      expect(screen.getByTestId("new-messages-button")).toBeInTheDocument();
+    });
+
+    await act(async () => {
+      container.scrollTop = container.scrollHeight;
+      container.dispatchEvent(new Event("scroll"));
+    });
+
+    await waitFor(() => {
+      expect(
+        screen.queryByTestId("new-messages-button"),
+      ).not.toBeInTheDocument();
+    });
   });
 });

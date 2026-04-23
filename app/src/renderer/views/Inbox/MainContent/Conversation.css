@@ -17,3 +17,15 @@
   height: auto;
   line-height: normal;
 }
+
+.new-messages-notification-btn {
+  position: absolute;
+  bottom: 16px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 10;
+  white-space: nowrap;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  border-color: rgba(206, 55, 92, 0.6) !important;
+  color: rgba(206, 55, 92, 1) !important;
+}
