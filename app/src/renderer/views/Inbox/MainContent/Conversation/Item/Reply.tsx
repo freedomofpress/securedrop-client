@@ -116,16 +116,20 @@ function Reply({ item }: ReplyProps) {
         <div className="flex items-center justify-start mb-1 gap-1">
           <span className="author reply-author">{getAuthorDisplay()}</span>
         </div>
-        <Tooltip title={statusIcon.tooltip} placement="bottomRight">
-          <div className="reply-box whitespace-pre-wrap overflow-hidden relative with-status-icon">
-            {isEncrypted ? (
-              <span className="italic text-gray-500">{t("itemEncrypted")}</span>
-            ) : (
-              <TruncatedText text={messageContent} />
-            )}
+        <div className="reply-box whitespace-pre-wrap overflow-hidden relative with-status-icon">
+          {isEncrypted ? (
+            <span className="italic text-gray-500">{t("itemEncrypted")}</span>
+          ) : (
+            <TruncatedText text={messageContent} />
+          )}
+          <Tooltip
+            title={statusIcon.tooltip}
+            placement="topRight"
+            styles={{ root: { position: "fixed" } }}
+          >
             {statusIcon.icon}
-          </div>
-        </Tooltip>
+          </Tooltip>
+        </div>
       </div>
     </div>
   );
