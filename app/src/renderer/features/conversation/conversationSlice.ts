@@ -1,5 +1,9 @@
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
-import { Item, type SourceWithItems } from "../../../types";
+import {
+  Item,
+  NONPROCESSABLE_FETCH_STATUSES,
+  type SourceWithItems,
+} from "../../../types";
 import type { RootState } from "../../store";
 import { fetchSources } from "../sources/sourcesSlice";
 
@@ -124,11 +128,22 @@ const conversationSlice = createSlice({
     updateItem: (state, action) => {
       const updatedItem: Item = action.payload;
       if (state.conversation) {
-        state.conversation.items = state.conversation.items.map((item, _) => {
-          if (item.uuid === updatedItem.uuid) {
-            return updatedItem;
+        state.conversation.items = state.conversation.items.map((item) => {
+          if (item.uuid !== updatedItem.uuid) {
+            return item;
           }
-          return item;
+
+          // Check that the update does not transition from a terminal state, indicating
+          // a stale update. If so, ignore.
+
+          if (
+            item.fetch_status &&
+            NONPROCESSABLE_FETCH_STATUSES.has(item.fetch_status)
+          ) {
+            return item;
+          }
+
+          return updatedItem;
         });
       }
     },
