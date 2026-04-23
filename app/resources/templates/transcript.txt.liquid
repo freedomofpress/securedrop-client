@@ -8,7 +8,7 @@ Transcript:
 Source wrote:
 {{ item.plaintext }}
 {% when "reply" %}
-{{ item.data.journalist_uuid | getJournalistName }} replied:
+{{ journalists[item.data.journalist_uuid] | default: "Unknown journalist" }} replied:
 {% if not item.plaintext %}[Message is encrypted...]{% else %}{{ item.plaintext }}{% endif %}
 {% when "file" %}
 Source uploaded file: {% if not item.filename %}[encrypted file]{% else %}{{ item.filename | split: "/" | last}}{% endif %}

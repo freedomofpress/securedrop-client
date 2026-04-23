@@ -2,35 +2,49 @@ import { join } from "path";
 import fs from "fs";
 import { DB } from "./database";
 import { Storage } from "./storage";
-import { type SourceWithItems, Journalist } from "../types";
+import { type SourceWithItems } from "../types";
 
 import { Liquid } from "liquidjs";
+import transcriptTemplateContent from "../../resources/templates/transcript.txt.liquid?raw";
 
 export async function renderTranscript(data: SourceWithItems, db: DB) {
+  const transcriptTemplateName = "transcript.txt.liquid";
+
   const engine = new Liquid({
-    root: join(__dirname, "../../resources/templates"),
-    extname: ".liquid",
+    // Supplying templates as an in-memory map causes LiquidJS to replace its
+    // default fs implementation with MapFS, which only performs map lookups.
+    // The real filesystem is never accessible to the engine.
+    templates: { [transcriptTemplateName]: transcriptTemplateContent },
+    // Restrict property access to own properties only, preventing templates
+    // from traversing the prototype chain on context objects.
+    ownPropertyOnly: true,
+    // Disable dynamic partials ({% include someVariable %}) — our template
+    // does not use them, so there's no reason to leave that surface open.
+    dynamicPartials: false,
+    // Throw on unknown filters rather than silently skipping them.
+    strictFilters: true,
+    // Throw on undefined variables rather than silently rendering empty string.
+    strictVariables: true,
+    // Relax strictVariables inside if/unless/default so that a missing
+    // variable evaluates to false/null instead of throwing. This is needed
+    // for the template's {% if not item.plaintext %} guards and
+    // | default: "..." fallbacks.
+    lenientIf: true,
   });
 
-  engine.registerFilter("getJournalistName", function (uuid: string) {
-    const db: DB = this.context.get(["db"]) as DB;
-    try {
-      const journalist: Journalist = db.getJournalistByID(uuid);
-      return journalist.data.username || "Unknown journalist";
-    } catch (error) {
-      console.error("Error looking up journalist ", error);
-      return "Unknown journalist";
-    }
-  });
+  const journalists: Record<string, string> = {};
+  for (const journalist of db.getJournalists()) {
+    journalists[journalist.uuid] = journalist.data.username;
+  }
 
   const renderContext = {
     d: data,
-    db: db,
+    journalists,
   };
 
   try {
     const output: string = await engine.renderFile(
-      "transcript.txt.liquid",
+      transcriptTemplateName,
       renderContext,
     );
     return output;
