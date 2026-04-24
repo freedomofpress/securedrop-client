@@ -465,7 +465,7 @@ if (!gotTheLock) {
         ): Promise<string> => {
           // Immediately delete any source files from the fs on pending deletion
           if (type === PendingEventType.SourceDeleted) {
-            db.deleteSourceFs(sourceUuid);
+            await db.deleteSourceFs(sourceUuid);
             // Abort any in-flight downloads for this source in the fetch worker
             if (fetchWorker) {
               fetchWorker.postMessage({
@@ -487,9 +487,7 @@ if (!gotTheLock) {
               const items = db.getSourceWithItems(sourceUuid, {
                 beforeInteractionCount: data?.upper_bound + 1,
               }).items;
-              for (const item of items) {
-                db.deleteItemFs(item);
-              }
+              await Promise.all(items.map((item) => db.deleteItemFs(item)));
             }
           }
           const snowflakeID = db.addPendingSourceEvent(sourceUuid, type, data);
