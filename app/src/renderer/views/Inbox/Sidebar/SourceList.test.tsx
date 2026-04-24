@@ -1398,4 +1398,187 @@ describe("Sources Component", () => {
       consoleErrorSpy.mockRestore();
     });
   });
+
+  describe("Selection behavior with filters and search", () => {
+    // Use 3 sources where only source-2 (bob builder) is starred
+    const singleStarredSources = mockSources.slice(0, 3).map((s, i) => ({
+      ...s,
+      data: { ...s.data, is_starred: i === 1 },
+    }));
+
+    beforeEach(() => {
+      window.electronAPI.addPendingSourceEvent = vi
+        .fn()
+        .mockResolvedValue(BigInt(123));
+      window.electronAPI.getSourceWithItems = vi.fn().mockResolvedValue(null);
+    });
+
+    it("select all then filter to starred: only the starred source is submitted for deletion", async () => {
+      vi.mocked(window.electronAPI.getSources).mockResolvedValue(
+        singleStarredSources,
+      );
+      renderSourceList(singleStarredSources);
+
+      await waitFor(() => {
+        expect(screen.getByTestId("source-source-1")).toBeInTheDocument();
+        expect(screen.getByTestId("source-source-2")).toBeInTheDocument();
+        expect(screen.getByTestId("source-source-3")).toBeInTheDocument();
+      });
+
+      // Select all (source-1, source-2, source-3)
+      await userEvent.click(screen.getByTestId("select-all-checkbox"));
+      expect(screen.getByTestId("source-checkbox-source-1")).toBeChecked();
+      expect(screen.getByTestId("source-checkbox-source-2")).toBeChecked();
+      expect(screen.getByTestId("source-checkbox-source-3")).toBeChecked();
+
+      // Filter to starred sources (only source-2 is visible)
+      await userEvent.click(screen.getByTestId("filter-dropdown"));
+      await userEvent.click(screen.getByText("Starred"));
+
+      await waitFor(() => {
+        expect(screen.queryByTestId("source-source-1")).not.toBeInTheDocument();
+        expect(screen.getByTestId("source-checkbox-source-2")).toBeChecked();
+        expect(screen.queryByTestId("source-source-3")).not.toBeInTheDocument();
+      });
+
+      // Delete source accounts
+      await userEvent.click(screen.getByTestId("bulk-delete-button"));
+
+      await waitFor(() => {
+        expect(
+          screen.getByTestId("delete-modal-delete-account-button"),
+        ).toBeInTheDocument();
+      });
+
+      await userEvent.click(
+        screen.getByTestId("delete-modal-delete-account-button"),
+      );
+
+      // Only the one starred source should have been submitted for deletion
+      await waitFor(() => {
+        expect(window.electronAPI.addPendingSourceEvent).toHaveBeenCalledTimes(
+          1,
+        );
+        expect(window.electronAPI.addPendingSourceEvent).toHaveBeenCalledWith(
+          "source-2",
+          PendingEventType.SourceDeleted,
+          undefined,
+        );
+      });
+    });
+
+    it("filter to starred then select all then remove filter: only the starred source stays selected", async () => {
+      vi.mocked(window.electronAPI.getSources).mockResolvedValue(
+        singleStarredSources,
+      );
+      renderSourceList(singleStarredSources);
+
+      await waitFor(() => {
+        expect(screen.getByTestId("source-source-1")).toBeInTheDocument();
+        expect(screen.getByTestId("source-source-2")).toBeInTheDocument();
+        expect(screen.getByTestId("source-source-3")).toBeInTheDocument();
+      });
+
+      // Filter to starred sources first (only source-2 is visible)
+      await userEvent.click(screen.getByTestId("filter-dropdown"));
+      await userEvent.click(screen.getByText("Starred"));
+
+      await waitFor(() => {
+        expect(screen.queryByTestId("source-source-1")).not.toBeInTheDocument();
+        expect(screen.getByTestId("source-source-2")).toBeInTheDocument();
+        expect(screen.queryByTestId("source-source-3")).not.toBeInTheDocument();
+      });
+
+      // Select all (only source-2 is visible, so only source-2 gets selected)
+      await userEvent.click(screen.getByTestId("select-all-checkbox"));
+      expect(screen.getByTestId("source-checkbox-source-2")).toBeChecked();
+
+      // Remove the filter to show all sources
+      await userEvent.click(screen.getByTestId("filter-dropdown"));
+      await userEvent.click(screen.getByText("All"));
+
+      await waitFor(() => {
+        expect(screen.getByTestId("source-source-1")).toBeInTheDocument();
+        expect(screen.getByTestId("source-source-2")).toBeInTheDocument();
+        expect(screen.getByTestId("source-source-3")).toBeInTheDocument();
+      });
+
+      // Only source-2 should remain selected
+      expect(screen.getByTestId("source-checkbox-source-1")).not.toBeChecked();
+      expect(screen.getByTestId("source-checkbox-source-2")).toBeChecked();
+      expect(screen.getByTestId("source-checkbox-source-3")).not.toBeChecked();
+
+      // Select-all should be indeterminate: one of three visible sources is selected
+      const selectAllCheckbox = screen.getByTestId(
+        "select-all-checkbox",
+      ) as HTMLInputElement;
+      expect(selectAllCheckbox).not.toBeChecked();
+      expect(selectAllCheckbox.indeterminate).toBe(true);
+    });
+
+    it("select all then search for one source then clear search: only that source stays selected", async () => {
+      renderSourceList();
+
+      await waitFor(() => {
+        expect(screen.getByTestId("source-source-1")).toBeInTheDocument();
+        expect(screen.getByTestId("source-source-2")).toBeInTheDocument();
+        expect(screen.getByTestId("source-source-3")).toBeInTheDocument();
+        expect(screen.getByTestId("source-source-4")).toBeInTheDocument();
+      });
+
+      // Select all four sources
+      await userEvent.click(screen.getByTestId("select-all-checkbox"));
+      expect(screen.getByTestId("source-checkbox-source-1")).toBeChecked();
+      expect(screen.getByTestId("source-checkbox-source-2")).toBeChecked();
+      expect(screen.getByTestId("source-checkbox-source-3")).toBeChecked();
+      expect(screen.getByTestId("source-checkbox-source-4")).toBeChecked();
+
+      // Search for "alice" — only source-1 (alice wonderland) is visible
+      const searchInput = screen.getByTestId("source-search-input");
+      await userEvent.type(searchInput, "alice");
+
+      await waitFor(
+        () => {
+          expect(screen.getByTestId("source-source-1")).toBeInTheDocument();
+          expect(
+            screen.queryByTestId("source-source-2"),
+          ).not.toBeInTheDocument();
+          expect(
+            screen.queryByTestId("source-source-3"),
+          ).not.toBeInTheDocument();
+          expect(
+            screen.queryByTestId("source-source-4"),
+          ).not.toBeInTheDocument();
+        },
+        { timeout: 1000 },
+      );
+
+      // Clear the search
+      await userEvent.clear(searchInput);
+
+      // All sources are visible again
+      await waitFor(
+        () => {
+          expect(screen.getByTestId("source-source-1")).toBeInTheDocument();
+          expect(screen.getByTestId("source-source-2")).toBeInTheDocument();
+          expect(screen.getByTestId("source-source-3")).toBeInTheDocument();
+          expect(screen.getByTestId("source-source-4")).toBeInTheDocument();
+        },
+        { timeout: 1000 },
+      );
+
+      // Only source-1 should remain selected
+      expect(screen.getByTestId("source-checkbox-source-1")).toBeChecked();
+      expect(screen.getByTestId("source-checkbox-source-2")).not.toBeChecked();
+      expect(screen.getByTestId("source-checkbox-source-3")).not.toBeChecked();
+      expect(screen.getByTestId("source-checkbox-source-4")).not.toBeChecked();
+
+      // Select-all should be indeterminate: one of four visible sources is selected
+      const selectAllCheckbox = screen.getByTestId(
+        "select-all-checkbox",
+      ) as HTMLInputElement;
+      expect(selectAllCheckbox).not.toBeChecked();
+      expect(selectAllCheckbox.indeterminate).toBe(true);
+    });
+  });
 });
