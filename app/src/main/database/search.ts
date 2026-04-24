@@ -207,6 +207,7 @@ export class Search {
     });
   }
 
+  // Removes source and all its items from the search index
   removeSource(sourceUuid: string): void {
     this.deleteBySourceStmt.run(sourceUuid);
   }

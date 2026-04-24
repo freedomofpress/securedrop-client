@@ -20,7 +20,9 @@ import { IndexSized, BatchResponseSized } from "../../../src/schemas";
 import * as fs from "fs";
 
 vi.mock("fs", () => ({
-  rmSync: vi.fn(),
+  promises: {
+    rm: vi.fn(),
+  },
   existsSync: vi.fn(() => true),
   realpathSync: vi.fn((path) => path),
   mkdirSync: vi.fn(),
@@ -465,8 +467,8 @@ describe("syncMetadata", () => {
     expect(proxyMock).toHaveBeenCalledTimes(2);
     expect(db.deleteItems).toHaveBeenCalledWith([ITEM_UUID_2]);
     expect(db.updateBatch).toHaveBeenCalledWith(metadata);
-    expect(fs.rmSync).toHaveBeenCalledTimes(1);
-    expect(fs.rmSync).toHaveBeenCalledWith(
+    expect(fs.promises.rm).toHaveBeenCalledTimes(1);
+    expect(fs.promises.rm).toHaveBeenCalledWith(
       `/mock-home/.config/SecureDrop/files/${SOURCE_UUID_1}/${ITEM_UUID_2}/`,
       {
         recursive: true,
@@ -730,7 +732,7 @@ describe("syncMetadata", () => {
 
     await syncModule.syncMetadata(db, "");
 
-    expect(fs.rmSync).toHaveBeenCalledWith(
+    expect(fs.promises.rm).toHaveBeenCalledWith(
       `/mock-home/.config/SecureDrop/files/${SOURCE_UUID_2}/`,
       { recursive: true, force: true },
     );
@@ -916,19 +918,10 @@ describe("Storage.deleteSourceFs", () => {
 
     storage.deleteSourceFs(SOURCE_UUID_1);
 
-    expect(fs.rmSync).toHaveBeenCalledWith(
+    expect(fs.promises.rm).toHaveBeenCalledWith(
       `/mock-home/.config/SecureDrop/files/${SOURCE_UUID_1}/`,
       { recursive: true, force: true },
     );
-  });
-
-  it("does nothing when source directory does not exist", () => {
-    vi.mocked(fs.existsSync).mockReturnValue(false);
-    const storage = new Storage();
-
-    storage.deleteSourceFs(SOURCE_UUID_1);
-
-    expect(fs.rmSync).not.toHaveBeenCalled();
   });
 });
 

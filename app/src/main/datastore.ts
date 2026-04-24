@@ -23,8 +23,10 @@ export class Datastore extends DB {
 
   override deleteItems(items: string[]): Item[] {
     const deletedItems = super.deleteItems(items);
+    // TODO: Consider routing FS deletions to the fetch worker so that FS I/O
+    // never runs on the main process event loop.
     for (const item of deletedItems) {
-      this.storage.deleteItemFs(item);
+      void this.storage.deleteItemFs(item);
     }
     return deletedItems;
   }
@@ -32,7 +34,7 @@ export class Datastore extends DB {
   override deleteSources(sources: string[]): void {
     super.deleteSources(sources);
     for (const uuid of sources) {
-      this.storage.deleteSourceFs(uuid);
+      void this.storage.deleteSourceFs(uuid);
     }
   }
 
@@ -46,7 +48,7 @@ export class Datastore extends DB {
   ): Item[] {
     const deletedItems = super.updateItems(items, pendingDeletionSources);
     for (const item of deletedItems) {
-      this.storage.deleteItemFs(item);
+      void this.storage.deleteItemFs(item);
     }
     return deletedItems;
   }
@@ -62,7 +64,7 @@ export class Datastore extends DB {
       pendingDeletionSources,
     );
     for (const uuid of deletedSourceUuids) {
-      this.storage.deleteSourceFs(uuid);
+      void this.storage.deleteSourceFs(uuid);
     }
     return deletedSourceUuids;
   }
@@ -81,19 +83,19 @@ export class Datastore extends DB {
     const result = super.updateBatch(batchResponse);
     // Perform all filesystem cleanups as necessary
     for (const item of result.deleted_items) {
-      this.storage.deleteItemFs(item);
+      void this.storage.deleteItemFs(item);
     }
     for (const uuid of result.deleted_sources) {
-      this.storage.deleteSourceFs(uuid);
+      void this.storage.deleteSourceFs(uuid);
     }
     return result;
   }
 
-  deleteSourceFs(sourceID: string): void {
+  async deleteSourceFs(sourceID: string): Promise<void> {
     return this.storage.deleteSourceFs(sourceID);
   }
 
-  deleteItemFs(item: Item): void {
+  async deleteItemFs(item: Item): Promise<void> {
     return this.storage.deleteItemFs(item);
   }
 }

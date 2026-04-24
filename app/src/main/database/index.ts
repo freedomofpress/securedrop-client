@@ -110,11 +110,16 @@ export class DB {
     { source_uuid: string },
     { uuid: string }
   >;
+  private deleteUnprojectedItemsBySource: Statement<
+    { source_uuid: string },
+    void
+  >;
   private upsertItem: Statement<
     { uuid: string; data: string; version: string },
     void
   >;
   private deleteItem: Statement<{ uuid: string }, void>;
+  private deleteItemMany: Statement<{ uuids_json: string }, void>;
   private updateItemFetchStatus: Statement<{
     uuid: string;
     fetch_status: number;
@@ -133,6 +138,7 @@ export class DB {
     fetch_status: number;
   }>;
   private selectItem: Statement<{ uuid: string }, ItemRow>;
+  private selectItemMany: Statement<{ uuids_json: string }, ItemRow>;
 
   private selectAllJournalistVersion: Statement<
     [],
@@ -188,6 +194,10 @@ export class DB {
     void
   >;
   private deletePendingEventsByItem: Statement<{ item_uuid: string }, void>;
+  private deletePendingEventsByItemMany: Statement<
+    { item_uuids_json: string },
+    void
+  >;
   private selectSourcesScheduledForDeletion: Statement<
     [],
     { source_uuid: string }
@@ -283,6 +293,9 @@ export class DB {
     this.selectUnprojectedItemsBySource = this.db.prepare(
       "SELECT uuid FROM items WHERE source_uuid = @source_uuid",
     );
+    this.deleteUnprojectedItemsBySource = this.db.prepare(
+      "DELETE FROM items WHERE source_uuid = @source_uuid",
+    );
     this.updateItemFetchStatus = this.db.prepare(
       "UPDATE items SET fetch_status = @fetch_status WHERE uuid = @uuid",
     );
@@ -299,8 +312,14 @@ export class DB {
       "INSERT INTO items (uuid, data, version) VALUES (@uuid, @data, @version) ON CONFLICT(uuid) DO UPDATE SET data=@data, version=@version",
     );
     this.deleteItem = this.db.prepare("DELETE FROM items WHERE uuid = @uuid");
+    this.deleteItemMany = this.db.prepare(
+      "DELETE FROM items WHERE uuid IN (SELECT value FROM json_each(@uuids_json))",
+    );
     this.selectItem = this.db.prepare(
       `SELECT uuid, data, plaintext, filename, fetch_status, fetch_progress, decrypted_size FROM items WHERE uuid = @uuid`,
+    );
+    this.selectItemMany = this.db.prepare(
+      `SELECT uuid, data, plaintext, filename, fetch_status, fetch_progress, decrypted_size FROM items WHERE uuid IN (SELECT value FROM json_each(@uuids_json))`,
     );
 
     this.selectAllJournalistVersion = this.db.prepare(
@@ -400,6 +419,9 @@ export class DB {
          )`);
     this.deletePendingEventsByItem = this.db.prepare(`
       DELETE FROM pending_events WHERE item_uuid = @item_uuid`);
+    this.deletePendingEventsByItemMany = this.db.prepare(
+      "DELETE FROM pending_events WHERE item_uuid IN (SELECT value FROM json_each(@item_uuids_json))",
+    );
     this.selectSourcesScheduledForDeletion = this.db.prepare(`
       SELECT DISTINCT source_uuid FROM pending_events
       WHERE type IN ('${PendingEventType.SourceDeleted}', '${PendingEventType.SourceConversationTruncated}')
@@ -564,16 +586,37 @@ export class DB {
   }
 
   protected deleteItems(items: string[]): Item[] {
+    if (items.length === 0) {
+      return [];
+    }
     return this.db!.transaction((items: string[]) => {
+      const DELETE_BATCH_SIZE = 500;
       const deletedItems: Item[] = [];
-      for (const itemID of items) {
-        const item = this.getItem(itemID);
-        if (item) {
-          deletedItems.push(item);
+      for (let i = 0; i < items.length; i += DELETE_BATCH_SIZE) {
+        const batch = items.slice(i, i + DELETE_BATCH_SIZE);
+        const uuids_json = JSON.stringify(batch);
+        // Batch fetch before delete so callers can act on deleted items
+        const rows = this.selectItemMany.all({ uuids_json }) as ItemRow[];
+        rows.forEach((row) => {
+          deletedItems.push({
+            uuid: row.uuid,
+            data: JSON.parse(row.data) as ItemMetadata,
+            plaintext: row.plaintext,
+            filename: row.filename,
+            fetch_status: row.fetch_status as FetchStatus,
+            fetch_progress: row.fetch_progress,
+            decrypted_size: row.decrypted_size,
+          });
+        });
+        // Delete from search index per-item
+        // TODO: batch this call as well
+        for (const id of batch) {
+          this.searchIndex.removeItem(id);
         }
-        this.searchIndex.removeItem(itemID);
-        this.deletePendingEventsByItem.run({ item_uuid: itemID });
-        this.deleteItem.run({ uuid: itemID });
+        this.deletePendingEventsByItemMany.run({
+          item_uuids_json: uuids_json,
+        });
+        this.deleteItemMany.run({ uuids_json });
       }
       this.updateVersion();
       return deletedItems;
@@ -587,14 +630,8 @@ export class DB {
       this.searchIndex.removeSource(sourceUuid);
       // Delete any pending events for this source
       this.deletePendingEventsBySource.run({ source_uuid: sourceUuid });
-      // Delete all source items, querying from unprojected view to not
-      // orphan pending deleted items
-      const itemUuids = this.selectUnprojectedItemsBySource
-        .all({
-          source_uuid: sourceUuid,
-        })
-        .map((row) => row.uuid);
-      this.deleteItems(itemUuids);
+      // Delete all source items
+      this.deleteUnprojectedItemsBySource.run({ source_uuid: sourceUuid });
       // Then, delete the source
       this.deleteSource.run({ uuid: sourceUuid });
     })(sourceUuid);
@@ -1204,7 +1241,7 @@ export class DB {
   }
 
   getPendingEvents(): PendingEvent[] {
-    const rows: PendingEventRow[] = this.selectPendingEvents.all({ limit: 50 });
+    const rows: PendingEventRow[] = this.selectPendingEvents.all({ limit: 20 });
     const pendingEvents = rows.map((r) => {
       let target: SourceTarget | ItemTarget;
       if (r.source_uuid) {
