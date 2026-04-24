@@ -1507,6 +1507,13 @@ describe("Sources Component", () => {
       expect(screen.getByTestId("source-checkbox-source-1")).not.toBeChecked();
       expect(screen.getByTestId("source-checkbox-source-2")).toBeChecked();
       expect(screen.getByTestId("source-checkbox-source-3")).not.toBeChecked();
+
+      // Select-all should be indeterminate: one of three visible sources is selected
+      const selectAllCheckbox = screen.getByTestId(
+        "select-all-checkbox",
+      ) as HTMLInputElement;
+      expect(selectAllCheckbox).not.toBeChecked();
+      expect(selectAllCheckbox.indeterminate).toBe(true);
     });
 
     it("select all then search for one source then clear search: only that source stays selected", async () => {
@@ -1565,6 +1572,13 @@ describe("Sources Component", () => {
       expect(screen.getByTestId("source-checkbox-source-2")).not.toBeChecked();
       expect(screen.getByTestId("source-checkbox-source-3")).not.toBeChecked();
       expect(screen.getByTestId("source-checkbox-source-4")).not.toBeChecked();
+
+      // Select-all should be indeterminate: one of four visible sources is selected
+      const selectAllCheckbox = screen.getByTestId(
+        "select-all-checkbox",
+      ) as HTMLInputElement;
+      expect(selectAllCheckbox).not.toBeChecked();
+      expect(selectAllCheckbox.indeterminate).toBe(true);
     });
   });
 });
