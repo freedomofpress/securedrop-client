@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.0.0-rc4
+
+* Journalist menu UX fixies (#3197)
+* Select all only selects filtered sources (#3296)
+* Improve UI lag and sync on large bulk delete (#3297)
+
 ## 1.0.0-rc3
 
 * Exclude unneeded files from asar (#3244)
