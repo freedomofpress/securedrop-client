@@ -221,6 +221,9 @@ export class DB {
     // WAL mode must be set after auto_vacuum
     db.pragma("journal_mode = WAL");
 
+    // enable foreign key
+    db.pragma("foreign_keys = ON");
+
     // Determine first-run status before migrations run
     if (isNewDatabase) {
       const legacyPath = path.join(os.homedir(), ".securedrop_client");
@@ -588,11 +591,8 @@ export class DB {
             decrypted_size: row.decrypted_size,
           });
         });
-        // Delete from search index per-item
-        // TODO: batch this call as well
-        for (const id of batch) {
-          this.searchIndex.removeItem(id);
-        }
+        // Delete from search index
+        this.searchIndex.removeItemMany(uuids_json);
         // Delete the items. This cascades to delete pending_events as well.
         this.deleteItemMany.run({ uuids_json });
       }

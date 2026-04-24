@@ -77,7 +77,7 @@ async function submitBatch(
   request: BatchRequest,
 ): Promise<BatchSubmitResponse> {
   // we include sources, items, and also events in the timeout since events may
-  // require serve compute time even if low payload size
+  // require server compute time even if low payload size
   const records =
     (request.sources?.length || 0) +
     (request.items?.length || 0) +
@@ -119,11 +119,11 @@ async function submitBatch(
 
 // Given the server index and the client's index, return the sources and items
 // that need to be synced. Also deletes items that are not in the server index.
-export function reconcileIndex(
+export async function reconcileIndex(
   db: Datastore,
   serverIndex: Index,
   clientIndex: Index,
-): BatchRequest {
+): Promise<BatchRequest> {
   const pendingDeletionSources = db.getSourcesScheduledForDeletion();
 
   const sourcesToUpdate: string[] = [];
@@ -145,7 +145,7 @@ export function reconcileIndex(
     (source) => !serverSourceSet.has(source),
   );
   if (sourcesToDelete.length > 0) {
-    db.deleteSources(sourcesToDelete);
+    await db.deleteSourcesAsync(sourcesToDelete);
   }
 
   const itemsToUpdate: string[] = [];
@@ -167,7 +167,7 @@ export function reconcileIndex(
     (item) => !serverItemSet.has(item),
   );
   if (itemsToDelete.length > 0) {
-    db.deleteItems(itemsToDelete);
+    await db.deleteItemsAsync(itemsToDelete);
   }
 
   const journalistsToUpdate: string[] = [];
@@ -243,7 +243,7 @@ export async function syncMetadata(
   if (indexResponse.status === 200) {
     // Reconcile with client's index to get metadata to update
     const clientIndex = db.getIndex();
-    const { sources, items, journalists } = reconcileIndex(
+    const { sources, items, journalists } = await reconcileIndex(
       db,
       indexResponse.index,
       clientIndex,
