@@ -365,7 +365,7 @@ function SourceList({ focusedPanel }: { focusedPanel: FocusedPanel }) {
         setSelectedSources(
           new Set(filteredSources.map((source) => source.uuid)),
         );
-        setAllSelected(true);
+        setAllSelected(filteredSources.length > 0);
       } else {
         setSelectedSources(new Set());
         setAllSelected(false);
