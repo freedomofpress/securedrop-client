@@ -362,7 +362,9 @@ function SourceList({ focusedPanel }: { focusedPanel: FocusedPanel }) {
   const handleSelectAll = useCallback(
     (checked: boolean) => {
       if (checked) {
-        setSelectedSources(new Set(filteredSources.map((source) => source.uuid)));
+        setSelectedSources(
+          new Set(filteredSources.map((source) => source.uuid)),
+        );
         setAllSelected(true);
       } else {
         setSelectedSources(new Set());
