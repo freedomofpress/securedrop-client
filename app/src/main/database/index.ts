@@ -106,10 +106,6 @@ export class DB {
     { limit: number },
     { uuid: string }
   >;
-  private selectUnprojectedItemsBySource: Statement<
-    { source_uuid: string },
-    { uuid: string }
-  >;
   private deleteUnprojectedItemsBySource: Statement<
     { source_uuid: string },
     void
@@ -188,14 +184,8 @@ export class DB {
   >;
   private deletePendingEvent: Statement<{ snowflake_id: string }, void>;
   private selectPendingEvents: Statement<[{ limit: number }], PendingEventRow>;
-  private deletePendingEventsBySource: Statement<{ source_uuid: string }, void>;
   private deletePendingEventsBySourceScope: Statement<
     { source_uuid: string },
-    void
-  >;
-  private deletePendingEventsByItem: Statement<{ item_uuid: string }, void>;
-  private deletePendingEventsByItemMany: Statement<
-    { item_uuids_json: string },
     void
   >;
   private selectSourcesScheduledForDeletion: Statement<
@@ -289,9 +279,6 @@ export class DB {
         AND fetch_status in (${FetchStatus.DownloadInProgress}, ${FetchStatus.DecryptionInProgress}, ${FetchStatus.FailedDownloadRetryable}, ${FetchStatus.FailedDecryptionRetryable})
       ORDER BY json_extract(sources.data, '$.last_updated') DESC, interaction_count DESC, items.uuid ASC
       LIMIT @limit`,
-    );
-    this.selectUnprojectedItemsBySource = this.db.prepare(
-      "SELECT uuid FROM items WHERE source_uuid = @source_uuid",
     );
     this.deleteUnprojectedItemsBySource = this.db.prepare(
       "DELETE FROM items WHERE source_uuid = @source_uuid",
@@ -409,19 +396,12 @@ export class DB {
     this.selectPendingEvents = this.db.prepare(`
       SELECT snowflake_id, source_uuid, item_uuid, type, data FROM pending_events ORDER BY snowflake_id ASC LIMIT @limit
     `);
-    this.deletePendingEventsBySource = this.db.prepare(`
-      DELETE FROM pending_events WHERE source_uuid = @source_uuid`);
     this.deletePendingEventsBySourceScope = this.db.prepare(`
       DELETE FROM pending_events
       WHERE source_uuid = @source_uuid
          OR item_uuid IN (
            SELECT uuid FROM items WHERE source_uuid = @source_uuid
          )`);
-    this.deletePendingEventsByItem = this.db.prepare(`
-      DELETE FROM pending_events WHERE item_uuid = @item_uuid`);
-    this.deletePendingEventsByItemMany = this.db.prepare(
-      "DELETE FROM pending_events WHERE item_uuid IN (SELECT value FROM json_each(@item_uuids_json))",
-    );
     this.selectSourcesScheduledForDeletion = this.db.prepare(`
       SELECT DISTINCT source_uuid FROM pending_events
       WHERE type IN ('${PendingEventType.SourceDeleted}', '${PendingEventType.SourceConversationTruncated}')
@@ -613,9 +593,7 @@ export class DB {
         for (const id of batch) {
           this.searchIndex.removeItem(id);
         }
-        this.deletePendingEventsByItemMany.run({
-          item_uuids_json: uuids_json,
-        });
+        // Delete the items. This cascades to delete pending_events as well.
         this.deleteItemMany.run({ uuids_json });
       }
       this.updateVersion();
@@ -628,11 +606,9 @@ export class DB {
     return this.db!.transaction((sourceUuid: string) => {
       // First, remove all search index entries for this source
       this.searchIndex.removeSource(sourceUuid);
-      // Delete any pending events for this source
-      this.deletePendingEventsBySource.run({ source_uuid: sourceUuid });
       // Delete all source items
       this.deleteUnprojectedItemsBySource.run({ source_uuid: sourceUuid });
-      // Then, delete the source
+      // Then, delete the source. This cascades to delete pending_events as well.
       this.deleteSource.run({ uuid: sourceUuid });
     })(sourceUuid);
   }
