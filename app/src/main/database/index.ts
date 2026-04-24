@@ -1204,7 +1204,7 @@ export class DB {
   }
 
   getPendingEvents(): PendingEvent[] {
-    const rows: PendingEventRow[] = this.selectPendingEvents.all({ limit: 50 });
+    const rows: PendingEventRow[] = this.selectPendingEvents.all({ limit: 10 });
     const pendingEvents = rows.map((r) => {
       let target: SourceTarget | ItemTarget;
       if (r.source_uuid) {
