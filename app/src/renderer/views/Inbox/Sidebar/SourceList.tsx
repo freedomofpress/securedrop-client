@@ -446,7 +446,7 @@ function SourceList({ focusedPanel }: { focusedPanel: FocusedPanel }) {
         <Toolbar
           allSelected={allSelected}
           selectedCount={selectedSources.size}
-          totalCount={sources.length}
+          totalCount={filteredSources.length}
           onSelectAll={handleSelectAll}
           onBulkDelete={handleBulkDelete}
           searchTerm={searchTerm}
