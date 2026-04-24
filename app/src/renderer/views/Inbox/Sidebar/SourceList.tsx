@@ -124,20 +124,6 @@ function SourceList({ focusedPanel }: { focusedPanel: FocusedPanel }) {
     };
   }, [debouncedSearchTerm, sources]);
 
-  // Handle select all checkbox
-  const handleSelectAll = useCallback(
-    (checked: boolean) => {
-      if (checked) {
-        setSelectedSources(new Set(sources.map((source) => source.uuid)));
-        setAllSelected(true);
-      } else {
-        setSelectedSources(new Set());
-        setAllSelected(false);
-      }
-    },
-    [sources],
-  );
-
   // Handle individual source selection
   const handleSourceSelect = useCallback(
     (sourceId: string, checked: boolean) => {
@@ -371,6 +357,34 @@ function SourceList({ focusedPanel }: { focusedPanel: FocusedPanel }) {
         }
       });
   }, [sources, searchResults, filter, sortedAsc]);
+
+  // Handle select all checkbox
+  const handleSelectAll = useCallback(
+    (checked: boolean) => {
+      if (checked) {
+        setSelectedSources(new Set(filteredSources.map((source) => source.uuid)));
+        setAllSelected(true);
+      } else {
+        setSelectedSources(new Set());
+        setAllSelected(false);
+      }
+    },
+    [filteredSources],
+  );
+
+  // When the visible sources change (due to filter or search), trim the selection
+  // to only sources that are still visible.
+  useEffect(() => {
+    const visibleUuids = new Set(filteredSources.map((s) => s.uuid));
+    setSelectedSources((prev) => {
+      const next = new Set([...prev].filter((uuid) => visibleUuids.has(uuid)));
+      if (next.size !== prev.size) {
+        setAllSelected(next.size > 0 && next.size === filteredSources.length);
+        return next;
+      }
+      return prev;
+    });
+  }, [filteredSources]);
 
   // Helper to get all source option elements in the list
   const getSourceOptions = useCallback((): HTMLElement[] => {
