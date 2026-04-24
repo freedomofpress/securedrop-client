@@ -67,7 +67,6 @@ function SourceList({ focusedPanel }: { focusedPanel: FocusedPanel }) {
   const [selectedSources, setSelectedSources] = useState<Set<string>>(
     new Set(),
   );
-  const [allSelected, setAllSelected] = useState(false);
   const [sortedAsc, setSortedAsc] = useState(false);
   const [filter, setFilter] = useState<filterOption>("all");
   const [searchTerm, setSearchTerm] = useState("");
@@ -134,11 +133,10 @@ function SourceList({ focusedPanel }: { focusedPanel: FocusedPanel }) {
         } else {
           newSelection.delete(sourceId);
         }
-        setAllSelected(newSelection.size === sources.length);
         return newSelection;
       });
     },
-    [sources.length],
+    [],
   );
 
   // Handle starring/unstarring a source
@@ -266,9 +264,6 @@ function SourceList({ focusedPanel }: { focusedPanel: FocusedPanel }) {
           for (const uuid of pendingDeleteSources) {
             next.delete(uuid);
           }
-          if (next.size === 0) {
-            setAllSelected(false);
-          }
           return next;
         });
         setPendingDeleteSources(new Set());
@@ -358,6 +353,13 @@ function SourceList({ focusedPanel }: { focusedPanel: FocusedPanel }) {
       });
   }, [sources, searchResults, filter, sortedAsc]);
 
+  const allSelected = useMemo(
+    () =>
+      filteredSources.length > 0 &&
+      filteredSources.every((s) => selectedSources.has(s.uuid)),
+    [filteredSources, selectedSources],
+  );
+
   // Handle select all checkbox
   const handleSelectAll = useCallback(
     (checked: boolean) => {
@@ -365,10 +367,8 @@ function SourceList({ focusedPanel }: { focusedPanel: FocusedPanel }) {
         setSelectedSources(
           new Set(filteredSources.map((source) => source.uuid)),
         );
-        setAllSelected(filteredSources.length > 0);
       } else {
         setSelectedSources(new Set());
-        setAllSelected(false);
       }
     },
     [filteredSources],
@@ -381,7 +381,6 @@ function SourceList({ focusedPanel }: { focusedPanel: FocusedPanel }) {
     setSelectedSources((prev) => {
       const next = new Set([...prev].filter((uuid) => visibleUuids.has(uuid)));
       if (next.size !== prev.size) {
-        setAllSelected(next.size > 0 && next.size === filteredSources.length);
         return next;
       }
       return prev;
