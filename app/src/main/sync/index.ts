@@ -76,9 +76,12 @@ async function submitBatch(
   authToken: string,
   request: BatchRequest,
 ): Promise<BatchSubmitResponse> {
-  // (sources + items) >> (journalists + events), so the former is good enough
-  // for estimation.
-  const records = (request.sources?.length || 0) + (request.items?.length || 0);
+  // we include sources, items, and also events in the timeout since events may
+  // require server compute time even if low payload size
+  const records =
+    (request.sources?.length || 0) +
+    (request.items?.length || 0) +
+    (request.events?.length || 0);
   const timeout = estimateTimeout(BatchResponseSized, records);
 
   const resp = (await proxyJSONRequest(
@@ -116,11 +119,11 @@ async function submitBatch(
 
 // Given the server index and the client's index, return the sources and items
 // that need to be synced. Also deletes items that are not in the server index.
-export function reconcileIndex(
+export async function reconcileIndex(
   db: Datastore,
   serverIndex: Index,
   clientIndex: Index,
-): BatchRequest {
+): Promise<BatchRequest> {
   const pendingDeletionSources = db.getSourcesScheduledForDeletion();
 
   const sourcesToUpdate: string[] = [];
@@ -137,11 +140,12 @@ export function reconcileIndex(
   });
   // Check for sources to delete, which are ones that the client has which
   // are no longer on the server.
+  const serverSourceSet = new Set(Object.keys(serverIndex.sources));
   const sourcesToDelete = Object.keys(clientIndex.sources).filter(
-    (source) => !Object.keys(serverIndex.sources).includes(source),
+    (source) => !serverSourceSet.has(source),
   );
   if (sourcesToDelete.length > 0) {
-    db.deleteSources(sourcesToDelete);
+    await db.deleteSourcesAsync(sourcesToDelete);
   }
 
   const itemsToUpdate: string[] = [];
@@ -158,11 +162,12 @@ export function reconcileIndex(
     }
   });
   // Also check for items to delete
+  const serverItemSet = new Set(Object.keys(serverIndex.items));
   const itemsToDelete = Object.keys(clientIndex.items).filter(
-    (item) => !Object.keys(serverIndex.items).includes(item),
+    (item) => !serverItemSet.has(item),
   );
   if (itemsToDelete.length > 0) {
-    db.deleteItems(itemsToDelete);
+    await db.deleteItemsAsync(itemsToDelete);
   }
 
   const journalistsToUpdate: string[] = [];
@@ -176,8 +181,9 @@ export function reconcileIndex(
     }
   });
   // Also check for journalists to delete
+  const serverJournalistSet = new Set(Object.keys(serverIndex.journalists));
   const journalistsToDelete = Object.keys(clientIndex.journalists).filter(
-    (journalist) => !Object.keys(serverIndex.journalists).includes(journalist),
+    (journalist) => !serverJournalistSet.has(journalist),
   );
   if (journalistsToDelete.length > 0) {
     db.deleteJournalists(journalistsToDelete);
@@ -237,7 +243,7 @@ export async function syncMetadata(
   if (indexResponse.status === 200) {
     // Reconcile with client's index to get metadata to update
     const clientIndex = db.getIndex();
-    const { sources, items, journalists } = reconcileIndex(
+    const { sources, items, journalists } = await reconcileIndex(
       db,
       indexResponse.index,
       clientIndex,
@@ -255,7 +261,9 @@ export async function syncMetadata(
     return syncStatus;
   }
 
+  console.debug("Client batch request: ", request);
   const batchResponse = await submitBatch(authToken, request);
+  console.debug("Server batch response: ", batchResponse);
 
   // Check for 403 Forbidden
   if (batchResponse.status === 403) {
@@ -265,6 +273,5 @@ export async function syncMetadata(
   db.updateBatch(batchResponse.data);
 
   syncStatus = SyncStatus.UPDATED;
-
   return syncStatus;
 }

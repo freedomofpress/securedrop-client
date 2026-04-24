@@ -619,6 +619,22 @@ describe("Datastore Method Tests", () => {
     expect(sourceWithItems.items.length).toEqual(2);
   });
 
+  it("addPendingSourceEvent returns null when source does not exist", async () => {
+    const result = await db.addPendingSourceEvent(
+      "nonexistent-source",
+      PendingEventType.Starred,
+    );
+    expect(result).toBeNull();
+  });
+
+  it("addPendingItemEvent returns null when item does not exist", async () => {
+    const result = await db.addPendingItemEvent(
+      "nonexistent-item",
+      PendingEventType.ItemDeleted,
+    );
+    expect(result).toBeNull();
+  });
+
   it("pending ReplySent and pending SourceConversationTruncated should delete all items in conversation", async () => {
     db.updateSources({
       source1: mockSourceMetadata("source1"),
@@ -656,7 +672,7 @@ describe("Datastore Method Tests", () => {
       "source1",
       PendingEventType.SourceConversationTruncated,
       { upper_bound: 2 },
-    );
+    )!;
     let sourceWithItems = db.getSourceWithItems("source1");
     expect(sourceWithItems.items.length).toEqual(0);
 
@@ -1055,11 +1071,11 @@ describe("Datastore Method Tests", () => {
     const snowflakeSource = db.addPendingSourceEvent(
       "source1",
       PendingEventType.Starred,
-    );
+    )!;
     const snowflakeItem = db.addPendingItemEvent(
       "item1",
       PendingEventType.ItemDeleted,
-    );
+    )!;
 
     // Before update, both events are present
     let events = db.getPendingEvents();
@@ -1087,11 +1103,11 @@ describe("Datastore Method Tests", () => {
     const snowflakeSource = db.addPendingSourceEvent(
       "source1",
       PendingEventType.Starred,
-    );
+    )!;
     const snowflakeItem = db.addPendingItemEvent(
       "item1",
       PendingEventType.ItemDeleted,
-    );
+    )!;
 
     // Simulate server response: only one event succeeded
     db.updatePendingEvents({
@@ -1376,7 +1392,7 @@ describe("Datastore Method Tests", () => {
     expect(itemsToProcess).toEqual(["message1", "file1"]);
   });
 
-  it("deleting a source should cascade to its pending events", () => {
+  it("deleting a source should cascade to its pending events", async () => {
     // Create a source and add a pending event for it
     db.updateSources({
       source1: mockSourceMetadata("source1"),
@@ -1393,14 +1409,14 @@ describe("Datastore Method Tests", () => {
     expect(events[0].id).toBe(snowflakeId);
 
     // Delete the source (should cascade to its pending events)
-    db.deleteSources(["source1"]);
+    await db.deleteSourcesAsync(["source1"]);
 
     // Pending events for the deleted source should be gone
     events = db.getPendingEvents();
     expect(events.length).toBe(0);
   });
 
-  it("deleting an item should cascade to its pending events", () => {
+  it("deleting an item should cascade to its pending events", async () => {
     // Create a source and item, then add a pending event for the item
     db.updateSources({
       source1: mockSourceMetadata("source1"),
@@ -1420,14 +1436,14 @@ describe("Datastore Method Tests", () => {
     expect(events[0].id).toBe(snowflakeId);
 
     // Delete the item (should cascade to its pending events)
-    db.deleteItems(["item1"]);
+    await db.deleteItemsAsync(["item1"]);
 
     // Pending events for the deleted item should be gone
     events = db.getPendingEvents();
     expect(events.length).toBe(0);
   });
 
-  it("cascading deletion should preserve unrelated pending events", () => {
+  it("cascading deletion should preserve unrelated pending events", async () => {
     // Create two sources with items
     db.updateSources({
       source1: mockSourceMetadata("source1"),
@@ -1461,7 +1477,7 @@ describe("Datastore Method Tests", () => {
     expect(events.length).toBe(4);
 
     // Delete source1 (should cascade to source1 and item1 events)
-    db.deleteSources(["source1"]);
+    await db.deleteSourcesAsync(["source1"]);
 
     // Only events for source2/item2 should remain
     events = db.getPendingEvents();
@@ -1474,7 +1490,7 @@ describe("Datastore Method Tests", () => {
     expect(remainingIds).not.toContain(snowflakeItem1);
   });
 
-  it("cascading deletion should handle multiple sources and events", () => {
+  it("cascading deletion should handle multiple sources and events", async () => {
     // Create sources and items
     db.updateSources({
       source1: mockSourceMetadata("source1"),
@@ -1497,7 +1513,7 @@ describe("Datastore Method Tests", () => {
     expect(events.length).toBe(5);
 
     // Delete both sources (should cascade to all related events)
-    db.deleteSources(["source1", "source2"]);
+    await db.deleteSourcesAsync(["source1", "source2"]);
 
     // All events should be deleted via cascade
     events = db.getPendingEvents();

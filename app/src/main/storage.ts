@@ -133,12 +133,10 @@ export class Storage {
     return new PathBuilder(tempDir + "/");
   }
 
-  deleteSourceFs(sourceID: string): void {
+  async deleteSourceFs(sourceID: string): Promise<void> {
     try {
       const sourceDirectory = this.sourceDirectory(sourceID, false).path;
-      if (fs.existsSync(sourceDirectory)) {
-        fs.rmSync(sourceDirectory, { recursive: true, force: true });
-      }
+      await fs.promises.rm(sourceDirectory, { recursive: true, force: true });
     } catch (err) {
       console.error("Failed to delete source from filesystem: ", {
         sourceID,
@@ -147,12 +145,13 @@ export class Storage {
     }
   }
 
-  deleteItemFs(item: Item): void {
+  async deleteItemFs(item: Item): Promise<void> {
     try {
       const itemDirectory = this.itemDirectory(item.data, false);
-      if (fs.existsSync(itemDirectory.path)) {
-        fs.rmSync(itemDirectory.path, { recursive: true, force: true });
-      }
+      await fs.promises.rm(itemDirectory.path, {
+        recursive: true,
+        force: true,
+      });
     } catch (err) {
       console.error("Failed to delete item from filesystem", {
         item: item.uuid,
