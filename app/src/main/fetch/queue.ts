@@ -111,6 +111,10 @@ export class TaskQueue {
   }
 
   abortSourceFetch(sourceUuid: string) {
+    console.debug(
+      "Source has been deleted: aborting downloads + decryptions: ",
+      sourceUuid,
+    );
     for (const [itemId, entry] of this.activeDownloads) {
       if (entry.sourceUuid === sourceUuid) {
         entry.controller.abort();

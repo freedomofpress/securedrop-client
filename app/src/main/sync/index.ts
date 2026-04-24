@@ -219,6 +219,7 @@ export async function syncMetadata(
     currentVersion,
     hintedRecords,
   );
+  console.debug("Server index: ", indexResponse);
 
   // Check for 403 Forbidden
   if (indexResponse.status === 403) {
@@ -237,6 +238,7 @@ export async function syncMetadata(
   if (indexResponse.status === 200) {
     // Reconcile with client's index to get metadata to update
     const clientIndex = db.getIndex();
+    console.debug("Client index: ", clientIndex);
     const { sources, items, journalists } = reconcileIndex(
       db,
       indexResponse.index,
@@ -252,10 +254,13 @@ export async function syncMetadata(
     indexResponse.status === 304 &&
     (!pendingEvents || pendingEvents.length == 0)
   ) {
+    console.debug("No pending events + no server updates: sync complete");
     return syncStatus;
   }
 
+  console.debug("Client batch request: ", request);
   const batchResponse = await submitBatch(authToken, request);
+  console.debug("Server batch response: ", batchResponse);
 
   // Check for 403 Forbidden
   if (batchResponse.status === 403) {
@@ -265,6 +270,5 @@ export async function syncMetadata(
   db.updateBatch(batchResponse.data);
 
   syncStatus = SyncStatus.UPDATED;
-
   return syncStatus;
 }
