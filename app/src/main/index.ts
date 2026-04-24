@@ -487,7 +487,11 @@ if (!gotTheLock) {
               const items = db.getSourceWithItems(sourceUuid, {
                 beforeInteractionCount: data?.upper_bound + 1,
               }).items;
-              await Promise.all(items.map((item) => db.deleteItemFs(item)));
+              const DELETE_BATCH_SIZE = 8;
+              for (let i = 0; i < items.length; i += DELETE_BATCH_SIZE) {
+                const batch = items.slice(i, i + DELETE_BATCH_SIZE);
+                await Promise.all(batch.map((item) => db.deleteItemFs(item)));
+              }
             }
           }
           const snowflakeID = db.addPendingSourceEvent(sourceUuid, type, data);

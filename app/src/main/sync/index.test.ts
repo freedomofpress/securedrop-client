@@ -58,7 +58,7 @@ function mockDB({
     getIndex: vi.fn(() => index),
     getItem: vi.fn((_itemID) => null),
     getItemsToProcess: vi.fn(() => []),
-    deleteItems: vi.fn((itemIDs: string[]) => {
+    deleteItemsAsync: vi.fn((itemIDs: string[]) => {
       if (storage) {
         for (const itemID of itemIDs) {
           const item = db.getItem(itemID);
@@ -68,7 +68,7 @@ function mockDB({
         }
       }
     }),
-    deleteSources: vi.fn((sourceIDs: string[]) => {
+    deleteSourcesAsync: vi.fn((sourceIDs: string[]) => {
       if (storage) {
         for (const sourceID of sourceIDs) {
           storage.deleteSourceFs(sourceID);
@@ -376,7 +376,7 @@ describe("syncMetadata", () => {
     db = mockDB({
       index: clientIndex,
     });
-    const metadataToUpdate = syncModule.reconcileIndex(
+    const metadataToUpdate = await syncModule.reconcileIndex(
       db,
       serverIndex,
       clientIndex,
@@ -465,7 +465,7 @@ describe("syncMetadata", () => {
     await syncModule.syncMetadata(db, "");
 
     expect(proxyMock).toHaveBeenCalledTimes(2);
-    expect(db.deleteItems).toHaveBeenCalledWith([ITEM_UUID_2]);
+    expect(db.deleteItemsAsync).toHaveBeenCalledWith([ITEM_UUID_2]);
     expect(db.updateBatch).toHaveBeenCalledWith(metadata);
     expect(fs.promises.rm).toHaveBeenCalledTimes(1);
     expect(fs.promises.rm).toHaveBeenCalledWith(
@@ -509,7 +509,7 @@ describe("syncMetadata", () => {
       index: clientIndex,
     });
 
-    const metadataToUpdate = syncModule.reconcileIndex(
+    const metadataToUpdate = await syncModule.reconcileIndex(
       db,
       serverIndex,
       clientIndex,
@@ -576,7 +576,11 @@ describe("syncMetadata", () => {
     // SOURCE_UUID_2 is pending deletion locally
     db.getSourcesScheduledForDeletion = vi.fn(() => new Set([SOURCE_UUID_2]));
 
-    const result = syncModule.reconcileIndex(db, serverIndex, clientIndex);
+    const result = await syncModule.reconcileIndex(
+      db,
+      serverIndex,
+      clientIndex,
+    );
 
     // Should request only SOURCE_UUID_1, not the pending-deleted SOURCE_UUID_2
     expect(result.sources).toEqual([SOURCE_UUID_1]);
@@ -607,7 +611,11 @@ describe("syncMetadata", () => {
     // ITEM_UUID_2 is scheduled for deletion
     db.getItemsScheduledForDeletion = vi.fn(() => new Set([ITEM_UUID_2]));
 
-    const result = syncModule.reconcileIndex(db, serverIndex, clientIndex);
+    const result = await syncModule.reconcileIndex(
+      db,
+      serverIndex,
+      clientIndex,
+    );
 
     // Should request only ITEM_UUID_1, not the pending-deleted ITEM_UUID_2
     expect(result.items).toEqual([ITEM_UUID_1]);
@@ -636,10 +644,10 @@ describe("syncMetadata", () => {
     // SOURCE_UUID_2 is also pending deletion locally
     db.getSourcesScheduledForDeletion = vi.fn(() => new Set([SOURCE_UUID_2]));
 
-    syncModule.reconcileIndex(db, serverIndex, clientIndex);
+    await syncModule.reconcileIndex(db, serverIndex, clientIndex);
 
     // The source should still be deleted locally (final cleanup)
-    expect(db.deleteSources).toHaveBeenCalledWith([SOURCE_UUID_2]);
+    expect(db.deleteSourcesAsync).toHaveBeenCalledWith([SOURCE_UUID_2]);
   });
 
   it("deletes sources on sync + updates source delta", async () => {
@@ -684,7 +692,7 @@ describe("syncMetadata", () => {
     await syncModule.syncMetadata(db, "");
 
     expect(proxyMock).toHaveBeenCalledTimes(2);
-    expect(db.deleteSources).toHaveBeenCalledWith([SOURCE_UUID_2]);
+    expect(db.deleteSourcesAsync).toHaveBeenCalledWith([SOURCE_UUID_2]);
     expect(db.updateBatch).toHaveBeenCalledWith({
       items: {},
       sources: {},

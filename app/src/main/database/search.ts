@@ -79,6 +79,7 @@ export class Search {
 
   private searchStmt: Statement<[string, number, number], SearchRow>;
   private deleteByItemStmt: Statement<[string], void>;
+  private deleteItemManyStmt: Statement<{ uuids_json: string }, void>;
   private deleteBySourceStmt: Statement<[string], void>;
   private upsertItemStmt: Statement<
     {
@@ -118,6 +119,10 @@ export class Search {
 
     this.deleteByItemStmt = this.db.prepare(
       `DELETE FROM search_index WHERE item_uuid = ?`,
+    );
+
+    this.deleteItemManyStmt = this.db.prepare(
+      "DELETE FROM search_index WHERE item_uuid IN (SELECT value FROM json_each(@uuids_json))",
     );
 
     this.deleteBySourceStmt = this.db.prepare(
@@ -214,6 +219,12 @@ export class Search {
 
   removeItem(itemUuid: string): void {
     this.deleteByItemStmt.run(itemUuid);
+  }
+
+  removeItemMany(uuidsJSON: string): void {
+    this.deleteItemManyStmt.run({
+      uuids_json: uuidsJSON,
+    });
   }
 
   close(): void {
