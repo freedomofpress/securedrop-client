@@ -15,24 +15,31 @@ import { Crypto } from "./crypto";
  */
 export class Datastore extends DB {
   private readonly storage: Storage;
+  private readonly DELETE_BATCH_SIZE = 8;
 
   constructor(crypto: Crypto, storage: Storage, dbDir?: string) {
     super(crypto, dbDir);
     this.storage = storage;
   }
 
-  override deleteItems(items: string[]): Item[] {
+  async deleteItemsAsync(items: string[]): Promise<Item[]> {
     const deletedItems = super.deleteItems(items);
-    for (const item of deletedItems) {
-      this.storage.deleteItemFs(item);
+    // TODO: Consider routing FS deletions to the fetch worker so that FS I/O
+    // never runs on the main process event loop.
+    for (let i = 0; i < deletedItems.length; i += this.DELETE_BATCH_SIZE) {
+      const batch = deletedItems.slice(i, i + this.DELETE_BATCH_SIZE);
+      await Promise.all(batch.map((item) => this.storage.deleteItemFs(item)));
     }
     return deletedItems;
   }
 
-  override deleteSources(sources: string[]): void {
+  async deleteSourcesAsync(sources: string[]): Promise<void> {
     super.deleteSources(sources);
-    for (const uuid of sources) {
-      this.storage.deleteSourceFs(uuid);
+    for (let i = 0; i < sources.length; i += this.DELETE_BATCH_SIZE) {
+      const batch = sources.slice(i, i + this.DELETE_BATCH_SIZE);
+      await Promise.all(
+        batch.map((source) => this.storage.deleteSourceFs(source)),
+      );
     }
   }
 
@@ -46,7 +53,7 @@ export class Datastore extends DB {
   ): Item[] {
     const deletedItems = super.updateItems(items, pendingDeletionSources);
     for (const item of deletedItems) {
-      this.storage.deleteItemFs(item);
+      void this.storage.deleteItemFs(item);
     }
     return deletedItems;
   }
@@ -62,7 +69,7 @@ export class Datastore extends DB {
       pendingDeletionSources,
     );
     for (const uuid of deletedSourceUuids) {
-      this.storage.deleteSourceFs(uuid);
+      void this.storage.deleteSourceFs(uuid);
     }
     return deletedSourceUuids;
   }
@@ -81,19 +88,19 @@ export class Datastore extends DB {
     const result = super.updateBatch(batchResponse);
     // Perform all filesystem cleanups as necessary
     for (const item of result.deleted_items) {
-      this.storage.deleteItemFs(item);
+      void this.storage.deleteItemFs(item);
     }
     for (const uuid of result.deleted_sources) {
-      this.storage.deleteSourceFs(uuid);
+      void this.storage.deleteSourceFs(uuid);
     }
     return result;
   }
 
-  deleteSourceFs(sourceID: string): void {
+  async deleteSourceFs(sourceID: string): Promise<void> {
     return this.storage.deleteSourceFs(sourceID);
   }
 
-  deleteItemFs(item: Item): void {
+  async deleteItemFs(item: Item): Promise<void> {
     return this.storage.deleteItemFs(item);
   }
 }

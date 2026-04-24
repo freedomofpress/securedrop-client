@@ -261,14 +261,14 @@ describe("Search", () => {
       expect(results).toHaveLength(0);
     });
 
-    it("does not return results for deleted items", () => {
+    it("does not return results for deleted items", async () => {
       db.updateSources({
         ["source1"]: mockSource("source1", "colorful caterpillar"),
       });
       db.updateItems({ ["item1"]: mockItem("item1", "source1", "message") });
       db.completePlaintextItem("item1", "secret document");
 
-      db.deleteItems(["item1"]);
+      await db.deleteItemsAsync(["item1"]);
 
       const results = db.search("secret");
       expect(results).toHaveLength(0);
@@ -399,26 +399,26 @@ describe("Search", () => {
   });
 
   describe("deleteSources", () => {
-    it("removes all entries for a source", () => {
+    it("removes all entries for a source", async () => {
       db.updateSources({
         ["source1"]: mockSource("source1", "dramatic dolphin"),
       });
       db.updateItems({ ["item1"]: mockItem("item1", "source1", "message") });
       db.completePlaintextItem("item1", "secret info");
 
-      db.deleteSources(["source1"]);
+      await db.deleteSourcesAsync(["source1"]);
 
       expect(db.search("dramatic")).toHaveLength(0);
       expect(db.search("secret")).toHaveLength(0);
     });
 
-    it("does not affect other sources", () => {
+    it("does not affect other sources", async () => {
       db.updateSources({
         ["source1"]: mockSource("source1", "dramatic dolphin"),
         ["source2"]: mockSource("source2", "elegant elephant"),
       });
 
-      db.deleteSources(["source1"]);
+      await db.deleteSourcesAsync(["source1"]);
 
       expect(db.search("dramatic")).toHaveLength(0);
       expect(db.search("elegant")).toHaveLength(1);
@@ -426,21 +426,21 @@ describe("Search", () => {
   });
 
   describe("deleteItems", () => {
-    it("removes a specific item entry", () => {
+    it("removes a specific item entry", async () => {
       db.updateSources({
         ["source1"]: mockSource("source1", "dramatic dolphin"),
       });
       db.updateItems({ ["item1"]: mockItem("item1", "source1", "message") });
       db.completePlaintextItem("item1", "secret info");
 
-      db.deleteItems(["item1"]);
+      await db.deleteItemsAsync(["item1"]);
 
       expect(db.search("secret")).toHaveLength(0);
       // Source entry should remain
       expect(db.search("dramatic")).toHaveLength(1);
     });
 
-    it("does not affect other items", () => {
+    it("does not affect other items", async () => {
       db.updateSources({
         ["source1"]: mockSource("source1", "dramatic dolphin"),
       });
@@ -451,7 +451,7 @@ describe("Search", () => {
       db.completePlaintextItem("item1", "first message");
       db.completePlaintextItem("item2", "second message");
 
-      db.deleteItems(["item1"]);
+      await db.deleteItemsAsync(["item1"]);
 
       expect(db.search("first")).toHaveLength(0);
       expect(db.search("second")).toHaveLength(1);

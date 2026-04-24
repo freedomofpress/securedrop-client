@@ -106,15 +106,16 @@ export class DB {
     { limit: number },
     { uuid: string }
   >;
-  private selectUnprojectedItemsBySource: Statement<
+  private deleteUnprojectedItemsBySource: Statement<
     { source_uuid: string },
-    { uuid: string }
+    void
   >;
   private upsertItem: Statement<
     { uuid: string; data: string; version: string },
     void
   >;
   private deleteItem: Statement<{ uuid: string }, void>;
+  private deleteItemMany: Statement<{ uuids_json: string }, void>;
   private updateItemFetchStatus: Statement<{
     uuid: string;
     fetch_status: number;
@@ -133,6 +134,7 @@ export class DB {
     fetch_status: number;
   }>;
   private selectItem: Statement<{ uuid: string }, ItemRow>;
+  private selectItemMany: Statement<{ uuids_json: string }, ItemRow>;
 
   private selectAllJournalistVersion: Statement<
     [],
@@ -182,12 +184,10 @@ export class DB {
   >;
   private deletePendingEvent: Statement<{ snowflake_id: string }, void>;
   private selectPendingEvents: Statement<[{ limit: number }], PendingEventRow>;
-  private deletePendingEventsBySource: Statement<{ source_uuid: string }, void>;
   private deletePendingEventsBySourceScope: Statement<
     { source_uuid: string },
     void
   >;
-  private deletePendingEventsByItem: Statement<{ item_uuid: string }, void>;
   private selectSourcesScheduledForDeletion: Statement<
     [],
     { source_uuid: string }
@@ -220,6 +220,9 @@ export class DB {
 
     // WAL mode must be set after auto_vacuum
     db.pragma("journal_mode = WAL");
+
+    // enable foreign key
+    db.pragma("foreign_keys = ON");
 
     // Determine first-run status before migrations run
     if (isNewDatabase) {
@@ -280,8 +283,8 @@ export class DB {
       ORDER BY json_extract(sources.data, '$.last_updated') DESC, interaction_count DESC, items.uuid ASC
       LIMIT @limit`,
     );
-    this.selectUnprojectedItemsBySource = this.db.prepare(
-      "SELECT uuid FROM items WHERE source_uuid = @source_uuid",
+    this.deleteUnprojectedItemsBySource = this.db.prepare(
+      "DELETE FROM items WHERE source_uuid = @source_uuid",
     );
     this.updateItemFetchStatus = this.db.prepare(
       "UPDATE items SET fetch_status = @fetch_status WHERE uuid = @uuid",
@@ -299,8 +302,14 @@ export class DB {
       "INSERT INTO items (uuid, data, version) VALUES (@uuid, @data, @version) ON CONFLICT(uuid) DO UPDATE SET data=@data, version=@version",
     );
     this.deleteItem = this.db.prepare("DELETE FROM items WHERE uuid = @uuid");
+    this.deleteItemMany = this.db.prepare(
+      "DELETE FROM items WHERE uuid IN (SELECT value FROM json_each(@uuids_json))",
+    );
     this.selectItem = this.db.prepare(
       `SELECT uuid, data, plaintext, filename, fetch_status, fetch_progress, decrypted_size FROM items WHERE uuid = @uuid`,
+    );
+    this.selectItemMany = this.db.prepare(
+      `SELECT uuid, data, plaintext, filename, fetch_status, fetch_progress, decrypted_size FROM items WHERE uuid IN (SELECT value FROM json_each(@uuids_json))`,
     );
 
     this.selectAllJournalistVersion = this.db.prepare(
@@ -390,16 +399,12 @@ export class DB {
     this.selectPendingEvents = this.db.prepare(`
       SELECT snowflake_id, source_uuid, item_uuid, type, data FROM pending_events ORDER BY snowflake_id ASC LIMIT @limit
     `);
-    this.deletePendingEventsBySource = this.db.prepare(`
-      DELETE FROM pending_events WHERE source_uuid = @source_uuid`);
     this.deletePendingEventsBySourceScope = this.db.prepare(`
       DELETE FROM pending_events
       WHERE source_uuid = @source_uuid
          OR item_uuid IN (
            SELECT uuid FROM items WHERE source_uuid = @source_uuid
          )`);
-    this.deletePendingEventsByItem = this.db.prepare(`
-      DELETE FROM pending_events WHERE item_uuid = @item_uuid`);
     this.selectSourcesScheduledForDeletion = this.db.prepare(`
       SELECT DISTINCT source_uuid FROM pending_events
       WHERE type IN ('${PendingEventType.SourceDeleted}', '${PendingEventType.SourceConversationTruncated}')
@@ -564,16 +569,32 @@ export class DB {
   }
 
   protected deleteItems(items: string[]): Item[] {
+    if (items.length === 0) {
+      return [];
+    }
     return this.db!.transaction((items: string[]) => {
+      const DELETE_BATCH_SIZE = 500;
       const deletedItems: Item[] = [];
-      for (const itemID of items) {
-        const item = this.getItem(itemID);
-        if (item) {
-          deletedItems.push(item);
-        }
-        this.searchIndex.removeItem(itemID);
-        this.deletePendingEventsByItem.run({ item_uuid: itemID });
-        this.deleteItem.run({ uuid: itemID });
+      for (let i = 0; i < items.length; i += DELETE_BATCH_SIZE) {
+        const batch = items.slice(i, i + DELETE_BATCH_SIZE);
+        const uuids_json = JSON.stringify(batch);
+        // Batch fetch before delete so callers can act on deleted items
+        const rows = this.selectItemMany.all({ uuids_json }) as ItemRow[];
+        rows.forEach((row) => {
+          deletedItems.push({
+            uuid: row.uuid,
+            data: JSON.parse(row.data) as ItemMetadata,
+            plaintext: row.plaintext,
+            filename: row.filename,
+            fetch_status: row.fetch_status as FetchStatus,
+            fetch_progress: row.fetch_progress,
+            decrypted_size: row.decrypted_size,
+          });
+        });
+        // Delete from search index
+        this.searchIndex.removeItemMany(uuids_json);
+        // Delete the items. This cascades to delete pending_events as well.
+        this.deleteItemMany.run({ uuids_json });
       }
       this.updateVersion();
       return deletedItems;
@@ -585,17 +606,9 @@ export class DB {
     return this.db!.transaction((sourceUuid: string) => {
       // First, remove all search index entries for this source
       this.searchIndex.removeSource(sourceUuid);
-      // Delete any pending events for this source
-      this.deletePendingEventsBySource.run({ source_uuid: sourceUuid });
-      // Delete all source items, querying from unprojected view to not
-      // orphan pending deleted items
-      const itemUuids = this.selectUnprojectedItemsBySource
-        .all({
-          source_uuid: sourceUuid,
-        })
-        .map((row) => row.uuid);
-      this.deleteItems(itemUuids);
-      // Then, delete the source
+      // Delete all source items
+      this.deleteUnprojectedItemsBySource.run({ source_uuid: sourceUuid });
+      // Then, delete the source. This cascades to delete pending_events as well.
       this.deleteSource.run({ uuid: sourceUuid });
     })(sourceUuid);
   }
@@ -1076,7 +1089,7 @@ export class DB {
     sourceUuid: string,
     type: PendingEventType,
     data?: PendingEventData,
-  ): string {
+  ): string | null {
     return this.db!.transaction(() => {
       const snowflakeID = this.snowflake
         .generate({ timestamp: Date.now() })
@@ -1095,12 +1108,23 @@ export class DB {
         }
       }
 
-      this.insertSourcePendingEvent.run({
-        snowflake_id: snowflakeID,
-        source_uuid: sourceUuid,
-        type: type,
-        data: data ? JSON.stringify(data) : null,
-      });
+      try {
+        this.insertSourcePendingEvent.run({
+          snowflake_id: snowflakeID,
+          source_uuid: sourceUuid,
+          type: type,
+          data: data ? JSON.stringify(data) : null,
+        });
+      } catch (err) {
+        if (err instanceof Error && "code" in err) {
+          if (err.code === "SQLITE_CONSTRAINT_FOREIGNKEY") {
+            return null;
+          } else {
+            throw err;
+          }
+        }
+      }
+
       return snowflakeID;
     })();
   }
@@ -1150,16 +1174,26 @@ export class DB {
     return snowflakeID;
   }
 
-  addPendingItemEvent(itemUuid: string, type: PendingEventType): string {
+  addPendingItemEvent(itemUuid: string, type: PendingEventType): string | null {
     const snowflakeID = this.snowflake
       .generate({ timestamp: Date.now() })
       .toString();
-    this.insertItemPendingEvent.run({
-      snowflake_id: snowflakeID,
-      item_uuid: itemUuid,
-      type: type,
-      data: null,
-    });
+    try {
+      this.insertItemPendingEvent.run({
+        snowflake_id: snowflakeID,
+        item_uuid: itemUuid,
+        type: type,
+        data: null,
+      });
+    } catch (err) {
+      if (err instanceof Error && "code" in err) {
+        if (err.code === "SQLITE_CONSTRAINT_FOREIGNKEY") {
+          return null;
+        } else {
+          throw err;
+        }
+      }
+    }
     return snowflakeID;
   }
 
@@ -1193,18 +1227,29 @@ export class DB {
       const snowflakeId = this.snowflake
         .generate({ timestamp: Date.now() })
         .toString();
-      this.insertSourcePendingEvent.run({
-        snowflake_id: snowflakeId,
-        source_uuid: sourceUuid,
-        type: PendingEventType.SourceConversationSeen,
-        data: JSON.stringify({ upper_bound: upperBound }),
-      });
+      try {
+        this.insertSourcePendingEvent.run({
+          snowflake_id: snowflakeId,
+          source_uuid: sourceUuid,
+          type: PendingEventType.SourceConversationSeen,
+          data: JSON.stringify({ upper_bound: upperBound }),
+        });
+      } catch (err) {
+        if (err instanceof Error && "code" in err) {
+          if (err.code === "SQLITE_CONSTRAINT_FOREIGNKEY") {
+            return null;
+          } else {
+            throw err;
+          }
+        }
+      }
+
       return snowflakeId;
     })();
   }
 
   getPendingEvents(): PendingEvent[] {
-    const rows: PendingEventRow[] = this.selectPendingEvents.all({ limit: 50 });
+    const rows: PendingEventRow[] = this.selectPendingEvents.all({ limit: 20 });
     const pendingEvents = rows.map((r) => {
       let target: SourceTarget | ItemTarget;
       if (r.source_uuid) {
