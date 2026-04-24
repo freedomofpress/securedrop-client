@@ -1089,7 +1089,7 @@ export class DB {
     sourceUuid: string,
     type: PendingEventType,
     data?: PendingEventData,
-  ): string {
+  ): string | null {
     return this.db!.transaction(() => {
       const snowflakeID = this.snowflake
         .generate({ timestamp: Date.now() })
@@ -1108,12 +1108,23 @@ export class DB {
         }
       }
 
-      this.insertSourcePendingEvent.run({
-        snowflake_id: snowflakeID,
-        source_uuid: sourceUuid,
-        type: type,
-        data: data ? JSON.stringify(data) : null,
-      });
+      try {
+        this.insertSourcePendingEvent.run({
+          snowflake_id: snowflakeID,
+          source_uuid: sourceUuid,
+          type: type,
+          data: data ? JSON.stringify(data) : null,
+        });
+      } catch (err) {
+        if (err instanceof Error && "code" in err) {
+          if (err.code === "SQLITE_CONSTRAINT_FOREIGNKEY") {
+            return null;
+          } else {
+            throw err;
+          }
+        }
+      }
+
       return snowflakeID;
     })();
   }
@@ -1163,16 +1174,26 @@ export class DB {
     return snowflakeID;
   }
 
-  addPendingItemEvent(itemUuid: string, type: PendingEventType): string {
+  addPendingItemEvent(itemUuid: string, type: PendingEventType): string | null {
     const snowflakeID = this.snowflake
       .generate({ timestamp: Date.now() })
       .toString();
-    this.insertItemPendingEvent.run({
-      snowflake_id: snowflakeID,
-      item_uuid: itemUuid,
-      type: type,
-      data: null,
-    });
+    try {
+      this.insertItemPendingEvent.run({
+        snowflake_id: snowflakeID,
+        item_uuid: itemUuid,
+        type: type,
+        data: null,
+      });
+    } catch (err) {
+      if (err instanceof Error && "code" in err) {
+        if (err.code === "SQLITE_CONSTRAINT_FOREIGNKEY") {
+          return null;
+        } else {
+          throw err;
+        }
+      }
+    }
     return snowflakeID;
   }
 
@@ -1206,12 +1227,23 @@ export class DB {
       const snowflakeId = this.snowflake
         .generate({ timestamp: Date.now() })
         .toString();
-      this.insertSourcePendingEvent.run({
-        snowflake_id: snowflakeId,
-        source_uuid: sourceUuid,
-        type: PendingEventType.SourceConversationSeen,
-        data: JSON.stringify({ upper_bound: upperBound }),
-      });
+      try {
+        this.insertSourcePendingEvent.run({
+          snowflake_id: snowflakeId,
+          source_uuid: sourceUuid,
+          type: PendingEventType.SourceConversationSeen,
+          data: JSON.stringify({ upper_bound: upperBound }),
+        });
+      } catch (err) {
+        if (err instanceof Error && "code" in err) {
+          if (err.code === "SQLITE_CONSTRAINT_FOREIGNKEY") {
+            return null;
+          } else {
+            throw err;
+          }
+        }
+      }
+
       return snowflakeId;
     })();
   }

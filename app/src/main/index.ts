@@ -462,7 +462,7 @@ if (!gotTheLock) {
           sourceUuid: string,
           type: PendingEventType,
           data?: PendingEventData,
-        ): Promise<string> => {
+        ): Promise<string | null> => {
           // Immediately delete any source files from the fs on pending deletion
           if (type === PendingEventType.SourceDeleted) {
             await db.deleteSourceFs(sourceUuid);
@@ -494,8 +494,7 @@ if (!gotTheLock) {
               }
             }
           }
-          const snowflakeID = db.addPendingSourceEvent(sourceUuid, type, data);
-          return snowflakeID;
+          return db.addPendingSourceEvent(sourceUuid, type, data);
         },
       );
 
@@ -521,7 +520,7 @@ if (!gotTheLock) {
           _event,
           itemUuid: string,
           type: PendingEventType,
-        ): Promise<string> => {
+        ): Promise<string | null> => {
           if (type === PendingEventType.ItemDeleted) {
             const item = db.getItem(itemUuid);
             if (item) {

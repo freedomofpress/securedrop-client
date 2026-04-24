@@ -15,7 +15,7 @@ import { Crypto } from "./crypto";
  */
 export class Datastore extends DB {
   private readonly storage: Storage;
-  DELETE_BATCH_SIZE = 8;
+  private readonly DELETE_BATCH_SIZE = 8;
 
   constructor(crypto: Crypto, storage: Storage, dbDir?: string) {
     super(crypto, dbDir);
