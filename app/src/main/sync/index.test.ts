@@ -68,10 +68,10 @@ function mockDB({
         }
       }
     }),
-    deleteSourcesAsync: vi.fn((sourceIDs: string[]) => {
+    deleteSourcesAsync: vi.fn(async (sourceIDs: string[]) => {
       if (storage) {
         for (const sourceID of sourceIDs) {
-          storage.deleteSourceFs(sourceID);
+          await storage.deleteSourceFs(sourceID);
         }
       }
     }),
@@ -920,11 +920,11 @@ describe("Storage.deleteSourceFs", () => {
     vi.resetAllMocks();
   });
 
-  it("deletes source directory when it exists", () => {
+  it("deletes source directory when it exists", async () => {
     vi.mocked(fs.existsSync).mockReturnValue(true);
     const storage = new Storage();
 
-    storage.deleteSourceFs(SOURCE_UUID_1);
+    await storage.deleteSourceFs(SOURCE_UUID_1);
 
     expect(fs.promises.rm).toHaveBeenCalledWith(
       `/mock-home/.config/SecureDrop/files/${SOURCE_UUID_1}/`,

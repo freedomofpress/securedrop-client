@@ -619,6 +619,22 @@ describe("Datastore Method Tests", () => {
     expect(sourceWithItems.items.length).toEqual(2);
   });
 
+  it("addPendingSourceEvent returns null when source does not exist", async () => {
+    const result = await db.addPendingSourceEvent(
+      "nonexistent-source",
+      PendingEventType.Starred,
+    );
+    expect(result).toBeNull();
+  });
+
+  it("addPendingItemEvent returns null when item does not exist", async () => {
+    const result = await db.addPendingItemEvent(
+      "nonexistent-item",
+      PendingEventType.ItemDeleted,
+    );
+    expect(result).toBeNull();
+  });
+
   it("pending ReplySent and pending SourceConversationTruncated should delete all items in conversation", async () => {
     db.updateSources({
       source1: mockSourceMetadata("source1"),
@@ -656,7 +672,7 @@ describe("Datastore Method Tests", () => {
       "source1",
       PendingEventType.SourceConversationTruncated,
       { upper_bound: 2 },
-    );
+    )!;
     let sourceWithItems = db.getSourceWithItems("source1");
     expect(sourceWithItems.items.length).toEqual(0);
 
@@ -1055,11 +1071,11 @@ describe("Datastore Method Tests", () => {
     const snowflakeSource = db.addPendingSourceEvent(
       "source1",
       PendingEventType.Starred,
-    );
+    )!;
     const snowflakeItem = db.addPendingItemEvent(
       "item1",
       PendingEventType.ItemDeleted,
-    );
+    )!;
 
     // Before update, both events are present
     let events = db.getPendingEvents();
@@ -1087,11 +1103,11 @@ describe("Datastore Method Tests", () => {
     const snowflakeSource = db.addPendingSourceEvent(
       "source1",
       PendingEventType.Starred,
-    );
+    )!;
     const snowflakeItem = db.addPendingItemEvent(
       "item1",
       PendingEventType.ItemDeleted,
-    );
+    )!;
 
     // Simulate server response: only one event succeeded
     db.updatePendingEvents({

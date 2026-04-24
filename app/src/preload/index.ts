@@ -87,7 +87,7 @@ const electronAPI = {
   getSystemLanguage: logIpcCall<string>("getSystemLanguage", () =>
     ipcRenderer.invoke("getSystemLanguage"),
   ),
-  addPendingSourceEvent: logIpcCall<bigint>(
+  addPendingSourceEvent: logIpcCall<string | null>(
     "addPendingSourceEvent",
     (sourceUuid: string, type: PendingEventType, data?: PendingEventData) =>
       ipcRenderer.invoke("addPendingSourceEvent", sourceUuid, type, data),
@@ -102,7 +102,7 @@ const electronAPI = {
         interactionCount,
       ),
   ),
-  addPendingItemEvent: logIpcCall<bigint>(
+  addPendingItemEvent: logIpcCall<string | null>(
     "addPendingItemEvent",
     (itemUuid: string, type: PendingEventType) =>
       ipcRenderer.invoke("addPendingItemEvent", itemUuid, type),
