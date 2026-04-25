@@ -15,9 +15,9 @@ requires-poetry = ">=2.1.0,<3.0.0"
 package-mode = false
 
 [tool.poetry.group.dev.dependencies]
-mypy = "^1.19.1"
+mypy = "^1.20.1"
 types-redis = "<5"
-types-setuptools = ">=68,<83"
+types-setuptools = ">=82.0.0.20260408,<83"
 
 [tool.mypy]
 python_version = "3.11"
