@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.0.0-rc5
+
+* Update pending deleted entities on sync (#3313)
+* Handle GONE code from server (#3311)
+* Don't inherit source timestamps when building packages (#3307)
+
 ## 1.0.0-rc4
 
 * Journalist menu UX fixies (#3197)
