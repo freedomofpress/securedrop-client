@@ -82,8 +82,6 @@ function mockDB({
     })),
     getItemFileData: vi.fn(() => itemFileData),
     getPendingEvents: vi.fn(() => pendingEvents),
-    getSourcesScheduledForDeletion: vi.fn(() => new Set<string>()),
-    getItemsScheduledForDeletion: vi.fn(() => new Set<string>()),
   } as unknown as Datastore;
   return db;
 }
@@ -549,105 +547,6 @@ describe("syncMetadata", () => {
 
     expect(proxyMock).toHaveBeenCalledTimes(2);
     expect(db.updateBatch).toHaveBeenCalledWith(metadata);
-  });
-
-  it("excludes pending-deleted sources from reconcile request", async () => {
-    // Server index has two sources with updated versions
-    const serverIndex: Index = {
-      sources: {
-        [SOURCE_UUID_1]: "v2",
-        [SOURCE_UUID_2]: "v2",
-      },
-      items: {},
-      journalists: {},
-    };
-
-    // Client index has both sources at older versions
-    const clientIndex: Index = {
-      sources: {
-        [SOURCE_UUID_1]: "v1",
-        [SOURCE_UUID_2]: "v1",
-      },
-      items: {},
-      journalists: {},
-    };
-
-    db = mockDB({ index: clientIndex });
-    // SOURCE_UUID_2 is pending deletion locally
-    db.getSourcesScheduledForDeletion = vi.fn(() => new Set([SOURCE_UUID_2]));
-
-    const result = await syncModule.reconcileIndex(
-      db,
-      serverIndex,
-      clientIndex,
-    );
-
-    // Should request only SOURCE_UUID_1, not the pending-deleted SOURCE_UUID_2
-    expect(result.sources).toEqual([SOURCE_UUID_1]);
-  });
-
-  it("excludes pending-deleted items from reconcile request", async () => {
-    // Server index has two items with updated versions
-    const serverIndex: Index = {
-      sources: {},
-      items: {
-        [ITEM_UUID_1]: "v2",
-        [ITEM_UUID_2]: "v2",
-      },
-      journalists: {},
-    };
-
-    // Client index has both items at older versions
-    const clientIndex: Index = {
-      sources: {},
-      items: {
-        [ITEM_UUID_1]: "v1",
-        [ITEM_UUID_2]: "v1",
-      },
-      journalists: {},
-    };
-
-    db = mockDB({ index: clientIndex });
-    // ITEM_UUID_2 is scheduled for deletion
-    db.getItemsScheduledForDeletion = vi.fn(() => new Set([ITEM_UUID_2]));
-
-    const result = await syncModule.reconcileIndex(
-      db,
-      serverIndex,
-      clientIndex,
-    );
-
-    // Should request only ITEM_UUID_1, not the pending-deleted ITEM_UUID_2
-    expect(result.items).toEqual([ITEM_UUID_1]);
-  });
-
-  it("still allows server-side deletions for pending-deleted sources", async () => {
-    // Client index has SOURCE_UUID_2 which is absent from server (deleted server-side)
-    const serverIndex: Index = {
-      sources: {
-        [SOURCE_UUID_1]: "v1",
-      },
-      items: {},
-      journalists: {},
-    };
-
-    const clientIndex: Index = {
-      sources: {
-        [SOURCE_UUID_1]: "v1",
-        [SOURCE_UUID_2]: "v1",
-      },
-      items: {},
-      journalists: {},
-    };
-
-    db = mockDB({ index: clientIndex });
-    // SOURCE_UUID_2 is also pending deletion locally
-    db.getSourcesScheduledForDeletion = vi.fn(() => new Set([SOURCE_UUID_2]));
-
-    await syncModule.reconcileIndex(db, serverIndex, clientIndex);
-
-    // The source should still be deleted locally (final cleanup)
-    expect(db.deleteSourcesAsync).toHaveBeenCalledWith([SOURCE_UUID_2]);
   });
 
   it("deletes sources on sync + updates source delta", async () => {
