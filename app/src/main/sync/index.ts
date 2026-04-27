@@ -261,9 +261,9 @@ export async function syncMetadata(
     return syncStatus;
   }
 
-  console.debug("Client batch request: ", request);
+  console.debug("Client batch request: ", JSON.stringify(request));
   const batchResponse = await submitBatch(authToken, request);
-  console.debug("Server batch response: ", batchResponse);
+  console.debug("Server batch response: ", JSON.stringify(batchResponse));
 
   // Check for 403 Forbidden
   if (batchResponse.status === 403) {
