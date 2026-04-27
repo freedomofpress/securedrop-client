@@ -245,6 +245,7 @@ export enum EventStatus {
   AlreadyReported = 208,
   BadRequest = 400,
   NotFound = 404,
+  Gone = 410,
   NotImplemented = 501,
 }
 
