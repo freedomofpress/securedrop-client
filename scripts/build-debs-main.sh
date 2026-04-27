@@ -13,7 +13,7 @@ apt-get update && apt-get upgrade --yes
 # Make a copy of the source tree since we do destructive operations on it
 rsync --exclude=build --exclude=.git --exclude=__pycache__ --exclude=node_modules --exclude=target \
     --exclude=htmlcov --exclude=app/coverage --exclude=app/dist --exclude=app/out \
-    -av /src/ /srv/securedrop-client
+    -av --no-times /src/ /srv/securedrop-client
 cd /srv/securedrop-client
 
 apt-get build-dep . --yes
