@@ -1315,7 +1315,10 @@ export class DB {
       if (result === EventStatus.OK) {
         appliedEventIDs.push(snowflake_id);
       }
-      if (result === EventStatus.AlreadyReported) {
+      if (
+        result === EventStatus.AlreadyReported ||
+        result === EventStatus.Gone
+      ) {
         eventIDsToRemove.push(snowflake_id);
       }
     });
