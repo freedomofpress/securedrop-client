@@ -25,17 +25,22 @@ function logIpcCall<T>(name: string, fn: (...args: any[]) => Promise<T>) {
   return async (...args: any[]): Promise<T> => {
     console.debug(`[IPC] ${name} called`);
     const start = performance.now();
-    const result = await fn(...args);
-    const end = performance.now();
-    const duration = end - start;
-    let timeStr;
-    if (duration < 1000) {
-      timeStr = `${duration.toFixed(2)}ms`;
-    } else {
-      timeStr = `${(duration / 1000).toFixed(2)}s`;
+    try {
+      return await fn(...args);
+    } catch (err) {
+      console.error(`Error in IPC handler ${name}:`, err);
+      throw err;
+    } finally {
+      const end = performance.now();
+      const duration = end - start;
+      let timeStr;
+      if (duration < 1000) {
+        timeStr = `${duration.toFixed(2)}ms`;
+      } else {
+        timeStr = `${(duration / 1000).toFixed(2)}s`;
+      }
+      console.debug(`[IPC] ${name} finished in ${timeStr}`);
     }
-    console.debug(`[IPC] ${name} finished in ${timeStr}`);
-    return result;
   };
 }
 
