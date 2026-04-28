@@ -212,7 +212,7 @@
   },
   "QuitModal": {
     "cancel": "[Cancel]",
-    "withDrafts": "[!!Draft replies be discarded.!!]",
+    "withDrafts": "[!!!Draft replies will be discarded.!!!]",
     "Quit": "[Quit]",
     "discardAndQuit": "[!Discard and Quit!]",
     "goBack": "[Go Back]",

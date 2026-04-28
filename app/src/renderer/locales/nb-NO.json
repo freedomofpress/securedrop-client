@@ -1,44 +1,5 @@
 {
-  "MainContent": {
-    "menu": {
-      "exportTranscript": "Exportar la transcripción",
-      "printTranscript": "Imprimir la transcripción",
-      "exportSource": "",
-      "clickToOpen": ""
-    },
-    "conversation": {
-      "sendButton": "",
-      "newMessagesDivider": "",
-      "messagePlaceholder": ""
-    },
-    "emptyState": "",
-    "alreadyRunning": "",
-    "messageFailed": "",
-    "seenReplyTooltip": "",
-    "pendingReplyTooltip": "",
-    "successReplyTooltip": "",
-    "retryFetch": "",
-    "itemEncrypted": "",
-    "lastSourceActivity": "",
-    "emptyConversation": "",
-    "nonProduction": "",
-    "you": "",
-    "unknown": ""
-  },
   "Sidebar": {
-    "account": {
-      "Quit": "Salir",
-      "signIn": "",
-      "signOut": "",
-      "syncNow": "",
-      "offlineMode": "",
-      "aboutOK": "",
-      "Help": "",
-      "aboutClose": "",
-      "keyboardShortcuts": "",
-      "signedIn": "",
-      "aboutSecureDrop": ""
-    },
     "sourcelist": {
       "sort": {
         "tooltip": ""
@@ -56,15 +17,12 @@
         },
         "cancelButton": "",
         "messageCount_one": "",
-        "messageCount_many": "",
         "messageCount_other": "",
         "countingItems": "",
         "replyCount_one": "",
-        "replyCount_many": "",
         "replyCount_other": "",
         "itemCountsHeader": "",
         "fileCount_one": "",
-        "fileCount_many": "",
         "fileCount_other": "",
         "warning": ""
       },
@@ -81,6 +39,19 @@
       "actions": {
         "bulkDelete": ""
       }
+    },
+    "account": {
+      "signIn": "",
+      "signOut": "",
+      "syncNow": "",
+      "offlineMode": "",
+      "aboutOK": "",
+      "Help": "",
+      "aboutClose": "",
+      "Quit": "",
+      "keyboardShortcuts": "",
+      "signedIn": "",
+      "aboutSecureDrop": ""
     },
     "shortcuts": {
       "deleteSource": "",
@@ -128,74 +99,19 @@
       "aboutRepoContent": ""
     }
   },
-  "SignIn": {
-    "username": {
-      "label": "Nombre de Usuario",
-      "minLength": "Ese nombre de usuario no funcionará. Debería tener al menos un largo de 3 caracteres.",
-      "required": ""
-    },
-    "passphrase": {
-      "label": "Frase de contraseña",
-      "invalidLength": "Esa frase de contraseña no funcionará. Debería tener entre 14 y 128 caracteres de largo.",
-      "required": ""
-    },
-    "twoFactorCode": {
-      "label": "Código de autenticación de dos factores",
-      "required": "",
-      "invalidFormat": ""
-    },
-    "errors": {
-      "network": {
-        "header": "No se pudo alcanzar al servidor SecureDrop.",
-        "body": "Por favor comprueba tus conexiones a Internet y Tor e inténtalo de nuevo."
-      },
-      "credentials": {
-        "header": "Esas credenciales no funcionaron.",
-        "body": "Por favor inténtalo de nuevo, y asegúrate de usar un nuevo código de autenticación de dos factores."
-      },
-      "generic": {
-        "header": "Eso no funcionó.",
-        "body": "Por favor comprueba todo e inténtalo de nuevo."
-      },
-      "sessionExpired": "Tu sesión expiró. Por favor iníciala de nuevo."
-    },
-    "title": "",
-    "button": {
-      "signingIn": "",
-      "signIn": "",
-      "useOffline": ""
-    },
-    "version": ""
-  },
   "Item": {
-    "wizard": {
-      "beCareful": "Recuerda ser cuidadoso cuando trabajes con archivos fuera de tu estación de trabajo.",
-      "anonymityTitle": "",
-      "malwareWarning": "",
-      "close": "",
-      "anonymityWarning": "",
-      "unknownError": "",
-      "malwareTitle": "",
-      "retry": "",
-      "continue": "",
-      "pleaseWait": "",
-      "done": "",
-      "back": "",
-      "cancel": ""
-    },
     "exportWizard": {
-      "errorUnlockLuks": "La frase de contraseña ingresada no funcionó. Por favor inténtalo de nuevo.",
-      "unlock": "Ingresar frase de contraseña para unidad USB",
-      "passphrase": "Frase de contraseña",
       "unknownDeviceDetected": "",
       "noDeviceDetected": "",
       "errorUnmountVolumeBusy": "",
       "undownloadedFiles": "",
       "insertUSBInstructions": "",
+      "passphrase": "",
       "readyExport": "",
       "sourceExportTitle": "",
       "preparingExport": "",
       "invalidDeviceDetected": "",
+      "unlock": "",
       "errorExportCleanup": "",
       "exportSuccess": "",
       "sourceExportDescription": "",
@@ -203,6 +119,7 @@
       "unexpectedError": "",
       "deviceError": "",
       "errorUnlockGeneric": "",
+      "errorUnlockLuks": "",
       "exportFailed": "",
       "exportSuccessWithWarning": "",
       "title": "",
@@ -228,6 +145,21 @@
       "errorPrint": ""
     },
     "exportToUSB": "",
+    "wizard": {
+      "anonymityTitle": "",
+      "malwareWarning": "",
+      "close": "",
+      "anonymityWarning": "",
+      "unknownError": "",
+      "malwareTitle": "",
+      "retry": "",
+      "continue": "",
+      "pleaseWait": "",
+      "done": "",
+      "beCareful": "",
+      "back": "",
+      "cancel": ""
+    },
     "cancel": "",
     "printFile": "",
     "retry": "",
@@ -239,6 +171,45 @@
     "downloadFailed": "",
     "resume": ""
   },
+  "SignIn": {
+    "title": "",
+    "passphrase": {
+      "label": "",
+      "required": "",
+      "invalidLength": ""
+    },
+    "button": {
+      "signingIn": "",
+      "signIn": "",
+      "useOffline": ""
+    },
+    "errors": {
+      "sessionExpired": "",
+      "credentials": {
+        "header": "",
+        "body": ""
+      },
+      "generic": {
+        "body": "",
+        "header": ""
+      },
+      "network": {
+        "header": "",
+        "body": ""
+      }
+    },
+    "version": "",
+    "username": {
+      "required": "",
+      "minLength": "",
+      "label": ""
+    },
+    "twoFactorCode": {
+      "label": "",
+      "required": "",
+      "invalidFormat": ""
+    }
+  },
   "QuitModal": {
     "cancel": "",
     "withDrafts": "",
@@ -247,6 +218,32 @@
     "noDrafts": "",
     "goBack": "",
     "title": ""
+  },
+  "MainContent": {
+    "menu": {
+      "exportTranscript": "",
+      "printTranscript": "",
+      "exportSource": "",
+      "clickToOpen": ""
+    },
+    "conversation": {
+      "sendButton": "",
+      "newMessagesDivider": "",
+      "messagePlaceholder": ""
+    },
+    "emptyState": "",
+    "alreadyRunning": "",
+    "messageFailed": "",
+    "seenReplyTooltip": "",
+    "pendingReplyTooltip": "",
+    "successReplyTooltip": "",
+    "retryFetch": "",
+    "itemEncrypted": "",
+    "lastSourceActivity": "",
+    "emptyConversation": "",
+    "nonProduction": "",
+    "you": "",
+    "unknown": ""
   },
   "common": {
     "seeLess": "",
