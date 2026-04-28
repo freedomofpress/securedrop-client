@@ -8,7 +8,7 @@ authors = [
     ]
 license = {text = "AGPLv3+"}
 readme = "README.md"
-dependencies = ["cryptography (>=45.0.6,<46.0.0)"]
+dependencies = []
 
 [tool.poetry]
 requires-poetry = ">=2.1.0,<3.0.0"
