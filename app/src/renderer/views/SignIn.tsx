@@ -279,7 +279,7 @@ function SignInView() {
             >
               <Input
                 data-testid="username-input"
-                placeholder="neliebly"
+                placeholder="nelliebly"
                 autoFocus
               />
             </Form.Item>
