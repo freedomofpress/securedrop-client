@@ -1,5 +1,8 @@
 #!/bin/bash
 # Wrap the real securedrop-app binary, forwarding its stdout/stderr to syslog
+if [[ "$*" == *"--version"* ]]; then
+    exec /usr/bin/securedrop-app.real "$@"
+fi
 exec /usr/bin/securedrop-app.real "$@" \
     > >(logger -t securedrop-inbox -p user.info) \
     2> >(logger -t securedrop-inbox -p user.err)
