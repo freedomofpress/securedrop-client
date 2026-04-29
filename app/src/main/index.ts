@@ -177,7 +177,7 @@ if (!gotTheLock) {
       minWidth: 1200,
       minHeight: 900,
       title: "SecureDrop Inbox",
-      icon: join(__dirname, "../renderer/resources/icon.png"),
+      icon: join(__dirname, "../../resources/images/logo.png"),
       show: false,
       autoHideMenuBar: true,
       webPreferences: {
