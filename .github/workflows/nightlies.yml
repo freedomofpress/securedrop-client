@@ -65,7 +65,7 @@ jobs:
           apt-get update && apt-get install --yes git git-lfs
       # Repeat this for all supported Debian versions
       - name: Download bookworm artifacts
-        uses: actions/download-artifact@v7
+        uses: actions/download-artifact@v8
         with:
           name: build-bookworm
           path: build-bookworm
