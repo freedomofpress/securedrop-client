@@ -31,6 +31,7 @@ import {
   SearchResult,
   FirstRunStatus,
   PendingEventData,
+  SourceItemCounts,
 } from "../../types";
 import { Crypto } from "../crypto";
 import { Search } from "./search";
@@ -154,6 +155,10 @@ export class DB {
   private selectItemsBySourceIdBefore: Statement<
     [string, number, number],
     ItemRow
+  >;
+  private selectItemCountsBySourceUuids: Statement<
+    { uuids_json: string },
+    { messages: number; files: number; replies: number }
   >;
   private selectAllJournalists: Statement<[], JournalistRow>;
   private insertSourcePendingEvent: Statement<
@@ -363,6 +368,14 @@ export class DB {
       WHERE source_uuid = ? AND interaction_count < ?
       ORDER BY interaction_count DESC
       LIMIT ?
+    `);
+    this.selectItemCountsBySourceUuids = this.db.prepare(`
+      SELECT
+        COALESCE(SUM(CASE WHEN kind = 'message' THEN 1 ELSE 0 END), 0) AS messages,
+        COALESCE(SUM(CASE WHEN kind = 'file' THEN 1 ELSE 0 END), 0) AS files,
+        COALESCE(SUM(CASE WHEN kind = 'reply' THEN 1 ELSE 0 END), 0) AS replies
+      FROM items_projected
+      WHERE source_uuid IN (SELECT value FROM json_each(@uuids_json))
     `);
     this.selectAllJournalists = this.db.prepare(`
       SELECT uuid, data FROM journalists
@@ -866,6 +879,24 @@ export class DB {
       items,
       hasMoreHistoricalItems,
       lastSeenInteractionCount,
+    };
+  }
+
+  getSourceItemCounts(sourceUuids: string[]): SourceItemCounts {
+    if (!this.db) {
+      throw new Error("Database is not open");
+    }
+
+    const uuids_json = JSON.stringify(sourceUuids);
+    const row = this.selectItemCountsBySourceUuids.get({ uuids_json }) as {
+      messages: number | null;
+      files: number | null;
+      replies: number | null;
+    };
+    return {
+      messages: row.messages ?? 0,
+      files: row.files ?? 0,
+      replies: row.replies ?? 0,
     };
   }
 

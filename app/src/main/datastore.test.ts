@@ -1826,4 +1826,65 @@ describe("Datastore Method Tests", () => {
       expect(processable.length).toBe(0);
     });
   });
+
+  describe("getSourceItemCounts", () => {
+    it("returns zeros when no sources are selected", () => {
+      const counts = db.getSourceItemCounts([]);
+      expect(counts).toEqual({ messages: 0, files: 0, replies: 0 });
+    });
+
+    it("returns zeros when selected sources have no items", () => {
+      db.updateSources({
+        ["source1"]: mockSourceMetadata("source1"),
+      });
+      const counts = db.getSourceItemCounts(["source1"]);
+      expect(counts).toEqual({ messages: 0, files: 0, replies: 0 });
+    });
+
+    it("counts items by kind for a single source", () => {
+      db.updateSources({
+        ["source1"]: mockSourceMetadata("source1"),
+      });
+      db.updateItems({
+        ["msg1"]: mockItemMetadata("msg1", "source1", "message"),
+        ["msg2"]: mockItemMetadata("msg2", "source1", "message"),
+        ["file1"]: mockItemMetadata("file1", "source1", "file"),
+        ["reply1"]: mockItemMetadata("reply1", "source1", "reply"),
+      });
+
+      const counts = db.getSourceItemCounts(["source1"]);
+      expect(counts).toEqual({ messages: 2, files: 1, replies: 1 });
+    });
+
+    it("aggregates counts across multiple sources", () => {
+      db.updateSources({
+        ["source1"]: mockSourceMetadata("source1"),
+        ["source2"]: mockSourceMetadata("source2"),
+      });
+      db.updateItems({
+        ["msg1"]: mockItemMetadata("msg1", "source1", "message"),
+        ["file1"]: mockItemMetadata("file1", "source1", "file"),
+        ["msg2"]: mockItemMetadata("msg2", "source2", "message"),
+        ["reply1"]: mockItemMetadata("reply1", "source2", "reply"),
+      });
+
+      const counts = db.getSourceItemCounts(["source1", "source2"]);
+      expect(counts).toEqual({ messages: 2, files: 1, replies: 1 });
+    });
+
+    it("only counts items belonging to the selected sources", () => {
+      db.updateSources({
+        ["source1"]: mockSourceMetadata("source1"),
+        ["source2"]: mockSourceMetadata("source2"),
+      });
+      db.updateItems({
+        ["msg1"]: mockItemMetadata("msg1", "source1", "message"),
+        ["msg2"]: mockItemMetadata("msg2", "source2", "message"),
+        ["msg3"]: mockItemMetadata("msg3", "source2", "message"),
+      });
+
+      const counts = db.getSourceItemCounts(["source1"]);
+      expect(counts).toEqual({ messages: 1, files: 0, replies: 0 });
+    });
+  });
 });

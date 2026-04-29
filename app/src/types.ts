@@ -145,6 +145,12 @@ export type SourceWithItems = {
   lastSeenInteractionCount?: number | null;
 };
 
+export type SourceItemCounts = {
+  messages: number;
+  files: number;
+  replies: number;
+};
+
 export type Journalist = {
   uuid: string;
   data: JournalistMetadata;
