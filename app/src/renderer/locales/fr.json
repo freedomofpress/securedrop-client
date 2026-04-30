@@ -248,7 +248,6 @@
   "QuitModal": {
     "title": "Fermer la boîte de réception SecureDrop ?",
     "withDrafts": "Les brouillons de réponse seront supprimés.",
-    "noDrafts": "",
     "cancel": "Annuler",
     "ok": "Oui, quitter",
     "goBack": "Retour",

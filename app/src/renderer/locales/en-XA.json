@@ -216,8 +216,7 @@
     "Quit": "[Quit]",
     "discardAndQuit": "[!Discard and Quit!]",
     "goBack": "[Go Back]",
-    "title": "[!!Quit SecureDrop Inbox?!!]",
-    "noDrafts": ""
+    "title": "[!!Quit SecureDrop Inbox?!!]"
   },
   "MainContent": {
     "menu": {
