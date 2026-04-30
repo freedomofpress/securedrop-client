@@ -168,6 +168,23 @@ describe("Sources Component", () => {
       messagePreview: null,
       lastInteractionCount: 7,
     },
+    {
+      uuid: "source-5",
+      data: {
+        fingerprint: "fingerprint-5",
+        is_starred: false,
+        is_seen: true,
+        has_attachment: false,
+        journalist_designation: "bob ross",
+        last_updated: "2024-01-18T11:20:00Z",
+        public_key: "key-5",
+        uuid: "source-5",
+      },
+      isRead: true,
+      hasAttachment: false,
+      messagePreview: null,
+      lastInteractionCount: 7,
+    },
   ];
 
   const mockSearchResults: SearchResult[] = [
@@ -193,6 +210,12 @@ describe("Sources Component", () => {
       sourceUuid: "source-4",
       type: "source",
       snippet: "diana ross",
+      itemUuid: null,
+    },
+    {
+      sourceUuid: "source-5",
+      type: "source",
+      snippet: "bob ross",
       itemUuid: null,
     },
   ];
@@ -266,7 +289,7 @@ describe("Sources Component", () => {
       // Verify virtual list is being used
       const virtualList = screen.getByTestId("virtualized-list");
       expect(virtualList).toBeInTheDocument();
-      expect(virtualList.getAttribute("data-item-count")).toBe("4");
+      expect(virtualList.getAttribute("data-item-count")).toBe("5");
     });
 
     it("dispatches fetchSources action on mount", async () => {
@@ -450,7 +473,7 @@ describe("Sources Component", () => {
       const searchInput = screen.getByTestId("source-search-input");
       await userEvent.type(searchInput, "BOB");
 
-      // Wait for debounce and Bob Builder should be visible (case-insensitive search)
+      // Wait for debounce and Bob Builder and Bob Ross should be visible (case-insensitive search)
       await waitFor(
         () => {
           expect(
@@ -463,6 +486,7 @@ describe("Sources Component", () => {
           expect(
             screen.queryByTestId("source-source-4"),
           ).not.toBeInTheDocument();
+          expect(screen.queryByTestId("source-source-5")).toBeInTheDocument();
         },
         { timeout: 1000 },
       );
@@ -645,7 +669,8 @@ describe("Sources Component", () => {
 
       // Should be ordered by last_updated descending: source-4, source-2, source-1, source-3
       expect(sourceOrder).toEqual([
-        "source-source-4", // 2024-01-17 (newest)
+        "source-source-5", // 2024-01-18 (newest)
+        "source-source-4", // 2024-01-17
         "source-source-2", // 2024-01-16
         "source-source-1", // 2024-01-15
         "source-source-3", // 2024-01-14 (oldest)
@@ -671,7 +696,8 @@ describe("Sources Component", () => {
         "source-source-3", // 2024-01-14 (oldest)
         "source-source-1", // 2024-01-15
         "source-source-2", // 2024-01-16
-        "source-source-4", // 2024-01-17 (newest)
+        "source-source-4", // 2024-01-17
+        "source-source-5", // 2024-01-18 (newest)
       ]);
     });
 
@@ -696,7 +722,7 @@ describe("Sources Component", () => {
 
       sources = screen.getAllByTestId(/^source-source-/);
       sourceOrder = sources.map((el) => el.getAttribute("data-testid"));
-      expect(sourceOrder[0]).toBe("source-source-4"); // newest first
+      expect(sourceOrder[0]).toBe("source-source-5"); // newest first
     });
   });
 
@@ -708,18 +734,18 @@ describe("Sources Component", () => {
         expect(screen.getByTestId("source-source-1")).toBeInTheDocument();
       });
 
-      // Search for "b" (should match bob builder and charlie chaplin)
+      // Search for "bob" (should match bob builder and bob ross)
       const searchInput = screen.getByTestId("source-search-input");
-      await userEvent.type(searchInput, "b");
+      await userEvent.type(searchInput, "bob");
 
-      // Filter to starred (should only show bob builder since charlie isn't starred)
+      // Filter to starred (should only show bob builder since bob ross isn't starred)
       const filterButton = screen.getByTestId("filter-dropdown");
       await userEvent.click(filterButton);
       await userEvent.click(screen.getByText("Starred"));
 
       await waitFor(
         () => {
-          // Only Bob Builder should be visible (matches search "b" and is starred)
+          // Only Bob Builder should be visible (matches search "bob" and is starred)
           expect(
             screen.queryByTestId("source-source-1"),
           ).not.toBeInTheDocument();
@@ -729,6 +755,9 @@ describe("Sources Component", () => {
           ).not.toBeInTheDocument();
           expect(
             screen.queryByTestId("source-source-4"),
+          ).not.toBeInTheDocument();
+          expect(
+            screen.queryByTestId("source-source-5"),
           ).not.toBeInTheDocument();
         },
         { timeout: 1000 },
@@ -1524,14 +1553,16 @@ describe("Sources Component", () => {
         expect(screen.getByTestId("source-source-2")).toBeInTheDocument();
         expect(screen.getByTestId("source-source-3")).toBeInTheDocument();
         expect(screen.getByTestId("source-source-4")).toBeInTheDocument();
+        expect(screen.getByTestId("source-source-5")).toBeInTheDocument();
       });
 
-      // Select all four sources
+      // Select all five sources
       await userEvent.click(screen.getByTestId("select-all-checkbox"));
       expect(screen.getByTestId("source-checkbox-source-1")).toBeChecked();
       expect(screen.getByTestId("source-checkbox-source-2")).toBeChecked();
       expect(screen.getByTestId("source-checkbox-source-3")).toBeChecked();
       expect(screen.getByTestId("source-checkbox-source-4")).toBeChecked();
+      expect(screen.getByTestId("source-checkbox-source-5")).toBeChecked();
 
       // Search for "alice" — only source-1 (alice wonderland) is visible
       const searchInput = screen.getByTestId("source-search-input");
@@ -1549,6 +1580,9 @@ describe("Sources Component", () => {
           expect(
             screen.queryByTestId("source-source-4"),
           ).not.toBeInTheDocument();
+          expect(
+            screen.queryByTestId("source-source-5"),
+          ).not.toBeInTheDocument();
         },
         { timeout: 1000 },
       );
@@ -1563,6 +1597,7 @@ describe("Sources Component", () => {
           expect(screen.getByTestId("source-source-2")).toBeInTheDocument();
           expect(screen.getByTestId("source-source-3")).toBeInTheDocument();
           expect(screen.getByTestId("source-source-4")).toBeInTheDocument();
+          expect(screen.getByTestId("source-source-5")).toBeInTheDocument();
         },
         { timeout: 1000 },
       );
@@ -1572,8 +1607,9 @@ describe("Sources Component", () => {
       expect(screen.getByTestId("source-checkbox-source-2")).not.toBeChecked();
       expect(screen.getByTestId("source-checkbox-source-3")).not.toBeChecked();
       expect(screen.getByTestId("source-checkbox-source-4")).not.toBeChecked();
+      expect(screen.getByTestId("source-checkbox-source-5")).not.toBeChecked();
 
-      // Select-all should be indeterminate: one of four visible sources is selected
+      // Select-all should be indeterminate: one of five visible sources is selected
       const selectAllCheckbox = screen.getByTestId(
         "select-all-checkbox",
       ) as HTMLInputElement;
