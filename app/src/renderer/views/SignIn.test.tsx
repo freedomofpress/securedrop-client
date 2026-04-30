@@ -134,7 +134,7 @@ describe("SignInView Component", () => {
     const signInButton = screen.getByTestId("sign-in-button");
 
     // Fill in valid inputs
-    await userEvent.type(usernameInput, "neliebly");
+    await userEvent.type(usernameInput, "nelliebly");
     await userEvent.type(passphraseInput, "validPassphrase12345");
     await userEvent.type(oneTimeCodeInput, "123456");
 
@@ -175,7 +175,7 @@ describe("SignInView Component", () => {
     const signInButton = screen.getByTestId("sign-in-button");
 
     // Fill in valid inputs
-    await userEvent.type(usernameInput, "neliebly");
+    await userEvent.type(usernameInput, "nelliebly");
     await userEvent.type(passphraseInput, "validPassphrase12345");
     await userEvent.type(oneTimeCodeInput, "123456");
 
@@ -237,7 +237,7 @@ describe("SignInView Component", () => {
     const signInButton = screen.getByTestId("sign-in-button");
 
     // Fill in valid inputs
-    await userEvent.type(usernameInput, "neliebly");
+    await userEvent.type(usernameInput, "nelliebly");
     await userEvent.type(passphraseInput, "validPassphrase12345");
     await userEvent.type(oneTimeCodeInput, "123456");
 
