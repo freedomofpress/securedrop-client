@@ -15,9 +15,7 @@ function QuitModal() {
       autoFocusButton: "ok",
       title: t("title"),
       icon: null,
-      content: t(
-        Object.keys(drafts.drafts).length > 0 ? "withDrafts" : "noDrafts",
-      ),
+      content: Object.keys(drafts.drafts).length > 0 ? t("withDrafts") : "",
       cancelText: t("goBack"),
       okText: t(
         Object.keys(drafts.drafts).length > 0 ? "discardAndQuit" : "Quit",
