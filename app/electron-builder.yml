@@ -35,10 +35,12 @@ mac:
   target:
     - dmg
   category: public.app-category.productivity
-  hardenedRuntime: true
+  # Use ad-hoc signing
+  identity: "-"
+  hardenedRuntime: false
+  entitlements: mac/entitlements.mac.plist
+  entitlementsInherit: mac/entitlements.mac.plist
   gatekeeperAssess: false
-  entitlements: build/entitlements.mac.plist
-  entitlementsInherit: build/entitlements.mac.plist
   extraResources:
     - from: node_modules/@dbmate/darwin-arm64/bin/dbmate
       to: bin/dbmate
@@ -47,5 +49,4 @@ mac:
     - from: scripts/securedrop-test-key.asc
       to: keys/securedrop-test-key.asc
 dmg:
-  sign: true
   title: "${productName}-${version}"

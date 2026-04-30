@@ -1,0 +1,61 @@
+name: Mac Demo Build
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+# Cancel in-progress builds for the same branch except on main
+concurrency:
+  group: mac-demo-${{ github.ref }}
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
+
+permissions:
+  contents: read
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  mac-demo:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: "24.x"
+          cache: pnpm
+          cache-dependency-path: app/pnpm-lock.yaml
+
+      # Keep version in sync with rust-toolchain.toml
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@1.90.0
+
+      - name: Install node dependencies
+        working-directory: app
+        run: pnpm install
+
+      - name: Build Mac demo DMG
+        working-directory: app
+        env:
+          # Enable code-signing on PRs (off by default)
+          CSC_FOR_PULL_REQUEST: true
+        run: pnpm build:mac-demo
+
+      - name: Upload DMG artifact
+        uses: actions/upload-artifact@v7
+        with:
+          name: mac-demo
+          path: app/dist/*.dmg
