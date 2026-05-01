@@ -98,7 +98,7 @@ afterEach(() => {
 beforeEach(() => {
   // Mock the electronAPI before each test
   (window as any).electronAPI = {
-    request: vi.fn().mockResolvedValue({ data: "test" }),
+    login: vi.fn().mockRejectedValue(new Error("mock not implemented")),
     requestStream: vi.fn().mockResolvedValue({ sha256sum: "abc" }),
     getSystemLanguage: vi.fn().mockResolvedValue("en"),
     getCSPNonce: vi.fn().mockResolvedValue("nonce"),
@@ -109,6 +109,7 @@ beforeEach(() => {
       .mockRejectedValue(new Error("mock not implemented")),
     onItemUpdate: vi.fn().mockReturnValue(() => {}),
     onSourceUpdate: vi.fn().mockReturnValue(() => {}),
+    onSyncComplete: vi.fn().mockReturnValue(() => {}),
     onQuitRequested: vi.fn().mockReturnValue(() => {}),
     getItem: vi.fn().mockRejectedValue(new Error("mock not implemented")),
     getSources: vi.fn().mockResolvedValue([

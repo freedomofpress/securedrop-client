@@ -95,18 +95,12 @@ export const updateItemFetchStatus = createAsyncThunk(
   async ({
     itemUuid,
     fetchStatus,
-    authToken,
   }: {
     sourceUuid: string;
     itemUuid: string;
     fetchStatus: number;
-    authToken: string | undefined;
   }) => {
-    await window.electronAPI.updateFetchStatus(
-      itemUuid,
-      fetchStatus,
-      authToken,
-    );
+    await window.electronAPI.updateFetchStatus(itemUuid, fetchStatus);
     const item = await window.electronAPI.getItem(itemUuid);
     return { item };
   },

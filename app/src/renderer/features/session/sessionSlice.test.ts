@@ -12,7 +12,6 @@ import sessionReducer, {
 describe("sessionSlice", () => {
   const mockAuthData: AuthData = {
     expiration: "2025-07-16T19:25:44.388054+00:00",
-    token: "test-token-123",
     journalistUUID: "journalist-uuid-456",
     journalistFirstName: "John",
     journalistLastName: "Doe",
@@ -60,7 +59,6 @@ describe("sessionSlice", () => {
     it("should replace existing session state", () => {
       const newAuthData: AuthData = {
         expiration: "2025-12-31T23:59:59.000000+00:00",
-        token: "new-token-789",
         journalistUUID: "new-uuid-123",
         journalistFirstName: "Jane",
         journalistLastName: "Smith",

@@ -20,12 +20,13 @@ import { Datastore } from "./datastore";
 import { Crypto, CryptoConfig } from "./crypto";
 import { proxyJSONRequest } from "./proxy";
 import {
-  type ProxyRequest,
-  type ProxyResponse,
   type Source,
   type SourceWithItems,
   type Journalist,
   type AuthedRequest,
+  type SyncRequest,
+  type LoginCredentials,
+  type LoginResult,
   type Item,
   type DeviceStatus,
   type SearchResult,
@@ -36,6 +37,7 @@ import {
   PendingEventData,
   type ms,
 } from "../types";
+import { TokenResponseSchema, API_MINOR_VERSION } from "../schemas";
 import { syncMetadata, shouldSkipSync } from "./sync";
 import workerPath from "./fetch/worker?modulePath";
 import { Lock, LockTimeoutError } from "./sync/lock";
@@ -254,9 +256,11 @@ if (!gotTheLock) {
   }
 
   let fetchWorker: Worker | null = null;
+  let authToken: string | null = null;
+  let syncLoopTimer: NodeJS.Timeout | null = null;
 
-  function wakeFetchWorkerIfNeeded(authToken: string): void {
-    if (!fetchWorker) {
+  function wakeFetchWorkerIfNeeded(): void {
+    if (!fetchWorker || !authToken) {
       return;
     }
 
@@ -344,17 +348,63 @@ if (!gotTheLock) {
         return app.getVersion();
       });
 
-      // TODO: Remove this generic IPC and instead replace it with a dedicated login one
-      // since that's the only thing that uses it
       ipcMain.handle(
-        "request",
-        async (_event, request: ProxyRequest): Promise<ProxyResponse> => {
-          const result = await proxyJSONRequest(
-            request,
-            undefined,
-            30_000 as ms,
-          );
-          return result;
+        "login",
+        async (_event, credentials: LoginCredentials): Promise<LoginResult> => {
+          // Clear authToken on new login attempt
+          authToken = null;
+          try {
+            const result = await proxyJSONRequest(
+              {
+                method: "POST",
+                path_query: "/api/v1/token",
+                stream: false,
+                body: JSON.stringify({
+                  username: credentials.username,
+                  passphrase: credentials.passphrase,
+                  one_time_code: credentials.oneTimeCode,
+                }),
+                headers: { Prefer: `securedrop=${API_MINOR_VERSION}` },
+              },
+              undefined,
+              30_000 as ms,
+            );
+            if (result.status === 403) {
+              return { success: false, errorType: "credentials" };
+            }
+            // TODO: use a dedicated error message here that exposes the code
+            if (result.status !== 200 || !result.data) {
+              console.error(
+                `Authentication failed with HTTP status ${result.status}`,
+                result.data,
+              );
+              return { success: false, errorType: "generic" };
+            }
+
+            const resp = TokenResponseSchema.safeParse(result.data);
+            if (!resp.success) {
+              return { success: false, errorType: "generic" };
+            }
+            authToken = resp.data.token;
+
+            // Initiate sync loop
+            if (import.meta.env.MODE != "test") {
+              void runSyncLoop({});
+            }
+
+            return {
+              success: true,
+              expiration: resp.data.expiration,
+              journalistUUID: resp.data.journalist_uuid,
+              journalistFirstName: resp.data.journalist_first_name,
+              journalistLastName: resp.data.journalist_last_name,
+              lastHintedVersion: resp.data.hints.version,
+              lastHintedSources: resp.data.hints.sources,
+              lastHintedItems: resp.data.hints.items,
+            };
+          } catch {
+            return { success: false, errorType: "network" };
+          }
         },
       );
 
@@ -403,12 +453,7 @@ if (!gotTheLock) {
 
       ipcMain.handle(
         "updateFetchStatus",
-        async (
-          _event,
-          itemUuid: string,
-          fetchStatus: number,
-          authToken: string,
-        ) => {
+        async (_event, itemUuid: string, fetchStatus: number) => {
           // If the user is pausing or cancelling, abort any in-progress download
           // before updating the DB so the worker doesn't overwrite the new status
           if (
@@ -418,35 +463,14 @@ if (!gotTheLock) {
             fetchWorker?.postMessage({ type: "cancel", itemId: itemUuid });
           }
           db.updateFetchStatus(itemUuid, fetchStatus);
-          fetchWorker?.postMessage({
-            authToken: authToken,
-          } as AuthedRequest);
+          wakeFetchWorkerIfNeeded();
         },
       );
 
       ipcMain.handle(
         "syncMetadata",
-        async (_event, request: AuthedRequest): Promise<SyncStatus> => {
-          if (shouldSkipSync(db, request.hintedVersion)) {
-            console.log(`Already at ${request.hintedVersion}; skipping sync`);
-            wakeFetchWorkerIfNeeded(request.authToken);
-            return SyncStatus.NOT_MODIFIED;
-          }
-
-          let syncStatus = await syncWithLock(syncLock, db, request);
-
-          if (syncStatus === SyncStatus.UPDATED) {
-            // Check to see if there are still pending events
-            // If so, attempt a second sync. This may happen
-            // when there are multiple events per source
-            if (db.getPendingEvents().length > 0) {
-              syncStatus = await syncWithLock(syncLock, db, request);
-            }
-          }
-
-          wakeFetchWorkerIfNeeded(request.authToken);
-
-          return syncStatus;
+        async (_event, request: SyncRequest): Promise<SyncStatus> => {
+          return runSyncLoop(request);
         },
       );
 
@@ -753,6 +777,65 @@ if (!gotTheLock) {
       const mainWindow = createWindow();
 
       fetchWorker = spawnFetchWorker(mainWindow);
+
+      function scheduleNextSync(): void {
+        if (syncLoopTimer) {
+          clearTimeout(syncLoopTimer);
+        }
+        // Short-circuit loops on test
+        if (import.meta.env.MODE === "test") {
+          return;
+        }
+
+        syncLoopTimer = setTimeout(() => {
+          if (authToken) {
+            void runSyncLoop({});
+          }
+        }, 1000 * 60);
+      }
+
+      // Checks if sync is necessary, and then continually sync with the
+      // server until all pending events are flushed. Schedules the next sync
+      // after sync interval on completion.
+      async function runSyncLoop(request: SyncRequest): Promise<SyncStatus> {
+        try {
+          if (!authToken) {
+            return SyncStatus.FORBIDDEN;
+          }
+          if (shouldSkipSync(db, request.hintedVersion)) {
+            console.log(`Already at ${request.hintedVersion}; skipping sync`);
+            wakeFetchWorkerIfNeeded();
+            return SyncStatus.NOT_MODIFIED;
+          }
+
+          // Clear timer to unschedule syncs until this loop is complete
+          if (syncLoopTimer) {
+            clearTimeout(syncLoopTimer);
+          }
+
+          // Keep syncing while there are still pending events to flush
+          const authedRequest: AuthedRequest = { authToken, ...request };
+          let syncStatus = SyncStatus.NOT_MODIFIED;
+          do {
+            syncStatus = await syncWithLock(syncLock, db, authedRequest);
+            // Update renderer on each sync cycle completion
+            if (!mainWindow.isDestroyed()) {
+              mainWindow.webContents.send("sync-complete", syncStatus);
+            }
+            wakeFetchWorkerIfNeeded();
+          } while (
+            syncStatus === SyncStatus.UPDATED &&
+            db.getPendingEvents().length > 0
+          );
+          // If we receive an auth error from sync, reset the auth token
+          if (syncStatus === SyncStatus.FORBIDDEN) {
+            authToken = null;
+          }
+          return syncStatus;
+        } finally {
+          scheduleNextSync();
+        }
+      }
     })
     .catch((error) => {
       console.error("Unhandled error during app startup:", error);

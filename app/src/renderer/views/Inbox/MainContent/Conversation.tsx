@@ -186,11 +186,10 @@ const Conversation = memo(function Conversation({
 
   // Keyboard shortcut: Ctrl+D initiates download for all files
   const downloadAllFiles = useCallback(() => {
-    if (!sourceWithItems || !session.authData?.token) {
+    if (!sourceWithItems || !session.authData) {
       return;
     }
 
-    const token = session.authData.token;
     sourceWithItems.items.forEach((item) => {
       if (
         item.data.kind === "file" &&
@@ -202,7 +201,6 @@ const Conversation = memo(function Conversation({
             sourceUuid: sourceWithItems.uuid,
             itemUuid: item.uuid,
             fetchStatus: FetchStatus.DownloadInProgress,
-            authToken: token,
           }),
         );
       }

@@ -6,8 +6,6 @@ import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router";
 import { useTranslation } from "react-i18next";
 
-import type { ProxyRequest } from "../../types";
-import { API_MINOR_VERSION, TokenResponseSchema } from "../../schemas";
 import { useAppDispatch, useAppSelector } from "../hooks";
 import {
   setAuth,
@@ -80,61 +78,36 @@ function SignInView() {
 
     // Authenticate to the API
     try {
-      const res = await window.electronAPI.request({
-        method: "POST",
-        path_query: "/api/v1/token",
-        stream: false,
-        body: JSON.stringify({
-          username: values.username,
-          passphrase: values.passphrase,
-          one_time_code: values.oneTimeCode,
-        }),
-        headers: {
-          Prefer: `securedrop=${API_MINOR_VERSION}`,
-        },
-      } as ProxyRequest);
+      const result = await window.electronAPI.login({
+        username: values.username,
+        passphrase: values.passphrase,
+        oneTimeCode: values.oneTimeCode,
+      });
 
-      // If the credentials were rejected, fail
-      if (res.status == 403) {
-        console.error("Authentication failed:", res.data);
-        setAuthErrorMessage(errorMessageCredentials);
-        setAuthError(true);
-        return;
-      }
-
-      // If it's a non-200 status code, fail too
-      // TODO: use a dedicated error message here that exposes the code
-      if (res.status != 200) {
-        console.error(
-          `Authentication failed with HTTP status ${res.status}`,
-          res.data,
-        );
-        setAuthErrorMessage(errorMessageGeneric);
-        setAuthError(true);
-        return;
-      }
-
-      if (!res.data) {
-        console.error("Authentication failed: no data received");
-        setAuthErrorMessage(errorMessageGeneric);
+      if (!result.success) {
+        console.error("Authentication failed:", result.errorType);
+        if (result.errorType === "credentials") {
+          setAuthErrorMessage(errorMessageCredentials);
+        } else if (result.errorType === "network") {
+          setAuthErrorMessage(errorMessageNetwork);
+        } else {
+          setAuthErrorMessage(errorMessageGeneric);
+        }
         setAuthError(true);
         return;
       }
 
       try {
-        const resp = TokenResponseSchema.parse(res.data);
-
         // Update the session state
         dispatch(
           setAuth({
-            expiration: resp.expiration,
-            token: resp.token,
-            journalistUUID: resp.journalist_uuid,
-            journalistFirstName: resp.journalist_first_name,
-            journalistLastName: resp.journalist_last_name,
-            lastHintedVersion: resp.hints.version,
-            lastHintedSources: resp.hints.sources,
-            lastHintedItems: resp.hints.items,
+            expiration: result.expiration,
+            journalistUUID: result.journalistUUID,
+            journalistFirstName: result.journalistFirstName,
+            journalistLastName: result.journalistLastName,
+            lastHintedVersion: result.lastHintedVersion,
+            lastHintedSources: result.lastHintedSources,
+            lastHintedItems: result.lastHintedItems,
           } as AuthData),
         );
 
@@ -144,14 +117,14 @@ function SignInView() {
         // Redirect to home
         navigate("/");
       } catch (e) {
-        console.error("Failed to validate or update session state:", e);
+        console.error("Failed to update session state:", e);
         dispatch(setUnauth(undefined));
 
         setAuthErrorMessage(errorMessageGeneric);
         setAuthError(true);
       }
     } catch (e) {
-      console.error("Proxy request failed:", e);
+      console.error("Login IPC failed:", e);
       dispatch(setUnauth(undefined));
 
       setAuthErrorMessage(errorMessageNetwork);

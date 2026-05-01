@@ -124,7 +124,6 @@ describe("Journalist Menu Component", () => {
         status: SessionStatus.Auth,
         authData: {
           expiration: "2037-07-16T19:25:44.388054+00:00",
-          token: "test-token-123",
           journalistUUID: "journalist-1",
           journalistFirstName: "Daniel",
           journalistLastName: "Ellsberg",

@@ -168,7 +168,6 @@ describe("Reply", () => {
         status: SessionStatus.Auth,
         authData: {
           expiration: "2025-07-16T19:25:44.388054+00:00",
-          token: "test-token-123",
           journalistUUID: "journalist-1", // Current user is journalist-1
           journalistFirstName: "Daniel",
           journalistLastName: "Ellsberg",
@@ -214,7 +213,6 @@ describe("Reply", () => {
           status: SessionStatus.Auth,
           authData: {
             expiration: "2025-07-16T19:25:44.388054+00:00",
-            token: "test-token-123",
             journalistUUID: "journalist-2", // Current user is journalist-2
             journalistFirstName: "",
             journalistLastName: "",
@@ -283,7 +281,6 @@ describe("Reply", () => {
           status: SessionStatus.Auth,
           authData: {
             expiration: "2025-07-16T19:25:44.388054+00:00",
-            token: "test-token-123",
             journalistUUID: "journalist-1", // Same as the reply author
             journalistFirstName: "Daniel",
             journalistLastName: "Ellsberg",
@@ -310,7 +307,6 @@ describe("Reply", () => {
           status: SessionStatus.Auth,
           authData: {
             expiration: "2025-07-16T19:25:44.388054+00:00",
-            token: "test-token-123",
             journalistUUID: "journalist-1", // Same as reply author
             journalistFirstName: "Daniel",
             journalistLastName: "Ellsberg",
@@ -337,7 +333,6 @@ describe("Reply", () => {
           status: SessionStatus.Auth,
           authData: {
             expiration: "2025-07-16T19:25:44.388054+00:00",
-            token: "test-token-123",
             journalistUUID: "journalist-2", // Different from reply author
             journalistFirstName: "Current",
             journalistLastName: "User",
@@ -383,7 +378,6 @@ describe("Reply", () => {
             status: SessionStatus.Auth,
             authData: {
               expiration: "2025-07-16T19:25:44.388054+00:00",
-              token: "test-token-123",
               journalistUUID: "journalist-1",
               journalistFirstName: "Daniel",
               journalistLastName: "Ellsberg",
@@ -410,7 +404,6 @@ describe("Reply", () => {
             status: SessionStatus.Auth,
             authData: {
               expiration: "2025-07-16T19:25:44.388054+00:00",
-              token: "test-token-123",
               journalistUUID: "journalist-99", // Not in journalists list
               journalistFirstName: "New",
               journalistLastName: "User",
@@ -437,7 +430,6 @@ describe("Reply", () => {
             status: SessionStatus.Auth,
             authData: {
               expiration: "2025-07-16T19:25:44.388054+00:00",
-              token: "test-token-123",
               journalistUUID: "journalist-2", // This journalist has no first/last name
               journalistFirstName: "",
               journalistLastName: "",
@@ -464,7 +456,6 @@ describe("Reply", () => {
             status: SessionStatus.Auth,
             authData: {
               expiration: "2025-07-16T19:25:44.388054+00:00",
-              token: "test-token-123",
               journalistUUID: "journalist-99",
               journalistFirstName: "John",
               journalistLastName: "",
@@ -539,7 +530,6 @@ describe("Reply", () => {
         status: SessionStatus.Auth,
         authData: {
           expiration: "2025-07-16T19:25:44.388054+00:00",
-          token: "test-token-123",
           journalistUUID: "journalist-1",
           journalistFirstName: "Daniel",
           journalistLastName: "Ellsberg",
@@ -596,7 +586,6 @@ describe("Reply", () => {
         status: SessionStatus.Auth,
         authData: {
           expiration: "2025-07-16T19:25:44.388054+00:00",
-          token: "test-token-123",
           journalistUUID: "journalist-1",
           journalistFirstName: "Daniel",
           journalistLastName: "Ellsberg",
@@ -686,7 +675,6 @@ describe("Reply", () => {
         status: SessionStatus.Auth,
         authData: {
           expiration: "2025-07-16T19:25:44.388054+00:00",
-          token: "test-token-123",
           journalistUUID: "journalist-1",
           journalistFirstName: "Daniel",
           journalistLastName: "Ellsberg",

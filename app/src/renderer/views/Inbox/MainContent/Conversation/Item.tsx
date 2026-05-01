@@ -7,7 +7,7 @@ import "./Item.css";
 import Message from "./Item/Message";
 import Reply from "./Item/Reply";
 import File from "./Item/File";
-import { useAppDispatch, useAppSelector } from "../../../../hooks";
+import { useAppDispatch } from "../../../../hooks";
 import { updateItemFetchStatus } from "../../../../features/conversation/conversationSlice";
 
 import { memo, useCallback } from "react";
@@ -19,7 +19,6 @@ interface ItemProps {
 
 const Item = memo(function ItemComponent({ item, designation }: ItemProps) {
   const dispatch = useAppDispatch();
-  const session = useAppSelector((state) => state.session);
 
   const onFetchStatusUpdate = useCallback(
     async (update: ItemUpdate) => {
@@ -29,12 +28,11 @@ const Item = memo(function ItemComponent({ item, designation }: ItemProps) {
             sourceUuid: item.data.source ?? "",
             itemUuid: update.item_uuid,
             fetchStatus: update.fetch_status!,
-            authToken: session.authData?.token,
           }),
         );
       }
     },
-    [dispatch, item.data.source, session.authData?.token],
+    [dispatch, item.data.source],
   );
 
   const kind = item.data.kind;

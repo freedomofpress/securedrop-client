@@ -2,13 +2,13 @@
 // https://www.electronjs.org/docs/latest/tutorial/process-model#preload-scripts
 import { contextBridge, ipcRenderer } from "electron";
 import {
-  type ProxyJSONResponse,
-  type ProxyRequest,
   type ProxyResponse,
   type Source,
   type SourceWithItems,
   type Journalist,
-  type AuthedRequest,
+  type SyncRequest,
+  type LoginCredentials,
+  type LoginResult,
   type SearchResult,
   type FirstRunStatus,
   Item,
@@ -16,6 +16,7 @@ import {
   SyncStatus,
   DeviceStatus,
   PendingEventData,
+  ProxyRequest,
 } from "../types";
 
 // Log the performance of IPC calls
@@ -44,22 +45,21 @@ const electronAPI = {
     ipcRenderer.invoke("getAppVersion"),
   ),
   quitApp: logIpcCall<string>("quitApp", () => ipcRenderer.invoke("quitApp")),
-  request: logIpcCall<ProxyJSONResponse>("request", (request: ProxyRequest) =>
-    ipcRenderer.invoke("request", request),
+  login: logIpcCall<LoginResult>("login", (credentials: LoginCredentials) =>
+    ipcRenderer.invoke("login", credentials),
   ),
   requestStream: logIpcCall<ProxyResponse>(
     "requestStream",
     (request: ProxyRequest, downloadPath: string) =>
       ipcRenderer.invoke("requestStream", request, downloadPath),
   ),
-  syncMetadata: logIpcCall<SyncStatus>(
-    "syncMetadata",
-    (request: AuthedRequest) => ipcRenderer.invoke("syncMetadata", request),
+  syncMetadata: logIpcCall<SyncStatus>("syncMetadata", (request: SyncRequest) =>
+    ipcRenderer.invoke("syncMetadata", request),
   ),
   updateFetchStatus: logIpcCall(
     "updateFetchStatus",
-    (itemUuid: string, fetchStatus: number, authToken: string) =>
-      ipcRenderer.invoke("updateFetchStatus", itemUuid, fetchStatus, authToken),
+    (itemUuid: string, fetchStatus: number) =>
+      ipcRenderer.invoke("updateFetchStatus", itemUuid, fetchStatus),
   ),
   getSources: logIpcCall<Source[]>("getSources", () =>
     ipcRenderer.invoke("getSources"),
@@ -136,6 +136,12 @@ const electronAPI = {
       callback(source);
     ipcRenderer.on("source-update", listener);
     return () => ipcRenderer.removeListener("source-update", listener);
+  },
+  onSyncComplete: (callback: (status: SyncStatus) => void) => {
+    const listener = (_event: Electron.IpcRendererEvent, status: SyncStatus) =>
+      callback(status);
+    ipcRenderer.on("sync-complete", listener);
+    return () => ipcRenderer.removeListener("sync-complete", listener);
   },
   onQuitRequested: (callback: () => void) => {
     const listener = () => callback();

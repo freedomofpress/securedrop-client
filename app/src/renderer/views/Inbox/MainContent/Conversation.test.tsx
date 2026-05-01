@@ -518,7 +518,6 @@ describe("Conversation new message indicator", () => {
             status: SessionStatus.Auth,
             authData: {
               expiration: "2025-01-01T00:00:00Z",
-              token: "token",
               journalistUUID: "journalist-1",
               journalistFirstName: "Test",
               journalistLastName: "User",
