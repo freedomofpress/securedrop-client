@@ -1,5 +1,6 @@
 import Database, { Statement } from "better-sqlite3";
 import { SearchResult } from "../../types";
+import { JsonArray } from "./utils";
 
 type SearchRow = {
   source_uuid: string;
@@ -79,7 +80,10 @@ export class Search {
 
   private searchStmt: Statement<[string, number, number], SearchRow>;
   private deleteByItemStmt: Statement<[string], void>;
-  private deleteItemManyStmt: Statement<{ uuids_json: string }, void>;
+  private deleteItemManyStmt: Statement<
+    { uuids_json: JsonArray<string> },
+    void
+  >;
   private deleteBySourceStmt: Statement<[string], void>;
   private upsertItemStmt: Statement<
     {
@@ -221,10 +225,8 @@ export class Search {
     this.deleteByItemStmt.run(itemUuid);
   }
 
-  removeItemMany(uuidsJSON: string): void {
-    this.deleteItemManyStmt.run({
-      uuids_json: uuidsJSON,
-    });
+  removeItemMany(uuids: JsonArray<string>): void {
+    this.deleteItemManyStmt.run({ uuids_json: uuids });
   }
 
   close(): void {

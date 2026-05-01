@@ -34,6 +34,7 @@ import {
 } from "../../types";
 import { Crypto } from "../crypto";
 import { Search } from "./search";
+import { JsonArray, jsonArray } from "./utils";
 
 // Truncate message previews to 200 Unicode code points
 // at the database layer; CSS will handle the rest
@@ -115,7 +116,7 @@ export class DB {
     void
   >;
   private deleteItem: Statement<{ uuid: string }, void>;
-  private deleteItemMany: Statement<{ uuids_json: string }, void>;
+  private deleteItemMany: Statement<{ uuids_json: JsonArray<string> }, void>;
   private updateItemFetchStatus: Statement<{
     uuid: string;
     fetch_status: number;
@@ -134,7 +135,7 @@ export class DB {
     fetch_status: number;
   }>;
   private selectItem: Statement<{ uuid: string }, ItemRow>;
-  private selectItemMany: Statement<{ uuids_json: string }, ItemRow>;
+  private selectItemMany: Statement<{ uuids_json: JsonArray<string> }, ItemRow>;
 
   private selectAllJournalistVersion: Statement<
     [],
@@ -565,7 +566,7 @@ export class DB {
       const deletedItems: Item[] = [];
       for (let i = 0; i < items.length; i += DELETE_BATCH_SIZE) {
         const batch = items.slice(i, i + DELETE_BATCH_SIZE);
-        const uuids_json = JSON.stringify(batch);
+        const uuids_json = jsonArray(batch);
         // Batch fetch before delete so callers can act on deleted items
         const rows = this.selectItemMany.all({ uuids_json }) as ItemRow[];
         rows.forEach((row) => {
