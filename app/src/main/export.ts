@@ -17,6 +17,12 @@ import {
   PrintStatus,
 } from "../types";
 
+const WHISTLEFLOW_ARGS = [
+  "whistleflow-view",
+  "qubes.Filecopy",
+  "/usr/lib/qubes/qfile-agent",
+];
+
 const mkdtemp = promisify(mkdtempCb);
 const chmodAsync = promisify(chmod);
 
@@ -121,6 +127,7 @@ export type ExportEvent =
   | { action: "initiateExport" }
   | { action: "preflightSuccess" }
   | { action: "export" }
+  | { action: "exportDirect" }
   | { action: "exportSuccess" }
   | { action: "fail"; error: Error; status?: DeviceStatus }
   | { action: "cancel" };
@@ -147,6 +154,9 @@ export class ExportStateMachine implements StateMachine<
       case ExportState.Error:
         if (event.action === "initiateExport") {
           next = ExportState.ExportPreflight;
+        }
+        if (event.action === "exportDirect") {
+          next = ExportState.Exporting;
         }
         break;
       case ExportState.ExportPreflight:
@@ -313,18 +323,23 @@ export class ArchiveExporter {
     return archivePath;
   }
 
-  async runQrexecExport(archivePath: string): Promise<void> {
+  async runQrexecExport(
+    archivePath: string,
+    overrideArgs?: string[],
+  ): Promise<void> {
     return new Promise<void>((resolve, reject) => {
       this.processStderr = ""; // Reset buffer at start
       // args uses positional values, we intentionally avoid shell.
       const qrexec = "/usr/bin/qrexec-client-vm";
       const args = [
         "--",
-        this.backendQube,
-        "qubes.OpenInVM",
-        "/usr/lib/qubes/qopen-in-vm",
-        "--view-only",
-        "--",
+        ...(overrideArgs ?? [
+          this.backendQube,
+          "qubes.OpenInVM",
+          "/usr/lib/qubes/qopen-in-vm",
+          "--view-only",
+          "--",
+        ]),
         archivePath,
       ];
 
@@ -587,11 +602,12 @@ export class Exporter extends ArchiveExporter {
     filepaths: string[],
     passphrase: string | null,
     sourceName?: string,
+    whistleflow?: boolean,
   ): Promise<DeviceStatus> {
     let status: DeviceStatus;
     try {
       console.log(`Begin exporting ${filepaths.length} item(s)`);
-      this.fsm.transition({ action: "export" });
+      this.fsm.transition({ action: whistleflow ? "exportDirect" : "export" });
 
       const metadata = { ...Exporter.DISK_METADATA } as Record<string, unknown>;
       if (passphrase) {
@@ -601,16 +617,32 @@ export class Exporter extends ArchiveExporter {
       this.tmpdir = await mkdtemp(path.join(os.tmpdir(), "sd-export-"));
       await chmodAsync(this.tmpdir, 0o700);
 
+      let filename = Exporter.DISK_FILENAME;
+      if (whistleflow) {
+        const now = new Date();
+        const isoString: string = now.toISOString();
+        filename = `export-${isoString}.tar`;
+      }
+
       const archivePath = await this.createArchive({
         archiveDir: this.tmpdir,
-        archiveFilename: Exporter.DISK_FILENAME,
+        archiveFilename: filename,
         metadata,
         filepaths,
         sourceName,
       });
 
-      await this.runQrexecExport(archivePath);
-      status = this._onComplete(false);
+      if (whistleflow) {
+        await this.runQrexecExport(archivePath, WHISTLEFLOW_ARGS);
+        this.cleanupTmpdir();
+        this.fsm.transition({ action: "exportSuccess" });
+        this.process = null;
+        this.processStderr = "";
+        status = ExportStatus.SUCCESS_EXPORT;
+      } else {
+        await this.runQrexecExport(archivePath);
+        status = this._onComplete(false);
+      }
     } catch (err) {
       console.log("Export failed", err);
       this._onError();

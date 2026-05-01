@@ -102,6 +102,7 @@ describe("MainContent Component", () => {
     (window as any).electronAPI = {
       getSourceWithItems: vi.fn().mockResolvedValue(mockSourceWithItems),
       addPendingItemsSeenBatch: vi.fn().mockResolvedValue(undefined),
+      getWhistleflowEnabled: vi.fn().mockResolvedValue(false),
     };
   });
 

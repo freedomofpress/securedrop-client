@@ -10,6 +10,7 @@ export class Config {
   readonly is_qubes!: boolean;
   readonly qubes_gpg_domain!: string;
   readonly sd_submission_key_fpr!: string;
+  readonly whistleflow!: boolean;
 
   public static load(noQubes: boolean): Config {
     const isQubes = noQubes ? !noQubes : detectQubes();
@@ -21,6 +22,7 @@ export class Config {
       gnupghome: readEnvironment("GNUPGHOME", ""),
       // TODO: implement SD_PROXY_VM_NAME
       is_qubes: isQubes,
+      whistleflow: read(isQubes, "WHISTLEFLOW", "false") === "true",
     };
   }
 }

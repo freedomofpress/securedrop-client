@@ -128,13 +128,14 @@ if (!gotTheLock) {
   const noFirstRun = args.includes("--no-first-run");
   const shouldAutoLogin = args.includes("--login");
 
-  function initializeMainDependencies(noQubesMode: boolean): {
+  // Load config
+  const config = Config.load(noQubes);
+
+  function initializeMainDependencies(): {
     db: Datastore;
     cryptoConfig: CryptoConfig;
   } {
     try {
-      const config = Config.load(noQubesMode);
-
       // Create crypto config + initialize
       const configForCrypto: CryptoConfig = {
         submissionKeyFingerprint: config.sd_submission_key_fpr,
@@ -157,7 +158,7 @@ if (!gotTheLock) {
     }
   }
 
-  const { db, cryptoConfig } = initializeMainDependencies(noQubes);
+  const { db, cryptoConfig } = initializeMainDependencies();
 
   // Generate a CSP nonce for this session (used by Ant Design)
   const cspNonce = randomBytes(32).toString("base64");
@@ -547,6 +548,13 @@ if (!gotTheLock) {
         return is.dev && shouldAutoLogin;
       });
 
+      ipcMain.handle(
+        "getWhistleflowEnabled",
+        async (_event): Promise<boolean> => {
+          return config.whistleflow;
+        },
+      );
+
       ipcMain.handle("getCSPNonce", async (_event): Promise<string> => {
         return cspNonce;
       });
@@ -601,6 +609,7 @@ if (!gotTheLock) {
           _event,
           sourceUuid: string,
           passphrase: string,
+          whistleflow?: boolean,
         ): Promise<DeviceStatus> => {
           try {
             const filePath: string = await writeTranscript(sourceUuid, db);
@@ -610,7 +619,12 @@ if (!gotTheLock) {
             }
             const sourceWithItems = db.getSourceWithItems(sourceUuid);
             const sourceName = sourceWithItems.data.journalist_designation;
-            return await exporter.export([filePath], passphrase, sourceName);
+            return await exporter.export(
+              [filePath],
+              passphrase,
+              sourceName,
+              whistleflow,
+            );
           } catch (error) {
             console.error(
               `Failed to export transcript for source: ${sourceUuid}:`,
@@ -627,6 +641,7 @@ if (!gotTheLock) {
           _event,
           itemUuids: string[],
           passphrase: string,
+          whistleflow?: boolean,
         ): Promise<DeviceStatus> => {
           const filenames: string[] = [];
           let sourceName: string | undefined;
@@ -648,7 +663,12 @@ if (!gotTheLock) {
               sourceName = source.data.journalist_designation;
             }
           }
-          return await exporter.export(filenames, passphrase, sourceName);
+          return await exporter.export(
+            filenames,
+            passphrase,
+            sourceName,
+            whistleflow,
+          );
         },
       );
 
@@ -658,6 +678,7 @@ if (!gotTheLock) {
           _event,
           sourceUuid: string,
           passphrase: string,
+          whistleflow?: boolean,
         ): Promise<DeviceStatus> => {
           try {
             const transcriptPath: string = await writeTranscript(
@@ -682,7 +703,12 @@ if (!gotTheLock) {
               }
             }
             const sourceName = sourceWithItems.data.journalist_designation;
-            return await exporter.export(filenames, passphrase, sourceName);
+            return await exporter.export(
+              filenames,
+              passphrase,
+              sourceName,
+              whistleflow,
+            );
           } catch (error) {
             console.error(`Failed to export source: ${sourceUuid}:`, error);
             throw error;

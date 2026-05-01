@@ -150,18 +150,26 @@ const electronAPI = {
   ),
   exportTranscript: logIpcCall<DeviceStatus>(
     "exportTranscript",
-    (sourceUuid: string, passphrase: string) =>
-      ipcRenderer.invoke("exportTranscript", sourceUuid, passphrase),
+    (sourceUuid: string, passphrase: string, whistleflow?: boolean) =>
+      ipcRenderer.invoke(
+        "exportTranscript",
+        sourceUuid,
+        passphrase,
+        whistleflow,
+      ),
   ),
   export: logIpcCall<DeviceStatus>(
     "export",
-    (itemUuids: string[], passphrase: string) =>
-      ipcRenderer.invoke("export", itemUuids, passphrase),
+    (itemUuids: string[], passphrase: string, whistleflow?: boolean) =>
+      ipcRenderer.invoke("export", itemUuids, passphrase, whistleflow),
   ),
   exportSource: logIpcCall<DeviceStatus>(
     "exportSource",
-    (sourceUuid: string, passphrase: string) =>
-      ipcRenderer.invoke("exportSource", sourceUuid, passphrase),
+    (sourceUuid: string, passphrase: string, whistleflow?: boolean) =>
+      ipcRenderer.invoke("exportSource", sourceUuid, passphrase, whistleflow),
+  ),
+  getWhistleflowEnabled: logIpcCall<boolean>("getWhistleflowEnabled", () =>
+    ipcRenderer.invoke("getWhistleflowEnabled"),
   ),
   initiatePrint: logIpcCall<DeviceStatus>("initiatePrint", () =>
     ipcRenderer.invoke("initiatePrint"),

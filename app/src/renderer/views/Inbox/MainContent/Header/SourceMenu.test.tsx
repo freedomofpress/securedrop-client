@@ -224,7 +224,7 @@ describe("SourceMenu Component", () => {
       await userEvent.click(menuButton);
 
       const exportSourceItem = screen.getByRole("menuitem", {
-        name: /export transcript and files/i,
+        name: "Export Transcript and Files",
       });
       await userEvent.click(exportSourceItem);
 
@@ -262,7 +262,7 @@ describe("SourceMenu Component", () => {
       await userEvent.click(menuButton);
 
       const exportSourceItem = screen.getByRole("menuitem", {
-        name: /export transcript and files/i,
+        name: "Export Transcript and Files",
       });
       await userEvent.click(exportSourceItem);
 
