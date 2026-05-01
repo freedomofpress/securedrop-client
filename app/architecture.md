@@ -269,15 +269,15 @@ The sync process keeps the client synchronized with the SecureDrop server. The c
 
 User actions that modify server state are stored as pending events until confirmed:
 
-| Event Type                    | Description                                               |
-| ----------------------------- | --------------------------------------------------------- |
-| `source_starred`              | Source starred by journalist                              |
-| `source_unstarred`            | Source unstarred                                          |
-| `source_deleted`              | Source deleted                                            |
-| `source_conversation_deleted` | Source conversation (all submissions and replies) deleted |
-| `item_deleted`                | Item deleted                                              |
-| `item_seen`                   | Reply marked as read                                      |
-| `reply_sent`                  | New reply submitted                                       |
+| Event Type                      | Description                                                                                      |
+| ------------------------------- | ------------------------------------------------------------------------------------------------ |
+| `reply_sent`                    | New reply submitted                                                                              |
+| `item_deleted`                  | Item deleted                                                                                     |
+| `source_deleted`                | Source deleted                                                                                   |
+| `source_conversation_truncated` | Items up to the specified interaction count (inclusive) deleted from the source's conversation   |
+| `source_starred`                | Source starred by journalist                                                                     |
+| `source_unstarred`              | Source unstarred                                                                                 |
+| `source_conversation_seen`      | Items up to the specified interaction count (inclusive) have been seen by the current journalist |
 
 Pending events use Snowflake IDs for ordering. The `sources_projected` and `items_projected` database views show the expected state after pending events are applied. This allows the UI to display pending event state even while the events are not yet synced to the server.
 
