@@ -247,7 +247,7 @@ describe("conversationSlice", () => {
         drafts: {},
       },
       sources: {
-        sources: [],
+        sources: {},
         activeSourceUuid: null,
         loading: false,
         error: null,

@@ -63,6 +63,10 @@ const mockSources: SourceType[] = [
   },
 ];
 
+const mockSourcesRecord: Record<string, SourceType> = Object.fromEntries(
+  mockSources.map((s) => [s.uuid, s]),
+);
+
 describe("sourcesSlice", () => {
   let store: ReturnType<typeof configureStore>;
   const mockGetSources = vi.fn();
@@ -91,7 +95,7 @@ describe("sourcesSlice", () => {
     };
 
     // Default mock implementations
-    mockGetSources.mockResolvedValue(mockSources);
+    mockGetSources.mockResolvedValue(mockSourcesRecord);
   });
 
   afterEach(() => {
@@ -102,7 +106,7 @@ describe("sourcesSlice", () => {
     it("has correct initial state", () => {
       const state = (store.getState() as any).sources;
       expect(state).toEqual({
-        sources: [],
+        sources: {},
         activeSourceUuid: null,
         loading: false,
         error: null,
@@ -115,7 +119,7 @@ describe("sourcesSlice", () => {
     it("clears the error state", () => {
       // First, set an error state
       const initialState: SourcesState = {
-        sources: [],
+        sources: {},
         activeSourceUuid: null,
         loading: false,
         error: "Some error message",
@@ -126,7 +130,7 @@ describe("sourcesSlice", () => {
       const newState = sourcesSlice(initialState, action);
 
       expect(newState.error).toBeNull();
-      expect(newState.sources).toEqual([]);
+      expect(newState.sources).toEqual({});
       expect(newState.activeSourceUuid).toBeNull();
       expect(newState.loading).toBe(false);
     });
@@ -135,7 +139,7 @@ describe("sourcesSlice", () => {
   describe("setActiveSource action", () => {
     it("sets the active source UUID", () => {
       const initialState: SourcesState = {
-        sources: [],
+        sources: {},
         activeSourceUuid: null,
         loading: false,
         error: null,
@@ -152,7 +156,7 @@ describe("sourcesSlice", () => {
   describe("clearActiveSource action", () => {
     it("clears the active source UUID", () => {
       const initialState: SourcesState = {
-        sources: [],
+        sources: {},
         activeSourceUuid: "source-1",
         loading: false,
         error: null,
@@ -169,7 +173,7 @@ describe("sourcesSlice", () => {
   describe("conversation indicator actions", () => {
     it("initializes indicator once per source", () => {
       const initialState: SourcesState = {
-        sources: [],
+        sources: {},
         activeSourceUuid: null,
         loading: false,
         error: null,
@@ -201,7 +205,7 @@ describe("sourcesSlice", () => {
 
     it("marks conversation last seen with latest count", () => {
       const initialState: SourcesState = {
-        sources: [],
+        sources: {},
         activeSourceUuid: null,
         loading: false,
         error: null,
@@ -241,7 +245,7 @@ describe("sourcesSlice", () => {
       expect(mockGetSources).toHaveBeenCalledTimes(1);
 
       const state = (store.getState() as any).sources;
-      expect(state.sources).toEqual(mockSources);
+      expect(state.sources).toEqual(mockSourcesRecord);
       expect(state.loading).toBe(false);
       expect(state.error).toBeNull();
     });
@@ -255,17 +259,19 @@ describe("sourcesSlice", () => {
       expect(mockGetSources).toHaveBeenCalledTimes(1);
 
       const state = (store.getState() as any).sources;
-      expect(state.sources).toEqual([]);
+      expect(state.sources).toEqual({});
       expect(state.loading).toBe(false);
       expect(state.error).toBe(errorMessage);
     });
 
     it("sets loading state during fetch", async () => {
       // Create a promise that we can control
-      let resolveGetSources!: (value: SourceType[]) => void;
-      const getSourcesPromise = new Promise<SourceType[]>((resolve) => {
-        resolveGetSources = resolve;
-      });
+      let resolveGetSources!: (value: Record<string, SourceType>) => void;
+      const getSourcesPromise = new Promise<Record<string, SourceType>>(
+        (resolve) => {
+          resolveGetSources = resolve;
+        },
+      );
       mockGetSources.mockReturnValue(getSourcesPromise);
 
       const action = fetchSources();
@@ -276,7 +282,7 @@ describe("sourcesSlice", () => {
       expect((store.getState() as any).sources.error).toBeNull();
 
       // Resolve the promise
-      resolveGetSources!(mockSources);
+      resolveGetSources!(mockSourcesRecord);
       await dispatchPromise;
 
       // Check loading state is false after completion
@@ -299,11 +305,11 @@ describe("sourcesSlice", () => {
       olderItemsLoading: false,
     };
 
-    it("selectSources returns sources array", () => {
+    it("selectSources returns sources map", () => {
       const state = {
         session: mockSessionState,
         sources: {
-          sources: mockSources,
+          sources: mockSourcesRecord,
           activeSourceUuid: null,
           loading: false,
           error: null,
@@ -324,14 +330,14 @@ describe("sourcesSlice", () => {
         drafts: { drafts: {} },
       };
 
-      expect(selectSources(state)).toEqual(mockSources);
+      expect(selectSources(state)).toEqual(mockSourcesRecord);
     });
 
     it("selectActiveSourceUuid returns active source UUID", () => {
       const state = {
         session: mockSessionState,
         sources: {
-          sources: mockSources,
+          sources: mockSourcesRecord,
           activeSourceUuid: "source-1",
           loading: false,
           error: null,
@@ -359,7 +365,7 @@ describe("sourcesSlice", () => {
       const state = {
         session: mockSessionState,
         sources: {
-          sources: [],
+          sources: {},
           activeSourceUuid: null,
           loading: true,
           error: null,
@@ -387,7 +393,7 @@ describe("sourcesSlice", () => {
       const state = {
         session: mockSessionState,
         sources: {
-          sources: [],
+          sources: {},
           activeSourceUuid: null,
           loading: false,
           error: null,
@@ -430,7 +436,7 @@ describe("sourcesSlice", () => {
 
       // Final state should have sources
       const state = (store.getState() as any).sources;
-      expect(state.sources).toEqual(mockSources);
+      expect(state.sources).toEqual(mockSourcesRecord);
       expect(state.loading).toBe(false);
     });
 
@@ -444,7 +450,7 @@ describe("sourcesSlice", () => {
       expect(mockGetSources).toHaveBeenCalledTimes(2);
 
       const state = (store.getState() as any).sources;
-      expect(state.sources).toEqual(mockSources);
+      expect(state.sources).toEqual(mockSourcesRecord);
       expect(state.loading).toBe(false);
       expect(state.error).toBeNull();
     });
@@ -458,7 +464,7 @@ describe("sourcesSlice", () => {
 
       const state = (store.getState() as any).sources;
       expect(state.error).toBe("Network timeout");
-      expect(state.sources).toEqual([]);
+      expect(state.sources).toEqual({});
       expect(state.loading).toBe(false);
 
       expect(mockGetSources).toHaveBeenCalledTimes(1);
@@ -495,12 +501,12 @@ describe("sourcesSlice", () => {
       expect((store.getState() as any).sources.error).toBe("First error");
 
       // Then make a successful call
-      mockGetSources.mockResolvedValue(mockSources);
+      mockGetSources.mockResolvedValue(mockSourcesRecord);
       await (store.dispatch as any)(fetchSources());
 
       const state = (store.getState() as any).sources;
       expect(state.error).toBeNull();
-      expect(state.sources).toEqual(mockSources);
+      expect(state.sources).toEqual(mockSourcesRecord);
     });
   });
 });

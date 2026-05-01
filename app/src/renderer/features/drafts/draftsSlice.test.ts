@@ -74,8 +74,8 @@ describe("draftsSlice", () => {
           "source-3": "delete this too",
         },
       };
-      const sources: Source[] = [
-        {
+      const sources: Record<string, Source> = {
+        "source-1": {
           uuid: "source-1",
           data: {
             uuid: "source-1",
@@ -91,7 +91,7 @@ describe("draftsSlice", () => {
           hasAttachment: false,
           messagePreview: null,
         },
-      ];
+      };
       const result = draftsReducer(state, fetchSources.fulfilled(sources, ""));
       expect(result.drafts).toEqual({ "source-1": "keep this" });
     });
@@ -100,8 +100,8 @@ describe("draftsSlice", () => {
       const state: DraftsState = {
         drafts: { "source-1": "one", "source-2": "two" },
       };
-      const sources: Source[] = [
-        {
+      const sources: Record<string, Source> = {
+        "source-1": {
           uuid: "source-1",
           data: {
             uuid: "source-1",
@@ -117,7 +117,7 @@ describe("draftsSlice", () => {
           hasAttachment: false,
           messagePreview: null,
         },
-        {
+        "source-2": {
           uuid: "source-2",
           data: {
             uuid: "source-2",
@@ -133,7 +133,7 @@ describe("draftsSlice", () => {
           hasAttachment: false,
           messagePreview: null,
         },
-      ];
+      };
       const result = draftsReducer(state, fetchSources.fulfilled(sources, ""));
       expect(result.drafts).toEqual({ "source-1": "one", "source-2": "two" });
     });

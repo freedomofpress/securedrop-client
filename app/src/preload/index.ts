@@ -62,7 +62,7 @@ const electronAPI = {
     (itemUuid: string, fetchStatus: number, authToken: string) =>
       ipcRenderer.invoke("updateFetchStatus", itemUuid, fetchStatus, authToken),
   ),
-  getSources: logIpcCall<Source[]>("getSources", () =>
+  getSources: logIpcCall<Record<string, Source>>("getSources", () =>
     ipcRenderer.invoke("getSources"),
   ),
   getSourceWithItems: logIpcCall<SourceWithItems>(
@@ -97,6 +97,16 @@ const electronAPI = {
     "addPendingSourceEvent",
     (sourceUuid: string, type: PendingEventType, data?: PendingEventData) =>
       ipcRenderer.invoke("addPendingSourceEvent", sourceUuid, type, data),
+  ),
+  addPendingSourceEventBatch: logIpcCall<(string | null)[]>(
+    "addPendingSourceEventBatch",
+    (
+      events: Array<{
+        sourceUuid: string;
+        type: PendingEventType;
+        data?: PendingEventData;
+      }>,
+    ) => ipcRenderer.invoke("addPendingSourceEventBatch", events),
   ),
   addPendingReplySentEvent: logIpcCall<bigint>(
     "addPendingReplySentEvent",

@@ -7,7 +7,7 @@ export interface ConversationIndicatorState {
 }
 
 export interface SourcesState {
-  sources: SourceType[];
+  sources: Record<string, SourceType>;
   activeSourceUuid: string | null;
   loading: boolean;
   error: string | null;
@@ -15,7 +15,7 @@ export interface SourcesState {
 }
 
 const initialState: SourcesState = {
-  sources: [],
+  sources: {},
   activeSourceUuid: null,
   loading: false,
   error: null,
@@ -46,12 +46,7 @@ export const sourcesSlice = createSlice({
     },
     updateSource: (state, action) => {
       const updatedSource: SourceType = action.payload;
-      state.sources = state.sources.map((source, _) => {
-        if (source.uuid === updatedSource.uuid) {
-          return updatedSource;
-        }
-        return source;
-      });
+      state.sources[updatedSource.uuid] = updatedSource;
     },
     initializeConversationIndicator: (state, action) => {
       const { sourceUuid, lastSeenInteractionCount } = action.payload;
@@ -80,7 +75,7 @@ export const sourcesSlice = createSlice({
         state.sources = action.payload;
 
         // Update active source UUID in case of deletion
-        if (!state.sources.find((s) => s.uuid === state.activeSourceUuid)) {
+        if (state.activeSourceUuid && !state.sources[state.activeSourceUuid]) {
           state.activeSourceUuid = null;
         }
       })

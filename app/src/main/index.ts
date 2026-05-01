@@ -360,10 +360,12 @@ if (!gotTheLock) {
         },
       );
 
-      ipcMain.handle("getSources", async (_event): Promise<Source[]> => {
-        const sources = db.getSources();
-        return sources;
-      });
+      ipcMain.handle(
+        "getSources",
+        async (_event): Promise<Record<string, Source>> => {
+          return Object.fromEntries(db.getSources());
+        },
+      );
 
       ipcMain.handle(
         "getSourceWithItems",
@@ -464,6 +466,46 @@ if (!gotTheLock) {
         return systemLanguage;
       });
 
+      // Handle cleanup from source event: in cases of deletion or truncation,
+      // we should abort fetches and delete from the fs
+      async function sourceEventCleanup(
+        sourceUuid: string,
+        type: PendingEventType,
+        data?: PendingEventData,
+      ) {
+        // Immediately delete any source files from the fs on pending deletion
+        if (type === PendingEventType.SourceDeleted) {
+          await db.deleteSourceFs(sourceUuid);
+          // Abort any in-flight downloads for this source in the fetch worker
+          if (fetchWorker) {
+            fetchWorker.postMessage({
+              type: "abortSourceFetch",
+              sourceUuid,
+            });
+          }
+        }
+        // For truncation, abort in-flight downloads and delete truncated item files from the fs
+        if (type === PendingEventType.SourceConversationTruncated) {
+          // Abort any in-flight downloads for this source in the fetch worker
+          if (fetchWorker) {
+            fetchWorker.postMessage({
+              type: "abortSourceFetch",
+              sourceUuid,
+            });
+          }
+          if (data?.upper_bound) {
+            const items = db.getSourceWithItems(sourceUuid, {
+              beforeInteractionCount: data?.upper_bound + 1,
+            }).items;
+            const DELETE_BATCH_SIZE = 8;
+            for (let i = 0; i < items.length; i += DELETE_BATCH_SIZE) {
+              const batch = items.slice(i, i + DELETE_BATCH_SIZE);
+              await Promise.all(batch.map((item) => db.deleteItemFs(item)));
+            }
+          }
+        }
+      }
+
       ipcMain.handle(
         "addPendingSourceEvent",
         async (
@@ -472,38 +514,31 @@ if (!gotTheLock) {
           type: PendingEventType,
           data?: PendingEventData,
         ): Promise<string | null> => {
-          // Immediately delete any source files from the fs on pending deletion
-          if (type === PendingEventType.SourceDeleted) {
-            await db.deleteSourceFs(sourceUuid);
-            // Abort any in-flight downloads for this source in the fetch worker
-            if (fetchWorker) {
-              fetchWorker.postMessage({
-                type: "abortSourceFetch",
-                sourceUuid,
-              });
-            }
-          }
-          // For truncation, abort in-flight downloads and delete truncated item files from the fs
-          if (type === PendingEventType.SourceConversationTruncated) {
-            // Abort any in-flight downloads for this source in the fetch worker
-            if (fetchWorker) {
-              fetchWorker.postMessage({
-                type: "abortSourceFetch",
-                sourceUuid,
-              });
-            }
-            if (data?.upper_bound) {
-              const items = db.getSourceWithItems(sourceUuid, {
-                beforeInteractionCount: data?.upper_bound + 1,
-              }).items;
-              const DELETE_BATCH_SIZE = 8;
-              for (let i = 0; i < items.length; i += DELETE_BATCH_SIZE) {
-                const batch = items.slice(i, i + DELETE_BATCH_SIZE);
-                await Promise.all(batch.map((item) => db.deleteItemFs(item)));
-              }
-            }
-          }
+          await sourceEventCleanup(sourceUuid, type, data);
           return db.addPendingSourceEvent(sourceUuid, type, data);
+        },
+      );
+
+      ipcMain.handle(
+        "addPendingSourceEventBatch",
+        async (
+          _event,
+          events: Array<{
+            sourceUuid: string;
+            type: PendingEventType;
+            data?: PendingEventData;
+          }>,
+        ): Promise<(string | null)[]> => {
+          const EVENT_BATCH_SIZE = 8;
+          for (let i = 0; i < events.length; i += EVENT_BATCH_SIZE) {
+            const batch = events.slice(i, i + EVENT_BATCH_SIZE);
+            await Promise.all(
+              batch.map(({ sourceUuid, type, data }) =>
+                sourceEventCleanup(sourceUuid, type, data),
+              ),
+            );
+          }
+          return db.addPendingSourceEventBatch(events);
         },
       );
 

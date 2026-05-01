@@ -776,15 +776,13 @@ export class DB {
     return this.toSource(row);
   }
 
-  getSources(): Source[] {
+  getSources(): Map<string, Source> {
     if (!this.db) {
       throw new Error("Database is not open");
     }
 
     const rows = this.selectAllSources.all();
-    return rows.map((row) => {
-      return this.toSource(row);
-    });
+    return new Map(rows.map((row) => [row.uuid, this.toSource(row)]));
   }
 
   getSourceWithItems(
@@ -1126,6 +1124,20 @@ export class DB {
       }
 
       return snowflakeID;
+    })();
+  }
+
+  addPendingSourceEventBatch(
+    events: Array<{
+      sourceUuid: string;
+      type: PendingEventType;
+      data?: PendingEventData;
+    }>,
+  ): (string | null)[] {
+    return this.db!.transaction(() => {
+      return events.map(({ sourceUuid, type, data }) =>
+        this.addPendingSourceEvent(sourceUuid, type, data),
+      );
     })();
   }
 

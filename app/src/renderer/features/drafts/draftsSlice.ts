@@ -37,9 +37,8 @@ export const draftsSlice = createSlice({
         state.drafts = {};
       })
       .addCase(fetchSources.fulfilled, (state, action) => {
-        const sourceUuids = new Set(action.payload.map((s) => s.uuid));
         for (const key of Object.keys(state.drafts)) {
-          if (!sourceUuids.has(key)) {
+          if (!(key in action.payload)) {
             delete state.drafts[key];
           }
         }
