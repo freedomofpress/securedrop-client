@@ -153,7 +153,24 @@ def test_path_traversal(tmp_path):
         f.write(original_name.encode("utf-8") + b"\000")
         f.write(gzip.compress(b"test content")[10:])
 
-    with pytest.raises(
-        ValueError, match="Unsafe file or directory name: '../../../../../etc/passwd'"
-    ):
+    with pytest.raises(ValueError, match=f"Unsafe file or directory name: '{original_name}'"):
+        read_gzip_header_filename(str(tmp_file))
+
+
+def test_overwrite_via_abs_path(tmp_path):
+    """Test that an absolute path in the gzip header filename is rejected."""
+    tmp_file = tmp_path / "test.gz"
+    original_name = "/home/user/.securedrop_client/svs.sqlite"
+
+    with open(tmp_file, "wb") as f:
+        f.write(GZIP_FILE_IDENTIFICATION)  # ID
+        f.write(GZIP_COMPRESSION_BYTES)  # Compression method
+        f.write(bytes([GZIP_FLAG_FILENAME]))  # Flags
+        f.write(b"\000\000\000\000")  # mtime
+        f.write(b"\000")  # XFL
+        f.write(b"\377")  # OS
+        f.write(original_name.encode("utf-8") + b"\000")
+        f.write(gzip.compress(b"test content")[10:])
+
+    with pytest.raises(ValueError, match="Unsafe file name; aborting further processing"):
         read_gzip_header_filename(str(tmp_file))
