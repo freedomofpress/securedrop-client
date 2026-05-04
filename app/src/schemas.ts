@@ -133,6 +133,8 @@ export const ItemTargetSchema = z.object({
   version: z.string(),
 });
 
+// This enum MUST be kept in sync with the server's `EventType` enum and
+// documented in the "Pending Events" section of `architecture.md`.
 export enum PendingEventType {
   Undefined = "undefined",
   ReplySent = "reply_sent",
