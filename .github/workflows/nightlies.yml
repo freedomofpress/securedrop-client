@@ -42,10 +42,13 @@ jobs:
           path: "securedrop-builder"
           lfs: true
       - name: Build packages
+        env:
+          NIGHTLY: "1"
+          DEBIAN_VERSION: ${{ matrix.debian_version }}
+          BUILDER: securedrop-builder
         run: |
           git config --global --add safe.directory '*'
-          NIGHTLY=1 DEBIAN_VERSION=${{ matrix.debian_version }} BUILDER=securedrop-builder \
-            ./scripts/build-debs.sh
+          make build-debs
       - uses: actions/upload-artifact@v7
         id: upload
         with:
@@ -62,7 +65,7 @@ jobs:
     steps:
       - name: Install dependencies
         run: |
-          apt-get update && apt-get install --yes git git-lfs
+          apt-get update && apt-get install --yes git git-lfs gpg
       # Repeat this for all supported Debian versions
       - name: Download bookworm artifacts
         uses: actions/download-artifact@v8
@@ -88,26 +91,54 @@ jobs:
           repositories: |
             build-logs
             securedrop-apt-test
-      - name: Commit and push
+      - name: Prepare buildinfo files
+        run: |
+          mkdir -p "build-logs/buildinfo/$(date +%Y)"
+          cp -v build-*/*.buildinfo "build-logs/buildinfo/$(date +%Y)"
+          mkdir -p "build-logs/workstation/bookworm/nightlies"
+          cp -v build-bookworm/*.log "build-logs/workstation/bookworm/nightlies/"
+      - name: Sign and commit buildinfo files
+        uses: freedomofpress/actionslib/act/signed-commit@main
+        with:
+          files: |
+            buildinfo/
+            workstation/
+          repo-path: build-logs
+          message: |
+            Publishing build metadata for workstation nightlies
+
+            Via <${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}>
+          gpg-key: ${{ secrets.FPF_SDCIBOT_GPG_KEY }}
+          gpg-identity: ${{ vars.FPF_SDCIBOT_GPG_IDENTITY }}
+          gpg-email: ${{ vars.FPF_SDCIBOT_GPG_EMAIL }}
+          push: ""
+      - name: Push buildinfo files
         env:
           GH_TOKEN: ${{ steps.app-token.outputs.token }}
           LOGS_REPO: freedomofpress/build-logs
-          PKG_REPO: freedomofpress/securedrop-apt-test
         run: |
-          git config --global user.email "securedrop@freedom.press"
-          git config --global user.name "sdcibot-nightlies[bot]"
-          # First publish buildinfo files
-          cd build-logs
-          mkdir -p "buildinfo/$(date +%Y)"
-          cp -v ../build-*/*.buildinfo "buildinfo/$(date +%Y)"
-          git add .
-          git diff-index --quiet HEAD || git commit -m "Publishing buildinfo files for workstation nightlies"
           # Sleep before we push so the token will have propagated across GitHub infra
           sleep 5
-          git push https://x-access-token:${GH_TOKEN}@github.com/${LOGS_REPO}.git main
-          # Now the packages themselves
-          cd ../securedrop-apt-test
-          cp -v ../build-bookworm/*.deb workstation/bookworm-nightlies/
-          git add .
-          git diff-index --quiet HEAD || git commit -m "Automated SecureDrop workstation build"
-          git push https://x-access-token:${GH_TOKEN}@github.com/${PKG_REPO}.git main
+          git -C build-logs push https://x-access-token:${GH_TOKEN}@github.com/${LOGS_REPO}.git main
+      - name: Prepare packages
+        run: |
+          cp -v build-bookworm/*.deb securedrop-apt-test/workstation/bookworm-nightlies/
+      - name: Sign and commit packages
+        uses: freedomofpress/actionslib/act/signed-commit@main
+        with:
+          files: workstation/bookworm-nightlies/
+          repo-path: securedrop-apt-test
+          message: |
+            Automated SecureDrop workstation build
+
+            Via <${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}>
+          gpg-key: ${{ secrets.FPF_SDCIBOT_GPG_KEY }}
+          gpg-identity: ${{ vars.FPF_SDCIBOT_GPG_IDENTITY }}
+          gpg-email: ${{ vars.FPF_SDCIBOT_GPG_EMAIL }}
+          push: ""
+      - name: Push packages
+        env:
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+          PKG_REPO: freedomofpress/securedrop-apt-test
+        run: |
+          git -C securedrop-apt-test push https://x-access-token:${GH_TOKEN}@github.com/${PKG_REPO}.git main
