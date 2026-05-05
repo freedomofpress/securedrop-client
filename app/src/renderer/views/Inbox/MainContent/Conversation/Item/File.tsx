@@ -1,4 +1,4 @@
-import { memo, useState } from "react";
+import { memo, useState, useEffect } from "react";
 import {
   FetchStatus,
   ItemUpdate,
@@ -406,8 +406,15 @@ const InProgressFile = memo(function InProgressFile({
 
 const CompleteFile = memo(function CompleteFile({ item }: { item: Item }) {
   const { t } = useTranslation("Item");
+  const [whistleflowEnabled, setWhistleflowEnabled] = useState(false);
   const [exportWizardOpen, setExportWizardOpen] = useState(false);
+  const [exportWizardKey, setExportWizardKey] = useState(0);
+  const [exportWhistleflow, setExportWhistleflow] = useState(false);
   const [printWizardOpen, setPrintWizardOpen] = useState(false);
+
+  useEffect(() => {
+    window.electronAPI.getWhistleflowEnabled().then(setWhistleflowEnabled);
+  }, []);
 
   const filename = item.filename
     ? item.filename.substring(item.filename.lastIndexOf("/") + 1)
@@ -442,6 +449,14 @@ const CompleteFile = memo(function CompleteFile({ item }: { item: Item }) {
   };
 
   const handleExportClick = () => {
+    setExportWhistleflow(false);
+    setExportWizardKey((k) => k + 1);
+    setExportWizardOpen(true);
+  };
+
+  const handleExportToWhistleflowClick = () => {
+    setExportWhistleflow(true);
+    setExportWizardKey((k) => k + 1);
     setExportWizardOpen(true);
   };
 
@@ -470,6 +485,15 @@ const CompleteFile = memo(function CompleteFile({ item }: { item: Item }) {
       label: t("exportToUSB"),
       onClick: handleExportClick,
     },
+    ...(whistleflowEnabled
+      ? [
+          {
+            key: "exportToWhistleflow",
+            label: t("exportToWhistleflow"),
+            onClick: handleExportToWhistleflowClick,
+          },
+        ]
+      : []),
     {
       key: "print",
       label: t("printFile"),
@@ -514,9 +538,11 @@ const CompleteFile = memo(function CompleteFile({ item }: { item: Item }) {
       </div>
 
       <ExportWizard
+        key={exportWizardKey}
         item={exportPayload}
         open={exportWizardOpen}
         onClose={handleExportWizardClose}
+        whistleflow={exportWhistleflow}
       />
       <PrintWizard
         item={printPayload}

@@ -27,7 +27,9 @@
     },
     "menu": {
       "exportTranscript": "Export Transcript",
+      "exportTranscriptToWhistleflow": "Export Transcript to Whistleflow",
       "exportSource": "Export Transcript and Files",
+      "exportSourceToWhistleflow": "Export Transcript and Files to Whistleflow",
       "printTranscript": "Print Transcript",
       "clickToOpen": "Click to open"
     },
@@ -191,6 +193,7 @@
     "filenameTooltip": "Filename available after downloading",
     "viewFile": "View",
     "exportToUSB": "Export to USB",
+    "exportToWhistleflow": "Export to Whistleflow",
     "printFile": "Print",
     "wizard": {
       "malwareTitle": "Malware",

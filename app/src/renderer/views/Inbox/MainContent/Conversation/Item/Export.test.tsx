@@ -294,6 +294,7 @@ describe("ExportWizard Component", () => {
         expect(exportMock).toHaveBeenCalledWith(
           [mockFilePayload.payload.uuid],
           testPassphrase,
+          undefined,
         );
       });
     });

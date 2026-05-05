@@ -47,6 +47,7 @@ interface ExportContext {
   errorMessage: string;
   deviceStatus?: DeviceStatus;
   unlockError: boolean;
+  whistleflow?: boolean;
 }
 
 const initialContext: ExportContext = {
@@ -59,6 +60,7 @@ const initialContext: ExportContext = {
   errorMessage: "",
   deviceStatus: undefined,
   unlockError: false,
+  whistleflow: undefined,
 };
 
 // Unrecoverable errors that should show error page
@@ -160,7 +162,10 @@ function exportReducer(
     case "CONFIRM_SOURCE":
       switch (action.type) {
         case "START_EXPORT":
-          return { ...context, state: "PREFLIGHT" };
+          return {
+            ...context,
+            state: context.whistleflow ? "EXPORTING" : "PREFLIGHT",
+          };
         default:
           return context;
       }
@@ -588,12 +593,14 @@ interface ExportWizardProps {
   item: ExportPayload;
   open: boolean;
   onClose: () => void;
+  whistleflow?: boolean;
 }
 
 export const ExportWizard = memo(function ExportWizard({
   item,
   open,
   onClose,
+  whistleflow,
 }: ExportWizardProps) {
   const { t } = useTranslation("Item");
 
@@ -614,11 +621,19 @@ export const ExportWizard = memo(function ExportWizard({
       break;
   }
 
+  const initialState: ExportState =
+    item.type === "source"
+      ? "CONFIRM_SOURCE"
+      : whistleflow
+        ? "EXPORTING"
+        : "PREFLIGHT";
+
   const [context, dispatch] = useReducer(exportReducer, {
     ...initialContext,
-    state: item.type === "source" ? "CONFIRM_SOURCE" : "PREFLIGHT",
+    state: initialState,
     itemType: item.type,
     filename: filename,
+    whistleflow: whistleflow,
     undownloadedItems:
       item.type === "source" ? item.payload.undownloaded_items : false,
   });
@@ -707,18 +722,21 @@ export const ExportWizard = memo(function ExportWizard({
             deviceStatus = await window.electronAPI.export(
               [item.payload.uuid],
               context.passphrase,
+              context.whistleflow,
             );
             break;
           case "transcript":
             deviceStatus = await window.electronAPI.exportTranscript(
               item.payload.source_uuid,
               context.passphrase,
+              context.whistleflow,
             );
             break;
           case "source": {
             deviceStatus = await window.electronAPI.exportSource(
               item.payload.source_uuid,
               context.passphrase,
+              context.whistleflow,
             );
             break;
           }
@@ -745,7 +763,7 @@ export const ExportWizard = memo(function ExportWizard({
     return () => {
       isCancelled = true;
     };
-  }, [context.state, item, context.passphrase, t]);
+  }, [context.state, item, context.passphrase, context.whistleflow, t]);
 
   const handleClose = () => {
     // Cancel any ongoing export operation

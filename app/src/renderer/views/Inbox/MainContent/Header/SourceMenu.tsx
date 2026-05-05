@@ -1,4 +1,4 @@
-import { memo, useState, useMemo } from "react";
+import { memo, useState, useMemo, useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import {
   type SourceWithItems,
@@ -21,10 +21,16 @@ const SourceMenu = memo(function SourceMenu({
 }: SourceMenuProps) {
   const { t } = useTranslation("MainContent");
 
+  const [whistleflowEnabled, setWhistleflowEnabled] = useState(false);
   const [exportType, setExportType] = useState<"transcript" | "source">(
     "transcript",
   );
+  const [exportWhistleflow, setExportWhistleflow] = useState(false);
   const [exportWizardKey, setExportWizardKey] = useState(0);
+
+  useEffect(() => {
+    window.electronAPI.getWhistleflowEnabled().then(setWhistleflowEnabled);
+  }, []);
 
   const exportPayload = useMemo((): ExportPayload => {
     if (exportType === "source") {
@@ -58,6 +64,7 @@ const SourceMenu = memo(function SourceMenu({
       case "exportTranscript":
         try {
           setExportType("transcript");
+          setExportWhistleflow(false);
           setExportWizardKey((k) => k + 1);
           setExportWizardOpen(true);
         } catch (error) {
@@ -67,6 +74,27 @@ const SourceMenu = memo(function SourceMenu({
       case "exportSource":
         try {
           setExportType("source");
+          setExportWhistleflow(false);
+          setExportWizardKey((k) => k + 1);
+          setExportWizardOpen(true);
+        } catch (error) {
+          console.error("Failed to export:", error);
+        }
+        break;
+      case "exportTranscriptToWhistleflow":
+        try {
+          setExportType("transcript");
+          setExportWhistleflow(true);
+          setExportWizardKey((k) => k + 1);
+          setExportWizardOpen(true);
+        } catch (error) {
+          console.error("Failed to export:", error);
+        }
+        break;
+      case "exportSourceToWhistleflow":
+        try {
+          setExportType("source");
+          setExportWhistleflow(true);
           setExportWizardKey((k) => k + 1);
           setExportWizardOpen(true);
         } catch (error) {
@@ -102,11 +130,29 @@ const SourceMenu = memo(function SourceMenu({
       label: t("menu.exportTranscript"),
       disabled: !hasConversation,
     },
+    ...(whistleflowEnabled
+      ? [
+          {
+            key: "exportTranscriptToWhistleflow",
+            label: t("menu.exportTranscriptToWhistleflow"),
+            disabled: !hasConversation,
+          },
+        ]
+      : []),
     {
       key: "exportSource",
       label: t("menu.exportSource"),
       disabled: !hasConversation,
     },
+    ...(whistleflowEnabled
+      ? [
+          {
+            key: "exportSourceToWhistleflow",
+            label: t("menu.exportSourceToWhistleflow"),
+            disabled: !hasConversation,
+          },
+        ]
+      : []),
     {
       key: "printTranscript",
       label: t("menu.printTranscript"),
@@ -138,6 +184,7 @@ const SourceMenu = memo(function SourceMenu({
         item={exportPayload}
         open={exportWizardOpen}
         onClose={handleExportWizardClose}
+        whistleflow={exportWhistleflow}
       />
       <PrintWizard
         item={printPayload}
