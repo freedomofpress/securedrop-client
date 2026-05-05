@@ -7,6 +7,7 @@ import {
   type ProxyResponse,
   type Source,
   type SourceWithItems,
+  type SourceItemCounts,
   type Journalist,
   type AuthedRequest,
   type SearchResult,
@@ -74,6 +75,11 @@ const electronAPI = {
         journalistUuid?: string;
       },
     ) => ipcRenderer.invoke("getSourceWithItems", sourceUuid, options),
+  ),
+  getSourceItemCounts: logIpcCall<SourceItemCounts>(
+    "getSourceItemCounts",
+    (sourceUuids: string[]) =>
+      ipcRenderer.invoke("getSourceItemCounts", sourceUuids),
   ),
   getItem: logIpcCall<Item | null>("getItem", (itemUuid: string) =>
     ipcRenderer.invoke("getItem", itemUuid),

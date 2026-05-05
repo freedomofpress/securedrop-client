@@ -169,35 +169,12 @@ function SourceList({ focusedPanel }: { focusedPanel: FocusedPanel }) {
     setDeleteModalLoading(true);
 
     try {
-      // Fetch all source items to count messages, files, and replies
-      let totalMessages = 0;
-      let totalFiles = 0;
-      let totalReplies = 0;
-
-      for (const sourceUuid of sources) {
-        const sourceWithItems =
-          await window.electronAPI.getSourceWithItems(sourceUuid);
-        if (sourceWithItems) {
-          // Count messages, files, and replies
-          for (const item of sourceWithItems.items) {
-            if (item.data.kind === "message") {
-              totalMessages++;
-            } else if (item.data.kind === "file") {
-              totalFiles++;
-            } else if (item.data.kind === "reply") {
-              totalReplies++;
-            }
-          }
-        }
-      }
-
-      setDeleteCounts({
-        messages: totalMessages,
-        files: totalFiles,
-        replies: totalReplies,
-      });
+      const counts = await window.electronAPI.getSourceItemCounts(
+        Array.from(sources),
+      );
+      setDeleteCounts(counts);
     } catch (error) {
-      console.error("Error fetching source items:", error);
+      console.error("Error fetching source item counts:", error);
       setDeleteCounts({ messages: 0, files: 0, replies: 0 });
     } finally {
       setDeleteModalLoading(false);

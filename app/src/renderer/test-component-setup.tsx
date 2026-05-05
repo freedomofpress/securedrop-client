@@ -188,6 +188,9 @@ beforeEach(() => {
         },
       ],
     }),
+    getSourceItemCounts: vi
+      .fn()
+      .mockResolvedValue({ messages: 0, files: 0, replies: 0 }),
     getJournalists: vi.fn().mockResolvedValue([
       {
         uuid: "journalist-1",

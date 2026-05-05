@@ -24,6 +24,7 @@ import {
   type ProxyResponse,
   type Source,
   type SourceWithItems,
+  type SourceItemCounts,
   type Journalist,
   type AuthedRequest,
   type Item,
@@ -376,6 +377,13 @@ if (!gotTheLock) {
         ): Promise<SourceWithItems> => {
           const sourceWithItems = db.getSourceWithItems(sourceUuid, options);
           return sourceWithItems;
+        },
+      );
+
+      ipcMain.handle(
+        "getSourceItemCounts",
+        async (_event, sourceUuids: string[]): Promise<SourceItemCounts> => {
+          return db.getSourceItemCounts(sourceUuids);
         },
       );
 
