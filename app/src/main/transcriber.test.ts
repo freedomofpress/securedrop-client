@@ -121,7 +121,8 @@ describe("Transcriber Component Tests", () => {
 
   function createMockDB() {
     return {
-      getJournalistByID: vi.fn(),
+      getJournalists: vi.fn(),
+      getSourceWithItems: vi.fn(),
     } as unknown as DB;
   }
 
@@ -132,7 +133,7 @@ describe("Transcriber Component Tests", () => {
   it("should return a valid transcript with all message and replies", async () => {
     const db = createMockDB();
 
-    db.getJournalistByID = vi.fn(() => mockJournalist);
+    db.getJournalists = vi.fn(() => [mockJournalist]);
 
     const expectedSource: string = "Source: palpable disquiet";
     const expectedTranscript: string = `Transcript:
@@ -153,12 +154,59 @@ Interesting message there
     expect(output).toContain(expectedTranscript);
   });
 
-  it("should gracefully handle  errors when looking up journalists", async () => {
+  it("should show [Message is encrypted...] when plaintext is null", async () => {
+    const db = createMockDB();
+    db.getJournalists = vi.fn(() => [mockJournalist]);
+
+    const sourceWithUnfetchedItems: SourceWithItems = {
+      ...mockSourceWithItems,
+      items: [
+        {
+          uuid: "message-unfetched",
+          data: {
+            kind: "message",
+            uuid: "message-unfetched",
+            source: "source-1",
+            size: 1024,
+            seen_by: [],
+            is_read: false,
+            interaction_count: 1,
+          },
+          fetch_progress: 0,
+          fetch_status: 0,
+          // @ts-expect-error FIXME the typing is wrong here, see https://github.com/freedomofpress/securedrop-client/issues/3347
+          plaintext: null,
+        },
+        {
+          uuid: "reply-unfetched",
+          data: {
+            kind: "reply",
+            uuid: "reply-unfetched",
+            source: "source-1",
+            size: 1024,
+            journalist_uuid: "journo-1",
+            is_deleted_by_source: false,
+            seen_by: [],
+            interaction_count: 1,
+          },
+          fetch_progress: 0,
+          fetch_status: 0,
+          // @ts-expect-error FIXME the typing is wrong here, see https://github.com/freedomofpress/securedrop-client/issues/3347
+          plaintext: null,
+        },
+      ],
+    };
+
+    const output: string = await renderTranscript(sourceWithUnfetchedItems, db);
+    // TODO: message should show [Message is encrypted...] like replies do
+    expect(output).toContain("Source wrote:\n\n");
+    expect(output).toContain("notsuperman replied:\n[Message is encrypted...]");
+  });
+
+  it("should gracefully handle unknown journalists", async () => {
     const db = createMockDB();
 
-    db.getJournalistByID = vi.fn(() => {
-      throw new Error("mocked error");
-    });
+    db.getJournalists = vi.fn(() => []);
 
     const expectedSource: string = "Source: palpable disquiet";
     const expectedTranscript: string = `Transcript:
@@ -182,12 +230,8 @@ Interesting message there
   it("should write a valid transcript file", async () => {
     const db = createMockDB();
 
-    db.getJournalistByID = vi.fn(() => {
-      return mockJournalist;
-    });
-    db.getSourceWithItems = vi.fn(() => {
-      return mockSourceWithItems;
-    });
+    db.getJournalists = vi.fn(() => [mockJournalist]);
+    db.getSourceWithItems = vi.fn(() => mockSourceWithItems);
 
     const expectedSource: string = "Source: palpable disquiet";
     const expectedTranscript: string = `Transcript:
