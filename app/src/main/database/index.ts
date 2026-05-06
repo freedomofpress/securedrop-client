@@ -1266,6 +1266,11 @@ export class DB {
           version: source.version,
         };
       } else {
+        if (!r.item_uuid) {
+          throw new Error(
+            `Invariant violation: pending event has neither source_uuid nor item_uuid`,
+          );
+        }
         const item = this.selectUnprojectedItemVersion.get({
           uuid: r.item_uuid,
         });

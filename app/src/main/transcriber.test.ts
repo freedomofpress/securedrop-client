@@ -49,6 +49,8 @@ describe("Transcriber Component Tests", () => {
       {
         uuid: "message-1",
         plaintext: "sphinx of black quartz, judge my vow",
+        filename: null,
+        decrypted_size: null,
         data: {
           kind: "message",
           uuid: "message-1",
@@ -63,7 +65,9 @@ describe("Transcriber Component Tests", () => {
       },
       {
         uuid: "file-1",
+        plaintext: null,
         filename: "/error/error/filename.ext",
+        decrypted_size: null,
         data: {
           kind: "file",
           uuid: "file-1",
@@ -78,6 +82,9 @@ describe("Transcriber Component Tests", () => {
       },
       {
         uuid: "file-2",
+        plaintext: null,
+        filename: null,
+        decrypted_size: null,
         data: {
           kind: "file",
           uuid: "file-2",
@@ -93,6 +100,8 @@ describe("Transcriber Component Tests", () => {
       {
         uuid: "reply-1",
         plaintext: "Interesting message there",
+        filename: null,
+        decrypted_size: null,
         data: {
           kind: "reply",
           uuid: "reply-1",
@@ -163,6 +172,9 @@ Interesting message there
       items: [
         {
           uuid: "message-unfetched",
+          plaintext: null,
+          filename: null,
+          decrypted_size: null,
           data: {
             kind: "message",
             uuid: "message-unfetched",
@@ -174,11 +186,12 @@ Interesting message there
           },
           fetch_progress: 0,
           fetch_status: 0,
-          // @ts-expect-error FIXME the typing is wrong here, see https://github.com/freedomofpress/securedrop-client/issues/3347
-          plaintext: null,
         },
         {
           uuid: "reply-unfetched",
+          plaintext: null,
+          filename: null,
+          decrypted_size: null,
           data: {
             kind: "reply",
             uuid: "reply-unfetched",
@@ -191,8 +204,6 @@ Interesting message there
           },
           fetch_progress: 0,
           fetch_status: 0,
-          // @ts-expect-error FIXME the typing is wrong here, see https://github.com/freedomofpress/securedrop-client/issues/3347
-          plaintext: null,
         },
       ],
     };

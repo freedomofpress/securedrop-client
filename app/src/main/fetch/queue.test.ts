@@ -101,6 +101,9 @@ function mockItem(
     data: metadata,
     fetch_status,
     fetch_progress,
+    plaintext: null,
+    filename: null,
+    decrypted_size: null,
   };
 }
 

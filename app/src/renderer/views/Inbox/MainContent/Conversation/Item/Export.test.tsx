@@ -24,7 +24,9 @@ describe("ExportWizard Component", () => {
       interaction_count: 0,
     },
     fetch_status: FetchStatus.Complete,
+    plaintext: null,
     filename: "/path/to/testfile.pdf",
+    decrypted_size: null,
   };
 
   const mockFilePayload: ExportPayload = {

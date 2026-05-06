@@ -23,6 +23,8 @@ describe("Reply", () => {
       interaction_count: 1,
     } as ReplyMetadata,
     plaintext: "This is a reply message",
+    filename: null,
+    decrypted_size: null,
   };
 
   const mockJournalists: Array<{ uuid: string; data: JournalistMetadata }> = [
@@ -374,6 +376,8 @@ describe("Reply", () => {
         interaction_count: 1,
       } as ReplyMetadata,
       plaintext: "This is a pending reply",
+      filename: null,
+      decrypted_size: null,
     };
 
     describe("when authenticated (online mode)", () => {
@@ -564,7 +568,7 @@ describe("Reply", () => {
     it("should display encrypted message placeholder when no plaintext", () => {
       const encryptedReply: Item = {
         ...mockReplyItem,
-        plaintext: undefined, // No plaintext available
+        plaintext: null, // No plaintext available
       };
 
       const { getByText } = renderWithProviders(
@@ -623,6 +627,8 @@ describe("Reply", () => {
         interaction_count: 0,
       } as ReplyMetadata,
       plaintext: "This is a pending reply",
+      filename: null,
+      decrypted_size: null,
     };
 
     it("should display pending icon for pending replies", () => {
@@ -712,6 +718,8 @@ describe("Reply", () => {
         interaction_count: 1,
       } as ReplyMetadata,
       plaintext: "This is a pending reply",
+      filename: null,
+      decrypted_size: null,
     };
 
     const sentReplyItem: Item = {
@@ -727,6 +735,8 @@ describe("Reply", () => {
         interaction_count: 1,
       } as ReplyMetadata,
       plaintext: "This is a sent reply",
+      filename: null,
+      decrypted_size: null,
     };
 
     const seenReplyItem: Item = {
@@ -742,6 +752,8 @@ describe("Reply", () => {
         interaction_count: 1,
       } as ReplyMetadata,
       plaintext: "This is a seen reply",
+      filename: null,
+      decrypted_size: null,
     };
 
     it("should show pending icon for pending replies", () => {

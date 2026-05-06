@@ -23,7 +23,9 @@ describe("PrintWizard Component", () => {
       interaction_count: 0,
     },
     fetch_status: FetchStatus.Complete,
+    plaintext: null,
     filename: "/path/to/testfile.pdf",
+    decrypted_size: null,
   };
 
   const mockPrintPayload: PrintPayload = {
