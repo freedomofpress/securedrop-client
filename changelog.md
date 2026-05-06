@@ -1,5 +1,23 @@
 # Changelog
 
+## 1.1.0
+
+This release contains fixes and dependency updates to the SecureDrop Inbox. It also 
+enables a feature flag-gated custom export to Whistleflow option.
+
+* Enable export to Whistleflow via feature flag (#3340)
+* Correctly set the SecureDrop logo as the Inbox menubar icon (#3330)
+* Fix typo in username placeholder text (#3331)
+* Remove empty string translation (#3334)
+* Harden liquidjs usage to mitigate CVE-2026-35525, CVE-2026-39859, and CVE-2026-39412 (#3204)
+* Improve deletion counting performance with a single SQL query instead of per-source queries (#3329)
+* Dependency updates:
+  * Bump openssl from 0.10.72 to 0.10.78 (#3284)
+  * Bump protobufjs to 7.5.5 (#3283)
+  * Update Poetry to 2.3.3 (#3228)
+* Internal and development:
+  * Remove unused `PendingEventType` event types (#3341)
+
 ## 1.0.0
 
 This release introduces the new SecureDrop Inbox, which is a rewrite of the
