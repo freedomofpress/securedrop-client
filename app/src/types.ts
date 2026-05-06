@@ -207,7 +207,6 @@ export type ItemRow = {
 export type JournalistRow = {
   uuid: string;
   data: string; // JSON stringified JournalistMetadata
-  version: string;
 };
 
 export type PendingEventRow = {
