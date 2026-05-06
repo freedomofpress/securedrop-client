@@ -285,6 +285,50 @@ describe("Search", () => {
       const results = db.search("secret");
       expect(results).toHaveLength(0);
     });
+
+    it("does not return item results pending deletion via item_deleted event", () => {
+      db.updateSources({
+        ["source1"]: mockSource("source1", "colorful caterpillar"),
+      });
+      db.updateItems({ ["item1"]: mockItem("item1", "source1", "message") });
+      db.completePlaintextItem("item1", "secret document");
+
+      db.addPendingItemEvent("item1", PendingEventType.ItemDeleted);
+
+      const results = db.search("secret");
+      expect(results).toHaveLength(0);
+    });
+
+    it("does not return item results pending deletion via source_conversation_truncated event", () => {
+      db.updateSources({
+        ["source1"]: mockSource("source1", "colorful caterpillar"),
+      });
+      db.updateItems({ ["item1"]: mockItem("item1", "source1", "message") });
+      db.completePlaintextItem("item1", "secret document");
+
+      db.addPendingSourceEvent(
+        "source1",
+        PendingEventType.SourceConversationTruncated,
+        { upper_bound: 1 },
+      );
+
+      const results = db.search("secret");
+      expect(results).toHaveLength(0);
+    });
+
+    it("still returns source result when item is pending deletion", () => {
+      db.updateSources({
+        ["source1"]: mockSource("source1", "colorful caterpillar"),
+      });
+      db.updateItems({ ["item1"]: mockItem("item1", "source1", "message") });
+      db.completePlaintextItem("item1", "secret document");
+
+      db.addPendingItemEvent("item1", PendingEventType.ItemDeleted);
+
+      const results = db.search("colorful");
+      expect(results).toHaveLength(1);
+      expect(results[0].type).toBe("source");
+    });
   });
 
   describe("indexItem", () => {
@@ -467,6 +511,25 @@ describe("Search", () => {
 
       expect(db.search("first")).toHaveLength(0);
       expect(db.search("second")).toHaveLength(1);
+    });
+  });
+
+  describe("update from sync", () => {
+    it("removes from search index on updateItems call", () => {
+      db.updateSources({
+        ["source1"]: mockSource("source1", "dramatic dolphin"),
+      });
+      db.updateItems({ ["item1"]: mockItem("item1", "source1", "message") });
+      db.completePlaintextItem("item1", "classified content");
+
+      // Verify the item is indexed before deletion
+      expect(db.search("classified")).toHaveLength(1);
+
+      db.updateItems({ ["item1"]: null });
+
+      expect(db.search("classified")).toHaveLength(0);
+      // Source entry should still be findable
+      expect(db.search("dramatic")).toHaveLength(1);
     });
   });
 });
