@@ -17,6 +17,8 @@ describe("Message Component Memoization", () => {
     },
     plaintext: "Hello, this is a message",
     filename: null,
+    fetch_status: null,
+    fetch_progress: null,
     decrypted_size: null,
   };
   const mockOnUpdate = vi.fn();

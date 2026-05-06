@@ -94,7 +94,7 @@ function createMockDB() {
 function mockItem(
   metadata: ItemMetadata,
   fetch_status: FetchStatus,
-  fetch_progress?: number,
+  fetch_progress: number | null = null,
 ): Item {
   return {
     uuid: "id",

@@ -23,6 +23,7 @@ describe("PrintWizard Component", () => {
       interaction_count: 0,
     },
     fetch_status: FetchStatus.Complete,
+    fetch_progress: null,
     plaintext: null,
     filename: "/path/to/testfile.pdf",
     decrypted_size: null,

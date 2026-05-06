@@ -18,6 +18,7 @@ describe("File Component Memoization", () => {
     },
     plaintext: null,
     filename: null,
+    fetch_progress: null,
     decrypted_size: null,
     fetch_status: FetchStatus.Initial,
   };

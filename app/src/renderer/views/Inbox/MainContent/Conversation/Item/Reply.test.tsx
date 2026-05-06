@@ -24,6 +24,8 @@ describe("Reply", () => {
     } as ReplyMetadata,
     plaintext: "This is a reply message",
     filename: null,
+    fetch_status: null,
+    fetch_progress: null,
     decrypted_size: null,
   };
 
@@ -377,6 +379,8 @@ describe("Reply", () => {
       } as ReplyMetadata,
       plaintext: "This is a pending reply",
       filename: null,
+      fetch_status: null,
+      fetch_progress: null,
       decrypted_size: null,
     };
 
@@ -628,6 +632,8 @@ describe("Reply", () => {
       } as ReplyMetadata,
       plaintext: "This is a pending reply",
       filename: null,
+      fetch_status: null,
+      fetch_progress: null,
       decrypted_size: null,
     };
 
@@ -719,6 +725,8 @@ describe("Reply", () => {
       } as ReplyMetadata,
       plaintext: "This is a pending reply",
       filename: null,
+      fetch_status: null,
+      fetch_progress: null,
       decrypted_size: null,
     };
 
@@ -736,6 +744,8 @@ describe("Reply", () => {
       } as ReplyMetadata,
       plaintext: "This is a sent reply",
       filename: null,
+      fetch_status: null,
+      fetch_progress: null,
       decrypted_size: null,
     };
 
@@ -753,6 +763,8 @@ describe("Reply", () => {
       } as ReplyMetadata,
       plaintext: "This is a seen reply",
       filename: null,
+      fetch_status: null,
+      fetch_progress: null,
       decrypted_size: null,
     };
 

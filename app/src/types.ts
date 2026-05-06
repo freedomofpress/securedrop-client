@@ -186,8 +186,8 @@ export type Item = {
   data: ItemMetadata;
   plaintext: string | null;
   filename: string | null;
-  fetch_status?: FetchStatus;
-  fetch_progress?: number;
+  fetch_status: FetchStatus | null;
+  fetch_progress: number | null;
   decrypted_size: number | null;
 };
 
@@ -197,8 +197,8 @@ export type ItemRow = {
   data: string; // JSON stringified ItemMetadata
   plaintext: string | null;
   filename: string | null;
-  fetch_status: number; // FetchStatus enum
-  fetch_progress: number;
+  fetch_status: number | null; // FetchStatus enum
+  fetch_progress: number | null;
   decrypted_size: number | null;
   is_read: number | null; // projected value from items_projected view
 };
