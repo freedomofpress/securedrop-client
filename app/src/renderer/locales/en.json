@@ -33,8 +33,11 @@
       "printTranscript": "Print Transcript",
       "clickToOpen": "Click to open"
     },
+    "itemFetching": "Fetching message...",
     "itemEncrypted": "Message is encrypted...",
-    "messageFailed": "Failed to decrypt message",
+    "messageDownloadFailed": "Failed to download message",
+    "messageDecryptionFailed": "Failed to decrypt message",
+    "messageFailed": "Error handling message",
     "retryFetch": "Retry",
     "lastSourceActivity": "Last source activity",
     "you": "You",
