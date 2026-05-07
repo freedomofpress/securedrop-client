@@ -207,19 +207,31 @@ describe("Search", () => {
       expect(results[0].type).toBe("reply");
     });
 
-    it("returns multiple results across sources and items", () => {
+    it("returns one result per source when multiple items match", () => {
       db.updateSources({
         ["source1"]: mockSource("source1", "colorful caterpillar"),
-        ["source2"]: mockSource("source2", "dramatic dolphin"),
       });
       db.updateItems({ ["item1"]: mockItem("item1", "source1", "message") });
       db.completePlaintextItem("item1", "colorful flowers in the garden");
 
+      // Both the source name and the message match, but we expect only one
+      // result for source1 (the highest-ranked row).
+      const results = db.search("colorful");
+      expect(results).toHaveLength(1);
+      expect(results[0].sourceUuid).toBe("source1");
+    });
+
+    it("returns one result per matching source", () => {
+      db.updateSources({
+        ["source1"]: mockSource("source1", "colorful caterpillar"),
+        ["source2"]: mockSource("source2", "colorful dolphin"),
+      });
+
       const results = db.search("colorful");
       expect(results).toHaveLength(2);
-      const types = results.map((r) => r.type);
-      expect(types).toContain("source");
-      expect(types).toContain("message");
+      const sourceUuids = results.map((r) => r.sourceUuid);
+      expect(sourceUuids).toContain("source1");
+      expect(sourceUuids).toContain("source2");
     });
 
     it("supports prefix matching", () => {

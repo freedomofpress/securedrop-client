@@ -97,7 +97,8 @@ function SourceList({ focusedPanel }: { focusedPanel: FocusedPanel }) {
   useEffect(() => {
     let cancelled = false;
 
-    if (!debouncedSearchTerm.trim()) {
+    // Do not search until we have at least 3 characters
+    if (debouncedSearchTerm.trim().length < 3) {
       setSearchResults(null);
       return;
     }

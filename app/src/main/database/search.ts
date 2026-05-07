@@ -1,6 +1,9 @@
 import Database, { Statement } from "better-sqlite3";
 import { SearchResult } from "../../types";
 
+// Set a large page size since we currently don't paginate from the SourceList
+const SEARCH_PAGE_SIZE = 1000;
+
 type SearchRow = {
   source_uuid: string;
   item_uuid: string | null;
@@ -77,7 +80,7 @@ export function buildQuery(input: string): string | null {
 export class Search {
   private db: Database.Database;
 
-  private searchStmt: Statement<[string, number, number], SearchRow>;
+  private searchBySourceStmt: Statement<[string, number], SearchRow>;
   private deleteByItemStmt: Statement<[string], void>;
   private deleteItemManyStmt: Statement<{ uuids_json: string }, void>;
   private deleteBySourceStmt: Statement<[string], void>;
@@ -103,18 +106,23 @@ export class Search {
   constructor(db: Database.Database) {
     this.db = db;
 
-    this.searchStmt = this.db.prepare(`
-      SELECT
-        si.source_uuid,
-        si.item_uuid,
-        si.type,
-        content AS snippet
-      FROM search_index si
-      INNER JOIN sources_projected sp ON sp.uuid = si.source_uuid
-      LEFT JOIN items_projected ip ON ip.uuid = si.item_uuid
-      WHERE search_index MATCH ?
+    this.searchBySourceStmt = this.db.prepare(`
+      SELECT 
+        source_uuid, 
+        item_uuid, 
+        type, 
+        content AS snippet                                                                                                                               
+      FROM (                                                                                                                                                                                
+        SELECT si.source_uuid, si.item_uuid, si.type, content, rank,                                                                                                                        
+              ROW_NUMBER() OVER (PARTITION BY si.source_uuid ORDER BY rank) AS rn
+        FROM search_index si
+        INNER JOIN sources_projected sp ON sp.uuid = si.source_uuid
+        LEFT JOIN items_projected ip ON ip.uuid = si.item_uuid
+        WHERE search_index MATCH ?
+      )
+      WHERE rn = 1
       ORDER BY rank
-      LIMIT ? OFFSET ?
+      LIMIT ?
     `);
 
     this.deleteByItemStmt = this.db.prepare(
@@ -159,17 +167,15 @@ export class Search {
     `);
   }
 
-  search(
-    query: string,
-    limit: number = 20,
-    offset: number = 0,
-  ): SearchResult[] {
+  // Searches by the query string over the search index, returning the top
+  // result per-source.
+  search(query: string): SearchResult[] {
     const ftsQuery = buildQuery(query);
     if (!ftsQuery) {
       return [];
     }
 
-    const rows = this.searchStmt.all(ftsQuery, limit, offset);
+    const rows = this.searchBySourceStmt.all(ftsQuery, SEARCH_PAGE_SIZE);
     return rows.map((row) => ({
       sourceUuid: row.source_uuid,
       itemUuid: row.item_uuid,
