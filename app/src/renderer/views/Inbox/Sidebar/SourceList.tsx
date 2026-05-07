@@ -207,18 +207,18 @@ function SourceList({ focusedPanel }: { focusedPanel: FocusedPanel }) {
   const handleDeleteAction = useCallback(
     async (eventType: PendingEventType) => {
       try {
-        for (const sourceUuid of pendingDeleteSources) {
-          const sourceToDelete = sources.find((x) => x.uuid === sourceUuid);
-          await window.electronAPI.addPendingSourceEvent(
+        const events = [...pendingDeleteSources].map((sourceUuid) => {
+          const sourceToDelete = sources[sourceUuid];
+          return {
             sourceUuid,
-            eventType,
-            eventType === PendingEventType.SourceConversationTruncated
-              ? {
-                  upper_bound: sourceToDelete?.lastInteractionCount ?? 0,
-                }
-              : undefined,
-          );
-        }
+            type: eventType,
+            data:
+              eventType === PendingEventType.SourceConversationTruncated
+                ? { upper_bound: sourceToDelete?.lastInteractionCount ?? 0 }
+                : undefined,
+          };
+        });
+        await window.electronAPI.addPendingSourceEventBatch(events);
         // If we deleted an account and it was the currently active source, navigate away
         if (
           eventType === PendingEventType.SourceDeleted &&
@@ -274,7 +274,6 @@ function SourceList({ focusedPanel }: { focusedPanel: FocusedPanel }) {
     let searchedSources: SourceType[] = [];
     if (searchResults !== null) {
       // Dedupe by sourceUuid, keeping the highest-ranked result per source
-      const sourcesByUuid = new Map(sources.map((s) => [s.uuid, s]));
       const seen = new Set<string>();
 
       for (const sr of searchResults) {
@@ -282,7 +281,7 @@ function SourceList({ focusedPanel }: { focusedPanel: FocusedPanel }) {
           continue;
         }
         seen.add(sr.sourceUuid);
-        const source = sourcesByUuid.get(sr.sourceUuid);
+        const source = sources[sr.sourceUuid];
         if (!source) {
           continue;
         }
@@ -300,7 +299,7 @@ function SourceList({ focusedPanel }: { focusedPanel: FocusedPanel }) {
         }
       }
     } else {
-      searchedSources = sources;
+      searchedSources = Object.values(sources);
     }
 
     return searchedSources

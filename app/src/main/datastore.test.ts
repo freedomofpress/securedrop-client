@@ -274,20 +274,16 @@ describe("Datastore Method Tests", () => {
     });
 
     let sources = db.getSources();
-    expect(sources.length).toEqual(3);
-    expect(sources.map((s) => s.uuid)).toEqual([
-      "source1",
-      "source2",
-      "source3",
-    ]);
+    expect(sources.size).toEqual(3);
+    expect([...sources.keys()]).toEqual(["source1", "source2", "source3"]);
 
     // Add pending delete for source3
     db.addPendingSourceEvent("source3", PendingEventType.SourceDeleted);
 
     // getSources should now return only source1, source2
     sources = db.getSources();
-    expect(sources.length).toEqual(2);
-    expect(sources.map((s) => s.uuid)).toEqual(["source1", "source2"]);
+    expect(sources.size).toEqual(2);
+    expect([...sources.keys()]).toEqual(["source1", "source2"]);
   });
 
   it("pending SourceConversationTruncated should remove items up to and including upper_bound", () => {
@@ -425,7 +421,7 @@ describe("Datastore Method Tests", () => {
       source3: mockSourceMetadata("source3"),
     });
     let sources = db.getSources();
-    for (const source of sources) {
+    for (const source of sources.values()) {
       expect(source.data.is_starred).toBe(false);
     }
 
@@ -433,7 +429,7 @@ describe("Datastore Method Tests", () => {
     db.addPendingSourceEvent("source2", PendingEventType.Starred);
 
     sources = db.getSources();
-    for (const source of sources) {
+    for (const source of sources.values()) {
       if (source.uuid === "source1" || source.uuid === "source2") {
         expect(source.data.is_starred).toBeTruthy();
         continue;
@@ -450,7 +446,7 @@ describe("Datastore Method Tests", () => {
       source3: mockSourceMetadata("source3", true),
     });
     let sources = db.getSources();
-    for (const source of sources) {
+    for (const source of sources.values()) {
       expect(source.data.is_starred).toBe(true);
     }
 
@@ -458,7 +454,7 @@ describe("Datastore Method Tests", () => {
     db.addPendingSourceEvent("source2", PendingEventType.Unstarred);
 
     sources = db.getSources();
-    for (const source of sources) {
+    for (const source of sources.values()) {
       if (source.uuid === "source1" || source.uuid === "source2") {
         expect(source.data.is_starred).toBeFalsy();
         continue;
@@ -475,7 +471,7 @@ describe("Datastore Method Tests", () => {
       source3: mockSourceMetadata("source3", true),
     });
     let sources = db.getSources();
-    for (const source of sources) {
+    for (const source of sources.values()) {
       expect(source.data.is_starred).toBe(true);
     }
 
@@ -483,7 +479,7 @@ describe("Datastore Method Tests", () => {
     db.addPendingSourceEvent("source1", PendingEventType.Starred);
 
     sources = db.getSources();
-    for (const source of sources) {
+    for (const source of sources.values()) {
       if (source.uuid === "source1") {
         expect(source.data.is_starred).toBeTruthy();
         continue;
@@ -493,7 +489,7 @@ describe("Datastore Method Tests", () => {
 
     db.addPendingSourceEvent("source1", PendingEventType.Unstarred);
     sources = db.getSources();
-    for (const source of sources) {
+    for (const source of sources.values()) {
       if (source.uuid === "source1") {
         expect(source.data.is_starred).toBeFalsy();
         continue;
@@ -510,7 +506,7 @@ describe("Datastore Method Tests", () => {
       source3: mockSourceMetadata("source3", true),
     });
     let sources = db.getSources();
-    for (const source of sources) {
+    for (const source of sources.values()) {
       expect(source.isRead).toBe(false);
     }
 
@@ -522,14 +518,14 @@ describe("Datastore Method Tests", () => {
 
     // Partially marking items seen should not update source Seen state
     db.addPendingSourceConversationSeen("source1", 2);
-    for (const source of sources) {
+    for (const source of sources.values()) {
       expect(source.isRead).toBe(false);
     }
 
     // Marking all items as seen should update Seen state
     db.addPendingSourceConversationSeen("source1", 3);
     sources = db.getSources();
-    for (const source of sources) {
+    for (const source of sources.values()) {
       if (source.uuid === "source1") {
         expect(source.isRead).toBe(true);
         continue;
@@ -701,11 +697,11 @@ describe("Datastore Method Tests", () => {
 
     await db.addPendingReplySentEvent("reply text", "source1", 1);
     let sources = db.getSources();
-    expect(sources.length).toEqual(1);
+    expect(sources.size).toEqual(1);
 
     db.addPendingSourceEvent("source1", PendingEventType.SourceDeleted);
     sources = db.getSources();
-    expect(sources.length).toEqual(0);
+    expect(sources.size).toEqual(0);
   });
 
   it("pending ReplySent and then pending ItemDeleted should delete reply", async () => {
@@ -1245,10 +1241,10 @@ describe("Datastore Method Tests", () => {
     db.completeFileItem("item4", "/tmp/filename.txt", 2048);
 
     const sources = db.getSources();
-    const s1 = sources.find((s) => s.uuid === "source1");
-    const s2 = sources.find((s) => s.uuid === "source2");
-    const s3 = sources.find((s) => s.uuid === "source3");
-    const s4 = sources.find((s) => s.uuid === "source4");
+    const s1 = sources.get("source1");
+    const s2 = sources.get("source2");
+    const s3 = sources.get("source3");
+    const s4 = sources.get("source4");
 
     expect(s1).not.toBeNull();
     if (s1) {
@@ -1294,7 +1290,7 @@ describe("Datastore Method Tests", () => {
     db.completePlaintextItem("item1", longAsciiMessage);
 
     const sources = db.getSources();
-    const source = sources.find((s) => s.uuid === "source1");
+    const source = sources.get("source1");
     expect(source).not.toBeNull();
     expect(source!.messagePreview).not.toBeNull();
     expect(source!.messagePreview!.plaintext).not.toBeNull();
@@ -1328,7 +1324,7 @@ describe("Datastore Method Tests", () => {
     db.completePlaintextItem("item1", emojiMessage);
 
     const sources = db.getSources();
-    const source = sources.find((s) => s.uuid === "source1");
+    const source = sources.get("source1");
     expect(source).not.toBeNull();
     expect(source!.messagePreview).not.toBeNull();
     expect(source!.messagePreview!.plaintext).not.toBeNull();

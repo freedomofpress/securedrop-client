@@ -96,8 +96,8 @@ vi.mock("./SourceList/Source", () => ({
 
 describe("Sources Component", () => {
   // Mock sources data with different states for comprehensive testing
-  const mockSources: SourceType[] = [
-    {
+  const mockSources: Record<string, SourceType> = {
+    "source-1": {
       uuid: "source-1",
       data: {
         fingerprint: "fingerprint-1",
@@ -114,7 +114,7 @@ describe("Sources Component", () => {
       messagePreview: null,
       lastInteractionCount: 6,
     },
-    {
+    "source-2": {
       uuid: "source-2",
       data: {
         fingerprint: "fingerprint-2",
@@ -134,7 +134,7 @@ describe("Sources Component", () => {
       },
       lastInteractionCount: 5,
     },
-    {
+    "source-3": {
       uuid: "source-3",
       data: {
         fingerprint: "fingerprint-3",
@@ -151,7 +151,7 @@ describe("Sources Component", () => {
       messagePreview: null,
       lastInteractionCount: 6,
     },
-    {
+    "source-4": {
       uuid: "source-4",
       data: {
         fingerprint: "fingerprint-4",
@@ -168,7 +168,7 @@ describe("Sources Component", () => {
       messagePreview: null,
       lastInteractionCount: 7,
     },
-    {
+    "source-5": {
       uuid: "source-5",
       data: {
         fingerprint: "fingerprint-5",
@@ -185,7 +185,7 @@ describe("Sources Component", () => {
       messagePreview: null,
       lastInteractionCount: 7,
     },
-  ];
+  };
 
   const mockSearchResults: SearchResult[] = [
     {
@@ -786,9 +786,9 @@ describe("Sources Component", () => {
 
   describe("Bulk delete functionality", () => {
     beforeEach(() => {
-      window.electronAPI.addPendingSourceEvent = vi
+      window.electronAPI.addPendingSourceEventBatch = vi
         .fn()
-        .mockResolvedValue(BigInt(123));
+        .mockResolvedValue(["123"]);
     });
 
     it("shows modal when delete button is clicked with single source selected", async () => {
@@ -859,7 +859,7 @@ describe("Sources Component", () => {
       ).toBeInTheDocument();
     });
 
-    it("calls addPendingSourceEvent with SourceDeleted when Delete Account is clicked", async () => {
+    it("calls addPendingSourceEventBatch with SourceDeleted when Delete Account is clicked", async () => {
       renderSourceList();
 
       await waitFor(() => {
@@ -886,15 +886,19 @@ describe("Sources Component", () => {
       await userEvent.click(deleteAccountButton);
 
       await waitFor(() => {
-        expect(window.electronAPI.addPendingSourceEvent).toHaveBeenCalledWith(
-          "source-1",
-          PendingEventType.SourceDeleted,
-          undefined,
-        );
+        expect(
+          window.electronAPI.addPendingSourceEventBatch,
+        ).toHaveBeenCalledWith([
+          {
+            sourceUuid: "source-1",
+            type: PendingEventType.SourceDeleted,
+            data: undefined,
+          },
+        ]);
       });
     });
 
-    it("calls addPendingSourceEvent with SourceConversationTruncated when Delete Conversation is clicked", async () => {
+    it("calls addPendingSourceEventBatch with SourceConversationTruncated when Delete Conversation is clicked", async () => {
       renderSourceList();
 
       await waitFor(() => {
@@ -921,15 +925,19 @@ describe("Sources Component", () => {
       await userEvent.click(deleteConversationButton);
 
       await waitFor(() => {
-        expect(window.electronAPI.addPendingSourceEvent).toHaveBeenCalledWith(
-          "source-1",
-          PendingEventType.SourceConversationTruncated,
-          { upper_bound: 6 },
-        );
+        expect(
+          window.electronAPI.addPendingSourceEventBatch,
+        ).toHaveBeenCalledWith([
+          {
+            sourceUuid: "source-1",
+            type: PendingEventType.SourceConversationTruncated,
+            data: { upper_bound: 6 },
+          },
+        ]);
       });
     });
 
-    it("calls addPendingSourceEvent for all selected sources", async () => {
+    it("calls addPendingSourceEventBatch with all selected sources in a single call", async () => {
       renderSourceList();
 
       await waitFor(() => {
@@ -958,22 +966,27 @@ describe("Sources Component", () => {
       await userEvent.click(deleteAccountsButton);
 
       await waitFor(() => {
-        const addPendingSourceEvent = window.electronAPI.addPendingSourceEvent;
-        expect(addPendingSourceEvent).toHaveBeenCalledTimes(3);
-        expect(addPendingSourceEvent).toHaveBeenCalledWith(
-          "source-1",
-          PendingEventType.SourceDeleted,
-          undefined,
-        );
-        expect(addPendingSourceEvent).toHaveBeenCalledWith(
-          "source-2",
-          PendingEventType.SourceDeleted,
-          undefined,
-        );
-        expect(addPendingSourceEvent).toHaveBeenCalledWith(
-          "source-3",
-          PendingEventType.SourceDeleted,
-          undefined,
+        const addPendingSourceEventBatch =
+          window.electronAPI.addPendingSourceEventBatch;
+        expect(addPendingSourceEventBatch).toHaveBeenCalledTimes(1);
+        expect(addPendingSourceEventBatch).toHaveBeenCalledWith(
+          expect.arrayContaining([
+            {
+              sourceUuid: "source-1",
+              type: PendingEventType.SourceDeleted,
+              data: undefined,
+            },
+            {
+              sourceUuid: "source-2",
+              type: PendingEventType.SourceDeleted,
+              data: undefined,
+            },
+            {
+              sourceUuid: "source-3",
+              type: PendingEventType.SourceDeleted,
+              data: undefined,
+            },
+          ]),
         );
       });
     });
@@ -1002,10 +1015,12 @@ describe("Sources Component", () => {
       const cancelButton = screen.getByTestId("delete-modal-cancel-button");
       await userEvent.click(cancelButton);
 
-      // Wait a bit to ensure addPendingSourceEvent is not called
+      // Wait a bit to ensure addPendingSourceEventBatch is not called
       await new Promise((resolve) => setTimeout(resolve, 100));
 
-      expect(window.electronAPI.addPendingSourceEvent).not.toHaveBeenCalled();
+      expect(
+        window.electronAPI.addPendingSourceEventBatch,
+      ).not.toHaveBeenCalled();
     });
 
     it("clears selection after deleting sources", async () => {
@@ -1043,7 +1058,9 @@ describe("Sources Component", () => {
 
       // Wait for the operation to complete
       await waitFor(() => {
-        expect(window.electronAPI.addPendingSourceEvent).toHaveBeenCalled();
+        expect(
+          window.electronAPI.addPendingSourceEventBatch,
+        ).toHaveBeenCalled();
       });
 
       // Checkboxes should be unchecked
@@ -1056,9 +1073,9 @@ describe("Sources Component", () => {
 
   describe("Keyboard shortcut (Ctrl+Delete)", () => {
     beforeEach(() => {
-      window.electronAPI.addPendingSourceEvent = vi
+      window.electronAPI.addPendingSourceEventBatch = vi
         .fn()
-        .mockResolvedValue(BigInt(123));
+        .mockResolvedValue(["123"]);
       window.electronAPI.getSourceWithItems = vi.fn().mockResolvedValue(null);
     });
 
@@ -1235,11 +1252,14 @@ describe("Sources Component", () => {
     it("calls addPendingSourceEvent with Starred when source is unstarred", async () => {
       // Create a mock source that is not starred
       const unstarredSource = {
-        ...mockSources[0],
-        data: { ...mockSources[0].data, is_starred: false },
+        ...mockSources["source-1"],
+        data: {
+          ...mockSources["source-1"].data,
+          is_starred: false,
+        },
       };
 
-      renderSourceList([unstarredSource]);
+      renderSourceList({ "source-1": unstarredSource });
 
       await waitFor(() => {
         expect(screen.getByTestId("source-source-1")).toBeInTheDocument();
@@ -1259,13 +1279,16 @@ describe("Sources Component", () => {
 
     it("calls addPendingSourceEvent with Unstarred when source is starred", async () => {
       // Create a mock source that is starred
-      const starredSources = [
-        {
-          ...mockSources[0],
-          data: { ...mockSources[0].data, is_starred: true },
+      const starredSources = {
+        ...mockSources,
+        "source-1": {
+          ...mockSources["source-1"],
+          data: {
+            ...mockSources["source-1"].data,
+            is_starred: true,
+          },
         },
-        ...mockSources.slice(1),
-      ];
+      };
 
       // Override getSources mock to return our custom sources
       vi.mocked(window.electronAPI.getSources).mockResolvedValue(
@@ -1291,20 +1314,29 @@ describe("Sources Component", () => {
     });
 
     it("handles multiple star toggles correctly", async () => {
-      const sources = [
-        {
-          ...mockSources[0],
-          data: { ...mockSources[0].data, is_starred: false },
+      const sources = {
+        "source-1": {
+          ...mockSources["source-1"],
+          data: {
+            ...mockSources["source-1"].data,
+            is_starred: false,
+          },
         },
-        {
-          ...mockSources[1],
-          data: { ...mockSources[1].data, is_starred: true },
+        "source-2": {
+          ...mockSources["source-2"],
+          data: {
+            ...mockSources["source-2"].data,
+            is_starred: true,
+          },
         },
-        {
-          ...mockSources[2],
-          data: { ...mockSources[2].data, is_starred: false },
+        "source-3": {
+          ...mockSources["source-3"],
+          data: {
+            ...mockSources["source-3"].data,
+            is_starred: false,
+          },
         },
-      ];
+      };
 
       renderSourceList(sources);
 
@@ -1358,11 +1390,11 @@ describe("Sources Component", () => {
         .mockRejectedValue(new Error("IPC failure"));
 
       const unstarredSource = {
-        ...mockSources[0],
-        data: { ...mockSources[0].data, is_starred: false },
+        ...mockSources["source-1"],
+        data: { ...mockSources["source-1"].data, is_starred: false },
       };
 
-      renderSourceList([unstarredSource]);
+      renderSourceList({ "source-1": unstarredSource });
 
       await waitFor(() => {
         expect(screen.getByTestId("source-source-1")).toBeInTheDocument();
@@ -1384,11 +1416,11 @@ describe("Sources Component", () => {
       consoleErrorSpy.mockRestore();
     });
 
-    it("handles addPendingSourceEvent rejection during delete action", async () => {
+    it("handles addPendingSourceEventBatch rejection during delete action", async () => {
       const consoleErrorSpy = vi
         .spyOn(console, "error")
         .mockImplementation(() => {});
-      window.electronAPI.addPendingSourceEvent = vi
+      window.electronAPI.addPendingSourceEventBatch = vi
         .fn()
         .mockRejectedValue(new Error("IPC failure"));
 
@@ -1412,11 +1444,15 @@ describe("Sources Component", () => {
       );
 
       await waitFor(() => {
-        expect(window.electronAPI.addPendingSourceEvent).toHaveBeenCalledWith(
-          "source-1",
-          PendingEventType.SourceDeleted,
-          undefined,
-        );
+        expect(
+          window.electronAPI.addPendingSourceEventBatch,
+        ).toHaveBeenCalledWith([
+          {
+            sourceUuid: "source-1",
+            type: PendingEventType.SourceDeleted,
+            data: undefined,
+          },
+        ]);
         expect(consoleErrorSpy).toHaveBeenCalledWith(
           "Failed to delete source(s):",
           expect.any(Error),
@@ -1430,15 +1466,22 @@ describe("Sources Component", () => {
 
   describe("Selection behavior with filters and search", () => {
     // Use 3 sources where only source-2 (bob builder) is starred
-    const singleStarredSources = mockSources.slice(0, 3).map((s, i) => ({
-      ...s,
-      data: { ...s.data, is_starred: i === 1 },
-    }));
+    const singleStarredSources = {
+      "source-1": mockSources["source-1"],
+      "source-2": {
+        ...mockSources["source-2"],
+        data: {
+          ...mockSources["source-2"].data,
+          is_starred: true,
+        },
+      },
+      "source-3": mockSources["source-3"],
+    };
 
     beforeEach(() => {
-      window.electronAPI.addPendingSourceEvent = vi
+      window.electronAPI.addPendingSourceEventBatch = vi
         .fn()
-        .mockResolvedValue(BigInt(123));
+        .mockResolvedValue(["123"]);
       window.electronAPI.getSourceWithItems = vi.fn().mockResolvedValue(null);
     });
 
@@ -1460,7 +1503,7 @@ describe("Sources Component", () => {
       expect(screen.getByTestId("source-checkbox-source-2")).toBeChecked();
       expect(screen.getByTestId("source-checkbox-source-3")).toBeChecked();
 
-      // Filter to starred sources (only source-2 is visible)
+      // Filter to starred sources (only source-2 visible)
       await userEvent.click(screen.getByTestId("filter-dropdown"));
       await userEvent.click(screen.getByText("Starred"));
 
@@ -1485,14 +1528,17 @@ describe("Sources Component", () => {
 
       // Only the one starred source should have been submitted for deletion
       await waitFor(() => {
-        expect(window.electronAPI.addPendingSourceEvent).toHaveBeenCalledTimes(
-          1,
-        );
-        expect(window.electronAPI.addPendingSourceEvent).toHaveBeenCalledWith(
-          "source-2",
-          PendingEventType.SourceDeleted,
-          undefined,
-        );
+        expect(
+          window.electronAPI.addPendingSourceEventBatch,
+        ).toHaveBeenCalledTimes(1);
+        expect(
+          window.electronAPI.addPendingSourceEventBatch,
+        ).toHaveBeenCalledWith([
+          expect.objectContaining({
+            sourceUuid: "source-2",
+            type: PendingEventType.SourceDeleted,
+          }),
+        ]);
       });
     });
 

@@ -111,8 +111,8 @@ beforeEach(() => {
     onSourceUpdate: vi.fn().mockReturnValue(() => {}),
     onQuitRequested: vi.fn().mockReturnValue(() => {}),
     getItem: vi.fn().mockRejectedValue(new Error("mock not implemented")),
-    getSources: vi.fn().mockResolvedValue([
-      {
+    getSources: vi.fn().mockResolvedValue({
+      "source-1": {
         uuid: "source-1",
         data: {
           fingerprint: "ABCD1234EFGH5678IJKL9012MNOP3456QRST7890",
@@ -125,7 +125,7 @@ beforeEach(() => {
         },
         isRead: false,
       },
-      {
+      "source-2": {
         uuid: "source-2",
         data: {
           fingerprint: "1234ABCD5678EFGH9012IJKL3456MNOP7890QRST",
@@ -138,7 +138,7 @@ beforeEach(() => {
         },
         isRead: true,
       },
-      {
+      "source-3": {
         uuid: "source-3",
         data: {
           fingerprint: "5678EFGH9012IJKL3456MNOP7890QRST1234ABCD",
@@ -151,7 +151,7 @@ beforeEach(() => {
         },
         isRead: false,
       },
-    ]),
+    }),
     getSourceWithItems: vi.fn().mockResolvedValue({
       uuid: "source-1",
       data: {
@@ -221,6 +221,7 @@ beforeEach(() => {
       },
     ]),
     addPendingSourceEvent: vi.fn().mockResolvedValue(BigInt(123)),
+    addPendingSourceEventBatch: vi.fn().mockResolvedValue(["123"]),
     addPendingReplySentEvent: vi.fn().mockResolvedValue(BigInt(456)),
     addPendingItemEvent: vi.fn().mockResolvedValue(BigInt(789)),
     addPendingSourceConversationSeen: vi.fn().mockResolvedValue(null),
