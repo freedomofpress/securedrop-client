@@ -164,6 +164,32 @@ function getSyncMetadataHandler() {
   return handler as (_event: unknown, request: unknown) => Promise<SyncStatus>;
 }
 
+async function loginWithToken(token: string) {
+  testState.proxyJSONRequest.mockResolvedValueOnce({
+    status: 200,
+    error: false,
+    data: {
+      token,
+      expiration: "2025-07-16T19:25:44.388054+00:00",
+      journalist_uuid: "7f19192d-c8e3-4518-9d4a-26cb39bc8662",
+      journalist_first_name: null,
+      journalist_last_name: null,
+      hints: { version: "abc123", sources: 0, items: 0 },
+    },
+    headers: {},
+  });
+  const loginHandler = testState.registeredHandlers.get("login");
+  expect(loginHandler).toBeDefined();
+  await loginHandler!(
+    {},
+    {
+      username: "user",
+      passphrase: "passphrase",
+      oneTimeCode: "123456",
+    },
+  );
+}
+
 describe("syncMetadata IPC handler", () => {
   beforeEach(() => {
     vi.resetModules();
@@ -207,14 +233,10 @@ describe("syncMetadata IPC handler", () => {
 
   it("re-wakes the fetch worker when sync returns NOT_MODIFIED", async () => {
     await loadMainProcessModule();
+    await loginWithToken("resume-token");
 
     const handler = getSyncMetadataHandler();
-    const request = {
-      authToken: "resume-token",
-      hintedVersion: undefined,
-    };
-
-    const status = await handler({}, request);
+    const status = await handler({}, { hintedVersion: undefined });
 
     expect(status).toBe(SyncStatus.NOT_MODIFIED);
     expect(testState.syncModule.shouldSkipSync).toHaveBeenCalledTimes(1);
@@ -229,14 +251,10 @@ describe("syncMetadata IPC handler", () => {
     testState.syncModule.shouldSkipSync.mockReturnValue(true);
 
     await loadMainProcessModule();
+    await loginWithToken("skip-token");
 
     const handler = getSyncMetadataHandler();
-    const request = {
-      authToken: "skip-token",
-      hintedVersion: "v1",
-    };
-
-    const status = await handler({}, request);
+    const status = await handler({}, { hintedVersion: "v1" });
 
     expect(status).toBe(SyncStatus.NOT_MODIFIED);
     expect(testState.syncModule.shouldSkipSync).toHaveBeenCalledTimes(1);

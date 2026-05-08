@@ -21,7 +21,23 @@ const initialState: SyncState = {
   status: null,
 };
 
-// Async thunk for syncing metadata (sources, journalists, and active conversation)
+// Async thunk called when the main process background sync loop completes a sync
+export const syncComplete = createAsyncThunk(
+  "sync/syncComplete",
+  async (status: SyncStatus, { getState, dispatch }) => {
+    if (status === SyncStatus.UPDATED) {
+      dispatch(fetchSources());
+      dispatch(fetchJournalists());
+      const state = getState() as RootState;
+      if (state.sources.activeSourceUuid) {
+        dispatch(fetchConversation(state.sources.activeSourceUuid));
+      }
+    }
+    return status;
+  },
+);
+
+// Async thunk for manually syncing metadata (sources, journalists, and active conversation)
 export const syncMetadata = createAsyncThunk(
   "sync/syncMetadata",
   async (authData: AuthData, { getState, dispatch }) => {
@@ -39,24 +55,17 @@ export const syncMetadata = createAsyncThunk(
 
     // Sync metadata with the server
     const status: SyncStatus = await window.electronAPI.syncMetadata({
-      authToken: authData.token,
       hintedRecords,
       hintedVersion,
     });
 
     // If there are updates from sync, fetch downstream state
     if (status === SyncStatus.UPDATED) {
-      // Fetch updated sources
       dispatch(fetchSources());
-
-      // Fetch updated journalists
       dispatch(fetchJournalists());
 
-      // Get the active source from Redux state
       const state = getState() as RootState;
       const activeSourceUuid = state.sources.activeSourceUuid;
-
-      // If there's an active source, fetch its conversation
       if (activeSourceUuid) {
         dispatch(fetchConversation(activeSourceUuid));
       }
@@ -83,6 +92,11 @@ export const syncSlice = createSlice({
   extraReducers: (builder) => {
     builder
       .addCase(setUnauth, () => initialState)
+      .addCase(syncComplete.fulfilled, (state, action) => {
+        state.lastSyncStarted = state.lastSyncStarted ?? Date.now();
+        state.lastSyncFinished = Date.now();
+        state.status = action.payload;
+      })
       .addCase(syncMetadata.fulfilled, (state, action) => {
         state.lastSyncFinished = Date.now();
         state.status = action.payload;

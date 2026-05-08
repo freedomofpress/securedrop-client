@@ -10,7 +10,6 @@ enum SessionStatus {
 
 interface AuthData {
   expiration: string;
-  token: string;
   journalistUUID: string;
   journalistFirstName: string | null;
   journalistLastName: string | null;

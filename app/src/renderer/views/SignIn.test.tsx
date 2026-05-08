@@ -121,10 +121,11 @@ describe("SignInView Component", () => {
   // Server-side validations
 
   it("fails when server is unreachable", async () => {
-    // Mock window.electronAPI.request to throw an error
-    (window as any).electronAPI.request.mockRejectedValue(
-      new Error("Network error"),
-    );
+    // Mock window.electronAPI.login to return a network error
+    (window as any).electronAPI.login.mockResolvedValue({
+      success: false,
+      errorType: "network",
+    });
 
     renderWithProviders(<SignInView />);
 
@@ -150,21 +151,10 @@ describe("SignInView Component", () => {
   });
 
   it("fails when credentials are invalid", async () => {
-    // Mock window.electronAPI.request to return invalid credentials error
-    (window as any).electronAPI.request.mockResolvedValue({
-      error: true,
-      data: {
-        error: "Forbidden",
-        message: "Token authentication failed.",
-      },
-      status: 403,
-      headers: {
-        "content-length": "73",
-        server: "Werkzeug/2.2.3 Python/3.12.3",
-        connection: "close",
-        "content-type": "application/json",
-        date: "Wed, 16 Jul 2025 17:23:30 GMT",
-      },
+    // Mock window.electronAPI.login to return a credentials error
+    (window as any).electronAPI.login.mockResolvedValue({
+      success: false,
+      errorType: "credentials",
     });
 
     renderWithProviders(<SignInView />);
@@ -191,31 +181,17 @@ describe("SignInView Component", () => {
   });
 
   it("redirects to inbox on success", async () => {
-    // Mock window.electronAPI.request to return success
-    (window as any).electronAPI.request.mockResolvedValue({
-      error: false,
-      data: {
-        expiration: "2025-07-16T19:25:44.388054+00:00",
-        journalist_first_name: null,
-        journalist_last_name: null,
-        journalist_uuid: "7f19192d-c8e3-4518-9d4a-26cb39bc8662",
-        token:
-          "IlNrR0lza1M1TDd6TC1HbVBOTEFlQ1YwSHkxNkplX00wbEN1amlCZ2wtTVEi.aHfglw.XM077FlEYyESuwl_JLeMqPSZsyg",
-        hints: {
-          version:
-            "a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2",
-          sources: 3,
-          items: 10,
-        },
-      },
-      status: 200,
-      headers: {
-        "content-length": "295",
-        date: "Wed, 16 Jul 2025 17:25:44 GMT",
-        connection: "close",
-        server: "Werkzeug/2.2.3 Python/3.12.3",
-        "content-type": "application/json",
-      },
+    // Mock window.electronAPI.login to return success
+    (window as any).electronAPI.login.mockResolvedValue({
+      success: true,
+      expiration: "2025-07-16T19:25:44.388054+00:00",
+      journalistFirstName: null,
+      journalistLastName: null,
+      journalistUUID: "7f19192d-c8e3-4518-9d4a-26cb39bc8662",
+      lastHintedVersion:
+        "a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2",
+      lastHintedSources: 3,
+      lastHintedItems: 10,
     });
 
     let currentLocation: any;

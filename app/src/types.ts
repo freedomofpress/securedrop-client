@@ -53,13 +53,45 @@ export enum SyncStatus {
   TIMEOUT = "timeout",
 }
 
-// IPC request for operations while authenticated against a server
-// ex: syncMetadata, fetchDownloads
+// AuthedRequest contains the authToken so that process outside the main
+// process (ie: fetch worker) can also make requests to the server
 export type AuthedRequest = {
   authToken: string;
   hintedRecords?: number;
   hintedVersion?: string;
 };
+
+// IPC request for sync operations sent from the renderer
+export type SyncRequest = {
+  hintedRecords?: number;
+  hintedVersion?: string;
+};
+
+// Credentials sent from the renderer to the main process to authenticate
+export type LoginCredentials = {
+  username: string;
+  passphrase: string;
+  oneTimeCode: string;
+};
+
+// Non-secret session data returned to the renderer after a successful login
+export type LoginSuccess = {
+  success: true;
+  expiration: string;
+  journalistUUID: string;
+  journalistFirstName: string | null;
+  journalistLastName: string | null;
+  lastHintedVersion: string;
+  lastHintedSources: number;
+  lastHintedItems: number;
+};
+
+export type LoginFailure = {
+  success: false;
+  errorType: "credentials" | "generic" | "network";
+};
+
+export type LoginResult = LoginSuccess | LoginFailure;
 
 // Message sent to the fetch worker to abort all active downloads and decryptions for a source
 export type AbortSourceFetch = {

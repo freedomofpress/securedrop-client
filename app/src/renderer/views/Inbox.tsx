@@ -6,6 +6,7 @@ import type { AppDispatch } from "../store";
 import { fetchJournalists } from "../features/journalists/journalistsSlice";
 import {
   syncMetadata,
+  syncComplete,
   selectSyncStatus,
   clearStatus,
 } from "../features/sync/syncSlice";
@@ -64,20 +65,6 @@ function InboxView() {
     }, [session.authData, dispatch, navigate]),
   });
 
-  // Trigger sync in the background every minute
-  useEffect(() => {
-    // Trigger immediately
-    sync();
-    const syncInterval = setInterval(() => {
-      sync();
-    }, 1000 * 60);
-
-    // Clean up interval
-    return () => {
-      clearInterval(syncInterval);
-    };
-  }, [sync]);
-
   // Handle 403 Forbidden errors from sync
   useEffect(() => {
     if (syncStatus === SyncStatus.FORBIDDEN) {
@@ -100,9 +87,15 @@ function InboxView() {
         dispatch(updateSource(source));
       },
     );
+    const unsubscribeSync = window.electronAPI.onSyncComplete(
+      (status: SyncStatus) => {
+        dispatch(syncComplete(status));
+      },
+    );
     return () => {
       unsubscribeItem();
       unsubscribeSource();
+      unsubscribeSync();
     };
   }, [dispatch]);
 
