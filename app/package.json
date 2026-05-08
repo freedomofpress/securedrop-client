@@ -38,6 +38,7 @@
   "keywords": [],
   "license": "AGPL-3.0-or-later",
   "//": {
+    "better-sqlite": "12.9.1 doesn't have electron prebuilds working right now: https://github.com/WiseLibs/better-sqlite3/releases/tag/v12.9.1",
     "electron-builder": "pinned to 26.3.0 because of regressions: https://github.com/freedomofpress/securedrop-client/issues/2996"
   },
   "devDependencies": {
@@ -63,7 +64,7 @@
     "@vitejs/plugin-react": "^5.1.2",
     "@vitest/coverage-v8": "^3.2.4",
     "antd": "^5.29.3",
-    "electron": "^40.7.0",
+    "electron": "^41",
     "electron-builder": "<26.3.1",
     "electron-devtools-installer": "^4.0.0",
     "electron-vite": "^5.0.0",
@@ -100,7 +101,7 @@
     "@electron-toolkit/utils": "^4.0.0",
     "@sapphire/snowflake": "^3.5.5",
     "better-queue": "^3.8.12",
-    "better-sqlite3": "^12.6.0",
+    "better-sqlite3": "~12.8.0",
     "blakejs": "^1.2.1",
     "dbmate": "^2.29.3",
     "liquidjs": "^10.25.5",
