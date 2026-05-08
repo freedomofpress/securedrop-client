@@ -175,32 +175,32 @@ export type SourceRow = {
   data: string; // JSON stringified SourceMetadata
   is_seen: boolean;
   has_attachment: boolean;
-  last_message_kind?: "message" | "reply" | "file";
-  last_message_plaintext?: string;
-  last_message_filename?: string;
-  last_interaction_count?: number;
+  last_message_kind: "message" | "reply" | "file" | null;
+  last_message_plaintext: string | null;
+  last_message_filename: string | null;
+  last_interaction_count: number | null;
 };
 
 export type Item = {
   uuid: string;
   data: ItemMetadata;
-  plaintext?: string;
-  filename?: string;
-  fetch_status?: FetchStatus;
-  fetch_progress?: number;
-  decrypted_size?: number;
+  plaintext: string | null;
+  filename: string | null;
+  fetch_status: FetchStatus | null;
+  fetch_progress: number | null;
+  decrypted_size: number | null;
 };
 
 // Database representation
 export type ItemRow = {
   uuid: string;
   data: string; // JSON stringified ItemMetadata
-  plaintext?: string;
-  filename?: string;
-  fetch_status: number; // FetchStatus enum
-  fetch_progress: number;
-  decrypted_size?: number;
-  is_read?: number; // projected value from items_projected view
+  plaintext: string | null;
+  filename: string | null;
+  fetch_status: number | null; // FetchStatus enum
+  fetch_progress: number | null;
+  decrypted_size: number | null;
+  is_read: number | null; // projected value from items_projected view
 };
 
 // Database representation
@@ -211,8 +211,8 @@ export type JournalistRow = {
 
 export type PendingEventRow = {
   snowflake_id: string;
-  source_uuid: string;
-  item_uuid: string;
+  source_uuid: string | null;
+  item_uuid: string | null;
   type: string;
   data: string; // JSON stringified PendingEventData
 };

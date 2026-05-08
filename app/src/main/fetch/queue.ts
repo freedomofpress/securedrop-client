@@ -142,7 +142,7 @@ export class TaskQueue {
     const item = db.getItem(itemId);
     return (
       item !== null &&
-      item?.fetch_status !== undefined &&
+      item.fetch_status !== null &&
       !NONPROCESSABLE_FETCH_STATUSES.has(item.fetch_status)
     );
   }
@@ -221,7 +221,7 @@ export class TaskQueue {
       const dbItem = db.getItem(item.id);
       if (
         !dbItem ||
-        dbItem.fetch_status === undefined ||
+        dbItem.fetch_status === null ||
         NONPROCESSABLE_FETCH_STATUSES.has(dbItem.fetch_status)
       ) {
         console.debug("Item task is not in a processable state, skipping...");

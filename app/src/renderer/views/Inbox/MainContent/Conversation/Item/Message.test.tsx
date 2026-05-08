@@ -16,6 +16,10 @@ describe("Message Component Memoization", () => {
       interaction_count: 0,
     },
     plaintext: "Hello, this is a message",
+    filename: null,
+    fetch_status: null,
+    fetch_progress: null,
+    decrypted_size: null,
   };
   const mockOnUpdate = vi.fn();
 
@@ -47,7 +51,7 @@ describe("Message Component Memoization", () => {
     // Change to encrypted (no plaintext) - should re-render
     [
       {
-        item: { ...mockItem, plaintext: undefined },
+        item: { ...mockItem, plaintext: null },
         designation: "Different Source",
         onUpdate: mockOnUpdate,
       },

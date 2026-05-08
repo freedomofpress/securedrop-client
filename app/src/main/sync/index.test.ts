@@ -437,7 +437,11 @@ describe("syncMetadata", () => {
       if (itemID === ITEM_UUID_2) {
         return {
           uuid: ITEM_UUID_2,
+          plaintext: null,
           filename: "/securedrop/plaintext.txt",
+          fetch_status: null,
+          fetch_progress: null,
+          decrypted_size: null,
           data: mockItemMetadata(ITEM_UUID_2, SOURCE_UUID_1),
         };
       }

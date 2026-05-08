@@ -94,13 +94,16 @@ function createMockDB() {
 function mockItem(
   metadata: ItemMetadata,
   fetch_status: FetchStatus,
-  fetch_progress?: number,
+  fetch_progress: number | null = null,
 ): Item {
   return {
     uuid: "id",
     data: metadata,
     fetch_status,
     fetch_progress,
+    plaintext: null,
+    filename: null,
+    decrypted_size: null,
   };
 }
 
