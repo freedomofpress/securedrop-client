@@ -105,7 +105,28 @@ describe("Crypto", () => {
       expect(result?.path).toBe(filename);
     });
 
-    it("should return empty string when no filename in header", () => {
+    it("should return null when gzip header filename is empty string", () => {
+      const gzipHeader = Buffer.from([
+        0x1f,
+        0x8b, // gzip magic
+        0x08, // compression method
+        0x08, // flags (FNAME bit set)
+        0x00,
+        0x00,
+        0x00,
+        0x00, // mtime
+        0x00, // extra flags
+        0x03, // OS
+        0x00, // empty filename (just the null terminator)
+      ]);
+
+      const result = (
+        crypto as unknown as CryptoWithPrivateMethods
+      ).readGzipHeaderFilename(gzipHeader);
+      expect(result).toBe(null);
+    });
+
+    it("should return null when no filename in header", () => {
       const gzipHeader = Buffer.from([
         0x1f,
         0x8b, // gzip magic

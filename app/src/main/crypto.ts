@@ -550,6 +550,10 @@ export class Crypto {
       const filename = data
         .subarray(filenameStart, filenameEnd)
         .toString("utf8");
+
+      if (filename.trim().length === 0) {
+        return null;
+      }
       return new UnsafePathComponent(filename);
     }
 
