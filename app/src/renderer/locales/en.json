@@ -191,6 +191,7 @@
     "retry": "Retry",
     "cancel": "Cancel",
     "filenameTooltip": "Filename available after downloading",
+    "offlineFilenameTooltip": "Download disabled in offline mode. Filename available after downloading",
     "viewFile": "View",
     "exportToUSB": "Export to USB",
     "exportToWhistleflow": "Export to Whistleflow",

@@ -199,6 +199,7 @@ const File = memo(function File({ item, designation, onUpdate }: FileProps) {
   const fetchStatus = item.fetch_status;
   const [isHovered, setIsHovered] = useState(false);
 
+  // Disable downloading of files in offline mode
   const session = useAppSelector(getSessionState);
   const disableFetch = session.status !== SessionStatus.Auth;
 
@@ -227,6 +228,9 @@ const File = memo(function File({ item, designation, onUpdate }: FileProps) {
   }
 
   const handleClick = () => {
+    if (disableFetch) {
+      return;
+    }
     if (
       fetchStatus === FetchStatus.Initial ||
       fetchStatus === FetchStatus.Cancelled
@@ -272,11 +276,13 @@ const File = memo(function File({ item, designation, onUpdate }: FileProps) {
           style={fileBoxStyle}
           onClick={handleClick}
           onMouseEnter={() =>
+            !disableFetch &&
             (fetchStatus === FetchStatus.Initial ||
               fetchStatus === FetchStatus.Cancelled) &&
             setIsHovered(true)
           }
           onMouseLeave={() =>
+            !disableFetch &&
             (fetchStatus === FetchStatus.Initial ||
               fetchStatus === FetchStatus.Cancelled) &&
             setIsHovered(false)
@@ -316,7 +322,9 @@ const InitialFile = memo(function InitialFile({
   };
 
   return (
-    <Tooltip title={t("filenameTooltip")}>
+    <Tooltip
+      title={disableFetch ? t("offlineFilenameTooltip") : t("filenameTooltip")}
+    >
       <div className="flex items-center justify-between pt-2 pb-2">
         <div className="flex items-center">
           <FileIcon size={30} strokeWidth={1} className="file-icon" />
