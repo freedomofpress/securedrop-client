@@ -11,7 +11,6 @@ This release contains bug fixes and improvements to the SecureDrop Inbox.
 * Fix `fetch_status` and `fetch_progress` to use nullable types (#3357)
 * Don't send `--version` output to syslog (#3328)
 * Dependency updates:
-  * Bump pnpm/action-setup from 4 to 6.0.5 (#3396)
   * Bump zizmor from 1.16.3 to 1.24.1 (#3304)
   * Bump actions/create-github-app-token from 2 to 3 (#3212)
 * Internal and development:
