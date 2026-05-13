@@ -5,7 +5,6 @@ import {
 } from "../../../../../types";
 import "./Item.css";
 import Message from "./Item/Message";
-import Reply from "./Item/Reply";
 import File from "./Item/File";
 import { useAppDispatch } from "../../../../hooks";
 import { updateItemFetchStatus } from "../../../../features/conversation/conversationSlice";
@@ -39,6 +38,7 @@ const Item = memo(function ItemComponent({ item, designation }: ItemProps) {
   if (kind === "message") {
     return (
       <Message
+        kind="message"
         item={item}
         designation={designation}
         onUpdate={onFetchStatusUpdate}
@@ -55,7 +55,7 @@ const Item = memo(function ItemComponent({ item, designation }: ItemProps) {
     );
   }
   if (kind === "reply") {
-    return <Reply item={item} />;
+    return <Message kind="reply" item={item} onUpdate={onFetchStatusUpdate} />;
   }
   // Fallback
   return null;
