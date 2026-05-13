@@ -1,5 +1,22 @@
 # Changelog
 
+## 1.2.0
+
+This release contains bug fixes and improvements to the SecureDrop Inbox.
+
+* Flush all pending events on sync and move auth token to main process (#3338)
+* Send batch source event when using the bulk deletion modal (#3339)
+* Increase the search results page limit (#3335)
+* Return null when the gzip header contains an empty filename (#3402)
+* Fix `fetch_status` and `fetch_progress` to use nullable types (#3357)
+* Don't send `--version` output to syslog (#3328)
+* Dependency updates:
+  * Bump zizmor from 1.16.3 to 1.24.1 (#3304)
+  * Bump actions/create-github-app-token from 2 to 3 (#3212)
+* Internal and development:
+  * Remove unused `JournalistRow.version` (#3359)
+  * Make `build-debs` tag verification more robust (#3346)
+
 ## 1.1.0
 
 This release contains fixes and dependency updates to the SecureDrop Inbox. It also 
