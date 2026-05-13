@@ -179,7 +179,7 @@ def verify_node_checksum(node_file_path, runtime, args) -> None:
     print(f"✓ Checksum verified: {checksum_key}")
 
 
-def download_and_extract_binary(runtime, base_path, args, verify_checksum=True):
+def download_and_extract_binary(runtime, base_path, args, verify_checksum=True, force=False):
     """Download and extract a binary for the given runtime"""
     url = build_download_url(runtime, args)
     filename = Path(url).name
@@ -191,7 +191,7 @@ def download_and_extract_binary(runtime, base_path, args, verify_checksum=True):
     final_path = target_dir / "better_sqlite3.node"
 
     # Check if file already exists
-    if final_path.exists():
+    if not force and final_path.exists():
         print(f"Binary already exists: {final_path}")
         if verify_checksum:
             verify_node_checksum(final_path, runtime, args)
@@ -297,7 +297,7 @@ def main():
             # Node.js binary
             node_args = dict(**platform_args, abi=node_abi)
             node_path = download_and_extract_binary(
-                "node", base_path, node_args, verify_checksum=False
+                "node", base_path, node_args, verify_checksum=False, force=True
             )
             checksum_key = get_checksum_key("node", node_args)
             checksums[checksum_key] = calculate_checksum(node_path)
@@ -306,7 +306,7 @@ def main():
             # Electron binary
             electron_args = dict(**platform_args, abi=electron_abi)
             electron_path = download_and_extract_binary(
-                "electron", base_path, electron_args, verify_checksum=False
+                "electron", base_path, electron_args, verify_checksum=False, force=True
             )
             checksum_key = get_checksum_key("electron", electron_args)
             checksums[checksum_key] = calculate_checksum(electron_path)
@@ -325,14 +325,22 @@ def main():
     if os.environ.get("DEB_BUILD_OPTIONS") is None:
         # Download Node.js binary
         results["node"] = download_and_extract_binary(
-            "node", base_path, dict(**args, abi=node_abi), verify_checksum=True
+            "node",
+            base_path,
+            dict(**args, abi=node_abi),
+            verify_checksum=True,
+            force=args_parsed.update_checksums,
         )
     else:
         print("Not downloading node.js version for package build")
 
     # Download Electron binary
     results["electron"] = download_and_extract_binary(
-        "electron", base_path, dict(**args, abi=electron_abi), verify_checksum=True
+        "electron",
+        base_path,
+        dict(**args, abi=electron_abi),
+        verify_checksum=True,
+        force=args_parsed.update_checksums,
     )
 
     print()
