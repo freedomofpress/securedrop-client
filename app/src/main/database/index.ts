@@ -686,6 +686,7 @@ export class DB {
             deletedItems.push(item);
           }
           this.deleteItem.run({ uuid: itemid });
+          this.searchIndex.removeItem(itemid);
         }
       });
     })(items);

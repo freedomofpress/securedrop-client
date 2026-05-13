@@ -119,6 +119,7 @@ export class Search {
         INNER JOIN sources_projected sp ON sp.uuid = si.source_uuid
         LEFT JOIN items_projected ip ON ip.uuid = si.item_uuid
         WHERE search_index MATCH ?
+        AND (si.item_uuid IS NULL OR ip.uuid IS NOT NULL)
       )
       WHERE rn = 1
       ORDER BY rank
