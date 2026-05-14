@@ -59,6 +59,11 @@ const Source = memo(function Source({
 
   const handleKeyDown = useCallback(
     (e: KeyboardEvent<HTMLDivElement>) => {
+      // Only intercept enter and space when the source div itself is focused
+      if (e.target !== e.currentTarget) {
+        return;
+      }
+
       if (e.key === "Enter" || e.key === " ") {
         e.preventDefault();
         handleClick();
