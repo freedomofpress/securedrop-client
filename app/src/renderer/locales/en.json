@@ -111,6 +111,14 @@
           "keepAccountsButton": "Delete Conversations"
         }
       },
+      "counts": {
+        "total_one": "{{count}} total source",
+        "total_other": "{{count}} total sources",
+        "visible_one": "{{count}} visible",
+        "visible_other": "{{count}} visible",
+        "selected_one": "{{count}} selected",
+        "selected_other": "{{count}} selected"
+      },
       "search": {
         "placeholder": "Search"
       },
