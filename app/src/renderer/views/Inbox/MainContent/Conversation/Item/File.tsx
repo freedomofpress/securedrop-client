@@ -36,6 +36,11 @@ import FileVideoFilled from "./FileVideoFilled";
 import FileAudioFilled from "./FileAudioFilled";
 import { ExportWizard } from "./Export";
 import { PrintWizard } from "./Print";
+import { useAppSelector } from "../../../../../hooks";
+import {
+  getSessionState,
+  SessionStatus,
+} from "../../../../../features/session/sessionSlice";
 
 const EXCEL_EXTENSIONS = new Set([
   ".xls",
@@ -194,6 +199,10 @@ const File = memo(function File({ item, designation, onUpdate }: FileProps) {
   const fetchStatus = item.fetch_status;
   const [isHovered, setIsHovered] = useState(false);
 
+  // Disable downloading of files in offline mode
+  const session = useAppSelector(getSessionState);
+  const disableFetch = session.status !== SessionStatus.Auth;
+
   let FileInner;
   switch (fetchStatus) {
     case FetchStatus.Initial:
@@ -219,6 +228,9 @@ const File = memo(function File({ item, designation, onUpdate }: FileProps) {
   }
 
   const handleClick = () => {
+    if (disableFetch) {
+      return;
+    }
     if (
       fetchStatus === FetchStatus.Initial ||
       fetchStatus === FetchStatus.Cancelled
@@ -264,17 +276,23 @@ const File = memo(function File({ item, designation, onUpdate }: FileProps) {
           style={fileBoxStyle}
           onClick={handleClick}
           onMouseEnter={() =>
+            !disableFetch &&
             (fetchStatus === FetchStatus.Initial ||
               fetchStatus === FetchStatus.Cancelled) &&
             setIsHovered(true)
           }
           onMouseLeave={() =>
+            !disableFetch &&
             (fetchStatus === FetchStatus.Initial ||
               fetchStatus === FetchStatus.Cancelled) &&
             setIsHovered(false)
           }
         >
-          <FileInner item={item} onUpdate={onUpdate} />
+          <FileInner
+            item={item}
+            onUpdate={onUpdate}
+            disableFetch={disableFetch}
+          />
         </div>
       </div>
     </div>
@@ -284,11 +302,13 @@ const File = memo(function File({ item, designation, onUpdate }: FileProps) {
 interface FileViewProps {
   item: Item;
   onUpdate: (update: ItemUpdate) => void;
+  disableFetch: boolean;
 }
 
 const InitialFile = memo(function InitialFile({
   item,
   onUpdate,
+  disableFetch,
 }: FileViewProps) {
   const { t } = useTranslation("Item");
   const fileSize = prettyPrintBytes(item.data.size);
@@ -302,7 +322,9 @@ const InitialFile = memo(function InitialFile({
   };
 
   return (
-    <Tooltip title={t("filenameTooltip")}>
+    <Tooltip
+      title={disableFetch ? t("offlineFilenameTooltip") : t("filenameTooltip")}
+    >
       <div className="flex items-center justify-between pt-2 pb-2">
         <div className="flex items-center">
           <FileIcon size={30} strokeWidth={1} className="file-icon" />
@@ -317,6 +339,7 @@ const InitialFile = memo(function InitialFile({
             type="text"
             size="large"
             icon={<Download size={20} onClick={scheduleDownload} />}
+            disabled={disableFetch}
           />
         </div>
       </div>
@@ -327,6 +350,7 @@ const InitialFile = memo(function InitialFile({
 const InProgressFile = memo(function InProgressFile({
   item,
   onUpdate,
+  disableFetch,
 }: FileViewProps) {
   const { t } = useTranslation("Item");
   const progressBytes = item.fetch_progress ?? 0;
@@ -386,15 +410,30 @@ const InProgressFile = memo(function InProgressFile({
           </p>
           <div className="flex gap-1">
             {item.fetch_status === FetchStatus.DownloadInProgress ? (
-              <Button size="small" type="link" onClick={pauseDownload}>
+              <Button
+                size="small"
+                type="link"
+                onClick={pauseDownload}
+                disabled={disableFetch}
+              >
                 {t("pause")}
               </Button>
             ) : (
-              <Button size="small" type="link" onClick={resumeDownload}>
+              <Button
+                size="small"
+                type="link"
+                onClick={resumeDownload}
+                disabled={disableFetch}
+              >
                 {t("resume")}
               </Button>
             )}
-            <Button size="small" type="link" onClick={cancelDownload}>
+            <Button
+              size="small"
+              type="link"
+              onClick={cancelDownload}
+              disabled={disableFetch}
+            >
               {t("cancel")}
             </Button>
           </div>
@@ -553,7 +592,11 @@ const CompleteFile = memo(function CompleteFile({ item }: { item: Item }) {
   );
 });
 
-const FailedFile = memo(function FailedFile({ item, onUpdate }: FileViewProps) {
+const FailedFile = memo(function FailedFile({
+  item,
+  onUpdate,
+  disableFetch,
+}: FileViewProps) {
   const { t } = useTranslation("Item");
   const { token } = theme.useToken();
 
@@ -586,10 +629,20 @@ const FailedFile = memo(function FailedFile({ item, onUpdate }: FileViewProps) {
         </div>
       </div>
       <div className="flex gap-2">
-        <Button type="link" size="small" onClick={retryDownload}>
+        <Button
+          type="link"
+          size="small"
+          onClick={retryDownload}
+          disabled={disableFetch}
+        >
           {t("retry")}
         </Button>
-        <Button type="link" size="small" onClick={cancelDownload}>
+        <Button
+          type="link"
+          size="small"
+          onClick={cancelDownload}
+          disabled={disableFetch}
+        >
           {t("cancel")}
         </Button>
       </div>
