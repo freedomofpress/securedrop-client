@@ -219,8 +219,28 @@ export class ArchiveExporter {
   tmpdir: string | null = null;
   backendQube: string;
 
+  // Track if export is in progress to guard against concurrent updates
+  // to the singleton FSM state.
+  private exportInProgress = false;
+
   constructor(backendQube: string) {
     this.backendQube = backendQube;
+  }
+
+  // Check if there is an export in progress: if so, throws to avoid
+  // concurrent mutation of export state.
+  protected acquireExportLock(): void {
+    if (this.exportInProgress) {
+      throw new PrintExportError(
+        "An export or print operation is already in progress",
+        DeviceErrorStatus.CALLED_PROCESS_ERROR,
+      );
+    }
+    this.exportInProgress = true;
+  }
+
+  protected releaseExportLock(): void {
+    this.exportInProgress = false;
   }
 
   /**
@@ -457,9 +477,11 @@ export class Printer extends ArchiveExporter {
   // Initiate print and run preflight checks to make sure that Export VM is started
   public async initiatePrint(): Promise<DeviceStatus> {
     console.log("Initiating print, beginning printer preflight checks");
-    this.fsm.transition({ action: "initiatePrint" });
+    this.acquireExportLock();
 
     try {
+      this.fsm.transition({ action: "initiatePrint" });
+
       if (!this.tmpdir) {
         this.tmpdir = await mkdtemp(path.join(os.tmpdir(), "sd-export-"));
         await chmodAsync(this.tmpdir, 0o700);
@@ -477,14 +499,18 @@ export class Printer extends ArchiveExporter {
       console.log("Error creating archive for printer preflight", err);
       this._onError();
       return DeviceErrorStatus.UNEXPECTED_RETURN_STATUS;
+    } finally {
+      this.releaseExportLock();
     }
   }
 
   public async print(filepaths: string[]): Promise<DeviceStatus> {
     console.log("Beginning print");
-    this.fsm.transition({ action: "print" });
+    this.acquireExportLock();
 
     try {
+      this.fsm.transition({ action: "print" });
+
       if (!this.tmpdir) {
         this.tmpdir = await mkdtemp(path.join(os.tmpdir(), "sd-export-"));
         await chmodAsync(this.tmpdir, 0o700);
@@ -503,6 +529,8 @@ export class Printer extends ArchiveExporter {
       console.log("Print failed", err);
       this._onError();
       return DeviceErrorStatus.UNEXPECTED_RETURN_STATUS;
+    } finally {
+      this.releaseExportLock();
     }
   }
 
@@ -575,11 +603,13 @@ export class Exporter extends ArchiveExporter {
 
   public async initiateExport(): Promise<DeviceStatus> {
     console.log("Beginning export preflight check");
-    this.fsm.transition({ action: "initiateExport" });
+    this.acquireExportLock();
 
     let status: DeviceStatus = DeviceErrorStatus.UNEXPECTED_RETURN_STATUS;
 
     try {
+      this.fsm.transition({ action: "initiateExport" });
+
       this.tmpdir = await mkdtemp(path.join(os.tmpdir(), "sd-export-"));
       await chmodAsync(this.tmpdir, 0o700);
 
@@ -594,6 +624,8 @@ export class Exporter extends ArchiveExporter {
     } catch (err) {
       console.log("Export preflight check failed", err);
       this._onError();
+    } finally {
+      this.releaseExportLock();
     }
     return status;
   }
@@ -604,6 +636,8 @@ export class Exporter extends ArchiveExporter {
     sourceName?: string,
     whistleflow?: boolean,
   ): Promise<DeviceStatus> {
+    this.acquireExportLock();
+
     let status: DeviceStatus;
     try {
       console.log(`Begin exporting ${filepaths.length} item(s)`);
@@ -647,6 +681,8 @@ export class Exporter extends ArchiveExporter {
       console.log("Export failed", err);
       this._onError();
       throw err;
+    } finally {
+      this.releaseExportLock();
     }
     return status;
   }
