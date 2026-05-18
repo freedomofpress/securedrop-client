@@ -697,6 +697,9 @@ export const ExportWizard = memo(function ExportWizard({
   if (open && context.state === "PREFLIGHT") {
     runPreflight();
   }
+  if (open && context.state === "EXPORTING") {
+    runExport(context.passphrase);
+  }
 
   const handleClose = () => {
     window.electronAPI.cancelExport();
