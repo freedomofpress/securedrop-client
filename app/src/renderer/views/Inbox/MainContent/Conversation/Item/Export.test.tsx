@@ -67,6 +67,11 @@ describe("ExportWizard Component", () => {
     await userEvent.click(continueButton);
   };
 
+  const close = async () => {
+    const cancelButton = screen.getByRole("button", { name: /cancel/i });
+    await userEvent.click(cancelButton);
+  };
+
   beforeEach(() => {
     vi.clearAllMocks();
   });
@@ -369,6 +374,9 @@ describe("ExportWizard Component", () => {
           onClose={mockOnClose}
         />,
       );
+
+      await close();
+
       rerender(
         <ExportWizard
           item={mockFilePayload}
