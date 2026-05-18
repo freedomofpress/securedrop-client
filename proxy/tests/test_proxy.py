@@ -32,6 +32,22 @@ def test_status_codes(proxy_request, status_code):
     assert response["status"] == status_code
 
 
+@pytest.mark.parametrize("status_code", range(301, 309))
+def test_redirect(proxy_request, status_code):
+    """Redirects are not followed: the status code, headers (including `Location`), and response
+    are proxied unmodified."""
+    test_input = {
+        "method": "GET",
+        "path_query": f"/redirect-to?url=https://example.org&status_code={status_code}",
+        "stream": False,
+    }
+    result = proxy_request(input=test_input)
+    assert result.returncode == 0
+    response = json.loads(result.stdout.decode())
+    assert response["status"] == status_code
+    assert response["headers"]["location"] == "https://example.org"
+
+
 def test_query_parameters(proxy_request):
     test_input = {
         "method": "GET",
