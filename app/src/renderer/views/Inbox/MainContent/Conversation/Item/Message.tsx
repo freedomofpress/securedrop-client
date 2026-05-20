@@ -1,4 +1,4 @@
-import { memo } from "react";
+import { memo, useState } from "react";
 import {
   FetchStatus,
   ItemUpdateType,
@@ -10,7 +10,14 @@ import { toTitleCase, formatJournalistName } from "../../../../../utils";
 import Avatar from "../../../../../components/Avatar";
 import TruncatedText from "../../../../../components/TruncatedText";
 import { useTranslation } from "react-i18next";
-import { Loader2, RotateCw, Clock, Check, CheckCheck } from "lucide-react";
+import {
+  Loader2,
+  RotateCw,
+  Trash,
+  Clock,
+  Check,
+  CheckCheck,
+} from "lucide-react";
 import { Button, Tooltip, theme } from "antd";
 import { ExclamationCircleTwoTone } from "@ant-design/icons";
 import {
@@ -30,19 +37,22 @@ type MessageProps =
       item: Item;
       designation: string;
       onUpdate: (update: ItemUpdate) => void;
+      onDelete: () => void;
     }
   | {
       kind: "reply";
       item: Item;
-      onUpdate: (update: ItemUpdate) => void;
+      onDelete: () => void;
     };
 
 const Message = memo(function Message(props: MessageProps) {
-  const { kind, item, onUpdate } = props;
+  const { kind, item, onDelete } = props;
   const { t } = useTranslation("MainContent");
   const { token } = theme.useToken();
+  const [isHovered, setIsHovered] = useState(false);
 
   const sessionState = useAppSelector(getSessionState);
+  const disableDelete = sessionState.status !== SessionStatus.Auth;
 
   const replyData = kind === "reply" ? (item.data as ReplyMetadata) : null;
   const syncState: ReplySyncState | null = replyData
@@ -60,7 +70,10 @@ const Message = memo(function Message(props: MessageProps) {
   );
 
   const retryFetch = () => {
-    onUpdate({
+    if (kind !== "message") {
+      return;
+    }
+    props.onUpdate({
       item_uuid: item.uuid,
       type: ItemUpdateType.FetchStatus,
       fetch_status: FetchStatus.DownloadInProgress,
@@ -181,14 +194,32 @@ const Message = memo(function Message(props: MessageProps) {
       <div
         className="flex items-start mb-4 justify-start"
         data-testid={`item-${item.uuid}`}
+        onMouseEnter={() => setIsHovered(true)}
+        onMouseLeave={() => setIsHovered(false)}
       >
         <Avatar designation={authorDisplay} isActive={false} />
         <div className="ml-3">
           <div className="flex items-center mb-1">
             <span className="author">{authorDisplay}</span>
           </div>
-          <div className="message-box whitespace-pre-wrap overflow-hidden">
-            {displayMessage()}
+          <div className="flex items-center gap-1">
+            <div className="message-box whitespace-pre-wrap overflow-hidden">
+              {displayMessage()}
+            </div>
+            {!disableDelete && (
+              <div
+                className="flex-shrink-0 transition-opacity"
+                style={{ opacity: isHovered ? 1 : 0 }}
+              >
+                <Button
+                  type="text"
+                  size="small"
+                  danger
+                  icon={<Trash size={16} />}
+                  onClick={onDelete}
+                />
+              </div>
+            )}
           </div>
         </div>
       </div>
@@ -199,22 +230,40 @@ const Message = memo(function Message(props: MessageProps) {
     <div
       className="flex items-start mb-4 justify-end"
       data-testid={`item-${item.uuid}`}
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => setIsHovered(false)}
     >
       <div>
         <div className="flex items-center justify-start mb-1 gap-1">
           <span className="author reply-author">{authorDisplay}</span>
         </div>
-        <div className="reply-box whitespace-pre-wrap overflow-hidden relative with-status-icon">
-          {displayMessage()}
-          {statusIcon && (
-            <Tooltip
-              title={statusIcon.tooltip}
-              placement="topRight"
-              styles={{ root: { position: "fixed" } }}
+        <div className="flex items-center gap-1">
+          {!disableDelete && (
+            <div
+              className="flex-shrink-0 transition-opacity"
+              style={{ opacity: isHovered ? 1 : 0 }}
             >
-              {statusIcon.icon}
-            </Tooltip>
+              <Button
+                type="text"
+                size="small"
+                danger
+                icon={<Trash size={16} />}
+                onClick={onDelete}
+              />
+            </div>
           )}
+          <div className="reply-box whitespace-pre-wrap overflow-hidden relative with-status-icon">
+            {displayMessage()}
+            {statusIcon && (
+              <Tooltip
+                title={statusIcon.tooltip}
+                placement="topRight"
+                styles={{ root: { position: "fixed" } }}
+              >
+                {statusIcon.icon}
+              </Tooltip>
+            )}
+          </div>
         </div>
       </div>
     </div>

@@ -17,7 +17,7 @@ import "../Item.css";
 import "./File.css";
 
 import { useTranslation } from "react-i18next";
-import { File as FileIcon, Download, LoaderCircle } from "lucide-react";
+import { File as FileIcon, Download, LoaderCircle, Trash } from "lucide-react";
 import { Button, Tooltip, theme, Dropdown } from "antd";
 import type { MenuProps } from "antd";
 import {
@@ -130,6 +130,7 @@ interface FileProps {
   item: Item;
   designation: string;
   onUpdate: (update: ItemUpdate) => void;
+  onDelete: () => void;
 }
 
 function getFileIconAndColor(filename: string): {
@@ -193,7 +194,12 @@ function getFileIconAndColor(filename: string): {
   return { Icon: FileFilled, color: "#8C8C8C" };
 }
 
-const File = memo(function File({ item, designation, onUpdate }: FileProps) {
+const File = memo(function File({
+  item,
+  designation,
+  onUpdate,
+  onDelete,
+}: FileProps) {
   const { token } = theme.useToken();
   const titleCaseDesignation = toTitleCase(designation);
   const fetchStatus = item.fetch_status;
@@ -265,34 +271,40 @@ const File = memo(function File({ item, designation, onUpdate }: FileProps) {
     <div
       className="flex items-start mb-4 justify-start"
       data-testid={`item-${item.uuid}`}
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => setIsHovered(false)}
     >
       <Avatar designation={titleCaseDesignation ?? ""} isActive={false} />
       <div className="ml-3">
         <div className="flex items-center mb-1">
           <span className="author">{titleCaseDesignation ?? ""}</span>
         </div>
-        <div
-          className="w-80 file-box"
-          style={fileBoxStyle}
-          onClick={handleClick}
-          onMouseEnter={() =>
-            !disableFetch &&
-            (fetchStatus === FetchStatus.Initial ||
-              fetchStatus === FetchStatus.Cancelled) &&
-            setIsHovered(true)
-          }
-          onMouseLeave={() =>
-            !disableFetch &&
-            (fetchStatus === FetchStatus.Initial ||
-              fetchStatus === FetchStatus.Cancelled) &&
-            setIsHovered(false)
-          }
-        >
-          <FileInner
-            item={item}
-            onUpdate={onUpdate}
-            disableFetch={disableFetch}
-          />
+        <div className="flex items-center gap-1">
+          <div
+            className="w-80 file-box"
+            style={fileBoxStyle}
+            onClick={handleClick}
+          >
+            <FileInner
+              disableFetch={disableFetch}
+              item={item}
+              onUpdate={onUpdate}
+            />
+          </div>
+          {!disableFetch && (
+            <div
+              className="flex-shrink-0 transition-opacity"
+              style={{ opacity: isHovered ? 1 : 0 }}
+            >
+              <Button
+                type="text"
+                size="small"
+                danger
+                icon={<Trash size={16} />}
+                onClick={onDelete}
+              />
+            </div>
+          )}
         </div>
       </div>
     </div>
