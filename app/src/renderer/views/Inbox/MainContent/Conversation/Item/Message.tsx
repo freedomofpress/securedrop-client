@@ -52,6 +52,7 @@ const Message = memo(function Message(props: MessageProps) {
   const [isHovered, setIsHovered] = useState(false);
 
   const sessionState = useAppSelector(getSessionState);
+  const disableDelete = sessionState.status !== SessionStatus.Auth;
 
   const replyData = kind === "reply" ? (item.data as ReplyMetadata) : null;
   const syncState: ReplySyncState | null = replyData
@@ -205,18 +206,20 @@ const Message = memo(function Message(props: MessageProps) {
             <div className="message-box whitespace-pre-wrap overflow-hidden">
               {displayMessage()}
             </div>
-            <div
-              className="flex-shrink-0 transition-opacity"
-              style={{ opacity: isHovered ? 1 : 0 }}
-            >
-              <Button
-                type="text"
-                size="small"
-                danger
-                icon={<Trash size={16} />}
-                onClick={onDelete}
-              />
-            </div>
+            {!disableDelete && (
+              <div
+                className="flex-shrink-0 transition-opacity"
+                style={{ opacity: isHovered ? 1 : 0 }}
+              >
+                <Button
+                  type="text"
+                  size="small"
+                  danger
+                  icon={<Trash size={16} />}
+                  onClick={onDelete}
+                />
+              </div>
+            )}
           </div>
         </div>
       </div>
@@ -235,18 +238,20 @@ const Message = memo(function Message(props: MessageProps) {
           <span className="author reply-author">{authorDisplay}</span>
         </div>
         <div className="flex items-center gap-1">
-          <div
-            className="flex-shrink-0 transition-opacity"
-            style={{ opacity: isHovered ? 1 : 0 }}
-          >
-            <Button
-              type="text"
-              size="small"
-              danger
-              icon={<Trash size={16} />}
-              onClick={onDelete}
-            />
-          </div>
+          {!disableDelete && (
+            <div
+              className="flex-shrink-0 transition-opacity"
+              style={{ opacity: isHovered ? 1 : 0 }}
+            >
+              <Button
+                type="text"
+                size="small"
+                danger
+                icon={<Trash size={16} />}
+                onClick={onDelete}
+              />
+            </div>
+          )}
           <div className="reply-box whitespace-pre-wrap overflow-hidden relative with-status-icon">
             {displayMessage()}
             {statusIcon && (

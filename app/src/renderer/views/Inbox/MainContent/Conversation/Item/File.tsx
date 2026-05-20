@@ -284,18 +284,6 @@ const File = memo(function File({
             className="w-80 file-box"
             style={fileBoxStyle}
             onClick={handleClick}
-            onMouseEnter={() =>
-              !disableFetch &&
-              (fetchStatus === FetchStatus.Initial ||
-                fetchStatus === FetchStatus.Cancelled) &&
-              setIsHovered(true)
-            }
-            onMouseLeave={() =>
-              !disableFetch &&
-              (fetchStatus === FetchStatus.Initial ||
-                fetchStatus === FetchStatus.Cancelled) &&
-              setIsHovered(false)
-            }
           >
             <FileInner
               disableFetch={disableFetch}
@@ -303,18 +291,20 @@ const File = memo(function File({
               onUpdate={onUpdate}
             />
           </div>
-          <div
-            className="flex-shrink-0 transition-opacity"
-            style={{ opacity: isHovered ? 1 : 0 }}
-          >
-            <Button
-              type="text"
-              size="small"
-              danger
-              icon={<Trash size={16} />}
-              onClick={onDelete}
-            />
-          </div>
+          {!disableFetch && (
+            <div
+              className="flex-shrink-0 transition-opacity"
+              style={{ opacity: isHovered ? 1 : 0 }}
+            >
+              <Button
+                type="text"
+                size="small"
+                danger
+                icon={<Trash size={16} />}
+                onClick={onDelete}
+              />
+            </div>
+          )}
         </div>
       </div>
     </div>
