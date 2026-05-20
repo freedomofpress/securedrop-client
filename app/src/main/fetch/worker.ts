@@ -1,7 +1,7 @@
 import { parentPort, workerData } from "worker_threads";
 
 import { TaskQueue } from "./queue";
-import { AuthedRequest, FetchWorkerMessage } from "../../types";
+import { FetchWorkerMessage } from "../../types";
 import { Crypto } from "../crypto";
 import { Datastore } from "../datastore";
 import { Storage } from "../storage";
@@ -29,11 +29,23 @@ const db = new Datastore(crypto, new Storage());
 const q = new TaskQueue(db, port);
 
 port.on("message", (message: FetchWorkerMessage) => {
-  if ("type" in message && message.type === "cancel") {
-    q.cancelDownload(message.itemId);
-  } else if ("type" in message && message.type === "abortSourceFetch") {
-    q.abortSourceFetch(message.sourceUuid);
-  } else {
-    q.queueFetches(message as AuthedRequest);
+  if (!("type" in message)) {
+    console.error("Unrecognized message: ", message);
+  }
+  switch (message.type) {
+    case "cancel":
+      q.cancelDownload(message.itemId);
+      break;
+    case "abortSourceFetch":
+      q.abortSourceFetch(message.sourceUuid);
+      break;
+    case "authedRequest":
+      q.queueFetches(message.request);
+      break;
+    case "exit": {
+      console.log("Received exit message, shutting down...");
+      db.close();
+      process.exit(0);
+    }
   }
 });
