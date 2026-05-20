@@ -1,5 +1,22 @@
 # Changelog
 
+## 1.3.0
+
+This release contains bug fixes and improvements to the SecureDrop Inbox.
+
+* Delete individual items (#3120)
+* Update source attachment and read status when deletes are pending (#3401)
+* Display source counts in bottom toolbar (#3423)
+* Disable file downloads in offline mode (#3399)
+* Prevent the quit confirmation modal from opening more than once (#3400)
+* Show message status indicators and allow retrying failed messages (#3394)
+* Fix search index to remove deleted items during sync (#3353)
+* Dependency updates:
+  * Upgrade to Electron 41 and better-sqlite3 12.8 (#3395)
+  * Bump actions/dependency-review-action from 4 to 5 (#3425)
+* Internal and development:
+  * Switch nightlies to use signed commits (#3345)
+
 ## 1.2.0
 
 This release contains bug fixes and improvements to the SecureDrop Inbox.
