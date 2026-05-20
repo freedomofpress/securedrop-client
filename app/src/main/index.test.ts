@@ -243,7 +243,10 @@ describe("syncMetadata IPC handler", () => {
     expect(testState.syncModule.syncMetadata).toHaveBeenCalledTimes(1);
     expect(testState.workerInstances).toHaveLength(1);
     expect(testState.workerInstances[0]?.postMessage).toHaveBeenCalledWith({
-      authToken: "resume-token",
+      type: "authedRequest",
+      request: {
+        authToken: "resume-token",
+      },
     });
   });
 
@@ -261,7 +264,10 @@ describe("syncMetadata IPC handler", () => {
     expect(testState.syncModule.syncMetadata).not.toHaveBeenCalled();
     expect(testState.workerInstances).toHaveLength(1);
     expect(testState.workerInstances[0]?.postMessage).toHaveBeenCalledWith({
-      authToken: "skip-token",
+      type: "authedRequest",
+      request: {
+        authToken: "skip-token",
+      },
     });
   });
 });
