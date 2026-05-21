@@ -5,7 +5,6 @@ import fs from "fs";
 import path from "path";
 import { Writable } from "stream";
 
-import { BufferedWriter } from "./bufferedWriter";
 import { DB } from "../database";
 import { getRealisticTimeout } from "../timeouts";
 import {
@@ -30,8 +29,6 @@ export type ItemFetchTask = {
   id: string;
 };
 
-type DownloadResult = Buffer | string;
-
 // Thrown when a download is intentionally aborted (paused or cancelled by the user).
 // This is not an error condition and should not cause the item to be marked as failed.
 class DownloadCancelledError extends Error {
@@ -43,11 +40,26 @@ class DownloadCancelledError extends Error {
 const MESSAGE_QUEUE_BATCH_LIMIT = 25;
 const FILE_QUEUE_BATCH_LIMIT = 2;
 
+// Statuses handled by the download queues.
+const DOWNLOAD_STATUSES = new Set<FetchStatus>([
+  FetchStatus.Initial,
+  FetchStatus.DownloadInProgress,
+  FetchStatus.FailedDownloadRetryable,
+]);
+
+// Statuses handled by the decrypt queues.
+const DECRYPT_STATUSES = new Set<FetchStatus>([
+  FetchStatus.DecryptionInProgress,
+  FetchStatus.FailedDecryptionRetryable,
+]);
+
 export class TaskQueue {
   db: DB;
-  messageQueue: Queue;
-  fileQueue: Queue;
-  authToken?: string;
+  messageDownloadQueue: Queue;
+  messageDecryptQueue: Queue;
+  fileDownloadQueue: Queue;
+  fileDecryptQueue: Queue;
+  authToken: string | null = null;
   port?: MessagePort;
   storage: Storage;
   activeDownloads = new Map<
@@ -59,24 +71,28 @@ export class TaskQueue {
     { sourceUuid: string; controller: AbortController }
   >();
 
-  constructor(
-    db: DB,
-    port?: MessagePort,
-    overrideTaskFn?: (task: ItemFetchTask, db: DB) => void,
-  ) {
+  constructor(db: DB, port?: MessagePort) {
     this.db = db;
-    this.messageQueue = createQueue(
-      "message-queue",
+    this.messageDownloadQueue = createQueue(
+      "message-download",
       db,
-      overrideTaskFn ? overrideTaskFn : this.process,
+      this.processDownload,
       // Max timeout: 60s for messages
       60_000,
       port,
     );
-    this.fileQueue = createQueue(
-      "file-queue",
+    this.messageDecryptQueue = createQueue(
+      "message-decrypt",
       db,
-      overrideTaskFn ? overrideTaskFn : this.process,
+      this.processDecrypt,
+      // Max timeout: 60s for messages
+      60_000,
+      port,
+    );
+    this.fileDownloadQueue = createQueue(
+      "file-download",
+      db,
+      this.processDownload,
       // Max timeout per task attempt. For the maximum file size of 500MB, the
       // worst-case download timeout is ~4.2 hours (based on 50 KB/s over Tor).
       // We set this to 2 hours as a reasonable per-attempt limit, relying on the
@@ -85,21 +101,29 @@ export class TaskQueue {
       7_200_000, // 2 hours in milliseconds
       port,
     );
+    this.fileDecryptQueue = createQueue(
+      "file-decrypt",
+      db,
+      this.processDecrypt,
+      // Max timeout: 1 hour — file decryption can be slow for large files
+      3_600_000,
+      port,
+    );
     this.port = port;
     this.storage = new Storage();
 
     // After each completed or terminally-failed task, try to top up the
-    // queue from the database so large backlogs drain without waiting for
+    // queues from the database so large backlogs drain without waiting for
     // the next sync tick.
     const refill = () => this.refillQueues();
-    this.messageQueue.on("task_finish", refill);
-    this.messageQueue.on("task_failed", refill);
-    this.fileQueue.on("task_finish", refill);
-    this.fileQueue.on("task_failed", refill);
-  }
-
-  getAuthToken(): string {
-    return this.authToken ? this.authToken : "";
+    this.messageDownloadQueue.on("task_finish", refill);
+    this.messageDownloadQueue.on("task_failed", refill);
+    this.messageDecryptQueue.on("task_finish", refill);
+    this.messageDecryptQueue.on("task_failed", refill);
+    this.fileDownloadQueue.on("task_finish", refill);
+    this.fileDownloadQueue.on("task_failed", refill);
+    this.fileDecryptQueue.on("task_finish", refill);
+    this.fileDecryptQueue.on("task_failed", refill);
   }
 
   // Aborts any in-progress download for the given item.
@@ -130,10 +154,7 @@ export class TaskQueue {
   }
 
   private refillQueues() {
-    if (!this.authToken) {
-      return;
-    }
-    this.queueFetches({ authToken: this.authToken });
+    this.queueFetchesInner();
   }
 
   // Check that item is still in processable state: not cancelled, paused
@@ -147,15 +168,19 @@ export class TaskQueue {
     );
   }
 
-  // Queries the database for all items that need to be downloaded and queues
-  // up download tasks to be processed.
-  // Routes items to the appropriate queue:
-  // - Messages/replies go to messageQueue
-  // - Files go to fileQueue
-  // This allows messages to be fetched while files are downloading, since that
-  // may be a long-running process
   queueFetches(message: AuthedRequest) {
     this.authToken = message.authToken;
+    this.queueFetchesInner();
+  }
+
+  // Queries the database for all items that are processable and enqueues to
+  // the appropriate queue based on its kind and fetch_status.
+  //
+  // message/reply + download  -> messageDownloadQueue
+  // message/reply + decypt    -> messageDecryptQueue
+  // file          + download  -> fileDownloadQueue
+  // file          + decrypt   -> fileDecryptQueue
+  queueFetchesInner() {
     try {
       const itemsToProcess = this.db.getItemsToProcess({
         messageLimit: MESSAGE_QUEUE_BATCH_LIMIT,
@@ -170,20 +195,39 @@ export class TaskQueue {
         };
 
         const item = this.db.getItem(itemUUID);
-        if (!item) {
+        if (!item || item.fetch_status === null) {
           continue;
         }
 
-        const queue =
-          item.data.kind === "file" ? this.fileQueue : this.messageQueue;
+        const isFile = item.data.kind === "file";
+        const inDownloadPhase = DOWNLOAD_STATUSES.has(item.fetch_status);
+        const inDecryptPhase = DECRYPT_STATUSES.has(item.fetch_status);
+
+        if (!inDownloadPhase && !inDecryptPhase) {
+          console.debug(
+            "Item has unknown fetch status: ",
+            item.uuid,
+            item.fetch_status,
+          );
+          continue;
+        }
+
+        // Only enqueue new download tasks when we are online
+        if (inDownloadPhase && !this.authToken) {
+          continue;
+        }
+
+        const queue = isFile
+          ? inDownloadPhase
+            ? this.fileDownloadQueue
+            : this.fileDecryptQueue
+          : inDownloadPhase
+            ? this.messageDownloadQueue
+            : this.messageDecryptQueue;
 
         queue.push(task, (err, _result) => {
           if (err) {
-            console.error(
-              `Error executing fetch download task in queue: `,
-              task,
-              err,
-            );
+            console.error(`Error executing fetch task in queue: `, task, err);
             try {
               this.db.failDownload(task.id);
             } catch (failError) {
@@ -210,14 +254,19 @@ export class TaskQueue {
     }
   }
 
-  // Process each task by downloading item data via proxy, and then
-  // decrypting data to plaintext stored in the DB or to a file on disk.
-  process = async (item: ItemFetchTask, db: DB) => {
+  // Process the download: fetch item data from the server and write the ciphertext
+  // to disk for decryption.
+  // Then, transition the item to DecryptionInProgress so the decrypt queue
+  // picks it up on the next refill.
+  processDownload = async (item: ItemFetchTask, db: DB) => {
     try {
-      console.log("Processing item: ", item);
+      if (!this.authToken) {
+        console.debug("Not authenticated to server, skipping...");
+        return;
+      }
+      const authToken = this.authToken;
+      console.log("Processing download for item: ", item);
 
-      // Skip items that are complete, terminally failed, paused, cancelled,
-      // scheduled for deletion, or otherwise not in a processable state.
       const dbItem = db.getItem(item.id);
       if (
         !dbItem ||
@@ -234,111 +283,124 @@ export class TaskQueue {
         fetch_progress: progress,
       } = dbItem;
 
-      // Phase 1: Download
-      let downloadResult: DownloadResult | undefined;
-      let nextStatus = status;
-      if (
-        status === FetchStatus.Initial ||
-        status === FetchStatus.DownloadInProgress ||
-        status === FetchStatus.FailedDownloadRetryable
-      ) {
-        try {
-          downloadResult = await this.download(
-            item,
-            db,
-            metadata,
-            progress || 0,
-          );
-        } catch (e) {
-          if (e instanceof DownloadCancelledError) {
-            // Download was intentionally paused or cancelled — not a failure
-            return;
-          }
-          throw e;
+      if (!DOWNLOAD_STATUSES.has(status)) {
+        console.debug(
+          `Item ${item.id} is not in download phase (status: ${status}), skipping...`,
+        );
+        return;
+      }
+
+      try {
+        await this.download(item, db, metadata, progress || 0, authToken);
+      } catch (e) {
+        if (e instanceof DownloadCancelledError) {
+          return;
         }
-        nextStatus = FetchStatus.DecryptionInProgress;
+        throw e;
       }
 
       // Re-check: if the item was marked for deletion during download, stop.
       if (!this.isProcessable(item.id, db)) {
         console.debug(
-          `Item ${item.id} in non-processable state after download, skipping decryption...`,
+          `Item ${item.id} in non-processable state after download, skipping transition to decrypt phase...`,
         );
         return;
       }
 
-      // Phase 2: Decryption (or failed decryption retries)
-      if (
-        nextStatus === FetchStatus.DecryptionInProgress ||
-        nextStatus === FetchStatus.FailedDecryptionRetryable
-      ) {
-        try {
-          await this.decrypt(item, db, metadata, downloadResult);
-        } catch (e) {
-          if (e instanceof DownloadCancelledError) {
-            // Decryption was intentionally aborted — not a failure
-            return;
-          }
-          throw e;
-        }
-      } else {
-        // Handle unexpected statuses
-        console.debug(
-          `Unexpected status ${nextStatus} for item ${item.id}, skipping...`,
-        );
-      }
-
-      // After decryption, update source message preview and
-      // post message to main thread
-      if (this.port) {
-        this.port.postMessage(this.db.getSource(metadata.source));
-      }
+      // Transition to decrypt phase — the decrypt queue will pick this up on the next refill.
+      db.setDecryptionInProgress(item.id);
     } finally {
-      // After every process tick, post message to main thread
+      // After every download tick, post item state to the main thread.
       if (this.port) {
         this.port.postMessage(this.db.getItem(item.id));
       }
     }
   };
 
+  // Process the decryption: read the ciphertext from disk, decrypt, and then
+  // persist the plaintext. Clean up the on-disk ciphertext on success.
+  processDecrypt = async (item: ItemFetchTask, db: DB) => {
+    try {
+      console.log("Processing decryption for item: ", item);
+
+      const dbItem = db.getItem(item.id);
+      if (
+        !dbItem ||
+        dbItem.fetch_status === null ||
+        NONPROCESSABLE_FETCH_STATUSES.has(dbItem.fetch_status)
+      ) {
+        console.debug("Item task is not in a processable state, skipping...");
+        return;
+      }
+
+      const { data: metadata, fetch_status: status } = dbItem;
+
+      if (!DECRYPT_STATUSES.has(status)) {
+        console.debug(
+          `Item ${item.id} is not in decrypt phase (status: ${status}), skipping...`,
+        );
+        return;
+      }
+
+      try {
+        await this.decrypt(item, db, metadata);
+      } catch (e) {
+        if (e instanceof DownloadCancelledError) {
+          return;
+        }
+        throw e;
+      }
+
+      // After decryption, update source message preview and post to main thread.
+      if (this.port) {
+        this.port.postMessage(this.db.getSource(metadata.source));
+      }
+    } finally {
+      // After every decrypt tick, post item state to the main thread.
+      if (this.port) {
+        this.port.postMessage(this.db.getItem(item.id));
+      }
+    }
+  };
+
+  // Prepare download location and writer on fs. File downloads support incremental
+  // progress, whereas messages are small enough that they are always fully re-downloaded
+  // on failure/retry.
   private async prepareDownload(
     item: ItemFetchTask,
     metadata: ItemMetadata,
     progress: number,
   ): Promise<{ path: string; writer: Writable; progress: number }> {
-    let downloadFilePath: string = "";
-    let downloadWriter: Writable;
-    let resumeProgress = 0;
-
-    if (metadata.kind === "message" || metadata.kind === "reply") {
-      // For messages/replies: use BufferedWriter (in-memory only)
-      downloadWriter = new BufferedWriter();
-    } else if (metadata.kind === "file") {
-      // For files: write directly to disk
-      downloadFilePath = this.storage.downloadFilePath(metadata, item);
-      const downloadDir = path.dirname(downloadFilePath);
-      await fs.promises.mkdir(downloadDir, { recursive: true });
-      if (progress > 0) {
-        // Re-read the resume position from disk — it's the source of truth,
-        // in case the DB is out of sync with what was actually written.
-        try {
-          const stats = await fs.promises.stat(downloadFilePath);
-          resumeProgress = stats.size;
-        } catch (error: unknown) {
-          if ((error as NodeJS.ErrnoException).code !== "ENOENT") {
-            throw error;
-          }
-          // File doesn't exist, start from the beginning
-        }
-      }
-      // If we have some progress to resume, append from where the file ends,
-      // otherwise truncate and start anew.
-      downloadWriter = fs.createWriteStream(downloadFilePath, {
-        flags: resumeProgress > 0 ? "a" : "w",
-      });
-    } else {
+    if (
+      metadata.kind !== "message" &&
+      metadata.kind !== "reply" &&
+      metadata.kind !== "file"
+    ) {
       throw new Error(`Unsupported item kind: ${metadata.kind}`);
     }
+
+    const downloadFilePath = this.storage.downloadFilePath(metadata, item);
+    const downloadDir = path.dirname(downloadFilePath);
+    await fs.promises.mkdir(downloadDir, { recursive: true });
+
+    let resumeProgress = 0;
+    if (metadata.kind === "file" && progress > 0) {
+      // For files, read resume position for incremental progress
+      try {
+        const stats = await fs.promises.stat(downloadFilePath);
+        resumeProgress = stats.size;
+      } catch (error: unknown) {
+        if ((error as NodeJS.ErrnoException).code !== "ENOENT") {
+          throw error;
+        }
+        // If file doesn't exist, start from the beginning.
+      }
+    }
+
+    const downloadWriter = fs.createWriteStream(downloadFilePath, {
+      flags: resumeProgress > 0 ? "a" : "w",
+    });
+
     return {
       path: downloadFilePath,
       writer: downloadWriter,
@@ -351,7 +413,8 @@ export class TaskQueue {
     db: DB,
     metadata: ItemMetadata,
     progress: number,
-  ): Promise<DownloadResult> {
+    authToken: string,
+  ): Promise<void> {
     console.debug(`Starting download for ${metadata.kind} ${item.id}`);
     const abortController = new AbortController();
     this.activeDownloads.set(item.id, {
@@ -360,12 +423,13 @@ export class TaskQueue {
     });
     try {
       db.startDownloadInProgress(item.id);
-      return await this.innerDownload(
+      await this.innerDownload(
         item,
         db,
         metadata,
         progress,
         abortController,
+        authToken,
       );
     } finally {
       this.activeDownloads.delete(item.id);
@@ -378,7 +442,8 @@ export class TaskQueue {
     metadata: ItemMetadata,
     originalProgress: number,
     abortController: AbortController,
-  ): Promise<DownloadResult> {
+    authToken: string,
+  ): Promise<void> {
     const {
       path: downloadFilePath,
       writer: downloadWriter,
@@ -389,7 +454,7 @@ export class TaskQueue {
     const downloadRequest: ProxyRequest = {
       method: "GET",
       path_query: queryPath,
-      headers: authHeader(this.getAuthToken()),
+      headers: authHeader(authToken),
     };
 
     // Calculate timeout based on item type
@@ -406,8 +471,8 @@ export class TaskQueue {
       `Downloading ${metadata.kind} ${item.id} (size: ${metadata.size} bytes) with timeout: ${timeout}ms`,
     );
 
-    // Progress callback to update database and notify renderer during download
-    // Throttle updates to avoid overwhelming the UI (max once per 200ms)
+    // Progress callback to update database and notify renderer during download.
+    // Throttled to avoid overwhelming the UI (max once per 200ms).
     let lastProgressUpdate = 0;
     const PROGRESS_UPDATE_INTERVAL_MS = 200;
 
@@ -452,6 +517,10 @@ export class TaskQueue {
     // If we received JSON response, indicates an error from the server
     if ("data" in downloadResponse && downloadResponse.error) {
       db.failDownload(item.id);
+      // Unset auth token on auth error
+      if (downloadResponse.status === 403) {
+        this.authToken = null;
+      }
       throw new Error(
         `Received error from server with status ${downloadResponse.status}: ${downloadResponse.data?.toString()}`,
       );
@@ -479,23 +548,17 @@ export class TaskQueue {
       db,
       metadata,
       downloadResponse.sha256sum,
-      downloadWriter,
       downloadFilePath,
     );
-
-    if (metadata.kind === "message" || metadata.kind === "reply") {
-      return (downloadWriter as BufferedWriter).getBuffer();
-    }
-    return downloadFilePath;
   }
 
-  // Verify ETag checksum for transport integrity purposes, otherwise fail terminally
+  // Verify ETag checksum for transport integrity purposes, otherwise fail terminally.
+  // All downloads write to disk, so verification always reads from the file.
   private async verifyEtag(
     item: ItemFetchTask,
     db: DB,
     metadata: ItemMetadata,
     etagRaw: string | undefined,
-    downloadWriter: Writable,
     downloadFilePath: string,
   ): Promise<void> {
     if (!etagRaw) {
@@ -512,14 +575,10 @@ export class TaskQueue {
     const expectedHex = etagRaw.slice(colonIdx + 1);
 
     const hash = createHash("sha256");
-    if (metadata.kind === "message" || metadata.kind === "reply") {
-      hash.update((downloadWriter as BufferedWriter).getBuffer());
-    } else {
-      // Stream the file to avoid loading a large file entirely into memory
-      const readStream = fs.createReadStream(downloadFilePath);
-      for await (const chunk of readStream) {
-        hash.update(chunk);
-      }
+    // Stream the file to avoid loading large content entirely into memory
+    const readStream = fs.createReadStream(downloadFilePath);
+    for await (const chunk of readStream) {
+      hash.update(chunk);
     }
     const actualHash = hash.digest("hex");
 
@@ -531,12 +590,7 @@ export class TaskQueue {
     }
   }
 
-  private async decrypt(
-    item: ItemFetchTask,
-    db: DB,
-    metadata: ItemMetadata,
-    downloadResult?: DownloadResult,
-  ) {
+  private async decrypt(item: ItemFetchTask, db: DB, metadata: ItemMetadata) {
     const crypto = Crypto.getInstance();
     if (!crypto) {
       throw new Error("Crypto not initialized in fetch worker, cannot decrypt");
@@ -548,7 +602,6 @@ export class TaskQueue {
       controller: abortController,
     });
 
-    // Set status to decryption in progress
     db.setDecryptionInProgress(item.id);
     try {
       if (metadata.kind === "file") {
@@ -561,24 +614,13 @@ export class TaskQueue {
         );
         return;
       }
-      if (downloadResult) {
-        await this.decryptBuffer(
-          item,
-          db,
-          crypto,
-          metadata,
-          downloadResult as Buffer,
-          abortController.signal,
-        );
-      } else {
-        await this.decryptRetry(
-          item,
-          db,
-          crypto,
-          metadata,
-          abortController.signal,
-        );
-      }
+      await this.decryptMessage(
+        item,
+        db,
+        crypto,
+        metadata,
+        abortController.signal,
+      );
     } catch (error) {
       if ((error as Error).name === "AbortError") {
         throw new DownloadCancelledError();
@@ -590,59 +632,9 @@ export class TaskQueue {
     }
   }
 
-  // Decrypt plaintext item from the in-memory buffer and persist to DB
-  // on success. On failure, write the ciphertext to disk so we can retry
-  // without needing to re-download.
-  private async decryptBuffer(
-    item: ItemFetchTask,
-    db: DB,
-    crypto: Crypto,
-    metadata: ItemMetadata,
-    buffer: Buffer,
-    signal?: AbortSignal,
-  ) {
-    try {
-      const decryptedContent = await crypto.decryptMessage(buffer, signal);
-
-      // Re-check: if the item was deleted during decryption, drop the result
-      if (!this.isProcessable(item.id, db)) {
-        return;
-      }
-
-      // Store the decrypted plaintext and mark item as complete
-      db.completePlaintextItem(item.id, decryptedContent);
-    } catch (error) {
-      // Don't save to disk if the decryption was intentionally aborted
-      if ((error as Error).name !== "AbortError") {
-        if (error instanceof CryptoError) {
-          console.warn(
-            `Failed to decrypt ${metadata.kind} ${item.id}: ${error.message}`,
-          );
-        }
-        // Ensure data is persisted to disk for retries
-        try {
-          const downloadFilePath = this.storage.downloadFilePath(
-            metadata,
-            item,
-          );
-          const downloadDir = path.dirname(downloadFilePath);
-          await fs.promises.mkdir(downloadDir, { recursive: true });
-          await fs.promises.writeFile(downloadFilePath, buffer);
-          console.debug(
-            `Saved encrypted buffer data to disk for retry: ${downloadFilePath}`,
-          );
-        } catch (saveError) {
-          console.warn(`Failed to save encrypted data to disk: ${saveError}`);
-        }
-      }
-      throw error;
-    }
-  }
-
-  // Decrypt a formerly failed message or reply decryption. Reads the
-  // ciphertext from disk to decrypt, and then write the plaintext to
-  // DB on success and clean up the encrypted file.
-  private async decryptRetry(
+  // Decrypt a message or reply. Reads ciphertext from disk, decrypts it, and persists
+  // the plaintext to the DB. Cleans up the on-disk ciphertext on success.
+  private async decryptMessage(
     item: ItemFetchTask,
     db: DB,
     crypto: Crypto,
@@ -650,25 +642,25 @@ export class TaskQueue {
     signal?: AbortSignal,
   ) {
     const downloadPath = this.storage.downloadFilePath(metadata, item);
+
+    let buffer: Buffer;
     try {
-      const buffer = await fs.promises.readFile(downloadPath);
-      const decryptedContent = await crypto.decryptMessage(buffer, signal);
-
-      // Re-check: if the item was deleted during decryption, drop the result
-      if (!this.isProcessable(item.id, db)) {
-        return;
-      }
-
-      // Store the decrypted plaintext and mark item as complete
-      db.completePlaintextItem(item.id, decryptedContent);
+      buffer = await fs.promises.readFile(downloadPath);
     } catch (error) {
-      if ((error as Error).name === "AbortError") {
-        throw error;
-      }
       throw new Error(`Failed to load encrypted data from disk: ${error}`);
     }
 
-    // After successful decryption, clean up the encrypted file
+    const decryptedContent = await crypto.decryptMessage(buffer, signal);
+
+    // Re-check: if the item was deleted during decryption, drop the result
+    if (!this.isProcessable(item.id, db)) {
+      return;
+    }
+
+    // Store the decrypted plaintext and mark item as complete
+    db.completePlaintextItem(item.id, decryptedContent);
+
+    // Clean up the ciphertext file after successful decryption
     try {
       await fs.promises.unlink(downloadPath);
     } catch (error) {
@@ -676,8 +668,8 @@ export class TaskQueue {
     }
   }
 
-  // Decrypt an encrypted file submission. Writes the unencrypted filepath
-  // to DB on success.
+  // Decrypt an encrypted file submission. Writes the unencrypted file path
+  // to the DB on success.
   private async decryptFile(
     item: ItemFetchTask,
     db: DB,
@@ -751,9 +743,9 @@ function createQueue(
       maxTimeout: maxTimeout,
       maxRetries: 5,
       id: "id",
-      // Merge handles tasks scheduled with the same ID
+      // Merge handles tasks scheduled with the same ID.
       // We want to simply allow the existing task to keep running
-      // and treat the operation as idempotent
+      // and treat the operation as idempotent.
       merge: function (oldTask, _newTask, _cb) {
         return oldTask;
       },
