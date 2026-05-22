@@ -45,7 +45,13 @@
     "pendingReplyTooltip": "The reply is pending and will be sent to the source in the next sync",
     "successReplyTooltip": "Reply sent successfully",
     "seenReplyTooltip": "Reply seen and deleted by source",
-    "alreadyRunning": "The SecureDrop Inbox is already running"
+    "alreadyRunning": "The SecureDrop Inbox is already running",
+    "deleteItemModal": {
+      "title": "Delete item?",
+      "content": "Are you sure you want to delete this item? Deleting is not reversible and will affect all users.",
+      "cancel": "Cancel",
+      "delete": "Delete"
+    }
   },
   "Sidebar": {
     "account": {
@@ -110,6 +116,14 @@
           "deleteAccountsButton": "Delete Accounts",
           "keepAccountsButton": "Delete Conversations"
         }
+      },
+      "counts": {
+        "total_one": "{{count}} total source",
+        "total_other": "{{count}} total sources",
+        "visible_one": "{{count}} visible",
+        "visible_other": "{{count}} visible",
+        "selected_one": "{{count}} selected",
+        "selected_other": "{{count}} selected"
       },
       "search": {
         "placeholder": "Search"
@@ -194,6 +208,7 @@
     "retry": "Retry",
     "cancel": "Cancel",
     "filenameTooltip": "Filename available after downloading",
+    "offlineFilenameTooltip": "Download disabled in offline mode. Filename available after downloading",
     "viewFile": "View",
     "exportToUSB": "Export to USB",
     "exportToWhistleflow": "Export to Whistleflow",

@@ -32,6 +32,7 @@ describe("Message Component Memoization", () => {
     decrypted_size: null,
   };
   const mockOnUpdate = vi.fn();
+  const mockOnDelete = vi.fn();
 
   const cases: Array<
     [
@@ -40,6 +41,7 @@ describe("Message Component Memoization", () => {
         item: Item;
         designation: string;
         onUpdate: () => void;
+        onDelete: () => void;
       },
       number,
     ]
@@ -51,6 +53,7 @@ describe("Message Component Memoization", () => {
         item: mockItem,
         designation: "Test Source",
         onUpdate: mockOnUpdate,
+        onDelete: mockOnDelete,
       },
       1,
     ],
@@ -61,6 +64,7 @@ describe("Message Component Memoization", () => {
         item: mockItem,
         designation: "Test Source",
         onUpdate: mockOnUpdate,
+        onDelete: mockOnDelete,
       },
       1,
     ],
@@ -71,6 +75,7 @@ describe("Message Component Memoization", () => {
         item: mockItem,
         designation: "Different Source",
         onUpdate: mockOnUpdate,
+        onDelete: mockOnDelete,
       },
       2,
     ],
@@ -81,6 +86,7 @@ describe("Message Component Memoization", () => {
         item: { ...mockItem, plaintext: "Different message" },
         designation: "Different Source",
         onUpdate: mockOnUpdate,
+        onDelete: mockOnDelete,
       },
       3,
     ],
@@ -91,6 +97,7 @@ describe("Message Component Memoization", () => {
         item: { ...mockItem, plaintext: null },
         designation: "Different Source",
         onUpdate: mockOnUpdate,
+        onDelete: mockOnDelete,
       },
       4,
     ],
@@ -100,7 +107,7 @@ describe("Message Component Memoization", () => {
 });
 
 describe("Reply", () => {
-  const mockOnUpdate = vi.fn();
+  const mockOnDelete = vi.fn();
 
   const mockReplyItem: Item = {
     uuid: "reply-1",
@@ -166,7 +173,7 @@ describe("Reply", () => {
 
     it("should display journalist full name when available", () => {
       const { getByText } = renderWithProviders(
-        <Message kind="reply" item={mockReplyItem} onUpdate={mockOnUpdate} />,
+        <Message kind="reply" item={mockReplyItem} onDelete={mockOnDelete} />,
         { preloadedState: unauthState },
       );
 
@@ -186,7 +193,7 @@ describe("Reply", () => {
         <Message
           kind="reply"
           item={itemWithJournalist2}
-          onUpdate={mockOnUpdate}
+          onDelete={mockOnDelete}
         />,
         { preloadedState: unauthState },
       );
@@ -207,7 +214,7 @@ describe("Reply", () => {
         <Message
           kind="reply"
           item={itemWithJournalist3}
-          onUpdate={mockOnUpdate}
+          onDelete={mockOnDelete}
         />,
         { preloadedState: unauthState },
       );
@@ -228,7 +235,7 @@ describe("Reply", () => {
         <Message
           kind="reply"
           item={itemWithUnknownJournalist}
-          onUpdate={mockOnUpdate}
+          onDelete={mockOnDelete}
         />,
         { preloadedState: unauthState },
       );
@@ -252,7 +259,7 @@ describe("Reply", () => {
 
     it("should display journalist name", () => {
       const { getByText } = renderWithProviders(
-        <Message kind="reply" item={mockReplyItem} onUpdate={mockOnUpdate} />,
+        <Message kind="reply" item={mockReplyItem} onDelete={mockOnDelete} />,
         { preloadedState: offlineState },
       );
 
@@ -261,7 +268,7 @@ describe("Reply", () => {
 
     it("should not display 'You' even if journalist matches offline user", () => {
       const { queryByText, getByText } = renderWithProviders(
-        <Message kind="reply" item={mockReplyItem} onUpdate={mockOnUpdate} />,
+        <Message kind="reply" item={mockReplyItem} onDelete={mockOnDelete} />,
         { preloadedState: offlineState },
       );
 
@@ -290,7 +297,7 @@ describe("Reply", () => {
 
     it("should display 'You' when current user is the author", () => {
       const { getByText } = renderWithProviders(
-        <Message kind="reply" item={mockReplyItem} onUpdate={mockOnUpdate} />, // journalist_uuid is "journalist-1"
+        <Message kind="reply" item={mockReplyItem} onDelete={mockOnDelete} />, // journalist_uuid is "journalist-1"
         { preloadedState: authState },
       );
 
@@ -310,7 +317,7 @@ describe("Reply", () => {
         <Message
           kind="reply"
           item={itemFromOtherJournalist}
-          onUpdate={mockOnUpdate}
+          onDelete={mockOnDelete}
         />,
         { preloadedState: authState },
       );
@@ -338,7 +345,7 @@ describe("Reply", () => {
       };
 
       const { getByText, queryByText } = renderWithProviders(
-        <Message kind="reply" item={mockReplyItem} onUpdate={mockOnUpdate} />, // journalist_uuid is "journalist-1" (Daniel Ellsberg)
+        <Message kind="reply" item={mockReplyItem} onDelete={mockOnDelete} />, // journalist_uuid is "journalist-1" (Daniel Ellsberg)
         { preloadedState: authStateAsJournalist2 },
       );
 
@@ -359,7 +366,7 @@ describe("Reply", () => {
         <Message
           kind="reply"
           item={itemWithUnknownJournalist}
-          onUpdate={mockOnUpdate}
+          onDelete={mockOnDelete}
         />,
         { preloadedState: authState },
       );
@@ -384,7 +391,7 @@ describe("Reply", () => {
       };
 
       const { getByText } = renderWithProviders(
-        <Message kind="reply" item={mockReplyItem} onUpdate={mockOnUpdate} />,
+        <Message kind="reply" item={mockReplyItem} onDelete={mockOnDelete} />,
         { preloadedState: emptyJournalistsState },
       );
 
@@ -410,7 +417,7 @@ describe("Reply", () => {
       };
 
       const { getByText } = renderWithProviders(
-        <Message kind="reply" item={mockReplyItem} onUpdate={mockOnUpdate} />, // journalist_uuid is "journalist-1"
+        <Message kind="reply" item={mockReplyItem} onDelete={mockOnDelete} />, // journalist_uuid is "journalist-1"
         { preloadedState: emptyJournalistsAuthState },
       );
 
@@ -436,7 +443,7 @@ describe("Reply", () => {
       };
 
       const { getByText } = renderWithProviders(
-        <Message kind="reply" item={mockReplyItem} onUpdate={mockOnUpdate} />, // journalist_uuid is "journalist-1"
+        <Message kind="reply" item={mockReplyItem} onDelete={mockOnDelete} />, // journalist_uuid is "journalist-1"
         { preloadedState: loadingState },
       );
 
@@ -462,7 +469,7 @@ describe("Reply", () => {
       };
 
       const { getByText, queryByText } = renderWithProviders(
-        <Message kind="reply" item={mockReplyItem} onUpdate={mockOnUpdate} />, // journalist_uuid is "journalist-1"
+        <Message kind="reply" item={mockReplyItem} onDelete={mockOnDelete} />, // journalist_uuid is "journalist-1"
         { preloadedState: emptyJournalistsAuthState },
       );
 
@@ -514,7 +521,7 @@ describe("Reply", () => {
           <Message
             kind="reply"
             item={pendingReplyItem}
-            onUpdate={mockOnUpdate}
+            onDelete={mockOnDelete}
           />,
           { preloadedState: authState },
         );
@@ -544,7 +551,7 @@ describe("Reply", () => {
           <Message
             kind="reply"
             item={pendingReplyItem}
-            onUpdate={mockOnUpdate}
+            onDelete={mockOnDelete}
           />,
           { preloadedState: authState },
         );
@@ -574,7 +581,7 @@ describe("Reply", () => {
           <Message
             kind="reply"
             item={pendingReplyItem}
-            onUpdate={mockOnUpdate}
+            onDelete={mockOnDelete}
           />,
           { preloadedState: authState },
         );
@@ -604,7 +611,7 @@ describe("Reply", () => {
           <Message
             kind="reply"
             item={pendingReplyItem}
-            onUpdate={mockOnUpdate}
+            onDelete={mockOnDelete}
           />,
           { preloadedState: authState },
         );
@@ -631,7 +638,7 @@ describe("Reply", () => {
           <Message
             kind="reply"
             item={pendingReplyItem}
-            onUpdate={mockOnUpdate}
+            onDelete={mockOnDelete}
           />,
           { preloadedState: offlineState },
         );
@@ -658,7 +665,7 @@ describe("Reply", () => {
           <Message
             kind="reply"
             item={pendingReplyItem}
-            onUpdate={mockOnUpdate}
+            onDelete={mockOnDelete}
           />,
           { preloadedState: unauthState },
         );
@@ -688,7 +695,7 @@ describe("Reply", () => {
 
     it("should display plaintext message when available", () => {
       const { getByText } = renderWithProviders(
-        <Message kind="reply" item={mockReplyItem} onUpdate={mockOnUpdate} />,
+        <Message kind="reply" item={mockReplyItem} onDelete={mockOnDelete} />,
         { preloadedState: authState },
       );
 
@@ -703,7 +710,7 @@ describe("Reply", () => {
       };
 
       const { getByText } = renderWithProviders(
-        <Message kind="reply" item={fetchingReply} onUpdate={mockOnUpdate} />,
+        <Message kind="reply" item={fetchingReply} onDelete={mockOnDelete} />,
         { preloadedState: authState },
       );
 
@@ -718,7 +725,7 @@ describe("Reply", () => {
       };
 
       const { getByText } = renderWithProviders(
-        <Message kind="reply" item={fetchingReply} onUpdate={mockOnUpdate} />,
+        <Message kind="reply" item={fetchingReply} onDelete={mockOnDelete} />,
         { preloadedState: authState },
       );
 
@@ -733,7 +740,7 @@ describe("Reply", () => {
       };
 
       const { getByText } = renderWithProviders(
-        <Message kind="reply" item={decryptingReply} onUpdate={mockOnUpdate} />,
+        <Message kind="reply" item={decryptingReply} onDelete={mockOnDelete} />,
         { preloadedState: authState },
       );
 
@@ -751,7 +758,7 @@ describe("Reply", () => {
         <Message
           kind="reply"
           item={failedDownloadReply}
-          onUpdate={mockOnUpdate}
+          onDelete={mockOnDelete}
         />,
         { preloadedState: authState },
       );
@@ -770,7 +777,7 @@ describe("Reply", () => {
         <Message
           kind="reply"
           item={failedDecryptionReply}
-          onUpdate={mockOnUpdate}
+          onDelete={mockOnDelete}
         />,
         { preloadedState: authState },
       );
@@ -785,7 +792,7 @@ describe("Reply", () => {
       };
 
       const { getByText } = renderWithProviders(
-        <Message kind="reply" item={encryptedReply} onUpdate={mockOnUpdate} />,
+        <Message kind="reply" item={encryptedReply} onDelete={mockOnDelete} />,
         { preloadedState: authState },
       );
 
@@ -799,7 +806,7 @@ describe("Reply", () => {
       };
 
       const { getByText } = renderWithProviders(
-        <Message kind="reply" item={encryptedReply} onUpdate={mockOnUpdate} />,
+        <Message kind="reply" item={encryptedReply} onDelete={mockOnDelete} />,
         { preloadedState: authState },
       );
 
@@ -850,7 +857,7 @@ describe("Reply", () => {
         <Message
           kind="reply"
           item={pendingReplyItem}
-          onUpdate={mockOnUpdate}
+          onDelete={mockOnDelete}
         />,
         { preloadedState: authState },
       );
@@ -860,7 +867,7 @@ describe("Reply", () => {
 
     it("should not display pending icon for regular replies", () => {
       const { queryByTestId } = renderWithProviders(
-        <Message kind="reply" item={mockReplyItem} onUpdate={mockOnUpdate} />, // Has journalist_uuid
+        <Message kind="reply" item={mockReplyItem} onDelete={mockOnDelete} />, // Has journalist_uuid
         { preloadedState: authState },
       );
 
@@ -872,7 +879,7 @@ describe("Reply", () => {
         <Message
           kind="reply"
           item={pendingReplyItem}
-          onUpdate={mockOnUpdate}
+          onDelete={mockOnDelete}
         />,
         { preloadedState: authState },
       );
@@ -880,8 +887,6 @@ describe("Reply", () => {
       const icon = getByTestId("pending-reply-icon");
       expect(icon).toBeInTheDocument();
 
-      // Hover to show tooltip (note: actual tooltip rendering may vary in tests)
-      // The tooltip title is set, which is what matters for accessibility
       const tooltipContainer = icon.parentElement;
       expect(tooltipContainer).toBeInTheDocument();
     });
@@ -903,7 +908,7 @@ describe("Reply", () => {
         <Message
           kind="reply"
           item={pendingReplyItem}
-          onUpdate={mockOnUpdate}
+          onDelete={mockOnDelete}
         />,
         { preloadedState: offlineState },
       );
@@ -992,7 +997,7 @@ describe("Reply", () => {
         <Message
           kind="reply"
           item={pendingReplyItem}
-          onUpdate={mockOnUpdate}
+          onDelete={mockOnDelete}
         />,
         { preloadedState: authState },
       );
@@ -1004,7 +1009,7 @@ describe("Reply", () => {
 
     it("should show sent icon for synced replies not yet seen by source", () => {
       const { getByTestId, queryByTestId } = renderWithProviders(
-        <Message kind="reply" item={sentReplyItem} onUpdate={mockOnUpdate} />,
+        <Message kind="reply" item={sentReplyItem} onDelete={mockOnDelete} />,
         { preloadedState: authState },
       );
 
@@ -1015,7 +1020,7 @@ describe("Reply", () => {
 
     it("should show seen icon when source has seen the reply", () => {
       const { getByTestId, queryByTestId } = renderWithProviders(
-        <Message kind="reply" item={seenReplyItem} onUpdate={mockOnUpdate} />,
+        <Message kind="reply" item={seenReplyItem} onDelete={mockOnDelete} />,
         { preloadedState: authState },
       );
 
@@ -1034,7 +1039,7 @@ describe("Reply", () => {
       };
 
       const { getByTestId, queryByTestId } = renderWithProviders(
-        <Message kind="reply" item={notDeletedItem} onUpdate={mockOnUpdate} />,
+        <Message kind="reply" item={notDeletedItem} onDelete={mockOnDelete} />,
         { preloadedState: authState },
       );
 

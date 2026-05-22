@@ -5,6 +5,7 @@ import { FetchStatus, type Item } from "../../../../../../types";
 
 describe("File Component Memoization", () => {
   const mockOnUpdate = vi.fn();
+  const mockOnDelete = vi.fn();
   const mockItem: Item = {
     uuid: "item-1",
     data: {
@@ -24,18 +25,43 @@ describe("File Component Memoization", () => {
   };
 
   const cases: Array<
-    [{ item: Item; designation: string; onUpdate: () => void }, number]
+    [
+      {
+        item: Item;
+        designation: string;
+        onUpdate: () => void;
+        onDelete: () => void;
+      },
+      number,
+    ]
   > = [
     // Initial render
-    [{ item: mockItem, designation: "Test Source", onUpdate: mockOnUpdate }, 1],
+    [
+      {
+        item: mockItem,
+        designation: "Test Source",
+        onUpdate: mockOnUpdate,
+        onDelete: mockOnDelete,
+      },
+      1,
+    ],
     // Same props - should not re-render
-    [{ item: mockItem, designation: "Test Source", onUpdate: mockOnUpdate }, 1],
+    [
+      {
+        item: mockItem,
+        designation: "Test Source",
+        onUpdate: mockOnUpdate,
+        onDelete: mockOnDelete,
+      },
+      1,
+    ],
     // Change designation - should re-render
     [
       {
         item: mockItem,
         designation: "Different Source",
         onUpdate: mockOnUpdate,
+        onDelete: mockOnDelete,
       },
       2,
     ],
@@ -45,6 +71,7 @@ describe("File Component Memoization", () => {
         item: { ...mockItem, uuid: "item-2" },
         designation: "Different Source",
         onUpdate: mockOnUpdate,
+        onDelete: mockOnDelete,
       },
       3,
     ],
@@ -58,6 +85,7 @@ describe("File Component Memoization", () => {
         },
         designation: "Different Source",
         onUpdate: mockOnUpdate,
+        onDelete: mockOnDelete,
       },
       4,
     ],
@@ -70,6 +98,7 @@ describe("File Component Memoization", () => {
         },
         designation: "Different Source",
         onUpdate: mockOnUpdate,
+        onDelete: mockOnDelete,
       },
       5,
     ],

@@ -13,6 +13,7 @@ import {
 } from "../../../features/sources/sourcesSlice";
 import { fetchConversation } from "../../../features/conversation/conversationSlice";
 import Toolbar, { type filterOption } from "./SourceList/Toolbar";
+import Counts from "./SourceList/Counts";
 import {
   PendingEventType,
   SearchResult,
@@ -454,6 +455,14 @@ function SourceList({ focusedPanel }: { focusedPanel: FocusedPanel }) {
           className="select-none"
         />
       </div>
+
+      {/* Source counts */}
+      <Counts
+        totalCount={Object.keys(sources).length}
+        visibleCount={filteredSources.length}
+        selectedCount={selectedSources.size}
+        isFiltered={filter !== "all" || searchResults !== null}
+      />
 
       {/* Delete confirmation modal */}
       <Modal

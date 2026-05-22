@@ -167,57 +167,6 @@ WHERE pending_events.type = 'reply_sent'
         AND later.snowflake_id > pending_events.snowflake_id
     )
 /* items_projected(uuid,data,version,plaintext,filename,kind,is_read,last_updated,source_uuid,fetch_progress,fetch_status,fetch_last_updated_at,fetch_retry_attempts,interaction_count,decrypted_size) */;
-CREATE VIEW sources_projected AS
-WITH latest_starred AS (
-    SELECT
-        source_uuid,
-        CASE
-            WHEN type = 'source_starred' THEN true
-            WHEN type = 'source_unstarred' THEN false
-        END AS starred_value
-    FROM (
-        SELECT
-            source_uuid,
-            type,
-            ROW_NUMBER() OVER (
-                PARTITION BY source_uuid
-                ORDER BY snowflake_id DESC
-            ) AS rn
-        FROM pending_events
-        WHERE type IN ('source_starred', 'source_unstarred')
-            AND source_uuid IS NOT NULL
-    ) latest
-    WHERE rn = 1
-)
-SELECT
-    sources.uuid,
-    CASE
-        WHEN latest_starred.starred_value IS NOT NULL THEN json_set(sources.data, '$.is_starred', starred_value)
-        ELSE sources.data
-    END AS data,
-    sources.version,
-    sources.has_attachment,
-    CASE
-        WHEN sources.is_seen THEN 1
-        WHEN EXISTS (
-            SELECT 1 FROM items_projected ip
-            WHERE ip.source_uuid = sources.uuid AND ip.is_read = 0
-        ) THEN 0
-        WHEN NOT EXISTS (
-            SELECT 1 FROM items_projected ip
-            WHERE ip.source_uuid = sources.uuid
-        ) THEN 0
-        ELSE 1
-    END AS is_seen
-FROM sources
-LEFT JOIN latest_starred ON latest_starred.source_uuid = sources.uuid
-WHERE NOT EXISTS (
-    SELECT 1
-    FROM pending_events
-    WHERE pending_events.source_uuid = sources.uuid
-        AND pending_events.type = 'source_deleted'
-)
-/* sources_projected(uuid,data,version,has_attachment,is_seen) */;
 CREATE VIEW sorted_items AS
 SELECT
     *,
@@ -227,6 +176,103 @@ SELECT
     ) AS rn
 FROM items_projected
 /* sorted_items(uuid,data,version,plaintext,filename,kind,is_read,last_updated,source_uuid,fetch_progress,fetch_status,fetch_last_updated_at,fetch_retry_attempts,interaction_count,decrypted_size,rn) */;
+CREATE VIEW sources_projected AS
+WITH
+    latest_starred AS (
+        SELECT
+            source_uuid,
+            CASE
+                WHEN type = 'source_starred' THEN true
+                WHEN type = 'source_unstarred' THEN false
+            END AS starred_value
+        FROM
+            (
+                SELECT
+                    source_uuid,
+                    type,
+                    ROW_NUMBER() OVER (
+                        PARTITION BY
+                            source_uuid
+                        ORDER BY
+                            snowflake_id DESC
+                    ) AS rn
+                FROM
+                    pending_events
+                WHERE
+                    type IN ('source_starred', 'source_unstarred') AND
+                    source_uuid IS NOT NULL
+            ) latest
+        WHERE
+            rn = 1
+    )
+SELECT
+    sources.uuid,
+    CASE
+        WHEN latest_starred.starred_value IS NOT NULL THEN json_set (sources.data, '$.is_starred', starred_value)
+        ELSE sources.data
+    END AS data,
+    sources.version,
+    -- Use server has_attachment by default; override only when there are pending events
+    CASE
+        WHEN EXISTS (
+            SELECT
+                1
+            FROM
+                pending_events pe
+            WHERE
+                pe.source_uuid = sources.uuid
+        ) THEN CASE
+            WHEN EXISTS (
+                SELECT
+                    1
+                FROM
+                    items_projected ip
+                WHERE
+                    ip.source_uuid = sources.uuid AND
+                    ip.kind = 'file'
+            ) THEN 1
+            ELSE 0
+        END
+        ELSE sources.has_attachment
+    END AS has_attachment,
+    -- Use server is_seen by default; override only when there are pending events
+    CASE
+        WHEN EXISTS (
+            SELECT
+                1
+            FROM
+                pending_events pe
+            WHERE
+                pe.source_uuid = sources.uuid
+        ) THEN CASE
+            WHEN EXISTS (
+                SELECT
+                    1
+                FROM
+                    items_projected ip
+                WHERE
+                    ip.source_uuid = sources.uuid AND
+                    ip.is_read = 0 AND
+                    ip.kind != 'reply'
+            ) THEN 0
+            ELSE 1
+        END
+        ELSE sources.is_seen
+    END AS is_seen
+FROM
+    sources
+    LEFT JOIN latest_starred ON latest_starred.source_uuid = sources.uuid
+WHERE
+    NOT EXISTS (
+        SELECT
+            1
+        FROM
+            pending_events
+        WHERE
+            pending_events.source_uuid = sources.uuid AND
+            pending_events.type = 'source_deleted'
+    )
+/* sources_projected(uuid,data,version,has_attachment,is_seen) */;
 -- Dbmate schema migrations
 INSERT INTO "schema_migrations" (version) VALUES
   ('20260203225412'),
@@ -235,4 +281,5 @@ INSERT INTO "schema_migrations" (version) VALUES
   ('20260326182530'),
   ('20260331000000'),
   ('20260416000000'),
-  ('20260507000000');
+  ('20260507000000'),
+  ('20260511000000');

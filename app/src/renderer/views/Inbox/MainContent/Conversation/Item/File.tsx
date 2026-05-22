@@ -17,7 +17,7 @@ import "../Item.css";
 import "./File.css";
 
 import { useTranslation } from "react-i18next";
-import { File as FileIcon, Download, LoaderCircle } from "lucide-react";
+import { File as FileIcon, Download, LoaderCircle, Trash } from "lucide-react";
 import { Button, Tooltip, theme, Dropdown } from "antd";
 import type { MenuProps } from "antd";
 import {
@@ -36,6 +36,11 @@ import FileVideoFilled from "./FileVideoFilled";
 import FileAudioFilled from "./FileAudioFilled";
 import { ExportWizard } from "./Export";
 import { PrintWizard } from "./Print";
+import { useAppSelector } from "../../../../../hooks";
+import {
+  getSessionState,
+  SessionStatus,
+} from "../../../../../features/session/sessionSlice";
 
 const EXCEL_EXTENSIONS = new Set([
   ".xls",
@@ -125,6 +130,7 @@ interface FileProps {
   item: Item;
   designation: string;
   onUpdate: (update: ItemUpdate) => void;
+  onDelete: () => void;
 }
 
 function getFileIconAndColor(filename: string): {
@@ -188,11 +194,20 @@ function getFileIconAndColor(filename: string): {
   return { Icon: FileFilled, color: "#8C8C8C" };
 }
 
-const File = memo(function File({ item, designation, onUpdate }: FileProps) {
+const File = memo(function File({
+  item,
+  designation,
+  onUpdate,
+  onDelete,
+}: FileProps) {
   const { token } = theme.useToken();
   const titleCaseDesignation = toTitleCase(designation);
   const fetchStatus = item.fetch_status;
   const [isHovered, setIsHovered] = useState(false);
+
+  // Disable downloading of files in offline mode
+  const session = useAppSelector(getSessionState);
+  const disableFetch = session.status !== SessionStatus.Auth;
 
   let FileInner;
   switch (fetchStatus) {
@@ -219,6 +234,9 @@ const File = memo(function File({ item, designation, onUpdate }: FileProps) {
   }
 
   const handleClick = () => {
+    if (disableFetch) {
+      return;
+    }
     if (
       fetchStatus === FetchStatus.Initial ||
       fetchStatus === FetchStatus.Cancelled
@@ -253,28 +271,40 @@ const File = memo(function File({ item, designation, onUpdate }: FileProps) {
     <div
       className="flex items-start mb-4 justify-start"
       data-testid={`item-${item.uuid}`}
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => setIsHovered(false)}
     >
       <Avatar designation={titleCaseDesignation ?? ""} isActive={false} />
       <div className="ml-3">
         <div className="flex items-center mb-1">
           <span className="author">{titleCaseDesignation ?? ""}</span>
         </div>
-        <div
-          className="w-80 file-box"
-          style={fileBoxStyle}
-          onClick={handleClick}
-          onMouseEnter={() =>
-            (fetchStatus === FetchStatus.Initial ||
-              fetchStatus === FetchStatus.Cancelled) &&
-            setIsHovered(true)
-          }
-          onMouseLeave={() =>
-            (fetchStatus === FetchStatus.Initial ||
-              fetchStatus === FetchStatus.Cancelled) &&
-            setIsHovered(false)
-          }
-        >
-          <FileInner item={item} onUpdate={onUpdate} />
+        <div className="flex items-center gap-1">
+          <div
+            className="w-80 file-box"
+            style={fileBoxStyle}
+            onClick={handleClick}
+          >
+            <FileInner
+              disableFetch={disableFetch}
+              item={item}
+              onUpdate={onUpdate}
+            />
+          </div>
+          {!disableFetch && (
+            <div
+              className="flex-shrink-0 transition-opacity"
+              style={{ opacity: isHovered ? 1 : 0 }}
+            >
+              <Button
+                type="text"
+                size="small"
+                danger
+                icon={<Trash size={16} />}
+                onClick={onDelete}
+              />
+            </div>
+          )}
         </div>
       </div>
     </div>
@@ -284,11 +314,13 @@ const File = memo(function File({ item, designation, onUpdate }: FileProps) {
 interface FileViewProps {
   item: Item;
   onUpdate: (update: ItemUpdate) => void;
+  disableFetch: boolean;
 }
 
 const InitialFile = memo(function InitialFile({
   item,
   onUpdate,
+  disableFetch,
 }: FileViewProps) {
   const { t } = useTranslation("Item");
   const fileSize = prettyPrintBytes(item.data.size);
@@ -302,7 +334,9 @@ const InitialFile = memo(function InitialFile({
   };
 
   return (
-    <Tooltip title={t("filenameTooltip")}>
+    <Tooltip
+      title={disableFetch ? t("offlineFilenameTooltip") : t("filenameTooltip")}
+    >
       <div className="flex items-center justify-between pt-2 pb-2">
         <div className="flex items-center">
           <FileIcon size={30} strokeWidth={1} className="file-icon" />
@@ -317,6 +351,7 @@ const InitialFile = memo(function InitialFile({
             type="text"
             size="large"
             icon={<Download size={20} onClick={scheduleDownload} />}
+            disabled={disableFetch}
           />
         </div>
       </div>
@@ -327,6 +362,7 @@ const InitialFile = memo(function InitialFile({
 const InProgressFile = memo(function InProgressFile({
   item,
   onUpdate,
+  disableFetch,
 }: FileViewProps) {
   const { t } = useTranslation("Item");
   const progressBytes = item.fetch_progress ?? 0;
@@ -386,15 +422,30 @@ const InProgressFile = memo(function InProgressFile({
           </p>
           <div className="flex gap-1">
             {item.fetch_status === FetchStatus.DownloadInProgress ? (
-              <Button size="small" type="link" onClick={pauseDownload}>
+              <Button
+                size="small"
+                type="link"
+                onClick={pauseDownload}
+                disabled={disableFetch}
+              >
                 {t("pause")}
               </Button>
             ) : (
-              <Button size="small" type="link" onClick={resumeDownload}>
+              <Button
+                size="small"
+                type="link"
+                onClick={resumeDownload}
+                disabled={disableFetch}
+              >
                 {t("resume")}
               </Button>
             )}
-            <Button size="small" type="link" onClick={cancelDownload}>
+            <Button
+              size="small"
+              type="link"
+              onClick={cancelDownload}
+              disabled={disableFetch}
+            >
               {t("cancel")}
             </Button>
           </div>
@@ -553,7 +604,11 @@ const CompleteFile = memo(function CompleteFile({ item }: { item: Item }) {
   );
 });
 
-const FailedFile = memo(function FailedFile({ item, onUpdate }: FileViewProps) {
+const FailedFile = memo(function FailedFile({
+  item,
+  onUpdate,
+  disableFetch,
+}: FileViewProps) {
   const { t } = useTranslation("Item");
   const { token } = theme.useToken();
 
@@ -586,10 +641,20 @@ const FailedFile = memo(function FailedFile({ item, onUpdate }: FileViewProps) {
         </div>
       </div>
       <div className="flex gap-2">
-        <Button type="link" size="small" onClick={retryDownload}>
+        <Button
+          type="link"
+          size="small"
+          onClick={retryDownload}
+          disabled={disableFetch}
+        >
           {t("retry")}
         </Button>
-        <Button type="link" size="small" onClick={cancelDownload}>
+        <Button
+          type="link"
+          size="small"
+          onClick={cancelDownload}
+          disabled={disableFetch}
+        >
           {t("cancel")}
         </Button>
       </div>

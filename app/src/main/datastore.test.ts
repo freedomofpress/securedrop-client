@@ -413,6 +413,103 @@ describe("Datastore Method Tests", () => {
     expect(source1Item2).not.toBeNull();
   });
 
+  it("pending SourceConversationTruncated should update has_attachment based on remaining items", () => {
+    db.updateSources({
+      source1: { ...mockSourceMetadata("source1"), has_attachment: true },
+    });
+
+    db.updateItems({
+      item1: mockItemMetadata("item1", "source1", "file", 1),
+      item2: mockItemMetadata("item2", "source1", "message", 2),
+    });
+
+    let sources = db.getSources();
+    expect(sources.get("source1")!.hasAttachment).toBe(true);
+
+    // Truncate only the file item
+    db.addPendingSourceEvent(
+      "source1",
+      PendingEventType.SourceConversationTruncated,
+      { upper_bound: 1 },
+    );
+
+    sources = db.getSources();
+    expect(sources.get("source1")!.hasAttachment).toBe(false);
+  });
+
+  it("pending SourceConversationTruncated should preserve has_attachment when file items remain", () => {
+    db.updateSources({
+      source1: { ...mockSourceMetadata("source1"), has_attachment: true },
+    });
+
+    db.updateItems({
+      item1: mockItemMetadata("item1", "source1", "file", 1),
+      item2: mockItemMetadata("item2", "source1", "file", 2),
+      item3: mockItemMetadata("item3", "source1", "message", 3),
+    });
+
+    // Truncate only first file item; second file item remains
+    db.addPendingSourceEvent(
+      "source1",
+      PendingEventType.SourceConversationTruncated,
+      { upper_bound: 1 },
+    );
+
+    const sources = db.getSources();
+    expect(sources.get("source1")!.hasAttachment).toBe(true);
+  });
+
+  it("pending SourceConversationTruncated should mark source as read when all items removed", () => {
+    db.updateSources({
+      source1: mockSourceMetadata("source1"),
+    });
+
+    db.updateItems({
+      item1: mockItemMetadata("item1", "source1", "message", 1),
+      item2: mockItemMetadata("item2", "source1", "message", 2),
+    });
+
+    let sources = db.getSources();
+    expect(sources.get("source1")!.isRead).toBe(false);
+
+    // Truncate all items
+    db.addPendingSourceEvent(
+      "source1",
+      PendingEventType.SourceConversationTruncated,
+      { upper_bound: 2 },
+    );
+
+    sources = db.getSources();
+    expect(sources.get("source1")!.isRead).toBe(true);
+  });
+
+  it("pending SourceConversationTruncated should mark source as read when remaining items are all read", () => {
+    db.updateSources({
+      source1: mockSourceMetadata("source1"),
+    });
+
+    db.updateItems({
+      // ic=2 stays after upper_bound=1 truncation, is_read=true
+      item1: {
+        ...mockItemMetadata("item1", "source1", "message", 2),
+        kind: "message",
+        is_read: true,
+      },
+      // ic=1 removed by upper_bound=1, is_read=false
+      item2: mockItemMetadata("item2", "source1", "message", 1),
+    });
+
+    // Only remove item2 (the unread item with ic=1)
+    db.addPendingSourceEvent(
+      "source1",
+      PendingEventType.SourceConversationTruncated,
+      { upper_bound: 1 },
+    );
+
+    const sources = db.getSources();
+    expect(sources.get("source1")!.isRead).toBe(true);
+  });
+
   it("pending Starred event should star sources", () => {
     // Insert three sources
     db.updateSources({
@@ -499,22 +596,22 @@ describe("Datastore Method Tests", () => {
   });
 
   it("pending Seen event should mark seen", () => {
-    // Insert three sources
+    // Insert source
     db.updateSources({
       source1: mockSourceMetadata("source1", true),
-      source2: mockSourceMetadata("source2", true),
-      source3: mockSourceMetadata("source3", true),
     });
-    let sources = db.getSources();
-    for (const source of sources.values()) {
-      expect(source.isRead).toBe(false);
-    }
 
     db.updateItems({
       item1: mockItemMetadata("item1", "source1", "message", 1),
       item2: mockItemMetadata("item2", "source1", "message", 2),
       item3: mockItemMetadata("item3", "source1", "message", 3),
     });
+
+    let sources = db.getSources();
+    for (const source of sources.values()) {
+      expect(source.uuid).toBe("source1");
+      expect(source.isRead).toBe(false);
+    }
 
     // Partially marking items seen should not update source Seen state
     db.addPendingSourceConversationSeen("source1", 2);
@@ -526,11 +623,8 @@ describe("Datastore Method Tests", () => {
     db.addPendingSourceConversationSeen("source1", 3);
     sources = db.getSources();
     for (const source of sources.values()) {
-      if (source.uuid === "source1") {
-        expect(source.isRead).toBe(true);
-        continue;
-      }
-      expect(source.isRead).toBe(false);
+      expect(source.uuid).toBe("source1");
+      expect(source.isRead).toBe(true);
     }
   });
 
