@@ -95,6 +95,13 @@ const Source = memo(function Source({
           onSelect(source.uuid, e.target.checked);
         }}
         onClick={(e) => e.stopPropagation()}
+        onKeyDown={(e) => {
+          if (e.key === "Enter") {
+            e.preventDefault();
+            e.stopPropagation();
+            onSelect(source.uuid, !isSelected);
+          }
+        }}
         className={
           isActive
             ? "text-white [&_.ant-checkbox-inner]:bg-white [&_.ant-checkbox-inner]:border-white [&_.ant-checkbox-checked_.ant-checkbox-inner]:bg-white [&_.ant-checkbox-checked_.ant-checkbox-inner]:border-white"
