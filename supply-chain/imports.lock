@@ -189,15 +189,15 @@ user-login = "sunfishcode"
 user-name = "Dan Gohman"
 
 [[publisher.openssl]]
-version = "0.10.78"
-when = "2026-04-19"
+version = "0.10.80"
+when = "2026-05-16"
 user-id = 163
 user-login = "alex"
 user-name = "Alex Gaynor"
 
 [[publisher.openssl-sys]]
-version = "0.9.114"
-when = "2026-04-19"
+version = "0.9.116"
+when = "2026-05-16"
 user-id = 163
 user-login = "alex"
 user-name = "Alex Gaynor"
