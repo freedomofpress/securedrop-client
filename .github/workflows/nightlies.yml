@@ -88,6 +88,7 @@ jobs:
         with:
           app-id: ${{ vars.FPF_BRANCH_UPDATER_APP_ID }}
           private-key: ${{ secrets.FPF_BRANCH_UPDATER_APP_PRIVKEY }}
+          permission-contents: write
           repositories: |
             build-logs
             securedrop-apt-test
