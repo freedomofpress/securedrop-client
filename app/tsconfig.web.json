@@ -1,6 +1,7 @@
 {
   "extends": "@electron-toolkit/tsconfig/tsconfig.web.json",
   "include": [
+    "src/renderer/test-component-setup.tsx",
     "src/renderer/env.d.ts",
     "src/renderer/**/*",
     "src/renderer/**/*.tsx",

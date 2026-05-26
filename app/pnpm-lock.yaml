@@ -213,6 +213,9 @@ importers:
       vitest:
         specifier: ^3.2.4
         version: 3.2.4(@types/debug@4.1.13)(@types/node@24.10.1)(jiti@2.7.0)(jsdom@27.2.0(postcss@8.5.6))(lightningcss@1.30.1)(tsx@4.20.5)(yaml@2.8.2)
+      vitest-axe:
+        specifier: ^0.1.0
+        version: 0.1.0(vitest@3.2.4(@types/debug@4.1.13)(@types/node@24.10.1)(jiti@2.7.0)(jsdom@27.2.0(postcss@8.5.6))(lightningcss@1.30.1)(tsx@4.20.5)(yaml@2.8.2))
 
 packages:
 
@@ -2203,6 +2206,10 @@ packages:
     resolution: {integrity: sha512-oKnbhFyRIXpUuez8iBMmyEa4nbj4IOQyuhc/wy9kY7/WVPcwIO9VA668Pu8RkO7+0G76SLROeyw9CpQ061i4mA==}
     engines: {node: '>=10'}
 
+  chalk@5.6.2:
+    resolution: {integrity: sha512-7NzBL0rN6fMUW+f7A6Io4h40qQlG+xGmtMxfbnH/K7TAtt8JQWVQK+6g0UXKMeVJoyV5EkkNsErQ8pVD3bLHbA==}
+    engines: {node: ^12.17.0 || ^14.13 || >=16.0.0}
+
   check-error@2.1.1:
     resolution: {integrity: sha512-OAlb+T7V4Op9OwdkjmguYRqncdlx5JiofwOAUkmTF+jNdHwzTaTs4sRAGpzLF3oOz5xAyDGrPgeIDFQmDOTiJw==}
     engines: {node: '>= 16'}
@@ -3520,6 +3527,9 @@ packages:
   locate-path@6.0.0:
     resolution: {integrity: sha512-iPZK6eYjbxRu3uB4/WZ3EsEIMJFMqAoopl3R+zuq0UjcAm/MO6KCweDgPfP3elTztoKP3KtnVHxTn2NHBSDVUw==}
     engines: {node: '>=10'}
+
+  lodash-es@4.18.1:
+    resolution: {integrity: sha512-J8xewKD/Gk22OZbhpOVSwcs60zhd95ESDwezOFuA3/099925PdHJ7OFHNTGtajL3AlZkykD32HykiMo+BIBI8A==}
 
   lodash.camelcase@4.3.0:
     resolution: {integrity: sha512-TwuEnCnxbc3rAvhf/LbG7tJUDzhqXyFnv3dtzLOPgCG/hODL7WFnsbwktkD7yUV0RrreP/l1PALq/YSg6VvjlA==}
@@ -5054,6 +5064,11 @@ packages:
         optional: true
       yaml:
         optional: true
+
+  vitest-axe@0.1.0:
+    resolution: {integrity: sha512-jvtXxeQPg8R/2ANTY8QicA5pvvdRP4F0FsVUAHANJ46YCDASie/cuhlSzu0DGcLmZvGBSBNsNuK3HqfaeknyvA==}
+    peerDependencies:
+      vitest: '>=0.16.0'
 
   vitest@3.2.4:
     resolution: {integrity: sha512-LUCP5ev3GURDysTWiP47wRRUpLKMOfPh+yKTx3kVIEiu5KOMeqzpnYNsKyOoVrULivR8tLcks4+lga33Whn90A==}
@@ -7454,6 +7469,8 @@ snapshots:
       ansi-styles: 4.3.0
       supports-color: 7.2.0
 
+  chalk@5.6.2: {}
+
   check-error@2.1.1: {}
 
   chownr@1.1.4: {}
@@ -9058,6 +9075,8 @@ snapshots:
   locate-path@6.0.0:
     dependencies:
       p-locate: 5.0.0
+
+  lodash-es@4.18.1: {}
 
   lodash.camelcase@4.3.0: {}
 
@@ -10829,6 +10848,16 @@ snapshots:
       lightningcss: 1.30.1
       tsx: 4.20.5
       yaml: 2.8.2
+
+  vitest-axe@0.1.0(vitest@3.2.4(@types/debug@4.1.13)(@types/node@24.10.1)(jiti@2.7.0)(jsdom@27.2.0(postcss@8.5.6))(lightningcss@1.30.1)(tsx@4.20.5)(yaml@2.8.2)):
+    dependencies:
+      aria-query: 5.3.2
+      axe-core: 4.11.4
+      chalk: 5.6.2
+      dom-accessibility-api: 0.5.16
+      lodash-es: 4.18.1
+      redent: 3.0.0
+      vitest: 3.2.4(@types/debug@4.1.13)(@types/node@24.10.1)(jiti@2.7.0)(jsdom@27.2.0(postcss@8.5.6))(lightningcss@1.30.1)(tsx@4.20.5)(yaml@2.8.2)
 
   vitest@3.2.4(@types/debug@4.1.13)(@types/node@24.10.1)(jiti@2.7.0)(jsdom@27.2.0(postcss@8.5.6))(lightningcss@1.30.1)(tsx@4.20.5)(yaml@2.8.2):
     dependencies:
