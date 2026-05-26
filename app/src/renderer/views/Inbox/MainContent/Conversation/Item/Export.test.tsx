@@ -9,7 +9,50 @@ import {
   type Item,
   type ExportPayload,
 } from "../../../../../../types";
-import { renderWithProviders } from "../../../../../test-component-setup";
+import {
+  renderWithProviders,
+  renderAndCheckA11y,
+} from "../../../../../test-component-setup";
+
+describe("ExportWizard accessibility", () => {
+  const mockItem: Item = {
+    uuid: "test-item-uuid",
+    data: {
+      uuid: "test-item-uuid",
+      kind: "file",
+      seen_by: [],
+      size: 1024,
+      source: "source-1",
+      is_read: false,
+      interaction_count: 0,
+    },
+    fetch_status: FetchStatus.Complete,
+    fetch_progress: null,
+    plaintext: null,
+    filename: "/path/to/testfile.pdf",
+    decrypted_size: null,
+  };
+
+  it("has no axe violations when the wizard is closed", async () => {
+    await renderAndCheckA11y(
+      <ExportWizard
+        item={{ type: "file", payload: mockItem }}
+        open={false}
+        onClose={vi.fn()}
+      />,
+    );
+  });
+
+  it("has no axe violations when the wizard is open (preflight step)", async () => {
+    await renderAndCheckA11y(
+      <ExportWizard
+        item={{ type: "file", payload: mockItem }}
+        open={true}
+        onClose={vi.fn()}
+      />,
+    );
+  });
+});
 
 describe("ExportWizard Component", () => {
   const mockItem: Item = {

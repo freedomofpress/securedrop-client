@@ -3,6 +3,7 @@ import { expect, describe, it, vi } from "vitest";
 import userEvent from "@testing-library/user-event";
 import {
   renderWithProviders,
+  renderAndCheckA11y,
   testMemoization,
 } from "../../../../test-component-setup";
 import Source from "./Source";
@@ -48,6 +49,20 @@ const defaultProps = {
   onSelect: mockOnSelect,
   onToggleStar: mockOnToggleStar,
 };
+
+describe("Source accessibility", () => {
+  it("has no axe violations on a basic unread source", async () => {
+    await renderAndCheckA11y(
+      <Source
+        source={createMockSource()}
+        isSelected={false}
+        isActive={false}
+        onSelect={vi.fn()}
+        onToggleStar={vi.fn()}
+      />,
+    );
+  });
+});
 
 describe("Source Component", () => {
   beforeEach(() => {
