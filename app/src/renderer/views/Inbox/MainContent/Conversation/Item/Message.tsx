@@ -1,4 +1,4 @@
-import { memo, useState } from "react";
+import { memo } from "react";
 import {
   FetchStatus,
   ItemUpdateType,
@@ -49,7 +49,6 @@ const Message = memo(function Message(props: MessageProps) {
   const { kind, item, onDelete } = props;
   const { t } = useTranslation("MainContent");
   const { token } = theme.useToken();
-  const [isHovered, setIsHovered] = useState(false);
 
   const sessionState = useAppSelector(getSessionState);
   const disableDelete = sessionState.status !== SessionStatus.Auth;
@@ -192,10 +191,8 @@ const Message = memo(function Message(props: MessageProps) {
   if (kind === "message") {
     return (
       <div
-        className="flex items-start mb-4 justify-start"
+        className="flex items-start mb-4 justify-start group"
         data-testid={`item-${item.uuid}`}
-        onMouseEnter={() => setIsHovered(true)}
-        onMouseLeave={() => setIsHovered(false)}
       >
         <Avatar designation={authorDisplay} isActive={false} />
         <div className="ml-3">
@@ -207,10 +204,7 @@ const Message = memo(function Message(props: MessageProps) {
               {displayMessage()}
             </div>
             {!disableDelete && (
-              <div
-                className="flex-shrink-0 transition-opacity"
-                style={{ opacity: isHovered ? 1 : 0 }}
-              >
+              <div className="flex-shrink-0 transition-opacity opacity-0 group-hover:opacity-100">
                 <Button
                   type="text"
                   size="small"
@@ -228,10 +222,8 @@ const Message = memo(function Message(props: MessageProps) {
 
   return (
     <div
-      className="flex items-start mb-4 justify-end"
+      className="flex items-start mb-4 justify-end group"
       data-testid={`item-${item.uuid}`}
-      onMouseEnter={() => setIsHovered(true)}
-      onMouseLeave={() => setIsHovered(false)}
     >
       <div>
         <div className="flex items-center justify-start mb-1 gap-1">
@@ -239,10 +231,7 @@ const Message = memo(function Message(props: MessageProps) {
         </div>
         <div className="flex items-center gap-1">
           {!disableDelete && (
-            <div
-              className="flex-shrink-0 transition-opacity"
-              style={{ opacity: isHovered ? 1 : 0 }}
-            >
+            <div className="flex-shrink-0 transition-opacity opacity-0 group-hover:opacity-100">
               <Button
                 type="text"
                 size="small"

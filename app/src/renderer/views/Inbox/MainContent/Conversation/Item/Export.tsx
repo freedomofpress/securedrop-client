@@ -10,7 +10,7 @@ import "./File.css";
 
 import { useTranslation } from "react-i18next";
 import { LoaderCircle, FileX2, Inbox, Unlock } from "lucide-react";
-import { Button, Modal, Input } from "antd";
+import { Button, Modal, Input, type InputRef } from "antd";
 
 type ExportState =
   | "CONFIRM_SOURCE"
@@ -421,6 +421,12 @@ const UnlockDeviceState = memo(function UnlockDeviceState({
   dispatch,
   t,
 }: StateComponentProps) {
+  const passphraseRef = useRef<InputRef>(null);
+
+  useEffect(() => {
+    passphraseRef.current?.focus();
+  }, []);
+
   const handlePassphraseChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     dispatch({ type: "SET_PASSPHRASE", payload: e.target.value });
   };
@@ -454,13 +460,13 @@ const UnlockDeviceState = memo(function UnlockDeviceState({
           </label>
           <Input.Password
             id="passphrase"
+            ref={passphraseRef}
             value={context.passphrase}
             onChange={handlePassphraseChange}
             onPressEnter={() =>
               dispatch({ type: "UNLOCK_DEVICE", payload: context.passphrase })
             }
             placeholder={t("exportWizard.passphrase")}
-            autoFocus
           />
         </div>
       </div>

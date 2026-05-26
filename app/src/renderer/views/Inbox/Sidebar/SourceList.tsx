@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, useCallback } from "react";
+import { useState, useEffect, useMemo, useCallback, useRef } from "react";
 import { useParams, useNavigate } from "react-router";
 import { List, useListRef } from "react-window";
 import { useTranslation } from "react-i18next";
@@ -74,6 +74,7 @@ function SourceList({ focusedPanel }: { focusedPanel: FocusedPanel }) {
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
   const [deleteModalLoading, setDeleteModalLoading] = useState(false);
+  const cancelButtonRef = useRef<HTMLButtonElement | null>(null);
   // Sources targeted for deletion
   const [pendingDeleteSources, setPendingDeleteSources] = useState<Set<string>>(
     new Set(),
@@ -469,6 +470,11 @@ function SourceList({ focusedPanel }: { focusedPanel: FocusedPanel }) {
         open={deleteModalOpen}
         data-testid="delete-modal"
         closable={false}
+        afterOpenChange={(open) => {
+          if (open) {
+            cancelButtonRef.current?.focus();
+          }
+        }}
         title={
           <span data-testid="delete-modal-title">
             {pendingDeleteSources.size === 1
@@ -483,9 +489,11 @@ function SourceList({ focusedPanel }: { focusedPanel: FocusedPanel }) {
         footer={[
           <Button
             key="cancel"
+            ref={(node) => {
+              cancelButtonRef.current = node as HTMLButtonElement | null;
+            }}
             data-testid="delete-modal-cancel-button"
             onClick={handleDeleteModalCancel}
-            autoFocus
           >
             {t("sourcelist.deleteDialog.cancelButton")}
           </Button>,
