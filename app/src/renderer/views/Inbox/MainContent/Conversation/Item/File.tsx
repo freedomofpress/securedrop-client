@@ -200,10 +200,13 @@ const File = memo(function File({
   onUpdate,
   onDelete,
 }: FileProps) {
+  const { t } = useTranslation("Item");
   const { token } = theme.useToken();
   const titleCaseDesignation = toTitleCase(designation);
   const fetchStatus = item.fetch_status;
   const [isFileBoxHovered, setIsFileBoxHovered] = useState(false);
+  const [isDeleteFocused, setIsDeleteFocused] = useState(false);
+  const showDelete = isFileBoxHovered || isDeleteFocused;
 
   // Disable downloading of files in offline mode
   const session = useAppSelector(getSessionState);
@@ -299,16 +302,24 @@ const File = memo(function File({
               disableFetch={disableFetch}
               item={item}
               onUpdate={onUpdate}
+              onDelete={onDelete}
             />
           </div>
           {!disableFetch && (
-            <div className="flex-shrink-0 transition-opacity opacity-0 group-hover:opacity-100">
+            <div
+              className="flex-shrink-0 transition-opacity group-hover:opacity-100"
+              style={{ opacity: showDelete ? 1 : 0 }}
+            >
               <Button
                 type="text"
                 size="small"
                 danger
                 icon={<Trash size={16} />}
                 onClick={onDelete}
+                aria-label={t("deleteFile")}
+                onFocus={() => setIsDeleteFocused(true)}
+                onBlur={() => setIsDeleteFocused(false)}
+                data-testid="file-delete-button"
               />
             </div>
           )}
@@ -322,6 +333,7 @@ interface FileViewProps {
   item: Item;
   onUpdate: (update: ItemUpdate) => void;
   disableFetch: boolean;
+  onDelete?: () => void;
 }
 
 const InitialFile = memo(function InitialFile({
@@ -332,7 +344,8 @@ const InitialFile = memo(function InitialFile({
   const { t } = useTranslation("Item");
   const fileSize = prettyPrintBytes(item.data.size);
 
-  const scheduleDownload = () => {
+  const scheduleDownload = (e: React.MouseEvent) => {
+    e.stopPropagation();
     onUpdate({
       item_uuid: item.uuid,
       type: ItemUpdateType.FetchStatus,
@@ -341,28 +354,39 @@ const InitialFile = memo(function InitialFile({
   };
 
   return (
-    <Tooltip
-      title={disableFetch ? t("offlineFilenameTooltip") : t("filenameTooltip")}
-    >
-      <div className="flex items-center justify-between pt-2 pb-2">
+    <div className="flex items-center justify-between pt-2 pb-2">
+      <Tooltip
+        title={
+          disableFetch ? t("offlineFilenameTooltip") : t("filenameTooltip")
+        }
+        trigger={["hover", "focus"]}
+      >
         <div className="flex items-center">
-          <FileIcon size={30} strokeWidth={1} className="file-icon" />
+          <FileIcon
+            size={30}
+            strokeWidth={1}
+            className="file-icon"
+            aria-hidden="true"
+          />
           <div className="ml-2">
             <p className="italic">{t("encryptedFile")}</p>
             <p className="italic">{fileSize}</p>
           </div>
         </div>
+      </Tooltip>
 
-        <div className="flex ml-8">
-          <Button
-            type="text"
-            size="large"
-            icon={<Download size={20} onClick={scheduleDownload} />}
-            disabled={disableFetch}
-          />
-        </div>
+      <div className="flex ml-8">
+        <Button
+          type="text"
+          size="large"
+          icon={<Download size={20} />}
+          onClick={scheduleDownload}
+          disabled={disableFetch}
+          aria-label={t("downloadFile")}
+          tabIndex={0}
+        />
       </div>
-    </Tooltip>
+    </div>
   );
 });
 
@@ -462,7 +486,15 @@ const InProgressFile = memo(function InProgressFile({
   );
 });
 
-const CompleteFile = memo(function CompleteFile({ item }: { item: Item }) {
+const CompleteFile = memo(function CompleteFile({
+  item,
+  onDelete,
+  disableFetch,
+}: {
+  item: Item;
+  onDelete?: () => void;
+  disableFetch: boolean;
+}) {
   const { t } = useTranslation("Item");
   const [whistleflowEnabled, setWhistleflowEnabled] = useState(false);
   const [exportWizardOpen, setExportWizardOpen] = useState(false);
@@ -557,6 +589,17 @@ const CompleteFile = memo(function CompleteFile({ item }: { item: Item }) {
       label: t("printFile"),
       onClick: handlePrintClick,
     },
+    ...(onDelete && !disableFetch
+      ? [
+          { type: "divider" as const },
+          {
+            key: "delete",
+            label: t("deleteFile"),
+            danger: true,
+            onClick: onDelete,
+          },
+        ]
+      : []),
   ];
 
   return (
@@ -565,12 +608,13 @@ const CompleteFile = memo(function CompleteFile({ item }: { item: Item }) {
         <div className="flex items-center">
           <Icon style={{ fontSize: 30, color }} className="file-icon" />
           <div className="ml-2">
-            <Tooltip title={tooltipTitle}>
+            <Tooltip title={tooltipTitle} trigger={["hover", "focus"]}>
               <Button
                 size="small"
                 type="link"
                 className="file-namebtn"
                 onClick={handleOpenFile}
+                aria-label={filename}
               >
                 {formattedFilename}
               </Button>
@@ -590,6 +634,7 @@ const CompleteFile = memo(function CompleteFile({ item }: { item: Item }) {
               type="text"
               size="small"
               icon={<MoreOutlined style={{ fontSize: 18 }} />}
+              aria-label={t("fileActions")}
             />
           </Dropdown>
         </div>
