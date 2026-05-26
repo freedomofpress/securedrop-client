@@ -148,7 +148,6 @@ jobs:
         # TODO: workstation-viewer pulls in grsec and qubes packages
         package:
           - app
-          - client
           - export
           - gpg-config
           - keyring
