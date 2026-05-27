@@ -3,6 +3,7 @@
 use anyhow::{bail, Result};
 use futures_util::StreamExt;
 use reqwest::header::HeaderMap;
+use reqwest::redirect::Policy as RedirectPolicy;
 use reqwest::{Client, Method, Proxy, Response};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
@@ -149,15 +150,15 @@ async fn proxy() -> Result<()> {
         bail! {"request would escape configured origin"}
     }
 
+    // Do not follow any redirects
+    let mut builder = Client::builder().redirect(RedirectPolicy::none());
     // Ability to disable tor explicitly (for dev/testing purposes)
-    let client = if config::read(DISABLE_TOR).is_ok() {
-        Client::new()
-    } else {
-        Client::builder()
+    if config::read(DISABLE_TOR).is_err() {
+        builder = builder
             // the *h* in socks5h has the proxy (i.e. Tor) resolve DNS (*h*ostnames)
-            .proxy(Proxy::http("socks5h://127.0.0.1:9150")?)
-            .build()?
-    };
+            .proxy(Proxy::all("socks5h://127.0.0.1:9150")?);
+    }
+    let client = builder.build()?;
 
     let mut req =
         client.request(Method::from_str(&incoming_request.method)?, url);
