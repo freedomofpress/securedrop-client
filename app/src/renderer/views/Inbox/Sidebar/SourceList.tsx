@@ -83,6 +83,7 @@ function SourceList({ focusedPanel }: { focusedPanel: FocusedPanel }) {
     files: number;
     replies: number;
   }>({ messages: 0, files: 0, replies: 0 });
+  const [deleteCountsLoaded, setDeleteCountsLoaded] = useState(false);
 
   // Debounce search term to avoid excessive filtering
   const debouncedSearchTerm = useDebounce(searchTerm, 300);
@@ -169,15 +170,18 @@ function SourceList({ focusedPanel }: { focusedPanel: FocusedPanel }) {
     setPendingDeleteSources(sources);
     setDeleteModalOpen(true);
     setDeleteModalLoading(true);
+    setDeleteCountsLoaded(false);
 
     try {
       const counts = await window.electronAPI.getSourceItemCounts(
         Array.from(sources),
       );
       setDeleteCounts(counts);
+      setDeleteCountsLoaded(true);
     } catch (error) {
       console.error("Error fetching source item counts:", error);
       setDeleteCounts({ messages: 0, files: 0, replies: 0 });
+      setDeleteCountsLoaded(false);
     } finally {
       setDeleteModalLoading(false);
     }
@@ -203,6 +207,7 @@ function SourceList({ focusedPanel }: { focusedPanel: FocusedPanel }) {
   const handleDeleteModalCancel = useCallback(() => {
     setPendingDeleteSources(new Set());
     setDeleteModalOpen(false);
+    setDeleteCountsLoaded(false);
   }, []);
 
   const handleDeleteAction = useCallback(
@@ -220,6 +225,7 @@ function SourceList({ focusedPanel }: { focusedPanel: FocusedPanel }) {
           };
         });
         await window.electronAPI.addPendingSourceEventBatch(events);
+        setDeleteCountsLoaded(false);
         // If we deleted an account and it was the currently active source, navigate away
         if (
           eventType === PendingEventType.SourceDeleted &&
@@ -416,6 +422,28 @@ function SourceList({ focusedPanel }: { focusedPanel: FocusedPanel }) {
     enabled: focusedPanel === "sidebar",
   });
 
+  const hasItemsToDelete =
+    deleteCounts.messages > 0 ||
+    deleteCounts.files > 0 ||
+    deleteCounts.replies > 0;
+  const isDeletingEmptySources =
+    deleteCountsLoaded && !deleteModalLoading && !hasItemsToDelete;
+  const deleteDialogTitle =
+    pendingDeleteSources.size === 1
+      ? t(
+          isDeletingEmptySources
+            ? "sourcelist.deleteDialog.single.emptyMessage"
+            : "sourcelist.deleteDialog.single.message",
+        )
+      : t(
+          isDeletingEmptySources
+            ? "sourcelist.deleteDialog.multiple.emptyMessage"
+            : "sourcelist.deleteDialog.multiple.message",
+          {
+            count: pendingDeleteSources.size,
+          },
+        );
+
   return (
     <div className="flex-1 flex flex-col min-h-0">
       {/* Toolbar with controls and actions */}
@@ -470,13 +498,7 @@ function SourceList({ focusedPanel }: { focusedPanel: FocusedPanel }) {
         data-testid="delete-modal"
         closable={false}
         title={
-          <span data-testid="delete-modal-title">
-            {pendingDeleteSources.size === 1
-              ? t("sourcelist.deleteDialog.single.message")
-              : t("sourcelist.deleteDialog.multiple.message", {
-                  count: pendingDeleteSources.size,
-                })}
-          </span>
+          <span data-testid="delete-modal-title">{deleteDialogTitle}</span>
         }
         getContainer={() => document.getElementById("root") || document.body}
         onCancel={handleDeleteModalCancel}
@@ -489,18 +511,20 @@ function SourceList({ focusedPanel }: { focusedPanel: FocusedPanel }) {
           >
             {t("sourcelist.deleteDialog.cancelButton")}
           </Button>,
-          <Button
-            key="deleteConversation"
-            data-testid="delete-modal-delete-conversation-button"
-            type="primary"
-            onClick={() =>
-              handleDeleteAction(PendingEventType.SourceConversationTruncated)
-            }
-          >
-            {pendingDeleteSources.size === 1
-              ? t("sourcelist.deleteDialog.single.keepAccountButton")
-              : t("sourcelist.deleteDialog.multiple.keepAccountsButton")}
-          </Button>,
+          !isDeletingEmptySources && (
+            <Button
+              key="deleteConversation"
+              data-testid="delete-modal-delete-conversation-button"
+              type="primary"
+              onClick={() =>
+                handleDeleteAction(PendingEventType.SourceConversationTruncated)
+              }
+            >
+              {pendingDeleteSources.size === 1
+                ? t("sourcelist.deleteDialog.single.keepAccountButton")
+                : t("sourcelist.deleteDialog.multiple.keepAccountsButton")}
+            </Button>
+          ),
           <Button
             key="deleteAccount"
             data-testid="delete-modal-delete-account-button"
@@ -522,9 +546,7 @@ function SourceList({ focusedPanel }: { focusedPanel: FocusedPanel }) {
             </p>
           ) : (
             <>
-              {(deleteCounts.messages > 0 ||
-                deleteCounts.files > 0 ||
-                deleteCounts.replies > 0) && (
+              {hasItemsToDelete && (
                 <div className="mt-3">
                   <p className="font-medium text-gray-800">
                     {t("sourcelist.deleteDialog.itemCountsHeader")}

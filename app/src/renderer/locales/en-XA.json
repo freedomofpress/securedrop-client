@@ -7,12 +7,14 @@
       "deleteDialog": {
         "single": {
           "message": "[!!!!!!Do you want to delete the source's account or just the conversation?!!!!!!]",
+          "emptyMessage": "[!!!!Do you want to delete the source's account?!!!!]",
           "keepAccountButton": "[!Delete Conversation!]",
           "deleteAccountButton": "[!Delete Account!]"
         },
         "multiple": {
           "keepAccountsButton": "[!!Delete Conversations!!]",
           "deleteAccountsButton": "[!Delete Accounts!]",
+          "emptyMessage": "[!!!!!Do you want to delete these {{count}} source accounts?!!!!!]",
           "message": "[!!!!!!!!Do you want to delete these {{count}} source accounts or just the conversations?!!!!!!!!]"
         },
         "cancelButton": "[Cancel]",

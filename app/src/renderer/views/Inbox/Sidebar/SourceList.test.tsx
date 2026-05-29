@@ -238,6 +238,9 @@ describe("Sources Component", () => {
         ),
       syncMetadata: vi.fn().mockResolvedValue(undefined),
       onSourceUpdate: vi.fn().mockResolvedValue(undefined),
+      getSourceItemCounts: vi
+        .fn()
+        .mockResolvedValue({ messages: 1, files: 0, replies: 0 }),
     } as Partial<typeof window.electronAPI> as typeof window.electronAPI;
   });
 
@@ -854,6 +857,63 @@ describe("Sources Component", () => {
       expect(
         screen.getByTestId("delete-modal-delete-conversation-button"),
       ).toBeInTheDocument();
+      expect(
+        screen.getByTestId("delete-modal-delete-account-button"),
+      ).toBeInTheDocument();
+    });
+
+    it("shows account-only modal for a single empty source", async () => {
+      window.electronAPI.getSourceItemCounts = vi
+        .fn()
+        .mockResolvedValue({ messages: 0, files: 0, replies: 0 });
+
+      renderSourceList();
+
+      await waitFor(() => {
+        expect(screen.getByTestId("source-source-1")).toBeInTheDocument();
+      });
+
+      await userEvent.click(screen.getByTestId("source-checkbox-source-1"));
+      await userEvent.click(screen.getByTestId("bulk-delete-button"));
+
+      await waitFor(() => {
+        expect(screen.getByTestId("delete-modal-title")).toHaveTextContent(
+          "Do you want to delete the source's account?",
+        );
+      });
+
+      expect(
+        screen.queryByTestId("delete-modal-delete-conversation-button"),
+      ).not.toBeInTheDocument();
+      expect(
+        screen.getByTestId("delete-modal-delete-account-button"),
+      ).toBeInTheDocument();
+    });
+
+    it("shows account-only modal for multiple empty sources", async () => {
+      window.electronAPI.getSourceItemCounts = vi
+        .fn()
+        .mockResolvedValue({ messages: 0, files: 0, replies: 0 });
+
+      renderSourceList();
+
+      await waitFor(() => {
+        expect(screen.getByTestId("source-source-1")).toBeInTheDocument();
+      });
+
+      await userEvent.click(screen.getByTestId("source-checkbox-source-1"));
+      await userEvent.click(screen.getByTestId("source-checkbox-source-2"));
+      await userEvent.click(screen.getByTestId("bulk-delete-button"));
+
+      await waitFor(() => {
+        expect(screen.getByTestId("delete-modal-title")).toHaveTextContent(
+          "Do you want to delete these 2 source accounts?",
+        );
+      });
+
+      expect(
+        screen.queryByTestId("delete-modal-delete-conversation-button"),
+      ).not.toBeInTheDocument();
       expect(
         screen.getByTestId("delete-modal-delete-account-button"),
       ).toBeInTheDocument();
