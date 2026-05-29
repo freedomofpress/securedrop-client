@@ -266,7 +266,7 @@ if (!gotTheLock) {
       return;
     }
 
-    fetchWorker.postMessage({ authToken } as AuthedRequest);
+    fetchWorker.postMessage({ type: "authedRequest", request: { authToken } });
   }
 
   // This method will be called when Electron has finished
@@ -919,7 +919,7 @@ if (!gotTheLock) {
     isQuitting = true;
     db.close();
     if (fetchWorker) {
-      void fetchWorker.terminate();
+      fetchWorker.postMessage({ type: "exit" });
     }
   });
 }

@@ -93,6 +93,12 @@ export type LoginFailure = {
 
 export type LoginResult = LoginSuccess | LoginFailure;
 
+// Message sent to fetch worker with authed request
+export type WorkerAuthedRequest = {
+  type: "authedRequest";
+  request: AuthedRequest;
+};
+
 // Message sent to the fetch worker to abort all active downloads and decryptions for a source
 export type AbortSourceFetch = {
   type: "abortSourceFetch";
@@ -105,11 +111,16 @@ export type CancelDownload = {
   itemId: string;
 };
 
+export type Exit = {
+  type: "exit";
+};
+
 // Union of all message types the fetch worker can receive
 export type FetchWorkerMessage =
-  | AuthedRequest
+  | WorkerAuthedRequest
   | AbortSourceFetch
-  | CancelDownload;
+  | CancelDownload
+  | Exit;
 
 // Re-export some types that are derived from zod schemas
 import type {
