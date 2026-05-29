@@ -43,7 +43,6 @@ jobs:
       - name: Check differences
         run: |
           source ./securedrop-builder/.venv/bin/activate
-          PKG_DIR=../client make -C securedrop-builder requirements
           PKG_DIR=../export make -C securedrop-builder requirements
           PKG_DIR=../log make -C securedrop-builder requirements
           git config --global --add safe.directory "$GITHUB_WORKSPACE"

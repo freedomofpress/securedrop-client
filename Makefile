@@ -48,7 +48,7 @@ zizmor: ## Lint GitHub Actions workflows
 	@poetry run zizmor .
 
 .PHONY: semgrep
-semgrep: semgrep-app semgrep-client semgrep-export ## Run Semgrep security checks on all components
+semgrep: semgrep-app semgrep-export ## Run Semgrep security checks on all components
 
 .PHONY: semgrep-app
 semgrep-app: ## Run Semgrep on app/ (JavaScript/TypeScript)
@@ -67,19 +67,6 @@ semgrep-app: ## Run Semgrep on app/ (JavaScript/TypeScript)
 		--config p/ci \
 		--config app/.semgrep \
 		app/
-
-.PHONY: semgrep-client
-semgrep-client: ## Run Semgrep on client/ (Python)
-	@echo "Running semgrep on client/ directory..."
-	@poetry run semgrep scan --metrics=off \
-		--exclude "tests/" \
-		--error \
-		--strict \
-		--verbose \
-		--config "p/security-audit" \
-		--config "p/ci" \
-		--config "client/.semgrep" \
-		client/
 
 .PHONY: semgrep-export
 semgrep-export: ## Run Semgrep on export/ (Python)

@@ -65,20 +65,6 @@ updates:
     allow:
       - dependency-type: "development"
   - package-ecosystem: "pip"
-    directory: "/client"
-    schedule:
-      interval: "weekly"
-    cooldown:
-      default-days: 7
-    allow:
-      - dependency-type: "development"
-    ignore:
-      - dependency-name: "pyqt*"
-    groups:
-      dev-dependencies:
-        patterns: ["*"]
-        dependency-type: "development"
-  - package-ecosystem: "pip"
     directory: "/export"
     schedule:
       interval: "weekly"
