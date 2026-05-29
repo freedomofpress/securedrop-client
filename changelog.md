@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.3.1
+
+This release contains a low-priority security fix. We are not aware of any
+exploitation in the wild.
+
+* Don't follow redirects in the proxy
+
 ## 1.3.0
 
 This release contains bug fixes and improvements to the SecureDrop Inbox.
