@@ -19,7 +19,7 @@ build-debs: ## Build Debian packages
 .PHONY: lint-apparmor
 lint-apparmor: ## Lint AppArmor profiles
 	# See apparmor_parser(8)
-	apparmor_parser --preprocess --abort-on-error --Werror=all client/files/usr.bin.securedrop-client
+	apparmor_parser --preprocess --abort-on-error --Werror=all proxy/usr.bin.securedrop-proxy
 
 .PHONY: lint-desktop
 lint-desktop: ## Lint .desktop files
