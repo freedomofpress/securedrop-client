@@ -48,15 +48,15 @@ def get_electron_abi() -> str:
     """
     script_dir = Path(__file__).parent.parent
 
-    version_file = script_dir / "node_modules" / "electron" / "dist" / "version"
+    electron_pkg = script_dir / "node_modules" / "electron" / "package.json"
     node_abi_path = script_dir / "node_modules" / "node-abi"
 
-    if not version_file.exists():
-        raise RuntimeError("Electron version file not found")
+    if not electron_pkg.exists():
+        raise RuntimeError("Electron package not found in node_modules")
     if not node_abi_path.exists():
         raise RuntimeError("node-abi module not found")
 
-    electron_version = version_file.read_text().strip()
+    electron_version = json.loads(electron_pkg.read_text())["version"]
 
     # Shell out to nodejs to invoke the node-abi library
     result = subprocess.run(
