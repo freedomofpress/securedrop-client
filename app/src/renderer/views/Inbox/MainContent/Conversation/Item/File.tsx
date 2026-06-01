@@ -203,11 +203,16 @@ const File = memo(function File({
   const { token } = theme.useToken();
   const titleCaseDesignation = toTitleCase(designation);
   const fetchStatus = item.fetch_status;
-  const [isHovered, setIsHovered] = useState(false);
+  const [isFileBoxHovered, setIsFileBoxHovered] = useState(false);
 
   // Disable downloading of files in offline mode
   const session = useAppSelector(getSessionState);
   const disableFetch = session.status !== SessionStatus.Auth;
+
+  const isClickable =
+    !disableFetch &&
+    (fetchStatus === FetchStatus.Initial ||
+      fetchStatus === FetchStatus.Cancelled);
 
   let FileInner;
   switch (fetchStatus) {
@@ -257,22 +262,17 @@ const File = memo(function File({
       : undefined),
     ...((fetchStatus === FetchStatus.Initial ||
       fetchStatus === FetchStatus.Cancelled) &&
-    isHovered
+    isFileBoxHovered
       ? { backgroundColor: token.colorFillQuaternary }
       : undefined),
-    ...(fetchStatus === FetchStatus.Initial ||
-    fetchStatus === FetchStatus.Cancelled
-      ? { cursor: "pointer" }
-      : undefined),
+    ...(isClickable ? { cursor: "pointer" } : undefined),
     transition: "background-color 0.2s ease",
   };
 
   return (
     <div
-      className="flex items-start mb-4 justify-start"
+      className="flex items-start mb-4 justify-start group"
       data-testid={`item-${item.uuid}`}
-      onMouseEnter={() => setIsHovered(true)}
-      onMouseLeave={() => setIsHovered(false)}
     >
       <Avatar designation={titleCaseDesignation ?? ""} isActive={false} />
       <div className="ml-3">
@@ -281,9 +281,19 @@ const File = memo(function File({
         </div>
         <div className="flex items-center gap-1">
           <div
+            role="button"
+            tabIndex={isClickable ? 0 : undefined}
             className="w-80 file-box"
             style={fileBoxStyle}
             onClick={handleClick}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" || e.key === " ") {
+                e.preventDefault();
+                handleClick();
+              }
+            }}
+            onMouseEnter={() => setIsFileBoxHovered(true)}
+            onMouseLeave={() => setIsFileBoxHovered(false)}
           >
             <FileInner
               disableFetch={disableFetch}
@@ -292,10 +302,7 @@ const File = memo(function File({
             />
           </div>
           {!disableFetch && (
-            <div
-              className="flex-shrink-0 transition-opacity"
-              style={{ opacity: isHovered ? 1 : 0 }}
-            >
+            <div className="flex-shrink-0 transition-opacity opacity-0 group-hover:opacity-100">
               <Button
                 type="text"
                 size="small"

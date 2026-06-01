@@ -1,13 +1,15 @@
 import globals, { node } from "globals";
 import eslint from "@eslint/js";
+import { defineConfig } from "eslint/config";
 import tseslint from "typescript-eslint";
 import reactHooks from "eslint-plugin-react-hooks";
 import reactRefresh from "eslint-plugin-react-refresh";
 import eslintConfigPrettier from "eslint-config-prettier/flat";
 import importPlugin from "eslint-plugin-import";
 import i18next from "eslint-plugin-i18next";
+import jsxA11y from "eslint-plugin-jsx-a11y";
 
-export default tseslint.config(
+export default defineConfig([
   {
     ignores: [
       "eslint.config.ts",
@@ -25,6 +27,7 @@ export default tseslint.config(
       reactRefresh.configs.recommended,
       eslintConfigPrettier,
       i18next.configs["flat/recommended"],
+      jsxA11y.flatConfigs.strict,
     ],
     files: ["**/*.ts", "**/*.tsx"],
     languageOptions: {
@@ -71,4 +74,4 @@ export default tseslint.config(
       "@typescript-eslint/no-explicit-any": "off",
     },
   },
-);
+]);

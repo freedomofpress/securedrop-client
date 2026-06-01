@@ -1,5 +1,5 @@
 import { Button, Input, Form, theme } from "antd";
-import type { FormProps } from "antd";
+import type { FormProps, InputRef } from "antd";
 import { Eye, EyeOff } from "lucide-react";
 import { CloseOutlined, CloseCircleFilled } from "@ant-design/icons";
 import { useState, useEffect, useRef } from "react";
@@ -44,6 +44,8 @@ function SignInView() {
     body: t("errors.generic.body"),
   };
 
+  const usernameInputRef = useRef<InputRef>(null);
+
   const [form] = Form.useForm();
   const [version, _setVersion] = useState<string>(__APP_VERSION__ || "Unknown");
   const [authError, setAuthError] = useState<boolean>(false);
@@ -54,6 +56,11 @@ function SignInView() {
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
   const [hasValidationErrors, setHasValidationErrors] =
     useState<boolean>(false);
+
+  // Focus the username input on mount
+  useEffect(() => {
+    usernameInputRef.current?.focus();
+  }, []);
 
   // Display error from session state (e.g., session expired)
   useEffect(() => {
@@ -251,9 +258,9 @@ function SignInView() {
               ]}
             >
               <Input
+                ref={usernameInputRef}
                 data-testid="username-input"
                 placeholder="nelliebly"
-                autoFocus
               />
             </Form.Item>
 

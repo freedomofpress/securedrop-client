@@ -99,12 +99,28 @@ function InboxView() {
     };
   }, [dispatch]);
 
+  // Handle focus via native focusin events
+  useEffect(() => {
+    const sidebar = sidebarRef.current;
+    const mainContent = mainContentRef.current;
+
+    const handleSidebarFocus = () => setFocusedPanel("sidebar");
+    const handleMainContentFocus = () => setFocusedPanel("mainContent");
+
+    sidebar?.addEventListener("focusin", handleSidebarFocus);
+    mainContent?.addEventListener("focusin", handleMainContentFocus);
+
+    return () => {
+      sidebar?.removeEventListener("focusin", handleSidebarFocus);
+      mainContent?.removeEventListener("focusin", handleMainContentFocus);
+    };
+  }, []);
+
   return (
     <div className="flex h-screen min-h-0">
       <div
         ref={sidebarRef}
         tabIndex={-1}
-        onFocus={() => setFocusedPanel("sidebar")}
         className="h-full outline-0 focus:outline-2 focus:outline-blue-300 focus:-outline-offset-2"
         data-testid="sidebar-panel"
       >
@@ -113,7 +129,6 @@ function InboxView() {
       <div
         ref={mainContentRef}
         tabIndex={-1}
-        onFocus={() => setFocusedPanel("mainContent")}
         className="flex-1 min-w-0 h-full outline-0 focus:outline-2 focus:outline-blue-300 focus:-outline-offset-2"
         data-testid="main-content-panel"
       >
