@@ -6,6 +6,7 @@ import Conversation from "./Conversation";
 import {
   testMemoization,
   renderWithProviders,
+  renderAndCheckA11y,
 } from "../../../test-component-setup";
 import { SessionStatus } from "../../../features/session/sessionSlice";
 import type { ItemUpdate, SourceWithItems } from "../../../../types";
@@ -174,6 +175,14 @@ const withItems = (items: SourceWithItems["items"]): SourceWithItems => ({
   ...mockSourceWithItems,
   data: { ...mockSourceWithItems.data },
   items,
+});
+
+describe("Conversation accessibility", () => {
+  it("has no axe violations on an empty conversation", async () => {
+    await renderAndCheckA11y(
+      <Conversation sourceWithItems={mockSourceWithItems} />,
+    );
+  });
 });
 
 describe("Conversation Component Memoization", () => {

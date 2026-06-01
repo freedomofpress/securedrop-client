@@ -1,7 +1,16 @@
 import { screen } from "@testing-library/react";
 import { expect } from "vitest";
 import InboxView from "./Inbox";
-import { renderWithProviders } from "../test-component-setup";
+import {
+  renderWithProviders,
+  renderAndCheckA11y,
+} from "../test-component-setup";
+
+describe("InboxView accessibility", () => {
+  it("has no axe violations on initial render", async () => {
+    await renderAndCheckA11y(<InboxView />);
+  });
+});
 
 describe("InboxView Component", () => {
   it('says the string "Select a source"', () => {

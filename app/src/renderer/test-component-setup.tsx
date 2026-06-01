@@ -2,6 +2,9 @@
 import { expect, afterEach, beforeEach, vi } from "vitest";
 import { cleanup, render, type RenderResult } from "@testing-library/react";
 import * as matchers from "@testing-library/jest-dom/matchers";
+import { configureAxe } from "vitest-axe";
+import * as vitestAxeMatchers from "vitest-axe/matchers";
+import "vitest-axe/extend-expect";
 import { MemoryRouter, useLocation } from "react-router";
 import { Provider } from "react-redux";
 import React, { memo } from "react";
@@ -53,6 +56,8 @@ global.ResizeObserver = class {
 
 // extends Vitest's expect with jest-dom matchers
 expect.extend(matchers);
+// extends Vitest's expect with axe accessibility matchers
+expect.extend(vitestAxeMatchers);
 
 // Mock window.matchMedia for Ant components
 Object.defineProperty(window, "matchMedia", {
@@ -247,6 +252,26 @@ beforeEach(() => {
     getAppVersion: vi.fn().mockResolvedValue("testVersion"),
   } as ElectronAPI;
 });
+
+// Accessibility testing helpers
+
+export const checkA11y = configureAxe({
+  rules: {
+    // Disable color-contrast: jsdom does not compute CSS so this would produce
+    // false positives.
+    "color-contrast": { enabled: false },
+  },
+});
+
+export const renderAndCheckA11y = async (
+  ui: React.ReactElement,
+  options?: Parameters<typeof renderWithProviders>[1],
+): Promise<RenderResult & { store: ReturnType<typeof setupStore> }> => {
+  const result = renderWithProviders(ui, options);
+  const results = await checkA11y(result.container);
+  expect(results).toHaveNoViolations();
+  return result;
+};
 
 // Component to track react-router location changes for testing
 export const LocationTracker = ({

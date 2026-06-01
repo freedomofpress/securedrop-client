@@ -2,8 +2,17 @@ import { screen, waitFor } from "@testing-library/react";
 import { expect } from "vitest";
 import userEvent from "@testing-library/user-event";
 import SignInView from "./SignIn";
-import { renderWithProviders } from "../test-component-setup";
+import {
+  renderWithProviders,
+  renderAndCheckA11y,
+} from "../test-component-setup";
 import { SessionStatus } from "../features/session/sessionSlice";
+
+describe("SignInView accessibility", () => {
+  it("has no axe violations on initial render", async () => {
+    await renderAndCheckA11y(<SignInView />);
+  });
+});
 
 describe("SignInView Component", () => {
   it("says title and version", async () => {
