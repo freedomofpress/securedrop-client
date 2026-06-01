@@ -1042,6 +1042,7 @@ dependencies = [
  "anyhow",
  "bindgen",
  "futures-util",
+ "libc",
  "reqwest",
  "serde",
  "serde_json",
