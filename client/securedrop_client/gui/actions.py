@@ -151,7 +151,7 @@ class DeleteConversationAction(QAction):
 
         # DeleteConversationDialog accepts only one source
         self._confirmation_dialog = confirmation_dialog(self.source)
-        self._confirmation_dialog.accepted.connect(lambda: self._on_confirmation_dialog_accepted())
+        self._confirmation_dialog.accepted.connect(self._on_confirmation_dialog_accepted)
         self.triggered.connect(self.trigger)
 
     def trigger(self) -> None:
