@@ -37,6 +37,13 @@ window.electronAPI.getCSPNonce().then((nonce) => {
             controlOutline: "#3b82f6",
             controlOutlineWidth: 2,
           },
+          components: {
+            Input: {
+              colorBorder: "#808080",
+              hoverBorderColor: "#3b82f6",
+              activeBorderColor: "#3b82f6",
+            },
+          },
         }}
       >
         <Provider store={store}>
