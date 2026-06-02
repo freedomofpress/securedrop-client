@@ -40,6 +40,7 @@ import { Search } from "./search";
 // at the database layer; CSS will handle the rest
 export const MESSAGE_PREVIEW_LENGTH = 200;
 const DEFAULT_ITEM_LIMIT = 100;
+export const DEFAULT_PENDING_EVENTS_LIMIT = 20;
 
 interface KeyObject {
   [key: string]: object;
@@ -1261,8 +1262,10 @@ export class DB {
     })();
   }
 
-  getPendingEvents(): PendingEvent[] {
-    const rows: PendingEventRow[] = this.selectPendingEvents.all({ limit: 20 });
+  getPendingEvents(limit?: number): PendingEvent[] {
+    const rows: PendingEventRow[] = this.selectPendingEvents.all({
+      limit: limit ?? DEFAULT_PENDING_EVENTS_LIMIT,
+    });
     const pendingEvents = rows.map((r) => {
       let target: SourceTarget | ItemTarget;
       if (r.source_uuid) {

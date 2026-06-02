@@ -35,7 +35,7 @@ export function estimateSize(schema: SizedSchema, records: number): bytes {
 }
 
 // Estimate a timeout for a request/response schema based on its expected size
-// per record.
+// per record and with exponential backoff for retries
 export function estimateTimeout(schema: SizedSchema, records?: number): ms {
   if (!records) {
     records = 0;
@@ -49,3 +49,6 @@ export function estimateTimeout(schema: SizedSchema, records?: number): ms {
   );
   return timeout;
 }
+
+export const sleep = (ms: number) =>
+  new Promise((resolve) => setTimeout(resolve, ms));

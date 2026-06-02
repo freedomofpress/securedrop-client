@@ -42,6 +42,7 @@ import { TokenResponseSchema, API_MINOR_VERSION } from "../schemas";
 import { syncMetadata, shouldSkipSync } from "./sync";
 import workerPath from "./fetch/worker?modulePath";
 import { Lock, LockTimeoutError } from "./sync/lock";
+import { sleep } from "./timeouts";
 import { Config } from "./config";
 import { setUmask } from "./umask";
 import { Exporter, Printer } from "./export";
@@ -924,24 +925,44 @@ if (!gotTheLock) {
   });
 }
 
+// syncWithLock attempts to acquire the sync lock and then perform
+// metadata sync with the server. Retries up to MAX_SYNC_RETRIES time
+// with backoff for the batch request timeout.
 async function syncWithLock(
   syncLock: Lock,
   db: Datastore,
   request: AuthedRequest,
 ): Promise<SyncStatus> {
-  let syncStatus: SyncStatus;
-  try {
-    syncStatus = await syncLock.run(async () => {
-      console.log("Acquired lock, syncing metadata");
-      return await syncMetadata(db, request.authToken, request.hintedRecords);
-    }, 1000);
-  } catch (error) {
-    // Check if this is a timeout error from the lock
-    console.log("Failed to acquire lock");
-    if (error instanceof LockTimeoutError) {
-      return SyncStatus.TIMEOUT;
+  const MAX_SYNC_RETRIES = 3;
+
+  let retryCount = 0;
+  while (true) {
+    try {
+      return await syncLock.run(async () => {
+        console.log("[sync] Acquired lock");
+        return await syncMetadata(
+          db,
+          request.authToken,
+          request.hintedRecords,
+          retryCount,
+        );
+      }, 1000);
+    } catch (error) {
+      if (error instanceof LockTimeoutError) {
+        console.log("[sync] Failed to acquire lock");
+        return SyncStatus.TIMEOUT;
+      }
+      if (retryCount >= MAX_SYNC_RETRIES) {
+        console.log("[sync] Exceeded max retries", { error });
+        throw error;
+      }
+      retryCount++;
+      const backoffMs = 1000 * 2 ** retryCount;
+      console.log(
+        `[sync] Sync failed, sleeping for ${backoffMs}ms before retrying...`,
+        { error },
+      );
+      await sleep(backoffMs);
     }
-    throw error;
   }
-  return syncStatus;
 }
