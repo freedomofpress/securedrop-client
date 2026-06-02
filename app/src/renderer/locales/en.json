@@ -108,11 +108,13 @@
         "cancelButton": "Cancel",
         "single": {
           "message": "Do you want to delete the source's account or just the conversation?",
+          "emptyMessage": "Do you want to delete the source's account?",
           "deleteAccountButton": "Delete Account",
           "keepAccountButton": "Delete Conversation"
         },
         "multiple": {
           "message": "Do you want to delete these {{count}} source accounts or just the conversations?",
+          "emptyMessage": "Do you want to delete these {{count}} source accounts?",
           "deleteAccountsButton": "Delete Accounts",
           "keepAccountsButton": "Delete Conversations"
         }
