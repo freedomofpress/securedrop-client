@@ -17,7 +17,9 @@
       "exportTranscript": "Exporter la transcription",
       "printTranscript": "Imprimer la transcription",
       "clickToOpen": "Cliquer pour ouvrir",
-      "exportSource": "Exporter la transcription et les fichiers"
+      "exportSource": "Exporter la transcription et les fichiers",
+      "exportTranscriptToWhistleflow": "Exporter la transcription vers le flux d’alertes",
+      "exportSourceToWhistleflow": "Exporter la transcription et les fichiers vers le flux d’alertes"
     },
     "itemEncrypted": "Le message est chiffré…",
     "lastSourceActivity": "Dernière activité de la source",
@@ -124,7 +126,7 @@
       "aboutMoreTitle": "Plus de renseignements",
       "aboutRepoTitle": "Code source",
       "aboutRepoContent": "https://github.com/freedomofpress/securedrop-client",
-      "aboutCopyright": "© 2013 à 2026 Aaron Swartz, James Dolan, Fondation « Freedom of the Press », et les contributeurs de SecureDrop.",
+      "aboutCopyright": "© 2013 à 2026 Aaron Swartz, James Dolan, Fondation « Freedom of the Press » et les contributeurs de SecureDrop. Publié sous licence AGPL-3.0.",
       "aboutLicence": "SecureDrop est un logiciel à code source ouvert distribué sous licence GNU Licence générale publique Affero v3."
     },
     "syncStatus": {
@@ -243,7 +245,8 @@
       "errorMimetypeUnsupported": "Le format du fichier n’est pas pris en charge pour l’impression.",
       "errorMimetypeDiscovery": "Impossible de déterminer le type de fichier.",
       "errorUnknown": "Une erreur d’impression inconnue est survenue."
-    }
+    },
+    "exportToWhistleflow": "Exporter vers le flux d’alertes"
   },
   "QuitModal": {
     "title": "Fermer la boîte de réception SecureDrop ?",

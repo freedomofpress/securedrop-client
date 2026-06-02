@@ -90,7 +90,7 @@
       "aboutRepoTitle": "[!Source code!]",
       "aboutLicence": "[!!!!!!!!SecureDrop is open source and released under the GNU Affero General Public License v3.!!!!!!!!]",
       "keyboardTitle": "[!Keyboard shortcuts!]",
-      "aboutCopyright": "[!!!!!!!!!!© 2013–2026 Aaron Swartz, James Dolan, Freedom of the Press Foundation, and SecureDrop contributors.!!!!!!!!!!]",
+      "aboutCopyright": "[!!!!!!!!!!!!© 2013–2026 Aaron Swartz, James Dolan, Freedom of the Press Foundation, and SecureDrop contributors. Released under the AGPL-3.0.!!!!!!!!!!!!]",
       "aboutAppDesc": "[!!!!Secure communications for journalists and sources!!!!]",
       "aboutMoreContent": "[!!https://securedrop.org/inbox!!]",
       "aboutAppVersion": "[Version]",
@@ -169,7 +169,8 @@
     "pause": "[Pause]",
     "filenameTooltip": "[!!!Filename available after downloading!!!]",
     "downloadFailed": "[!Download Failed!]",
-    "resume": "[Resume]"
+    "resume": "[Resume]",
+    "exportToWhistleflow": "[!!Export to Whistleflow!!]"
   },
   "SignIn": {
     "title": "[!!Sign in to SecureDrop!!]",
@@ -223,7 +224,9 @@
       "exportTranscript": "[!Export Transcript!]",
       "printTranscript": "[!Print Transcript!]",
       "exportSource": "[!!Export Transcript and Files!!]",
-      "clickToOpen": "[!Click to open!]"
+      "clickToOpen": "[!Click to open!]",
+      "exportTranscriptToWhistleflow": "[!!!Export Transcript to Whistleflow!!!]",
+      "exportSourceToWhistleflow": "[!!!!Export Transcript and Files to Whistleflow!!!!]"
     },
     "conversation": {
       "sendButton": "[Send]",
