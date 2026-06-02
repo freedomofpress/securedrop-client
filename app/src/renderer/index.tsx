@@ -21,7 +21,16 @@ if (typeof window !== "undefined") {
 window.electronAPI.getCSPNonce().then((nonce) => {
   createRoot(document.getElementById("root")!).render(
     <StrictMode>
-      <ConfigProvider csp={{ nonce }}>
+      <ConfigProvider
+        csp={{ nonce }}
+        theme={{
+          token: {
+            // WCAG 2.2 requirement: this color on a white background
+            // has a contrast ratio of 4.608:1
+            colorTextPlaceholder: "#757575",
+          },
+        }}
+      >
         <Provider store={store}>
           <MemoryRouter initialEntries={["/"]}>
             <App />
