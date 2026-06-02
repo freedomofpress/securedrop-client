@@ -28,6 +28,9 @@ window.electronAPI.getCSPNonce().then((nonce) => {
             // WCAG 2.2 requirement: this color on a white background
             // has a contrast ratio of 4.608:1
             colorTextPlaceholder: "#757575",
+            // Keep disabled text readable (including disabled link buttons
+            // like the conversation Send button) on light backgrounds.
+            colorTextDisabled: "#666666",
           },
         }}
       >
