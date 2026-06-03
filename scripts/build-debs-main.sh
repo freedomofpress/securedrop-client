@@ -16,6 +16,13 @@ rsync --exclude=build --exclude=.git --exclude=__pycache__ --exclude=node_module
     -av --no-times /src/ /srv/securedrop-client
 cd /srv/securedrop-client
 
+# HACK: Force installation of nodejs 24.15.0 to work around <https://github.com/electron/electron/issues/51619>.
+cat >/etc/apt/preferences.d/nodejs <<'EOF'
+Package: nodejs
+Pin: version 24.15.0-1nodesource1
+Pin-Priority: 1001
+EOF
+
 apt-get build-dep . --yes
 
 # Tweak the changelog just a bit

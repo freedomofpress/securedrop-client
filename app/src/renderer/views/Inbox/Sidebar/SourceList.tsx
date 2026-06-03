@@ -83,6 +83,7 @@ function SourceList({ focusedPanel }: { focusedPanel: FocusedPanel }) {
     files: number;
     replies: number;
   }>({ messages: 0, files: 0, replies: 0 });
+  const [buttonCountdown, setButtonCountdown] = useState(0);
 
   // Debounce search term to avoid excessive filtering
   const debouncedSearchTerm = useDebounce(searchTerm, 300);
@@ -93,6 +94,27 @@ function SourceList({ focusedPanel }: { focusedPanel: FocusedPanel }) {
   useEffect(() => {
     dispatch(fetchSources());
   }, [dispatch]);
+
+  // Countdown timer for delete buttons when > 30 sources selected
+  useEffect(() => {
+    if (deleteModalOpen && pendingDeleteSources.size > 30) {
+      setButtonCountdown(5);
+    } else {
+      setButtonCountdown(0);
+    }
+  }, [deleteModalOpen, pendingDeleteSources.size]);
+
+  useEffect(() => {
+    if (buttonCountdown <= 0) {
+      return;
+    }
+
+    const timer = setTimeout(() => {
+      setButtonCountdown((prev) => prev - 1);
+    }, 1000);
+
+    return () => clearTimeout(timer);
+  }, [buttonCountdown]);
 
   // Perform search via IPC when search term changes or sources update
   useEffect(() => {
@@ -203,6 +225,7 @@ function SourceList({ focusedPanel }: { focusedPanel: FocusedPanel }) {
   const handleDeleteModalCancel = useCallback(() => {
     setPendingDeleteSources(new Set());
     setDeleteModalOpen(false);
+    setButtonCountdown(0);
   }, []);
 
   const handleDeleteAction = useCallback(
@@ -338,6 +361,11 @@ function SourceList({ focusedPanel }: { focusedPanel: FocusedPanel }) {
     [filteredSources, selectedSources],
   );
 
+  const totalSourceCount = Object.keys(sources).length;
+  const allSourcesPendingDelete =
+    pendingDeleteSources.size > 0 &&
+    pendingDeleteSources.size === totalSourceCount;
+
   // Handle select all checkbox
   const handleSelectAll = useCallback(
     (checked: boolean) => {
@@ -458,7 +486,7 @@ function SourceList({ focusedPanel }: { focusedPanel: FocusedPanel }) {
 
       {/* Source counts */}
       <Counts
-        totalCount={Object.keys(sources).length}
+        totalCount={totalSourceCount}
         visibleCount={filteredSources.length}
         selectedCount={selectedSources.size}
         isFiltered={filter !== "all" || searchResults !== null}
@@ -493,29 +521,46 @@ function SourceList({ focusedPanel }: { focusedPanel: FocusedPanel }) {
             key="deleteConversation"
             data-testid="delete-modal-delete-conversation-button"
             type="primary"
+            disabled={buttonCountdown > 0}
             onClick={() =>
               handleDeleteAction(PendingEventType.SourceConversationTruncated)
             }
           >
-            {pendingDeleteSources.size === 1
-              ? t("sourcelist.deleteDialog.single.keepAccountButton")
-              : t("sourcelist.deleteDialog.multiple.keepAccountsButton")}
+            {allSourcesPendingDelete
+              ? t("sourcelist.deleteDialog.all.keepAccountsButton")
+              : pendingDeleteSources.size === 1
+                ? t("sourcelist.deleteDialog.single.keepAccountButton")
+                : t("sourcelist.deleteDialog.multiple.keepAccountsButton")}
           </Button>,
           <Button
             key="deleteAccount"
             data-testid="delete-modal-delete-account-button"
             type="primary"
             danger
+            disabled={buttonCountdown > 0}
             onClick={() => handleDeleteAction(PendingEventType.SourceDeleted)}
           >
-            {pendingDeleteSources.size === 1
-              ? t("sourcelist.deleteDialog.single.deleteAccountButton")
-              : t("sourcelist.deleteDialog.multiple.deleteAccountsButton")}
+            {allSourcesPendingDelete
+              ? t("sourcelist.deleteDialog.all.deleteAccountsButton")
+              : pendingDeleteSources.size === 1
+                ? t("sourcelist.deleteDialog.single.deleteAccountButton")
+                : t("sourcelist.deleteDialog.multiple.deleteAccountsButton")}
           </Button>,
+          <span className="text-sm text-gray-500 italic ml-2">
+            {buttonCountdown > 0 && `${buttonCountdown}s`}
+          </span>,
         ]}
       >
-        <div data-testid="delete-modal-content">
+        <div
+          data-testid="delete-modal-content"
+          data-all-sources-selected={allSourcesPendingDelete}
+        >
           <p>{t("sourcelist.deleteDialog.warning")}</p>
+          {allSourcesPendingDelete && (
+            <p className="font-semibold text-orange-600 mt-2">
+              {t("sourcelist.deleteDialog.allSourcesWarning")}
+            </p>
+          )}
           {deleteModalLoading ? (
             <p className="text-gray-600 italic">
               {t("sourcelist.deleteDialog.countingItems")}
