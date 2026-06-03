@@ -97,6 +97,7 @@
       },
       "deleteDialog": {
         "warning": "If you delete a source's account, they will no longer be able to sign in and send you messages. To communicate with this source in the future, they must create a new account.",
+        "allSourcesWarning": "Notice: All sources have been selected!",
         "countingItems": "Calculating items to delete...",
         "itemCountsHeader": "This will delete:",
         "messageCount_one": "{{count}} message",
@@ -115,6 +116,10 @@
           "message": "Do you want to delete these {{count}} source accounts or just the conversations?",
           "deleteAccountsButton": "Delete Accounts",
           "keepAccountsButton": "Delete Conversations"
+        },
+        "all": {
+          "deleteAccountsButton": "Delete All Sources",
+          "keepAccountsButton": "Delete All Conversations"
         }
       },
       "counts": {
