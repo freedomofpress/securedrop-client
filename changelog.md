@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.3.2
+
+This release adds extra warnings and safeguards to the bulk deletion 
+dialog when attempt to delete a very large number of sources.
+
+ * Delete confirmation guards (#3475).
+
 ## 1.3.1
 
 This release contains a low-priority security fix. We are not aware of any
