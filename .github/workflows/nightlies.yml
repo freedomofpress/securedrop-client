@@ -78,6 +78,8 @@ jobs:
           repository: "freedomofpress/securedrop-apt-test"
           path: "securedrop-apt-test"
           lfs: true
+          sparse-checkout: workstation/
+          sparse-checkout-cone-mode: false
       - uses: actions/checkout@v6
         with:
           persist-credentials: false
