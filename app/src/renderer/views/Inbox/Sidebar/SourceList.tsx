@@ -339,6 +339,11 @@ function SourceList({ focusedPanel }: { focusedPanel: FocusedPanel }) {
     [filteredSources, selectedSources],
   );
 
+  const totalSourceCount = Object.keys(sources).length;
+  const allSourcesPendingDelete =
+    pendingDeleteSources.size > 0 &&
+    pendingDeleteSources.size === totalSourceCount;
+
   // Handle select all checkbox
   const handleSelectAll = useCallback(
     (checked: boolean) => {
@@ -459,7 +464,7 @@ function SourceList({ focusedPanel }: { focusedPanel: FocusedPanel }) {
 
       {/* Source counts */}
       <Counts
-        totalCount={Object.keys(sources).length}
+        totalCount={totalSourceCount}
         visibleCount={filteredSources.length}
         selectedCount={selectedSources.size}
         isFiltered={filter !== "all" || searchResults !== null}
@@ -505,9 +510,11 @@ function SourceList({ focusedPanel }: { focusedPanel: FocusedPanel }) {
               handleDeleteAction(PendingEventType.SourceConversationTruncated)
             }
           >
-            {pendingDeleteSources.size === 1
-              ? t("sourcelist.deleteDialog.single.keepAccountButton")
-              : t("sourcelist.deleteDialog.multiple.keepAccountsButton")}
+            {allSourcesPendingDelete
+              ? t("sourcelist.deleteDialog.all.keepAccountsButton")
+              : pendingDeleteSources.size === 1
+                ? t("sourcelist.deleteDialog.single.keepAccountButton")
+                : t("sourcelist.deleteDialog.multiple.keepAccountsButton")}
           </Button>,
           <Button
             key="deleteAccount"
@@ -516,14 +523,24 @@ function SourceList({ focusedPanel }: { focusedPanel: FocusedPanel }) {
             danger
             onClick={() => handleDeleteAction(PendingEventType.SourceDeleted)}
           >
-            {pendingDeleteSources.size === 1
-              ? t("sourcelist.deleteDialog.single.deleteAccountButton")
-              : t("sourcelist.deleteDialog.multiple.deleteAccountsButton")}
+            {allSourcesPendingDelete
+              ? t("sourcelist.deleteDialog.all.deleteAccountsButton")
+              : pendingDeleteSources.size === 1
+                ? t("sourcelist.deleteDialog.single.deleteAccountButton")
+                : t("sourcelist.deleteDialog.multiple.deleteAccountsButton")}
           </Button>,
         ]}
       >
-        <div data-testid="delete-modal-content">
+        <div
+          data-testid="delete-modal-content"
+          data-all-sources-selected={allSourcesPendingDelete}
+        >
           <p>{t("sourcelist.deleteDialog.warning")}</p>
+          {allSourcesPendingDelete && (
+            <p className="font-semibold text-orange-600 mt-2">
+              {t("sourcelist.deleteDialog.allSourcesWarning")}
+            </p>
+          )}
           {deleteModalLoading ? (
             <p className="text-gray-600 italic">
               {t("sourcelist.deleteDialog.countingItems")}
