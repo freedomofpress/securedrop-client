@@ -262,7 +262,7 @@ if (!gotTheLock) {
   let syncLoopTimer: NodeJS.Timeout | null = null;
 
   function wakeFetchWorkerIfNeeded(): void {
-    if (!fetchWorker || !authToken) {
+    if (!fetchWorker) {
       return;
     }
 
