@@ -46,6 +46,8 @@
     "successReplyTooltip": "Reply sent successfully",
     "seenReplyTooltip": "Reply seen and deleted by source",
     "alreadyRunning": "The SecureDrop Inbox is already running",
+    "deleteMessage": "Delete message",
+    "deleteReply": "Delete reply",
     "deleteItemModal": {
       "title": "Delete item?",
       "content": "Are you sure you want to delete this item? Deleting is not reversible and will affect all users.",
@@ -95,6 +97,7 @@
       "actions": {
         "bulkDelete": "Delete selected sources"
       },
+      "selectAll": "Select all sources",
       "deleteDialog": {
         "warning": "If you delete a source's account, they will no longer be able to sign in and send you messages. To communicate with this source in the future, they must create a new account.",
         "allSourcesWarning": "Notice: All sources have been selected!",
@@ -140,7 +143,8 @@
     "source": {
       "encryptedFile": "Encrypted File",
       "encryptedMessage": "Encrypted Message",
-      "toggleStar": "Toggle star"
+      "toggleStar": "Toggle star",
+      "selectSource": "Select {{designation}}"
     },
     "shortcuts": {
       "quit": "Quit SecureDrop",
@@ -175,7 +179,9 @@
     "passphrase": {
       "label": "Passphrase",
       "required": "Please enter your passphrase.",
-      "invalidLength": "That passphrase won't work. It should be between 14 and 128 characters long."
+      "invalidLength": "That passphrase won't work. It should be between 14 and 128 characters long.",
+      "showPassphrase": "Show passphrase",
+      "hidePassphrase": "Hide passphrase"
     },
     "twoFactorCode": {
       "label": "Two-Factor Code",
@@ -206,6 +212,7 @@
   },
   "Item": {
     "encryptedFile": "Encrypted File",
+    "downloadFile": "Download file",
     "pause": "Pause",
     "resume": "Resume",
     "of": "of",
@@ -214,10 +221,12 @@
     "cancel": "Cancel",
     "filenameTooltip": "Filename available after downloading",
     "offlineFilenameTooltip": "Download disabled in offline mode. Filename available after downloading",
+    "fileActions": "File actions",
     "viewFile": "View",
     "exportToUSB": "Export to USB",
     "exportToWhistleflow": "Export to Whistleflow",
     "printFile": "Print",
+    "deleteFile": "Delete item",
     "wizard": {
       "malwareTitle": "Malware",
       "malwareWarning": "This workstation lets you open files securely. If you open files on another computer, any embedded malware may spread to your computer or network. If you are unsure how to manage this risk, please print the file, or contact your administrator.",

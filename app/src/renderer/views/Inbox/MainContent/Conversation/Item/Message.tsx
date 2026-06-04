@@ -1,4 +1,4 @@
-import { memo } from "react";
+import { memo, useState } from "react";
 import {
   FetchStatus,
   ItemUpdateType,
@@ -49,6 +49,8 @@ const Message = memo(function Message(props: MessageProps) {
   const { kind, item, onDelete } = props;
   const { t } = useTranslation("MainContent");
   const { token } = theme.useToken();
+  const [isDeleteFocused, setIsDeleteFocused] = useState(false);
+  const showDelete = isDeleteFocused;
 
   const sessionState = useAppSelector(getSessionState);
   const disableDelete = sessionState.status !== SessionStatus.Auth;
@@ -204,13 +206,19 @@ const Message = memo(function Message(props: MessageProps) {
               {displayMessage()}
             </div>
             {!disableDelete && (
-              <div className="flex-shrink-0 transition-opacity opacity-0 group-hover:opacity-100">
+              <div
+                className="flex-shrink-0 transition-opacity group-hover:opacity-100"
+                style={{ opacity: showDelete ? 1 : 0 }}
+              >
                 <Button
                   type="text"
                   size="small"
                   danger
                   icon={<Trash size={16} />}
                   onClick={onDelete}
+                  aria-label={t("deleteMessage")}
+                  onFocus={() => setIsDeleteFocused(true)}
+                  onBlur={() => setIsDeleteFocused(false)}
                 />
               </div>
             )}
@@ -231,13 +239,19 @@ const Message = memo(function Message(props: MessageProps) {
         </div>
         <div className="flex items-center gap-1">
           {!disableDelete && (
-            <div className="flex-shrink-0 transition-opacity opacity-0 group-hover:opacity-100">
+            <div
+              className="flex-shrink-0 transition-opacity group-hover:opacity-100"
+              style={{ opacity: showDelete ? 1 : 0 }}
+            >
               <Button
                 type="text"
                 size="small"
                 danger
                 icon={<Trash size={16} />}
                 onClick={onDelete}
+                aria-label={t("deleteReply")}
+                onFocus={() => setIsDeleteFocused(true)}
+                onBlur={() => setIsDeleteFocused(false)}
               />
             </div>
           )}

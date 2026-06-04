@@ -1,4 +1,6 @@
-import { describe, it, expect, vi } from "vitest";
+import { describe, it, expect, vi, beforeEach } from "vitest";
+import userEvent from "@testing-library/user-event";
+import { screen, fireEvent } from "@testing-library/react";
 import Message from "./Message";
 import {
   testMemoization,
@@ -1046,5 +1048,148 @@ describe("Reply", () => {
       expect(getByTestId("sent-reply-icon")).toBeInTheDocument();
       expect(queryByTestId("seen-reply-icon")).not.toBeInTheDocument();
     });
+  });
+});
+
+describe("Message and Reply delete button keyboard accessibility", () => {
+  const mockOnDelete = vi.fn();
+
+  const authState: Partial<import("../../../../../store").RootState> = {
+    session: {
+      status: SessionStatus.Auth,
+      authData: {
+        expiration: "2025-07-16T19:25:44.388054+00:00",
+        journalistUUID: "journalist-1",
+        journalistFirstName: "Daniel",
+        journalistLastName: "Ellsberg",
+      },
+    },
+    journalists: { journalists: [], loading: false, error: null },
+  };
+
+  const mockMessageItem: Item = {
+    uuid: "msg-1",
+    data: {
+      uuid: "msg-1",
+      kind: "message",
+      seen_by: [],
+      size: 512,
+      source: "source-1",
+      is_read: false,
+      interaction_count: 0,
+    },
+    plaintext: "Hello",
+    filename: null,
+    fetch_status: null,
+    fetch_progress: null,
+    decrypted_size: null,
+  };
+
+  const mockReplyItem: Item = {
+    uuid: "reply-1",
+    data: {
+      kind: "reply",
+      uuid: "reply-1",
+      source: "source-1",
+      size: 1024,
+      journalist_uuid: "journalist-1",
+      is_deleted_by_source: false,
+      seen_by: [],
+      interaction_count: 1,
+    } as import("../../../../../../types").ReplyMetadata,
+    plaintext: "A reply",
+    filename: null,
+    fetch_status: null,
+    fetch_progress: null,
+    decrypted_size: null,
+  };
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it("message delete button has an accessible label", () => {
+    renderWithProviders(
+      <Message
+        kind="message"
+        item={mockMessageItem}
+        designation="Test Source"
+        onUpdate={vi.fn()}
+        onDelete={mockOnDelete}
+      />,
+      { preloadedState: authState },
+    );
+
+    expect(
+      screen.getByRole("button", { name: "Delete message" }),
+    ).toBeInTheDocument();
+  });
+
+  it("reply delete button has an accessible label", () => {
+    renderWithProviders(
+      <Message kind="reply" item={mockReplyItem} onDelete={mockOnDelete} />,
+      { preloadedState: authState },
+    );
+
+    expect(
+      screen.getByRole("button", { name: "Delete reply" }),
+    ).toBeInTheDocument();
+  });
+
+  it("message delete button is reachable by keyboard and becomes visible on focus", async () => {
+    renderWithProviders(
+      <Message
+        kind="message"
+        item={mockMessageItem}
+        designation="Test Source"
+        onUpdate={vi.fn()}
+        onDelete={mockOnDelete}
+      />,
+      { preloadedState: authState },
+    );
+
+    const deleteBtn = screen.getByRole("button", { name: "Delete message" });
+    const wrapper = deleteBtn.closest(".transition-opacity") as HTMLElement;
+
+    // Starts hidden
+    expect(wrapper.style.opacity).toBe("0");
+
+    fireEvent.focus(deleteBtn);
+    expect(wrapper.style.opacity).toBe("1");
+  });
+
+  it("reply delete button is reachable by keyboard and becomes visible on focus", () => {
+    renderWithProviders(
+      <Message kind="reply" item={mockReplyItem} onDelete={mockOnDelete} />,
+      { preloadedState: authState },
+    );
+
+    const deleteBtn = screen.getByRole("button", { name: "Delete reply" });
+    const wrapper = deleteBtn.closest(".transition-opacity") as HTMLElement;
+
+    expect(wrapper.style.opacity).toBe("0");
+
+    fireEvent.focus(deleteBtn);
+    expect(wrapper.style.opacity).toBe("1");
+  });
+
+  it("message delete button calls onDelete when activated by keyboard", async () => {
+    const user = userEvent.setup();
+    renderWithProviders(
+      <Message
+        kind="message"
+        item={mockMessageItem}
+        designation="Test Source"
+        onUpdate={vi.fn()}
+        onDelete={mockOnDelete}
+      />,
+      { preloadedState: authState },
+    );
+
+    const deleteBtn = screen.getByRole("button", { name: "Delete message" });
+    deleteBtn.focus();
+    await user.keyboard("{Enter}");
+
+    expect(mockOnDelete).toHaveBeenCalledOnce();
   });
 });

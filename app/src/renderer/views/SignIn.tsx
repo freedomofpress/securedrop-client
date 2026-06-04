@@ -2,7 +2,7 @@ import { Button, Input, Form, theme } from "antd";
 import type { FormProps, InputRef } from "antd";
 import { Eye, EyeOff } from "lucide-react";
 import { CloseOutlined, CloseCircleFilled } from "@ant-design/icons";
-import { useState, useEffect, useRef } from "react";
+import { useState, useCallback, useEffect, useRef } from "react";
 import { useNavigate } from "react-router";
 import { useTranslation } from "react-i18next";
 
@@ -56,6 +56,11 @@ function SignInView() {
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
   const [hasValidationErrors, setHasValidationErrors] =
     useState<boolean>(false);
+  const [passwordVisible, setPasswordVisible] = useState<boolean>(false);
+
+  const togglePasswordVisibility = useCallback(() => {
+    setPasswordVisible((v) => !v);
+  }, []);
 
   // Focus the username input on mount
   useEffect(() => {
@@ -280,11 +285,24 @@ function SignInView() {
                 },
               ]}
             >
-              <Input.Password
+              <Input
                 data-testid="passphrase-input"
+                type={passwordVisible ? "text" : "password"}
                 placeholder="••••••••••••••••••••••••"
-                iconRender={(visible) =>
-                  visible ? <Eye size={18} /> : <EyeOff size={18} />
+                suffix={
+                  <button
+                    type="button"
+                    className="flex items-center text-gray-400 hover:text-gray-600 bg-transparent border-0 p-0 cursor-pointer rounded focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-blue-500"
+                    onClick={togglePasswordVisibility}
+                    aria-pressed={passwordVisible}
+                    aria-label={
+                      passwordVisible
+                        ? t("passphrase.hidePassphrase")
+                        : t("passphrase.showPassphrase")
+                    }
+                  >
+                    {passwordVisible ? <Eye size={18} /> : <EyeOff size={18} />}
+                  </button>
                 }
               />
             </Form.Item>

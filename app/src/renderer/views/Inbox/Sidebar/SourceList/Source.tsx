@@ -111,7 +111,7 @@ const Source = memo(function Source({
       />
 
       {/* Star button */}
-      <Tooltip title={t("source.toggleStar")}>
+      <Tooltip title={t("source.toggleStar")} trigger={["hover", "focus"]}>
         <Button
           type="text"
           size="large"

@@ -95,17 +95,22 @@ const Toolbar = memo(function Toolbar({
           indeterminate={selectedCount > 0 && selectedCount < totalCount}
           onChange={(e) => onSelectAll(e.target.checked)}
           data-testid="select-all-checkbox"
+          aria-label={t("sourcelist.selectAll")}
         />
 
         {/* Only display action buttons if sources are selected */}
         {selectedCount > 0 && (
           <>
-            <Tooltip title={t("sourcelist.actions.bulkDelete")}>
+            <Tooltip
+              title={t("sourcelist.actions.bulkDelete")}
+              trigger={["hover", "focus"]}
+            >
               <Button
                 type="text"
                 icon={<Trash size={18} />}
                 onClick={onBulkDelete}
                 data-testid="bulk-delete-button"
+                aria-label={t("sourcelist.actions.bulkDelete")}
               />
             </Tooltip>
           </>
@@ -134,7 +139,10 @@ const Toolbar = memo(function Toolbar({
           </Button>
         </Dropdown>
 
-        <Tooltip title={t("sourcelist.sort.tooltip")}>
+        <Tooltip
+          title={t("sourcelist.sort.tooltip")}
+          trigger={["hover", "focus"]}
+        >
           <Button
             type="text"
             icon={
@@ -146,6 +154,7 @@ const Toolbar = memo(function Toolbar({
             }
             onClick={onToggleSort}
             data-testid="sort-button"
+            aria-label={t("sourcelist.sort.tooltip")}
           />
         </Tooltip>
       </div>

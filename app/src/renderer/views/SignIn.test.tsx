@@ -6,6 +6,72 @@ import { renderWithProviders } from "../test-component-setup";
 import { SessionStatus } from "../features/session/sessionSlice";
 
 describe("SignInView Component", () => {
+  describe("passphrase visibility toggle", () => {
+    it("has an accessible toggle button with show label by default", async () => {
+      renderWithProviders(<SignInView />);
+
+      const toggleButton = screen.getByRole("button", {
+        name: "Show passphrase",
+      });
+      expect(toggleButton).toBeInTheDocument();
+    });
+
+    it("shows passphrase and updates aria-label when toggle is clicked", async () => {
+      const user = userEvent.setup();
+      renderWithProviders(<SignInView />);
+
+      const passphraseInput = screen.getByTestId("passphrase-input");
+      const toggleButton = screen.getByRole("button", {
+        name: "Show passphrase",
+      });
+
+      await user.click(toggleButton);
+
+      expect(passphraseInput).toHaveAttribute("type", "text");
+      expect(
+        screen.getByRole("button", { name: "Hide passphrase" }),
+      ).toBeInTheDocument();
+    });
+
+    it("toggle button is keyboard operable via Enter", async () => {
+      const user = userEvent.setup();
+      renderWithProviders(<SignInView />);
+
+      const passphraseInput = screen.getByTestId("passphrase-input");
+      const toggleButton = screen.getByRole("button", {
+        name: "Show passphrase",
+      });
+
+      toggleButton.focus();
+      await user.keyboard("{Enter}");
+
+      expect(passphraseInput).toHaveAttribute("type", "text");
+    });
+
+    it("toggle button has aria-pressed=false when passphrase is hidden", () => {
+      renderWithProviders(<SignInView />);
+
+      const toggleButton = screen.getByRole("button", {
+        name: "Show passphrase",
+      });
+      expect(toggleButton).toHaveAttribute("aria-pressed", "false");
+    });
+
+    it("toggle button has aria-pressed=true when passphrase is visible", async () => {
+      const user = userEvent.setup();
+      renderWithProviders(<SignInView />);
+
+      const toggleButton = screen.getByRole("button", {
+        name: "Show passphrase",
+      });
+      await user.click(toggleButton);
+
+      expect(
+        screen.getByRole("button", { name: "Hide passphrase" }),
+      ).toHaveAttribute("aria-pressed", "true");
+    });
+  });
+
   it("says title and version", async () => {
     renderWithProviders(<SignInView />);
 
