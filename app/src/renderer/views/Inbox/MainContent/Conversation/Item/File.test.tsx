@@ -322,7 +322,7 @@ describe("File Component", () => {
 
     // Check that tabIndex=0 is properly set so keyboard users can focus the tooltip
     const tooltipTrigger = container.querySelector(
-      ".flex.items-center[tabindex='0']",
+      ".w-80.file-box[tabindex='0']",
     );
     expect(tooltipTrigger).not.toBeNull();
     expect(tooltipTrigger).toHaveAttribute("tabindex", "0");

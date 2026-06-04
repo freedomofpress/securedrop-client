@@ -217,6 +217,10 @@ const File = memo(function File({
     (fetchStatus === FetchStatus.Initial ||
       fetchStatus === FetchStatus.Cancelled);
 
+  const isInitialState =
+    fetchStatus === FetchStatus.Initial ||
+    fetchStatus === FetchStatus.Cancelled;
+
   let FileInner;
   switch (fetchStatus) {
     case FetchStatus.Initial:
@@ -283,28 +287,42 @@ const File = memo(function File({
           <span className="author">{titleCaseDesignation ?? ""}</span>
         </div>
         <div className="flex items-center gap-1">
-          <div
-            role="button"
-            tabIndex={isClickable ? 0 : undefined}
-            className="w-80 file-box"
-            style={fileBoxStyle}
-            onClick={handleClick}
-            onKeyDown={(e) => {
-              if (e.key === "Enter" || e.key === " ") {
-                e.preventDefault();
-                handleClick();
-              }
-            }}
-            onMouseEnter={() => setIsFileBoxHovered(true)}
-            onMouseLeave={() => setIsFileBoxHovered(false)}
+          <Tooltip
+            title={
+              isInitialState
+                ? disableFetch
+                  ? t("offlineFilenameTooltip")
+                  : t("filenameTooltip")
+                : undefined
+            }
+            trigger={["hover", "focus"]}
           >
-            <FileInner
-              disableFetch={disableFetch}
-              item={item}
-              onUpdate={onUpdate}
-              onDelete={onDelete}
-            />
-          </div>
+            <div
+              role="button"
+              tabIndex={isClickable || isInitialState ? 0 : undefined}
+              className="w-80 file-box"
+              style={fileBoxStyle}
+              onClick={handleClick}
+              onKeyDown={(e) => {
+                if (
+                  e.target === e.currentTarget &&
+                  (e.key === "Enter" || e.key === " ")
+                ) {
+                  e.preventDefault();
+                  handleClick();
+                }
+              }}
+              onMouseEnter={() => setIsFileBoxHovered(true)}
+              onMouseLeave={() => setIsFileBoxHovered(false)}
+            >
+              <FileInner
+                disableFetch={disableFetch}
+                item={item}
+                onUpdate={onUpdate}
+                onDelete={onDelete}
+              />
+            </div>
+          </Tooltip>
           {!disableFetch && (
             <div
               className="flex-shrink-0 transition-opacity group-hover:opacity-100"
@@ -355,25 +373,18 @@ const InitialFile = memo(function InitialFile({
 
   return (
     <div className="flex items-center justify-between pt-2 pb-2">
-      <Tooltip
-        title={
-          disableFetch ? t("offlineFilenameTooltip") : t("filenameTooltip")
-        }
-        trigger={["hover", "focus"]}
-      >
-        <div className="flex items-center">
-          <FileIcon
-            size={30}
-            strokeWidth={1}
-            className="file-icon"
-            aria-hidden="true"
-          />
-          <div className="ml-2">
-            <p className="italic">{t("encryptedFile")}</p>
-            <p className="italic">{fileSize}</p>
-          </div>
+      <div className="flex items-center">
+        <FileIcon
+          size={30}
+          strokeWidth={1}
+          className="file-icon"
+          aria-hidden="true"
+        />
+        <div className="ml-2">
+          <p className="italic">{t("encryptedFile")}</p>
+          <p className="italic">{fileSize}</p>
         </div>
-      </Tooltip>
+      </div>
 
       <div className="flex ml-8">
         <Button
@@ -383,7 +394,6 @@ const InitialFile = memo(function InitialFile({
           onClick={scheduleDownload}
           disabled={disableFetch}
           aria-label={t("downloadFile")}
-          tabIndex={0}
         />
       </div>
     </div>
