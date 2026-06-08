@@ -1,9 +1,5 @@
 # SecureDrop Inbox
 
-A pre-alpha re-implementation of the SecureDrop Client for Qubes, built with modern web technologies.
-
-**NOTE:** This project is not yet ready for production use. Please see the [`client`](../client) directory for the implementation currently in use in production.
-
 ## Overview
 
 This is an Electron-based desktop application that provides a secure interface for SecureDrop journalists to communicate with sources. The app is built with React, Redux Toolkit, and TypeScript, featuring a modern UI with Ant Design components and Tailwind CSS.
@@ -42,19 +38,19 @@ From the repository root, install Node, Rust, pnpm, and Poetry automatically:
 make install-deps-app
 ```
 
-Then install the app's Node dependencies:
+Then install the Inbox's Node dependencies:
 
 ```bash
 pnpm install
 ```
 
-### 3. Start Development App Locally
+### 3. Start Development Inbox Locally
 
-#### Run App Against Local SecureDrop Server
+#### Run Inbox Against Local SecureDrop Server
 
 To run against a local SecureDrop server, first follow the instructions to [run the SecureDrop server in localdev](https://github.com/freedomofpress/securedrop?tab=readme-ov-file#developer-quickstart).
 
-Once the server has been started, you can build and start the Electron app in development mode with:
+Once the server has been started, you can build and start the Inbox in development mode with:
 
 ```bash
 pnpm dev
@@ -64,7 +60,7 @@ This will:
 
 - Build the SecureDrop proxy component (requires Rust)
 - Configure environment variables automatically
-- Start the Electron app in development mode
+- Start the Inbox in development mode
 
 To enable autologin, run with:
 
@@ -72,22 +68,22 @@ To enable autologin, run with:
 pnpm dev -- --login
 ```
 
-If you are running on Qubes OS, you will need to pass in the `--no-qubes` flag in localdev. This ensures the app
+If you are running on Qubes OS, you will need to pass in the `--no-qubes` flag in localdev. This ensures the Inbox
 loads development configuration rather than attempting to read config values from QubesDB as expected in the production Qubes Workstation environment.
 
 ```bash
 pnpm dev -- --no-qubes
 ```
 
-#### Run App Against Demo SecureDrop Server
+#### Run Inbox Against Demo SecureDrop Server
 
-To run the app against the [Demo SecureDrop instance](https://demo.securedrop.org/), start the app with:
+To run the Inbox against the [Demo SecureDrop instance](https://demo.securedrop.org/), start it with:
 
 ```bash
 pnpm dev-demo
 ```
 
-This will start the Electron app with autologin against the demo SecureDrop instance.
+This will start the Inbox with autologin against the demo SecureDrop instance.
 
 You can then access the [Demo Source Interface](https://demo-source.securedrop.org/) to test sending new submissions and reading replies.
 
@@ -149,7 +145,7 @@ pnpm server-test
 
 ### Database
 
-The app uses SQLite with migrations managed by dbmate:
+The Inbox uses SQLite with migrations managed by dbmate:
 
 ```bash
 # Run database migrations
@@ -163,12 +159,8 @@ pnpm dbmate new migration_name
 
 The production environment (`pnpm start`) will attempt to use a proxy VM.
 
-The VM in which you are running the app must have RPC policy access to the proxy VM. When using `sd-proxy`, this is configured in `dom0` in the file `/etc/qubes/policy.d/31-securedrop-workstation.policy`.
+The VM in which you are running the Inbox must have RPC policy access to the proxy VM. When using `sd-proxy`, this is configured in `dom0` in the file `/etc/qubes/policy.d/31-securedrop-workstation.policy`.
 
 ## License
 
 AGPL-3.0-or-later
-
-## Contributing
-
-This is pre-alpha software under active development. Please refer to the main SecureDrop project documentation for contribution guidelines.
