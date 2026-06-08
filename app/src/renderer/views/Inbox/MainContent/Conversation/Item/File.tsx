@@ -131,6 +131,8 @@ interface FileProps {
   designation: string;
   onUpdate: (update: ItemUpdate) => void;
   onDelete: () => void;
+  positionInConversation?: number;
+  totalConversationItems?: number;
 }
 
 function getFileIconAndColor(filename: string): {
@@ -199,6 +201,8 @@ const File = memo(function File({
   designation,
   onUpdate,
   onDelete,
+  positionInConversation,
+  totalConversationItems,
 }: FileProps) {
   const { t } = useTranslation("Item");
   const { token } = theme.useToken();
@@ -276,10 +280,24 @@ const File = memo(function File({
     transition: "background-color 0.2s ease",
   };
 
+  const listItemAriaProps =
+    positionInConversation && totalConversationItems
+      ? {
+          role: "listitem" as const,
+          "aria-posinset": positionInConversation,
+          "aria-setsize": totalConversationItems,
+          "aria-label": t("filePositionAriaLabel", {
+            index: positionInConversation,
+            total: totalConversationItems,
+          }),
+        }
+      : {};
+
   return (
     <div
       className="flex items-start mb-4 justify-start group"
       data-testid={`item-${item.uuid}`}
+      {...listItemAriaProps}
     >
       <Avatar designation={titleCaseDesignation ?? ""} isActive={false} />
       <div className="ml-3">

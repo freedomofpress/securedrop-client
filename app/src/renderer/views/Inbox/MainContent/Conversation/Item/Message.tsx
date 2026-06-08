@@ -38,11 +38,15 @@ type MessageProps =
       designation: string;
       onUpdate: (update: ItemUpdate) => void;
       onDelete: () => void;
+      positionInConversation?: number;
+      totalConversationItems?: number;
     }
   | {
       kind: "reply";
       item: Item;
       onDelete: () => void;
+      positionInConversation?: number;
+      totalConversationItems?: number;
     };
 
 const Message = memo(function Message(props: MessageProps) {
@@ -189,12 +193,34 @@ const Message = memo(function Message(props: MessageProps) {
 
   const authorDisplay = getAuthorDisplay();
   const statusIcon = getStatusIcon();
+  const positionInConversation = props.positionInConversation;
+  const totalConversationItems = props.totalConversationItems;
+
+  const listItemAriaProps =
+    positionInConversation && totalConversationItems
+      ? {
+          role: "listitem" as const,
+          "aria-posinset": positionInConversation,
+          "aria-setsize": totalConversationItems,
+          "aria-label":
+            kind === "reply"
+              ? t("conversation.replyPositionAriaLabel", {
+                  index: positionInConversation,
+                  total: totalConversationItems,
+                })
+              : t("conversation.messagePositionAriaLabel", {
+                  index: positionInConversation,
+                  total: totalConversationItems,
+                }),
+        }
+      : {};
 
   if (kind === "message") {
     return (
       <div
         className="flex items-start mb-4 justify-start group"
         data-testid={`item-${item.uuid}`}
+        {...listItemAriaProps}
       >
         <Avatar designation={authorDisplay} isActive={false} />
         <div className="ml-3">
@@ -232,6 +258,7 @@ const Message = memo(function Message(props: MessageProps) {
     <div
       className="flex items-start mb-4 justify-end group"
       data-testid={`item-${item.uuid}`}
+      {...listItemAriaProps}
     >
       <div>
         <div className="flex items-center justify-start mb-1 gap-1">

@@ -41,6 +41,8 @@ type VirtualRow =
 interface ConversationRowProps {
   virtualRows: VirtualRow[];
   designation: string;
+  itemPositionsByRowIndex: Array<number | null>;
+  totalConversationItems: number;
 }
 
 // memo is ineffective here because shared rowProps change reference on every selection
@@ -51,14 +53,23 @@ function ConversationRow({
   style,
   virtualRows,
   designation,
+  itemPositionsByRowIndex,
+  totalConversationItems,
 }: RowComponentProps<ConversationRowProps>) {
   const row = virtualRows[index];
+  const itemPosition = itemPositionsByRowIndex[index] ?? undefined;
+
   return (
     <div style={style} className="px-4">
       {row.kind === "divider" ? (
         <NewMessagesDivider />
       ) : (
-        <Item item={row.item} designation={designation} />
+        <Item
+          item={row.item}
+          designation={designation}
+          positionInConversation={itemPosition}
+          totalConversationItems={totalConversationItems}
+        />
       )}
     </div>
   );
@@ -221,6 +232,23 @@ const Conversation = memo(function Conversation({
     return rows;
   }, [oldItems, newItems, dividerIndex]);
 
+  const itemPositionsByRowIndex = useMemo((): Array<number | null> => {
+    let currentPosition = 0;
+    return virtualRows.map((row) => {
+      if (row.kind !== "item") {
+        return null;
+      }
+      currentPosition += 1;
+      return currentPosition;
+    });
+  }, [virtualRows]);
+
+  const totalConversationItems = useMemo(
+    () =>
+      itemPositionsByRowIndex.filter((position) => position !== null).length,
+    [itemPositionsByRowIndex],
+  );
+
   // Load older messages when the user scrolls near the top
   useEffect(() => {
     if (!scrollElement) {
@@ -266,8 +294,17 @@ const Conversation = memo(function Conversation({
             rowCount={virtualRows.length}
             rowHeight={dynamicRowHeight}
             rowComponent={ConversationRow}
-            rowProps={{ virtualRows, designation: designation || "" }}
+            rowProps={{
+              virtualRows,
+              designation: designation || "",
+              itemPositionsByRowIndex,
+              totalConversationItems,
+            }}
             listRef={listRef}
+            role="log"
+            aria-live="polite"
+            aria-relevant="additions"
+            aria-label={t("conversation.messageHistoryAriaLabel")}
             style={{
               height: "100%",
               visibility: heightsReady ? "visible" : "hidden",
