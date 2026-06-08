@@ -1,4 +1,4 @@
-import { screen } from "@testing-library/react";
+import { screen, waitFor } from "@testing-library/react";
 import { expect, describe, it, vi } from "vitest";
 import userEvent from "@testing-library/user-event";
 import {
@@ -239,6 +239,28 @@ describe("Source Component", () => {
       await user.click(sourceElement);
 
       expect(mockNavigate).toHaveBeenCalledWith("/source/test-uuid-123");
+    });
+
+    it("moves focus to conversation heading after selecting a source", async () => {
+      const user = userEvent.setup();
+      const source = createMockSource();
+      const { container } = renderWithProviders(
+        <Source source={source} {...defaultProps} isActive={false} />,
+      );
+
+      const heading = document.createElement("h2");
+      heading.setAttribute("data-testid", "conversation-header-designation");
+      heading.tabIndex = -1;
+      document.body.appendChild(heading);
+
+      const sourceElement = container.firstChild as HTMLElement;
+      await user.click(sourceElement);
+
+      await waitFor(() => {
+        expect(document.activeElement).toBe(heading);
+      });
+
+      heading.remove();
     });
 
     it("navigates to home when clicked and already active", async () => {

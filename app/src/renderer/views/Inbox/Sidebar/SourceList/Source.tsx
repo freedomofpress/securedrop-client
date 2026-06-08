@@ -45,6 +45,21 @@ const Source = memo(function Source({
     [source.data.last_updated, i18n.language, tCommon],
   );
 
+  const focusConversationHeading = useCallback((attempt = 0) => {
+    const heading = document.querySelector<HTMLElement>(
+      '[data-testid="conversation-header-designation"]',
+    );
+    if (heading) {
+      heading.focus();
+      return;
+    }
+
+    // Wait briefly for route transition + content render before giving up.
+    if (attempt < 5) {
+      window.setTimeout(() => focusConversationHeading(attempt + 1), 50);
+    }
+  }, []);
+
   const handleClick = useCallback(() => {
     if (isActive) {
       // If already active, clear active source and navigate back to inbox home
@@ -54,8 +69,9 @@ const Source = memo(function Source({
       // Set active source and navigate to the source route
       dispatch(setActiveSource(source.uuid));
       navigate(`/source/${source.uuid}`);
+      focusConversationHeading();
     }
-  }, [isActive, navigate, source.uuid, dispatch]);
+  }, [isActive, navigate, source.uuid, dispatch, focusConversationHeading]);
 
   const handleKeyDown = useCallback(
     (e: KeyboardEvent<HTMLDivElement>) => {
