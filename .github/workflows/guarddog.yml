@@ -1,0 +1,149 @@
+name: GuardDog
+on:
+  pull_request:
+    paths:
+      # GuardDog supports PyPI, NPM and GitHub Actions
+      - '**/pnpm-lock.yaml'
+      - '**/poetry.lock'
+      - '.github/workflows/**'
+
+permissions:
+  contents: read
+
+# A given PR only needs the latest scan.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  GIT_PKGS_VERSION: 0.16.2
+
+jobs:
+  # Stage 1: figure out which packages changed and emit them as a job matrix.
+  discover:
+    runs-on: ubuntu-latest
+    outputs:
+      packages: ${{ steps.discover.outputs.packages }}
+      any: ${{ steps.discover.outputs.any }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+        with:
+          # Need both the base and head commits for `git pkgs diff`.
+          fetch-depth: 0
+          persist-credentials: false
+
+      # Note: This job never runs against main, so most likely there'll be no
+      # cached version available; it'll only be on PR updates we see cache hits
+      - name: Cache git-pkgs
+        id: cache-git-pkgs
+        uses: actions/cache@v4
+        with:
+          path: /usr/local/bin/git-pkgs
+          key: git-pkgs-${{ runner.os }}-${{ env.GIT_PKGS_VERSION }}
+
+      - name: Install git-pkgs
+        if: steps.cache-git-pkgs.outputs.cache-hit != 'true'
+        env:
+          VERSION: ${{ env.GIT_PKGS_VERSION }}
+        run: |
+          set -euo pipefail
+          base="https://github.com/git-pkgs/git-pkgs/releases/download/v${VERSION}"
+          tarball="git-pkgs_${VERSION}_linux_amd64.tar.gz"
+          curl -fsSL "${base}/${tarball}" -o "${tarball}"
+          curl -fsSL "${base}/checksums.txt" -o checksums.txt
+          # Verify the download before trusting the binary.
+          grep " ${tarball}\$" checksums.txt | sha256sum --check --strict -
+          tar -xzf "${tarball}" git-pkgs
+          install -m 0755 git-pkgs /usr/local/bin/git-pkgs
+          rm -f "${tarball}" checksums.txt git-pkgs
+
+      - name: Discover changed packages
+        id: discover
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          set -euo pipefail
+          # `git pkgs diff` reads the two refs' lockfiles directly, so no
+          # one-time `git pkgs init` of the whole history is needed.
+          git pkgs diff --from "${BASE_SHA}" --to "${HEAD_SHA}" -f json > diff.json
+          packages="$(python .github/scripts/guarddog_scan_matrix.py < diff.json)"
+          echo "packages=${packages}" >> "$GITHUB_OUTPUT"
+          if [ "$(jq 'length' <<<"${packages}")" -gt 0 ]; then
+            echo "any=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "any=false" >> "$GITHUB_OUTPUT"
+          fi
+
+  # Stage 2: one job per changed package, scanned independently.
+  scan:
+    needs: discover
+    if: needs.discover.outputs.any == 'true'
+    runs-on: ubuntu-latest
+    strategy:
+      # Scan every package even if one finds something.
+      fail-fast: false
+      matrix:
+        package: ${{ fromJSON(needs.discover.outputs.packages) }}
+    name: "Scan ${{ matrix.package.ecosystem }}:${{ matrix.package.name }}@${{ matrix.package.version }}"
+    steps:
+      # No checkout: GuardDog scans remote packages, so this job needs nothing
+      # from the repo. The matrix already carries everything the scan needs.
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: '3.11'
+
+      - name: Install latest version of GuardDog
+        run: |
+          pip install guarddog semgrep
+          guarddog --version
+          semgrep --version
+
+      - name: Scan with GuardDog
+        env:
+          SCANNER: ${{ matrix.package.scanner }}
+          NAME: ${{ matrix.package.name }}
+          VERSION: ${{ matrix.package.version }}
+        shell: python
+        run: |
+          import json, os, subprocess, sys
+
+          scanner, name, version = os.environ["SCANNER"], os.environ["NAME"], os.environ["VERSION"]
+          label = f"{name}@{version}"
+
+          # GuardDog fails quietly, so always run with debug logging and inspect
+          # the JSON report ourselves, failing closed on findings, a scan error,
+          # or a missing report.
+          cmd = [
+            "guarddog", "--log-level", "debug", scanner, "scan", name,
+            "--version", version, "--output-format", "json"
+          ]
+          print("Running: " + " ".join(cmd))
+          proc = subprocess.run(
+              cmd, capture_output=True, text=True, check=False
+          )
+          sys.stderr.write(proc.stderr)  # debug logs -> job log
+          print(f"----- GuardDog report: {label} (exit {proc.returncode}) -----")
+          print(proc.stdout)
+
+          def fail(message):
+              # Workflow commands (::error::) are only parsed from stdout.
+              print(f"::error::{message}")
+              sys.exit(1)
+
+          try:
+              result = json.loads(proc.stdout)
+          except json.JSONDecodeError:
+              fail(f"GuardDog produced no JSON report for {label}.")
+
+          issues = int(result.get("issues", 0) or 0)
+          errors = result.get("errors") or {}
+          if issues > 0:
+              print(json.dumps(result.get("results", {}), indent=2))
+              fail(f"GuardDog flagged {issues} finding(s) in {label}.")
+          if errors:
+              print(json.dumps(errors, indent=2))
+              fail(f"GuardDog could not scan {label}; failing closed.")
+          print(f"{label}: clean")
