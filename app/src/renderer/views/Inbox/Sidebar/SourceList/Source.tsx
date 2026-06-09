@@ -45,19 +45,26 @@ const Source = memo(function Source({
     [source.data.last_updated, i18n.language, tCommon],
   );
 
-  const focusConversationHeading = useCallback((attempt = 0) => {
-    const heading = document.querySelector<HTMLElement>(
-      '[data-testid="conversation-header-designation"]',
-    );
-    if (heading) {
-      heading.focus();
-      return;
-    }
+  const focusConversationHeading = useCallback(() => {
+    let attempt = 0;
 
-    // Wait briefly for route transition + content render before giving up.
-    if (attempt < 5) {
-      window.setTimeout(() => focusConversationHeading(attempt + 1), 50);
-    }
+    const tryFocusHeading = () => {
+      const heading = document.querySelector<HTMLElement>(
+        '[data-testid="conversation-header-designation"]',
+      );
+      if (heading) {
+        heading.focus();
+        return;
+      }
+
+      // Wait briefly for route transition + content render before giving up.
+      if (attempt < 5) {
+        attempt += 1;
+        window.setTimeout(tryFocusHeading, 50);
+      }
+    };
+
+    tryFocusHeading();
   }, []);
 
   const handleClick = useCallback(() => {
