@@ -926,7 +926,7 @@ if (!gotTheLock) {
 }
 
 // syncWithLock attempts to acquire the sync lock and then perform
-// metadata sync with the server. Retries up to MAX_SYNC_RETRIES time
+// metadata sync with the server. Retries up to MAX_SYNC_RETRIES times
 // with exponential backoff and decreased batch sizes.
 async function syncWithLock(
   syncLock: Lock,
@@ -957,7 +957,7 @@ async function syncWithLock(
         throw error;
       }
       retryCount++;
-      const backoffMs = 1000 * 2 ** retryCount;
+      const backoffMs = (1000 * 2 ** retryCount) as ms;
       console.log(
         `[sync] Sync failed, sleeping for ${backoffMs}ms before retrying...`,
         { error },

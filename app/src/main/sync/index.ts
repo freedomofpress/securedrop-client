@@ -220,7 +220,7 @@ export async function syncMetadata(
   const pendingEvents =
     attempt && attempt > 0
       ? db.getPendingEvents(
-          Math.max(1, Math.ceil(DEFAULT_PENDING_EVENTS_LIMIT / attempt)),
+          Math.max(1, Math.ceil(DEFAULT_PENDING_EVENTS_LIMIT / (attempt + 1))),
         )
       : db.getPendingEvents();
 
