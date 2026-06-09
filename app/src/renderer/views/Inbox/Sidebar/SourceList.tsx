@@ -74,7 +74,7 @@ function SourceList({ focusedPanel }: { focusedPanel: FocusedPanel }) {
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
   const [deleteModalLoading, setDeleteModalLoading] = useState(false);
-  const cancelButtonRef = useRef<HTMLButtonElement | null>(null);
+  const deleteModalTitleRef = useRef<HTMLHeadingElement | null>(null);
   // Sources targeted for deletion
   const [pendingDeleteSources, setPendingDeleteSources] = useState<Set<string>>(
     new Set(),
@@ -500,26 +500,29 @@ function SourceList({ focusedPanel }: { focusedPanel: FocusedPanel }) {
         closable={false}
         afterOpenChange={(open) => {
           if (open) {
-            cancelButtonRef.current?.focus();
+            requestAnimationFrame(() => {
+              deleteModalTitleRef.current?.focus();
+            });
           }
         }}
         title={
-          <span data-testid="delete-modal-title">
+          <h2
+            data-testid="delete-modal-title"
+            tabIndex={-1}
+            ref={deleteModalTitleRef}
+          >
             {pendingDeleteSources.size === 1
               ? t("sourcelist.deleteDialog.single.message")
               : t("sourcelist.deleteDialog.multiple.message", {
                   count: pendingDeleteSources.size,
                 })}
-          </span>
+          </h2>
         }
         getContainer={() => document.getElementById("root") || document.body}
         onCancel={handleDeleteModalCancel}
         footer={[
           <Button
             key="cancel"
-            ref={(node) => {
-              cancelButtonRef.current = node as HTMLButtonElement | null;
-            }}
             data-testid="delete-modal-cancel-button"
             onClick={handleDeleteModalCancel}
           >
