@@ -123,7 +123,7 @@ describe("Lock", () => {
 
     // Start a long-running operation
     const firstPromise = lock.run(async () => {
-      await new Promise((res) => setTimeout(res, 200));
+      await new Promise((res) => setTimeout(res, 50));
     });
 
     // Try to run with a short timeout - should fail
@@ -199,7 +199,7 @@ describe("Lock", () => {
 
     // Call 1 holds the lock for 500ms
     const call1 = lock.run(async () => {
-      await new Promise((res) => setTimeout(res, 500));
+      await new Promise((res) => setTimeout(res, 50));
     }, 100);
 
     await call1;

@@ -927,7 +927,7 @@ if (!gotTheLock) {
 
 // syncWithLock attempts to acquire the sync lock and then perform
 // metadata sync with the server. Retries up to MAX_SYNC_RETRIES time
-// with backoff for the batch request timeout.
+// with exponential backoff and decreased batch sizes.
 async function syncWithLock(
   syncLock: Lock,
   db: Datastore,

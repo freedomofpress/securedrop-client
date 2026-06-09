@@ -227,12 +227,14 @@ export function sanitizeBatchRequest(request: BatchRequest): object {
   };
 }
 
-// Sanitizes BatchResponse to log only UUID keys for logging
+// Sanitizes BatchResponse to contain only UUID keys and event status codes
 export function sanitizeBatchResponse(response: BatchResponse): object {
   return {
     sources: Object.keys(response.sources),
     items: Object.keys(response.items),
     journalists: Object.keys(response.journalists),
-    events: response.events,
+    events: Object.fromEntries(
+      Object.entries(response.events).map(([id, [status]]) => [id, status]),
+    ),
   };
 }

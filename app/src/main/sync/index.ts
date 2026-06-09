@@ -217,9 +217,12 @@ export async function syncMetadata(
   const currentVersion = db.getVersion();
 
   // Decrease event batch size on retry attempts
-  const pendingEvents = attempt
-    ? db.getPendingEvents(DEFAULT_PENDING_EVENTS_LIMIT / attempt)
-    : db.getPendingEvents();
+  const pendingEvents =
+    attempt && attempt > 0
+      ? db.getPendingEvents(
+          Math.max(1, Math.ceil(DEFAULT_PENDING_EVENTS_LIMIT / attempt)),
+        )
+      : db.getPendingEvents();
 
   const indexResponse = await getServerIndex(
     authToken,
