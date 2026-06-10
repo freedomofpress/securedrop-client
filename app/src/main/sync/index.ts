@@ -6,7 +6,7 @@ import {
   BatchResponse,
   SyncStatus,
 } from "../../types";
-import { DB } from "../database";
+import { DB, DEFAULT_PENDING_EVENTS_LIMIT } from "../database";
 import { Datastore } from "../datastore";
 import {
   API_MINOR_VERSION,
@@ -15,6 +15,8 @@ import {
   BatchResponseSchema,
   BatchResponseSized,
   BatchRequestSchema,
+  sanitizeBatchRequest,
+  sanitizeBatchResponse,
 } from "../../schemas";
 import { estimateTimeout } from "../timeouts";
 
@@ -208,9 +210,20 @@ export async function syncMetadata(
   db: Datastore,
   authToken: string,
   hintedRecords?: number,
+  attempt?: number,
 ): Promise<SyncStatus> {
+  console.log("[sync] syncing ", { hintedRecords, attempt });
+
   const currentVersion = db.getVersion();
-  const pendingEvents = db.getPendingEvents();
+
+  // Decrease event batch size on retry attempts
+  const pendingEvents =
+    attempt && attempt > 0
+      ? db.getPendingEvents(
+          Math.max(1, Math.ceil(DEFAULT_PENDING_EVENTS_LIMIT / (attempt + 1))),
+        )
+      : db.getPendingEvents();
+
   const indexResponse = await getServerIndex(
     authToken,
     currentVersion,
@@ -219,6 +232,7 @@ export async function syncMetadata(
 
   // Check for 403 Forbidden
   if (indexResponse.status === 403) {
+    console.log("[sync] index response 403");
     return SyncStatus.FORBIDDEN;
   }
 
@@ -249,20 +263,33 @@ export async function syncMetadata(
     indexResponse.status === 304 &&
     (!pendingEvents || pendingEvents.length == 0)
   ) {
+    console.log("[sync] index up to date");
     return syncStatus;
   }
 
-  console.debug("Client batch request: ", JSON.stringify(request));
+  console.log(
+    "[sync] batch request:",
+    JSON.stringify(sanitizeBatchRequest(request)),
+  );
   const batchResponse = await submitBatch(authToken, request);
-  console.debug("Server batch response: ", JSON.stringify(batchResponse));
+  console.log(
+    "[sync] batch response:",
+    JSON.stringify(
+      batchResponse.status === 200
+        ? { status: 200, data: sanitizeBatchResponse(batchResponse.data) }
+        : batchResponse,
+    ),
+  );
 
   // Check for 403 Forbidden
   if (batchResponse.status === 403) {
+    console.log("[sync] batch response 403");
     return SyncStatus.FORBIDDEN;
   }
 
   db.updateBatch(batchResponse.data);
 
   syncStatus = SyncStatus.UPDATED;
+  console.log("[sync] updates complete");
   return syncStatus;
 }

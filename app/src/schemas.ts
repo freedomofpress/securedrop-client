@@ -216,3 +216,25 @@ export type SourceTarget = z.infer<typeof SourceTargetSchema>;
 export type ItemTarget = z.infer<typeof ItemTargetSchema>;
 export type PendingEvent = z.infer<typeof PendingEventSchema>;
 export type PendingEventData = z.infer<typeof PendingEventDataSchema>;
+
+// Sanitizes BatchRequest to log only UUID keys and event types
+export function sanitizeBatchRequest(request: BatchRequest): object {
+  return {
+    sources: request.sources, // UUIDs
+    items: request.items, // UUIDs
+    journalists: request.journalists, // UUIDs
+    events: request.events?.map(({ id, type }) => ({ id, type })),
+  };
+}
+
+// Sanitizes BatchResponse to contain only UUID keys and event status codes
+export function sanitizeBatchResponse(response: BatchResponse): object {
+  return {
+    sources: Object.keys(response.sources),
+    items: Object.keys(response.items),
+    journalists: Object.keys(response.journalists),
+    events: Object.fromEntries(
+      Object.entries(response.events).map(([id, [status]]) => [id, status]),
+    ),
+  };
+}

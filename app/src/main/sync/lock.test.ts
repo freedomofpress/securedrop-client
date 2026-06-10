@@ -193,4 +193,23 @@ describe("Lock", () => {
     // and unblock call 3 before call 1 has finished
     expect(concurrentAccess).toBe(false);
   });
+
+  it("should fully await completion", async () => {
+    const lock = new Lock();
+
+    // Call 1 holds the lock for 50ms
+    const call1 = lock.run(async () => {
+      await new Promise((res) => setTimeout(res, 50));
+    }, 100);
+
+    await call1;
+
+    let call2Ran = false;
+    // Call 2 should immediately be able to acquire the lock
+    await lock.run(async () => {
+      call2Ran = true;
+    });
+
+    expect(call2Ran).toBe(true);
+  });
 });

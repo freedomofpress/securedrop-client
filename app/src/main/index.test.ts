@@ -73,6 +73,7 @@ const testState = vi.hoisted(() => {
     },
     proxyJSONRequest: vi.fn(),
     lockRun: vi.fn(async (fn: () => unknown) => await fn()),
+    mockSleep: vi.fn(),
     configLoad: vi.fn(() => ({
       sd_submission_key_fpr: "fingerprint",
       is_qubes: false,
@@ -148,6 +149,10 @@ vi.mock("./transcriber", () => ({
   writeTranscript: vi.fn(),
 }));
 
+vi.mock("./timeouts", () => ({
+  sleep: (...args: unknown[]) => testState.mockSleep(...args),
+}));
+
 vi.mock("./fetch/worker?modulePath", () => ({
   default: "mock-worker-path",
 }));
@@ -221,6 +226,8 @@ describe("syncMetadata IPC handler", () => {
     testState.lockRun.mockImplementation(
       async (fn: () => unknown) => await fn(),
     );
+    testState.mockSleep.mockReset();
+    testState.mockSleep.mockResolvedValue(undefined);
     testState.configLoad.mockClear();
     testState.cryptoInitialize.mockClear();
     testState.datastoreClose.mockClear();
@@ -269,5 +276,45 @@ describe("syncMetadata IPC handler", () => {
         authToken: "skip-token",
       },
     });
+  });
+
+  it("retries syncMetadata up to MAX_SYNC_RETRIES times then re-throws", async () => {
+    const err = new Error("network failure");
+    testState.syncModule.syncMetadata.mockRejectedValue(err);
+
+    await loadMainProcessModule();
+    await loginWithToken("retry-token");
+
+    const handler = getSyncMetadataHandler();
+    await expect(handler({}, {})).rejects.toThrow("network failure");
+
+    // 1 initial attempt + 3 retries = 4 total calls
+    expect(testState.syncModule.syncMetadata).toHaveBeenCalledTimes(4);
+    // sleep called between each attempt (not after the final failure)
+    expect(testState.mockSleep).toHaveBeenCalledTimes(3);
+  });
+
+  it("waits with exponential backoff between retries", async () => {
+    const err = new Error("network failure");
+    // Fail 3 times then succeed on the 4th attempt
+    testState.syncModule.syncMetadata
+      .mockRejectedValueOnce(err)
+      .mockRejectedValueOnce(err)
+      .mockRejectedValueOnce(err)
+      .mockResolvedValueOnce(SyncStatus.NOT_MODIFIED);
+
+    await loadMainProcessModule();
+    await loginWithToken("backoff-token");
+
+    const handler = getSyncMetadataHandler();
+    const status = await handler({}, {});
+
+    expect(status).toBe(SyncStatus.NOT_MODIFIED);
+    expect(testState.syncModule.syncMetadata).toHaveBeenCalledTimes(4);
+    expect(testState.mockSleep).toHaveBeenCalledTimes(3);
+    // backoffMs = 1000 * 2^retryCount where retryCount is post-increment (1, 2, 3)
+    expect(testState.mockSleep).toHaveBeenNthCalledWith(1, 2000);
+    expect(testState.mockSleep).toHaveBeenNthCalledWith(2, 4000);
+    expect(testState.mockSleep).toHaveBeenNthCalledWith(3, 8000);
   });
 });

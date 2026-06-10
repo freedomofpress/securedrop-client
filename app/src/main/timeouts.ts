@@ -49,3 +49,6 @@ export function estimateTimeout(schema: SizedSchema, records?: number): ms {
   );
   return timeout;
 }
+
+export const sleep = (duration: ms) =>
+  new Promise<void>((resolve) => setTimeout(resolve, duration));
