@@ -45,6 +45,9 @@ const Source = memo(function Source({
     [source.data.last_updated, i18n.language, tCommon],
   );
 
+  const unstarredStarColor = isActive ? "#ffffff" : "#9ca3af";
+  const starredStarColor = "#eab308";
+
   const handleClick = useCallback(() => {
     if (isActive) {
       // If already active, clear active source and navigate back to inbox home
@@ -117,13 +120,9 @@ const Source = memo(function Source({
           size="large"
           icon={
             source.data.is_starred ? (
-              <StarFilled color="#eab308" size={20} />
+              <StarFilled color={starredStarColor} size={20} />
             ) : (
-              <Star
-                color="#9ca3af"
-                size={20}
-                className={isActive ? "text-white" : "text-gray-400"}
-              />
+              <Star color={unstarredStarColor} size={20} />
             )
           }
           onClick={(e) => {
