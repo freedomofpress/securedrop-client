@@ -335,6 +335,30 @@ describe("PrintWizard Component", () => {
       });
     });
 
+    it("moves focus to the error heading when print fails", async () => {
+      vi.mocked(window.electronAPI.print).mockResolvedValueOnce(
+        PrintStatus.ERROR_PRINT,
+      );
+
+      renderWithProviders(
+        <PrintWizard
+          item={mockPrintPayload}
+          open={true}
+          onClose={mockOnClose}
+        />,
+      );
+
+      await navigateToPrinting();
+
+      await waitFor(() => {
+        expect(screen.getByText("Print Failed")).toBeInTheDocument();
+      });
+
+      await waitFor(() => {
+        expect(document.activeElement).toBe(screen.getByText("Print Failed"));
+      });
+    });
+
     it("shows Close button and closes modal on click", async () => {
       vi.mocked(window.electronAPI.print).mockResolvedValueOnce(
         PrintStatus.ERROR_PRINT,

@@ -859,6 +859,31 @@ describe("Sources Component", () => {
       ).toBeInTheDocument();
     });
 
+    it("focuses dialog title when modal opens", async () => {
+      renderSourceList();
+
+      await waitFor(() => {
+        expect(screen.getByTestId("source-source-1")).toBeInTheDocument();
+      });
+
+      await userEvent.click(screen.getByTestId("source-checkbox-source-1"));
+      await userEvent.click(screen.getByTestId("bulk-delete-button"));
+
+      await waitFor(() => {
+        expect(screen.getByTestId("delete-modal")).toBeInTheDocument();
+      });
+
+      await waitFor(() => {
+        expect(document.activeElement).toBe(
+          screen.getByTestId("delete-modal-title"),
+        );
+      });
+
+      expect(
+        screen.getByTestId("delete-modal-cancel-button"),
+      ).toBeInTheDocument();
+    });
+
     it("calls addPendingSourceEventBatch with SourceDeleted when Delete Account is clicked", async () => {
       renderSourceList();
 

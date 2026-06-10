@@ -20,9 +20,16 @@ import React, { memo, useCallback } from "react";
 interface ItemProps {
   item: Item;
   designation: string;
+  positionInConversation?: number;
+  totalConversationItems?: number;
 }
 
-const Item = memo(function ItemComponent({ item, designation }: ItemProps) {
+const Item = memo(function ItemComponent({
+  item,
+  designation,
+  positionInConversation,
+  totalConversationItems,
+}: ItemProps) {
   const dispatch = useAppDispatch();
   const { t } = useTranslation("MainContent");
   const [modal, contextHolder] = Modal.useModal();
@@ -71,6 +78,8 @@ const Item = memo(function ItemComponent({ item, designation }: ItemProps) {
         designation={designation}
         onUpdate={onFetchStatusUpdate}
         onDelete={onDeleteClick}
+        positionInConversation={positionInConversation}
+        totalConversationItems={totalConversationItems}
       />
     );
   } else if (kind === "file") {
@@ -80,10 +89,20 @@ const Item = memo(function ItemComponent({ item, designation }: ItemProps) {
         designation={designation}
         onUpdate={onFetchStatusUpdate}
         onDelete={onDeleteClick}
+        positionInConversation={positionInConversation}
+        totalConversationItems={totalConversationItems}
       />
     );
   } else if (kind === "reply") {
-    content = <Message kind="reply" item={item} onDelete={onDeleteClick} />;
+    content = (
+      <Message
+        kind="reply"
+        item={item}
+        onDelete={onDeleteClick}
+        positionInConversation={positionInConversation}
+        totalConversationItems={totalConversationItems}
+      />
+    );
   }
 
   if (content === null) {

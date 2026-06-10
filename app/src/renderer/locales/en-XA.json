@@ -166,6 +166,7 @@
     "viewFile": "[View]",
     "encryptedFile": "[!Encrypted File!]",
     "of": "[of]",
+    "filePositionAriaLabel": "[!!File {{index}} of {{total}}!!]",
     "pause": "[Pause]",
     "filenameTooltip": "[!!!Filename available after downloading!!!]",
     "downloadFailed": "[!Download Failed!]",
@@ -228,7 +229,10 @@
     "conversation": {
       "sendButton": "[Send]",
       "newMessagesDivider": "[!new messages!]",
-      "messagePlaceholder": "[!!Message {{designation}}...!!]"
+      "messagePlaceholder": "[!!Message {{designation}}...!!]",
+      "messageHistoryAriaLabel": "[!!Conversation messages!!]",
+      "messagePositionAriaLabel": "[!!Message {{index}} of {{total}}!!]",
+      "replyPositionAriaLabel": "[!!Reply {{index}} of {{total}}!!]"
     },
     "emptyState": "[!!!!!!!!!<bold>Select a source</bold> from the list to read messages, retrieve files, or send responses.!!!!!!!!!]",
     "alreadyRunning": "[!!!The SecureDrop Inbox is already running!!!]",

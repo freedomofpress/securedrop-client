@@ -304,6 +304,10 @@ interface StateComponentProps {
   t: (key: string, options?: Record<string, unknown>) => string;
 }
 
+interface ErrorStateProps extends StateComponentProps {
+  headingRef: React.RefObject<HTMLHeadingElement | null>;
+}
+
 const ConfirmSourceState = memo(function ConfirmSourceState({
   context,
   t,
@@ -554,7 +558,8 @@ const PartialSuccessState = memo(function PartialSuccessState({
 const ErrorState = memo(function ErrorState({
   context,
   t,
-}: StateComponentProps) {
+  headingRef,
+}: ErrorStateProps) {
   const getErrorMessage = () => {
     // If we have a device status, try to get a user-friendly message
     if (context.deviceStatus) {
@@ -582,7 +587,7 @@ const ErrorState = memo(function ErrorState({
       <div className="flex items-center gap-3 mb-4">
         <FileX2 size={24} strokeWidth={2} className="text-red-500" />
         <div className="ml-3">
-          <h3 className="text-lg font-semibold">
+          <h3 className="text-lg font-semibold" ref={headingRef} tabIndex={-1}>
             {t("exportWizard.exportFailed")}
           </h3>
         </div>
@@ -647,6 +652,7 @@ export const ExportWizard = memo(function ExportWizard({
   // Refs to track in-progress operations
   const preflightInProgress = useRef(false);
   const exportInProgress = useRef(false);
+  const errorHeadingRef = useRef<HTMLHeadingElement>(null);
 
   // Reset state when wizard is closed
   useEffect(() => {
@@ -657,6 +663,17 @@ export const ExportWizard = memo(function ExportWizard({
       exportInProgress.current = false;
     }
   }, [open]);
+
+  // Move focus to the error heading so screen readers announce failures immediately.
+  useEffect(() => {
+    if (!open || context.state !== "ERROR") {
+      return;
+    }
+
+    requestAnimationFrame(() => {
+      errorHeadingRef.current?.focus();
+    });
+  }, [context.state, open]);
 
   // Sync undownloaded_items to update when items have been downloaded
   const undownloadedItems =
@@ -799,7 +816,7 @@ export const ExportWizard = memo(function ExportWizard({
       case "PARTIAL_SUCCESS":
         return <PartialSuccessState {...stateProps} />;
       case "ERROR":
-        return <ErrorState {...stateProps} />;
+        return <ErrorState {...stateProps} headingRef={errorHeadingRef} />;
     }
   };
 
