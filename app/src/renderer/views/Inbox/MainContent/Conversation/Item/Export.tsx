@@ -1,4 +1,4 @@
-import { memo, useReducer, useEffect, useRef } from "react";
+import { memo, useEffect, useReducer, useRef } from "react";
 import {
   type ExportPayload,
   DeviceStatus,
@@ -34,14 +34,12 @@ type ExportAction =
   | { type: "START_EXPORT" }
   | { type: "EXPORT_COMPLETE"; deviceStatus: DeviceStatus }
   | { type: "EXPORT_ERROR"; payload: string; deviceStatus?: DeviceStatus }
-  | { type: "CANCEL" }
-  | { type: "UPDATE_UNDOWNLOADED_ITEMS"; value: boolean };
+  | { type: "CANCEL" };
 
 interface ExportContext {
   state: ExportState;
   itemType: ExportPayload["type"];
   filename: string;
-  undownloadedItems: boolean;
   passphrase: string;
   deviceLocked: boolean;
   errorMessage: string;
@@ -54,7 +52,6 @@ const initialContext: ExportContext = {
   state: "PREFLIGHT",
   itemType: "file",
   filename: "",
-  undownloadedItems: false,
   passphrase: "",
   deviceLocked: true,
   errorMessage: "",
@@ -147,9 +144,6 @@ function exportReducer(
       deviceStatus: action.deviceStatus,
       passphrase: "",
     };
-  }
-  if (action.type === "UPDATE_UNDOWNLOADED_ITEMS") {
-    return { ...context, undownloadedItems: action.value };
   }
   if (action.type === "CANCEL") {
     return {
@@ -305,9 +299,11 @@ interface StateComponentProps {
 }
 
 const ConfirmSourceState = memo(function ConfirmSourceState({
-  context,
+  item,
   t,
 }: StateComponentProps) {
+  const undownloadedItems =
+    item.type === "source" ? item.payload.undownloaded_items : false;
   return (
     <div>
       <div className="flex items-center gap-3 mb-4">
@@ -321,7 +317,7 @@ const ConfirmSourceState = memo(function ConfirmSourceState({
       <hr className="my-4 border-gray-300" />
       <div className="space-y-4">
         <p>{t("exportWizard.sourceExportDescription")}</p>
-        {context.undownloadedItems && (
+        {undownloadedItems && (
           <div>
             <p className="text-yellow-800">
               {t("exportWizard.undownloadedFiles")}
@@ -640,139 +636,72 @@ export const ExportWizard = memo(function ExportWizard({
     itemType: item.type,
     filename: filename,
     whistleflow: whistleflow,
-    undownloadedItems:
-      item.type === "source" ? item.payload.undownloaded_items : false,
   });
 
-  // Refs to track in-progress operations
-  const preflightInProgress = useRef(false);
-  const exportInProgress = useRef(false);
+  const operationInProgress = useRef(false);
 
-  // Reset state when wizard is closed
-  useEffect(() => {
-    if (!open) {
-      dispatch({ type: "CANCEL" });
-      // Reset operation flags when closing
-      preflightInProgress.current = false;
-      exportInProgress.current = false;
-    }
-  }, [open]);
-
-  // Sync undownloaded_items to update when items have been downloaded
-  const undownloadedItems =
-    item.type === "source" ? item.payload.undownloaded_items : false;
-  useEffect(() => {
-    dispatch({ type: "UPDATE_UNDOWNLOADED_ITEMS", value: undownloadedItems });
-  }, [undownloadedItems]);
-
-  // Initiate export preflight checks
-  useEffect(() => {
-    // Only run if we're in a preflight state, modal is open, and not already in progress
-    if (
-      !(
-        context.state === "PREFLIGHT" ||
-        context.state === "PREFLIGHT_INSERT_USB"
-      ) ||
-      !open ||
-      preflightInProgress.current
-    ) {
+  const runPreflight = async () => {
+    if (operationInProgress.current) {
       return;
     }
+    operationInProgress.current = true;
+    try {
+      const deviceStatus = await window.electronAPI.initiateExport();
+      dispatch({ type: "PREFLIGHT_COMPLETE", deviceStatus });
+    } catch (error) {
+      console.error("Failed to initiate export during preflight:", error);
+      dispatch({ type: "EXPORT_ERROR", payload: t("wizard.unknownError") });
+    } finally {
+      operationInProgress.current = false;
+    }
+  };
 
-    preflightInProgress.current = true;
-    let isCancelled = false;
-
-    const initiateExport = async () => {
-      try {
-        const deviceStatus = await window.electronAPI.initiateExport();
-        // Only dispatch if operation hasn't been cancelled
-        if (!isCancelled) {
-          dispatch({ type: "PREFLIGHT_COMPLETE", deviceStatus: deviceStatus });
-        }
-      } catch (error) {
-        if (!isCancelled) {
-          console.error("Failed to initiate export during preflight:", error);
-          const errorMessage = t("wizard.unknownError");
-          dispatch({ type: "EXPORT_ERROR", payload: errorMessage });
-        }
-      } finally {
-        preflightInProgress.current = false;
-      }
-    };
-
-    initiateExport();
-
-    // Cleanup function to mark operation as cancelled. This marks operation as
-    // cancelled in the frontend, but does not cancel the async preflight operation
-    // in the backend.
-    return () => {
-      isCancelled = true;
-    };
-  }, [open, context.state, t]);
-
-  // Perform export
-  useEffect(() => {
-    // Only run if we're in EXPORTING state and not already in progress
-    if (context.state !== "EXPORTING" || exportInProgress.current) {
+  const runExport = async (passphrase: string) => {
+    if (operationInProgress.current) {
       return;
     }
-
-    exportInProgress.current = true;
-    let isCancelled = false;
-
-    const performExport = async () => {
-      try {
-        let deviceStatus: DeviceStatus;
-        switch (item.type) {
-          case "file":
-            deviceStatus = await window.electronAPI.export(
-              [item.payload.uuid],
-              context.passphrase,
-              context.whistleflow,
-            );
-            break;
-          case "transcript":
-            deviceStatus = await window.electronAPI.exportTranscript(
-              item.payload.source_uuid,
-              context.passphrase,
-              context.whistleflow,
-            );
-            break;
-          case "source": {
-            deviceStatus = await window.electronAPI.exportSource(
-              item.payload.source_uuid,
-              context.passphrase,
-              context.whistleflow,
-            );
-            break;
-          }
-        }
-        // Only dispatch if operation hasn't been cancelled
-        if (!isCancelled) {
-          dispatch({ type: "EXPORT_COMPLETE", deviceStatus: deviceStatus });
-        }
-      } catch {
-        if (!isCancelled) {
-          const errorMessage = t("wizard.unknownError");
-          dispatch({ type: "EXPORT_ERROR", payload: errorMessage });
-        }
-      } finally {
-        exportInProgress.current = false;
+    operationInProgress.current = true;
+    try {
+      let deviceStatus: DeviceStatus;
+      switch (item.type) {
+        case "file":
+          deviceStatus = await window.electronAPI.export(
+            [item.payload.uuid],
+            passphrase,
+            whistleflow,
+          );
+          break;
+        case "transcript":
+          deviceStatus = await window.electronAPI.exportTranscript(
+            item.payload.source_uuid,
+            passphrase,
+            whistleflow,
+          );
+          break;
+        case "source":
+          deviceStatus = await window.electronAPI.exportSource(
+            item.payload.source_uuid,
+            passphrase,
+            whistleflow,
+          );
+          break;
       }
-    };
+      dispatch({ type: "EXPORT_COMPLETE", deviceStatus: deviceStatus! });
+    } catch {
+      dispatch({ type: "EXPORT_ERROR", payload: t("wizard.unknownError") });
+    } finally {
+      operationInProgress.current = false;
+    }
+  };
 
-    performExport();
-
-    // Cleanup function to mark operation as cancelled. This marks operation as
-    // cancelled in the frontend, but does not cancel the async export operation
-    // in the backend.
-    return () => {
-      isCancelled = true;
-    };
-  }, [context.state, item, context.passphrase, context.whistleflow, t]);
+  if (open && context.state === "PREFLIGHT") {
+    runPreflight();
+  }
+  if (open && context.state === "EXPORTING") {
+    runExport(context.passphrase);
+  }
 
   const handleClose = () => {
-    // Cancel any ongoing export operation
     window.electronAPI.cancelExport();
     dispatch({ type: "CANCEL" });
     onClose();
@@ -810,7 +739,12 @@ export const ExportWizard = memo(function ExportWizard({
           <Button
             key="continue"
             type="primary"
-            onClick={() => dispatch({ type: "START_EXPORT" })}
+            onClick={() => {
+              dispatch({ type: "START_EXPORT" });
+              if (!whistleflow) {
+                runPreflight();
+              }
+            }}
           >
             {t("wizard.continue")}
           </Button>,
@@ -837,6 +771,9 @@ export const ExportWizard = memo(function ExportWizard({
             type="primary"
             onClick={() => {
               dispatch({ type: "PREPARE_USB" });
+              if (context.deviceStatus === ExportStatus.DEVICE_WRITABLE) {
+                runExport(context.passphrase);
+              }
             }}
           >
             {t("wizard.continue")}
@@ -847,13 +784,13 @@ export const ExportWizard = memo(function ExportWizard({
         ];
 
       case "INSERT_USB":
-        // Show cancel button - user needs to insert USB or cancel
         return [
           <Button
             key="continue"
             type="primary"
             onClick={() => {
               dispatch({ type: "RETRY_PREFLIGHT" });
+              runPreflight();
             }}
           >
             {t("wizard.retry")}
@@ -871,10 +808,11 @@ export const ExportWizard = memo(function ExportWizard({
           <Button
             key="export"
             type="primary"
-            disabled={!context.passphrase}
-            onClick={() =>
-              dispatch({ type: "UNLOCK_DEVICE", payload: context.passphrase })
-            }
+            disabled={!context.passphrase?.trim()}
+            onClick={() => {
+              dispatch({ type: "UNLOCK_DEVICE", payload: context.passphrase });
+              runExport(context.passphrase);
+            }}
           >
             {t("wizard.continue")}
           </Button>,

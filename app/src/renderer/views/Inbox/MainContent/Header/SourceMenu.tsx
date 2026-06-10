@@ -1,4 +1,4 @@
-import { memo, useState, useMemo, useEffect } from "react";
+import { memo, useState, useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import {
   type SourceWithItems,
@@ -22,34 +22,16 @@ const SourceMenu = memo(function SourceMenu({
   const { t } = useTranslation("MainContent");
 
   const [whistleflowEnabled, setWhistleflowEnabled] = useState(false);
-  const [exportType, setExportType] = useState<"transcript" | "source">(
-    "transcript",
-  );
   const [exportWhistleflow, setExportWhistleflow] = useState(false);
   const [exportWizardKey, setExportWizardKey] = useState(0);
+  const [exportPayload, setExportPayload] = useState<ExportPayload>({
+    type: "transcript",
+    payload: { source_uuid: sourceWithItems.uuid },
+  });
 
   useEffect(() => {
     window.electronAPI.getWhistleflowEnabled().then(setWhistleflowEnabled);
   }, []);
-
-  const exportPayload = useMemo((): ExportPayload => {
-    if (exportType === "source") {
-      return {
-        type: "source",
-        payload: {
-          source_uuid: sourceWithItems.uuid,
-          undownloaded_items: sourceWithItems.items.some(
-            (i) =>
-              i.data.kind === "file" && i.fetch_status !== FetchStatus.Complete,
-          ),
-        },
-      };
-    }
-    return {
-      type: "transcript",
-      payload: { source_uuid: sourceWithItems.uuid },
-    };
-  }, [exportType, sourceWithItems]);
 
   const printPayload: PrintPayload = {
     type: "transcript",
@@ -63,7 +45,10 @@ const SourceMenu = memo(function SourceMenu({
     switch (e.key) {
       case "exportTranscript":
         try {
-          setExportType("transcript");
+          setExportPayload({
+            type: "transcript",
+            payload: { source_uuid: sourceWithItems.uuid },
+          });
           setExportWhistleflow(false);
           setExportWizardKey((k) => k + 1);
           setExportWizardOpen(true);
@@ -73,7 +58,17 @@ const SourceMenu = memo(function SourceMenu({
         break;
       case "exportSource":
         try {
-          setExportType("source");
+          setExportPayload({
+            type: "source",
+            payload: {
+              source_uuid: sourceWithItems.uuid,
+              undownloaded_items: sourceWithItems.items.some(
+                (i) =>
+                  i.data.kind === "file" &&
+                  i.fetch_status !== FetchStatus.Complete,
+              ),
+            },
+          });
           setExportWhistleflow(false);
           setExportWizardKey((k) => k + 1);
           setExportWizardOpen(true);
@@ -83,7 +78,10 @@ const SourceMenu = memo(function SourceMenu({
         break;
       case "exportTranscriptToWhistleflow":
         try {
-          setExportType("transcript");
+          setExportPayload({
+            type: "transcript",
+            payload: { source_uuid: sourceWithItems.uuid },
+          });
           setExportWhistleflow(true);
           setExportWizardKey((k) => k + 1);
           setExportWizardOpen(true);
@@ -93,7 +91,17 @@ const SourceMenu = memo(function SourceMenu({
         break;
       case "exportSourceToWhistleflow":
         try {
-          setExportType("source");
+          setExportPayload({
+            type: "source",
+            payload: {
+              source_uuid: sourceWithItems.uuid,
+              undownloaded_items: sourceWithItems.items.some(
+                (i) =>
+                  i.data.kind === "file" &&
+                  i.fetch_status !== FetchStatus.Complete,
+              ),
+            },
+          });
           setExportWhistleflow(true);
           setExportWizardKey((k) => k + 1);
           setExportWizardOpen(true);
