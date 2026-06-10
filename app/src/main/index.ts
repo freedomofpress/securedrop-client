@@ -261,6 +261,7 @@ if (!gotTheLock) {
   let fetchWorker: Worker | null = null;
   let authToken: string | null = null;
   let syncLoopTimer: NodeJS.Timeout | null = null;
+  let lastHintedRecords: number | undefined;
 
   function wakeFetchWorkerIfNeeded(): void {
     if (!fetchWorker || !authToken) {
@@ -389,10 +390,11 @@ if (!gotTheLock) {
               return { success: false, errorType: "generic" };
             }
             authToken = resp.data.token;
+            lastHintedRecords = resp.data.hints.sources + resp.data.hints.items;
 
             // Initiate sync loop
             if (import.meta.env.MODE != "test") {
-              void runSyncLoop({});
+              void runSyncLoop({ hintedRecords: lastHintedRecords });
             }
 
             return {
@@ -859,7 +861,7 @@ if (!gotTheLock) {
 
         syncLoopTimer = setTimeout(() => {
           if (authToken) {
-            void runSyncLoop({});
+            void runSyncLoop({ hintedRecords: lastHintedRecords });
           }
         }, 1000 * 60);
       }
