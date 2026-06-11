@@ -19,7 +19,7 @@ build-debs: ## Build Debian packages
 .PHONY: lint-apparmor
 lint-apparmor: ## Lint AppArmor profiles
 	# See apparmor_parser(8)
-	apparmor_parser --preprocess --abort-on-error --Werror=all client/files/usr.bin.securedrop-client
+	apparmor_parser --preprocess --abort-on-error --Werror=all proxy/usr.bin.securedrop-proxy
 
 .PHONY: lint-desktop
 lint-desktop: ## Lint .desktop files
@@ -48,7 +48,7 @@ zizmor: ## Lint GitHub Actions workflows
 	@poetry run zizmor .
 
 .PHONY: semgrep
-semgrep: semgrep-app semgrep-client semgrep-export ## Run Semgrep security checks on all components
+semgrep: semgrep-app semgrep-export ## Run Semgrep security checks on all components
 
 .PHONY: semgrep-app
 semgrep-app: ## Run Semgrep on app/ (JavaScript/TypeScript)
@@ -67,19 +67,6 @@ semgrep-app: ## Run Semgrep on app/ (JavaScript/TypeScript)
 		--config p/ci \
 		--config app/.semgrep \
 		app/
-
-.PHONY: semgrep-client
-semgrep-client: ## Run Semgrep on client/ (Python)
-	@echo "Running semgrep on client/ directory..."
-	@poetry run semgrep scan --metrics=off \
-		--exclude "tests/" \
-		--error \
-		--strict \
-		--verbose \
-		--config "p/security-audit" \
-		--config "p/ci" \
-		--config "client/.semgrep" \
-		client/
 
 .PHONY: semgrep-export
 semgrep-export: ## Run Semgrep on export/ (Python)
