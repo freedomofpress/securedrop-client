@@ -2,7 +2,11 @@ Source: securedrop-client
 Section: unknown
 Priority: optional
 Maintainer: SecureDrop Team <securedrop@freedom.press>
-Build-Depends: debhelper-compat (= 11), dh-apparmor, dh-exec, python3-venv, libssl-dev, pkgconf, libclang-dev, qubesdb-dev, nodejs,
+Build-Depends: debhelper-compat (= 11), dh-apparmor, dh-exec, python3-venv, python3-setuptools,
+# python3-wheel is only needed on bookworm; setuptools >= 70.1 (trixie+) bundles bdist_wheel.
+# Drop the "| python3-wheel" alternative once bookworm support is removed.
+ python3-setuptools (>= 70.1) | python3-wheel,
+ libssl-dev, pkgconf, libclang-dev, qubesdb-dev, nodejs,
  libasound2, libatk-bridge2.0-0, libatk1.0-0, libatspi2.0-0, libcairo2,
  libcups2, libdbus-1-3, libexpat1, libgbm1, libglib2.0-0, libgtk-3-0,
  libnspr4, libnss3, libpango-1.0-0, libx11-6, libxcb1, libxcomposite1,
