@@ -59,7 +59,7 @@ export const shortcuts: ShortcutDefinition[] = [
     categoryKey: "shortcuts.categories.application",
     scope: Scope.GLOBAL,
     displayKeys: [["F1"]],
-    options: { preventDefault: true },
+    options: { preventDefault: true, enableOnFormTags: true },
   },
   {
     id: "sync",
