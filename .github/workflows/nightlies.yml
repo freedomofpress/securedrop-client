@@ -5,6 +5,8 @@ on:
   push:
     branches:
       - main
+    tags:
+      - '*'
   pull_request:  # To test changes in this workflow
     paths:
       - '.github/workflows/nightlies.yml'
@@ -20,6 +22,22 @@ permissions:
 defaults:
   run:
     shell: bash
+
+env:
+  # ${{ format(env.PR_TEMPLATE_BODY, 'tagVersion', 'workflowLink', 'buildLogsSha1') }}
+  PR_TEMPLATE_BODY: |
+    > [!WARNING]
+    > These packages were built on GitHub Actions, an untrusted build host. You MUST reproduce them locally before
+    > merging. If you are unable to bit-for-bit reproduce them, do not approve.
+
+    Add SecureDrop Inbox packages using the [{0} tag](https://github.com/freedomofpress/securedrop-client/releases/tag/{0})
+
+    Submitted via GitHub Actions (nightlies.yml): {1}
+
+    ## Checklist
+    - [ ] Build metadata has been committed to build-logs: https://github.com/freedomofpress/build-logs/commit/{2}
+    - [ ] Ensure packages names are the ones expected (i.e. no missing packages)
+    - [ ] Build locally and compare sha256sum hashes, must be bit-for-bit reproducible
 
 jobs:
   build-debs:
@@ -41,9 +59,15 @@ jobs:
           repository: "freedomofpress/securedrop-builder"
           path: "securedrop-builder"
           lfs: true
+      - name: Set build flags
+        run: |
+          if [[ "$GITHUB_REF" == refs/tags/* ]]; then
+            echo "NIGHTLY=" >> "$GITHUB_ENV"
+          else
+            echo "NIGHTLY=1" >> "$GITHUB_ENV"
+          fi
       - name: Build packages
         env:
-          NIGHTLY: "1"
           DEBIAN_VERSION: ${{ matrix.debian_version }}
           BUILDER: securedrop-builder
         run: |
@@ -57,7 +81,6 @@ jobs:
           if-no-files-found: error
 
   commit-and-push:
-    if: ${{ github.ref == 'refs/heads/main' }} # Skip when testing workflow
     runs-on: ubuntu-latest
     container: debian:bookworm
     needs:
@@ -65,7 +88,7 @@ jobs:
     steps:
       - name: Install dependencies
         run: |
-          apt-get update && apt-get install --yes git git-lfs gpg
+          apt-get update && apt-get install --yes git git-lfs gpg gh
       # Repeat this for all supported Debian versions
       - name: Download bookworm artifacts
         uses: actions/download-artifact@v8
@@ -78,28 +101,54 @@ jobs:
           repository: "freedomofpress/securedrop-apt-test"
           path: "securedrop-apt-test"
           lfs: true
-          sparse-checkout: workstation/
-          sparse-checkout-cone-mode: false
+          # TODO: why doesn't this work on branch creation?
+          #sparse-checkout: workstation/
+          #sparse-checkout-cone-mode: false
       - uses: actions/checkout@v6
         with:
           persist-credentials: false
           repository: "freedomofpress/build-logs"
           path: "build-logs"
       - uses: actions/create-github-app-token@v3.1.1
-        id: app-token
+        id: build-logs-token
         with:
           app-id: ${{ vars.FPF_BRANCH_UPDATER_APP_ID }}
           private-key: ${{ secrets.FPF_BRANCH_UPDATER_APP_PRIVKEY }}
           permission-contents: write
           repositories: |
             build-logs
+      - uses: actions/create-github-app-token@v3.1.1
+        id: apt-test-token
+        with:
+          app-id: ${{ vars.FPF_BRANCH_UPDATER_APP_ID }}
+          private-key: ${{ secrets.FPF_BRANCH_UPDATER_APP_PRIVKEY }}
+          permission-contents: write
+          permission-pull-requests: write
+          repositories: |
             securedrop-apt-test
+      - name: Set build vars
+        id: vars
+        run: |
+          if [[ "$GITHUB_REF" == refs/tags/* ]]; then
+            echo "log_dir=workstation/bookworm" >> "$GITHUB_OUTPUT"
+            echo "buildinfo_msg=Add SecureDrop Inbox ${GITHUB_REF_NAME} build metadata" >> "$GITHUB_OUTPUT"
+            echo "pkg_dir=workstation/bookworm" >> "$GITHUB_OUTPUT"
+            echo "pkg_msg=Add SecureDrop Inbox ${GITHUB_REF_NAME} debs" >> "$GITHUB_OUTPUT"
+          else
+            echo "log_dir=workstation/bookworm/nightlies" >> "$GITHUB_OUTPUT"
+            echo "buildinfo_msg=Publishing build metadata files for workstation nightlies" >> "$GITHUB_OUTPUT"
+            echo "pkg_dir=workstation/bookworm-nightlies" >> "$GITHUB_OUTPUT"
+            echo "pkg_msg=Automated SecureDrop workstation build" >> "$GITHUB_OUTPUT"
+          fi
+          echo "workflow_url=${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}" >> "$GITHUB_OUTPUT"
       - name: Prepare buildinfo files
+        env:
+          LOG_DIR: ${{ steps.vars.outputs.log_dir }}
         run: |
           mkdir -p "build-logs/buildinfo/$(date +%Y)"
           cp -v build-*/*.buildinfo "build-logs/buildinfo/$(date +%Y)"
-          mkdir -p "build-logs/workstation/bookworm/nightlies"
-          cp -v build-bookworm/*.log "build-logs/workstation/bookworm/nightlies/"
+          mkdir -p "build-logs/${LOG_DIR}"
+          cp -v build-bookworm/*.log "build-logs/${LOG_DIR}/securedrop-inbox-${GITHUB_REF_NAME}.log"
       - name: Sign and commit buildinfo files
         uses: freedomofpress/actionslib/act/signed-commit@main
         with:
@@ -108,31 +157,38 @@ jobs:
             workstation/
           repo-path: build-logs
           message: |
-            Publishing build metadata for workstation nightlies
+            ${{ steps.vars.outputs.buildinfo_msg }}
 
             Via <${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}>
           gpg-key: ${{ secrets.FPF_SDCIBOT_GPG_KEY }}
           gpg-identity: ${{ vars.FPF_SDCIBOT_GPG_IDENTITY }}
           gpg-email: ${{ vars.FPF_SDCIBOT_GPG_EMAIL }}
           push: ""
+      - name: Extract build-logs commit
+        id: buildinfo-commit
+        run: |
+          echo "sha=$(git -C build-logs rev-parse HEAD)" >> "$GITHUB_OUTPUT"
       - name: Push buildinfo files
+        if: ${{ github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/') }} # Only push on real runs
         env:
-          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+          GH_TOKEN: ${{ steps.build-logs-token.outputs.token }}
           LOGS_REPO: freedomofpress/build-logs
         run: |
           # Sleep before we push so the token will have propagated across GitHub infra
           sleep 5
           git -C build-logs push https://x-access-token:${GH_TOKEN}@github.com/${LOGS_REPO}.git main
       - name: Prepare packages
+        env:
+          PKG_DIR: ${{ steps.vars.outputs.pkg_dir }}
         run: |
-          cp -v build-bookworm/*.deb securedrop-apt-test/workstation/bookworm-nightlies/
+          cp -v build-bookworm/*.deb securedrop-apt-test/${PKG_DIR}/
       - name: Sign and commit packages
         uses: freedomofpress/actionslib/act/signed-commit@main
         with:
-          files: workstation/bookworm-nightlies/
+          files: ${{ steps.vars.outputs.pkg_dir }}/
           repo-path: securedrop-apt-test
           message: |
-            Automated SecureDrop workstation build
+            ${{ steps.vars.outputs.pkg_msg }}
 
             Via <${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}>
           gpg-key: ${{ secrets.FPF_SDCIBOT_GPG_KEY }}
@@ -140,8 +196,23 @@ jobs:
           gpg-email: ${{ vars.FPF_SDCIBOT_GPG_EMAIL }}
           push: ""
       - name: Push packages
+        if: ${{ github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/') }} # Only push on real runs
         env:
-          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+          GH_TOKEN: ${{ steps.apt-test-token.outputs.token }}
           PKG_REPO: freedomofpress/securedrop-apt-test
+          PR_TITLE: "SecureDrop Inbox ${{ github.ref_name }}"
+          PR_BODY: ${{ format(env.PR_TEMPLATE_BODY, github.ref_name, steps.vars.outputs.workflow_url, steps.buildinfo-commit.outputs.sha) }}
         run: |
-          git -C securedrop-apt-test push https://x-access-token:${GH_TOKEN}@github.com/${PKG_REPO}.git main
+          if [[ "$GITHUB_REF" == refs/tags/* ]]; then
+            BRANCH="inbox-${GITHUB_REF_NAME}"
+            git -C securedrop-apt-test checkout -b "$BRANCH"
+            git -C securedrop-apt-test push https://x-access-token:${GH_TOKEN}@github.com/${PKG_REPO}.git "$BRANCH"
+            gh pr create \
+              --repo "$PKG_REPO" \
+              --head "$BRANCH" \
+              --base main \
+              --title "${PR_TITLE}" \
+              --body "${PR_BODY}"
+          else
+            git -C securedrop-apt-test push https://x-access-token:${GH_TOKEN}@github.com/${PKG_REPO}.git main
+          fi
