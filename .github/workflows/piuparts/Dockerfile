@@ -21,5 +21,5 @@ RUN echo "deb [trusted=yes] file:/packages ./" > /etc/apt/sources.list.d/local.l
 # remove this version and cause piuparts to fail.
 COPY apt_freedom_press.sources /etc/apt/sources.list.d/piuparts-apt_freedom_press.sources
 RUN sed -i s/##VERSION_CODENAME##/bookworm/ /etc/apt/sources.list.d/piuparts-apt_freedom_press.sources
-COPY qubes_42.sources /etc/apt/sources.list.d/
-RUN sed -i s/##VERSION_CODENAME##/${DISTRO}/ /etc/apt/sources.list.d/qubes_42.sources
+COPY qubes_43.sources /etc/apt/sources.list.d/
+RUN sed -i s/##VERSION_CODENAME##/${DISTRO}/ /etc/apt/sources.list.d/qubes_43.sources

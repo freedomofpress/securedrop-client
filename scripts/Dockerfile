@@ -11,8 +11,8 @@ ENV CARGO_TERM_PROGRESS_WHEN=never
 
 RUN apt-get update && apt-get --yes upgrade && apt-get install --yes build-essential curl rsync
 
-COPY qubes_42.sources /etc/apt/sources.list.d/
-RUN sed -i s/##VERSION_CODENAME##/${DISTRO}/ /etc/apt/sources.list.d/qubes_42.sources
+COPY qubes_43.sources /etc/apt/sources.list.d/
+RUN sed -i s/##VERSION_CODENAME##/${DISTRO}/ /etc/apt/sources.list.d/qubes_43.sources
 COPY nodesource-node24.sources /etc/apt/sources.list.d/
 
 # Keep in sync with rust-toolchain.toml

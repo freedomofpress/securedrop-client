@@ -123,9 +123,9 @@ jobs:
           persist-credentials: false
       - name: Configure Qubes repository
         run: |
-          cp scripts/qubes_42.sources /etc/apt/sources.list.d/
+          cp scripts/qubes_43.sources /etc/apt/sources.list.d/
           source /etc/os-release
-          sed -i s/##VERSION_CODENAME##/${VERSION_CODENAME}/ /etc/apt/sources.list.d/qubes_42.sources
+          sed -i s/##VERSION_CODENAME##/${VERSION_CODENAME}/ /etc/apt/sources.list.d/qubes_43.sources
           apt-get update && apt-get install --yes libclang-dev qubesdb-dev
       - name: Install dependencies
         run: |
