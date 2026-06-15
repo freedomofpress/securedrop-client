@@ -27,12 +27,17 @@ jobs:
         with:
           persist-credentials: false
 
+      - name: Bootstrap node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: "24.15.x"
+
       - name: Install pnpm
-        uses: pnpm/action-setup@v6
+        uses: pnpm/action-setup@v6.0.8
         with:
           version: 10
 
-      - name: Set up Node.js
+      - name: Set up Node.js w/ caching
         uses: actions/setup-node@v6
         with:
           node-version: "24.15.x"
