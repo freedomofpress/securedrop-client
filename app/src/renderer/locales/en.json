@@ -23,7 +23,10 @@
     "conversation": {
       "sendButton": "Send",
       "messagePlaceholder": "Message {{designation}}...",
-      "newMessagesDivider": "new messages"
+      "newMessagesDivider": "new messages",
+      "messageHistoryAriaLabel": "Conversation messages",
+      "messagePositionAriaLabel": "Message {{index}} of {{total}}",
+      "replyPositionAriaLabel": "Reply {{index}} of {{total}}"
     },
     "menu": {
       "exportTranscript": "Export Transcript",
@@ -219,6 +222,7 @@
     "downloadFailed": "Download Failed",
     "retry": "Retry",
     "cancel": "Cancel",
+    "filePositionAriaLabel": "File {{index}} of {{total}}",
     "filenameTooltip": "Filename available after downloading",
     "offlineFilenameTooltip": "Download disabled in offline mode. Filename available after downloading",
     "fileActions": "File actions",

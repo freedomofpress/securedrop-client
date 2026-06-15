@@ -301,11 +301,18 @@ export function useConversationScroll(
       return;
     }
     const handleScroll = () => {
-      if (isAutoScrollingValueRef.current) {
-        return;
-      }
       const distanceToBottom =
         el.scrollHeight - (el.scrollTop + el.clientHeight);
+
+      // While auto-scrolling, ignore intermediate scroll events but still process
+      // the final bottom position so unseen messages can be acknowledged.
+      if (
+        isAutoScrollingValueRef.current &&
+        distanceToBottom > NEW_MESSAGE_SEEN_THRESHOLD
+      ) {
+        return;
+      }
+
       isAtBottomRef.current = distanceToBottom <= NEW_MESSAGE_SEEN_THRESHOLD;
       if (isAtBottomRef.current) {
         if (dividerItemUuid) {
