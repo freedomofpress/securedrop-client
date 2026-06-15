@@ -32,25 +32,19 @@ jobs:
         with:
           node-version: "24.15.x"
 
-      - name: Install pnpm
+      - name: Install pnpm and dependencies
         uses: pnpm/action-setup@v6.0.8
         with:
           version: 10
-
-      - name: Set up Node.js w/ caching
-        uses: actions/setup-node@v6
-        with:
-          node-version: "24.15.x"
-          cache: pnpm
-          cache-dependency-path: app/pnpm-lock.yaml
+          cache: true
+          cache_dependency_path: |
+            app/pnpm-lock.yaml
+          run_install: |
+            - cwd: app
 
       # Keep version in sync with rust-toolchain.toml
       - name: Install Rust
         uses: dtolnay/rust-toolchain@1.90.0
-
-      - name: Install node dependencies
-        working-directory: app
-        run: pnpm install
 
       - name: Build Mac demo DMG
         working-directory: app

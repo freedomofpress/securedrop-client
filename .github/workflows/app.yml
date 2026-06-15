@@ -42,19 +42,15 @@ jobs:
         uses: actions/setup-node@v6
         with:
           node-version: "24.15.x"
-      - name: Install pnpm
+      - name: Install pnpm and dependencies
         uses: pnpm/action-setup@v6.0.8
         with:
           version: 10
-      - name: Set up Node.js w/ caching
-        uses: actions/setup-node@v6
-        with:
-          node-version: "24.15.x"
-          cache: pnpm
-          cache-dependency-path: app/pnpm-lock.yaml
-      - name: Install node dependencies
-        working-directory: app
-        run: pnpm install
+          cache: true
+          cache_dependency_path: |
+            app/pnpm-lock.yaml
+          run_install: |
+            - cwd: app
       - name: Lint
         working-directory: app
         run: pnpm lint
@@ -98,19 +94,15 @@ jobs:
         uses: actions/setup-node@v6
         with:
           node-version: "24.15.x"
-      - name: Install pnpm
+      - name: Install pnpm and dependencies
         uses: pnpm/action-setup@v6.0.8
         with:
           version: 10
-      - name: Set up Node.js w/ caching
-        uses: actions/setup-node@v6
-        with:
-          node-version: "24.15.x"
-          cache: pnpm
-          cache-dependency-path: app/pnpm-lock.yaml
-      - name: Install node dependencies
-        working-directory: app
-        run: pnpm install
+          cache: true
+          cache_dependency_path: |
+            app/pnpm-lock.yaml
+          run_install: |
+            - cwd: app
       - name: Install Rust-specific dependencies for sd-proxy
         run: apt-get install --yes build-essential curl libssl-dev pkg-config
       - name: Install Rust to build sd-proxy
@@ -167,19 +159,15 @@ jobs:
         uses: actions/setup-node@v6
         with:
           node-version: "24.15.x"
-      - name: Install pnpm
+      - name: Install pnpm and dependencies
         uses: pnpm/action-setup@v6.0.8
         with:
           version: 10
-      - name: Set up Node.js w/ caching
-        uses: actions/setup-node@v6
-        with:
-          node-version: "24.15.x"
-          cache: pnpm
-          cache-dependency-path: app/pnpm-lock.yaml
-      - name: Install node dependencies
-        working-directory: app
-        run: pnpm install
+          cache: true
+          cache_dependency_path: |
+            app/pnpm-lock.yaml
+          run_install: |
+            - cwd: app
       - name: Install Rust-specific dependencies for sd-proxy
         run: apt-get install --yes build-essential curl libssl-dev pkg-config
       - name: Install Rust to build sd-proxy
@@ -206,19 +194,15 @@ jobs:
         uses: actions/setup-node@v6
         with:
           node-version: "24.15.x"
-      - name: Install pnpm
+      - name: Install pnpm and dependencies
         uses: pnpm/action-setup@v6.0.8
         with:
           version: 10
-      - name: Set up Node.js w/ caching
-        uses: actions/setup-node@v6
-        with:
-          node-version: "24.15.x"
-          cache: pnpm
-          cache-dependency-path: app/pnpm-lock.yaml
-      - name: Install node dependencies
-        working-directory: app
-        run: pnpm install
+          cache: true
+          cache_dependency_path: |
+            app/pnpm-lock.yaml
+          run_install: |
+            - cwd: app
       # n.b. because this runs on Ubuntu runner directly,
       # build-essential, curl, libssl-dev and pkg-config are already installed
       - name: Install Rust to build sd-proxy
