@@ -211,6 +211,9 @@ export class DB {
     // Check if this is a fresh database (first run)
     const dbPath = path.join(dbDir, "db.sqlite");
     const isNewDatabase = !fs.existsSync(dbPath);
+    // The custom-persist mount points to a path under /rw/
+    const legacyPath = "/rw/home/user/.securedrop_client";
+    const legacyClientExists = fs.existsSync(legacyPath);
 
     // Create or open the SQLite database
     const db = new Database(dbPath, { nativeBinding: this.getBinaryPath() });
@@ -227,10 +230,21 @@ export class DB {
 
     // Determine first-run status before migrations run
     if (isNewDatabase) {
-      const legacyPath = path.join(os.homedir(), ".securedrop_client");
-      this.firstRunStatus = fs.existsSync(legacyPath)
-        ? "migration"
-        : "new_user";
+      this.firstRunStatus = legacyClientExists ? "migration" : "new_user";
+    }
+    if (legacyClientExists) {
+      // Clean up the contents of the .securedrop_client directory if it still exists,
+      // but leave the directory itself in place because on 4.3 it's a mount.
+      try {
+        for (const entry of fs.readdirSync(legacyPath)) {
+          fs.rmSync(path.join(legacyPath, entry), {
+            recursive: true,
+            force: true,
+          });
+        }
+      } catch (err) {
+        console.log(`Failed to clean up ${legacyPath}:`, err);
+      }
     }
 
     // Set the database URL for migrations
