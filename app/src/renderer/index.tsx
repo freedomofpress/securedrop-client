@@ -21,7 +21,31 @@ if (typeof window !== "undefined") {
 window.electronAPI.getCSPNonce().then((nonce) => {
   createRoot(document.getElementById("root")!).render(
     <StrictMode>
-      <ConfigProvider csp={{ nonce }}>
+      <ConfigProvider
+        csp={{ nonce }}
+        theme={{
+          token: {
+            // WCAG 2.2 requirement: this color on a white background
+            // has a contrast ratio of 4.608:1
+            colorTextPlaceholder: "#757575",
+            // Keep disabled text readable (including disabled link buttons
+            // like the conversation Send button) on light backgrounds
+            colorTextDisabled: "#666666",
+            // Raise default Ant focus contrast globally
+            colorPrimaryBorder: "#3b82f6",
+            colorPrimaryBorderHover: "#3b82f6",
+            controlOutline: "#3b82f6",
+            controlOutlineWidth: 2,
+          },
+          components: {
+            Input: {
+              colorBorder: "#808080",
+              hoverBorderColor: "#3b82f6",
+              activeBorderColor: "#3b82f6",
+            },
+          },
+        }}
+      >
         <Provider store={store}>
           <MemoryRouter initialEntries={["/"]}>
             <App />
