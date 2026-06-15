@@ -18,7 +18,7 @@ def test_format_datetime_month_day(mocker):
     """
     with mock.patch("securedrop_client.gui.datetime_helpers.datetime") as mock_datetime:
         mock_datetime.date.today.return_value = datetime.date(2024, 10, 31)
-        mock_datetime.date.side_effect = lambda *args, **kwargs: datetime.date(*args, **kwargs)
+        mock_datetime.date.side_effect = datetime.date
         midnight_january_london = datetime.datetime(2021, 1, 1, 1, 0, 0, tzinfo=datetime.UTC)
 
         assert format_datetime_month_day(midnight_january_london) == "Jan 1, 2021"
