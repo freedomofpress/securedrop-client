@@ -3,146 +3,148 @@
     "menu": {
       "exportTranscript": "Exportar la transcripción",
       "printTranscript": "Imprimir la transcripción",
-      "exportSource": "",
-      "clickToOpen": ""
+      "exportSource": "Exportar Transcripción y Archivos",
+      "clickToOpen": "Clic para abrir",
+      "exportTranscriptToWhistleflow": "Exportar Transcripción a Whistleflow",
+      "exportSourceToWhistleflow": "Exportar Transcripción y Archivos a Whistleflow"
     },
     "conversation": {
-      "sendButton": "",
-      "newMessagesDivider": "",
-      "messagePlaceholder": ""
+      "sendButton": "Enviar",
+      "newMessagesDivider": "nuevos mensajes",
+      "messagePlaceholder": "Mensaje {{designation}}..."
     },
-    "emptyState": "",
-    "alreadyRunning": "",
-    "messageFailed": "",
-    "seenReplyTooltip": "",
-    "pendingReplyTooltip": "",
-    "successReplyTooltip": "",
-    "retryFetch": "",
-    "itemEncrypted": "",
-    "lastSourceActivity": "",
-    "emptyConversation": "",
-    "nonProduction": "",
-    "you": "",
-    "unknown": ""
+    "emptyState": "<bold>Selecciona una fuente</bold> de la lista para leer mensajes, recuperar archivos o enviar respuestas.",
+    "alreadyRunning": "La Bandeja de Entrada de SecureDrop ya se está ejecutando",
+    "messageFailed": "Falló al descifrar mensaje",
+    "seenReplyTooltip": "Respuesta vista y eliminada por la fuente",
+    "pendingReplyTooltip": "La respuesta está pendiente y se enviará a la fuente en la próxima sincronización",
+    "successReplyTooltip": "Respuesta enviada exitosamente",
+    "retryFetch": "Reintentar",
+    "itemEncrypted": "El mensaje está cifrado...",
+    "lastSourceActivity": "Última actividad de la fuente",
+    "emptyConversation": "Esta conversación aún no tiene mensajes.",
+    "nonProduction": "ADVERTENCIA: no está en modo producción",
+    "you": "Tu",
+    "unknown": "Desconocido"
   },
   "Sidebar": {
     "account": {
       "Quit": "Salir",
-      "signIn": "",
-      "signOut": "",
-      "syncNow": "",
-      "offlineMode": "",
-      "aboutOK": "",
-      "Help": "",
-      "aboutClose": "",
-      "keyboardShortcuts": "",
-      "signedIn": "",
-      "aboutSecureDrop": ""
+      "signIn": "Iniciar Sesión",
+      "signOut": "Cerrar sesión",
+      "syncNow": "Sincronizar ahora",
+      "offlineMode": "Modo Offline",
+      "aboutOK": "OK",
+      "Help": "Ayuda",
+      "aboutClose": "Cerrar",
+      "keyboardShortcuts": "Atajos del Teclado",
+      "signedIn": "Sesión Iniciada",
+      "aboutSecureDrop": "Acerca de SecureDrop"
     },
     "sourcelist": {
       "sort": {
-        "tooltip": ""
+        "tooltip": "Cambiar orden"
       },
       "deleteDialog": {
         "single": {
-          "message": "",
-          "keepAccountButton": "",
-          "deleteAccountButton": ""
+          "message": "¿Quieres eliminar la cuenta de la fuente o solo la conversación?",
+          "keepAccountButton": "Eliminar Conversación",
+          "deleteAccountButton": "Eliminar Cuenta"
         },
         "multiple": {
-          "keepAccountsButton": "",
-          "deleteAccountsButton": "",
-          "message": ""
+          "keepAccountsButton": "Eliminar Conversaciones",
+          "deleteAccountsButton": "Eliminar Cuentas",
+          "message": "¿Quieres eliminar estas {{count}} cuentas de fuentes o solo las conversaciones?"
         },
-        "cancelButton": "",
-        "messageCount_one": "",
-        "messageCount_many": "",
-        "messageCount_other": "",
-        "countingItems": "",
-        "replyCount_one": "",
-        "replyCount_many": "",
-        "replyCount_other": "",
-        "itemCountsHeader": "",
-        "fileCount_one": "",
-        "fileCount_many": "",
-        "fileCount_other": "",
-        "warning": ""
+        "cancelButton": "Cancelar",
+        "messageCount_one": "{{count}} mensaje",
+        "messageCount_many": "{{count}} mensajes",
+        "messageCount_other": "{{count}} mensajes",
+        "countingItems": "Calculando ítems a eliminar...",
+        "replyCount_one": "{{count}} respuesta",
+        "replyCount_many": "{{count}} respuestas",
+        "replyCount_other": "{{count}} respuestas",
+        "itemCountsHeader": "Esto eliminará:",
+        "fileCount_one": "{{count}} archivo",
+        "fileCount_many": "{{count}} archivos",
+        "fileCount_other": "{{count}} archivos",
+        "warning": "Si eliminas la cuenta de una fuente, ya no podrá iniciar sesión y enviarte mensajes. Para comunicarte con esta fuente en el futuro, deberá crear una nueva cuenta."
       },
       "filters": {
-        "starred": "",
-        "unread": "",
-        "read": "",
-        "unstarred": "",
-        "all": ""
+        "starred": "Marcadas",
+        "unread": "Sin leer",
+        "read": "Leídas",
+        "unstarred": "Sin marcar",
+        "all": "Todas"
       },
       "search": {
-        "placeholder": ""
+        "placeholder": "Buscar"
       },
       "actions": {
-        "bulkDelete": ""
+        "bulkDelete": "Eliminar fuentes seleccionadas"
       }
     },
     "shortcuts": {
-      "deleteSource": "",
-      "quit": "",
-      "sendReply": "",
-      "focusMainContent": "",
-      "sourceDown": "",
-      "downloadAll": "",
-      "deleteCheckedSources": "",
-      "sourceSelect": "",
+      "deleteSource": "Eliminar fuente seleccionada",
+      "quit": "Cerrar SecureDrop",
+      "sendReply": "Enviar respuesta",
+      "focusMainContent": "Enfocar contenido principal",
+      "sourceDown": "Fuente siguiente",
+      "downloadAll": "Descargar todos los archivos",
+      "deleteCheckedSources": "Eliminar fuentes marcadas",
+      "sourceSelect": "Abrir fuente enfocada",
       "categories": {
-        "application": "",
-        "composing": "",
-        "navigation": "",
-        "sources": "",
-        "files": ""
+        "application": "Aplicación",
+        "composing": "Redacción",
+        "navigation": "Navegación",
+        "sources": "Fuentes",
+        "files": "Archivos"
       },
-      "signOut": "",
-      "openHelp": "",
-      "sync": "",
-      "sourceUp": "",
-      "focusSidebar": ""
+      "signOut": "Cerrar sesión",
+      "openHelp": "Abrir atajos del teclado",
+      "sync": "Sincronizar ahora",
+      "sourceUp": "Fuente anterior",
+      "focusSidebar": "Enfocar barra lateral"
     },
     "source": {
-      "encryptedMessage": "",
-      "toggleStar": "",
-      "encryptedFile": ""
+      "encryptedMessage": "Mensaje Cifrado",
+      "toggleStar": "Marcar",
+      "encryptedFile": "Archivo Cifrado"
     },
     "syncStatus": {
-      "notloggedin": "",
-      "ok": "",
-      "error": "",
-      "warning": ""
+      "notloggedin": "Sincronización: no has iniciado sesión",
+      "ok": "Sincronización: OK",
+      "error": "Sincronización: error",
+      "warning": "Sincronización: advertencia"
     },
     "helpModals": {
-      "aboutRepoTitle": "",
+      "aboutRepoTitle": "Código fuente",
       "aboutLicence": "",
-      "keyboardTitle": "",
-      "aboutCopyright": "",
-      "aboutAppDesc": "",
-      "aboutMoreContent": "",
-      "aboutAppVersion": "",
-      "aboutMoreTitle": "",
-      "aboutAppTitle": "",
-      "aboutRepoContent": ""
+      "keyboardTitle": "Atajos del teclado",
+      "aboutCopyright": "© 2013–2026 Aaron Swartz, James Dolan, Freedom of the Press Foundation, y colaboradores de SecureDrop. Lanzada bajo licencia AGPL-3.0.",
+      "aboutAppDesc": "Comunicación segura para periodistas y fuentes",
+      "aboutMoreContent": "https://securedrop.org/inbox",
+      "aboutAppVersion": "Versión",
+      "aboutMoreTitle": "Más información",
+      "aboutAppTitle": "Bandeja de Entrada de SecureDrop",
+      "aboutRepoContent": "https://github.com/freedomofpress/securedrop-client"
     }
   },
   "SignIn": {
     "username": {
       "label": "Nombre de Usuario",
       "minLength": "Ese nombre de usuario no funcionará. Debería tener al menos un largo de 3 caracteres.",
-      "required": ""
+      "required": "Por favor introduce tu nombre de usuario."
     },
     "passphrase": {
       "label": "Frase de contraseña",
       "invalidLength": "Esa frase de contraseña no funcionará. Debería tener entre 14 y 128 caracteres de largo.",
-      "required": ""
+      "required": "Por favor introduce tu frase de contraseña."
     },
     "twoFactorCode": {
       "label": "Código de autenticación de dos factores",
-      "required": "",
-      "invalidFormat": ""
+      "required": "Por favor introduce tu código de dos factores.",
+      "invalidFormat": "Tu código de dos factores debe tener exactamente 6 dígitos."
     },
     "errors": {
       "network": {
@@ -159,109 +161,110 @@
       },
       "sessionExpired": "Tu sesión expiró. Por favor iníciala de nuevo."
     },
-    "title": "",
+    "title": "Iniciar sesión en SecureDrop",
     "button": {
-      "signingIn": "",
-      "signIn": "",
-      "useOffline": ""
+      "signingIn": "Iniciando sesión...",
+      "signIn": "Iniciar sesión",
+      "useOffline": "Usar fuera de línea"
     },
-    "version": ""
+    "version": "Bandeja de Entrada de SecureDrop v{{version}}"
   },
   "Item": {
     "wizard": {
       "beCareful": "Recuerda ser cuidadoso cuando trabajes con archivos fuera de tu estación de trabajo.",
-      "anonymityTitle": "",
-      "malwareWarning": "",
-      "close": "",
-      "anonymityWarning": "",
-      "unknownError": "",
-      "malwareTitle": "",
-      "retry": "",
-      "continue": "",
-      "pleaseWait": "",
-      "done": "",
-      "back": "",
-      "cancel": ""
+      "anonymityTitle": "Anonimato",
+      "malwareWarning": "Esta estación de trabajo te permite abrir archivos de manera segura. Si abres archivos en otra computadora, cualquier malware incrustado se podría contagiar a tu computadora o tu red. Si tienes dudas sobre cómo manejar este riesgo, por favor imprime el archivo o contacta a tus administrador.",
+      "close": "Cerrar",
+      "anonymityWarning": "Los archivos subidos por fuentes pueden contener información o metadatos ocultos que identifican quienes son. Para proteger tus fuentes, por favor considera testar los archivos antes de trabajar con ellos en computadoras con conexión a internet.",
+      "unknownError": "Ocurrió un error desconocido",
+      "malwareTitle": "Malware",
+      "retry": "Reintentar",
+      "continue": "Continuar",
+      "pleaseWait": "Espera por favor...",
+      "done": "Hecho",
+      "back": "Atrás",
+      "cancel": "Cancelar"
     },
     "exportWizard": {
       "errorUnlockLuks": "La frase de contraseña ingresada no funcionó. Por favor inténtalo de nuevo.",
       "unlock": "Ingresar frase de contraseña para unidad USB",
       "passphrase": "Frase de contraseña",
-      "unknownDeviceDetected": "",
-      "noDeviceDetected": "",
-      "errorUnmountVolumeBusy": "",
-      "undownloadedFiles": "",
-      "insertUSBInstructions": "",
-      "readyExport": "",
-      "sourceExportTitle": "",
-      "preparingExport": "",
-      "invalidDeviceDetected": "",
-      "errorExportCleanup": "",
-      "exportSuccess": "",
-      "sourceExportDescription": "",
-      "errorExport": "",
-      "unexpectedError": "",
-      "deviceError": "",
-      "errorUnlockGeneric": "",
-      "exportFailed": "",
-      "exportSuccessWithWarning": "",
-      "title": "",
-      "transcript": "",
-      "errorMissingFiles": "",
-      "understandRisks": "",
-      "multiDeviceDetected": "",
-      "transcriptAndFiles": "",
-      "errorMount": ""
+      "unknownDeviceDetected": "Se detectó una unidad USB desconocida.",
+      "noDeviceDetected": "No se detectaron unidades USB",
+      "errorUnmountVolumeBusy": "Los archivos fueron exportados exitosamente, pero no se pudo desmontar la unidad USB.",
+      "undownloadedFiles": "Algunos archivos no han sido descargados y no se exportarán",
+      "insertUSBInstructions": "Por favor inserta una de las unidades de exportación proporcionadas específicamente para la Estación de Trabajo de SecureDrop. Si utilizas una unidad de VeraCrypt, desbloqueala manualmente antes de proceder.",
+      "readyExport": "Listo para exportar.",
+      "sourceExportTitle": "Exportar Transcripción y Archivos",
+      "preparingExport": "Preparando para exportar.",
+      "invalidDeviceDetected": "La unidad no está cifrada o hay un problema con la misma. Si esta es una unidad de VeraCrypt, por favor desbloqueala desde dentro de la VM sd-devices, luego vuelve a intentar.",
+      "errorExportCleanup": "Los archivos se exportaron con éxito, pero quedan algunos archivos temporales en el disco. Reinicia para eliminarlos.",
+      "exportSuccess": "Exportación Exitosa",
+      "sourceExportDescription": "La transcripción y todos los archivos descargados serán exportados.",
+      "errorExport": "Error durance la exportación",
+      "unexpectedError": "Se encontró un error. Por favor contacta a soporte.",
+      "deviceError": "Se encontró un error con esta unidad. Ve a tu administrador para obtener ayuda.",
+      "errorUnlockGeneric": "Falló al desbloquear la unidad. Por favor vuelve a intentar.",
+      "exportFailed": "Falló la Exportación",
+      "exportSuccessWithWarning": "Exportación exitosa, pero la unidad no se bloqueó",
+      "title": "Exportar Archivo",
+      "transcript": "Transcripción Fuente",
+      "errorMissingFiles": "Faltan los archivos o fueron movidos y no se pudieron exportar.",
+      "understandRisks": "Comprende los riesgos antes de exportar archivos",
+      "multiDeviceDetected": "Se detectaron demasiadas unidades USB; por favor inserta una unidad admitida.",
+      "transcriptAndFiles": "Transcripción y Archivos Fuente",
+      "errorMount": "Error al montar unidad"
     },
     "printWizard": {
-      "understandRisks": "",
-      "errorMimetypeUnsupported": "",
-      "connectPrinterInstructions": "",
-      "preparingPrint": "",
-      "errorUnknown": "",
-      "errorMimetypeDiscovery": "",
-      "printFailed": "",
-      "errorUnprintableType": "",
-      "readyPrint": "",
-      "title": "",
-      "errorPrinterNotFound": "",
-      "errorPrint": ""
+      "understandRisks": "Comprende los riesgos antes de imprimir archivos",
+      "errorMimetypeUnsupported": "El formato de archivo no es admitido para impresión.",
+      "connectPrinterInstructions": "Por favor conecta una impresora para continuar. Una vez conectada, haz clic en Reintentar para volver a verificar la impresora.",
+      "preparingPrint": "Preparando para imprimir.",
+      "errorUnknown": "Ocurrió un error desconocido al imprimir.",
+      "errorMimetypeDiscovery": "No se pudo determinar el tipo de archivo.",
+      "printFailed": "Impresión Fallida",
+      "errorUnprintableType": "Este tipo de archivo no se puede imprimir.",
+      "readyPrint": "Listo para imprimir.",
+      "title": "Imprimir Archivo",
+      "errorPrinterNotFound": "No se encontró ninguna impresora. Por favor verifica que la impresora está conectada y configurada.",
+      "errorPrint": "Ocurrió un error al imprimir el archivo."
     },
-    "exportToUSB": "",
-    "cancel": "",
-    "printFile": "",
-    "retry": "",
-    "viewFile": "",
-    "encryptedFile": "",
-    "of": "",
-    "pause": "",
-    "filenameTooltip": "",
-    "downloadFailed": "",
-    "resume": ""
+    "exportToUSB": "Exportar a USB",
+    "cancel": "Cancelar",
+    "printFile": "Imprimir",
+    "retry": "Reintentar",
+    "viewFile": "Ver",
+    "encryptedFile": "Archivo Cifrado",
+    "of": "de",
+    "pause": "Pausar",
+    "filenameTooltip": "El nombre del archivo estará disponible tras descargar",
+    "downloadFailed": "Descarga Fallida",
+    "resume": "Resumir",
+    "exportToWhistleflow": "Exportar a Whistleflow"
   },
   "QuitModal": {
     "cancel": "",
-    "withDrafts": "",
-    "Quit": "",
-    "discardAndQuit": "",
-    "goBack": "",
-    "title": ""
+    "withDrafts": "Los borradores de respuestas serán descartados.",
+    "Quit": "Salir",
+    "discardAndQuit": "Descartar y Salir",
+    "goBack": "Regresar",
+    "title": "¿Salir de de la Bandeja de Entrada de SecureDrop?"
   },
   "common": {
-    "seeLess": "",
-    "seeMore": "",
-    "yesterday": "",
-    "ellipsis": ""
+    "seeLess": "Ver menos",
+    "seeMore": "Ver más",
+    "yesterday": "Ayer",
+    "ellipsis": "…"
   },
   "FirstRunPopup": {
-    "ok": "",
+    "ok": "OK",
     "newUser": {
-      "title": "",
-      "body": ""
+      "title": "Bienvenidos a la Bandeja de Entrada de SecureDrop",
+      "body": "Los mensajes y documentos que envies a través de SecureDrop se mostrarán aquí. La sincronización de datos inicial puede tomar varios minutos. <br><br>Puedes presionar<kbd>F1</kbd> para recibir ayuda en cualquier momento. Si tienes más preguntas, consulta a tu administrador de sistema o contacta al equipo de soporte de SecureDrop a través de Signal. La documentación e instrucciones para acceder a soporte están disponibles en securedrop.org/inbox, a la cual se puede acceder desde una computadora diferente."
     },
     "migration": {
-      "body": "",
-      "title": ""
+      "body": "La aplicación ha sido reescrita desde cero para hacerla más rápida y añadir funciones muy solicitadas. La sincronización de datos inicial puede tardar varios minutos. Se deberá volver a descargar cualquier archivo descargado anteriormente .<br><br>Si encuentras algún problema o si te gustaría usar el Cliente original de SecureDrop, puedes acceder a el por un tiempo limitado a través del Menú de Qubes ▸ ⚙️ ▸ Otros ▸ Cliente de SecureDrop (legacy). Si necesitas volver al Cliente antiguo, por favor contacta al equipo de soporte de SecureDrop via Signal y dinos sobre los problemas que has encontrado para que podamos abordarlos. <br><br>Puedes presionar <kbd>F1</kbd> en cualquier momento para obtener ayuda. Para más preguntas, consulta a tu administrador de sistema o contacta a soporte de SecureDrop a través de Signal. La documentación e instrucciones sobre cómo acceder a soporte están disponibles en securedrop.org/inbox, a la cual se puede acceder desde una computadora diferente.",
+      "title": "Bienvenidos a la nueva Bandeja de Entrada de SecureDrop"
     }
   }
 }

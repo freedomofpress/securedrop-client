@@ -7,15 +7,15 @@ msgid ""
 msgstr ""
 "Project-Id-Version: SecureDrop Client 0.5.0\n"
 "Report-Msgid-Bugs-To: securedrop@freedom.press\n"
-"PO-Revision-Date: 2026-04-14 21:55+0000\n"
-"Last-Translator: aaloo <aaloo@riseup.net>\n"
+"PO-Revision-Date: 2026-05-04 05:40+0000\n"
+"Last-Translator: Anatoli <djanatoli@gmail.com>\n"
 "Language-Team: Spanish <https://weblate.securedrop.org/projects/securedrop/securedrop-client/es/>\n"
 "Language: es\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=n != 1;\n"
-"X-Generator: Weblate 5.16.2\n"
+"X-Generator: Weblate 5.17\n"
 "Generated-By: Babel 2.9.1\n"
 
 #, python-brace-format
@@ -126,7 +126,7 @@ msgid "DELETE SOURCES"
 msgstr "FUENTES BORRADAS"
 
 msgid "Delete selected source accounts. Ctrl+click sources below to select multiple sources."
-msgstr ""
+msgstr "Eliminar cuentas de fuentes seleccionadas. Ctrl + clic en fuentes a continuación para seleccionar múltiples fuentes."
 
 #, python-brace-format
 msgid "{}"
@@ -160,16 +160,16 @@ msgid "Send a response"
 msgstr "Enviar una respuesta"
 
 msgid "Or, select multiple sources with Ctrl+click."
-msgstr ""
+msgstr "O, selecciona múltiples fuentes con Ctrl+clic."
 
 msgid "Multiple Sources Selected"
-msgstr ""
+msgstr "Múltiples Fuentes Seleccionadas"
 
 msgid "Select or de-select sources using Ctrl+click, Shift+click, or by dragging the mouse."
-msgstr ""
+msgstr "Selecciona o deselecciona fuentes usando Crtl+clic, Shift+clic o arrastrando el ratón."
 
 msgid "Use the top toolbar to delete multiple sources at once. You will be shown a confirmation dialog before anything is deleted."
-msgstr ""
+msgstr "Utiliza la barra superior para eliminar múltiples fuentes a la vez. Te aparecerá un dialogo de confirmación antes de eliminar cualquier cosa."
 
 msgid "Deleting files and messages…"
 msgstr "Borrando ficheros y mensajes…"
@@ -234,7 +234,7 @@ msgstr "CUENTA DE ORIGEN"
 
 #, python-brace-format
 msgid "Last seen: {last_update_time}"
-msgstr ""
+msgstr "Visto por última vez: {last_update_time}"
 
 msgid "Username"
 msgstr "Nombre de Usuario"
@@ -321,49 +321,49 @@ msgid "DONE"
 msgstr "HECHO"
 
 msgid "BACK"
-msgstr ""
+msgstr "ATRÁS"
 
 msgid "No USB drives detected"
-msgstr ""
+msgstr "No se detectaron unidades USB"
 
 msgid "Too many USB drives detected; please insert one supported drive."
-msgstr ""
+msgstr "Demasiadas unidades USB seleccionadas; por favor inserta una unidad soportada."
 
 msgid "Either the drive is not encrypted or there is something else wrong with it.<br />If this is a VeraCrypt drive, please unlock it from within the sd-devices VM, then try again."
-msgstr ""
+msgstr "La unidad no está cifrada o tiene algún otro problema.<br />Si esta es una unidad de VeraCrypt, por favor desbloqueala desde la VM sd-devices y vuelve a intentar."
 
 msgid "The drive is ready for export."
-msgstr ""
+msgstr "La unidad está lista para exportar."
 
 msgid "The drive is locked."
-msgstr ""
+msgstr "La unidad está bloqueada."
 
 msgid "The passphrase provided did not work. Please try again."
 msgstr "La frase de contraseña ingresada no funcionó. Por favor inténtalo de nuevo."
 
 msgid "Error mounting drive"
-msgstr ""
+msgstr "Error al montar la unidad"
 
 msgid "Error during export"
-msgstr ""
+msgstr "Error al exportar"
 
 msgid "Files were exported successfully, but the USB drive could not be unmounted."
-msgstr ""
+msgstr "Los archivos se exportaron exitosamente, pero no se pudo desmontar la unidad USB."
 
 msgid "Files were exported successfully, but some temporary files remain on disk. Reboot to remove them."
-msgstr ""
+msgstr "Los archivos se exportaron exitosamente, pero aún quedan algunos archivos temporales en el disco. Reinicia para eliminarlos."
 
 msgid "Export successful"
 msgstr "Exportación exitosa"
 
 msgid "Error encountered with this drive. See your administrator for help."
-msgstr ""
+msgstr "Se ha encontrado un error con esta unidad. Consulta a tu administrador para obtener ayuda."
 
 msgid "Files were moved or missing and could not be exported."
-msgstr ""
+msgstr "Los archivos fueron movidos o faltan y no se pudieron exportar."
 
 msgid "Error encountered. Please contact support."
-msgstr ""
+msgstr "Se encontró un error. Por favor contacta a soporte."
 
 #, python-brace-format
 msgid "Preparing to export:<br /><span style=\"font-weight:normal\">{}</span>"
@@ -377,19 +377,19 @@ msgid "Ready to export:<br /><span style=\"font-weight:normal\">{}</span>"
 msgstr "Listo para exportar:<br /><span style=\"font-weight:normal\">{}</span>"
 
 msgid "Export Failed"
-msgstr ""
+msgstr "Exportación Fallida"
 
 msgid "Please insert one of the export drives provisioned specifically for the SecureDrop Workstation.<br />If you're using a VeraCrypt drive, unlock it manually before proceeding."
-msgstr ""
+msgstr "Por favor inserta una de las unidades de exportación suministradas específicamente para la Workstation de SecureDrop. <br />Si estás utilizando una unidad de VeraCrypt, desbloqueala manualmente antes de proceder."
 
 msgid "Remember to be careful when working with files outside of your Workstation machine."
 msgstr "Recuerda ser cuidadoso cuando trabajes con archivos fuera de tu estación de trabajo."
 
 msgid "Export sucessful, but drive was not locked"
-msgstr ""
+msgstr "Exportación exitosa, pero no se bloqueó la unidad"
 
 msgid "Working..."
-msgstr ""
+msgstr "En proceso..."
 
 msgid "Enter passphrase for USB drive"
 msgstr "Ingresar frase de contraseña para unidad USB"
@@ -418,28 +418,27 @@ msgid "See your administrator for help."
 msgstr "Vé a tu administrador por ayuda."
 
 msgid "This file type cannot be printed."
-msgstr ""
+msgstr "No se puede imprimir este tipo de archivo."
 
-#, fuzzy, python-brace-format
-#| msgid "YES, DELETE ENTIRE SOURCE ACCOUNT"
+#, python-brace-format
 msgid "YES, DELETE ENTIRE SOURCE ACCOUNT"
 msgid_plural "YES, DELETE {number} SOURCE ACCOUNTS"
-msgstr[0] "SÍ, BORRAR POR COMPLETO LA CUENTA DE LA FUENTE"
-msgstr[1] "SÍ, BORRAR POR COMPLETO LA CUENTA DE LA FUENTE"
+msgstr[0] "SÍ, ELIMINAR POR COMPLETO LA CUENTA DE LA FUENTE"
+msgstr[1] "SÍ, ELIMINAR {number} CUENTAS DE LA FUENTE"
 
 msgid "Are you sure this is what you want?"
 msgstr "¿Estás seguro de que esto es lo quieres?"
 
 #, python-brace-format
 msgid "{text} (wait {delay} sec)"
-msgstr ""
+msgstr "{text}(espera {delay} s)"
 
 msgid "Notice: All sources have been selected!"
-msgstr ""
+msgstr "Aviso: ¡Todas las fuentes han sido seleccionadas!"
 
 #, python-brace-format
 msgid "Delete entire account for: {source_or_sources}?"
-msgstr ""
+msgstr "¿Eliminar cuente completa para: {source_or_sources}?"
 
 msgid "When the entire account for a source is deleted:"
 msgstr "Cuando la cuenta de una fuente es borrada por completo:"
@@ -455,10 +454,10 @@ msgstr "Todos los archivos y mensajes de esa fuente también serán destruidos."
 
 #, python-brace-format
 msgid "{sources} ... plus {count} additional sources"
-msgstr ""
+msgstr "{sources}... más {count} fuentes adicionales"
 
 msgid "No sources have been selected."
-msgstr ""
+msgstr "No se ha seleccionado ninguna fuente."
 
 #~ msgid "SUBMIT"
 #~ msgstr "ENVIAR"
