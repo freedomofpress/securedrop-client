@@ -1,5 +1,6 @@
 import { useTranslation } from "react-i18next";
 import { shortcuts } from "../../../../shortcuts/shortcutDefinitions";
+import "./KeyboardHelp.css";
 
 // Keyboard Shortcuts Modal Content
 function KeyboardHelp() {
@@ -47,7 +48,7 @@ function KeyboardHelp() {
       </div>
 
       {/* Body */}
-      <div className="px-[24px] pt-[16px] pb-[4px]">
+      <div className="keyboard-help-body px-[24px] pt-[16px] pb-[4px]">
         {grouped.map((group, gi) => (
           <div key={group.categoryKey}>
             <div

@@ -3,6 +3,7 @@ import { Modal, Button } from "antd";
 import { useTranslation } from "react-i18next";
 import { setHelpHandler } from "./helpRequester";
 import KeyboardHelp from "../views/Inbox/Sidebar/Account/KeyboardHelp";
+import "./KeyboardHelpModal.css";
 
 function KeyboardHelpModal() {
   const { t } = useTranslation("Sidebar");
@@ -22,7 +23,7 @@ function KeyboardHelpModal() {
   return (
     <Modal
       getContainer={() => document.getElementById("root") || document.body}
-      wrapClassName="about-modal-container"
+      wrapClassName="about-modal-container keyboard-help-modal"
       className="about-modal-content"
       title=""
       closable={false}
