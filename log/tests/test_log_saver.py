@@ -24,6 +24,8 @@ def home(fs):
     # The `fs` fixture (from pyfakefs) replaces the real filesystem, so nothing
     # is written to the developer's real ~/QubesIncomingLogs.
     fs.create_dir(HOME)
+    # Workaround fakeredis+pyfakefs incompatibility by hardcoding the path the former needs
+    fs.add_real_directory(Path(fakeredis.__file__).parent, lazy_read=True)
     with mock.patch.dict("os.environ", {"HOME": HOME}):
         yield HOME
 

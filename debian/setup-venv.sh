@@ -3,7 +3,7 @@
 set -euxo pipefail
 
 NAME=$1
-if [[ $NAME == "export" ]]; then
+if [[ $NAME == "export" || $NAME == "log" ]]; then
     VENV_ARGS="--system-site-packages"
 else
     VENV_ARGS=""
