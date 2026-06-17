@@ -18,6 +18,9 @@ package-mode = false
 mypy = "^1.19.1"
 types-redis = "<5"
 types-setuptools = ">=68,<83"
+fakeredis = "<1.8"
+pyfakefs = "^6.2.0"
+pytest = "^9.0.3"
 
 [tool.mypy]
 python_version = "3.11"
