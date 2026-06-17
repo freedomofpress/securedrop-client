@@ -86,7 +86,6 @@ jobs:
       matrix:
         # proxy has no `make lint` because it is covered by `rust-lint`.
         component:
-          - client
           - export
           - log
         debian_version:
