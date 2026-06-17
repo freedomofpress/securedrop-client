@@ -14,7 +14,6 @@ if [[ $NEW_VERSION == *~rc* ]]; then
     exit 1
 fi
 
-sed -i'' -r -e "s/^__version__ = \"(.*?)\"/__version__ = \"${NEW_VERSION}\"/" client/securedrop_client/__init__.py
 sed -i'' -r -e "s/^__version__ = \"(.*?)\"/__version__ = \"${NEW_VERSION}\"/" export/securedrop_export/__init__.py
 sed -i'' -r -e 's/"version": ".*?"/"version": "'"${NEW_VERSION}"'"/' app/package.json
 
