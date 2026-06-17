@@ -20,7 +20,7 @@ env:
   POETRY_VERSION: 2.3.3
 
 jobs:
-  # Run `make test` against all components but client, which is special
+  # Run `make test` against all components
   component:
     strategy:
       fail-fast: false
