@@ -71,8 +71,8 @@ mkdir -p build
 cp ${BUILD_DEST}/* build/
 
 if [[ -z $FAST ]]; then
-    CONTAINER2="fpf.local/sd-client-lintian"
-    $OCI_BIN build scripts/lintian -t $CONTAINER2
+    CONTAINER2="fpf.local/sd-client-lintian-${DEBIAN_VERSION}"
+    $OCI_BIN build scripts/lintian -t $CONTAINER2 --build-arg DISTRO=$DEBIAN_VERSION
     # Display verbose info, and fail on warnings and errors.
     $OCI_BIN run --rm $OCI_RUN_ARGUMENTS -v "${BUILD_DEST}:/build:Z" $CONTAINER2 \
         bash -c \
