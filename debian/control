@@ -41,7 +41,7 @@ Description: Provides an apt keyring for SecureDrop-related packages, so the mas
 
 Package: securedrop-log
 Architecture: all
-Depends: python3-distutils, ${misc:Depends}
+Depends: ${misc:Depends}, python3-redis
 Description: Python module and qrexec service to store logs for SecureDrop Workstation
  This package provides Python module and qrexec service files to create a logging VM in
  SecureDrop Workstation project in Qubes.

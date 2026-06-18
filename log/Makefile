@@ -11,7 +11,7 @@ mypy: ## Type check Python files
 	@poetry run mypy
 
 test: ## Run Python unit tests
-	@echo "The log component doesn't have any tests!!"
+	@poetry run pytest
 
 # Explanation of the below shell command should it ever break.
 # 1. Set the field separator to ": ##" and any make targets that might appear between : and ##

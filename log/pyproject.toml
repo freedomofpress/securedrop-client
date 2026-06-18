@@ -8,16 +8,24 @@ authors = [
     ]
 license = {text = "AGPLv3+"}
 readme = "README.md"
-dependencies = ["redis==3.3.11"]
 
 [tool.poetry]
 requires-poetry = ">=2.3.3,<3.0.0"
 package-mode = false
 
 [tool.poetry.group.dev.dependencies]
+# In production these are installed using a system package, so match
+# those versions directly
+redis = [
+    {version = "=4.3.4", python = "<3.12"}, # bookworm
+    {version = "=6.1.0", python = ">=3.12"}, # trixie
+]
 mypy = "^1.19.1"
 types-redis = "<5"
 types-setuptools = ">=68,<83"
+fakeredis = "^2.36.0"
+pyfakefs = "^6.2.0"
+pytest = "^9.0.3"
 
 [tool.mypy]
 python_version = "3.11"
