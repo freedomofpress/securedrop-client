@@ -23,6 +23,13 @@ endif
 
 override_dh_install:
 	dh_install
+	# The default mime list targets trixie (loupe + newer mime types). bookworm
+	# has no loupe (the "loupe | eog" dependency falls back to eog there), so use
+	# the bookworm-specific list that keeps eog for all image types.
+ifeq ($(VERSION_CODENAME),bookworm)
+	cp workstation-config/mimeapps.list.sd-viewer.bookworm \
+		debian/securedrop-workstation-config/opt/sdw/mimeapps.list.sd-viewer
+endif
 	mv debian/securedrop-app/usr/lib/securedrop-app/linux-unpacked/* debian/securedrop-app/usr/lib/securedrop-app/
 	rmdir debian/securedrop-app/usr/lib/securedrop-app/linux-unpacked
 	rm -rf debian/securedrop-app/usr/lib/securedrop-app/resources/app.asar.unpacked/node_modules/better-sqlite3/deps/
