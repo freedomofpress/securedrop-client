@@ -1,3 +1,7 @@
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
 [project]
 requires-python = ">=3.11"
 name = "securedrop-log"
@@ -8,6 +12,13 @@ authors = [
     ]
 license = {text = "AGPLv3+"}
 readme = "README.md"
+
+[project.scripts]
+securedrop-log-saver = "log_server.log_saver:main"
+securedrop-redis-log = "log_server.redis_log:main"
+
+[tool.setuptools.packages.find]
+exclude = ["docs*", "tests*"]
 
 [tool.poetry]
 requires-poetry = ">=2.3.3,<3.0.0"
