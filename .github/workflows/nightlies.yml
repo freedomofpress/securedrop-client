@@ -134,6 +134,7 @@ jobs:
       - name: Prepare packages
         run: |
           cp -v build-bookworm/*.deb securedrop-apt-test/workstation/bookworm-nightlies/
+          mkdir -p securedrop-apt-test/workstation/trixie-nightlies/
           cp -v build-trixie/*.deb securedrop-apt-test/workstation/trixie-nightlies/
       - name: Sign and commit packages
         uses: freedomofpress/actionslib/act/signed-commit@main
