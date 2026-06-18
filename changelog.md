@@ -1,5 +1,43 @@
 # Changelog
 
+## 1.4.0
+
+This release focuses on accessibility improvements to the SecureDrop Inbox
+along with sync reliability fixes and dependency updates.
+
+* Accessibility:
+  * Improve keyboard navigation throughout the Inbox (#3452)
+  * Make Enter and Space toggle source checkboxes and stars (#3422)
+  * Improve screen reader support: focus dialog/modal headers, add semantic
+    list structure and aria-labels to the conversation view (#3492)
+  * Fix color contrast issues (#3474)
+* Reliability:
+  * Log sync events and retry failed syncs with backoff (#3471)
+  * Gracefully shut down the fetch worker (#3437)
+  * Save metadata hints alongside the authentication token so background
+    syncs calculate hint-based timeouts (#3494, #3495)
+* Dependency updates:
+  * Bump liquidjs and react-router to their latest versions (#3488)
+  * Bump openssl from 0.10.78 to 0.10.80 (#3447)
+  * Bump mistune from 3.0.2 to 3.2.1 in the proxy (#3448)
+  * Bump idna from 3.11 to 3.15 (#3449)
+  * Bump @tootallnate/once from 2.0.0 to 2.0.1 (#3450)
+  * Bump ruff from 0.14.13 to 0.15.1 (#3122)
+  * Bump semgrep from 1.152.0 to 1.163.0 (#3444)
+  * Bump zizmor from 1.24.1 to 1.25.2 (#3445)
+  * Bump pnpm/action-setup from 4 to 6 (#3443, #3465)
+  * Bump actions/create-github-app-token from 3 to 3.1.1 (#3424)
+* Internal and development:
+  * Remove the legacy securedrop-client package and data (#3454)
+  * Enable dependency cooldowns within poetry and pnpm (#3491)
+  * Add jsx-a11y eslint rules (#3451)
+  * Update READMEs for the Inbox (#3489)
+  * Have pnpm/setup-action install and cache packages (#3501)
+  * Use a sparse checkout of apt-test to reduce bandwidth consumption (#3459)
+  * Fix Node.js CI and pin to node 24.15.x (#3470)
+  * Address the Electron ABI/postinst CI flake (#3431, #3468)
+  * mac-demo action builds a DMG with ad-hoc code signing on PRs (#3361)
+
 ## 1.3.2
 
 This release adds extra warnings and safeguards to the bulk deletion 
