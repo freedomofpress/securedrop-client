@@ -12,7 +12,7 @@ jobs:
     # Keep version in sync with rust-toolchain.toml
     container: rust:1.90.0
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v6.0.3
         with:
           persist-credentials: false
       - name: Check Rust dependencies

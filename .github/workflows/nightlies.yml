@@ -33,10 +33,10 @@ jobs:
     outputs:
       artifact_id: ${{ steps.upload.outputs.artifact-id }}
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v6.0.3
         with:
           persist-credentials: false
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v6.0.3
         with:
           persist-credentials: false
           repository: "freedomofpress/securedrop-builder"
@@ -78,7 +78,7 @@ jobs:
         with:
           name: build-trixie
           path: build-trixie
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v6.0.3
         with:
           persist-credentials: false
           repository: "freedomofpress/securedrop-apt-test"
@@ -86,7 +86,7 @@ jobs:
           lfs: true
           sparse-checkout: workstation/
           sparse-checkout-cone-mode: false
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v6.0.3
         with:
           persist-credentials: false
           repository: "freedomofpress/build-logs"
