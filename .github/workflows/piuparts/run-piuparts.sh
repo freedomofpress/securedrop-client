@@ -6,7 +6,7 @@ apt-get update && apt-get install --yes piuparts docker.io
 
 # Move things in this folder so the docker build can find them
 cp /keyring/apt_freedom_press.sources /piuparts
-cp /scripts/qubes_42.sources /piuparts
+cp /scripts/qubes_43.sources /piuparts
 mkdir -p /piuparts/packages
 cp /build/*.deb /piuparts/packages/
 
