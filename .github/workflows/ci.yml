@@ -61,6 +61,7 @@ jobs:
       matrix:
         debian_version:
           - bookworm
+          - trixie
     runs-on: ubuntu-latest
     container: debian:${{ matrix.debian_version }}
     steps:
