@@ -32,7 +32,9 @@ const Header = memo(function Header({
       <Flex>
         <Avatar designation={designation} isActive={false} />
         <div className="ml-2">
-          <p data-testid="conversation-header-designation">{designation}</p>
+          <h2 data-testid="conversation-header-designation" tabIndex={-1}>
+            {designation}
+          </h2>
           <p
             className="text-sm text-gray-600"
             data-testid="conversation-header-last-activity"

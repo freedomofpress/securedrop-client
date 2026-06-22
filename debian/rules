@@ -10,7 +10,6 @@ VERSION_CODENAME := $(shell echo $(DEB_VERSION) | cut -d '+' -f 2)
 
 override_dh_auto_install:
 	sed -i s/##VERSION_CODENAME##/$(VERSION_CODENAME)/ keyring/apt_freedom_press.sources
-	bash ./debian/setup-venv.sh client
 	bash ./debian/setup-venv.sh export
 	bash ./debian/setup-venv.sh log
 	cargo build --release --locked --features qubesdb
@@ -20,7 +19,6 @@ ifdef FAST
 endif
 	bash ./debian/build-app.sh
 	dh_auto_install
-	dh_apparmor --profile-name=usr.bin.securedrop-client -psecuredrop-client
 	dh_apparmor --profile-name=usr.bin.securedrop-proxy -psecuredrop-proxy
 
 override_dh_install:

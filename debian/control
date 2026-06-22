@@ -2,7 +2,11 @@ Source: securedrop-client
 Section: unknown
 Priority: optional
 Maintainer: SecureDrop Team <securedrop@freedom.press>
-Build-Depends: debhelper-compat (= 11), dh-apparmor, dh-exec, python3-venv, libssl-dev, pkg-config, libclang-dev, qubesdb-dev, nodejs,
+Build-Depends: debhelper-compat (= 11), dh-apparmor, dh-exec, python3-venv, python3-setuptools,
+# python3-wheel is only needed on bookworm; setuptools >= 70.1 (trixie+) bundles bdist_wheel.
+# Drop the "| python3-wheel" alternative once bookworm support is removed.
+ python3-setuptools (>= 70.1) | python3-wheel,
+ libssl-dev, pkgconf, libclang-dev, qubesdb-dev, nodejs,
  libasound2, libatk-bridge2.0-0, libatk1.0-0, libatspi2.0-0, libcairo2,
  libcups2, libdbus-1-3, libexpat1, libgbm1, libglib2.0-0, libgtk-3-0,
  libnspr4, libnss3, libpango-1.0-0, libx11-6, libxcb1, libxcomposite1,
@@ -14,12 +18,9 @@ X-Python3-Version: >= 3.5
 Package: securedrop-app
 Architecture: any
 Depends: ${shlibs:Depends}, ${misc:Depends}, desktop-file-utils, qubes-gpg-split
+Breaks: securedrop-client
+Replaces: securedrop-client
 Description: SecureDrop Inbox for journalists
-
-Package: securedrop-client
-Architecture: any
-Depends: ${shlibs:Depends}, ${misc:Depends}, python3, python3-pyqt5, python3-pyqt5.qtsvg, python3-qubesdb, desktop-file-utils, qubes-gpg-split
-Description: securedrop client for qubes workstation
 
 Package: securedrop-export
 Architecture: all
@@ -44,7 +45,7 @@ Description: Provides an apt keyring for SecureDrop-related packages, so the mas
 
 Package: securedrop-log
 Architecture: all
-Depends: python3-distutils, ${misc:Depends}
+Depends: ${misc:Depends}, python3-redis
 Description: Python module and qrexec service to store logs for SecureDrop Workstation
  This package provides Python module and qrexec service files to create a logging VM in
  SecureDrop Workstation project in Qubes.

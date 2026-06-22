@@ -28,6 +28,7 @@ jobs:
       matrix:
         debian_version:
           - bookworm
+          - trixie
     runs-on: ubuntu-latest
     outputs:
       artifact_id: ${{ steps.upload.outputs.artifact-id }}
@@ -72,6 +73,11 @@ jobs:
         with:
           name: build-bookworm
           path: build-bookworm
+      - name: Download trixie artifacts
+        uses: actions/download-artifact@v8
+        with:
+          name: build-trixie
+          path: build-trixie
       - uses: actions/checkout@v6
         with:
           persist-credentials: false
@@ -100,6 +106,8 @@ jobs:
           cp -v build-*/*.buildinfo "build-logs/buildinfo/$(date +%Y)"
           mkdir -p "build-logs/workstation/bookworm/nightlies"
           cp -v build-bookworm/*.log "build-logs/workstation/bookworm/nightlies/"
+          mkdir -p "build-logs/workstation/trixie/nightlies"
+          cp -v build-trixie/*.log "build-logs/workstation/trixie/nightlies/"
       - name: Sign and commit buildinfo files
         uses: freedomofpress/actionslib/act/signed-commit@main
         with:
@@ -126,10 +134,12 @@ jobs:
       - name: Prepare packages
         run: |
           cp -v build-bookworm/*.deb securedrop-apt-test/workstation/bookworm-nightlies/
+          mkdir -p securedrop-apt-test/workstation/trixie-nightlies/
+          cp -v build-trixie/*.deb securedrop-apt-test/workstation/trixie-nightlies/
       - name: Sign and commit packages
         uses: freedomofpress/actionslib/act/signed-commit@main
         with:
-          files: workstation/bookworm-nightlies/
+          files: workstation/
           repo-path: securedrop-apt-test
           message: |
             Automated SecureDrop workstation build

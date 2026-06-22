@@ -45,6 +45,31 @@ const Source = memo(function Source({
     [source.data.last_updated, i18n.language, tCommon],
   );
 
+  const focusConversationHeading = useCallback(() => {
+    let attempt = 0;
+
+    const tryFocusHeading = () => {
+      const heading = document.querySelector<HTMLElement>(
+        '[data-testid="conversation-header-designation"]',
+      );
+      if (heading) {
+        heading.focus();
+        return;
+      }
+
+      // Wait briefly for route transition + content render before giving up.
+      if (attempt < 5) {
+        attempt += 1;
+        window.setTimeout(tryFocusHeading, 50);
+      }
+    };
+
+    tryFocusHeading();
+  }, []);
+
+  const unstarredStarColor = isActive ? "#ffffff" : "#9ca3af";
+  const starredStarColor = "#eab308";
+
   const handleClick = useCallback(() => {
     if (isActive) {
       // If already active, clear active source and navigate back to inbox home
@@ -54,8 +79,9 @@ const Source = memo(function Source({
       // Set active source and navigate to the source route
       dispatch(setActiveSource(source.uuid));
       navigate(`/source/${source.uuid}`);
+      focusConversationHeading();
     }
-  }, [isActive, navigate, source.uuid, dispatch]);
+  }, [isActive, navigate, source.uuid, dispatch, focusConversationHeading]);
 
   const handleKeyDown = useCallback(
     (e: KeyboardEvent<HTMLDivElement>) => {
@@ -117,13 +143,9 @@ const Source = memo(function Source({
           size="large"
           icon={
             source.data.is_starred ? (
-              <StarFilled color="#eab308" size={20} />
+              <StarFilled color={starredStarColor} size={20} />
             ) : (
-              <Star
-                color="#9ca3af"
-                size={20}
-                className={isActive ? "text-white" : "text-gray-400"}
-              />
+              <Star color={unstarredStarColor} size={20} />
             )
           }
           onClick={(e) => {

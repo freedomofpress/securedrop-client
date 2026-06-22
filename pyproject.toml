@@ -14,7 +14,7 @@ package-mode = false
 requires-poetry = ">=2.3.3,<3.0.0"
 
 [tool.poetry.group.dev.dependencies]
-ruff = "^0.14.11"
+ruff = "^0.15.1"
 semgrep = "*"
 shellcheck-py = "*"
 zizmor = "*"
@@ -96,7 +96,6 @@ ignore = [
 # because we're running from the root, isort doesn't know that these
 # are our packages, so tell it explicitly.
 known-first-party = [
-    "securedrop_client",
     "securedrop_export",
     "securedrop_log",
     "securedrop_proxy",
@@ -108,19 +107,6 @@ known-third-party = [
 ]
 
 [tool.ruff.lint.per-file-ignores]
-"client/securedrop_client/sdk/__init__.py" = [
-    # significant assert use for mypy
-    "S101",
-    # a number of unchecked "We should never reach here" `return false` that
-    # need to be refactored away
-    "SIM103",
-]
-"client/securedrop_client/gui/widgets.py" = [
-    # FIXME: shouldn't be using assert
-    "S101",
-    # Switching Optional[X] hints to X | None
-    "UP007",
-]
 "log/tests/**.py" = [
     # TODO: switch to pytest
     "PT009", "PT027"

@@ -13,5 +13,5 @@ This change accounts for:
 - [ ] any needed updates to the [AppArmor profile] for files beyond the application code
 - [ ] any needed [self-contained] database migrations (including testing against a clean test database from `main`)
 
-[AppArmor profile]: https://github.com/freedomofpress/securedrop-client/blob/main/client/files/usr.bin.securedrop-client
-[self-contained]: https://github.com/freedomofpress/securedrop-client/tree/main/client#generating-and-running-database-migrations
+[AppArmor profile]: https://github.com/freedomofpress/securedrop-client/blob/main/proxy/usr.bin.securedrop-proxy
+[self-contained]: https://github.com/freedomofpress/securedrop-client/blob/main/app/README.md#database

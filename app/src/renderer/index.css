@@ -9,6 +9,7 @@
   --bg-secondary: #fafafa;
   --border-secondary: #e9eaeb;
   --text-tertiary: #535862;
+  --focus-contrast: #3b82f6;
 }
 
 .sd-bg-primary {
@@ -58,4 +59,14 @@ object {
 }
 .about-modal-content .ant-modal-footer {
   padding: 0 24px 24px 24px;
+}
+
+/* increase focus indicator contrast globally for shared Tailwind focus utilities */
+.focus\:ring-blue-300:focus,
+.focus\:ring-blue-500:focus {
+  --tw-ring-color: var(--focus-contrast) !important;
+}
+
+.focus\:outline-blue-300:focus {
+  outline-color: var(--focus-contrast) !important;
 }

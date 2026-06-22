@@ -1,3 +1,7 @@
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
 [project]
 requires-python = ">=3.11"
 name = "securedrop-export"
@@ -9,6 +13,12 @@ authors = [
 license = {text = "AGPLv3+"}
 readme = "README.md"
 dependencies = ["pexpect >= 4.9.0, <5.0"]
+
+[project.scripts]
+send-to-usb = "securedrop_export.main:entrypoint"
+
+[tool.setuptools.packages.find]
+exclude = ["docs*", "tests*"]
 
 [tool.poetry]
 requires-poetry = ">=2.3.3,<3.0.0"

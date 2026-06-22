@@ -168,6 +168,10 @@ interface StateComponentProps {
   t: (key: string) => string;
 }
 
+interface ErrorStateProps extends StateComponentProps {
+  headingRef: React.RefObject<HTMLHeadingElement | null>;
+}
+
 const PreflightState = memo(function PreflightState({
   context,
   t,
@@ -267,7 +271,8 @@ const PrintingState = memo(function PrintingState({ t }: StateComponentProps) {
 const ErrorState = memo(function ErrorState({
   context,
   t,
-}: StateComponentProps) {
+  headingRef,
+}: ErrorStateProps) {
   const getErrorMessage = () => {
     // If we have a device status, try to get a user-friendly message
     if (context.deviceStatus) {
@@ -296,7 +301,7 @@ const ErrorState = memo(function ErrorState({
       <div className="flex items-center gap-3 mb-4">
         <FileX2 size={24} strokeWidth={2} className="text-red-500" />
         <div className="ml-3">
-          <h3 className="text-lg font-semibold">
+          <h3 className="text-lg font-semibold" ref={headingRef} tabIndex={-1}>
             {t("printWizard.printFailed")}
           </h3>
         </div>
@@ -342,6 +347,7 @@ export const PrintWizard = memo(function PrintWizard({
   const [context, dispatch] = useReducer(printReducer, {
     ...initialContext,
   });
+  const errorHeadingRef = useRef<HTMLHeadingElement>(null);
 
   // Refs to track in-progress operations
   const preflightInProgress = useRef(false);
@@ -461,6 +467,17 @@ export const PrintWizard = memo(function PrintWizard({
     }
   }, [context.state, onClose]);
 
+  // Move focus to the error heading so screen readers announce failures immediately.
+  useEffect(() => {
+    if (!open || context.state !== "ERROR") {
+      return;
+    }
+
+    requestAnimationFrame(() => {
+      errorHeadingRef.current?.focus();
+    });
+  }, [context.state, open]);
+
   const handleClose = () => {
     // Cancel any ongoing print operation
     window.electronAPI.cancelPrint();
@@ -481,7 +498,7 @@ export const PrintWizard = memo(function PrintWizard({
       case "PRINTING":
         return <PrintingState {...stateProps} />;
       case "ERROR":
-        return <ErrorState {...stateProps} />;
+        return <ErrorState {...stateProps} headingRef={errorHeadingRef} />;
       default:
         return null;
     }
