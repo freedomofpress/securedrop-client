@@ -1,8 +1,6 @@
 #!/bin/bash
 # shellcheck disable=SC2209,SC2086
 # Build packages! This script is configured by environment variables:
-# `BUILDER`: relative path to the securedrop-builder repository,
-#            defaults to "../securedrop-builder"
 # `DEBIAN_VERSION`: codename to build for, defaults to "bookworm"
 # `NIGHTLY`: if set, add current time to the version number
 
@@ -28,15 +26,6 @@ if test -t 0; then
     OCI_RUN_ARGUMENTS="${OCI_RUN_ARGUMENTS} -it"
 fi
 
-# Look for the builder repo with our local wheels
-BUILDER=$(realpath "${BUILDER:-../securedrop-builder}")
-if [[ ! -d $BUILDER ]]; then
-    echo "Cannot find securedrop-builder repository, please check it out \
-to ${BUILDER} or set the BUILDER variable"
-    exit 1
-fi
-
-export BUILDER
 export DEBIAN_VERSION="${DEBIAN_VERSION:-bookworm}"
 export OCI_RUN_ARGUMENTS
 export OCI_BIN
@@ -56,7 +45,6 @@ if [[ -n $FAST ]]; then
 fi
 
 $OCI_BIN run --rm $OCI_RUN_ARGUMENTS \
-    -v "${BUILDER}:/builder:Z" \
     -v "${BUILD_DEST}:/build:Z" \
     $FAST_CACHE_ARGUMENTS \
     --env NIGHTLY="${NIGHTLY:-}" \

@@ -2,7 +2,7 @@ Source: securedrop-client
 Section: unknown
 Priority: optional
 Maintainer: SecureDrop Team <securedrop@freedom.press>
-Build-Depends: debhelper-compat (= 11), dh-apparmor, dh-exec, python3-venv, python3-setuptools,
+Build-Depends: debhelper-compat (= 11), dh-apparmor, dh-exec, python3-venv, python3-setuptools, flit,
 # python3-wheel is only needed on bookworm; setuptools >= 70.1 (trixie+) bundles bdist_wheel.
 # Drop the "| python3-wheel" alternative once bookworm support is removed.
  python3-setuptools (>= 70.1) | python3-wheel,
