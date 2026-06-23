@@ -13,7 +13,7 @@ import * as openpgp from "openpgp";
 import { execSync, spawn } from "child_process";
 import { EventEmitter } from "events";
 import { PassThrough } from "stream";
-import { Crypto, CryptoError, encryptMessage } from "../crypto";
+import { Crypto, CryptoError, encryptMessage, isPgpEncrypted } from "../crypto";
 import {
   createGpgTestEnvironment,
   createTestEncryptedFile,
@@ -592,6 +592,187 @@ and symbols: !@#$%^&*()_+-={}[]|\\:";'<>?,./`;
         Buffer.from(encrypted),
       );
       expect(decrypted).toBe(plaintext);
+    });
+  });
+
+  describe("Double-encryption (real GPG)", () => {
+    // The "submission key" in this test environment is the only key whose secret
+    // is imported into the test keyring (testKeyId). A source that pre-encrypts
+    // to this key produces a payload the app can transparently decrypt.
+    // The "wrong key" is a key whose secret is NOT in the keyring (the test-key
+    // fixture), simulating a source who encrypted to some other key — the app
+    // detects the inner layer but cannot decrypt it.
+    let submissionPubKey: string;
+    let wrongPubKey: string;
+
+    beforeAll(() => {
+      // Export the public part of the in-keyring submission key
+      submissionPubKey = execSync(
+        `gpg --homedir "${gpgEnv.homedir}" --armor --export ${testKeyId}`,
+        { encoding: "utf8" },
+      );
+
+      // The test-key fixture's secret is never imported into the test keyring,
+      // so anything encrypted to it cannot be decrypted here.
+      wrongPubKey = fs.readFileSync(
+        path.join(__dirname, "files", "test-key.gpg.pub.asc"),
+        "utf8",
+      );
+    });
+
+    // Encrypt binary data to a single recipient, returning a binary OpenPGP packet
+    async function encryptBinary(
+      data: Buffer,
+      recipientPublicKey: string,
+    ): Promise<Buffer> {
+      const key = await openpgp.readKey({ armoredKey: recipientPublicKey });
+      const encrypted = await openpgp.encrypt({
+        message: await openpgp.createMessage({ binary: new Uint8Array(data) }),
+        encryptionKeys: key,
+        format: "binary",
+      });
+      return Buffer.from(encrypted as Uint8Array);
+    }
+
+    it("message: ascii-armored inner encrypted to submission key is transparently decrypted", async () => {
+      const secret = "the source pre-encrypted this message";
+
+      // Inner layer: source encrypts to the submission key (ASCII-armored)
+      const inner = await encryptMessage(secret, [submissionPubKey]);
+      // Outer layer: server re-encrypts the armored inner message
+      const outer = await encryptMessage(inner, [submissionPubKey]);
+
+      const result = await crypto.decryptMessage(Buffer.from(outer, "utf-8"));
+
+      expect(result.isDoubleEncrypted).toBe(true);
+      expect(result.plaintext).toBe(secret);
+    });
+
+    it("message: malformed inner PGP is surfaced as-is without a double-encryption badge", async () => {
+      // Looks like an armored PGP message but the body is not valid OpenPGP data
+      // (a real PKESK prefix followed by non-base64 garbage, like a source who
+      // produced a corrupt block).
+      const malformed =
+        "-----BEGIN PGP MESSAGE-----\n\nhQIMA8PnxMCiIBsqARAAjXzqPikF0KPvRRzhDDElGzy7Wuo4KxH3KwcKrSHmrBA7\nhaha just kidding this isn't a real PGP message\n-----END PGP MESSAGE-----\n";
+      const outer = await encryptMessage(malformed, [submissionPubKey]);
+
+      const result = await crypto.decryptMessage(Buffer.from(outer, "utf-8"));
+
+      expect(result.isDoubleEncrypted).toBe(false);
+      // The undecryptable inner layer is surfaced verbatim
+      expect(result.plaintext).toBe(malformed);
+    });
+
+    it("file: ascii-armored inner encrypted to submission key is transparently decrypted", async () => {
+      const secret = "the source pre-encrypted this file";
+
+      // Inner layer: ASCII-armored message encrypted to the submission key
+      const inner = await encryptMessage(secret, [submissionPubKey]);
+      // Outer layer: gzip + encrypt to the submission key (server behavior)
+      const { filePath, cleanup } = createTestEncryptedFile(
+        inner,
+        "test.txt.asc",
+        testKeyId,
+        gpgEnv.homedir,
+      );
+
+      try {
+        const result = await crypto.decryptFile(
+          storage,
+          itemDirectory,
+          filePath,
+        );
+
+        expect(result.isDoubleEncrypted).toBe(true);
+        // The ".asc" extension is stripped from the inner filename
+        expect(path.basename(result.finalPath)).toBe("test.txt");
+        expect(fs.readFileSync(result.finalPath, "utf8")).toBe(secret);
+      } finally {
+        cleanup();
+      }
+    });
+
+    it("file: binary inner encrypted to submission key is transparently decrypted", async () => {
+      const secret = Buffer.from([
+        0x00, 0x01, 0x02, 0x03, 0xff, 0xfe, 0x42, 0x42, 0x10, 0x20,
+      ]);
+
+      // Inner layer: binary OpenPGP packet encrypted to the submission key
+      const inner = await encryptBinary(secret, submissionPubKey);
+      const { filePath, cleanup } = createTestEncryptedFile(
+        inner,
+        "test.txt.gpg",
+        testKeyId,
+        gpgEnv.homedir,
+      );
+
+      try {
+        const result = await crypto.decryptFile(
+          storage,
+          itemDirectory,
+          filePath,
+        );
+
+        expect(result.isDoubleEncrypted).toBe(true);
+        // The ".gpg" extension is stripped from the inner filename
+        expect(path.basename(result.finalPath)).toBe("test.txt");
+        expect(Buffer.compare(fs.readFileSync(result.finalPath), secret)).toBe(
+          0,
+        );
+      } finally {
+        cleanup();
+      }
+    });
+
+    it("file: ascii-armored inner encrypted to the wrong key is surfaced without a badge", async () => {
+      // Inner layer encrypted to a key whose secret is not in the keyring
+      const inner = await encryptMessage("unreachable contents", [wrongPubKey]);
+      const { filePath, cleanup } = createTestEncryptedFile(
+        inner,
+        "test.txt.asc",
+        testKeyId,
+        gpgEnv.homedir,
+      );
+
+      try {
+        const result = await crypto.decryptFile(
+          storage,
+          itemDirectory,
+          filePath,
+        );
+
+        expect(result.isDoubleEncrypted).toBe(false);
+        // The still-encrypted intermediate file is surfaced as-is
+        expect(isPgpEncrypted(fs.readFileSync(result.finalPath))).toBe(true);
+      } finally {
+        cleanup();
+      }
+    });
+
+    it("file: binary inner encrypted to the wrong key is surfaced without a badge", async () => {
+      const inner = await encryptBinary(
+        Buffer.from("unreachable binary contents"),
+        wrongPubKey,
+      );
+      const { filePath, cleanup } = createTestEncryptedFile(
+        inner,
+        "test.txt.gpg",
+        testKeyId,
+        gpgEnv.homedir,
+      );
+
+      try {
+        const result = await crypto.decryptFile(
+          storage,
+          itemDirectory,
+          filePath,
+        );
+
+        expect(result.isDoubleEncrypted).toBe(false);
+        expect(isPgpEncrypted(fs.readFileSync(result.finalPath))).toBe(true);
+      } finally {
+        cleanup();
+      }
     });
   });
 });
