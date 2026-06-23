@@ -28,6 +28,7 @@ type CryptoWithPrivateMethods = {
     gzipFilePath: string,
     outputPath: string,
   ): Promise<void>;
+  readFileHeader(filePath: string): Promise<Buffer>;
 };
 
 describe("Crypto Integration Tests", () => {
@@ -114,7 +115,8 @@ describe("Crypto Integration Tests", () => {
 
       mockSpawn.mockReturnValue(mockProcess as never);
 
-      const result = await crypto.decryptMessage(encryptedContent);
+      const { plaintext: result } =
+        await crypto.decryptMessage(encryptedContent);
 
       expect(result).toBe(testMessage);
       expect(mockSpawn).toHaveBeenCalledWith(
@@ -251,10 +253,13 @@ describe("Crypto Integration Tests", () => {
         cryptoWithPrivate,
         "streamDecompressGzipFile",
       ).mockResolvedValue();
+      vi.spyOn(cryptoWithPrivate, "readFileHeader").mockResolvedValue(
+        Buffer.from("plaintext content"),
+      );
 
       mockSpawn.mockReturnValue(mockProcess as never);
 
-      const result = await crypto.decryptFile(
+      const { finalPath: result } = await crypto.decryptFile(
         storage,
         itemDirectory,
         testFilePath,
@@ -340,10 +345,13 @@ describe("Crypto Integration Tests", () => {
         cryptoWithPrivate,
         "streamDecompressGzipFile",
       ).mockResolvedValue();
+      vi.spyOn(cryptoWithPrivate, "readFileHeader").mockResolvedValue(
+        Buffer.from("plaintext content"),
+      );
 
       mockSpawn.mockReturnValue(mockProcess as never);
 
-      const result = await crypto.decryptFile(
+      const { finalPath: result } = await crypto.decryptFile(
         storage,
         itemDirectory,
         testFilePath,
