@@ -329,10 +329,10 @@ export class DB {
       "DELETE FROM items WHERE uuid IN (SELECT value FROM json_each(@uuids_json))",
     );
     this.selectItem = this.db.prepare(
-      `SELECT uuid, data, plaintext, filename, fetch_status, fetch_progress, decrypted_size FROM items WHERE uuid = @uuid`,
+      `SELECT uuid, data, plaintext, filename, fetch_status, fetch_progress, decrypted_size, is_double_encrypted FROM items WHERE uuid = @uuid`,
     );
     this.selectItemMany = this.db.prepare(
-      `SELECT uuid, data, plaintext, filename, fetch_status, fetch_progress, decrypted_size FROM items WHERE uuid IN (SELECT value FROM json_each(@uuids_json))`,
+      `SELECT uuid, data, plaintext, filename, fetch_status, fetch_progress, decrypted_size, is_double_encrypted FROM items WHERE uuid IN (SELECT value FROM json_each(@uuids_json))`,
     );
 
     this.selectAllJournalistVersion = this.db.prepare(
@@ -381,13 +381,13 @@ export class DB {
       WHERE s.uuid = ?
     `);
     this.selectItemsBySourceId = this.db.prepare(`
-      SELECT uuid, data, plaintext, filename, fetch_status, fetch_progress, decrypted_size, is_read FROM items_projected
+      SELECT uuid, data, plaintext, filename, fetch_status, fetch_progress, decrypted_size, is_read, is_double_encrypted FROM items_projected
       WHERE source_uuid = ?
       ORDER BY interaction_count DESC
       LIMIT ?
     `);
     this.selectItemsBySourceIdBefore = this.db.prepare(`
-      SELECT uuid, data, plaintext, filename, fetch_status, fetch_progress, decrypted_size FROM items_projected
+      SELECT uuid, data, plaintext, filename, fetch_status, fetch_progress, decrypted_size, is_double_encrypted FROM items_projected
       WHERE source_uuid = ? AND interaction_count < ?
       ORDER BY interaction_count DESC
       LIMIT ?
@@ -627,6 +627,7 @@ export class DB {
             fetch_status: row.fetch_status as FetchStatus,
             fetch_progress: row.fetch_progress,
             decrypted_size: row.decrypted_size,
+            isDoubleEncrypted: row.is_double_encrypted === 1,
           });
         });
         // Delete from search index
@@ -878,6 +879,7 @@ export class DB {
         fetch_status: row.fetch_status,
         fetch_progress: row.fetch_progress,
         decrypted_size: row.decrypted_size,
+        isDoubleEncrypted: row.is_double_encrypted === 1,
       };
     });
 
@@ -1004,6 +1006,7 @@ export class DB {
       fetch_status: row.fetch_status as FetchStatus,
       fetch_progress: row.fetch_progress,
       decrypted_size: row.decrypted_size,
+      isDoubleEncrypted: row.is_double_encrypted === 1,
     };
   }
 

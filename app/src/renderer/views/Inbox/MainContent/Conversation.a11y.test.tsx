@@ -130,6 +130,7 @@ const messageItem = (
   decrypted_size: null,
   fetch_progress: 1024,
   fetch_status: 3,
+  isDoubleEncrypted: false,
 });
 
 const replyItem = (
@@ -152,6 +153,7 @@ const replyItem = (
   decrypted_size: null,
   fetch_progress: 512,
   fetch_status: 3,
+  isDoubleEncrypted: false,
 });
 
 // ---------------------------------------------------------------------------

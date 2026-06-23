@@ -232,6 +232,7 @@ export type Item = {
   fetch_status: FetchStatus | null;
   fetch_progress: number | null;
   decrypted_size: number | null;
+  isDoubleEncrypted: boolean;
 };
 
 // Database representation
@@ -244,6 +245,7 @@ export type ItemRow = {
   fetch_progress: number | null;
   decrypted_size: number | null;
   is_read: number | null; // projected value from items_projected view
+  is_double_encrypted: number | null;
 };
 
 // Database representation

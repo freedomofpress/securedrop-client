@@ -31,6 +31,7 @@ describe("ExportWizard accessibility", () => {
     plaintext: null,
     filename: "/path/to/testfile.pdf",
     decrypted_size: null,
+    isDoubleEncrypted: false,
   };
 
   it("has no axe violations when the wizard is closed", async () => {
@@ -71,6 +72,7 @@ describe("ExportWizard Component", () => {
     plaintext: null,
     filename: "/path/to/testfile.pdf",
     decrypted_size: null,
+    isDoubleEncrypted: false,
   };
 
   const mockFilePayload: ExportPayload = {
