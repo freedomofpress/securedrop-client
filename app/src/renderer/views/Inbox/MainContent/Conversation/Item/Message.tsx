@@ -12,6 +12,7 @@ import TruncatedText from "../../../../../components/TruncatedText";
 import { useTranslation } from "react-i18next";
 import {
   Loader2,
+  LockKeyhole,
   RotateCw,
   Trash,
   Clock,
@@ -143,7 +144,18 @@ const Message = memo(function Message(props: MessageProps) {
 
   const displayMessage = () => {
     if (item.plaintext) {
-      return <TruncatedText text={item.plaintext} />;
+      return (
+        <>
+          <TruncatedText text={item.plaintext} />
+          {item.isDoubleEncrypted && kind === "message" && (
+            <Tooltip title={t("Item:doubleEncryptedTooltip")}>
+              <span className="double-encrypted-badge">
+                <LockKeyhole size={12} /> {t("Item:doubleEncryptedBadge")}
+              </span>
+            </Tooltip>
+          )}
+        </>
+      );
     }
     switch (item.fetch_status) {
       case FetchStatus.FailedDecryptionRetryable:
