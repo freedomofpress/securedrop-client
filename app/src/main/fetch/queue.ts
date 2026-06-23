@@ -654,7 +654,10 @@ export class TaskQueue {
       throw new Error(`Failed to load encrypted data from disk: ${error}`);
     }
 
-    const decryptedContent = await crypto.decryptMessage(buffer, signal);
+    const { plaintext, isDoubleEncrypted } = await crypto.decryptMessage(
+      buffer,
+      signal,
+    );
 
     // Re-check: if the item was deleted during decryption, drop the result
     if (!this.isProcessable(item.id, db)) {
@@ -662,7 +665,7 @@ export class TaskQueue {
     }
 
     // Store the decrypted plaintext and mark item as complete
-    db.completePlaintextItem(item.id, decryptedContent);
+    db.completePlaintextItem(item.id, plaintext, isDoubleEncrypted);
 
     // Clean up the ciphertext file after successful decryption
     try {
@@ -684,7 +687,7 @@ export class TaskQueue {
     const downloadPath = this.storage.downloadFilePath(metadata, item);
     const itemDirectory = this.storage.itemDirectory(metadata);
     try {
-      const finalAbsolutePath = await crypto.decryptFile(
+      const { finalPath, isDoubleEncrypted } = await crypto.decryptFile(
         this.storage,
         itemDirectory,
         downloadPath,
@@ -694,7 +697,7 @@ export class TaskQueue {
       // Re-check: if the item was deleted during decryption, drop the result
       if (!this.isProcessable(item.id, db)) {
         try {
-          await fs.promises.unlink(finalAbsolutePath);
+          await fs.promises.unlink(finalPath);
         } catch (error) {
           console.warn(
             `Failed to clean up decrypted file after deletion: ${error}`,
@@ -704,9 +707,9 @@ export class TaskQueue {
       }
 
       // Get the decrypted file size to display to the user
-      const fileStats = await fs.promises.stat(finalAbsolutePath);
+      const fileStats = await fs.promises.stat(finalPath);
       const decryptedSize = fileStats.size;
-      db.completeFileItem(item.id, finalAbsolutePath, decryptedSize);
+      db.completeFileItem(item.id, finalPath, decryptedSize, isDoubleEncrypted);
       console.log(`Successfully decrypted ${metadata.kind} ${item.id}`);
     } catch (error) {
       if (error instanceof CryptoError) {

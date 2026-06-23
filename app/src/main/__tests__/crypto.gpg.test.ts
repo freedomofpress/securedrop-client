@@ -110,7 +110,8 @@ describe("Crypto with Real GPG", () => {
       );
 
       // Decrypt using our crypto class
-      const decryptedMessage = await crypto.decryptMessage(encryptedContent);
+      const { plaintext: decryptedMessage } =
+        await crypto.decryptMessage(encryptedContent);
 
       expect(decryptedMessage).toBe(originalMessage);
     });
@@ -125,7 +126,8 @@ and symbols: !@#$%^&*()_+-={}[]|\\:";'<>?,./`;
         "utf-8",
       );
 
-      const decryptedMessage = await crypto.decryptMessage(encryptedContent);
+      const { plaintext: decryptedMessage } =
+        await crypto.decryptMessage(encryptedContent);
 
       expect(decryptedMessage).toBe(originalMessage);
     });
@@ -146,7 +148,8 @@ and symbols: !@#$%^&*()_+-={}[]|\\:";'<>?,./`;
         "utf-8",
       );
 
-      const decryptedMessage = await crypto.decryptMessage(encryptedContent);
+      const { plaintext: decryptedMessage } =
+        await crypto.decryptMessage(encryptedContent);
 
       expect(decryptedMessage).toBe(originalMessage);
     });
@@ -167,7 +170,7 @@ and symbols: !@#$%^&*()_+-={}[]|\\:";'<>?,./`;
 
       try {
         // Decrypt using our crypto class
-        const result = await crypto.decryptFile(
+        const { finalPath: result } = await crypto.decryptFile(
           storage,
           itemDirectory,
           filePath,
@@ -209,7 +212,7 @@ and symbols: !@#$%^&*()_+-={}[]|\\:";'<>?,./`;
       );
 
       try {
-        const result = await crypto.decryptFile(
+        const { finalPath: result } = await crypto.decryptFile(
           storage,
           itemDirectory,
           filePath,
@@ -241,7 +244,7 @@ and symbols: !@#$%^&*()_+-={}[]|\\:";'<>?,./`;
       );
 
       try {
-        const result = await crypto.decryptFile(
+        const { finalPath: result } = await crypto.decryptFile(
           storage,
           itemDirectory,
           filePath,
@@ -276,7 +279,8 @@ and symbols: !@#$%^&*()_+-={}[]|\\:";'<>?,./`;
         "utf-8",
       );
 
-      const decryptedMessage = await crypto.decryptMessage(encryptedMessage);
+      const { plaintext: decryptedMessage } =
+        await crypto.decryptMessage(encryptedMessage);
       expect(decryptedMessage).toBe(testData);
     });
 
@@ -293,7 +297,7 @@ and symbols: !@#$%^&*()_+-={}[]|\\:";'<>?,./`;
       );
 
       try {
-        const result = await crypto.decryptFile(
+        const { finalPath: result } = await crypto.decryptFile(
           storage,
           itemDirectory,
           filePath,
@@ -321,7 +325,8 @@ and symbols: !@#$%^&*()_+-={}[]|\\:";'<>?,./`;
       );
 
       const startTime = Date.now();
-      const decryptedMessage = await crypto.decryptMessage(encryptedContent);
+      const { plaintext: decryptedMessage } =
+        await crypto.decryptMessage(encryptedContent);
       const endTime = Date.now();
 
       expect(decryptedMessage).toBe(largeMessage);
@@ -346,7 +351,7 @@ and symbols: !@#$%^&*()_+-={}[]|\\:";'<>?,./`;
         encryptedMessages.map((encrypted) => crypto.decryptMessage(encrypted)),
       );
 
-      expect(results).toEqual(messages);
+      expect(results.map((r) => r.plaintext)).toEqual(messages);
     });
   });
 
@@ -499,7 +504,8 @@ and symbols: !@#$%^&*()_+-={}[]|\\:";'<>?,./`;
         "utf-8",
       );
 
-      const decryptedMessage = await crypto.decryptMessage(encryptedContent);
+      const { plaintext: decryptedMessage } =
+        await crypto.decryptMessage(encryptedContent);
       expect(decryptedMessage).toBe(originalMessage);
     });
   });
@@ -582,7 +588,9 @@ and symbols: !@#$%^&*()_+-={}[]|\\:";'<>?,./`;
       expect(encrypted).toContain("-----END PGP MESSAGE-----");
 
       // Decrypt with GPG to verify it matches the original plaintext
-      const decrypted = await crypto.decryptMessage(Buffer.from(encrypted));
+      const { plaintext: decrypted } = await crypto.decryptMessage(
+        Buffer.from(encrypted),
+      );
       expect(decrypted).toBe(plaintext);
     });
   });
