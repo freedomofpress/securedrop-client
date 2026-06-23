@@ -103,6 +103,7 @@ function mockItem(
     plaintext: null,
     filename: null,
     decrypted_size: null,
+    isDoubleEncrypted: false,
   };
 }
 
