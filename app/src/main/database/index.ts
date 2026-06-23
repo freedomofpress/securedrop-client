@@ -985,29 +985,47 @@ export class DB {
     };
   }
 
-  completePlaintextItem(itemUuid: string, plaintext: string) {
-    const stmt: Statement<{ uuid: string; plaintext: string }, void> =
-      this.db!.prepare(
-        `UPDATE items SET fetch_progress = null, fetch_status = ${FetchStatus.Complete}, plaintext = @plaintext, fetch_last_updated_at = CURRENT_TIMESTAMP WHERE uuid = @uuid`,
-      );
+  completePlaintextItem(
+    itemUuid: string,
+    plaintext: string,
+    isDoubleEncrypted: boolean,
+  ) {
+    const stmt: Statement<
+      { uuid: string; plaintext: string; is_double_encrypted: number },
+      void
+    > = this.db!.prepare(
+      `UPDATE items SET fetch_progress = null, fetch_status = ${FetchStatus.Complete}, plaintext = @plaintext, is_double_encrypted = @is_double_encrypted, fetch_last_updated_at = CURRENT_TIMESTAMP WHERE uuid = @uuid`,
+    );
     stmt.run({
       uuid: itemUuid,
       plaintext: plaintext,
+      is_double_encrypted: isDoubleEncrypted ? 1 : 0,
     });
     this.searchIndex.indexItem(itemUuid);
   }
 
-  completeFileItem(itemUuid: string, filename: string, decryptedSize: number) {
+  completeFileItem(
+    itemUuid: string,
+    filename: string,
+    decryptedSize: number,
+    isDoubleEncrypted: boolean,
+  ) {
     const stmt: Statement<
-      { uuid: string; filename: string; decrypted_size: number },
+      {
+        uuid: string;
+        filename: string;
+        decrypted_size: number;
+        is_double_encrypted: number;
+      },
       void
     > = this.db!.prepare(
-      `UPDATE items SET fetch_progress = null, fetch_status = ${FetchStatus.Complete}, filename = @filename, decrypted_size = @decrypted_size, fetch_last_updated_at = CURRENT_TIMESTAMP WHERE uuid = @uuid`,
+      `UPDATE items SET fetch_progress = null, fetch_status = ${FetchStatus.Complete}, filename = @filename, decrypted_size = @decrypted_size, is_double_encrypted = @is_double_encrypted, fetch_last_updated_at = CURRENT_TIMESTAMP WHERE uuid = @uuid`,
     );
     stmt.run({
       uuid: itemUuid,
       filename: filename,
       decrypted_size: decryptedSize,
+      is_double_encrypted: isDoubleEncrypted ? 1 : 0,
     });
     this.searchIndex.indexItem(itemUuid);
   }
@@ -1369,7 +1387,7 @@ export class DB {
           data: metadataBlob,
           version: version,
         });
-        this.completePlaintextItem(replyData.uuid, replyData.plaintext);
+        this.completePlaintextItem(replyData.uuid, replyData.plaintext, false);
       }
       // Once event is applied, delete from pending events table
       this.deletePendingEvent.run({ snowflake_id: event.snowflake_id });
