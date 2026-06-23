@@ -46,6 +46,41 @@ function isExpectedGpgStderr(stderr: string): boolean {
   );
 }
 
+/**
+ * Returns true if the buffer contains a PGP-encrypted payload — either an
+ * ASCII-armored block (starts with "-----BEGIN PGP MESSAGE-----") or a binary
+ * OpenPGP packet whose first packet tag is a Public-Key (1) or Symmetric-Key (3)
+ * Encrypted Session Key packet (RFC 4880 §4.2 / §5.1 / §5.3).
+ */
+export function isPgpEncrypted(buf: Buffer): boolean {
+  if (buf.length === 0) {
+    return false;
+  }
+
+  // ASCII-armored: "-----BEGIN PGP MESSAGE-----"
+  if (buf.slice(0, 27).toString("ascii") === "-----BEGIN PGP MESSAGE-----") {
+    return true;
+  }
+
+  // Binary OpenPGP: bit 7 must be set on every packet tag byte (RFC 4880 §4.2)
+  const firstByte = buf[0];
+  if ((firstByte & 0x80) === 0) {
+    return false;
+  }
+
+  let packetTag: number;
+  if (firstByte & 0x40) {
+    // New format (§4.2): bits 5-0 are the packet tag
+    packetTag = firstByte & 0x3f;
+  } else {
+    // Old format (§4.2): bits 5-2 are the packet tag
+    packetTag = (firstByte & 0x3c) >> 2;
+  }
+
+  // Tag 1 = Public-Key Encrypted Session Key, Tag 3 = Symmetric-Key ESK
+  return packetTag === 1 || packetTag === 3;
+}
+
 export class CryptoError extends Error {
   constructor(
     message: string,
