@@ -397,6 +397,52 @@ describe("File Component", () => {
     fireEvent.focus(trashButton);
     expect(wrapper.style.opacity).toBe("1");
   });
+
+  it("shows the double-encryption badge on a downloaded double-encrypted file", () => {
+    renderWithProviders(
+      <File
+        item={makeItem({
+          fetch_status: FetchStatus.Complete,
+          filename: "/path/to/document.pdf",
+          decrypted_size: 2048,
+          isDoubleEncrypted: true,
+        })}
+        designation="Test Source"
+        onUpdate={mockOnUpdate}
+        onDelete={mockOnDelete}
+      />,
+      {
+        preloadedState: {
+          session: { status: SessionStatus.Auth } as any,
+        },
+      },
+    );
+
+    expect(screen.getByText("Source-encrypted")).toBeInTheDocument();
+  });
+
+  it("does not show the double-encryption badge on a normal file", () => {
+    renderWithProviders(
+      <File
+        item={makeItem({
+          fetch_status: FetchStatus.Complete,
+          filename: "/path/to/document.pdf",
+          decrypted_size: 2048,
+          isDoubleEncrypted: false,
+        })}
+        designation="Test Source"
+        onUpdate={mockOnUpdate}
+        onDelete={mockOnDelete}
+      />,
+      {
+        preloadedState: {
+          session: { status: SessionStatus.Auth } as any,
+        },
+      },
+    );
+
+    expect(screen.queryByText("Source-encrypted")).not.toBeInTheDocument();
+  });
 });
 
 describe("File Component Accessibility", () => {
