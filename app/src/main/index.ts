@@ -178,9 +178,9 @@ if (!gotTheLock) {
   function createWindow(): BrowserWindow {
     const mainWindow = new BrowserWindow({
       width: is.dev && process.env["NODE_ENV"] != "production" ? 1500 : 1200,
-      height: 900,
+      height: 700,
       minWidth: 1200,
-      minHeight: 900,
+      minHeight: 700,
       title: "SecureDrop Inbox",
       icon: join(__dirname, "../../resources/images/logo.png"),
       show: false,
