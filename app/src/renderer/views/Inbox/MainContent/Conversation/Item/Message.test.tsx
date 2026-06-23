@@ -1202,3 +1202,103 @@ describe("Message and Reply delete button keyboard accessibility", () => {
     expect(mockOnDelete).toHaveBeenCalledOnce();
   });
 });
+
+describe("Double-encryption badge", () => {
+  const authState: Partial<RootState> = {
+    session: {
+      status: SessionStatus.Auth,
+      authData: {
+        expiration: "2025-07-16T19:25:44.388054+00:00",
+        journalistUUID: "journalist-1",
+        journalistFirstName: "Daniel",
+        journalistLastName: "Ellsberg",
+      },
+    },
+    journalists: { journalists: [], loading: false, error: null },
+  };
+
+  const mockMessageItem: Item = {
+    uuid: "msg-1",
+    data: {
+      uuid: "msg-1",
+      kind: "message",
+      seen_by: [],
+      size: 512,
+      source: "source-1",
+      is_read: false,
+      interaction_count: 0,
+    },
+    plaintext: "A pre-encrypted message",
+    filename: null,
+    fetch_status: null,
+    fetch_progress: null,
+    decrypted_size: null,
+    isDoubleEncrypted: false,
+  };
+
+  const mockReplyItem: Item = {
+    uuid: "reply-1",
+    data: {
+      kind: "reply",
+      uuid: "reply-1",
+      source: "source-1",
+      size: 1024,
+      journalist_uuid: "journalist-1",
+      is_deleted_by_source: false,
+      seen_by: [],
+      interaction_count: 1,
+    } as ReplyMetadata,
+    plaintext: "A reply",
+    filename: null,
+    fetch_status: null,
+    fetch_progress: null,
+    decrypted_size: null,
+    isDoubleEncrypted: false,
+  };
+
+  it("shows the badge on a double-encrypted message", () => {
+    renderWithProviders(
+      <Message
+        kind="message"
+        item={{ ...mockMessageItem, isDoubleEncrypted: true }}
+        designation="Test Source"
+        onUpdate={vi.fn()}
+        onDelete={vi.fn()}
+      />,
+      { preloadedState: authState },
+    );
+
+    expect(screen.getByText("Source-encrypted")).toBeInTheDocument();
+    // The message itself is still displayed
+    expect(screen.getByText("A pre-encrypted message")).toBeInTheDocument();
+  });
+
+  it("does not show the badge on a normal message", () => {
+    renderWithProviders(
+      <Message
+        kind="message"
+        item={mockMessageItem}
+        designation="Test Source"
+        onUpdate={vi.fn()}
+        onDelete={vi.fn()}
+      />,
+      { preloadedState: authState },
+    );
+
+    expect(screen.queryByText("Source-encrypted")).not.toBeInTheDocument();
+  });
+
+  it("does not show the badge on a reply, even if flagged", () => {
+    // Replies are authored by journalists and are never source-double-encrypted
+    renderWithProviders(
+      <Message
+        kind="reply"
+        item={{ ...mockReplyItem, isDoubleEncrypted: true }}
+        onDelete={vi.fn()}
+      />,
+      { preloadedState: authState },
+    );
+
+    expect(screen.queryByText("Source-encrypted")).not.toBeInTheDocument();
+  });
+});
