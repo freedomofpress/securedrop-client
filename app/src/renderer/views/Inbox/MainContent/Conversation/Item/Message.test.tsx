@@ -32,6 +32,7 @@ describe("Message Component Memoization", () => {
     fetch_status: null,
     fetch_progress: null,
     decrypted_size: null,
+    isDoubleEncrypted: false,
   };
   const mockOnUpdate = vi.fn();
   const mockOnDelete = vi.fn();
@@ -128,6 +129,7 @@ describe("Reply", () => {
     fetch_status: null,
     fetch_progress: null,
     decrypted_size: null,
+    isDoubleEncrypted: false,
   };
 
   const mockJournalists: Array<{ uuid: string; data: JournalistMetadata }> = [
@@ -498,6 +500,7 @@ describe("Reply", () => {
       fetch_status: null,
       fetch_progress: null,
       decrypted_size: null,
+      isDoubleEncrypted: false,
     };
 
     describe("when authenticated (online mode)", () => {
@@ -852,6 +855,7 @@ describe("Reply", () => {
       fetch_status: null,
       fetch_progress: null,
       decrypted_size: null,
+      isDoubleEncrypted: false,
     };
 
     it("should display pending icon for pending replies", () => {
@@ -954,6 +958,7 @@ describe("Reply", () => {
       fetch_status: null,
       fetch_progress: null,
       decrypted_size: null,
+      isDoubleEncrypted: false,
     };
 
     const sentReplyItem: Item = {
@@ -973,6 +978,7 @@ describe("Reply", () => {
       fetch_status: null,
       fetch_progress: null,
       decrypted_size: null,
+      isDoubleEncrypted: false,
     };
 
     const seenReplyItem: Item = {
@@ -992,6 +998,7 @@ describe("Reply", () => {
       fetch_status: null,
       fetch_progress: null,
       decrypted_size: null,
+      isDoubleEncrypted: false,
     };
 
     it("should show pending icon for pending replies", () => {
@@ -1083,6 +1090,7 @@ describe("Message and Reply delete button keyboard accessibility", () => {
     fetch_status: null,
     fetch_progress: null,
     decrypted_size: null,
+    isDoubleEncrypted: false,
   };
 
   const mockReplyItem: Item = {
@@ -1102,6 +1110,7 @@ describe("Message and Reply delete button keyboard accessibility", () => {
     fetch_status: null,
     fetch_progress: null,
     decrypted_size: null,
+    isDoubleEncrypted: false,
   };
 
   beforeEach(() => {
