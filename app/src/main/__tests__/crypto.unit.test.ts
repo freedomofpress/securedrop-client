@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, vi, afterEach } from "vitest";
-import { Crypto, CryptoError } from "../crypto";
+import { Crypto, CryptoError, isPgpEncrypted } from "../crypto";
 import { UnsafePathComponent } from "../storage";
 
 // Type definition for testing private methods
@@ -186,6 +186,59 @@ describe("Crypto", () => {
           invalidHeader,
         );
       }).toThrow("Unknown compression method");
+    });
+  });
+
+  describe("isPgpEncrypted", () => {
+    it("returns false for an empty buffer", () => {
+      expect(isPgpEncrypted(Buffer.alloc(0))).toBe(false);
+    });
+
+    it("returns false for plaintext", () => {
+      expect(isPgpEncrypted(Buffer.from("hello world"))).toBe(false);
+    });
+
+    it("returns true for an ASCII-armored PGP message", () => {
+      expect(
+        isPgpEncrypted(Buffer.from("-----BEGIN PGP MESSAGE-----\n...")),
+      ).toBe(true);
+    });
+
+    it("returns false for an ASCII-armored PGP signed message (not encrypted)", () => {
+      expect(
+        isPgpEncrypted(
+          Buffer.from("-----BEGIN PGP SIGNED MESSAGE-----\nHash: SHA256\n..."),
+        ),
+      ).toBe(false);
+    });
+
+    it("returns true for a binary OpenPGP new-format Public-Key ESK packet (tag 1)", () => {
+      // New format: bit7=1, bit6=1, tag=1 → 0xC1
+      expect(isPgpEncrypted(Buffer.from([0xc1, 0x00]))).toBe(true);
+    });
+
+    it("returns true for a binary OpenPGP new-format Symmetric-Key ESK packet (tag 3)", () => {
+      // New format: bit7=1, bit6=1, tag=3 → 0xC3
+      expect(isPgpEncrypted(Buffer.from([0xc3, 0x00]))).toBe(true);
+    });
+
+    it("returns true for a binary OpenPGP old-format Public-Key ESK packet (tag 1)", () => {
+      // Old format: bit7=1, bit6=0, tag=1 in bits 5-2, length-type=0 → 0x84
+      expect(isPgpEncrypted(Buffer.from([0x84, 0x00]))).toBe(true);
+    });
+
+    it("returns true for a binary OpenPGP old-format Symmetric-Key ESK packet (tag 3)", () => {
+      // Old format: bit7=1, bit6=0, tag=3 in bits 5-2, length-type=0 → 0x8c
+      expect(isPgpEncrypted(Buffer.from([0x8c, 0x00]))).toBe(true);
+    });
+
+    it("returns false for a binary OpenPGP packet with a non-ESK tag (e.g. tag 11 = literal data)", () => {
+      // New format: bit7=1, bit6=1, tag=11 → 0xCB
+      expect(isPgpEncrypted(Buffer.from([0xcb, 0x00]))).toBe(false);
+    });
+
+    it("returns false when bit 7 is not set", () => {
+      expect(isPgpEncrypted(Buffer.from([0x01, 0x00]))).toBe(false);
     });
   });
 
