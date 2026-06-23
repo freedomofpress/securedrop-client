@@ -17,7 +17,13 @@ import "../Item.css";
 import "./File.css";
 
 import { useTranslation } from "react-i18next";
-import { File as FileIcon, Download, LoaderCircle, Trash } from "lucide-react";
+import {
+  File as FileIcon,
+  Download,
+  LoaderCircle,
+  LockKeyhole,
+  Trash,
+} from "lucide-react";
 import { Button, Tooltip, theme, Dropdown } from "antd";
 import type { MenuProps } from "antd";
 import {
@@ -669,6 +675,13 @@ const CompleteFile = memo(function CompleteFile({
         </div>
       </div>
 
+      {item.isDoubleEncrypted && (
+        <Tooltip title={t("doubleEncryptedTooltip")}>
+          <span className="double-encrypted-badge">
+            <LockKeyhole size={12} /> {t("doubleEncryptedBadge")}
+          </span>
+        </Tooltip>
+      )}
       <ExportWizard
         key={exportWizardKey}
         item={exportPayload}
