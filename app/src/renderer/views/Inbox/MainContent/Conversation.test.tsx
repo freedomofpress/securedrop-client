@@ -120,6 +120,7 @@ const mockSourceWithItems: SourceWithItems = {
       plaintext: null,
       filename: null,
       decrypted_size: null,
+      isDoubleEncrypted: false,
       fetch_progress: 1024,
       fetch_status: 3,
     },
@@ -144,6 +145,7 @@ const createMessageItem = (
   plaintext: null,
   filename: null,
   decrypted_size: null,
+  isDoubleEncrypted: false,
   fetch_progress: 1024,
   fetch_status: 3,
 });
@@ -166,6 +168,7 @@ const createReplyItem = (
   plaintext: null,
   filename: null,
   decrypted_size: null,
+  isDoubleEncrypted: false,
   fetch_progress: 1024,
   fetch_status: 3,
 });

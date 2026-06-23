@@ -31,6 +31,7 @@ describe("File Component Memoization", () => {
     filename: null,
     fetch_progress: null,
     decrypted_size: null,
+    isDoubleEncrypted: false,
     fetch_status: FetchStatus.Initial,
   };
 
@@ -136,6 +137,7 @@ describe("File Component", () => {
     filename: null,
     fetch_progress: null,
     decrypted_size: null,
+    isDoubleEncrypted: false,
     fetch_status: FetchStatus.Initial,
     ...overrides,
   });
@@ -227,6 +229,7 @@ describe("File Component", () => {
           fetch_status: FetchStatus.Complete,
           filename: "/path/to/document.pdf",
           decrypted_size: 2048,
+          isDoubleEncrypted: false,
         })}
         designation="Test Source"
         onUpdate={mockOnUpdate}
@@ -257,6 +260,7 @@ describe("File Component", () => {
           fetch_status: FetchStatus.Complete,
           filename: "/path/to/document.pdf",
           decrypted_size: 2048,
+          isDoubleEncrypted: false,
         })}
         designation="Test Source"
         onUpdate={mockOnUpdate}
@@ -335,6 +339,7 @@ describe("File Component", () => {
           fetch_status: FetchStatus.Complete,
           filename: "/path/to/document.pdf",
           decrypted_size: 2048,
+          isDoubleEncrypted: false,
         })}
         designation="Test Source"
         onUpdate={mockOnUpdate}
@@ -364,6 +369,7 @@ describe("File Component", () => {
           fetch_status: FetchStatus.Complete,
           filename: "/path/to/document.pdf",
           decrypted_size: 2048,
+          isDoubleEncrypted: false,
         })}
         designation="Test Source"
         onUpdate={mockOnUpdate}
