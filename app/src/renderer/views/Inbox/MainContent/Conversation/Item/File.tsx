@@ -59,6 +59,7 @@ const IMAGE_EXTENSIONS = new Set([
   ".png",
   ".jpg",
   ".jpeg",
+  ".jxl",
   ".gif",
   ".bmp",
   ".tif",
