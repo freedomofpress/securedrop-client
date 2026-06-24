@@ -1,4 +1,4 @@
-ARG DISTRO=bookworm
+ARG DISTRO=trixie
 FROM debian:$DISTRO
 
 # ARGs must be repeated for every different build stage
