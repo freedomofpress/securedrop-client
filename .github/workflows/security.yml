@@ -10,7 +10,7 @@ jobs:
   rust-audit:
     runs-on: ubuntu-latest
     # Keep version in sync with rust-toolchain.toml
-    container: rust:1.90.0
+    container: rust:1.96.0
     steps:
       - uses: actions/checkout@v6
         with:
