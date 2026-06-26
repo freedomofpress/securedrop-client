@@ -7,6 +7,7 @@ securedrop-gpg-config: control-file-is-empty [conffiles]
 # profile.d scripts do not need exec bit (they are sourced)
 securedrop-gpg-config: script-not-executable [etc/profile.d/sd-gpg-hide-prompt.sh]
 securedrop-gpg-config: file-in-etc-not-marked-as-conffile [etc/profile.d/sd-gpg-hide-prompt.sh]
+securedrop-gpg-config: file-in-etc-not-marked-as-conffile [etc/gnupg/gpg-agent.conf]
 
 # Not needed
 securedrop-gpg-config: extended-description-is-empty
