@@ -2,6 +2,9 @@
 import { expect, afterEach, beforeEach, vi } from "vitest";
 import { cleanup, render, type RenderResult } from "@testing-library/react";
 import * as matchers from "@testing-library/jest-dom/matchers";
+import { configureAxe } from "vitest-axe";
+import * as vitestAxeMatchers from "vitest-axe/matchers";
+import "vitest-axe/extend-expect";
 import { MemoryRouter, useLocation } from "react-router";
 import { Provider } from "react-redux";
 import React, { memo } from "react";
@@ -53,6 +56,8 @@ global.ResizeObserver = class {
 
 // extends Vitest's expect with jest-dom matchers
 expect.extend(matchers);
+// extends Vitest's expect with axe accessibility matchers
+expect.extend(vitestAxeMatchers);
 
 // Mock window.matchMedia for Ant components
 Object.defineProperty(window, "matchMedia", {
@@ -247,6 +252,46 @@ beforeEach(() => {
     getAppVersion: vi.fn().mockResolvedValue("testVersion"),
   } as ElectronAPI;
 });
+
+// Accessibility testing helpers
+
+export const checkA11y = configureAxe({
+  rules: {
+    // Disable color-contrast: jsdom does not compute CSS so this would produce
+    // false positives.
+    "color-contrast": { enabled: false },
+  },
+});
+
+export const renderAndCheckA11y = async (
+  ui: React.ReactElement,
+  options?: Parameters<typeof renderWithProviders>[1],
+  // Axe rule IDs that this call site is currently expected to violate.
+  // This way, we can mute pre-existing failures to avoid blocking CI while
+  // still catching + fixing new violations + new rules.
+  // Should mark each mute-site with a TODO and aim to eventually remove all
+  // knownViolations and this param.
+  knownViolations: string[] = [],
+): Promise<RenderResult & { store: ReturnType<typeof setupStore> }> => {
+  const result = renderWithProviders(ui, options);
+  const results = await checkA11y(result.container);
+  const violations = results.violations ?? [];
+  const firing = new Set(violations.map((v) => v.id));
+
+  // Unexpected violations still fail CI.
+  const unexpected = violations.filter((v) => !knownViolations.includes(v.id));
+  expect({ ...results, violations: unexpected }).toHaveNoViolations();
+
+  // If we had previously muted a violation but it has since been fixed,
+  // should alert so that we remember to clean up the knownViolations list.
+  const stale = knownViolations.filter((id) => !firing.has(id));
+  expect(
+    stale,
+    `These a11y rules no longer fail: remove from knownViolations: ${stale.join(", ")}`,
+  ).toEqual([]);
+
+  return result;
+};
 
 // Component to track react-router location changes for testing
 export const LocationTracker = ({

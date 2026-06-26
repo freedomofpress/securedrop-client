@@ -9,7 +9,54 @@ import importPlugin from "eslint-plugin-import";
 import i18next from "eslint-plugin-i18next";
 import jsxA11y from "eslint-plugin-jsx-a11y";
 
-export default defineConfig([
+// Local rule: test files that call renderWithProviders must also call
+// renderAndCheckA11y so every rendered component is checked for accessibility.
+const requireA11yInTests = {
+  meta: {
+    type: "suggestion" as const,
+    docs: {
+      description:
+        "Test files that call renderWithProviders must also call renderAndCheckA11y.",
+    },
+    schema: [],
+    messages: {
+      missingA11yCall:
+        "This test file calls renderWithProviders but never calls " +
+        "renderAndCheckA11y. Add at least one renderAndCheckA11y(...) call " +
+        "to verify accessibility.",
+    },
+  },
+  create(context: { report: (d: object) => void }) {
+    let usesRenderWithProviders = false;
+    let usesRenderAndCheckA11y = false;
+    let programNode: object | null = null;
+    return {
+      Program(node: object) {
+        programNode = node;
+      },
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      CallExpression(node: any) {
+        const name =
+          node.callee.type === "Identifier" ? node.callee.name : null;
+        if (name === "renderWithProviders") {
+          usesRenderWithProviders = true;
+        }
+        if (name === "renderAndCheckA11y") {
+          usesRenderAndCheckA11y = true;
+        }
+      },
+      "Program:exit"() {
+        if (usesRenderWithProviders && !usesRenderAndCheckA11y) {
+          context.report({ node: programNode!, messageId: "missingA11yCall" });
+        }
+      },
+    };
+  },
+};
+
+// ---------------------------------------------------------------------------
+
+export default tseslint.config(
   {
     ignores: [
       "eslint.config.ts",
@@ -74,4 +121,18 @@ export default defineConfig([
       "@typescript-eslint/no-explicit-any": "off",
     },
   },
-]);
+  // Require renderAndCheckA11y in every renderer test that calls renderWithProviders.
+  {
+    files: ["src/renderer/**/*.test.ts", "src/renderer/**/*.test.tsx"],
+    plugins: {
+      local: {
+        rules: {
+          "require-a11y-in-tests": requireA11yInTests,
+        },
+      },
+    },
+    rules: {
+      "local/require-a11y-in-tests": "error",
+    },
+  },
+);
