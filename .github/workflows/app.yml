@@ -190,7 +190,7 @@ jobs:
           persist-credentials: false
           repository: "freedomofpress/securedrop"
           path: "securedrop-server"
-      - uses: actions/setup-python@v6
+      - uses: actions/setup-python@v6.2.0
         with:
           python-version: "3.11"
       - name: Bootstrap node.js
