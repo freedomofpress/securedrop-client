@@ -33,7 +33,7 @@ jobs:
           node-version: "24.15.x"
 
       - name: Install pnpm and dependencies
-        uses: pnpm/action-setup@v6.0.8
+        uses: pnpm/action-setup@v6.0.9
         with:
           version: 10
           cache: true
