@@ -46,7 +46,7 @@ jobs:
       - name: Install Rust-specific dependencies
         run: apt-get install --yes build-essential curl libssl-dev pkg-config
         if: ${{ matrix.component == 'proxy' }}
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
         with:
           persist-credentials: false
       # Install Rust, keep in sync with rust-toolchain.toml
