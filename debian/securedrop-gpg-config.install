@@ -1,3 +1,4 @@
 #!/usr/bin/dh-exec --with=install
 gpg-config/profile.d/sd-gpg-hide-prompt.sh etc/profile.d/
+gpg-config/gpg-agent.conf etc/gnupg/
 gpg-config/securedrop-get-secret-keys.sh => usr/bin/securedrop-get-secret-keys
