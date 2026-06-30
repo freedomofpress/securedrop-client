@@ -4,6 +4,12 @@ packages:
 # 7-day cooldown
 minimumReleaseAge: 10080
 
+# don't allow deps to come in via git or a direct tarball
+blockExoticSubdeps: true
+
+# if packages previously used trusted publishing, they must continue
+trustPolicy: no-downgrade
+
 ignoredBuiltDependencies:
   - "@tailwindcss/oxide"
   - better-sqlite3
