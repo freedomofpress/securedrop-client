@@ -46,6 +46,51 @@ function isExpectedGpgStderr(stderr: string): boolean {
   );
 }
 
+/**
+ * Returns true if the buffer contains a PGP-encrypted payload — either an
+ * ASCII-armored block (starts with "-----BEGIN PGP MESSAGE-----") or a binary
+ * OpenPGP packet whose first packet tag is a Public-Key (1) or Symmetric-Key (3)
+ * Encrypted Session Key packet (RFC 4880 §4.2 / §5.1 / §5.3).
+ */
+export function isPgpEncrypted(buf: Buffer): boolean {
+  if (buf.length === 0) {
+    return false;
+  }
+
+  // ASCII-armored: "-----BEGIN PGP MESSAGE-----"
+  if (buf.slice(0, 27).toString("ascii") === "-----BEGIN PGP MESSAGE-----") {
+    return true;
+  }
+
+  // Binary OpenPGP: bit 7 must be set on every packet tag byte (RFC 4880 §4.2)
+  const firstByte = buf[0];
+  if ((firstByte & 0x80) === 0) {
+    return false;
+  }
+
+  let packetTag: number;
+  if (firstByte & 0x40) {
+    // New format (§4.2): bits 5-0 are the packet tag
+    packetTag = firstByte & 0x3f;
+  } else {
+    // Old format (§4.2): bits 5-2 are the packet tag
+    packetTag = (firstByte & 0x3c) >> 2;
+  }
+
+  // Tag 1 = Public-Key Encrypted Session Key, Tag 3 = Symmetric-Key ESK
+  return packetTag === 1 || packetTag === 3;
+}
+
+export interface DecryptMessageResult {
+  plaintext: string;
+  isDoubleEncrypted: boolean;
+}
+
+export interface DecryptFileResult {
+  finalPath: string;
+  isDoubleEncrypted: boolean;
+}
+
 export class CryptoError extends Error {
   constructor(
     message: string,
@@ -190,12 +235,12 @@ export class Crypto {
    * Decrypt a message from encrypted buffer content
    * Messages are not gzipped, so no decompression is needed (unlike files)
    * @param encryptedContent - The encrypted message content
-   * @returns Promise<string> - The decrypted plaintext
+   * @returns Promise<DecryptMessageResult> - The decrypted plaintext and double-encryption flag
    */
   async decryptMessage(
     encryptedContent: Buffer,
     signal?: AbortSignal,
-  ): Promise<string> {
+  ): Promise<DecryptMessageResult> {
     const cmd = this.getGpgCommand();
     cmd.push("--decrypt");
 
@@ -264,8 +309,24 @@ export class Crypto {
           return;
         }
 
-        // Messages are not gzipped, so return the decrypted content directly as string
-        resolve(stdout.toString("utf8"));
+        const plaintext = stdout.toString("utf8");
+        if (!isPgpEncrypted(stdout)) {
+          resolve({ plaintext, isDoubleEncrypted: false });
+          return;
+        }
+
+        // Double-encrypted: attempt a second GPG decryption of the inner message
+        this.decryptMessage(stdout, signal).then(
+          (inner) => {
+            resolve({ plaintext: inner.plaintext, isDoubleEncrypted: true });
+          },
+          (innerError) => {
+            console.warn(
+              `Double-encryption detected but inner message decryption failed: ${innerError}`,
+            );
+            resolve({ plaintext, isDoubleEncrypted: false });
+          },
+        );
       });
 
       gpgProcess.on("error", (error) => {
@@ -284,14 +345,14 @@ export class Crypto {
    * Decrypt a file and return the path to the decrypted file with original filename
    * Uses streaming approach to handle large files efficiently (similar to legacy client)
    * @param filepath - Path to the encrypted file
-   * @returns Promise with path to decrypted file
+   * @returns Promise<DecryptFileResult> - Path to the decrypted file and double-encryption flag
    */
   async decryptFile(
     storage: Storage,
     itemDirectory: PathBuilder,
     filepath: string,
     signal?: AbortSignal,
-  ): Promise<string> {
+  ): Promise<DecryptFileResult> {
     const cmd = this.getGpgCommand();
     cmd.push("--decrypt", filepath);
 
@@ -407,8 +468,42 @@ export class Crypto {
           // Clean up temporary GPG output file
           fs.unlink(tempGpgOutput, () => {});
 
-          isSettled = true;
-          resolve(finalAbsolutePath);
+          // Peek at the decompressed output to detect double-encryption
+          const headerBuf = await this.readFileHeader(finalAbsolutePath);
+          if (!isPgpEncrypted(headerBuf)) {
+            isSettled = true;
+            resolve({ finalPath: finalAbsolutePath, isDoubleEncrypted: false });
+            return;
+          }
+
+          // Double-encrypted: attempt a second GPG decryption
+          const innerFilename = this.stripGpgExtension(
+            path.basename(finalAbsolutePath),
+          );
+          const innerAbsolutePath = itemDirectory.join(
+            new UnsafePathComponent(innerFilename),
+          );
+          try {
+            await this.decryptRawFile(
+              finalAbsolutePath,
+              innerAbsolutePath,
+              signal,
+            );
+            // Remove the intermediate (still-encrypted) decompressed file
+            fs.unlink(finalAbsolutePath, () => {});
+            isSettled = true;
+            resolve({ finalPath: innerAbsolutePath, isDoubleEncrypted: true });
+          } catch (innerError) {
+            // Second decryption failed — surface the intermediate file as-is
+            console.warn(
+              `Double-encryption detected but inner decryption failed: ${innerError}`,
+            );
+            isSettled = true;
+            resolve({
+              finalPath: finalAbsolutePath,
+              isDoubleEncrypted: false,
+            });
+          }
         } catch (error) {
           // Clean up temp directory on error
           fs.rmSync(tempDir.path, { recursive: true, force: true });
@@ -558,6 +653,100 @@ export class Crypto {
     }
 
     return null; // No filename in header
+  }
+
+  /** Read the first 32 bytes of a file for magic-byte detection. */
+  private readFileHeader(filePath: string): Promise<Buffer> {
+    return new Promise((resolve, reject) => {
+      const stream = fs.createReadStream(filePath, { start: 0, end: 31 });
+      const chunks: Buffer[] = [];
+      stream.on("data", (chunk) =>
+        chunks.push(Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk)),
+      );
+      stream.on("end", () => resolve(Buffer.concat(chunks)));
+      stream.on("error", reject);
+    });
+  }
+
+  /**
+   * Strip a .gpg or .asc extension from a filename.
+   * Falls back to appending ".decrypted" when no recognized extension is present
+   * so the output path never collides with the input path.
+   */
+  private stripGpgExtension(filename: string): string {
+    if (filename.endsWith(".gpg") || filename.endsWith(".asc")) {
+      return filename.slice(0, -4);
+    }
+    return filename + ".decrypted";
+  }
+
+  /**
+   * Decrypt an already-decompressed file to a new path using the available
+   * GPG keys. Used for the inner layer of double-encrypted submissions.
+   */
+  private decryptRawFile(
+    inputPath: string,
+    outputPath: string,
+    signal?: AbortSignal,
+  ): Promise<void> {
+    const cmd = this.getGpgCommand();
+    cmd.push("--decrypt", "--output", outputPath, inputPath);
+
+    return new Promise((resolve, reject) => {
+      let stderr = Buffer.alloc(0);
+      const gpgProcess = spawn(cmd[0], cmd.slice(1), this.getSpawnOptions());
+
+      const abortListener = () => {
+        gpgProcess.kill();
+      };
+      signal?.addEventListener("abort", abortListener, { once: true });
+
+      if (signal?.aborted) {
+        signal.removeEventListener("abort", abortListener);
+        gpgProcess.kill();
+        const err = new Error("Decryption was cancelled");
+        err.name = "AbortError";
+        reject(err);
+        return;
+      }
+
+      gpgProcess.stderr.on("data", (chunk) => {
+        stderr = Buffer.concat([stderr, chunk]);
+      });
+
+      gpgProcess.on("close", (code, exitSignal) => {
+        signal?.removeEventListener("abort", abortListener);
+        if (signal?.aborted) {
+          const err = new Error("Decryption was cancelled");
+          err.name = "AbortError";
+          reject(err);
+          return;
+        }
+        if (exitSignal) {
+          reject(new Error(`Process terminated with signal ${exitSignal}`));
+          return;
+        }
+        if (code !== 0) {
+          reject(
+            new CryptoError(
+              `Inner GPG decryption failed (exit code ${code}): ${stderr.toString("utf8")}`,
+            ),
+          );
+          return;
+        }
+        resolve();
+      });
+
+      gpgProcess.on("error", (error) => {
+        signal?.removeEventListener("abort", abortListener);
+        reject(
+          new CryptoError(
+            `Failed to start GPG process for inner decryption: ${error.message}`,
+            error,
+          ),
+        );
+      });
+    });
   }
 }
 

@@ -231,6 +231,8 @@
     "exportToWhistleflow": "Export to Whistleflow",
     "printFile": "Print",
     "deleteFile": "Delete item",
+    "doubleEncryptedBadge": "Source-encrypted",
+    "doubleEncryptedTooltip": "This submission was encrypted by the source before uploading",
     "wizard": {
       "malwareTitle": "Malware",
       "malwareWarning": "This workstation lets you open files securely. If you open files on another computer, any embedded malware may spread to your computer or network. If you are unsure how to manage this risk, please print the file, or contact your administrator.",

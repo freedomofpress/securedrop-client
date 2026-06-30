@@ -70,6 +70,7 @@ describe("PrintWizard Component", () => {
     plaintext: null,
     filename: "/path/to/testfile.pdf",
     decrypted_size: null,
+    isDoubleEncrypted: false,
   };
 
   const mockPrintPayload: PrintPayload = {

@@ -104,6 +104,7 @@ function mockItem(
     plaintext: null,
     filename: null,
     decrypted_size: null,
+    isDoubleEncrypted: false,
   };
 }
 
@@ -132,7 +133,10 @@ describe("TaskQueue - Two-Phase Download and Decryption", () => {
       vi.spyOn(BufferedWriter.prototype, "getBuffer").mockReturnValue(
         encryptedBuffer,
       );
-      mockCrypto.decryptMessage.mockResolvedValue(decryptedContent);
+      mockCrypto.decryptMessage.mockResolvedValue({
+        plaintext: decryptedContent,
+        isDoubleEncrypted: false,
+      });
 
       // Mock successful download
       mockProxyStreamRequest.mockResolvedValue({
@@ -166,6 +170,7 @@ describe("TaskQueue - Two-Phase Download and Decryption", () => {
       expect(db.completePlaintextItem).toHaveBeenCalledWith(
         "msg1",
         decryptedContent,
+        false,
       );
     });
 
@@ -232,7 +237,10 @@ describe("TaskQueue - Two-Phase Download and Decryption", () => {
       // Second attempt - retry from FailedDecryptionRetryable status
       // Mock successful decryption this time
       const decryptedContent = "decrypted message content";
-      mockCrypto.decryptMessage.mockResolvedValue(decryptedContent);
+      mockCrypto.decryptMessage.mockResolvedValue({
+        plaintext: decryptedContent,
+        isDoubleEncrypted: false,
+      });
       fs.promises.readFile = vi.fn().mockResolvedValue(encryptedBuffer);
 
       await queue.process({ id: "msg1" }, db);
@@ -245,6 +253,7 @@ describe("TaskQueue - Two-Phase Download and Decryption", () => {
       expect(db.completePlaintextItem).toHaveBeenCalledWith(
         "msg1",
         decryptedContent,
+        false,
       );
 
       // Should clean up the file after successful decryption
@@ -299,7 +308,10 @@ describe("TaskQueue - Two-Phase Download and Decryption", () => {
       vi.spyOn(BufferedWriter.prototype, "getBuffer").mockReturnValue(
         encryptedBuffer,
       );
-      mockCrypto.decryptMessage.mockResolvedValue(decryptedContent);
+      mockCrypto.decryptMessage.mockResolvedValue({
+        plaintext: decryptedContent,
+        isDoubleEncrypted: false,
+      });
 
       mockProxyStreamRequest.mockResolvedValueOnce({
         complete: true,
@@ -313,6 +325,7 @@ describe("TaskQueue - Two-Phase Download and Decryption", () => {
       expect(db.completePlaintextItem).toHaveBeenCalledWith(
         "msg1",
         decryptedContent,
+        false,
       );
     });
   });
@@ -333,7 +346,10 @@ describe("TaskQueue - Two-Phase Download and Decryption", () => {
       vi.spyOn(BufferedWriter.prototype, "getBuffer").mockReturnValue(
         encryptedBuffer,
       );
-      mockCrypto.decryptMessage.mockResolvedValue(decryptedContent);
+      mockCrypto.decryptMessage.mockResolvedValue({
+        plaintext: decryptedContent,
+        isDoubleEncrypted: false,
+      });
 
       mockProxyStreamRequest.mockResolvedValue({
         complete: true,
@@ -359,6 +375,7 @@ describe("TaskQueue - Two-Phase Download and Decryption", () => {
       expect(db.completePlaintextItem).toHaveBeenCalledWith(
         "reply1",
         decryptedContent,
+        false,
       );
     });
 
@@ -418,7 +435,10 @@ describe("TaskQueue - Two-Phase Download and Decryption", () => {
 
       // Second attempt - successful decryption from disk
       const decryptedContent = "decrypted reply content";
-      mockCrypto.decryptMessage.mockResolvedValue(decryptedContent);
+      mockCrypto.decryptMessage.mockResolvedValue({
+        plaintext: decryptedContent,
+        isDoubleEncrypted: false,
+      });
       fs.promises.readFile = vi.fn().mockResolvedValue(encryptedBuffer);
 
       await queue.process({ id: "reply1" }, db);
@@ -427,6 +447,7 @@ describe("TaskQueue - Two-Phase Download and Decryption", () => {
       expect(db.completePlaintextItem).toHaveBeenCalledWith(
         "reply1",
         decryptedContent,
+        false,
       );
       expect(fs.promises.unlink).toHaveBeenCalled();
     });
@@ -473,7 +494,10 @@ describe("TaskQueue - Two-Phase Download and Decryption", () => {
       vi.spyOn(BufferedWriter.prototype, "getBuffer").mockReturnValue(
         encryptedBuffer,
       );
-      mockCrypto.decryptMessage.mockResolvedValue(decryptedContent);
+      mockCrypto.decryptMessage.mockResolvedValue({
+        plaintext: decryptedContent,
+        isDoubleEncrypted: false,
+      });
 
       mockProxyStreamRequest.mockResolvedValueOnce({
         complete: true,
@@ -486,6 +510,7 @@ describe("TaskQueue - Two-Phase Download and Decryption", () => {
       expect(db.completePlaintextItem).toHaveBeenCalledWith(
         "reply1",
         decryptedContent,
+        false,
       );
     });
   });
@@ -512,9 +537,10 @@ describe("TaskQueue - Two-Phase Download and Decryption", () => {
       });
 
       // Mock successful decryption
-      mockCrypto.decryptFile.mockResolvedValue(
-        "/securedrop/source1/plaintext.txt",
-      );
+      mockCrypto.decryptFile.mockResolvedValue({
+        finalPath: "/securedrop/source1/plaintext.txt",
+        isDoubleEncrypted: false,
+      });
 
       const queue = new TaskQueue(db);
       await queue.process({ id: "msg1" }, db);
@@ -551,6 +577,7 @@ describe("TaskQueue - Two-Phase Download and Decryption", () => {
         "msg1",
         "/securedrop/source1/plaintext.txt",
         expect.any(Number),
+        false,
       );
     });
 
@@ -568,9 +595,10 @@ describe("TaskQueue - Two-Phase Download and Decryption", () => {
       db.getSource = vi.fn(() => ({}) as never);
 
       // Mock crypto decryption success
-      mockCrypto.decryptFile.mockResolvedValue(
-        "/securedrop/source1/plaintext.txt",
-      );
+      mockCrypto.decryptFile.mockResolvedValue({
+        finalPath: "/securedrop/source1/plaintext.txt",
+        isDoubleEncrypted: false,
+      });
 
       // Mock Date.now to control throttling intervals
       const nowSpy = vi
@@ -672,9 +700,10 @@ describe("TaskQueue - Two-Phase Download and Decryption", () => {
 
       // Second attempt - retry from FailedDecryptionRetryable status
       // Mock successful decryption this time
-      mockCrypto.decryptFile.mockResolvedValue(
-        "/securedrop/source1/plaintext.txt",
-      );
+      mockCrypto.decryptFile.mockResolvedValue({
+        finalPath: "/securedrop/source1/plaintext.txt",
+        isDoubleEncrypted: false,
+      });
 
       await queue.process({ id: "msg1" }, db);
 
@@ -684,6 +713,7 @@ describe("TaskQueue - Two-Phase Download and Decryption", () => {
         "msg1",
         "/securedrop/source1/plaintext.txt",
         expect.any(Number),
+        false,
       );
       expect(fs.promises.unlink).toHaveBeenCalledWith(
         expect.stringContaining("/encrypted.gpg"),
@@ -740,9 +770,10 @@ describe("TaskQueue - Two-Phase Download and Decryption", () => {
         sha256sum: FILE_ETAG,
       });
 
-      mockCrypto.decryptFile.mockResolvedValue(
-        "/securedrop/source1/plaintext.txt",
-      );
+      mockCrypto.decryptFile.mockResolvedValue({
+        finalPath: "/securedrop/source1/plaintext.txt",
+        isDoubleEncrypted: false,
+      });
 
       await queue.process({ id: "msg1" }, db);
 
@@ -751,6 +782,7 @@ describe("TaskQueue - Two-Phase Download and Decryption", () => {
         "msg1",
         "/securedrop/source1/plaintext.txt",
         expect.any(Number),
+        false,
       );
     });
   });
@@ -1297,7 +1329,10 @@ describe("TaskQueue - Two-Phase Download and Decryption", () => {
       vi.spyOn(BufferedWriter.prototype, "getBuffer").mockReturnValue(
         encryptedBuffer,
       );
-      mockCrypto.decryptMessage.mockResolvedValue("decrypted");
+      mockCrypto.decryptMessage.mockResolvedValue({
+        plaintext: "decrypted",
+        isDoubleEncrypted: false,
+      });
 
       const queue = new TaskQueue(db);
 
@@ -1309,6 +1344,7 @@ describe("TaskQueue - Two-Phase Download and Decryption", () => {
       expect(db.completePlaintextItem).toHaveBeenCalledWith(
         "msg1",
         "decrypted",
+        false,
       );
     });
 
@@ -1333,7 +1369,10 @@ describe("TaskQueue - Two-Phase Download and Decryption", () => {
       vi.spyOn(BufferedWriter.prototype, "getBuffer").mockReturnValue(
         encryptedBuffer,
       );
-      mockCrypto.decryptMessage.mockResolvedValue("decrypted");
+      mockCrypto.decryptMessage.mockResolvedValue({
+        plaintext: "decrypted",
+        isDoubleEncrypted: false,
+      });
 
       const queue = new TaskQueue(db);
       await queue.process({ id: "msg1" }, db);
@@ -1369,7 +1408,10 @@ describe("TaskQueue - Two-Phase Download and Decryption", () => {
       vi.spyOn(BufferedWriter.prototype, "getBuffer").mockReturnValue(
         encryptedBuffer,
       );
-      mockCrypto.decryptMessage.mockResolvedValue("decrypted");
+      mockCrypto.decryptMessage.mockResolvedValue({
+        plaintext: "decrypted",
+        isDoubleEncrypted: false,
+      });
 
       const queue = new TaskQueue(db);
       await queue.process({ id: "msg1" }, db);
@@ -1448,7 +1490,10 @@ describe("TaskQueue - Two-Phase Download and Decryption", () => {
       vi.spyOn(BufferedWriter.prototype, "getBuffer").mockReturnValue(
         encryptedBuffer,
       );
-      mockCrypto.decryptMessage.mockResolvedValue("decrypted plaintext");
+      mockCrypto.decryptMessage.mockResolvedValue({
+        plaintext: "decrypted plaintext",
+        isDoubleEncrypted: false,
+      });
 
       const queue = new TaskQueue(db);
       await queue.process({ id: "msg1" }, db);
@@ -1485,7 +1530,10 @@ describe("TaskQueue - Two-Phase Download and Decryption", () => {
         sha256sum: FILE_ETAG,
       });
 
-      mockCrypto.decryptFile.mockResolvedValue("/tmp/decrypted/file.txt");
+      mockCrypto.decryptFile.mockResolvedValue({
+        finalPath: "/tmp/decrypted/file.txt",
+        isDoubleEncrypted: false,
+      });
 
       const queue = new TaskQueue(db);
       await queue.process({ id: "file1" }, db);
@@ -1520,7 +1568,10 @@ describe("TaskQueue - Two-Phase Download and Decryption", () => {
           mockItem(metadata, FetchStatus.ScheduledDeletion, 0),
         );
 
-      mockCrypto.decryptMessage.mockResolvedValue("decrypted plaintext");
+      mockCrypto.decryptMessage.mockResolvedValue({
+        plaintext: "decrypted plaintext",
+        isDoubleEncrypted: false,
+      });
       fs.promises.readFile = vi
         .fn()
         .mockResolvedValue(Buffer.from("encrypted"));
@@ -1606,8 +1657,8 @@ describe("TaskQueue - Two-Phase Download and Decryption", () => {
       });
 
       mockCrypto.decryptFile.mockResolvedValue({
-        decryptedFilePath: "/tmp/decrypted/file.txt",
-        decryptedSize: 145000000,
+        finalPath: "/tmp/decrypted/file.txt",
+        isDoubleEncrypted: false,
       });
 
       await queue.process({ id: "file1" }, db);
@@ -1654,8 +1705,8 @@ describe("TaskQueue - Two-Phase Download and Decryption", () => {
       });
 
       mockCrypto.decryptFile.mockResolvedValue({
-        decryptedFilePath: "/tmp/decrypted/file.txt",
-        decryptedSize: 95000000,
+        finalPath: "/tmp/decrypted/file.txt",
+        isDoubleEncrypted: false,
       });
 
       const queue = new TaskQueue(db);
@@ -1702,8 +1753,8 @@ describe("TaskQueue - Two-Phase Download and Decryption", () => {
       });
 
       mockCrypto.decryptFile.mockResolvedValue({
-        decryptedFilePath: "/tmp/decrypted/file.txt",
-        decryptedSize: 95000000,
+        finalPath: "/tmp/decrypted/file.txt",
+        isDoubleEncrypted: false,
       });
 
       const queue = new TaskQueue(db);
@@ -1782,7 +1833,10 @@ describe("TaskQueue - Two-Phase Download and Decryption", () => {
       vi.spyOn(BufferedWriter.prototype, "getBuffer").mockReturnValue(
         encryptedBuffer,
       );
-      mockCrypto.decryptMessage.mockResolvedValue("decrypted content");
+      mockCrypto.decryptMessage.mockResolvedValue({
+        plaintext: "decrypted content",
+        isDoubleEncrypted: false,
+      });
 
       const queue = new TaskQueue(db);
       await queue.process({ id: "msg1" }, db);
@@ -1790,6 +1844,7 @@ describe("TaskQueue - Two-Phase Download and Decryption", () => {
       expect(db.completePlaintextItem).toHaveBeenCalledWith(
         "msg1",
         "decrypted content",
+        false,
       );
       expect(db.failDownload).not.toHaveBeenCalled();
     });
@@ -1845,7 +1900,10 @@ describe("TaskQueue - Two-Phase Download and Decryption", () => {
         sha256sum: FILE_ETAG,
       });
 
-      mockCrypto.decryptFile.mockResolvedValue("/securedrop/source1/file.txt");
+      mockCrypto.decryptFile.mockResolvedValue({
+        finalPath: "/securedrop/source1/file.txt",
+        isDoubleEncrypted: false,
+      });
 
       const queue = new TaskQueue(db);
       await queue.process({ id: "file1" }, db);

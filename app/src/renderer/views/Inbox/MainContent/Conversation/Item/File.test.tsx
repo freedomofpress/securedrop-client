@@ -32,6 +32,7 @@ describe("File Component Memoization", () => {
     filename: null,
     fetch_progress: null,
     decrypted_size: null,
+    isDoubleEncrypted: false,
     fetch_status: FetchStatus.Initial,
   };
 
@@ -137,6 +138,7 @@ describe("File Component", () => {
     filename: null,
     fetch_progress: null,
     decrypted_size: null,
+    isDoubleEncrypted: false,
     fetch_status: FetchStatus.Initial,
     ...overrides,
   });
@@ -228,6 +230,7 @@ describe("File Component", () => {
           fetch_status: FetchStatus.Complete,
           filename: "/path/to/document.pdf",
           decrypted_size: 2048,
+          isDoubleEncrypted: false,
         })}
         designation="Test Source"
         onUpdate={mockOnUpdate}
@@ -258,6 +261,7 @@ describe("File Component", () => {
           fetch_status: FetchStatus.Complete,
           filename: "/path/to/document.pdf",
           decrypted_size: 2048,
+          isDoubleEncrypted: false,
         })}
         designation="Test Source"
         onUpdate={mockOnUpdate}
@@ -336,6 +340,7 @@ describe("File Component", () => {
           fetch_status: FetchStatus.Complete,
           filename: "/path/to/document.pdf",
           decrypted_size: 2048,
+          isDoubleEncrypted: false,
         })}
         designation="Test Source"
         onUpdate={mockOnUpdate}
@@ -365,6 +370,7 @@ describe("File Component", () => {
           fetch_status: FetchStatus.Complete,
           filename: "/path/to/document.pdf",
           decrypted_size: 2048,
+          isDoubleEncrypted: false,
         })}
         designation="Test Source"
         onUpdate={mockOnUpdate}
@@ -390,6 +396,52 @@ describe("File Component", () => {
     // which should make the button visible so keyboard users can see it.
     fireEvent.focus(trashButton);
     expect(wrapper.style.opacity).toBe("1");
+  });
+
+  it("shows the double-encryption badge on a downloaded double-encrypted file", () => {
+    renderWithProviders(
+      <File
+        item={makeItem({
+          fetch_status: FetchStatus.Complete,
+          filename: "/path/to/document.pdf",
+          decrypted_size: 2048,
+          isDoubleEncrypted: true,
+        })}
+        designation="Test Source"
+        onUpdate={mockOnUpdate}
+        onDelete={mockOnDelete}
+      />,
+      {
+        preloadedState: {
+          session: { status: SessionStatus.Auth } as any,
+        },
+      },
+    );
+
+    expect(screen.getByText("Source-encrypted")).toBeInTheDocument();
+  });
+
+  it("does not show the double-encryption badge on a normal file", () => {
+    renderWithProviders(
+      <File
+        item={makeItem({
+          fetch_status: FetchStatus.Complete,
+          filename: "/path/to/document.pdf",
+          decrypted_size: 2048,
+          isDoubleEncrypted: false,
+        })}
+        designation="Test Source"
+        onUpdate={mockOnUpdate}
+        onDelete={mockOnDelete}
+      />,
+      {
+        preloadedState: {
+          session: { status: SessionStatus.Auth } as any,
+        },
+      },
+    );
+
+    expect(screen.queryByText("Source-encrypted")).not.toBeInTheDocument();
   });
 });
 

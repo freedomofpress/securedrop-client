@@ -71,6 +71,7 @@ describe("ExportWizard Component", () => {
     plaintext: null,
     filename: "/path/to/testfile.pdf",
     decrypted_size: null,
+    isDoubleEncrypted: false,
   };
 
   const mockFilePayload: ExportPayload = {
