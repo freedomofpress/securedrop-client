@@ -38,8 +38,7 @@
   "keywords": [],
   "license": "AGPL-3.0-or-later",
   "//": {
-    "better-sqlite": "12.9.1 doesn't have electron prebuilds working right now: https://github.com/WiseLibs/better-sqlite3/releases/tag/v12.9.1",
-    "electron-builder": "pinned to 26.3.0 because of regressions: https://github.com/freedomofpress/securedrop-client/issues/2996"
+    "better-sqlite": "12.9.1 doesn't have electron prebuilds working right now: https://github.com/WiseLibs/better-sqlite3/releases/tag/v12.9.1"
   },
   "devDependencies": {
     "@ant-design/icons": "5.6.1",
@@ -66,7 +65,7 @@
     "@vitest/coverage-v8": "^3.2.4",
     "antd": "^5.29.3",
     "electron": "^41",
-    "electron-builder": "<26.3.1",
+    "electron-builder": "^26.15.3",
     "electron-devtools-installer": "^4.0.0",
     "electron-vite": "^5.0.0",
     "eslint": "^9.39.2",
@@ -110,7 +109,7 @@
     "liquidjs": "^10.27.0",
     "openpgp": "^6.3.0",
     "source-map-support": "^0.5.21",
-    "tar": "^7.5.8",
+    "tar": "^7.5.16",
     "zod": "^4.3.5"
   },
   "pnpm": {
