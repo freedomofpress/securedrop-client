@@ -189,6 +189,14 @@ export class DB {
     { count: number }
   >;
   private deletePendingEvent: Statement<{ snowflake_id: string }, void>;
+  private incrementPendingEventRetry: Statement<
+    { snowflake_id: string; status: number },
+    void
+  >;
+  private setPendingEventStatus: Statement<
+    { snowflake_id: string; status: number },
+    void
+  >;
   private selectPendingEvents: Statement<[{ limit: number }], PendingEventRow>;
   private deletePendingEventsBySourceScope: Statement<
     { source_uuid: string },
@@ -264,7 +272,7 @@ export class DB {
     );
 
     this.selectAllSourceVersion = this.db.prepare(
-      "SELECT uuid, version FROM sources_projected",
+      "SELECT uuid, version FROM sources",
     );
     this.selectUnprojectedSourceVersion = this.db.prepare(
       "SELECT version FROM sources WHERE uuid = @uuid",
@@ -277,7 +285,7 @@ export class DB {
     );
 
     this.selectAllItemVersion = this.db.prepare(
-      "SELECT uuid, version FROM items_projected",
+      "SELECT uuid, version FROM items",
     );
     this.selectUnprojectedItemVersion = this.db.prepare(
       "SELECT version FROM items WHERE uuid = @uuid",
@@ -419,8 +427,22 @@ export class DB {
     this.deletePendingEvent = this.db.prepare(
       `DELETE FROM pending_events WHERE snowflake_id = @snowflake_id`,
     );
+    this.incrementPendingEventRetry = this.db.prepare(`
+      UPDATE pending_events
+      SET retry_attempts = retry_attempts + 1, last_event_status = @status
+      WHERE snowflake_id = @snowflake_id
+    `);
+    this.setPendingEventStatus = this.db.prepare(`
+      UPDATE pending_events
+      SET last_event_status = @status
+      WHERE snowflake_id = @snowflake_id
+    `);
+    // Schedule previously-failed events later, and exclude events already reported
+    // and accepted on the server that are just awaiting completion.
     this.selectPendingEvents = this.db.prepare(`
-      SELECT snowflake_id, source_uuid, item_uuid, type, data FROM pending_events ORDER BY snowflake_id ASC LIMIT @limit
+      SELECT snowflake_id, source_uuid, item_uuid, type, data FROM pending_events
+      WHERE last_event_status IS NOT ${EventStatus.AlreadyReported}
+      ORDER BY retry_attempts ASC, snowflake_id ASC LIMIT @limit
     `);
     this.deletePendingEventsBySourceScope = this.db.prepare(`
       DELETE FROM pending_events
@@ -1338,13 +1360,21 @@ export class DB {
     Object.keys(events).forEach((snowflake_id: string) => {
       const result = events[snowflake_id][0];
       if (result === EventStatus.OK) {
+        // Event has been accepted by the server: apply + remove from pending_events
         appliedEventIDs.push(snowflake_id);
-      }
-      if (
-        result === EventStatus.AlreadyReported ||
-        result === EventStatus.Gone
-      ) {
+      } else if (result === EventStatus.Gone) {
+        // Target no longer exists on the server: remove pending_event.
         eventIDsToRemove.push(snowflake_id);
+      } else if (result === EventStatus.AlreadyReported) {
+        // Already reported to the server but awaiting completion.
+        // Retain the event but record the status so it's excluded from future
+        // sync batches and not re-sent.
+        this.setPendingEventStatus.run({ snowflake_id, status: result });
+      } else {
+        // All other statuses indicate event was submitted but not accepted
+        // Retain and bump the retry counter, recording the status.
+        // This event will be re-scheduled in subsequent batches.
+        this.incrementPendingEventRetry.run({ snowflake_id, status: result });
       }
     });
 
