@@ -8,11 +8,12 @@ import {
   PrintExportError,
   PrintState,
   PrintStateMachine,
+  Exporter,
   ExportState,
   ExportStateMachine,
   EXPORT_QUBE,
 } from "./export";
-import { PrintStatus } from "../types";
+import { ExportStatus, PrintStatus } from "../types";
 
 // PrintStateMachine transitions
 describe("PrintStateMachine", () => {
@@ -327,5 +328,122 @@ describe("ArchiveExporter", () => {
       // Metadata file should be cleaned up
       expect(fs.existsSync(path.join(archiveDir, "metadata.json"))).toBe(false);
     });
+  });
+});
+
+// Exports are handled by a single Exporter instance, holding the export FSM state.
+// If concurrent export operations ran, they could mutate that shared singleton
+// state, resulting in invalid state transitions.
+//
+// Export operations should acquire a lock, enforcing that only one export is
+// in progress at a given time.
+describe("Exporter guards against concurrent export operations", () => {
+  // Mock the qrexec process so the test can control when the export operation finishes
+  function mockQrexec() {
+    let release!: () => void;
+    const promise = new Promise<void>((resolve) => {
+      release = resolve;
+    });
+    return { promise, release };
+  }
+
+  // Test Exporter that keeps ALL production logic but replaces the real qrexec
+  // transfer with a gated stub, so we can observe shared state mid-transfer.
+  class HarnessExporter extends Exporter {
+    qrexec = mockQrexec();
+    obs: Record<string, unknown> = {};
+
+    // Observe private FSM state for test
+    fsmState(): ExportState {
+      // @ts-expect-error -- fsm is private; we only read it for observation.
+      return this.fsm.state as ExportState;
+    }
+
+    async runQrexecExport(archivePath: string): Promise<void> {
+      const fakeProcess = { kill: () => {}, killed: false };
+      this.process = fakeProcess as unknown as typeof this.process;
+
+      this.obs.archiveExistsAtTransferStart = fs.existsSync(archivePath);
+
+      // Transfer is now "in flight". Block until the test releases us.
+      await this.qrexec.promise;
+
+      this.obs.archiveExistsAtTransferEnd = fs.existsSync(archivePath);
+      this.obs.processHandleAtTransferEnd = this.process;
+    }
+  }
+
+  it("rejects a second export without corrupting the in-flight export", async () => {
+    const src = fs.mkdtempSync(path.join(os.tmpdir(), "sd-race-src-"));
+    const file = path.join(src, "secret.txt");
+    fs.writeFileSync(file, "in-flight payload");
+
+    const exporter = new HarnessExporter();
+
+    // Export A: whistleflow=true takes the exportDirect path: Idle -> Exporting ---
+    const a = exporter.export([file], null, undefined, true);
+
+    // Let Export A reach the gated transfer (archive created, process spawned).
+    await new Promise((r) => setTimeout(r, 50));
+
+    const beforeB = exporter.fsmState();
+    expect(beforeB).toBe(ExportState.Exporting);
+
+    // Export B: a concurrent export against the same instance ---
+    let bError: unknown = null;
+    try {
+      await exporter.export([file], null, undefined, false);
+    } catch (e) {
+      bError = e;
+    }
+
+    const afterB = exporter.fsmState();
+
+    // Release Export A's transfer and let it settle.
+    exporter.qrexec.release();
+    const aResult = await a.then(
+      (v) => ({ status: "fulfilled" as const, value: v }),
+      (e) => ({ status: "rejected" as const, reason: e }),
+    );
+
+    // B must be rejected by the single-flight guard
+    expect(bError).not.toBeNull();
+    expect(String(bError)).toContain("already in progress");
+    // but has not hit an invalid state transition
+    expect(String(bError)).not.toContain("invalid state transition");
+
+    // In-flight Export A is untouched
+    // Archive still present throughout the transfer.
+    expect(exporter.obs.archiveExistsAtTransferStart).toBe(true);
+    expect(exporter.obs.archiveExistsAtTransferEnd).toBe(true);
+    // Process handle still owned by A during the transfer.
+    expect(exporter.obs.processHandleAtTransferEnd).not.toBeNull();
+    // FSM stayed in Exporting
+    expect(afterB).toBe(ExportState.Exporting);
+
+    // A completes successfully
+    expect(aResult.status).toBe("fulfilled");
+    expect(aResult.status === "fulfilled" && aResult.value).toBe(
+      ExportStatus.SUCCESS_EXPORT,
+    );
+  });
+
+  it("allows a fresh export after the previous one completes (lock is released)", async () => {
+    const src = fs.mkdtempSync(path.join(os.tmpdir(), "sd-race-src2-"));
+    const file = path.join(src, "secret.txt");
+    fs.writeFileSync(file, "payload");
+
+    const exporter = new HarnessExporter();
+
+    // First export: release immediately so it completes.
+    exporter.qrexec.release();
+    const first = await exporter.export([file], null, undefined, true);
+    expect(first).toBe(ExportStatus.SUCCESS_EXPORT);
+
+    // A subsequent, non-overlapping export must be allowed (lock was released).
+    exporter.qrexec = mockQrexec();
+    exporter.qrexec.release();
+    const second = await exporter.export([file], null, undefined, true);
+    expect(second).toBe(ExportStatus.SUCCESS_EXPORT);
   });
 });
