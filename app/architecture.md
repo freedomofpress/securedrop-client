@@ -240,19 +240,27 @@ stateDiagram-v2
     [*] --> Initial
     Initial --> DownloadInProgress
 
+    state DownloadQueue {
     DownloadInProgress --> DecryptionInProgress: download success
     DownloadInProgress --> FailedDownloadRetryable: error
     DownloadInProgress --> Paused: pause
     Paused --> DownloadInProgress: resume
+    }
 
-    DecryptionInProgress --> Complete: decryption success
+    state DecryptionQueue {
     DecryptionInProgress --> FailedDecryptionRetryable: error
+    }
+    DecryptionInProgress --> Complete: decryption success
+
 
     FailedDownloadRetryable --> FailedTerminal: after 5 retries
     FailedDecryptionRetryable --> FailedTerminal: after 5 retries
 
     FailedDownloadRetryable --> DownloadInProgress: retry
     FailedDecryptionRetryable --> DecryptionInProgress: retry
+
+    FailedTerminal --> [*]
+    Complete --> [*]
 ```
 
 On retryable decryption failures, the encrypted data is preserved on disk so the download doesn't need to be repeated. Downloads are also progressively streamed so that incremental progress can be retried and resumed. After 6 retries, items enter the terminal failure state and are removed from the queue.
