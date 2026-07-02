@@ -177,7 +177,7 @@ export class TaskQueue {
   // the appropriate queue based on its kind and fetch_status.
   //
   // message/reply + download  -> messageDownloadQueue
-  // message/reply + decypt    -> messageDecryptQueue
+  // message/reply + decrypt    -> messageDecryptQueue
   // file          + download  -> fileDownloadQueue
   // file          + decrypt   -> fileDecryptQueue
   queueFetchesInner() {
@@ -229,10 +229,14 @@ export class TaskQueue {
           if (err) {
             console.error(`Error executing fetch task in queue: `, task, err);
             try {
-              this.db.failDownload(task.id);
+              if (inDownloadPhase) {
+                this.db.failDownload(task.id);
+              } else {
+                this.db.failDecryption(task.id);
+              }
             } catch (failError) {
               console.error(
-                `Error failing download in queue callback for item ${task.id}:`,
+                `Error failing task in queue callback for item ${task.id}:`,
                 failError,
               );
             }

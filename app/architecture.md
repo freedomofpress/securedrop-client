@@ -29,8 +29,16 @@ flowchart TB
             ipc["IPC Handlers"]
 
             subgraph worker["Fetch Worker (Thread)"]
-                msgq["Message Queue<br/>(messages/replies)"]
-                fileq["File Queue<br/>(file downloads)"]
+                subgraph msgqs["Message Pipeline (messages/replies)"]
+                    msgdl["Message Download Queue"]
+                    msgdec["Message Decrypt Queue"]
+                    msgdl -->|"ciphertext on disk"| msgdec
+                end
+                subgraph fileqs["File Pipeline (file downloads)"]
+                    filedl["File Download Queue"]
+                    filedec["File Decrypt Queue"]
+                    filedl -->|"ciphertext on disk"| filedec
+                end
             end
             ipc <--> worker
         end
@@ -84,15 +92,22 @@ sequenceDiagram
     Note over R,S: Enqueue Fetch
     M->>W: MessagePort: enqueue items<br/>(new messages/files)
 
-    Note over R,S: Download and Decrypt (async)
+    Note over R,S: Download (download queue, async)
+    W->>DB: Update fetch_status: DownloadInProgress
     W->>P: POST /api/v1/sources/<source_uuid>/replies/<reply_uuid>/download<br/>Download ciphertext from server
     P->>S: request proxied over Tor network
     S-->>P: Item ciphertext response
     P-->>W: Item ciphertext response
-    W->>DB: Update fetch_status: DownloadInProgress
+    W->>W: Write ciphertext to disk
+    W->>DB: Update fetch_status: DecryptionInProgress
+    W->>M: MessagePort: item updated
+
+    Note over R,S: Decrypt (decrypt queue, async)
+    Note right of W: Decrypt queue picks up the item on next refill
+    W->>W: Read ciphertext from disk
     W->>G: Decrypt ciphertext
     G-->>W: Plaintext
-    W->>DB: Store plaintext in DB or write unencrypted file to disk<br/>Update fetch_status: Complete
+    W->>DB: Store plaintext in DB or write unencrypted file to disk<br/>Remove on-disk ciphertext<br/>Update fetch_status: Complete
     W->>M: MessagePort: item updated
     M->>R: IPC: item update
     R->>R: Redux dispatch,<br/>re-render UI
@@ -201,14 +216,18 @@ The proxy is spawned as a child process. Requests are written to stdin as JSON; 
 
 The [fetch worker](./src/main/fetch/worker.ts) runs in a separate Node.js worker thread to avoid blocking the main process during long-running network I/O and decryption. The fetch worker is responsible for managing all message and file ciphertext download, and message and file decryption.
 
-It maintains two task queues:
+Download and decryption are handled by **separate queues** so that a slow download cannot block decryption of already-downloaded items (and vice versa). A downloaded item writes its ciphertext to disk, transitions to `DecryptionInProgress`, and is picked up by the matching decrypt queue on the next refill. Messages/replies and files are also kept on separate pipelines so that large file downloads don't starve small text items. This gives four task queues in total:
 
-| Queue         | Items             | Timeout                 | Purpose              |
-| ------------- | ----------------- | ----------------------- | -------------------- |
-| Message Queue | Messages, replies | 1 minute                | Small text items     |
-| File Queue    | File submissions  | Dynamic (up to 2 hours) | Large file downloads |
+| Queue            | Items             | Timeout    | Purpose                       |
+| ---------------- | ----------------- | ---------- | ----------------------------- |
+| Message Download | Messages, replies | 60 seconds | Fetch small text ciphertext   |
+| Message Decrypt  | Messages, replies | 60 seconds | Decrypt small text ciphertext |
+| File Download    | File submissions  | 2 hours    | Fetch large file ciphertext   |
+| File Decrypt     | File submissions  | 1 hour     | Decrypt large file ciphertext |
 
-The worker communicates with the main process via `MessagePort`. When an item is downloaded and decrypted, the worker posts an update message that the main process forwards to the renderer.
+Each queue attempts up to 5 retries per task, with a fresh timeout per attempt. After a completed or terminally-failed task, the worker tops up the queues from the database (`refillQueues`) so large backlogs drain without waiting for the next sync tick.
+
+The worker communicates with the main process via `MessagePort`. When an item is downloaded or decrypted, the worker posts an update message that the main process forwards to the renderer.
 
 The fetch worker writes directly to the SQLite database and filesystem, spawns decryption operations, and makes proxied network requests to download file and message ciphertext.
 
