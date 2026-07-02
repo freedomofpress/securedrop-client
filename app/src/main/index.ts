@@ -264,7 +264,7 @@ if (!gotTheLock) {
   let lastHintedRecords: number | undefined;
 
   function wakeFetchWorkerIfNeeded(): void {
-    if (!fetchWorker || !authToken) {
+    if (!fetchWorker) {
       return;
     }
 

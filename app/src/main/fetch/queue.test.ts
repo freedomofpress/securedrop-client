@@ -15,7 +15,6 @@ import {
   ProxyStreamResponse,
 } from "../../types";
 import { DB } from "../database";
-import { BufferedWriter } from "./bufferedWriter";
 
 // Mocks
 const mockProxyStreamRequest = vi.hoisted(() => {
@@ -45,7 +44,7 @@ vi.mock("../crypto", async () => {
   };
 });
 
-// Mock fs for file operations during decryption failure scenarios
+// Mock fs for file operations
 vi.mock("fs", () => ({
   default: {
     promises: {
@@ -107,15 +106,22 @@ function mockItem(
   };
 }
 
-describe("TaskQueue - Two-Phase Download and Decryption", () => {
+// Helper: mock createReadStream to return the given buffer (used for ETag verification)
+function mockReadStreamFor(buf: Buffer) {
+  (fs.createReadStream as ReturnType<typeof vi.fn>).mockReturnValueOnce(
+    Readable.from([buf]),
+  );
+}
+
+describe("TaskQueue - Four-Queue Download and Decryption", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mockCrypto.decryptMessage.mockReset();
     mockCrypto.decryptFile.mockReset();
   });
 
-  describe("Message Processing", () => {
-    it("should download and decrypt a message successfully on first attempt", async () => {
+  describe("Message Download Phase", () => {
+    it("should download a message and write ciphertext to disk, then transition to DecryptionInProgress", async () => {
       const db = createMockDB();
       const metadata = {
         kind: "message",
@@ -123,18 +129,11 @@ describe("TaskQueue - Two-Phase Download and Decryption", () => {
         size: 1000,
       } as ItemMetadata;
 
-      // Mock: item is in Initial status
       db.getItem = vi.fn(() => mockItem(metadata, FetchStatus.Initial, 0));
 
-      // Mock successful decryption
       const encryptedBuffer = Buffer.from("encrypted message data");
-      const decryptedContent = "decrypted message content";
-      vi.spyOn(BufferedWriter.prototype, "getBuffer").mockReturnValue(
-        encryptedBuffer,
-      );
-      mockCrypto.decryptMessage.mockResolvedValue(decryptedContent);
+      mockReadStreamFor(encryptedBuffer);
 
-      // Mock successful download
       mockProxyStreamRequest.mockResolvedValue({
         complete: true,
         bytesWritten: 100,
@@ -142,7 +141,8 @@ describe("TaskQueue - Two-Phase Download and Decryption", () => {
       });
 
       const queue = new TaskQueue(db);
-      await queue.process({ id: "msg1" }, db);
+      queue.authToken = "test-token";
+      await queue.processDownload({ id: "msg1" }, db);
 
       // Verify download phase
       expect(db.startDownloadInProgress).toHaveBeenCalledWith("msg1");
@@ -150,14 +150,147 @@ describe("TaskQueue - Two-Phase Download and Decryption", () => {
         expect.objectContaining({
           path_query: "/api/v1/sources/source1/submissions/msg1/download",
         }),
-        expect.any(BufferedWriter),
+        expect.any(PassThrough),
         0,
-        expect.any(AbortSignal), // abortSignal
-        20000, // timeout
-        expect.any(Function), // onProgress
+        expect.any(AbortSignal),
+        20000,
+        expect.any(Function),
       );
 
-      // Verify decryption phase
+      // Ciphertext is written to disk via createWriteStream (not in-memory)
+      expect(fs.createWriteStream).toHaveBeenCalledWith(
+        expect.stringContaining("/encrypted.gpg"),
+        expect.objectContaining({ flags: "w" }),
+      );
+
+      // Transitions to decrypt phase
+      expect(db.setDecryptionInProgress).toHaveBeenCalledWith("msg1");
+
+      // Decryption did NOT happen in the download phase
+      expect(mockCrypto.decryptMessage).not.toHaveBeenCalled();
+    });
+
+    it("should download a reply and write ciphertext to disk", async () => {
+      const db = createMockDB();
+      const metadata = {
+        kind: "reply",
+        source: "source1",
+        size: 1000,
+      } as ItemMetadata;
+
+      db.getItem = vi.fn(() => mockItem(metadata, FetchStatus.Initial, 0));
+
+      const encryptedBuffer = Buffer.from("encrypted reply data");
+      mockReadStreamFor(encryptedBuffer);
+
+      mockProxyStreamRequest.mockResolvedValue({
+        complete: true,
+        bytesWritten: 100,
+        sha256sum: etagFor(encryptedBuffer),
+      });
+
+      const queue = new TaskQueue(db);
+      queue.authToken = "test-token";
+      await queue.processDownload({ id: "reply1" }, db);
+
+      // Verify reply uses correct API endpoint
+      expect(mockProxyStreamRequest).toHaveBeenCalledWith(
+        expect.objectContaining({
+          path_query: "/api/v1/sources/source1/replies/reply1/download",
+        }),
+        expect.any(PassThrough),
+        0,
+        expect.any(AbortSignal),
+        20000,
+        expect.any(Function),
+      );
+
+      expect(db.setDecryptionInProgress).toHaveBeenCalledWith("reply1");
+      expect(mockCrypto.decryptMessage).not.toHaveBeenCalled();
+    });
+
+    it("should retry a failed message download when status is FailedDownloadRetryable", async () => {
+      const db = createMockDB();
+      const metadata = {
+        kind: "message",
+        source: "source1",
+        size: 1000,
+      } as ItemMetadata;
+
+      // First attempt: download fails
+      db.getItem = vi
+        .fn()
+        .mockReturnValueOnce(mockItem(metadata, FetchStatus.Initial, 0))
+        .mockReturnValueOnce(
+          mockItem(metadata, FetchStatus.FailedDownloadRetryable, 50),
+        );
+
+      const queue = new TaskQueue(db);
+      queue.authToken = "test-token";
+
+      mockProxyStreamRequest.mockResolvedValueOnce({
+        complete: false,
+        bytesWritten: 50,
+        error: new Error("Network error"),
+      });
+
+      await expect(queue.processDownload({ id: "msg1" }, db)).rejects.toThrow(
+        "Unable to complete stream download",
+      );
+
+      expect(db.startDownloadInProgress).toHaveBeenCalledWith("msg1");
+      expect(db.updateDownloadInProgress).toHaveBeenCalledWith("msg1", 50);
+      expect(db.failDownload).toHaveBeenCalledWith("msg1");
+      expect(db.setDecryptionInProgress).not.toHaveBeenCalled();
+
+      // Second attempt: download succeeds
+      const encryptedBuffer = Buffer.from("encrypted message data");
+      mockReadStreamFor(encryptedBuffer);
+      mockProxyStreamRequest.mockResolvedValueOnce({
+        complete: true,
+        bytesWritten: 100,
+        sha256sum: etagFor(encryptedBuffer),
+      });
+
+      // Download now progressing
+      db.getItem = vi
+        .fn()
+        .mockReturnValue(
+          mockItem(metadata, FetchStatus.DownloadInProgress, 50),
+        );
+
+      await queue.processDownload({ id: "msg1" }, db);
+
+      expect(mockProxyStreamRequest).toHaveBeenCalledTimes(2);
+      expect(db.setDecryptionInProgress).toHaveBeenCalledWith("msg1");
+    });
+  });
+
+  describe("Message Decrypt Phase", () => {
+    it("should decrypt a message by reading ciphertext from disk", async () => {
+      const db = createMockDB();
+      const metadata = {
+        kind: "message",
+        source: "source1",
+        size: 1000,
+      } as ItemMetadata;
+
+      db.getItem = vi.fn(() =>
+        mockItem(metadata, FetchStatus.DecryptionInProgress, 0),
+      );
+
+      const encryptedBuffer = Buffer.from("encrypted message data");
+      const decryptedContent = "decrypted message content";
+      fs.promises.readFile = vi.fn().mockResolvedValue(encryptedBuffer);
+      mockCrypto.decryptMessage.mockResolvedValue(decryptedContent);
+
+      const queue = new TaskQueue(db);
+      await queue.processDecrypt({ id: "msg1" }, db);
+
+      // Reads ciphertext from disk (not from memory)
+      expect(fs.promises.readFile).toHaveBeenCalledWith(
+        expect.stringContaining("/encrypted.gpg"),
+      );
       expect(db.setDecryptionInProgress).toHaveBeenCalledWith("msg1");
       expect(mockCrypto.decryptMessage).toHaveBeenCalledWith(
         encryptedBuffer,
@@ -167,158 +300,13 @@ describe("TaskQueue - Two-Phase Download and Decryption", () => {
         "msg1",
         decryptedContent,
       );
-    });
-
-    it("should download successfully but fail decryption, save to disk, and retry decryption only", async () => {
-      const db = createMockDB();
-      const metadata = {
-        kind: "message",
-        source: "source1",
-        size: 1000,
-      } as ItemMetadata;
-
-      // First attempt: Initial status
-      // Calls: getItem(initial), getItem(post-download re-check), decrypt fails (no post-decrypt re-check)
-      // Second attempt: getItem(retry), getItem(post-download re-check), getItem(post-decrypt re-check)
-      db.getItem = vi
-        .fn()
-        .mockReturnValueOnce(mockItem(metadata, FetchStatus.Initial, 0))
-        .mockReturnValueOnce(mockItem(metadata, FetchStatus.Initial, 0))
-        .mockReturnValueOnce(
-          mockItem(metadata, FetchStatus.FailedDecryptionRetryable, 0),
-        )
-        .mockReturnValueOnce(
-          mockItem(metadata, FetchStatus.FailedDecryptionRetryable, 0),
-        )
-        .mockReturnValueOnce(
-          mockItem(metadata, FetchStatus.FailedDecryptionRetryable, 0),
-        );
-
-      const encryptedBuffer = Buffer.from("encrypted message data");
-      vi.spyOn(BufferedWriter.prototype, "getBuffer").mockReturnValue(
-        encryptedBuffer,
-      );
-
-      // Mock successful download
-      mockProxyStreamRequest.mockResolvedValue({
-        complete: true,
-        bytesWritten: 100,
-        sha256sum: etagFor(encryptedBuffer),
-      });
-
-      // Mock decryption failure on first attempt
-      mockCrypto.decryptMessage.mockRejectedValueOnce(
-        new CryptoError("Decryption failed"),
-      );
-
-      const queue = new TaskQueue(db);
-
-      // First attempt - should fail decryption and save to disk
-      await expect(queue.process({ id: "msg1" }, db)).rejects.toThrow(
-        `Decryption failed`,
-      );
-
-      expect(db.startDownloadInProgress).toHaveBeenCalledWith("msg1");
-      expect(db.setDecryptionInProgress).toHaveBeenCalledWith("msg1");
-      expect(db.failDecryption).toHaveBeenCalledWith("msg1");
-
-      // Verify encrypted data was saved to disk for retry
-      expect(fs.promises.mkdir).toHaveBeenCalled();
-      expect(fs.promises.writeFile).toHaveBeenCalledWith(
-        expect.stringContaining("/encrypted.gpg"),
-        encryptedBuffer,
-      );
-
-      // Second attempt - retry from FailedDecryptionRetryable status
-      // Mock successful decryption this time
-      const decryptedContent = "decrypted message content";
-      mockCrypto.decryptMessage.mockResolvedValue(decryptedContent);
-      fs.promises.readFile = vi.fn().mockResolvedValue(encryptedBuffer);
-
-      await queue.process({ id: "msg1" }, db);
-
-      // Should only do decryption phase (no download)
-      expect(mockProxyStreamRequest).toHaveBeenCalledTimes(1); // Only called once (first attempt)
-      expect(fs.promises.readFile).toHaveBeenCalledWith(
-        expect.stringContaining("/encrypted.gpg"),
-      );
-      expect(db.completePlaintextItem).toHaveBeenCalledWith(
-        "msg1",
-        decryptedContent,
-      );
-
-      // Should clean up the file after successful decryption
+      // Ciphertext file cleaned up after success
       expect(fs.promises.unlink).toHaveBeenCalledWith(
         expect.stringContaining("/encrypted.gpg"),
       );
     });
 
-    it("should fail download, retry download and decryption successfully", async () => {
-      const db = createMockDB();
-      const metadata = {
-        kind: "message",
-        source: "source1",
-        size: 1000,
-      } as ItemMetadata;
-
-      // First attempt: Initial status, download fails (throws, no re-checks)
-      // Second attempt: getItem(retry), getItem(post-download re-check), getItem(post-decrypt re-check)
-      db.getItem = vi
-        .fn()
-        .mockReturnValueOnce(mockItem(metadata, FetchStatus.Initial, 0))
-        .mockReturnValueOnce(
-          mockItem(metadata, FetchStatus.FailedDownloadRetryable, 50),
-        )
-        .mockReturnValueOnce(
-          mockItem(metadata, FetchStatus.FailedDownloadRetryable, 50),
-        )
-        .mockReturnValueOnce(
-          mockItem(metadata, FetchStatus.FailedDownloadRetryable, 50),
-        );
-
-      const queue = new TaskQueue(db);
-
-      // First attempt - download fails
-      mockProxyStreamRequest.mockResolvedValueOnce({
-        complete: false,
-        bytesWritten: 50,
-        error: new Error("Network error"),
-      });
-
-      await expect(queue.process({ id: "msg1" }, db)).rejects.toThrow(
-        "Unable to complete stream download",
-      );
-
-      expect(db.startDownloadInProgress).toHaveBeenCalledWith("msg1");
-      expect(db.updateDownloadInProgress).toHaveBeenCalledWith("msg1", 50); // Progress update
-      expect(db.failDownload).toHaveBeenCalledWith("msg1");
-
-      // Second attempt - download and decrypt successfully
-      const encryptedBuffer = Buffer.from("encrypted message data");
-      const decryptedContent = "decrypted message content";
-      vi.spyOn(BufferedWriter.prototype, "getBuffer").mockReturnValue(
-        encryptedBuffer,
-      );
-      mockCrypto.decryptMessage.mockResolvedValue(decryptedContent);
-
-      mockProxyStreamRequest.mockResolvedValueOnce({
-        complete: true,
-        bytesWritten: 100,
-        sha256sum: etagFor(encryptedBuffer),
-      });
-
-      await queue.process({ id: "msg1" }, db);
-
-      expect(mockProxyStreamRequest).toHaveBeenCalledTimes(2);
-      expect(db.completePlaintextItem).toHaveBeenCalledWith(
-        "msg1",
-        decryptedContent,
-      );
-    });
-  });
-
-  describe("Reply Processing", () => {
-    it("should download and decrypt a reply successfully on first attempt", async () => {
+    it("should decrypt a reply by reading ciphertext from disk", async () => {
       const db = createMockDB();
       const metadata = {
         kind: "reply",
@@ -326,104 +314,21 @@ describe("TaskQueue - Two-Phase Download and Decryption", () => {
         size: 1000,
       } as ItemMetadata;
 
-      db.getItem = vi.fn(() => mockItem(metadata, FetchStatus.Initial, 0));
+      db.getItem = vi.fn(() =>
+        mockItem(metadata, FetchStatus.DecryptionInProgress, 0),
+      );
 
       const encryptedBuffer = Buffer.from("encrypted reply data");
       const decryptedContent = "decrypted reply content";
-      vi.spyOn(BufferedWriter.prototype, "getBuffer").mockReturnValue(
-        encryptedBuffer,
-      );
-      mockCrypto.decryptMessage.mockResolvedValue(decryptedContent);
-
-      mockProxyStreamRequest.mockResolvedValue({
-        complete: true,
-        bytesWritten: 100,
-        sha256sum: etagFor(encryptedBuffer),
-      });
-
-      const queue = new TaskQueue(db);
-      await queue.process({ id: "reply1" }, db);
-
-      // Verify reply uses correct API endpoint
-      expect(mockProxyStreamRequest).toHaveBeenCalledWith(
-        expect.objectContaining({
-          path_query: "/api/v1/sources/source1/replies/reply1/download",
-        }),
-        expect.any(BufferedWriter),
-        0,
-        expect.any(AbortSignal), // abortSignal
-        20000, // timeout
-        expect.any(Function), // onProgress
-      );
-
-      expect(db.completePlaintextItem).toHaveBeenCalledWith(
-        "reply1",
-        decryptedContent,
-      );
-    });
-
-    it("should download successfully but fail decryption, save to disk, and retry decryption only", async () => {
-      const db = createMockDB();
-      const metadata = {
-        kind: "reply",
-        source: "source1",
-        size: 1000,
-      } as ItemMetadata;
-
-      // First attempt: download succeeds, decrypt fails (no post-decrypt re-check on throw)
-      // Calls: getItem(initial), getItem(post-download re-check), decrypt fails
-      // Second attempt: getItem(retry), getItem(post-download re-check), getItem(post-decrypt re-check)
-      db.getItem = vi
-        .fn()
-        .mockReturnValueOnce(mockItem(metadata, FetchStatus.Initial, 0))
-        .mockReturnValueOnce(mockItem(metadata, FetchStatus.Initial, 0))
-        .mockReturnValueOnce(
-          mockItem(metadata, FetchStatus.FailedDecryptionRetryable, 0),
-        )
-        .mockReturnValueOnce(
-          mockItem(metadata, FetchStatus.FailedDecryptionRetryable, 0),
-        )
-        .mockReturnValueOnce(
-          mockItem(metadata, FetchStatus.FailedDecryptionRetryable, 0),
-        );
-
-      const encryptedBuffer = Buffer.from("encrypted reply data");
-      vi.spyOn(BufferedWriter.prototype, "getBuffer").mockReturnValue(
-        encryptedBuffer,
-      );
-
-      mockProxyStreamRequest.mockResolvedValue({
-        complete: true,
-        bytesWritten: 100,
-        sha256sum: etagFor(encryptedBuffer),
-      });
-
-      // First attempt - decryption fails
-      mockCrypto.decryptMessage.mockRejectedValueOnce(
-        new CryptoError("Decryption failed"),
-      );
-
-      const queue = new TaskQueue(db);
-
-      // Should fail decryption and save to disk
-      await expect(queue.process({ id: "reply1" }, db)).rejects.toThrow(
-        `Decryption failed`,
-      );
-
-      expect(db.failDecryption).toHaveBeenCalledWith("reply1");
-      expect(fs.promises.writeFile).toHaveBeenCalledWith(
-        expect.stringContaining("/encrypted.gpg"),
-        encryptedBuffer,
-      );
-
-      // Second attempt - successful decryption from disk
-      const decryptedContent = "decrypted reply content";
-      mockCrypto.decryptMessage.mockResolvedValue(decryptedContent);
       fs.promises.readFile = vi.fn().mockResolvedValue(encryptedBuffer);
+      mockCrypto.decryptMessage.mockResolvedValue(decryptedContent);
 
-      await queue.process({ id: "reply1" }, db);
+      const queue = new TaskQueue(db);
+      await queue.processDecrypt({ id: "reply1" }, db);
 
-      expect(fs.promises.readFile).toHaveBeenCalled();
+      expect(fs.promises.readFile).toHaveBeenCalledWith(
+        expect.stringContaining("/encrypted.gpg"),
+      );
       expect(db.completePlaintextItem).toHaveBeenCalledWith(
         "reply1",
         decryptedContent,
@@ -431,67 +336,125 @@ describe("TaskQueue - Two-Phase Download and Decryption", () => {
       expect(fs.promises.unlink).toHaveBeenCalled();
     });
 
-    it("should fail download, retry download and decryption successfully", async () => {
+    it("should retry decryption from disk when status is FailedDecryptionRetryable", async () => {
       const db = createMockDB();
       const metadata = {
-        kind: "reply",
+        kind: "message",
         source: "source1",
         size: 1000,
       } as ItemMetadata;
 
-      // First attempt: download fails (throws, no re-checks)
-      // Second attempt: getItem(retry), getItem(post-download re-check), getItem(post-decrypt re-check)
-      db.getItem = vi
-        .fn()
-        .mockReturnValueOnce(mockItem(metadata, FetchStatus.Initial, 0))
-        .mockReturnValueOnce(
-          mockItem(metadata, FetchStatus.FailedDownloadRetryable, 30),
-        )
-        .mockReturnValueOnce(
-          mockItem(metadata, FetchStatus.FailedDownloadRetryable, 30),
-        )
-        .mockReturnValueOnce(
-          mockItem(metadata, FetchStatus.FailedDownloadRetryable, 30),
-        );
+      db.getItem = vi.fn(() =>
+        mockItem(metadata, FetchStatus.FailedDecryptionRetryable, 0),
+      );
+
+      const encryptedBuffer = Buffer.from("encrypted message data");
+      const decryptedContent = "decrypted message content";
+      fs.promises.readFile = vi.fn().mockResolvedValue(encryptedBuffer);
+      mockCrypto.decryptMessage.mockResolvedValue(decryptedContent);
+
+      const queue = new TaskQueue(db);
+      await queue.processDecrypt({ id: "msg1" }, db);
+
+      // No download — reads directly from disk
+      expect(mockProxyStreamRequest).not.toHaveBeenCalled();
+      expect(fs.promises.readFile).toHaveBeenCalledWith(
+        expect.stringContaining("/encrypted.gpg"),
+      );
+      expect(db.completePlaintextItem).toHaveBeenCalledWith(
+        "msg1",
+        decryptedContent,
+      );
+      expect(fs.promises.unlink).toHaveBeenCalledWith(
+        expect.stringContaining("/encrypted.gpg"),
+      );
+    });
+
+    it("should fail decryption and leave ciphertext on disk for retry", async () => {
+      const db = createMockDB();
+      const metadata = {
+        kind: "message",
+        source: "source1",
+        size: 1000,
+      } as ItemMetadata;
+
+      db.getItem = vi.fn(() =>
+        mockItem(metadata, FetchStatus.DecryptionInProgress, 0),
+      );
+
+      const encryptedBuffer = Buffer.from("encrypted message data");
+      fs.promises.readFile = vi.fn().mockResolvedValue(encryptedBuffer);
+      mockCrypto.decryptMessage.mockRejectedValueOnce(
+        new CryptoError("Decryption failed"),
+      );
 
       const queue = new TaskQueue(db);
 
-      // First attempt - download fails
-      mockProxyStreamRequest.mockResolvedValueOnce({
-        complete: false,
-        bytesWritten: 30,
-      });
-
-      await expect(queue.process({ id: "reply1" }, db)).rejects.toThrow(
-        "Unable to complete stream download",
+      await expect(queue.processDecrypt({ id: "msg1" }, db)).rejects.toThrow(
+        "Decryption failed",
       );
-      expect(db.failDownload).toHaveBeenCalledWith("reply1");
 
-      // Second attempt - success
-      const encryptedBuffer = Buffer.from("encrypted reply data");
-      const decryptedContent = "decrypted reply content";
-      vi.spyOn(BufferedWriter.prototype, "getBuffer").mockReturnValue(
-        encryptedBuffer,
-      );
-      mockCrypto.decryptMessage.mockResolvedValue(decryptedContent);
+      expect(db.setDecryptionInProgress).toHaveBeenCalledWith("msg1");
+      expect(db.failDecryption).toHaveBeenCalledWith("msg1");
+      // Ciphertext stays on disk for the next retry attempt
+      expect(fs.promises.unlink).not.toHaveBeenCalled();
+    });
+  });
 
-      mockProxyStreamRequest.mockResolvedValueOnce({
+  describe("Full Message Flow (download → decrypt)", () => {
+    it("should download to disk then decrypt out of band", async () => {
+      const db = createMockDB();
+      const metadata = {
+        kind: "message",
+        source: "source1",
+        size: 1000,
+      } as ItemMetadata;
+
+      const encryptedBuffer = Buffer.from("encrypted message data");
+      const decryptedContent = "decrypted message content";
+
+      // Phase 1: download
+      db.getItem = vi.fn(() => mockItem(metadata, FetchStatus.Initial, 0));
+      mockReadStreamFor(encryptedBuffer);
+      mockProxyStreamRequest.mockResolvedValue({
         complete: true,
         bytesWritten: 100,
         sha256sum: etagFor(encryptedBuffer),
       });
 
-      await queue.process({ id: "reply1" }, db);
+      const queue = new TaskQueue(db);
+      queue.authToken = "test-token";
+      await queue.processDownload({ id: "msg1" }, db);
 
+      expect(db.setDecryptionInProgress).toHaveBeenCalledWith("msg1");
+      expect(mockCrypto.decryptMessage).not.toHaveBeenCalled();
+
+      // Phase 2: decrypt (out of band, separate call)
+      db.getItem = vi.fn(() =>
+        mockItem(metadata, FetchStatus.DecryptionInProgress, 0),
+      );
+      fs.promises.readFile = vi.fn().mockResolvedValue(encryptedBuffer);
+      mockCrypto.decryptMessage.mockResolvedValue(decryptedContent);
+
+      await queue.processDecrypt({ id: "msg1" }, db);
+
+      // Download did not run again
+      expect(mockProxyStreamRequest).toHaveBeenCalledTimes(1);
+      expect(fs.promises.readFile).toHaveBeenCalledWith(
+        expect.stringContaining("/encrypted.gpg"),
+      );
       expect(db.completePlaintextItem).toHaveBeenCalledWith(
-        "reply1",
+        "msg1",
         decryptedContent,
+      );
+      expect(fs.promises.unlink).toHaveBeenCalledWith(
+        expect.stringContaining("/encrypted.gpg"),
       );
     });
   });
 
-  describe("File Processing", () => {
-    it("should download and decrypt a file successfully on first attempt", async () => {
+  describe("File Download Phase", () => {
+    it("should download a file to disk and transition to DecryptionInProgress", async () => {
       const db = createMockDB();
       const metadata = {
         kind: "file",
@@ -504,22 +467,16 @@ describe("TaskQueue - Two-Phase Download and Decryption", () => {
         mockItem(metadata, FetchStatus.DownloadInProgress, 0),
       );
 
-      // Mock successful download
       mockProxyStreamRequest.mockResolvedValue({
         complete: true,
         bytesWritten: 100,
         sha256sum: FILE_ETAG,
       });
 
-      // Mock successful decryption
-      mockCrypto.decryptFile.mockResolvedValue(
-        "/securedrop/source1/plaintext.txt",
-      );
-
       const queue = new TaskQueue(db);
-      await queue.process({ id: "msg1" }, db);
+      queue.authToken = "test-token";
+      await queue.processDownload({ id: "msg1" }, db);
 
-      // Verify download phase
       expect(db.startDownloadInProgress).toHaveBeenCalledWith("msg1");
       expect(mockProxyStreamRequest).toHaveBeenCalledWith(
         expect.objectContaining({
@@ -527,12 +484,145 @@ describe("TaskQueue - Two-Phase Download and Decryption", () => {
         }),
         expect.any(PassThrough),
         0,
-        expect.any(AbortSignal), // abortSignal
-        55000, // timeout
-        expect.any(Function), // onProgress
+        expect.any(AbortSignal),
+        55000,
+        expect.any(Function),
       );
 
-      // Verify decryption phase
+      // Transitions to decrypt phase
+      expect(db.setDecryptionInProgress).toHaveBeenCalledWith("msg1");
+
+      // Decryption did NOT happen in the download phase
+      expect(mockCrypto.decryptFile).not.toHaveBeenCalled();
+    });
+
+    it("should send throttled progress updates and update db for each chunk", async () => {
+      const db = createMockDB();
+      const metadata = {
+        kind: "file",
+        source: "source1",
+        uuid: "file-uuid-progress",
+      } as ItemMetadata;
+
+      db.getItem = vi.fn(() =>
+        mockItem(metadata, FetchStatus.DownloadInProgress, 0),
+      );
+      db.getSource = vi.fn(() => ({}) as never);
+
+      // Mock Date.now to control throttling intervals
+      const nowSpy = vi
+        .spyOn(Date, "now")
+        .mockReturnValueOnce(200) // first progress -> postMessage
+        .mockReturnValueOnce(250) // within throttle window -> no postMessage
+        .mockReturnValueOnce(500) // outside throttle window -> second postMessage
+        .mockReturnValue(500);
+
+      mockProxyStreamRequest.mockImplementation(
+        async (_req, _writer, _offset, _abort, _timeout, onProgress) => {
+          onProgress?.(10);
+          onProgress?.(20);
+          onProgress?.(30);
+          return {
+            complete: true,
+            bytesWritten: 30,
+            sha256sum: FILE_ETAG,
+          } as ProxyStreamResponse;
+        },
+      );
+
+      const mockPort = { postMessage: vi.fn() } as unknown as WorkerMessagePort;
+      const queue = new TaskQueue(db, mockPort);
+      queue.authToken = "test-token";
+
+      await queue.processDownload({ id: "file-uuid-progress" }, db);
+
+      const updateDownloadMock = db.updateDownloadInProgress as unknown as Mock;
+      const progressCalls = updateDownloadMock.mock.calls;
+      expect(progressCalls.map((call) => call[1])).toEqual([10, 20, 30]);
+
+      // One throttled progress post plus the final item update from processDownload's finally
+      expect(mockPort.postMessage).toHaveBeenCalledTimes(2);
+
+      nowSpy.mockRestore();
+    });
+
+    it("should retry a failed file download when status is FailedDownloadRetryable", async () => {
+      const db = createMockDB();
+      const metadata = {
+        kind: "file",
+        source: "source1",
+        uuid: "file-uuid-3",
+        size: 1000000,
+      } as ItemMetadata;
+
+      db.getItem = vi
+        .fn()
+        .mockReturnValueOnce(
+          mockItem(metadata, FetchStatus.DownloadInProgress, 0),
+        )
+        .mockReturnValueOnce(
+          mockItem(metadata, FetchStatus.FailedDownloadRetryable, 30),
+        );
+
+      const queue = new TaskQueue(db);
+      queue.authToken = "test-token";
+
+      mockProxyStreamRequest.mockResolvedValueOnce({
+        complete: false,
+        bytesWritten: 50,
+        error: new Error("Network error"),
+      });
+
+      await expect(queue.processDownload({ id: "msg1" }, db)).rejects.toThrow(
+        "Unable to complete stream download",
+      );
+
+      expect(db.startDownloadInProgress).toHaveBeenCalledWith("msg1");
+      expect(db.updateDownloadInProgress).toHaveBeenCalledWith("msg1", 50);
+      expect(db.failDownload).toHaveBeenCalledWith("msg1");
+      expect(db.setDecryptionInProgress).not.toHaveBeenCalled();
+
+      mockProxyStreamRequest.mockResolvedValueOnce({
+        complete: true,
+        bytesWritten: 100,
+        sha256sum: FILE_ETAG,
+      });
+
+      // Download now progressing
+      db.getItem = vi
+        .fn()
+        .mockReturnValue(
+          mockItem(metadata, FetchStatus.DownloadInProgress, 50),
+        );
+
+      await queue.processDownload({ id: "msg1" }, db);
+
+      expect(mockProxyStreamRequest).toHaveBeenCalledTimes(2);
+      expect(db.setDecryptionInProgress).toHaveBeenCalledWith("msg1");
+    });
+  });
+
+  describe("File Decrypt Phase", () => {
+    it("should decrypt a file from disk on first attempt", async () => {
+      const db = createMockDB();
+      const metadata = {
+        kind: "file",
+        source: "source1",
+        uuid: "file-uuid-1",
+        size: 1000000,
+      } as ItemMetadata;
+
+      db.getItem = vi.fn(() =>
+        mockItem(metadata, FetchStatus.DecryptionInProgress, 0),
+      );
+
+      mockCrypto.decryptFile.mockResolvedValue(
+        "/securedrop/source1/plaintext.txt",
+      );
+
+      const queue = new TaskQueue(db);
+      await queue.processDecrypt({ id: "msg1" }, db);
+
       const downloadPath = path.join(
         os.tmpdir(),
         "download",
@@ -554,63 +644,7 @@ describe("TaskQueue - Two-Phase Download and Decryption", () => {
       );
     });
 
-    it("should send throttled progress updates and update db for each chunk", async () => {
-      const db = createMockDB();
-      const metadata = {
-        kind: "file",
-        source: "source1",
-        uuid: "file-uuid-progress",
-      } as ItemMetadata;
-
-      db.getItem = vi.fn(() =>
-        mockItem(metadata, FetchStatus.DownloadInProgress, 0),
-      );
-      db.getSource = vi.fn(() => ({}) as never);
-
-      // Mock crypto decryption success
-      mockCrypto.decryptFile.mockResolvedValue(
-        "/securedrop/source1/plaintext.txt",
-      );
-
-      // Mock Date.now to control throttling intervals
-      const nowSpy = vi
-        .spyOn(Date, "now")
-        .mockReturnValueOnce(200) // first progress -> postMessage
-        .mockReturnValueOnce(250) // within throttle window -> no postMessage
-        .mockReturnValueOnce(500) // outside throttle window -> second postMessage
-        .mockReturnValue(500); // default for any further calls
-
-      // Capture onProgress and simulate chunked progress
-      mockProxyStreamRequest.mockImplementation(
-        async (_req, _writer, _offset, _abort, _timeout, onProgress) => {
-          onProgress?.(10);
-          onProgress?.(20);
-          onProgress?.(30);
-          return {
-            complete: true,
-            bytesWritten: 30,
-            sha256sum: FILE_ETAG,
-          } as ProxyStreamResponse;
-        },
-      );
-
-      const mockPort = { postMessage: vi.fn() } as unknown as WorkerMessagePort;
-      const queue = new TaskQueue(db, mockPort);
-
-      await queue.process({ id: "file-uuid-progress" }, db);
-
-      const updateDownloadMock = db.updateDownloadInProgress as unknown as Mock;
-      const progressCalls = updateDownloadMock.mock.calls;
-      expect(progressCalls.map((call) => call[1])).toEqual([10, 20, 30]);
-
-      // One throttled progress post plus source update and final item update
-      expect(mockPort.postMessage).toHaveBeenCalledTimes(3);
-      expect(db.getSource).toHaveBeenCalledTimes(1);
-
-      nowSpy.mockRestore();
-    });
-
-    it("should download successfully but fail decryption, and retry decryption only", async () => {
+    it("should retry file decryption from disk when status is FailedDecryptionRetryable", async () => {
       const db = createMockDB();
       const metadata = {
         kind: "file",
@@ -619,67 +653,19 @@ describe("TaskQueue - Two-Phase Download and Decryption", () => {
         size: 1000000,
       } as ItemMetadata;
 
-      // First attempt: download succeeds, decrypt fails (no post-decrypt re-check on throw)
-      // Calls: getItem(initial), getItem(post-download re-check), decrypt fails
-      // Second attempt: getItem(retry), getItem(post-download re-check), getItem(post-decrypt re-check)
-      db.getItem = vi
-        .fn()
-        .mockReturnValueOnce(
-          mockItem(metadata, FetchStatus.DownloadInProgress, 0),
-        )
-        .mockReturnValueOnce(
-          mockItem(metadata, FetchStatus.DownloadInProgress, 0),
-        )
-        .mockReturnValueOnce(
-          mockItem(metadata, FetchStatus.FailedDecryptionRetryable, 0),
-        )
-        .mockReturnValueOnce(
-          mockItem(metadata, FetchStatus.FailedDecryptionRetryable, 0),
-        )
-        .mockReturnValueOnce(
-          mockItem(metadata, FetchStatus.FailedDecryptionRetryable, 0),
-        );
-
-      // Mock successful download
-      mockProxyStreamRequest.mockResolvedValue({
-        complete: true,
-        bytesWritten: 100,
-        sha256sum: FILE_ETAG,
-      });
-
-      // Mock decryption failure on first attempt
-      mockCrypto.decryptFile.mockRejectedValueOnce(
-        new CryptoError("Decryption failed"),
+      db.getItem = vi.fn(() =>
+        mockItem(metadata, FetchStatus.FailedDecryptionRetryable, 0),
       );
 
-      const queue = new TaskQueue(db);
-
-      // First attempt - should fail decryption
-      await expect(queue.process({ id: "msg1" }, db)).rejects.toThrow(
-        `Decryption failed`,
-      );
-
-      // Verify download was saved to disk
-      expect(fs.promises.mkdir).toHaveBeenCalled();
-      expect(fs.createWriteStream).toHaveBeenCalledWith(
-        expect.stringContaining("/encrypted.gpg"),
-        expect.any(Object),
-      );
-
-      expect(db.startDownloadInProgress).toHaveBeenCalledWith("msg1");
-      expect(db.setDecryptionInProgress).toHaveBeenCalledWith("msg1");
-      expect(db.failDecryption).toHaveBeenCalledWith("msg1");
-
-      // Second attempt - retry from FailedDecryptionRetryable status
-      // Mock successful decryption this time
       mockCrypto.decryptFile.mockResolvedValue(
         "/securedrop/source1/plaintext.txt",
       );
 
-      await queue.process({ id: "msg1" }, db);
+      const queue = new TaskQueue(db);
+      await queue.processDecrypt({ id: "msg1" }, db);
 
-      // Should only do decryption phase (no download)
-      expect(mockProxyStreamRequest).toHaveBeenCalledTimes(1); // Only called once (first attempt)
+      // No download
+      expect(mockProxyStreamRequest).not.toHaveBeenCalled();
       expect(db.completeFileItem).toHaveBeenCalledWith(
         "msg1",
         "/securedrop/source1/plaintext.txt",
@@ -690,68 +676,33 @@ describe("TaskQueue - Two-Phase Download and Decryption", () => {
       );
     });
 
-    it("should fail download, retry download and decryption successfully", async () => {
+    it("should fail file decryption and leave encrypted file on disk for retry", async () => {
       const db = createMockDB();
       const metadata = {
         kind: "file",
         source: "source1",
-        uuid: "file-uuid-3",
+        uuid: "file-uuid-2",
         size: 1000000,
       } as ItemMetadata;
 
-      // First attempt: download fails (throws, no re-checks)
-      // Second attempt: getItem(retry), getItem(post-download re-check), getItem(post-decrypt re-check)
-      db.getItem = vi
-        .fn()
-        .mockReturnValueOnce(
-          mockItem(metadata, FetchStatus.DownloadInProgress, 0),
-        )
-        .mockReturnValueOnce(
-          mockItem(metadata, FetchStatus.FailedDownloadRetryable, 30),
-        )
-        .mockReturnValueOnce(
-          mockItem(metadata, FetchStatus.FailedDownloadRetryable, 30),
-        )
-        .mockReturnValueOnce(
-          mockItem(metadata, FetchStatus.FailedDownloadRetryable, 30),
-        );
+      db.getItem = vi.fn(() =>
+        mockItem(metadata, FetchStatus.DecryptionInProgress, 0),
+      );
+
+      mockCrypto.decryptFile.mockRejectedValueOnce(
+        new CryptoError("Decryption failed"),
+      );
 
       const queue = new TaskQueue(db);
 
-      // First attempt - download fails
-      mockProxyStreamRequest.mockResolvedValueOnce({
-        complete: false,
-        bytesWritten: 50,
-        error: new Error("Network error"),
-      });
-
-      await expect(queue.process({ id: "msg1" }, db)).rejects.toThrow(
-        "Unable to complete stream download",
+      await expect(queue.processDecrypt({ id: "msg1" }, db)).rejects.toThrow(
+        "Decryption failed",
       );
 
-      expect(db.startDownloadInProgress).toHaveBeenCalledWith("msg1");
-      expect(db.updateDownloadInProgress).toHaveBeenCalledWith("msg1", 50); // Progress update
-      expect(db.failDownload).toHaveBeenCalledWith("msg1");
-
-      // Second attempt - download and decrypt successfully
-      mockProxyStreamRequest.mockResolvedValueOnce({
-        complete: true,
-        bytesWritten: 100,
-        sha256sum: FILE_ETAG,
-      });
-
-      mockCrypto.decryptFile.mockResolvedValue(
-        "/securedrop/source1/plaintext.txt",
-      );
-
-      await queue.process({ id: "msg1" }, db);
-
-      expect(mockProxyStreamRequest).toHaveBeenCalledTimes(2);
-      expect(db.completeFileItem).toHaveBeenCalledWith(
-        "msg1",
-        "/securedrop/source1/plaintext.txt",
-        expect.any(Number),
-      );
+      expect(db.setDecryptionInProgress).toHaveBeenCalledWith("msg1");
+      expect(db.failDecryption).toHaveBeenCalledWith("msg1");
+      // Encrypted file stays on disk for the next retry attempt
+      expect(fs.promises.unlink).not.toHaveBeenCalled();
     });
   });
 
@@ -761,59 +712,54 @@ describe("TaskQueue - Two-Phase Download and Decryption", () => {
       { status: FetchStatus.FailedTerminal, label: "terminally failed" },
       { status: FetchStatus.Paused, label: "paused" },
       { status: FetchStatus.Cancelled, label: "cancelled" },
-    ])("should skip items that are $label", async ({ status }) => {
-      const db = createMockDB();
-      const metadata = {
-        kind: "message",
-        source: "source1",
-        size: 1000,
-      } as ItemMetadata;
+    ])(
+      "processDownload should skip items that are $label",
+      async ({ status }) => {
+        const db = createMockDB();
+        const metadata = {
+          kind: "message",
+          source: "source1",
+          size: 1000,
+        } as ItemMetadata;
 
-      db.getItem = vi.fn(() => mockItem(metadata, status, 0));
+        db.getItem = vi.fn(() => mockItem(metadata, status, 0));
 
-      const queue = new TaskQueue(db);
-      await queue.process({ id: "msg1" }, db);
+        const queue = new TaskQueue(db);
+        queue.authToken = "test-token";
+        await queue.processDownload({ id: "msg1" }, db);
 
-      expect(mockProxyStreamRequest).not.toHaveBeenCalled();
-      expect(db.startDownloadInProgress).not.toHaveBeenCalled();
-      expect(db.setDecryptionInProgress).not.toHaveBeenCalled();
-    });
+        expect(mockProxyStreamRequest).not.toHaveBeenCalled();
+        expect(db.startDownloadInProgress).not.toHaveBeenCalled();
+        expect(db.setDecryptionInProgress).not.toHaveBeenCalled();
+      },
+    );
 
-    it("should skip items that are terminally failed", async () => {
-      const db = createMockDB();
-      const metadata = {
-        kind: "message",
-        source: "source1",
-        size: 1000,
-      } as ItemMetadata;
+    it.each([
+      { status: FetchStatus.Complete, label: "complete" },
+      { status: FetchStatus.FailedTerminal, label: "terminally failed" },
+      { status: FetchStatus.Paused, label: "paused" },
+      { status: FetchStatus.Cancelled, label: "cancelled" },
+    ])(
+      "processDecrypt should skip items that are $label",
+      async ({ status }) => {
+        const db = createMockDB();
+        const metadata = {
+          kind: "message",
+          source: "source1",
+          size: 1000,
+        } as ItemMetadata;
 
-      db.getItem = vi.fn(() =>
-        mockItem(metadata, FetchStatus.FailedTerminal, 0),
-      );
+        db.getItem = vi.fn(() => mockItem(metadata, status, 0));
 
-      const queue = new TaskQueue(db);
-      await queue.process({ id: "msg1" }, db);
+        const queue = new TaskQueue(db);
+        await queue.processDecrypt({ id: "msg1" }, db);
 
-      expect(mockProxyStreamRequest).not.toHaveBeenCalled();
-    });
+        expect(mockCrypto.decryptMessage).not.toHaveBeenCalled();
+        expect(db.setDecryptionInProgress).not.toHaveBeenCalled();
+      },
+    );
 
-    it("should skip items that are paused", async () => {
-      const db = createMockDB();
-      const metadata = {
-        kind: "message",
-        source: "source1",
-        size: 1000,
-      } as ItemMetadata;
-
-      db.getItem = vi.fn(() => mockItem(metadata, FetchStatus.Paused, 0));
-
-      const queue = new TaskQueue(db);
-      await queue.process({ id: "msg1" }, db);
-
-      expect(mockProxyStreamRequest).not.toHaveBeenCalled();
-    });
-
-    it("should skip items that are scheduled for deletion", async () => {
+    it("processDownload should skip items that are scheduled for deletion", async () => {
       const db = createMockDB();
       const metadata = {
         kind: "message",
@@ -826,10 +772,48 @@ describe("TaskQueue - Two-Phase Download and Decryption", () => {
       );
 
       const queue = new TaskQueue(db);
-      await queue.process({ id: "msg1" }, db);
+      queue.authToken = "test-token";
+      await queue.processDownload({ id: "msg1" }, db);
 
       expect(mockProxyStreamRequest).not.toHaveBeenCalled();
       expect(db.startDownloadInProgress).not.toHaveBeenCalled();
+      expect(db.setDecryptionInProgress).not.toHaveBeenCalled();
+    });
+
+    it("processDownload should skip items already in decrypt phase (guard against mis-routing)", async () => {
+      const db = createMockDB();
+      const metadata = {
+        kind: "message",
+        source: "source1",
+        size: 1000,
+      } as ItemMetadata;
+
+      db.getItem = vi.fn(() =>
+        mockItem(metadata, FetchStatus.DecryptionInProgress, 0),
+      );
+
+      const queue = new TaskQueue(db);
+      queue.authToken = "test-token";
+      await queue.processDownload({ id: "msg1" }, db);
+
+      expect(mockProxyStreamRequest).not.toHaveBeenCalled();
+      expect(db.startDownloadInProgress).not.toHaveBeenCalled();
+    });
+
+    it("processDecrypt should skip items still in download phase (guard against mis-routing)", async () => {
+      const db = createMockDB();
+      const metadata = {
+        kind: "message",
+        source: "source1",
+        size: 1000,
+      } as ItemMetadata;
+
+      db.getItem = vi.fn(() => mockItem(metadata, FetchStatus.Initial, 0));
+
+      const queue = new TaskQueue(db);
+      await queue.processDecrypt({ id: "msg1" }, db);
+
+      expect(mockCrypto.decryptMessage).not.toHaveBeenCalled();
       expect(db.setDecryptionInProgress).not.toHaveBeenCalled();
     });
 
@@ -850,15 +834,16 @@ describe("TaskQueue - Two-Phase Download and Decryption", () => {
       });
 
       const queue = new TaskQueue(db);
+      queue.authToken = "test-token";
 
-      await expect(queue.process({ id: "msg1" }, db)).rejects.toThrow(
+      await expect(queue.processDownload({ id: "msg1" }, db)).rejects.toThrow(
         "Received error from server with status 500",
       );
 
       expect(db.failDownload).toHaveBeenCalledWith("msg1");
     });
 
-    it("should handle file read errors during decryption retry", async () => {
+    it("should handle file read errors during message decryption", async () => {
       const db = createMockDB();
       const metadata = {
         kind: "message",
@@ -870,21 +855,61 @@ describe("TaskQueue - Two-Phase Download and Decryption", () => {
         mockItem(metadata, FetchStatus.FailedDecryptionRetryable, 0),
       );
 
-      // Mock file read error
       fs.promises.readFile = vi
         .fn()
         .mockRejectedValue(new Error("File not found"));
 
       const queue = new TaskQueue(db);
 
-      await expect(queue.process({ id: "msg1" }, db)).rejects.toThrow(
+      await expect(queue.processDecrypt({ id: "msg1" }, db)).rejects.toThrow(
         "Failed to load encrypted data from disk",
       );
 
       expect(db.failDecryption).toHaveBeenCalledWith("msg1");
     });
 
-    it("should handle unsupported item kinds", async () => {
+    it("processDownload should return early when authToken is null", async () => {
+      const db = createMockDB();
+      const metadata = {
+        kind: "message",
+        source: "source1",
+        size: 1000,
+      } as ItemMetadata;
+
+      db.getItem = vi.fn(() => mockItem(metadata, FetchStatus.Initial, 0));
+
+      // authToken is null
+      const queue = new TaskQueue(db);
+      await queue.processDownload({ id: "msg1" }, db);
+
+      expect(mockProxyStreamRequest).not.toHaveBeenCalled();
+      expect(db.startDownloadInProgress).not.toHaveBeenCalled();
+      expect(db.setDecryptionInProgress).not.toHaveBeenCalled();
+    });
+
+    it("processDownload should return early for files when authToken is null", async () => {
+      const db = createMockDB();
+      const metadata = {
+        kind: "file",
+        source: "source1",
+        uuid: "file1",
+        size: 1000000,
+      } as ItemMetadata;
+
+      db.getItem = vi.fn(() =>
+        mockItem(metadata, FetchStatus.DownloadInProgress, 0),
+      );
+
+      // authToken is null
+      const queue = new TaskQueue(db);
+      await queue.processDownload({ id: "file1" }, db);
+
+      expect(mockProxyStreamRequest).not.toHaveBeenCalled();
+      expect(db.startDownloadInProgress).not.toHaveBeenCalled();
+      expect(db.setDecryptionInProgress).not.toHaveBeenCalled();
+    });
+
+    it("should handle unsupported item kinds in processDownload", async () => {
       const db = createMockDB();
       const metadata = {
         kind: "unknown",
@@ -894,15 +919,16 @@ describe("TaskQueue - Two-Phase Download and Decryption", () => {
       db.getItem = vi.fn(() => mockItem(metadata, FetchStatus.Initial, 0));
 
       const queue = new TaskQueue(db);
+      queue.authToken = "test-token";
 
-      await expect(queue.process({ id: "item1" }, db)).rejects.toThrow(
+      await expect(queue.processDownload({ id: "item1" }, db)).rejects.toThrow(
         "Unsupported item kind: unknown",
       );
     });
   });
 
-  describe("Queue Integration", () => {
-    it("should queue messages to messageQueue and files to fileQueue", () => {
+  describe("Queue Integration — four-queue routing", () => {
+    it("should route messages/replies to messageDownloadQueue and files to fileDownloadQueue", () => {
       const db = createMockDB();
       db.getItemsToProcess = vi.fn(() => ["message1", "file1", "reply1"]);
       db.getItem = vi.fn((id) => {
@@ -934,15 +960,17 @@ describe("TaskQueue - Two-Phase Download and Decryption", () => {
               uuid: "file1",
               size: 1000,
             } as ItemMetadata,
-            FetchStatus.Initial,
+            FetchStatus.DownloadInProgress,
           );
         }
         return null;
       });
 
       const queue = new TaskQueue(db);
-      vi.spyOn(queue.messageQueue, "push");
-      vi.spyOn(queue.fileQueue, "push");
+      vi.spyOn(queue.messageDownloadQueue, "push");
+      vi.spyOn(queue.messageDecryptQueue, "push");
+      vi.spyOn(queue.fileDownloadQueue, "push");
+      vi.spyOn(queue.fileDecryptQueue, "push");
 
       queue.queueFetches({ authToken: "test-token" });
 
@@ -950,11 +978,98 @@ describe("TaskQueue - Two-Phase Download and Decryption", () => {
         messageLimit: 25,
         fileLimit: 2,
       });
-      // 2 messages/replies should go to messageQueue
-      expect(queue.messageQueue.push).toHaveBeenCalledTimes(2);
-      // 1 file should go to fileQueue
-      expect(queue.fileQueue.push).toHaveBeenCalledTimes(1);
+      // 2 messages/replies in download phase → messageDownloadQueue
+      expect(queue.messageDownloadQueue.push).toHaveBeenCalledTimes(2);
+      // 1 file in download phase → fileDownloadQueue
+      expect(queue.fileDownloadQueue.push).toHaveBeenCalledTimes(1);
+      // Neither decrypt queue receives any tasks
+      expect(queue.messageDecryptQueue.push).not.toHaveBeenCalled();
+      expect(queue.fileDecryptQueue.push).not.toHaveBeenCalled();
       expect(queue.authToken).toBe("test-token");
+    });
+
+    it("should route items in decrypt phase to the decrypt queues", () => {
+      const db = createMockDB();
+      db.getItemsToProcess = vi.fn(() => [
+        "msgDecrypt",
+        "replyDecrypt",
+        "fileDecrypt",
+      ]);
+      db.getItem = vi.fn((id) => {
+        if (id === "msgDecrypt") {
+          return mockItem(
+            { kind: "message", source: "s1", uuid: id } as ItemMetadata,
+            FetchStatus.DecryptionInProgress,
+          );
+        }
+        if (id === "replyDecrypt") {
+          return mockItem(
+            { kind: "reply", source: "s1", uuid: id } as ItemMetadata,
+            FetchStatus.FailedDecryptionRetryable,
+          );
+        }
+        if (id === "fileDecrypt") {
+          return mockItem(
+            {
+              kind: "file",
+              source: "s1",
+              uuid: id,
+              size: 1000,
+            } as ItemMetadata,
+            FetchStatus.DecryptionInProgress,
+          );
+        }
+        return null;
+      });
+
+      const queue = new TaskQueue(db);
+      vi.spyOn(queue.messageDownloadQueue, "push");
+      vi.spyOn(queue.messageDecryptQueue, "push");
+      vi.spyOn(queue.fileDownloadQueue, "push");
+      vi.spyOn(queue.fileDecryptQueue, "push");
+
+      queue.queueFetches({ authToken: "test-token" });
+
+      expect(queue.messageDecryptQueue.push).toHaveBeenCalledTimes(2);
+      expect(queue.fileDecryptQueue.push).toHaveBeenCalledTimes(1);
+      expect(queue.messageDownloadQueue.push).not.toHaveBeenCalled();
+      expect(queue.fileDownloadQueue.push).not.toHaveBeenCalled();
+    });
+
+    it("should route mixed-phase items to the correct queues", () => {
+      const db = createMockDB();
+      db.getItemsToProcess = vi.fn(() => [
+        "msgDownload",
+        "msgDecrypt",
+        "fileDownload",
+        "fileDecrypt",
+      ]);
+      db.getItem = vi.fn((id) => {
+        const statusMap: Record<string, [string, FetchStatus]> = {
+          msgDownload: ["message", FetchStatus.Initial],
+          msgDecrypt: ["message", FetchStatus.DecryptionInProgress],
+          fileDownload: ["file", FetchStatus.DownloadInProgress],
+          fileDecrypt: ["file", FetchStatus.FailedDecryptionRetryable],
+        };
+        const [kind, status] = statusMap[id];
+        return mockItem(
+          { kind, source: "s1", uuid: id, size: 1000 } as ItemMetadata,
+          status,
+        );
+      });
+
+      const queue = new TaskQueue(db);
+      vi.spyOn(queue.messageDownloadQueue, "push");
+      vi.spyOn(queue.messageDecryptQueue, "push");
+      vi.spyOn(queue.fileDownloadQueue, "push");
+      vi.spyOn(queue.fileDecryptQueue, "push");
+
+      queue.queueFetches({ authToken: "tok" });
+
+      expect(queue.messageDownloadQueue.push).toHaveBeenCalledTimes(1);
+      expect(queue.messageDecryptQueue.push).toHaveBeenCalledTimes(1);
+      expect(queue.fileDownloadQueue.push).toHaveBeenCalledTimes(1);
+      expect(queue.fileDecryptQueue.push).toHaveBeenCalledTimes(1);
     });
 
     it("should handle queue errors with failDownload", () => {
@@ -968,16 +1083,14 @@ describe("TaskQueue - Two-Phase Download and Decryption", () => {
       );
 
       const queue = new TaskQueue(db);
-      vi.spyOn(queue.messageQueue, "push");
+      vi.spyOn(queue.messageDownloadQueue, "push");
 
       queue.queueFetches({ authToken: "test-token" });
 
-      // Simulate the error callback that gets passed to queue.push
-      const pushCall = vi.mocked(queue.messageQueue.push).mock.calls[0];
+      const pushCall = vi.mocked(queue.messageDownloadQueue.push).mock.calls[0];
       expect(pushCall).toBeDefined();
       expect(pushCall[1]).toBeTypeOf("function");
 
-      // Call the error callback with an error
       const errorCallback = pushCall[1] as (
         err: Error | null,
         result?: unknown,
@@ -1001,11 +1114,11 @@ describe("TaskQueue - Two-Phase Download and Decryption", () => {
       });
 
       const queue = new TaskQueue(db);
-      vi.spyOn(queue.messageQueue, "push");
+      vi.spyOn(queue.messageDownloadQueue, "push");
 
       queue.queueFetches({ authToken: "test-token" });
 
-      const pushCall = vi.mocked(queue.messageQueue.push).mock.calls[0];
+      const pushCall = vi.mocked(queue.messageDownloadQueue.push).mock.calls[0];
       const errorCallback = pushCall[1] as (
         err: Error | null,
         result?: unknown,
@@ -1032,11 +1145,11 @@ describe("TaskQueue - Two-Phase Download and Decryption", () => {
       } as unknown as WorkerMessagePort;
 
       const queue = new TaskQueue(db, mockPort);
-      vi.spyOn(queue.messageQueue, "push");
+      vi.spyOn(queue.messageDownloadQueue, "push");
 
       queue.queueFetches({ authToken: "test-token" });
 
-      const pushCall = vi.mocked(queue.messageQueue.push).mock.calls[0];
+      const pushCall = vi.mocked(queue.messageDownloadQueue.push).mock.calls[0];
       const errorCallback = pushCall[1] as (
         err: Error | null,
         result?: unknown,
@@ -1074,13 +1187,13 @@ describe("TaskQueue - Two-Phase Download and Decryption", () => {
       });
 
       const queue = new TaskQueue(db);
-      vi.spyOn(queue.messageQueue, "push");
-      vi.spyOn(queue.fileQueue, "push");
+      vi.spyOn(queue.messageDownloadQueue, "push");
+      vi.spyOn(queue.fileDownloadQueue, "push");
 
       queue.queueFetches({ authToken: "test-token" });
 
-      expect(queue.messageQueue.push).toHaveBeenCalledTimes(2);
-      expect(queue.fileQueue.push).toHaveBeenCalledTimes(1);
+      expect(queue.messageDownloadQueue.push).toHaveBeenCalledTimes(2);
+      expect(queue.fileDownloadQueue.push).toHaveBeenCalledTimes(1);
     });
 
     it("should not throw if terminallyFailItem throws in task_failed handler", () => {
@@ -1092,7 +1205,11 @@ describe("TaskQueue - Two-Phase Download and Decryption", () => {
       const queue = new TaskQueue(db);
 
       expect(() => {
-        queue.messageQueue.emit("task_failed", "item1", new Error("boom"));
+        queue.messageDownloadQueue.emit(
+          "task_failed",
+          "item1",
+          new Error("boom"),
+        );
       }).not.toThrow();
 
       expect(db.terminallyFailItem).toHaveBeenCalledWith("item1");
@@ -1116,7 +1233,11 @@ describe("TaskQueue - Two-Phase Download and Decryption", () => {
       const queue = new TaskQueue(db, mockPort);
 
       expect(() => {
-        queue.messageQueue.emit("task_failed", "item1", new Error("boom"));
+        queue.messageDownloadQueue.emit(
+          "task_failed",
+          "item1",
+          new Error("boom"),
+        );
       }).not.toThrow();
 
       expect(db.terminallyFailItem).toHaveBeenCalledWith("item1");
@@ -1125,7 +1246,85 @@ describe("TaskQueue - Two-Phase Download and Decryption", () => {
   });
 
   describe("Queue Refill", () => {
-    it("should refill queues after a message task finishes", () => {
+    it("should not enqueue download items when unauthed", () => {
+      const db = createMockDB();
+      db.getItemsToProcess = vi.fn(() => ["msg1", "file1"]);
+      db.getItem = vi.fn((id) => {
+        if (id === "file1") {
+          return mockItem(
+            {
+              kind: "file",
+              source: "s1",
+              uuid: "file1",
+              size: 1000,
+            } as ItemMetadata,
+            FetchStatus.DownloadInProgress,
+          );
+        }
+        return mockItem(
+          { kind: "message", source: "s1", uuid: id } as ItemMetadata,
+          FetchStatus.Initial,
+        );
+      });
+
+      // authToken is null: we are unauthed
+      const queue = new TaskQueue(db);
+      vi.spyOn(queue.messageDownloadQueue, "push");
+      vi.spyOn(queue.fileDownloadQueue, "push");
+
+      // Trigger a refill via a completed task event
+      queue.messageDownloadQueue.emit("task_finish", "prev-msg", {});
+
+      expect(queue.messageDownloadQueue.push).not.toHaveBeenCalled();
+      expect(queue.fileDownloadQueue.push).not.toHaveBeenCalled();
+    });
+
+    it("should enqueue decrypt items when unauthed", () => {
+      const db = createMockDB();
+      db.getItemsToProcess = vi.fn(() => ["msgDecrypt", "fileDecrypt"]);
+      db.getItem = vi.fn((id) => {
+        if (id === "fileDecrypt") {
+          return mockItem(
+            {
+              kind: "file",
+              source: "s1",
+              uuid: "fileDecrypt",
+              size: 1000,
+            } as ItemMetadata,
+            FetchStatus.DecryptionInProgress,
+          );
+        }
+        return mockItem(
+          { kind: "message", source: "s1", uuid: id } as ItemMetadata,
+          FetchStatus.DecryptionInProgress,
+        );
+      });
+
+      // authToken is null: we are unauthed
+      const queue = new TaskQueue(db);
+      vi.spyOn(queue.messageDecryptQueue, "push");
+      vi.spyOn(queue.fileDecryptQueue, "push");
+      vi.spyOn(queue.messageDownloadQueue, "push");
+      vi.spyOn(queue.fileDownloadQueue, "push");
+
+      // Trigger a refill via a completed task event
+      queue.messageDecryptQueue.emit("task_finish", "prev-msg", {});
+
+      // Decryption items should still be enqueued
+      expect(queue.messageDecryptQueue.push).toHaveBeenCalledWith(
+        { id: "msgDecrypt" },
+        expect.any(Function),
+      );
+      expect(queue.fileDecryptQueue.push).toHaveBeenCalledWith(
+        { id: "fileDecrypt" },
+        expect.any(Function),
+      );
+      // Download queues untouched
+      expect(queue.messageDownloadQueue.push).not.toHaveBeenCalled();
+      expect(queue.fileDownloadQueue.push).not.toHaveBeenCalled();
+    });
+
+    it("should refill queues after a message download task finishes", () => {
       const db = createMockDB();
       db.getItemsToProcess = vi.fn(() => []);
       db.getItem = vi.fn(() => null);
@@ -1133,17 +1332,15 @@ describe("TaskQueue - Two-Phase Download and Decryption", () => {
       const queue = new TaskQueue(db);
       queue.authToken = "test-token";
 
-      // Emit task_finish on the message queue
-      queue.messageQueue.emit("task_finish", "item1", {});
+      queue.messageDownloadQueue.emit("task_finish", "item1", {});
 
-      // refillQueues should have called queueFetches → getItemsToProcess
       expect(db.getItemsToProcess).toHaveBeenCalledWith({
         messageLimit: 25,
         fileLimit: 2,
       });
     });
 
-    it("should refill queues after a file task finishes", () => {
+    it("should refill queues after a message decrypt task finishes", () => {
       const db = createMockDB();
       db.getItemsToProcess = vi.fn(() => []);
       db.getItem = vi.fn(() => null);
@@ -1151,7 +1348,39 @@ describe("TaskQueue - Two-Phase Download and Decryption", () => {
       const queue = new TaskQueue(db);
       queue.authToken = "test-token";
 
-      queue.fileQueue.emit("task_finish", "file1", {});
+      queue.messageDecryptQueue.emit("task_finish", "item1", {});
+
+      expect(db.getItemsToProcess).toHaveBeenCalledWith({
+        messageLimit: 25,
+        fileLimit: 2,
+      });
+    });
+
+    it("should refill queues after a file download task finishes", () => {
+      const db = createMockDB();
+      db.getItemsToProcess = vi.fn(() => []);
+      db.getItem = vi.fn(() => null);
+
+      const queue = new TaskQueue(db);
+      queue.authToken = "test-token";
+
+      queue.fileDownloadQueue.emit("task_finish", "file1", {});
+
+      expect(db.getItemsToProcess).toHaveBeenCalledWith({
+        messageLimit: 25,
+        fileLimit: 2,
+      });
+    });
+
+    it("should refill queues after a file decrypt task finishes", () => {
+      const db = createMockDB();
+      db.getItemsToProcess = vi.fn(() => []);
+      db.getItem = vi.fn(() => null);
+
+      const queue = new TaskQueue(db);
+      queue.authToken = "test-token";
+
+      queue.fileDecryptQueue.emit("task_finish", "file1", {});
 
       expect(db.getItemsToProcess).toHaveBeenCalledWith({
         messageLimit: 25,
@@ -1167,30 +1396,21 @@ describe("TaskQueue - Two-Phase Download and Decryption", () => {
       const queue = new TaskQueue(db);
       queue.authToken = "test-token";
 
-      queue.messageQueue.emit("task_failed", "item1", new Error("boom"));
+      queue.messageDownloadQueue.emit(
+        "task_failed",
+        "item1",
+        new Error("boom"),
+      );
 
-      // Refill triggered after terminal failure
       expect(db.getItemsToProcess).toHaveBeenCalledWith({
         messageLimit: 25,
         fileLimit: 2,
       });
     });
 
-    it("should not refill if no auth token is set", () => {
+    it("should enqueue new items returned by refill after download completes", () => {
       const db = createMockDB();
-      db.getItemsToProcess = vi.fn(() => []);
-
-      const queue = new TaskQueue(db);
-      // authToken is undefined
-
-      queue.messageQueue.emit("task_finish", "item1", {});
-
-      expect(db.getItemsToProcess).not.toHaveBeenCalled();
-    });
-
-    it("should enqueue new items returned by refill", () => {
-      const db = createMockDB();
-      // First call returns nothing (initial state), second returns new items
+      // First call: initial queueFetches; second: refill from messageDownloadQueue finish
       db.getItemsToProcess = vi
         .fn()
         .mockReturnValueOnce(["msg2", "msg3"])
@@ -1204,21 +1424,49 @@ describe("TaskQueue - Two-Phase Download and Decryption", () => {
 
       const queue = new TaskQueue(db);
       queue.authToken = "test-token";
-      vi.spyOn(queue.messageQueue, "push");
+      vi.spyOn(queue.messageDownloadQueue, "push");
 
-      // Simulate a task finishing, which triggers refill
-      queue.messageQueue.emit("task_finish", "msg1", {});
+      queue.messageDownloadQueue.emit("task_finish", "msg1", {});
 
-      // Refill should have pushed the newly returned items
-      expect(queue.messageQueue.push).toHaveBeenCalledTimes(2);
-      expect(queue.messageQueue.push).toHaveBeenCalledWith(
+      expect(queue.messageDownloadQueue.push).toHaveBeenCalledTimes(2);
+      expect(queue.messageDownloadQueue.push).toHaveBeenCalledWith(
         { id: "msg2" },
         expect.any(Function),
       );
-      expect(queue.messageQueue.push).toHaveBeenCalledWith(
+      expect(queue.messageDownloadQueue.push).toHaveBeenCalledWith(
         { id: "msg3" },
         expect.any(Function),
       );
+    });
+
+    it("should route DecryptionInProgress items from refill to decrypt queues", () => {
+      const db = createMockDB();
+      // After a download finishes, the item moves to DecryptionInProgress.
+      // The refill should push it to the decrypt queue.
+      db.getItemsToProcess = vi
+        .fn()
+        .mockReturnValueOnce(["msg1"])
+        .mockReturnValueOnce([]);
+      db.getItem = vi.fn(() =>
+        mockItem(
+          { kind: "message", source: "s1", uuid: "msg1" } as ItemMetadata,
+          FetchStatus.DecryptionInProgress,
+        ),
+      );
+
+      const queue = new TaskQueue(db);
+      queue.authToken = "test-token";
+      vi.spyOn(queue.messageDownloadQueue, "push");
+      vi.spyOn(queue.messageDecryptQueue, "push");
+
+      queue.messageDownloadQueue.emit("task_finish", "msg1", {});
+
+      // Item is now in decrypt phase — goes to messageDecryptQueue
+      expect(queue.messageDecryptQueue.push).toHaveBeenCalledWith(
+        { id: "msg1" },
+        expect.any(Function),
+      );
+      expect(queue.messageDownloadQueue.push).not.toHaveBeenCalled();
     });
 
     it("should stop refilling when database returns no more items", () => {
@@ -1228,14 +1476,13 @@ describe("TaskQueue - Two-Phase Download and Decryption", () => {
 
       const queue = new TaskQueue(db);
       queue.authToken = "test-token";
-      vi.spyOn(queue.messageQueue, "push");
-      vi.spyOn(queue.fileQueue, "push");
+      vi.spyOn(queue.messageDownloadQueue, "push");
+      vi.spyOn(queue.fileDownloadQueue, "push");
 
-      queue.fileQueue.emit("task_finish", "file1", {});
+      queue.fileDownloadQueue.emit("task_finish", "file1", {});
 
-      // DB returned empty, so no items should be pushed
-      expect(queue.messageQueue.push).not.toHaveBeenCalled();
-      expect(queue.fileQueue.push).not.toHaveBeenCalled();
+      expect(queue.messageDownloadQueue.push).not.toHaveBeenCalled();
+      expect(queue.fileDownloadQueue.push).not.toHaveBeenCalled();
     });
   });
 
@@ -1251,7 +1498,6 @@ describe("TaskQueue - Two-Phase Download and Decryption", () => {
 
       db.getItem = vi.fn(() => mockItem(metadata, FetchStatus.Initial, 0));
 
-      // Make proxyStreamRequest hang until aborted
       let rejectProxy: (reason: unknown) => void;
       mockProxyStreamRequest.mockReturnValue(
         new Promise((_resolve, reject) => {
@@ -1260,18 +1506,15 @@ describe("TaskQueue - Two-Phase Download and Decryption", () => {
       );
 
       const queue = new TaskQueue(db);
-      const processPromise = queue.process({ id: "file1" }, db);
+      queue.authToken = "test-token";
+      const processPromise = queue.processDownload({ id: "file1" }, db);
 
-      // Wait a tick so download registers the AbortController
       await new Promise((r) => setTimeout(r, 10));
 
-      // Abort downloads for source1
       queue.abortSourceFetch("source1");
 
-      // Simulate the proxy rejecting due to abort
       rejectProxy!(new Error("AbortError: The operation was aborted"));
 
-      // Abort is treated as a graceful cancellation, not an error
       await expect(processPromise).resolves.toBeUndefined();
     });
 
@@ -1287,29 +1530,22 @@ describe("TaskQueue - Two-Phase Download and Decryption", () => {
       db.getItem = vi.fn(() => mockItem(metadata, FetchStatus.Initial, 0));
 
       const encryptedContent = Buffer.from("encrypted");
+      mockReadStreamFor(encryptedContent);
       mockProxyStreamRequest.mockResolvedValue({
         complete: true,
         bytesWritten: 100,
         sha256sum: etagFor(encryptedContent),
       });
 
-      const encryptedBuffer = Buffer.from("encrypted");
-      vi.spyOn(BufferedWriter.prototype, "getBuffer").mockReturnValue(
-        encryptedBuffer,
-      );
-      mockCrypto.decryptMessage.mockResolvedValue("decrypted");
-
       const queue = new TaskQueue(db);
+      queue.authToken = "test-token";
 
       // Abort for a different source
       queue.abortSourceFetch("source2");
 
-      // Process should still complete normally
-      await queue.process({ id: "msg1" }, db);
-      expect(db.completePlaintextItem).toHaveBeenCalledWith(
-        "msg1",
-        "decrypted",
-      );
+      // Download should still complete normally
+      await queue.processDownload({ id: "msg1" }, db);
+      expect(db.setDecryptionInProgress).toHaveBeenCalledWith("msg1");
     });
 
     it("should pass abort signal to proxyStreamRequest", async () => {
@@ -1324,21 +1560,17 @@ describe("TaskQueue - Two-Phase Download and Decryption", () => {
       db.getItem = vi.fn(() => mockItem(metadata, FetchStatus.Initial, 0));
 
       const encryptedBuffer = Buffer.from("encrypted");
+      mockReadStreamFor(encryptedBuffer);
       mockProxyStreamRequest.mockResolvedValue({
         complete: true,
         bytesWritten: 100,
         sha256sum: etagFor(encryptedBuffer),
       });
 
-      vi.spyOn(BufferedWriter.prototype, "getBuffer").mockReturnValue(
-        encryptedBuffer,
-      );
-      mockCrypto.decryptMessage.mockResolvedValue("decrypted");
-
       const queue = new TaskQueue(db);
-      await queue.process({ id: "msg1" }, db);
+      queue.authToken = "test-token";
+      await queue.processDownload({ id: "msg1" }, db);
 
-      // Verify abortSignal was passed (not undefined anymore)
       expect(mockProxyStreamRequest).toHaveBeenCalledWith(
         expect.anything(),
         expect.anything(),
@@ -1361,27 +1593,24 @@ describe("TaskQueue - Two-Phase Download and Decryption", () => {
       db.getItem = vi.fn(() => mockItem(metadata, FetchStatus.Initial, 0));
 
       const encryptedBuffer = Buffer.from("encrypted");
+      mockReadStreamFor(encryptedBuffer);
       mockProxyStreamRequest.mockResolvedValue({
         complete: true,
         bytesWritten: 100,
         sha256sum: etagFor(encryptedBuffer),
       });
-      vi.spyOn(BufferedWriter.prototype, "getBuffer").mockReturnValue(
-        encryptedBuffer,
-      );
-      mockCrypto.decryptMessage.mockResolvedValue("decrypted");
 
       const queue = new TaskQueue(db);
-      await queue.process({ id: "msg1" }, db);
+      queue.authToken = "test-token";
+      await queue.processDownload({ id: "msg1" }, db);
 
-      // Aborting now should be a no-op (entry already cleaned up)
+      // Aborting now should be a no-op
       queue.abortSourceFetch("source1");
-      // No error thrown = success
     });
   });
 
   describe("Mid-flight Deletion Races", () => {
-    it("should skip decryption if item is deleted after download", async () => {
+    it("should skip decrypt-phase transition if item is deleted after download", async () => {
       const db = createMockDB();
       const metadata = {
         kind: "message",
@@ -1390,7 +1619,8 @@ describe("TaskQueue - Two-Phase Download and Decryption", () => {
         uuid: "msg1",
       } as ItemMetadata;
 
-      // First getItem returns processable item, second (re-check) returns ScheduledDeletion
+      // First getItem: processable → download proceeds
+      // Second getItem (re-check after download): ScheduledDeletion → skip transition
       db.getItem = vi
         .fn()
         .mockReturnValueOnce(mockItem(metadata, FetchStatus.Initial, 0))
@@ -1399,22 +1629,19 @@ describe("TaskQueue - Two-Phase Download and Decryption", () => {
         );
 
       const encryptedBuffer = Buffer.from("encrypted");
+      mockReadStreamFor(encryptedBuffer);
       mockProxyStreamRequest.mockResolvedValue({
         complete: true,
         bytesWritten: 100,
         sha256sum: etagFor(encryptedBuffer),
       });
 
-      vi.spyOn(BufferedWriter.prototype, "getBuffer").mockReturnValue(
-        encryptedBuffer,
-      );
-
       const queue = new TaskQueue(db);
-      await queue.process({ id: "msg1" }, db);
+      queue.authToken = "test-token";
+      await queue.processDownload({ id: "msg1" }, db);
 
-      // Decryption should never have been attempted
-      expect(mockCrypto.decryptMessage).not.toHaveBeenCalled();
-      expect(db.completePlaintextItem).not.toHaveBeenCalled();
+      // Download happened but decrypt phase was not entered
+      expect(db.setDecryptionInProgress).not.toHaveBeenCalled();
     });
 
     it("should drop decryption result if item is deleted during message decryption", async () => {
@@ -1426,11 +1653,9 @@ describe("TaskQueue - Two-Phase Download and Decryption", () => {
         uuid: "msg1",
       } as ItemMetadata;
 
-      // First call: processable, second (post-download re-check): still processable,
-      // third (post-decryption re-check): deleted
+      // processDecrypt re-check: deleted after decryptMessage runs
       db.getItem = vi
         .fn()
-        .mockReturnValueOnce(mockItem(metadata, FetchStatus.Initial, 0))
         .mockReturnValueOnce(
           mockItem(metadata, FetchStatus.DecryptionInProgress, 0),
         )
@@ -1439,21 +1664,12 @@ describe("TaskQueue - Two-Phase Download and Decryption", () => {
         );
 
       const encryptedBuffer = Buffer.from("encrypted");
-      mockProxyStreamRequest.mockResolvedValue({
-        complete: true,
-        bytesWritten: 100,
-        sha256sum: etagFor(encryptedBuffer),
-      });
-
-      vi.spyOn(BufferedWriter.prototype, "getBuffer").mockReturnValue(
-        encryptedBuffer,
-      );
+      fs.promises.readFile = vi.fn().mockResolvedValue(encryptedBuffer);
       mockCrypto.decryptMessage.mockResolvedValue("decrypted plaintext");
 
       const queue = new TaskQueue(db);
-      await queue.process({ id: "msg1" }, db);
+      await queue.processDecrypt({ id: "msg1" }, db);
 
-      // Decryption ran but the result was not persisted
       expect(mockCrypto.decryptMessage).toHaveBeenCalled();
       expect(db.completePlaintextItem).not.toHaveBeenCalled();
     });
@@ -1467,11 +1683,8 @@ describe("TaskQueue - Two-Phase Download and Decryption", () => {
         uuid: "file1",
       } as ItemMetadata;
 
-      // First call: processable, second (post-download re-check): still processable,
-      // third (post-decryption re-check): deleted
       db.getItem = vi
         .fn()
-        .mockReturnValueOnce(mockItem(metadata, FetchStatus.Initial, 0))
         .mockReturnValueOnce(
           mockItem(metadata, FetchStatus.DecryptionInProgress, 0),
         )
@@ -1479,18 +1692,11 @@ describe("TaskQueue - Two-Phase Download and Decryption", () => {
           mockItem(metadata, FetchStatus.ScheduledDeletion, 0),
         );
 
-      mockProxyStreamRequest.mockResolvedValue({
-        complete: true,
-        bytesWritten: 1000,
-        sha256sum: FILE_ETAG,
-      });
-
       mockCrypto.decryptFile.mockResolvedValue("/tmp/decrypted/file.txt");
 
       const queue = new TaskQueue(db);
-      await queue.process({ id: "file1" }, db);
+      await queue.processDecrypt({ id: "file1" }, db);
 
-      // Decryption ran but completion was not written to DB
       expect(mockCrypto.decryptFile).toHaveBeenCalled();
       expect(db.completeFileItem).not.toHaveBeenCalled();
     });
@@ -1504,15 +1710,8 @@ describe("TaskQueue - Two-Phase Download and Decryption", () => {
         uuid: "msg1",
       } as ItemMetadata;
 
-      // Status is FailedDecryptionRetryable (retry path, no download phase)
-      // First call: processable retry state,
-      // second (post-download re-check): still processable,
-      // third (post-decryption re-check): deleted
       db.getItem = vi
         .fn()
-        .mockReturnValueOnce(
-          mockItem(metadata, FetchStatus.FailedDecryptionRetryable, 0),
-        )
         .mockReturnValueOnce(
           mockItem(metadata, FetchStatus.FailedDecryptionRetryable, 0),
         )
@@ -1526,14 +1725,13 @@ describe("TaskQueue - Two-Phase Download and Decryption", () => {
         .mockResolvedValue(Buffer.from("encrypted"));
 
       const queue = new TaskQueue(db);
-      await queue.process({ id: "msg1" }, db);
+      await queue.processDecrypt({ id: "msg1" }, db);
 
-      // Decryption ran but the result was not persisted
       expect(mockCrypto.decryptMessage).toHaveBeenCalled();
       expect(db.completePlaintextItem).not.toHaveBeenCalled();
     });
 
-    it("should not re-check if item was not downloadable", async () => {
+    it("should not proceed to download if item is in non-processable state at start", async () => {
       const db = createMockDB();
       const metadata = {
         kind: "message",
@@ -1542,18 +1740,16 @@ describe("TaskQueue - Two-Phase Download and Decryption", () => {
         uuid: "msg1",
       } as ItemMetadata;
 
-      // Item is already scheduled for deletion — skipped immediately
       db.getItem = vi.fn(() =>
         mockItem(metadata, FetchStatus.ScheduledDeletion, 0),
       );
 
       const queue = new TaskQueue(db);
-      await queue.process({ id: "msg1" }, db);
+      queue.authToken = "test-token";
+      await queue.processDownload({ id: "msg1" }, db);
 
-      // Should have been skipped at the initial check
       expect(mockProxyStreamRequest).not.toHaveBeenCalled();
-      expect(mockCrypto.decryptMessage).not.toHaveBeenCalled();
-      expect(db.completePlaintextItem).not.toHaveBeenCalled();
+      expect(db.setDecryptionInProgress).not.toHaveBeenCalled();
     });
   });
 
@@ -1567,7 +1763,6 @@ describe("TaskQueue - Two-Phase Download and Decryption", () => {
         uuid: "file1",
       } as ItemMetadata;
 
-      // First attempt: download fails partway through
       db.getItem = vi
         .fn()
         .mockReturnValueOnce(
@@ -1576,55 +1771,45 @@ describe("TaskQueue - Two-Phase Download and Decryption", () => {
 
       mockProxyStreamRequest.mockResolvedValueOnce({
         complete: false,
-        bytesWritten: 100000000, // 100MB downloaded before failure
+        bytesWritten: 100000000,
         error: new Error("Connection lost"),
       });
 
       const queue = new TaskQueue(db);
+      queue.authToken = "test-token";
 
-      // First attempt should fail
-      await expect(queue.process({ id: "file1" }, db)).rejects.toThrow(
+      await expect(queue.processDownload({ id: "file1" }, db)).rejects.toThrow(
         "Unable to complete stream download",
       );
 
       expect(db.failDownload).toHaveBeenCalledWith("file1");
 
-      // Simulate the UI clicking "Retry" - status reset to DownloadInProgress with progress=0
-      // (This would be done by updateFetchStatus in index.ts which resets progress)
       vi.clearAllMocks();
 
-      db.getItem = vi.fn().mockReturnValue(
-        // Progress is now 0 because updateFetchStatus reset it
-        mockItem(metadata, FetchStatus.DownloadInProgress, 0),
-      );
+      db.getItem = vi
+        .fn()
+        .mockReturnValue(mockItem(metadata, FetchStatus.DownloadInProgress, 0));
 
-      // Second attempt should succeed
       mockProxyStreamRequest.mockResolvedValueOnce({
         complete: true,
         bytesWritten: 150000000,
         sha256sum: FILE_ETAG,
       });
 
-      mockCrypto.decryptFile.mockResolvedValue({
-        decryptedFilePath: "/tmp/decrypted/file.txt",
-        decryptedSize: 145000000,
-      });
+      await queue.processDownload({ id: "file1" }, db);
 
-      await queue.process({ id: "file1" }, db);
-
-      // Verify it started fresh from offset 0, not from the old progress
       expect(mockProxyStreamRequest).toHaveBeenCalledWith(
         expect.objectContaining({
           path_query: "/api/v1/sources/source1/submissions/file1/download",
         }),
         expect.anything(),
-        0, // Should start from 0, not 100000000
-        expect.any(AbortSignal), // abortSignal
-        expect.any(Number), // timeout
-        expect.any(Function), // onProgress
+        0,
+        expect.any(AbortSignal),
+        expect.any(Number),
+        expect.any(Function),
       );
 
-      expect(db.completeFileItem).toHaveBeenCalled();
+      expect(db.setDecryptionInProgress).toHaveBeenCalled();
     });
 
     it("should resume from actual file size on disk, not DB progress", async () => {
@@ -1632,11 +1817,10 @@ describe("TaskQueue - Two-Phase Download and Decryption", () => {
       const metadata = {
         kind: "file",
         source: "source1",
-        size: 100000000, // 100MB
+        size: 100000000,
         uuid: "file1",
       } as ItemMetadata;
 
-      // DB thinks 60MB was written, but only 50MB is on disk
       db.getItem = vi
         .fn()
         .mockReturnValue(
@@ -1653,15 +1837,11 @@ describe("TaskQueue - Two-Phase Download and Decryption", () => {
         sha256sum: FILE_ETAG,
       });
 
-      mockCrypto.decryptFile.mockResolvedValue({
-        decryptedFilePath: "/tmp/decrypted/file.txt",
-        decryptedSize: 95000000,
-      });
-
       const queue = new TaskQueue(db);
-      await queue.process({ id: "file1" }, db);
+      queue.authToken = "test-token";
+      await queue.processDownload({ id: "file1" }, db);
 
-      // Should resume from the actual file size (50MB), not the DB value (60MB)
+      // Should resume from actual file size (50MB), not DB value (60MB)
       expect(mockProxyStreamRequest).toHaveBeenCalledWith(
         expect.anything(),
         expect.anything(),
@@ -1681,7 +1861,6 @@ describe("TaskQueue - Two-Phase Download and Decryption", () => {
         uuid: "file1",
       } as ItemMetadata;
 
-      // DB has progress, but the partial file is gone
       db.getItem = vi
         .fn()
         .mockReturnValue(
@@ -1692,8 +1871,8 @@ describe("TaskQueue - Two-Phase Download and Decryption", () => {
         code: "ENOENT",
       });
       (fs.promises.stat as ReturnType<typeof vi.fn>)
-        .mockRejectedValueOnce(enoentError) // partial file missing on resume check
-        .mockResolvedValue({ size: 100000000 }); // post-decryption stat
+        .mockRejectedValueOnce(enoentError)
+        .mockResolvedValue({ size: 100000000 });
 
       mockProxyStreamRequest.mockResolvedValueOnce({
         complete: true,
@@ -1701,15 +1880,10 @@ describe("TaskQueue - Two-Phase Download and Decryption", () => {
         sha256sum: FILE_ETAG,
       });
 
-      mockCrypto.decryptFile.mockResolvedValue({
-        decryptedFilePath: "/tmp/decrypted/file.txt",
-        decryptedSize: 95000000,
-      });
-
       const queue = new TaskQueue(db);
-      await queue.process({ id: "file1" }, db);
+      queue.authToken = "test-token";
+      await queue.processDownload({ id: "file1" }, db);
 
-      // File missing → resume from 0
       expect(mockProxyStreamRequest).toHaveBeenCalledWith(
         expect.anything(),
         expect.anything(),
@@ -1720,7 +1894,7 @@ describe("TaskQueue - Two-Phase Download and Decryption", () => {
       );
     });
 
-    it("should not call failDownload or proceed to decryption when a download is cancelled", async () => {
+    it("should not call failDownload or transition to decrypt when a download is cancelled", async () => {
       const db = createMockDB();
       const metadata = {
         kind: "file",
@@ -1733,12 +1907,9 @@ describe("TaskQueue - Two-Phase Download and Decryption", () => {
         .fn()
         .mockReturnValue(mockItem(metadata, FetchStatus.DownloadInProgress, 0));
 
-      // Simulate an in-progress download that gets aborted mid-stream
       mockProxyStreamRequest.mockImplementation(
         async (_req, _writer, _offset, _abortSignal: AbortSignal) => {
-          // Abort during the download
           queue.cancelDownload("file1");
-          // proxyStreamRequest returns incomplete when the signal fires
           return {
             complete: false,
             bytesWritten: 10000000,
@@ -1748,8 +1919,8 @@ describe("TaskQueue - Two-Phase Download and Decryption", () => {
       );
 
       const queue = new TaskQueue(db);
-      // Should resolve cleanly, not throw
-      await queue.process({ id: "file1" }, db);
+      queue.authToken = "test-token";
+      await queue.processDownload({ id: "file1" }, db);
 
       expect(db.failDownload).not.toHaveBeenCalled();
       expect(db.setDecryptionInProgress).not.toHaveBeenCalled();
@@ -1758,8 +1929,6 @@ describe("TaskQueue - Two-Phase Download and Decryption", () => {
   });
 
   describe("ETag checksum verification", () => {
-    // The server sends ETags in "sha256:<hexdigest>" format.
-
     it("should succeed when message ETag matches downloaded content", async () => {
       const db = createMockDB();
       const metadata = {
@@ -1771,26 +1940,19 @@ describe("TaskQueue - Two-Phase Download and Decryption", () => {
       db.getItem = vi.fn(() => mockItem(metadata, FetchStatus.Initial, 0));
 
       const encryptedBuffer = Buffer.from("encrypted message data");
-      const hex = createHash("sha256").update(encryptedBuffer).digest("hex");
+      mockReadStreamFor(encryptedBuffer);
 
       mockProxyStreamRequest.mockResolvedValue({
         complete: true,
         bytesWritten: encryptedBuffer.length,
-        sha256sum: `sha256:${hex}`,
+        sha256sum: etagFor(encryptedBuffer),
       });
 
-      vi.spyOn(BufferedWriter.prototype, "getBuffer").mockReturnValue(
-        encryptedBuffer,
-      );
-      mockCrypto.decryptMessage.mockResolvedValue("decrypted content");
-
       const queue = new TaskQueue(db);
-      await queue.process({ id: "msg1" }, db);
+      queue.authToken = "test-token";
+      await queue.processDownload({ id: "msg1" }, db);
 
-      expect(db.completePlaintextItem).toHaveBeenCalledWith(
-        "msg1",
-        "decrypted content",
-      );
+      expect(db.setDecryptionInProgress).toHaveBeenCalledWith("msg1");
       expect(db.failDownload).not.toHaveBeenCalled();
     });
 
@@ -1805,6 +1967,7 @@ describe("TaskQueue - Two-Phase Download and Decryption", () => {
       db.getItem = vi.fn(() => mockItem(metadata, FetchStatus.Initial, 0));
 
       const encryptedBuffer = Buffer.from("encrypted message data");
+      mockReadStreamFor(encryptedBuffer);
 
       mockProxyStreamRequest.mockResolvedValue({
         complete: true,
@@ -1813,19 +1976,14 @@ describe("TaskQueue - Two-Phase Download and Decryption", () => {
           "sha256:0000000000000000000000000000000000000000000000000000000000000000",
       });
 
-      vi.spyOn(BufferedWriter.prototype, "getBuffer").mockReturnValue(
-        encryptedBuffer,
-      );
-
       const queue = new TaskQueue(db);
-      await expect(queue.process({ id: "msg1" }, db)).rejects.toThrow(
+      queue.authToken = "test-token";
+      await expect(queue.processDownload({ id: "msg1" }, db)).rejects.toThrow(
         "ETag checksum mismatch",
       );
 
       expect(db.terminallyFailItem).toHaveBeenCalledWith("msg1");
-      // Should not attempt decryption
       expect(db.setDecryptionInProgress).not.toHaveBeenCalled();
-      expect(mockCrypto.decryptMessage).not.toHaveBeenCalled();
     });
 
     it("should succeed when file ETag matches downloaded content", async () => {
@@ -1845,10 +2003,9 @@ describe("TaskQueue - Two-Phase Download and Decryption", () => {
         sha256sum: FILE_ETAG,
       });
 
-      mockCrypto.decryptFile.mockResolvedValue("/securedrop/source1/file.txt");
-
       const queue = new TaskQueue(db);
-      await queue.process({ id: "file1" }, db);
+      queue.authToken = "test-token";
+      await queue.processDownload({ id: "file1" }, db);
 
       const expectedDownloadPath = path.join(
         os.tmpdir(),
@@ -1858,7 +2015,7 @@ describe("TaskQueue - Two-Phase Download and Decryption", () => {
         "encrypted.gpg",
       );
       expect(fs.createReadStream).toHaveBeenCalledWith(expectedDownloadPath);
-      expect(db.completeFileItem).toHaveBeenCalled();
+      expect(db.setDecryptionInProgress).toHaveBeenCalled();
       expect(db.failDownload).not.toHaveBeenCalled();
     });
 
@@ -1881,13 +2038,13 @@ describe("TaskQueue - Two-Phase Download and Decryption", () => {
       });
 
       const queue = new TaskQueue(db);
-      await expect(queue.process({ id: "file1" }, db)).rejects.toThrow(
+      queue.authToken = "test-token";
+      await expect(queue.processDownload({ id: "file1" }, db)).rejects.toThrow(
         "ETag checksum mismatch",
       );
 
       expect(db.terminallyFailItem).toHaveBeenCalledWith("file1");
       expect(db.setDecryptionInProgress).not.toHaveBeenCalled();
-      expect(mockCrypto.decryptFile).not.toHaveBeenCalled();
     });
 
     it("should fail terminally when ETag is missing", async () => {
@@ -1906,12 +2063,9 @@ describe("TaskQueue - Two-Phase Download and Decryption", () => {
         // no sha256sum
       });
 
-      vi.spyOn(BufferedWriter.prototype, "getBuffer").mockReturnValue(
-        Buffer.from("encrypted message data"),
-      );
-
       const queue = new TaskQueue(db);
-      await expect(queue.process({ id: "msg1" }, db)).rejects.toThrow(
+      queue.authToken = "test-token";
+      await expect(queue.processDownload({ id: "msg1" }, db)).rejects.toThrow(
         "Missing ETag checksum",
       );
 
@@ -1935,12 +2089,9 @@ describe("TaskQueue - Two-Phase Download and Decryption", () => {
         sha256sum: "md5:d8e8fca2dc0f896fd7cb4cb0031ba249",
       });
 
-      vi.spyOn(BufferedWriter.prototype, "getBuffer").mockReturnValue(
-        Buffer.from("encrypted message data"),
-      );
-
       const queue = new TaskQueue(db);
-      await expect(queue.process({ id: "msg1" }, db)).rejects.toThrow(
+      queue.authToken = "test-token";
+      await expect(queue.processDownload({ id: "msg1" }, db)).rejects.toThrow(
         "Invalid or unsupported ETag format",
       );
 
@@ -1953,7 +2104,6 @@ describe("TaskQueue - Two-Phase Download and Decryption", () => {
     it("refill should drain a large backlog by re-querying after each task completes", () => {
       const db = createMockDB();
 
-      // Simulate a large backlog: first call returns a batch, second returns more, third returns empty
       db.getItemsToProcess = vi
         .fn()
         .mockReturnValueOnce(["msg1", "msg2", "msg3"])
@@ -1976,23 +2126,19 @@ describe("TaskQueue - Two-Phase Download and Decryption", () => {
       const queue = new TaskQueue(db);
       queue.authToken = "test-token";
 
-      // First call: initial queueFetches loads batch 1
       queue.queueFetches({ authToken: "test-token" });
       expect(db.getItemsToProcess).toHaveBeenCalledTimes(1);
 
-      // Simulate task completion triggers refill → loads batch 2
-      queue.messageQueue.emit("task_finish", "msg1", {});
+      queue.messageDownloadQueue.emit("task_finish", "msg1", {});
       expect(db.getItemsToProcess).toHaveBeenCalledTimes(2);
 
-      // Another completion → loads batch 3 (empty, backlog drained)
-      queue.messageQueue.emit("task_finish", "msg4", {});
+      queue.messageDownloadQueue.emit("task_finish", "msg4", {});
       expect(db.getItemsToProcess).toHaveBeenCalledTimes(3);
     });
 
     it("deletion during large backlog should prevent new items from being queued", () => {
       const db = createMockDB();
 
-      // First call returns items, second call (after deletion) returns nothing
       db.getItemsToProcess = vi
         .fn()
         .mockReturnValueOnce(["msg1", "msg2"])
@@ -2007,7 +2153,6 @@ describe("TaskQueue - Two-Phase Download and Decryption", () => {
 
       db.getItem = vi.fn((uuid: string) => {
         if (uuid === "msg1") {
-          // After deletion, item is ScheduledDeletion
           return mockItem(msg1Meta, FetchStatus.ScheduledDeletion, 0);
         }
         return mockItem(
@@ -2025,22 +2170,15 @@ describe("TaskQueue - Two-Phase Download and Decryption", () => {
       const queue = new TaskQueue(db);
       queue.authToken = "test-token";
 
-      // Initial queueing
       queue.queueFetches({ authToken: "test-token" });
+      queue.messageDownloadQueue.emit("task_finish", "msg1", {});
 
-      // Source gets deleted — items marked ScheduledDeletion in DB.
-      // On next refill, getItemsToProcess returns empty because all items
-      // are ScheduledDeletion and excluded by the bounded query.
-      queue.messageQueue.emit("task_finish", "msg1", {});
-
-      // Second call to getItemsToProcess returned [] — nothing new queued
       expect(db.getItemsToProcess).toHaveBeenCalledTimes(2);
     });
 
     it("abort should cancel all active downloads for a deleted source across a backlog", async () => {
       const db = createMockDB();
 
-      // Two files from the same source actively downloading
       const fileMeta = (uuid: string) =>
         ({
           kind: "file",
@@ -2058,7 +2196,6 @@ describe("TaskQueue - Two-Phase Download and Decryption", () => {
           mockItem(fileMeta("file2"), FetchStatus.Initial, 0),
         );
 
-      // Make downloads hang until aborted
       const rejects: Array<(reason: unknown) => void> = [];
       mockProxyStreamRequest.mockImplementation(
         () =>
@@ -2068,22 +2205,19 @@ describe("TaskQueue - Two-Phase Download and Decryption", () => {
       );
 
       const queue = new TaskQueue(db);
+      queue.authToken = "test-token";
 
-      const p1 = queue.process({ id: "file1" }, db);
-      const p2 = queue.process({ id: "file2" }, db);
+      const p1 = queue.processDownload({ id: "file1" }, db);
+      const p2 = queue.processDownload({ id: "file2" }, db);
 
-      // Wait for downloads to register
       await new Promise((r) => setTimeout(r, 10));
 
-      // Abort all downloads for source1
       queue.abortSourceFetch("source1");
 
-      // Reject the hanging promises to simulate abort
       for (const reject of rejects) {
         reject(new Error("AbortError: The operation was aborted"));
       }
 
-      // Abort is treated as a graceful cancellation, not an error
       await expect(p1).resolves.toBeUndefined();
       await expect(p2).resolves.toBeUndefined();
     });
