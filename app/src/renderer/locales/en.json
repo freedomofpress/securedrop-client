@@ -29,11 +29,15 @@
       "replyPositionAriaLabel": "Reply {{index}} of {{total}}"
     },
     "menu": {
+      "ExportGroup": "Export to USB",
       "exportTranscript": "Export Transcript",
-      "exportTranscriptToWhistleflow": "Export Transcript to Whistleflow",
       "exportSource": "Export Transcript and Files",
-      "exportSourceToWhistleflow": "Export Transcript and Files to Whistleflow",
+      "WhistleflowExportGroup": "Send to Whistleflow",
+      "exportSourceToWhistleflow": "Send Transcript and Files",
+      "exportTranscriptToWhistleflow": "Send Transcript",
       "printTranscript": "Print Transcript",
+      "deleteSource": "Delete Source Account",
+      "deleteConversation": "Delete Files and Messages",
       "clickToOpen": "Click to open"
     },
     "itemFetching": "Fetching message...",

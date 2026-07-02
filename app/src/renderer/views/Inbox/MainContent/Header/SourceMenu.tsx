@@ -134,37 +134,62 @@ const SourceMenu = memo(function SourceMenu({
 
   const items: MenuProps["items"] = [
     {
-      key: "exportTranscript",
-      label: t("menu.exportTranscript"),
-      disabled: !hasConversation,
+      type: "group",
+      label: t("menu.ExportGroup"),
+      children: [
+        {
+          key: "exportTranscript",
+          label: t("menu.exportTranscript"),
+          disabled: !hasConversation,
+        },
+        {
+          key: "exportSource",
+          label: t("menu.exportSource"),
+          disabled: !hasConversation,
+        },
+      ],
     },
-    ...(whistleflowEnabled
-      ? [
-          {
-            key: "exportTranscriptToWhistleflow",
-            label: t("menu.exportTranscriptToWhistleflow"),
-            disabled: !hasConversation,
-          },
-        ]
-      : []),
-    {
-      key: "exportSource",
-      label: t("menu.exportSource"),
-      disabled: !hasConversation,
-    },
-    ...(whistleflowEnabled
-      ? [
-          {
-            key: "exportSourceToWhistleflow",
-            label: t("menu.exportSourceToWhistleflow"),
-            disabled: !hasConversation,
-          },
-        ]
-      : []),
     {
       key: "printTranscript",
       label: t("menu.printTranscript"),
       disabled: !hasConversation,
+    },
+    ...(whistleflowEnabled
+      ? [
+          {
+            type: "divider",
+          },
+          {
+            type: "group",
+            label: t("menu.WhistleflowExportGroup"),
+            children: [
+              {
+                key: "exportTranscriptToWhistleflow",
+                label: t("menu.exportTranscriptToWhistleflow"),
+                disabled: !hasConversation,
+              },
+              {
+                key: "exportSourceToWhistleflow",
+                label: t("menu.exportSourceToWhistleflow"),
+                disabled: !hasConversation,
+              },
+            ],
+          },
+        ]
+      : []),
+    {
+      type: "divider",
+    },
+    {
+      key: "deleteConversation",
+      label: t("menu.deleteConversation"),
+      disabled: !hasConversation,
+      danger: true,
+    },
+    {
+      key: "deleteSource",
+      label: t("menu.deleteSource"),
+      danger: true,
     },
   ];
 
