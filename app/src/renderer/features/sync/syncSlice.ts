@@ -91,7 +91,7 @@ export const syncSlice = createSlice({
   },
   extraReducers: (builder) => {
     builder
-      .addCase(setUnauth, () => initialState)
+      .addCase(setUnauth.fulfilled, () => initialState)
       .addCase(syncComplete.fulfilled, (state, action) => {
         state.lastSyncStarted = state.lastSyncStarted ?? Date.now();
         state.lastSyncFinished = Date.now();

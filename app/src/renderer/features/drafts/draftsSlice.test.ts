@@ -62,7 +62,10 @@ describe("draftsSlice", () => {
       const state: DraftsState = {
         drafts: { "source-1": "draft one", "source-2": "draft two" },
       };
-      const result = draftsReducer(state, setUnauth(undefined));
+      const result = draftsReducer(
+        state,
+        setUnauth.fulfilled(undefined, "", undefined),
+      );
       expect(result.drafts).toEqual({});
     });
 

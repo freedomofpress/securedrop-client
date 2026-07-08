@@ -1,4 +1,4 @@
-import { createSlice } from "@reduxjs/toolkit";
+import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
 import type { PayloadAction } from "@reduxjs/toolkit";
 import type { RootState } from "../../store";
 
@@ -30,6 +30,16 @@ const unauthState: SessionState = {
   errorMessage: undefined,
 };
 
+export const setUnauth = createAsyncThunk(
+  "session/setUnauth",
+  async (errorMessage: string | undefined) => {
+    void Promise.resolve(window.electronAPI?.signOut?.()).catch((e) => {
+      console.error("Failed to sign out:", e);
+    });
+    return errorMessage;
+  },
+);
+
 export const sessionSlice = createSlice({
   name: "session",
   initialState: unauthState,
@@ -38,11 +48,6 @@ export const sessionSlice = createSlice({
       state.authData = action.payload;
       state.status = SessionStatus.Auth;
       state.errorMessage = undefined;
-    },
-    setUnauth: (state, action: PayloadAction<string | undefined>) => {
-      state.status = SessionStatus.Unauth;
-      state.authData = undefined;
-      state.errorMessage = action.payload;
     },
     clearError: (state) => {
       state.errorMessage = undefined;
@@ -53,12 +58,18 @@ export const sessionSlice = createSlice({
       state.errorMessage = undefined;
     },
   },
+  extraReducers: (builder) => {
+    builder.addCase(setUnauth.fulfilled, (state, action) => {
+      state.status = SessionStatus.Unauth;
+      state.authData = undefined;
+      state.errorMessage = action.payload;
+    });
+  },
 });
 
 export type { SessionState, AuthData };
 export { SessionStatus };
 export const unauthSessionState = unauthState;
-export const { setAuth, setUnauth, clearError, setOffline } =
-  sessionSlice.actions;
+export const { setAuth, clearError, setOffline } = sessionSlice.actions;
 export const getSessionState = (state: RootState) => state.session;
 export default sessionSlice.reducer;

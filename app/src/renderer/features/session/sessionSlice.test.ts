@@ -1,4 +1,5 @@
-import { describe, it, expect } from "vitest";
+import { describe, it, expect, vi, beforeEach } from "vitest";
+import { configureStore } from "@reduxjs/toolkit";
 import sessionReducer, {
   setAuth,
   setUnauth,
@@ -8,6 +9,16 @@ import sessionReducer, {
   SessionStatus,
   unauthSessionState,
 } from "../../../../src/renderer/features/session/sessionSlice";
+
+// Mock electronAPI so we can assert the signOut IPC is invoked
+const mockElectronAPI = {
+  signOut: vi.fn(),
+};
+
+Object.defineProperty(window, "electronAPI", {
+  value: mockElectronAPI,
+  writable: true,
+});
 
 describe("sessionSlice", () => {
   const mockAuthData: AuthData = {
@@ -30,19 +41,64 @@ describe("sessionSlice", () => {
 
   describe("setUnauth action", () => {
     it("should set the session state to unauth", () => {
-      const result = sessionReducer(mockSessionState, setUnauth(undefined));
+      const result = sessionReducer(
+        mockSessionState,
+        setUnauth.fulfilled(undefined, "", undefined),
+      );
       expect(result).toEqual(unauthSessionState);
     });
 
     it("should return unauth state when clearing already empty state", () => {
-      const result = sessionReducer(unauthSessionState, setUnauth(undefined));
+      const result = sessionReducer(
+        unauthSessionState,
+        setUnauth.fulfilled(undefined, "", undefined),
+      );
       expect(result).toEqual(unauthSessionState);
     });
 
     it("should set error message when provided", () => {
       const errorMsg = "Your session expired. Please log in again.";
-      const result = sessionReducer(mockSessionState, setUnauth(errorMsg));
+      const result = sessionReducer(
+        mockSessionState,
+        setUnauth.fulfilled(errorMsg, "", errorMsg),
+      );
       expect(result).toEqual({
+        status: SessionStatus.Unauth,
+        authData: undefined,
+        errorMessage: errorMsg,
+      });
+    });
+  });
+
+  describe("setUnauth thunk", () => {
+    beforeEach(() => {
+      (window as any).electronAPI = mockElectronAPI;
+      mockElectronAPI.signOut.mockReset();
+    });
+
+    const makeStore = () =>
+      configureStore({ reducer: { session: sessionReducer } });
+
+    it("calls the signOut IPC and clears the session when dispatched", async () => {
+      mockElectronAPI.signOut.mockResolvedValue(null);
+      const store = makeStore();
+
+      const result = await store.dispatch(setUnauth(undefined));
+
+      expect(mockElectronAPI.signOut).toHaveBeenCalledTimes(1);
+      expect(result.type).toBe("session/setUnauth/fulfilled");
+      expect(store.getState().session).toEqual(unauthSessionState);
+    });
+
+    it("propagates the error message through to the session state", async () => {
+      mockElectronAPI.signOut.mockResolvedValue(null);
+      const errorMsg = "Your session expired. Please log in again.";
+      const store = makeStore();
+
+      await store.dispatch(setUnauth(errorMsg));
+
+      expect(mockElectronAPI.signOut).toHaveBeenCalledTimes(1);
+      expect(store.getState().session).toEqual({
         status: SessionStatus.Unauth,
         authData: undefined,
         errorMessage: errorMsg,
