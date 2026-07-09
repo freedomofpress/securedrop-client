@@ -283,6 +283,19 @@ SELECT
     ) AS rn
 FROM items_projected
 /* sorted_items(uuid,data,version,plaintext,filename,kind,is_read,last_updated,source_uuid,fetch_progress,fetch_status,fetch_last_updated_at,fetch_retry_attempts,interaction_count,decrypted_size,double_encrypted_key_fingerprint,rn) */;
+CREATE TRIGGER sources_key_material_immutable
+BEFORE UPDATE OF data ON sources
+FOR EACH ROW
+WHEN (
+    json_extract(OLD.data, '$.public_key') IS NOT NULL
+    AND json_extract(NEW.data, '$.public_key') IS NOT json_extract(OLD.data, '$.public_key')
+) OR (
+    json_extract(OLD.data, '$.fingerprint') IS NOT NULL
+    AND json_extract(NEW.data, '$.fingerprint') IS NOT json_extract(OLD.data, '$.fingerprint')
+)
+BEGIN
+    SELECT RAISE(ABORT, 'sources key material is immutable');
+END;
 -- Dbmate schema migrations
 INSERT INTO "schema_migrations" (version) VALUES
   ('20260203225412'),
@@ -295,4 +308,5 @@ INSERT INTO "schema_migrations" (version) VALUES
   ('20260511000000'),
   ('20260624000000'),
   ('20260710151500'),
-  ('20260730000000');
+  ('20260730000000'),
+  ('20260805000000');
