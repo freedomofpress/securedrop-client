@@ -683,6 +683,10 @@ export class Crypto {
   /**
    * Decrypt an already-decompressed file to a new path using the available
    * GPG keys. Used for the inner layer of double-encrypted submissions.
+   *
+   * Note: split-gpg's qubes-gpg-client rejects `--output <path>` (only "-"
+   * is allowed, since the backend must not write client files), so gpg
+   * writes the plaintext to stdout and we stream it to outputPath ourselves.
    */
   private decryptRawFile(
     inputPath: string,
@@ -690,11 +694,25 @@ export class Crypto {
     signal?: AbortSignal,
   ): Promise<void> {
     const cmd = this.getGpgCommand();
-    cmd.push("--decrypt", "--output", outputPath, inputPath);
+    cmd.push("--decrypt", inputPath);
 
     return new Promise((resolve, reject) => {
       let stderr = Buffer.alloc(0);
       const gpgProcess = spawn(cmd[0], cmd.slice(1), this.getSpawnOptions());
+      const outputFile = fs.createWriteStream(outputPath);
+      gpgProcess.stdout.pipe(outputFile);
+
+      // Destroy the write stream, wait for it to fully close, and remove any
+      // partially-written output so a failed decryption leaves nothing behind.
+      const removePartialOutput = async () => {
+        outputFile.destroy();
+        try {
+          await finished(outputFile);
+        } catch {
+          // ignore stream errors during cleanup
+        }
+        fs.rmSync(outputPath, { force: true });
+      };
 
       const abortListener = () => {
         gpgProcess.kill();
@@ -704,9 +722,11 @@ export class Crypto {
       if (signal?.aborted) {
         signal.removeEventListener("abort", abortListener);
         gpgProcess.kill();
-        const err = new Error("Decryption was cancelled");
-        err.name = "AbortError";
-        reject(err);
+        void removePartialOutput().finally(() => {
+          const err = new Error("Decryption was cancelled");
+          err.name = "AbortError";
+          reject(err);
+        });
         return;
       }
 
@@ -714,19 +734,22 @@ export class Crypto {
         stderr = Buffer.concat([stderr, chunk]);
       });
 
-      gpgProcess.on("close", (code, exitSignal) => {
+      gpgProcess.on("close", async (code, exitSignal) => {
         signal?.removeEventListener("abort", abortListener);
         if (signal?.aborted) {
+          await removePartialOutput();
           const err = new Error("Decryption was cancelled");
           err.name = "AbortError";
           reject(err);
           return;
         }
         if (exitSignal) {
+          await removePartialOutput();
           reject(new Error(`Process terminated with signal ${exitSignal}`));
           return;
         }
         if (code !== 0) {
+          await removePartialOutput();
           reject(
             new CryptoError(
               `Inner GPG decryption failed (exit code ${code}): ${stderr.toString("utf8")}`,
@@ -734,11 +757,25 @@ export class Crypto {
           );
           return;
         }
+        try {
+          // Wait for the piped plaintext to be fully flushed to disk
+          await finished(outputFile);
+        } catch (error) {
+          await removePartialOutput();
+          reject(
+            new CryptoError(
+              "Failed to write inner decrypted file",
+              error instanceof Error ? error : new Error(String(error)),
+            ),
+          );
+          return;
+        }
         resolve();
       });
 
-      gpgProcess.on("error", (error) => {
+      gpgProcess.on("error", async (error) => {
         signal?.removeEventListener("abort", abortListener);
+        await removePartialOutput();
         reject(
           new CryptoError(
             `Failed to start GPG process for inner decryption: ${error.message}`,

@@ -1,6 +1,17 @@
 import { describe, it, expect, beforeEach, vi, afterEach } from "vitest";
+import { EventEmitter } from "events";
+import { PassThrough } from "stream";
+import * as fs from "fs";
+import * as os from "os";
+import * as path from "path";
 import { Crypto, CryptoError, isPgpEncrypted } from "../crypto";
 import { UnsafePathComponent } from "../storage";
+
+const spawnMock = vi.hoisted(() => vi.fn());
+vi.mock("child_process", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("child_process")>();
+  return { ...actual, spawn: spawnMock };
+});
 
 // Type definition for testing private methods
 type CryptoWithPrivateMethods = {
@@ -239,6 +250,86 @@ describe("Crypto", () => {
 
     it("returns false when bit 7 is not set", () => {
       expect(isPgpEncrypted(Buffer.from([0x01, 0x00]))).toBe(false);
+    });
+  });
+
+  describe("decryptRawFile (inner layer of double-encrypted files)", () => {
+    let crypto: Crypto;
+    let tmpDir: string;
+    let inputPath: string;
+    let outputPath: string;
+
+    // Minimal stand-in for a spawned gpg process: emits the given stdout
+    // and stderr, then closes with the given exit code.
+    function fakeGpgProcess(options: {
+      stdoutData?: Buffer;
+      stderrData?: Buffer;
+      code?: number;
+    }) {
+      const proc = new EventEmitter() as any;
+      proc.stdout = new PassThrough();
+      proc.stderr = new PassThrough();
+      proc.stdin = new PassThrough();
+      proc.kill = vi.fn();
+      setImmediate(() => {
+        if (options.stderrData) {
+          proc.stderr.write(options.stderrData);
+        }
+        proc.stdout.end(options.stdoutData ?? Buffer.alloc(0));
+        proc.stderr.end();
+        setImmediate(() => proc.emit("close", options.code ?? 0, null));
+      });
+      return proc;
+    }
+
+    beforeEach(() => {
+      (Crypto as any).instance = undefined;
+      crypto = Crypto.initialize({
+        isQubes: true,
+        qubesGpgDomain: "sd-gpg",
+        submissionKeyFingerprint: "",
+      });
+      tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "crypto-unit-test-"));
+      inputPath = path.join(tmpDir, "document.txt.gpg");
+      outputPath = path.join(tmpDir, "document.txt");
+      fs.writeFileSync(inputPath, "ciphertext");
+    });
+
+    afterEach(() => {
+      fs.rmSync(tmpDir, { recursive: true, force: true });
+    });
+
+    it("streams plaintext from stdout instead of passing --output, which qubes-gpg-client rejects", async () => {
+      const plaintext = Buffer.from("inner plaintext");
+      spawnMock.mockImplementation(() =>
+        fakeGpgProcess({ stdoutData: plaintext }),
+      );
+
+      await (crypto as any).decryptRawFile(inputPath, outputPath);
+
+      expect(spawnMock).toHaveBeenCalledTimes(1);
+      const [command, args] = spawnMock.mock.calls[0];
+      expect(command).toBe("qubes-gpg-client");
+      // split-gpg only permits `--output -`, so the plaintext must be
+      // streamed from stdout rather than written by gpg itself
+      expect(args).not.toContain("--output");
+      expect(args).toContain(inputPath);
+      expect(fs.readFileSync(outputPath)).toEqual(plaintext);
+    });
+
+    it("removes partial output and rejects when gpg exits non-zero", async () => {
+      spawnMock.mockImplementation(() =>
+        fakeGpgProcess({
+          stdoutData: Buffer.from("partial output"),
+          stderrData: Buffer.from("gpg: decryption failed: No secret key\n"),
+          code: 2,
+        }),
+      );
+
+      await expect(
+        (crypto as any).decryptRawFile(inputPath, outputPath),
+      ).rejects.toThrow(/Inner GPG decryption failed \(exit code 2\)/);
+      expect(fs.existsSync(outputPath)).toBe(false);
     });
   });
 
