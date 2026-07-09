@@ -2,7 +2,7 @@ import "../Item.css";
 
 import { memo } from "react";
 import { useTranslation } from "react-i18next";
-import { LockKeyhole, TriangleAlert } from "lucide-react";
+import { LockKeyhole } from "lucide-react";
 import { Tooltip, theme } from "antd";
 
 // Format a hex fingerprint into GPG's conventional 4-character groups
@@ -19,8 +19,8 @@ interface DoubleEncryptedBadgeProps {
 
 // Badge shown on items that were additionally encrypted by the source
 // before uploading. When the inner layer was encrypted to a key other than
-// the current submission key, the badge is shown in the error color and the
-// tooltip includes that key's fingerprint.
+// the current submission key, the badge is shown in the warning color and
+// the tooltip includes that key's fingerprint.
 const DoubleEncryptedBadge = memo(function DoubleEncryptedBadge({
   keyFingerprint,
 }: DoubleEncryptedBadgeProps) {
@@ -36,9 +36,9 @@ const DoubleEncryptedBadge = memo(function DoubleEncryptedBadge({
       >
         <span
           className="double-encrypted-badge"
-          style={{ color: token.colorError }}
+          style={{ color: token.colorWarning }}
         >
-          <TriangleAlert size={12} /> {t("doubleEncryptedBadge")}
+          <LockKeyhole size={12} /> {t("doubleEncryptedBadge")}
         </span>
       </Tooltip>
     );
