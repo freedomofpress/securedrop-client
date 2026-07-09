@@ -1304,9 +1304,9 @@ describe("Double-encryption badge", () => {
 
     const badge = screen.getByText("Source-encrypted");
     expect(badge).toBeInTheDocument();
-    // Warning icon instead of the padlock
-    expect(container.querySelector(".lucide-triangle-alert")).toBeTruthy();
-    expect(container.querySelector(".lucide-lock-keyhole")).toBeFalsy();
+    // Same padlock icon, but tinted with the warning color
+    expect(container.querySelector(".lucide-lock-keyhole")).toBeTruthy();
+    expect(badge.style.color).not.toBe("");
 
     // The tooltip names the key's fingerprint, formatted in 4-char groups
     await user.hover(badge);
