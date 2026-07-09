@@ -148,6 +148,111 @@ describe("DB Component Tests", () => {
       ).toThrow("items.kind is immutable");
     });
   });
+
+  describe("sources_key_material_immutable trigger", () => {
+    const sourceUuid = "11111111-1111-4111-8111-111111111111";
+
+    function sourceData({
+      designation = "alpha bravo",
+      publicKey = "source-public-key-a",
+      fingerprint = "source-fingerprint-a",
+    } = {}) {
+      return JSON.stringify({
+        uuid: sourceUuid,
+        journalist_designation: designation,
+        is_starred: false,
+        is_seen: false,
+        has_attachment: false,
+        last_updated: "2026-07-09T00:00:00Z",
+        public_key: publicKey,
+        fingerprint,
+      });
+    }
+
+    function sourceMetadata(options = {}): SourceMetadata {
+      return JSON.parse(sourceData(options)) as SourceMetadata;
+    }
+
+    it("allows TOFU initial source key write", () => {
+      db = new Datastore(crypto, new Storage());
+      const rawDb = db["db"]!;
+
+      rawDb
+        .prepare("INSERT INTO sources (uuid, data) VALUES (?, NULL)")
+        .run(sourceUuid);
+
+      expect(() =>
+        rawDb
+          .prepare("UPDATE sources SET data = ? WHERE uuid = ?")
+          .run(sourceData(), sourceUuid),
+      ).not.toThrow();
+    });
+
+    it("allows source metadata updates when key material is unchanged", () => {
+      db = new Datastore(crypto, new Storage());
+      const rawDb = db["db"]!;
+
+      rawDb
+        .prepare("INSERT INTO sources (uuid, data) VALUES (?, ?)")
+        .run(sourceUuid, sourceData());
+
+      expect(() =>
+        rawDb
+          .prepare("UPDATE sources SET data = ? WHERE uuid = ?")
+          .run(sourceData({ designation: "charlie delta" }), sourceUuid),
+      ).not.toThrow();
+    });
+
+    it("rejects source public key replacement", () => {
+      db = new Datastore(crypto, new Storage());
+      const rawDb = db["db"]!;
+
+      rawDb
+        .prepare("INSERT INTO sources (uuid, data) VALUES (?, ?)")
+        .run(sourceUuid, sourceData());
+
+      expect(() =>
+        rawDb.prepare("UPDATE sources SET data = ? WHERE uuid = ?").run(
+          sourceData({
+            publicKey: "source-public-key-b",
+          }),
+          sourceUuid,
+        ),
+      ).toThrow("sources key material is immutable");
+    });
+
+    it("rejects source fingerprint replacement", () => {
+      db = new Datastore(crypto, new Storage());
+      const rawDb = db["db"]!;
+
+      rawDb
+        .prepare("INSERT INTO sources (uuid, data) VALUES (?, ?)")
+        .run(sourceUuid, sourceData());
+
+      expect(() =>
+        rawDb.prepare("UPDATE sources SET data = ? WHERE uuid = ?").run(
+          sourceData({
+            fingerprint: "source-fingerprint-b",
+          }),
+          sourceUuid,
+        ),
+      ).toThrow("sources key material is immutable");
+    });
+
+    it("rejects source key replacement through the source upsert path", () => {
+      db = new Datastore(crypto, new Storage());
+
+      db.updateSources({ [sourceUuid]: sourceMetadata() });
+
+      expect(() =>
+        db.updateSources({
+          [sourceUuid]: sourceMetadata({
+            publicKey: "source-public-key-b",
+          }),
+        }),
+      ).toThrow("sources key material is immutable");
+    });
+  });
 });
 
 describe("Datastore Method Tests", () => {

@@ -273,6 +273,19 @@ WHERE
             pending_events.type = 'source_deleted'
     )
 /* sources_projected(uuid,data,version,has_attachment,is_seen) */;
+CREATE TRIGGER sources_key_material_immutable
+BEFORE UPDATE OF data ON sources
+FOR EACH ROW
+WHEN (
+    json_extract(OLD.data, '$.public_key') IS NOT NULL
+    AND json_extract(NEW.data, '$.public_key') IS NOT json_extract(OLD.data, '$.public_key')
+) OR (
+    json_extract(OLD.data, '$.fingerprint') IS NOT NULL
+    AND json_extract(NEW.data, '$.fingerprint') IS NOT json_extract(OLD.data, '$.fingerprint')
+)
+BEGIN
+    SELECT RAISE(ABORT, 'sources key material is immutable');
+END;
 -- Dbmate schema migrations
 INSERT INTO "schema_migrations" (version) VALUES
   ('20260203225412'),
@@ -283,4 +296,5 @@ INSERT INTO "schema_migrations" (version) VALUES
   ('20260416000000'),
   ('20260507000000'),
   ('20260511000000'),
-  ('20260624000000');
+  ('20260624000000'),
+  ('20260709000000');
