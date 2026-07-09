@@ -12,13 +12,13 @@ import TruncatedText from "../../../../../components/TruncatedText";
 import { useTranslation } from "react-i18next";
 import {
   Loader2,
-  LockKeyhole,
   RotateCw,
   Trash,
   Clock,
   Check,
   CheckCheck,
 } from "lucide-react";
+import DoubleEncryptedBadge from "./DoubleEncryptedBadge";
 import { Button, Tooltip, theme } from "antd";
 import { ExclamationCircleTwoTone } from "@ant-design/icons";
 import {
@@ -148,11 +148,9 @@ const Message = memo(function Message(props: MessageProps) {
         <>
           <TruncatedText text={item.plaintext} />
           {item.isDoubleEncrypted && kind === "message" && (
-            <Tooltip title={t("Item:doubleEncryptedTooltip")}>
-              <span className="double-encrypted-badge">
-                <LockKeyhole size={12} /> {t("Item:doubleEncryptedBadge")}
-              </span>
-            </Tooltip>
+            <DoubleEncryptedBadge
+              keyFingerprint={item.doubleEncryptedKeyFingerprint}
+            />
           )}
         </>
       );

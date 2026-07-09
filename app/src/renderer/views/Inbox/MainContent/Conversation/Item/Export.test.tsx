@@ -29,6 +29,7 @@ describe("ExportWizard Component", () => {
     filename: "/path/to/testfile.pdf",
     decrypted_size: null,
     isDoubleEncrypted: false,
+    doubleEncryptedKeyFingerprint: null,
   };
 
   const mockFilePayload: ExportPayload = {

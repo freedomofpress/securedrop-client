@@ -22,7 +22,7 @@ CREATE TABLE items (
     fetch_retry_attempts INTEGER NOT NULL DEFAULT 0,
     interaction_count INTEGER GENERATED ALWAYS AS (json_extract(data, '$.interaction_count')),
     decrypted_size INTEGER
-, is_double_encrypted INTEGER NOT NULL DEFAULT 0);
+, is_double_encrypted INTEGER NOT NULL DEFAULT 0, double_encrypted_key_fingerprint TEXT);
 CREATE TABLE journalists (
     uuid TEXT PRIMARY KEY,
     data JSON,
@@ -202,7 +202,8 @@ SELECT
     items.fetch_retry_attempts,
     items.interaction_count,
     items.decrypted_size,
-    items.is_double_encrypted
+    items.is_double_encrypted,
+    items.double_encrypted_key_fingerprint
 FROM items
 WHERE NOT EXISTS (
     SELECT 1
@@ -240,7 +241,8 @@ SELECT
     NULL AS fetch_retry_attempts,
     json_extract(pending_events.data, '$.metadata.interaction_count') AS interaction_count,
     NULL AS decrypted_size,
-    0 AS is_double_encrypted
+    0 AS is_double_encrypted,
+    NULL AS double_encrypted_key_fingerprint
 FROM pending_events
 WHERE pending_events.type = 'reply_sent'
     AND NOT EXISTS (
@@ -265,7 +267,7 @@ WHERE pending_events.type = 'reply_sent'
         )
         AND later.snowflake_id > pending_events.snowflake_id
     )
-/* items_projected(uuid,data,version,plaintext,filename,kind,is_read,last_updated,source_uuid,fetch_progress,fetch_status,fetch_last_updated_at,fetch_retry_attempts,interaction_count,decrypted_size,is_double_encrypted) */;
+/* items_projected(uuid,data,version,plaintext,filename,kind,is_read,last_updated,source_uuid,fetch_progress,fetch_status,fetch_last_updated_at,fetch_retry_attempts,interaction_count,decrypted_size,is_double_encrypted,double_encrypted_key_fingerprint) */;
 CREATE VIEW sorted_items AS
 SELECT
     *,
@@ -274,7 +276,7 @@ SELECT
         ORDER BY interaction_count DESC
     ) AS rn
 FROM items_projected
-/* sorted_items(uuid,data,version,plaintext,filename,kind,is_read,last_updated,source_uuid,fetch_progress,fetch_status,fetch_last_updated_at,fetch_retry_attempts,interaction_count,decrypted_size,is_double_encrypted,rn) */;
+/* sorted_items(uuid,data,version,plaintext,filename,kind,is_read,last_updated,source_uuid,fetch_progress,fetch_status,fetch_last_updated_at,fetch_retry_attempts,interaction_count,decrypted_size,is_double_encrypted,double_encrypted_key_fingerprint,rn) */;
 CREATE TRIGGER items_source_immutable
 BEFORE UPDATE OF data ON items
 FOR EACH ROW
@@ -295,4 +297,5 @@ INSERT INTO "schema_migrations" (version) VALUES
   ('20260511000000'),
   ('20260623163815'),
   ('20260624000000'),
+  ('20260709000000'),
   ('20260710151500');

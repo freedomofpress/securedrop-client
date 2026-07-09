@@ -443,6 +443,7 @@ describe("syncMetadata", () => {
           fetch_progress: null,
           decrypted_size: null,
           isDoubleEncrypted: false,
+          doubleEncryptedKeyFingerprint: null,
           data: mockItemMetadata(ITEM_UUID_2, SOURCE_UUID_1),
         };
       }

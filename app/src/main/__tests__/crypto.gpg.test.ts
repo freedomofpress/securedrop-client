@@ -520,6 +520,8 @@ and symbols: !@#$%^&*()_+-={}[]|\\:";'<>?,./`;
       proc.stdout = new PassThrough();
       proc.stderr = new EventEmitter();
       proc.stdin = { write: vi.fn(), end: vi.fn() };
+      // fd 3 carries gpg's --status-fd output
+      proc.stdio = [proc.stdin, proc.stdout, proc.stderr, new PassThrough()];
       return proc;
     }
 
@@ -605,6 +607,19 @@ and symbols: !@#$%^&*()_+-={}[]|\\:";'<>?,./`;
     let submissionPubKey: string;
     let wrongPubKey: string;
 
+    beforeEach(() => {
+      // Unlike most tests in this file, these need the configured submission
+      // key fingerprint to be real: it's compared against the key gpg reports
+      // having used for the inner layer. testKeyId is a long key ID, which
+      // the comparison must also accept.
+      (Crypto as any).instance = undefined;
+      crypto = Crypto.initialize({
+        isQubes: false,
+        gpgHomedir: gpgEnv.homedir,
+        submissionKeyFingerprint: testKeyId,
+      });
+    });
+
     beforeAll(() => {
       // Export the public part of the in-keyring submission key
       submissionPubKey = execSync(
@@ -646,6 +661,9 @@ and symbols: !@#$%^&*()_+-={}[]|\\:";'<>?,./`;
 
       expect(result.isDoubleEncrypted).toBe(true);
       expect(result.plaintext).toBe(secret);
+      // Inner layer was encrypted to the submission key, so no foreign
+      // key fingerprint is reported
+      expect(result.doubleEncryptedKeyFingerprint).toBe(null);
     });
 
     it("message: malformed inner PGP is surfaced as-is without a double-encryption badge", async () => {
@@ -684,6 +702,7 @@ and symbols: !@#$%^&*()_+-={}[]|\\:";'<>?,./`;
         );
 
         expect(result.isDoubleEncrypted).toBe(true);
+        expect(result.doubleEncryptedKeyFingerprint).toBe(null);
         // The ".asc" extension is stripped from the inner filename
         expect(path.basename(result.finalPath)).toBe("test.txt");
         expect(fs.readFileSync(result.finalPath, "utf8")).toBe(secret);
@@ -714,6 +733,7 @@ and symbols: !@#$%^&*()_+-={}[]|\\:";'<>?,./`;
         );
 
         expect(result.isDoubleEncrypted).toBe(true);
+        expect(result.doubleEncryptedKeyFingerprint).toBe(null);
         // The ".gpg" extension is stripped from the inner filename
         expect(path.basename(result.finalPath)).toBe("test.txt");
         expect(Buffer.compare(fs.readFileSync(result.finalPath), secret)).toBe(
@@ -773,6 +793,84 @@ and symbols: !@#$%^&*()_+-={}[]|\\:";'<>?,./`;
       } finally {
         cleanup();
       }
+    });
+
+    // Simulates key rotation: the source encrypted to an old submission key
+    // that is still in the keyring but is no longer the configured
+    // submission key. Decryption succeeds, and the old key's fingerprint is
+    // surfaced so the UI can flag it.
+    describe("inner layer encrypted to a rotated (non-submission) key", () => {
+      // Import the test-key fixture's secret key and return its primary
+      // fingerprint. Deleted again after each test so the "wrong key" tests
+      // above stay meaningful if re-run.
+      function importRotatedKey(): string {
+        const rotatedPrivKey = fs.readFileSync(
+          path.join(__dirname, "files", "test-key.gpg.asc"),
+          "utf8",
+        );
+        gpgEnv.importKey(rotatedPrivKey);
+        return execSync(
+          `gpg --homedir "${gpgEnv.homedir}" --list-keys --with-colons test@securedrop.org | grep '^fpr' | head -1 | cut -d: -f10`,
+          { encoding: "utf8" },
+        ).trim();
+      }
+
+      function deleteRotatedKey(fingerprint: string) {
+        execSync(
+          `gpg --homedir "${gpgEnv.homedir}" --batch --yes --delete-secret-and-public-key ${fingerprint}`,
+        );
+      }
+
+      it("message: reports the rotated key's fingerprint", async () => {
+        const rotatedFingerprint = importRotatedKey();
+        try {
+          const secret = "message encrypted to a rotated submission key";
+          const inner = await encryptMessage(secret, [wrongPubKey]);
+          const outer = await encryptMessage(inner, [submissionPubKey]);
+
+          const result = await crypto.decryptMessage(
+            Buffer.from(outer, "utf-8"),
+          );
+
+          expect(result.isDoubleEncrypted).toBe(true);
+          expect(result.plaintext).toBe(secret);
+          expect(result.doubleEncryptedKeyFingerprint).toBe(rotatedFingerprint);
+        } finally {
+          deleteRotatedKey(rotatedFingerprint);
+        }
+      });
+
+      it("file: reports the rotated key's fingerprint", async () => {
+        const rotatedFingerprint = importRotatedKey();
+        try {
+          const secret = "file encrypted to a rotated submission key";
+          const inner = await encryptMessage(secret, [wrongPubKey]);
+          const { filePath, cleanup } = createTestEncryptedFile(
+            inner,
+            "test.txt.asc",
+            testKeyId,
+            gpgEnv.homedir,
+          );
+
+          try {
+            const result = await crypto.decryptFile(
+              storage,
+              itemDirectory,
+              filePath,
+            );
+
+            expect(result.isDoubleEncrypted).toBe(true);
+            expect(result.doubleEncryptedKeyFingerprint).toBe(
+              rotatedFingerprint,
+            );
+            expect(fs.readFileSync(result.finalPath, "utf8")).toBe(secret);
+          } finally {
+            cleanup();
+          }
+        } finally {
+          deleteRotatedKey(rotatedFingerprint);
+        }
+      });
     });
   });
 });

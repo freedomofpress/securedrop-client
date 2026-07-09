@@ -329,10 +329,10 @@ export class DB {
       "DELETE FROM items WHERE uuid IN (SELECT value FROM json_each(@uuids_json))",
     );
     this.selectItem = this.db.prepare(
-      `SELECT uuid, data, plaintext, filename, fetch_status, fetch_progress, decrypted_size, is_double_encrypted FROM items WHERE uuid = @uuid`,
+      `SELECT uuid, data, plaintext, filename, fetch_status, fetch_progress, decrypted_size, is_double_encrypted, double_encrypted_key_fingerprint FROM items WHERE uuid = @uuid`,
     );
     this.selectItemMany = this.db.prepare(
-      `SELECT uuid, data, plaintext, filename, fetch_status, fetch_progress, decrypted_size, is_double_encrypted FROM items WHERE uuid IN (SELECT value FROM json_each(@uuids_json))`,
+      `SELECT uuid, data, plaintext, filename, fetch_status, fetch_progress, decrypted_size, is_double_encrypted, double_encrypted_key_fingerprint FROM items WHERE uuid IN (SELECT value FROM json_each(@uuids_json))`,
     );
 
     this.selectAllJournalistVersion = this.db.prepare(
@@ -381,13 +381,13 @@ export class DB {
       WHERE s.uuid = ?
     `);
     this.selectItemsBySourceId = this.db.prepare(`
-      SELECT uuid, data, plaintext, filename, fetch_status, fetch_progress, decrypted_size, is_read, is_double_encrypted FROM items_projected
+      SELECT uuid, data, plaintext, filename, fetch_status, fetch_progress, decrypted_size, is_read, is_double_encrypted, double_encrypted_key_fingerprint FROM items_projected
       WHERE source_uuid = ?
       ORDER BY interaction_count DESC
       LIMIT ?
     `);
     this.selectItemsBySourceIdBefore = this.db.prepare(`
-      SELECT uuid, data, plaintext, filename, fetch_status, fetch_progress, decrypted_size, is_double_encrypted FROM items_projected
+      SELECT uuid, data, plaintext, filename, fetch_status, fetch_progress, decrypted_size, is_double_encrypted, double_encrypted_key_fingerprint FROM items_projected
       WHERE source_uuid = ? AND interaction_count < ?
       ORDER BY interaction_count DESC
       LIMIT ?
@@ -628,6 +628,8 @@ export class DB {
             fetch_progress: row.fetch_progress,
             decrypted_size: row.decrypted_size,
             isDoubleEncrypted: row.is_double_encrypted === 1,
+            doubleEncryptedKeyFingerprint:
+              row.double_encrypted_key_fingerprint ?? null,
           });
         });
         // Delete from search index
@@ -880,6 +882,8 @@ export class DB {
         fetch_progress: row.fetch_progress,
         decrypted_size: row.decrypted_size,
         isDoubleEncrypted: row.is_double_encrypted === 1,
+        doubleEncryptedKeyFingerprint:
+          row.double_encrypted_key_fingerprint ?? null,
       };
     });
 
@@ -1007,6 +1011,8 @@ export class DB {
       fetch_progress: row.fetch_progress,
       decrypted_size: row.decrypted_size,
       isDoubleEncrypted: row.is_double_encrypted === 1,
+      doubleEncryptedKeyFingerprint:
+        row.double_encrypted_key_fingerprint ?? null,
     };
   }
 
@@ -1014,17 +1020,24 @@ export class DB {
     itemUuid: string,
     plaintext: string,
     isDoubleEncrypted: boolean,
+    doubleEncryptedKeyFingerprint: string | null,
   ) {
     const stmt: Statement<
-      { uuid: string; plaintext: string; is_double_encrypted: number },
+      {
+        uuid: string;
+        plaintext: string;
+        is_double_encrypted: number;
+        double_encrypted_key_fingerprint: string | null;
+      },
       void
     > = this.db!.prepare(
-      `UPDATE items SET fetch_progress = null, fetch_status = ${FetchStatus.Complete}, plaintext = @plaintext, is_double_encrypted = @is_double_encrypted, fetch_last_updated_at = CURRENT_TIMESTAMP WHERE uuid = @uuid`,
+      `UPDATE items SET fetch_progress = null, fetch_status = ${FetchStatus.Complete}, plaintext = @plaintext, is_double_encrypted = @is_double_encrypted, double_encrypted_key_fingerprint = @double_encrypted_key_fingerprint, fetch_last_updated_at = CURRENT_TIMESTAMP WHERE uuid = @uuid`,
     );
     stmt.run({
       uuid: itemUuid,
       plaintext: plaintext,
       is_double_encrypted: isDoubleEncrypted ? 1 : 0,
+      double_encrypted_key_fingerprint: doubleEncryptedKeyFingerprint,
     });
     this.searchIndex.indexItem(itemUuid);
   }
@@ -1034,6 +1047,7 @@ export class DB {
     filename: string,
     decryptedSize: number,
     isDoubleEncrypted: boolean,
+    doubleEncryptedKeyFingerprint: string | null,
   ) {
     const stmt: Statement<
       {
@@ -1041,16 +1055,18 @@ export class DB {
         filename: string;
         decrypted_size: number;
         is_double_encrypted: number;
+        double_encrypted_key_fingerprint: string | null;
       },
       void
     > = this.db!.prepare(
-      `UPDATE items SET fetch_progress = null, fetch_status = ${FetchStatus.Complete}, filename = @filename, decrypted_size = @decrypted_size, is_double_encrypted = @is_double_encrypted, fetch_last_updated_at = CURRENT_TIMESTAMP WHERE uuid = @uuid`,
+      `UPDATE items SET fetch_progress = null, fetch_status = ${FetchStatus.Complete}, filename = @filename, decrypted_size = @decrypted_size, is_double_encrypted = @is_double_encrypted, double_encrypted_key_fingerprint = @double_encrypted_key_fingerprint, fetch_last_updated_at = CURRENT_TIMESTAMP WHERE uuid = @uuid`,
     );
     stmt.run({
       uuid: itemUuid,
       filename: filename,
       decrypted_size: decryptedSize,
       is_double_encrypted: isDoubleEncrypted ? 1 : 0,
+      double_encrypted_key_fingerprint: doubleEncryptedKeyFingerprint,
     });
     this.searchIndex.indexItem(itemUuid);
   }
@@ -1420,7 +1436,12 @@ export class DB {
           data: metadataBlob,
           version: version,
         });
-        this.completePlaintextItem(replyData.uuid, replyData.plaintext, false);
+        this.completePlaintextItem(
+          replyData.uuid,
+          replyData.plaintext,
+          false,
+          null,
+        );
       }
       // Once event is applied, delete from pending events table
       this.deletePendingEvent.run({ snowflake_id: event.snowflake_id });

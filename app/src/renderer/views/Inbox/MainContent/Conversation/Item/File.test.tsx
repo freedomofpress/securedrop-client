@@ -32,6 +32,7 @@ describe("File Component Memoization", () => {
     fetch_progress: null,
     decrypted_size: null,
     isDoubleEncrypted: false,
+    doubleEncryptedKeyFingerprint: null,
     fetch_status: FetchStatus.Initial,
   };
 
@@ -138,6 +139,7 @@ describe("File Component", () => {
     fetch_progress: null,
     decrypted_size: null,
     isDoubleEncrypted: false,
+    doubleEncryptedKeyFingerprint: null,
     fetch_status: FetchStatus.Initial,
     ...overrides,
   });
@@ -230,6 +232,7 @@ describe("File Component", () => {
           filename: "/path/to/document.pdf",
           decrypted_size: 2048,
           isDoubleEncrypted: false,
+          doubleEncryptedKeyFingerprint: null,
         })}
         designation="Test Source"
         onUpdate={mockOnUpdate}
@@ -261,6 +264,7 @@ describe("File Component", () => {
           filename: "/path/to/document.pdf",
           decrypted_size: 2048,
           isDoubleEncrypted: false,
+          doubleEncryptedKeyFingerprint: null,
         })}
         designation="Test Source"
         onUpdate={mockOnUpdate}
@@ -340,6 +344,7 @@ describe("File Component", () => {
           filename: "/path/to/document.pdf",
           decrypted_size: 2048,
           isDoubleEncrypted: false,
+          doubleEncryptedKeyFingerprint: null,
         })}
         designation="Test Source"
         onUpdate={mockOnUpdate}
@@ -370,6 +375,7 @@ describe("File Component", () => {
           filename: "/path/to/document.pdf",
           decrypted_size: 2048,
           isDoubleEncrypted: false,
+          doubleEncryptedKeyFingerprint: null,
         })}
         designation="Test Source"
         onUpdate={mockOnUpdate}
@@ -420,6 +426,43 @@ describe("File Component", () => {
     expect(screen.getByText("Source-encrypted")).toBeInTheDocument();
   });
 
+  it("shows a warning badge with the fingerprint in the tooltip when the inner layer used a non-submission key", async () => {
+    const user = userEvent.setup();
+    const { container } = renderWithProviders(
+      <File
+        item={makeItem({
+          fetch_status: FetchStatus.Complete,
+          filename: "/path/to/document.pdf",
+          decrypted_size: 2048,
+          isDoubleEncrypted: true,
+          doubleEncryptedKeyFingerprint:
+            "1234567890ABCDEF1234567890ABCDEF12345678",
+        })}
+        designation="Test Source"
+        onUpdate={mockOnUpdate}
+        onDelete={mockOnDelete}
+      />,
+      {
+        preloadedState: {
+          session: { status: SessionStatus.Auth } as any,
+        },
+      },
+    );
+
+    const badge = screen.getByText("Source-encrypted");
+    expect(badge).toBeInTheDocument();
+    // Warning icon instead of the padlock
+    expect(container.querySelector(".lucide-triangle-alert")).toBeTruthy();
+
+    // The tooltip names the key's fingerprint, formatted in 4-char groups
+    await user.hover(badge);
+    expect(
+      await screen.findByText(
+        /1234 5678 90AB CDEF 1234 5678 90AB CDEF 1234 5678/,
+      ),
+    ).toBeInTheDocument();
+  });
+
   it("does not show the double-encryption badge on a normal file", () => {
     renderWithProviders(
       <File
@@ -428,6 +471,7 @@ describe("File Component", () => {
           filename: "/path/to/document.pdf",
           decrypted_size: 2048,
           isDoubleEncrypted: false,
+          doubleEncryptedKeyFingerprint: null,
         })}
         designation="Test Source"
         onUpdate={mockOnUpdate}

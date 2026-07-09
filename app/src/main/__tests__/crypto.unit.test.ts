@@ -4,7 +4,12 @@ import { PassThrough } from "stream";
 import * as fs from "fs";
 import * as os from "os";
 import * as path from "path";
-import { Crypto, CryptoError, isPgpEncrypted } from "../crypto";
+import {
+  Crypto,
+  CryptoError,
+  isPgpEncrypted,
+  parseDecryptionKeyFingerprint,
+} from "../crypto";
 import { UnsafePathComponent } from "../storage";
 
 const spawnMock = vi.hoisted(() => vi.fn());
@@ -253,30 +258,69 @@ describe("Crypto", () => {
     });
   });
 
+  describe("parseDecryptionKeyFingerprint", () => {
+    it("extracts the primary key fingerprint from a DECRYPTION_KEY status line", () => {
+      const status =
+        "[GNUPG:] ENC_TO C3E7C4C0A2201B2A 1 0\n" +
+        "[GNUPG:] DECRYPTION_KEY C1C4E16BB24E4F4ABF37C3A6C3E7C4C0A2201B2A 65A1B5FF195B56353CC63DFFCC40EF1228271441 -\n" +
+        "[GNUPG:] PLAINTEXT 62 0\n";
+      expect(parseDecryptionKeyFingerprint(status)).toBe(
+        "65A1B5FF195B56353CC63DFFCC40EF1228271441",
+      );
+    });
+
+    it("uppercases the fingerprint", () => {
+      const status =
+        "[GNUPG:] DECRYPTION_KEY c1c4e16bb24e4f4abf37c3a6c3e7c4c0a2201b2a 65a1b5ff195b56353cc63dffcc40ef1228271441 -\n";
+      expect(parseDecryptionKeyFingerprint(status)).toBe(
+        "65A1B5FF195B56353CC63DFFCC40EF1228271441",
+      );
+    });
+
+    it("returns null when no DECRYPTION_KEY line is present (e.g. failed decryption)", () => {
+      const status =
+        "[GNUPG:] ENC_TO C45DE8BD2069CFFB 1 0\n" +
+        "[GNUPG:] NO_SECKEY C45DE8BD2069CFFB\n" +
+        "[GNUPG:] DECRYPTION_FAILED\n";
+      expect(parseDecryptionKeyFingerprint(status)).toBe(null);
+    });
+
+    it("returns null for empty status output", () => {
+      expect(parseDecryptionKeyFingerprint("")).toBe(null);
+    });
+  });
+
   describe("decryptRawFile (inner layer of double-encrypted files)", () => {
     let crypto: Crypto;
     let tmpDir: string;
     let inputPath: string;
     let outputPath: string;
 
-    // Minimal stand-in for a spawned gpg process: emits the given stdout
-    // and stderr, then closes with the given exit code.
+    // Minimal stand-in for a spawned gpg process: emits the given stdout,
+    // stderr, and status-fd (fd 3) output, then closes with the given exit code.
     function fakeGpgProcess(options: {
       stdoutData?: Buffer;
       stderrData?: Buffer;
+      statusData?: string;
       code?: number;
     }) {
       const proc = new EventEmitter() as any;
       proc.stdout = new PassThrough();
       proc.stderr = new PassThrough();
       proc.stdin = new PassThrough();
+      const statusStream = new PassThrough();
+      proc.stdio = [proc.stdin, proc.stdout, proc.stderr, statusStream];
       proc.kill = vi.fn();
       setImmediate(() => {
         if (options.stderrData) {
           proc.stderr.write(options.stderrData);
         }
+        if (options.statusData) {
+          statusStream.write(options.statusData);
+        }
         proc.stdout.end(options.stdoutData ?? Buffer.alloc(0));
         proc.stderr.end();
+        statusStream.end();
         setImmediate(() => proc.emit("close", options.code ?? 0, null));
       });
       return proc;
@@ -302,10 +346,18 @@ describe("Crypto", () => {
     it("streams plaintext from stdout instead of passing --output, which qubes-gpg-client rejects", async () => {
       const plaintext = Buffer.from("inner plaintext");
       spawnMock.mockImplementation(() =>
-        fakeGpgProcess({ stdoutData: plaintext }),
+        fakeGpgProcess({
+          stdoutData: plaintext,
+          statusData:
+            "[GNUPG:] ENC_TO C3E7C4C0A2201B2A 1 0\n" +
+            "[GNUPG:] DECRYPTION_KEY C1C4E16BB24E4F4ABF37C3A6C3E7C4C0A2201B2A 65A1B5FF195B56353CC63DFFCC40EF1228271441 -\n",
+        }),
       );
 
-      await (crypto as any).decryptRawFile(inputPath, outputPath);
+      const result = await (crypto as any).decryptRawFile(
+        inputPath,
+        outputPath,
+      );
 
       expect(spawnMock).toHaveBeenCalledTimes(1);
       const [command, args] = spawnMock.mock.calls[0];
@@ -315,6 +367,10 @@ describe("Crypto", () => {
       expect(args).not.toContain("--output");
       expect(args).toContain(inputPath);
       expect(fs.readFileSync(outputPath)).toEqual(plaintext);
+      // The primary fingerprint is extracted from the DECRYPTION_KEY status line
+      expect(result.decryptionKeyFingerprint).toBe(
+        "65A1B5FF195B56353CC63DFFCC40EF1228271441",
+      );
     });
 
     it("removes partial output and rejects when gpg exits non-zero", async () => {
