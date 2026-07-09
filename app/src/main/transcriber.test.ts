@@ -63,6 +63,7 @@ describe("Transcriber Component Tests", () => {
         fetch_progress: 1024,
         fetch_status: 3,
         isDoubleEncrypted: false,
+        doubleEncryptedKeyFingerprint: null,
       },
       {
         uuid: "file-1",
@@ -81,6 +82,7 @@ describe("Transcriber Component Tests", () => {
         fetch_progress: 1024,
         fetch_status: 3,
         isDoubleEncrypted: false,
+        doubleEncryptedKeyFingerprint: null,
       },
       {
         uuid: "file-2",
@@ -99,6 +101,7 @@ describe("Transcriber Component Tests", () => {
         fetch_progress: 1024,
         fetch_status: 3,
         isDoubleEncrypted: false,
+        doubleEncryptedKeyFingerprint: null,
       },
       {
         uuid: "reply-1",
@@ -118,6 +121,7 @@ describe("Transcriber Component Tests", () => {
         fetch_progress: 1024,
         fetch_status: 3,
         isDoubleEncrypted: false,
+        doubleEncryptedKeyFingerprint: null,
       },
     ],
   };
@@ -191,6 +195,7 @@ Interesting message there
           fetch_progress: 0,
           fetch_status: 0,
           isDoubleEncrypted: false,
+          doubleEncryptedKeyFingerprint: null,
         },
         {
           uuid: "reply-unfetched",
@@ -210,6 +215,7 @@ Interesting message there
           fetch_progress: 0,
           fetch_status: 0,
           isDoubleEncrypted: false,
+          doubleEncryptedKeyFingerprint: null,
         },
       ],
     };

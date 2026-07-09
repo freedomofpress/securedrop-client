@@ -357,7 +357,7 @@ describe("Datastore Method Tests", () => {
       source2Item1: mockItemMetadata("source2Item1", "source2"),
     });
 
-    db.completePlaintextItem("source1Item2", "plaintext", false);
+    db.completePlaintextItem("source1Item2", "plaintext", false, null);
 
     db.addPendingSourceEvent("source1", PendingEventType.SourceDeleted);
 
@@ -1313,7 +1313,7 @@ describe("Datastore Method Tests", () => {
     expect(sourceWithItems.items[0].data.interaction_count).toBe(1);
     expect(sourceWithItems.items[0].fetch_status).toBe(FetchStatus.Initial);
 
-    db.completePlaintextItem("item1", "plaintext", false);
+    db.completePlaintextItem("item1", "plaintext", false, null);
     sourceWithItems = db.getSourceWithItems("source1");
     expect(sourceWithItems.items.length).toBe(1);
     expect(sourceWithItems.items[0].uuid).toBe("item1");
@@ -1346,7 +1346,7 @@ describe("Datastore Method Tests", () => {
     db.updateItems({
       item1: mockItemMetadata("item1", "source1", "message"),
     });
-    db.completePlaintextItem("item1", "plaintext");
+    db.completePlaintextItem("item1", "plaintext", null);
 
     expect(() =>
       db.updateItems({
@@ -1379,9 +1379,9 @@ describe("Datastore Method Tests", () => {
     });
 
     // Set plaintext and filename for items
-    db.completePlaintextItem("item1", "reply message 1", false);
-    db.completePlaintextItem("item2", "submission message", false);
-    db.completeFileItem("item3", "/tmp/file3.txt", 1024, false);
+    db.completePlaintextItem("item1", "reply message 1", false, null);
+    db.completePlaintextItem("item2", "submission message", false, null);
+    db.completeFileItem("item3", "/tmp/file3.txt", 1024, false, null);
 
     source = db.getSource("source1");
     expect(source).not.toBeNull();
@@ -1403,7 +1403,7 @@ describe("Datastore Method Tests", () => {
       expect(source.messagePreview?.plaintext).toBeNull();
     }
 
-    db.completePlaintextItem("item4", "latest message", false);
+    db.completePlaintextItem("item4", "latest message", false, null);
     source = db.getSource("source1");
     expect(source).not.toBeNull();
     if (source) {
@@ -1433,10 +1433,10 @@ describe("Datastore Method Tests", () => {
       item6: mockItemMetadata("item6", "source3", "message", 5),
     });
 
-    db.completePlaintextItem("item1", "reply message 1", false);
-    db.completePlaintextItem("item2", "message 2", false);
-    db.completePlaintextItem("item3", "message 1", false);
-    db.completeFileItem("item4", "/tmp/filename.txt", 2048, false);
+    db.completePlaintextItem("item1", "reply message 1", false, null);
+    db.completePlaintextItem("item2", "message 2", false, null);
+    db.completePlaintextItem("item3", "message 1", false, null);
+    db.completeFileItem("item4", "/tmp/filename.txt", 2048, false, null);
 
     const sources = db.getSources();
     const s1 = sources.get("source1");
@@ -1485,7 +1485,7 @@ describe("Datastore Method Tests", () => {
 
     // Create a long ASCII-only message (no multi-byte chars) to test basic truncation
     const longAsciiMessage = "a".repeat(500);
-    db.completePlaintextItem("item1", longAsciiMessage, false);
+    db.completePlaintextItem("item1", longAsciiMessage, false, null);
 
     const sources = db.getSources();
     const source = sources.get("source1");
@@ -1519,7 +1519,7 @@ describe("Datastore Method Tests", () => {
     // Create a message with emojis - each emoji is 1 Unicode code point but 2 JS chars
     // "👋" is 1 code point, so 200 of them = 200 code points = 400 JS chars
     const emojiMessage = "👋".repeat(300);
-    db.completePlaintextItem("item1", emojiMessage, false);
+    db.completePlaintextItem("item1", emojiMessage, false, null);
 
     const sources = db.getSources();
     const source = sources.get("source1");
@@ -1893,9 +1893,9 @@ describe("Datastore Method Tests", () => {
       // Mark the first batch as complete so they leave the processable pool
       for (const id of batch1) {
         if (id.startsWith("msg")) {
-          db.completePlaintextItem(id, "decrypted", false);
+          db.completePlaintextItem(id, "decrypted", false, null);
         } else {
-          db.completeFileItem(id, `/tmp/${id}.txt`, 1024, false);
+          db.completeFileItem(id, `/tmp/${id}.txt`, 1024, false, null);
         }
       }
 
@@ -1931,7 +1931,7 @@ describe("Datastore Method Tests", () => {
       // Set some items to various in-progress states
       db.updateDownloadInProgress("msg1", 100);
       db.updateFetchStatus("msg2", FetchStatus.DecryptionInProgress);
-      db.completePlaintextItem("msg3", "already decrypted", false);
+      db.completePlaintextItem("msg3", "already decrypted", false, null);
 
       // Create many pending events for source1
       db.addPendingSourceEvent("source1", PendingEventType.Starred);

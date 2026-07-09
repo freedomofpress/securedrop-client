@@ -36,6 +36,7 @@ describe("Crypto Integration Tests", () => {
     stdin: { write: ReturnType<typeof vi.fn>; end: ReturnType<typeof vi.fn> };
     stdout: { on: ReturnType<typeof vi.fn>; pipe: ReturnType<typeof vi.fn> };
     stderr: { on: ReturnType<typeof vi.fn> };
+    stdio: unknown[];
     on: ReturnType<typeof vi.fn>;
   };
   let storage: Storage;
@@ -65,8 +66,16 @@ describe("Crypto Integration Tests", () => {
       stderr: {
         on: vi.fn(),
       },
+      stdio: [],
       on: vi.fn(),
     };
+    // fd 3 carries gpg's --status-fd output
+    mockProcess.stdio = [
+      mockProcess.stdin,
+      mockProcess.stdout,
+      mockProcess.stderr,
+      { on: vi.fn() },
+    ];
 
     // Create real Storage and PathBuilder instances
     storage = new Storage();
@@ -121,7 +130,7 @@ describe("Crypto Integration Tests", () => {
       expect(result).toBe(testMessage);
       expect(mockSpawn).toHaveBeenCalledWith(
         "gpg",
-        ["--trust-model", "always", "--decrypt"],
+        ["--trust-model", "always", "--status-fd", "3", "--decrypt"],
         expect.objectContaining({ env: expect.any(Object) }),
       );
       expect(mockProcess.stdin.write).toHaveBeenCalledWith(encryptedContent);
@@ -432,7 +441,7 @@ describe("Crypto Integration Tests", () => {
 
       expect(mockSpawn).toHaveBeenCalledWith(
         "qubes-gpg-client",
-        ["--trust-model", "always", "--decrypt"],
+        ["--trust-model", "always", "--status-fd", "3", "--decrypt"],
         expect.objectContaining({ env: expect.any(Object) }),
       );
     });
@@ -470,7 +479,15 @@ describe("Crypto Integration Tests", () => {
 
       expect(mockSpawn).toHaveBeenCalledWith(
         "gpg",
-        ["--trust-model", "always", "--homedir", "/custom/gnupg", "--decrypt"],
+        [
+          "--trust-model",
+          "always",
+          "--homedir",
+          "/custom/gnupg",
+          "--status-fd",
+          "3",
+          "--decrypt",
+        ],
         expect.objectContaining({ env: expect.any(Object) }),
       );
     });

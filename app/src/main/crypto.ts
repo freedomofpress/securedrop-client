@@ -1,4 +1,5 @@
 import { spawn } from "child_process";
+import { Readable } from "stream";
 import { createGunzip } from "zlib";
 import { pipeline, finished } from "stream/promises";
 
@@ -81,14 +82,45 @@ export function isPgpEncrypted(buf: Buffer): boolean {
   return packetTag === 1 || packetTag === 3;
 }
 
+/**
+ * Extract the primary key fingerprint from gpg --status-fd output.
+ * A successful public-key decryption emits (see gnupg/doc/DETAILS):
+ *   [GNUPG:] DECRYPTION_KEY <subkey fpr> <primary key fpr> <ownertrust>
+ * Returns the primary key fingerprint, uppercased, or null if absent.
+ */
+export function parseDecryptionKeyFingerprint(
+  statusOutput: string,
+): string | null {
+  const match = statusOutput.match(
+    /^\[GNUPG:\] DECRYPTION_KEY [0-9A-Fa-f]+ ([0-9A-Fa-f]+)/m,
+  );
+  return match ? match[1].toUpperCase() : null;
+}
+
 export interface DecryptMessageResult {
   plaintext: string;
   isDoubleEncrypted: boolean;
+  /**
+   * Primary fingerprint of the key that decrypted the outermost layer of
+   * this payload, as reported by gpg's status output (null if not reported).
+   */
+  decryptionKeyFingerprint: string | null;
+  /**
+   * Set only when the payload was double-encrypted AND the inner layer was
+   * decrypted by a key other than the configured submission key (e.g. a
+   * rotated submission key still present in the keyring) — a signal that the
+   * source should update their copy of the public key. Null when the inner
+   * layer used the current submission key, or when gpg reported no
+   * fingerprint.
+   */
+  doubleEncryptedKeyFingerprint: string | null;
 }
 
 export interface DecryptFileResult {
   finalPath: string;
   isDoubleEncrypted: boolean;
+  /** Same semantics as DecryptMessageResult.doubleEncryptedKeyFingerprint */
+  doubleEncryptedKeyFingerprint: string | null;
 }
 
 export class CryptoError extends Error {
@@ -169,6 +201,46 @@ export class Crypto {
   }
 
   /**
+   * Spawn options that open an extra pipe on fd 3 for gpg's --status-fd
+   * output. split-gpg's qubes-gpg-client supports --status-fd and
+   * multiplexes the descriptor over qrexec, so this works in both Qubes
+   * and dev mode.
+   */
+  private getSpawnOptionsWithStatusFd() {
+    const stdio: "pipe"[] = ["pipe", "pipe", "pipe", "pipe"];
+    return { ...this.getSpawnOptions(), stdio };
+  }
+
+  /**
+   * True when the fingerprint gpg reported matches the configured submission
+   * key. The config may hold a full 40-char fingerprint or a long (16-char)
+   * key ID; a fingerprint ends with its long key ID, so compare by suffix.
+   */
+  private matchesSubmissionKey(fingerprint: string): boolean {
+    const reported = fingerprint.toUpperCase();
+    const configured = this.submissionKeyFingerprint
+      .replace(/\s/g, "")
+      .toUpperCase();
+    if (configured.length < 16 || reported.length < 16) {
+      return false;
+    }
+    return reported.endsWith(configured) || configured.endsWith(reported);
+  }
+
+  /**
+   * Reduce the fingerprint of the key that decrypted an inner layer to its
+   * user-facing meaning: null when it is the configured submission key (the
+   * expected case) or unknown, and the fingerprint itself when the source
+   * used some other key (e.g. a rotated submission key still in sd-gpg).
+   */
+  private foreignKeyFingerprint(fingerprint: string | null): string | null {
+    if (fingerprint === null || this.matchesSubmissionKey(fingerprint)) {
+      return null;
+    }
+    return fingerprint;
+  }
+
+  /**
    * Lazily get the public part of the submission key
    */
   async getSubmissionKey(): Promise<string> {
@@ -242,10 +314,14 @@ export class Crypto {
     signal?: AbortSignal,
   ): Promise<DecryptMessageResult> {
     const cmd = this.getGpgCommand();
-    cmd.push("--decrypt");
+    cmd.push("--status-fd", "3", "--decrypt");
 
     return new Promise((resolve, reject) => {
-      const gpgProcess = spawn(cmd[0], cmd.slice(1), this.getSpawnOptions());
+      const gpgProcess = spawn(
+        cmd[0],
+        cmd.slice(1),
+        this.getSpawnOptionsWithStatusFd(),
+      );
 
       // Kill the process if the abort signal fires
       const abortListener = () => {
@@ -264,6 +340,7 @@ export class Crypto {
 
       let stdout = Buffer.alloc(0);
       let stderr = Buffer.alloc(0);
+      let statusOutput = "";
 
       // Write encrypted content to GPG stdin
       gpgProcess.stdin.write(encryptedContent);
@@ -277,6 +354,11 @@ export class Crypto {
       // Collect stderr (error messages)
       gpgProcess.stderr.on("data", (chunk) => {
         stderr = Buffer.concat([stderr, chunk]);
+      });
+
+      // Collect machine-readable status lines (fd 3)
+      (gpgProcess.stdio[3] as Readable | null)?.on("data", (chunk) => {
+        statusOutput += chunk.toString();
       });
 
       gpgProcess.on("close", async (code, exitSignal) => {
@@ -310,21 +392,41 @@ export class Crypto {
         }
 
         const plaintext = stdout.toString("utf8");
+        const decryptionKeyFingerprint =
+          parseDecryptionKeyFingerprint(statusOutput);
         if (!isPgpEncrypted(stdout)) {
-          resolve({ plaintext, isDoubleEncrypted: false });
+          resolve({
+            plaintext,
+            isDoubleEncrypted: false,
+            decryptionKeyFingerprint,
+            doubleEncryptedKeyFingerprint: null,
+          });
           return;
         }
 
         // Double-encrypted: attempt a second GPG decryption of the inner message
         this.decryptMessage(stdout, signal).then(
           (inner) => {
-            resolve({ plaintext: inner.plaintext, isDoubleEncrypted: true });
+            resolve({
+              plaintext: inner.plaintext,
+              isDoubleEncrypted: true,
+              decryptionKeyFingerprint,
+              // The recursive call's outermost layer is our inner layer
+              doubleEncryptedKeyFingerprint: this.foreignKeyFingerprint(
+                inner.decryptionKeyFingerprint,
+              ),
+            });
           },
           (innerError) => {
             console.warn(
               `Double-encryption detected but inner message decryption failed: ${innerError}`,
             );
-            resolve({ plaintext, isDoubleEncrypted: false });
+            resolve({
+              plaintext,
+              isDoubleEncrypted: false,
+              decryptionKeyFingerprint,
+              doubleEncryptedKeyFingerprint: null,
+            });
           },
         );
       });
@@ -472,7 +574,11 @@ export class Crypto {
           const headerBuf = await this.readFileHeader(finalAbsolutePath);
           if (!isPgpEncrypted(headerBuf)) {
             isSettled = true;
-            resolve({ finalPath: finalAbsolutePath, isDoubleEncrypted: false });
+            resolve({
+              finalPath: finalAbsolutePath,
+              isDoubleEncrypted: false,
+              doubleEncryptedKeyFingerprint: null,
+            });
             return;
           }
 
@@ -484,7 +590,7 @@ export class Crypto {
             new UnsafePathComponent(innerFilename),
           );
           try {
-            await this.decryptRawFile(
+            const inner = await this.decryptRawFile(
               finalAbsolutePath,
               innerAbsolutePath,
               signal,
@@ -492,7 +598,13 @@ export class Crypto {
             // Remove the intermediate (still-encrypted) decompressed file
             fs.unlink(finalAbsolutePath, () => {});
             isSettled = true;
-            resolve({ finalPath: innerAbsolutePath, isDoubleEncrypted: true });
+            resolve({
+              finalPath: innerAbsolutePath,
+              isDoubleEncrypted: true,
+              doubleEncryptedKeyFingerprint: this.foreignKeyFingerprint(
+                inner.decryptionKeyFingerprint,
+              ),
+            });
           } catch (innerError) {
             // Second decryption failed — surface the intermediate file as-is
             console.warn(
@@ -502,6 +614,7 @@ export class Crypto {
             resolve({
               finalPath: finalAbsolutePath,
               isDoubleEncrypted: false,
+              doubleEncryptedKeyFingerprint: null,
             });
           }
         } catch (error) {
@@ -683,6 +796,7 @@ export class Crypto {
   /**
    * Decrypt an already-decompressed file to a new path using the available
    * GPG keys. Used for the inner layer of double-encrypted submissions.
+   * Resolves with the primary fingerprint of the key gpg used to decrypt.
    *
    * Note: split-gpg's qubes-gpg-client rejects `--output <path>` (only "-"
    * is allowed, since the backend must not write client files), so gpg
@@ -692,15 +806,25 @@ export class Crypto {
     inputPath: string,
     outputPath: string,
     signal?: AbortSignal,
-  ): Promise<void> {
+  ): Promise<{ decryptionKeyFingerprint: string | null }> {
     const cmd = this.getGpgCommand();
-    cmd.push("--decrypt", inputPath);
+    cmd.push("--status-fd", "3", "--decrypt", inputPath);
 
     return new Promise((resolve, reject) => {
       let stderr = Buffer.alloc(0);
-      const gpgProcess = spawn(cmd[0], cmd.slice(1), this.getSpawnOptions());
+      let statusOutput = "";
+      const gpgProcess = spawn(
+        cmd[0],
+        cmd.slice(1),
+        this.getSpawnOptionsWithStatusFd(),
+      );
       const outputFile = fs.createWriteStream(outputPath);
       gpgProcess.stdout.pipe(outputFile);
+
+      // Collect machine-readable status lines (fd 3)
+      (gpgProcess.stdio[3] as Readable | null)?.on("data", (chunk) => {
+        statusOutput += chunk.toString();
+      });
 
       // Destroy the write stream, wait for it to fully close, and remove any
       // partially-written output so a failed decryption leaves nothing behind.
@@ -770,7 +894,9 @@ export class Crypto {
           );
           return;
         }
-        resolve();
+        resolve({
+          decryptionKeyFingerprint: parseDecryptionKeyFingerprint(statusOutput),
+        });
       });
 
       gpgProcess.on("error", async (error) => {

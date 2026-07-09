@@ -104,6 +104,7 @@ function mockItem(
     filename: null,
     decrypted_size: null,
     isDoubleEncrypted: false,
+    doubleEncryptedKeyFingerprint: null,
   };
 }
 
@@ -286,6 +287,7 @@ describe("TaskQueue - Four-Queue Download and Decryption", () => {
       mockCrypto.decryptMessage.mockResolvedValue({
         plaintext: decryptedContent,
         isDoubleEncrypted: false,
+        doubleEncryptedKeyFingerprint: null,
       });
 
       const queue = new TaskQueue(db);
@@ -304,6 +306,7 @@ describe("TaskQueue - Four-Queue Download and Decryption", () => {
         "msg1",
         decryptedContent,
         false,
+        null,
       );
       // Ciphertext file cleaned up after success
       expect(fs.promises.unlink).toHaveBeenCalledWith(
@@ -329,6 +332,7 @@ describe("TaskQueue - Four-Queue Download and Decryption", () => {
       mockCrypto.decryptMessage.mockResolvedValue({
         plaintext: decryptedContent,
         isDoubleEncrypted: false,
+        doubleEncryptedKeyFingerprint: null,
       });
 
       const queue = new TaskQueue(db);
@@ -341,6 +345,7 @@ describe("TaskQueue - Four-Queue Download and Decryption", () => {
         "reply1",
         decryptedContent,
         false,
+        null,
       );
       expect(fs.promises.unlink).toHaveBeenCalled();
     });
@@ -363,6 +368,7 @@ describe("TaskQueue - Four-Queue Download and Decryption", () => {
       mockCrypto.decryptMessage.mockResolvedValue({
         plaintext: decryptedContent,
         isDoubleEncrypted: false,
+        doubleEncryptedKeyFingerprint: null,
       });
 
       const queue = new TaskQueue(db);
@@ -377,6 +383,7 @@ describe("TaskQueue - Four-Queue Download and Decryption", () => {
         "msg1",
         decryptedContent,
         false,
+        null,
       );
       expect(fs.promises.unlink).toHaveBeenCalledWith(
         expect.stringContaining("/encrypted.gpg"),
@@ -450,6 +457,7 @@ describe("TaskQueue - Four-Queue Download and Decryption", () => {
       mockCrypto.decryptMessage.mockResolvedValue({
         plaintext: decryptedContent,
         isDoubleEncrypted: false,
+        doubleEncryptedKeyFingerprint: null,
       });
 
       await queue.processDecrypt({ id: "msg1" }, db);
@@ -463,6 +471,7 @@ describe("TaskQueue - Four-Queue Download and Decryption", () => {
         "msg1",
         decryptedContent,
         false,
+        null,
       );
       expect(fs.promises.unlink).toHaveBeenCalledWith(
         expect.stringContaining("/encrypted.gpg"),
@@ -636,6 +645,7 @@ describe("TaskQueue - Four-Queue Download and Decryption", () => {
       mockCrypto.decryptFile.mockResolvedValue({
         finalPath: "/securedrop/source1/plaintext.txt",
         isDoubleEncrypted: false,
+        doubleEncryptedKeyFingerprint: null,
       });
 
       const queue = new TaskQueue(db);
@@ -660,6 +670,7 @@ describe("TaskQueue - Four-Queue Download and Decryption", () => {
         "/securedrop/source1/plaintext.txt",
         expect.any(Number),
         false,
+        null,
       );
     });
 
@@ -679,6 +690,7 @@ describe("TaskQueue - Four-Queue Download and Decryption", () => {
       mockCrypto.decryptFile.mockResolvedValue({
         finalPath: "/securedrop/source1/plaintext.txt",
         isDoubleEncrypted: false,
+        doubleEncryptedKeyFingerprint: null,
       });
 
       const queue = new TaskQueue(db);
@@ -691,6 +703,7 @@ describe("TaskQueue - Four-Queue Download and Decryption", () => {
         "/securedrop/source1/plaintext.txt",
         expect.any(Number),
         false,
+        null,
       );
       expect(fs.promises.unlink).toHaveBeenCalledWith(
         expect.stringContaining("/encrypted.gpg"),
@@ -1689,6 +1702,7 @@ describe("TaskQueue - Four-Queue Download and Decryption", () => {
       mockCrypto.decryptMessage.mockResolvedValue({
         plaintext: "decrypted plaintext",
         isDoubleEncrypted: false,
+        doubleEncryptedKeyFingerprint: null,
       });
 
       const queue = new TaskQueue(db);
@@ -1719,6 +1733,7 @@ describe("TaskQueue - Four-Queue Download and Decryption", () => {
       mockCrypto.decryptFile.mockResolvedValue({
         finalPath: "/tmp/decrypted/file.txt",
         isDoubleEncrypted: false,
+        doubleEncryptedKeyFingerprint: null,
       });
 
       const queue = new TaskQueue(db);
@@ -1749,6 +1764,7 @@ describe("TaskQueue - Four-Queue Download and Decryption", () => {
       mockCrypto.decryptMessage.mockResolvedValue({
         plaintext: "decrypted plaintext",
         isDoubleEncrypted: false,
+        doubleEncryptedKeyFingerprint: null,
       });
       fs.promises.readFile = vi
         .fn()
