@@ -307,11 +307,18 @@ export class Crypto {
    * Decrypt a message from encrypted buffer content
    * Messages are not gzipped, so no decompression is needed (unlike files)
    * @param encryptedContent - The encrypted message content
+   * @param isInnerLayer - True for the recursive pass over a double-encrypted
+   *   payload. The strict stderr whitelist is skipped for inner layers
+   *   (matching file decryption): it only describes submission keys, while a
+   *   source may have encrypted the inner layer to a key of any type (e.g. a
+   *   rotated ECC key), and a rejected inner decrypt safely falls back to
+   *   surfacing the ciphertext.
    * @returns Promise<DecryptMessageResult> - The decrypted plaintext and double-encryption flag
    */
   async decryptMessage(
     encryptedContent: Buffer,
     signal?: AbortSignal,
+    isInnerLayer = false,
   ): Promise<DecryptMessageResult> {
     const cmd = this.getGpgCommand();
     cmd.push("--status-fd", "3", "--decrypt");
@@ -380,7 +387,11 @@ export class Crypto {
             ),
           );
           return;
-        } else if (errorMessage.trim() && !isExpectedGpgStderr(errorMessage)) {
+        } else if (
+          !isInnerLayer &&
+          errorMessage.trim() &&
+          !isExpectedGpgStderr(errorMessage)
+        ) {
           reject(
             // n.b. use JSON.stringify() to sanitize the error since it's not what we expect
             // and could be the result of some sort of injection attack
@@ -405,7 +416,7 @@ export class Crypto {
         }
 
         // Double-encrypted: attempt a second GPG decryption of the inner message
-        this.decryptMessage(stdout, signal).then(
+        this.decryptMessage(stdout, signal, true).then(
           (inner) => {
             resolve({
               plaintext: inner.plaintext,

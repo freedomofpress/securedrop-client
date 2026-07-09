@@ -821,6 +821,24 @@ and symbols: !@#$%^&*()_+-={}[]|\\:";'<>?,./`;
         );
       }
 
+      // Generate an ed25519/cv25519 key in the keyring, returning its
+      // primary fingerprint. gpg describes decryption with it as
+      // "encrypted with cv25519 key", which the RSA-only stderr whitelist
+      // does not cover — inner layers must not be subject to that whitelist.
+      function createEccRotatedKey(): string {
+        execSync(
+          `gpg --homedir "${gpgEnv.homedir}" --batch --passphrase '' --quick-gen-key "ecc-rotated <ecc-rotated@test.org>" ed25519 cert never`,
+        );
+        const fingerprint = execSync(
+          `gpg --homedir "${gpgEnv.homedir}" --list-keys --with-colons ecc-rotated@test.org | grep '^fpr' | head -1 | cut -d: -f10`,
+          { encoding: "utf8" },
+        ).trim();
+        execSync(
+          `gpg --homedir "${gpgEnv.homedir}" --batch --passphrase '' --quick-add-key ${fingerprint} cv25519 encr never`,
+        );
+        return fingerprint;
+      }
+
       it("message: reports the rotated key's fingerprint", async () => {
         const rotatedFingerprint = importRotatedKey();
         try {
@@ -869,6 +887,67 @@ and symbols: !@#$%^&*()_+-={}[]|\\:";'<>?,./`;
           }
         } finally {
           deleteRotatedKey(rotatedFingerprint);
+        }
+      });
+
+      // Regression test: the inner layer's gpg stderr ("encrypted with
+      // cv25519 key ...") is not in the RSA-only stderr whitelist, which
+      // previously made message inner decryption fail while file inner
+      // decryption (no whitelist) succeeded.
+      it("message: decrypts an inner layer encrypted to a rotated ECC key", async () => {
+        const eccFingerprint = createEccRotatedKey();
+        try {
+          const eccPubKey = execSync(
+            `gpg --homedir "${gpgEnv.homedir}" --armor --export ${eccFingerprint}`,
+            { encoding: "utf8" },
+          );
+          const secret = "message encrypted to a rotated ECC key";
+          const inner = await encryptMessage(secret, [eccPubKey]);
+          const outer = await encryptMessage(inner, [submissionPubKey]);
+
+          const result = await crypto.decryptMessage(
+            Buffer.from(outer, "utf-8"),
+          );
+
+          expect(result.isDoubleEncrypted).toBe(true);
+          expect(result.plaintext).toBe(secret);
+          expect(result.doubleEncryptedKeyFingerprint).toBe(eccFingerprint);
+        } finally {
+          deleteRotatedKey(eccFingerprint);
+        }
+      });
+
+      it("file: decrypts an inner layer encrypted to a rotated ECC key", async () => {
+        const eccFingerprint = createEccRotatedKey();
+        try {
+          const eccPubKey = execSync(
+            `gpg --homedir "${gpgEnv.homedir}" --armor --export ${eccFingerprint}`,
+            { encoding: "utf8" },
+          );
+          const secret = "file encrypted to a rotated ECC key";
+          const inner = await encryptMessage(secret, [eccPubKey]);
+          const { filePath, cleanup } = createTestEncryptedFile(
+            inner,
+            "test.txt.asc",
+            testKeyId,
+            gpgEnv.homedir,
+          );
+
+          try {
+            const result = await crypto.decryptFile(
+              storage,
+              itemDirectory,
+              filePath,
+            );
+
+            expect(result.isDoubleEncrypted).toBe(true);
+            expect(result.doubleEncryptedKeyFingerprint).toBe(eccFingerprint);
+            expect(fs.readFileSync(result.finalPath, "utf8")).toBe(secret);
+          } finally {
+            cleanup();
+          }
+        } finally {
+          deleteRotatedKey(eccFingerprint);
         }
       });
     });
