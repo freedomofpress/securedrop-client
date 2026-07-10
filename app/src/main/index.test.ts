@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-import { SyncStatus } from "../types";
+import { FetchStatus, SyncStatus } from "../types";
 
 const testState = vi.hoisted(() => {
   const registeredHandlers = new Map<string, (...args: unknown[]) => unknown>();
@@ -82,6 +82,7 @@ const testState = vi.hoisted(() => {
     })),
     cryptoInitialize: vi.fn(() => ({ mock: "crypto" })),
     datastoreClose: vi.fn(),
+    datastoreUpdateFetchStatus: vi.fn(() => true),
     setUmask: vi.fn(),
   };
 });
@@ -133,6 +134,7 @@ vi.mock("./datastore", () => ({
   Datastore: class {
     getPendingEvents = vi.fn(() => []);
     close = testState.datastoreClose;
+    updateFetchStatus = testState.datastoreUpdateFetchStatus;
   },
 }));
 
@@ -169,6 +171,16 @@ function getSyncMetadataHandler() {
   return handler as (_event: unknown, request: unknown) => Promise<SyncStatus>;
 }
 
+function getUpdateFetchStatusHandler() {
+  const handler = testState.registeredHandlers.get("updateFetchStatus");
+  expect(handler).toBeDefined();
+  return handler as (
+    _event: unknown,
+    itemUuid: string,
+    fetchStatus: number,
+  ) => Promise<boolean>;
+}
+
 async function loginWithToken(token: string) {
   testState.proxyJSONRequest.mockResolvedValueOnce({
     status: 200,
@@ -195,7 +207,7 @@ async function loginWithToken(token: string) {
   );
 }
 
-describe("syncMetadata IPC handler", () => {
+describe("main process IPC handlers", () => {
   beforeEach(() => {
     vi.resetModules();
     testState.registeredHandlers.clear();
@@ -231,6 +243,8 @@ describe("syncMetadata IPC handler", () => {
     testState.configLoad.mockClear();
     testState.cryptoInitialize.mockClear();
     testState.datastoreClose.mockClear();
+    testState.datastoreUpdateFetchStatus.mockReset();
+    testState.datastoreUpdateFetchStatus.mockReturnValue(true);
     testState.setUmask.mockClear();
   });
 
@@ -316,5 +330,49 @@ describe("syncMetadata IPC handler", () => {
     expect(testState.mockSleep).toHaveBeenNthCalledWith(1, 2000);
     expect(testState.mockSleep).toHaveBeenNthCalledWith(2, 4000);
     expect(testState.mockSleep).toHaveBeenNthCalledWith(3, 8000);
+  });
+
+  it("does not wake the fetch worker after a rejected status transition", async () => {
+    testState.datastoreUpdateFetchStatus.mockReturnValue(false);
+    await loadMainProcessModule();
+    await loginWithToken("rejected-transition-token");
+
+    const worker = testState.workerInstances[0];
+    expect(worker).toBeDefined();
+    worker!.postMessage.mockClear();
+
+    const updated = await getUpdateFetchStatusHandler()(
+      {},
+      "scheduled-item",
+      FetchStatus.DownloadInProgress,
+    );
+
+    expect(updated).toBe(false);
+    expect(testState.datastoreUpdateFetchStatus).toHaveBeenCalledWith(
+      "scheduled-item",
+      FetchStatus.DownloadInProgress,
+    );
+    expect(worker!.postMessage).not.toHaveBeenCalled();
+  });
+
+  it("wakes the fetch worker after an accepted status transition", async () => {
+    await loadMainProcessModule();
+    await loginWithToken("accepted-transition-token");
+
+    const worker = testState.workerInstances[0];
+    expect(worker).toBeDefined();
+    worker!.postMessage.mockClear();
+
+    const updated = await getUpdateFetchStatusHandler()(
+      {},
+      "cancelled-item",
+      FetchStatus.DownloadInProgress,
+    );
+
+    expect(updated).toBe(true);
+    expect(worker!.postMessage).toHaveBeenCalledWith({
+      type: "authedRequest",
+      request: { authToken: "accepted-transition-token" },
+    });
   });
 });
