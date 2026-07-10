@@ -689,6 +689,87 @@ describe("Datastore Method Tests", () => {
     expect(items).toEqual(sortedItems);
   });
 
+  it.each([0, 1, 100, 101, 201])(
+    "getSourceWithAllItems returns all %i projected items",
+    (itemCount) => {
+      db.updateSources({
+        source1: mockSourceMetadata("source1"),
+      });
+
+      const items = Object.fromEntries(
+        Array.from({ length: itemCount }, (_, index) => {
+          const interactionCount = index + 1;
+          const uuid = `item-${interactionCount.toString().padStart(3, "0")}`;
+          return [
+            uuid,
+            mockItemMetadata(uuid, "source1", "message", interactionCount),
+          ];
+        }),
+      );
+      db.updateItems(items);
+
+      const sourceWithItems = db.getSourceWithAllItems("source1");
+      expect(sourceWithItems.items).toHaveLength(itemCount);
+      expect(sourceWithItems.hasMoreHistoricalItems).toBe(false);
+      expect(
+        sourceWithItems.items.map((item) => item.data.interaction_count),
+      ).toEqual(Array.from({ length: itemCount }, (_, index) => index + 1));
+    },
+  );
+
+  it("getSourceWithAllItems orders duplicate counts by UUID", () => {
+    db.updateSources({
+      source1: mockSourceMetadata("source1"),
+    });
+    db.updateItems({
+      "item-z": mockItemMetadata("item-z", "source1", "message", 7),
+      "item-a": mockItemMetadata("item-a", "source1", "reply", 7),
+      "item-m": mockItemMetadata("item-m", "source1", "file", 6),
+    });
+
+    expect(
+      db.getSourceWithAllItems("source1").items.map((item) => item.uuid),
+    ).toEqual(["item-m", "item-a", "item-z"]);
+  });
+
+  it("getSourceWithAllItems excludes hidden and scheduled-deletion rows", () => {
+    db.updateSources({
+      source1: mockSourceMetadata("source1"),
+    });
+    db.updateItems({
+      truncated: mockItemMetadata("truncated", "source1", "message", 1),
+      visible: mockItemMetadata("visible", "source1", "message", 10),
+      deleted: mockItemMetadata("deleted", "source1", "message", 11),
+      scheduled: mockItemMetadata("scheduled", "source1", "file", 12),
+    });
+    db.addPendingSourceEvent(
+      "source1",
+      PendingEventType.SourceConversationTruncated,
+      { upper_bound: 1 },
+    );
+    db.addPendingItemEvent("deleted", PendingEventType.ItemDeleted);
+    db.updateFetchStatus("scheduled", FetchStatus.ScheduledDeletion);
+
+    expect(
+      db.getSourceWithAllItems("source1").items.map((item) => item.uuid),
+    ).toEqual(["visible"]);
+  });
+
+  it("getSourceWithAllItems rejects missing and pending-deleted sources", () => {
+    expect(() => db.getSourceWithAllItems("missing")).toThrow(
+      "Source with UUID missing not found",
+    );
+
+    db.updateSources({
+      source1: mockSourceMetadata("source1"),
+    });
+    db.addPendingSourceEvent("source1", PendingEventType.SourceDeleted);
+
+    expect(() => db.getSourceWithAllItems("source1")).toThrow(
+      "Source with UUID source1 not found",
+    );
+  });
+
   it("pending ItemDeleted event should delete reply", () => {
     db.updateSources({
       source1: mockSourceMetadata("source1"),

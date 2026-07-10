@@ -131,7 +131,7 @@ describe("Transcriber Component Tests", () => {
   function createMockDB() {
     return {
       getJournalists: vi.fn(),
-      getSourceWithItems: vi.fn(),
+      getSourceWithAllItems: vi.fn(),
     } as unknown as DB;
   }
 
@@ -242,7 +242,7 @@ Interesting message there
     const db = createMockDB();
 
     db.getJournalists = vi.fn(() => [mockJournalist]);
-    db.getSourceWithItems = vi.fn(() => mockSourceWithItems);
+    db.getSourceWithAllItems = vi.fn(() => mockSourceWithItems);
 
     const expectedSource: string = "Source: palpable disquiet";
     const expectedTranscript: string = `Transcript:
@@ -258,11 +258,11 @@ notsuperman replied:
 Interesting message there
 `;
 
-    const output: string = await writeTranscript(mockSourceWithItems.uuid, db);
-    expect(output).toContain("transcript.txt");
-    expect(fs.existsSync(output)).toBe(true);
-    console.log(`BANANA: ${output}`);
-    const fileContents = fs.readFileSync(output, "utf-8");
+    const output = await writeTranscript(mockSourceWithItems.uuid, db);
+    expect(output.filePath).toContain("transcript.txt");
+    expect(output.sourceWithItems).toBe(mockSourceWithItems);
+    expect(fs.existsSync(output.filePath)).toBe(true);
+    const fileContents = fs.readFileSync(output.filePath, "utf-8");
     expect(fileContents).toContain(expectedSource);
     expect(fileContents).toContain(expectedTranscript);
   });
