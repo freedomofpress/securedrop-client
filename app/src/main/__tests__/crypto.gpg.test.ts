@@ -10,9 +10,10 @@ import {
 import * as path from "path";
 import * as fs from "fs";
 import * as openpgp from "openpgp";
-import { execSync, spawn } from "child_process";
+import { execFileSync, execSync, spawn } from "child_process";
 import { EventEmitter } from "events";
 import { PassThrough } from "stream";
+import { gzipSync } from "zlib";
 import { Crypto, CryptoError, encryptMessage } from "../crypto";
 import {
   createGpgTestEnvironment,
@@ -254,6 +255,57 @@ and symbols: !@#$%^&*()_+-={}[]|\\:";'<>?,./`;
         expect(decryptedContent).toBe(originalContent);
       } finally {
         cleanup();
+      }
+    });
+
+    it("should not leave plaintext when malformed gzip decompression fails", async () => {
+      const fixtureDirectory = fs.mkdtempSync(
+        path.join(itemDirectory.path, "encrypted-fixture-"),
+      );
+      const malformedGzipPath = path.join(fixtureDirectory, "malformed-output");
+      const encryptedPath = `${malformedGzipPath}.gpg`;
+      const plaintext = Buffer.alloc(4 * 1024 * 1024, 0x41);
+      const gzipPayload = gzipSync(plaintext, { level: 9 });
+      fs.writeFileSync(
+        malformedGzipPath,
+        gzipPayload.subarray(0, gzipPayload.length - 8),
+      );
+      execFileSync("gpg", [
+        "--homedir",
+        gpgEnv.homedir,
+        "--batch",
+        "--trust-model",
+        "always",
+        "--encrypt",
+        "-r",
+        testKeyId,
+        "--output",
+        encryptedPath,
+        malformedGzipPath,
+      ]);
+
+      const finalOutputPath = itemDirectory.join("malformed-output");
+      try {
+        await expect(
+          crypto.decryptFile(storage, itemDirectory, encryptedPath),
+        ).rejects.toThrow("Failed to decompress decrypted file");
+
+        const finalOutputExists = fs.existsSync(finalOutputPath);
+        expect({
+          finalOutputExists,
+          finalOutputBytes: finalOutputExists
+            ? fs.statSync(finalOutputPath).size
+            : 0,
+          itemDirectoryEntries: fs
+            .readdirSync(itemDirectory.path)
+            .filter((entry) => entry !== path.basename(fixtureDirectory)),
+        }).toEqual({
+          finalOutputExists: false,
+          finalOutputBytes: 0,
+          itemDirectoryEntries: [],
+        });
+      } finally {
+        fs.rmSync(fixtureDirectory, { recursive: true, force: true });
       }
     });
 

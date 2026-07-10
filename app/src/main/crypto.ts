@@ -401,8 +401,11 @@ export class Crypto {
             originalFilename || path.basename(filepath, ".gpg");
           const finalAbsolutePath = itemDirectory.join(finalFilename);
 
-          // Stream decompress the gzipped content to final file
-          await this.streamDecompressGzipFile(tempGpgOutput, finalAbsolutePath);
+          await this.decompressGzipFileAtomically(
+            tempGpgOutput,
+            itemDirectory,
+            finalAbsolutePath,
+          );
 
           // Clean up temporary GPG output file
           fs.unlink(tempGpgOutput, () => {});
@@ -461,10 +464,28 @@ export class Crypto {
     outputPath: string,
   ): Promise<void> {
     const readStream = fs.createReadStream(gzipFilePath);
-    const writeStream = fs.createWriteStream(outputPath);
+    const writeStream = fs.createWriteStream(outputPath, { flags: "wx" });
     const gunzip = createGunzip();
 
     await pipeline(readStream, gunzip, writeStream);
+  }
+
+  private async decompressGzipFileAtomically(
+    gzipFilePath: string,
+    itemDirectory: PathBuilder,
+    finalOutputPath: string,
+  ): Promise<void> {
+    const temporaryDirectory = fs.mkdtempSync(
+      itemDirectory.join(".securedrop-decrypt-"),
+    );
+    const temporaryOutputPath = path.join(temporaryDirectory, "plaintext");
+
+    try {
+      await this.streamDecompressGzipFile(gzipFilePath, temporaryOutputPath);
+      fs.renameSync(temporaryOutputPath, finalOutputPath);
+    } finally {
+      fs.rmSync(temporaryDirectory, { force: true, recursive: true });
+    }
   }
 
   /**
