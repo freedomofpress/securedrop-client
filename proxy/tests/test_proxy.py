@@ -88,8 +88,55 @@ def test_streaming(proxy_request):
     result = proxy_request(input=test_input)
     assert result.returncode == 0
     stderr = json.loads(result.stderr.decode())
+    assert stderr["status"] == 200
     assert "headers" in stderr
     assert result.stdout.decode() == "*" * count
+
+
+@pytest.mark.parametrize("status_code", [401, 403, 404, 500])
+def test_stream_status_codes(proxy_request, status_code):
+    """Stream errors retain the legacy JSON envelope for compatibility."""
+    test_input = {
+        "method": "GET",
+        "path_query": f"/status/{status_code}",
+        "stream": True,
+    }
+    result = proxy_request(input=test_input)
+    assert result.returncode == 0
+    response = json.loads(result.stdout.decode())
+    assert response["status"] == status_code
+    assert "headers" in response
+    assert result.stderr == b""
+
+
+def test_large_stream_error_body_is_truncated(proxy_request):
+    test_input = {
+        "method": "GET",
+        "path_query": "/drip?duration=0&numbytes=70000&code=500&delay=0",
+        "stream": True,
+        "timeout": 20,
+    }
+    result = proxy_request(input=test_input)
+    assert result.returncode == 0
+    response = json.loads(result.stdout.decode())
+    assert response["status"] == 500
+    assert "[response body truncated at 65536 bytes]" in response["body"]
+    assert result.stderr == b""
+
+
+def test_stream_error_body_is_preserved_within_limit(proxy_request):
+    test_input = {
+        "method": "GET",
+        "path_query": "/drip?duration=0&numbytes=16&code=401&delay=0",
+        "stream": True,
+        "timeout": 20,
+    }
+    result = proxy_request(input=test_input)
+    assert result.returncode == 0
+    response = json.loads(result.stdout.decode())
+    assert response["status"] == 401
+    assert response["body"] == "*" * 16
+    assert result.stderr == b""
 
 
 def test_non_json_response(proxy_request):
@@ -97,6 +144,7 @@ def test_non_json_response(proxy_request):
     result = proxy_request(input=test_input)
     assert result.returncode == 0
     stderr = json.loads(result.stderr.decode())
+    assert stderr["status"] == 200
     assert "headers" in stderr
     assert result.stdout.decode().splitlines()[0] == "<!DOCTYPE html>"
 

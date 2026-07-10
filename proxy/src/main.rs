@@ -14,7 +14,8 @@ use std::str::FromStr;
 use std::time::Duration;
 use url::Url;
 
-// Expose a different `config` implementation depending on whether the `qubesdb` feature is enabled or not.
+// Expose a different `config` implementation depending on whether the
+// `qubesdb` feature is enabled.
 #[cfg(feature = "qubesdb")]
 mod config_qubesdb;
 #[cfg(feature = "qubesdb")]
@@ -25,13 +26,15 @@ mod config_env;
 #[cfg(not(feature = "qubesdb"))]
 use config_env as config;
 
-// This is the only setting we need to read via `config`.  We should refactor this more extensibly if we ever need multiple.
+// This is the only setting we need to read via `config`. Refactor this more
+// extensibly if more settings are needed.
 const ENV_CONFIG: &str = "SD_PROXY_ORIGIN";
 const DISABLE_TOR: &str = "DISABLE_TOR";
 
 // Read a max of 5MB from stdin. This should be much higher than what a
 // server w/ 1k sources needs (~300KB), but still low enough to prevent a DoS.
 const STDIN_LIMIT: u64 = 5_000_000;
+const STREAM_ERROR_BODY_MAX_BYTES: usize = 64 * 1024;
 
 /// Incoming HTTP requests (as JSON) received over stdin
 #[derive(Deserialize, Debug)]
@@ -66,16 +69,17 @@ struct OutgoingResponse {
 /// Serialization format for streamed HTTP responses
 #[derive(Serialize, Debug)]
 struct StreamMetadataResponse {
+    status: u16,
     headers: HashMap<String, String>,
 }
 
-/// Serialization format for errors, always over stderr
+/// Serialization format for proxy execution errors, always over stderr
 #[derive(Serialize, Debug)]
 struct ErrorResponse {
     error: String,
 }
 
-/// Convert `request::header::HeaderMap` to a `HashMap` that can be serialized to JSON on stdout.
+/// Convert response headers to a `HashMap` for JSON serialization.
 ///
 /// TODO(#1780): support duplicate HTTP headers
 fn headers_to_map(resp: &Response) -> Result<HashMap<String, String>> {
@@ -86,7 +90,7 @@ fn headers_to_map(resp: &Response) -> Result<HashMap<String, String>> {
     Ok(headers)
 }
 
-/// Given a `Response` that doesn't require stream processing, convert it to our `OutgoingResponse` and serialize to JSON on stdout.
+/// Convert a non-streamed response to an `OutgoingResponse` and serialize it on stdout.
 async fn handle_json_response(resp: Response) -> Result<()> {
     let headers = headers_to_map(&resp)?;
     let outgoing_response = OutgoingResponse {
@@ -98,9 +102,43 @@ async fn handle_json_response(resp: Response) -> Result<()> {
     Ok(())
 }
 
-/// Given a `Response` that does require stream processing, forward it to stdout as we receive it, and then write the headers to stderr when we're done.
+/// Serialize an HTTP error for a stream request without reading an unbounded body.
+async fn handle_stream_error_response(resp: Response) -> Result<()> {
+    let status = resp.status().as_u16();
+    let headers = headers_to_map(&resp)?;
+    let mut body = Vec::with_capacity(STREAM_ERROR_BODY_MAX_BYTES + 1);
+    let mut stream = resp.bytes_stream();
+    while let Some(item) = stream.next().await {
+        let item = item?;
+        let remaining = STREAM_ERROR_BODY_MAX_BYTES + 1 - body.len();
+        body.extend_from_slice(&item[..item.len().min(remaining)]);
+        if body.len() > STREAM_ERROR_BODY_MAX_BYTES {
+            break;
+        }
+    }
+
+    let body = if body.len() > STREAM_ERROR_BODY_MAX_BYTES {
+        format!(
+            "{}\n[response body truncated at {STREAM_ERROR_BODY_MAX_BYTES} bytes]",
+            String::from_utf8_lossy(&body[..STREAM_ERROR_BODY_MAX_BYTES])
+        )
+    } else {
+        String::from_utf8_lossy(&body).into_owned()
+    };
+    let outgoing_response = OutgoingResponse {
+        status,
+        headers,
+        body,
+    };
+    println!("{}", serde_json::to_string(&outgoing_response)?);
+    Ok(())
+}
+
+/// Given a `Response` that requires stream processing, forward it to stdout and write its
+/// metadata to stderr when complete.
 async fn handle_stream_response(resp: Response) -> Result<()> {
     // Get the headers, will be output later but we want to fail early if it's missing/invalid
+    let status = resp.status().as_u16();
     let headers = headers_to_map(&resp)?;
     let mut stdout = io::stdout().lock();
     let mut stream = resp.bytes_stream();
@@ -110,15 +148,15 @@ async fn handle_stream_response(resp: Response) -> Result<()> {
         // TODO: can we flush at smarter intervals?
         stdout.flush()?;
     }
-    // Emit the headers as stderr
+    // Emit the response metadata on stderr.
     eprintln!(
         "{}",
-        serde_json::to_string(&StreamMetadataResponse { headers })?
+        serde_json::to_string(&StreamMetadataResponse { status, headers })?
     );
     Ok(())
 }
 
-/// Read a single JSON-serialized HTTP request from a single line from stdin and reconstruct it, including its URL.  Make the request, and stream the response if requested; otherwise, or in an error condition, return it as JSON.
+/// Read one JSON request from stdin, make it, and emit either a streamed response or JSON.
 async fn proxy() -> Result<()> {
     // Get the hostname from the environment or QubesDB
     let origin = config::read(ENV_CONFIG)?;
@@ -171,21 +209,20 @@ async fn proxy() -> Result<()> {
     }
     // Fire off the request!
     let resp = req.send().await?;
-    // We return the output in two ways, either a JSON blob or stream the output.
-    // JSON is used for HTTP 4xx, 5xx, and all non-stream requests.
-    if !incoming_request.stream
-        || resp.status().is_client_error()
-        || resp.status().is_server_error()
+    if incoming_request.stream
+        && (resp.status().is_client_error() || resp.status().is_server_error())
     {
-        handle_json_response(resp).await?;
-    } else {
+        handle_stream_error_response(resp).await?;
+    } else if incoming_request.stream {
         handle_stream_response(resp).await?;
+    } else {
+        handle_json_response(resp).await?;
     }
     Ok(())
 }
 
 #[tokio::main(flavor = "current_thread")]
-/// Entry-point: Every invocation handles a single request via `proxy()` and exits according to its success or failure.
+/// Handle one request and exit according to its success or failure.
 async fn main() -> ExitCode {
     match proxy().await {
         Ok(()) => ExitCode::SUCCESS,
