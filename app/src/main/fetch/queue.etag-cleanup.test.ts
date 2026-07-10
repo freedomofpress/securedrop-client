@@ -264,17 +264,26 @@ describe("TaskQueue ETag ciphertext cleanup", () => {
     const targetPath = queue.storage.downloadFilePath(metadata, {
       id: itemId,
     });
-    const targetDirectory = path.dirname(targetPath);
+    const cleanupFailure = new Error(
+      "permission denied",
+    ) as NodeJS.ErrnoException;
+    cleanupFailure.code = "EACCES";
+    const realRm = fs.promises.rm.bind(fs.promises);
+    vi.spyOn(fs.promises, "rm").mockImplementationOnce(
+      async (rmPath, options) => {
+        if (rmPath.toString() === targetPath) {
+          throw cleanupFailure;
+        }
+        return realRm(rmPath, options);
+      },
+    );
 
     mockProxyStreamRequest.mockImplementationOnce(
-      async (_request, writer: Writable) => {
-        const response = await writeResponse(writer, CIPHERTEXT, {
+      async (_request, writer: Writable) =>
+        writeResponse(writer, CIPHERTEXT, {
           complete: true,
           bytesWritten: CIPHERTEXT.length,
-        } as ProxyStreamResponse);
-        await fs.promises.chmod(targetDirectory, 0o500);
-        return response;
-      },
+        } as ProxyStreamResponse),
     );
 
     queue.authToken = "test-token";
@@ -283,8 +292,6 @@ describe("TaskQueue ETag ciphertext cleanup", () => {
       await queue.processDownload({ id: itemId }, db);
     } catch (error) {
       cleanupError = error;
-    } finally {
-      await fs.promises.chmod(targetDirectory, 0o700);
     }
 
     expect((cleanupError as NodeJS.ErrnoException).code).toBe("EACCES");
