@@ -37,6 +37,19 @@ class DownloadCancelledError extends Error {
   }
 }
 
+class DownloadCleanupError extends Error {
+  code: string | undefined;
+
+  constructor(itemId: string, downloadFilePath: string, cause: unknown) {
+    super(
+      `Failed to clean up downloaded ciphertext for ${itemId} at ${downloadFilePath}: ${String(cause)}`,
+      { cause },
+    );
+    this.name = "DownloadCleanupError";
+    this.code = (cause as NodeJS.ErrnoException).code;
+  }
+}
+
 const MESSAGE_QUEUE_BATCH_LIMIT = 25;
 const FILE_QUEUE_BATCH_LIMIT = 2;
 
@@ -112,16 +125,21 @@ export class TaskQueue {
     this.port = port;
     this.storage = new Storage();
 
-    // After each completed or terminally-failed task, try to top up the
-    // queues from the database so large backlogs drain without waiting for
-    // the next sync tick.
+    // After each completed or terminally-failed task, try to top up the queues.
+    // Cleanup failures remain retryable but wait for the next sync tick so a
+    // persistent filesystem error cannot create a tight retry loop.
     const refill = () => this.refillQueues();
+    const refillAfterFailure = (_taskId: string, error: unknown) => {
+      if (!(error instanceof DownloadCleanupError)) {
+        this.refillQueues();
+      }
+    };
     this.messageDownloadQueue.on("task_finish", refill);
-    this.messageDownloadQueue.on("task_failed", refill);
+    this.messageDownloadQueue.on("task_failed", refillAfterFailure);
     this.messageDecryptQueue.on("task_finish", refill);
     this.messageDecryptQueue.on("task_failed", refill);
     this.fileDownloadQueue.on("task_finish", refill);
-    this.fileDownloadQueue.on("task_failed", refill);
+    this.fileDownloadQueue.on("task_failed", refillAfterFailure);
     this.fileDecryptQueue.on("task_finish", refill);
     this.fileDecryptQueue.on("task_failed", refill);
   }
@@ -556,6 +574,21 @@ export class TaskQueue {
     );
   }
 
+  private async terminallyFailEtag(
+    item: ItemFetchTask,
+    db: DB,
+    downloadFilePath: string,
+    errorMessage: string,
+  ): Promise<never> {
+    try {
+      await fs.promises.rm(downloadFilePath, { force: true });
+    } catch (error) {
+      throw new DownloadCleanupError(item.id, downloadFilePath, error);
+    }
+    db.terminallyFailItem(item.id);
+    throw new Error(errorMessage);
+  }
+
   // Verify ETag checksum for transport integrity purposes, otherwise fail terminally.
   // All downloads write to disk, so verification always reads from the file.
   private async verifyEtag(
@@ -566,13 +599,19 @@ export class TaskQueue {
     downloadFilePath: string,
   ): Promise<void> {
     if (!etagRaw) {
-      db.terminallyFailItem(item.id);
-      throw new Error(`Missing ETag checksum for ${metadata.kind} ${item.id}`);
+      return this.terminallyFailEtag(
+        item,
+        db,
+        downloadFilePath,
+        `Missing ETag checksum for ${metadata.kind} ${item.id}`,
+      );
     }
     const colonIdx = etagRaw.indexOf(":");
     if (colonIdx === -1 || etagRaw.slice(0, colonIdx) !== "sha256") {
-      db.terminallyFailItem(item.id);
-      throw new Error(
+      return this.terminallyFailEtag(
+        item,
+        db,
+        downloadFilePath,
         `Invalid or unsupported ETag format for ${metadata.kind} ${item.id}: ${etagRaw}`,
       );
     }
@@ -587,8 +626,10 @@ export class TaskQueue {
     const actualHash = hash.digest("hex");
 
     if (actualHash !== expectedHex) {
-      db.terminallyFailItem(item.id);
-      throw new Error(
+      return this.terminallyFailEtag(
+        item,
+        db,
+        downloadFilePath,
         `ETag checksum mismatch for ${metadata.kind} ${item.id}: expected ${expectedHex}, got ${actualHash}`,
       );
     }
@@ -763,6 +804,15 @@ function createQueue(
   });
 
   q.on("task_failed", (taskId, errorMessage) => {
+    const taskError: unknown = errorMessage;
+    if (taskError instanceof DownloadCleanupError) {
+      console.error(
+        `Task failed because ciphertext cleanup did not complete in ${name}, leaving item retryable: `,
+        taskId,
+        taskError,
+      );
+      return;
+    }
     console.error(
       `Task failed and exceeded retry attempts in ${name}, removing from queue: `,
       taskId,
