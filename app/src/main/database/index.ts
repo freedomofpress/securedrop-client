@@ -53,29 +53,6 @@ const RENDERER_SETTABLE_FETCH_STATUSES = new Set<number>([
   FetchStatus.Paused,
   FetchStatus.Cancelled,
 ]);
-const RENDERER_DOWNLOAD_CURRENT_STATUS_VALUES = [
-  ...PROCESSABLE_FETCH_STATUSES,
-  FetchStatus.Paused,
-  FetchStatus.FailedTerminal,
-  FetchStatus.Cancelled,
-].join(", ");
-const RENDERER_CANCEL_CURRENT_STATUS_VALUES = [
-  FetchStatus.DownloadInProgress,
-  FetchStatus.DecryptionInProgress,
-  FetchStatus.FailedDownloadRetryable,
-  FetchStatus.FailedDecryptionRetryable,
-  FetchStatus.Paused,
-  FetchStatus.FailedTerminal,
-  FetchStatus.Cancelled,
-].join(", ");
-const RENDERER_FETCH_STATUS_TRANSITION_PREDICATE = `(
-  (@fetch_status = ${FetchStatus.DownloadInProgress}
-    AND fetch_status IN (${RENDERER_DOWNLOAD_CURRENT_STATUS_VALUES}))
-  OR (@fetch_status = ${FetchStatus.Paused}
-    AND fetch_status = ${FetchStatus.DownloadInProgress})
-  OR (@fetch_status = ${FetchStatus.Cancelled}
-    AND fetch_status IN (${RENDERER_CANCEL_CURRENT_STATUS_VALUES}))
-)`;
 
 interface KeyObject {
   [key: string]: object;
@@ -344,12 +321,64 @@ export class DB {
     this.deleteUnprojectedItemsBySource = this.db.prepare(
       "DELETE FROM items WHERE source_uuid = @source_uuid",
     );
-    this.updateItemFetchStatus = this.db.prepare(
-      `UPDATE items SET fetch_status = @fetch_status WHERE uuid = @uuid AND ${RENDERER_FETCH_STATUS_TRANSITION_PREDICATE}`,
-    );
-    this.updateItemFetchStatusWithReset = this.db.prepare(
-      `UPDATE items SET fetch_status = @fetch_status, fetch_progress = 0 WHERE uuid = @uuid AND ${RENDERER_FETCH_STATUS_TRANSITION_PREDICATE}`,
-    );
+    this.updateItemFetchStatus = this.db.prepare(`
+      UPDATE items SET fetch_status = @fetch_status
+      WHERE uuid = @uuid
+        AND (
+          (@fetch_status = ${FetchStatus.DownloadInProgress}
+            AND fetch_status IN (
+              ${FetchStatus.Initial},
+              ${FetchStatus.DownloadInProgress},
+              ${FetchStatus.DecryptionInProgress},
+              ${FetchStatus.FailedDownloadRetryable},
+              ${FetchStatus.FailedDecryptionRetryable},
+              ${FetchStatus.Paused},
+              ${FetchStatus.FailedTerminal},
+              ${FetchStatus.Cancelled}
+            ))
+          OR (@fetch_status = ${FetchStatus.Paused}
+            AND fetch_status = ${FetchStatus.DownloadInProgress})
+          OR (@fetch_status = ${FetchStatus.Cancelled}
+            AND fetch_status IN (
+              ${FetchStatus.DownloadInProgress},
+              ${FetchStatus.DecryptionInProgress},
+              ${FetchStatus.FailedDownloadRetryable},
+              ${FetchStatus.FailedDecryptionRetryable},
+              ${FetchStatus.Paused},
+              ${FetchStatus.FailedTerminal},
+              ${FetchStatus.Cancelled}
+            ))
+        )
+    `);
+    this.updateItemFetchStatusWithReset = this.db.prepare(`
+      UPDATE items SET fetch_status = @fetch_status, fetch_progress = 0
+      WHERE uuid = @uuid
+        AND (
+          (@fetch_status = ${FetchStatus.DownloadInProgress}
+            AND fetch_status IN (
+              ${FetchStatus.Initial},
+              ${FetchStatus.DownloadInProgress},
+              ${FetchStatus.DecryptionInProgress},
+              ${FetchStatus.FailedDownloadRetryable},
+              ${FetchStatus.FailedDecryptionRetryable},
+              ${FetchStatus.Paused},
+              ${FetchStatus.FailedTerminal},
+              ${FetchStatus.Cancelled}
+            ))
+          OR (@fetch_status = ${FetchStatus.Paused}
+            AND fetch_status = ${FetchStatus.DownloadInProgress})
+          OR (@fetch_status = ${FetchStatus.Cancelled}
+            AND fetch_status IN (
+              ${FetchStatus.DownloadInProgress},
+              ${FetchStatus.DecryptionInProgress},
+              ${FetchStatus.FailedDownloadRetryable},
+              ${FetchStatus.FailedDecryptionRetryable},
+              ${FetchStatus.Paused},
+              ${FetchStatus.FailedTerminal},
+              ${FetchStatus.Cancelled}
+            ))
+        )
+    `);
     this.updateItemsFetchStatusBySource = this.db.prepare(
       "UPDATE items SET fetch_status = @fetch_status WHERE source_uuid = @source_uuid",
     );
