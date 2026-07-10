@@ -14,7 +14,7 @@ package-mode = false
 requires-poetry = ">=2.3.3,<3.0.0"
 
 [tool.poetry.group.dev.dependencies]
-ruff = "^0.15.1"
+ruff = "^0.15.20"
 semgrep = "*"
 shellcheck-py = "*"
 zizmor = "*"
