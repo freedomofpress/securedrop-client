@@ -273,6 +273,14 @@ WHERE
             pending_events.type = 'source_deleted'
     )
 /* sources_projected(uuid,data,version,has_attachment,is_seen) */;
+CREATE TRIGGER items_source_immutable
+BEFORE UPDATE OF data ON items
+FOR EACH ROW
+WHEN json_extract(OLD.data, '$.source') IS NOT NULL
+    AND json_extract(NEW.data, '$.source') IS NOT json_extract(OLD.data, '$.source')
+BEGIN
+    SELECT RAISE(ABORT, 'items.source is immutable');
+END;
 -- Dbmate schema migrations
 INSERT INTO "schema_migrations" (version) VALUES
   ('20260203225412'),
@@ -283,4 +291,5 @@ INSERT INTO "schema_migrations" (version) VALUES
   ('20260416000000'),
   ('20260507000000'),
   ('20260511000000'),
-  ('20260624000000');
+  ('20260624000000'),
+  ('20260710151500');

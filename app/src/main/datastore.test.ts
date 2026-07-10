@@ -337,9 +337,9 @@ describe("Datastore Method Tests", () => {
     });
 
     db.updateItems({
-      item1: mockItemMetadata("item1", "source2", "message", 1),
-      item2: mockItemMetadata("item2", "source2", "message", 2),
-      item3: mockItemMetadata("item3", "source2", "message", 3),
+      item4: mockItemMetadata("item4", "source2", "message", 1),
+      item5: mockItemMetadata("item5", "source2", "message", 2),
+      item6: mockItemMetadata("item6", "source2", "message", 3),
     });
     sourceWithItems = db.getSourceWithItems("source2");
     expect(sourceWithItems.items.length).toEqual(3);
@@ -1336,6 +1336,29 @@ describe("Datastore Method Tests", () => {
     expect(sourceWithItems.items[0].data.interaction_count).toBe(42);
     expect(sourceWithItems.items[0].plaintext).toBe("plaintext");
     expect(sourceWithItems.items[0].fetch_status).toBe(FetchStatus.Complete);
+  });
+
+  it("updateItems should reject source reassignment for a conflicting uuid", () => {
+    db.updateSources({
+      source1: mockSourceMetadata("source1"),
+      source2: mockSourceMetadata("source2"),
+    });
+    db.updateItems({
+      item1: mockItemMetadata("item1", "source1", "message"),
+    });
+    db.completePlaintextItem("item1", "plaintext");
+
+    expect(() =>
+      db.updateItems({
+        item1: mockItemMetadata("item1", "source2", "message"),
+      }),
+    ).toThrow("items.source is immutable");
+
+    const source1 = db.getSourceWithItems("source1");
+    const source2 = db.getSourceWithItems("source2");
+    expect(source1.items).toHaveLength(1);
+    expect(source1.items[0].plaintext).toBe("plaintext");
+    expect(source2.items).toHaveLength(0);
   });
 
   it("getSource should return correct message preview", () => {
