@@ -46,6 +46,11 @@ export const PENDING_EVENT_RETRY_MAX_SECONDS = 60 * 60;
 const PENDING_EVENT_RETRY_MAX_EXPONENT = Math.ceil(
   Math.log2(PENDING_EVENT_RETRY_MAX_SECONDS / PENDING_EVENT_RETRY_BASE_SECONDS),
 );
+const PENDING_EVENT_RETRY_PARAMS = {
+  base_seconds: PENDING_EVENT_RETRY_BASE_SECONDS,
+  max_exponent: PENDING_EVENT_RETRY_MAX_EXPONENT,
+  max_seconds: PENDING_EVENT_RETRY_MAX_SECONDS,
+};
 
 interface KeyObject {
   [key: string]: object;
@@ -195,7 +200,13 @@ export class DB {
   >;
   private deletePendingEvent: Statement<{ snowflake_id: string }, void>;
   private schedulePendingEventRetry: Statement<
-    { snowflake_id: string; status: number | null },
+    {
+      snowflake_id: string;
+      status: number | null;
+      base_seconds: number;
+      max_exponent: number;
+      max_seconds: number;
+    },
     void
   >;
   private setPendingEventStatus: Statement<
@@ -437,9 +448,9 @@ export class DB {
       SET retry_attempts = retry_attempts + 1,
           last_event_status = COALESCE(@status, last_event_status),
           next_retry_at = unixepoch() + CASE
-            WHEN retry_attempts >= ${PENDING_EVENT_RETRY_MAX_EXPONENT}
-              THEN ${PENDING_EVENT_RETRY_MAX_SECONDS}
-            ELSE ${PENDING_EVENT_RETRY_BASE_SECONDS} * (1 << retry_attempts)
+            WHEN retry_attempts >= @max_exponent
+              THEN @max_seconds
+            ELSE @base_seconds * (1 << retry_attempts)
           END
       WHERE snowflake_id = @snowflake_id
     `);
@@ -1367,6 +1378,14 @@ export class DB {
     return pendingEvents;
   }
 
+  private scheduleRetry(snowflake_id: string, status: number | null) {
+    this.schedulePendingEventRetry.run({
+      snowflake_id,
+      status,
+      ...PENDING_EVENT_RETRY_PARAMS,
+    });
+  }
+
   // Takes pending events and their statuses from the server and applies
   // pending event updates as needed.
   // Should be run within a transaction that also updates index version.
@@ -1382,7 +1401,7 @@ export class DB {
       const snowflake_id = submittedEvent.id;
       const response = events[snowflake_id];
       if (response === undefined) {
-        this.schedulePendingEventRetry.run({ snowflake_id, status: null });
+        this.scheduleRetry(snowflake_id, null);
         continue;
       }
 
@@ -1402,7 +1421,7 @@ export class DB {
         // All other statuses indicate event was submitted but not accepted
         // Retain and bump the retry counter, recording the status.
         // This event will be re-scheduled in subsequent batches.
-        this.schedulePendingEventRetry.run({ snowflake_id, status: result });
+        this.scheduleRetry(snowflake_id, result);
       }
     }
 
