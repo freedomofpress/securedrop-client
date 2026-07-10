@@ -41,6 +41,11 @@ import { Search } from "./search";
 export const MESSAGE_PREVIEW_LENGTH = 200;
 const DEFAULT_ITEM_LIMIT = 100;
 export const DEFAULT_PENDING_EVENTS_LIMIT = 20;
+export const PENDING_EVENT_RETRY_BASE_SECONDS = 60;
+export const PENDING_EVENT_RETRY_MAX_SECONDS = 60 * 60;
+const PENDING_EVENT_RETRY_MAX_EXPONENT = Math.ceil(
+  Math.log2(PENDING_EVENT_RETRY_MAX_SECONDS / PENDING_EVENT_RETRY_BASE_SECONDS),
+);
 
 interface KeyObject {
   [key: string]: object;
@@ -189,8 +194,8 @@ export class DB {
     { count: number }
   >;
   private deletePendingEvent: Statement<{ snowflake_id: string }, void>;
-  private incrementPendingEventRetry: Statement<
-    { snowflake_id: string; status: number },
+  private schedulePendingEventRetry: Statement<
+    { snowflake_id: string; status: number | null },
     void
   >;
   private setPendingEventStatus: Statement<
@@ -427,9 +432,15 @@ export class DB {
     this.deletePendingEvent = this.db.prepare(
       `DELETE FROM pending_events WHERE snowflake_id = @snowflake_id`,
     );
-    this.incrementPendingEventRetry = this.db.prepare(`
+    this.schedulePendingEventRetry = this.db.prepare(`
       UPDATE pending_events
-      SET retry_attempts = retry_attempts + 1, last_event_status = @status
+      SET retry_attempts = retry_attempts + 1,
+          last_event_status = COALESCE(@status, last_event_status),
+          next_retry_at = unixepoch() + CASE
+            WHEN retry_attempts >= ${PENDING_EVENT_RETRY_MAX_EXPONENT}
+              THEN ${PENDING_EVENT_RETRY_MAX_SECONDS}
+            ELSE ${PENDING_EVENT_RETRY_BASE_SECONDS} * (1 << retry_attempts)
+          END
       WHERE snowflake_id = @snowflake_id
     `);
     this.setPendingEventStatus = this.db.prepare(`
@@ -437,11 +448,15 @@ export class DB {
       SET last_event_status = @status
       WHERE snowflake_id = @snowflake_id
     `);
-    // Schedule previously-failed events later, and exclude events already reported
-    // and accepted on the server that are just awaiting completion.
+    // Deadlines beyond one maximum backoff window indicate that the wall clock
+    // moved backward. Treat them as due so retries cannot be deferred forever.
     this.selectPendingEvents = this.db.prepare(`
       SELECT snowflake_id, source_uuid, item_uuid, type, data FROM pending_events
       WHERE last_event_status IS NOT ${EventStatus.AlreadyReported}
+        AND (
+          next_retry_at <= unixepoch()
+          OR next_retry_at > unixepoch() + ${PENDING_EVENT_RETRY_MAX_SECONDS}
+        )
       ORDER BY retry_attempts ASC, snowflake_id ASC LIMIT @limit
     `);
     this.deletePendingEventsBySourceScope = this.db.prepare(`
@@ -669,18 +684,23 @@ export class DB {
     })(journalists);
   }
 
-  protected updateBatch(batchResponse: BatchResponse): {
+  protected updateBatch(
+    batchResponse: BatchResponse,
+    submittedEvents: PendingEvent[],
+  ): {
     deleted_items: Item[];
     deleted_sources: string[];
   } {
-    return this.db!.transaction((batch: BatchResponse) => {
-      this.updatePendingEvents(batch.events);
-      const deleted_items = this.updateItems(batch.items);
-      const deleted_sources = this.updateSources(batch.sources);
-      this.updateJournalists(batch.journalists);
-      this.updateVersion();
-      return { deleted_items, deleted_sources };
-    })(batchResponse);
+    return this.db!.transaction(
+      (batch: BatchResponse, submitted: PendingEvent[]) => {
+        this.updatePendingEvents(batch.events, submitted);
+        const deleted_items = this.updateItems(batch.items);
+        const deleted_sources = this.updateSources(batch.sources);
+        this.updateJournalists(batch.journalists);
+        this.updateVersion();
+        return { deleted_items, deleted_sources };
+      },
+    )(batchResponse, submittedEvents);
   }
 
   protected updateSources(sources: {
@@ -1350,15 +1370,23 @@ export class DB {
   // Takes pending events and their statuses from the server and applies
   // pending event updates as needed.
   // Should be run within a transaction that also updates index version.
-  updatePendingEvents(events: {
-    [snowflake_id: string]: [number, string | null];
-  }) {
-    // Remove successfully applied pending events. On failure, retain them in the
-    // pending events table for resubmission on next sync
+  updatePendingEvents(
+    events: { [snowflake_id: string]: [number, string | null] },
+    submittedEvents: PendingEvent[],
+  ) {
+    // Reconcile only the submitted snapshot. Missing statuses are failures, and
+    // response-only IDs are ignored so they cannot mutate unsent local rows.
     const appliedEventIDs: string[] = [];
     const eventIDsToRemove: string[] = [];
-    Object.keys(events).forEach((snowflake_id: string) => {
-      const result = events[snowflake_id][0];
+    for (const submittedEvent of submittedEvents) {
+      const snowflake_id = submittedEvent.id;
+      const response = events[snowflake_id];
+      if (response === undefined) {
+        this.schedulePendingEventRetry.run({ snowflake_id, status: null });
+        continue;
+      }
+
+      const result = response[0];
       if (result === EventStatus.OK) {
         // Event has been accepted by the server: apply + remove from pending_events
         appliedEventIDs.push(snowflake_id);
@@ -1374,9 +1402,9 @@ export class DB {
         // All other statuses indicate event was submitted but not accepted
         // Retain and bump the retry counter, recording the status.
         // This event will be re-scheduled in subsequent batches.
-        this.incrementPendingEventRetry.run({ snowflake_id, status: result });
+        this.schedulePendingEventRetry.run({ snowflake_id, status: result });
       }
-    });
+    }
 
     for (const eventID of eventIDsToRemove) {
       this.deletePendingEvent.run({ snowflake_id: eventID });

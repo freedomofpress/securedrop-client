@@ -287,7 +287,7 @@ export async function syncMetadata(
     return SyncStatus.FORBIDDEN;
   }
 
-  db.updateBatch(batchResponse.data);
+  db.updateBatch(batchResponse.data, pendingEvents);
 
   syncStatus = SyncStatus.UPDATED;
   console.log("[sync] updates complete");

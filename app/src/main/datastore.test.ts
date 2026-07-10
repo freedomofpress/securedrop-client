@@ -14,7 +14,11 @@ import {
 import { Crypto } from "./crypto";
 import { Datastore } from "./datastore";
 import { Storage } from "./storage";
-import { MESSAGE_PREVIEW_LENGTH } from "./database";
+import {
+  MESSAGE_PREVIEW_LENGTH,
+  PENDING_EVENT_RETRY_BASE_SECONDS,
+  PENDING_EVENT_RETRY_MAX_SECONDS,
+} from "./database";
 import { setUmask } from "./umask";
 
 describe("DB Component Tests", () => {
@@ -1143,20 +1147,23 @@ describe("Datastore Method Tests", () => {
     expect(remainingItemEvent!.target).toHaveProperty("item_uuid", "item3");
   });
 
-  it("updatePendingEvents should remove successful events from pending_events", () => {
+  it("updatePendingEvents should remove successful and gone events", () => {
     db.updateSources({
       source1: mockSourceMetadata("source1"),
     });
     db.updateItems({
       item1: mockItemMetadata("item1", "source1"),
+      item2: mockItemMetadata("item2", "source1"),
     });
 
     // Verify source and item exist
     const sourceWithItems = db.getSourceWithItems("source1");
     expect(sourceWithItems).toBeDefined();
     expect(sourceWithItems.uuid).toEqual("source1");
-    expect(sourceWithItems.items.length).toBe(1);
-    expect(sourceWithItems.items[0].uuid).toBe("item1");
+    expect(sourceWithItems.items.map((item) => item.uuid).sort()).toEqual([
+      "item1",
+      "item2",
+    ]);
 
     const snowflakeSource = db.addPendingSourceEvent(
       "source1",
@@ -1166,28 +1173,38 @@ describe("Datastore Method Tests", () => {
       "item1",
       PendingEventType.ItemDeleted,
     )!;
+    const snowflakeGone = db.addPendingItemEvent(
+      "item2",
+      PendingEventType.ItemDeleted,
+    )!;
 
-    // Before update, both events are present
+    // Before update, all events are present
     let events = db.getPendingEvents();
-    expect(events.length).toBe(2);
+    expect(events.length).toBe(3);
 
-    // Simulate server response: both events succeeded (HTTP 200)
-    db.updatePendingEvents({
-      [snowflakeSource.toString()]: [200, ""],
-      [snowflakeItem.toString()]: [200, ""],
-    });
+    // HTTP 200 applies the event; HTTP 410 removes the stale event.
+    db.updatePendingEvents(
+      {
+        [snowflakeSource.toString()]: [200, ""],
+        [snowflakeItem.toString()]: [200, ""],
+        [snowflakeGone.toString()]: [410, "gone"],
+      },
+      events,
+    );
 
     // After update, no pending events should remain
     events = db.getPendingEvents();
     expect(events.length).toBe(0);
   });
 
-  it("updatePendingEvents should retain failed events", () => {
+  it("updatePendingEvents should defer failed events and leave new events due", () => {
     db.updateSources({
       source1: mockSourceMetadata("source1"),
     });
     db.updateItems({
       item1: mockItemMetadata("item1", "source1"),
+      item2: mockItemMetadata("item2", "source1"),
+      item3: mockItemMetadata("item3", "source1"),
     });
 
     const snowflakeSource = db.addPendingSourceEvent(
@@ -1198,59 +1215,179 @@ describe("Datastore Method Tests", () => {
       "item1",
       PendingEventType.ItemDeleted,
     )!;
+    const snowflakeItem2 = db.addPendingItemEvent(
+      "item2",
+      PendingEventType.ItemDeleted,
+    )!;
+    const newEvent = db.addPendingItemEvent(
+      "item3",
+      PendingEventType.ItemDeleted,
+    )!;
 
-    // Simulate server response: only one event succeeded
-    db.updatePendingEvents({
-      [snowflakeSource.toString()]: [200, ""],
-      [snowflakeItem.toString()]: [500, "error"], // failed
-    });
+    const submittedEventIds = new Set([
+      snowflakeSource,
+      snowflakeItem,
+      snowflakeItem2,
+    ]);
+    const submittedEvents = db
+      .getPendingEvents()
+      .filter((event) => submittedEventIds.has(event.id));
+    db.updatePendingEvents(
+      {
+        [snowflakeSource.toString()]: [400, "bad request"],
+        [snowflakeItem.toString()]: [409, "conflict"],
+        [snowflakeItem2.toString()]: [500, "server error"],
+      },
+      submittedEvents,
+    );
 
     const events = db.getPendingEvents();
-    expect(events.length).toBe(1);
-    expect(events[0].id).toBe(snowflakeItem);
-    expect(events[0].type).toBe(PendingEventType.ItemDeleted);
+    expect(events.map((event) => event.id)).toEqual([newEvent]);
+
+    const rows = (db as any).db
+      .prepare(
+        `SELECT retry_attempts, last_event_status,
+                next_retry_at - unixepoch() AS retry_delay
+         FROM pending_events
+         WHERE snowflake_id IN (?, ?, ?)
+         ORDER BY last_event_status`,
+      )
+      .all(snowflakeSource, snowflakeItem, snowflakeItem2) as Array<{
+      retry_attempts: number;
+      last_event_status: number;
+      retry_delay: number;
+    }>;
+    expect(rows.map((row) => row.last_event_status)).toEqual([400, 409, 500]);
+    for (const row of rows) {
+      expect(row.retry_attempts).toBe(1);
+      expect(row.retry_delay).toBeGreaterThanOrEqual(
+        PENDING_EVENT_RETRY_BASE_SECONDS - 1,
+      );
+      expect(row.retry_delay).toBeLessThanOrEqual(
+        PENDING_EVENT_RETRY_BASE_SECONDS,
+      );
+    }
   });
 
-  it("updatePendingEvents should bump retry_attempts so failed events are scheduled later", () => {
+  it("updatePendingEvents should exponentially back off retries up to the cap", () => {
     db.updateSources({
       source1: mockSourceMetadata("source1"),
     });
-    db.updateItems({
-      item1: mockItemMetadata("item1", "source1"),
-    });
-
-    // snowflakeSource is created first, so it sorts before snowflakeItem by
-    // snowflake_id.
-    const snowflakeSource = db.addPendingSourceEvent(
+    const eventId = db.addPendingSourceEvent(
       "source1",
       PendingEventType.Starred,
     )!;
-    const snowflakeItem = db.addPendingItemEvent(
-      "item1",
-      PendingEventType.ItemDeleted,
+    const expectedDelays = [60, 120, 240, 480, 960, 1920, 3600, 3600];
+
+    for (const [attempt, expectedDelay] of expectedDelays.entries()) {
+      (db as any).db
+        .prepare(
+          "UPDATE pending_events SET next_retry_at = 0 WHERE snowflake_id = ?",
+        )
+        .run(eventId);
+      db.updatePendingEvents(
+        { [eventId]: [500, "error"] },
+        db.getPendingEvents(),
+      );
+
+      const row = (db as any).db
+        .prepare(
+          `SELECT retry_attempts, last_event_status,
+                  next_retry_at - unixepoch() AS retry_delay
+           FROM pending_events WHERE snowflake_id = ?`,
+        )
+        .get(eventId) as {
+        retry_attempts: number;
+        last_event_status: number;
+        retry_delay: number;
+      };
+      expect(row.retry_attempts).toBe(attempt + 1);
+      expect(row.last_event_status).toBe(500);
+      expect(row.retry_delay).toBeGreaterThanOrEqual(expectedDelay - 1);
+      expect(row.retry_delay).toBeLessThanOrEqual(expectedDelay);
+      expect(db.getPendingEvents()).toEqual([]);
+    }
+  });
+
+  it("persists retry scheduling across restart and removes a later success", () => {
+    db.updateSources({ source1: mockSourceMetadata("source1") });
+    const eventId = db.addPendingSourceEvent(
+      "source1",
+      PendingEventType.Starred,
     )!;
+    db.updatePendingEvents(
+      { [eventId]: [500, "error"] },
+      db.getPendingEvents(),
+    );
+    expect(db.getPendingEvents()).toEqual([]);
 
-    // With equal retry_attempts, ordering falls back to snowflake_id ascending.
-    let events = db.getPendingEvents();
-    expect(events.map((e) => e.id)).toEqual([snowflakeSource, snowflakeItem]);
+    db.close();
+    db = new Datastore(crypto, new Storage());
+    expect(db.getPendingEvents()).toEqual([]);
 
-    // The earlier (source) event fails to be accepted, bumping its retry count.
-    db.updatePendingEvents({
-      [snowflakeSource.toString()]: [500, "error"],
+    (db as any).db
+      .prepare(
+        "UPDATE pending_events SET next_retry_at = 0 WHERE snowflake_id = ?",
+      )
+      .run(eventId);
+    expect(db.getPendingEvents().map((event) => event.id)).toEqual([eventId]);
+
+    db.updatePendingEvents({ [eventId]: [200, null] }, db.getPendingEvents());
+    expect(
+      (db as any).db
+        .prepare("SELECT 1 FROM pending_events WHERE snowflake_id = ?")
+        .get(eventId),
+    ).toBeUndefined();
+  });
+
+  it("rolls back an omitted-status retry when the batch update fails", () => {
+    db.updateSources({ source1: mockSourceMetadata("source1") });
+    const eventId = db.addPendingSourceEvent(
+      "source1",
+      PendingEventType.Starred,
+    )!;
+    const submittedEvents = db.getPendingEvents();
+    vi.spyOn(db, "updateSources").mockImplementationOnce(() => {
+      throw new Error("metadata update failed");
     });
 
-    // Should now be scheduled after the never-failed item event.
-    events = db.getPendingEvents();
-    expect(events.map((e) => e.id)).toEqual([snowflakeItem, snowflakeSource]);
+    expect(() =>
+      db.updateBatch(
+        { sources: {}, items: {}, journalists: {}, events: {} },
+        submittedEvents,
+      ),
+    ).toThrow("metadata update failed");
 
-    // Verify the counter and last status were persisted.
     const row = (db as any).db
       .prepare(
-        "SELECT retry_attempts, last_event_status FROM pending_events WHERE snowflake_id = ?",
+        `SELECT retry_attempts, last_event_status, next_retry_at
+         FROM pending_events WHERE snowflake_id = ?`,
       )
-      .get(snowflakeSource.toString());
-    expect(row.retry_attempts).toBe(1);
-    expect(row.last_event_status).toBe(500);
+      .get(eventId);
+    expect(row).toEqual({
+      retry_attempts: 0,
+      last_event_status: null,
+      next_retry_at: 0,
+    });
+  });
+
+  it("treats a deadline beyond the maximum backoff as due", () => {
+    db.updateSources({ source1: mockSourceMetadata("source1") });
+    const eventId = db.addPendingSourceEvent(
+      "source1",
+      PendingEventType.Starred,
+    )!;
+    (db as any).db
+      .prepare(
+        `UPDATE pending_events
+         SET retry_attempts = 1,
+             last_event_status = 500,
+             next_retry_at = unixepoch() + ?
+         WHERE snowflake_id = ?`,
+      )
+      .run(PENDING_EVENT_RETRY_MAX_SECONDS + 60, eventId);
+
+    expect(db.getPendingEvents().map((event) => event.id)).toEqual([eventId]);
   });
 
   it("updatePendingEvents should retain but exclude AlreadyReported events", () => {
@@ -1272,14 +1409,17 @@ describe("Datastore Method Tests", () => {
 
     // The server reports the source event as already reported + accepted (208),
     // and the item event as not yet accepted (500).
-    db.updatePendingEvents({
-      [snowflakeSource.toString()]: [208, null],
-      [snowflakeItem.toString()]: [500, "error"],
-    });
+    db.updatePendingEvents(
+      {
+        [snowflakeSource.toString()]: [208, null],
+        [snowflakeItem.toString()]: [500, "error"],
+      },
+      db.getPendingEvents(),
+    );
 
-    // The AlreadyReported event must be excluded from future sync batches
+    // Both the AlreadyReported and not-yet-due failed event are excluded.
     const events = db.getPendingEvents();
-    expect(events.map((e) => e.id)).toEqual([snowflakeItem]);
+    expect(events).toEqual([]);
 
     // but event should be retained in the table to preserve projection state
     // with the status recorded
@@ -1290,6 +1430,13 @@ describe("Datastore Method Tests", () => {
       .get(snowflakeSource.toString());
     expect(row).toBeDefined();
     expect(row.last_event_status).toBe(208);
+
+    const failedRow = (db as any).db
+      .prepare(
+        "SELECT retry_attempts, last_event_status FROM pending_events WHERE snowflake_id = ?",
+      )
+      .get(snowflakeItem.toString());
+    expect(failedRow).toEqual({ retry_attempts: 1, last_event_status: 500 });
   });
 
   it("updateItems should upsert items with conflicting uuid", () => {
