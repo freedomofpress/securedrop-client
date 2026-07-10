@@ -153,6 +153,7 @@ export class DB {
   private selectAllSources: Statement<[], SourceRow>;
   private selectSourceById: Statement<[string], SourceRow>;
   private selectItemsBySourceId: Statement<[string, number], ItemRow>;
+  private selectAllItemsBySourceId: Statement<[string, number], ItemRow>;
   private selectItemsBySourceIdBefore: Statement<
     [string, number, number],
     ItemRow
@@ -385,6 +386,12 @@ export class DB {
       WHERE source_uuid = ?
       ORDER BY interaction_count DESC
       LIMIT ?
+    `);
+    this.selectAllItemsBySourceId = this.db.prepare(`
+      SELECT uuid, data, plaintext, filename, fetch_status, fetch_progress, decrypted_size, is_read FROM items_projected
+      WHERE source_uuid = ?
+        AND (fetch_status IS NULL OR fetch_status != ?)
+      ORDER BY interaction_count ASC, uuid ASC
     `);
     this.selectItemsBySourceIdBefore = this.db.prepare(`
       SELECT uuid, data, plaintext, filename, fetch_status, fetch_progress, decrypted_size FROM items_projected
@@ -915,6 +922,46 @@ export class DB {
       items,
       hasMoreHistoricalItems,
       lastSeenInteractionCount,
+    };
+  }
+
+  getSourceWithAllItems(sourceUuid: string): SourceWithItems {
+    if (!this.db) {
+      throw new Error("Database is not open");
+    }
+
+    const sourceRow = this.selectSourceById.get(sourceUuid) as
+      | SourceRow
+      | undefined;
+    if (!sourceRow) {
+      throw new Error(`Source with UUID ${sourceUuid} not found`);
+    }
+
+    const rows = this.selectAllItemsBySourceId.all(
+      sourceUuid,
+      FetchStatus.ScheduledDeletion,
+    );
+    const items = rows.map((row) => {
+      const data = JSON.parse(row.data) as ItemMetadata;
+      if (row.is_read !== undefined && "is_read" in data) {
+        (data as { is_read: boolean }).is_read = this.isTruthy(row.is_read);
+      }
+      return {
+        uuid: row.uuid,
+        data,
+        plaintext: row.plaintext,
+        filename: row.filename,
+        fetch_status: row.fetch_status,
+        fetch_progress: row.fetch_progress,
+        decrypted_size: row.decrypted_size,
+      };
+    });
+
+    return {
+      uuid: sourceRow.uuid,
+      data: JSON.parse(sourceRow.data) as SourceMetadata,
+      items,
+      hasMoreHistoricalItems: false,
     };
   }
 

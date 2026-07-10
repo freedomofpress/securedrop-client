@@ -7,6 +7,11 @@ import { type SourceWithItems } from "../types";
 import { Liquid } from "liquidjs";
 import transcriptTemplateContent from "../../resources/templates/transcript.txt.liquid?raw";
 
+export type TranscriptArtifact = {
+  filePath: string;
+  sourceWithItems: SourceWithItems;
+};
+
 export async function renderTranscript(data: SourceWithItems, db: DB) {
   const transcriptTemplateName = "transcript.txt.liquid";
 
@@ -59,11 +64,11 @@ export async function renderTranscript(data: SourceWithItems, db: DB) {
 export async function writeTranscript(
   sourceUuid: string,
   db: DB,
-): Promise<string> {
+): Promise<TranscriptArtifact> {
   const storage = new Storage();
 
   try {
-    const sourceWithItems = db.getSourceWithItems(sourceUuid);
+    const sourceWithItems = db.getSourceWithAllItems(sourceUuid);
     const filePath: string = join(
       storage.sourceDirectory(sourceUuid).path,
       "transcript.txt",
@@ -71,7 +76,7 @@ export async function writeTranscript(
 
     const fileContent = await renderTranscript(sourceWithItems, db);
     fs.writeFileSync(filePath, fileContent, "utf-8");
-    return filePath;
+    return { filePath, sourceWithItems };
   } catch (error) {
     console.error(
       `Failed to write transcript for source: ${sourceUuid}:`,

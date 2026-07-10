@@ -48,6 +48,7 @@ import { setUmask } from "./umask";
 import { Exporter, Printer } from "./export";
 import { Storage } from "./storage";
 import { writeTranscript } from "./transcriber";
+import { prepareSourceExport } from "./source-export";
 import { initLogging } from "./log";
 
 // Set umask so any files written are owner-only read/write (600).
@@ -682,12 +683,14 @@ if (!gotTheLock) {
           whistleflow?: boolean,
         ): Promise<DeviceStatus> => {
           try {
-            const filePath: string = await writeTranscript(sourceUuid, db);
+            const { filePath, sourceWithItems } = await writeTranscript(
+              sourceUuid,
+              db,
+            );
 
             if (!fs.existsSync(filePath)) {
               throw new Error(`Transcript file not found: ${filePath}`);
             }
-            const sourceWithItems = db.getSourceWithItems(sourceUuid);
             const sourceName = sourceWithItems.data.journalist_designation;
             return await exporter.export(
               [filePath],
@@ -751,30 +754,16 @@ if (!gotTheLock) {
           whistleflow?: boolean,
         ): Promise<DeviceStatus> => {
           try {
-            const transcriptPath: string = await writeTranscript(
+            const { filepaths, sourceName } = await prepareSourceExport(
               sourceUuid,
               db,
             );
 
-            if (!fs.existsSync(transcriptPath)) {
-              throw new Error(`Transcript file not found: ${transcriptPath}`);
+            if (!fs.existsSync(filepaths[0])) {
+              throw new Error(`Transcript file not found: ${filepaths[0]}`);
             }
-
-            const sourceWithItems = db.getSourceWithItems(sourceUuid);
-            const filenames: string[] = [transcriptPath];
-            for (const item of sourceWithItems.items) {
-              if (
-                item.data.kind === "file" &&
-                item.fetch_status === FetchStatus.Complete &&
-                item.filename &&
-                fs.existsSync(item.filename)
-              ) {
-                filenames.push(item.filename);
-              }
-            }
-            const sourceName = sourceWithItems.data.journalist_designation;
             return await exporter.export(
-              filenames,
+              filepaths,
               passphrase,
               sourceName,
               whistleflow,
@@ -794,7 +783,7 @@ if (!gotTheLock) {
         "printTranscript",
         async (_event, sourceUuid: string): Promise<DeviceStatus> => {
           try {
-            const filePath: string = await writeTranscript(sourceUuid, db);
+            const { filePath } = await writeTranscript(sourceUuid, db);
 
             if (!fs.existsSync(filePath)) {
               throw new Error(`Transcript file not found: ${filePath}`);
