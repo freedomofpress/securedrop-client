@@ -162,7 +162,7 @@ describe("syncMetadata", () => {
         [SOURCE_UUID_1]: "abc",
       },
       items: {
-        [SOURCE_UUID_2]: "def",
+        [ITEM_UUID_1]: "def",
       },
       journalists: {
         [JOURNALIST_UUID_1]: "ghi",
@@ -173,7 +173,7 @@ describe("syncMetadata", () => {
         [SOURCE_UUID_1]: mockSourceMetadata(SOURCE_UUID_1),
       },
       items: {
-        [SOURCE_UUID_2]: mockItemMetadata(ITEM_UUID_1, SOURCE_UUID_1),
+        [ITEM_UUID_1]: mockItemMetadata(ITEM_UUID_1, SOURCE_UUID_1),
       },
       journalists: {
         [JOURNALIST_UUID_1]: mockJournalistMetadata(JOURNALIST_UUID_1),
@@ -204,6 +204,33 @@ describe("syncMetadata", () => {
     expect(proxyMock).toHaveBeenCalledTimes(2);
     // Should update sources and items with new data
     expect(db.updateBatch).toHaveBeenCalledWith(batch);
+  });
+
+  it("rejects a batch item whose map key differs from its metadata UUID", async () => {
+    const serverIndex: Index = {
+      sources: {},
+      items: { [ITEM_UUID_2]: "def" },
+      journalists: {},
+    };
+    const batch: BatchResponse = {
+      sources: {},
+      items: {
+        [ITEM_UUID_2]: mockItemMetadata(ITEM_UUID_1, SOURCE_UUID_1),
+      },
+      journalists: {},
+      events: {},
+    };
+    const proxyMock = mockProxyResponses([
+      { status: 200, error: false, data: serverIndex, headers: new Map() },
+      { status: 200, error: false, data: batch, headers: new Map() },
+    ]);
+
+    await expect(syncModule.syncMetadata(db, "")).rejects.toThrow(
+      "Item metadata UUID must match its batch map key",
+    );
+
+    expect(proxyMock).toHaveBeenCalledTimes(2);
+    expect(db.updateBatch).not.toHaveBeenCalled();
   });
 
   it("passes estimated timeouts to proxyJSONRequest", async () => {

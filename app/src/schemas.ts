@@ -101,12 +101,24 @@ export const IndexSized: SizedSchema = {
 };
 
 // Metadata, maps UUIDs to full metadata objects
-export const BatchResponseSchema = z.object({
-  sources: z.record(UUIDSchema, SourceMetadataSchema.nullable()),
-  items: z.record(UUIDSchema, ItemMetadataSchema.nullable()),
-  journalists: z.record(UUIDSchema, JournalistMetadataSchema.nullable()),
-  events: z.record(z.string(), z.tuple([z.number(), z.string().nullable()])),
-});
+export const BatchResponseSchema = z
+  .object({
+    sources: z.record(UUIDSchema, SourceMetadataSchema.nullable()),
+    items: z.record(UUIDSchema, ItemMetadataSchema.nullable()),
+    journalists: z.record(UUIDSchema, JournalistMetadataSchema.nullable()),
+    events: z.record(z.string(), z.tuple([z.number(), z.string().nullable()])),
+  })
+  .superRefine(({ items }, context) => {
+    for (const [itemUuid, metadata] of Object.entries(items)) {
+      if (metadata !== null && metadata.uuid !== itemUuid) {
+        context.addIssue({
+          code: "custom",
+          message: "Item metadata UUID must match its batch map key",
+          path: ["items", itemUuid, "uuid"],
+        });
+      }
+    }
+  });
 
 // Interface for size calculations
 export const BatchResponseSized: SizedSchema = {

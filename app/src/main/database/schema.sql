@@ -273,6 +273,30 @@ WHERE
             pending_events.type = 'source_deleted'
     )
 /* sources_projected(uuid,data,version,has_attachment,is_seen) */;
+CREATE TRIGGER items_uuid_matches_metadata_insert
+BEFORE INSERT ON items
+FOR EACH ROW
+WHEN NEW.data IS NOT NULL
+    AND (
+        SELECT count(*) != 1 OR min(value) IS NOT NEW.uuid
+        FROM json_each(NEW.data)
+        WHERE key = 'uuid'
+    )
+BEGIN
+    SELECT RAISE(ABORT, 'items.uuid must match items.data.uuid');
+END;
+CREATE TRIGGER items_uuid_matches_metadata_update
+BEFORE UPDATE OF uuid, data ON items
+FOR EACH ROW
+WHEN NEW.data IS NOT NULL
+    AND (
+        SELECT count(*) != 1 OR min(value) IS NOT NEW.uuid
+        FROM json_each(NEW.data)
+        WHERE key = 'uuid'
+    )
+BEGIN
+    SELECT RAISE(ABORT, 'items.uuid must match items.data.uuid');
+END;
 -- Dbmate schema migrations
 INSERT INTO "schema_migrations" (version) VALUES
   ('20260203225412'),
@@ -283,4 +307,5 @@ INSERT INTO "schema_migrations" (version) VALUES
   ('20260416000000'),
   ('20260507000000'),
   ('20260511000000'),
-  ('20260624000000');
+  ('20260624000000'),
+  ('20260710153000');

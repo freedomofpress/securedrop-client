@@ -1,4 +1,5 @@
 import { describe, expect, it, beforeEach, afterEach } from "vitest";
+import { spawnSync } from "child_process";
 import fs from "fs";
 import path from "path";
 import os from "os";
@@ -148,6 +149,118 @@ describe("DB Component Tests", () => {
       ).toThrow("items.kind is immutable");
     });
   });
+
+  it("rejects an insert with duplicate embedded item UUID keys", () => {
+    db = new Datastore(crypto, new Storage());
+    const rawDb = db["db"]!;
+    const data =
+      '{"kind":"message","uuid":"item-a","uuid":"item-b","source":"s"}';
+
+    expect(JSON.parse(data).uuid).toBe("item-b");
+    expect(() =>
+      rawDb
+        .prepare("INSERT INTO items (uuid, data) VALUES (?, ?)")
+        .run("item-a", data),
+    ).toThrow("items.uuid must match items.data.uuid");
+  });
+
+  it("rejects non-NULL item data without an embedded UUID key", () => {
+    db = new Datastore(crypto, new Storage());
+    const rawDb = db["db"]!;
+
+    expect(() =>
+      rawDb
+        .prepare("INSERT INTO items (uuid, data) VALUES (?, ?)")
+        .run("item-a", '{"kind":"message","source":"s"}'),
+    ).toThrow("items.uuid must match items.data.uuid");
+  });
+
+  it("rejects an update with duplicate embedded item UUID keys", () => {
+    db = new Datastore(crypto, new Storage());
+    const rawDb = db["db"]!;
+    const data = {
+      kind: "message",
+      uuid: "item-a",
+      source: "s",
+      size: 0,
+      is_read: false,
+      seen_by: [],
+      interaction_count: 0,
+    };
+    const duplicateUuidData =
+      '{"kind":"message","uuid":"item-a","uuid":"item-b","source":"s"}';
+
+    rawDb
+      .prepare("INSERT INTO items (uuid, data) VALUES (?, ?)")
+      .run(data.uuid, JSON.stringify(data));
+
+    expect(() =>
+      rawDb
+        .prepare("UPDATE items SET data = ? WHERE uuid = ?")
+        .run(duplicateUuidData, data.uuid),
+    ).toThrow("items.uuid must match items.data.uuid");
+  });
+
+  it("rejects a legacy database with duplicate embedded item UUID keys", () => {
+    const currentMigration = "20260710153000_item_uuid_matches_metadata.sql";
+    const migrationsDir = path.resolve("src/main/database/migrations");
+    const legacyRoot = fs.mkdtempSync(
+      path.join(os.tmpdir(), "sdc-item-uuid-legacy-"),
+    );
+    const legacyMigrationsDir = path.join(legacyRoot, "migrations");
+    const legacyDbPath = path.join(legacyRoot, "legacy.sqlite");
+    const dbmatePath = path.resolve("node_modules/.bin/dbmate");
+    try {
+      fs.mkdirSync(legacyMigrationsDir, { recursive: true });
+
+      for (const migration of fs.readdirSync(migrationsDir)) {
+        if (migration.endsWith(".sql") && migration !== currentMigration) {
+          fs.symlinkSync(
+            path.join(migrationsDir, migration),
+            path.join(legacyMigrationsDir, migration),
+          );
+        }
+      }
+
+      const dbmateArgs = (directory: string) => [
+        "--url",
+        `sqlite:${legacyDbPath}`,
+        "--migrations-dir",
+        directory,
+        "--schema-file",
+        "/dev/null",
+        "up",
+      ];
+      const legacyMigration = spawnSync(
+        dbmatePath,
+        dbmateArgs(legacyMigrationsDir),
+        { encoding: "utf8" },
+      );
+      expect(legacyMigration.status, legacyMigration.stderr).toBe(0);
+
+      const duplicateUuidData =
+        '{"kind":"file","uuid":"item-a","uuid":"item-b"}';
+      const insert = spawnSync(
+        "sqlite3",
+        [
+          legacyDbPath,
+          `INSERT INTO items(uuid, data) VALUES ('item-a', '${duplicateUuidData}');`,
+        ],
+        { encoding: "utf8" },
+      );
+      expect(insert.status, insert.stderr).toBe(0);
+
+      const migration = spawnSync(dbmatePath, dbmateArgs(migrationsDir), {
+        encoding: "utf8",
+      });
+      expect(migration.status).toBe(2);
+      expect(migration.stderr).toContain(
+        "items.uuid must match items.data.uuid",
+      );
+    } finally {
+      fs.rmSync(legacyRoot, { recursive: true, force: true });
+    }
+  });
 });
 
 describe("Datastore Method Tests", () => {
@@ -245,6 +358,18 @@ describe("Datastore Method Tests", () => {
       interaction_count: interaction_count,
     };
   }
+
+  it("rejects item metadata whose UUID differs from its map key", () => {
+    const itemUuid = "660e8400-e29b-41d4-a716-446655440001";
+    const metadataUuid = "660e8400-e29b-41d4-a716-446655440002";
+
+    expect(() =>
+      db.updateItems({
+        [itemUuid]: mockItemMetadata(metadataUuid, "source1", "file"),
+      }),
+    ).toThrow("items.uuid must match items.data.uuid");
+    expect(db.getItem(itemUuid)).toBeNull();
+  });
 
   it("getJournalistbyID should return the first matching journalist", () => {
     // Insert two Journalists
