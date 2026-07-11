@@ -41,6 +41,46 @@ import { Search } from "./search";
 export const MESSAGE_PREVIEW_LENGTH = 200;
 const DEFAULT_ITEM_LIMIT = 100;
 export const DEFAULT_PENDING_EVENTS_LIMIT = 20;
+const PROCESSABLE_FETCH_STATUS_LIST = [
+  FetchStatus.Initial,
+  FetchStatus.DownloadInProgress,
+  FetchStatus.DecryptionInProgress,
+  FetchStatus.FailedDownloadRetryable,
+  FetchStatus.FailedDecryptionRetryable,
+].join(", ");
+const NONPROCESSABLE_FETCH_STATUS_LIST = [
+  ...NONPROCESSABLE_FETCH_STATUSES,
+].join(", ");
+const COMPLETION_BLOCKED_FETCH_STATUS_LIST = [
+  FetchStatus.Paused,
+  FetchStatus.FailedTerminal,
+  FetchStatus.Cancelled,
+  FetchStatus.ScheduledDeletion,
+].join(", ");
+const PENDING_ITEM_DELETION_FOR_ITEMS = `
+  EXISTS (
+    SELECT 1
+    FROM pending_events
+    WHERE pending_events.item_uuid = items.uuid
+      AND pending_events.type = '${PendingEventType.ItemDeleted}'
+  )
+`;
+const PENDING_ITEM_DELETION_FOR_UUID = `
+  EXISTS (
+    SELECT 1
+    FROM pending_events
+    WHERE pending_events.item_uuid = @uuid
+      AND pending_events.type = '${PendingEventType.ItemDeleted}'
+  )
+`;
+const ITEM_PROCESSABLE_BY_UUID = `
+  fetch_status NOT IN (${NONPROCESSABLE_FETCH_STATUS_LIST})
+  AND NOT ${PENDING_ITEM_DELETION_FOR_UUID}
+`;
+const ITEM_COMPLETION_ALLOWED_BY_UUID = `
+  fetch_status NOT IN (${COMPLETION_BLOCKED_FETCH_STATUS_LIST})
+  AND NOT ${PENDING_ITEM_DELETION_FOR_UUID}
+`;
 
 interface KeyObject {
   [key: string]: object;
@@ -126,6 +166,7 @@ export class DB {
     uuid: string;
     fetch_status: number;
   }>;
+  private markItemScheduledDeletion: Statement<{ uuid: string }, void>;
   private updateItemsFetchStatusBySource: Statement<{
     source_uuid: string;
     fetch_status: number;
@@ -137,6 +178,10 @@ export class DB {
   }>;
   private selectItem: Statement<{ uuid: string }, ItemRow>;
   private selectItemMany: Statement<{ uuids_json: string }, ItemRow>;
+  private selectItemPendingDeletion: Statement<
+    { uuid: string },
+    { pending: number }
+  >;
 
   private selectAllJournalistVersion: Statement<
     [],
@@ -294,7 +339,8 @@ export class DB {
       `SELECT items.uuid FROM items
       JOIN sources ON items.source_uuid = sources.uuid
       WHERE kind <> 'file'
-        AND fetch_status in (${FetchStatus.Initial}, ${FetchStatus.DownloadInProgress}, ${FetchStatus.DecryptionInProgress}, ${FetchStatus.FailedDownloadRetryable}, ${FetchStatus.FailedDecryptionRetryable})
+        AND fetch_status in (${PROCESSABLE_FETCH_STATUS_LIST})
+        AND NOT ${PENDING_ITEM_DELETION_FOR_ITEMS}
       ORDER BY json_extract(sources.data, '$.last_updated') DESC, interaction_count DESC, items.uuid ASC
       LIMIT @limit`,
     );
@@ -303,6 +349,7 @@ export class DB {
       JOIN sources ON items.source_uuid = sources.uuid
       WHERE kind = 'file'
         AND fetch_status in (${FetchStatus.DownloadInProgress}, ${FetchStatus.DecryptionInProgress}, ${FetchStatus.FailedDownloadRetryable}, ${FetchStatus.FailedDecryptionRetryable})
+        AND NOT ${PENDING_ITEM_DELETION_FOR_ITEMS}
       ORDER BY json_extract(sources.data, '$.last_updated') DESC, interaction_count DESC, items.uuid ASC
       LIMIT @limit`,
     );
@@ -310,10 +357,23 @@ export class DB {
       "DELETE FROM items WHERE source_uuid = @source_uuid",
     );
     this.updateItemFetchStatus = this.db.prepare(
-      "UPDATE items SET fetch_status = @fetch_status WHERE uuid = @uuid",
+      `UPDATE items
+      SET fetch_status = @fetch_status
+      WHERE uuid = @uuid
+        AND fetch_status IS NOT ${FetchStatus.ScheduledDeletion}
+        AND NOT ${PENDING_ITEM_DELETION_FOR_UUID}`,
     );
     this.updateItemFetchStatusWithReset = this.db.prepare(
-      "UPDATE items SET fetch_status = @fetch_status, fetch_progress = 0 WHERE uuid = @uuid",
+      `UPDATE items
+      SET fetch_status = @fetch_status, fetch_progress = 0
+      WHERE uuid = @uuid
+        AND fetch_status IS NOT ${FetchStatus.ScheduledDeletion}
+        AND NOT ${PENDING_ITEM_DELETION_FOR_UUID}`,
+    );
+    this.markItemScheduledDeletion = this.db.prepare(
+      `UPDATE items
+      SET fetch_status = ${FetchStatus.ScheduledDeletion}
+      WHERE uuid = @uuid`,
     );
     this.updateItemsFetchStatusBySource = this.db.prepare(
       "UPDATE items SET fetch_status = @fetch_status WHERE source_uuid = @source_uuid",
@@ -334,6 +394,13 @@ export class DB {
     this.selectItemMany = this.db.prepare(
       `SELECT uuid, data, plaintext, filename, fetch_status, fetch_progress, decrypted_size FROM items WHERE uuid IN (SELECT value FROM json_each(@uuids_json))`,
     );
+    this.selectItemPendingDeletion = this.db.prepare(`
+      SELECT 1 AS pending
+      FROM pending_events
+      WHERE item_uuid = @uuid
+        AND type = '${PendingEventType.ItemDeleted}'
+      LIMIT 1
+    `);
 
     this.selectAllJournalistVersion = this.db.prepare(
       "SELECT uuid, version FROM journalists",
@@ -730,18 +797,20 @@ export class DB {
     return deletedItems;
   }
 
-  public updateFetchStatus(itemUuid: string, fetchStatus: number) {
+  public updateFetchStatus(itemUuid: string, fetchStatus: number): boolean {
     // When cancelling, reset fetch_progress so the next download starts fresh
     if (fetchStatus === FetchStatus.Cancelled) {
-      this.updateItemFetchStatusWithReset.run({
+      const result = this.updateItemFetchStatusWithReset.run({
         uuid: itemUuid,
         fetch_status: fetchStatus,
       });
+      return result.changes !== 0;
     } else {
-      this.updateItemFetchStatus.run({
+      const result = this.updateItemFetchStatus.run({
         uuid: itemUuid,
         fetch_status: fetchStatus,
       });
+      return result.changes !== 0;
     }
   }
 
@@ -1007,59 +1076,120 @@ export class DB {
     };
   }
 
-  completePlaintextItem(itemUuid: string, plaintext: string) {
+  isItemPendingDeletion(itemUuid: string): boolean {
+    return this.selectItemPendingDeletion.get({ uuid: itemUuid }) !== undefined;
+  }
+
+  isItemProcessable(itemUuid: string): boolean {
+    const item = this.getItem(itemUuid);
+    return (
+      item !== null &&
+      item.fetch_status !== null &&
+      !NONPROCESSABLE_FETCH_STATUSES.has(item.fetch_status) &&
+      !this.isItemPendingDeletion(itemUuid)
+    );
+  }
+
+  completePlaintextItem(itemUuid: string, plaintext: string): boolean {
     const stmt: Statement<{ uuid: string; plaintext: string }, void> =
       this.db!.prepare(
-        `UPDATE items SET fetch_progress = null, fetch_status = ${FetchStatus.Complete}, plaintext = @plaintext, fetch_last_updated_at = CURRENT_TIMESTAMP WHERE uuid = @uuid`,
+        `UPDATE items
+        SET fetch_progress = null,
+            fetch_status = ${FetchStatus.Complete},
+            plaintext = @plaintext,
+            fetch_last_updated_at = CURRENT_TIMESTAMP
+        WHERE uuid = @uuid
+          AND ${ITEM_COMPLETION_ALLOWED_BY_UUID}`,
       );
-    stmt.run({
+    const result = stmt.run({
       uuid: itemUuid,
       plaintext: plaintext,
     });
+    if (result.changes === 0) {
+      return false;
+    }
     this.searchIndex.indexItem(itemUuid);
+    return true;
   }
 
-  completeFileItem(itemUuid: string, filename: string, decryptedSize: number) {
+  completeFileItem(
+    itemUuid: string,
+    filename: string,
+    decryptedSize: number,
+  ): boolean {
     const stmt: Statement<
       { uuid: string; filename: string; decrypted_size: number },
       void
     > = this.db!.prepare(
-      `UPDATE items SET fetch_progress = null, fetch_status = ${FetchStatus.Complete}, filename = @filename, decrypted_size = @decrypted_size, fetch_last_updated_at = CURRENT_TIMESTAMP WHERE uuid = @uuid`,
+      `UPDATE items
+      SET fetch_progress = null,
+          fetch_status = ${FetchStatus.Complete},
+          filename = @filename,
+          decrypted_size = @decrypted_size,
+          fetch_last_updated_at = CURRENT_TIMESTAMP
+      WHERE uuid = @uuid
+        AND ${ITEM_COMPLETION_ALLOWED_BY_UUID}`,
     );
-    stmt.run({
+    const result = stmt.run({
       uuid: itemUuid,
       filename: filename,
       decrypted_size: decryptedSize,
     });
+    if (result.changes === 0) {
+      return false;
+    }
     this.searchIndex.indexItem(itemUuid);
+    return true;
   }
 
-  terminallyFailItem(itemUuid: string) {
+  terminallyFailItem(itemUuid: string): boolean {
     const stmt: Statement<{ uuid: string }, void> = this.db!.prepare(
-      `UPDATE ITEMS set fetch_status = ${FetchStatus.FailedTerminal}, fetch_retry_attempts = fetch_retry_attempts + 1, fetch_last_updated_at = CURRENT_TIMESTAMP WHERE uuid = @uuid`,
+      `UPDATE ITEMS
+      SET fetch_status = ${FetchStatus.FailedTerminal},
+          fetch_retry_attempts = fetch_retry_attempts + 1,
+          fetch_last_updated_at = CURRENT_TIMESTAMP
+      WHERE uuid = @uuid
+        AND ${ITEM_PROCESSABLE_BY_UUID}`,
     );
-    stmt.run({ uuid: itemUuid });
+    const result = stmt.run({ uuid: itemUuid });
+    return result.changes !== 0;
   }
 
-  pauseItem(itemUuid: string) {
+  pauseItem(itemUuid: string): boolean {
     const stmt: Statement<{ uuid: string }, void> = this.db!.prepare(
-      `UPDATE ITEMS set fetch_status = ${FetchStatus.Paused}, fetch_last_updated_at = CURRENT_TIMESTAMP WHERE uuid = @uuid`,
+      `UPDATE ITEMS
+      SET fetch_status = ${FetchStatus.Paused},
+          fetch_last_updated_at = CURRENT_TIMESTAMP
+      WHERE uuid = @uuid
+        AND ${ITEM_PROCESSABLE_BY_UUID}`,
     );
-    stmt.run({ uuid: itemUuid });
+    const result = stmt.run({ uuid: itemUuid });
+    return result.changes !== 0;
   }
 
-  resumeItem(itemUuid: string) {
+  resumeItem(itemUuid: string): boolean {
     const stmt: Statement<{ uuid: string }, void> = this.db!.prepare(
-      `UPDATE ITEMS set fetch_status = ${FetchStatus.DownloadInProgress}, fetch_last_updated_at = CURRENT_TIMESTAMP WHERE uuid = @uuid`,
+      `UPDATE ITEMS
+      SET fetch_status = ${FetchStatus.DownloadInProgress},
+          fetch_last_updated_at = CURRENT_TIMESTAMP
+      WHERE uuid = @uuid
+        AND fetch_status IS NOT ${FetchStatus.ScheduledDeletion}
+        AND NOT ${PENDING_ITEM_DELETION_FOR_UUID}`,
     );
-    stmt.run({ uuid: itemUuid });
+    const result = stmt.run({ uuid: itemUuid });
+    return result.changes !== 0;
   }
 
-  startDownloadInProgress(itemUuid: string) {
+  startDownloadInProgress(itemUuid: string): boolean {
     const stmt: Statement<{ uuid: string }, void> = this.db!.prepare(
-      `UPDATE items SET fetch_status = ${FetchStatus.DownloadInProgress}, fetch_last_updated_at = CURRENT_TIMESTAMP WHERE uuid = @uuid`,
+      `UPDATE items
+      SET fetch_status = ${FetchStatus.DownloadInProgress},
+          fetch_last_updated_at = CURRENT_TIMESTAMP
+      WHERE uuid = @uuid
+        AND ${ITEM_PROCESSABLE_BY_UUID}`,
     );
-    stmt.run({ uuid: itemUuid });
+    const result = stmt.run({ uuid: itemUuid });
+    return result.changes !== 0;
   }
 
   // Updates a download in progress if it is still in a processable state. Returns true
@@ -1067,7 +1197,12 @@ export class DB {
   updateDownloadInProgress(itemUuid: string, progress: number): boolean {
     const stmt: Statement<{ uuid: string; progress: number }, void> =
       this.db!.prepare(
-        `UPDATE items SET fetch_progress = @progress, fetch_status = ${FetchStatus.DownloadInProgress}, fetch_last_updated_at = CURRENT_TIMESTAMP WHERE uuid = @uuid AND fetch_status NOT IN (${[...NONPROCESSABLE_FETCH_STATUSES].join(", ")})`,
+        `UPDATE items
+        SET fetch_progress = @progress,
+            fetch_status = ${FetchStatus.DownloadInProgress},
+            fetch_last_updated_at = CURRENT_TIMESTAMP
+        WHERE uuid = @uuid
+          AND ${ITEM_PROCESSABLE_BY_UUID}`,
       );
     const result = stmt.run({
       uuid: itemUuid,
@@ -1076,25 +1211,48 @@ export class DB {
     return result.changes !== 0;
   }
 
-  setDecryptionInProgress(itemUuid: string) {
+  setDecryptionInProgress(itemUuid: string): boolean {
     const stmt: Statement<{ uuid: string }, void> = this.db!.prepare(
-      `UPDATE items SET fetch_status = ${FetchStatus.DecryptionInProgress}, fetch_last_updated_at = CURRENT_TIMESTAMP WHERE uuid = @uuid`,
+      `UPDATE items
+      SET fetch_status = ${FetchStatus.DecryptionInProgress},
+          fetch_last_updated_at = CURRENT_TIMESTAMP
+      WHERE uuid = @uuid
+        AND ${ITEM_PROCESSABLE_BY_UUID}`,
     );
-    stmt.run({ uuid: itemUuid });
+    const result = stmt.run({ uuid: itemUuid });
+    return result.changes !== 0;
   }
 
-  failDownload(itemUuid: string) {
+  failDownload(itemUuid: string): boolean {
     const stmt: Statement<{ uuid: string }, void> = this.db!.prepare(
-      `UPDATE items SET fetch_status = ${FetchStatus.FailedDownloadRetryable}, fetch_retry_attempts = fetch_retry_attempts + 1, fetch_last_updated_at = CURRENT_TIMESTAMP WHERE uuid = @uuid`,
+      `UPDATE items
+      SET fetch_status = ${FetchStatus.FailedDownloadRetryable},
+          fetch_retry_attempts = fetch_retry_attempts + 1,
+          fetch_last_updated_at = CURRENT_TIMESTAMP
+      WHERE uuid = @uuid
+        AND ${ITEM_PROCESSABLE_BY_UUID}`,
     );
-    stmt.run({ uuid: itemUuid });
+    const result = stmt.run({ uuid: itemUuid });
+    return result.changes !== 0;
   }
 
-  failDecryption(itemUuid: string) {
+  failDecryption(itemUuid: string): boolean {
     const stmt: Statement<{ uuid: string }, void> = this.db!.prepare(
-      `UPDATE items SET fetch_status = ${FetchStatus.FailedDecryptionRetryable}, fetch_retry_attempts = fetch_retry_attempts + 1, fetch_last_updated_at = CURRENT_TIMESTAMP WHERE uuid = @uuid`,
+      `UPDATE items
+      SET fetch_status = ${FetchStatus.FailedDecryptionRetryable},
+          fetch_retry_attempts = fetch_retry_attempts + 1,
+          fetch_last_updated_at = CURRENT_TIMESTAMP
+      WHERE uuid = @uuid
+        AND ${ITEM_PROCESSABLE_BY_UUID}`,
     );
-    stmt.run({ uuid: itemUuid });
+    const result = stmt.run({ uuid: itemUuid });
+    return result.changes !== 0;
+  }
+
+  private markItemPendingDeletion(itemUuid: string) {
+    this.markItemScheduledDeletion.run({
+      uuid: itemUuid,
+    });
   }
 
   private markSourceItemsScheduledDeletion(sourceUuid: string) {
@@ -1225,26 +1383,31 @@ export class DB {
   }
 
   addPendingItemEvent(itemUuid: string, type: PendingEventType): string | null {
-    const snowflakeID = this.snowflake
-      .generate({ timestamp: Date.now() })
-      .toString();
-    try {
-      this.insertItemPendingEvent.run({
-        snowflake_id: snowflakeID,
-        item_uuid: itemUuid,
-        type: type,
-        data: null,
-      });
-    } catch (err) {
-      if (err instanceof Error && "code" in err) {
-        if (err.code === "SQLITE_CONSTRAINT_FOREIGNKEY") {
-          return null;
-        } else {
-          throw err;
+    return this.db!.transaction(() => {
+      const snowflakeID = this.snowflake
+        .generate({ timestamp: Date.now() })
+        .toString();
+      if (type === PendingEventType.ItemDeleted) {
+        this.markItemPendingDeletion(itemUuid);
+      }
+      try {
+        this.insertItemPendingEvent.run({
+          snowflake_id: snowflakeID,
+          item_uuid: itemUuid,
+          type: type,
+          data: null,
+        });
+      } catch (err) {
+        if (err instanceof Error && "code" in err) {
+          if (err.code === "SQLITE_CONSTRAINT_FOREIGNKEY") {
+            return null;
+          } else {
+            throw err;
+          }
         }
       }
-    }
-    return snowflakeID;
+      return snowflakeID;
+    })();
   }
 
   addPendingSourceConversationSeen(

@@ -707,6 +707,80 @@ describe("Datastore Method Tests", () => {
 
     sourceWithItems = db.getSourceWithItems("source1");
     expect(sourceWithItems.items.length).toEqual(2);
+    expect(db.getItem("item1")?.fetch_status).toBe(
+      FetchStatus.ScheduledDeletion,
+    );
+  });
+
+  it("pending ItemDeleted should stop raw item processing and completion", () => {
+    db.updateSources({
+      source1: mockSourceMetadata("source1"),
+    });
+    db.updateItems({
+      msg1: mockItemMetadata("msg1", "source1", "message", 1),
+      file1: mockItemMetadata("file1", "source1", "file", 2),
+    });
+    db.updateDownloadInProgress("file1", 42);
+
+    const messageEventId = db.addPendingItemEvent(
+      "msg1",
+      PendingEventType.ItemDeleted,
+    );
+    const fileEventId = db.addPendingItemEvent(
+      "file1",
+      PendingEventType.ItemDeleted,
+    );
+
+    expect(messageEventId).not.toBeNull();
+    expect(fileEventId).not.toBeNull();
+    expect(db.getItem("msg1")?.fetch_status).toBe(
+      FetchStatus.ScheduledDeletion,
+    );
+    expect(db.getItem("file1")?.fetch_status).toBe(
+      FetchStatus.ScheduledDeletion,
+    );
+    expect(
+      db.getItemsToProcess({
+        messageLimit: 10,
+        fileLimit: 10,
+      }),
+    ).toEqual([]);
+
+    expect(db.completePlaintextItem("msg1", "deleted plaintext")).toBe(false);
+    expect(db.completeFileItem("file1", "/tmp/deleted-file", 123)).toBe(false);
+    expect(db.getItem("msg1")?.plaintext).toBeNull();
+    expect(db.getItem("file1")?.filename).toBeNull();
+    expect(db.search("deleted")).toEqual([]);
+  });
+
+  it("raw pending ItemDeleted rows should stop processing without status migration", () => {
+    db.updateSources({
+      source1: mockSourceMetadata("source1"),
+    });
+    db.updateItems({
+      item1: mockItemMetadata("item1", "source1", "message", 1),
+    });
+
+    db["db"]!.prepare(
+      `INSERT INTO pending_events (snowflake_id, item_uuid, type, data)
+        VALUES (?, ?, ?, ?)`,
+    ).run("raw-item-delete", "item1", PendingEventType.ItemDeleted, null);
+
+    expect(db.getItem("item1")?.fetch_status).toBe(FetchStatus.Initial);
+    expect(db.isItemPendingDeletion("item1")).toBe(true);
+    expect(db.isItemProcessable("item1")).toBe(false);
+    expect(
+      db.getItemsToProcess({
+        messageLimit: 10,
+        fileLimit: 10,
+      }),
+    ).toEqual([]);
+
+    expect(db.completePlaintextItem("item1", "raw deleted plaintext")).toBe(
+      false,
+    );
+    expect(db.getItem("item1")?.plaintext).toBeNull();
+    expect(db.search("raw deleted")).toEqual([]);
   });
 
   it("addPendingSourceEvent returns null when source does not exist", async () => {

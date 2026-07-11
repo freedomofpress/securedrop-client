@@ -128,9 +128,16 @@ export class TaskQueue {
 
   // Aborts any in-progress download for the given item.
   cancelDownload(itemId: string) {
-    const entry = this.activeDownloads.get(itemId);
-    if (entry) {
-      entry.controller.abort();
+    const download = this.activeDownloads.get(itemId);
+    if (download) {
+      download.controller.abort();
+      this.activeDownloads.delete(itemId);
+    }
+
+    const decryption = this.activeDecryptions.get(itemId);
+    if (decryption) {
+      decryption.controller.abort();
+      this.activeDecryptions.delete(itemId);
     }
   }
 
@@ -164,7 +171,8 @@ export class TaskQueue {
     return (
       item !== null &&
       item.fetch_status !== null &&
-      !NONPROCESSABLE_FETCH_STATUSES.has(item.fetch_status)
+      !NONPROCESSABLE_FETCH_STATUSES.has(item.fetch_status) &&
+      !db.isItemPendingDeletion(itemId)
     );
   }
 
@@ -195,7 +203,11 @@ export class TaskQueue {
         };
 
         const item = this.db.getItem(itemUUID);
-        if (!item || item.fetch_status === null) {
+        if (
+          !item ||
+          item.fetch_status === null ||
+          this.db.isItemPendingDeletion(itemUUID)
+        ) {
           continue;
         }
 
@@ -275,7 +287,8 @@ export class TaskQueue {
       if (
         !dbItem ||
         dbItem.fetch_status === null ||
-        NONPROCESSABLE_FETCH_STATUSES.has(dbItem.fetch_status)
+        NONPROCESSABLE_FETCH_STATUSES.has(dbItem.fetch_status) ||
+        db.isItemPendingDeletion(item.id)
       ) {
         console.debug("Item task is not in a processable state, skipping...");
         return;
@@ -295,7 +308,16 @@ export class TaskQueue {
       }
 
       try {
-        await this.download(item, db, metadata, progress || 0, authToken);
+        const downloaded = await this.download(
+          item,
+          db,
+          metadata,
+          progress || 0,
+          authToken,
+        );
+        if (!downloaded) {
+          return;
+        }
       } catch (e) {
         if (e instanceof DownloadCancelledError) {
           return;
@@ -312,7 +334,11 @@ export class TaskQueue {
       }
 
       // Transition to decrypt phase — the decrypt queue will pick this up on the next refill.
-      db.setDecryptionInProgress(item.id);
+      if (!db.setDecryptionInProgress(item.id)) {
+        console.debug(
+          `Item ${item.id} became non-processable before decrypt phase, skipping...`,
+        );
+      }
     } finally {
       // After every download tick, post item state to the main thread.
       if (this.port) {
@@ -331,7 +357,8 @@ export class TaskQueue {
       if (
         !dbItem ||
         dbItem.fetch_status === null ||
-        NONPROCESSABLE_FETCH_STATUSES.has(dbItem.fetch_status)
+        NONPROCESSABLE_FETCH_STATUSES.has(dbItem.fetch_status) ||
+        db.isItemPendingDeletion(item.id)
       ) {
         console.debug("Item task is not in a processable state, skipping...");
         return;
@@ -418,7 +445,7 @@ export class TaskQueue {
     metadata: ItemMetadata,
     progress: number,
     authToken: string,
-  ): Promise<void> {
+  ): Promise<boolean> {
     console.debug(`Starting download for ${metadata.kind} ${item.id}`);
     const abortController = new AbortController();
     this.activeDownloads.set(item.id, {
@@ -426,7 +453,9 @@ export class TaskQueue {
       controller: abortController,
     });
     try {
-      db.startDownloadInProgress(item.id);
+      if (!db.startDownloadInProgress(item.id)) {
+        return false;
+      }
       await this.innerDownload(
         item,
         db,
@@ -435,6 +464,7 @@ export class TaskQueue {
         abortController,
         authToken,
       );
+      return true;
     } finally {
       this.activeDownloads.delete(item.id);
     }
@@ -606,7 +636,9 @@ export class TaskQueue {
       controller: abortController,
     });
 
-    db.setDecryptionInProgress(item.id);
+    if (!db.setDecryptionInProgress(item.id)) {
+      return;
+    }
     try {
       if (metadata.kind === "file") {
         await this.decryptFile(
@@ -662,7 +694,9 @@ export class TaskQueue {
     }
 
     // Store the decrypted plaintext and mark item as complete
-    db.completePlaintextItem(item.id, decryptedContent);
+    if (!db.completePlaintextItem(item.id, decryptedContent)) {
+      return;
+    }
 
     // Clean up the ciphertext file after successful decryption
     try {
@@ -706,7 +740,16 @@ export class TaskQueue {
       // Get the decrypted file size to display to the user
       const fileStats = await fs.promises.stat(finalAbsolutePath);
       const decryptedSize = fileStats.size;
-      db.completeFileItem(item.id, finalAbsolutePath, decryptedSize);
+      if (!db.completeFileItem(item.id, finalAbsolutePath, decryptedSize)) {
+        try {
+          await fs.promises.unlink(finalAbsolutePath);
+        } catch (error) {
+          console.warn(
+            `Failed to clean up decrypted file after deletion: ${error}`,
+          );
+        }
+        return;
+      }
       console.log(`Successfully decrypted ${metadata.kind} ${item.id}`);
     } catch (error) {
       if (error instanceof CryptoError) {

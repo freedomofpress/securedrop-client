@@ -592,13 +592,18 @@ if (!gotTheLock) {
           itemUuid: string,
           type: PendingEventType,
         ): Promise<string | null> => {
+          const item =
+            type === PendingEventType.ItemDeleted ? db.getItem(itemUuid) : null;
+          const pendingEventId = db.addPendingItemEvent(itemUuid, type);
           if (type === PendingEventType.ItemDeleted) {
-            const item = db.getItem(itemUuid);
-            if (item) {
-              db.deleteItemFs(item);
+            if (pendingEventId) {
+              fetchWorker?.postMessage({ type: "cancel", itemId: itemUuid });
+              if (item) {
+                await db.deleteItemFs(item);
+              }
             }
           }
-          return db.addPendingItemEvent(itemUuid, type);
+          return pendingEventId;
         },
       );
 
