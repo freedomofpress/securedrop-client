@@ -32,6 +32,7 @@ import {
   FirstRunStatus,
   PendingEventData,
   SourceItemCounts,
+  PendingSourceCleanup,
 } from "../../types";
 import { Crypto } from "../crypto";
 import { Search } from "./search";
@@ -41,6 +42,17 @@ import { Search } from "./search";
 export const MESSAGE_PREVIEW_LENGTH = 200;
 const DEFAULT_ITEM_LIMIT = 100;
 export const DEFAULT_PENDING_EVENTS_LIMIT = 20;
+
+type PendingSourceCleanupRow = {
+  snowflake_id: string;
+  source_uuid: string;
+  data: string | null;
+};
+
+type SourceCleanupData = {
+  upper_bound: number;
+  local_cleanup_item_uuids?: string[];
+};
 
 interface KeyObject {
   [key: string]: object;
@@ -157,6 +169,10 @@ export class DB {
     [string, number, number],
     ItemRow
   >;
+  private selectSourceItemsUpTo: Statement<
+    { source_uuid: string; upper_bound: number },
+    ItemRow
+  >;
   private selectItemCountsBySourceUuids: Statement<
     { uuids_json: string },
     { messages: number; files: number; replies: number }
@@ -168,6 +184,7 @@ export class DB {
       source_uuid: string;
       type: string;
       data: string | null;
+      local_cleanup_pending: number;
     },
     void
   >;
@@ -198,6 +215,27 @@ export class DB {
     void
   >;
   private selectPendingEvents: Statement<[{ limit: number }], PendingEventRow>;
+  private selectPendingSourceCleanup: Statement<
+    { snowflake_id: string },
+    PendingSourceCleanupRow
+  >;
+  private selectPendingSourceCleanups: Statement<[], PendingSourceCleanupRow>;
+  private selectPendingSourceTruncations: Statement<
+    [],
+    PendingSourceCleanupRow
+  >;
+  private selectPendingSourceCleanupBySource: Statement<
+    { source_uuid: string },
+    { present: number }
+  >;
+  private updatePendingSourceCleanup: Statement<
+    { snowflake_id: string; data: string },
+    void
+  >;
+  private completePendingSourceCleanup: Statement<
+    { snowflake_id: string },
+    void
+  >;
   private deletePendingEventsBySourceScope: Statement<
     { source_uuid: string },
     void
@@ -310,10 +348,12 @@ export class DB {
       "DELETE FROM items WHERE source_uuid = @source_uuid",
     );
     this.updateItemFetchStatus = this.db.prepare(
-      "UPDATE items SET fetch_status = @fetch_status WHERE uuid = @uuid",
+      `UPDATE items SET fetch_status = @fetch_status
+       WHERE uuid = @uuid AND fetch_status != ${FetchStatus.ScheduledDeletion}`,
     );
     this.updateItemFetchStatusWithReset = this.db.prepare(
-      "UPDATE items SET fetch_status = @fetch_status, fetch_progress = 0 WHERE uuid = @uuid",
+      `UPDATE items SET fetch_status = @fetch_status, fetch_progress = 0
+       WHERE uuid = @uuid AND fetch_status != ${FetchStatus.ScheduledDeletion}`,
     );
     this.updateItemsFetchStatusBySource = this.db.prepare(
       "UPDATE items SET fetch_status = @fetch_status WHERE source_uuid = @source_uuid",
@@ -392,6 +432,13 @@ export class DB {
       ORDER BY interaction_count DESC
       LIMIT ?
     `);
+    this.selectSourceItemsUpTo = this.db.prepare(`
+      SELECT uuid, data, plaintext, filename, fetch_status, fetch_progress, decrypted_size
+      FROM items
+      WHERE source_uuid = @source_uuid
+        AND interaction_count <= @upper_bound
+      ORDER BY interaction_count ASC
+    `);
     this.selectItemCountsBySourceUuids = this.db.prepare(`
       SELECT
         COALESCE(SUM(CASE WHEN kind = 'message' THEN 1 ELSE 0 END), 0) AS messages,
@@ -405,7 +452,11 @@ export class DB {
     `);
 
     this.insertSourcePendingEvent = this.db.prepare(`
-      INSERT INTO pending_events (snowflake_id, source_uuid, type, data) VALUES (@snowflake_id, @source_uuid, @type, @data)
+      INSERT INTO pending_events (
+        snowflake_id, source_uuid, type, data, local_cleanup_pending
+      ) VALUES (
+        @snowflake_id, @source_uuid, @type, @data, @local_cleanup_pending
+      )
     `);
 
     this.insertItemPendingEvent = this.db.prepare(`
@@ -442,7 +493,50 @@ export class DB {
     this.selectPendingEvents = this.db.prepare(`
       SELECT snowflake_id, source_uuid, item_uuid, type, data FROM pending_events
       WHERE last_event_status IS NOT ${EventStatus.AlreadyReported}
+        AND local_cleanup_pending = 0
       ORDER BY retry_attempts ASC, snowflake_id ASC LIMIT @limit
+    `);
+    this.selectPendingSourceCleanup = this.db.prepare(`
+      SELECT snowflake_id, source_uuid, data
+      FROM pending_events
+      WHERE snowflake_id = @snowflake_id
+        AND type = '${PendingEventType.SourceConversationTruncated}'
+        AND local_cleanup_pending = 1
+    `);
+    this.selectPendingSourceCleanups = this.db.prepare(`
+      SELECT snowflake_id, source_uuid, data
+      FROM pending_events
+      WHERE type = '${PendingEventType.SourceConversationTruncated}'
+        AND local_cleanup_pending = 1
+      ORDER BY snowflake_id ASC
+    `);
+    this.selectPendingSourceTruncations = this.db.prepare(`
+      SELECT snowflake_id, source_uuid, data
+      FROM pending_events
+      WHERE type = '${PendingEventType.SourceConversationTruncated}'
+      ORDER BY snowflake_id ASC
+    `);
+    this.selectPendingSourceCleanupBySource = this.db.prepare(`
+      SELECT 1 AS present
+      FROM pending_events
+      WHERE source_uuid = @source_uuid
+        AND type = '${PendingEventType.SourceConversationTruncated}'
+        AND local_cleanup_pending = 1
+      LIMIT 1
+    `);
+    this.updatePendingSourceCleanup = this.db.prepare(`
+      UPDATE pending_events
+      SET data = @data
+      WHERE snowflake_id = @snowflake_id
+        AND local_cleanup_pending = 1
+    `);
+    this.completePendingSourceCleanup = this.db.prepare(`
+      UPDATE pending_events
+      SET
+        data = json_remove(data, '$.local_cleanup_item_uuids'),
+        local_cleanup_pending = 0
+      WHERE snowflake_id = @snowflake_id
+        AND local_cleanup_pending = 1
     `);
     this.deletePendingEventsBySourceScope = this.db.prepare(`
       DELETE FROM pending_events
@@ -697,6 +791,13 @@ export class DB {
             this.upsertSource.run({ uuid: sourceid, data: info, version });
             this.searchIndex.indexSource(sourceid);
           } else {
+            if (
+              this.selectPendingSourceCleanupBySource.get({
+                source_uuid: sourceid,
+              })
+            ) {
+              return;
+            }
             deletedSourceUuids.push(sourceid);
             this.deleteSourceAndItems(sourceid);
           }
@@ -726,6 +827,8 @@ export class DB {
           this.searchIndex.removeItem(itemid);
         }
       });
+      this.refreshPendingSourceCleanups();
+      this.markPendingSourceTruncationsScheduledDeletion();
     })(items);
     return deletedItems;
   }
@@ -1007,59 +1110,93 @@ export class DB {
     };
   }
 
-  completePlaintextItem(itemUuid: string, plaintext: string) {
+  protected getSourceItemsUpTo(sourceUuid: string, upperBound: number): Item[] {
+    const rows = this.selectSourceItemsUpTo.all({
+      source_uuid: sourceUuid,
+      upper_bound: upperBound,
+    });
+    return rows.map((row) => ({
+      uuid: row.uuid,
+      data: JSON.parse(row.data) as ItemMetadata,
+      plaintext: row.plaintext,
+      filename: row.filename,
+      fetch_status: row.fetch_status as FetchStatus,
+      fetch_progress: row.fetch_progress,
+      decrypted_size: row.decrypted_size,
+    }));
+  }
+
+  completePlaintextItem(itemUuid: string, plaintext: string): boolean {
     const stmt: Statement<{ uuid: string; plaintext: string }, void> =
       this.db!.prepare(
-        `UPDATE items SET fetch_progress = null, fetch_status = ${FetchStatus.Complete}, plaintext = @plaintext, fetch_last_updated_at = CURRENT_TIMESTAMP WHERE uuid = @uuid`,
+        `UPDATE items SET fetch_progress = null, fetch_status = ${FetchStatus.Complete}, plaintext = @plaintext, fetch_last_updated_at = CURRENT_TIMESTAMP
+         WHERE uuid = @uuid AND fetch_status != ${FetchStatus.ScheduledDeletion}`,
       );
-    stmt.run({
+    const result = stmt.run({
       uuid: itemUuid,
       plaintext: plaintext,
     });
-    this.searchIndex.indexItem(itemUuid);
+    if (result.changes !== 0) {
+      this.searchIndex.indexItem(itemUuid);
+      return true;
+    }
+    return false;
   }
 
-  completeFileItem(itemUuid: string, filename: string, decryptedSize: number) {
+  completeFileItem(
+    itemUuid: string,
+    filename: string,
+    decryptedSize: number,
+  ): boolean {
     const stmt: Statement<
       { uuid: string; filename: string; decrypted_size: number },
       void
     > = this.db!.prepare(
-      `UPDATE items SET fetch_progress = null, fetch_status = ${FetchStatus.Complete}, filename = @filename, decrypted_size = @decrypted_size, fetch_last_updated_at = CURRENT_TIMESTAMP WHERE uuid = @uuid`,
+      `UPDATE items SET fetch_progress = null, fetch_status = ${FetchStatus.Complete}, filename = @filename, decrypted_size = @decrypted_size, fetch_last_updated_at = CURRENT_TIMESTAMP
+       WHERE uuid = @uuid AND fetch_status != ${FetchStatus.ScheduledDeletion}`,
     );
-    stmt.run({
+    const result = stmt.run({
       uuid: itemUuid,
       filename: filename,
       decrypted_size: decryptedSize,
     });
-    this.searchIndex.indexItem(itemUuid);
+    if (result.changes !== 0) {
+      this.searchIndex.indexItem(itemUuid);
+      return true;
+    }
+    return false;
   }
 
   terminallyFailItem(itemUuid: string) {
     const stmt: Statement<{ uuid: string }, void> = this.db!.prepare(
-      `UPDATE ITEMS set fetch_status = ${FetchStatus.FailedTerminal}, fetch_retry_attempts = fetch_retry_attempts + 1, fetch_last_updated_at = CURRENT_TIMESTAMP WHERE uuid = @uuid`,
+      `UPDATE items SET fetch_status = ${FetchStatus.FailedTerminal}, fetch_retry_attempts = fetch_retry_attempts + 1, fetch_last_updated_at = CURRENT_TIMESTAMP
+       WHERE uuid = @uuid AND fetch_status != ${FetchStatus.ScheduledDeletion}`,
     );
     stmt.run({ uuid: itemUuid });
   }
 
   pauseItem(itemUuid: string) {
     const stmt: Statement<{ uuid: string }, void> = this.db!.prepare(
-      `UPDATE ITEMS set fetch_status = ${FetchStatus.Paused}, fetch_last_updated_at = CURRENT_TIMESTAMP WHERE uuid = @uuid`,
+      `UPDATE items SET fetch_status = ${FetchStatus.Paused}, fetch_last_updated_at = CURRENT_TIMESTAMP
+       WHERE uuid = @uuid AND fetch_status != ${FetchStatus.ScheduledDeletion}`,
     );
     stmt.run({ uuid: itemUuid });
   }
 
   resumeItem(itemUuid: string) {
     const stmt: Statement<{ uuid: string }, void> = this.db!.prepare(
-      `UPDATE ITEMS set fetch_status = ${FetchStatus.DownloadInProgress}, fetch_last_updated_at = CURRENT_TIMESTAMP WHERE uuid = @uuid`,
+      `UPDATE items SET fetch_status = ${FetchStatus.DownloadInProgress}, fetch_last_updated_at = CURRENT_TIMESTAMP
+       WHERE uuid = @uuid AND fetch_status != ${FetchStatus.ScheduledDeletion}`,
     );
     stmt.run({ uuid: itemUuid });
   }
 
-  startDownloadInProgress(itemUuid: string) {
+  startDownloadInProgress(itemUuid: string): boolean {
     const stmt: Statement<{ uuid: string }, void> = this.db!.prepare(
-      `UPDATE items SET fetch_status = ${FetchStatus.DownloadInProgress}, fetch_last_updated_at = CURRENT_TIMESTAMP WHERE uuid = @uuid`,
+      `UPDATE items SET fetch_status = ${FetchStatus.DownloadInProgress}, fetch_last_updated_at = CURRENT_TIMESTAMP
+       WHERE uuid = @uuid AND fetch_status != ${FetchStatus.ScheduledDeletion}`,
     );
-    stmt.run({ uuid: itemUuid });
+    return stmt.run({ uuid: itemUuid }).changes !== 0;
   }
 
   // Updates a download in progress if it is still in a processable state. Returns true
@@ -1076,23 +1213,26 @@ export class DB {
     return result.changes !== 0;
   }
 
-  setDecryptionInProgress(itemUuid: string) {
+  setDecryptionInProgress(itemUuid: string): boolean {
     const stmt: Statement<{ uuid: string }, void> = this.db!.prepare(
-      `UPDATE items SET fetch_status = ${FetchStatus.DecryptionInProgress}, fetch_last_updated_at = CURRENT_TIMESTAMP WHERE uuid = @uuid`,
+      `UPDATE items SET fetch_status = ${FetchStatus.DecryptionInProgress}, fetch_last_updated_at = CURRENT_TIMESTAMP
+       WHERE uuid = @uuid AND fetch_status != ${FetchStatus.ScheduledDeletion}`,
     );
-    stmt.run({ uuid: itemUuid });
+    return stmt.run({ uuid: itemUuid }).changes !== 0;
   }
 
   failDownload(itemUuid: string) {
     const stmt: Statement<{ uuid: string }, void> = this.db!.prepare(
-      `UPDATE items SET fetch_status = ${FetchStatus.FailedDownloadRetryable}, fetch_retry_attempts = fetch_retry_attempts + 1, fetch_last_updated_at = CURRENT_TIMESTAMP WHERE uuid = @uuid`,
+      `UPDATE items SET fetch_status = ${FetchStatus.FailedDownloadRetryable}, fetch_retry_attempts = fetch_retry_attempts + 1, fetch_last_updated_at = CURRENT_TIMESTAMP
+       WHERE uuid = @uuid AND fetch_status != ${FetchStatus.ScheduledDeletion}`,
     );
     stmt.run({ uuid: itemUuid });
   }
 
   failDecryption(itemUuid: string) {
     const stmt: Statement<{ uuid: string }, void> = this.db!.prepare(
-      `UPDATE items SET fetch_status = ${FetchStatus.FailedDecryptionRetryable}, fetch_retry_attempts = fetch_retry_attempts + 1, fetch_last_updated_at = CURRENT_TIMESTAMP WHERE uuid = @uuid`,
+      `UPDATE items SET fetch_status = ${FetchStatus.FailedDecryptionRetryable}, fetch_retry_attempts = fetch_retry_attempts + 1, fetch_last_updated_at = CURRENT_TIMESTAMP
+       WHERE uuid = @uuid AND fetch_status != ${FetchStatus.ScheduledDeletion}`,
     );
     stmt.run({ uuid: itemUuid });
   }
@@ -1121,48 +1261,177 @@ export class DB {
     });
   }
 
+  private refreshPendingSourceCleanupRow(
+    row: PendingSourceCleanupRow,
+  ): PendingSourceCleanup {
+    if (!row.data) {
+      throw new Error(
+        `Invariant violation: pending cleanup ${row.snowflake_id} has no data`,
+      );
+    }
+    const data = JSON.parse(row.data) as SourceCleanupData;
+    const itemUuids = new Set(data.local_cleanup_item_uuids ?? []);
+    for (const item of this.getSourceItemsUpTo(
+      row.source_uuid,
+      data.upper_bound,
+    )) {
+      itemUuids.add(item.uuid);
+    }
+    this.markSourceItemsScheduledDeletionUpTo(
+      row.source_uuid,
+      data.upper_bound,
+    );
+    const storedData: SourceCleanupData = {
+      upper_bound: data.upper_bound,
+      local_cleanup_item_uuids: [...itemUuids],
+    };
+    this.updatePendingSourceCleanup.run({
+      snowflake_id: row.snowflake_id,
+      data: JSON.stringify(storedData),
+    });
+    return {
+      id: row.snowflake_id,
+      sourceUuid: row.source_uuid,
+      upperBound: data.upper_bound,
+      itemUuids: storedData.local_cleanup_item_uuids ?? [],
+    };
+  }
+
+  private refreshPendingSourceCleanups(): void {
+    for (const row of this.selectPendingSourceCleanups.all()) {
+      this.refreshPendingSourceCleanupRow(row);
+    }
+  }
+
+  private markPendingSourceTruncationsScheduledDeletion(): void {
+    for (const row of this.selectPendingSourceTruncations.all()) {
+      if (!row.data) {
+        continue;
+      }
+      const data = JSON.parse(row.data) as Partial<SourceCleanupData>;
+      if (typeof data.upper_bound !== "number") {
+        continue;
+      }
+      this.markSourceItemsScheduledDeletionUpTo(
+        row.source_uuid,
+        data.upper_bound,
+      );
+    }
+  }
+
+  getPendingSourceCleanup(snowflakeId: string): PendingSourceCleanup | null {
+    return this.db!.transaction(() => {
+      const row = this.selectPendingSourceCleanup.get({
+        snowflake_id: snowflakeId,
+      });
+      return row ? this.refreshPendingSourceCleanupRow(row) : null;
+    })();
+  }
+
+  getPendingSourceCleanups(): PendingSourceCleanup[] {
+    return this.db!.transaction(() => {
+      return this.selectPendingSourceCleanups
+        .all()
+        .map((row) => this.refreshPendingSourceCleanupRow(row));
+    })();
+  }
+
+  finishPendingSourceCleanup(
+    snowflakeId: string,
+    deletedItemUuids: string[],
+  ): boolean {
+    return this.db!.transaction(() => {
+      const row = this.selectPendingSourceCleanup.get({
+        snowflake_id: snowflakeId,
+      });
+      if (!row) {
+        return true;
+      }
+      const cleanup = this.refreshPendingSourceCleanupRow(row);
+      const deleted = new Set(deletedItemUuids);
+      if (cleanup.itemUuids.some((uuid) => !deleted.has(uuid))) {
+        return false;
+      }
+      this.completePendingSourceCleanup.run({
+        snowflake_id: snowflakeId,
+      });
+      return true;
+    })();
+  }
+
   addPendingSourceEvent(
     sourceUuid: string,
     type: PendingEventType,
     data?: PendingEventData,
   ): string | null {
-    return this.db!.transaction(() => {
-      const snowflakeID = this.snowflake
-        .generate({ timestamp: Date.now() })
-        .toString();
+    try {
+      return this.db!.transaction(() => {
+        const snowflakeID = this.snowflake
+          .generate({ timestamp: Date.now() })
+          .toString();
+        let eventData = data ? JSON.stringify(data) : null;
+        let localCleanupPending = 0;
 
-      if (type === PendingEventType.SourceDeleted) {
-        this.purgePendingEventsForSource(sourceUuid);
-        this.markSourceItemsScheduledDeletion(sourceUuid);
-      } else if (type === PendingEventType.SourceConversationTruncated) {
-        this.purgePendingEventsForSource(sourceUuid);
-        if (data?.upper_bound !== undefined) {
-          this.markSourceItemsScheduledDeletionUpTo(
-            sourceUuid,
-            data.upper_bound,
+        if (type === PendingEventType.SourceDeleted) {
+          this.purgePendingEventsForSource(sourceUuid);
+          this.markSourceItemsScheduledDeletion(sourceUuid);
+        } else if (type === PendingEventType.SourceConversationTruncated) {
+          const existingCleanups = this.selectPendingSourceCleanups
+            .all()
+            .filter((row) => row.source_uuid === sourceUuid)
+            .map((row) => {
+              if (!row.data) {
+                throw new Error(
+                  `Invariant violation: pending cleanup ${row.snowflake_id} has no data`,
+                );
+              }
+              return JSON.parse(row.data) as SourceCleanupData;
+            });
+          const itemUuids = new Set(
+            existingCleanups.flatMap(
+              (cleanup) => cleanup.local_cleanup_item_uuids ?? [],
+            ),
           );
+          this.purgePendingEventsForSource(sourceUuid);
+          if (data?.upper_bound !== undefined) {
+            const upperBound = Math.max(
+              data.upper_bound,
+              ...existingCleanups.map((cleanup) => cleanup.upper_bound),
+            );
+            this.markSourceItemsScheduledDeletionUpTo(sourceUuid, upperBound);
+            for (const item of this.getSourceItemsUpTo(
+              sourceUuid,
+              upperBound,
+            )) {
+              itemUuids.add(item.uuid);
+            }
+            eventData = JSON.stringify({
+              upper_bound: upperBound,
+              local_cleanup_item_uuids: [...itemUuids],
+            } satisfies SourceCleanupData);
+            localCleanupPending = 1;
+          }
         }
-      }
 
-      try {
         this.insertSourcePendingEvent.run({
           snowflake_id: snowflakeID,
           source_uuid: sourceUuid,
           type: type,
-          data: data ? JSON.stringify(data) : null,
+          data: eventData,
+          local_cleanup_pending: localCleanupPending,
         });
-      } catch (err) {
-        if (err instanceof Error && "code" in err) {
-          if (err.code === "SQLITE_CONSTRAINT_FOREIGNKEY") {
-            return null;
-          } else {
-            throw err;
-          }
-        }
+        return snowflakeID;
+      })();
+    } catch (err) {
+      if (
+        err instanceof Error &&
+        "code" in err &&
+        err.code === "SQLITE_CONSTRAINT_FOREIGNKEY"
+      ) {
+        return null;
       }
-
-      return snowflakeID;
-    })();
+      throw err;
+    }
   }
 
   addPendingSourceEventBatch(
@@ -1220,6 +1489,7 @@ export class DB {
       source_uuid: sourceUuid,
       type: PendingEventType.ReplySent,
       data: JSON.stringify(replyData, sortKeys),
+      local_cleanup_pending: 0,
     });
     return snowflakeID;
   }
@@ -1283,6 +1553,7 @@ export class DB {
           source_uuid: sourceUuid,
           type: PendingEventType.SourceConversationSeen,
           data: JSON.stringify({ upper_bound: upperBound }),
+          local_cleanup_pending: 0,
         });
       } catch (err) {
         if (err instanceof Error && "code" in err) {

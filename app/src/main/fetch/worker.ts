@@ -37,7 +37,22 @@ port.on("message", (message: FetchWorkerMessage) => {
       q.cancelDownload(message.itemId);
       break;
     case "abortSourceFetch":
-      q.abortSourceFetch(message.sourceUuid);
+      void q
+        .abortSourceFetch(message.sourceUuid)
+        .then(() => {
+          if (message.requestId) {
+            port.postMessage({
+              type: "sourceFetchAborted",
+              requestId: message.requestId,
+            });
+          }
+        })
+        .catch((error: unknown) => {
+          console.error("Failed to abort source fetch", {
+            sourceUuid: message.sourceUuid,
+            error,
+          });
+        });
       break;
     case "authedRequest":
       q.queueFetches(message.request);

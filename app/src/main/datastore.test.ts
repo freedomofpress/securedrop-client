@@ -2,6 +2,7 @@ import { describe, expect, it, beforeEach, afterEach } from "vitest";
 import fs from "fs";
 import path from "path";
 import os from "os";
+import { execFileSync } from "node:child_process";
 import {
   FetchStatus,
   ItemMetadata,
@@ -151,7 +152,10 @@ describe("DB Component Tests", () => {
 });
 
 describe("Datastore Method Tests", () => {
-  const testHomeDir = path.join(os.tmpdir(), "test-home-datastore");
+  const testHomeDir = path.join(
+    fs.realpathSync(os.tmpdir()),
+    `test-home-datastore-${process.pid}`,
+  );
   const originalHomedir = os.homedir;
   let db: Datastore;
   let crypto: Crypto;
@@ -246,6 +250,48 @@ describe("Datastore Method Tests", () => {
     };
   }
 
+  async function completeTruncation(
+    sourceUuid: string,
+    upperBound: number,
+  ): Promise<string> {
+    const eventId = db.addPendingSourceEvent(
+      sourceUuid,
+      PendingEventType.SourceConversationTruncated,
+      { upper_bound: upperBound },
+    );
+    expect(eventId).not.toBeNull();
+    await db.runPendingSourceCleanup(eventId!);
+    return eventId!;
+  }
+
+  function seedFileItems(
+    sourceUuid: string,
+    interactionCounts: number[],
+    createPlaintext = true,
+  ): string[] {
+    const storage = new Storage();
+    const items: Record<string, ItemMetadata> = {};
+    const directories: string[] = [];
+    db.updateSources({ [sourceUuid]: mockSourceMetadata(sourceUuid) });
+    interactionCounts.forEach((interactionCount, index) => {
+      const uuid = `${sourceUuid}-file-${index + 1}`;
+      const metadata = mockItemMetadata(
+        uuid,
+        sourceUuid,
+        "file",
+        interactionCount,
+      );
+      items[uuid] = metadata;
+      const directory = storage.itemDirectory(metadata);
+      if (createPlaintext) {
+        fs.writeFileSync(directory.join("payload"), "plaintext");
+      }
+      directories.push(directory.path);
+    });
+    db.updateItems(items);
+    return directories;
+  }
+
   it("getJournalistbyID should return the first matching journalist", () => {
     // Insert two Journalists
     db.updateJournalists({
@@ -286,7 +332,7 @@ describe("Datastore Method Tests", () => {
     expect([...sources.keys()]).toEqual(["source1", "source2"]);
   });
 
-  it("pending SourceConversationTruncated should remove items up to and including upper_bound", () => {
+  it("pending SourceConversationTruncated should remove items up to and including upper_bound", async () => {
     db.updateSources({
       source1: mockSourceMetadata("source1"),
     });
@@ -300,16 +346,12 @@ describe("Datastore Method Tests", () => {
     let sourceWithItems = db.getSourceWithItems("source1");
     expect(sourceWithItems.items.length).toEqual(3);
 
-    db.addPendingSourceEvent(
-      "source1",
-      PendingEventType.SourceConversationTruncated,
-      { upper_bound: 2 },
-    );
+    await completeTruncation("source1", 2);
     sourceWithItems = db.getSourceWithItems("source1");
     expect(sourceWithItems.items.length).toEqual(1);
   });
 
-  it("pending SourceConversationTruncated event should only affect given source", () => {
+  it("pending SourceConversationTruncated event should only affect given source", async () => {
     db.updateSources({
       source1: mockSourceMetadata("source1"),
     });
@@ -323,11 +365,7 @@ describe("Datastore Method Tests", () => {
     let sourceWithItems = db.getSourceWithItems("source1");
     expect(sourceWithItems.items.length).toEqual(3);
 
-    db.addPendingSourceEvent(
-      "source1",
-      PendingEventType.SourceConversationTruncated,
-      { upper_bound: 3 },
-    );
+    await completeTruncation("source1", 3);
     sourceWithItems = db.getSourceWithItems("source1");
     expect(sourceWithItems.items.length).toEqual(0);
 
@@ -413,7 +451,7 @@ describe("Datastore Method Tests", () => {
     expect(source1Item2).not.toBeNull();
   });
 
-  it("pending SourceConversationTruncated should update has_attachment based on remaining items", () => {
+  it("pending SourceConversationTruncated should update has_attachment based on remaining items", async () => {
     db.updateSources({
       source1: { ...mockSourceMetadata("source1"), has_attachment: true },
     });
@@ -427,17 +465,13 @@ describe("Datastore Method Tests", () => {
     expect(sources.get("source1")!.hasAttachment).toBe(true);
 
     // Truncate only the file item
-    db.addPendingSourceEvent(
-      "source1",
-      PendingEventType.SourceConversationTruncated,
-      { upper_bound: 1 },
-    );
+    await completeTruncation("source1", 1);
 
     sources = db.getSources();
     expect(sources.get("source1")!.hasAttachment).toBe(false);
   });
 
-  it("pending SourceConversationTruncated should preserve has_attachment when file items remain", () => {
+  it("pending SourceConversationTruncated should preserve has_attachment when file items remain", async () => {
     db.updateSources({
       source1: { ...mockSourceMetadata("source1"), has_attachment: true },
     });
@@ -449,17 +483,13 @@ describe("Datastore Method Tests", () => {
     });
 
     // Truncate only first file item; second file item remains
-    db.addPendingSourceEvent(
-      "source1",
-      PendingEventType.SourceConversationTruncated,
-      { upper_bound: 1 },
-    );
+    await completeTruncation("source1", 1);
 
     const sources = db.getSources();
     expect(sources.get("source1")!.hasAttachment).toBe(true);
   });
 
-  it("pending SourceConversationTruncated should mark source as read when all items removed", () => {
+  it("pending SourceConversationTruncated should mark source as read when all items removed", async () => {
     db.updateSources({
       source1: mockSourceMetadata("source1"),
     });
@@ -473,17 +503,13 @@ describe("Datastore Method Tests", () => {
     expect(sources.get("source1")!.isRead).toBe(false);
 
     // Truncate all items
-    db.addPendingSourceEvent(
-      "source1",
-      PendingEventType.SourceConversationTruncated,
-      { upper_bound: 2 },
-    );
+    await completeTruncation("source1", 2);
 
     sources = db.getSources();
     expect(sources.get("source1")!.isRead).toBe(true);
   });
 
-  it("pending SourceConversationTruncated should mark source as read when remaining items are all read", () => {
+  it("pending SourceConversationTruncated should mark source as read when remaining items are all read", async () => {
     db.updateSources({
       source1: mockSourceMetadata("source1"),
     });
@@ -500,11 +526,7 @@ describe("Datastore Method Tests", () => {
     });
 
     // Only remove item2 (the unread item with ic=1)
-    db.addPendingSourceEvent(
-      "source1",
-      PendingEventType.SourceConversationTruncated,
-      { upper_bound: 1 },
-    );
+    await completeTruncation("source1", 1);
 
     const sources = db.getSources();
     expect(sources.get("source1")!.isRead).toBe(true);
@@ -689,6 +711,326 @@ describe("Datastore Method Tests", () => {
     expect(items).toEqual(sortedItems);
   });
 
+  it("publishes a truncation event only after all covered directories are gone", async () => {
+    const storage = new Storage();
+    db.updateSources({
+      source1: mockSourceMetadata("source1"),
+      source2: mockSourceMetadata("source2"),
+    });
+
+    const items: Record<string, ItemMetadata> = {};
+    const source1Directories: string[] = [];
+    for (
+      let interactionCount = 1;
+      interactionCount <= 151;
+      interactionCount += 1
+    ) {
+      const uuid = `source1-file-${interactionCount}`;
+      const metadata = mockItemMetadata(
+        uuid,
+        "source1",
+        "file",
+        interactionCount,
+      );
+      items[uuid] = metadata;
+      const directory = storage.itemDirectory(metadata);
+      fs.writeFileSync(directory.join("payload"), "plaintext");
+      source1Directories.push(directory.path);
+    }
+
+    const unrelated = mockItemMetadata("source2-file", "source2", "file", 1);
+    items[unrelated.uuid] = unrelated;
+    const unrelatedDirectory = storage.itemDirectory(unrelated);
+    fs.writeFileSync(unrelatedDirectory.join("payload"), "keep");
+    db.updateItems(items);
+
+    const eventId = db.addPendingSourceEvent(
+      "source1",
+      PendingEventType.SourceConversationTruncated,
+      { upper_bound: 151 },
+    );
+
+    expect(eventId).not.toBeNull();
+    expect(
+      source1Directories.every((directory) => fs.existsSync(directory)),
+    ).toBe(true);
+    expect(db.getSourceWithItems("source1").items).toHaveLength(0);
+    expect(db.getPendingEvents()).toHaveLength(0);
+
+    const deletedCount = await db.runPendingSourceCleanup(eventId!);
+
+    expect(deletedCount).toBe(151);
+    expect(
+      source1Directories.every((directory) => !fs.existsSync(directory)),
+    ).toBe(true);
+    expect(fs.existsSync(unrelatedDirectory.path)).toBe(true);
+    expect(db.getItem("source1-file-1")?.fetch_status).toBe(
+      FetchStatus.ScheduledDeletion,
+    );
+    expect(db.getItem("source1-file-151")?.fetch_status).toBe(
+      FetchStatus.ScheduledDeletion,
+    );
+    expect(db.getSourceWithItems("source1").items).toHaveLength(0);
+    expect(db.getPendingEvents()).toHaveLength(1);
+    await expect(db.runPendingSourceCleanup(eventId!)).resolves.toBe(0);
+  });
+
+  it.each([0, 1, 100, 101, 151, 201])(
+    "cleans every covered directory for a %i-item conversation",
+    async (itemCount) => {
+      const counts = Array.from({ length: itemCount }, (_, index) => index + 1);
+      const directories = seedFileItems("source1", counts);
+      const eventId = db.addPendingSourceEvent(
+        "source1",
+        PendingEventType.SourceConversationTruncated,
+        { upper_bound: itemCount },
+      )!;
+
+      expect(db.getPendingEvents()).toHaveLength(0);
+      await expect(db.runPendingSourceCleanup(eventId)).resolves.toBe(
+        itemCount,
+      );
+      expect(directories.every((directory) => !fs.existsSync(directory))).toBe(
+        true,
+      );
+      expect(db.getPendingSourceCleanups()).toHaveLength(0);
+      expect(db.getPendingEvents()).toHaveLength(1);
+    },
+  );
+
+  it("cleans all duplicate counts within a partial upper bound", async () => {
+    const directories = seedFileItems("source1", [1, 2, 2, 3]);
+    const eventId = db.addPendingSourceEvent(
+      "source1",
+      PendingEventType.SourceConversationTruncated,
+      { upper_bound: 2 },
+    )!;
+
+    await expect(db.runPendingSourceCleanup(eventId)).resolves.toBe(3);
+    expect(directories.slice(0, 3).every((path) => !fs.existsSync(path))).toBe(
+      true,
+    );
+    expect(fs.existsSync(directories[3])).toBe(true);
+    expect(db.getItem("source1-file-4")?.fetch_status).toBe(
+      FetchStatus.Initial,
+    );
+  });
+
+  it("leaves rows above a partial bound in a 201-item conversation", async () => {
+    const counts = Array.from({ length: 201 }, (_, index) => index + 1);
+    const directories = seedFileItems("source1", counts);
+    const eventId = db.addPendingSourceEvent(
+      "source1",
+      PendingEventType.SourceConversationTruncated,
+      { upper_bound: 101 },
+    )!;
+
+    await expect(db.runPendingSourceCleanup(eventId)).resolves.toBe(101);
+    expect(
+      directories.slice(0, 101).every((directory) => !fs.existsSync(directory)),
+    ).toBe(true);
+    expect(
+      directories.slice(101).every((directory) => fs.existsSync(directory)),
+    ).toBe(true);
+    expect(db.getItem("source1-file-101")?.fetch_status).toBe(
+      FetchStatus.ScheduledDeletion,
+    );
+    expect(db.getItem("source1-file-102")?.fetch_status).toBe(
+      FetchStatus.Initial,
+    );
+  });
+
+  it("preserves the broader bound when truncation is requested again", async () => {
+    const directories = seedFileItems("source1", [1, 2, 3, 4, 5]);
+    const broadEventId = db.addPendingSourceEvent(
+      "source1",
+      PendingEventType.SourceConversationTruncated,
+      { upper_bound: 5 },
+    )!;
+    const replacementEventId = db.addPendingSourceEvent(
+      "source1",
+      PendingEventType.SourceConversationTruncated,
+      { upper_bound: 2 },
+    )!;
+
+    expect(db.getPendingSourceCleanup(broadEventId)).toBeNull();
+    expect(db.getPendingSourceCleanup(replacementEventId)?.upperBound).toBe(5);
+    await expect(db.runPendingSourceCleanup(replacementEventId)).resolves.toBe(
+      5,
+    );
+    expect(directories.every((directory) => !fs.existsSync(directory))).toBe(
+      true,
+    );
+    expect(db.getPendingEvents()[0].data).toEqual({ upper_bound: 5 });
+  });
+
+  it("treats missing covered directories as idempotent success", async () => {
+    seedFileItems("source1", [1], false);
+    const eventId = db.addPendingSourceEvent(
+      "source1",
+      PendingEventType.SourceConversationTruncated,
+      { upper_bound: 1 },
+    )!;
+
+    await expect(db.runPendingSourceCleanup(eventId)).resolves.toBe(1);
+    await expect(db.runPendingSourceCleanup(eventId)).resolves.toBe(0);
+    expect(db.getPendingEvents()).toHaveLength(1);
+  });
+
+  it.runIf(process.platform === "darwin")(
+    "keeps cleanup pending after a real immutable-file failure",
+    async () => {
+      const [directory] = seedFileItems("source1", [1]);
+      const plaintextPath = path.join(directory, "payload");
+      const eventId = db.addPendingSourceEvent(
+        "source1",
+        PendingEventType.SourceConversationTruncated,
+        { upper_bound: 1 },
+      )!;
+      execFileSync("/usr/bin/chflags", ["uchg", plaintextPath]);
+
+      try {
+        await expect(db.runPendingSourceCleanup(eventId)).rejects.toMatchObject(
+          { code: "EPERM" },
+        );
+        expect(fs.existsSync(plaintextPath)).toBe(true);
+        expect(db.getPendingSourceCleanups()).toHaveLength(1);
+        expect(db.getPendingEvents()).toHaveLength(0);
+      } finally {
+        if (fs.existsSync(plaintextPath)) {
+          execFileSync("/usr/bin/chflags", ["nouchg", plaintextPath]);
+        }
+      }
+
+      await expect(db.runPendingSourceCleanup(eventId)).resolves.toBe(1);
+      expect(fs.existsSync(directory)).toBe(false);
+      expect(db.getPendingEvents()).toHaveLength(1);
+    },
+  );
+
+  it("rolls back truncation state when pending event insertion fails", () => {
+    const storage = new Storage();
+    const metadata = mockItemMetadata("source1-file", "source1", "file", 1);
+    db.updateSources({ source1: mockSourceMetadata("source1") });
+    db.updateItems({ [metadata.uuid]: metadata });
+    const directory = storage.itemDirectory(metadata);
+    const filename = directory.join("payload");
+    fs.writeFileSync(filename, "plaintext");
+    db.completeFileItem(metadata.uuid, filename, 9);
+    db["db"]!.exec(`
+      CREATE TEMP TRIGGER reject_truncation_event
+      BEFORE INSERT ON pending_events
+      WHEN NEW.type = 'source_conversation_truncated'
+      BEGIN
+        SELECT RAISE(ABORT, 'forced insertion failure');
+      END;
+    `);
+
+    expect(() =>
+      db.addPendingSourceEvent(
+        "source1",
+        PendingEventType.SourceConversationTruncated,
+        { upper_bound: 1 },
+      ),
+    ).toThrow("forced insertion failure");
+
+    expect(fs.existsSync(filename)).toBe(true);
+    expect(db.getItem(metadata.uuid)?.fetch_status).toBe(FetchStatus.Complete);
+    expect(db.getPendingSourceCleanups()).toHaveLength(0);
+    expect(db.getPendingEvents()).toHaveLength(0);
+  });
+
+  it("retries partial filesystem cleanup after restart", async () => {
+    class FailOnceStorage extends Storage {
+      private failed = false;
+
+      override async deleteItemDirectory(
+        sourceUuid: string,
+        itemUuid: string,
+      ): Promise<void> {
+        if (itemUuid === "source1-file-2" && !this.failed) {
+          this.failed = true;
+          throw Object.assign(new Error("immutable plaintext"), {
+            code: "EPERM",
+          });
+        }
+        await super.deleteItemDirectory(sourceUuid, itemUuid);
+      }
+    }
+
+    const storage = new Storage();
+    db.updateSources({ source1: mockSourceMetadata("source1") });
+    const items: Record<string, ItemMetadata> = {};
+    const directories: string[] = [];
+    for (let count = 1; count <= 3; count += 1) {
+      const metadata = mockItemMetadata(
+        `source1-file-${count}`,
+        "source1",
+        "file",
+        count,
+      );
+      items[metadata.uuid] = metadata;
+      const directory = storage.itemDirectory(metadata);
+      fs.writeFileSync(directory.join("payload"), "plaintext");
+      directories.push(directory.path);
+    }
+    db.updateItems(items);
+    db.close();
+    db = new Datastore(crypto, new FailOnceStorage());
+
+    const eventId = db.addPendingSourceEvent(
+      "source1",
+      PendingEventType.SourceConversationTruncated,
+      { upper_bound: 3 },
+    )!;
+    await expect(db.runPendingSourceCleanup(eventId)).rejects.toMatchObject({
+      code: "EPERM",
+    });
+    expect(db.getPendingEvents()).toHaveLength(0);
+    expect(db.getPendingSourceCleanups()).toHaveLength(1);
+    expect(db.getSourceWithItems("source1").items).toHaveLength(0);
+    expect(fs.existsSync(directories[1])).toBe(true);
+
+    db.close();
+    db = new Datastore(crypto, new Storage());
+    await expect(db.runPendingSourceCleanup(eventId)).resolves.toBe(3);
+    expect(directories.every((directory) => !fs.existsSync(directory))).toBe(
+      true,
+    );
+    expect(db.getPendingSourceCleanups()).toHaveLength(0);
+    expect(db.getPendingEvents()).toHaveLength(1);
+    expect(db.getSourceWithItems("source1").items).toHaveLength(0);
+  });
+
+  it("keeps covered sync-upserted items non-processable after cleanup is publishable", async () => {
+    seedFileItems("source1", [1]);
+    const eventId = db.addPendingSourceEvent(
+      "source1",
+      PendingEventType.SourceConversationTruncated,
+      { upper_bound: 2 },
+    )!;
+    await expect(db.runPendingSourceCleanup(eventId)).resolves.toBe(1);
+    expect(db.getPendingSourceCleanups()).toHaveLength(0);
+    expect(db.getPendingEvents()).toHaveLength(1);
+
+    db.updateItems({
+      "source1-file-2": mockItemMetadata(
+        "source1-file-2",
+        "source1",
+        "file",
+        2,
+      ),
+    });
+
+    expect(db.getItem("source1-file-2")?.fetch_status).toBe(
+      FetchStatus.ScheduledDeletion,
+    );
+    expect(db.getSourceWithItems("source1").items).toHaveLength(0);
+    expect(
+      db.getItemsToProcess({ messageLimit: 10, fileLimit: 10 }),
+    ).not.toContain("source1-file-2");
+  });
+
   it("pending ItemDeleted event should delete reply", () => {
     db.updateSources({
       source1: mockSourceMetadata("source1"),
@@ -739,11 +1081,7 @@ describe("Datastore Method Tests", () => {
     let sourceWithItems = db.getSourceWithItems("source1");
     expect(sourceWithItems.items.length).toEqual(3);
 
-    db.addPendingSourceEvent(
-      "source1",
-      PendingEventType.SourceConversationTruncated,
-      { upper_bound: 3 },
-    );
+    await completeTruncation("source1", 3);
     sourceWithItems = db.getSourceWithItems("source1");
     expect(sourceWithItems.items.length).toEqual(0);
   });
@@ -763,6 +1101,7 @@ describe("Datastore Method Tests", () => {
       PendingEventType.SourceConversationTruncated,
       { upper_bound: 2 },
     )!;
+    await db.runPendingSourceCleanup(snowflake1);
     let sourceWithItems = db.getSourceWithItems("source1");
     expect(sourceWithItems.items.length).toEqual(0);
 
@@ -1972,11 +2311,7 @@ describe("Datastore Method Tests", () => {
       }
 
       // Delete conversation (not the whole source), covering all 30 items
-      db.addPendingSourceEvent(
-        "source1",
-        PendingEventType.SourceConversationTruncated,
-        { upper_bound: 30 },
-      );
+      await completeTruncation("source1", 30);
 
       // Events purged except the delete event itself
       const events = db.getPendingEvents();

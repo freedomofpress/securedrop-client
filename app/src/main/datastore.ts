@@ -22,6 +22,24 @@ export class Datastore extends DB {
     this.storage = storage;
   }
 
+  private deleteItemFsInBackground(item: Item): void {
+    void this.storage.deleteItemFs(item).catch((error: unknown) => {
+      console.error("Background item filesystem cleanup failed", {
+        item: item.uuid,
+        error,
+      });
+    });
+  }
+
+  private deleteSourceFsInBackground(sourceUuid: string): void {
+    void this.storage.deleteSourceFs(sourceUuid).catch((error: unknown) => {
+      console.error("Background source filesystem cleanup failed", {
+        sourceUuid,
+        error,
+      });
+    });
+  }
+
   async deleteItemsAsync(items: string[]): Promise<Item[]> {
     const deletedItems = super.deleteItems(items);
     // TODO: Consider routing FS deletions to the fetch worker so that FS I/O
@@ -50,7 +68,7 @@ export class Datastore extends DB {
   override updateItems(items: { [uuid: string]: ItemMetadata | null }): Item[] {
     const deletedItems = super.updateItems(items);
     for (const item of deletedItems) {
-      void this.storage.deleteItemFs(item);
+      this.deleteItemFsInBackground(item);
     }
     return deletedItems;
   }
@@ -60,7 +78,7 @@ export class Datastore extends DB {
   }): string[] {
     const deletedSourceUuids = super.updateSources(sources);
     for (const uuid of deletedSourceUuids) {
-      void this.storage.deleteSourceFs(uuid);
+      this.deleteSourceFsInBackground(uuid);
     }
     return deletedSourceUuids;
   }
@@ -79,10 +97,10 @@ export class Datastore extends DB {
     const result = super.updateBatch(batchResponse);
     // Perform all filesystem cleanups as necessary
     for (const item of result.deleted_items) {
-      void this.storage.deleteItemFs(item);
+      this.deleteItemFsInBackground(item);
     }
     for (const uuid of result.deleted_sources) {
-      void this.storage.deleteSourceFs(uuid);
+      this.deleteSourceFsInBackground(uuid);
     }
     return result;
   }
@@ -93,5 +111,31 @@ export class Datastore extends DB {
 
   async deleteItemFs(item: Item): Promise<void> {
     return this.storage.deleteItemFs(item);
+  }
+
+  async runPendingSourceCleanup(snowflakeId: string): Promise<number> {
+    let deletedCount = 0;
+    while (true) {
+      const cleanup = super.getPendingSourceCleanup(snowflakeId);
+      if (!cleanup) {
+        return deletedCount;
+      }
+      for (
+        let i = 0;
+        i < cleanup.itemUuids.length;
+        i += this.DELETE_BATCH_SIZE
+      ) {
+        const batch = cleanup.itemUuids.slice(i, i + this.DELETE_BATCH_SIZE);
+        await Promise.all(
+          batch.map((itemUuid) =>
+            this.storage.deleteItemDirectory(cleanup.sourceUuid, itemUuid),
+          ),
+        );
+      }
+      deletedCount = cleanup.itemUuids.length;
+      if (super.finishPendingSourceCleanup(snowflakeId, cleanup.itemUuids)) {
+        return deletedCount;
+      }
+    }
   }
 }

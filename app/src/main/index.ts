@@ -235,6 +235,11 @@ if (!gotTheLock) {
       if (!result) {
         return;
       }
+      if (result.type === "sourceFetchAborted") {
+        pendingSourceFetchAborts.get(result.requestId)?.();
+        pendingSourceFetchAborts.delete(result.requestId);
+        return;
+      }
       // Check if worker update is Source or Item
       if (result && "messagePreview" in result) {
         mainWindow.webContents.send("source-update", result);
@@ -249,6 +254,10 @@ if (!gotTheLock) {
 
     worker.on("exit", (err) => {
       console.log("Worker exited with code ", err);
+      for (const resolve of pendingSourceFetchAborts.values()) {
+        resolve();
+      }
+      pendingSourceFetchAborts.clear();
     });
 
     worker.on("messageerror", (err) => {
@@ -259,6 +268,8 @@ if (!gotTheLock) {
   }
 
   let fetchWorker: Worker | null = null;
+  const pendingSourceFetchAborts = new Map<string, () => void>();
+  let sourceFetchAbortSequence = 0;
   let authToken: string | null = null;
   let syncLoopTimer: NodeJS.Timeout | null = null;
   let lastHintedRecords: number | undefined;
@@ -271,12 +282,29 @@ if (!gotTheLock) {
     fetchWorker.postMessage({ type: "authedRequest", request: { authToken } });
   }
 
+  function abortSourceFetch(sourceUuid: string): Promise<void> {
+    const worker = fetchWorker;
+    if (!worker) {
+      return Promise.resolve();
+    }
+    sourceFetchAbortSequence += 1;
+    const requestId = sourceFetchAbortSequence.toString();
+    return new Promise((resolve) => {
+      pendingSourceFetchAborts.set(requestId, resolve);
+      worker.postMessage({
+        type: "abortSourceFetch",
+        sourceUuid,
+        requestId,
+      });
+    });
+  }
+
   // This method will be called when Electron has finished
   // initialization and is ready to create browser windows.
   // Some APIs can only be used after this event occurs.
   app
     .whenReady()
-    .then(() => {
+    .then(async () => {
       // Set strict Content Security Policy via HTTP header with nonce
       session.defaultSession.webRequest.onHeadersReceived(
         (details, callback) => {
@@ -493,12 +521,10 @@ if (!gotTheLock) {
         return systemLanguage;
       });
 
-      // Handle cleanup from source event: in cases of deletion or truncation,
-      // we should abort fetches and delete from the fs
+      // Handle cleanup that must precede non-truncation source events.
       async function sourceEventCleanup(
         sourceUuid: string,
         type: PendingEventType,
-        data?: PendingEventData,
       ) {
         // Immediately delete any source files from the fs on pending deletion
         if (type === PendingEventType.SourceDeleted) {
@@ -511,24 +537,27 @@ if (!gotTheLock) {
             });
           }
         }
-        // For truncation, abort in-flight downloads and delete truncated item files from the fs
-        if (type === PendingEventType.SourceConversationTruncated) {
-          // Abort any in-flight downloads for this source in the fetch worker
-          if (fetchWorker) {
-            fetchWorker.postMessage({
-              type: "abortSourceFetch",
-              sourceUuid,
+      }
+
+      async function finishPendingSourceCleanup(
+        sourceUuid: string,
+        snowflakeId: string,
+      ): Promise<void> {
+        await abortSourceFetch(sourceUuid);
+        await db.runPendingSourceCleanup(snowflakeId);
+      }
+
+      async function retryPendingSourceCleanups(): Promise<void> {
+        const cleanups = db.getPendingSourceCleanups();
+        for (const cleanup of cleanups) {
+          try {
+            await finishPendingSourceCleanup(cleanup.sourceUuid, cleanup.id);
+          } catch (error) {
+            console.error("Pending conversation cleanup remains retryable", {
+              sourceUuid: cleanup.sourceUuid,
+              eventId: cleanup.id,
+              error,
             });
-          }
-          if (data?.upper_bound) {
-            const items = db.getSourceWithItems(sourceUuid, {
-              beforeInteractionCount: data?.upper_bound + 1,
-            }).items;
-            const DELETE_BATCH_SIZE = 8;
-            for (let i = 0; i < items.length; i += DELETE_BATCH_SIZE) {
-              const batch = items.slice(i, i + DELETE_BATCH_SIZE);
-              await Promise.all(batch.map((item) => db.deleteItemFs(item)));
-            }
           }
         }
       }
@@ -541,8 +570,17 @@ if (!gotTheLock) {
           type: PendingEventType,
           data?: PendingEventData,
         ): Promise<string | null> => {
-          await sourceEventCleanup(sourceUuid, type, data);
-          return db.addPendingSourceEvent(sourceUuid, type, data);
+          if (type !== PendingEventType.SourceConversationTruncated) {
+            await sourceEventCleanup(sourceUuid, type);
+          }
+          const eventId = db.addPendingSourceEvent(sourceUuid, type, data);
+          if (
+            eventId &&
+            type === PendingEventType.SourceConversationTruncated
+          ) {
+            await finishPendingSourceCleanup(sourceUuid, eventId);
+          }
+          return eventId;
         },
       );
 
@@ -556,16 +594,25 @@ if (!gotTheLock) {
             data?: PendingEventData;
           }>,
         ): Promise<(string | null)[]> => {
-          const EVENT_BATCH_SIZE = 8;
-          for (let i = 0; i < events.length; i += EVENT_BATCH_SIZE) {
-            const batch = events.slice(i, i + EVENT_BATCH_SIZE);
-            await Promise.all(
-              batch.map(({ sourceUuid, type, data }) =>
-                sourceEventCleanup(sourceUuid, type, data),
-              ),
-            );
+          for (const { sourceUuid, type } of events) {
+            if (type !== PendingEventType.SourceConversationTruncated) {
+              await sourceEventCleanup(sourceUuid, type);
+            }
           }
-          return db.addPendingSourceEventBatch(events);
+          const eventIds = db.addPendingSourceEventBatch(events);
+          await Promise.all(
+            events.map(({ sourceUuid, type }, index) => {
+              const eventId = eventIds[index];
+              if (
+                !eventId ||
+                type !== PendingEventType.SourceConversationTruncated
+              ) {
+                return Promise.resolve();
+              }
+              return finishPendingSourceCleanup(sourceUuid, eventId);
+            }),
+          );
+          return eventIds;
         },
       );
 
@@ -595,7 +642,7 @@ if (!gotTheLock) {
           if (type === PendingEventType.ItemDeleted) {
             const item = db.getItem(itemUuid);
             if (item) {
-              db.deleteItemFs(item);
+              await db.deleteItemFs(item);
             }
           }
           return db.addPendingItemEvent(itemUuid, type);
@@ -846,6 +893,8 @@ if (!gotTheLock) {
         },
       );
 
+      await retryPendingSourceCleanups();
+
       const mainWindow = createWindow();
 
       fetchWorker = spawnFetchWorker(mainWindow);
@@ -874,6 +923,7 @@ if (!gotTheLock) {
           if (!authToken) {
             return SyncStatus.FORBIDDEN;
           }
+          await retryPendingSourceCleanups();
           if (shouldSkipSync(db, request.hintedVersion)) {
             console.log(`Already at ${request.hintedVersion}; skipping sync`);
             wakeFetchWorkerIfNeeded();

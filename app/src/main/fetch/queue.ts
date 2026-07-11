@@ -134,22 +134,29 @@ export class TaskQueue {
     }
   }
 
-  abortSourceFetch(sourceUuid: string) {
+  private hasActiveSourceFetch(sourceUuid: string): boolean {
+    return [this.activeDownloads, this.activeDecryptions].some((active) =>
+      [...active.values()].some((entry) => entry.sourceUuid === sourceUuid),
+    );
+  }
+
+  async abortSourceFetch(sourceUuid: string): Promise<void> {
     console.debug(
       "Source has been deleted: aborting downloads + decryptions: ",
       sourceUuid,
     );
-    for (const [itemId, entry] of this.activeDownloads) {
+    for (const entry of this.activeDownloads.values()) {
       if (entry.sourceUuid === sourceUuid) {
         entry.controller.abort();
-        this.activeDownloads.delete(itemId);
       }
     }
-    for (const [itemId, entry] of this.activeDecryptions) {
+    for (const entry of this.activeDecryptions.values()) {
       if (entry.sourceUuid === sourceUuid) {
         entry.controller.abort();
-        this.activeDecryptions.delete(itemId);
       }
+    }
+    while (this.hasActiveSourceFetch(sourceUuid)) {
+      await new Promise((resolve) => setTimeout(resolve, 10));
     }
   }
 
@@ -312,7 +319,9 @@ export class TaskQueue {
       }
 
       // Transition to decrypt phase — the decrypt queue will pick this up on the next refill.
-      db.setDecryptionInProgress(item.id);
+      if (!db.setDecryptionInProgress(item.id)) {
+        return;
+      }
     } finally {
       // After every download tick, post item state to the main thread.
       if (this.port) {
@@ -426,7 +435,9 @@ export class TaskQueue {
       controller: abortController,
     });
     try {
-      db.startDownloadInProgress(item.id);
+      if (!db.startDownloadInProgress(item.id)) {
+        throw new DownloadCancelledError();
+      }
       await this.innerDownload(
         item,
         db,
@@ -606,7 +617,9 @@ export class TaskQueue {
       controller: abortController,
     });
 
-    db.setDecryptionInProgress(item.id);
+    if (!db.setDecryptionInProgress(item.id)) {
+      throw new DownloadCancelledError();
+    }
     try {
       if (metadata.kind === "file") {
         await this.decryptFile(
@@ -693,20 +706,17 @@ export class TaskQueue {
 
       // Re-check: if the item was deleted during decryption, drop the result
       if (!this.isProcessable(item.id, db)) {
-        try {
-          await fs.promises.unlink(finalAbsolutePath);
-        } catch (error) {
-          console.warn(
-            `Failed to clean up decrypted file after deletion: ${error}`,
-          );
-        }
+        await this.storage.deleteItemDirectory(metadata.source, item.id);
         return;
       }
 
       // Get the decrypted file size to display to the user
       const fileStats = await fs.promises.stat(finalAbsolutePath);
       const decryptedSize = fileStats.size;
-      db.completeFileItem(item.id, finalAbsolutePath, decryptedSize);
+      if (!db.completeFileItem(item.id, finalAbsolutePath, decryptedSize)) {
+        await this.storage.deleteItemDirectory(metadata.source, item.id);
+        return;
+      }
       console.log(`Successfully decrypted ${metadata.kind} ${item.id}`);
     } catch (error) {
       if (error instanceof CryptoError) {

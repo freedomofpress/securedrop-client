@@ -21,6 +21,14 @@ const mockProxyStreamRequest = vi.hoisted(() => {
   return vi.fn();
 });
 const MOCK_FILE_CONTENT = vi.hoisted(() => Buffer.from("fake file content"));
+const mockFsPromises = vi.hoisted(() => ({
+  mkdir: vi.fn(),
+  writeFile: vi.fn(),
+  readFile: vi.fn(),
+  unlink: vi.fn(),
+  rm: vi.fn(),
+  stat: vi.fn(() => Promise.resolve({ size: 1024 })),
+}));
 vi.mock("../proxy", async () => {
   const actual = await vi.importActual("../proxy");
   return {
@@ -47,13 +55,7 @@ vi.mock("../crypto", async () => {
 // Mock fs for file operations
 vi.mock("fs", () => ({
   default: {
-    promises: {
-      mkdir: vi.fn(),
-      writeFile: vi.fn(),
-      readFile: vi.fn(),
-      unlink: vi.fn(),
-      stat: vi.fn(() => Promise.resolve({ size: 1024 })),
-    },
+    promises: mockFsPromises,
     createWriteStream: vi.fn(() => new PassThrough()),
     createReadStream: vi.fn(() => Readable.from([MOCK_FILE_CONTENT])),
   },
@@ -62,6 +64,7 @@ vi.mock("fs", () => ({
   mkdtempSync: vi.fn((prefix) => prefix + "XXXXXX"),
   mkdirSync: vi.fn(),
   rmSync: vi.fn(),
+  promises: mockFsPromises,
 }));
 
 // SHA-256 of MOCK_FILE_CONTENT — matches what the mocked createReadStream returns
@@ -78,11 +81,11 @@ function createMockDB() {
     getItemsToProcess: vi.fn(),
     getItem: vi.fn(),
     getSource: vi.fn(),
-    completePlaintextItem: vi.fn(),
-    completeFileItem: vi.fn(),
-    startDownloadInProgress: vi.fn(),
+    completePlaintextItem: vi.fn(() => true),
+    completeFileItem: vi.fn(() => true),
+    startDownloadInProgress: vi.fn(() => true),
     updateDownloadInProgress: vi.fn(() => true),
-    setDecryptionInProgress: vi.fn(),
+    setDecryptionInProgress: vi.fn(() => true),
     setSourceMessagePreview: vi.fn(),
     failDownload: vi.fn(),
     failDecryption: vi.fn(),
@@ -1511,11 +1514,12 @@ describe("TaskQueue - Four-Queue Download and Decryption", () => {
 
       await new Promise((r) => setTimeout(r, 10));
 
-      queue.abortSourceFetch("source1");
+      const abortPromise = queue.abortSourceFetch("source1");
 
       rejectProxy!(new Error("AbortError: The operation was aborted"));
 
       await expect(processPromise).resolves.toBeUndefined();
+      await expect(abortPromise).resolves.toBeUndefined();
     });
 
     it("should not abort downloads for unrelated sources", async () => {
@@ -1541,7 +1545,7 @@ describe("TaskQueue - Four-Queue Download and Decryption", () => {
       queue.authToken = "test-token";
 
       // Abort for a different source
-      queue.abortSourceFetch("source2");
+      await queue.abortSourceFetch("source2");
 
       // Download should still complete normally
       await queue.processDownload({ id: "msg1" }, db);
@@ -1699,6 +1703,68 @@ describe("TaskQueue - Four-Queue Download and Decryption", () => {
 
       expect(mockCrypto.decryptFile).toHaveBeenCalled();
       expect(db.completeFileItem).not.toHaveBeenCalled();
+      expect(fs.promises.rm).toHaveBeenCalledWith(
+        expect.stringContaining("source1/file1"),
+        { recursive: true, force: true },
+      );
+    });
+
+    it("propagates failure to remove a late decrypted file", async () => {
+      const db = createMockDB();
+      const metadata = {
+        kind: "file",
+        source: "source1",
+        size: 1000,
+        uuid: "file1",
+      } as ItemMetadata;
+      db.getItem = vi
+        .fn()
+        .mockReturnValueOnce(
+          mockItem(metadata, FetchStatus.DecryptionInProgress, 0),
+        )
+        .mockReturnValueOnce(
+          mockItem(metadata, FetchStatus.ScheduledDeletion, 0),
+        );
+      mockCrypto.decryptFile.mockResolvedValue(
+        "/tmp/source1/file1/decrypted.txt",
+      );
+      const deletionError = Object.assign(new Error("immutable plaintext"), {
+        code: "EPERM",
+      });
+      mockFsPromises.rm.mockRejectedValueOnce(deletionError);
+
+      const queue = new TaskQueue(db);
+
+      await expect(queue.processDecrypt({ id: "file1" }, db)).rejects.toBe(
+        deletionError,
+      );
+      expect(db.completeFileItem).not.toHaveBeenCalled();
+    });
+
+    it("removes a file if deletion wins after the post-decrypt check", async () => {
+      const db = createMockDB();
+      const metadata = {
+        kind: "file",
+        source: "source1",
+        size: 1000,
+        uuid: "file1",
+      } as ItemMetadata;
+      db.getItem = vi.fn(() =>
+        mockItem(metadata, FetchStatus.DecryptionInProgress, 0),
+      );
+      db.completeFileItem = vi.fn(() => false);
+      mockCrypto.decryptFile.mockResolvedValue(
+        "/tmp/source1/file1/decrypted.txt",
+      );
+
+      const queue = new TaskQueue(db);
+      await queue.processDecrypt({ id: "file1" }, db);
+
+      expect(db.completeFileItem).toHaveBeenCalled();
+      expect(fs.promises.rm).toHaveBeenCalledWith(
+        expect.stringContaining("source1/file1"),
+        { recursive: true, force: true },
+      );
     });
 
     it("should drop retry decryption result if item is deleted during retry", async () => {
@@ -2212,7 +2278,7 @@ describe("TaskQueue - Four-Queue Download and Decryption", () => {
 
       await new Promise((r) => setTimeout(r, 10));
 
-      queue.abortSourceFetch("source1");
+      const abortPromise = queue.abortSourceFetch("source1");
 
       for (const reject of rejects) {
         reject(new Error("AbortError: The operation was aborted"));
@@ -2220,6 +2286,7 @@ describe("TaskQueue - Four-Queue Download and Decryption", () => {
 
       await expect(p1).resolves.toBeUndefined();
       await expect(p2).resolves.toBeUndefined();
+      await expect(abortPromise).resolves.toBeUndefined();
     });
   });
 });
