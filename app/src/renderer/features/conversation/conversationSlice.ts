@@ -28,6 +28,17 @@ const initialState: ConversationState = {
 
 const CONVERSATION_PAGE_SIZE = 100;
 
+const highestLoadedInteractionCount = (items: Item[]) => {
+  let highest = 0;
+  for (const item of items) {
+    const interactionCount = item.data.interaction_count;
+    if (interactionCount !== undefined && interactionCount > highest) {
+      highest = interactionCount;
+    }
+  }
+  return highest;
+};
+
 export const fetchConversation = createAsyncThunk(
   "conversation/fetchConversation",
   async (sourceUuid: string, { dispatch }) => {
@@ -36,18 +47,19 @@ export const fetchConversation = createAsyncThunk(
       { limit: CONVERSATION_PAGE_SIZE },
     );
 
-    // Mark all items in this conversation as seen
-    const maxInteractionCount = sourceWithItems.items.reduce(
-      (max, item) => Math.max(max, item.data.interaction_count ?? 0),
-      0,
-    );
-    if (maxInteractionCount > 0) {
-      const created = await window.electronAPI.addPendingSourceConversationSeen(
-        sourceUuid,
-        maxInteractionCount,
+    if (!sourceWithItems.hasMoreHistoricalItems) {
+      const highestInteractionCount = highestLoadedInteractionCount(
+        sourceWithItems.items,
       );
-      if (created) {
-        dispatch(fetchSources());
+      if (highestInteractionCount > 0) {
+        const created =
+          await window.electronAPI.addPendingSourceConversationSeen(
+            sourceUuid,
+            highestInteractionCount,
+          );
+        if (created) {
+          dispatch(fetchSources());
+        }
       }
     }
 
@@ -72,18 +84,20 @@ export const fetchOlderConversationItems = createAsyncThunk(
       { limit: CONVERSATION_PAGE_SIZE, beforeInteractionCount },
     );
 
-    // Mark all older items in this conversation as seen
-    const maxInteractionCount = sourceWithItems.items.reduce(
-      (max, item) => Math.max(max, item.data.interaction_count ?? 0),
-      0,
-    );
-    if (maxInteractionCount > 0) {
-      const created = await window.electronAPI.addPendingSourceConversationSeen(
-        sourceUuid,
-        maxInteractionCount,
-      );
-      if (created) {
-        dispatch(fetchSources());
+    if (!sourceWithItems.hasMoreHistoricalItems) {
+      const highestInteractionCount = highestLoadedInteractionCount([
+        ...conversation.items,
+        ...sourceWithItems.items,
+      ]);
+      if (highestInteractionCount > 0) {
+        const created =
+          await window.electronAPI.addPendingSourceConversationSeen(
+            sourceUuid,
+            highestInteractionCount,
+          );
+        if (created) {
+          dispatch(fetchSources());
+        }
       }
     }
 
