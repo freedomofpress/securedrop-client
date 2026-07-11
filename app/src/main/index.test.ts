@@ -52,6 +52,7 @@ const testState = vi.hoisted(() => {
           registeredHandlers.set(channel, handler);
         },
       ),
+      on: vi.fn(),
     },
     session: {
       defaultSession: {
@@ -211,6 +212,7 @@ describe("syncMetadata IPC handler", () => {
 
     testState.dialog.showMessageBox.mockClear();
     testState.ipcMain.handle.mockClear();
+    testState.ipcMain.on.mockClear();
     testState.session.defaultSession.webRequest.onHeadersReceived.mockClear();
     testState.optimizer.watchWindowShortcuts.mockClear();
 

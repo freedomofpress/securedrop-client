@@ -213,6 +213,10 @@ describe("journalistsSlice", () => {
         lastFetchTime: null,
         hasMoreHistoricalItems: false,
         olderItemsLoading: false,
+        traversalEpoch: 0,
+        traversalSourceUuid: null,
+        activeConversationRequest: null,
+        activeOlderRequest: null,
       },
       sync: {
         error: null,

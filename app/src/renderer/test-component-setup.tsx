@@ -193,7 +193,10 @@ beforeEach(() => {
           },
         },
       ],
+      hasMoreHistoricalItems: false,
+      paginationGeneration: 0,
     }),
+    getConversationPaginationGeneration: vi.fn().mockReturnValue(0),
     getSourceItemCounts: vi
       .fn()
       .mockResolvedValue({ messages: 0, files: 0, replies: 0 }),
@@ -231,6 +234,7 @@ beforeEach(() => {
     addPendingReplySentEvent: vi.fn().mockResolvedValue(BigInt(456)),
     addPendingItemEvent: vi.fn().mockResolvedValue(BigInt(789)),
     addPendingSourceConversationSeen: vi.fn().mockResolvedValue(null),
+    finalizePendingSourceConversationSeen: vi.fn().mockResolvedValue(false),
     shouldAutoLogin: vi.fn().mockResolvedValue(false),
     clearClipboard: vi.fn().mockResolvedValue(null),
     openFile: vi.fn().mockResolvedValue(undefined),

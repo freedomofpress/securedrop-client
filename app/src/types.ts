@@ -186,6 +186,22 @@ export type SourceWithItems = {
   items: Item[];
   hasMoreHistoricalItems?: boolean;
   lastSeenInteractionCount?: number | null;
+  paginationCursor?: ConversationPaginationCursor;
+  paginationGeneration?: number;
+  paginationRestarted?: boolean;
+};
+
+export type ConversationPaginationCursor = {
+  interactionCount: number | null;
+  itemUuid: string;
+};
+
+export type GetSourceWithItemsOptions = {
+  limit?: number;
+  beforeInteractionCount?: number | null;
+  beforeItemUuid?: string;
+  paginationGeneration?: number;
+  journalistUuid?: string;
 };
 
 export type SourceItemCounts = {

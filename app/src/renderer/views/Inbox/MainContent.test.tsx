@@ -98,12 +98,18 @@ const mockSourceWithItems: SourceWithItems = {
       fetch_status: 3,
     },
   ],
+  hasMoreHistoricalItems: false,
+  paginationGeneration: 0,
 };
 
 describe("MainContent accessibility", () => {
   beforeEach(() => {
     (window as any).electronAPI = {
       getSourceWithItems: vi.fn().mockResolvedValue(null),
+      getConversationPaginationGeneration: vi.fn().mockReturnValue(0),
+      addPendingSourceConversationSeen: vi.fn().mockResolvedValue(null),
+      finalizePendingSourceConversationSeen: vi.fn().mockResolvedValue(false),
+      getSources: vi.fn().mockResolvedValue({}),
       addPendingItemsSeenBatch: vi.fn().mockResolvedValue(undefined),
       getWhistleflowEnabled: vi.fn().mockResolvedValue(false),
     };
@@ -125,6 +131,10 @@ describe("MainContent accessibility", () => {
             lastFetchTime: null,
             hasMoreHistoricalItems: false,
             olderItemsLoading: false,
+            traversalEpoch: 0,
+            traversalSourceUuid: null,
+            activeConversationRequest: null,
+            activeOlderRequest: null,
           },
         },
       },
@@ -140,6 +150,10 @@ describe("MainContent Component", () => {
     // Mock electronAPI
     (window as any).electronAPI = {
       getSourceWithItems: vi.fn().mockResolvedValue(mockSourceWithItems),
+      getConversationPaginationGeneration: vi.fn().mockReturnValue(0),
+      addPendingSourceConversationSeen: vi.fn().mockResolvedValue(null),
+      finalizePendingSourceConversationSeen: vi.fn().mockResolvedValue(false),
+      getSources: vi.fn().mockResolvedValue({}),
       addPendingItemsSeenBatch: vi.fn().mockResolvedValue(undefined),
       getWhistleflowEnabled: vi.fn().mockResolvedValue(false),
     };
@@ -170,6 +184,10 @@ describe("MainContent Component", () => {
             lastFetchTime: null,
             hasMoreHistoricalItems: false,
             olderItemsLoading: false,
+            traversalEpoch: 0,
+            traversalSourceUuid: sourceUuid ?? null,
+            activeConversationRequest: null,
+            activeOlderRequest: null,
           },
         },
       },
@@ -206,6 +224,10 @@ describe("MainContent Component", () => {
               lastFetchTime: Date.now(),
               hasMoreHistoricalItems: false,
               olderItemsLoading: false,
+              traversalEpoch: 0,
+              traversalSourceUuid: "source-1",
+              activeConversationRequest: null,
+              activeOlderRequest: null,
             },
           },
         },
@@ -393,6 +415,10 @@ describe("MainContent Component", () => {
               lastFetchTime: Date.now(),
               hasMoreHistoricalItems: false,
               olderItemsLoading: false,
+              traversalEpoch: 0,
+              traversalSourceUuid: "source-1",
+              activeConversationRequest: null,
+              activeOlderRequest: null,
             },
           },
         },

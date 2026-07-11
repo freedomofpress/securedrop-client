@@ -303,6 +303,10 @@ describe("sourcesSlice", () => {
       lastFetchTime: null,
       hasMoreHistoricalItems: false,
       olderItemsLoading: false,
+      traversalEpoch: 0,
+      traversalSourceUuid: null,
+      activeConversationRequest: null,
+      activeOlderRequest: null,
     };
 
     it("selectSources returns sources map", () => {

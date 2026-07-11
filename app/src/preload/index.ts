@@ -12,6 +12,7 @@ import {
   type LoginResult,
   type SearchResult,
   type FirstRunStatus,
+  type GetSourceWithItemsOptions,
   Item,
   PendingEventType,
   SyncStatus,
@@ -67,15 +68,11 @@ const electronAPI = {
   ),
   getSourceWithItems: logIpcCall<SourceWithItems>(
     "getSourceWithItems",
-    (
-      sourceUuid: string,
-      options?: {
-        limit?: number;
-        beforeInteractionCount?: number;
-        journalistUuid?: string;
-      },
-    ) => ipcRenderer.invoke("getSourceWithItems", sourceUuid, options),
+    (sourceUuid: string, options?: GetSourceWithItemsOptions) =>
+      ipcRenderer.invoke("getSourceWithItems", sourceUuid, options),
   ),
+  getConversationPaginationGeneration: (): number =>
+    ipcRenderer.sendSync("getConversationPaginationGeneration"),
   getSourceItemCounts: logIpcCall<SourceItemCounts>(
     "getSourceItemCounts",
     (sourceUuids: string[]) =>
@@ -125,11 +122,22 @@ const electronAPI = {
   ),
   addPendingSourceConversationSeen: logIpcCall<string | null>(
     "addPendingSourceConversationSeen",
-    (sourceUuid: string, upperBound: number) =>
+    (sourceUuid: string, upperBound: number, requestToken?: string) =>
       ipcRenderer.invoke(
         "addPendingSourceConversationSeen",
         sourceUuid,
         upperBound,
+        requestToken,
+      ),
+  ),
+  finalizePendingSourceConversationSeen: logIpcCall<boolean>(
+    "finalizePendingSourceConversationSeen",
+    (sourceUuid: string, requestToken: string, keep: boolean) =>
+      ipcRenderer.invoke(
+        "finalizePendingSourceConversationSeen",
+        sourceUuid,
+        requestToken,
+        keep,
       ),
   ),
   shouldAutoLogin: logIpcCall<boolean>("shouldAutoLogin", () =>
