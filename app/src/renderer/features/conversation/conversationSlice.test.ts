@@ -1,8 +1,18 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { configureStore } from "@reduxjs/toolkit";
-import { FetchStatus, type SourceWithItems } from "../../../types";
+import fs from "fs";
+import os from "os";
+import path from "path";
+import {
+  FetchStatus,
+  type GetSourceWithItemsOptions,
+  type ItemMetadata,
+  type SourceWithItems,
+} from "../../../types";
+import { Datastore } from "../../../main/datastore";
 import conversationSlice, {
   fetchConversation,
+  fetchOlderConversationItems,
   clearError,
   clearConversation,
   updateItem,
@@ -63,6 +73,8 @@ const mockSourceWithItems: SourceWithItems = {
       fetch_status: 3,
     },
   ],
+  hasMoreHistoricalItems: true,
+  paginationGeneration: 10,
 };
 
 const mockSourceWithItems2: SourceWithItems = {
@@ -97,12 +109,34 @@ const mockSourceWithItems2: SourceWithItems = {
       fetch_status: 3,
     },
   ],
+  hasMoreHistoricalItems: false,
+  paginationGeneration: 10,
+};
+
+function deferred<T>() {
+  let resolve!: (value: T) => void;
+  let reject!: (reason: unknown) => void;
+  const promise = new Promise<T>((resolvePromise, rejectPromise) => {
+    resolve = resolvePromise;
+    reject = rejectPromise;
+  });
+  return { promise, reject, resolve };
+}
+
+const idleTraversalState = {
+  traversalEpoch: 0,
+  traversalSourceUuid: null,
+  activeConversationRequest: null,
+  activeOlderRequest: null,
 };
 
 describe("conversationSlice", () => {
   let store: ReturnType<typeof configureStore>;
   const mockGetSourceWithItems = vi.fn();
   const mockAddPendingSourceConversationSeen = vi.fn();
+  const mockFinalizePendingSourceConversationSeen = vi.fn();
+  const mockGetConversationPaginationGeneration = vi.fn();
+  const mockGetSources = vi.fn();
 
   beforeEach(() => {
     // Create a test store with conversations slice
@@ -119,11 +153,19 @@ describe("conversationSlice", () => {
     (window as any).electronAPI = {
       getSourceWithItems: mockGetSourceWithItems,
       addPendingSourceConversationSeen: mockAddPendingSourceConversationSeen,
+      finalizePendingSourceConversationSeen:
+        mockFinalizePendingSourceConversationSeen,
+      getConversationPaginationGeneration:
+        mockGetConversationPaginationGeneration,
+      getSources: mockGetSources,
     };
 
     // Default mock implementations
     mockGetSourceWithItems.mockResolvedValue(mockSourceWithItems);
     mockAddPendingSourceConversationSeen.mockResolvedValue(null);
+    mockFinalizePendingSourceConversationSeen.mockResolvedValue(false);
+    mockGetConversationPaginationGeneration.mockReturnValue(10);
+    mockGetSources.mockResolvedValue({});
   });
 
   afterEach(() => {
@@ -140,6 +182,7 @@ describe("conversationSlice", () => {
         lastFetchTime: null,
         hasMoreHistoricalItems: false,
         olderItemsLoading: false,
+        ...idleTraversalState,
       });
     });
   });
@@ -154,6 +197,7 @@ describe("conversationSlice", () => {
         lastFetchTime: null,
         hasMoreHistoricalItems: false,
         olderItemsLoading: false,
+        ...idleTraversalState,
       };
 
       const action = clearError();
@@ -175,6 +219,7 @@ describe("conversationSlice", () => {
         lastFetchTime: 123456789,
         hasMoreHistoricalItems: false,
         olderItemsLoading: false,
+        ...idleTraversalState,
       };
 
       const action = clearConversation();
@@ -199,6 +244,11 @@ describe("conversationSlice", () => {
       expect(state.loading).toBe(false);
       expect(state.error).toBeNull();
       expect(state.lastFetchTime).toBeGreaterThan(0);
+      expect(mockAddPendingSourceConversationSeen).toHaveBeenCalledWith(
+        "source-1",
+        2,
+        expect.stringContaining("source-1:1:"),
+      );
     });
 
     it("handles fetch error", async () => {
@@ -239,6 +289,665 @@ describe("conversationSlice", () => {
       // Check loading state is false after completion
       expect((store.getState() as any).conversation.loading).toBe(false);
     });
+
+    it("discards an older navigation response and its seen effects", async () => {
+      const sourceARequest = deferred<SourceWithItems>();
+      mockGetSourceWithItems
+        .mockReturnValueOnce(sourceARequest.promise)
+        .mockResolvedValueOnce(mockSourceWithItems2);
+      mockAddPendingSourceConversationSeen.mockResolvedValue("created");
+
+      const sourceADispatch = (store.dispatch as any)(
+        fetchConversation("source-1"),
+      );
+      await (store.dispatch as any)(fetchConversation("source-2"));
+      mockAddPendingSourceConversationSeen.mockClear();
+      mockGetSources.mockClear();
+
+      sourceARequest.resolve(mockSourceWithItems);
+      await sourceADispatch;
+
+      const state = (store.getState() as any).conversation;
+      expect(state.conversation).toEqual(mockSourceWithItems2);
+      expect(state.traversalSourceUuid).toBe("source-2");
+      expect(mockAddPendingSourceConversationSeen).not.toHaveBeenCalled();
+      expect(mockGetSources).not.toHaveBeenCalled();
+    });
+
+    it("rolls back a seen write completed after navigation", async () => {
+      const seenWrite = deferred<string | null>();
+      mockGetSourceWithItems.mockImplementation((sourceUuid: string) =>
+        Promise.resolve(
+          sourceUuid === "source-1"
+            ? mockSourceWithItems
+            : mockSourceWithItems2,
+        ),
+      );
+      mockAddPendingSourceConversationSeen.mockImplementation(
+        (sourceUuid: string) =>
+          sourceUuid === "source-1" ? seenWrite.promise : Promise.resolve(null),
+      );
+
+      const staleDispatch = (store.dispatch as any)(
+        fetchConversation("source-1"),
+      );
+      await vi.waitFor(() => {
+        expect(mockAddPendingSourceConversationSeen).toHaveBeenCalled();
+      });
+      await (store.dispatch as any)(fetchConversation("source-2"));
+      mockGetSources.mockClear();
+
+      seenWrite.resolve("stale-seen-id");
+      await staleDispatch;
+
+      const staleToken = mockAddPendingSourceConversationSeen.mock.calls[0][2];
+      expect(mockFinalizePendingSourceConversationSeen).toHaveBeenCalledWith(
+        "source-1",
+        staleToken,
+        false,
+      );
+      expect(mockGetSources).not.toHaveBeenCalled();
+      const state = (store.getState() as any).conversation;
+      expect(state.conversation).toEqual(mockSourceWithItems2);
+      expect(state.loading).toBe(false);
+    });
+
+    it("refreshes from a seen event adopted by the current request", async () => {
+      const staleSeenWrite = deferred<string | null>();
+      mockAddPendingSourceConversationSeen
+        .mockReturnValueOnce(staleSeenWrite.promise)
+        .mockResolvedValueOnce("adopted-seen-id");
+
+      const staleDispatch = (store.dispatch as any)(
+        fetchConversation("source-1"),
+      );
+      await vi.waitFor(() => {
+        expect(mockAddPendingSourceConversationSeen).toHaveBeenCalledTimes(1);
+      });
+      const currentDispatch = (store.dispatch as any)(
+        fetchConversation("source-1"),
+      );
+      await currentDispatch;
+
+      expect(mockGetSources).toHaveBeenCalledTimes(1);
+      const currentToken =
+        mockAddPendingSourceConversationSeen.mock.calls[1][2];
+      expect(mockFinalizePendingSourceConversationSeen).toHaveBeenCalledWith(
+        "source-1",
+        currentToken,
+        true,
+      );
+
+      staleSeenWrite.resolve("stale-seen-id");
+      await staleDispatch;
+
+      const staleToken = mockAddPendingSourceConversationSeen.mock.calls[0][2];
+      expect(mockFinalizePendingSourceConversationSeen).toHaveBeenCalledWith(
+        "source-1",
+        staleToken,
+        false,
+      );
+      const state = (store.getState() as any).conversation;
+      expect(state.conversation).toEqual(mockSourceWithItems);
+      expect(state.loading).toBe(false);
+    });
+
+    it("binds initial results to the captured epoch when request IDs repeat", async () => {
+      const stalePage = deferred<SourceWithItems>();
+      const currentPage = deferred<SourceWithItems>();
+      mockGetSourceWithItems
+        .mockReturnValueOnce(stalePage.promise)
+        .mockReturnValueOnce(currentPage.promise);
+      const originalRandom = Math.random;
+      Math.random = () => 0;
+      try {
+        const staleDispatch = (store.dispatch as any)(
+          fetchConversation("source-1"),
+        );
+        const currentDispatch = (store.dispatch as any)(
+          fetchConversation("source-1"),
+        );
+        expect(staleDispatch.requestId).toBe(currentDispatch.requestId);
+
+        stalePage.resolve({
+          ...mockSourceWithItems,
+          data: {
+            ...mockSourceWithItems.data,
+            journalist_designation: "stale",
+          },
+        });
+        await staleDispatch;
+        currentPage.resolve({
+          ...mockSourceWithItems,
+          data: {
+            ...mockSourceWithItems.data,
+            journalist_designation: "current",
+          },
+        });
+        await currentDispatch;
+
+        const state = (store.getState() as any).conversation;
+        expect(state.conversation.data.journalist_designation).toBe("current");
+        expect(state.activeConversationRequest).toBeNull();
+        expect(state.loading).toBe(false);
+        expect(state.traversalEpoch).toBe(2);
+        expect(mockAddPendingSourceConversationSeen).toHaveBeenCalledTimes(1);
+      } finally {
+        Math.random = originalRandom;
+      }
+    });
+
+    it("re-reads an initial page changed before renderer fulfillment", async () => {
+      const staleRead = deferred<SourceWithItems>();
+      const currentPage: SourceWithItems = {
+        ...mockSourceWithItems,
+        items: [mockSourceWithItems.items[1]],
+        paginationGeneration: 11,
+      };
+      mockGetSourceWithItems
+        .mockReturnValueOnce(staleRead.promise)
+        .mockResolvedValueOnce(currentPage);
+      mockGetConversationPaginationGeneration.mockReturnValue(11);
+
+      const dispatch = (store.dispatch as any)(fetchConversation("source-1"));
+      staleRead.resolve(mockSourceWithItems);
+      await dispatch;
+
+      expect(mockGetSourceWithItems).toHaveBeenCalledTimes(2);
+      expect(mockAddPendingSourceConversationSeen).toHaveBeenCalledTimes(1);
+      const state = (store.getState() as any).conversation;
+      expect(state.conversation).toEqual(currentPage);
+      expect(state.loading).toBe(false);
+    });
+
+    it("removes a real seen event written after navigation", async () => {
+      const dbDir = fs.mkdtempSync(path.join(os.tmpdir(), "seen-race-"));
+      const realDb = new Datastore(
+        {} as never,
+        {
+          deleteItemFs: async () => undefined,
+          deleteSourceFs: async () => undefined,
+        } as never,
+        dbDir,
+      );
+      const sourceA = "10000000-0000-4000-8000-000000000000";
+      const sourceB = "20000000-0000-4000-8000-000000000000";
+      const itemUuid = "30000000-0000-4000-8000-000000000001";
+      realDb.updateSources({
+        [sourceA]: { ...mockSourceWithItems.data, uuid: sourceA },
+        [sourceB]: { ...mockSourceWithItems2.data, uuid: sourceB },
+      });
+      realDb.updateItems({
+        [itemUuid]: {
+          interaction_count: 1,
+          is_read: false,
+          kind: "message",
+          seen_by: [],
+          size: 1,
+          source: sourceA,
+          uuid: itemUuid,
+        },
+      });
+      const seenStarted = deferred<void>();
+      const releaseSeen = deferred<void>();
+      let refreshes = 0;
+      (window as any).electronAPI = {
+        addPendingSourceConversationSeen: async (
+          sourceUuid: string,
+          upperBound: number,
+          token: string,
+        ) => {
+          if (sourceUuid === sourceA) {
+            seenStarted.resolve();
+            await releaseSeen.promise;
+          }
+          return realDb.addPendingSourceConversationSeen(
+            sourceUuid,
+            upperBound,
+            token,
+          );
+        },
+        finalizePendingSourceConversationSeen: async (
+          sourceUuid: string,
+          token: string,
+          keep: boolean,
+        ) =>
+          realDb.finalizePendingSourceConversationSeen(sourceUuid, token, keep),
+        getConversationPaginationGeneration: () =>
+          realDb.getConversationPaginationGeneration(),
+        getSourceWithItems: async (
+          sourceUuid: string,
+          options?: GetSourceWithItemsOptions,
+        ) => realDb.getSourceWithItems(sourceUuid, options),
+        getSources: async () => {
+          refreshes += 1;
+          return {};
+        },
+      };
+
+      try {
+        const staleDispatch = (store.dispatch as any)(
+          fetchConversation(sourceA),
+        );
+        await seenStarted.promise;
+        await (store.dispatch as any)(fetchConversation(sourceB));
+        releaseSeen.resolve();
+        await staleDispatch;
+
+        const seenForA = realDb
+          .getPendingEvents()
+          .filter(
+            (event) =>
+              event.type === "source_conversation_seen" &&
+              "source_uuid" in event.target &&
+              event.target.source_uuid === sourceA,
+          );
+        expect(seenForA).toHaveLength(0);
+        expect(refreshes).toBe(0);
+        expect((store.getState() as any).conversation.conversation.uuid).toBe(
+          sourceB,
+        );
+      } finally {
+        realDb.close();
+      }
+    });
+  });
+
+  describe("fetchOlderConversationItems async thunk", () => {
+    const olderItem = {
+      ...mockSourceWithItems.items[0],
+      uuid: "item-0",
+      data: {
+        ...mockSourceWithItems.items[0].data,
+        uuid: "item-0",
+        interaction_count: 0,
+      },
+    };
+    const olderPage: SourceWithItems = {
+      ...mockSourceWithItems,
+      items: [olderItem],
+      hasMoreHistoricalItems: false,
+      paginationGeneration: 10,
+    };
+
+    it("merges a successful page and updates hasMore", async () => {
+      await (store.dispatch as any)(fetchConversation("source-1"));
+      mockGetSourceWithItems.mockClear();
+      mockGetSourceWithItems.mockResolvedValue(olderPage);
+
+      const action = await (store.dispatch as any)(
+        fetchOlderConversationItems("source-1"),
+      );
+
+      expect(mockGetSourceWithItems).toHaveBeenCalledWith("source-1", {
+        limit: 100,
+        beforeInteractionCount: 1,
+        beforeItemUuid: "item-1",
+        paginationGeneration: 10,
+      });
+      expect(action.payload.request.sourceUuid).toBe("source-1");
+      const state = (store.getState() as any).conversation;
+      expect(state.conversation.items.map((item: any) => item.uuid)).toEqual([
+        "item-0",
+        "item-1",
+        "item-2",
+      ]);
+      expect(state.hasMoreHistoricalItems).toBe(false);
+      expect(state.conversation.hasMoreHistoricalItems).toBe(false);
+      expect(state.olderItemsLoading).toBe(false);
+      expect(mockAddPendingSourceConversationSeen).toHaveBeenCalledTimes(1);
+    });
+
+    it("discards a stale fulfillment after switching sources", async () => {
+      await (store.dispatch as any)(fetchConversation("source-1"));
+      mockGetSourceWithItems.mockClear();
+      mockAddPendingSourceConversationSeen.mockResolvedValue("created");
+      const sourceARequest = deferred<SourceWithItems>();
+      mockGetSourceWithItems
+        .mockReturnValueOnce(sourceARequest.promise)
+        .mockResolvedValueOnce(mockSourceWithItems2);
+
+      const sourceADispatch = (store.dispatch as any)(
+        fetchOlderConversationItems("source-1"),
+      );
+      await (store.dispatch as any)(fetchConversation("source-2"));
+      mockAddPendingSourceConversationSeen.mockClear();
+      mockGetSources.mockClear();
+      sourceARequest.resolve(olderPage);
+      await sourceADispatch;
+
+      const state = (store.getState() as any).conversation;
+      expect(state.conversation).toEqual(mockSourceWithItems2);
+      expect(state.conversation.items.map((item: any) => item.uuid)).toEqual([
+        "item-3",
+      ]);
+      expect(state.hasMoreHistoricalItems).toBe(false);
+      expect(state.olderItemsLoading).toBe(false);
+      expect(mockAddPendingSourceConversationSeen).not.toHaveBeenCalled();
+      expect(mockGetSources).not.toHaveBeenCalled();
+    });
+
+    it("discards an A to B to A page without clearing the new request", async () => {
+      await (store.dispatch as any)(fetchConversation("source-1"));
+      mockGetSourceWithItems.mockClear();
+      const staleRequest = deferred<SourceWithItems>();
+      const currentRequest = deferred<SourceWithItems>();
+      const currentSourceA = {
+        ...mockSourceWithItems,
+        paginationGeneration: 30,
+      };
+      const currentOlderPage = {
+        ...olderPage,
+        paginationGeneration: 30,
+      };
+      mockGetSourceWithItems
+        .mockReturnValueOnce(staleRequest.promise)
+        .mockResolvedValueOnce(mockSourceWithItems2)
+        .mockResolvedValueOnce(currentSourceA)
+        .mockReturnValueOnce(currentRequest.promise);
+
+      const staleDispatch = (store.dispatch as any)(
+        fetchOlderConversationItems("source-1"),
+      );
+      await (store.dispatch as any)(fetchConversation("source-2"));
+      mockGetConversationPaginationGeneration.mockReturnValue(30);
+      await (store.dispatch as any)(fetchConversation("source-1"));
+      const currentDispatch = (store.dispatch as any)(
+        fetchOlderConversationItems("source-1"),
+      );
+      mockAddPendingSourceConversationSeen.mockClear();
+      mockGetSources.mockClear();
+
+      staleRequest.resolve(olderPage);
+      await staleDispatch;
+
+      let state = (store.getState() as any).conversation;
+      expect(state.conversation).toEqual(currentSourceA);
+      expect(state.olderItemsLoading).toBe(true);
+      expect(state.activeOlderRequest).not.toBeNull();
+      expect(mockAddPendingSourceConversationSeen).not.toHaveBeenCalled();
+      expect(mockGetSources).not.toHaveBeenCalled();
+
+      currentRequest.resolve(currentOlderPage);
+      await currentDispatch;
+      state = (store.getState() as any).conversation;
+      expect(state.conversation.items.map((item: any) => item.uuid)).toEqual([
+        "item-0",
+        "item-1",
+        "item-2",
+      ]);
+      expect(state.conversation.paginationGeneration).toBe(30);
+      expect(state.olderItemsLoading).toBe(false);
+    });
+
+    it("preserves hasMore when the request is rejected", async () => {
+      await (store.dispatch as any)(fetchConversation("source-1"));
+      mockGetSourceWithItems.mockRejectedValue(new Error("IPC failed"));
+
+      await (store.dispatch as any)(fetchOlderConversationItems("source-1"));
+
+      const state = (store.getState() as any).conversation;
+      expect(state.conversation).toEqual(mockSourceWithItems);
+      expect(state.hasMoreHistoricalItems).toBe(true);
+      expect(state.olderItemsLoading).toBe(false);
+    });
+
+    it("discards a stale rejection after switching sources", async () => {
+      await (store.dispatch as any)(fetchConversation("source-1"));
+      mockGetSourceWithItems.mockClear();
+      const sourceARequest = deferred<SourceWithItems>();
+      mockGetSourceWithItems
+        .mockReturnValueOnce(sourceARequest.promise)
+        .mockResolvedValueOnce(mockSourceWithItems2);
+
+      const sourceADispatch = (store.dispatch as any)(
+        fetchOlderConversationItems("source-1"),
+      );
+      await (store.dispatch as any)(fetchConversation("source-2"));
+      sourceARequest.reject(new Error("source A failed"));
+      await sourceADispatch;
+
+      const state = (store.getState() as any).conversation;
+      expect(state.conversation).toEqual(mockSourceWithItems2);
+      expect(state.hasMoreHistoricalItems).toBe(false);
+      expect(state.olderItemsLoading).toBe(false);
+    });
+
+    it("invalidates an older request when the conversation is cleared", async () => {
+      await (store.dispatch as any)(fetchConversation("source-1"));
+      const request = deferred<SourceWithItems>();
+      mockGetSourceWithItems.mockReturnValue(request.promise);
+
+      const dispatch = (store.dispatch as any)(
+        fetchOlderConversationItems("source-1"),
+      );
+      store.dispatch(clearConversation());
+      request.resolve(olderPage);
+      await dispatch;
+
+      const state = (store.getState() as any).conversation;
+      expect(state.conversation).toBeNull();
+      expect(state.olderItemsLoading).toBe(false);
+      expect(state.activeOlderRequest).toBeNull();
+      expect(state.traversalSourceUuid).toBeNull();
+    });
+
+    it("suppresses a duplicate dispatch while a page is pending", async () => {
+      await (store.dispatch as any)(fetchConversation("source-1"));
+      mockGetSourceWithItems.mockClear();
+      const request = deferred<SourceWithItems>();
+      mockGetSourceWithItems.mockReturnValue(request.promise);
+
+      const firstDispatch = (store.dispatch as any)(
+        fetchOlderConversationItems("source-1"),
+      );
+      const duplicateAction = await (store.dispatch as any)(
+        fetchOlderConversationItems("source-1"),
+      );
+
+      expect(mockGetSourceWithItems).toHaveBeenCalledTimes(1);
+      expect(duplicateAction.meta.condition).toBe(true);
+      request.resolve(olderPage);
+      await firstDispatch;
+      const state = (store.getState() as any).conversation;
+      expect(state.conversation.items.map((item: any) => item.uuid)).toEqual([
+        "item-0",
+        "item-1",
+        "item-2",
+      ]);
+      expect(state.hasMoreHistoricalItems).toBe(false);
+    });
+
+    it("replaces the traversal when the datastore generation changes", async () => {
+      await (store.dispatch as any)(fetchConversation("source-1"));
+      const restartedPage: SourceWithItems = {
+        ...mockSourceWithItems,
+        items: [olderItem],
+        hasMoreHistoricalItems: true,
+        paginationGeneration: 11,
+        paginationRestarted: true,
+      };
+      mockGetSourceWithItems.mockResolvedValue(restartedPage);
+      mockGetConversationPaginationGeneration.mockReturnValue(11);
+
+      await (store.dispatch as any)(fetchOlderConversationItems("source-1"));
+
+      const state = (store.getState() as any).conversation;
+      expect(state.conversation).toEqual(restartedPage);
+      expect(state.hasMoreHistoricalItems).toBe(true);
+      expect(state.olderItemsLoading).toBe(false);
+    });
+
+    it("re-reads a page changed after its database read", async () => {
+      await (store.dispatch as any)(fetchConversation("source-1"));
+      mockGetSourceWithItems.mockClear();
+      const staleRead = deferred<SourceWithItems>();
+      const restartedPage: SourceWithItems = {
+        ...mockSourceWithItems,
+        items: [mockSourceWithItems.items[1]],
+        hasMoreHistoricalItems: true,
+        paginationGeneration: 11,
+        paginationRestarted: true,
+      };
+      mockGetSourceWithItems
+        .mockReturnValueOnce(staleRead.promise)
+        .mockResolvedValueOnce(restartedPage);
+
+      const dispatch = (store.dispatch as any)(
+        fetchOlderConversationItems("source-1"),
+      );
+      mockGetConversationPaginationGeneration.mockReturnValue(11);
+      staleRead.resolve(olderPage);
+      await dispatch;
+
+      expect(mockGetSourceWithItems).toHaveBeenCalledTimes(2);
+      const state = (store.getState() as any).conversation;
+      expect(state.conversation).toEqual(restartedPage);
+      expect(state.hasMoreHistoricalItems).toBe(true);
+      expect(state.olderItemsLoading).toBe(false);
+    });
+
+    it("rejects a real SQLite page mutated after read", async () => {
+      const dbDir = fs.mkdtempSync(path.join(os.tmpdir(), "pagination-race-"));
+      const realDb = new Datastore(
+        {} as never,
+        {
+          deleteItemFs: async () => undefined,
+          deleteSourceFs: async () => undefined,
+        } as never,
+        dbDir,
+      );
+      const sourceUuid = "10000000-0000-4000-8000-000000000000";
+      const itemUuid = (index: number) =>
+        `30000000-0000-4000-8000-${index.toString().padStart(12, "0")}`;
+      const items: Record<string, ItemMetadata> = {};
+      for (let index = 1; index <= 151; index += 1) {
+        const uuid = itemUuid(index);
+        items[uuid] = {
+          interaction_count: 100,
+          is_read: false,
+          kind: "message",
+          seen_by: [],
+          size: 1,
+          source: sourceUuid,
+          uuid,
+        };
+      }
+      realDb.updateSources({
+        [sourceUuid]: { ...mockSourceWithItems.data, uuid: sourceUuid },
+      });
+      realDb.updateItems(items);
+      const held = deferred<SourceWithItems>();
+      let holdOlderPage = false;
+      let stalePage: SourceWithItems | undefined;
+      (window as any).electronAPI = {
+        addPendingSourceConversationSeen: async () => null,
+        finalizePendingSourceConversationSeen: async () => false,
+        getConversationPaginationGeneration: () =>
+          realDb.getConversationPaginationGeneration(),
+        getSourceWithItems: async (
+          requestedSourceUuid: string,
+          options?: GetSourceWithItemsOptions,
+        ) => {
+          const page = realDb.getSourceWithItems(requestedSourceUuid, options);
+          if (holdOlderPage && options?.beforeItemUuid !== undefined) {
+            holdOlderPage = false;
+            stalePage = page;
+            return held.promise;
+          }
+          return page;
+        },
+        getSources: async () => ({}),
+      };
+
+      try {
+        await (store.dispatch as any)(fetchConversation(sourceUuid));
+        holdOlderPage = true;
+        const olderDispatch = (store.dispatch as any)(
+          fetchOlderConversationItems(sourceUuid),
+        );
+        expect(stalePage?.items).toHaveLength(51);
+        const deletedUuid = stalePage!.items[0].uuid;
+        realDb.updateItems({ [deletedUuid]: null });
+        const currentGeneration = realDb.getConversationPaginationGeneration();
+
+        held.resolve(stalePage!);
+        await olderDispatch;
+
+        const state = (store.getState() as any).conversation;
+        expect(state.conversation.paginationGeneration).toBe(currentGeneration);
+        expect(
+          state.conversation.items.some(
+            (item: { uuid: string }) => item.uuid === deletedUuid,
+          ),
+        ).toBe(false);
+        expect(state.conversation.items).toHaveLength(100);
+        expect(state.hasMoreHistoricalItems).toBe(true);
+      } finally {
+        realDb.close();
+      }
+    });
+
+    it("converges after repeated generation changes become quiescent", async () => {
+      await (store.dispatch as any)(fetchConversation("source-1"));
+      mockGetSourceWithItems.mockClear();
+      const restartAt11: SourceWithItems = {
+        ...olderPage,
+        paginationGeneration: 11,
+        paginationRestarted: true,
+      };
+      const restartAt12: SourceWithItems = {
+        ...olderPage,
+        paginationGeneration: 12,
+        paginationRestarted: true,
+      };
+      mockGetSourceWithItems
+        .mockResolvedValueOnce(olderPage)
+        .mockResolvedValueOnce(restartAt11)
+        .mockResolvedValueOnce(restartAt12);
+      mockGetConversationPaginationGeneration
+        .mockReturnValueOnce(11)
+        .mockReturnValueOnce(12)
+        .mockReturnValue(12);
+
+      await (store.dispatch as any)(fetchOlderConversationItems("source-1"));
+
+      expect(mockGetSourceWithItems).toHaveBeenCalledTimes(3);
+      const state = (store.getState() as any).conversation;
+      expect(state.conversation).toEqual(restartAt12);
+      expect(state.olderItemsLoading).toBe(false);
+    });
+
+    it("discards a non-restart page from a different generation", async () => {
+      await (store.dispatch as any)(fetchConversation("source-1"));
+      mockGetSourceWithItems.mockResolvedValue({
+        ...olderPage,
+        paginationGeneration: 11,
+      });
+      mockGetConversationPaginationGeneration.mockReturnValue(11);
+
+      await (store.dispatch as any)(fetchOlderConversationItems("source-1"));
+
+      const state = (store.getState() as any).conversation;
+      expect(state.conversation).toEqual(mockSourceWithItems);
+      expect(state.hasMoreHistoricalItems).toBe(true);
+      expect(state.olderItemsLoading).toBe(false);
+    });
+
+    it("discards a page whose returned source differs from the request", async () => {
+      await (store.dispatch as any)(fetchConversation("source-1"));
+      mockGetSourceWithItems.mockResolvedValue({
+        ...olderPage,
+        uuid: "source-2",
+      });
+
+      await (store.dispatch as any)(fetchOlderConversationItems("source-1"));
+
+      const state = (store.getState() as any).conversation;
+      expect(state.conversation).toEqual(mockSourceWithItems);
+      expect(state.hasMoreHistoricalItems).toBe(true);
+      expect(state.olderItemsLoading).toBe(false);
+    });
   });
 
   describe("selectors", () => {
@@ -271,6 +980,7 @@ describe("conversationSlice", () => {
         lastFetchTime: 123456789,
         hasMoreHistoricalItems: false,
         olderItemsLoading: false,
+        ...idleTraversalState,
       },
       sync: {
         error: null,
@@ -404,6 +1114,7 @@ describe("conversationSlice", () => {
       lastFetchTime: null,
       hasMoreHistoricalItems: false,
       olderItemsLoading: false,
+      ...idleTraversalState,
     };
 
     it("does not resurrect a Cancelled item", () => {

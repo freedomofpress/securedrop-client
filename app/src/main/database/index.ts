@@ -32,6 +32,8 @@ import {
   FirstRunStatus,
   PendingEventData,
   SourceItemCounts,
+  GetSourceWithItemsOptions,
+  ConversationPaginationCursor,
 } from "../../types";
 import { Crypto } from "../crypto";
 import { Search } from "./search";
@@ -44,6 +46,23 @@ export const DEFAULT_PENDING_EVENTS_LIMIT = 20;
 
 interface KeyObject {
   [key: string]: object;
+}
+
+interface PaginationItemRow extends ItemRow {
+  interaction_count: number | null;
+}
+
+interface SourceItemsPage {
+  itemRows: PaginationItemRow[];
+  hasMoreHistoricalItems: boolean;
+  paginationCursor: ConversationPaginationCursor | undefined;
+  paginationGeneration: number;
+  paginationRestarted: boolean;
+}
+
+interface PendingConversationSeenRollback {
+  createdSnowflakeId: string;
+  previousEvent: { snowflake_id: string; data: string } | undefined;
 }
 
 const sortKeys = (_: string, value: KeyObject) =>
@@ -75,94 +94,107 @@ export class DB {
   private firstRunStatus: FirstRunStatus = null;
 
   // Prepared statements
-  private selectVersion: Statement<[], { version: string }>;
-  private insertVersion: Statement<[string], void>;
+  private selectVersion!: Statement<[], { version: string }>;
+  private insertVersion!: Statement<[string], void>;
+  private selectPaginationGeneration!: Statement<[], { generation: number }>;
 
-  private selectAllSourceVersion: Statement<
+  private selectAllSourceVersion!: Statement<
     [],
     { uuid: string; version: string }
   >;
-  private selectUnprojectedSourceVersion: Statement<
+  private selectUnprojectedSourceVersion!: Statement<
     { uuid: string },
     { version: string }
   >;
-  private upsertSource: Statement<
+  private upsertSource!: Statement<
     { uuid: string; data: string; version: string },
     void
   >;
-  private deleteSource: Statement<{ uuid: string }, void>;
+  private deleteSource!: Statement<{ uuid: string }, void>;
 
-  private selectAllItemVersion: Statement<
+  private selectAllItemVersion!: Statement<
     [],
     { uuid: string; version: string }
   >;
-  private selectUnprojectedItemVersion: Statement<
+  private selectUnprojectedItemVersion!: Statement<
     { uuid: string },
     { version: string }
   >;
-  private selectMessageItemsProcessable: Statement<
+  private selectMessageItemsProcessable!: Statement<
     { limit: number },
     { uuid: string }
   >;
-  private selectFileItemsProcessable: Statement<
+  private selectFileItemsProcessable!: Statement<
     { limit: number },
     { uuid: string }
   >;
-  private deleteUnprojectedItemsBySource: Statement<
+  private deleteUnprojectedItemsBySource!: Statement<
     { source_uuid: string },
     void
   >;
-  private upsertItem: Statement<
+  private upsertItem!: Statement<
     { uuid: string; data: string; version: string },
     void
   >;
-  private deleteItem: Statement<{ uuid: string }, void>;
-  private deleteItemMany: Statement<{ uuids_json: string }, void>;
-  private updateItemFetchStatus: Statement<{
+  private deleteItem!: Statement<{ uuid: string }, void>;
+  private deleteItemMany!: Statement<{ uuids_json: string }, void>;
+  private updateItemFetchStatus!: Statement<{
     uuid: string;
     fetch_status: number;
   }>;
-  private updateItemFetchStatusWithReset: Statement<{
+  private updateItemFetchStatusWithReset!: Statement<{
     uuid: string;
     fetch_status: number;
   }>;
-  private updateItemsFetchStatusBySource: Statement<{
+  private updateItemsFetchStatusBySource!: Statement<{
     source_uuid: string;
     fetch_status: number;
   }>;
-  private updateItemsFetchStatusBySourceUpTo: Statement<{
+  private updateItemsFetchStatusBySourceUpTo!: Statement<{
     source_uuid: string;
     upper_bound: number;
     fetch_status: number;
   }>;
-  private selectItem: Statement<{ uuid: string }, ItemRow>;
-  private selectItemMany: Statement<{ uuids_json: string }, ItemRow>;
+  private selectItem!: Statement<{ uuid: string }, ItemRow>;
+  private selectItemMany!: Statement<{ uuids_json: string }, ItemRow>;
 
-  private selectAllJournalistVersion: Statement<
+  private selectAllJournalistVersion!: Statement<
     [],
     { uuid: string; version: string }
   >;
-  private upsertJournalist: Statement<
+  private upsertJournalist!: Statement<
     { uuid: string; data: string; version: string },
     void
   >;
-  private selectJournalist: Statement<{ uuid: string }, JournalistRow>;
+  private selectJournalist!: Statement<{ uuid: string }, JournalistRow>;
 
-  private deleteJournalist: Statement<{ uuid: string }, void>;
+  private deleteJournalist!: Statement<{ uuid: string }, void>;
 
-  private selectAllSources: Statement<[], SourceRow>;
-  private selectSourceById: Statement<[string], SourceRow>;
-  private selectItemsBySourceId: Statement<[string, number], ItemRow>;
-  private selectItemsBySourceIdBefore: Statement<
-    [string, number, number],
-    ItemRow
+  private selectAllSources!: Statement<[], SourceRow>;
+  private selectSourceById!: Statement<[string], SourceRow>;
+  private selectItemsBySourceId!: Statement<
+    [string, number],
+    PaginationItemRow
   >;
-  private selectItemCountsBySourceUuids: Statement<
+  private selectItemsBySourceIdBefore!: Statement<
+    [string, number, number],
+    PaginationItemRow
+  >;
+  private selectItemsBySourceIdBeforeCursor!: Statement<
+    {
+      source_uuid: string;
+      before_interaction_count: number | null;
+      before_item_uuid: string;
+      limit: number;
+    },
+    PaginationItemRow
+  >;
+  private selectItemCountsBySourceUuids!: Statement<
     { uuids_json: string },
     { messages: number; files: number; replies: number }
   >;
-  private selectAllJournalists: Statement<[], JournalistRow>;
-  private insertSourcePendingEvent: Statement<
+  private selectAllJournalists!: Statement<[], JournalistRow>;
+  private insertSourcePendingEvent!: Statement<
     {
       snowflake_id: string;
       source_uuid: string;
@@ -171,7 +203,7 @@ export class DB {
     },
     void
   >;
-  private insertItemPendingEvent: Statement<
+  private insertItemPendingEvent!: Statement<
     {
       snowflake_id: string;
       item_uuid?: string;
@@ -180,28 +212,33 @@ export class DB {
     },
     void
   >;
-  private selectSourceConversationSeenEvent: Statement<
+  private selectSourceConversationSeenEvent!: Statement<
     { source_uuid: string },
     { snowflake_id: string; data: string }
   >;
-  private selectUnprojectedUnseenItemsCount: Statement<
+  private selectUnprojectedUnseenItemsCount!: Statement<
     { source_uuid: string; upper_bound: number },
     { count: number }
   >;
-  private deletePendingEvent: Statement<{ snowflake_id: string }, void>;
-  private incrementPendingEventRetry: Statement<
+  private deletePendingEvent!: Statement<{ snowflake_id: string }, void>;
+  private incrementPendingEventRetry!: Statement<
     { snowflake_id: string; status: number },
     void
   >;
-  private setPendingEventStatus: Statement<
+  private setPendingEventStatus!: Statement<
     { snowflake_id: string; status: number },
     void
   >;
-  private selectPendingEvents: Statement<[{ limit: number }], PendingEventRow>;
-  private deletePendingEventsBySourceScope: Statement<
+  private selectPendingEvents!: Statement<[{ limit: number }], PendingEventRow>;
+  private deletePendingEventsBySourceScope!: Statement<
     { source_uuid: string },
     void
   >;
+  private pendingSeenOwners = new Map<string, string>();
+  private pendingSeenRollbacks = new Map<
+    string,
+    PendingConversationSeenRollback | null
+  >();
 
   protected constructor(crypto: Crypto, dbDir?: string) {
     this.crypto = crypto;
@@ -265,32 +302,40 @@ export class DB {
     // Initialize search index
     this.searchIndex = new Search(db);
 
-    // Prepare statements
-    this.selectVersion = this.db.prepare("SELECT version FROM state");
-    this.insertVersion = this.db.prepare(
+    this.prepareStateStatements(db);
+    this.prepareItemStatements(db);
+    this.prepareJournalistStatements(db);
+    this.prepareConversationStatements(db);
+    this.preparePendingEventStatements(db);
+  }
+
+  private prepareStateStatements(db: Database.Database): void {
+    this.selectVersion = db.prepare("SELECT version FROM state");
+    this.insertVersion = db.prepare(
       "INSERT INTO state_history (version) VALUES (?)",
     );
+    this.selectPaginationGeneration = db.prepare(
+      "SELECT generation FROM pagination_state WHERE id = 1",
+    );
 
-    this.selectAllSourceVersion = this.db.prepare(
+    this.selectAllSourceVersion = db.prepare(
       "SELECT uuid, version FROM sources",
     );
-    this.selectUnprojectedSourceVersion = this.db.prepare(
+    this.selectUnprojectedSourceVersion = db.prepare(
       "SELECT version FROM sources WHERE uuid = @uuid",
     );
-    this.upsertSource = this.db.prepare(
+    this.upsertSource = db.prepare(
       "INSERT INTO sources (uuid, data, version) VALUES (@uuid, @data, @version) ON CONFLICT(uuid) DO UPDATE SET data=@data, version=@version",
     );
-    this.deleteSource = this.db.prepare(
-      "DELETE FROM sources WHERE uuid = @uuid",
-    );
+    this.deleteSource = db.prepare("DELETE FROM sources WHERE uuid = @uuid");
+  }
 
-    this.selectAllItemVersion = this.db.prepare(
-      "SELECT uuid, version FROM items",
-    );
-    this.selectUnprojectedItemVersion = this.db.prepare(
+  private prepareItemStatements(db: Database.Database): void {
+    this.selectAllItemVersion = db.prepare("SELECT uuid, version FROM items");
+    this.selectUnprojectedItemVersion = db.prepare(
       "SELECT version FROM items WHERE uuid = @uuid",
     );
-    this.selectMessageItemsProcessable = this.db.prepare(
+    this.selectMessageItemsProcessable = db.prepare(
       `SELECT items.uuid FROM items
       JOIN sources ON items.source_uuid = sources.uuid
       WHERE kind <> 'file'
@@ -298,7 +343,7 @@ export class DB {
       ORDER BY json_extract(sources.data, '$.last_updated') DESC, interaction_count DESC, items.uuid ASC
       LIMIT @limit`,
     );
-    this.selectFileItemsProcessable = this.db.prepare(
+    this.selectFileItemsProcessable = db.prepare(
       `SELECT items.uuid FROM items
       JOIN sources ON items.source_uuid = sources.uuid
       WHERE kind = 'file'
@@ -306,51 +351,58 @@ export class DB {
       ORDER BY json_extract(sources.data, '$.last_updated') DESC, interaction_count DESC, items.uuid ASC
       LIMIT @limit`,
     );
-    this.deleteUnprojectedItemsBySource = this.db.prepare(
+    this.deleteUnprojectedItemsBySource = db.prepare(
       "DELETE FROM items WHERE source_uuid = @source_uuid",
     );
-    this.updateItemFetchStatus = this.db.prepare(
+    this.updateItemFetchStatus = db.prepare(
       "UPDATE items SET fetch_status = @fetch_status WHERE uuid = @uuid",
     );
-    this.updateItemFetchStatusWithReset = this.db.prepare(
+    this.updateItemFetchStatusWithReset = db.prepare(
       "UPDATE items SET fetch_status = @fetch_status, fetch_progress = 0 WHERE uuid = @uuid",
     );
-    this.updateItemsFetchStatusBySource = this.db.prepare(
+    this.updateItemsFetchStatusBySource = db.prepare(
       "UPDATE items SET fetch_status = @fetch_status WHERE source_uuid = @source_uuid",
     );
-    this.updateItemsFetchStatusBySourceUpTo = this.db.prepare(
+    this.updateItemsFetchStatusBySourceUpTo = db.prepare(
       "UPDATE items SET fetch_status = @fetch_status WHERE source_uuid = @source_uuid AND interaction_count <= @upper_bound",
     );
-    this.upsertItem = this.db.prepare(
+    this.upsertItem = db.prepare(
       "INSERT INTO items (uuid, data, version) VALUES (@uuid, @data, @version) ON CONFLICT(uuid) DO UPDATE SET data=@data, version=@version",
     );
-    this.deleteItem = this.db.prepare("DELETE FROM items WHERE uuid = @uuid");
-    this.deleteItemMany = this.db.prepare(
+    this.deleteItem = db.prepare("DELETE FROM items WHERE uuid = @uuid");
+    this.deleteItemMany = db.prepare(
       "DELETE FROM items WHERE uuid IN (SELECT value FROM json_each(@uuids_json))",
     );
-    this.selectItem = this.db.prepare(
+    this.selectItem = db.prepare(
       `SELECT uuid, data, plaintext, filename, fetch_status, fetch_progress, decrypted_size FROM items WHERE uuid = @uuid`,
     );
-    this.selectItemMany = this.db.prepare(
+    this.selectItemMany = db.prepare(
       `SELECT uuid, data, plaintext, filename, fetch_status, fetch_progress, decrypted_size FROM items WHERE uuid IN (SELECT value FROM json_each(@uuids_json))`,
     );
+  }
 
-    this.selectAllJournalistVersion = this.db.prepare(
+  private prepareJournalistStatements(db: Database.Database): void {
+    this.selectAllJournalistVersion = db.prepare(
       "SELECT uuid, version FROM journalists",
     );
 
-    this.selectJournalist = this.db.prepare(
+    this.selectJournalist = db.prepare(
       "SELECT uuid, data FROM journalists WHERE uuid = @uuid",
     );
 
-    this.upsertJournalist = this.db.prepare(
+    this.upsertJournalist = db.prepare(
       "INSERT INTO journalists (uuid, data, version) VALUES (@uuid, @data, @version) ON CONFLICT(uuid) DO UPDATE SET data=@data, version=@version",
     );
-    this.deleteJournalist = this.db.prepare(
+    this.deleteJournalist = db.prepare(
       "DELETE FROM journalists WHERE uuid = @uuid",
     );
+    this.selectAllJournalists = db.prepare(`
+      SELECT uuid, data FROM journalists
+    `);
+  }
 
-    this.selectAllSources = this.db.prepare(`
+  private prepareConversationStatements(db: Database.Database): void {
+    this.selectAllSources = db.prepare(`
       SELECT
         s.uuid,
         s.data,
@@ -365,7 +417,7 @@ export class DB {
         ON s.uuid = i.source_uuid
         AND i.rn = 1;
     `);
-    this.selectSourceById = this.db.prepare(`
+    this.selectSourceById = db.prepare(`
       SELECT
         s.uuid,
         s.data,
@@ -380,19 +432,49 @@ export class DB {
         ON s.uuid = i.source_uuid AND i.rn = 1
       WHERE s.uuid = ?
     `);
-    this.selectItemsBySourceId = this.db.prepare(`
-      SELECT uuid, data, plaintext, filename, fetch_status, fetch_progress, decrypted_size, is_read FROM items_projected
+    this.selectItemsBySourceId = db.prepare(`
+      SELECT uuid, data, plaintext, filename, fetch_status, fetch_progress,
+        decrypted_size, is_read, interaction_count
+      FROM items_projected
       WHERE source_uuid = ?
-      ORDER BY interaction_count DESC
+      ORDER BY interaction_count DESC, uuid DESC
       LIMIT ?
     `);
-    this.selectItemsBySourceIdBefore = this.db.prepare(`
-      SELECT uuid, data, plaintext, filename, fetch_status, fetch_progress, decrypted_size FROM items_projected
+    this.selectItemsBySourceIdBefore = db.prepare(`
+      SELECT uuid, data, plaintext, filename, fetch_status, fetch_progress,
+        decrypted_size, is_read, interaction_count
+      FROM items_projected
       WHERE source_uuid = ? AND interaction_count < ?
-      ORDER BY interaction_count DESC
+      ORDER BY interaction_count DESC, uuid DESC
       LIMIT ?
     `);
-    this.selectItemCountsBySourceUuids = this.db.prepare(`
+    this.selectItemsBySourceIdBeforeCursor = db.prepare(`
+      SELECT uuid, data, plaintext, filename, fetch_status, fetch_progress,
+        decrypted_size, is_read, interaction_count
+      FROM items_projected
+      WHERE source_uuid = @source_uuid
+        AND (
+          (
+            @before_interaction_count IS NULL
+            AND interaction_count IS NULL
+            AND uuid < @before_item_uuid
+          )
+          OR (
+            @before_interaction_count IS NOT NULL
+            AND (
+              interaction_count IS NULL
+              OR interaction_count < @before_interaction_count
+              OR (
+                interaction_count = @before_interaction_count
+                AND uuid < @before_item_uuid
+              )
+            )
+          )
+        )
+      ORDER BY interaction_count DESC, uuid DESC
+      LIMIT @limit
+    `);
+    this.selectItemCountsBySourceUuids = db.prepare(`
       SELECT
         COALESCE(SUM(CASE WHEN kind = 'message' THEN 1 ELSE 0 END), 0) AS messages,
         COALESCE(SUM(CASE WHEN kind = 'file' THEN 1 ELSE 0 END), 0) AS files,
@@ -400,23 +482,22 @@ export class DB {
       FROM items_projected
       WHERE source_uuid IN (SELECT value FROM json_each(@uuids_json))
     `);
-    this.selectAllJournalists = this.db.prepare(`
-      SELECT uuid, data FROM journalists
-    `);
+  }
 
-    this.insertSourcePendingEvent = this.db.prepare(`
+  private preparePendingEventStatements(db: Database.Database): void {
+    this.insertSourcePendingEvent = db.prepare(`
       INSERT INTO pending_events (snowflake_id, source_uuid, type, data) VALUES (@snowflake_id, @source_uuid, @type, @data)
     `);
 
-    this.insertItemPendingEvent = this.db.prepare(`
+    this.insertItemPendingEvent = db.prepare(`
       INSERT INTO pending_events (snowflake_id, item_uuid, type, data) VALUES(@snowflake_id, @item_uuid, @type, @data)
     `);
 
-    this.selectSourceConversationSeenEvent = this.db.prepare(`
+    this.selectSourceConversationSeenEvent = db.prepare(`
       SELECT snowflake_id, data FROM pending_events
       WHERE source_uuid = @source_uuid AND type = 'source_conversation_seen'
     `);
-    this.selectUnprojectedUnseenItemsCount = this.db.prepare(`
+    this.selectUnprojectedUnseenItemsCount = db.prepare(`
       SELECT
         COUNT(*) AS count
       FROM items
@@ -424,27 +505,27 @@ export class DB {
         AND interaction_count <= @upper_bound
         AND is_read = 0
     `);
-    this.deletePendingEvent = this.db.prepare(
+    this.deletePendingEvent = db.prepare(
       `DELETE FROM pending_events WHERE snowflake_id = @snowflake_id`,
     );
-    this.incrementPendingEventRetry = this.db.prepare(`
+    this.incrementPendingEventRetry = db.prepare(`
       UPDATE pending_events
       SET retry_attempts = retry_attempts + 1, last_event_status = @status
       WHERE snowflake_id = @snowflake_id
     `);
-    this.setPendingEventStatus = this.db.prepare(`
+    this.setPendingEventStatus = db.prepare(`
       UPDATE pending_events
       SET last_event_status = @status
       WHERE snowflake_id = @snowflake_id
     `);
     // Schedule previously-failed events later, and exclude events already reported
     // and accepted on the server that are just awaiting completion.
-    this.selectPendingEvents = this.db.prepare(`
+    this.selectPendingEvents = db.prepare(`
       SELECT snowflake_id, source_uuid, item_uuid, type, data FROM pending_events
       WHERE last_event_status IS NOT ${EventStatus.AlreadyReported}
       ORDER BY retry_attempts ASC, snowflake_id ASC LIMIT @limit
     `);
-    this.deletePendingEventsBySourceScope = this.db.prepare(`
+    this.deletePendingEventsBySourceScope = db.prepare(`
       DELETE FROM pending_events
       WHERE source_uuid = @source_uuid
          OR item_uuid IN (
@@ -823,99 +904,177 @@ export class DB {
     return new Map(rows.map((row) => [row.uuid, this.toSource(row)]));
   }
 
-  getSourceWithItems(
-    sourceUuid: string,
-    options?: {
-      limit?: number;
-      beforeInteractionCount?: number;
-      journalistUuid?: string;
-    },
-  ): SourceWithItems {
+  getConversationPaginationGeneration(): number {
     if (!this.db) {
       throw new Error("Database is not open");
     }
-
-    const sourceRow = this.selectSourceById.get(sourceUuid) as
-      | SourceRow
-      | undefined;
-
-    if (!sourceRow) {
-      throw new Error(`Source with UUID ${sourceUuid} not found`);
+    const row = this.selectPaginationGeneration.get();
+    if (!row) {
+      throw new Error("Pagination generation state is missing");
     }
+    return row.generation;
+  }
 
-    const sourceData = JSON.parse(sourceRow.data);
+  private shouldRestartPagination(
+    options: GetSourceWithItemsOptions | undefined,
+    currentGeneration: number,
+  ): boolean {
+    return (
+      options?.beforeInteractionCount !== undefined &&
+      options.paginationGeneration !== undefined &&
+      options.paginationGeneration !== currentGeneration
+    );
+  }
 
-    let limit = DEFAULT_ITEM_LIMIT;
-    if (options?.limit) {
-      limit = options?.limit;
+  private selectSourceItemRows(
+    sourceUuid: string,
+    options: GetSourceWithItemsOptions | undefined,
+    fetchLimit: number,
+    paginationRestarted: boolean,
+  ): PaginationItemRow[] {
+    if (
+      !paginationRestarted &&
+      options?.beforeInteractionCount !== undefined &&
+      options.beforeItemUuid !== undefined
+    ) {
+      return this.selectItemsBySourceIdBeforeCursor.all({
+        source_uuid: sourceUuid,
+        before_interaction_count: options.beforeInteractionCount,
+        before_item_uuid: options.beforeItemUuid,
+        limit: fetchLimit,
+      });
     }
-    // Fetch limit+1 rows to detect if there are more historical items
-    const fetchLimit = limit + 1;
-    let rows: ItemRow[];
-    if (options?.beforeInteractionCount) {
-      rows = this.selectItemsBySourceIdBefore.all(
+    if (
+      !paginationRestarted &&
+      typeof options?.beforeInteractionCount === "number"
+    ) {
+      return this.selectItemsBySourceIdBefore.all(
         sourceUuid,
         options.beforeInteractionCount,
         fetchLimit,
       );
-    } else {
-      rows = this.selectItemsBySourceId.all(sourceUuid, fetchLimit);
     }
-    const hasMoreHistoricalItems = rows.length > limit;
-    // Take at most `limit` rows (DESC order), then reverse to ASC for display
-    const itemRows = rows.slice(0, limit).reverse();
+    return this.selectItemsBySourceId.all(sourceUuid, fetchLimit);
+  }
 
-    const items = itemRows.map((row) => {
+  private getSourceItemsPage(
+    sourceUuid: string,
+    options?: GetSourceWithItemsOptions,
+  ): SourceItemsPage {
+    const limit = options?.limit || DEFAULT_ITEM_LIMIT;
+    const paginationGeneration = this.getConversationPaginationGeneration();
+    const paginationRestarted = this.shouldRestartPagination(
+      options,
+      paginationGeneration,
+    );
+    const rows = this.selectSourceItemRows(
+      sourceUuid,
+      options,
+      limit + 1,
+      paginationRestarted,
+    );
+    const itemRows = rows.slice(0, limit).reverse();
+    const oldestRow = itemRows[0];
+    return {
+      itemRows,
+      hasMoreHistoricalItems: rows.length > limit,
+      paginationCursor: oldestRow
+        ? {
+            interactionCount: oldestRow.interaction_count,
+            itemUuid: oldestRow.uuid,
+          }
+        : undefined,
+      paginationGeneration,
+      paginationRestarted,
+    };
+  }
+
+  private toItems(rows: ItemRow[]): Item[] {
+    return rows.map((row) => {
       const data = JSON.parse(row.data) as ItemMetadata;
       if (row.is_read !== undefined && "is_read" in data) {
-        (data as { is_read: boolean }).is_read = this.isTruthy(row.is_read);
+        data.is_read = this.isTruthy(row.is_read);
       }
       return {
         uuid: row.uuid,
         data,
         plaintext: row.plaintext,
         filename: row.filename,
-        fetch_status: row.fetch_status,
+        fetch_status: row.fetch_status as FetchStatus,
         fetch_progress: row.fetch_progress,
         decrypted_size: row.decrypted_size,
       };
     });
+  }
 
-    // Return most recently seen message: all replies are seen, if journalistUuid is specified
-    // use seen_by field, otherwise fallback to the is_read field
-    const journalistUuid = options?.journalistUuid;
+  private getLastSeenInteractionCount(
+    items: Item[],
+    journalistUuid?: string,
+  ): number | null {
     let maxSeenInteractionCount: number | null = null;
     for (const item of items) {
-      const interaction = item.data.interaction_count ?? null;
-      if (interaction === null) {
+      const interaction = item.data.interaction_count;
+      if (interaction === null || interaction === undefined) {
         continue;
       }
-      let hasBeenSeen: boolean;
-      if (journalistUuid) {
-        hasBeenSeen = item.data.seen_by.includes(journalistUuid);
-      } else if (item.data.kind !== "reply") {
-        hasBeenSeen = item.data.is_read;
-      } else {
-        hasBeenSeen = true;
+      if (!this.hasItemBeenSeen(item, journalistUuid)) {
+        continue;
       }
-      if (
-        hasBeenSeen &&
-        (maxSeenInteractionCount === null ||
-          interaction > maxSeenInteractionCount)
-      ) {
-        maxSeenInteractionCount = interaction;
-      }
+      maxSeenInteractionCount =
+        maxSeenInteractionCount === null
+          ? interaction
+          : Math.max(maxSeenInteractionCount, interaction);
     }
-    // If nothing has been seen, return null
-    const lastSeenInteractionCount = maxSeenInteractionCount ?? null;
+    return maxSeenInteractionCount;
+  }
 
+  private hasItemBeenSeen(item: Item, journalistUuid?: string): boolean {
+    if (journalistUuid) {
+      return item.data.seen_by.includes(journalistUuid);
+    }
+    return item.data.kind === "reply" || item.data.is_read;
+  }
+
+  private getSourceWithItemsSnapshot(
+    sourceUuid: string,
+    options?: GetSourceWithItemsOptions,
+  ): SourceWithItems {
+    const sourceRow = this.selectSourceById.get(sourceUuid) as
+      | SourceRow
+      | undefined;
+    if (!sourceRow) {
+      throw new Error(`Source with UUID ${sourceUuid} not found`);
+    }
+    const page = this.getSourceItemsPage(sourceUuid, options);
+    const items = this.toItems(page.itemRows);
     return {
       uuid: sourceRow.uuid,
-      data: sourceData as SourceMetadata,
+      data: JSON.parse(sourceRow.data) as SourceMetadata,
       items,
-      hasMoreHistoricalItems,
-      lastSeenInteractionCount,
+      hasMoreHistoricalItems: page.hasMoreHistoricalItems,
+      lastSeenInteractionCount: this.getLastSeenInteractionCount(
+        items,
+        options?.journalistUuid,
+      ),
+      ...(page.paginationCursor
+        ? { paginationCursor: page.paginationCursor }
+        : {}),
+      paginationGeneration: page.paginationGeneration,
+      paginationRestarted: page.paginationRestarted,
     };
+  }
+
+  getSourceWithItems(
+    sourceUuid: string,
+    options?: GetSourceWithItemsOptions,
+  ): SourceWithItems {
+    if (!this.db) {
+      throw new Error("Database is not open");
+    }
+    const readSnapshot = this.db.transaction(() =>
+      this.getSourceWithItemsSnapshot(sourceUuid, options),
+    );
+    return readSnapshot();
   }
 
   getSourceItemCounts(sourceUuids: string[]): SourceItemCounts {
@@ -1121,47 +1280,69 @@ export class DB {
     });
   }
 
+  private applyPendingSourceEventEffects(
+    sourceUuid: string,
+    type: PendingEventType,
+    data?: PendingEventData,
+  ): void {
+    if (type === PendingEventType.SourceDeleted) {
+      this.purgePendingEventsForSource(sourceUuid);
+      this.markSourceItemsScheduledDeletion(sourceUuid);
+      return;
+    }
+    if (type !== PendingEventType.SourceConversationTruncated) {
+      return;
+    }
+    this.purgePendingEventsForSource(sourceUuid);
+    if (data?.upper_bound !== undefined) {
+      this.markSourceItemsScheduledDeletionUpTo(sourceUuid, data.upper_bound);
+    }
+  }
+
+  private insertPendingSourceEventRow(
+    snowflakeId: string,
+    sourceUuid: string,
+    type: PendingEventType,
+    data?: PendingEventData,
+  ): boolean {
+    try {
+      this.insertSourcePendingEvent.run({
+        snowflake_id: snowflakeId,
+        source_uuid: sourceUuid,
+        type,
+        data: data ? JSON.stringify(data) : null,
+      });
+    } catch (error) {
+      if (
+        error instanceof Error &&
+        "code" in error &&
+        error.code === "SQLITE_CONSTRAINT_FOREIGNKEY"
+      ) {
+        return false;
+      }
+      throw error;
+    }
+    return true;
+  }
+
   addPendingSourceEvent(
     sourceUuid: string,
     type: PendingEventType,
     data?: PendingEventData,
   ): string | null {
     return this.db!.transaction(() => {
-      const snowflakeID = this.snowflake
+      const snowflakeId = this.snowflake
         .generate({ timestamp: Date.now() })
         .toString();
-
-      if (type === PendingEventType.SourceDeleted) {
-        this.purgePendingEventsForSource(sourceUuid);
-        this.markSourceItemsScheduledDeletion(sourceUuid);
-      } else if (type === PendingEventType.SourceConversationTruncated) {
-        this.purgePendingEventsForSource(sourceUuid);
-        if (data?.upper_bound !== undefined) {
-          this.markSourceItemsScheduledDeletionUpTo(
-            sourceUuid,
-            data.upper_bound,
-          );
-        }
-      }
-
-      try {
-        this.insertSourcePendingEvent.run({
-          snowflake_id: snowflakeID,
-          source_uuid: sourceUuid,
-          type: type,
-          data: data ? JSON.stringify(data) : null,
-        });
-      } catch (err) {
-        if (err instanceof Error && "code" in err) {
-          if (err.code === "SQLITE_CONSTRAINT_FOREIGNKEY") {
-            return null;
-          } else {
-            throw err;
-          }
-        }
-      }
-
-      return snowflakeID;
+      this.applyPendingSourceEventEffects(sourceUuid, type, data);
+      return this.insertPendingSourceEventRow(
+        snowflakeId,
+        sourceUuid,
+        type,
+        data,
+      )
+        ? snowflakeId
+        : null;
     })();
   }
 
@@ -1250,8 +1431,10 @@ export class DB {
   addPendingSourceConversationSeen(
     sourceUuid: string,
     upperBound: number,
+    requestToken?: string,
   ): string | null {
-    return this.db!.transaction(() => {
+    let rollback: PendingConversationSeenRollback | null = null;
+    const snowflakeId = this.db!.transaction(() => {
       const unseen = this.selectUnprojectedUnseenItemsCount.get({
         source_uuid: sourceUuid,
         upper_bound: upperBound,
@@ -1274,12 +1457,12 @@ export class DB {
         this.deletePendingEvent.run({ snowflake_id: existing.snowflake_id });
       }
 
-      const snowflakeId = this.snowflake
+      const nextSnowflakeId = this.snowflake
         .generate({ timestamp: Date.now() })
         .toString();
       try {
         this.insertSourcePendingEvent.run({
-          snowflake_id: snowflakeId,
+          snowflake_id: nextSnowflakeId,
           source_uuid: sourceUuid,
           type: PendingEventType.SourceConversationSeen,
           data: JSON.stringify({ upper_bound: upperBound }),
@@ -1294,7 +1477,94 @@ export class DB {
         }
       }
 
-      return snowflakeId;
+      rollback = {
+        createdSnowflakeId: nextSnowflakeId,
+        previousEvent: existing,
+      };
+      return nextSnowflakeId;
+    })();
+    if (requestToken) {
+      const inheritedRollback = this.claimPendingSeenOwnership(
+        sourceUuid,
+        requestToken,
+      );
+      this.pendingSeenRollbacks.set(
+        requestToken,
+        this.collapsePendingSeenRollback(rollback, inheritedRollback),
+      );
+      return snowflakeId ?? inheritedRollback?.createdSnowflakeId ?? null;
+    }
+    return snowflakeId;
+  }
+
+  private claimPendingSeenOwnership(
+    sourceUuid: string,
+    requestToken: string | undefined,
+  ): PendingConversationSeenRollback | null | undefined {
+    if (!requestToken) {
+      return undefined;
+    }
+    const previousOwner = this.pendingSeenOwners.get(sourceUuid);
+    const inherited = previousOwner
+      ? this.pendingSeenRollbacks.get(previousOwner)
+      : undefined;
+    if (previousOwner) {
+      this.pendingSeenRollbacks.delete(previousOwner);
+    }
+    this.pendingSeenOwners.set(sourceUuid, requestToken);
+    return inherited;
+  }
+
+  private collapsePendingSeenRollback(
+    rollback: PendingConversationSeenRollback | null,
+    inherited: PendingConversationSeenRollback | null | undefined,
+  ): PendingConversationSeenRollback | null {
+    if (!rollback) {
+      return inherited ?? null;
+    }
+    if (
+      inherited &&
+      rollback.previousEvent?.snowflake_id === inherited.createdSnowflakeId
+    ) {
+      rollback.previousEvent = inherited.previousEvent;
+    }
+    return rollback;
+  }
+
+  finalizePendingSourceConversationSeen(
+    sourceUuid: string,
+    requestToken: string,
+    keep: boolean,
+  ): boolean {
+    const ownsChange = this.pendingSeenOwners.get(sourceUuid) === requestToken;
+    const rollback = this.pendingSeenRollbacks.get(requestToken);
+    this.pendingSeenRollbacks.delete(requestToken);
+    if (!ownsChange) {
+      return false;
+    }
+    this.pendingSeenOwners.delete(sourceUuid);
+    if (keep || !rollback) {
+      return false;
+    }
+    return this.db!.transaction(() => {
+      const current = this.selectSourceConversationSeenEvent.get({
+        source_uuid: sourceUuid,
+      });
+      if (current?.snowflake_id !== rollback.createdSnowflakeId) {
+        return false;
+      }
+      this.deletePendingEvent.run({
+        snowflake_id: rollback.createdSnowflakeId,
+      });
+      if (rollback.previousEvent) {
+        this.insertSourcePendingEvent.run({
+          snowflake_id: rollback.previousEvent.snowflake_id,
+          source_uuid: sourceUuid,
+          type: PendingEventType.SourceConversationSeen,
+          data: rollback.previousEvent.data,
+        });
+      }
+      return true;
     })();
   }
 

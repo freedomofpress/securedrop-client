@@ -10,6 +10,7 @@ import {
   Journalist,
   JournalistMetadata,
   SubmissionMetadata,
+  SourceWithItems,
 } from "../types";
 import { Crypto } from "./crypto";
 import { Datastore } from "./datastore";
@@ -244,6 +245,114 @@ describe("Datastore Method Tests", () => {
       seen_by: [],
       interaction_count: interaction_count,
     };
+  }
+
+  function paginationUuid(index: number): string {
+    return `00000000-0000-4000-8000-${index.toString().padStart(12, "0")}`;
+  }
+
+  const paginationSourceUuid = "10000000-0000-4000-8000-000000000000";
+
+  function paginationItems(counts: number[]): Record<string, ItemMetadata> {
+    return Object.fromEntries(
+      counts.map((interactionCount, index) => {
+        const uuid = paginationUuid(index + 1);
+        return [
+          uuid,
+          mockItemMetadata(
+            uuid,
+            paginationSourceUuid,
+            "message",
+            interactionCount,
+          ),
+        ];
+      }),
+    );
+  }
+
+  function traverseConversation(limit: number): {
+    items: SourceWithItems["items"];
+    pageLengths: number[];
+    hasMoreStates: boolean[];
+  } {
+    let page = db.getSourceWithItems(paginationSourceUuid, { limit });
+    let items = page.items;
+    const pageLengths = [page.items.length];
+    const hasMoreStates = [page.hasMoreHistoricalItems ?? false];
+    while (page.hasMoreHistoricalItems) {
+      const cursor = page.paginationCursor;
+      if (!cursor) {
+        throw new Error("Paginated response is missing its cursor");
+      }
+      page = db.getSourceWithItems(paginationSourceUuid, {
+        limit,
+        beforeInteractionCount: cursor.interactionCount,
+        beforeItemUuid: cursor.itemUuid,
+        paginationGeneration: page.paginationGeneration,
+      });
+      items = page.paginationRestarted ? page.items : [...page.items, ...items];
+      pageLengths.push(page.items.length);
+      hasMoreStates.push(page.hasMoreHistoricalItems ?? false);
+    }
+    return { items, pageLengths, hasMoreStates };
+  }
+
+  async function traverseLargeConversation(
+    limit: number,
+  ): Promise<{ items: SourceWithItems["items"]; pageCount: number }> {
+    let page = db.getSourceWithItems(paginationSourceUuid, { limit });
+    let items = page.items;
+    let pageCount = 1;
+    while (page.hasMoreHistoricalItems) {
+      const cursor = page.paginationCursor;
+      if (!cursor) {
+        throw new Error("Paginated response is missing its cursor");
+      }
+      page = db.getSourceWithItems(paginationSourceUuid, {
+        limit,
+        beforeInteractionCount: cursor.interactionCount,
+        beforeItemUuid: cursor.itemUuid,
+        paginationGeneration: page.paginationGeneration,
+      });
+      items = [...page.items, ...items];
+      pageCount += 1;
+      if (pageCount % 10 === 0) {
+        await new Promise((resolve) => setTimeout(resolve, 0));
+      }
+    }
+    return { items, pageCount };
+  }
+
+  function sortedPaginationUuids(
+    items: Record<string, ItemMetadata>,
+  ): string[] {
+    return Object.entries(items)
+      .sort(([uuidA, itemA], [uuidB, itemB]) => {
+        const countDifference =
+          itemA.interaction_count - itemB.interaction_count;
+        if (countDifference !== 0) {
+          return countDifference;
+        }
+        return uuidA < uuidB ? -1 : uuidA > uuidB ? 1 : 0;
+      })
+      .map(([uuid]) => uuid);
+  }
+
+  function paginationGeneration(): number {
+    return db["db"]!.prepare(
+      "SELECT generation FROM pagination_state WHERE id = 1",
+    )
+      .pluck()
+      .get() as number;
+  }
+
+  function expectPaginationGenerationDelta(
+    expectedDelta: number,
+    operation: () => unknown,
+  ): void {
+    const before = paginationGeneration();
+    operation();
+    expect(paginationGeneration() - before).toBe(expectedDelta);
   }
 
   it("getJournalistbyID should return the first matching journalist", () => {
@@ -687,6 +796,744 @@ describe("Datastore Method Tests", () => {
 
     // Verify the returned items are already sorted
     expect(items).toEqual(sortedItems);
+  });
+
+  it.each([
+    {
+      name: "unique counts",
+      counts: Array.from({ length: 251 }, (_, index) => index + 1),
+      pageLengths: [100, 100, 51],
+    },
+    {
+      name: "all tied counts",
+      counts: Array.from({ length: 151 }, () => 100),
+      pageLengths: [100, 51],
+    },
+    {
+      name: "mixed negative, zero, and fractional counts",
+      counts: [-7.5, 0, 0.5, 1, 100].flatMap((count) =>
+        Array.from({ length: 61 }, () => count),
+      ),
+      pageLengths: [100, 100, 100, 5],
+    },
+  ])("paginates $name exactly once", ({ counts, pageLengths }) => {
+    db.updateSources({
+      [paginationSourceUuid]: mockSourceMetadata(paginationSourceUuid),
+    });
+    const items = paginationItems(counts);
+    db.updateItems(items);
+
+    const traversal = traverseConversation(100);
+
+    expect(traversal.pageLengths).toEqual(pageLengths);
+    expect(traversal.hasMoreStates).toEqual(
+      pageLengths.map((_, index) => index < pageLengths.length - 1),
+    );
+    expect(new Set(traversal.items.map((item) => item.uuid)).size).toBe(
+      counts.length,
+    );
+    expect(traversal.items.map((item) => item.uuid)).toEqual(
+      sortedPaginationUuids(items),
+    );
+  });
+
+  it("traverses schema-permitted null counts and malformed UUIDs", () => {
+    db.updateSources({
+      [paginationSourceUuid]: mockSourceMetadata(paginationSourceUuid),
+    });
+    const validItems = paginationItems(Array.from({ length: 101 }, () => 1));
+    db.updateItems(validItems);
+    const malformedUuids = Array.from(
+      { length: 101 },
+      (_, index) => `malformed-item-${(index + 1).toString().padStart(3, "0")}`,
+    );
+    const insert = db["db"]!.prepare(
+      "INSERT INTO items (uuid, data) VALUES (?, ?)",
+    );
+    const insertMalformed = db["db"]!.transaction(() => {
+      for (const uuid of malformedUuids) {
+        insert.run(
+          uuid,
+          JSON.stringify({
+            is_read: false,
+            kind: "message",
+            seen_by: [],
+            size: 1,
+            source: paginationSourceUuid,
+            uuid,
+          }),
+        );
+      }
+    });
+    insertMalformed();
+
+    const traversal = traverseConversation(100);
+
+    expect(traversal.pageLengths).toEqual([100, 100, 2]);
+    expect(traversal.hasMoreStates).toEqual([true, true, false]);
+    expect(traversal.items).toHaveLength(202);
+    expect(new Set(traversal.items.map((item) => item.uuid)).size).toBe(202);
+    expect(traversal.items.map((item) => item.uuid)).toEqual([
+      ...malformedUuids,
+      ...sortedPaginationUuids(validItems),
+    ]);
+  });
+
+  it("traverses 20,000 tied rows exactly once with an inspected query plan", async () => {
+    db.updateSources({
+      [paginationSourceUuid]: mockSourceMetadata(paginationSourceUuid),
+    });
+    const items = paginationItems(Array.from({ length: 20_000 }, () => 100));
+    db.updateItems(items);
+    const raw = db["db"]!;
+    const plan = raw
+      .prepare(
+        `EXPLAIN QUERY PLAN
+           SELECT uuid, interaction_count
+           FROM items_projected
+           WHERE source_uuid = @source_uuid
+             AND (
+               interaction_count < @before_interaction_count
+               OR (
+                 interaction_count = @before_interaction_count
+                 AND uuid < @before_item_uuid
+               )
+             )
+           ORDER BY interaction_count DESC, uuid DESC
+           LIMIT @limit`,
+      )
+      .all({
+        source_uuid: paginationSourceUuid,
+        before_interaction_count: 100,
+        before_item_uuid: paginationUuid(19_901),
+        limit: 101,
+      }) as { detail: string }[];
+    const started = performance.now();
+    const traversal = await traverseLargeConversation(100);
+    const elapsedMs = performance.now() - started;
+
+    expect(traversal.items).toHaveLength(20_000);
+    expect(new Set(traversal.items.map((item) => item.uuid)).size).toBe(20_000);
+    expect(traversal.items.map((item) => item.uuid)).toEqual(
+      sortedPaginationUuids(items),
+    );
+    expect(traversal.pageCount).toBe(200);
+    expect(
+      plan.some((row) => row.detail.includes("idx_items_source_uuid")),
+    ).toBe(true);
+    expect(elapsedMs).toBeLessThan(60_000);
+    console.log(
+      `PAGINATION_20K=${JSON.stringify({ elapsedMs, pages: 200, plan })}`,
+    );
+  }, 120_000);
+
+  it("preserves legacy count-only pagination", () => {
+    db.updateSources({
+      [paginationSourceUuid]: mockSourceMetadata(paginationSourceUuid),
+    });
+    db.updateItems(
+      paginationItems(Array.from({ length: 151 }, (_, index) => index + 1)),
+    );
+
+    const olderPage = db.getSourceWithItems(paginationSourceUuid, {
+      limit: 100,
+      beforeInteractionCount: 52,
+    });
+
+    expect(olderPage.items).toHaveLength(51);
+    expect(olderPage.items[0].data.interaction_count).toBe(1);
+    expect(olderPage.items[50].data.interaction_count).toBe(51);
+    expect(olderPage.hasMoreHistoricalItems).toBe(false);
+  });
+
+  it("restarts when an unloaded item moves above the cursor", () => {
+    db.updateSources({
+      [paginationSourceUuid]: mockSourceMetadata(paginationSourceUuid),
+    });
+    const items = paginationItems(Array.from({ length: 151 }, () => 100));
+    db.updateItems(items);
+    const firstPage = db.getSourceWithItems(paginationSourceUuid, {
+      limit: 100,
+    });
+    const movedUuid = paginationUuid(1);
+    items[movedUuid] = {
+      ...items[movedUuid],
+      interaction_count: 101,
+    };
+    db.updateBatch({
+      sources: {},
+      items: { [movedUuid]: items[movedUuid] },
+      journalists: {},
+      events: {},
+    });
+
+    const cursor = firstPage.items[0];
+    const restartedPage = db.getSourceWithItems(paginationSourceUuid, {
+      limit: 100,
+      beforeInteractionCount: cursor.data.interaction_count,
+      beforeItemUuid: cursor.uuid,
+      paginationGeneration: firstPage.paginationGeneration,
+    });
+
+    expect(restartedPage.paginationRestarted).toBe(true);
+    expect(restartedPage.paginationGeneration).not.toBe(
+      firstPage.paginationGeneration,
+    );
+    expect(restartedPage.items.map((item) => item.uuid)).toContain(movedUuid);
+    const restartedCursor = restartedPage.items[0];
+    const finalPage = db.getSourceWithItems(paginationSourceUuid, {
+      limit: 100,
+      beforeInteractionCount: restartedCursor.data.interaction_count,
+      beforeItemUuid: restartedCursor.uuid,
+      paginationGeneration: restartedPage.paginationGeneration,
+    });
+    const recoveredItems = [...finalPage.items, ...restartedPage.items];
+    expect(finalPage.items).toHaveLength(51);
+    expect(finalPage.hasMoreHistoricalItems).toBe(false);
+    expect(new Set(recoveredItems.map((item) => item.uuid)).size).toBe(151);
+    expect(recoveredItems.map((item) => item.uuid)).toEqual(
+      sortedPaginationUuids(items),
+    );
+  });
+
+  it("does not restart pagination for a conversation-seen event", () => {
+    db.updateSources({
+      [paginationSourceUuid]: mockSourceMetadata(paginationSourceUuid),
+    });
+    db.updateItems(paginationItems(Array.from({ length: 151 }, () => 100)));
+    const firstPage = db.getSourceWithItems(paginationSourceUuid, {
+      limit: 100,
+    });
+    expect(
+      db.addPendingSourceConversationSeen(paginationSourceUuid, 100),
+    ).not.toBeNull();
+
+    const cursor = firstPage.items[0];
+    const olderPage = db.getSourceWithItems(paginationSourceUuid, {
+      limit: 100,
+      beforeInteractionCount: cursor.data.interaction_count,
+      beforeItemUuid: cursor.uuid,
+      paginationGeneration: firstPage.paginationGeneration,
+    });
+
+    expect(olderPage.paginationRestarted).toBe(false);
+    expect(olderPage.paginationGeneration).toBe(firstPage.paginationGeneration);
+    expect(olderPage.items).toHaveLength(51);
+    expect(olderPage.hasMoreHistoricalItems).toBe(false);
+    expect(
+      db
+        .getPendingEvents()
+        .filter(
+          (event) => event.type === PendingEventType.SourceConversationSeen,
+        ),
+    ).toHaveLength(1);
+  });
+
+  it("advances generation only for item cursor-dataset changes", () => {
+    const itemUuid = paginationUuid(1);
+    const original = paginationItems([1])[itemUuid] as SubmissionMetadata;
+    db.updateSources({
+      [paginationSourceUuid]: mockSourceMetadata(paginationSourceUuid),
+      source2: mockSourceMetadata("source2"),
+    });
+    db.updateItems({ [itemUuid]: original });
+
+    expectPaginationGenerationDelta(0, () =>
+      db.updateItems({ [itemUuid]: original }),
+    );
+    expectPaginationGenerationDelta(0, () =>
+      db.updateItems({ [itemUuid]: { ...original, size: 2 } }),
+    );
+    expectPaginationGenerationDelta(0, () =>
+      db.updateItems({ [itemUuid]: { ...original, seen_by: ["journalist"] } }),
+    );
+    expectPaginationGenerationDelta(0, () =>
+      db.updateItems({ [itemUuid]: { ...original, is_read: true } }),
+    );
+    expectPaginationGenerationDelta(0, () =>
+      db.updateDownloadInProgress(itemUuid, 10),
+    );
+    expectPaginationGenerationDelta(0, () =>
+      db.updateFetchStatus(itemUuid, FetchStatus.ScheduledDeletion),
+    );
+
+    expectPaginationGenerationDelta(1, () =>
+      db.updateItems({
+        [itemUuid]: { ...original, interaction_count: 2 },
+      }),
+    );
+    expectPaginationGenerationDelta(1, () =>
+      db.updateItems({ [itemUuid]: { ...original, source: "source2" } }),
+    );
+    const replacementUuid = paginationUuid(2);
+    expectPaginationGenerationDelta(1, () =>
+      db["db"]!.prepare("UPDATE items SET uuid = ? WHERE uuid = ?").run(
+        replacementUuid,
+        itemUuid,
+      ),
+    );
+    expectPaginationGenerationDelta(1, () =>
+      db.updateItems({ [replacementUuid]: null }),
+    );
+    expectPaginationGenerationDelta(1, () =>
+      db.updateItems({ [itemUuid]: original }),
+    );
+    expectPaginationGenerationDelta(1, () =>
+      db["db"]!.prepare(
+        "UPDATE items SET data = json_remove(data, '$.interaction_count') WHERE uuid = ?",
+      ).run(itemUuid),
+    );
+    expectPaginationGenerationDelta(1, () =>
+      db.updateItems({ [itemUuid]: original }),
+    );
+  });
+
+  it("excludes seen and starred events from the pagination generation", () => {
+    const itemUuid = paginationUuid(1);
+    db.updateSources({
+      [paginationSourceUuid]: mockSourceMetadata(paginationSourceUuid),
+    });
+    db.updateItems({ [itemUuid]: paginationItems([1])[itemUuid] });
+
+    expectPaginationGenerationDelta(0, () =>
+      db.addPendingSourceConversationSeen(paginationSourceUuid, 1),
+    );
+    expectPaginationGenerationDelta(0, () =>
+      db.addPendingSourceEvent(paginationSourceUuid, PendingEventType.Starred),
+    );
+    expectPaginationGenerationDelta(0, () =>
+      db["db"]!.prepare(
+        `INSERT INTO pending_events
+            (snowflake_id, item_uuid, type, data)
+          VALUES ('seen', ?, 'item_seen', NULL)`,
+      ).run(itemUuid),
+    );
+  });
+
+  it("advances generation for membership-changing pending events", async () => {
+    const itemUuid = paginationUuid(1);
+    db.updateSources({
+      [paginationSourceUuid]: mockSourceMetadata(paginationSourceUuid),
+    });
+    db.updateItems({ [itemUuid]: paginationItems([1])[itemUuid] });
+
+    expectPaginationGenerationDelta(1, () =>
+      db.addPendingItemEvent(itemUuid, PendingEventType.ItemDeleted),
+    );
+    const beforeReply = paginationGeneration();
+    await db.addPendingReplySentEvent("reply", paginationSourceUuid, 2);
+    expect(paginationGeneration() - beforeReply).toBe(1);
+    expectPaginationGenerationDelta(1, () =>
+      db["db"]!.prepare(
+        `INSERT INTO pending_events
+            (snowflake_id, source_uuid, type, data)
+          VALUES ('truncated', ?, 'source_conversation_truncated', ?)`,
+      ).run(paginationSourceUuid, JSON.stringify({ upper_bound: 1 })),
+    );
+    expectPaginationGenerationDelta(1, () =>
+      db["db"]!.prepare(
+        `INSERT INTO pending_events
+            (snowflake_id, source_uuid, type, data)
+          VALUES ('deleted', ?, 'source_deleted', NULL)`,
+      ).run(paginationSourceUuid),
+    );
+  });
+
+  it("does not advance generation for no-op pending-event updates", () => {
+    const itemUuid = paginationUuid(1);
+    db.updateSources({
+      [paginationSourceUuid]: mockSourceMetadata(paginationSourceUuid),
+    });
+    db.updateItems({ [itemUuid]: paginationItems([1])[itemUuid] });
+    const raw = db["db"]!;
+    const replyData = JSON.stringify({
+      metadata: mockItemMetadata(
+        paginationUuid(2),
+        paginationSourceUuid,
+        "reply",
+        2,
+      ),
+      plaintext: "reply",
+    });
+    raw
+      .prepare(
+        `INSERT INTO pending_events
+          (snowflake_id, item_uuid, type, data)
+         VALUES ('deleted', ?, 'item_deleted', NULL)`,
+      )
+      .run(itemUuid);
+    raw
+      .prepare(
+        `INSERT INTO pending_events
+          (snowflake_id, source_uuid, type, data)
+         VALUES ('reply', ?, 'reply_sent', ?)`,
+      )
+      .run(paginationSourceUuid, replyData);
+    raw
+      .prepare(
+        `INSERT INTO pending_events
+          (snowflake_id, source_uuid, type, data)
+         VALUES ('truncated', ?, 'source_conversation_truncated', ?)`,
+      )
+      .run(paginationSourceUuid, JSON.stringify({ upper_bound: 1 }));
+    raw
+      .prepare(
+        `INSERT INTO pending_events
+          (snowflake_id, source_uuid, type, data)
+         VALUES ('source-deleted', ?, 'source_deleted', NULL)`,
+      )
+      .run(paginationSourceUuid);
+
+    for (const snowflakeId of [
+      "deleted",
+      "reply",
+      "truncated",
+      "source-deleted",
+    ]) {
+      expectPaginationGenerationDelta(0, () =>
+        raw
+          .prepare(
+            `UPDATE pending_events
+             SET snowflake_id = snowflake_id,
+                 type = type,
+                 data = data,
+                 source_uuid = source_uuid,
+                 item_uuid = item_uuid
+             WHERE snowflake_id = ?`,
+          )
+          .run(snowflakeId),
+      );
+      expectPaginationGenerationDelta(0, () =>
+        raw
+          .prepare(
+            `UPDATE pending_events
+             SET retry_attempts = retry_attempts + 1,
+                 last_event_status = 500
+             WHERE snowflake_id = ?`,
+          )
+          .run(snowflakeId),
+      );
+    }
+    expectPaginationGenerationDelta(0, () =>
+      raw
+        .prepare(
+          `UPDATE pending_events
+           SET data = json_set(data, '$.plaintext', 'changed')
+           WHERE snowflake_id = 'reply'`,
+        )
+        .run(),
+    );
+    for (const snowflakeId of [
+      "deleted",
+      "reply",
+      "truncated",
+      "source-deleted",
+    ]) {
+      expectPaginationGenerationDelta(1, () =>
+        raw
+          .prepare("DELETE FROM pending_events WHERE snowflake_id = ?")
+          .run(snowflakeId),
+      );
+    }
+  });
+
+  it("advances generation for each pending-event cursor signature", () => {
+    const firstItemUuid = paginationUuid(1);
+    const secondItemUuid = paginationUuid(2);
+    db.updateSources({
+      [paginationSourceUuid]: mockSourceMetadata(paginationSourceUuid),
+      source2: mockSourceMetadata("source2"),
+    });
+    db.updateItems(paginationItems([1, 2]));
+    const raw = db["db"]!;
+    const replyData = JSON.stringify({
+      metadata: mockItemMetadata(
+        paginationUuid(3),
+        paginationSourceUuid,
+        "reply",
+        3,
+      ),
+      plaintext: "reply",
+    });
+    raw
+      .prepare(
+        `INSERT INTO pending_events
+          (snowflake_id, item_uuid, type, data)
+         VALUES ('deleted', ?, 'item_deleted', NULL)`,
+      )
+      .run(firstItemUuid);
+    raw
+      .prepare(
+        `INSERT INTO pending_events
+          (snowflake_id, source_uuid, type, data)
+         VALUES ('reply', ?, 'reply_sent', ?)`,
+      )
+      .run(paginationSourceUuid, replyData);
+    raw
+      .prepare(
+        `INSERT INTO pending_events
+          (snowflake_id, source_uuid, type, data)
+         VALUES ('truncated', ?, 'source_conversation_truncated', ?)`,
+      )
+      .run(paginationSourceUuid, JSON.stringify({ upper_bound: 1 }));
+    raw
+      .prepare(
+        `INSERT INTO pending_events
+          (snowflake_id, source_uuid, type, data)
+         VALUES ('source-deleted', ?, 'source_deleted', NULL)`,
+      )
+      .run(paginationSourceUuid);
+    raw
+      .prepare(
+        `INSERT INTO pending_events
+          (snowflake_id, source_uuid, type, data)
+         VALUES ('starred', ?, 'starred', NULL)`,
+      )
+      .run("source2");
+
+    expectPaginationGenerationDelta(1, () =>
+      raw
+        .prepare(
+          "UPDATE pending_events SET item_uuid = ? WHERE snowflake_id = 'deleted'",
+        )
+        .run(secondItemUuid),
+    );
+    expectPaginationGenerationDelta(1, () =>
+      raw
+        .prepare(
+          `UPDATE pending_events SET snowflake_id = 'deleted-2'
+           WHERE snowflake_id = 'deleted'`,
+        )
+        .run(),
+    );
+    expectPaginationGenerationDelta(1, () =>
+      raw
+        .prepare(
+          `UPDATE pending_events
+           SET data = json_set(data, '$.metadata.interaction_count', 4)
+           WHERE snowflake_id = 'reply'`,
+        )
+        .run(),
+    );
+    expectPaginationGenerationDelta(1, () =>
+      raw
+        .prepare(
+          `UPDATE pending_events
+           SET data = json_set(data, '$.metadata.uuid', ?)
+           WHERE snowflake_id = 'reply'`,
+        )
+        .run(paginationUuid(4)),
+    );
+    expectPaginationGenerationDelta(1, () =>
+      raw
+        .prepare(
+          `UPDATE pending_events
+           SET data = json_set(data, '$.metadata.source', 'source2')
+           WHERE snowflake_id = 'reply'`,
+        )
+        .run(),
+    );
+    expectPaginationGenerationDelta(1, () =>
+      raw
+        .prepare(
+          `UPDATE pending_events SET snowflake_id = 'reply-2'
+           WHERE snowflake_id = 'reply'`,
+        )
+        .run(),
+    );
+    expectPaginationGenerationDelta(1, () =>
+      raw
+        .prepare(
+          `UPDATE pending_events
+           SET data = json_set(data, '$.upper_bound', 2)
+           WHERE snowflake_id = 'truncated'`,
+        )
+        .run(),
+    );
+    expectPaginationGenerationDelta(1, () =>
+      raw
+        .prepare(
+          `UPDATE pending_events SET source_uuid = 'source2'
+           WHERE snowflake_id = 'truncated'`,
+        )
+        .run(),
+    );
+    expectPaginationGenerationDelta(1, () =>
+      raw
+        .prepare(
+          `UPDATE pending_events SET snowflake_id = 'truncated-2'
+           WHERE snowflake_id = 'truncated'`,
+        )
+        .run(),
+    );
+    expectPaginationGenerationDelta(1, () =>
+      raw
+        .prepare(
+          `UPDATE pending_events SET source_uuid = 'source2'
+           WHERE snowflake_id = 'source-deleted'`,
+        )
+        .run(),
+    );
+    expectPaginationGenerationDelta(1, () =>
+      raw
+        .prepare(
+          `UPDATE pending_events SET snowflake_id = 'source-deleted-2'
+           WHERE snowflake_id = 'source-deleted'`,
+        )
+        .run(),
+    );
+    expectPaginationGenerationDelta(1, () =>
+      raw
+        .prepare(
+          `UPDATE pending_events SET type = 'source_deleted'
+           WHERE snowflake_id = 'starred'`,
+        )
+        .run(),
+    );
+  });
+
+  it("uses null-safe comparisons for pagination trigger fields", () => {
+    const itemUuid = paginationUuid(1);
+    db.updateSources({
+      [paginationSourceUuid]: mockSourceMetadata(paginationSourceUuid),
+    });
+    db.updateItems({ [itemUuid]: paginationItems([1])[itemUuid] });
+    const raw = db["db"]!;
+
+    expectPaginationGenerationDelta(1, () =>
+      raw
+        .prepare(
+          "UPDATE items SET data = json_remove(data, '$.source') WHERE uuid = ?",
+        )
+        .run(itemUuid),
+    );
+    expectPaginationGenerationDelta(0, () =>
+      raw
+        .prepare(
+          "UPDATE items SET data = json_remove(data, '$.source') WHERE uuid = ?",
+        )
+        .run(itemUuid),
+    );
+    expectPaginationGenerationDelta(1, () =>
+      raw
+        .prepare(
+          `UPDATE items SET data = json_set(data, '$.source', ?) WHERE uuid = ?`,
+        )
+        .run(paginationSourceUuid, itemUuid),
+    );
+  });
+
+  it("rolls back only the seen change owned by a stale request", () => {
+    db.updateSources({
+      [paginationSourceUuid]: mockSourceMetadata(paginationSourceUuid),
+    });
+    db.updateItems(paginationItems([1, 2]));
+
+    const firstEvent = db.addPendingSourceConversationSeen(
+      paginationSourceUuid,
+      1,
+      "request-a",
+    );
+    expect(firstEvent).not.toBeNull();
+    expect(
+      db.addPendingSourceConversationSeen(paginationSourceUuid, 1, "request-b"),
+    ).toBe(firstEvent);
+    expect(
+      db.finalizePendingSourceConversationSeen(
+        paginationSourceUuid,
+        "request-a",
+        false,
+      ),
+    ).toBe(false);
+    db.finalizePendingSourceConversationSeen(
+      paginationSourceUuid,
+      "request-b",
+      true,
+    );
+
+    const raisedEvent = db.addPendingSourceConversationSeen(
+      paginationSourceUuid,
+      2,
+      "request-c",
+    );
+    expect(raisedEvent).not.toBe(firstEvent);
+    expect(
+      db.finalizePendingSourceConversationSeen(
+        paginationSourceUuid,
+        "request-c",
+        false,
+      ),
+    ).toBe(true);
+    const seenEvents = db
+      .getPendingEvents()
+      .filter(
+        (event) => event.type === PendingEventType.SourceConversationSeen,
+      );
+    expect(seenEvents).toHaveLength(1);
+    expect(seenEvents[0].id).toBe(firstEvent);
+    expect(seenEvents[0].data).toEqual({ upper_bound: 1 });
+  });
+
+  it("transfers seen rollback ownership across stale same-source requests", () => {
+    db.updateSources({
+      [paginationSourceUuid]: mockSourceMetadata(paginationSourceUuid),
+    });
+    db.updateItems({
+      [paginationUuid(1)]: paginationItems([1])[paginationUuid(1)],
+    });
+
+    const firstEvent = db.addPendingSourceConversationSeen(
+      paginationSourceUuid,
+      1,
+      "request-a",
+    );
+    expect(firstEvent).not.toBeNull();
+    expect(
+      db.addPendingSourceConversationSeen(paginationSourceUuid, 1, "request-b"),
+    ).toBe(firstEvent);
+    expect(
+      db.finalizePendingSourceConversationSeen(
+        paginationSourceUuid,
+        "request-a",
+        false,
+      ),
+    ).toBe(false);
+    expect(
+      db.finalizePendingSourceConversationSeen(
+        paginationSourceUuid,
+        "request-b",
+        false,
+      ),
+    ).toBe(true);
+    expect(
+      db
+        .getPendingEvents()
+        .filter(
+          (event) => event.type === PendingEventType.SourceConversationSeen,
+        ),
+    ).toHaveLength(0);
+
+    db.addPendingSourceConversationSeen(paginationSourceUuid, 1, "request-c");
+    db.addPendingSourceConversationSeen(paginationSourceUuid, 2, "request-d");
+    db.finalizePendingSourceConversationSeen(
+      paginationSourceUuid,
+      "request-c",
+      false,
+    );
+    expect(
+      db.finalizePendingSourceConversationSeen(
+        paginationSourceUuid,
+        "request-d",
+        false,
+      ),
+    ).toBe(true);
+    expect(
+      db
+        .getPendingEvents()
+        .filter(
+          (event) => event.type === PendingEventType.SourceConversationSeen,
+        ),
+    ).toHaveLength(0);
   });
 
   it("pending ItemDeleted event should delete reply", () => {

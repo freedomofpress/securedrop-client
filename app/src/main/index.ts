@@ -32,6 +32,7 @@ import {
   type DeviceStatus,
   type SearchResult,
   type FirstRunStatus,
+  type GetSourceWithItemsOptions,
   FetchStatus,
   PendingEventType,
   SyncStatus,
@@ -425,16 +426,15 @@ if (!gotTheLock) {
         async (
           _event,
           sourceUuid: string,
-          options?: {
-            limit?: number;
-            beforeInteractionCount?: number;
-            journalistUuid?: string;
-          },
+          options?: GetSourceWithItemsOptions,
         ): Promise<SourceWithItems> => {
           const sourceWithItems = db.getSourceWithItems(sourceUuid, options);
           return sourceWithItems;
         },
       );
+      ipcMain.on("getConversationPaginationGeneration", (event) => {
+        event.returnValue = db.getConversationPaginationGeneration();
+      });
 
       ipcMain.handle(
         "getSourceItemCounts",
@@ -608,8 +608,28 @@ if (!gotTheLock) {
           _event,
           sourceUuid: string,
           upperBound: number,
+          requestToken?: string,
         ): Promise<string | null> => {
-          return db.addPendingSourceConversationSeen(sourceUuid, upperBound);
+          return db.addPendingSourceConversationSeen(
+            sourceUuid,
+            upperBound,
+            requestToken,
+          );
+        },
+      );
+      ipcMain.handle(
+        "finalizePendingSourceConversationSeen",
+        async (
+          _event,
+          sourceUuid: string,
+          requestToken: string,
+          keep: boolean,
+        ): Promise<boolean> => {
+          return db.finalizePendingSourceConversationSeen(
+            sourceUuid,
+            requestToken,
+            keep,
+          );
         },
       );
 
