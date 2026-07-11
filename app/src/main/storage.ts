@@ -142,21 +142,33 @@ export class Storage {
         sourceID,
         error: err,
       });
+      throw err;
     }
   }
 
   async deleteItemFs(item: Item): Promise<void> {
+    await this.deleteItemDirectory(item.data.source, item.uuid);
+  }
+
+  async deleteItemDirectory(
+    sourceUuid: string,
+    itemUuid: string,
+  ): Promise<void> {
     try {
-      const itemDirectory = this.itemDirectory(item.data, false);
+      const itemDirectory = this.sourceDirectory(
+        sourceUuid,
+        false,
+      ).getSubBuilder(itemUuid);
       await fs.promises.rm(itemDirectory.path, {
         recursive: true,
         force: true,
       });
     } catch (err) {
       console.error("Failed to delete item from filesystem", {
-        item: item.uuid,
+        item: itemUuid,
         error: err,
       });
+      throw err;
     }
   }
 }

@@ -132,6 +132,7 @@ vi.mock("./crypto", () => ({
 vi.mock("./datastore", () => ({
   Datastore: class {
     getPendingEvents = vi.fn(() => []);
+    getPendingSourceCleanups = vi.fn(() => []);
     close = testState.datastoreClose;
   },
 }));

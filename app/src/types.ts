@@ -103,6 +103,12 @@ export type WorkerAuthedRequest = {
 export type AbortSourceFetch = {
   type: "abortSourceFetch";
   sourceUuid: string;
+  requestId?: string;
+};
+
+export type SourceFetchAborted = {
+  type: "sourceFetchAborted";
+  requestId: string;
 };
 
 // Message sent to the fetch worker to cancel a single item download
@@ -258,6 +264,13 @@ export type PendingEventRow = {
   item_uuid: string | null;
   type: string;
   data: string; // JSON stringified PendingEventData
+};
+
+export type PendingSourceCleanup = {
+  id: string;
+  sourceUuid: string;
+  upperBound: number;
+  itemUuids: string[];
 };
 
 export enum FetchStatus {
