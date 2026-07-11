@@ -255,6 +255,11 @@ describe("Sources Component", () => {
     // Mock electronAPI with partial implementation for these tests
     window.electronAPI = {
       getSources: vi.fn().mockResolvedValue(mockSources),
+      getSourceItemCounts: vi.fn().mockResolvedValue({
+        messages: 0,
+        files: 0,
+        replies: 0,
+      }),
       search: vi
         .fn()
         .mockImplementation((query: string) =>
@@ -1251,7 +1256,7 @@ describe("Sources Component", () => {
 
       // Focus the search input and fire keydown on it
       const searchInput = screen.getByTestId("source-search-input");
-      searchInput.focus();
+      await userEvent.click(searchInput);
 
       // Press Ctrl+Delete while focused on input
       fireEvent.keyDown(searchInput, {

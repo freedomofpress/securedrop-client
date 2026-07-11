@@ -144,6 +144,14 @@ describe("PathBuilder", () => {
       expect(result2).toBe(`${tempDir}/foo/bar/file.txt`);
     });
 
+    it("should allow existing directories within root", () => {
+      fs.mkdirSync(path.join(tempDir, "existing"));
+
+      const result = builder.getSubBuilder("existing");
+
+      expect(result.path).toBe(`${tempDir}/existing/`);
+    });
+
     it("should reject bad input", () => {
       expect(() => builder.join("..")).toThrow("Invalid path component: ..");
       expect(() => builder.join("foo/bar")).toThrow(

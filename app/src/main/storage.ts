@@ -1,6 +1,7 @@
 import * as fs from "fs";
 import os from "os";
-import { Item, ItemMetadata } from "../types";
+import pathModule from "path";
+import { FilesystemCleanupJob, ItemMetadata } from "../types";
 import { ItemFetchTask } from "./fetch/queue";
 
 /// Newtype for when we know a path component is potentially unsafe,
@@ -53,8 +54,14 @@ export class PathBuilder {
   doesntEscape(path: string) {
     // Don't allow escape via symlinks
     if (fs.existsSync(path)) {
+      const root = fs.realpathSync(this.path);
       const absolute = fs.realpathSync(path);
-      if (!absolute.startsWith(this.path)) {
+      const relative = pathModule.relative(root, absolute);
+      if (
+        relative === ".." ||
+        relative.startsWith(`..${pathModule.sep}`) ||
+        pathModule.isAbsolute(relative)
+      ) {
         throw new Error(`Path ${path} escapes root ${this.path}`);
       }
     }
@@ -116,9 +123,15 @@ export class Storage {
   }
 
   itemDirectory(item: ItemMetadata, mkdir: boolean = true): PathBuilder {
-    const dir = this.sourceDirectory(item.source, mkdir).getSubBuilder(
-      item.uuid,
-    );
+    return this.itemDirectoryByIdentity(item.source, item.uuid, mkdir);
+  }
+
+  itemDirectoryByIdentity(
+    sourceUuid: string,
+    itemUuid: string,
+    mkdir: boolean = true,
+  ): PathBuilder {
+    const dir = this.sourceDirectory(sourceUuid, mkdir).getSubBuilder(itemUuid);
     if (mkdir) {
       fs.mkdirSync(dir.path, { recursive: true });
     }
@@ -133,30 +146,25 @@ export class Storage {
     return new PathBuilder(tempDir + "/");
   }
 
-  async deleteSourceFs(sourceID: string): Promise<void> {
-    try {
-      const sourceDirectory = this.sourceDirectory(sourceID, false).path;
-      await fs.promises.rm(sourceDirectory, { recursive: true, force: true });
-    } catch (err) {
-      console.error("Failed to delete source from filesystem: ", {
-        sourceID,
-        error: err,
-      });
+  async runFilesystemCleanupJob(job: FilesystemCleanupJob): Promise<void> {
+    if (job.status !== "pending" || !job.source_uuid) {
+      throw new Error(`Cleanup job ${job.id} is not executable`);
     }
+    const directory =
+      job.target === "source"
+        ? this.sourceDirectory(job.source_uuid, false)
+        : this.itemDirectoryByIdentity(
+            job.source_uuid,
+            this.requireItemUuid(job),
+            false,
+          );
+    await fs.promises.rm(directory.path, { recursive: true, force: true });
   }
 
-  async deleteItemFs(item: Item): Promise<void> {
-    try {
-      const itemDirectory = this.itemDirectory(item.data, false);
-      await fs.promises.rm(itemDirectory.path, {
-        recursive: true,
-        force: true,
-      });
-    } catch (err) {
-      console.error("Failed to delete item from filesystem", {
-        item: item.uuid,
-        error: err,
-      });
+  private requireItemUuid(job: FilesystemCleanupJob): string {
+    if (!job.item_uuid) {
+      throw new Error(`Item cleanup job ${job.id} has no item identity`);
     }
+    return job.item_uuid;
   }
 }

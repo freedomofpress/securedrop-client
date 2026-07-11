@@ -1,10 +1,21 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-import { SyncStatus } from "../types";
+import { PendingEventType, SyncStatus } from "../types";
 
 const testState = vi.hoisted(() => {
   const registeredHandlers = new Map<string, (...args: unknown[]) => unknown>();
   const workerInstances: MockWorker[] = [];
+  const datastore = {
+    addPendingSourceConversationSeen: vi.fn(),
+    addPendingSourceEvent: vi.fn(),
+    addPendingSourceEventBatch: vi.fn(),
+    cleanupInvalidLifecycleData: vi.fn(() => Promise.resolve()),
+    close: vi.fn(),
+    deleteItemFs: vi.fn(),
+    getPendingEvents: vi.fn(() => []),
+    getSourceWithItems: vi.fn(() => ({ items: [] })),
+    runFilesystemCleanupJobs: vi.fn(() => Promise.resolve()),
+  };
 
   class MockWorker {
     on = vi.fn();
@@ -81,7 +92,7 @@ const testState = vi.hoisted(() => {
       qubes_gpg_domain: undefined,
     })),
     cryptoInitialize: vi.fn(() => ({ mock: "crypto" })),
-    datastoreClose: vi.fn(),
+    datastore,
     setUmask: vi.fn(),
   };
 });
@@ -131,8 +142,17 @@ vi.mock("./crypto", () => ({
 
 vi.mock("./datastore", () => ({
   Datastore: class {
-    getPendingEvents = vi.fn(() => []);
-    close = testState.datastoreClose;
+    addPendingSourceConversationSeen =
+      testState.datastore.addPendingSourceConversationSeen;
+    addPendingSourceEvent = testState.datastore.addPendingSourceEvent;
+    addPendingSourceEventBatch = testState.datastore.addPendingSourceEventBatch;
+    cleanupInvalidLifecycleData =
+      testState.datastore.cleanupInvalidLifecycleData;
+    close = testState.datastore.close;
+    deleteItemFs = testState.datastore.deleteItemFs;
+    getPendingEvents = testState.datastore.getPendingEvents;
+    getSourceWithItems = testState.datastore.getSourceWithItems;
+    runFilesystemCleanupJobs = testState.datastore.runFilesystemCleanupJobs;
   },
 }));
 
@@ -230,12 +250,26 @@ describe("syncMetadata IPC handler", () => {
     testState.mockSleep.mockResolvedValue(undefined);
     testState.configLoad.mockClear();
     testState.cryptoInitialize.mockClear();
-    testState.datastoreClose.mockClear();
+    for (const mock of Object.values(testState.datastore)) {
+      mock.mockClear();
+    }
     testState.setUmask.mockClear();
   });
 
   afterEach(() => {
     vi.clearAllMocks();
+  });
+
+  it("repairs invalid lifecycle data before registering IPC handlers", async () => {
+    await loadMainProcessModule();
+
+    expect(
+      testState.datastore.cleanupInvalidLifecycleData,
+    ).toHaveBeenCalledOnce();
+    expect(
+      testState.datastore.cleanupInvalidLifecycleData.mock
+        .invocationCallOrder[0],
+    ).toBeLessThan(testState.ipcMain.handle.mock.invocationCallOrder[0]!);
   });
 
   it("re-wakes the fetch worker when sync returns NOT_MODIFIED", async () => {
@@ -316,5 +350,119 @@ describe("syncMetadata IPC handler", () => {
     expect(testState.mockSleep).toHaveBeenNthCalledWith(1, 2000);
     expect(testState.mockSleep).toHaveBeenNthCalledWith(2, 4000);
     expect(testState.mockSleep).toHaveBeenNthCalledWith(3, 8000);
+  });
+});
+
+describe("lifecycle event IPC handlers", () => {
+  beforeEach(async () => {
+    vi.resetModules();
+    testState.registeredHandlers.clear();
+    for (const mock of Object.values(testState.datastore)) {
+      mock.mockClear();
+    }
+    await loadMainProcessModule();
+  });
+
+  it("rejects an invalid truncation bound before cleanup", async () => {
+    const handler = testState.registeredHandlers.get("addPendingSourceEvent");
+    expect(handler).toBeDefined();
+
+    await expect(
+      handler!({}, "source-1", PendingEventType.SourceConversationTruncated, {
+        upper_bound: 1.5,
+      }),
+    ).rejects.toThrow();
+
+    expect(testState.datastore.getSourceWithItems).not.toHaveBeenCalled();
+    expect(testState.datastore.deleteItemFs).not.toHaveBeenCalled();
+    expect(testState.datastore.addPendingSourceEvent).not.toHaveBeenCalled();
+  });
+
+  it("handles a zero truncation bound without skipping cleanup", async () => {
+    const handler = testState.registeredHandlers.get("addPendingSourceEvent");
+    expect(handler).toBeDefined();
+
+    await handler!(
+      {},
+      "source-1",
+      PendingEventType.SourceConversationTruncated,
+      { upper_bound: 0 },
+    );
+
+    expect(testState.datastore.getSourceWithItems).not.toHaveBeenCalled();
+    expect(testState.datastore.deleteItemFs).not.toHaveBeenCalled();
+    expect(testState.datastore.addPendingSourceEvent).toHaveBeenCalledWith(
+      "source-1",
+      PendingEventType.SourceConversationTruncated,
+      { upper_bound: 0 },
+    );
+    expect(testState.datastore.runFilesystemCleanupJobs).toHaveBeenCalledOnce();
+  });
+
+  it.each([
+    PendingEventType.SourceConversationSeen,
+    PendingEventType.SourceConversationTruncated,
+  ])("rejects %s without data before cleanup", async (type) => {
+    const handler = testState.registeredHandlers.get("addPendingSourceEvent");
+    expect(handler).toBeDefined();
+
+    await expect(handler!({}, "source-1", type)).rejects.toThrow();
+
+    expect(testState.datastore.getSourceWithItems).not.toHaveBeenCalled();
+    expect(testState.datastore.deleteItemFs).not.toHaveBeenCalled();
+    expect(testState.datastore.addPendingSourceEvent).not.toHaveBeenCalled();
+  });
+
+  it("validates a source event batch before any cleanup", async () => {
+    const handler = testState.registeredHandlers.get(
+      "addPendingSourceEventBatch",
+    );
+    expect(handler).toBeDefined();
+
+    await expect(
+      handler!({}, [
+        {
+          sourceUuid: "source-1",
+          type: PendingEventType.SourceConversationTruncated,
+          data: { upper_bound: 1 },
+        },
+        {
+          sourceUuid: "source-2",
+          type: PendingEventType.SourceConversationTruncated,
+        },
+      ]),
+    ).rejects.toThrow();
+
+    expect(testState.datastore.getSourceWithItems).not.toHaveBeenCalled();
+    expect(testState.datastore.deleteItemFs).not.toHaveBeenCalled();
+    expect(
+      testState.datastore.addPendingSourceEventBatch,
+    ).not.toHaveBeenCalled();
+  });
+
+  it("rejects an invalid seen bound before the datastore call", async () => {
+    const handler = testState.registeredHandlers.get(
+      "addPendingSourceConversationSeen",
+    );
+    expect(handler).toBeDefined();
+
+    await expect(handler!({}, "source-1", Number.NaN)).rejects.toThrow();
+
+    expect(
+      testState.datastore.addPendingSourceConversationSeen,
+    ).not.toHaveBeenCalled();
+  });
+
+  it("passes a zero seen bound to the datastore", async () => {
+    const handler = testState.registeredHandlers.get(
+      "addPendingSourceConversationSeen",
+    );
+    expect(handler).toBeDefined();
+
+    await handler!({}, "source-1", 0);
+
+    expect(
+      testState.datastore.addPendingSourceConversationSeen,
+    ).toHaveBeenCalledWith("source-1", 0);
   });
 });

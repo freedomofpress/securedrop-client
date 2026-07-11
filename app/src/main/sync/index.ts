@@ -5,6 +5,8 @@ import {
   BatchRequest,
   BatchResponse,
   SyncStatus,
+  IndexDeletionPlan,
+  PendingEvent,
 } from "../../types";
 import { DB, DEFAULT_PENDING_EVENTS_LIMIT } from "../database";
 import { Datastore } from "../datastore";
@@ -119,13 +121,10 @@ async function submitBatch(
   );
 }
 
-// Given the server index and the client's index, return the sources and items
-// that need to be synced. Also deletes items that are not in the server index.
-export async function reconcileIndex(
-  db: Datastore,
+export function reconcileIndex(
   serverIndex: Index,
   clientIndex: Index,
-): Promise<BatchRequest> {
+): { request: BatchRequest; deletions: IndexDeletionPlan } {
   const sourcesToUpdate: string[] = [];
   Object.keys(serverIndex.sources).forEach((sourceID) => {
     if (
@@ -141,10 +140,6 @@ export async function reconcileIndex(
   const sourcesToDelete = Object.keys(clientIndex.sources).filter(
     (source) => !serverSourceSet.has(source),
   );
-  if (sourcesToDelete.length > 0) {
-    await db.deleteSourcesAsync(sourcesToDelete);
-  }
-
   const itemsToUpdate: string[] = [];
   Object.keys(serverIndex.items).forEach((itemID) => {
     if (
@@ -159,10 +154,6 @@ export async function reconcileIndex(
   const itemsToDelete = Object.keys(clientIndex.items).filter(
     (item) => !serverItemSet.has(item),
   );
-  if (itemsToDelete.length > 0) {
-    await db.deleteItemsAsync(itemsToDelete);
-  }
-
   const journalistsToUpdate: string[] = [];
   Object.keys(serverIndex.journalists).forEach((journalistID) => {
     if (
@@ -178,15 +169,18 @@ export async function reconcileIndex(
   const journalistsToDelete = Object.keys(clientIndex.journalists).filter(
     (journalist) => !serverJournalistSet.has(journalist),
   );
-  if (journalistsToDelete.length > 0) {
-    db.deleteJournalists(journalistsToDelete);
-  }
-
   return {
-    sources: sourcesToUpdate,
-    items: itemsToUpdate,
-    journalists: journalistsToUpdate,
-    events: [],
+    request: {
+      sources: sourcesToUpdate,
+      items: itemsToUpdate,
+      journalists: journalistsToUpdate,
+      events: [],
+    },
+    deletions: {
+      sources: sourcesToDelete,
+      items: itemsToDelete,
+      journalists: journalistsToDelete,
+    },
   };
 }
 
@@ -201,6 +195,43 @@ export function shouldSkipSync(db: DB, hintedVersion?: string): boolean {
   return nothingIncoming && nothingOutgoing;
 }
 
+function getPendingEventsForAttempt(
+  db: Datastore,
+  attempt?: number,
+): PendingEvent[] {
+  if (attempt === undefined || attempt <= 0) {
+    return db.getPendingEvents();
+  }
+  const limit = Math.max(
+    1,
+    Math.ceil(DEFAULT_PENDING_EVENTS_LIMIT / (attempt + 1)),
+  );
+  return db.getPendingEvents(limit);
+}
+
+function buildBatchPlan(
+  db: Datastore,
+  indexResponse: IndexResponse,
+  pendingEvents: PendingEvent[],
+): { request: BatchRequest; deletions: IndexDeletionPlan } {
+  const emptyDeletions = { sources: [], items: [], journalists: [] };
+  if (indexResponse.status !== 200) {
+    return {
+      request: {
+        sources: [],
+        items: [],
+        journalists: [],
+        events: pendingEvents,
+      },
+      deletions: emptyDeletions,
+    };
+  }
+
+  const reconciliation = reconcileIndex(indexResponse.index, db.getIndex());
+  reconciliation.request.events = pendingEvents;
+  return reconciliation;
+}
+
 // Executes metadata sync with SecureDrop server, updating
 // the current version and persisting updated source, reply,
 // and submission metadata to the DB.
@@ -213,16 +244,11 @@ export async function syncMetadata(
   attempt?: number,
 ): Promise<SyncStatus> {
   console.log("[sync] syncing ", { hintedRecords, attempt });
+  await db.runFilesystemCleanupJobs();
 
   const currentVersion = db.getVersion();
 
-  // Decrease event batch size on retry attempts
-  const pendingEvents =
-    attempt && attempt > 0
-      ? db.getPendingEvents(
-          Math.max(1, Math.ceil(DEFAULT_PENDING_EVENTS_LIMIT / (attempt + 1))),
-        )
-      : db.getPendingEvents();
+  const pendingEvents = getPendingEventsForAttempt(db, attempt);
 
   const indexResponse = await getServerIndex(
     authToken,
@@ -238,25 +264,11 @@ export async function syncMetadata(
 
   let syncStatus = SyncStatus.NOT_MODIFIED;
 
-  const request: BatchRequest = {
-    sources: [],
-    items: [],
-    journalists: [],
-    events: pendingEvents,
-  };
-
-  if (indexResponse.status === 200) {
-    // Reconcile with client's index to get metadata to update
-    const clientIndex = db.getIndex();
-    const { sources, items, journalists } = await reconcileIndex(
-      db,
-      indexResponse.index,
-      clientIndex,
-    );
-    request.sources = sources;
-    request.items = items;
-    request.journalists = journalists;
-  }
+  const { request, deletions } = buildBatchPlan(
+    db,
+    indexResponse,
+    pendingEvents,
+  );
 
   // No pending events and no server updates, nothing to sync
   if (
@@ -287,7 +299,8 @@ export async function syncMetadata(
     return SyncStatus.FORBIDDEN;
   }
 
-  db.updateBatch(batchResponse.data);
+  db.updateBatch(batchResponse.data, deletions);
+  await db.runFilesystemCleanupJobs();
 
   syncStatus = SyncStatus.UPDATED;
   console.log("[sync] updates complete");

@@ -164,6 +164,22 @@ export type MetadataRequest = {
   journalists: string[];
 };
 
+export type IndexDeletionPlan = {
+  sources: string[];
+  items: string[];
+  journalists: string[];
+};
+
+export type FilesystemCleanupJob = {
+  id: string;
+  target: "item" | "source";
+  source_uuid: string | null;
+  item_uuid: string | null;
+  metadata_item_uuid: string | null;
+  status: "pending" | "quarantined";
+  reason: string | null;
+};
+
 /** UI Types */
 
 export type Source = {
@@ -226,6 +242,7 @@ export type SourceRow = {
 
 export type Item = {
   uuid: string;
+  source_uuid?: string;
   data: ItemMetadata;
   plaintext: string | null;
   filename: string | null;
@@ -237,6 +254,7 @@ export type Item = {
 // Database representation
 export type ItemRow = {
   uuid: string;
+  source_uuid: string | null;
   data: string; // JSON stringified ItemMetadata
   plaintext: string | null;
   filename: string | null;

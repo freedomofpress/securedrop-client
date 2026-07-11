@@ -1,5 +1,7 @@
 import { describe, it, beforeAll, afterAll } from "vitest";
 import { expect } from "@playwright/test";
+import fs from "fs";
+import path from "path";
 
 import { TestContext, createDbHelper, TestHelpers } from "./helper";
 import { Crypto } from "../src/main/crypto";
@@ -13,8 +15,10 @@ const TARGET_SOURCE = {
 describe.sequential("deleting source conversation", () => {
   let context: TestContext;
   let helpers: TestHelpers;
+  let dbHelper: ReturnType<typeof createDbHelper>;
   let initialSourceCount: number;
   let initialItemCount: number;
+  let cleanupFilePath: string;
 
   beforeAll(async () => {
     context = await TestContext.setup();
@@ -22,14 +26,37 @@ describe.sequential("deleting source conversation", () => {
       isQubes: false,
       submissionKeyFingerprint: "",
     });
-    const dbHelper = createDbHelper(crypto, context.dbPath);
+    dbHelper = createDbHelper(crypto, context.dbPath);
     helpers = new TestHelpers(context, dbHelper);
     await context.login();
     await context.runSync();
+    await expect(
+      context.page.locator('[data-testid^="source-checkbox-"]'),
+    ).toHaveCount(3, { timeout: 60000 });
 
     // Store initial counts
     initialSourceCount = await context.getVisibleSourceCount();
     initialItemCount = await helpers.getSourceItemCount(TARGET_SOURCE.uuid);
+    const itemUuid = await dbHelper.withDb((db) => {
+      const item = db.getSourceWithItems(TARGET_SOURCE.uuid).items[0];
+      if (!item) {
+        throw new Error(
+          "Target source has no item for filesystem cleanup test",
+        );
+      }
+      return item.uuid;
+    });
+    cleanupFilePath = path.join(
+      context.tempDir,
+      ".config",
+      "SecureDrop",
+      "files",
+      TARGET_SOURCE.uuid,
+      itemUuid,
+      "plaintext",
+    );
+    fs.mkdirSync(path.dirname(cleanupFilePath), { recursive: true });
+    fs.writeFileSync(cleanupFilePath, "server-backed cleanup secret");
     console.log(`Initial source count: ${initialSourceCount}`);
     console.log(`Initial item count for target source: ${initialItemCount}`);
   }, 180000);
@@ -38,6 +65,44 @@ describe.sequential("deleting source conversation", () => {
     await context.teardown();
     await TestContext.stopServer();
   }, 60000);
+
+  it("round trips a zero truncation bound through preload and API2", async () => {
+    const eventId = await context.page.evaluate(async (sourceUuid) => {
+      const electronWindow = window as unknown as {
+        electronAPI: {
+          addPendingSourceEvent: (
+            sourceUuid: string,
+            type: PendingEventType,
+            data: { upper_bound: number },
+          ) => Promise<string | null>;
+        };
+      };
+      return electronWindow.electronAPI.addPendingSourceEvent(
+        sourceUuid,
+        "source_conversation_truncated" as PendingEventType,
+        { upper_bound: 0 },
+      );
+    }, TARGET_SOURCE.uuid);
+
+    expect(eventId).not.toBeNull();
+    expect(await helpers.getSourceItemCount(TARGET_SOURCE.uuid)).toBe(
+      initialItemCount,
+    );
+    await context.runSync();
+    await helpers.waitForPendingEvents(
+      PendingEventType.SourceConversationTruncated,
+      0,
+      60000,
+    );
+    expect(
+      await helpers.getPendingEventsByType(
+        PendingEventType.SourceConversationTruncated,
+      ),
+    ).toHaveLength(0);
+    expect(await helpers.getSourceItemCount(TARGET_SOURCE.uuid)).toBe(
+      initialItemCount,
+    );
+  });
 
   it("deletes conversation but keeps source account locally", async () => {
     // Verify source exists and has items before deletion
@@ -66,11 +131,20 @@ describe.sequential("deleting source conversation", () => {
     // Verify items are hidden from conversation (projected as deleted)
     const itemCount = await helpers.getSourceItemCount(TARGET_SOURCE.uuid);
     expect(itemCount).toBe(0);
+    expect(fs.existsSync(cleanupFilePath)).toBe(false);
+    expect(
+      await dbHelper.withDb((db) => db.getFilesystemCleanupJobs()),
+    ).toHaveLength(0);
   });
 
   it("syncs the conversation delete event with the server", async () => {
     // Run sync to push the delete event to the server
     await context.runSync();
+    await helpers.waitForPendingEvents(
+      PendingEventType.SourceConversationTruncated,
+      0,
+      60000,
+    );
 
     // Verify pending events are cleared
     const pendingEvents = await helpers.getPendingEventsByType(

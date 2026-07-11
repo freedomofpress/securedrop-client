@@ -38,7 +38,7 @@ export const fetchConversation = createAsyncThunk(
 
     // Mark all items in this conversation as seen
     const maxInteractionCount = sourceWithItems.items.reduce(
-      (max, item) => Math.max(max, item.data.interaction_count ?? 0),
+      (max, item) => Math.max(max, item.data.interaction_count),
       0,
     );
     if (maxInteractionCount > 0) {
@@ -74,7 +74,7 @@ export const fetchOlderConversationItems = createAsyncThunk(
 
     // Mark all older items in this conversation as seen
     const maxInteractionCount = sourceWithItems.items.reduce(
-      (max, item) => Math.max(max, item.data.interaction_count ?? 0),
+      (max, item) => Math.max(max, item.data.interaction_count),
       0,
     );
     if (maxInteractionCount > 0) {

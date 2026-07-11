@@ -273,6 +273,36 @@ WHERE
             pending_events.type = 'source_deleted'
     )
 /* sources_projected(uuid,data,version,has_attachment,is_seen) */;
+CREATE TABLE filesystem_cleanup_jobs (
+    id TEXT PRIMARY KEY,
+    target TEXT NOT NULL CHECK (target IN ('item', 'source')),
+    source_uuid TEXT,
+    item_uuid TEXT,
+    metadata_item_uuid TEXT,
+    status TEXT NOT NULL CHECK (status IN ('pending', 'quarantined')),
+    reason TEXT,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    CHECK (
+        (
+            target = 'source'
+            AND source_uuid IS NOT NULL
+            AND item_uuid IS NULL
+            AND metadata_item_uuid IS NULL
+            AND status = 'pending'
+        )
+        OR
+        (
+            target = 'item'
+            AND item_uuid IS NOT NULL
+            AND (
+                (status = 'pending' AND source_uuid IS NOT NULL)
+                OR status = 'quarantined'
+            )
+        )
+    )
+);
+CREATE INDEX idx_filesystem_cleanup_jobs_status
+ON filesystem_cleanup_jobs(status, created_at, id);
 -- Dbmate schema migrations
 INSERT INTO "schema_migrations" (version) VALUES
   ('20260203225412'),
@@ -283,4 +313,5 @@ INSERT INTO "schema_migrations" (version) VALUES
   ('20260416000000'),
   ('20260507000000'),
   ('20260511000000'),
-  ('20260624000000');
+  ('20260624000000'),
+  ('20260710200000');

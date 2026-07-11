@@ -18,6 +18,20 @@ export const API_MINOR_VERSION = 4; // 2.x
 
 export const UUIDSchema = z.uuid({ version: "v4" });
 
+export const InteractionCountSchema = z
+  .number()
+  .finite()
+  .int()
+  .positive()
+  .safe();
+
+export const EventUpperBoundSchema = z
+  .number()
+  .finite()
+  .int()
+  .nonnegative()
+  .safe();
+
 export interface SizedSchema {
   recordSize: number;
   description: string;
@@ -61,7 +75,7 @@ export const ReplyMetadataSchema = z.object({
   journalist_uuid: UUIDSchema,
   is_deleted_by_source: z.boolean(),
   seen_by: z.array(UUIDSchema),
-  interaction_count: z.number(),
+  interaction_count: InteractionCountSchema,
 });
 
 export const SubmissionMetadataSchema = z.object({
@@ -71,7 +85,7 @@ export const SubmissionMetadataSchema = z.object({
   size: z.number(),
   is_read: z.boolean(),
   seen_by: z.array(UUIDSchema),
-  interaction_count: z.number(),
+  interaction_count: InteractionCountSchema,
 });
 
 // Item metadata is either a reply or submission
@@ -101,12 +115,24 @@ export const IndexSized: SizedSchema = {
 };
 
 // Metadata, maps UUIDs to full metadata objects
-export const BatchResponseSchema = z.object({
-  sources: z.record(UUIDSchema, SourceMetadataSchema.nullable()),
-  items: z.record(UUIDSchema, ItemMetadataSchema.nullable()),
-  journalists: z.record(UUIDSchema, JournalistMetadataSchema.nullable()),
-  events: z.record(z.string(), z.tuple([z.number(), z.string().nullable()])),
-});
+export const BatchResponseSchema = z
+  .object({
+    sources: z.record(UUIDSchema, SourceMetadataSchema.nullable()),
+    items: z.record(UUIDSchema, ItemMetadataSchema.nullable()),
+    journalists: z.record(UUIDSchema, JournalistMetadataSchema.nullable()),
+    events: z.record(z.string(), z.tuple([z.number(), z.string().nullable()])),
+  })
+  .superRefine(({ items }, context) => {
+    for (const [itemUuid, metadata] of Object.entries(items)) {
+      if (metadata !== null && metadata.uuid !== itemUuid) {
+        context.addIssue({
+          code: "custom",
+          message: "Item metadata UUID must match its batch map key",
+          path: ["items", itemUuid, "uuid"],
+        });
+      }
+    }
+  });
 
 // Interface for size calculations
 export const BatchResponseSized: SizedSchema = {
@@ -151,16 +177,40 @@ const BasePendingEvent = {
   target: z.union([SourceTargetSchema, ItemTargetSchema]),
 };
 
-const SourceConversationSeenDataSchema = z.object({ upper_bound: z.number() });
+const SourceConversationSeenDataSchema = z.object({
+  upper_bound: EventUpperBoundSchema,
+});
 
 const SourceConversationTruncatedDataSchema = z.object({
-  upper_bound: z.number(),
+  upper_bound: EventUpperBoundSchema,
 });
 
 export const PendingEventDataSchema = z.union([
   SourceConversationSeenDataSchema,
   SourceConversationTruncatedDataSchema,
 ]);
+
+const SourcePendingEventDataSchemas: Partial<
+  Record<PendingEventType, z.ZodType<unknown>>
+> = {
+  [PendingEventType.SourceDeleted]: z.undefined(),
+  [PendingEventType.SourceConversationTruncated]:
+    SourceConversationTruncatedDataSchema,
+  [PendingEventType.Starred]: z.undefined(),
+  [PendingEventType.Unstarred]: z.undefined(),
+  [PendingEventType.SourceConversationSeen]: SourceConversationSeenDataSchema,
+};
+
+export function validatePendingEventData(
+  type: PendingEventType,
+  data?: PendingEventData,
+): void {
+  const schema = SourcePendingEventDataSchemas[type];
+  if (!schema) {
+    throw new Error(`Unsupported source event type: ${type}`);
+  }
+  schema.parse(data);
+}
 
 export const PendingEventSchema = z.discriminatedUnion("type", [
   z.object({

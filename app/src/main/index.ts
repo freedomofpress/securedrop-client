@@ -38,7 +38,12 @@ import {
   PendingEventData,
   type ms,
 } from "../types";
-import { TokenResponseSchema, API_MINOR_VERSION } from "../schemas";
+import {
+  TokenResponseSchema,
+  API_MINOR_VERSION,
+  EventUpperBoundSchema,
+  validatePendingEventData,
+} from "../schemas";
 import { syncMetadata, shouldSkipSync } from "./sync";
 import workerPath from "./fetch/worker?modulePath";
 import { Lock, LockTimeoutError } from "./sync/lock";
@@ -163,6 +168,7 @@ if (!gotTheLock) {
   }
 
   const { db, cryptoConfig } = initializeMainDependencies();
+  const startupCleanup = db.cleanupInvalidLifecycleData();
 
   // Generate a CSP nonce for this session (used by Ant Design)
   const cspNonce = randomBytes(32).toString("base64");
@@ -276,6 +282,7 @@ if (!gotTheLock) {
   // Some APIs can only be used after this event occurs.
   app
     .whenReady()
+    .then(() => startupCleanup)
     .then(() => {
       // Set strict Content Security Policy via HTTP header with nonce
       session.defaultSession.webRequest.onHeadersReceived(
@@ -493,43 +500,15 @@ if (!gotTheLock) {
         return systemLanguage;
       });
 
-      // Handle cleanup from source event: in cases of deletion or truncation,
-      // we should abort fetches and delete from the fs
-      async function sourceEventCleanup(
+      function abortSourceFetch(
         sourceUuid: string,
         type: PendingEventType,
-        data?: PendingEventData,
-      ) {
-        // Immediately delete any source files from the fs on pending deletion
-        if (type === PendingEventType.SourceDeleted) {
-          await db.deleteSourceFs(sourceUuid);
-          // Abort any in-flight downloads for this source in the fetch worker
-          if (fetchWorker) {
-            fetchWorker.postMessage({
-              type: "abortSourceFetch",
-              sourceUuid,
-            });
-          }
-        }
-        // For truncation, abort in-flight downloads and delete truncated item files from the fs
-        if (type === PendingEventType.SourceConversationTruncated) {
-          // Abort any in-flight downloads for this source in the fetch worker
-          if (fetchWorker) {
-            fetchWorker.postMessage({
-              type: "abortSourceFetch",
-              sourceUuid,
-            });
-          }
-          if (data?.upper_bound) {
-            const items = db.getSourceWithItems(sourceUuid, {
-              beforeInteractionCount: data?.upper_bound + 1,
-            }).items;
-            const DELETE_BATCH_SIZE = 8;
-            for (let i = 0; i < items.length; i += DELETE_BATCH_SIZE) {
-              const batch = items.slice(i, i + DELETE_BATCH_SIZE);
-              await Promise.all(batch.map((item) => db.deleteItemFs(item)));
-            }
-          }
+      ): void {
+        const deletesSourceData =
+          type === PendingEventType.SourceDeleted ||
+          type === PendingEventType.SourceConversationTruncated;
+        if (deletesSourceData && fetchWorker) {
+          fetchWorker.postMessage({ type: "abortSourceFetch", sourceUuid });
         }
       }
 
@@ -541,8 +520,11 @@ if (!gotTheLock) {
           type: PendingEventType,
           data?: PendingEventData,
         ): Promise<string | null> => {
-          await sourceEventCleanup(sourceUuid, type, data);
-          return db.addPendingSourceEvent(sourceUuid, type, data);
+          validatePendingEventData(type, data);
+          const eventId = db.addPendingSourceEvent(sourceUuid, type, data);
+          abortSourceFetch(sourceUuid, type);
+          await db.runFilesystemCleanupJobs();
+          return eventId;
         },
       );
 
@@ -556,16 +538,15 @@ if (!gotTheLock) {
             data?: PendingEventData;
           }>,
         ): Promise<(string | null)[]> => {
-          const EVENT_BATCH_SIZE = 8;
-          for (let i = 0; i < events.length; i += EVENT_BATCH_SIZE) {
-            const batch = events.slice(i, i + EVENT_BATCH_SIZE);
-            await Promise.all(
-              batch.map(({ sourceUuid, type, data }) =>
-                sourceEventCleanup(sourceUuid, type, data),
-              ),
-            );
+          for (const { type, data } of events) {
+            validatePendingEventData(type, data);
           }
-          return db.addPendingSourceEventBatch(events);
+          const eventIds = db.addPendingSourceEventBatch(events);
+          for (const { sourceUuid, type } of events) {
+            abortSourceFetch(sourceUuid, type);
+          }
+          await db.runFilesystemCleanupJobs();
+          return eventIds;
         },
       );
 
@@ -592,13 +573,9 @@ if (!gotTheLock) {
           itemUuid: string,
           type: PendingEventType,
         ): Promise<string | null> => {
-          if (type === PendingEventType.ItemDeleted) {
-            const item = db.getItem(itemUuid);
-            if (item) {
-              db.deleteItemFs(item);
-            }
-          }
-          return db.addPendingItemEvent(itemUuid, type);
+          const eventId = db.addPendingItemEvent(itemUuid, type);
+          await db.runFilesystemCleanupJobs();
+          return eventId;
         },
       );
 
@@ -609,7 +586,10 @@ if (!gotTheLock) {
           sourceUuid: string,
           upperBound: number,
         ): Promise<string | null> => {
-          return db.addPendingSourceConversationSeen(sourceUuid, upperBound);
+          return db.addPendingSourceConversationSeen(
+            sourceUuid,
+            EventUpperBoundSchema.parse(upperBound),
+          );
         },
       );
 

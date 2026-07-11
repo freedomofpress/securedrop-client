@@ -337,9 +337,9 @@ describe("Datastore Method Tests", () => {
     });
 
     db.updateItems({
-      item1: mockItemMetadata("item1", "source2", "message", 1),
-      item2: mockItemMetadata("item2", "source2", "message", 2),
-      item3: mockItemMetadata("item3", "source2", "message", 3),
+      source2Item1: mockItemMetadata("source2Item1", "source2", "message", 1),
+      source2Item2: mockItemMetadata("source2Item2", "source2", "message", 2),
+      source2Item3: mockItemMetadata("source2Item3", "source2", "message", 3),
     });
     sourceWithItems = db.getSourceWithItems("source2");
     expect(sourceWithItems.items.length).toEqual(3);
@@ -1088,7 +1088,7 @@ describe("Datastore Method Tests", () => {
     expect(unrelatedEvent!.target).toHaveProperty("source_uuid", "source2");
   });
 
-  it("pending SourceConversationTruncated should purge all pending events for that source scope", async () => {
+  it("rejects SourceConversationTruncated without data without mutation", async () => {
     db.updateSources({
       source1: mockSourceMetadata("source1"),
       source2: mockSourceMetadata("source2"),
@@ -1112,35 +1112,20 @@ describe("Datastore Method Tests", () => {
       PendingEventType.ItemDeleted,
     );
 
-    const deleteEventId = db.addPendingSourceEvent(
-      "source1",
-      PendingEventType.SourceConversationTruncated,
-    );
+    const eventsBefore = db.getPendingEvents();
 
-    const events = db.getPendingEvents();
-    expect(events.length).toBe(3);
+    expect(() =>
+      db.addPendingSourceEvent(
+        "source1",
+        PendingEventType.SourceConversationTruncated,
+      ),
+    ).toThrow();
 
-    const deleteEvent = events.find((e) => e.id === deleteEventId);
-    expect(deleteEvent).toBeDefined();
-    expect(deleteEvent!.type).toBe(
-      PendingEventType.SourceConversationTruncated,
-    );
-    expect(deleteEvent!.target).toHaveProperty("source_uuid", "source1");
-
-    const remainingSourceEvent = events.find(
-      (e) => e.id === unrelatedSourceEvent,
-    );
-    expect(remainingSourceEvent).toBeDefined();
-    expect(remainingSourceEvent!.type).toBe(PendingEventType.Starred);
-    expect(remainingSourceEvent!.target).toHaveProperty(
-      "source_uuid",
-      "source2",
-    );
-
-    const remainingItemEvent = events.find((e) => e.id === unrelatedItemEvent);
-    expect(remainingItemEvent).toBeDefined();
-    expect(remainingItemEvent!.type).toBe(PendingEventType.ItemDeleted);
-    expect(remainingItemEvent!.target).toHaveProperty("item_uuid", "item3");
+    expect(db.getPendingEvents()).toEqual(eventsBefore);
+    expect(db.getItem("item1")?.fetch_status).toBe(FetchStatus.Initial);
+    expect(db.getItem("item2")?.fetch_status).toBe(FetchStatus.Initial);
+    expect(unrelatedSourceEvent).not.toBeNull();
+    expect(unrelatedItemEvent).not.toBeNull();
   });
 
   it("updatePendingEvents should remove successful events from pending_events", () => {
