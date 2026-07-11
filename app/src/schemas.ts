@@ -53,6 +53,18 @@ export const SourceMetadataSchema = z.object({
   fingerprint: z.string(),
 });
 
+export const InteractionCountSchema = z
+  .number()
+  .int()
+  .min(1)
+  .max(Number.MAX_SAFE_INTEGER);
+
+export const InteractionCountUpperBoundSchema = z
+  .number()
+  .int()
+  .min(0)
+  .max(Number.MAX_SAFE_INTEGER - 1);
+
 export const ReplyMetadataSchema = z.object({
   kind: z.literal("reply"),
   uuid: UUIDSchema,
@@ -61,7 +73,7 @@ export const ReplyMetadataSchema = z.object({
   journalist_uuid: UUIDSchema,
   is_deleted_by_source: z.boolean(),
   seen_by: z.array(UUIDSchema),
-  interaction_count: z.number(),
+  interaction_count: InteractionCountSchema,
 });
 
 export const SubmissionMetadataSchema = z.object({
@@ -71,7 +83,7 @@ export const SubmissionMetadataSchema = z.object({
   size: z.number(),
   is_read: z.boolean(),
   seen_by: z.array(UUIDSchema),
-  interaction_count: z.number(),
+  interaction_count: InteractionCountSchema,
 });
 
 // Item metadata is either a reply or submission
@@ -151,10 +163,12 @@ const BasePendingEvent = {
   target: z.union([SourceTargetSchema, ItemTargetSchema]),
 };
 
-const SourceConversationSeenDataSchema = z.object({ upper_bound: z.number() });
+export const SourceConversationSeenDataSchema = z.object({
+  upper_bound: InteractionCountUpperBoundSchema,
+});
 
-const SourceConversationTruncatedDataSchema = z.object({
-  upper_bound: z.number(),
+export const SourceConversationTruncatedDataSchema = z.object({
+  upper_bound: InteractionCountUpperBoundSchema,
 });
 
 export const PendingEventDataSchema = z.union([
