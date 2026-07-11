@@ -64,5 +64,7 @@ Description: This is the SecureDrop workstation template configuration package.
 
 Package: securedrop-workstation-viewer
 Architecture: all
-Depends: securedrop-workstation-config,securedrop-workstation-grsec,apparmor-profiles,apparmor-profiles-extra,apparmor-utils,audacious,eog,evince,file-roller,gnome-text-editor,totem,heif-gdk-pixbuf,libreoffice
+Depends: securedrop-workstation-config,securedrop-workstation-grsec,apparmor-profiles,apparmor-profiles-extra,apparmor-utils,audacious,eog,evince,file-roller,gnome-text-editor,totem,heif-gdk-pixbuf,libreoffice,
+# Drop the "| eog" alternative after we drop bookworm support
+ loupe | eog (<<47~)
 Description: This is the SecureDrop workstation SecureDrop Viewer Disposable VM template configuration package. This package provides dependencies and configuration for the Qubes SecureDrop workstation sd-viewer Template VM.
