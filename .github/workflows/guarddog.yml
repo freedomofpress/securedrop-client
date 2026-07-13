@@ -27,7 +27,7 @@ jobs:
       any: ${{ steps.discover.outputs.any }}
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
         with:
           # Need both the base and head commits for `git pkgs diff`.
           fetch-depth: 0
