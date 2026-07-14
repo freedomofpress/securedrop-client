@@ -3,6 +3,7 @@ import { configureStore } from "@reduxjs/toolkit";
 import { FetchStatus, type SourceWithItems } from "../../../types";
 import conversationSlice, {
   fetchConversation,
+  fetchOlderConversationItems,
   clearError,
   clearConversation,
   updateItem,
@@ -98,6 +99,39 @@ const mockSourceWithItems2: SourceWithItems = {
     },
   ],
 };
+
+const mockMessageItem = (interactionCount: number) => ({
+  uuid: `item-${interactionCount}`,
+  data: {
+    kind: "message" as const,
+    uuid: `item-${interactionCount}`,
+    source: "source-1",
+    size: 1024,
+    is_read: false,
+    seen_by: [],
+    interaction_count: interactionCount,
+  },
+  plaintext: `message-${interactionCount}`,
+  filename: null,
+  decrypted_size: null,
+  fetch_progress: 1024,
+  fetch_status: FetchStatus.Complete,
+});
+
+const mockMessageItems = (first: number, last: number) =>
+  Array.from({ length: last - first + 1 }, (_, index) =>
+    mockMessageItem(first + index),
+  );
+
+const mockSourcePage = (
+  firstInteractionCount: number,
+  lastInteractionCount: number,
+  hasMoreHistoricalItems: boolean,
+): SourceWithItems => ({
+  ...mockSourceWithItems,
+  items: mockMessageItems(firstInteractionCount, lastInteractionCount),
+  hasMoreHistoricalItems,
+});
 
 describe("conversationSlice", () => {
   let store: ReturnType<typeof configureStore>;
@@ -238,6 +272,80 @@ describe("conversationSlice", () => {
 
       // Check loading state is false after completion
       expect((store.getState() as any).conversation.loading).toBe(false);
+    });
+
+    it("does not mark a paginated first page as seen", async () => {
+      mockGetSourceWithItems.mockResolvedValue(mockSourcePage(52, 151, true));
+
+      await (store.dispatch as any)(fetchConversation("source-1"));
+
+      expect(mockAddPendingSourceConversationSeen).not.toHaveBeenCalled();
+
+      const state = (store.getState() as any).conversation;
+      expect(state.hasMoreHistoricalItems).toBe(true);
+      expect(state.conversation.items).toHaveLength(100);
+    });
+
+    it("marks a complete initial conversation page as seen", async () => {
+      mockGetSourceWithItems.mockResolvedValue(mockSourcePage(1, 2, false));
+
+      await (store.dispatch as any)(fetchConversation("source-1"));
+
+      expect(mockAddPendingSourceConversationSeen).toHaveBeenCalledOnce();
+      expect(mockAddPendingSourceConversationSeen).toHaveBeenCalledWith(
+        "source-1",
+        2,
+      );
+    });
+  });
+
+  describe("fetchOlderConversationItems async thunk", () => {
+    it("marks loaded history only after the final older page", async () => {
+      mockGetSourceWithItems
+        .mockResolvedValueOnce(mockSourcePage(52, 151, true))
+        .mockResolvedValueOnce(mockSourcePage(1, 51, false));
+
+      await (store.dispatch as any)(fetchConversation("source-1"));
+      expect(mockAddPendingSourceConversationSeen).not.toHaveBeenCalled();
+
+      await (store.dispatch as any)(fetchOlderConversationItems("source-1"));
+
+      expect(mockGetSourceWithItems).toHaveBeenLastCalledWith("source-1", {
+        limit: 100,
+        beforeInteractionCount: 52,
+      });
+      expect(mockAddPendingSourceConversationSeen).toHaveBeenCalledOnce();
+      expect(mockAddPendingSourceConversationSeen).toHaveBeenCalledWith(
+        "source-1",
+        151,
+      );
+
+      const state = (store.getState() as any).conversation;
+      expect(state.hasMoreHistoricalItems).toBe(false);
+      expect(state.conversation.items).toHaveLength(151);
+    });
+
+    it("continues deferring seen events while older pages remain", async () => {
+      mockGetSourceWithItems
+        .mockResolvedValueOnce(mockSourcePage(102, 201, true))
+        .mockResolvedValueOnce(mockSourcePage(52, 101, true))
+        .mockResolvedValueOnce(mockSourcePage(1, 51, false));
+
+      await (store.dispatch as any)(fetchConversation("source-1"));
+      await (store.dispatch as any)(fetchOlderConversationItems("source-1"));
+      expect(mockAddPendingSourceConversationSeen).not.toHaveBeenCalled();
+
+      await (store.dispatch as any)(fetchOlderConversationItems("source-1"));
+
+      expect(mockAddPendingSourceConversationSeen).toHaveBeenCalledOnce();
+      expect(mockAddPendingSourceConversationSeen).toHaveBeenCalledWith(
+        "source-1",
+        201,
+      );
+
+      const state = (store.getState() as any).conversation;
+      expect(state.hasMoreHistoricalItems).toBe(false);
+      expect(state.conversation.items).toHaveLength(201);
     });
   });
 
