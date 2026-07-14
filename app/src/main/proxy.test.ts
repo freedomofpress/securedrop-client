@@ -340,7 +340,7 @@ describe("Test executing proxy with streaming requests", () => {
   it("proxy should return ProxyStreamResponse with data on successful response", async () => {
     const respData = "Hello, world";
     const respSHA256 = "12345";
-    process.stdout = Readable.from(respData);
+    process.stdout = Readable.from([Buffer.from(respData)]);
 
     let data = "";
 
@@ -357,7 +357,9 @@ describe("Test executing proxy with streaming requests", () => {
     if (process.stderr) {
       process.stderr.emit(
         "data",
-        JSON.stringify({ headers: { etag: respSHA256 } }),
+        Buffer.from(
+          JSON.stringify({ status: 200, headers: { etag: respSHA256 } }),
+        ),
       );
     }
 
@@ -374,7 +376,7 @@ describe("Test executing proxy with streaming requests", () => {
   it("proxy should return on proxy-command exit error code", async () => {
     const proxyExec = proxyStreamRequest({} as ProxyRequest, writeStream);
 
-    process.stderr?.emit("data", "error");
+    process.stderr?.emit("data", Buffer.from("error"));
 
     setTimeout(() => {
       process.emit("close", 1);

@@ -1,11 +1,20 @@
 import { describe, expect, it } from "vitest";
 
+import { channel } from "node:diagnostics_channel";
+import { createWriteStream } from "node:fs";
+import { mkdtemp, realpath, rm, stat } from "node:fs/promises";
+import { createServer } from "node:http";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 import { PassThrough } from "node:stream";
 
 import {
+  LEGACY_STREAM_JSON_MAX_BYTES,
+  STREAM_CAPTURE_DIAGNOSTICS_CHANNEL,
   proxyJSONRequestInner,
   proxyStreamRequestInner,
 } from "../src/main/proxy";
+import type { StreamCaptureDiagnostics } from "../src/main/proxy";
 import {
   JSONObject,
   ProxyCommand,
@@ -170,6 +179,90 @@ describe("Test executing JSON proxy commands against httpbin", async () => {
 });
 
 describe("Test executing streaming proxy", async () => {
+  it.for([64, 256])(
+    "streams %i MiB without concatenating the response body in memory",
+    { timeout: 120_000 },
+    async (mebibytes: number) => {
+      const payloadBytes = mebibytes * 1024 * 1024;
+      const etag = "sha256:stream-test";
+      const canonicalTmpDirectory = await realpath(tmpdir());
+      const outputDirectory = await mkdtemp(
+        join(canonicalTmpDirectory, "sd-proxy-stream-"),
+      );
+      const outputPath = join(outputDirectory, "response.bin");
+      const server = createServer((_request, response) => {
+        const chunk = Buffer.alloc(64 * 1024, 0x41);
+        let remaining = payloadBytes;
+
+        function writeChunk() {
+          while (remaining > 0) {
+            const length = Math.min(remaining, chunk.length);
+            remaining -= length;
+            if (!response.write(chunk.subarray(0, length))) {
+              response.once("drain", writeChunk);
+              return;
+            }
+          }
+          response.end();
+        }
+
+        response.writeHead(200, { etag });
+        writeChunk();
+      });
+
+      await new Promise<void>((resolve) => {
+        server.listen(0, "127.0.0.1", resolve);
+      });
+      const address = server.address();
+      if (!address || typeof address === "string") {
+        throw new Error("Stream test server did not bind to a TCP port");
+      }
+
+      const command = proxyCommand(60_000);
+      command.env.set("SD_PROXY_ORIGIN", `http://127.0.0.1:${address.port}`);
+      const diagnostics: StreamCaptureDiagnostics[] = [];
+      const diagnosticsChannel = channel(STREAM_CAPTURE_DIAGNOSTICS_CHANNEL);
+      const onDiagnostics = (message: unknown) => {
+        diagnostics.push(message as StreamCaptureDiagnostics);
+      };
+      diagnosticsChannel.subscribe(onDiagnostics);
+
+      try {
+        const response = await proxyStreamRequestInner(
+          {
+            method: "GET",
+            path_query: "/stream-test",
+            headers: {},
+          },
+          command,
+          createWriteStream(outputPath),
+        );
+
+        expect(response).toMatchObject({
+          complete: true,
+          bytesWritten: payloadBytes,
+          sha256sum: etag,
+        });
+        expect((await stat(outputPath)).size).toBe(payloadBytes);
+        expect(diagnostics).toEqual([
+          expect.objectContaining({
+            stdoutBytesObserved: payloadBytes,
+            legacyBytesCaptured: LEGACY_STREAM_JSON_MAX_BYTES,
+          }),
+        ]);
+        expect(diagnostics[0].metadataBytesCaptured).toBe(
+          diagnostics[0].metadataBytesObserved,
+        );
+      } finally {
+        diagnosticsChannel.unsubscribe(onDiagnostics);
+        await new Promise<void>((resolve, reject) => {
+          server.close((error) => (error ? reject(error) : resolve()));
+        });
+        await rm(outputDirectory, { recursive: true, force: true });
+      }
+    },
+  );
+
   it("proxy successfully streams data", async () => {
     const writeStream = new PassThrough();
     let streamData = "";
@@ -228,8 +321,10 @@ describe("Test executing streaming proxy", async () => {
         3,
       )) as ProxyJSONResponse;
 
-      expect(response.error);
-      expect(response.status).toEqual(statusCode);
+      expect(response).toMatchObject({
+        error: true,
+        status: statusCode,
+      });
     },
   );
 

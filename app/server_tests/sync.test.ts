@@ -21,7 +21,7 @@ const EXPECTED_INDEX = {
     "48256b37-2761-4695-8a1a-282601dc3c87":
       "ccd8c21a34242ce4c1a80c544e14185d95f2bf13f64ab3c912b327cbb7786e15",
     "485396d7-114b-49d5-a910-43337f72b471":
-      "082b57f9d5d68f26831ebf45b80613ef9ed71b61d58dc235f6454c3fe1fa73df",
+      "69bf01a114e4bf5d946113632933f110838a9d73d2986f8cff6c5874ed2db9d6",
     "6428c271-3108-4c73-9a44-9acfb7e2b388":
       "cb48aa754a95005a9aac025da999921fc827809bd1d8ce5a37addaee4b63651b",
     "6ba8a2c8-aa3a-4b0e-95f9-34d3001a5043":
@@ -64,7 +64,7 @@ const EXPECTED_INDEX = {
 };
 
 const EXPECTED_VERSION =
-  "5b4388514c7e5c4dcb57aacb8efad7596e83c6b0b5eab4dfea631056b0177a5a";
+  "44c5cb56c68b98e090c21e6d3d4b7b5ef70debce41b00ff35bf4b358d99114d6";
 
 describe.sequential("sync against a real server", () => {
   let context: TestContext;

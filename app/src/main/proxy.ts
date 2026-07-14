@@ -1,4 +1,5 @@
 import child_process from "node:child_process";
+import { channel } from "node:diagnostics_channel";
 import path from "node:path";
 import { Writable } from "node:stream";
 import { finished } from "node:stream/promises";
@@ -18,6 +19,57 @@ const DEFAULT_PROXY_VM_NAME = "sd-proxy";
 // than the proxy's request-level timeout.
 export const DEFAULT_PROXY_CMD_TIMEOUT_MS = 10_000 as ms;
 export const MESSAGE_REPLY_DOWNLOAD_TIMEOUT_MS = 20_000 as ms;
+export const LEGACY_STREAM_JSON_MAX_BYTES = 1024 * 1024;
+export const STREAM_METADATA_MAX_BYTES = 1024 * 1024;
+export const STREAM_CAPTURE_DIAGNOSTICS_CHANNEL =
+  "securedrop.proxy.stream-capture";
+
+export type StreamCaptureDiagnostics = {
+  stdoutBytesObserved: number;
+  legacyBytesCaptured: number;
+  metadataBytesObserved: number;
+  metadataBytesCaptured: number;
+};
+
+const streamCaptureDiagnostics = channel(STREAM_CAPTURE_DIAGNOSTICS_CHANNEL);
+
+class BoundedCapture {
+  private readonly buffer: Buffer;
+  private bytesCaptured = 0;
+  private totalBytes = 0;
+
+  constructor(maxBytes: number) {
+    this.buffer = Buffer.alloc(maxBytes);
+  }
+
+  append(chunk: Buffer): void {
+    this.totalBytes += chunk.length;
+    const bytesToCopy = Math.min(
+      chunk.length,
+      this.buffer.length - this.bytesCaptured,
+    );
+    if (bytesToCopy > 0) {
+      chunk.copy(this.buffer, this.bytesCaptured, 0, bytesToCopy);
+      this.bytesCaptured += bytesToCopy;
+    }
+  }
+
+  get overflowed(): boolean {
+    return this.totalBytes > this.buffer.length;
+  }
+
+  get capturedBytes(): number {
+    return this.bytesCaptured;
+  }
+
+  get observedBytes(): number {
+    return this.totalBytes;
+  }
+
+  toString(): string {
+    return this.buffer.subarray(0, this.bytesCaptured).toString();
+  }
+}
 
 function parseJSONResponse(response: string): ProxyJSONResponse {
   const result = JSON.parse(response);
@@ -48,6 +100,115 @@ function parseJSONResponse(response: string): ProxyJSONResponse {
       ? new Map(Object.entries(result["headers"]))
       : new Map(),
   };
+}
+
+function parseStreamMetadata(
+  response: string,
+  bytesWritten: number,
+): ProxyResponse {
+  const result = JSON.parse(response);
+  const rawHeaders = result["headers"];
+  if (
+    !rawHeaders ||
+    typeof rawHeaders !== "object" ||
+    Array.isArray(rawHeaders) ||
+    Object.values(rawHeaders).some((value) => typeof value !== "string")
+  ) {
+    throw new Error("Invalid stream metadata: headers must be an object");
+  }
+
+  const status = result["status"];
+  if (
+    status !== undefined &&
+    (!Number.isInteger(status) || status < 100 || status > 599)
+  ) {
+    throw new Error("Invalid stream metadata: invalid status code");
+  }
+
+  const headers = new Map<string, string>(Object.entries(rawHeaders));
+  const error =
+    typeof status === "number" &&
+    ((status >= 400 && status < 500) || (status >= 500 && status < 600));
+  if (error) {
+    return { error, data: null, status, headers };
+  }
+
+  return {
+    complete: true,
+    sha256sum: headers.get("etag") || "",
+    bytesWritten,
+  };
+}
+
+function parseLegacyStreamError(response: string): ProxyJSONResponse {
+  const result = parseJSONResponse(response);
+  if (!result.error) {
+    throw new Error("Legacy stream response did not contain an HTTP error");
+  }
+  return result;
+}
+
+type StreamCloseContext = {
+  code: number | null;
+  signal: NodeJS.Signals | null;
+  writeStream: Writable;
+  bytesWritten: number;
+  stderr: BoundedCapture;
+  legacyJSON: BoundedCapture;
+};
+
+async function finishStreamResponse(
+  context: StreamCloseContext,
+): Promise<ProxyResponse> {
+  context.writeStream.end();
+  try {
+    await finished(context.writeStream, { readable: false });
+  } catch (err) {
+    return Promise.reject(`Error flushing write stream: ${err}`);
+  }
+
+  if (context.signal) {
+    return {
+      complete: false,
+      error: new Error(`Process terminated with signal ${context.signal}`),
+      bytesWritten: context.bytesWritten,
+    };
+  }
+  if (context.code != 0) {
+    return {
+      complete: false,
+      error: new Error(
+        `Process exited with non-zero code ${context.code}: ${context.stderr.toString()}`,
+      ),
+      bytesWritten: context.bytesWritten,
+    };
+  }
+  if (context.stderr.overflowed) {
+    return Promise.reject(
+      `Proxy stderr exceeded ${STREAM_METADATA_MAX_BYTES} bytes`,
+    );
+  }
+  if (context.stderr.toString().trim()) {
+    try {
+      return parseStreamMetadata(
+        context.stderr.toString(),
+        context.bytesWritten,
+      );
+    } catch (err) {
+      return Promise.reject(`Error reading metadata from proxy stderr: ${err}`);
+    }
+  }
+  if (context.legacyJSON.overflowed) {
+    return Promise.reject(
+      `Legacy proxy JSON response exceeded ${LEGACY_STREAM_JSON_MAX_BYTES} bytes`,
+    );
+  }
+
+  try {
+    return parseLegacyStreamError(context.legacyJSON.toString());
+  } catch (err) {
+    return Promise.reject(`Error reading legacy proxy JSON response: ${err}`);
+  }
 }
 
 export async function proxyJSONRequest(
@@ -161,17 +322,15 @@ export async function proxyStreamRequestInner(
       signal: command.abortSignal,
     });
 
-    // Attach provided `writeStream` to the standard output of the proxy command. This will write
-    // contents directly to the `writeStream`.
+    // Attach the provided write stream directly to proxy stdout.
     process.stdout.pipe(writeStream);
 
-    // Store stdout as buffer array to avoid binary data corruption, and track bytes written
-    // to allow resuming incremental progress.
-    const stdoutChunks: Buffer[] = [];
+    // Legacy proxies emit HTTP error envelopes on stdout. Retain only a fixed-size prefix.
+    const legacyJSON = new BoundedCapture(LEGACY_STREAM_JSON_MAX_BYTES);
     let bytesWritten = 0;
-    process.stdout.on("data", (data) => {
+    process.stdout.on("data", (data: Buffer) => {
       bytesWritten += data.length;
-      stdoutChunks.push(data);
+      legacyJSON.append(data);
       // Report progress to caller if callback is provided
       if (onProgress) {
         try {
@@ -182,9 +341,9 @@ export async function proxyStreamRequestInner(
       }
     });
 
-    let stderr = "";
-    process.stderr.on("data", (data) => {
-      stderr += data;
+    const stderr = new BoundedCapture(STREAM_METADATA_MAX_BYTES);
+    process.stderr.on("data", (data: Buffer) => {
+      stderr.append(data);
     });
 
     process.stdout.on("error", (err) => {
@@ -195,50 +354,23 @@ export async function proxyStreamRequestInner(
       reject(`Error writing stream data: ${err}`);
     });
 
-    process.on("close", async (code, signal) => {
-      writeStream.end();
-      try {
-        await finished(writeStream, { readable: false });
-      } catch (err) {
-        reject(`Error flushing write stream: ${err}`);
-        return;
+    process.on("close", (code, signal) => {
+      if (streamCaptureDiagnostics.hasSubscribers) {
+        streamCaptureDiagnostics.publish({
+          stdoutBytesObserved: bytesWritten,
+          legacyBytesCaptured: legacyJSON.capturedBytes,
+          metadataBytesObserved: stderr.observedBytes,
+          metadataBytesCaptured: stderr.capturedBytes,
+        } satisfies StreamCaptureDiagnostics);
       }
-
-      if (signal) {
-        resolve({
-          complete: false,
-          error: new Error(`Process terminated with signal ${signal}`),
-          bytesWritten: bytesWritten,
-        });
-        return;
-      }
-      if (code != 0) {
-        resolve({
-          complete: false,
-          error: new Error(
-            `Process exited with non-zero code ${code}: ${stderr}`,
-          ),
-          bytesWritten: bytesWritten,
-        });
-        return;
-      }
-      try {
-        // If we receive JSON data, parse and return
-        // Convert buffer chunks to string only when needed for JSON parsing
-        const stdout = Buffer.concat(stdoutChunks).toString("utf8");
-        resolve(parseJSONResponse(stdout));
-      } catch {
-        try {
-          const header = JSON.parse(stderr);
-          resolve({
-            complete: true,
-            sha256sum: header["headers"]["etag"] || "",
-            bytesWritten: bytesWritten,
-          });
-        } catch (err) {
-          reject(`Error reading headers from proxy stderr: ${err}`);
-        }
-      }
+      void finishStreamResponse({
+        code,
+        signal,
+        writeStream,
+        bytesWritten,
+        stderr,
+        legacyJSON,
+      }).then(resolve, reject);
     });
 
     process.on("error", (err) => {
