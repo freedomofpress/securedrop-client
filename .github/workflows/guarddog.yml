@@ -27,7 +27,7 @@ jobs:
       any: ${{ steps.discover.outputs.any }}
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v7
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7
         with:
           # Need both the base and head commits for `git pkgs diff`.
           fetch-depth: 0
@@ -37,7 +37,7 @@ jobs:
       # cached version available; it'll only be on PR updates we see cache hits
       - name: Cache git-pkgs
         id: cache-git-pkgs
-        uses: actions/cache@v6
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6
         with:
           path: /usr/local/bin/git-pkgs
           key: git-pkgs-${{ runner.os }}-${{ env.GIT_PKGS_VERSION }}
@@ -91,7 +91,7 @@ jobs:
       # No checkout: GuardDog scans remote packages, so this job needs nothing
       # from the repo. The matrix already carries everything the scan needs.
       - name: Set up Python
-        uses: actions/setup-python@v6
+        uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6
         with:
           python-version: '3.11'
 
