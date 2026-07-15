@@ -13,6 +13,7 @@ This release, along with SecureDrop Workstation 1.8.0, switches to Debian 13 (tr
   * Use packaged version of python3-redis (#3518)
   * pkgconf has replaced pkg-config (#3522)
   * Run lint job for trixie too (#3526)
+  * Ensure rsyslog can access /dev/xen (#3610)
 * Other user-facing changes:
   * Enable F1 shortcut when in text entry (#3498)
   * Support 1366x768 resolution (#3506)
