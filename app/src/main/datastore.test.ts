@@ -246,6 +246,31 @@ describe("Datastore Method Tests", () => {
     };
   }
 
+  type PendingEventRetryState = {
+    retry_attempts: number;
+    last_event_status: number | null;
+    next_retry_at: string | null;
+    retry_delay_seconds: number | null;
+  };
+
+  function pendingEventRetryState(eventId: string): PendingEventRetryState {
+    const row = db["db"]!.prepare(
+      `SELECT retry_attempts, last_event_status, next_retry_at,
+                retry_delay_seconds
+         FROM pending_events WHERE snowflake_id = ?`,
+    ).get(eventId) as PendingEventRetryState | undefined;
+    if (!row) {
+      throw new Error(`missing pending event ${eventId}`);
+    }
+    return row;
+  }
+
+  function makePendingEventDue(eventId: string): void {
+    db["db"]!.prepare(
+      "UPDATE pending_events SET next_retry_at = CURRENT_TIMESTAMP WHERE snowflake_id = ?",
+    ).run(eventId);
+  }
+
   it("getJournalistbyID should return the first matching journalist", () => {
     // Insert two Journalists
     db.updateJournalists({
@@ -1253,43 +1278,180 @@ describe("Datastore Method Tests", () => {
     expect(row.last_event_status).toBe(500);
   });
 
-  it("updatePendingEvents should retain but exclude AlreadyReported events", () => {
+  it("backs off repeated destructive AlreadyReported responses beyond 24 hours", () => {
     db.updateSources({
       source1: mockSourceMetadata("source1"),
     });
-    db.updateItems({
-      item1: mockItemMetadata("item1", "source1"),
+    const eventId = db.addPendingSourceEvent(
+      "source1",
+      PendingEventType.SourceDeleted,
+    )!;
+    const expectedDelays = [
+      60, 120, 240, 480, 960, 1_920, 3_840, 7_680, 14_400, 14_400, 14_400,
+      14_400, 14_400,
+    ];
+    let elapsedSeconds = 0;
+
+    for (const expectedDelay of expectedDelays) {
+      db.updatePendingEvents({ [eventId]: [208, null] });
+      const state = pendingEventRetryState(eventId);
+      expect(state.retry_delay_seconds).toBe(expectedDelay);
+      expect(db.getPendingEvents()).toEqual([]);
+      elapsedSeconds += expectedDelay;
+      makePendingEventDue(eventId);
+      expect(db.getPendingEvents().map((event) => event.id)).toEqual([eventId]);
+    }
+
+    expect(elapsedSeconds).toBe(87_300);
+    expect(pendingEventRetryState(eventId).retry_attempts).toBe(13);
+  });
+
+  it("releases an implausibly future retry after a backward clock jump", () => {
+    db.updateSources({
+      source1: mockSourceMetadata("source1"),
+    });
+    const eventId = db.addPendingSourceEvent(
+      "source1",
+      PendingEventType.SourceDeleted,
+    )!;
+    db.updatePendingEvents({ [eventId]: [208, null] });
+    expect(db.getPendingEvents()).toEqual([]);
+
+    db["db"]!.prepare(
+      "UPDATE pending_events SET next_retry_at = datetime('now', '+1 day') WHERE snowflake_id = ?",
+    ).run(eventId);
+
+    expect(db.getPendingEvents().map((event) => event.id)).toEqual([eventId]);
+  });
+
+  it("migrates stranded events and preserves deferred retries across restart", () => {
+    db.updateSources({ source1: mockSourceMetadata("source1") });
+    const eventId = db.addPendingSourceEvent(
+      "source1",
+      PendingEventType.SourceDeleted,
+    )!;
+    const rawDb = db["db"]!;
+    rawDb
+      .prepare(
+        "UPDATE pending_events SET last_event_status = 208 WHERE snowflake_id = ?",
+      )
+      .run(eventId);
+    rawDb
+      .prepare("DELETE FROM schema_migrations WHERE version = ?")
+      .run("20260710194500");
+    rawDb.exec("ALTER TABLE pending_events DROP COLUMN retry_delay_seconds");
+    rawDb.exec("ALTER TABLE pending_events DROP COLUMN next_retry_at");
+
+    db.close();
+    db = new Datastore(crypto, new Storage());
+
+    expect(pendingEventRetryState(eventId).retry_delay_seconds).toBe(0);
+    expect(db.getPendingEvents().map((event) => event.id)).toEqual([eventId]);
+    db.updatePendingEvents({ [eventId]: [208, null] });
+    const deferredState = pendingEventRetryState(eventId);
+    expect(deferredState.retry_delay_seconds).toBe(60);
+    expect(db.getPendingEvents()).toEqual([]);
+
+    db.close();
+    db = new Datastore(crypto, new Storage());
+
+    expect(pendingEventRetryState(eventId)).toEqual(deferredState);
+    expect(db.getPendingEvents()).toEqual([]);
+  });
+
+  it("clears deferral through 500 to 200 and removes Gone events", () => {
+    db.updateSources({
+      source1: mockSourceMetadata("source1"),
+      source2: mockSourceMetadata("source2"),
+    });
+    const successEventId = db.addPendingSourceEvent(
+      "source1",
+      PendingEventType.SourceDeleted,
+    )!;
+    const goneEventId = db.addPendingSourceEvent(
+      "source2",
+      PendingEventType.SourceDeleted,
+    )!;
+
+    db.updatePendingEvents({
+      [successEventId]: [208, null],
+      [goneEventId]: [208, null],
+    });
+    makePendingEventDue(successEventId);
+    makePendingEventDue(goneEventId);
+    db.updatePendingEvents({
+      [successEventId]: [500, "failed to process event"],
+      [goneEventId]: [410, null],
     });
 
-    const snowflakeSource = db.addPendingSourceEvent(
-      "source1",
+    expect(pendingEventRetryState(successEventId)).toMatchObject({
+      retry_attempts: 2,
+      last_event_status: 500,
+      next_retry_at: null,
+      retry_delay_seconds: null,
+    });
+    expect(db.getPendingEvents().map((event) => event.id)).toEqual([
+      successEventId,
+    ]);
+    expect(() => pendingEventRetryState(goneEventId)).toThrow(
+      `missing pending event ${goneEventId}`,
+    );
+
+    db.updateBatch({
+      sources: { source1: null },
+      items: {},
+      journalists: {},
+      events: { [successEventId]: [200, null] },
+    });
+    expect(db.getPendingEvents()).toEqual([]);
+  });
+
+  it("selects fresh and failed events around deferred 208 responses", () => {
+    db.updateSources({
+      failed: mockSourceMetadata("failed"),
+      destructive: mockSourceMetadata("destructive"),
+      suppressed: mockSourceMetadata("suppressed"),
+      fresh: mockSourceMetadata("fresh"),
+    });
+    const failedId = db.addPendingSourceEvent(
+      "failed",
       PendingEventType.Starred,
     )!;
-    const snowflakeItem = db.addPendingItemEvent(
-      "item1",
-      PendingEventType.ItemDeleted,
+    const destructiveId = db.addPendingSourceEvent(
+      "destructive",
+      PendingEventType.SourceDeleted,
+    )!;
+    const suppressedId = db.addPendingSourceEvent(
+      "suppressed",
+      PendingEventType.Starred,
+    )!;
+    const freshId = db.addPendingSourceEvent(
+      "fresh",
+      PendingEventType.Unstarred,
     )!;
 
-    // The server reports the source event as already reported + accepted (208),
-    // and the item event as not yet accepted (500).
     db.updatePendingEvents({
-      [snowflakeSource.toString()]: [208, null],
-      [snowflakeItem.toString()]: [500, "error"],
+      [failedId]: [500, "failed"],
+      [destructiveId]: [208, null],
+      [suppressedId]: [208, null],
     });
 
-    // The AlreadyReported event must be excluded from future sync batches
-    const events = db.getPendingEvents();
-    expect(events.map((e) => e.id)).toEqual([snowflakeItem]);
-
-    // but event should be retained in the table to preserve projection state
-    // with the status recorded
-    const row = (db as any).db
-      .prepare(
-        "SELECT last_event_status FROM pending_events WHERE snowflake_id = ?",
-      )
-      .get(snowflakeSource.toString());
-    expect(row).toBeDefined();
-    expect(row.last_event_status).toBe(208);
+    expect(db.getPendingEvents().map((event) => event.id)).toEqual([
+      freshId,
+      failedId,
+    ]);
+    makePendingEventDue(destructiveId);
+    expect(db.getPendingEvents().map((event) => event.id)).toEqual([
+      freshId,
+      failedId,
+      destructiveId,
+    ]);
+    expect(pendingEventRetryState(suppressedId)).toMatchObject({
+      retry_attempts: 0,
+      last_event_status: 208,
+      next_retry_at: null,
+      retry_delay_seconds: null,
+    });
   });
 
   it("updateItems should upsert items with conflicting uuid", () => {

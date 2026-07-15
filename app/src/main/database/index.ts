@@ -41,6 +41,16 @@ import { Search } from "./search";
 export const MESSAGE_PREVIEW_LENGTH = 200;
 const DEFAULT_ITEM_LIMIT = 100;
 export const DEFAULT_PENDING_EVENTS_LIMIT = 20;
+// API2 retains completed idempotence keys for 24 hours. These bounds reach
+// 24h15 after 13 responses while limiting failure recovery latency to 4 hours.
+const ALREADY_REPORTED_INITIAL_RETRY_SECONDS = 60;
+const ALREADY_REPORTED_MAX_RETRY_SECONDS = 4 * 60 * 60;
+const ALREADY_REPORTED_MAX_BACKOFF_EXPONENT = 8;
+const RETRYABLE_ALREADY_REPORTED_EVENT_TYPES = new Set<PendingEventType>([
+  PendingEventType.ItemDeleted,
+  PendingEventType.SourceDeleted,
+  PendingEventType.SourceConversationTruncated,
+]);
 
 interface KeyObject {
   [key: string]: object;
@@ -189,12 +199,20 @@ export class DB {
     { count: number }
   >;
   private deletePendingEvent: Statement<{ snowflake_id: string }, void>;
+  private selectPendingEventRetryState: Statement<
+    { snowflake_id: string },
+    { type: string; retry_attempts: number }
+  >;
   private incrementPendingEventRetry: Statement<
     { snowflake_id: string; status: number },
     void
   >;
   private setPendingEventStatus: Statement<
     { snowflake_id: string; status: number },
+    void
+  >;
+  private deferPendingEventRetry: Statement<
+    { snowflake_id: string; status: number; retry_delay_seconds: number },
     void
   >;
   private selectPendingEvents: Statement<[{ limit: number }], PendingEventRow>;
@@ -427,21 +445,44 @@ export class DB {
     this.deletePendingEvent = this.db.prepare(
       `DELETE FROM pending_events WHERE snowflake_id = @snowflake_id`,
     );
+    this.selectPendingEventRetryState = this.db.prepare(`
+      SELECT type, retry_attempts FROM pending_events
+      WHERE snowflake_id = @snowflake_id
+    `);
     this.incrementPendingEventRetry = this.db.prepare(`
       UPDATE pending_events
-      SET retry_attempts = retry_attempts + 1, last_event_status = @status
+      SET retry_attempts = retry_attempts + 1,
+          last_event_status = @status,
+          next_retry_at = NULL,
+          retry_delay_seconds = NULL
       WHERE snowflake_id = @snowflake_id
     `);
     this.setPendingEventStatus = this.db.prepare(`
       UPDATE pending_events
-      SET last_event_status = @status
+      SET last_event_status = @status,
+          next_retry_at = NULL,
+          retry_delay_seconds = NULL
       WHERE snowflake_id = @snowflake_id
     `);
-    // Schedule previously-failed events later, and exclude events already reported
-    // and accepted on the server that are just awaiting completion.
+    this.deferPendingEventRetry = this.db.prepare(`
+      UPDATE pending_events
+      SET retry_attempts = retry_attempts + 1,
+          last_event_status = @status,
+          next_retry_at = datetime(
+            'now', printf('+%d seconds', @retry_delay_seconds)
+          ),
+          retry_delay_seconds = @retry_delay_seconds
+      WHERE snowflake_id = @snowflake_id
+    `);
+    // A retry timestamp beyond its recorded delay means the wall clock moved
+    // backward after scheduling. Treat it as due instead of stranding the row.
     this.selectPendingEvents = this.db.prepare(`
       SELECT snowflake_id, source_uuid, item_uuid, type, data FROM pending_events
       WHERE last_event_status IS NOT ${EventStatus.AlreadyReported}
+         OR next_retry_at <= CURRENT_TIMESTAMP
+         OR next_retry_at > datetime(
+           'now', printf('+%d seconds', retry_delay_seconds)
+         )
       ORDER BY retry_attempts ASC, snowflake_id ASC LIMIT @limit
     `);
     this.deletePendingEventsBySourceScope = this.db.prepare(`
@@ -1347,6 +1388,29 @@ export class DB {
     return pendingEvents;
   }
 
+  private getAlreadyReportedRetryDelay(snowflakeId: string): number | null {
+    const event = this.selectPendingEventRetryState.get({
+      snowflake_id: snowflakeId,
+    });
+    if (
+      !event ||
+      !RETRYABLE_ALREADY_REPORTED_EVENT_TYPES.has(
+        event.type as PendingEventType,
+      )
+    ) {
+      return null;
+    }
+
+    const exponent = Math.min(
+      event.retry_attempts,
+      ALREADY_REPORTED_MAX_BACKOFF_EXPONENT,
+    );
+    return Math.min(
+      ALREADY_REPORTED_INITIAL_RETRY_SECONDS * 2 ** exponent,
+      ALREADY_REPORTED_MAX_RETRY_SECONDS,
+    );
+  }
+
   // Takes pending events and their statuses from the server and applies
   // pending event updates as needed.
   // Should be run within a transaction that also updates index version.
@@ -1366,10 +1430,20 @@ export class DB {
         // Target no longer exists on the server: remove pending_event.
         eventIDsToRemove.push(snowflake_id);
       } else if (result === EventStatus.AlreadyReported) {
-        // Already reported to the server but awaiting completion.
-        // Retain the event but record the status so it's excluded from future
-        // sync batches and not re-sent.
-        this.setPendingEventStatus.run({ snowflake_id, status: result });
+        // API2 returns 208 for both Processing and completed idempotence keys,
+        // so the client cannot infer a final outcome. Destructive handlers are
+        // idempotent when retried with the same event ID after the server's
+        // 24-hour key expires. Other event types remain suppressed.
+        const retryDelay = this.getAlreadyReportedRetryDelay(snowflake_id);
+        if (retryDelay === null) {
+          this.setPendingEventStatus.run({ snowflake_id, status: result });
+        } else {
+          this.deferPendingEventRetry.run({
+            snowflake_id,
+            status: result,
+            retry_delay_seconds: retryDelay,
+          });
+        }
       } else {
         // All other statuses indicate event was submitted but not accepted
         // Retain and bump the retry counter, recording the status.

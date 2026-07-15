@@ -38,7 +38,7 @@ CREATE TABLE pending_events (
     source_uuid TEXT REFERENCES sources(uuid) ON DELETE CASCADE,
     item_uuid TEXT REFERENCES items(uuid) ON DELETE CASCADE,
     type TEXT NOT NULL,
-    data JSON, retry_attempts INTEGER NOT NULL DEFAULT 0, last_event_status INTEGER,
+    data JSON, retry_attempts INTEGER NOT NULL DEFAULT 0, last_event_status INTEGER, next_retry_at TIMESTAMP, retry_delay_seconds INTEGER,
     CHECK (NOT (source_uuid IS NOT NULL AND item_uuid IS NOT NULL))
 );
 CREATE VIEW state AS
@@ -283,4 +283,5 @@ INSERT INTO "schema_migrations" (version) VALUES
   ('20260416000000'),
   ('20260507000000'),
   ('20260511000000'),
-  ('20260624000000');
+  ('20260624000000'),
+  ('20260710194500');
