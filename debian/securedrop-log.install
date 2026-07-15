@@ -2,3 +2,4 @@ log/log_client_files/sd-rsyslog usr/sbin/
 log/log_client_files/sdlog.conf etc/rsyslog.d/
 log/log_client_files/sd-rsyslog.conf etc/
 log/securedrop.Log etc/qubes-rpc/
+log/systemd/rsyslog.service.d/35_securedrop-xen.conf usr/lib/systemd/system/rsyslog.service.d
