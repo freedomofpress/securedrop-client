@@ -3,7 +3,7 @@ import path from "path";
 import fs from "fs";
 import os from "os";
 import { Datastore } from "../datastore";
-import { buildQuery } from "./search";
+import { buildQuery, Search } from "./search";
 import { Crypto } from "../crypto";
 import { Storage } from "../storage";
 import { PendingEventType } from "../../types";
@@ -362,8 +362,10 @@ describe("Search", () => {
         ["source1"]: mockSource("source1", "colorful caterpillar"),
       });
       db.updateItems({ ["item1"]: mockItem("item1", "source1", "message") });
-      // Set filename first, then plaintext — plaintext should win in the index
-      db.completeFileItem("item1", "original.txt", 100);
+      db["db"]!.prepare("UPDATE items SET filename = ? WHERE uuid = ?").run(
+        "original.txt",
+        "item1",
+      );
       db.completePlaintextItem("item1", "the real content");
 
       const results = db.search("real content");
@@ -392,7 +394,11 @@ describe("Search", () => {
       });
       db.updateItems({ ["item1"]: mockItem("item1", "source1", "message") });
       db.completePlaintextItem("item1", "old content");
-      db.completePlaintextItem("item1", "new content");
+      db["db"]!.prepare("UPDATE items SET plaintext = ? WHERE uuid = ?").run(
+        "new content",
+        "item1",
+      );
+      new Search(db["db"]!).indexItem("item1");
 
       expect(db.search("old")).toHaveLength(0);
       expect(db.search("new content")).toHaveLength(1);

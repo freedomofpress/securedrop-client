@@ -426,7 +426,9 @@ export class TaskQueue {
       controller: abortController,
     });
     try {
-      db.startDownloadInProgress(item.id);
+      if (!db.startDownloadInProgress(item.id)) {
+        throw new DownloadCancelledError();
+      }
       await this.innerDownload(
         item,
         db,
@@ -606,8 +608,10 @@ export class TaskQueue {
       controller: abortController,
     });
 
-    db.setDecryptionInProgress(item.id);
     try {
+      if (!db.setDecryptionInProgress(item.id)) {
+        return;
+      }
       if (metadata.kind === "file") {
         await this.decryptFile(
           item,
@@ -706,7 +710,16 @@ export class TaskQueue {
       // Get the decrypted file size to display to the user
       const fileStats = await fs.promises.stat(finalAbsolutePath);
       const decryptedSize = fileStats.size;
-      db.completeFileItem(item.id, finalAbsolutePath, decryptedSize);
+      if (!db.completeFileItem(item.id, finalAbsolutePath, decryptedSize)) {
+        try {
+          await fs.promises.unlink(finalAbsolutePath);
+        } catch (error) {
+          console.warn(
+            `Failed to clean up decrypted file after rejected transition: ${error}`,
+          );
+        }
+        return;
+      }
       console.log(`Successfully decrypted ${metadata.kind} ${item.id}`);
     } catch (error) {
       if (error instanceof CryptoError) {

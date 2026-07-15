@@ -467,17 +467,26 @@ if (!gotTheLock) {
 
       ipcMain.handle(
         "updateFetchStatus",
-        async (_event, itemUuid: string, fetchStatus: number) => {
-          // If the user is pausing or cancelling, abort any in-progress download
-          // before updating the DB so the worker doesn't overwrite the new status
+        async (
+          _event,
+          itemUuid: string,
+          fetchStatus: number,
+        ): Promise<boolean> => {
+          const updated = db.updateFetchStatus(itemUuid, fetchStatus);
+          if (!updated) {
+            return false;
+          }
+
+          // If the user is pausing or cancelling, abort any in-progress download.
+          // Worker writes cannot overwrite the accepted status at the DB boundary.
           if (
             fetchStatus === FetchStatus.Paused ||
             fetchStatus === FetchStatus.Cancelled
           ) {
             fetchWorker?.postMessage({ type: "cancel", itemId: itemUuid });
           }
-          db.updateFetchStatus(itemUuid, fetchStatus);
           wakeFetchWorkerIfNeeded();
+          return true;
         },
       );
 

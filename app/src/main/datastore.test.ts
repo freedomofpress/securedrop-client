@@ -1541,19 +1541,19 @@ describe("Datastore Method Tests", () => {
   it("getItemsToProcess should exclude ScheduledDeletion items", () => {
     db.updateSources({
       source1: mockSourceMetadata("source1"),
+      source2: mockSourceMetadata("source2"),
     });
 
     db.updateItems({
       message1: mockItemMetadata("message1", "source1", "message", 1),
-      message2: mockItemMetadata("message2", "source1", "message", 2),
+      message2: mockItemMetadata("message2", "source2", "message", 2),
       file1: mockItemMetadata("file1", "source1", "file", 3),
-      file2: mockItemMetadata("file2", "source1", "file", 4),
+      file2: mockItemMetadata("file2", "source2", "file", 4),
     });
 
     db.updateDownloadInProgress("file1", 10);
     db.updateDownloadInProgress("file2", 20);
-    db.updateFetchStatus("message2", FetchStatus.ScheduledDeletion);
-    db.updateFetchStatus("file2", FetchStatus.ScheduledDeletion);
+    db.addPendingSourceEvent("source2", PendingEventType.SourceDeleted);
 
     const itemsToProcess = db.getItemsToProcess({
       messageLimit: 5,
@@ -1772,7 +1772,7 @@ describe("Datastore Method Tests", () => {
 
       db.updateDownloadInProgress("item1", 42000);
 
-      db.updateFetchStatus("item1", FetchStatus.ScheduledDeletion);
+      db.addPendingSourceEvent("source1", PendingEventType.SourceDeleted);
 
       const item = db.getItem("item1");
       expect(item?.fetch_status).toBe(FetchStatus.ScheduledDeletion);
@@ -1907,7 +1907,7 @@ describe("Datastore Method Tests", () => {
 
       // Set some items to various in-progress states
       db.updateDownloadInProgress("msg1", 100);
-      db.updateFetchStatus("msg2", FetchStatus.DecryptionInProgress);
+      db.setDecryptionInProgress("msg2");
       db.completePlaintextItem("msg3", "already decrypted");
 
       // Create many pending events for source1
