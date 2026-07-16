@@ -2,30 +2,7 @@ import { screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { expect, vi, beforeEach } from "vitest";
 import { FirstRunPopup } from "./FirstRunPopup";
-import {
-  renderWithProviders,
-  renderAndCheckA11y,
-} from "../test-component-setup";
-
-describe("FirstRunPopup accessibility", () => {
-  it("has no axe violations when no popup is shown (null status)", async () => {
-    window.electronAPI.getFirstRunStatus = vi.fn().mockResolvedValue(null);
-    await renderAndCheckA11y(<FirstRunPopup />);
-  });
-
-  it("has no axe violations when the new-user popup is visible", async () => {
-    window.electronAPI.getFirstRunStatus = vi
-      .fn()
-      .mockResolvedValue("new_user");
-    const result = await renderAndCheckA11y(<FirstRunPopup />);
-    // Wait for the async popup to appear and re-check
-    await waitFor(() => {
-      expect(
-        result.getByText("Welcome to SecureDrop Inbox"),
-      ).toBeInTheDocument();
-    });
-  });
-});
+import { renderWithProviders } from "../test-component-setup";
 
 describe("FirstRunPopup Component", () => {
   beforeEach(() => {

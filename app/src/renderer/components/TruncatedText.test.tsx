@@ -1,22 +1,8 @@
 import { screen } from "@testing-library/react";
 import { expect, describe, it } from "vitest";
 import userEvent from "@testing-library/user-event";
-import {
-  renderWithProviders,
-  renderAndCheckA11y,
-  testMemoization,
-} from "../test-component-setup";
+import { renderWithProviders, testMemoization } from "../test-component-setup";
 import TruncatedText from "./TruncatedText";
-
-describe("TruncatedText accessibility", () => {
-  it("has no axe violations on short text", async () => {
-    await renderAndCheckA11y(<TruncatedText text="Short message" />);
-  });
-
-  it("has no axe violations on truncated text", async () => {
-    await renderAndCheckA11y(<TruncatedText text={"a".repeat(3500)} />);
-  });
-});
 
 describe("TruncatedText Component Memoization", () => {
   const cases: Array<[{ text: string; maxCodePoints?: number }, number]> = [

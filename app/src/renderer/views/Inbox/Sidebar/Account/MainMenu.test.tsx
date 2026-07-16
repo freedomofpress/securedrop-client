@@ -1,10 +1,7 @@
 import { screen, waitFor } from "@testing-library/react";
 import { expect, describe, it, vi, beforeEach, afterEach } from "vitest";
 import userEvent from "@testing-library/user-event";
-import {
-  renderWithProviders,
-  renderAndCheckA11y,
-} from "../../../../test-component-setup";
+import { renderWithProviders } from "../../../../test-component-setup";
 
 import { SessionStatus } from "../../../../features/session/sessionSlice";
 import { RootState } from "../../../../store";
@@ -24,16 +21,6 @@ vi.mock("react-router", async (importOriginal) => {
     ...actual,
     useNavigate: () => mockNavigate,
   };
-});
-
-describe("MainMenu accessibility", () => {
-  it("has no axe violations in offline mode", async () => {
-    await renderAndCheckA11y(<MainMenu />, {
-      preloadedState: {
-        session: { status: SessionStatus.Unauth, authData: undefined },
-      },
-    });
-  });
 });
 
 describe("Journalist Menu Component", () => {

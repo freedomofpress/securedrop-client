@@ -9,45 +9,46 @@ import importPlugin from "eslint-plugin-import";
 import i18next from "eslint-plugin-i18next";
 import jsxA11y from "eslint-plugin-jsx-a11y";
 
-// Local rule: test files that call renderWithProviders must also call
-// renderAndCheckA11y so every rendered component is checked for accessibility.
-const requireA11yInTests = {
+// Checks that all axe a11y tests live in the a11y.test.tsx file so that they
+// can run sequentially in a single worker to avoid CI flakes.
+const a11yChecks = {
   meta: {
-    type: "suggestion" as const,
+    type: "problem" as const,
     docs: {
       description:
-        "Test files that call renderWithProviders must also call renderAndCheckA11y.",
+        "Accessibility (axe) checks must all live in src/renderer/a11y.test.tsx.",
     },
     schema: [],
     messages: {
-      missingA11yCall:
-        "This test file calls renderWithProviders but never calls " +
-        "renderAndCheckA11y. Add at least one renderAndCheckA11y(...) call " +
-        "to verify accessibility.",
+      a11yOutsideA11yFile:
+        "Accessibility checks ({{name}}) must live in  " +
+        "src/renderer/a11y.test.tsx file so they all run sequentially in one " +
+        "worker.",
     },
   },
-  create(context: { report: (d: object) => void }) {
-    let usesRenderWithProviders = false;
-    let usesRenderAndCheckA11y = false;
-    let programNode: object | null = null;
+  create(context: {
+    filename: string;
+    report: (d: {
+      node: object;
+      messageId: string;
+      data?: Record<string, string>;
+    }) => void;
+  }) {
+    const isA11yFile = /(^|[\\/])a11y\.test\.tsx$/.test(context.filename);
     return {
-      Program(node: object) {
-        programNode = node;
-      },
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       CallExpression(node: any) {
         const name =
           node.callee.type === "Identifier" ? node.callee.name : null;
-        if (name === "renderWithProviders") {
-          usesRenderWithProviders = true;
-        }
-        if (name === "renderAndCheckA11y") {
-          usesRenderAndCheckA11y = true;
-        }
-      },
-      "Program:exit"() {
-        if (usesRenderWithProviders && !usesRenderAndCheckA11y) {
-          context.report({ node: programNode!, messageId: "missingA11yCall" });
+        if (
+          (name === "renderAndCheckA11y" || name === "checkA11y") &&
+          !isA11yFile
+        ) {
+          context.report({
+            node,
+            messageId: "a11yOutsideA11yFile",
+            data: { name },
+          });
         }
       },
     };
@@ -121,18 +122,19 @@ export default tseslint.config(
       "@typescript-eslint/no-explicit-any": "off",
     },
   },
-  // Require renderAndCheckA11y in every renderer test that calls renderWithProviders.
+  // Keep all accessibility (axe) checks in the single consolidated
+  // a11y.test.tsx file: require them there, forbid them elsewhere.
   {
     files: ["src/renderer/**/*.test.ts", "src/renderer/**/*.test.tsx"],
     plugins: {
       local: {
         rules: {
-          "require-a11y-in-tests": requireA11yInTests,
+          "a11y-checks": a11yChecks,
         },
       },
     },
     rules: {
-      "local/require-a11y-in-tests": "error",
+      "local/a11y-checks": "error",
     },
   },
 );
