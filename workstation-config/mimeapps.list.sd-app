@@ -160,6 +160,7 @@ audio/x-scpls=open-in-dvm.desktop;
 audio/x-speex=open-in-dvm.desktop;
 audio/x-stm=open-in-dvm.desktop;
 audio/x-tta=open-in-dvm.desktop;
+audio/vnd.wave=open-in-dvm.desktop;
 audio/x-wav=open-in-dvm.desktop;
 audio/x-wavpack=open-in-dvm.desktop;
 audio/x-vorbis=open-in-dvm.desktop;
