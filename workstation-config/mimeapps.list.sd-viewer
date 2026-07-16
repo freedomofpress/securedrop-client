@@ -15,6 +15,7 @@ application/x-desktop=org.gnome.TextEditor.desktop
 audio/mp4=audacious.desktop
 audio/mpeg=audacious.desktop
 audio/x-vorbis+ogg=audacious.desktop
+audio/vnd.wave=audacious.desktop;
 audio/x-wav=audacious.desktop
 video/quicktime=org.gnome.Totem.desktop
 video/x-theora+ogg=org.gnome.Totem.desktop
