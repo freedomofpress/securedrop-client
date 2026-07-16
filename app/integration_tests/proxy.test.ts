@@ -234,19 +234,22 @@ describe("Test executing streaming proxy", async () => {
   );
 
   it("stream proxy subcommand terminates with SIGTERM on timeout", async () => {
+    // Must be well-formed ("req-" + lowercase UUID) or the proxy rejects the
+    // request before the timeout can be exercised
+    const requestId = "req-72d64b57-4632-4d3e-96b0-24a0428f7ec1";
     const writeStream = new PassThrough();
     const response = (await proxyStreamRequestInner(
       {
         method: "GET",
         path_query: "/delay/10",
-        headers: { "X-Request-ID": "req-test" },
+        headers: { "X-Request-ID": requestId },
       },
       proxyCommand(100),
       writeStream,
       1,
     )) as ProxyStreamResponse;
     expect(response.error!.message).toEqual(
-      "req-test: Process terminated with signal SIGTERM",
+      `${requestId}: Process terminated with signal SIGTERM`,
     );
     expect(response.complete).toEqual(false);
   });
