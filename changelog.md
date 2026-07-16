@@ -14,14 +14,19 @@ This release, along with SecureDrop Workstation 1.8.0, switches to Debian 13 (tr
   * pkgconf has replaced pkg-config (#3522)
   * Run lint job for trixie too (#3526)
   * Ensure rsyslog can access /dev/xen (#3610)
+  * Open audio/vnd.wave files in audacious (#3616)
 * Other user-facing changes:
   * Enable F1 shortcut when in text entry (#3498)
   * Support 1366x768 resolution (#3506)
 * Internal and development:
   * Remove more references to client/ (#3514)
+  * Remove all of the legacy client/ directory (#3463)
   * Build against Qubes 4.3 qubesdb-dev (#3507)
   * Add vitest-axe + accessibility unit tests (#3453)
   * Strengthen pnpm configuration per semgrep (#3551)
+  * Add trixie variants of many CI jobs (#3510)
+  * Run lintian on the build distribution (#3516)
+  * Update nodesource signing key to address SHA-1 weakness (#3508)
 
 ## 1.4.0
 
