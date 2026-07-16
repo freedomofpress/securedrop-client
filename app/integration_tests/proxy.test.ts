@@ -239,14 +239,14 @@ describe("Test executing streaming proxy", async () => {
       {
         method: "GET",
         path_query: "/delay/10",
-        headers: {},
+        headers: { "X-Request-ID": "req-test" },
       },
       proxyCommand(100),
       writeStream,
       1,
     )) as ProxyStreamResponse;
     expect(response.error!.message).toEqual(
-      "Process terminated with signal SIGTERM",
+      "req-test: Process terminated with signal SIGTERM",
     );
     expect(response.complete).toEqual(false);
   });
