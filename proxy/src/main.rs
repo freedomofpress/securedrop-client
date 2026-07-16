@@ -87,9 +87,9 @@ impl Syslog {
 }
 
 /// Whether `value` is a well-formed request ID: `req-` followed by a
-/// lowercase UUID.  Anything else is stripped by `extract_request_id()` so
-/// that a compromised client VM can't inject arbitrary strings into the
-/// proxy's and server's logs.
+/// lowercase UUID.  A request carrying anything else is rejected so that a
+/// compromised client VM can't inject arbitrary strings into the proxy's
+/// and server's logs.
 fn valid_request_id(value: &str) -> bool {
     let Some(uuid) = value.strip_prefix("req-") else {
         return false;
@@ -106,16 +106,16 @@ fn valid_request_id(value: &str) -> bool {
 #[derive(Debug, PartialEq)]
 enum RequestId {
     Valid(String),
-    /// The malformed value, which has been stripped from the request
+    /// The malformed value; the caller fails the request
     Invalid(String),
     Missing,
 }
 
-/// Validate the request's X-Request-ID header.  A malformed one is removed
-/// from the request: the Inbox always generates well-formed IDs, so a
-/// malformed one means a broken (or compromised) client, which the caller
-/// should log a warning about.  The request itself still proceeds either
-/// way — request IDs are an observability aid, not a gate.
+/// Validate the request's X-Request-ID header.  The Inbox always generates
+/// well-formed IDs, so a malformed one means a broken (or compromised)
+/// client: the caller logs a warning and fails the request.  A missing ID
+/// is not an error — the header is optional — and the request proceeds
+/// without one.
 fn extract_request_id(headers: &mut HashMap<String, String>) -> RequestId {
     let Some(key) = headers
         .keys()
@@ -275,13 +275,14 @@ async fn proxy() -> Result<()> {
         RequestId::Invalid(value) => {
             // {:?} escapes control characters so the malformed value can't
             // inject anything into the logs; truncate it for good measure.
+            let escaped =
+                format!("{:?}", value.chars().take(64).collect::<String>());
             syslog.warn(&format!(
-                "stripped invalid X-Request-ID header: {:?}",
-                value.chars().take(64).collect::<String>()
+                "rejected invalid X-Request-ID header: {escaped}"
             ));
-            // Apache-style placeholder in the log lines below
-            "-".to_string()
+            bail!("invalid X-Request-ID header: {escaped}");
         }
+        // Apache-style placeholder in the log lines below
         RequestId::Missing => "-".to_string(),
     };
     syslog.info(&format!(
@@ -431,7 +432,7 @@ mod tests {
     }
 
     #[test]
-    fn test_extract_request_id_strips_invalid() {
+    fn test_extract_request_id_invalid() {
         let mut headers = HashMap::from([
             (
                 REQUEST_ID_HEADER.to_string(),
@@ -464,7 +465,7 @@ mod tests {
         assert!(message.starts_with("<14>securedrop-proxy["));
         assert!(message.ends_with("]: req-x request: method=GET body_size=0"));
 
-        syslog.warn("stripped invalid X-Request-ID header: \"nope\"");
+        syslog.warn("rejected invalid X-Request-ID header: \"nope\"");
         let n = receiver.recv(&mut buf).unwrap();
         let message = std::str::from_utf8(&buf[..n]).unwrap();
         assert!(message.starts_with("<12>securedrop-proxy["));

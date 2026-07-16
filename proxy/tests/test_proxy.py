@@ -168,10 +168,10 @@ def test_request_id_not_added_when_missing(proxy_request, header_echo_server):
         "req-injected message into the logs!",
     ],
 )
-def test_request_id_invalid_stripped(proxy_request, header_echo_server, invalid):
-    """A malformed X-Request-ID is stripped from the request (and logged as a
-    warning), so a compromised client VM can't inject arbitrary strings into
-    the proxy's or server's logs; the request itself still proceeds"""
+def test_request_id_invalid_rejected(proxy_request, header_echo_server, invalid):
+    """A malformed X-Request-ID fails the request (and is logged as a
+    warning), so a broken or compromised client VM can't inject arbitrary
+    strings into the proxy's or server's logs; nothing is sent upstream"""
     test_input = {
         "method": "GET",
         "path_query": "/",
@@ -180,10 +180,11 @@ def test_request_id_invalid_stripped(proxy_request, header_echo_server, invalid)
     }
 
     result = proxy_request(input=test_input, origin=header_echo_server)
-    assert result.returncode == 0
-    response = json.loads(result.stdout.decode())
-    assert response["status"] == 200
-    assert sent_request_id(response) is None
+    assert result.returncode == 1
+    # Nothing was proxied: the request is rejected before anything is sent
+    assert result.stdout == b""
+    error = json.loads(result.stderr.decode())
+    assert error["error"].startswith("invalid X-Request-ID header: ")
 
 
 def test_body(proxy_request):
