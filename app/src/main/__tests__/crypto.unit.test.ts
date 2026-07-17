@@ -214,10 +214,40 @@ describe("Crypto", () => {
       expect(isPgpEncrypted(Buffer.from("hello world"))).toBe(false);
     });
 
-    it("returns true for an ASCII-armored PGP message", () => {
+    it("returns true for an ASCII-armored Public-Key ESK message", () => {
       expect(
-        isPgpEncrypted(Buffer.from("-----BEGIN PGP MESSAGE-----\n...")),
+        isPgpEncrypted(
+          Buffer.from(
+            "-----BEGIN PGP MESSAGE-----\n\nwQAA\n-----END PGP MESSAGE-----",
+          ),
+        ),
       ).toBe(true);
+    });
+
+    it("returns true for an ASCII-armored Public-Key ESK message with armor headers", () => {
+      expect(
+        isPgpEncrypted(
+          Buffer.from(
+            "-----BEGIN PGP MESSAGE-----\r\nVersion: GnuPG v2\r\nComment: test\r\n\r\nwQAA\r\n-----END PGP MESSAGE-----",
+          ),
+        ),
+      ).toBe(true);
+    });
+
+    it("returns false for an ASCII-armored Symmetric-Key ESK message", () => {
+      expect(
+        isPgpEncrypted(
+          Buffer.from(
+            "-----BEGIN PGP MESSAGE-----\n\njA0ECQMKjx9c2LXqOSz/0nQB\n-----END PGP MESSAGE-----",
+          ),
+        ),
+      ).toBe(false);
+    });
+
+    it("returns false for malformed ASCII armor without packet data", () => {
+      expect(
+        isPgpEncrypted(Buffer.from("-----BEGIN PGP MESSAGE-----\n\n...")),
+      ).toBe(false);
     });
 
     it("returns false for an ASCII-armored PGP signed message (not encrypted)", () => {
@@ -233,9 +263,9 @@ describe("Crypto", () => {
       expect(isPgpEncrypted(Buffer.from([0xc1, 0x00]))).toBe(true);
     });
 
-    it("returns true for a binary OpenPGP new-format Symmetric-Key ESK packet (tag 3)", () => {
+    it("returns false for a binary OpenPGP new-format Symmetric-Key ESK packet (tag 3)", () => {
       // New format: bit7=1, bit6=1, tag=3 → 0xC3
-      expect(isPgpEncrypted(Buffer.from([0xc3, 0x00]))).toBe(true);
+      expect(isPgpEncrypted(Buffer.from([0xc3, 0x00]))).toBe(false);
     });
 
     it("returns true for a binary OpenPGP old-format Public-Key ESK packet (tag 1)", () => {
@@ -243,9 +273,9 @@ describe("Crypto", () => {
       expect(isPgpEncrypted(Buffer.from([0x84, 0x00]))).toBe(true);
     });
 
-    it("returns true for a binary OpenPGP old-format Symmetric-Key ESK packet (tag 3)", () => {
+    it("returns false for a binary OpenPGP old-format Symmetric-Key ESK packet (tag 3)", () => {
       // Old format: bit7=1, bit6=0, tag=3 in bits 5-2, length-type=0 → 0x8c
-      expect(isPgpEncrypted(Buffer.from([0x8c, 0x00]))).toBe(true);
+      expect(isPgpEncrypted(Buffer.from([0x8c, 0x00]))).toBe(false);
     });
 
     it("returns false for a binary OpenPGP packet with a non-ESK tag (e.g. tag 11 = literal data)", () => {
