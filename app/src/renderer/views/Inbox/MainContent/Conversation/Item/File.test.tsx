@@ -1,4 +1,4 @@
-import { screen, fireEvent } from "@testing-library/react";
+import { screen, fireEvent, waitFor } from "@testing-library/react";
 import { expect, describe, it, vi } from "vitest";
 import userEvent from "@testing-library/user-event";
 import File from "./File";
@@ -31,7 +31,6 @@ describe("File Component Memoization", () => {
     filename: null,
     fetch_progress: null,
     decrypted_size: null,
-    isDoubleEncrypted: false,
     doubleEncryptedKeyFingerprint: null,
     fetch_status: FetchStatus.Initial,
   };
@@ -138,7 +137,6 @@ describe("File Component", () => {
     filename: null,
     fetch_progress: null,
     decrypted_size: null,
-    isDoubleEncrypted: false,
     doubleEncryptedKeyFingerprint: null,
     fetch_status: FetchStatus.Initial,
     ...overrides,
@@ -231,7 +229,6 @@ describe("File Component", () => {
           fetch_status: FetchStatus.Complete,
           filename: "/path/to/document.pdf",
           decrypted_size: 2048,
-          isDoubleEncrypted: false,
           doubleEncryptedKeyFingerprint: null,
         })}
         designation="Test Source"
@@ -263,7 +260,6 @@ describe("File Component", () => {
           fetch_status: FetchStatus.Complete,
           filename: "/path/to/document.pdf",
           decrypted_size: 2048,
-          isDoubleEncrypted: false,
           doubleEncryptedKeyFingerprint: null,
         })}
         designation="Test Source"
@@ -343,7 +339,6 @@ describe("File Component", () => {
           fetch_status: FetchStatus.Complete,
           filename: "/path/to/document.pdf",
           decrypted_size: 2048,
-          isDoubleEncrypted: false,
           doubleEncryptedKeyFingerprint: null,
         })}
         designation="Test Source"
@@ -374,7 +369,6 @@ describe("File Component", () => {
           fetch_status: FetchStatus.Complete,
           filename: "/path/to/document.pdf",
           decrypted_size: 2048,
-          isDoubleEncrypted: false,
           doubleEncryptedKeyFingerprint: null,
         })}
         designation="Test Source"
@@ -410,7 +404,8 @@ describe("File Component", () => {
           fetch_status: FetchStatus.Complete,
           filename: "/path/to/document.pdf",
           decrypted_size: 2048,
-          isDoubleEncrypted: true,
+          doubleEncryptedKeyFingerprint:
+            "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
         })}
         designation="Test Source"
         onUpdate={mockOnUpdate}
@@ -434,7 +429,6 @@ describe("File Component", () => {
           fetch_status: FetchStatus.Complete,
           filename: "/path/to/document.pdf",
           decrypted_size: 2048,
-          isDoubleEncrypted: true,
           doubleEncryptedKeyFingerprint:
             "1234567890ABCDEF1234567890ABCDEF12345678",
         })}
@@ -453,7 +447,7 @@ describe("File Component", () => {
     expect(badge).toBeInTheDocument();
     // Same padlock icon, but tinted with the warning color
     expect(container.querySelector(".lucide-lock-keyhole")).toBeTruthy();
-    expect(badge.style.color).not.toBe("");
+    await waitFor(() => expect(badge.style.color).not.toBe(""));
 
     // The tooltip names the key's fingerprint, formatted in 4-char groups
     await user.hover(badge);
@@ -471,7 +465,6 @@ describe("File Component", () => {
           fetch_status: FetchStatus.Complete,
           filename: "/path/to/document.pdf",
           decrypted_size: 2048,
-          isDoubleEncrypted: false,
           doubleEncryptedKeyFingerprint: null,
         })}
         designation="Test Source"

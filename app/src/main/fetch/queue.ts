@@ -654,7 +654,7 @@ export class TaskQueue {
       throw new Error(`Failed to load encrypted data from disk: ${error}`);
     }
 
-    const { plaintext, isDoubleEncrypted, doubleEncryptedKeyFingerprint } =
+    const { plaintext, doubleEncryptedKeyFingerprint } =
       await crypto.decryptMessage(buffer, signal);
 
     // Re-check: if the item was deleted during decryption, drop the result
@@ -663,12 +663,7 @@ export class TaskQueue {
     }
 
     // Store the decrypted plaintext and mark item as complete
-    db.completePlaintextItem(
-      item.id,
-      plaintext,
-      isDoubleEncrypted,
-      doubleEncryptedKeyFingerprint,
-    );
+    db.completePlaintextItem(item.id, plaintext, doubleEncryptedKeyFingerprint);
 
     // Clean up the ciphertext file after successful decryption
     try {
@@ -690,7 +685,7 @@ export class TaskQueue {
     const downloadPath = this.storage.downloadFilePath(metadata, item);
     const itemDirectory = this.storage.itemDirectory(metadata);
     try {
-      const { finalPath, isDoubleEncrypted, doubleEncryptedKeyFingerprint } =
+      const { finalPath, doubleEncryptedKeyFingerprint } =
         await crypto.decryptFile(
           this.storage,
           itemDirectory,
@@ -717,7 +712,6 @@ export class TaskQueue {
         item.id,
         finalPath,
         decryptedSize,
-        isDoubleEncrypted,
         doubleEncryptedKeyFingerprint,
       );
       console.log(`Successfully decrypted ${metadata.kind} ${item.id}`);

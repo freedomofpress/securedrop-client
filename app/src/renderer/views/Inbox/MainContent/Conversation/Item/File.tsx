@@ -670,9 +670,9 @@ const CompleteFile = memo(function CompleteFile({
         </div>
       </div>
 
-      {item.isDoubleEncrypted && (
+      {item.doubleEncryptedKeyFingerprint !== null && (
         <DoubleEncryptedBadge
-          keyFingerprint={item.doubleEncryptedKeyFingerprint}
+          keyFingerprint={item.doubleEncryptedKeyFingerprint!}
         />
       )}
       <ExportWizard

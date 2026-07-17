@@ -93,6 +93,10 @@ const electronAPI = {
   getSystemLanguage: logIpcCall<string>("getSystemLanguage", () =>
     ipcRenderer.invoke("getSystemLanguage"),
   ),
+  getSubmissionKeyFingerprint: logIpcCall<string>(
+    "getSubmissionKeyFingerprint",
+    () => ipcRenderer.invoke("getSubmissionKeyFingerprint"),
+  ),
   addPendingSourceEvent: logIpcCall<string | null>(
     "addPendingSourceEvent",
     (sourceUuid: string, type: PendingEventType, data?: PendingEventData) =>

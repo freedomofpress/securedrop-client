@@ -232,9 +232,8 @@ export type Item = {
   fetch_status: FetchStatus | null;
   fetch_progress: number | null;
   decrypted_size: number | null;
-  isDoubleEncrypted: boolean;
-  // Set only when the inner layer of a double-encrypted item was decrypted
-  // by a key other than the submission key current at decryption time
+  // Full primary fingerprint of the key that decrypted the inner layer, or
+  // null when the item was not double-encrypted.
   doubleEncryptedKeyFingerprint: string | null;
 };
 
@@ -248,8 +247,7 @@ export type ItemRow = {
   fetch_progress: number | null;
   decrypted_size: number | null;
   is_read: number | null; // projected value from items_projected view
-  is_double_encrypted: number | null;
-  double_encrypted_key_fingerprint: string | null;
+  double_encrypted_key_fingerprint: string;
 };
 
 // Database representation

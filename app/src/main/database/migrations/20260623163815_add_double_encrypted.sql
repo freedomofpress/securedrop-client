@@ -1,5 +1,7 @@
 -- migrate:up
-ALTER TABLE items ADD COLUMN is_double_encrypted INTEGER NOT NULL DEFAULT 0;
+-- Empty means the item was not double-encrypted. Otherwise this stores the
+-- full primary fingerprint of the key that decrypted the inner layer.
+ALTER TABLE items ADD COLUMN double_encrypted_key_fingerprint TEXT NOT NULL DEFAULT '';
 
 DROP VIEW IF EXISTS items_projected;
 CREATE VIEW items_projected AS
@@ -33,7 +35,7 @@ SELECT
     items.fetch_retry_attempts,
     items.interaction_count,
     items.decrypted_size,
-    items.is_double_encrypted
+    items.double_encrypted_key_fingerprint
 FROM items
 WHERE NOT EXISTS (
     SELECT 1
@@ -71,7 +73,7 @@ SELECT
     NULL AS fetch_retry_attempts,
     json_extract(pending_events.data, '$.metadata.interaction_count') AS interaction_count,
     NULL AS decrypted_size,
-    0 AS is_double_encrypted
+    '' AS double_encrypted_key_fingerprint
 FROM pending_events
 WHERE pending_events.type = 'reply_sent'
     AND NOT EXISTS (
@@ -110,8 +112,6 @@ FROM items_projected;
 -- migrate:down
 DROP VIEW IF EXISTS sorted_items;
 DROP VIEW IF EXISTS items_projected;
-
-ALTER TABLE items DROP COLUMN is_double_encrypted;
 
 CREATE VIEW items_projected AS
 SELECT
@@ -214,3 +214,5 @@ SELECT
         ORDER BY interaction_count DESC
     ) AS rn
 FROM items_projected;
+
+ALTER TABLE items DROP COLUMN double_encrypted_key_fingerprint;
