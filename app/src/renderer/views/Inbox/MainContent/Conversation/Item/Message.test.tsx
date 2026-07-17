@@ -1289,6 +1289,51 @@ describe("Double-encryption badge", () => {
     expect(screen.getByText("A pre-encrypted message")).toBeInTheDocument();
   });
 
+  it("normalizes case and spacing when comparing full fingerprints", async () => {
+    vi.mocked(window.electronAPI.getSubmissionKeyFingerprint).mockResolvedValue(
+      "aaaa aaaa aaaa aaaa aaaa aaaa aaaa aaaa aaaa aaaa",
+    );
+    renderWithProviders(
+      <Message
+        kind="message"
+        item={{
+          ...mockMessageItem,
+          doubleEncryptedKeyFingerprint:
+            "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
+        }}
+        designation="Test Source"
+        onUpdate={vi.fn()}
+        onDelete={vi.fn()}
+      />,
+      { preloadedState: authState },
+    );
+
+    const badge = screen.getByText("Source-encrypted");
+    await waitFor(() =>
+      expect(window.electronAPI.getSubmissionKeyFingerprint).toHaveBeenCalled(),
+    );
+    expect(badge.style.color).toBe("");
+  });
+
+  it("does not treat a matching 16-character key ID as the current key", async () => {
+    renderWithProviders(
+      <Message
+        kind="message"
+        item={{
+          ...mockMessageItem,
+          doubleEncryptedKeyFingerprint: "AAAAAAAAAAAAAAAA",
+        }}
+        designation="Test Source"
+        onUpdate={vi.fn()}
+        onDelete={vi.fn()}
+      />,
+      { preloadedState: authState },
+    );
+
+    const badge = screen.getByText("Source-encrypted");
+    await waitFor(() => expect(badge.style.color).not.toBe(""));
+  });
+
   it("shows a warning badge with the fingerprint in the tooltip when the inner layer used a non-submission key", async () => {
     const user = userEvent.setup();
     const { container } = renderWithProviders(

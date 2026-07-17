@@ -8,6 +8,8 @@ vi.mock("child_process", () => ({
 
 import { spawnSync } from "child_process";
 
+const FINGERPRINT = "0123456789ABCDEF0123456789ABCDEF01234567";
+
 describe("Config", () => {
   beforeEach(() => {
     // Clear all environment variables that might affect tests
@@ -27,18 +29,18 @@ describe("Config", () => {
 
   describe("Non-Qubes mode", () => {
     it("loads required config from import.meta.env", () => {
-      (import.meta.env as any).SD_SUBMISSION_KEY_FPR = "ABCD1234";
+      (import.meta.env as any).SD_SUBMISSION_KEY_FPR = FINGERPRINT;
       (import.meta.env as any).QUBES_GPG_DOMAIN = "my-gpg-domain";
 
       const config = Config.load(true);
 
       expect(config.is_qubes).toBe(false);
-      expect(config.sd_submission_key_fpr).toBe("ABCD1234");
+      expect(config.sd_submission_key_fpr).toBe(FINGERPRINT);
       expect(config.qubes_gpg_domain).toBe("my-gpg-domain");
     });
 
     it("uses default values for optional config", () => {
-      (import.meta.env as any).SD_SUBMISSION_KEY_FPR = "ABCD1234";
+      (import.meta.env as any).SD_SUBMISSION_KEY_FPR = FINGERPRINT;
 
       const config = Config.load(true);
 
@@ -46,7 +48,7 @@ describe("Config", () => {
     });
 
     it("loads GNUPGHOME from environment for development", () => {
-      (import.meta.env as any).SD_SUBMISSION_KEY_FPR = "ABCD1234";
+      (import.meta.env as any).SD_SUBMISSION_KEY_FPR = FINGERPRINT;
       (import.meta.env as any).GNUPGHOME = "/custom/gnupg";
 
       const config = Config.load(true);
@@ -59,6 +61,21 @@ describe("Config", () => {
         "Missing configuration value: SD_SUBMISSION_KEY_FPR",
       );
     });
+
+    it("normalizes fingerprint case and spacing", () => {
+      (import.meta.env as any).SD_SUBMISSION_KEY_FPR =
+        "0123 4567 89ab cdef 0123 4567 89ab cdef 0123 4567";
+
+      expect(Config.load(true).sd_submission_key_fpr).toBe(FINGERPRINT);
+    });
+
+    it("rejects a 16-character key ID", () => {
+      (import.meta.env as any).SD_SUBMISSION_KEY_FPR = "89ABCDEF01234567";
+
+      expect(() => Config.load(true)).toThrow(
+        "SD_SUBMISSION_KEY_FPR must be a full 40-character fingerprint",
+      );
+    });
   });
 
   describe("Qubes mode", () => {
@@ -68,7 +85,7 @@ describe("Config", () => {
         if (key === "/vm-config/SD_SUBMISSION_KEY_FPR") {
           return {
             status: 0,
-            stdout: "QUBES_KEY_FPR\n",
+            stdout: `${FINGERPRINT}\n`,
             stderr: "",
             signal: null,
             error: undefined,
@@ -96,7 +113,7 @@ describe("Config", () => {
       const config = Config.load(false);
 
       expect(config.is_qubes).toBe(true);
-      expect(config.sd_submission_key_fpr).toBe("QUBES_KEY_FPR");
+      expect(config.sd_submission_key_fpr).toBe(FINGERPRINT);
       expect(config.qubes_gpg_domain).toBe("gpg-domain");
     });
 
@@ -106,7 +123,7 @@ describe("Config", () => {
         if (key === "/vm-config/SD_SUBMISSION_KEY_FPR") {
           return {
             status: 0,
-            stdout: "KEY123\n",
+            stdout: `${FINGERPRINT}\n`,
             stderr: "",
             signal: null,
             error: undefined,
@@ -125,7 +142,7 @@ describe("Config", () => {
       vi.stubEnv("QUBES_TEST", "1");
       const config = Config.load(false);
 
-      expect(config.sd_submission_key_fpr).toBe("KEY123");
+      expect(config.sd_submission_key_fpr).toBe(FINGERPRINT);
       expect(config.qubes_gpg_domain).toBe("");
     });
 
@@ -199,7 +216,7 @@ describe("Config", () => {
         if (key === "/vm-config/SD_SUBMISSION_KEY_FPR") {
           return {
             status: 0,
-            stdout: "KEY123\n",
+            stdout: `${FINGERPRINT}\n`,
             stderr: "",
             signal: null,
             error: undefined,
@@ -222,7 +239,7 @@ describe("Config", () => {
     });
 
     it("does not detect Qubes when no QUBES_ env vars exist", () => {
-      (import.meta.env as any).SD_SUBMISSION_KEY_FPR = "KEY123";
+      (import.meta.env as any).SD_SUBMISSION_KEY_FPR = FINGERPRINT;
 
       const config = Config.load(false);
 
@@ -230,7 +247,7 @@ describe("Config", () => {
     });
 
     it("respects noQubes parameter even with QUBES_ env var", () => {
-      (import.meta.env as any).SD_SUBMISSION_KEY_FPR = "KEY123";
+      (import.meta.env as any).SD_SUBMISSION_KEY_FPR = FINGERPRINT;
       vi.stubEnv("QUBES_TEST", "1");
 
       const config = Config.load(true);

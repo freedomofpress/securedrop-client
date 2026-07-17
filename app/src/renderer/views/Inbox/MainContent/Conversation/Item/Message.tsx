@@ -26,7 +26,10 @@ import {
   SessionStatus,
 } from "../../../../../features/session/sessionSlice";
 import { getJournalistById } from "../../../../../features/journalists/journalistsSlice";
-import { useAppSelector } from "../../../../../hooks";
+import {
+  useAppSelector,
+  useSubmissionKeyFingerprint,
+} from "../../../../../hooks";
 import "../Item.css";
 import "./Reply.css";
 
@@ -54,6 +57,9 @@ const Message = memo(function Message(props: MessageProps) {
   const { kind, item, onDelete } = props;
   const { t } = useTranslation("MainContent");
   const { token } = theme.useToken();
+  const currentKeyFingerprint = useSubmissionKeyFingerprint(
+    kind === "message" && item.doubleEncryptedKeyFingerprint !== null,
+  );
   const [isDeleteFocused, setIsDeleteFocused] = useState(false);
   const showDelete = isDeleteFocused;
 
@@ -151,6 +157,7 @@ const Message = memo(function Message(props: MessageProps) {
             kind === "message" && (
               <DoubleEncryptedBadge
                 keyFingerprint={item.doubleEncryptedKeyFingerprint!}
+                currentKeyFingerprint={currentKeyFingerprint}
               />
             )}
         </>
