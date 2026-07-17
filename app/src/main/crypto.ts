@@ -109,34 +109,28 @@ export function parseDecryptionKeyFingerprint(
   statusOutput: string,
 ): string | null {
   const match = statusOutput.match(
-    /^\[GNUPG:\] DECRYPTION_KEY [0-9A-Fa-f]+ ([0-9A-Fa-f]+)/m,
+    /^\[GNUPG:\] DECRYPTION_KEY [0-9A-Fa-f]{40} ([0-9A-Fa-f]{40})(?:\s|$)/m,
   );
   return match ? match[1].toUpperCase() : null;
 }
 
 export interface DecryptMessageResult {
   plaintext: string;
-  isDoubleEncrypted: boolean;
   /**
    * Primary fingerprint of the key that decrypted the outermost layer of
    * this payload, as reported by gpg's status output (null if not reported).
    */
   decryptionKeyFingerprint: string | null;
   /**
-   * Set only when the payload was double-encrypted AND the inner layer was
-   * decrypted by a key other than the configured submission key (e.g. a
-   * rotated submission key still present in the keyring) — a signal that the
-   * source should update their copy of the public key. Null when the inner
-   * layer used the current submission key, or when gpg reported no
-   * fingerprint.
+   * Primary fingerprint of the key that decrypted the inner layer. Null when
+   * the payload was not double-encrypted.
    */
   doubleEncryptedKeyFingerprint: string | null;
 }
 
 export interface DecryptFileResult {
   finalPath: string;
-  isDoubleEncrypted: boolean;
-  /** Same semantics as DecryptMessageResult.doubleEncryptedKeyFingerprint */
+  /** Same semantics as DecryptMessageResult.doubleEncryptedKeyFingerprint. */
   doubleEncryptedKeyFingerprint: string | null;
 }
 
@@ -229,35 +223,6 @@ export class Crypto {
   }
 
   /**
-   * True when the fingerprint gpg reported matches the configured submission
-   * key. The config may hold a full 40-char fingerprint or a long (16-char)
-   * key ID; a fingerprint ends with its long key ID, so compare by suffix.
-   */
-  private matchesSubmissionKey(fingerprint: string): boolean {
-    const reported = fingerprint.toUpperCase();
-    const configured = this.submissionKeyFingerprint
-      .replace(/\s/g, "")
-      .toUpperCase();
-    if (configured.length < 16 || reported.length < 16) {
-      return false;
-    }
-    return reported.endsWith(configured) || configured.endsWith(reported);
-  }
-
-  /**
-   * Reduce the fingerprint of the key that decrypted an inner layer to its
-   * user-facing meaning: null when it is the configured submission key (the
-   * expected case) or unknown, and the fingerprint itself when the source
-   * used some other key (e.g. a rotated submission key still in sd-gpg).
-   */
-  private foreignKeyFingerprint(fingerprint: string | null): string | null {
-    if (fingerprint === null || this.matchesSubmissionKey(fingerprint)) {
-      return null;
-    }
-    return fingerprint;
-  }
-
-  /**
    * Lazily get the public part of the submission key
    */
   async getSubmissionKey(): Promise<string> {
@@ -330,7 +295,7 @@ export class Crypto {
    *   source may have encrypted the inner layer to a key of any type (e.g. a
    *   rotated ECC key), and a rejected inner decrypt safely falls back to
    *   surfacing the ciphertext.
-   * @returns Promise<DecryptMessageResult> - The decrypted plaintext and double-encryption flag
+   * @returns Promise<DecryptMessageResult> - The decrypted plaintext and inner-key fingerprint
    */
   async decryptMessage(
     encryptedContent: Buffer,
@@ -425,7 +390,6 @@ export class Crypto {
         if (!isPgpEncrypted(stdout)) {
           resolve({
             plaintext,
-            isDoubleEncrypted: false,
             decryptionKeyFingerprint,
             doubleEncryptedKeyFingerprint: null,
           });
@@ -435,14 +399,22 @@ export class Crypto {
         // Double-encrypted: attempt a second GPG decryption of the inner message
         this.decryptMessage(stdout, signal, true).then(
           (inner) => {
+            if (inner.decryptionKeyFingerprint === null) {
+              console.warn(
+                "Double-encryption detected but GPG did not report a valid inner decryption key fingerprint",
+              );
+              resolve({
+                plaintext,
+                decryptionKeyFingerprint,
+                doubleEncryptedKeyFingerprint: null,
+              });
+              return;
+            }
             resolve({
               plaintext: inner.plaintext,
-              isDoubleEncrypted: true,
               decryptionKeyFingerprint,
               // The recursive call's outermost layer is our inner layer
-              doubleEncryptedKeyFingerprint: this.foreignKeyFingerprint(
-                inner.decryptionKeyFingerprint,
-              ),
+              doubleEncryptedKeyFingerprint: inner.decryptionKeyFingerprint,
             });
           },
           (innerError) => {
@@ -451,7 +423,6 @@ export class Crypto {
             );
             resolve({
               plaintext,
-              isDoubleEncrypted: false,
               decryptionKeyFingerprint,
               doubleEncryptedKeyFingerprint: null,
             });
@@ -475,7 +446,7 @@ export class Crypto {
    * Decrypt a file and return the path to the decrypted file with original filename
    * Uses streaming approach to handle large files efficiently (similar to legacy client)
    * @param filepath - Path to the encrypted file
-   * @returns Promise<DecryptFileResult> - Path to the decrypted file and double-encryption flag
+   * @returns Promise<DecryptFileResult> - Path and inner-key fingerprint
    */
   async decryptFile(
     storage: Storage,
@@ -604,7 +575,6 @@ export class Crypto {
             isSettled = true;
             resolve({
               finalPath: finalAbsolutePath,
-              isDoubleEncrypted: false,
               doubleEncryptedKeyFingerprint: null,
             });
             return;
@@ -623,15 +593,18 @@ export class Crypto {
               innerAbsolutePath,
               signal,
             );
+            if (inner.decryptionKeyFingerprint === null) {
+              fs.rmSync(innerAbsolutePath, { force: true });
+              throw new CryptoError(
+                "GPG did not report a valid inner decryption key fingerprint",
+              );
+            }
             // Remove the intermediate (still-encrypted) decompressed file
             fs.unlink(finalAbsolutePath, () => {});
             isSettled = true;
             resolve({
               finalPath: innerAbsolutePath,
-              isDoubleEncrypted: true,
-              doubleEncryptedKeyFingerprint: this.foreignKeyFingerprint(
-                inner.decryptionKeyFingerprint,
-              ),
+              doubleEncryptedKeyFingerprint: inner.decryptionKeyFingerprint,
             });
           } catch (innerError) {
             // Second decryption failed — surface the intermediate file as-is
@@ -641,7 +614,6 @@ export class Crypto {
             isSettled = true;
             resolve({
               finalPath: finalAbsolutePath,
-              isDoubleEncrypted: false,
               doubleEncryptedKeyFingerprint: null,
             });
           }

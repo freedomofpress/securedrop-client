@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import userEvent from "@testing-library/user-event";
-import { screen, fireEvent } from "@testing-library/react";
+import { screen, fireEvent, waitFor } from "@testing-library/react";
 import Message from "./Message";
 import {
   testMemoization,
@@ -32,7 +32,6 @@ describe("Message Component Memoization", () => {
     fetch_status: null,
     fetch_progress: null,
     decrypted_size: null,
-    isDoubleEncrypted: false,
     doubleEncryptedKeyFingerprint: null,
   };
   const mockOnUpdate = vi.fn();
@@ -130,7 +129,6 @@ describe("Reply", () => {
     fetch_status: null,
     fetch_progress: null,
     decrypted_size: null,
-    isDoubleEncrypted: false,
     doubleEncryptedKeyFingerprint: null,
   };
 
@@ -502,7 +500,6 @@ describe("Reply", () => {
       fetch_status: null,
       fetch_progress: null,
       decrypted_size: null,
-      isDoubleEncrypted: false,
       doubleEncryptedKeyFingerprint: null,
     };
 
@@ -858,7 +855,6 @@ describe("Reply", () => {
       fetch_status: null,
       fetch_progress: null,
       decrypted_size: null,
-      isDoubleEncrypted: false,
       doubleEncryptedKeyFingerprint: null,
     };
 
@@ -962,7 +958,6 @@ describe("Reply", () => {
       fetch_status: null,
       fetch_progress: null,
       decrypted_size: null,
-      isDoubleEncrypted: false,
       doubleEncryptedKeyFingerprint: null,
     };
 
@@ -983,7 +978,6 @@ describe("Reply", () => {
       fetch_status: null,
       fetch_progress: null,
       decrypted_size: null,
-      isDoubleEncrypted: false,
       doubleEncryptedKeyFingerprint: null,
     };
 
@@ -1004,7 +998,6 @@ describe("Reply", () => {
       fetch_status: null,
       fetch_progress: null,
       decrypted_size: null,
-      isDoubleEncrypted: false,
       doubleEncryptedKeyFingerprint: null,
     };
 
@@ -1097,7 +1090,6 @@ describe("Message and Reply delete button keyboard accessibility", () => {
     fetch_status: null,
     fetch_progress: null,
     decrypted_size: null,
-    isDoubleEncrypted: false,
     doubleEncryptedKeyFingerprint: null,
   };
 
@@ -1118,7 +1110,6 @@ describe("Message and Reply delete button keyboard accessibility", () => {
     fetch_status: null,
     fetch_progress: null,
     decrypted_size: null,
-    isDoubleEncrypted: false,
     doubleEncryptedKeyFingerprint: null,
   };
 
@@ -1242,7 +1233,6 @@ describe("Double-encryption badge", () => {
     fetch_status: null,
     fetch_progress: null,
     decrypted_size: null,
-    isDoubleEncrypted: false,
     doubleEncryptedKeyFingerprint: null,
   };
 
@@ -1263,15 +1253,19 @@ describe("Double-encryption badge", () => {
     fetch_status: null,
     fetch_progress: null,
     decrypted_size: null,
-    isDoubleEncrypted: false,
     doubleEncryptedKeyFingerprint: null,
   };
 
-  it("shows the badge on a double-encrypted message", () => {
+  it("shows the normal badge when the inner layer used the current submission key", async () => {
+    const user = userEvent.setup();
     renderWithProviders(
       <Message
         kind="message"
-        item={{ ...mockMessageItem, isDoubleEncrypted: true }}
+        item={{
+          ...mockMessageItem,
+          doubleEncryptedKeyFingerprint:
+            "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
+        }}
         designation="Test Source"
         onUpdate={vi.fn()}
         onDelete={vi.fn()}
@@ -1279,7 +1273,18 @@ describe("Double-encryption badge", () => {
       { preloadedState: authState },
     );
 
-    expect(screen.getByText("Source-encrypted")).toBeInTheDocument();
+    const badge = screen.getByText("Source-encrypted");
+    expect(badge).toBeInTheDocument();
+    await waitFor(() =>
+      expect(window.electronAPI.getSubmissionKeyFingerprint).toHaveBeenCalled(),
+    );
+    expect(badge.style.color).toBe("");
+    await user.hover(badge);
+    expect(
+      await screen.findByText(
+        "This submission was encrypted by the source before uploading",
+      ),
+    ).toBeInTheDocument();
     // The message itself is still displayed
     expect(screen.getByText("A pre-encrypted message")).toBeInTheDocument();
   });
@@ -1291,7 +1296,6 @@ describe("Double-encryption badge", () => {
         kind="message"
         item={{
           ...mockMessageItem,
-          isDoubleEncrypted: true,
           doubleEncryptedKeyFingerprint:
             "1234567890ABCDEF1234567890ABCDEF12345678",
         }}
@@ -1306,7 +1310,7 @@ describe("Double-encryption badge", () => {
     expect(badge).toBeInTheDocument();
     // Same padlock icon, but tinted with the warning color
     expect(container.querySelector(".lucide-lock-keyhole")).toBeTruthy();
-    expect(badge.style.color).not.toBe("");
+    await waitFor(() => expect(badge.style.color).not.toBe(""));
 
     // The tooltip names the key's fingerprint, formatted in 4-char groups
     await user.hover(badge);
@@ -1337,7 +1341,11 @@ describe("Double-encryption badge", () => {
     renderWithProviders(
       <Message
         kind="reply"
-        item={{ ...mockReplyItem, isDoubleEncrypted: true }}
+        item={{
+          ...mockReplyItem,
+          doubleEncryptedKeyFingerprint:
+            "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
+        }}
         onDelete={vi.fn()}
       />,
       { preloadedState: authState },

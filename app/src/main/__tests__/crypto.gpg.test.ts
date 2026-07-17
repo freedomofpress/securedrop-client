@@ -605,13 +605,10 @@ and symbols: !@#$%^&*()_+-={}[]|\\:";'<>?,./`;
     // fixture), simulating a source who encrypted to some other key — the app
     // detects the inner layer but cannot decrypt it.
     let submissionPubKey: string;
+    let submissionFingerprint: string;
     let wrongPubKey: string;
 
     beforeEach(() => {
-      // Unlike most tests in this file, these need the configured submission
-      // key fingerprint to be real: it's compared against the key gpg reports
-      // having used for the inner layer. testKeyId is a long key ID, which
-      // the comparison must also accept.
       (Crypto as any).instance = undefined;
       crypto = Crypto.initialize({
         isQubes: false,
@@ -626,6 +623,10 @@ and symbols: !@#$%^&*()_+-={}[]|\\:";'<>?,./`;
         `gpg --homedir "${gpgEnv.homedir}" --armor --export ${testKeyId}`,
         { encoding: "utf8" },
       );
+      submissionFingerprint = execSync(
+        `gpg --homedir "${gpgEnv.homedir}" --list-keys --with-colons ${testKeyId} | grep '^fpr' | head -1 | cut -d: -f10`,
+        { encoding: "utf8" },
+      ).trim();
 
       // The test-key fixture's secret is never imported into the test keyring,
       // so anything encrypted to it cannot be decrypted here.
@@ -659,11 +660,8 @@ and symbols: !@#$%^&*()_+-={}[]|\\:";'<>?,./`;
 
       const result = await crypto.decryptMessage(Buffer.from(outer, "utf-8"));
 
-      expect(result.isDoubleEncrypted).toBe(true);
       expect(result.plaintext).toBe(secret);
-      // Inner layer was encrypted to the submission key, so no foreign
-      // key fingerprint is reported
-      expect(result.doubleEncryptedKeyFingerprint).toBe(null);
+      expect(result.doubleEncryptedKeyFingerprint).toBe(submissionFingerprint);
     });
 
     it("message: malformed inner PGP is surfaced as-is without a double-encryption badge", async () => {
@@ -676,9 +674,9 @@ and symbols: !@#$%^&*()_+-={}[]|\\:";'<>?,./`;
 
       const result = await crypto.decryptMessage(Buffer.from(outer, "utf-8"));
 
-      expect(result.isDoubleEncrypted).toBe(false);
       // The undecryptable inner layer is surfaced verbatim
       expect(result.plaintext).toBe(malformed);
+      expect(result.doubleEncryptedKeyFingerprint).toBe(null);
     });
 
     it("file: ascii-armored inner encrypted to submission key is transparently decrypted", async () => {
@@ -701,8 +699,9 @@ and symbols: !@#$%^&*()_+-={}[]|\\:";'<>?,./`;
           filePath,
         );
 
-        expect(result.isDoubleEncrypted).toBe(true);
-        expect(result.doubleEncryptedKeyFingerprint).toBe(null);
+        expect(result.doubleEncryptedKeyFingerprint).toBe(
+          submissionFingerprint,
+        );
         // The ".asc" extension is stripped from the inner filename
         expect(path.basename(result.finalPath)).toBe("test.txt");
         expect(fs.readFileSync(result.finalPath, "utf8")).toBe(secret);
@@ -732,8 +731,9 @@ and symbols: !@#$%^&*()_+-={}[]|\\:";'<>?,./`;
           filePath,
         );
 
-        expect(result.isDoubleEncrypted).toBe(true);
-        expect(result.doubleEncryptedKeyFingerprint).toBe(null);
+        expect(result.doubleEncryptedKeyFingerprint).toBe(
+          submissionFingerprint,
+        );
         // The ".gpg" extension is stripped from the inner filename
         expect(path.basename(result.finalPath)).toBe("test.txt");
         expect(Buffer.compare(fs.readFileSync(result.finalPath), secret)).toBe(
@@ -761,7 +761,7 @@ and symbols: !@#$%^&*()_+-={}[]|\\:";'<>?,./`;
           filePath,
         );
 
-        expect(result.isDoubleEncrypted).toBe(false);
+        expect(result.doubleEncryptedKeyFingerprint).toBe(null);
         // The still-encrypted intermediate file is surfaced as-is
         expect(isPgpEncrypted(fs.readFileSync(result.finalPath))).toBe(true);
       } finally {
@@ -788,7 +788,7 @@ and symbols: !@#$%^&*()_+-={}[]|\\:";'<>?,./`;
           filePath,
         );
 
-        expect(result.isDoubleEncrypted).toBe(false);
+        expect(result.doubleEncryptedKeyFingerprint).toBe(null);
         expect(isPgpEncrypted(fs.readFileSync(result.finalPath))).toBe(true);
       } finally {
         cleanup();
@@ -850,7 +850,6 @@ and symbols: !@#$%^&*()_+-={}[]|\\:";'<>?,./`;
             Buffer.from(outer, "utf-8"),
           );
 
-          expect(result.isDoubleEncrypted).toBe(true);
           expect(result.plaintext).toBe(secret);
           expect(result.doubleEncryptedKeyFingerprint).toBe(rotatedFingerprint);
         } finally {
@@ -877,7 +876,6 @@ and symbols: !@#$%^&*()_+-={}[]|\\:";'<>?,./`;
               filePath,
             );
 
-            expect(result.isDoubleEncrypted).toBe(true);
             expect(result.doubleEncryptedKeyFingerprint).toBe(
               rotatedFingerprint,
             );
@@ -909,7 +907,6 @@ and symbols: !@#$%^&*()_+-={}[]|\\:";'<>?,./`;
             Buffer.from(outer, "utf-8"),
           );
 
-          expect(result.isDoubleEncrypted).toBe(true);
           expect(result.plaintext).toBe(secret);
           expect(result.doubleEncryptedKeyFingerprint).toBe(eccFingerprint);
         } finally {
@@ -940,7 +937,6 @@ and symbols: !@#$%^&*()_+-={}[]|\\:";'<>?,./`;
               filePath,
             );
 
-            expect(result.isDoubleEncrypted).toBe(true);
             expect(result.doubleEncryptedKeyFingerprint).toBe(eccFingerprint);
             expect(fs.readFileSync(result.finalPath, "utf8")).toBe(secret);
           } finally {

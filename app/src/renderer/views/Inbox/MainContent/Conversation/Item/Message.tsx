@@ -147,11 +147,12 @@ const Message = memo(function Message(props: MessageProps) {
       return (
         <>
           <TruncatedText text={item.plaintext} />
-          {item.isDoubleEncrypted && kind === "message" && (
-            <DoubleEncryptedBadge
-              keyFingerprint={item.doubleEncryptedKeyFingerprint}
-            />
-          )}
+          {item.doubleEncryptedKeyFingerprint !== null &&
+            kind === "message" && (
+              <DoubleEncryptedBadge
+                keyFingerprint={item.doubleEncryptedKeyFingerprint!}
+              />
+            )}
         </>
       );
     }

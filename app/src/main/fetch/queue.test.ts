@@ -103,7 +103,6 @@ function mockItem(
     plaintext: null,
     filename: null,
     decrypted_size: null,
-    isDoubleEncrypted: false,
     doubleEncryptedKeyFingerprint: null,
   };
 }
@@ -283,11 +282,11 @@ describe("TaskQueue - Four-Queue Download and Decryption", () => {
 
       const encryptedBuffer = Buffer.from("encrypted message data");
       const decryptedContent = "decrypted message content";
+      const innerFingerprint = "A".repeat(40);
       fs.promises.readFile = vi.fn().mockResolvedValue(encryptedBuffer);
       mockCrypto.decryptMessage.mockResolvedValue({
         plaintext: decryptedContent,
-        isDoubleEncrypted: false,
-        doubleEncryptedKeyFingerprint: null,
+        doubleEncryptedKeyFingerprint: innerFingerprint,
       });
 
       const queue = new TaskQueue(db);
@@ -305,8 +304,7 @@ describe("TaskQueue - Four-Queue Download and Decryption", () => {
       expect(db.completePlaintextItem).toHaveBeenCalledWith(
         "msg1",
         decryptedContent,
-        false,
-        null,
+        innerFingerprint,
       );
       // Ciphertext file cleaned up after success
       expect(fs.promises.unlink).toHaveBeenCalledWith(
@@ -331,7 +329,6 @@ describe("TaskQueue - Four-Queue Download and Decryption", () => {
       fs.promises.readFile = vi.fn().mockResolvedValue(encryptedBuffer);
       mockCrypto.decryptMessage.mockResolvedValue({
         plaintext: decryptedContent,
-        isDoubleEncrypted: false,
         doubleEncryptedKeyFingerprint: null,
       });
 
@@ -344,7 +341,6 @@ describe("TaskQueue - Four-Queue Download and Decryption", () => {
       expect(db.completePlaintextItem).toHaveBeenCalledWith(
         "reply1",
         decryptedContent,
-        false,
         null,
       );
       expect(fs.promises.unlink).toHaveBeenCalled();
@@ -367,7 +363,6 @@ describe("TaskQueue - Four-Queue Download and Decryption", () => {
       fs.promises.readFile = vi.fn().mockResolvedValue(encryptedBuffer);
       mockCrypto.decryptMessage.mockResolvedValue({
         plaintext: decryptedContent,
-        isDoubleEncrypted: false,
         doubleEncryptedKeyFingerprint: null,
       });
 
@@ -382,7 +377,6 @@ describe("TaskQueue - Four-Queue Download and Decryption", () => {
       expect(db.completePlaintextItem).toHaveBeenCalledWith(
         "msg1",
         decryptedContent,
-        false,
         null,
       );
       expect(fs.promises.unlink).toHaveBeenCalledWith(
@@ -456,7 +450,6 @@ describe("TaskQueue - Four-Queue Download and Decryption", () => {
       fs.promises.readFile = vi.fn().mockResolvedValue(encryptedBuffer);
       mockCrypto.decryptMessage.mockResolvedValue({
         plaintext: decryptedContent,
-        isDoubleEncrypted: false,
         doubleEncryptedKeyFingerprint: null,
       });
 
@@ -470,7 +463,6 @@ describe("TaskQueue - Four-Queue Download and Decryption", () => {
       expect(db.completePlaintextItem).toHaveBeenCalledWith(
         "msg1",
         decryptedContent,
-        false,
         null,
       );
       expect(fs.promises.unlink).toHaveBeenCalledWith(
@@ -644,7 +636,6 @@ describe("TaskQueue - Four-Queue Download and Decryption", () => {
 
       mockCrypto.decryptFile.mockResolvedValue({
         finalPath: "/securedrop/source1/plaintext.txt",
-        isDoubleEncrypted: false,
         doubleEncryptedKeyFingerprint: null,
       });
 
@@ -669,7 +660,6 @@ describe("TaskQueue - Four-Queue Download and Decryption", () => {
         "msg1",
         "/securedrop/source1/plaintext.txt",
         expect.any(Number),
-        false,
         null,
       );
     });
@@ -689,7 +679,6 @@ describe("TaskQueue - Four-Queue Download and Decryption", () => {
 
       mockCrypto.decryptFile.mockResolvedValue({
         finalPath: "/securedrop/source1/plaintext.txt",
-        isDoubleEncrypted: false,
         doubleEncryptedKeyFingerprint: null,
       });
 
@@ -702,7 +691,6 @@ describe("TaskQueue - Four-Queue Download and Decryption", () => {
         "msg1",
         "/securedrop/source1/plaintext.txt",
         expect.any(Number),
-        false,
         null,
       );
       expect(fs.promises.unlink).toHaveBeenCalledWith(
@@ -1701,7 +1689,6 @@ describe("TaskQueue - Four-Queue Download and Decryption", () => {
       fs.promises.readFile = vi.fn().mockResolvedValue(encryptedBuffer);
       mockCrypto.decryptMessage.mockResolvedValue({
         plaintext: "decrypted plaintext",
-        isDoubleEncrypted: false,
         doubleEncryptedKeyFingerprint: null,
       });
 
@@ -1732,7 +1719,6 @@ describe("TaskQueue - Four-Queue Download and Decryption", () => {
 
       mockCrypto.decryptFile.mockResolvedValue({
         finalPath: "/tmp/decrypted/file.txt",
-        isDoubleEncrypted: false,
         doubleEncryptedKeyFingerprint: null,
       });
 
@@ -1763,7 +1749,6 @@ describe("TaskQueue - Four-Queue Download and Decryption", () => {
 
       mockCrypto.decryptMessage.mockResolvedValue({
         plaintext: "decrypted plaintext",
-        isDoubleEncrypted: false,
         doubleEncryptedKeyFingerprint: null,
       });
       fs.promises.readFile = vi

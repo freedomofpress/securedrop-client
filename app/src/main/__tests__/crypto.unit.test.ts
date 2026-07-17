@@ -318,6 +318,12 @@ describe("Crypto", () => {
     it("returns null for empty status output", () => {
       expect(parseDecryptionKeyFingerprint("")).toBe(null);
     });
+
+    it("rejects short key IDs instead of treating them as fingerprints", () => {
+      const status =
+        "[GNUPG:] DECRYPTION_KEY C3E7C4C0A2201B2A CC40EF1228271441 -\n";
+      expect(parseDecryptionKeyFingerprint(status)).toBe(null);
+    });
   });
 
   describe("decryptRawFile (inner layer of double-encrypted files)", () => {

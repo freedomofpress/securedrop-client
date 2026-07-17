@@ -1,6 +1,6 @@
 import "../Item.css";
 
-import { memo } from "react";
+import { memo, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { LockKeyhole } from "lucide-react";
 import { Tooltip, theme } from "antd";
@@ -11,10 +11,12 @@ function formatFingerprint(fingerprint: string): string {
 }
 
 interface DoubleEncryptedBadgeProps {
-  // Fingerprint of the key that decrypted the inner layer, when it was NOT
-  // the submission key current at decryption time (e.g. a rotated key still
-  // in the keyring); null in the expected case
-  keyFingerprint: string | null;
+  // Full primary fingerprint of the key that decrypted the inner layer.
+  keyFingerprint: string;
+}
+
+function normalizeFingerprint(fingerprint: string): string {
+  return fingerprint.replace(/\s/g, "").toUpperCase();
 }
 
 // Badge shown on items that were additionally encrypted by the source
@@ -26,8 +28,37 @@ const DoubleEncryptedBadge = memo(function DoubleEncryptedBadge({
 }: DoubleEncryptedBadgeProps) {
   const { t } = useTranslation("Item");
   const { token } = theme.useToken();
+  const [currentKeyFingerprint, setCurrentKeyFingerprint] = useState<
+    string | null
+  >(null);
 
-  if (keyFingerprint) {
+  useEffect(() => {
+    let cancelled = false;
+    const getFingerprint = window.electronAPI.getSubmissionKeyFingerprint;
+    if (getFingerprint) {
+      void getFingerprint()
+        .then((fingerprint) => {
+          if (!cancelled) {
+            setCurrentKeyFingerprint(fingerprint);
+          }
+        })
+        .catch((error: unknown) => {
+          console.warn(`Could not get submission key fingerprint: ${error}`);
+        });
+    }
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  // Until configuration arrives, use the normal badge. Exact normalized
+  // equality is required; short key IDs must never be treated as fingerprints.
+  const isOtherKey =
+    currentKeyFingerprint !== null &&
+    normalizeFingerprint(keyFingerprint) !==
+      normalizeFingerprint(currentKeyFingerprint);
+
+  if (isOtherKey) {
     return (
       <Tooltip
         title={t("doubleEncryptedOtherKeyTooltip", {
