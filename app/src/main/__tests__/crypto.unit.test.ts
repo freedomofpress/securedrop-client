@@ -362,6 +362,15 @@ describe("Crypto", () => {
       return proc;
     }
 
+    const validStatus =
+      "[GNUPG:] ENC_TO C3E7C4C0A2201B2A 1 0\n" +
+      "[GNUPG:] BEGIN_DECRYPTION 2 9\n" +
+      "[GNUPG:] DECRYPTION_KEY C1C4E16BB24E4F4ABF37C3A6C3E7C4C0A2201B2A 65A1B5FF195B56353CC63DFFCC40EF1228271441 -\n" +
+      "[GNUPG:] DECRYPTION_OKAY\n" +
+      "[GNUPG:] END_DECRYPTION\n";
+    const validStderr =
+      'gpg: encrypted with cv25519 key, ID C3E7C4C0A2201B2A, created 2026-07-17\n      "Test Key <test@example.org>"\n';
+
     beforeEach(() => {
       (Crypto as any).instance = undefined;
       crypto = Crypto.initialize({
@@ -384,9 +393,8 @@ describe("Crypto", () => {
       spawnMock.mockImplementation(() =>
         fakeGpgProcess({
           stdoutData: plaintext,
-          statusData:
-            "[GNUPG:] ENC_TO C3E7C4C0A2201B2A 1 0\n" +
-            "[GNUPG:] DECRYPTION_KEY C1C4E16BB24E4F4ABF37C3A6C3E7C4C0A2201B2A 65A1B5FF195B56353CC63DFFCC40EF1228271441 -\n",
+          stderrData: Buffer.from(validStderr),
+          statusData: validStatus,
         }),
       );
 
@@ -409,6 +417,20 @@ describe("Crypto", () => {
       );
     });
 
+    it("applies the same strict validation to inner message decryption", async () => {
+      spawnMock.mockImplementation(() =>
+        fakeGpgProcess({
+          stdoutData: Buffer.from("inner plaintext"),
+          stderrData: Buffer.from(validStderr),
+          statusData: validStatus + "[GNUPG:] DECRYPTION_FAILED\n",
+        }),
+      );
+
+      await expect(
+        crypto.decryptMessage(Buffer.from("ciphertext"), undefined, true),
+      ).rejects.toThrow(/unexpected status/);
+    });
+
     it("removes partial output and rejects when gpg exits non-zero", async () => {
       spawnMock.mockImplementation(() =>
         fakeGpgProcess({
@@ -423,6 +445,55 @@ describe("Crypto", () => {
       ).rejects.toThrow(/Inner GPG decryption failed \(exit code 2\)/);
       expect(fs.existsSync(outputPath)).toBe(false);
     });
+
+    it.each([
+      ["unexpected stderr", validStatus, "gpg: forged diagnostic\n"],
+      [
+        "unexpected status",
+        validStatus + "[GNUPG:] DECRYPTION_FAILED\n",
+        validStderr,
+      ],
+      [
+        "short fingerprint",
+        validStatus.replace(
+          "C1C4E16BB24E4F4ABF37C3A6C3E7C4C0A2201B2A 65A1B5FF195B56353CC63DFFCC40EF1228271441",
+          "C3E7C4C0A2201B2A CC40EF1228271441",
+        ),
+        validStderr,
+      ],
+      [
+        "multiple key records",
+        validStatus.replace(
+          "[GNUPG:] DECRYPTION_OKAY",
+          "[GNUPG:] DECRYPTION_KEY C1C4E16BB24E4F4ABF37C3A6C3E7C4C0A2201B2A 65A1B5FF195B56353CC63DFFCC40EF1228271441 -\n[GNUPG:] DECRYPTION_OKAY",
+        ),
+        validStderr,
+      ],
+      [
+        "contradictory success sequence",
+        validStatus.replace(
+          "[GNUPG:] END_DECRYPTION",
+          "[GNUPG:] DECRYPTION_OKAY\n[GNUPG:] END_DECRYPTION",
+        ),
+        validStderr,
+      ],
+    ])(
+      "removes partial output for %s",
+      async (_name, statusData, stderrData) => {
+        spawnMock.mockImplementation(() =>
+          fakeGpgProcess({
+            stdoutData: Buffer.from("untrusted plaintext"),
+            stderrData: Buffer.from(stderrData),
+            statusData,
+          }),
+        );
+
+        await expect(
+          (crypto as any).decryptRawFile(inputPath, outputPath),
+        ).rejects.toThrow(/GPG decryption/);
+        expect(fs.existsSync(outputPath)).toBe(false);
+      },
+    );
   });
 
   describe("CryptoError", () => {

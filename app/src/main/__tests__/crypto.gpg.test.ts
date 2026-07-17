@@ -823,8 +823,8 @@ and symbols: !@#$%^&*()_+-={}[]|\\:";'<>?,./`;
 
       // Generate an ed25519/cv25519 key in the keyring, returning its
       // primary fingerprint. gpg describes decryption with it as
-      // "encrypted with cv25519 key", which the RSA-only stderr whitelist
-      // does not cover — inner layers must not be subject to that whitelist.
+      // "encrypted with cv25519 key"; the inner-layer stderr allowlist must
+      // accept that legitimate algorithm while status validation stays strict.
       function createEccRotatedKey(): string {
         execSync(
           `gpg --homedir "${gpgEnv.homedir}" --batch --passphrase '' --quick-gen-key "ecc-rotated <ecc-rotated@test.org>" ed25519 cert never`,
@@ -888,10 +888,8 @@ and symbols: !@#$%^&*()_+-={}[]|\\:";'<>?,./`;
         }
       });
 
-      // Regression test: the inner layer's gpg stderr ("encrypted with
-      // cv25519 key ...") is not in the RSA-only stderr whitelist, which
-      // previously made message inner decryption fail while file inner
-      // decryption (no whitelist) succeeded.
+      // Regression test: the inner layer's gpg stderr uses the cv25519 key
+      // description, which must pass the generalized strict allowlist.
       it("message: decrypts an inner layer encrypted to a rotated ECC key", async () => {
         const eccFingerprint = createEccRotatedKey();
         try {

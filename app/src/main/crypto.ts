@@ -28,15 +28,16 @@ export interface CryptoConfig {
 
 // These are hardcoded English, which should be fine since there are no other locales in sd-gpg.
 // File decryption (1 recipient) or message decryption (1 recipient) or reply decryption with source key in keyring (2 recipients)
-// GPG versions differ in how they describe the key: older versions use "4096-bit RSA key", newer use "rsa4096 key".
+// GPG versions and key types differ in how they describe the key. Keep this
+// human-readable output allowlisted, but do not use it to establish success.
 const GPG_STDERR_KNOWN_KEY =
-  /^(gpg: encrypted with (?:4096-bit RSA|rsa4096) key, ID [0-9A-Fa-f]+, created \d{4}-\d{2}-\d{2}\n\s+"[^"]*"\n){1,2}$/;
+  /^(gpg: encrypted with (?:\d+-bit [A-Za-z0-9]+|[a-z][a-z0-9-]*) key, ID [0-9A-Fa-f]+, created \d{4}-\d{2}-\d{2}\n\s+"[^"]*"\n){1,2}$/;
 // Reply decryption: source key not in keyring (anonymous) + journalist key (known).
 // GPG may output the anonymous key before or after the known key depending on the version.
 const GPG_STDERR_ANONYMOUS_THEN_KNOWN =
-  /^(gpg: encrypted with RSA key, ID [0-9A-Fa-f]+\n)(gpg: encrypted with (?:4096-bit RSA|rsa4096) key, ID [0-9A-Fa-f]+, created \d{4}-\d{2}-\d{2}\n\s+"[^"]*"\n)$/;
+  /^(gpg: encrypted with (?:RSA|ELG|ECDH) key, ID [0-9A-Fa-f]+\n)(gpg: encrypted with (?:\d+-bit [A-Za-z0-9]+|[a-z][a-z0-9-]*) key, ID [0-9A-Fa-f]+, created \d{4}-\d{2}-\d{2}\n\s+"[^"]*"\n)$/;
 const GPG_STDERR_KNOWN_THEN_ANONYMOUS =
-  /^(gpg: encrypted with (?:4096-bit RSA|rsa4096) key, ID [0-9A-Fa-f]+, created \d{4}-\d{2}-\d{2}\n\s+"[^"]*"\n)(gpg: encrypted with RSA key, ID [0-9A-Fa-f]+\n)$/;
+  /^(gpg: encrypted with (?:\d+-bit [A-Za-z0-9]+|[a-z][a-z0-9-]*) key, ID [0-9A-Fa-f]+, created \d{4}-\d{2}-\d{2}\n\s+"[^"]*"\n)(gpg: encrypted with (?:RSA|ELG|ECDH) key, ID [0-9A-Fa-f]+\n)$/;
 
 function isExpectedGpgStderr(stderr: string): boolean {
   const normalized = stderr.trimEnd() + "\n";
@@ -112,6 +113,74 @@ export function parseDecryptionKeyFingerprint(
     /^\[GNUPG:\] DECRYPTION_KEY [0-9A-Fa-f]{40} ([0-9A-Fa-f]{40})(?:\s|$)/m,
   );
   return match ? match[1].toUpperCase() : null;
+}
+
+const EXPECTED_DECRYPTION_STATUS = new Set([
+  "ENC_TO",
+  "KEY_CONSIDERED",
+  "BEGIN_DECRYPTION",
+  "DECRYPTION_INFO",
+  "PLAINTEXT",
+  "PLAINTEXT_LENGTH",
+  "DECRYPTION_KEY",
+  "DECRYPTION_OKAY",
+  "GOODMDC",
+  "END_DECRYPTION",
+]);
+
+function validateInnerGpgDecryption(
+  statusOutput: string,
+  stderr: string,
+): string {
+  if (stderr.trim() && !isExpectedGpgStderr(stderr)) {
+    throw new CryptoError(
+      `GPG decryption emitted stderr: ${JSON.stringify(stderr.trim())}`,
+    );
+  }
+
+  const records = statusOutput.split(/\r?\n/).filter(Boolean);
+  const names: string[] = [];
+  for (const record of records) {
+    const match = record.match(/^\[GNUPG:\] ([A-Z_]+)(?:\s.*)?$/);
+    if (!match || !EXPECTED_DECRYPTION_STATUS.has(match[1])) {
+      throw new CryptoError(
+        `GPG decryption emitted unexpected status: ${JSON.stringify(record)}`,
+      );
+    }
+    names.push(match[1]);
+  }
+
+  const fingerprints = records.flatMap((record) => {
+    const match = record.match(
+      /^\[GNUPG:\] DECRYPTION_KEY [0-9A-Fa-f]{40} ([0-9A-Fa-f]{40}) (?:-|[A-Za-z0-9]+)$/,
+    );
+    return match ? [match[1].toUpperCase()] : [];
+  });
+  const keyRecordCount = names.filter(
+    (name) => name === "DECRYPTION_KEY",
+  ).length;
+  if (keyRecordCount !== 1 || fingerprints.length !== 1) {
+    throw new CryptoError(
+      "GPG decryption did not emit exactly one valid DECRYPTION_KEY record",
+    );
+  }
+
+  const begin = names.indexOf("BEGIN_DECRYPTION");
+  const okay = names.indexOf("DECRYPTION_OKAY");
+  const end = names.indexOf("END_DECRYPTION");
+  if (
+    begin === -1 ||
+    okay <= begin ||
+    end <= okay ||
+    names.lastIndexOf("BEGIN_DECRYPTION") !== begin ||
+    names.lastIndexOf("DECRYPTION_OKAY") !== okay ||
+    names.lastIndexOf("END_DECRYPTION") !== end
+  ) {
+    throw new CryptoError(
+      "GPG decryption did not emit an unambiguous successful status sequence",
+    );
+  }
+  return fingerprints[0];
 }
 
 export interface DecryptMessageResult {
@@ -290,11 +359,8 @@ export class Crypto {
    * Messages are not gzipped, so no decompression is needed (unlike files)
    * @param encryptedContent - The encrypted message content
    * @param isInnerLayer - True for the recursive pass over a double-encrypted
-   *   payload. The strict stderr whitelist is skipped for inner layers
-   *   (matching file decryption): it only describes submission keys, while a
-   *   source may have encrypted the inner layer to a key of any type (e.g. a
-   *   rotated ECC key), and a rejected inner decrypt safely falls back to
-   *   surfacing the ciphertext.
+   *   payload. Inner layers receive strict status and stderr validation that
+   *   accepts the supported RSA and ECC key descriptions.
    * @returns Promise<DecryptMessageResult> - The decrypted plaintext and inner-key fingerprint
    */
   async decryptMessage(
@@ -365,7 +431,7 @@ export class Crypto {
         } else if (code !== 0) {
           reject(
             new CryptoError(
-              `GPG decryption failed (exit code ${code}): ${errorMessage}`,
+              `GPG decryption failed (exit code ${code}): ${JSON.stringify(errorMessage.trim())}`,
             ),
           );
           return;
@@ -385,8 +451,21 @@ export class Crypto {
         }
 
         const plaintext = stdout.toString("utf8");
-        const decryptionKeyFingerprint =
-          parseDecryptionKeyFingerprint(statusOutput);
+        let decryptionKeyFingerprint: string | null;
+        if (isInnerLayer) {
+          try {
+            decryptionKeyFingerprint = validateInnerGpgDecryption(
+              statusOutput,
+              errorMessage,
+            );
+          } catch (error) {
+            reject(error);
+            return;
+          }
+        } else {
+          decryptionKeyFingerprint =
+            parseDecryptionKeyFingerprint(statusOutput);
+        }
         if (!isPgpEncrypted(stdout)) {
           resolve({
             plaintext,
@@ -419,7 +498,7 @@ export class Crypto {
           },
           (innerError) => {
             console.warn(
-              `Double-encryption detected but inner message decryption failed: ${innerError}`,
+              `Double-encryption detected but inner message decryption failed: ${JSON.stringify(String(innerError))}`,
             );
             resolve({
               plaintext,
@@ -536,7 +615,7 @@ export class Crypto {
           isSettled = true;
           reject(
             new CryptoError(
-              `GPG file decryption failed (exit code ${code}): ${errorMessage}`,
+              `GPG file decryption failed (exit code ${code}): ${JSON.stringify(errorMessage.trim())}`,
             ),
           );
           return;
@@ -609,7 +688,7 @@ export class Crypto {
           } catch (innerError) {
             // Second decryption failed — surface the intermediate file as-is
             console.warn(
-              `Double-encryption detected but inner decryption failed: ${innerError}`,
+              `Double-encryption detected but inner decryption failed: ${JSON.stringify(String(innerError))}`,
             );
             isSettled = true;
             resolve({
@@ -879,7 +958,7 @@ export class Crypto {
           await removePartialOutput();
           reject(
             new CryptoError(
-              `Inner GPG decryption failed (exit code ${code}): ${stderr.toString("utf8")}`,
+              `Inner GPG decryption failed (exit code ${code}): ${JSON.stringify(stderr.toString("utf8").trim())}`,
             ),
           );
           return;
@@ -897,9 +976,17 @@ export class Crypto {
           );
           return;
         }
-        resolve({
-          decryptionKeyFingerprint: parseDecryptionKeyFingerprint(statusOutput),
-        });
+        try {
+          resolve({
+            decryptionKeyFingerprint: validateInnerGpgDecryption(
+              statusOutput,
+              stderr.toString("utf8"),
+            ),
+          });
+        } catch (error) {
+          await removePartialOutput();
+          reject(error);
+        }
       });
 
       gpgProcess.on("error", async (error) => {
