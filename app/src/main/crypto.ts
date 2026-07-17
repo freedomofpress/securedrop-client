@@ -47,39 +47,56 @@ function isExpectedGpgStderr(stderr: string): boolean {
   );
 }
 
-/**
- * Returns true if the buffer contains a PGP-encrypted payload — either an
- * ASCII-armored block (starts with "-----BEGIN PGP MESSAGE-----") or a binary
- * OpenPGP packet whose first packet tag is a Public-Key (1) or Symmetric-Key (3)
- * Encrypted Session Key packet (RFC 4880 §4.2 / §5.1 / §5.3).
- */
-export function isPgpEncrypted(buf: Buffer): boolean {
+function openPgpPacketTag(buf: Buffer): number | null {
   if (buf.length === 0) {
-    return false;
+    return null;
   }
 
-  // ASCII-armored: "-----BEGIN PGP MESSAGE-----"
-  if (buf.slice(0, 27).toString("ascii") === "-----BEGIN PGP MESSAGE-----") {
-    return true;
-  }
-
-  // Binary OpenPGP: bit 7 must be set on every packet tag byte (RFC 4880 §4.2)
+  // Bit 7 must be set on every OpenPGP packet tag byte (RFC 4880 §4.2).
   const firstByte = buf[0];
   if ((firstByte & 0x80) === 0) {
-    return false;
+    return null;
   }
 
-  let packetTag: number;
   if (firstByte & 0x40) {
     // New format (§4.2): bits 5-0 are the packet tag
-    packetTag = firstByte & 0x3f;
-  } else {
-    // Old format (§4.2): bits 5-2 are the packet tag
-    packetTag = (firstByte & 0x3c) >> 2;
+    return firstByte & 0x3f;
   }
 
-  // Tag 1 = Public-Key Encrypted Session Key, Tag 3 = Symmetric-Key ESK
-  return packetTag === 1 || packetTag === 3;
+  // Old format (§4.2): bits 5-2 are the packet tag
+  return (firstByte & 0x3c) >> 2;
+}
+
+/**
+ * Returns true if the buffer starts with a Public-Key Encrypted Session Key
+ * packet (tag 1; RFC 4880 §4.2 / §5.1), either binary or ASCII-armored.
+ * Symmetric-key-encrypted payloads are not supported because the client has no
+ * way to prompt for a passphrase.
+ */
+export function isPgpEncrypted(buf: Buffer): boolean {
+  const armorHeader = "-----BEGIN PGP MESSAGE-----";
+  if (buf.subarray(0, armorHeader.length).toString("ascii") === armorHeader) {
+    // ASCII armor may contain metadata headers before its blank separator. We
+    // only decode the first Base64 quartet after that separator: it yields the
+    // packet-tag byte without decoding (or loading, for files) the ciphertext,
+    // and lets us reject symmetric encryption before GPG can show a passphrase
+    // prompt. The caller supplies only a small prefix when inspecting a file.
+    const armoredPrefix = buf.subarray(0, 1024).toString("ascii");
+    const separator = armoredPrefix.search(/\r?\n\r?\n/);
+    if (separator === -1) {
+      return false;
+    }
+    const armorBody = armoredPrefix.slice(
+      separator + armoredPrefix.match(/\r?\n\r?\n/)![0].length,
+    );
+    const firstBase64Quartet = armorBody.match(/^[A-Za-z0-9+/]{4}/m)?.[0];
+    if (!firstBase64Quartet) {
+      return false;
+    }
+    return openPgpPacketTag(Buffer.from(firstBase64Quartet, "base64")) === 1;
+  }
+
+  return openPgpPacketTag(buf) === 1;
 }
 
 /**
@@ -779,10 +796,13 @@ export class Crypto {
     return null; // No filename in header
   }
 
-  /** Read the first 32 bytes of a file for magic-byte detection. */
+  /**
+   * Read only the first 1KB of a file for magic-byte detection. This leaves
+   * enough room for optional ASCII-armor headers and its first Base64 quartet.
+   */
   private readFileHeader(filePath: string): Promise<Buffer> {
     return new Promise((resolve, reject) => {
-      const stream = fs.createReadStream(filePath, { start: 0, end: 31 });
+      const stream = fs.createReadStream(filePath, { start: 0, end: 1023 });
       const chunks: Buffer[] = [];
       stream.on("data", (chunk) =>
         chunks.push(Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk)),
