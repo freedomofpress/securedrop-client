@@ -19,6 +19,10 @@ import "./File.css";
 import { useTranslation } from "react-i18next";
 import { File as FileIcon, Download, LoaderCircle, Trash } from "lucide-react";
 import DoubleEncryptedBadge from "./DoubleEncryptedBadge";
+import {
+  useAppSelector,
+  useSubmissionKeyFingerprint,
+} from "../../../../../hooks";
 import { Button, Tooltip, theme, Dropdown } from "antd";
 import type { MenuProps } from "antd";
 import {
@@ -37,7 +41,6 @@ import FileVideoFilled from "./FileVideoFilled";
 import FileAudioFilled from "./FileAudioFilled";
 import { ExportWizard } from "./Export";
 import { PrintWizard } from "./Print";
-import { useAppSelector } from "../../../../../hooks";
 import {
   getSessionState,
   SessionStatus,
@@ -531,6 +534,9 @@ const CompleteFile = memo(function CompleteFile({
   const [exportWizardKey, setExportWizardKey] = useState(0);
   const [exportWhistleflow, setExportWhistleflow] = useState(false);
   const [printWizardOpen, setPrintWizardOpen] = useState(false);
+  const currentKeyFingerprint = useSubmissionKeyFingerprint(
+    item.doubleEncryptedKeyFingerprint !== null,
+  );
 
   useEffect(() => {
     window.electronAPI.getWhistleflowEnabled().then(setWhistleflowEnabled);
@@ -673,6 +679,7 @@ const CompleteFile = memo(function CompleteFile({
       {item.doubleEncryptedKeyFingerprint !== null && (
         <DoubleEncryptedBadge
           keyFingerprint={item.doubleEncryptedKeyFingerprint!}
+          currentKeyFingerprint={currentKeyFingerprint}
         />
       )}
       <ExportWizard

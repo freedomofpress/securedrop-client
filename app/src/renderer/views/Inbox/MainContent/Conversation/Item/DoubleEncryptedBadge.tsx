@@ -1,6 +1,6 @@
 import "../Item.css";
 
-import { memo, useEffect, useState } from "react";
+import { memo } from "react";
 import { useTranslation } from "react-i18next";
 import { LockKeyhole } from "lucide-react";
 import { Tooltip, theme } from "antd";
@@ -13,10 +13,13 @@ function formatFingerprint(fingerprint: string): string {
 interface DoubleEncryptedBadgeProps {
   // Full primary fingerprint of the key that decrypted the inner layer.
   keyFingerprint: string;
+  // Full primary fingerprint of the currently configured submission key.
+  currentKeyFingerprint: string | null;
 }
 
-function normalizeFingerprint(fingerprint: string): string {
-  return fingerprint.replace(/\s/g, "").toUpperCase();
+function normalizeFingerprint(fingerprint: string): string | null {
+  const normalized = fingerprint.replace(/\s/g, "").toUpperCase();
+  return /^[0-9A-F]{40}$/.test(normalized) ? normalized : null;
 }
 
 // Badge shown on items that were additionally encrypted by the source
@@ -25,32 +28,10 @@ function normalizeFingerprint(fingerprint: string): string {
 // the tooltip includes that key's fingerprint.
 const DoubleEncryptedBadge = memo(function DoubleEncryptedBadge({
   keyFingerprint,
+  currentKeyFingerprint,
 }: DoubleEncryptedBadgeProps) {
   const { t } = useTranslation("Item");
   const { token } = theme.useToken();
-  const [currentKeyFingerprint, setCurrentKeyFingerprint] = useState<
-    string | null
-  >(null);
-
-  useEffect(() => {
-    let cancelled = false;
-    const getFingerprint = window.electronAPI.getSubmissionKeyFingerprint;
-    if (getFingerprint) {
-      void getFingerprint()
-        .then((fingerprint) => {
-          if (!cancelled) {
-            setCurrentKeyFingerprint(fingerprint);
-          }
-        })
-        .catch((error: unknown) => {
-          console.warn(`Could not get submission key fingerprint: ${error}`);
-        });
-    }
-    return () => {
-      cancelled = true;
-    };
-  }, []);
-
   // Until configuration arrives, use the normal badge. Exact normalized
   // equality is required; short key IDs must never be treated as fingerprints.
   const isOtherKey =
