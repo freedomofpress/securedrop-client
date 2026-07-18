@@ -40,7 +40,7 @@ jobs:
         with:
           persist-credentials: false
       - name: Bootstrap node.js
-        uses: actions/setup-node@v6
+        uses: actions/setup-node@v6.4.0
         with:
           node-version: "24.15.x"
       - name: Install pnpm and dependencies
@@ -93,7 +93,7 @@ jobs:
           path: "securedrop-server"
           persist-credentials: false
       - name: Bootstrap node.js
-        uses: actions/setup-node@v6
+        uses: actions/setup-node@v6.4.0
         with:
           node-version: "24.15.x"
       - name: Install pnpm and dependencies
@@ -159,7 +159,7 @@ jobs:
         with:
           persist-credentials: false
       - name: Bootstrap node.js
-        uses: actions/setup-node@v6
+        uses: actions/setup-node@v6.4.0
         with:
           node-version: "24.15.x"
       - name: Install pnpm and dependencies
@@ -194,7 +194,7 @@ jobs:
         with:
           python-version: "3.11"
       - name: Bootstrap node.js
-        uses: actions/setup-node@v6
+        uses: actions/setup-node@v6.4.0
         with:
           node-version: "24.15.x"
       - name: Install pnpm and dependencies
