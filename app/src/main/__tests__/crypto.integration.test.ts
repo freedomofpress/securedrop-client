@@ -171,7 +171,7 @@ describe("Crypto Integration Tests", () => {
         CryptoError,
       );
       await expect(crypto.decryptMessage(encryptedContent)).rejects.toThrow(
-        "GPG decryption failed (exit code 1): GPG decryption error",
+        'GPG decryption failed (exit code 1): "GPG decryption error"',
       );
     });
 
@@ -320,7 +320,7 @@ describe("Crypto Integration Tests", () => {
       await expect(
         crypto.decryptFile(storage, itemDirectory, testFilePath),
       ).rejects.toThrow(
-        "GPG file decryption failed (exit code 2): GPG file decryption error",
+        'GPG file decryption failed (exit code 2): "GPG file decryption error"',
       );
     });
 
