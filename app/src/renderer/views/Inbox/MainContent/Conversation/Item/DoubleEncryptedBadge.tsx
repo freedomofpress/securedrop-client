@@ -57,7 +57,7 @@ const DoubleEncryptedBadge = memo(function DoubleEncryptedBadge({
   }
 
   return (
-    <Tooltip title={t("doubleEncryptedTooltip")}>
+    <Tooltip title={t("doubleEncryptedTooltip")} placement="bottom">
       <span className="double-encrypted-badge">
         <LockKeyhole size={12} /> {t("doubleEncryptedBadge")}
       </span>
