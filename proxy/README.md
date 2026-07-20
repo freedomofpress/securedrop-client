@@ -1,13 +1,13 @@
-## securedrop workstation proxy
+## SecureDrop Workstation proxy
 
 `securedrop-proxy` is part of the [SecureDrop
 Workstation](https://github.com/freedomofpress/securedrop-workstation) project.
 
 The code in this repository implements a proxy across two APIs: the [Qubes RPC
-protocol](https://www.qubes-os.org/doc/qrexec/) and the [SecureDrop
+protocol](https://www.qubes-os.org/doc/qrexec/) and the [SecureDrop Journalist
 API](https://developers.securedrop.org/en/latest/journalist_api.html).
-This proxy is used to forward requests from the securedrop workstation client to
-the securedrop server.
+This proxy is used to forward requests from the [SecureDrop Inbox](../app/) to
+the [SecureDrop server](https://github.com/freedomofpress/securedrop).
 
 The proxy is implemented in Rust. The tests are implemented in Python.
 
@@ -18,51 +18,52 @@ installed in the `sd-proxy` VM after provisioning a SecureDrop Workstation.
 
 ### Isolation
 
-The SecureDrop Client/SDK can talk only to the proxy. The proxy talks only to
-the (onion) origin it's configured with.
+The SecureDrop Inbox (in the `sd-app` VM) can talk only to the proxy. The proxy
+(in the `sd-proxy` VM) talks only to the (onion) origin it's configured with.
 
-**Mitigates against:** A compromised Client/VM tries to contact or exfiltrate
-data to an arbitrary origin.
+**Mitigates against:** A compromised Inbox or `sd-app` VM tries to contact or
+exfiltrate data to an arbitrary origin.
 
 ### Sanitization
 
-The SDK talks JSON. The proxy translates JSON to HTTP and back again. (In v3, it
+The Inbox talks JSON. The proxy translates JSON to HTTP and back again. (In v3, it
 will just construct a sanitized HTTP request and do the same for the response.)
 
-**Mitigates against:** A compromised Client/VM constructs a malicious HTTP
+**Mitigates against:** A compromised Inbox or `sd-app` VM constructs a malicious HTTP
 request. (The server returning a malicious HTTP response is already game over.)
 
 ## How It Works
 
+_Solid and dashed lines indicate plaintext and encrypted connections,
+respectively._
+
 ```mermaid
 sequenceDiagram
 
-participant c as securedrop-client
-participant sdk as securedrop-sdk
+box sd-app
+participant c as Inbox
+end
+box sd-proxy
 participant p as securedrop-proxy
-participant server as SecureDrop
+end
+participant s as SecureDrop
 
-c ->> sdk: job
-activate sdk
-sdk -->> p: JSON over qrexec
+c ->> p: request<br>(JSON over qrexec stdin)
 activate p
-p -->> server: HTTP over Tor
-
-server -->> p: HTTP over Tor
+activate s
+p -->> s: HTTP over Tor
+s -->> p: HTTP over Tor
+deactivate s
 
 alt stream: false
-p -->> sdk: JSON over qrexec
-sdk ->> c: response
+p ->> c: response<br>(JSON over qrexec stdout)
 else stream: true
-p -->> sdk: HTTP over qrexec
-sdk ->> c: stream
+p ->> c: stream<br>(stream over qrexec stdout)
 else error
-p ->> sdk: JSON over qrexec
-sdk ->> c: error
+p ->> c: error<br>(JSON over qrexec stderr)
 end
 
 deactivate p
-deactivate sdk
 ```
 
 The proxy works by reading a JSON object from the standard input, generating an
@@ -72,7 +73,6 @@ the remote server's response or (b) streaming the response directly to the
 standard output.
 
 ## Quick Start
-
 
 1. Install Rust from Debian stable packages or via [rustup](https://rustup.rs/)
 2. [Install Poetry](https://python-poetry.org/docs/#installing-with-the-official-installer)
