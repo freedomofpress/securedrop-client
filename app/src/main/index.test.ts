@@ -1,10 +1,11 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-import { SyncStatus } from "../types";
+import { PendingEventType, SyncStatus } from "../types";
 
 const testState = vi.hoisted(() => {
   const registeredHandlers = new Map<string, (...args: unknown[]) => unknown>();
   const workerInstances: MockWorker[] = [];
+  const datastoreInstances: MockDatastore[] = [];
 
   class MockWorker {
     on = vi.fn();
@@ -29,11 +30,37 @@ const testState = vi.hoisted(() => {
     isDestroyed = vi.fn(() => false);
   }
 
+  class MockDatastore {
+    item = {
+      uuid: "item1",
+      data: { kind: "message", source: "source1" },
+      plaintext: null,
+      filename: null,
+      fetch_status: 0,
+      fetch_progress: null,
+      decrypted_size: null,
+    };
+    getPendingEvents = vi.fn(() => []);
+    getItem = vi.fn(() => this.item);
+    addPendingItemEvent = vi.fn(
+      (_itemUuid: string, _type: unknown): string | null =>
+        "pending-item-delete",
+    );
+    deleteItemFs = vi.fn(async () => undefined);
+    close = testState.datastoreClose;
+
+    constructor() {
+      datastoreInstances.push(this);
+    }
+  }
+
   return {
     registeredHandlers,
     workerInstances,
+    datastoreInstances,
     MockWorker,
     MockBrowserWindow,
+    MockDatastore,
     app: {
       getVersion: vi.fn(() => "0.0.0-test"),
       requestSingleInstanceLock: vi.fn(() => true),
@@ -130,10 +157,7 @@ vi.mock("./crypto", () => ({
 }));
 
 vi.mock("./datastore", () => ({
-  Datastore: class {
-    getPendingEvents = vi.fn(() => []);
-    close = testState.datastoreClose;
-  },
+  Datastore: testState.MockDatastore,
 }));
 
 vi.mock("./export", () => ({
@@ -169,6 +193,16 @@ function getSyncMetadataHandler() {
   return handler as (_event: unknown, request: unknown) => Promise<SyncStatus>;
 }
 
+function getAddPendingItemEventHandler() {
+  const handler = testState.registeredHandlers.get("addPendingItemEvent");
+  expect(handler).toBeDefined();
+  return handler as (
+    _event: unknown,
+    itemUuid: string,
+    type: PendingEventType,
+  ) => Promise<string | null>;
+}
+
 async function loginWithToken(token: string) {
   testState.proxyJSONRequest.mockResolvedValueOnce({
     status: 200,
@@ -200,6 +234,7 @@ describe("syncMetadata IPC handler", () => {
     vi.resetModules();
     testState.registeredHandlers.clear();
     testState.workerInstances.length = 0;
+    testState.datastoreInstances.length = 0;
 
     testState.app.getVersion.mockClear();
     testState.app.requestSingleInstanceLock.mockReturnValue(true);
@@ -316,5 +351,60 @@ describe("syncMetadata IPC handler", () => {
     expect(testState.mockSleep).toHaveBeenNthCalledWith(1, 2000);
     expect(testState.mockSleep).toHaveBeenNthCalledWith(2, 4000);
     expect(testState.mockSleep).toHaveBeenNthCalledWith(3, 8000);
+  });
+
+  it("records item deletion before cancelling worker work and deleting files", async () => {
+    await loadMainProcessModule();
+    await loginWithToken("delete-token");
+
+    const db = testState.datastoreInstances[0]!;
+    const worker = testState.workerInstances[0]!;
+    worker.postMessage.mockClear();
+
+    const handler = getAddPendingItemEventHandler();
+    const result = await handler({}, "item1", PendingEventType.ItemDeleted);
+
+    expect(result).toBe("pending-item-delete");
+    expect(db.getItem).toHaveBeenCalledWith("item1");
+    expect(db.addPendingItemEvent).toHaveBeenCalledWith(
+      "item1",
+      PendingEventType.ItemDeleted,
+    );
+    expect(worker.postMessage).toHaveBeenCalledWith({
+      type: "cancel",
+      itemId: "item1",
+    });
+    expect(db.deleteItemFs).toHaveBeenCalledWith(db.item);
+
+    const addOrder = db.addPendingItemEvent.mock.invocationCallOrder[0]!;
+    const cancelCallIndex = worker.postMessage.mock.calls.findIndex(
+      ([message]) => (message as { type?: string }).type === "cancel",
+    );
+    expect(cancelCallIndex).toBeGreaterThanOrEqual(0);
+    const cancelOrder =
+      worker.postMessage.mock.invocationCallOrder[cancelCallIndex]!;
+    const deleteOrder = db.deleteItemFs.mock.invocationCallOrder[0]!;
+    expect(addOrder).toBeLessThan(cancelOrder);
+    expect(addOrder).toBeLessThan(deleteOrder);
+  });
+
+  it("does not cancel worker work or delete files when item deletion is rejected", async () => {
+    await loadMainProcessModule();
+    await loginWithToken("delete-token");
+
+    const db = testState.datastoreInstances[0]!;
+    const worker = testState.workerInstances[0]!;
+    db.addPendingItemEvent.mockReturnValue(null);
+    worker.postMessage.mockClear();
+
+    const handler = getAddPendingItemEventHandler();
+    const result = await handler({}, "item1", PendingEventType.ItemDeleted);
+
+    expect(result).toBeNull();
+    expect(worker.postMessage).not.toHaveBeenCalledWith({
+      type: "cancel",
+      itemId: "item1",
+    });
+    expect(db.deleteItemFs).not.toHaveBeenCalled();
   });
 });

@@ -77,16 +77,17 @@ function createMockDB() {
   return {
     getItemsToProcess: vi.fn(),
     getItem: vi.fn(),
+    isItemPendingDeletion: vi.fn(() => false),
     getSource: vi.fn(),
-    completePlaintextItem: vi.fn(),
-    completeFileItem: vi.fn(),
-    startDownloadInProgress: vi.fn(),
+    completePlaintextItem: vi.fn(() => true),
+    completeFileItem: vi.fn(() => true),
+    startDownloadInProgress: vi.fn(() => true),
     updateDownloadInProgress: vi.fn(() => true),
-    setDecryptionInProgress: vi.fn(),
+    setDecryptionInProgress: vi.fn(() => true),
     setSourceMessagePreview: vi.fn(),
-    failDownload: vi.fn(),
-    failDecryption: vi.fn(),
-    terminallyFailItem: vi.fn(),
+    failDownload: vi.fn(() => true),
+    failDecryption: vi.fn(() => true),
+    terminallyFailItem: vi.fn(() => true),
   } as unknown as DB;
 }
 
@@ -1729,6 +1730,89 @@ describe("TaskQueue - Four-Queue Download and Decryption", () => {
 
       expect(mockCrypto.decryptMessage).toHaveBeenCalled();
       expect(db.completePlaintextItem).not.toHaveBeenCalled();
+    });
+
+    it("should not persist plaintext if message completion loses a deletion race", async () => {
+      const db = createMockDB();
+      const metadata = {
+        kind: "message",
+        source: "source1",
+        size: 100,
+        uuid: "msg1",
+      } as ItemMetadata;
+
+      db.getItem = vi.fn(() =>
+        mockItem(metadata, FetchStatus.DecryptionInProgress, 0),
+      );
+      db.completePlaintextItem = vi.fn(
+        () => false,
+      ) as unknown as DB["completePlaintextItem"];
+
+      mockCrypto.decryptMessage.mockResolvedValue("decrypted plaintext");
+      fs.promises.readFile = vi
+        .fn()
+        .mockResolvedValue(Buffer.from("encrypted"));
+
+      const queue = new TaskQueue(db);
+      await queue.processDecrypt({ id: "msg1" }, db);
+
+      expect(db.completePlaintextItem).toHaveBeenCalledWith(
+        "msg1",
+        "decrypted plaintext",
+      );
+      expect(fs.promises.unlink).not.toHaveBeenCalled();
+    });
+
+    it("should remove a decrypted file if file completion loses a deletion race", async () => {
+      const db = createMockDB();
+      const metadata = {
+        kind: "file",
+        source: "source1",
+        size: 1000,
+        uuid: "file1",
+      } as ItemMetadata;
+
+      db.getItem = vi.fn(() =>
+        mockItem(metadata, FetchStatus.DecryptionInProgress, 0),
+      );
+      db.completeFileItem = vi.fn(
+        () => false,
+      ) as unknown as DB["completeFileItem"];
+      mockCrypto.decryptFile.mockResolvedValue("/tmp/decrypted/file.txt");
+
+      const queue = new TaskQueue(db);
+      await queue.processDecrypt({ id: "file1" }, db);
+
+      expect(db.completeFileItem).toHaveBeenCalledWith(
+        "file1",
+        "/tmp/decrypted/file.txt",
+        1024,
+      );
+      expect(fs.promises.unlink).toHaveBeenCalledWith(
+        "/tmp/decrypted/file.txt",
+      );
+    });
+
+    it("should not proceed to download if item has a pending deletion event", async () => {
+      const db = createMockDB();
+      const metadata = {
+        kind: "message",
+        source: "source1",
+        size: 100,
+        uuid: "msg1",
+      } as ItemMetadata;
+
+      db.getItem = vi.fn(() => mockItem(metadata, FetchStatus.Initial, 0));
+      db.isItemPendingDeletion = vi.fn(
+        () => true,
+      ) as unknown as DB["isItemPendingDeletion"];
+
+      const queue = new TaskQueue(db);
+      queue.authToken = "test-token";
+      await queue.processDownload({ id: "msg1" }, db);
+
+      expect(mockProxyStreamRequest).not.toHaveBeenCalled();
+      expect(db.startDownloadInProgress).not.toHaveBeenCalled();
     });
 
     it("should not proceed to download if item is in non-processable state at start", async () => {
