@@ -34,6 +34,7 @@ const a11yChecks = {
       data?: Record<string, string>;
     }) => void;
   }) {
+    // Keep this regex in sync with src/renderer/a11y.test.tsx
     const isA11yFile = /(^|[\\/])a11y\.test\.tsx$/.test(context.filename);
     return {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any

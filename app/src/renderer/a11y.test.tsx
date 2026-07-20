@@ -815,7 +815,8 @@ describe.sequential("accessibility (axe)", () => {
       const missing: string[] = [];
 
       for (const [testPath, source] of Object.entries(testSources)) {
-        if (/(^|\/)a11y\.test\.tsx$/.test(testPath)) {
+        // Keep this regex in sync with eslint.config.ts
+        if (/(^|[\\/])a11y\.test\.tsx$/.test(testPath)) {
           continue;
         }
         if (!/\brenderWithProviders\b/.test(source)) {
