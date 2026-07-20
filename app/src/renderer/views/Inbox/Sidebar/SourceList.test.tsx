@@ -1,4 +1,4 @@
-import { screen, waitFor, fireEvent } from "@testing-library/react";
+import { screen, waitFor, fireEvent, act } from "@testing-library/react";
 import { expect, describe, it, vi, beforeEach, afterEach } from "vitest";
 import userEvent from "@testing-library/user-event";
 import React from "react";
@@ -8,6 +8,7 @@ import type { SearchResult, Source as SourceType } from "../../../../types";
 import { PendingEventType } from "../../../../types";
 import type { SourceProps } from "./SourceList/Source";
 import { renderWithProviders } from "../../../test-component-setup";
+import { requestDeleteSource } from "../../../components/deleteSourceRequester";
 
 // Mock react-window to render all items instead of virtualizing
 vi.mock("react-window", () => ({
@@ -1263,6 +1264,110 @@ describe("Sources Component", () => {
 
       // Modal should still be open (not re-triggered)
       expect(screen.getByTestId("delete-modal")).toBeInTheDocument();
+    });
+  });
+
+  describe("Delete source requester integration (used by the source menu)", () => {
+    beforeEach(() => {
+      window.electronAPI.addPendingSourceEventBatch = vi
+        .fn()
+        .mockResolvedValue(["123"]);
+    });
+
+    it("opens the delete modal for the requested source while mounted", async () => {
+      renderSourceList(mockSources, false, "/source/source-1");
+
+      await waitFor(() => {
+        expect(screen.getByTestId("source-source-1")).toBeInTheDocument();
+      });
+
+      act(() => {
+        requestDeleteSource(new Set(["source-1"]));
+      });
+
+      await waitFor(() => {
+        expect(screen.getByTestId("delete-modal")).toBeInTheDocument();
+        expect(screen.getByTestId("delete-modal-title")).toHaveTextContent(
+          "Do you want to delete the source's account or just the conversation?",
+        );
+      });
+    });
+
+    it("does not disturb existing checkbox selection", async () => {
+      renderSourceList(mockSources, false, "/source/source-1");
+
+      await waitFor(() => {
+        expect(screen.getByTestId("source-source-1")).toBeInTheDocument();
+      });
+
+      await userEvent.click(screen.getByTestId("source-checkbox-source-2"));
+      expect(screen.getByTestId("source-checkbox-source-2")).toBeChecked();
+
+      act(() => {
+        requestDeleteSource(new Set(["source-1"]));
+      });
+
+      await waitFor(() => {
+        expect(screen.getByTestId("delete-modal")).toBeInTheDocument();
+      });
+
+      expect(screen.getByTestId("source-checkbox-source-1")).not.toBeChecked();
+      expect(screen.getByTestId("source-checkbox-source-2")).toBeChecked();
+    });
+
+    it("deletes only the requested source, independent of the checked selection", async () => {
+      renderSourceList(mockSources, false, "/source/source-1");
+
+      await waitFor(() => {
+        expect(screen.getByTestId("source-source-1")).toBeInTheDocument();
+      });
+
+      // Check a different source in the sidebar - it should not be affected
+      await userEvent.click(screen.getByTestId("source-checkbox-source-2"));
+
+      act(() => {
+        requestDeleteSource(new Set(["source-1"]));
+      });
+
+      await waitFor(() => {
+        expect(
+          screen.getByTestId("delete-modal-delete-account-button"),
+        ).toBeInTheDocument();
+      });
+
+      await userEvent.click(
+        screen.getByTestId("delete-modal-delete-account-button"),
+      );
+
+      await waitFor(() => {
+        expect(
+          window.electronAPI.addPendingSourceEventBatch,
+        ).toHaveBeenCalledWith([
+          {
+            sourceUuid: "source-1",
+            type: PendingEventType.SourceDeleted,
+            data: undefined,
+          },
+        ]);
+      });
+    });
+
+    it("does nothing when called after SourceList has unmounted", async () => {
+      const { unmount } = renderSourceList(
+        mockSources,
+        false,
+        "/source/source-1",
+      );
+
+      await waitFor(() => {
+        expect(screen.getByTestId("source-source-1")).toBeInTheDocument();
+      });
+
+      unmount();
+
+      expect(() => {
+        requestDeleteSource(new Set(["source-1"]));
+      }).not.toThrow();
     });
   });
 
