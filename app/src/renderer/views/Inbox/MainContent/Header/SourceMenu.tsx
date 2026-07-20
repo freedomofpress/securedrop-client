@@ -136,6 +136,28 @@ const SourceMenu = memo(function SourceMenu({
 
   const hasConversation: boolean = sourceWithItems.items.length > 0;
 
+  const whistleFlowItems: MenuProps["items"] = [
+    {
+      type: "divider",
+    },
+    {
+      type: "group",
+      label: t("menu.WhistleflowExportGroup"),
+      children: [
+        {
+          key: "exportTranscriptToWhistleflow",
+          label: t("menu.exportTranscriptToWhistleflow"),
+          disabled: !hasConversation,
+        },
+        {
+          key: "exportSourceToWhistleflow",
+          label: t("menu.exportSourceToWhistleflow"),
+          disabled: !hasConversation,
+        },
+      ],
+    },
+  ];
+
   const items: MenuProps["items"] = [
     {
       type: "group",
@@ -158,29 +180,7 @@ const SourceMenu = memo(function SourceMenu({
       label: t("menu.printTranscript"),
       disabled: !hasConversation,
     },
-    ...(whistleflowEnabled
-      ? [
-          {
-            type: "divider",
-          },
-          {
-            type: "group",
-            label: t("menu.WhistleflowExportGroup"),
-            children: [
-              {
-                key: "exportTranscriptToWhistleflow",
-                label: t("menu.exportTranscriptToWhistleflow"),
-                disabled: !hasConversation,
-              },
-              {
-                key: "exportSourceToWhistleflow",
-                label: t("menu.exportSourceToWhistleflow"),
-                disabled: !hasConversation,
-              },
-            ],
-          },
-        ]
-      : []),
+    ...(whistleflowEnabled ? whistleFlowItems : []),
     {
       type: "divider",
     },
