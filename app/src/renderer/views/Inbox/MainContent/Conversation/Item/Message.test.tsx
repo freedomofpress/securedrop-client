@@ -1285,6 +1285,9 @@ describe("Double-encryption badge", () => {
         "This submission was encrypted by the source before uploading",
       ),
     ).toBeInTheDocument();
+    expect(
+      (await screen.findByRole("tooltip")).closest(".ant-tooltip"),
+    ).toHaveClass("ant-tooltip-placement-bottom");
     // The message itself is still displayed
     expect(screen.getByText("A pre-encrypted message")).toBeInTheDocument();
   });
