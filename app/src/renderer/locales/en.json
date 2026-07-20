@@ -36,7 +36,7 @@
       "exportSourceToWhistleflow": "Send Transcript and Files",
       "exportTranscriptToWhistleflow": "Send Transcript",
       "printTranscript": "Print Transcript",
-      "deleteSource": "Delete Source Account",
+      "deleteSource": "Delete Source",
       "deleteConversation": "Delete Files and Messages",
       "clickToOpen": "Click to open"
     },

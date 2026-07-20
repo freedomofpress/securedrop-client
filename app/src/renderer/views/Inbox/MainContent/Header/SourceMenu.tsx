@@ -11,6 +11,7 @@ import { ExportWizard } from "../Conversation/Item/Export";
 import { PrintWizard } from "../Conversation/Item/Print";
 import { MenuProps, Dropdown, Button, Tooltip } from "antd";
 import { MoreOutlined } from "@ant-design/icons";
+import { requestDeleteSource } from "../../../../components/deleteSourceRequester";
 
 interface SourceMenuProps {
   sourceWithItems: SourceWithItems;
@@ -117,6 +118,9 @@ const SourceMenu = memo(function SourceMenu({
           console.error("Failed to print transcript:", error);
         }
         break;
+      case "deleteSource":
+        requestDeleteSource(new Set([sourceWithItems.uuid]));
+        break;
       default:
         break;
     }
@@ -179,12 +183,6 @@ const SourceMenu = memo(function SourceMenu({
       : []),
     {
       type: "divider",
-    },
-    {
-      key: "deleteConversation",
-      label: t("menu.deleteConversation"),
-      disabled: !hasConversation,
-      danger: true,
     },
     {
       key: "deleteSource",
