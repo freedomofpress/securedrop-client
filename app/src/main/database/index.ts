@@ -669,18 +669,60 @@ export class DB {
     })(journalists);
   }
 
-  protected updateBatch(batchResponse: BatchResponse): {
+  protected updateBatch(
+    batchResponse: BatchResponse,
+    submittedEvents: PendingEvent[],
+  ): {
     deleted_items: Item[];
     deleted_sources: string[];
   } {
     return this.db!.transaction((batch: BatchResponse) => {
+      const items = this.reconcileBatchItems(batch.items, submittedEvents);
       this.updatePendingEvents(batch.events);
-      const deleted_items = this.updateItems(batch.items);
+      const deleted_items = this.updateItems(items);
       const deleted_sources = this.updateSources(batch.sources);
       this.updateJournalists(batch.journalists);
       this.updateVersion();
       return { deleted_items, deleted_sources };
     })(batchResponse);
+  }
+
+  private reconcileBatchItems(
+    items: { [uuid: string]: ItemMetadata | null },
+    submittedEvents: PendingEvent[],
+  ): { [uuid: string]: ItemMetadata | null } {
+    const replyEvents = submittedEvents.filter(
+      (event) => event.type === PendingEventType.ReplySent,
+    );
+    const liveEventIds = new Set(
+      this.selectWhereIn<PendingEventRow>(
+        "pending_events",
+        "snowflake_id",
+        replyEvents.map(({ id }) => id),
+      ).map(({ snowflake_id }) => snowflake_id),
+    );
+    const supersededReplyUuids = new Set(
+      replyEvents
+        .filter((event) => !liveEventIds.has(event.id))
+        .map((event) => event.data.uuid),
+    );
+    const reconciledItems: { [uuid: string]: ItemMetadata | null } = {};
+    for (const [itemUuid, metadata] of Object.entries(items)) {
+      if (metadata === null) {
+        reconciledItems[itemUuid] = null;
+        continue;
+      }
+      if (metadata.uuid !== itemUuid) {
+        throw new Error(
+          "Item metadata UUID must match its batch map key: " +
+            `key ${itemUuid}, metadata ${metadata.uuid}`,
+        );
+      }
+      if (!supersededReplyUuids.has(metadata.uuid)) {
+        reconciledItems[itemUuid] = metadata;
+      }
+    }
+    return reconciledItems;
   }
 
   protected updateSources(sources: {
