@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach, vi, afterEach } from "vitest";
 import { spawn } from "child_process";
-import { EventEmitter } from "events";
+import { PassThrough } from "stream";
 import * as fs from "fs";
 import { Crypto, CryptoError } from "../crypto";
 import { Storage, PathBuilder, UnsafePathComponent } from "../storage";
@@ -32,10 +32,11 @@ type CryptoWithPrivateMethods = {
 
 describe("Crypto Integration Tests", () => {
   let mockProcess: {
-    stdin: { write: ReturnType<typeof vi.fn>; end: ReturnType<typeof vi.fn> };
-    stdout: { on: ReturnType<typeof vi.fn>; pipe: ReturnType<typeof vi.fn> };
-    stderr: { on: ReturnType<typeof vi.fn> };
+    stdin: PassThrough;
+    stdout: PassThrough;
+    stderr: PassThrough;
     on: ReturnType<typeof vi.fn>;
+    kill: ReturnType<typeof vi.fn>;
   };
   let storage: Storage;
   let itemDirectory: PathBuilder;
@@ -50,21 +51,25 @@ describe("Crypto Integration Tests", () => {
     (mockFs.realpathSync as any) = vi.fn((path) => path);
     (mockFs.existsSync as any) = vi.fn(() => false);
     (mockFs.mkdirSync as any) = vi.fn();
+    vi.mocked(mockFs.promises.open).mockResolvedValue({
+      close: vi.fn().mockResolvedValue(undefined),
+      sync: vi.fn().mockResolvedValue(undefined),
+    } as never);
+    vi.mocked(mockFs.promises.link).mockResolvedValue();
+    vi.mocked(mockFs.promises.rm).mockResolvedValue();
 
     // Mock process object for spawn
+    const stdin = new PassThrough();
+    const stdout = new PassThrough();
+    const stderr = new PassThrough();
+    vi.spyOn(stdin, "write");
+    vi.spyOn(stdin, "end");
     mockProcess = {
-      stdin: {
-        write: vi.fn(),
-        end: vi.fn(),
-      },
-      stdout: {
-        on: vi.fn(),
-        pipe: vi.fn(),
-      },
-      stderr: {
-        on: vi.fn(),
-      },
+      stdin,
+      stdout,
+      stderr,
       on: vi.fn(),
+      kill: vi.fn(),
     };
 
     // Create real Storage and PathBuilder instances
@@ -89,25 +94,11 @@ describe("Crypto Integration Tests", () => {
       mockProcess.on.mockImplementation(
         (event: string, callback: (code: number) => void) => {
           if (event === "close") {
-            // Simulate successful GPG exit
-            setTimeout(() => callback(0), 10);
+            setTimeout(() => {
+              mockProcess.stdout.end(Buffer.from(testMessage));
+              callback(0);
+            }, 10);
           }
-          return mockProcess;
-        },
-      );
-
-      mockProcess.stdout.on.mockImplementation(
-        (event: string, callback: (data: Buffer) => void) => {
-          if (event === "data") {
-            // Simulate GPG output (decrypted content - no gzip decompression for messages)
-            setTimeout(() => callback(Buffer.from(testMessage)), 5);
-          }
-          return mockProcess;
-        },
-      );
-
-      mockProcess.stderr.on.mockImplementation(
-        (_event: string, _callback: (data: Buffer) => void) => {
           return mockProcess;
         },
       );
@@ -138,17 +129,11 @@ describe("Crypto Integration Tests", () => {
       mockProcess.on.mockImplementation(
         (event: string, callback: (code: number) => void) => {
           if (event === "close") {
-            // Simulate GPG failure
-            setTimeout(() => callback(1), 10);
-          }
-          return mockProcess;
-        },
-      );
-
-      mockProcess.stderr.on.mockImplementation(
-        (event: string, callback: (data: Buffer) => void) => {
-          if (event === "data") {
-            setTimeout(() => callback(Buffer.from("GPG decryption error")), 5);
+            setTimeout(() => {
+              mockProcess.stderr.end(Buffer.from("GPG decryption error"));
+              mockProcess.stdout.end();
+              callback(1);
+            }, 10);
           }
           return mockProcess;
         },
@@ -156,10 +141,9 @@ describe("Crypto Integration Tests", () => {
 
       mockSpawn.mockReturnValue(mockProcess as never);
 
-      await expect(crypto.decryptMessage(encryptedContent)).rejects.toThrow(
-        CryptoError,
-      );
-      await expect(crypto.decryptMessage(encryptedContent)).rejects.toThrow(
+      const decryption = crypto.decryptMessage(encryptedContent);
+      await expect(decryption).rejects.toThrow(CryptoError);
+      await expect(decryption).rejects.toThrow(
         "GPG decryption failed (exit code 1): GPG decryption error",
       );
     });
@@ -184,10 +168,9 @@ describe("Crypto Integration Tests", () => {
 
       mockSpawn.mockReturnValue(mockProcess as never);
 
-      await expect(crypto.decryptMessage(encryptedContent)).rejects.toThrow(
-        CryptoError,
-      );
-      await expect(crypto.decryptMessage(encryptedContent)).rejects.toThrow(
+      const decryption = crypto.decryptMessage(encryptedContent);
+      await expect(decryption).rejects.toThrow(CryptoError);
+      await expect(decryption).rejects.toThrow(
         "Failed to start GPG process: Process spawn failed",
       );
     });
@@ -196,13 +179,7 @@ describe("Crypto Integration Tests", () => {
   describe("File Decryption", () => {
     beforeEach(() => {
       // Mock filesystem operations
-      const mockWriteStream = Object.assign(new EventEmitter(), {
-        end: vi.fn(),
-        destroy: vi.fn(function (this: EventEmitter) {
-          setImmediate(() => this.emit("close"));
-        }),
-        writable: true,
-      });
+      const mockWriteStream = new PassThrough();
       mockFs.createWriteStream.mockReturnValue(mockWriteStream as never);
 
       mockFs.createReadStream.mockReturnValue({
@@ -233,13 +210,14 @@ describe("Crypto Integration Tests", () => {
       mockProcess.on.mockImplementation(
         (event: string, callback: (code: number) => void) => {
           if (event === "close") {
-            setTimeout(() => callback(0), 10);
+            setTimeout(() => {
+              mockProcess.stdout.end();
+              callback(0);
+            }, 10);
           }
           return mockProcess;
         },
       );
-
-      mockProcess.stderr.on.mockImplementation(() => mockProcess);
 
       // Mock the private methods that would handle gzip
       const cryptoWithPrivate = crypto as unknown as CryptoWithPrivateMethods;
@@ -280,19 +258,11 @@ describe("Crypto Integration Tests", () => {
       mockProcess.on.mockImplementation(
         (event: string, callback: (code: number) => void) => {
           if (event === "close") {
-            setTimeout(() => callback(2), 10);
-          }
-          return mockProcess;
-        },
-      );
-
-      mockProcess.stderr.on.mockImplementation(
-        (event: string, callback: (data: Buffer) => void) => {
-          if (event === "data") {
-            setTimeout(
-              () => callback(Buffer.from("GPG file decryption error")),
-              5,
-            );
+            setTimeout(() => {
+              mockProcess.stderr.end(Buffer.from("GPG file decryption error"));
+              mockProcess.stdout.end();
+              callback(2);
+            }, 10);
           }
           return mockProcess;
         },
@@ -300,12 +270,13 @@ describe("Crypto Integration Tests", () => {
 
       mockSpawn.mockReturnValue(mockProcess as never);
 
-      await expect(
-        crypto.decryptFile(storage, itemDirectory, testFilePath),
-      ).rejects.toThrow(CryptoError);
-      await expect(
-        crypto.decryptFile(storage, itemDirectory, testFilePath),
-      ).rejects.toThrow(
+      const decryption = crypto.decryptFile(
+        storage,
+        itemDirectory,
+        testFilePath,
+      );
+      await expect(decryption).rejects.toThrow(CryptoError);
+      await expect(decryption).rejects.toThrow(
         "GPG file decryption failed (exit code 2): GPG file decryption error",
       );
     });
@@ -322,13 +293,14 @@ describe("Crypto Integration Tests", () => {
       mockProcess.on.mockImplementation(
         (event: string, callback: (code: number) => void) => {
           if (event === "close") {
-            setTimeout(() => callback(0), 10);
+            setTimeout(() => {
+              mockProcess.stdout.end();
+              callback(0);
+            }, 10);
           }
           return mockProcess;
         },
       );
-
-      mockProcess.stderr.on.mockImplementation(() => mockProcess);
 
       // Mock no filename in gzip header
       const cryptoWithPrivate = crypto as unknown as CryptoWithPrivateMethods;
@@ -365,7 +337,10 @@ describe("Crypto Integration Tests", () => {
       mockProcess.on.mockImplementation(
         (event: string, callback: (code: number) => void) => {
           if (event === "close") {
-            setTimeout(() => callback(0), 10);
+            setTimeout(() => {
+              mockProcess.stdout.end();
+              callback(0);
+            }, 10);
           }
           return mockProcess;
         },
@@ -382,12 +357,15 @@ describe("Crypto Integration Tests", () => {
 
       mockSpawn.mockReturnValue(mockProcess as never);
 
-      await expect(
-        crypto.decryptFile(storage, itemDirectory, testFilePath),
-      ).rejects.toThrow(CryptoError);
-      await expect(
-        crypto.decryptFile(storage, itemDirectory, testFilePath),
-      ).rejects.toThrow("Failed to decompress decrypted file");
+      const decryption = crypto.decryptFile(
+        storage,
+        itemDirectory,
+        testFilePath,
+      );
+      await expect(decryption).rejects.toThrow(CryptoError);
+      await expect(decryption).rejects.toThrow(
+        "Failed to decompress decrypted file",
+      );
     });
   });
 
@@ -403,16 +381,10 @@ describe("Crypto Integration Tests", () => {
       mockProcess.on.mockImplementation(
         (event: string, callback: (code: number) => void) => {
           if (event === "close") {
-            setTimeout(() => callback(0), 10);
-          }
-          return mockProcess;
-        },
-      );
-
-      mockProcess.stdout.on.mockImplementation(
-        (event: string, callback: (data: Buffer) => void) => {
-          if (event === "data") {
-            setTimeout(() => callback(Buffer.from("decrypted")), 5);
+            setTimeout(() => {
+              mockProcess.stdout.end(Buffer.from("decrypted"));
+              callback(0);
+            }, 10);
           }
           return mockProcess;
         },
@@ -441,16 +413,10 @@ describe("Crypto Integration Tests", () => {
       mockProcess.on.mockImplementation(
         (event: string, callback: (code: number) => void) => {
           if (event === "close") {
-            setTimeout(() => callback(0), 10);
-          }
-          return mockProcess;
-        },
-      );
-
-      mockProcess.stdout.on.mockImplementation(
-        (event: string, callback: (data: Buffer) => void) => {
-          if (event === "data") {
-            setTimeout(() => callback(Buffer.from("decrypted")), 5);
+            setTimeout(() => {
+              mockProcess.stdout.end(Buffer.from("decrypted"));
+              callback(0);
+            }, 10);
           }
           return mockProcess;
         },
