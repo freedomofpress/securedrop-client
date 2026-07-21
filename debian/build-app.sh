@@ -2,10 +2,10 @@
 
 set -euxo pipefail
 
-# Install pnpm v10
-npm install -g pnpm@10
-
 cd app
+
+corepack enable
+corepack install
 
 pnpm install --frozen-lockfile
 pnpm run build:unpack
