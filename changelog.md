@@ -1,5 +1,33 @@
 # Changelog
 
+## 1.5.0
+
+This release, along with SecureDrop Workstation 1.8.0, switches to Debian 13 (trixie).
+
+* Debian 13 (trixie) support:
+  * Handle JPEG XL files (#3539)
+  * Disable GPG smartcard support (#3544)
+  * Switch to gnome-text-editor (#3524)
+  * Install `locales-all` in all VMs (#3535)
+  * Build Debian packages for trixie (#3509, #3525, #3536)
+  * Use packaged version of python3-redis (#3518)
+  * pkgconf has replaced pkg-config (#3522)
+  * Run lint job for trixie too (#3526)
+  * Ensure rsyslog can access /dev/xen (#3610)
+  * Open audio/vnd.wave files in audacious (#3616)
+* Other user-facing changes:
+  * Enable F1 shortcut when in text entry (#3498)
+  * Support 1366x768 resolution (#3506)
+* Internal and development:
+  * Remove more references to client/ (#3514)
+  * Remove all of the legacy client/ directory (#3463)
+  * Build against Qubes 4.3 qubesdb-dev (#3507)
+  * Add vitest-axe + accessibility unit tests (#3453)
+  * Strengthen pnpm configuration per semgrep (#3551)
+  * Add trixie variants of many CI jobs (#3510)
+  * Run lintian on the build distribution (#3516)
+  * Update nodesource signing key to address SHA-1 weakness (#3508)
+
 ## 1.4.0
 
 This release focuses on accessibility improvements to the SecureDrop Inbox
@@ -40,7 +68,7 @@ along with sync reliability fixes and dependency updates.
 
 ## 1.3.2
 
-This release adds extra warnings and safeguards to the bulk deletion 
+This release adds extra warnings and safeguards to the bulk deletion
 dialog when attempt to delete a very large number of sources.
 
  * Delete confirmation guards (#3475).
@@ -88,7 +116,7 @@ This release contains bug fixes and improvements to the SecureDrop Inbox.
 
 ## 1.1.0
 
-This release contains fixes and dependency updates to the SecureDrop Inbox. It also 
+This release contains fixes and dependency updates to the SecureDrop Inbox. It also
 enables a feature flag-gated custom export to Whistleflow option.
 
 * Enable export to Whistleflow via feature flag (#3340)
