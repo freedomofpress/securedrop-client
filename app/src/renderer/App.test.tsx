@@ -1,10 +1,7 @@
 import { screen, waitFor } from "@testing-library/react";
 import { expect } from "vitest";
 import App from "./App";
-import {
-  renderWithProviders,
-  renderAndCheckA11y,
-} from "./test-component-setup";
+import { renderWithProviders } from "./test-component-setup";
 import {
   unauthSessionState,
   SessionStatus,
@@ -21,15 +18,6 @@ vi.mock("./views/SignIn", () => ({
   // eslint-disable-next-line i18next/no-literal-string
   default: () => <div data-testid="signin-view">Sign In View</div>,
 }));
-
-describe("App accessibility", () => {
-  it("has no axe violations on the sign-in redirect (unauthenticated)", async () => {
-    await renderAndCheckA11y(<App />, {
-      initialEntries: ["/"],
-      preloadedState: { session: unauthSessionState },
-    });
-  });
-});
 
 describe("App Component", () => {
   it("renders inbox view when user has valid session and navigates to root", async () => {

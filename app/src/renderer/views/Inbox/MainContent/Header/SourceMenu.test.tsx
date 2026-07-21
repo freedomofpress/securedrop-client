@@ -5,32 +5,8 @@ import SourceMenu from "./SourceMenu";
 import {
   testMemoization,
   renderWithProviders,
-  renderAndCheckA11y,
 } from "../../../../test-component-setup";
 import { FetchStatus, type SourceWithItems } from "../../../../../types";
-
-describe("SourceMenu accessibility", () => {
-  const mockSourceWithItemsA11y: SourceWithItems = {
-    uuid: "source-1",
-    data: {
-      fingerprint: "ABCD1234EFGH5678IJKL9012MNOP3456QRST7890",
-      is_starred: false,
-      journalist_designation: "durian smoothie",
-      last_updated: "2024-01-15T10:30:00Z",
-      public_key: "-----BEGIN PGP PUBLIC KEY BLOCK-----\n...\n-----END-----",
-      uuid: "source-1",
-      is_seen: true,
-      has_attachment: false,
-    },
-    items: [],
-  };
-
-  it("has no axe violations on initial render", async () => {
-    await renderAndCheckA11y(
-      <SourceMenu sourceWithItems={mockSourceWithItemsA11y} />,
-    );
-  });
-});
 
 describe("SourceMenu Component", () => {
   beforeEach(() => {

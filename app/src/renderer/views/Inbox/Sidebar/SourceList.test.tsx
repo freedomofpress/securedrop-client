@@ -7,10 +7,7 @@ import SourceList from "./SourceList";
 import type { SearchResult, Source as SourceType } from "../../../../types";
 import { PendingEventType } from "../../../../types";
 import type { SourceProps } from "./SourceList/Source";
-import {
-  renderWithProviders,
-  renderAndCheckA11y,
-} from "../../../test-component-setup";
+import { renderWithProviders } from "../../../test-component-setup";
 
 // Mock react-window to render all items instead of virtualizing
 vi.mock("react-window", () => ({
@@ -96,31 +93,6 @@ vi.mock("./SourceList/Source", () => ({
     </div>
   ),
 }));
-
-describe("SourceList accessibility", () => {
-  it("has no axe violations with no sources", async () => {
-    await renderAndCheckA11y(
-      <Routes>
-        <Route path="/" element={<SourceList focusedPanel="sidebar" />} />
-        <Route
-          path="/source/:sourceUuid"
-          element={<SourceList focusedPanel="sidebar" />}
-        />
-      </Routes>,
-      {
-        preloadedState: {
-          sources: {
-            sources: {},
-            activeSourceUuid: null,
-            loading: false,
-            error: null,
-            conversationIndicators: {},
-          },
-        },
-      },
-    );
-  });
-});
 
 describe("Sources Component", () => {
   // Mock sources data with different states for comprehensive testing

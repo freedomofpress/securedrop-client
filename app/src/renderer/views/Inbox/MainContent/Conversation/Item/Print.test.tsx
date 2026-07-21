@@ -8,50 +8,7 @@ import {
   type Item,
   type PrintPayload,
 } from "../../../../../../types";
-import {
-  renderWithProviders,
-  renderAndCheckA11y,
-} from "../../../../../test-component-setup";
-
-describe("PrintWizard accessibility", () => {
-  const mockItem: Item = {
-    uuid: "print-a11y-uuid",
-    data: {
-      uuid: "print-a11y-uuid",
-      kind: "file",
-      seen_by: [],
-      size: 1024,
-      source: "source-1",
-      is_read: false,
-      interaction_count: 0,
-    },
-    fetch_status: FetchStatus.Complete,
-    fetch_progress: null,
-    plaintext: null,
-    filename: "/path/to/testfile.pdf",
-    decrypted_size: null,
-  };
-
-  it("has no axe violations when closed", async () => {
-    await renderAndCheckA11y(
-      <PrintWizard
-        item={{ type: "file", payload: mockItem }}
-        open={false}
-        onClose={vi.fn()}
-      />,
-    );
-  });
-
-  it("has no axe violations when open (preflight step)", async () => {
-    await renderAndCheckA11y(
-      <PrintWizard
-        item={{ type: "file", payload: mockItem }}
-        open={true}
-        onClose={vi.fn()}
-      />,
-    );
-  });
-});
+import { renderWithProviders } from "../../../../../test-component-setup";
 
 describe("PrintWizard Component", () => {
   const mockItem: Item = {

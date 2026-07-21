@@ -6,7 +6,6 @@ import Conversation from "./Conversation";
 import {
   testMemoization,
   renderWithProviders,
-  renderAndCheckA11y,
 } from "../../../test-component-setup";
 import { SessionStatus } from "../../../features/session/sessionSlice";
 import type { ItemUpdate, SourceWithItems } from "../../../../types";
@@ -175,17 +174,6 @@ const withItems = (items: SourceWithItems["items"]): SourceWithItems => ({
   ...mockSourceWithItems,
   data: { ...mockSourceWithItems.data },
   items,
-});
-
-describe("Conversation accessibility", () => {
-  it("has no axe violations on an empty conversation", async () => {
-    // TODO(a11y): ARIA role not contained by its required parent.
-    await renderAndCheckA11y(
-      <Conversation sourceWithItems={mockSourceWithItems} />,
-      undefined,
-      ["aria-required-parent"],
-    );
-  });
 });
 
 describe("Conversation Component Memoization", () => {

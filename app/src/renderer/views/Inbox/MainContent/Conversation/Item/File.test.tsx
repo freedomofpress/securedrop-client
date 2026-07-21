@@ -3,7 +3,6 @@ import { expect, describe, it, vi } from "vitest";
 import userEvent from "@testing-library/user-event";
 import File from "./File";
 import {
-  renderAndCheckA11y,
   renderWithProviders,
   testMemoization,
 } from "../../../../../test-component-setup";
@@ -390,73 +389,5 @@ describe("File Component", () => {
     // which should make the button visible so keyboard users can see it.
     fireEvent.focus(trashButton);
     expect(wrapper.style.opacity).toBe("1");
-  });
-});
-
-describe("File Component Accessibility", () => {
-  const mockOnUpdate = vi.fn();
-  const mockOnDelete = vi.fn();
-
-  const makeItem = (overrides: Partial<Item> = {}): Item => ({
-    uuid: "item-1",
-    data: {
-      uuid: "item-1",
-      kind: "file",
-      seen_by: [],
-      size: 1024,
-      source: "source-1",
-      is_read: false,
-      interaction_count: 0,
-    },
-    plaintext: null,
-    filename: null,
-    fetch_progress: null,
-    decrypted_size: null,
-    fetch_status: FetchStatus.Initial,
-    ...overrides,
-  });
-
-  beforeEach(() => {
-    vi.clearAllMocks();
-  });
-
-  it("has no axe violations for undownloaded file", async () => {
-    // TODO(a11y): file row nests interactive controls.
-    await renderAndCheckA11y(
-      <File
-        item={makeItem()}
-        designation="Test Source"
-        onUpdate={mockOnUpdate}
-        onDelete={mockOnDelete}
-      />,
-      {
-        preloadedState: {
-          session: { status: SessionStatus.Auth } as any,
-        },
-      },
-      ["nested-interactive"],
-    );
-  });
-
-  it("has no axe violations for downloaded file", async () => {
-    // TODO(a11y): file row nests interactive controls.
-    await renderAndCheckA11y(
-      <File
-        item={makeItem({
-          fetch_status: FetchStatus.Complete,
-          filename: "/path/to/document.pdf",
-          decrypted_size: 2048,
-        })}
-        designation="Test Source"
-        onUpdate={mockOnUpdate}
-        onDelete={mockOnDelete}
-      />,
-      {
-        preloadedState: {
-          session: { status: SessionStatus.Auth } as any,
-        },
-      },
-      ["nested-interactive"],
-    );
   });
 });

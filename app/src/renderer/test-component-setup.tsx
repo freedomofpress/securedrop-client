@@ -255,6 +255,40 @@ beforeEach(() => {
 
 // Accessibility testing helpers
 
+// Track the components that are rendered with renderWithProviders in a given test file.
+// Used by the a11y coverage test to verify that all components are axe-checked.
+export const renderedComponents = new Set<unknown>();
+
+// Recursively walk an authored React element tree (pre-render) and record all
+// referenced component types.
+function recordRenderedComponents(node: React.ReactNode): void {
+  if (Array.isArray(node)) {
+    node.forEach(recordRenderedComponents);
+    return;
+  }
+  if (!React.isValidElement(node)) {
+    return;
+  }
+  const type = node.type;
+  if (typeof type === "function") {
+    renderedComponents.add(type);
+  } else if (typeof type === "object" && type !== null) {
+    // memo()/forwardRef() wrappers: record both the wrapper and its inner
+    // component so identity matches however the module exports it.
+    renderedComponents.add(type);
+    const inner =
+      (type as { type?: unknown }).type ??
+      (type as { render?: unknown }).render;
+    if (inner) {
+      renderedComponents.add(inner);
+    }
+  }
+  const props = (node.props ?? {}) as Record<string, React.ReactNode>;
+  for (const key of Object.keys(props)) {
+    recordRenderedComponents(props[key]);
+  }
+}
+
 export const checkA11y = configureAxe({
   rules: {
     // Disable color-contrast: jsdom does not compute CSS so this would produce
@@ -340,6 +374,7 @@ export const renderWithProviders = (
     preloadedState?: Partial<RootState>;
   },
 ): RenderResult & { store: ReturnType<typeof setupStore> } => {
+  recordRenderedComponents(ui);
   const store = setupStore(options?.preloadedState);
 
   const renderResult = render(ui, {

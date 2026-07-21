@@ -4,10 +4,7 @@ import { Routes, Route, useNavigate } from "react-router";
 import { useEffect } from "react";
 import MainContent from "./MainContent";
 import type { SourceWithItems } from "../../../types";
-import {
-  renderWithProviders,
-  renderAndCheckA11y,
-} from "../../test-component-setup";
+import { renderWithProviders } from "../../test-component-setup";
 import { fetchConversation } from "../../features/conversation/conversationSlice";
 
 const testNav: { current: ReturnType<typeof useNavigate> | null } = {
@@ -99,38 +96,6 @@ const mockSourceWithItems: SourceWithItems = {
     },
   ],
 };
-
-describe("MainContent accessibility", () => {
-  beforeEach(() => {
-    (window as any).electronAPI = {
-      getSourceWithItems: vi.fn().mockResolvedValue(null),
-      addPendingItemsSeenBatch: vi.fn().mockResolvedValue(undefined),
-      getWhistleflowEnabled: vi.fn().mockResolvedValue(false),
-    };
-  });
-
-  it("has no axe violations on the empty state (no source selected)", async () => {
-    await renderAndCheckA11y(
-      <Routes>
-        <Route path="/" element={<MainContent />} />
-        <Route path="/source/:sourceUuid" element={<MainContent />} />
-      </Routes>,
-      {
-        initialEntries: ["/"],
-        preloadedState: {
-          conversation: {
-            conversation: null,
-            loading: false,
-            error: null,
-            lastFetchTime: null,
-            hasMoreHistoricalItems: false,
-            olderItemsLoading: false,
-          },
-        },
-      },
-    );
-  });
-});
 
 describe("MainContent Component", () => {
   beforeEach(() => {

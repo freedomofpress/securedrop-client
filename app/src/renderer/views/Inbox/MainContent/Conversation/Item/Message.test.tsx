@@ -5,7 +5,6 @@ import Message from "./Message";
 import {
   testMemoization,
   renderWithProviders,
-  renderAndCheckA11y,
 } from "../../../../../test-component-setup";
 import type {
   Item,
@@ -15,38 +14,6 @@ import type {
 import { FetchStatus } from "../../../../../../types";
 import { SessionStatus } from "../../../../../features/session/sessionSlice";
 import type { RootState } from "../../../../../store";
-
-describe("Message accessibility", () => {
-  const mockItem: Item = {
-    uuid: "item-a11y",
-    data: {
-      uuid: "item-a11y",
-      kind: "message",
-      seen_by: [],
-      size: 512,
-      source: "source-1",
-      is_read: false,
-      interaction_count: 1,
-    },
-    plaintext: "Hello, this is a message",
-    filename: null,
-    fetch_status: null,
-    fetch_progress: null,
-    decrypted_size: null,
-  };
-
-  it("has no axe violations for a message item", async () => {
-    await renderAndCheckA11y(
-      <Message
-        kind="message"
-        item={mockItem}
-        designation="Test Source"
-        onUpdate={vi.fn()}
-        onDelete={vi.fn()}
-      />,
-    );
-  });
-});
 
 describe("Message Component Memoization", () => {
   const mockItem: Item = {

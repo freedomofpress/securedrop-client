@@ -2,16 +2,7 @@ import { describe, it, expect } from "vitest";
 import { screen } from "@testing-library/react";
 import KeyboardHelp from "./KeyboardHelp";
 import { shortcuts } from "../../../../shortcuts/shortcutDefinitions";
-import {
-  renderWithProviders,
-  renderAndCheckA11y,
-} from "../../../../test-component-setup";
-
-describe("KeyboardHelp accessibility", () => {
-  it("has no axe violations", async () => {
-    await renderAndCheckA11y(<KeyboardHelp />);
-  });
-});
+import { renderWithProviders } from "../../../../test-component-setup";
 
 describe("KeyboardHelp", () => {
   it("renders all shortcuts from the registry", () => {
