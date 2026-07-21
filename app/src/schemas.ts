@@ -100,11 +100,27 @@ export const IndexSized: SizedSchema = {
   description: "index",
 };
 
-// Metadata, maps UUIDs to full metadata objects
+// A record whose keys must equal each value's own `uuid` field.
+const uuidKeyedRecord = <T extends z.ZodType<{ uuid: string }>>(
+  value: T,
+  label: string,
+) =>
+  z.record(UUIDSchema, value.nullable()).superRefine((data, ctx) => {
+    for (const [uuid, metadata] of Object.entries(data)) {
+      if (metadata && uuid !== metadata.uuid) {
+        ctx.addIssue({
+          code: "custom",
+          message: `${label} UUID does not match its metadata uuid`,
+          path: [uuid],
+        });
+      }
+    }
+  });
+
 export const BatchResponseSchema = z.object({
-  sources: z.record(UUIDSchema, SourceMetadataSchema.nullable()),
-  items: z.record(UUIDSchema, ItemMetadataSchema.nullable()),
-  journalists: z.record(UUIDSchema, JournalistMetadataSchema.nullable()),
+  sources: uuidKeyedRecord(SourceMetadataSchema, "source"),
+  items: uuidKeyedRecord(ItemMetadataSchema, "item"),
+  journalists: uuidKeyedRecord(JournalistMetadataSchema, "journalist"),
   events: z.record(z.string(), z.tuple([z.number(), z.string().nullable()])),
 });
 
