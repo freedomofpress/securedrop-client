@@ -1,0 +1,55 @@
+<svg id="a5e825db-c5b8-488a-a1bd-bdafd3613a98" data-name="Layer 1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="596.05" height="671.01" viewBox="0 0 596.05 671.01">
+  <defs>
+    <radialGradient id="e5e97f36-6594-4fc7-8a7a-e304d9b5d4ce" cx="-96.55" cy="641.92" r="0.8" gradientTransform="matrix(0, 596, 596, 0, -382286.66, 57706.48)" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#00c7ff"/>
+      <stop offset="1" stop-color="#0055de"/>
+    </radialGradient>
+    <mask id="5dfd18e4-fe2e-4c04-bf6c-3f0dc21e67ca" x="297.29" y="-16.29" width="216.37" height="252.16" maskUnits="userSpaceOnUse">
+      <g transform="translate(0.05)">
+        <g id="082ce9dd-062b-4bac-a81b-4bede15a71cc" data-name="mask-3">
+          <polygon id="182d0c8f-60fc-42ca-8b2d-7d2df72ac412" data-name="path-2" points="297.24 -16.29 513.61 -16.29 513.61 235.48 297.24 235.48 297.24 -16.29" fill="#fff"/>
+        </g>
+      </g>
+    </mask>
+  </defs>
+  <title>LoginBasse-OHYOUWILLWORK</title>
+  <g id="aa13ed56-dd6b-4796-ae30-dd97bccbc27f" data-name="LoginBasse">
+    <g id="840130dd-6d97-4d7e-8eac-a7c9bae7eece" data-name="•••-HuzzahAlt">
+      <polygon id="121efc96-6633-4758-8151-806efb45c9e6" data-name="MessagePaneBG" points="0.05 0 596.05 0 596.05 670.99 0.05 671 0.05 0" fill="url(#e5e97f36-6594-4fc7-8a7a-e304d9b5d4ce)"/>
+      <g id="e8db1a80-eec5-4a04-a2f3-45d0d9fd1a7d" data-name="ugh222">
+        <g id="22b33aa6-37a4-4e88-be25-c71e47e0ca4d" data-name="Group-69">
+          <g id="af6ecf2c-8321-466a-957d-bb931998f078" data-name="Group-65">
+            <polyline id="d743cb5a-753a-41c2-9164-7852917772c3" data-name="Fill-14" points="0.16 220.34 81.55 172.94 81.48 46.69 1.31 0.24 0.13 0.21" fill="#fff" opacity="0.11" style="isolation: isolate"/>
+            <polyline id="c8bb10b2-fa6f-4675-ae75-ea319ef279bc" data-name="Fill-16" points="0.21 377.42 82.38 424.83 189.67 361.56 189.11 235.75 81.55 172.88 0.05 220" fill="#036fd8" opacity="0.63" style="isolation: isolate"/>
+            <polyline id="b21fcb8d-ede7-47ec-bfba-cc8cdc061380" data-name="Fill-18" points="0 598.23 81.47 550.75 82.47 424.74 0.07 377.3" fill="#013a69" opacity="0.76" style="isolation: isolate"/>
+            <polyline id="d78bf86c-56f9-4c5d-a447-91e405ae7d01" data-name="Fill-20" points="0.01 598.22 0.04 671.01 189.57 671 189.57 613.59 81.47 550.58 0.05 598.16" fill="#0c3e75"/>
+            <polyline id="22ecb1e5-f2ef-4912-a457-b21e04d526f7" data-name="Fill-25" points="161.44 0.11 81.47 46.72 81.55 172.91 189.05 235.69 297.68 172.73 297.68 46.72 217.49 0" fill="#fff" opacity="0.05" style="isolation: isolate"/>
+            <polygon id="11e223b7-cd3e-47b8-90e9-86cf8a8b5043" data-name="Fill-27" points="297.15 424.7 405.26 361.69 407.09 235.67 297.15 172.69 189.05 235.69 189.61 361.75 297.15 424.7" fill="#045bad" opacity="0.2" style="isolation: isolate"/>
+            <polygon id="04854747-4910-41ea-b6c6-bef000c5c8e2" data-name="Fill-29" points="188.57 613.75 296.68 550.75 296.68 424.74 189.57 361.73 82.47 424.74 81.47 550.75 188.57 613.75" fill="#024482" opacity="0.89" style="isolation: isolate"/>
+            <polyline points="404.78 670.75 404.78 613.59 296.68 550.58 188.57 613.59 188.64 671 404.76 671" fill="#0c3e75"/>
+            <polyline id="109be0e0-f61d-4b74-b576-c00686adc7a5" data-name="Fill-36" points="596.05 221 513.8 172.75 406.92 235.63 405.74 361.69 512.92 424.84 596.04 375.57" fill="#075394" opacity="0.19" style="isolation: isolate"/>
+            <polygon id="60724360-b824-4918-ab26-cf2c527407f7" data-name="Fill-38" points="403.78 613.75 511.88 550.75 512.88 424.74 405.78 361.74 295.68 424.74 295.68 550.75 403.78 613.75" fill="#095191"/>
+            <polyline id="d7a13685-5c61-4aa4-834f-a1d0990a6646" data-name="Fill-40" points="405.05 671 596.05 671.01 596.05 599.61 511.88 550.58 403.78 613.59 403.78 671" fill="#0c3e75"/>
+            <polyline id="0993a9ba-f467-47b1-bba2-10829f1e60b7" data-name="Fill-45" points="594.35 0 513.88 46.72 513.88 172.73 596.05 221 596.05 1.19" fill="#50e3c2" opacity="0.06" style="isolation: isolate"/>
+            <polyline id="6d827fb6-95db-472d-8e63-f92fa41f822c" data-name="Fill-49" points="596.05 375.57 512.83 424.75 511.86 550.63 596.05 599.61" fill="#012c50" opacity="0.62" style="isolation: isolate"/>
+          </g>
+          <g id="7079549b-012a-44a7-884b-2fdeac95f0e3" data-name="Group-68" opacity="0.08">
+            <g mask="url(#5dfd18e4-fe2e-4c04-bf6c-3f0dc21e67ca)">
+              <polyline id="3da36f84-c699-4646-9dc7-36646c5d0bf2" data-name="Fill-66" points="377.52 0.03 297.29 46.66 297.29 172.54 407.05 235.88 513.66 172.54 513.66 46.66 433.39 0" fill="#fff"/>
+            </g>
+          </g>
+        </g>
+      </g>
+      <g id="a7fb3245-8820-4d5d-8ee0-0f0ef3fb1d88" data-name="Nu-Icon">
+        <polygon id="3fcb07f3-309c-401c-b70b-ac334d29204d" data-name="Fill-1" points="298.05 170.33 298.05 301 407.05 235.67 407.05 105 298.05 170.33" fill="#045fb4"/>
+        <polygon id="2568a658-2958-4f77-890d-a3b3f686bd32" data-name="Fill-2" points="189.05 105.55 298.01 171 406.96 105 298.01 47 189.05 105.55" fill="#2e8ae8"/>
+        <polygon id="e3090293-2da6-4a03-9128-dcd4e7ef57a2" data-name="Fill-3" points="189.05 235.67 298.05 301 298.13 170.96 189.05 105.55 189.05 235.67" fill="#093d70"/>
+        <g id="3ed6924b-ef8a-4a9a-918e-fb9d3634967d" data-name="Group-10">
+          <path id="dbb93284-73eb-408a-9489-74cc77a6d9e1" data-name="Fill-4" d="M342.73,193.42l24.79-14.76a3.56,3.56,0,0,1,4.89,1.37,4.09,4.09,0,0,1,.5,1.72v24.46a10,10,0,0,1-4.89,8.67l-25.2,14.59Zm37,33.13A17.31,17.31,0,0,0,388,211.7V161a8.36,8.36,0,0,0-8.12-8.5,8.5,8.5,0,0,0-4.06,1.12l-50,30v75.27Z" transform="translate(0.05)" fill="#fff"/>
+          <path id="2d529e3f-a9e3-45ae-9f4e-785599650dcb" data-name="Fill-6" d="M307.12,132.11,340,112.88l-37-10.59a8,8,0,0,0,1.09-4.06c0-7.08-9.94-12.93-22.25-12.93s-22.25,5.85-22.25,12.93,9.94,12.93,22.25,12.93a41.38,41.38,0,0,0,4.83-.28Z" transform="translate(0.05)" fill="#fff"/>
+          <polygon id="c762ee89-0084-48f5-b04f-7faf0e5cb055" data-name="Fill-8" points="215.11 204.58 253.25 227.41 253.25 218.91 215.11 196.08 215.11 151.03 270.9 184.33 270.9 202.35 230.28 178.06 230.28 186.65 270.9 210.93 270.9 256.42 215.11 223.12 215.11 204.58" fill="#fff"/>
+        </g>
+      </g>
+    </g>
+  </g>
+</svg>

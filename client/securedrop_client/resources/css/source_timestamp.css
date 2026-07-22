@@ -1,0 +1,16 @@
+#SourceWidget_timestamp {
+    font-weight: 500;
+    font-size: 13px;
+    color: #383838;
+}
+
+#SourceWidget_timestamp_unread {
+    font-weight: 600;
+    font-size: 13px;
+    color: #000;
+}
+
+#SourceWidget_timestamp.deleting {
+    color: #8e8e92;
+    font-style: italic;
+}

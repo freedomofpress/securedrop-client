@@ -1,0 +1,436 @@
+interactions:
+- request:
+    body: null
+    headers:
+      Accept:
+      - application/json
+      Authorization:
+      - Token IlAzb1p1MjRubnlLOFo0SDVaajZPc2JPZWRRcjRYRUxLM3RrUmhsUEFWVTQi.Z1jewg.4VNFOk_5HSHXhgn319zzDh9JVyg
+      Content-Type:
+      - application/json
+    method: GET
+    uri: api/v1/submissions
+  response: !!python/object:securedrop_client.sdk.JSONResponse
+    data:
+      submissions:
+      - download_url: /api/v1/sources/3f85129c-a43e-4ce5-8ec0-ab5c0b3be6bf/submissions/01584f2b-a5b9-49c3-bfe4-2f1bc1f68a98/download
+        filename: 1-cocksure_incompetent-msg.gpg
+        is_file: false
+        is_message: true
+        is_read: true
+        seen_by:
+        - e7e047d5-aa5e-4afe-9a4f-c24e5f2cec8d
+        size: 616
+        source_url: /api/v1/sources/3f85129c-a43e-4ce5-8ec0-ab5c0b3be6bf
+        submission_url: /api/v1/sources/3f85129c-a43e-4ce5-8ec0-ab5c0b3be6bf/submissions/01584f2b-a5b9-49c3-bfe4-2f1bc1f68a98
+        uuid: 01584f2b-a5b9-49c3-bfe4-2f1bc1f68a98
+      - download_url: /api/v1/sources/3f85129c-a43e-4ce5-8ec0-ab5c0b3be6bf/submissions/eb3ea36c-eac6-4295-897b-dc82fd928b54/download
+        filename: 2-cocksure_incompetent-msg.gpg
+        is_file: false
+        is_message: true
+        is_read: true
+        seen_by:
+        - e7e047d5-aa5e-4afe-9a4f-c24e5f2cec8d
+        size: 700
+        source_url: /api/v1/sources/3f85129c-a43e-4ce5-8ec0-ab5c0b3be6bf
+        submission_url: /api/v1/sources/3f85129c-a43e-4ce5-8ec0-ab5c0b3be6bf/submissions/eb3ea36c-eac6-4295-897b-dc82fd928b54
+        uuid: eb3ea36c-eac6-4295-897b-dc82fd928b54
+      - download_url: /api/v1/sources/3f85129c-a43e-4ce5-8ec0-ab5c0b3be6bf/submissions/aac59b96-b3e3-401b-9f55-49f998afb61e/download
+        filename: 3-cocksure_incompetent-doc.gz.gpg
+        is_file: true
+        is_message: false
+        is_read: true
+        seen_by:
+        - a6e99098-ca63-403c-a76d-38530a2e88dd
+        - e7e047d5-aa5e-4afe-9a4f-c24e5f2cec8d
+        size: 650
+        source_url: /api/v1/sources/3f85129c-a43e-4ce5-8ec0-ab5c0b3be6bf
+        submission_url: /api/v1/sources/3f85129c-a43e-4ce5-8ec0-ab5c0b3be6bf/submissions/aac59b96-b3e3-401b-9f55-49f998afb61e
+        uuid: aac59b96-b3e3-401b-9f55-49f998afb61e
+      - download_url: /api/v1/sources/3f85129c-a43e-4ce5-8ec0-ab5c0b3be6bf/submissions/e5c999ec-ff0c-4d43-830b-e835833fb10e/download
+        filename: 4-cocksure_incompetent-doc.gz.gpg
+        is_file: true
+        is_message: false
+        is_read: true
+        seen_by:
+        - a6e99098-ca63-403c-a76d-38530a2e88dd
+        - e7e047d5-aa5e-4afe-9a4f-c24e5f2cec8d
+        size: 650
+        source_url: /api/v1/sources/3f85129c-a43e-4ce5-8ec0-ab5c0b3be6bf
+        submission_url: /api/v1/sources/3f85129c-a43e-4ce5-8ec0-ab5c0b3be6bf/submissions/e5c999ec-ff0c-4d43-830b-e835833fb10e
+        uuid: e5c999ec-ff0c-4d43-830b-e835833fb10e
+      - download_url: /api/v1/sources/c0f0153d-0cb0-4ad3-9f0e-f8540891b5c8/submissions/5165913e-cdeb-4142-b4be-0ccd86647327/download
+        filename: 1-intricate_hock-msg.gpg
+        is_file: false
+        is_message: true
+        is_read: true
+        seen_by:
+        - a6e99098-ca63-403c-a76d-38530a2e88dd
+        - e7e047d5-aa5e-4afe-9a4f-c24e5f2cec8d
+        size: 647
+        source_url: /api/v1/sources/c0f0153d-0cb0-4ad3-9f0e-f8540891b5c8
+        submission_url: /api/v1/sources/c0f0153d-0cb0-4ad3-9f0e-f8540891b5c8/submissions/5165913e-cdeb-4142-b4be-0ccd86647327
+        uuid: 5165913e-cdeb-4142-b4be-0ccd86647327
+      - download_url: /api/v1/sources/c0f0153d-0cb0-4ad3-9f0e-f8540891b5c8/submissions/0c00f400-0906-430b-9181-cf7bbdb7c86e/download
+        filename: 2-intricate_hock-msg.gpg
+        is_file: false
+        is_message: true
+        is_read: true
+        seen_by:
+        - e7e047d5-aa5e-4afe-9a4f-c24e5f2cec8d
+        size: 766
+        source_url: /api/v1/sources/c0f0153d-0cb0-4ad3-9f0e-f8540891b5c8
+        submission_url: /api/v1/sources/c0f0153d-0cb0-4ad3-9f0e-f8540891b5c8/submissions/0c00f400-0906-430b-9181-cf7bbdb7c86e
+        uuid: 0c00f400-0906-430b-9181-cf7bbdb7c86e
+      - download_url: /api/v1/sources/c0f0153d-0cb0-4ad3-9f0e-f8540891b5c8/submissions/fa87ca16-35ef-452a-bb0b-6029cdc126d1/download
+        filename: 3-intricate_hock-doc.gz.gpg
+        is_file: true
+        is_message: false
+        is_read: true
+        seen_by:
+        - e7e047d5-aa5e-4afe-9a4f-c24e5f2cec8d
+        size: 650
+        source_url: /api/v1/sources/c0f0153d-0cb0-4ad3-9f0e-f8540891b5c8
+        submission_url: /api/v1/sources/c0f0153d-0cb0-4ad3-9f0e-f8540891b5c8/submissions/fa87ca16-35ef-452a-bb0b-6029cdc126d1
+        uuid: fa87ca16-35ef-452a-bb0b-6029cdc126d1
+      - download_url: /api/v1/sources/c0f0153d-0cb0-4ad3-9f0e-f8540891b5c8/submissions/af832b74-c5b6-4ac0-8ffd-385eee99e7a9/download
+        filename: 4-intricate_hock-doc.gz.gpg
+        is_file: true
+        is_message: false
+        is_read: true
+        seen_by:
+        - e7e047d5-aa5e-4afe-9a4f-c24e5f2cec8d
+        size: 650
+        source_url: /api/v1/sources/c0f0153d-0cb0-4ad3-9f0e-f8540891b5c8
+        submission_url: /api/v1/sources/c0f0153d-0cb0-4ad3-9f0e-f8540891b5c8/submissions/af832b74-c5b6-4ac0-8ffd-385eee99e7a9
+        uuid: af832b74-c5b6-4ac0-8ffd-385eee99e7a9
+      - download_url: /api/v1/sources/ee212060-9cd5-4031-b596-581ea15cffa0/submissions/c68298b5-577a-43a5-bbdb-790789c67dec/download
+        filename: 1-generational_catchment-msg.gpg
+        is_file: false
+        is_message: true
+        is_read: true
+        seen_by:
+        - e7e047d5-aa5e-4afe-9a4f-c24e5f2cec8d
+        size: 804
+        source_url: /api/v1/sources/ee212060-9cd5-4031-b596-581ea15cffa0
+        submission_url: /api/v1/sources/ee212060-9cd5-4031-b596-581ea15cffa0/submissions/c68298b5-577a-43a5-bbdb-790789c67dec
+        uuid: c68298b5-577a-43a5-bbdb-790789c67dec
+      - download_url: /api/v1/sources/ee212060-9cd5-4031-b596-581ea15cffa0/submissions/a6d76866-91a2-4f00-a504-2ad6465626d9/download
+        filename: 2-generational_catchment-msg.gpg
+        is_file: false
+        is_message: true
+        is_read: true
+        seen_by:
+        - e7e047d5-aa5e-4afe-9a4f-c24e5f2cec8d
+        size: 710
+        source_url: /api/v1/sources/ee212060-9cd5-4031-b596-581ea15cffa0
+        submission_url: /api/v1/sources/ee212060-9cd5-4031-b596-581ea15cffa0/submissions/a6d76866-91a2-4f00-a504-2ad6465626d9
+        uuid: a6d76866-91a2-4f00-a504-2ad6465626d9
+      - download_url: /api/v1/sources/ee212060-9cd5-4031-b596-581ea15cffa0/submissions/436c66e2-378e-4270-bba5-aa70bc678901/download
+        filename: 3-generational_catchment-doc.gz.gpg
+        is_file: true
+        is_message: false
+        is_read: true
+        seen_by:
+        - e7e047d5-aa5e-4afe-9a4f-c24e5f2cec8d
+        size: 650
+        source_url: /api/v1/sources/ee212060-9cd5-4031-b596-581ea15cffa0
+        submission_url: /api/v1/sources/ee212060-9cd5-4031-b596-581ea15cffa0/submissions/436c66e2-378e-4270-bba5-aa70bc678901
+        uuid: 436c66e2-378e-4270-bba5-aa70bc678901
+      - download_url: /api/v1/sources/ee212060-9cd5-4031-b596-581ea15cffa0/submissions/a4c231a1-64f3-4c5f-a95e-3b9187d4a05a/download
+        filename: 4-generational_catchment-doc.gz.gpg
+        is_file: true
+        is_message: false
+        is_read: true
+        seen_by:
+        - e7e047d5-aa5e-4afe-9a4f-c24e5f2cec8d
+        size: 650
+        source_url: /api/v1/sources/ee212060-9cd5-4031-b596-581ea15cffa0
+        submission_url: /api/v1/sources/ee212060-9cd5-4031-b596-581ea15cffa0/submissions/a4c231a1-64f3-4c5f-a95e-3b9187d4a05a
+        uuid: a4c231a1-64f3-4c5f-a95e-3b9187d4a05a
+    headers:
+      connection: close
+      content-length: '7806'
+      content-type: application/json
+      date: Wed, 11 Dec 2024 00:37:27 GMT
+      server: Werkzeug/2.2.3 Python/3.8.10
+    status: 200
+- request:
+    body: null
+    headers:
+      Accept:
+      - application/json
+      Authorization:
+      - Token IlAzb1p1MjRubnlLOFo0SDVaajZPc2JPZWRRcjRYRUxLM3RrUmhsUEFWVTQi.Z1jewg.4VNFOk_5HSHXhgn319zzDh9JVyg
+      Content-Type:
+      - application/json
+    method: GET
+    uri: api/v1/sources/3f85129c-a43e-4ce5-8ec0-ab5c0b3be6bf
+  response: !!python/object:securedrop_client.sdk.JSONResponse
+    data:
+      add_star_url: /api/v1/sources/3f85129c-a43e-4ce5-8ec0-ab5c0b3be6bf/add_star
+      interaction_count: 6
+      is_flagged: false
+      is_starred: false
+      journalist_designation: cocksure incompetent
+      key:
+        fingerprint: 341E9C1E0468E900C6ADF0FC748BE6E54A2AEDED
+        public: '-----BEGIN PGP PUBLIC KEY BLOCK-----
+
+          Comment: 341E 9C1E 0468 E900 C6AD  F0FC 748B E6E5 4A2A EDED
+
+          Comment: Source Key <M32Z4DS5ETYOMZZRLUWK2T24R2ZFDSMUXRDBF2MGY7R
+
+
+          xsFNBFGRxNABEADezeulpayk40+yTwnnI3bu/IzRzshoXPWQVoggHXLeTXLeOGXa
+
+          BxfRgDZz4a50KtAzs99ZQqeK/+BXAkrnIApzZwBcLRFzqaC1InW/nX2XypvObUQr
+
+          /hDLPW+GaYj08qyDscCdplRpVq+o19W7shvxjFLtQo3+BIFwjaMJMyDl9HnkqaxX
+
+          OhnWo3//vzzkg+B0dEndokqcuK1ZMsr7d4CLIxxkjvRipN7HGwNF2Yiey08GQd9E
+
+          TSgLDK1Il+pWu5nIkphcCvc5r3jc57El7I6T1Zeh+0uyDkviWKBe5CejYPwvwm0X
+
+          ReadmO5pvHdzI4MTyRMLu2090Yn18l50XpvvUpcu2aAZ8K9I3/05x6m9eLAeQBmx
+
+          kHDYxb5nr77ntenmOUBuBMoOKE5FIkk0wWmnGV/dwFNflixYTFO91YRRZC2eChIG
+
+          cBkcMSjbqW4g+B0p9sypCxMWR+Cvb0azseclko4NYkZqDU/aeyrq3OzeAbXWbLAf
+
+          9SzHtF+hEgSy9xbqNfUB8PUMZ5W69rzseNxaW06dzOAzqTG6Mh1u0xoacTMiSrYM
+
+          450iN8pS/V9rFzJgW1pHsKNAy17Eds98HBKA/Wu9ABng5Ov7+gMK56tUwADsBPyC
+
+          vrMYPtrGmt8v77tetIj/oHgWU7TWiOm1To69/JhbB0EMYKjC1o8xg7uOWwARAQAB
+
+          wsHJBB8BCgB9BYJRkcTQAwsJBwkQdIvm5Uoq7e1HFAAAAAAAHgAgc2FsdEBub3Rh
+
+          dGlvbnMuc2VxdW9pYS1wZ3Aub3Jnv7LOYqeCBFcNvY+yeysBGzQz9ByRV5YAhwjI
+
+          g6xDIe4DFQoIApsBAh4BFiEENB6cHgRo6QDGrfD8dIvm5Uoq7e0AAKJyEADbL7d8
+
+          4Gh7I9XcSPOzslJg6Alv3YQbtAcd5XNgyx8cMJ4OM4Wn4znqeeBSA72vkcfQNNFm
+
+          E5MGf38PMc7c7w5JtJFkVOxLTTFVRs6ZVuV+f4UlY3c3Iybjoms39SUyEiu271NG
+
+          srElRpIy2zOmC1nf7d35cVem4RyCOkfMLDWkxz7vlhb+R7pnKUCblgmZcjP4Pt7p
+
+          iF9GIWGpFaD2V2N+Xf5H6t3i+M3zmDDFGLboSYU1Y7C6EjmXz/U57e1vuPRADcBo
+
+          twaZDEtV+sXox00QVii6z53Qohfy7vylzpEAdYSJdbaKkyeWTpj5wyRdTX6IdGXE
+
+          cHVi+JmsFKEc4gLX9g5p8cLFC4CzY0b1c+vYDQWqc+t5JX9lZzFpx26Wq5U5lONp
+
+          WCmRj8ptXfPqPwgd38pssenumrQwxVlWxQMDX9gUgqh6xOh66aKry/93rw6KlbP4
+
+          zQD40DPiJjxaw3oSJd+ENyjgTJ2uk71q6lijvkV7MkSwGPGhI6nCDRrJQBI1xCpN
+
+          aULJLUYGe4Wf8M0mUNrimEW6mUHWl8Jyi28f/PgZ/M49D2sK62uzV0vp36Lc3phD
+
+          5V43SO2b2sms2Yu96BSnLt0sj/DtKsCLJKLXNgOYCRW81a9vag7/ODX15j6aVb5g
+
+          KviI96gbu42m4Yh5YOpl55vaDW2l9kuGLE7Ci811U291cmNlIEtleSA8TTMyWjRE
+
+          UzVFVFlPTVpaUkxVV0syVDI0UjJaRkRTTVVYUkRCRjJNR1k3UkFJR0RJUVUyRVdZ
+
+          M0hSUVdLTE5DNVc3VzJJWE01WFVJTDNSQ1ZaUTdNUVg0Q1dRWktKTlFYV0hOWUVI
+
+          QT0+wsHMBBMBCgCABYJRkcTQAwsJBwkQdIvm5Uoq7e1HFAAAAAAAHgAgc2FsdEBu
+
+          b3RhdGlvbnMuc2VxdW9pYS1wZ3Aub3JnH3uk8iIozGGrsybkb8EhhlybHAflheJ4
+
+          n7k6/IAnSGUDFQoIApkBApsBAh4BFiEENB6cHgRo6QDGrfD8dIvm5Uoq7e0AAIbk
+
+          EACOH+6gW1X0U9HlX/I2mCrbV5oTHRO+pzt2M94UJuoG95yuz1b2SHntni3N7Ynx
+
+          4RXUoX5/147/86mPuQ3MPjmP3XRkYL6LNOV/vHO8IcKOEOIgR2v6fNPLawJYDdDW
+
+          91VxPUMiDl/A9JRpXOJWaql/GCU6NC9lW04KHQCyVU2qowwSGkDyIulmWtYpZ2Wg
+
+          wFSvSzPWpjR4nEWCtnGTsqC57DlD1BKFkGOQIqcjor8+s2QI926ClUddKJWhg/hQ
+
+          uWqxAw74Ny3u0xIPE7eO3hgAoJGcknD4cOqtLPNWhWQND9BUl7Wps6J2m/WFqkUh
+
+          WpeDTTXqktD31Aj4ahCF8EjpWbdymiL6lYk9UcLb1iPtwzR2Uh0Rv6sWXcyyKNYl
+
+          B64TviD0jMOQi5nK5mSD8lhreTNCZgbtMRIkEPLuMRZXZb1QOEG44EQ5CsZa5e5Y
+
+          /YPuwardbRbtXdwutBfhrdThPoxnw0KLLOeKiomeqi8ZWx4EGdmwyQMMqkzGhdkt
+
+          r4sGf63aMrFW0DofuFGd2gKuIbuwXoALvtBTQISXrRjqlSgY647v9LRE5N4uqFfr
+
+          2tkll1AXRjAxk5CF3h+VD8gjerWRzoyiBciJBfO3CLj2sOpmzJlyZQBeaOlitkD9
+
+          ZsY7N3aSoDuxd3UFGoURx3IQZFgfAjt2dRv5kOq7W0nwpM7BTQRRkcTQARAAxsmq
+
+          FCrotMdCJ7okJ9fufCtRqhIFI9N19tNjqzmVT8lRDkE5BwMS6jPJzhfDCU/Itj43
+
+          pyJVAX3Mpb9K1BZNUYwQ52IEahg0s1BxCnEfTbTl/B1VweuonhqIKla6eEWSAsPi
+
+          SqC9VFFgRgWiA/ltDbGmtK7aWrwOH6GBhbm1UKb03vUHD6ASSi6PsKDaSfHMxFTB
+
+          fPsICvNeI38uTo6y1Hqom/NR/cu/mHtgfWYtiw+KzEz7Zl7ebh4l+GkGLHhQPQtT
+
+          IcHndpeYUhBd50YgcyNpxT13THrAZCQhmIq28mwPSq4nRMHl0oz2lhnfrUTaamaj
+
+          p4V3lGefQ566/SNgbwb5G+YrD21jwtu8znQxjSREKLW6Tm8OBv3EsWJRxCsdLO+C
+
+          4XtYv6++HDpz0F8WCB05AfQuRVbIRSITasM9Q5ojapRRDR9nuzCtRbUORqdCiTvc
+
+          BuVQWAFeFWjYgXEd+K/qekkaKcafouP0qL7fAxID8ozSq2Sjlz0Uk3b+qx3csZlY
+
+          5d4fKasEy1UqVs84yXJLrqIusv06/xyghYjdln9qBMDMKaB4AxDsP4lF1yEvqcsc
+
+          YITt3stk2J2VuhAo/39/Q3HWHW4ygQwpqxbZP69BiJOQEM3rAeaoKZrPGl6VFakM
+
+          bjOsxxNBdrzMNT/ZqF0tta1UiECFrMeUPHpNNaMAEQEAAcLBvgQYAQoAcgWCUZHE
+
+          0AkQdIvm5Uoq7e1HFAAAAAAAHgAgc2FsdEBub3RhdGlvbnMuc2VxdW9pYS1wZ3Au
+
+          b3Jn1bi321YNv2T7cXoE/3B0FxoJYoQwE54iwPrxibpUbo8CmwgWIQQ0HpweBGjp
+
+          AMat8Px0i+blSirt7QAA6wcP/iIEMfEf4nQNa6BpRUzvQ/U5x8Y6C03VbeRqP8At
+
+          GF87nTgEK0hAGsoZDJEAYKiOrGUNGjLfQ8WTOi8mLgR1wL7BmJuboO7HMH+l+Yw5
+
+          7aSBmqtyGQ3WTFhojH7wv4bB28nUQAS8m6Sn3Jn78JDjRLbFc6GFiz1WL/6oMho/
+
+          EUiSExIMtwd9xG9Ix0W92aZOAJR6nkgXchDb+CULumb1PEQ4nG51rGmxsB7Nxq2z
+
+          r8qiOBmrRqhEu0SDnZFtHHDH6CdCbk/8IEq9Z4a2X7/uOUp09rh87A9Z2LAKz5V8
+
+          WdkP/x94sQFBlkbwVBnIjUBxAF1nd/PpKUD1QFNwq5+m6dZpU/Nn2mpnaACpp3qe
+
+          m8JzwLyQTr4YmJEiNlME0O5GB1q3UxBgjf8I/5YrBqW3OYODi3JEA5ZC4jj2sqit
+
+          9AkPOn6vIzBTor4NDJOIKpRMKrPunWXPFldT/iO20jlYmhmuoh9fZ7kd6QWzSm17
+
+          D+oFXutBTbXbYiQy4XdxiaseYdhFrsn6Nh6ljZvvLzJYcHUS/Nk3skdYSksI94Nk
+
+          n6HH/Hvi2V9KNkLWCRj7kmXuvhVkcAN/9lYg9ODYLj1H8WR+7kc+v8gIVwRDX0M8
+
+          yJWLRM84gzdm92XlzUx5MpupRifWdO6aBLPeByR0YV1cdK1ufEAHf2MGSexBVrDK
+
+          ZaBj
+
+          =9/Kn
+
+          -----END PGP PUBLIC KEY BLOCK-----
+
+          '
+        type: PGP
+      last_updated: '2024-12-11T00:37:12.251095Z'
+      number_of_documents: 2
+      number_of_messages: 2
+      remove_star_url: /api/v1/sources/3f85129c-a43e-4ce5-8ec0-ab5c0b3be6bf/remove_star
+      replies_url: /api/v1/sources/3f85129c-a43e-4ce5-8ec0-ab5c0b3be6bf/replies
+      submissions_url: /api/v1/sources/3f85129c-a43e-4ce5-8ec0-ab5c0b3be6bf/submissions
+      url: /api/v1/sources/3f85129c-a43e-4ce5-8ec0-ab5c0b3be6bf
+      uuid: 3f85129c-a43e-4ce5-8ec0-ab5c0b3be6bf
+    headers:
+      connection: close
+      content-length: '5324'
+      content-type: application/json
+      date: Wed, 11 Dec 2024 00:37:27 GMT
+      server: Werkzeug/2.2.3 Python/3.8.10
+    status: 200
+- request:
+    body: null
+    headers:
+      Accept:
+      - application/json
+      Authorization:
+      - Token IlAzb1p1MjRubnlLOFo0SDVaajZPc2JPZWRRcjRYRUxLM3RrUmhsUEFWVTQi.Z1jewg.4VNFOk_5HSHXhgn319zzDh9JVyg
+      Content-Type:
+      - application/json
+    method: GET
+    uri: api/v1/sources/3f85129c-a43e-4ce5-8ec0-ab5c0b3be6bf/submissions
+  response: !!python/object:securedrop_client.sdk.JSONResponse
+    data:
+      submissions:
+      - download_url: /api/v1/sources/3f85129c-a43e-4ce5-8ec0-ab5c0b3be6bf/submissions/01584f2b-a5b9-49c3-bfe4-2f1bc1f68a98/download
+        filename: 1-cocksure_incompetent-msg.gpg
+        is_file: false
+        is_message: true
+        is_read: true
+        seen_by:
+        - e7e047d5-aa5e-4afe-9a4f-c24e5f2cec8d
+        size: 616
+        source_url: /api/v1/sources/3f85129c-a43e-4ce5-8ec0-ab5c0b3be6bf
+        submission_url: /api/v1/sources/3f85129c-a43e-4ce5-8ec0-ab5c0b3be6bf/submissions/01584f2b-a5b9-49c3-bfe4-2f1bc1f68a98
+        uuid: 01584f2b-a5b9-49c3-bfe4-2f1bc1f68a98
+      - download_url: /api/v1/sources/3f85129c-a43e-4ce5-8ec0-ab5c0b3be6bf/submissions/eb3ea36c-eac6-4295-897b-dc82fd928b54/download
+        filename: 2-cocksure_incompetent-msg.gpg
+        is_file: false
+        is_message: true
+        is_read: true
+        seen_by:
+        - e7e047d5-aa5e-4afe-9a4f-c24e5f2cec8d
+        size: 700
+        source_url: /api/v1/sources/3f85129c-a43e-4ce5-8ec0-ab5c0b3be6bf
+        submission_url: /api/v1/sources/3f85129c-a43e-4ce5-8ec0-ab5c0b3be6bf/submissions/eb3ea36c-eac6-4295-897b-dc82fd928b54
+        uuid: eb3ea36c-eac6-4295-897b-dc82fd928b54
+      - download_url: /api/v1/sources/3f85129c-a43e-4ce5-8ec0-ab5c0b3be6bf/submissions/aac59b96-b3e3-401b-9f55-49f998afb61e/download
+        filename: 3-cocksure_incompetent-doc.gz.gpg
+        is_file: true
+        is_message: false
+        is_read: true
+        seen_by:
+        - a6e99098-ca63-403c-a76d-38530a2e88dd
+        - e7e047d5-aa5e-4afe-9a4f-c24e5f2cec8d
+        size: 650
+        source_url: /api/v1/sources/3f85129c-a43e-4ce5-8ec0-ab5c0b3be6bf
+        submission_url: /api/v1/sources/3f85129c-a43e-4ce5-8ec0-ab5c0b3be6bf/submissions/aac59b96-b3e3-401b-9f55-49f998afb61e
+        uuid: aac59b96-b3e3-401b-9f55-49f998afb61e
+      - download_url: /api/v1/sources/3f85129c-a43e-4ce5-8ec0-ab5c0b3be6bf/submissions/e5c999ec-ff0c-4d43-830b-e835833fb10e/download
+        filename: 4-cocksure_incompetent-doc.gz.gpg
+        is_file: true
+        is_message: false
+        is_read: true
+        seen_by:
+        - a6e99098-ca63-403c-a76d-38530a2e88dd
+        - e7e047d5-aa5e-4afe-9a4f-c24e5f2cec8d
+        size: 650
+        source_url: /api/v1/sources/3f85129c-a43e-4ce5-8ec0-ab5c0b3be6bf
+        submission_url: /api/v1/sources/3f85129c-a43e-4ce5-8ec0-ab5c0b3be6bf/submissions/e5c999ec-ff0c-4d43-830b-e835833fb10e
+        uuid: e5c999ec-ff0c-4d43-830b-e835833fb10e
+    headers:
+      connection: close
+      content-length: '2673'
+      content-type: application/json
+      date: Wed, 11 Dec 2024 00:37:27 GMT
+      server: Werkzeug/2.2.3 Python/3.8.10
+    status: 200
+- request:
+    body: null
+    headers:
+      Accept:
+      - application/json
+      Authorization:
+      - Token IlAzb1p1MjRubnlLOFo0SDVaajZPc2JPZWRRcjRYRUxLM3RrUmhsUEFWVTQi.Z1jewg.4VNFOk_5HSHXhgn319zzDh9JVyg
+      Content-Type:
+      - application/json
+    method: GET
+    uri: api/v1/sources/3f85129c-a43e-4ce5-8ec0-ab5c0b3be6bf/submissions/01584f2b-a5b9-49c3-bfe4-2f1bc1f68a98
+  response: !!python/object:securedrop_client.sdk.JSONResponse
+    data:
+      download_url: /api/v1/sources/3f85129c-a43e-4ce5-8ec0-ab5c0b3be6bf/submissions/01584f2b-a5b9-49c3-bfe4-2f1bc1f68a98/download
+      filename: 1-cocksure_incompetent-msg.gpg
+      is_file: false
+      is_message: true
+      is_read: true
+      seen_by:
+      - e7e047d5-aa5e-4afe-9a4f-c24e5f2cec8d
+      size: 616
+      source_url: /api/v1/sources/3f85129c-a43e-4ce5-8ec0-ab5c0b3be6bf
+      submission_url: /api/v1/sources/3f85129c-a43e-4ce5-8ec0-ab5c0b3be6bf/submissions/01584f2b-a5b9-49c3-bfe4-2f1bc1f68a98
+      uuid: 01584f2b-a5b9-49c3-bfe4-2f1bc1f68a98
+    headers:
+      connection: close
+      content-length: '578'
+      content-type: application/json
+      date: Wed, 11 Dec 2024 00:37:27 GMT
+      server: Werkzeug/2.2.3 Python/3.8.10
+    status: 200
+version: 1
