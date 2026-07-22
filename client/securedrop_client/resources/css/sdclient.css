@@ -1,0 +1,395 @@
+/**
+ * The main stylesheet for the SecureDrop Client application
+ */
+
+QWidget {
+    font-family: 'Source Sans Pro';
+}
+
+#MainWindow {
+    min-width: 1279px;
+    min-height: 600px;
+}
+
+#SyncIcon {
+    border: none;
+    color: #fff;
+}
+
+#SyncStatusBar {
+    font-weight: 600;
+    font-size: 12px;
+    color: #d3d8ea;
+    background: transparent;
+}
+
+#ActivityStatusBar {
+    font-weight: 600;
+    font-size: 12px;
+    color: #d3d8ea;
+    background: transparent;
+}
+
+#ErrorStatusBar_vertical_bar {
+    background-color: #ff3366;
+}
+
+#ErrorStatusBar_icon {
+    background-color: qlineargradient(
+        x1: 0,
+        y1: 0,
+        x2: 0,
+        y2: 1,
+        stop: 0 #fff,
+        stop: 0.2 #fff,
+        stop: 1 #fff
+    );
+}
+
+#ErrorStatusBar_status_bar {
+    background-color: qlineargradient(
+        x1: 0,
+        y1: 0,
+        x2: 0,
+        y2: 1,
+        stop: 0 #fff,
+        stop: 0.2 #fff,
+        stop: 1 #fff
+    );
+    font-weight: 400;
+    font-size: 14px;
+    color: #0c3e75;
+}
+
+#LeftPane {
+    min-width: 198;
+    max-width: 198;
+}
+
+#UserProfile {
+    background-color: #0096dc;
+    padding: 15px;
+    min-height: 60px
+}
+
+#UserProfile_icon {
+    border: none;
+    padding-left: 1px;
+    background-color: #9211ff;
+    font-weight: 600;
+    font-size: 15px;
+    color: #fff;
+}
+
+#UserButton {
+    border: none;
+    font-weight: 700;
+    font-size: 12px;
+    color: #fff;
+    text-align: left;
+}
+
+#UserButton:focus {
+    outline: none;
+}
+
+#UserButton::menu-indicator {
+    image: none;
+}
+
+#LoginButton {
+    border: none;
+    background-color: #05edfe;
+    font-weight: 600;
+    font-size: 14px;
+    color: #2a319d;
+}
+
+#LoginButton:pressed {
+    background-color: #85f6fe;
+}
+
+#InnerTopPane {
+    background-color: #f3f5f9;
+}
+
+#BatchActionWidget {
+    background-color: #fff;
+    margin: 2px;
+}
+
+#BatchActionToolbar {
+    min-height: 42px;
+}
+
+#BatchActionToolbar QToolButton:disabled {
+    color: #f9f9ff;
+    background-color: #a5b3e9;
+    border: 2px solid #a5b3e9;
+}
+
+#BatchActionToolbar QToolButton {
+    font-weight: 600;
+    font-size: 12px;
+    padding: 2px;
+    color: #a5b3e9;
+    background-color: #fff;
+    border: 2px solid #a5b3e9;
+    border-radius: 4%;
+    margin-left: 2px;
+    margin-right: 2px;
+}
+
+#BatchActionToolbar QToolButton:hover,
+#BatchActionToolbar QToolButton:checked {
+    background-color: #a5b3e9;
+    border: 2px solid #a5b3e9;
+    color: #fff;
+}
+
+#MainView {
+    min-height: 558;
+}
+
+#MainView_view_holder {
+    border: none;
+    background-color: #f9f9ff;
+}
+
+#EmptyConversationView {
+    min-width: 640px;
+}
+
+#EmptyConversationView QLabel {
+    font-weight: 400;
+    font-size: 30px;
+    color: #a5b3e9;
+}
+
+#EmptyConversationView QLabel#EmptyConversationView_instructions {
+    font-weight: 500;
+}
+
+#EmptyConversationView QLabel#EmptyConversationView_bullet {
+    margin: 4px 0px 0px 0px;
+    font-size: 30px;
+    font-weight: 600;
+}
+
+QListView#SourceList {
+    border: none;
+    show-decoration-selected: 0;
+    border-right: 3px solid #f3f5f9;
+    min-width: 400px;
+    max-width: 540px;
+}
+
+QListView#SourceList::item:selected {
+    /* #a5b3e94d aka #e4e8f8 */
+    background-color: rgba(165, 179, 233, 0.30);
+}
+
+QListView#SourceList::item:hover {
+    background-color: #e4e8f8;
+}
+
+#SourceWidget_container {
+    border-bottom: 1px solid #9b9b9b;
+}
+
+#SourceWidget_container QPushButton {
+    border: none;
+}
+
+#StarToggleButton {
+    border: none;
+}
+
+#ConversationDeletionIndicator QLabel,
+#SourceDeletionIndicator QLabel {
+    font-weight: normal;
+    font-size: 30px;
+    font-style: italic;
+    background-color: #9495b9;
+    color: #ffffff;
+}
+
+#ReplyBoxWidget {
+    min-height: 173px;
+    max-height: 173px;
+}
+
+#ReplyBoxWidget_replybox {
+    background-color: #ffffff;
+}
+
+#ReplyBoxWidget_replybox::disabled {
+    background-color: #ffffff;
+}
+
+#ReplyBoxWidget QPushButton {
+    border: none;
+}
+
+#ReplyBoxWidget QPushButton:hover {
+    background: #D3D8EA;
+    border-radius: 8px;
+}
+
+QWidget#SourceProfileShortWidget_horizontal_line,
+QWidget#ReplyBoxWidget_horizontal_line {
+    min-height: 2px;
+    max-height: 2px;
+    background-color: rgba(42, 49, 157, 0.15);
+}
+
+#ReplyTextEdit {
+    font-weight: 400;
+    font-size: 18px;
+    border: none;
+}
+
+#ReplyTextEdit::disabled {
+    font-weight: 400;
+    font-size: 18px;
+    border: none;
+    background-color: #ffffff;
+}
+
+#ReplyTextEditPlaceholder_text {
+    font-weight: 400;
+    font-size: 18px;
+    color: #404040;
+}
+
+#ReplyTextEditPlaceholder_bold_blue {
+    font-weight: 600;
+    font-size: 18px;
+    color: #2a319d;
+}
+
+#ReplyBoxWidget.deleting #ReplyBoxWidget_replybox,
+#ReplyBoxWidget.deleting #ReplyBoxWidget_replybox::disabled,
+#ReplyBoxWidget.deleting #ReplyTextEdit,
+#ReplyBoxWidget.deleting #ReplyTextEdit::disabled {
+    color: #a5a8d8;
+    background-color: #9495b9;
+}
+
+#ReplyBoxWidget.deleting #SourceProfileShortWidget_horizontal_line,
+#ReplyBoxWidget.deleting #ReplyBoxWidget_horizontal_line {
+    background-color: #8788b4;
+}
+
+#ReplyBoxWidget.deleting_conversation #ReplyBoxWidget_replybox,
+#ReplyBoxWidget.deleting_conversation #ReplyBoxWidget_replybox::disabled,
+#ReplyBoxWidget.deleting_conversation #ReplyTextEdit,
+#ReplyBoxWidget.deleting_conversation #ReplyTextEdit::disabled,
+#ReplyBoxWidget.deleting_conversation #ReplyTextEditPlaceholder_text,
+#ReplyBoxWidget.deleting_conversation #ReplyTextEditPlaceholder_bold_blue {
+    color: #a5a8d8;
+    background-color: #f7f7fd;
+}
+
+#SourceMenuButton {
+    border: none;
+    margin: 5px 0px 0px 0px;
+    padding-left: 8px;
+}
+
+QToolButton#SourceMenuButton::menu-indicator {
+    image: none;
+}
+
+#LastUpdatedLabel {
+    font-weight: 200;
+    font-size: 16px;
+    color: #2a319d;
+    padding-left: 4px;
+}
+
+#TitleLabel {
+    font-weight: 400;
+    font-size: 20px;
+    color: #2a319d;
+    padding-left: 4px;
+}
+
+#ConversationScrollArea {
+    border: 0;
+    background: #f9f9ff;
+}
+
+#ConversationScrollArea_conversation {
+    background: #f9f9ff;
+}
+
+#FileWidget_file_options {
+    min-width: 137px;
+}
+
+QPushButton#FileWidget_export_print {
+    border: none;
+    font-weight: 500;
+    font-size: 13px;
+    color: #2a319d;
+}
+
+QPushButton#FileWidget_export_print:hover {
+    color: #05a6fe;
+}
+
+QLabel#FileWidget_file_name {
+    font-weight: 600;
+    font-size: 13px;
+    color: #2a319d;
+}
+
+QLabel#FileWidget_file_name:hover {
+    color: #05a6fe;
+}
+
+QLabel#FileWidget_no_file_name {
+    font-weight: 300;
+    font-size: 13px;
+    color: #7481b4;
+}
+
+QLabel#FileWidget_file_size {
+    min-width: 48px;
+    max-width: 48px;
+    font-weight: 400;
+    font-size: 13px;
+    color: #2a319d;
+}
+
+QWidget#FileWidget_horizontal_line {
+    min-width: 0px;
+    min-height: 2px;
+    max-height: 2px;
+    background-color: rgba(211, 216, 234, 0.45);
+    margin: 0px 8px 0px 8px;
+}
+
+#DeletedConversationItemsMessage {
+    font-weight: 600;
+    font-size: 12px;
+    font-style: italic;
+    color: #9092ae;
+}
+
+#DeletedConversationMessage {
+    font-size: 30px;
+    color: #a5b3e9;
+}
+
+#ConversationView {
+    min-width: 640px;
+    background-color: #00ff00;
+}
+
+#ReplyWidget_failed_to_send_text {
+    font-weight: 500;
+    font-size: 13px;
+    color: #ff3366;
+}

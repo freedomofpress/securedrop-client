@@ -1,0 +1,137 @@
+interactions:
+- request:
+    body: null
+    headers:
+      Accept:
+      - application/json
+      Authorization:
+      - Token IlAzb1p1MjRubnlLOFo0SDVaajZPc2JPZWRRcjRYRUxLM3RrUmhsUEFWVTQi.Z1jewg.4VNFOk_5HSHXhgn319zzDh9JVyg
+      Content-Type:
+      - application/json
+    method: GET
+    uri: api/v1/replies
+  response: !!python/object:securedrop_client.sdk.JSONResponse
+    data:
+      replies:
+      - filename: 5-cocksure_incompetent-reply.gpg
+        is_deleted_by_source: false
+        journalist_first_name: ''
+        journalist_last_name: ''
+        journalist_username: dellsberg
+        journalist_uuid: a6e99098-ca63-403c-a76d-38530a2e88dd
+        reply_url: /api/v1/sources/3f85129c-a43e-4ce5-8ec0-ab5c0b3be6bf/replies/23e392f6-80c9-411e-8a79-b67515f2cbeb
+        seen_by:
+        - e7e047d5-aa5e-4afe-9a4f-c24e5f2cec8d
+        - a6e99098-ca63-403c-a76d-38530a2e88dd
+        size: 1143
+        source_url: /api/v1/sources/3f85129c-a43e-4ce5-8ec0-ab5c0b3be6bf
+        uuid: 23e392f6-80c9-411e-8a79-b67515f2cbeb
+      - filename: 6-cocksure_incompetent-reply.gpg
+        is_deleted_by_source: false
+        journalist_first_name: ''
+        journalist_last_name: ''
+        journalist_username: deleted
+        journalist_uuid: c98cd9c4-a45a-42cb-a704-9d9af34f4563
+        reply_url: /api/v1/sources/3f85129c-a43e-4ce5-8ec0-ab5c0b3be6bf/replies/c8008feb-953f-49fe-b4b7-932573b15f83
+        seen_by:
+        - e7e047d5-aa5e-4afe-9a4f-c24e5f2cec8d
+        - c98cd9c4-a45a-42cb-a704-9d9af34f4563
+        size: 1227
+        source_url: /api/v1/sources/3f85129c-a43e-4ce5-8ec0-ab5c0b3be6bf
+        uuid: c8008feb-953f-49fe-b4b7-932573b15f83
+      - filename: 5-intricate_hock-reply.gpg
+        is_deleted_by_source: false
+        journalist_first_name: ''
+        journalist_last_name: ''
+        journalist_username: dellsberg
+        journalist_uuid: a6e99098-ca63-403c-a76d-38530a2e88dd
+        reply_url: /api/v1/sources/c0f0153d-0cb0-4ad3-9f0e-f8540891b5c8/replies/417d50e9-6e12-4aee-b11a-4d2e2bb58cde
+        seen_by:
+        - e7e047d5-aa5e-4afe-9a4f-c24e5f2cec8d
+        - a6e99098-ca63-403c-a76d-38530a2e88dd
+        size: 1174
+        source_url: /api/v1/sources/c0f0153d-0cb0-4ad3-9f0e-f8540891b5c8
+        uuid: 417d50e9-6e12-4aee-b11a-4d2e2bb58cde
+      - filename: 6-intricate_hock-reply.gpg
+        is_deleted_by_source: false
+        journalist_first_name: ''
+        journalist_last_name: ''
+        journalist_username: deleted
+        journalist_uuid: c98cd9c4-a45a-42cb-a704-9d9af34f4563
+        reply_url: /api/v1/sources/c0f0153d-0cb0-4ad3-9f0e-f8540891b5c8/replies/c8142538-e670-42dd-9126-fb67242166dd
+        seen_by:
+        - e7e047d5-aa5e-4afe-9a4f-c24e5f2cec8d
+        - c98cd9c4-a45a-42cb-a704-9d9af34f4563
+        size: 1293
+        source_url: /api/v1/sources/c0f0153d-0cb0-4ad3-9f0e-f8540891b5c8
+        uuid: c8142538-e670-42dd-9126-fb67242166dd
+      - filename: 5-generational_catchment-reply.gpg
+        is_deleted_by_source: false
+        journalist_first_name: ''
+        journalist_last_name: ''
+        journalist_username: deleted
+        journalist_uuid: c98cd9c4-a45a-42cb-a704-9d9af34f4563
+        reply_url: /api/v1/sources/ee212060-9cd5-4031-b596-581ea15cffa0/replies/946ab2d4-a13d-4fd9-9372-e9a7aac55aca
+        seen_by:
+        - e7e047d5-aa5e-4afe-9a4f-c24e5f2cec8d
+        - c98cd9c4-a45a-42cb-a704-9d9af34f4563
+        size: 1331
+        source_url: /api/v1/sources/ee212060-9cd5-4031-b596-581ea15cffa0
+        uuid: 946ab2d4-a13d-4fd9-9372-e9a7aac55aca
+      - filename: 6-generational_catchment-reply.gpg
+        is_deleted_by_source: false
+        journalist_first_name: ''
+        journalist_last_name: ''
+        journalist_username: dellsberg
+        journalist_uuid: a6e99098-ca63-403c-a76d-38530a2e88dd
+        reply_url: /api/v1/sources/ee212060-9cd5-4031-b596-581ea15cffa0/replies/97ad15ab-64a2-4fb9-8d26-80cf46fedfae
+        seen_by:
+        - e7e047d5-aa5e-4afe-9a4f-c24e5f2cec8d
+        - a6e99098-ca63-403c-a76d-38530a2e88dd
+        size: 1237
+        source_url: /api/v1/sources/ee212060-9cd5-4031-b596-581ea15cffa0
+        uuid: 97ad15ab-64a2-4fb9-8d26-80cf46fedfae
+    headers:
+      connection: close
+      content-length: '4111'
+      content-type: application/json
+      date: Wed, 11 Dec 2024 00:37:31 GMT
+      server: Werkzeug/2.2.3 Python/3.8.10
+    status: 200
+- request:
+    body: null
+    headers:
+      Accept:
+      - application/json
+      Authorization:
+      - Token IlAzb1p1MjRubnlLOFo0SDVaajZPc2JPZWRRcjRYRUxLM3RrUmhsUEFWVTQi.Z1jewg.4VNFOk_5HSHXhgn319zzDh9JVyg
+      Content-Type:
+      - application/json
+    method: GET
+    uri: api/v1/sources/3f85129c-a43e-4ce5-8ec0-ab5c0b3be6bf/replies/23e392f6-80c9-411e-8a79-b67515f2cbeb/download
+  response: !!python/object:securedrop_client.sdk.StreamedResponse
+    contents: !!binary |
+      wcFMA4nw+rgoKDyPAQ/+JRNzmMJmBjTrVjEhT4LUeHQAIl8Mf15Wd5fkLtUvH8hlZHDDorRBpkt4
+      m6WDo3rUsMrO/k0FWGmNYRDIH0q6hjZdiVLskE5Dl23//lbfW7/EaJkHqA/C5+EuqYmROUN9qzCM
+      nywnT8iJ0ZJeEP4Jo/EjGMa7hwbHw1VYP2MAa9moYhtP5XHovkriztb87K7oIeodbFUoUNYsxifx
+      tMENBKYHEolUFkX3bSnqtlLubdS3yBg5U3pIy4z7d+bL4BRR/psXGLbCMmuBYDikA72tUSmfh3+2
+      3o3TlPfixxKv1a9gJwRVHsdHpKbdiaXsBHSmJo90HytnfgBsB82vaHY1VsmjJf4GMByn2wGTHNcr
+      vSdY00tRRZqndiq7ETlXT8w5Cd0ECSuVT8mCCw85pSPFHhImuMHTrgnl7HY+OW0F3hlOeZ36+WK2
+      +JgAggB6lRZAQXo+mLQBnakHhv+nzct548ny1eSdmaQ+0AQydz+tmdfBTTEXCEvTcqSPSqI2J7KA
+      ndofLB1Otx5Qgo+GV0o7HpkpeceajE9zsmpSwA6beqkRQgR2+2MtMzimEHT1by+Afw4vWkZxyl4Y
+      oXze4x1G/If5S+w+O4ae4gquz1x+Z2cPgFR7hoPVKSd7emZvPgDWk2Bbo7Sjxjwx39fgOkB7pq3r
+      JELIy2zn4Li2HdUsfMXBwUwDw+fEwKIgGyoBEACKF4RVlqb9+4knYksXhkr02w6KsGNI4bxfWJI2
+      k5SkIoTCoXJEHhf066d3+HnPCTLaa0i4OcxPrfDQ4oujHR51CUZTDvuPAWyu+c6yB20BQ8IezL08
+      JlNsQIsj9xjQeKP4CQGBXPgrKGnEu7SuDM82dsYjHgXcOAico7zvJoBeOA6eIn+cgwIoHwCm68wq
+      6yWrtJOvMFggxKXj4jbH03Va/fZrCz8+T/kbmSNADJr6ErSaXYYWRyOCaSVuo4Le3HwQLhTMFD61
+      SIU/Mng9SV1vuIUfJyp5+Nl/I6qV7n9g9y3wGIEM9ut7dfo/3IlIiGhZ62f/EDwYhgVbugEzXe88
+      buvwE1gG5/0Vbp1WWL4uwSRe/jmsZ9F5nlx54loILCoMSZrrj5UlIG8BH4F0zn5AGSoFyrhFO58H
+      Z4aarYm7o9qzTYxz1h675yibEwe5SOst9pjqSZ+wdlV71qqlVbXQFmiFl7yTjG0obFfIPILVi/h9
+      NoXqs2w/F+ZtlY/uvHw68fB/Tf/SOpiXxp6EXXlJyfpmlRWhfxW7bDcxGtcATc1lwIuF+ix7bDJ9
+      YRFk/wDz/CGTzIRHYpYlVpI3EMgGZQzjFprhHIxGk8HC7gmXzO48vdEC1QKHXo4kNR3Q7qSeRoGf
+      1IdIlIZ6ouB23DgchUeIEDrNEmWa/RVLHKzJRtJXAf0632Ku5zMKPoWdb4Xm48TkRLOfxvC9jwkb
+      ilgaHtlnkTx0LawWMiNvbS8C1yFU445Sp9k5hbf08JhfAA8z4sVrc+FHXny5tovwbD9d5NvPckJb
+      utNA
+    filename: attachment; filename=5-cocksure_incompetent-reply.gpg
+    sha256sum: sha256:e86aea305d87e753d7f153c6a3488fbf7b0c88e40668071e3c3635c0ac48fe4b
+version: 1

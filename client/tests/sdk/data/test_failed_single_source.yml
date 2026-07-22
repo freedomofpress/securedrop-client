@@ -1,0 +1,25 @@
+interactions:
+- request:
+    body: null
+    headers:
+      Accept:
+      - application/json
+      Authorization:
+      - Token IlAzb1p1MjRubnlLOFo0SDVaajZPc2JPZWRRcjRYRUxLM3RrUmhsUEFWVTQi.Z1jewg.4VNFOk_5HSHXhgn319zzDh9JVyg
+      Content-Type:
+      - application/json
+    method: GET
+    uri: api/v1/sources/not there
+  response: !!python/object:securedrop_client.sdk.JSONResponse
+    data:
+      error: Not Found
+      message: The requested URL was not found on the server. If you entered the URL
+        manually please check your spelling and try again.
+    headers:
+      connection: close
+      content-length: '165'
+      content-type: application/json
+      date: Wed, 11 Dec 2024 00:37:26 GMT
+      server: Werkzeug/2.2.3 Python/3.8.10
+    status: 404
+version: 1
