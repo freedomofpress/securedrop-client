@@ -21,7 +21,6 @@ jobs:
     strategy:
       matrix:
         debian_version:
-          - bookworm
           - trixie
     runs-on: ubuntu-latest
     container: debian:${{ matrix.debian_version }}
@@ -54,7 +53,6 @@ jobs:
     strategy:
       matrix:
         debian_version:
-          - bookworm
           - trixie
         what:
           - main
@@ -87,7 +85,6 @@ jobs:
     strategy:
       matrix:
         debian_version:
-          - bookworm
           - trixie
         what:
           - main
@@ -118,7 +115,6 @@ jobs:
     strategy:
       matrix:
         debian_version:
-          - bookworm
           - trixie
     runs-on: ubuntu-latest
     container: debian:trixie
@@ -157,7 +153,6 @@ jobs:
           - log
           - proxy
         debian_version:
-          - bookworm
           - trixie
     runs-on: ubuntu-latest
     needs:

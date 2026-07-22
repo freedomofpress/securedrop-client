@@ -27,7 +27,6 @@ jobs:
       fail-fast: false
       matrix:
         debian_version:
-          - bookworm
           - trixie
     runs-on: ubuntu-latest
     outputs:
@@ -60,7 +59,7 @@ jobs:
   commit-and-push:
     if: ${{ github.ref == 'refs/heads/main' }} # Skip when testing workflow
     runs-on: ubuntu-latest
-    container: debian:bookworm
+    container: debian:trixie
     needs:
       - build-debs
     steps:
@@ -68,11 +67,6 @@ jobs:
         run: |
           apt-get update && apt-get install --yes git git-lfs gpg
       # Repeat this for all supported Debian versions
-      - name: Download bookworm artifacts
-        uses: actions/download-artifact@v8
-        with:
-          name: build-bookworm
-          path: build-bookworm
       - name: Download trixie artifacts
         uses: actions/download-artifact@v8
         with:
@@ -104,8 +98,6 @@ jobs:
         run: |
           mkdir -p "build-logs/buildinfo/$(date +%Y)"
           cp -v build-*/*.buildinfo "build-logs/buildinfo/$(date +%Y)"
-          mkdir -p "build-logs/workstation/bookworm/nightlies"
-          cp -v build-bookworm/*.log "build-logs/workstation/bookworm/nightlies/"
           mkdir -p "build-logs/workstation/trixie/nightlies"
           cp -v build-trixie/*.log "build-logs/workstation/trixie/nightlies/"
       - name: Sign and commit buildinfo files
@@ -133,7 +125,6 @@ jobs:
           git -C build-logs push https://x-access-token:${GH_TOKEN}@github.com/${LOGS_REPO}.git main
       - name: Prepare packages
         run: |
-          cp -v build-bookworm/*.deb securedrop-apt-test/workstation/bookworm-nightlies/
           mkdir -p securedrop-apt-test/workstation/trixie-nightlies/
           cp -v build-trixie/*.deb securedrop-apt-test/workstation/trixie-nightlies/
       - name: Sign and commit packages
