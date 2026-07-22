@@ -9,7 +9,6 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any
 
-from securedrop_client import utils
 from securedrop_client.config import Config
 from securedrop_client.gui.base.progress import ProgressProxy
 
@@ -62,6 +61,7 @@ class StreamedResponse:
 
     contents: bytes
     sha256sum: str
+    filename: str
 
 
 @dataclass(frozen=True)
@@ -242,13 +242,16 @@ class API:
                         raise BaseError("Unable to parse headers (stderr) JSON") from err
 
                     sha256sum = stderr["headers"]["etag"]
+                    filename = stderr["headers"]["content-disposition"]
                 else:
                     # This should never happen because we should always have an stderr
                     sha256sum = ""
+                    filename = ""
 
                 return StreamedResponse(
                     contents=contents,
                     sha256sum=sha256sum,
+                    filename=filename,
                 )
 
             except subprocess.TimeoutExpired as err:
@@ -698,7 +701,7 @@ class API:
     def download_submission(
         self,
         submission: Submission,
-        original_path: str | None = None,
+        path: str | None = None,
         timeout: int | None = None,
         progress: ProgressProxy | None = None,
     ) -> tuple[str, str]:
@@ -708,7 +711,7 @@ class API:
         at which to save the submission file.
 
         :param submission: Submission object
-        :param original_path: Local directory path to save the submission, if None, use ~/Downloads
+        :param path: Local directory path to save the submission, if None, use ~/Downloads
 
         :returns: Tuple of etag and path of the saved submission.
         """
@@ -717,12 +720,10 @@ class API:
         )
         method = "GET"
 
-        if original_path:
-            path = Path(original_path)
-        else:
-            path = Path("~/Downloads").expanduser()
+        if not path:
+            path = os.path.expanduser("~/Downloads")
 
-        if not path.is_dir():
+        if not os.path.isdir(path):
             raise BaseError(f"Specified path isn't a directory: {path}")
 
         response = self._send_json_request(
@@ -740,13 +741,10 @@ class API:
             else:
                 raise BaseError(f"Unknown error, status code: {response.status}")
 
-        filepath = path / submission.filename
-        # submission.filename should have already been validated, but let's
-        # double check before we write anything
-        utils.check_path_traversal(filepath)
-        filepath.write_bytes(response.contents)
+        filepath = os.path.join(path, submission.filename)
+        Path(filepath).write_bytes(response.contents)
 
-        return response.sha256sum.strip('"'), str(filepath)
+        return response.sha256sum.strip('"'), filepath
 
     def flag_source(self, source: Source) -> bool:
         """
@@ -933,7 +931,7 @@ class API:
         return result
 
     def download_reply(
-        self, reply: Reply, original_path: str | None = None, progress: ProgressProxy | None = None
+        self, reply: Reply, path: str | None = None, progress: ProgressProxy | None = None
     ) -> tuple[str, str]:
         """
         Returns a tuple of etag (format is algorithm:checksum) and file path for
@@ -941,7 +939,7 @@ class API:
         at which to save the reply file.
 
         :param reply: Reply object
-        :param original_path: Local directory path to save the reply
+        :param path: Local directory path to save the reply
 
         :returns: Tuple of etag and path of the saved Reply.
         """
@@ -949,10 +947,8 @@ class API:
 
         method = "GET"
 
-        if original_path:
-            path = Path(original_path)
-        else:
-            path = Path("~/Downloads").expanduser()
+        if not path:
+            path = os.path.expanduser("~/Downloads")
 
         if not os.path.isdir(path):
             raise BaseError(f"Specified path isn't a directory: {path}")
@@ -972,13 +968,11 @@ class API:
             else:
                 raise BaseError(f"Unknown error, status code: {response.status}")
 
-        filepath = path / reply.filename
-        # reply.filename should have already been validated, but let's
-        # double check before we write anything
-        utils.check_path_traversal(filepath)
-        filepath.write_bytes(response.contents)
+        # This is where we will save our downloaded file
+        filepath = os.path.join(path, response.filename.split("attachment; filename=")[1])
+        Path(filepath).write_bytes(response.contents)
 
-        return response.sha256sum.strip('"'), str(filepath)
+        return response.sha256sum.strip('"'), filepath
 
     def delete_reply(self, reply: Reply) -> bool:
         """
