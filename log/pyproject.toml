@@ -3,7 +3,7 @@ requires = ["setuptools>=61"]
 build-backend = "setuptools.build_meta"
 
 [project]
-requires-python = ">=3.11"
+requires-python = ">=3.13"
 name = "securedrop-log"
 version = "0.0.0"
 description = "SecureDrop Qubes logging scripts"
@@ -28,8 +28,7 @@ package-mode = false
 # In production these are installed using a system package, so match
 # those versions directly
 redis = [
-    {version = "=4.3.4", python = "<3.12"}, # bookworm
-    {version = "=6.1.0", python = ">=3.12"}, # trixie
+    {version = "=6.1.0", python = ">=3.13"}, # trixie
 ]
 mypy = "^1.19.1"
 types-redis = "<5"
@@ -39,7 +38,7 @@ pyfakefs = "^6.2.0"
 pytest = "^9.0.3"
 
 [tool.mypy]
-python_version = "3.11"
+python_version = "3.13"
 scripts_are_modules = true
 files = [
     "*.py",
