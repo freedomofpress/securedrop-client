@@ -145,8 +145,8 @@ def test_request_id_forwarded(proxy_request, header_echo_server):
 
 
 def test_request_id_not_added_when_missing(proxy_request, header_echo_server):
-    """The proxy doesn't invent an X-Request-ID when the client doesn't send
-    one: end-to-end correlation is only as good as what the client provides"""
+    """If the request didn't specify an `X-Request-ID`, then the response must not have one
+    either."""
     test_input = {
         "method": "GET",
         "path_query": "/",

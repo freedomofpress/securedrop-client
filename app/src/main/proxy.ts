@@ -20,12 +20,18 @@ const DEFAULT_PROXY_VM_NAME = "sd-proxy";
 export const DEFAULT_PROXY_CMD_TIMEOUT_MS = 10_000 as ms;
 export const MESSAGE_REPLY_DOWNLOAD_TIMEOUT_MS = 20_000 as ms;
 
-// Tag the request with an X-Request-ID header (unless the caller already set one)
+// Tag the request with an X-Request-ID header (unless the caller already set
+// one).  This MUST be a v4 UUID per RFC 9562, here via crypto.randomUUID().
 function ensureRequestID(request: ProxyRequest): string {
   request.headers = request.headers ?? {};
-  if (!request.headers["X-Request-ID"]) {
-    request.headers["X-Request-ID"] = `req-${crypto.randomUUID()}`;
+  const existingKey = Object.keys(request.headers).find(
+    (key) => key.toLowerCase() === "x-request-id",
+  );
+  const existing = existingKey ? request.headers[existingKey] : undefined;
+  if (existingKey) {
+    delete request.headers[existingKey];
   }
+  request.headers["X-Request-ID"] = existing || `req-${crypto.randomUUID()}`;
   return request.headers["X-Request-ID"];
 }
 
@@ -51,7 +57,7 @@ function logJSONResponse(
   const echoed = getHeader(response.headers, "X-Request-ID");
   console.log(
     `[proxy] ${requestID} response: status=${response.status} size=${size}` +
-      (echoed ? ` echoed=${echoed}` : ""),
+      (echoed ? " echoed" : ""),
   );
 }
 
@@ -136,7 +142,11 @@ export async function proxyJSONRequestInner(
       } else {
         try {
           const response = parseJSONResponse(stdout);
-          logJSONResponse(requestID, response, stdout.length);
+          logJSONResponse(
+            requestID,
+            response,
+            Buffer.byteLength(stdout, "utf8"),
+          );
           resolve(response);
         } catch (err) {
           reject(err);
@@ -277,7 +287,7 @@ export async function proxyStreamRequestInner(
         // Convert buffer chunks to string only when needed for JSON parsing
         const stdout = Buffer.concat(stdoutChunks).toString("utf8");
         const response = parseJSONResponse(stdout);
-        logJSONResponse(requestID, response, stdout.length);
+        logJSONResponse(requestID, response, Buffer.byteLength(stdout, "utf8"));
         resolve(response);
       } catch {
         try {
@@ -288,7 +298,7 @@ export async function proxyStreamRequestInner(
           const echoed = getHeader(headers, "X-Request-ID");
           console.log(
             `[proxy] ${requestID} stream complete: bytesWritten=${bytesWritten}` +
-              (echoed ? ` echoed=${echoed}` : ""),
+              (echoed ? " echoed" : ""),
           );
           resolve({
             complete: true,

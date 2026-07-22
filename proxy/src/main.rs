@@ -2,6 +2,7 @@
 
 use anyhow::{bail, Result};
 use futures_util::StreamExt;
+use regex::Regex;
 use reqwest::header::HeaderMap;
 use reqwest::redirect::Policy as RedirectPolicy;
 use reqwest::{Client, Method, Proxy, Response};
@@ -12,6 +13,7 @@ use std::io::{BufRead, Write};
 use std::os::unix::net::UnixDatagram;
 use std::process::ExitCode;
 use std::str::FromStr;
+use std::sync::LazyLock;
 use std::time::Duration;
 use url::Url;
 
@@ -87,20 +89,18 @@ impl Syslog {
 }
 
 /// Whether `value` is a well-formed request ID: `req-` followed by a
-/// lowercase UUID.  A request carrying anything else is rejected so that a
-/// compromised client VM can't inject arbitrary strings into the proxy's
-/// and server's logs.
+/// lowercase RFC 9562 UUID.  A request carrying anything else is rejected.
+/// Kept in sync with the client-side generator in `app/src/main/proxy.ts`.
 fn valid_request_id(value: &str) -> bool {
-    let Some(uuid) = value.strip_prefix("req-") else {
-        return false;
-    };
-    if uuid.len() != 36 {
-        return false;
-    }
-    uuid.chars().enumerate().all(|(i, c)| match i {
-        8 | 13 | 18 | 23 => c == '-',
-        _ => c.is_ascii_digit() || ('a'..='f').contains(&c),
-    })
+    // `\A`/`\z` anchor the whole string so an embedded newline can't sneak a
+    // log-injection payload past a line-oriented `$`.
+    static REQUEST_ID: LazyLock<Regex> = LazyLock::new(|| {
+        Regex::new(
+            r"\Areq-[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\z",
+        )
+        .expect("request ID regex is valid")
+    });
+    REQUEST_ID.is_match(value)
 }
 
 #[derive(Debug, PartialEq)]
@@ -133,15 +133,12 @@ fn extract_request_id(headers: &mut HashMap<String, String>) -> RequestId {
     }
 }
 
-/// The server's echoed X-Request-ID, formatted for appending to a log line.
-fn echoed_request_id(resp: &Response) -> String {
-    match resp
-        .headers()
-        .get(REQUEST_ID_HEADER)
-        .and_then(|value| value.to_str().ok())
-    {
-        Some(echoed) => format!(" echoed={echoed}"),
-        None => String::new(),
+/// An ` echoed` marker for the log line when the server echoed back an X-Request-ID
+fn echoed_request_id(resp: &Response) -> &'static str {
+    if resp.headers().contains_key(REQUEST_ID_HEADER) {
+        " echoed"
+    } else {
+        ""
     }
 }
 

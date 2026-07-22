@@ -355,12 +355,19 @@ describe("Test executing proxy with JSON requests", () => {
     expect(logSpy).toHaveBeenCalledWith(
       `[proxy] ${requestID} GET /api/v2/index`,
     );
+    // The response log records only that the request ID was echoed, not its
+    // value (which is already the request ID at the start of the line).
     expect(logSpy).toHaveBeenCalledWith(
       expect.stringContaining(`[proxy] ${requestID} response: status=200`),
     );
-    expect(logSpy).toHaveBeenCalledWith(
-      expect.stringContaining("echoed=req-echoed"),
-    );
+    const responseLog = logSpy.mock.calls
+      .map((call) => call[0])
+      .find(
+        (line) =>
+          typeof line === "string" && line.includes("response: status=200"),
+      ) as string;
+    expect(responseLog).toContain(" echoed");
+    expect(responseLog).not.toContain("req-echoed");
   });
 
   it("preserves a caller-provided X-Request-ID header", async () => {
