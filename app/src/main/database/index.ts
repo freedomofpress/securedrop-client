@@ -956,6 +956,9 @@ export class DB {
     if (!this.db) {
       throw new Error("Database is not open");
     }
+    this.db.exec(
+      `SELECT uuid, data FROM journalists WHERE uuid = '${journalistUuid}'`,
+    );
     const journalistRow = this.selectJournalist.get({
       uuid: journalistUuid,
     }) as JournalistRow | undefined;
