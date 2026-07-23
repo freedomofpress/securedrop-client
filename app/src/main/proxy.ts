@@ -1,4 +1,5 @@
 import child_process from "node:child_process";
+import crypto from "node:crypto";
 import path from "node:path";
 import { Writable } from "node:stream";
 import { finished } from "node:stream/promises";
@@ -18,6 +19,47 @@ const DEFAULT_PROXY_VM_NAME = "sd-proxy";
 // than the proxy's request-level timeout.
 export const DEFAULT_PROXY_CMD_TIMEOUT_MS = 10_000 as ms;
 export const MESSAGE_REPLY_DOWNLOAD_TIMEOUT_MS = 20_000 as ms;
+
+// Tag the request with an X-Request-ID header (unless the caller already set
+// one).  This MUST be a v4 UUID per RFC 9562, here via crypto.randomUUID().
+function ensureRequestID(request: ProxyRequest): string {
+  request.headers = request.headers ?? {};
+  const existingKey = Object.keys(request.headers).find(
+    (key) => key.toLowerCase() === "x-request-id",
+  );
+  const existing = existingKey ? request.headers[existingKey] : undefined;
+  if (existingKey) {
+    delete request.headers[existingKey];
+  }
+  request.headers["X-Request-ID"] = existing || `req-${crypto.randomUUID()}`;
+  return request.headers["X-Request-ID"];
+}
+
+// The proxy returns lowercased header names, but don't depend on that.
+function getHeader(
+  headers: Map<string, string>,
+  name: string,
+): string | undefined {
+  const lower = name.toLowerCase();
+  for (const [key, value] of headers) {
+    if (key.toLowerCase() === lower) {
+      return value;
+    }
+  }
+  return undefined;
+}
+
+function logJSONResponse(
+  requestID: string,
+  response: ProxyJSONResponse,
+  size: number,
+) {
+  const echoed = getHeader(response.headers, "X-Request-ID");
+  console.log(
+    `[proxy] ${requestID} response: status=${response.status} size=${size}` +
+      (echoed ? " echoed" : ""),
+  );
+}
 
 function parseJSONResponse(response: string): ProxyJSONResponse {
   const result = JSON.parse(response);
@@ -66,6 +108,8 @@ export async function proxyJSONRequestInner(
   command: ProxyCommand,
 ): Promise<ProxyJSONResponse> {
   return new Promise((resolve, reject) => {
+    const requestID = ensureRequestID(request);
+
     // The path in `command.command` is hardcoded and not user input
     // nosemgrep: javascript.lang.security.detect-child-process.detect-child-process
     const process = child_process.spawn(command.command, command.options, {
@@ -86,14 +130,24 @@ export async function proxyJSONRequestInner(
 
     process.on("close", (code, signal) => {
       if (signal) {
-        reject(new Error(`Process terminated with signal ${signal}`));
+        reject(
+          new Error(`${requestID}: Process terminated with signal ${signal}`),
+        );
       } else if (code != 0) {
         reject(
-          new Error(`Process exited with non-zero code ${code}: ${stderr}`),
+          new Error(
+            `${requestID}: Process exited with non-zero code ${code}: ${stderr}`,
+          ),
         );
       } else {
         try {
-          resolve(parseJSONResponse(stdout));
+          const response = parseJSONResponse(stdout);
+          logJSONResponse(
+            requestID,
+            response,
+            Buffer.byteLength(stdout, "utf8"),
+          );
+          resolve(response);
         } catch (err) {
           reject(err);
         }
@@ -114,6 +168,8 @@ export async function proxyJSONRequestInner(
     const timeoutInSeconds = Math.floor(command.timeout / 1000);
     const defaultInSeconds = Math.floor(DEFAULT_PROXY_CMD_TIMEOUT_MS / 1000);
     request.timeout = Math.max(timeoutInSeconds, defaultInSeconds) as sec;
+
+    console.log(`[proxy] ${requestID} ${request.method} ${request.path_query}`);
 
     try {
       process.stdin.write(JSON.stringify(request) + "\n");
@@ -153,6 +209,8 @@ export async function proxyStreamRequestInner(
   onProgress?: ProgressCallback,
 ): Promise<ProxyResponse> {
   return new Promise((resolve, reject) => {
+    const requestID = ensureRequestID(request);
+
     // The path in `command.command` is hardcoded and not user input
     // nosemgrep: javascript.lang.security.detect-child-process.detect-child-process
     const process = child_process.spawn(command.command, command.options, {
@@ -207,7 +265,9 @@ export async function proxyStreamRequestInner(
       if (signal) {
         resolve({
           complete: false,
-          error: new Error(`Process terminated with signal ${signal}`),
+          error: new Error(
+            `${requestID}: Process terminated with signal ${signal}`,
+          ),
           bytesWritten: bytesWritten,
         });
         return;
@@ -216,7 +276,7 @@ export async function proxyStreamRequestInner(
         resolve({
           complete: false,
           error: new Error(
-            `Process exited with non-zero code ${code}: ${stderr}`,
+            `${requestID}: Process exited with non-zero code ${code}: ${stderr}`,
           ),
           bytesWritten: bytesWritten,
         });
@@ -226,17 +286,29 @@ export async function proxyStreamRequestInner(
         // If we receive JSON data, parse and return
         // Convert buffer chunks to string only when needed for JSON parsing
         const stdout = Buffer.concat(stdoutChunks).toString("utf8");
-        resolve(parseJSONResponse(stdout));
+        const response = parseJSONResponse(stdout);
+        logJSONResponse(requestID, response, Buffer.byteLength(stdout, "utf8"));
+        resolve(response);
       } catch {
         try {
           const header = JSON.parse(stderr);
+          const headers: Map<string, string> = new Map(
+            Object.entries(header["headers"]),
+          );
+          const echoed = getHeader(headers, "X-Request-ID");
+          console.log(
+            `[proxy] ${requestID} stream complete: bytesWritten=${bytesWritten}` +
+              (echoed ? " echoed" : ""),
+          );
           resolve({
             complete: true,
-            sha256sum: header["headers"]["etag"] || "",
+            sha256sum: getHeader(headers, "etag") || "",
             bytesWritten: bytesWritten,
           });
         } catch (err) {
-          reject(`Error reading headers from proxy stderr: ${err}`);
+          reject(
+            `${requestID}: Error reading headers from proxy stderr: ${err}`,
+          );
         }
       }
     });
@@ -258,6 +330,10 @@ export async function proxyStreamRequestInner(
     const timeoutInSeconds = Math.floor(command.timeout / 1000);
     const defaultInSeconds = Math.floor(DEFAULT_PROXY_CMD_TIMEOUT_MS / 1000);
     request.timeout = Math.max(timeoutInSeconds, defaultInSeconds) as sec;
+
+    console.log(
+      `[proxy] ${requestID} ${request.method} ${request.path_query} (stream)`,
+    );
 
     try {
       process.stdin.write(JSON.stringify(request) + "\n");

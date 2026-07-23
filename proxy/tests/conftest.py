@@ -4,6 +4,8 @@ import json
 import os
 import subprocess
 import sys
+import threading
+from http.server import BaseHTTPRequestHandler, HTTPServer
 from pathlib import Path
 
 import pytest
@@ -21,6 +23,34 @@ def proxy_bin() -> str:
     # default debug path, expects `cargo build` to already have been run
     metadata = subprocess.check_output(["cargo", "metadata"])
     return json.loads(metadata)["target_directory"] + "/debug/securedrop-proxy"
+
+
+@pytest.fixture
+def header_echo_server():
+    """Origin that echoes the request headers into the response body (and the
+    request's X-Request-ID into the response headers).  httpbin can't be used
+    to observe forwarded request headers here because it hides X-Request-Id
+    from /headers as an "environment header" (httpbin.helpers.ENV_HEADERS)."""
+
+    class EchoHandler(BaseHTTPRequestHandler):
+        def do_GET(self):
+            body = json.dumps({"headers": dict(self.headers)}).encode()
+            self.send_response(200)
+            request_id = self.headers.get("X-Request-ID")
+            if request_id:
+                self.send_header("X-Request-ID", request_id)
+            self.send_header("Content-Length", str(len(body)))
+            self.end_headers()
+            self.wfile.write(body)
+
+        def log_message(self, *args):
+            pass
+
+    server = HTTPServer(("127.0.0.1", 0), EchoHandler)
+    threading.Thread(target=server.serve_forever, daemon=True).start()
+    yield f"http://127.0.0.1:{server.server_port}"
+    server.shutdown()
+    server.server_close()
 
 
 @pytest.fixture

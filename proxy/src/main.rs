@@ -2,6 +2,7 @@
 
 use anyhow::{bail, Result};
 use futures_util::StreamExt;
+use regex::Regex;
 use reqwest::header::HeaderMap;
 use reqwest::redirect::Policy as RedirectPolicy;
 use reqwest::{Client, Method, Proxy, Response};
@@ -9,8 +10,10 @@ use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::io::{self, Read};
 use std::io::{BufRead, Write};
+use std::os::unix::net::UnixDatagram;
 use std::process::ExitCode;
 use std::str::FromStr;
+use std::sync::LazyLock;
 use std::time::Duration;
 use url::Url;
 
@@ -32,6 +35,112 @@ const DISABLE_TOR: &str = "DISABLE_TOR";
 // Read a max of 5MB from stdin. This should be much higher than what a
 // server w/ 1k sources needs (~300KB), but still low enough to prevent a DoS.
 const STDIN_LIMIT: u64 = 5_000_000;
+
+// Requests are tagged with an X-Request-ID header
+const REQUEST_ID_HEADER: &str = "X-Request-ID";
+
+/// Best-effort logger that writes to the local syslog socket, from where
+/// messages are forwarded to sd-log by securedrop-log's rsyslog config.
+///
+/// stdout and stderr are the qrexec protocol channels back to the client, so
+/// logs MUST NOT be written to either. If the syslog socket is unavailable
+/// (e.g. in dev mode outside Qubes), messages are silently dropped: logging
+/// must never fail a request.
+struct Syslog {
+    socket: Option<UnixDatagram>,
+}
+
+// RFC 3164 severities, within facility "user" (1)
+const SYSLOG_WARNING: u8 = 4;
+const SYSLOG_INFO: u8 = 6;
+
+impl Syslog {
+    fn new() -> Self {
+        Self::connect("/dev/log")
+    }
+
+    fn connect(path: &str) -> Self {
+        let socket = UnixDatagram::unbound()
+            .ok()
+            .filter(|socket| socket.connect(path).is_ok());
+        Syslog { socket }
+    }
+
+    fn info(&self, message: &str) {
+        self.log(SYSLOG_INFO, message);
+    }
+
+    fn warn(&self, message: &str) {
+        self.log(SYSLOG_WARNING, message);
+    }
+
+    fn log(&self, severity: u8, message: &str) {
+        if let Some(socket) = &self.socket {
+            // RFC 3164 priority: facility "user" (1) * 8 + severity
+            let line = format!(
+                "<{}>securedrop-proxy[{}]: {}",
+                8 + severity,
+                std::process::id(),
+                message
+            );
+            let _ = socket.send(line.as_bytes());
+        }
+    }
+}
+
+/// Whether `value` is a well-formed request ID: `req-` followed by a
+/// lowercase RFC 9562 UUID.  A request carrying anything else is rejected.
+/// Kept in sync with the client-side generator in `app/src/main/proxy.ts`.
+fn valid_request_id(value: &str) -> bool {
+    // `\A`/`\z` anchor the whole string so an embedded newline can't sneak a
+    // log-injection payload past a line-oriented `$`.
+    static REQUEST_ID: LazyLock<Regex> = LazyLock::new(|| {
+        Regex::new(
+            r"\Areq-[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\z",
+        )
+        .expect("request ID regex is valid")
+    });
+    REQUEST_ID.is_match(value)
+}
+
+#[derive(Debug, PartialEq)]
+enum RequestId {
+    Valid(String),
+    /// The malformed value; the caller fails the request
+    Invalid(String),
+    Missing,
+}
+
+/// Validate the request's X-Request-ID header.  The Inbox always generates
+/// well-formed IDs, so a malformed one means a broken (or compromised)
+/// client: the caller logs a warning and fails the request.  A missing ID
+/// is not an error — the header is optional — and the request proceeds
+/// without one.
+fn extract_request_id(headers: &mut HashMap<String, String>) -> RequestId {
+    let Some(key) = headers
+        .keys()
+        .find(|key| key.eq_ignore_ascii_case(REQUEST_ID_HEADER))
+        .cloned()
+    else {
+        return RequestId::Missing;
+    };
+    let value = headers[&key].clone();
+    if valid_request_id(&value) {
+        RequestId::Valid(value)
+    } else {
+        headers.remove(&key);
+        RequestId::Invalid(value)
+    }
+}
+
+/// An ` echoed` marker for the log line when the server echoed back an X-Request-ID
+fn echoed_request_id(resp: &Response) -> &'static str {
+    if resp.headers().contains_key(REQUEST_ID_HEADER) {
+        " echoed"
+    } else {
+        ""
+    }
+}
 
 /// Incoming HTTP requests (as JSON) received over stdin
 #[derive(Deserialize, Debug)]
@@ -87,29 +196,52 @@ fn headers_to_map(resp: &Response) -> Result<HashMap<String, String>> {
 }
 
 /// Given a `Response` that doesn't require stream processing, convert it to our `OutgoingResponse` and serialize to JSON on stdout.
-async fn handle_json_response(resp: Response) -> Result<()> {
+async fn handle_json_response(
+    resp: Response,
+    request_id: &str,
+    syslog: &Syslog,
+) -> Result<()> {
     let headers = headers_to_map(&resp)?;
+    let status = resp.status().as_u16();
+    let echoed = echoed_request_id(&resp);
+    let body = resp.text().await?;
+    syslog.info(&format!(
+        "{request_id} response: status={status} size={}{echoed}",
+        body.len()
+    ));
     let outgoing_response = OutgoingResponse {
-        status: resp.status().as_u16(),
+        status,
         headers,
-        body: resp.text().await?,
+        body,
     };
     println!("{}", serde_json::to_string(&outgoing_response)?);
     Ok(())
 }
 
 /// Given a `Response` that does require stream processing, forward it to stdout as we receive it, and then write the headers to stderr when we're done.
-async fn handle_stream_response(resp: Response) -> Result<()> {
+async fn handle_stream_response(
+    resp: Response,
+    request_id: &str,
+    syslog: &Syslog,
+) -> Result<()> {
     // Get the headers, will be output later but we want to fail early if it's missing/invalid
     let headers = headers_to_map(&resp)?;
+    let status = resp.status().as_u16();
+    let echoed = echoed_request_id(&resp);
+    let mut size: usize = 0;
     let mut stdout = io::stdout().lock();
     let mut stream = resp.bytes_stream();
     // Stream the response, printing bytes as we receive them
     while let Some(item) = stream.next().await {
-        stdout.write_all(&item?)?;
+        let item = item?;
+        size += item.len();
+        stdout.write_all(&item)?;
         // TODO: can we flush at smarter intervals?
         stdout.flush()?;
     }
+    syslog.info(&format!(
+        "{request_id} response: status={status} size={size} stream=true{echoed}"
+    ));
     // Emit the headers as stderr
     eprintln!(
         "{}",
@@ -133,7 +265,28 @@ async fn proxy() -> Result<()> {
     if buffer.len() == STDIN_LIMIT as usize && !buffer.ends_with('\n') {
         bail!("stdin is over the max bytes ({STDIN_LIMIT}), aborting");
     }
-    let incoming_request: IncomingRequest = serde_json::from_str(&buffer)?;
+    let mut incoming_request: IncomingRequest = serde_json::from_str(&buffer)?;
+    let syslog = Syslog::new();
+    let request_id = match extract_request_id(&mut incoming_request.headers) {
+        RequestId::Valid(request_id) => request_id,
+        RequestId::Invalid(value) => {
+            // {:?} escapes control characters so the malformed value can't
+            // inject anything into the logs; truncate it for good measure.
+            let escaped =
+                format!("{:?}", value.chars().take(64).collect::<String>());
+            syslog.warn(&format!(
+                "rejected invalid X-Request-ID header: {escaped}"
+            ));
+            bail!("invalid X-Request-ID header: {escaped}");
+        }
+        // Apache-style placeholder in the log lines below
+        RequestId::Missing => "-".to_string(),
+    };
+    syslog.info(&format!(
+        "{request_id} request: method={} body_size={}",
+        incoming_request.method,
+        incoming_request.body.as_deref().map_or(0, str::len)
+    ));
     // We construct the URL by first parsing the origin and then appending the
     // path query. This forces the path query to be part of the path and prevents
     // it from getting itself into the hostname.
@@ -170,16 +323,22 @@ async fn proxy() -> Result<()> {
         req = req.body(body);
     }
     // Fire off the request!
-    let resp = req.send().await?;
+    let resp = match req.send().await {
+        Ok(resp) => resp,
+        Err(err) => {
+            syslog.warn(&format!("{request_id} request failed: {err}"));
+            return Err(err.into());
+        }
+    };
     // We return the output in two ways, either a JSON blob or stream the output.
     // JSON is used for HTTP 4xx, 5xx, and all non-stream requests.
     if !incoming_request.stream
         || resp.status().is_client_error()
         || resp.status().is_server_error()
     {
-        handle_json_response(resp).await?;
+        handle_json_response(resp, &request_id, &syslog).await?;
     } else {
-        handle_stream_response(resp).await?;
+        handle_stream_response(resp, &request_id, &syslog).await?;
     }
     Ok(())
 }
@@ -211,5 +370,110 @@ async fn main() -> ExitCode {
             };
             ExitCode::FAILURE
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_valid_request_id() {
+        assert!(valid_request_id("req-72d64b57-4632-4d3e-96b0-24a0428f7ec1"));
+        // missing prefix
+        assert!(!valid_request_id("72d64b57-4632-4d3e-96b0-24a0428f7ec1"));
+        // wrong prefix
+        assert!(!valid_request_id(
+            "seq-72d64b57-4632-4d3e-96b0-24a0428f7ec1"
+        ));
+        // uppercase hex
+        assert!(!valid_request_id(
+            "req-72D64B57-4632-4D3E-96B0-24A0428F7EC1"
+        ));
+        // too short / too long / empty
+        assert!(!valid_request_id("req-72d64b57"));
+        assert!(!valid_request_id(
+            "req-72d64b57-4632-4d3e-96b0-24a0428f7ec1ff"
+        ));
+        assert!(!valid_request_id(""));
+        // non-hex, log-injection attempts
+        assert!(!valid_request_id(
+            "req-72d64b57-4632-4d3e-96b0-24a0428f7ecz"
+        ));
+        assert!(!valid_request_id("req-injected\nmessage into the logs!"));
+    }
+
+    #[test]
+    fn test_extract_request_id_preserves_valid() {
+        let valid = "req-72d64b57-4632-4d3e-96b0-24a0428f7ec1";
+        // ... under any header-name casing
+        for name in [REQUEST_ID_HEADER, "x-request-id"] {
+            let mut headers =
+                HashMap::from([(name.to_string(), valid.to_string())]);
+            assert_eq!(
+                extract_request_id(&mut headers),
+                RequestId::Valid(valid.to_string())
+            );
+            assert_eq!(headers.len(), 1);
+            assert_eq!(headers[name], valid);
+        }
+    }
+
+    #[test]
+    fn test_extract_request_id_missing() {
+        let mut headers =
+            HashMap::from([("Accept".to_string(), "*/*".to_string())]);
+        assert_eq!(extract_request_id(&mut headers), RequestId::Missing);
+        // Other headers are untouched
+        assert_eq!(headers.len(), 1);
+    }
+
+    #[test]
+    fn test_extract_request_id_invalid() {
+        let mut headers = HashMap::from([
+            (
+                REQUEST_ID_HEADER.to_string(),
+                "not a request ID".to_string(),
+            ),
+            ("Accept".to_string(), "*/*".to_string()),
+        ]);
+        assert_eq!(
+            extract_request_id(&mut headers),
+            RequestId::Invalid("not a request ID".to_string())
+        );
+        // The malformed header is removed; other headers are untouched
+        assert_eq!(headers.len(), 1);
+        assert_eq!(headers["Accept"], "*/*");
+    }
+
+    #[test]
+    fn test_syslog_message_format() {
+        let path = std::env::temp_dir()
+            .join(format!("sdproxy-test-syslog-{}", std::process::id()));
+        let _ = std::fs::remove_file(&path);
+        let receiver = UnixDatagram::bind(&path).unwrap();
+        let mut buf = [0u8; 1024];
+
+        let syslog = Syslog::connect(path.to_str().unwrap());
+
+        syslog.info("req-x request: method=GET body_size=0");
+        let n = receiver.recv(&mut buf).unwrap();
+        let message = std::str::from_utf8(&buf[..n]).unwrap();
+        assert!(message.starts_with("<14>securedrop-proxy["));
+        assert!(message.ends_with("]: req-x request: method=GET body_size=0"));
+
+        syslog.warn("rejected invalid X-Request-ID header: \"nope\"");
+        let n = receiver.recv(&mut buf).unwrap();
+        let message = std::str::from_utf8(&buf[..n]).unwrap();
+        assert!(message.starts_with("<12>securedrop-proxy["));
+
+        let _ = std::fs::remove_file(&path);
+    }
+
+    #[test]
+    fn test_syslog_unavailable_is_silently_dropped() {
+        let syslog = Syslog::connect("/nonexistent/syslog/socket");
+        // Must not panic or error
+        syslog.info("req-x request: method=GET body_size=0");
     }
 }

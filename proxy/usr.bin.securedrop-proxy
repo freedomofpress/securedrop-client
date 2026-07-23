@@ -9,4 +9,8 @@ include <tunables/global>
   include <abstractions/ssl_certs>
 
   /usr/bin/securedrop-proxy mr,
+
+  # Allow logging
+  /dev/log w,
+  /{,var/}run/systemd/journal/dev-log w,
 }

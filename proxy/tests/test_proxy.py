@@ -4,6 +4,14 @@ import time
 import pytest
 
 
+def sent_request_id(response: dict) -> str | None:
+    """Extract the X-Request-ID the proxy sent upstream from a
+    header_echo_server response, tolerating header-name casing."""
+    body = json.loads(response["body"])
+    headers = {name.lower(): value for name, value in body["headers"].items()}
+    return headers.get("x-request-id")
+
+
 def test_json_response(proxy_request):
     """test a JSON response"""
     test_input = {
@@ -115,6 +123,68 @@ def test_headers(proxy_request):
     assert response["status"] == 200
     body = json.loads(response["body"])
     assert body["headers"]["X-Test-Header"] == "th"
+
+
+def test_request_id_forwarded(proxy_request, header_echo_server):
+    """A well-formed X-Request-ID is forwarded to the server unmodified, and
+    the server's echoed X-Request-ID is passed back in the response headers"""
+    request_id = "req-72d64b57-4632-4d3e-96b0-24a0428f7ec1"
+    test_input = {
+        "method": "GET",
+        "path_query": "/",
+        "stream": False,
+        "headers": {"X-Request-ID": request_id},
+    }
+
+    result = proxy_request(input=test_input, origin=header_echo_server)
+    assert result.returncode == 0
+    response = json.loads(result.stdout.decode())
+    assert response["status"] == 200
+    assert sent_request_id(response) == request_id
+    assert response["headers"]["x-request-id"] == request_id
+
+
+def test_request_id_not_added_when_missing(proxy_request, header_echo_server):
+    """If the request didn't specify an `X-Request-ID`, then the response must not have one
+    either."""
+    test_input = {
+        "method": "GET",
+        "path_query": "/",
+        "stream": False,
+    }
+
+    result = proxy_request(input=test_input, origin=header_echo_server)
+    assert result.returncode == 0
+    response = json.loads(result.stdout.decode())
+    assert response["status"] == 200
+    assert sent_request_id(response) is None
+
+
+@pytest.mark.parametrize(
+    "invalid",
+    [
+        "not a request ID",
+        "req-72D64B57-4632-4D3E-96B0-24A0428F7EC1",
+        "req-injected message into the logs!",
+    ],
+)
+def test_request_id_invalid_rejected(proxy_request, header_echo_server, invalid):
+    """A malformed X-Request-ID fails the request (and is logged as a
+    warning), so a broken or compromised client VM can't inject arbitrary
+    strings into the proxy's or server's logs; nothing is sent upstream"""
+    test_input = {
+        "method": "GET",
+        "path_query": "/",
+        "stream": False,
+        "headers": {"X-Request-ID": invalid},
+    }
+
+    result = proxy_request(input=test_input, origin=header_echo_server)
+    assert result.returncode == 1
+    # Nothing was proxied: the request is rejected before anything is sent
+    assert result.stdout == b""
+    error = json.loads(result.stderr.decode())
+    assert error["error"].startswith("invalid X-Request-ID header: ")
 
 
 def test_body(proxy_request):
