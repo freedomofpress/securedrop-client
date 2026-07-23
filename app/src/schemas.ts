@@ -53,6 +53,13 @@ export const SourceMetadataSchema = z.object({
   fingerprint: z.string(),
 });
 
+// Source metadata fields that cannot be changed on update.
+export const SOURCE_IMMUTABLE_FIELDS = [
+  "journalist_designation",
+  "public_key",
+  "fingerprint",
+] as const satisfies readonly (keyof SourceMetadata)[];
+
 export const ReplyMetadataSchema = z.object({
   kind: z.literal("reply"),
   uuid: UUIDSchema,
@@ -79,6 +86,13 @@ export const ItemMetadataSchema = z.union([
   ReplyMetadataSchema,
   SubmissionMetadataSchema,
 ]);
+
+// Metadata fields that cannot be updated for items.
+export const ITEM_IMMUTABLE_FIELDS = [
+  "kind",
+  "source",
+  "interaction_count",
+] as const satisfies readonly (keyof ItemMetadata)[];
 
 export const JournalistMetadataSchema = z.object({
   uuid: UUIDSchema,

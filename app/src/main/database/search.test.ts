@@ -414,14 +414,6 @@ describe("Search", () => {
       });
     });
 
-    it("updates source name on re-index", () => {
-      db.updateSources({ ["source1"]: mockSource("source1", "old name") });
-      db.updateSources({ ["source1"]: mockSource("source1", "new name") });
-
-      expect(db.search("old")).toHaveLength(0);
-      expect(db.search("new name")).toHaveLength(1);
-    });
-
     it("does not duplicate source rows on re-index", () => {
       db.updateSources({
         ["source1"]: mockSource("source1", "dramatic dolphin"),

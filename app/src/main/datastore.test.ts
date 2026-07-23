@@ -148,6 +148,173 @@ describe("DB Component Tests", () => {
       ).toThrow("items.kind is immutable");
     });
   });
+
+  describe("source immutable metadata", () => {
+    const sourceUuid = "11111111-1111-4111-8111-111111111111";
+
+    function sourceData({
+      designation = "alpha bravo",
+      publicKey = "source-public-key-a",
+      fingerprint = "source-fingerprint-a",
+      isStarred = false,
+      lastUpdated = "2026-07-09T00:00:00Z",
+    } = {}) {
+      return JSON.stringify({
+        uuid: sourceUuid,
+        journalist_designation: designation,
+        is_starred: isStarred,
+        is_seen: false,
+        has_attachment: false,
+        last_updated: lastUpdated,
+        public_key: publicKey,
+        fingerprint,
+      });
+    }
+
+    function sourceMetadata(options = {}): SourceMetadata {
+      return JSON.parse(sourceData(options)) as SourceMetadata;
+    }
+
+    it("can update mutable source metadata fields", () => {
+      db = new Datastore(crypto, new Storage());
+
+      db.updateSources({ [sourceUuid]: sourceMetadata() });
+      db.updateSources({
+        [sourceUuid]: sourceMetadata({
+          isStarred: true,
+          lastUpdated: "2026-07-10T00:00:00Z",
+        }),
+      });
+
+      const stored = db.getSource(sourceUuid)?.data;
+      expect(stored?.is_starred).toBe(true);
+      expect(stored?.last_updated).toBe("2026-07-10T00:00:00Z");
+      expect(stored?.journalist_designation).toBe("alpha bravo");
+      expect(stored?.public_key).toBe("source-public-key-a");
+    });
+
+    it("rejects source key replacement", () => {
+      db = new Datastore(crypto, new Storage());
+
+      db.updateSources({ [sourceUuid]: sourceMetadata() });
+
+      expect(() =>
+        db.updateSources({
+          [sourceUuid]: sourceMetadata({
+            publicKey: "source-public-key-b",
+          }),
+        }),
+      ).toThrow("source immutable field 'public_key' cannot be changed");
+    });
+
+    it("rejects journalist designation changes", () => {
+      db = new Datastore(crypto, new Storage());
+
+      db.updateSources({ [sourceUuid]: sourceMetadata() });
+
+      expect(() =>
+        db.updateSources({
+          [sourceUuid]: sourceMetadata({ designation: "charlie delta" }),
+        }),
+      ).toThrow(
+        "source immutable field 'journalist_designation' cannot be changed",
+      );
+      expect(db.getSource(sourceUuid)?.data.journalist_designation).toBe(
+        "alpha bravo",
+      );
+    });
+
+    it("rejects source key replacement", () => {
+      db = new Datastore(crypto, new Storage());
+
+      db.updateSources({ [sourceUuid]: sourceMetadata() });
+
+      expect(() =>
+        db.updateSources({
+          [sourceUuid]: sourceMetadata({ publicKey: "source-public-key-b" }),
+        }),
+      ).toThrow("source immutable field 'public_key' cannot be changed");
+      expect(db.getSource(sourceUuid)?.data.public_key).toBe(
+        "source-public-key-a",
+      );
+    });
+  });
+
+  describe("item immutable metadata", () => {
+    const itemUuid = "22222222-2222-4222-8222-222222222222";
+    const sourceUuid = "11111111-1111-4111-8111-111111111111";
+    const otherSourceUuid = "33333333-3333-4333-8333-333333333333";
+
+    function itemMetadata({
+      kind = "message" as "file" | "message",
+      source = sourceUuid,
+      interactionCount = 1,
+      isRead = false,
+      size = 100,
+    } = {}): SubmissionMetadata {
+      return {
+        kind,
+        uuid: itemUuid,
+        source,
+        size,
+        is_read: isRead,
+        seen_by: [],
+        interaction_count: interactionCount,
+      };
+    }
+
+    it("can update mutable item fields", () => {
+      db = new Datastore(crypto, new Storage());
+
+      db.updateItems({ [itemUuid]: itemMetadata() });
+      db.updateItems({ [itemUuid]: itemMetadata({ isRead: true, size: 250 }) });
+
+      const stored = db.getItem(itemUuid)?.data as SubmissionMetadata;
+      expect(stored.is_read).toBe(true);
+      expect(stored.size).toBe(250);
+      expect(stored.kind).toBe("message");
+      expect(stored.source).toBe(sourceUuid);
+      expect(stored.interaction_count).toBe(1);
+    });
+
+    it("rejects item kind changes", () => {
+      db = new Datastore(crypto, new Storage());
+
+      db.updateItems({ [itemUuid]: itemMetadata() });
+
+      expect(() =>
+        db.updateItems({ [itemUuid]: itemMetadata({ kind: "file" }) }),
+      ).toThrow("item immutable field 'kind' cannot be changed");
+      expect((db.getItem(itemUuid)?.data as SubmissionMetadata).kind).toBe(
+        "message",
+      );
+    });
+
+    it("rejects moving an item to another source", () => {
+      db = new Datastore(crypto, new Storage());
+
+      db.updateItems({ [itemUuid]: itemMetadata() });
+
+      expect(() =>
+        db.updateItems({
+          [itemUuid]: itemMetadata({ source: otherSourceUuid }),
+        }),
+      ).toThrow("item immutable field 'source' cannot be changed");
+      expect((db.getItem(itemUuid)?.data as SubmissionMetadata).source).toBe(
+        sourceUuid,
+      );
+    });
+
+    it("rejects item interaction count changes", () => {
+      db = new Datastore(crypto, new Storage());
+
+      db.updateItems({ [itemUuid]: itemMetadata() });
+
+      expect(() =>
+        db.updateItems({ [itemUuid]: itemMetadata({ interactionCount: 5 }) }),
+      ).toThrow("item immutable field 'interaction_count' cannot be changed");
+    });
+  });
 });
 
 describe("Datastore Method Tests", () => {
@@ -1320,12 +1487,11 @@ describe("Datastore Method Tests", () => {
     expect(sourceWithItems.items[0].plaintext).toBe("plaintext");
     expect(sourceWithItems.items[0].fetch_status).toBe(FetchStatus.Complete);
 
-    // Upsert with same uuid but different data
+    // Upsert with same uuid but different data.
     db.updateItems({
       item1: {
         ...mockItemMetadata("item1", "source1"),
         size: 99,
-        interaction_count: 42,
       },
     });
 
@@ -1333,7 +1499,7 @@ describe("Datastore Method Tests", () => {
     expect(sourceWithItems.items.length).toBe(1);
     expect(sourceWithItems.items[0].uuid).toBe("item1");
     expect(sourceWithItems.items[0].data.size).toBe(99);
-    expect(sourceWithItems.items[0].data.interaction_count).toBe(42);
+    expect(sourceWithItems.items[0].data.interaction_count).toBe(1);
     expect(sourceWithItems.items[0].plaintext).toBe("plaintext");
     expect(sourceWithItems.items[0].fetch_status).toBe(FetchStatus.Complete);
   });
@@ -1352,7 +1518,7 @@ describe("Datastore Method Tests", () => {
       db.updateItems({
         item1: mockItemMetadata("item1", "source2", "message"),
       }),
-    ).toThrow("items.source is immutable");
+    ).toThrow("item immutable field 'source' cannot be changed");
 
     const source1 = db.getSourceWithItems("source1");
     const source2 = db.getSourceWithItems("source2");

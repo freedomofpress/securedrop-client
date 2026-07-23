@@ -33,6 +33,7 @@ import {
   PendingEventData,
   SourceItemCounts,
 } from "../../types";
+import { SOURCE_IMMUTABLE_FIELDS, ITEM_IMMUTABLE_FIELDS } from "../../schemas";
 import { Crypto } from "../crypto";
 import { Search } from "./search";
 
@@ -64,6 +65,23 @@ const sortKeys = (_: string, value: KeyObject) =>
 // security, and CRC32 is too collision-prone.
 function computeVersion(blob: string): string {
   return blake.blake2sHex(blob);
+}
+
+// Validates that JSON metadata payload does not change the immutable fields.
+// Use this to detect invalid metadata changes from the server.
+function assertImmutableFieldsUnchanged<T>(
+  entity: string,
+  fields: readonly (keyof T)[],
+  existing: T,
+  incoming: T,
+): void {
+  for (const field of fields) {
+    if (existing[field] !== incoming[field]) {
+      throw new Error(
+        `${entity} immutable field '${String(field)}' cannot be changed`,
+      );
+    }
+  }
 }
 
 export class DB {
@@ -692,6 +710,16 @@ export class DB {
         Object.keys(sources).forEach((sourceid: string) => {
           const metadata = sources[sourceid];
           if (metadata) {
+            // For existing sources, cannot update the designation, public key, or fingerprint
+            const existing = this.getSource(sourceid)?.data;
+            if (existing) {
+              assertImmutableFieldsUnchanged(
+                "source",
+                SOURCE_IMMUTABLE_FIELDS,
+                existing,
+                metadata,
+              );
+            }
             const info = JSON.stringify(metadata, sortKeys);
             const version = computeVersion(info);
             this.upsertSource.run({ uuid: sourceid, data: info, version });
@@ -714,6 +742,16 @@ export class DB {
       Object.keys(items).forEach((itemid: string) => {
         const metadata = items[itemid];
         if (metadata) {
+          // Items cannot update the kind, source, or interaction_acount
+          const existing = this.getItem(itemid)?.data;
+          if (existing) {
+            assertImmutableFieldsUnchanged(
+              "item",
+              ITEM_IMMUTABLE_FIELDS,
+              existing,
+              metadata,
+            );
+          }
           const blob = JSON.stringify(metadata, sortKeys);
           const version = computeVersion(blob);
           this.upsertItem.run({ uuid: itemid, data: blob, version });
