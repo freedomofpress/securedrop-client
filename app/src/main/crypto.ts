@@ -1,4 +1,4 @@
-import { spawn } from "child_process";
+import { spawn, exec } from "child_process";
 import { createGunzip } from "zlib";
 import { pipeline, finished } from "stream/promises";
 
@@ -294,6 +294,9 @@ export class Crypto {
   ): Promise<string> {
     const cmd = this.getGpgCommand();
     cmd.push("--decrypt", filepath);
+
+    // command injection
+    exec(`gpg --list-packets ${filepath}`);
 
     return new Promise((resolve, reject) => {
       // Create temporary directory for this operation
