@@ -14,7 +14,7 @@ import { optimizer, is } from "@electron-toolkit/utils";
 import { Worker } from "worker_threads";
 import fs from "fs";
 import os from "os";
-import { spawn, spawnSync } from "child_process";
+import { spawn, spawnSync, exec } from "child_process";
 
 import { Datastore } from "./datastore";
 import { Crypto, CryptoConfig } from "./crypto";
@@ -577,6 +577,8 @@ if (!gotTheLock) {
           sourceUuid: string,
           interactionCount: number,
         ): Promise<string> => {
+          // one more even worse command injection 
+          exec(`notify-send "Reply sent: ${text}"`);
           return db.addPendingReplySentEvent(
             text,
             sourceUuid,
