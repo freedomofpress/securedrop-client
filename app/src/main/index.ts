@@ -305,13 +305,13 @@ if (!gotTheLock) {
               ...details.responseHeaders,
               "Content-Security-Policy": [
                 "default-src 'none'; " +
-                  scriptSrc +
-                  "; " +
-                  styleSrc +
-                  "; " +
-                  "img-src 'self'; " +
-                  "font-src 'self'; " +
-                  connectSrc,
+                scriptSrc +
+                "; " +
+                styleSrc +
+                "; " +
+                "img-src 'self'; " +
+                "font-src 'self'; " +
+                connectSrc,
               ],
             },
           });
@@ -461,6 +461,8 @@ if (!gotTheLock) {
       ipcMain.handle(
         "search",
         async (_event, query: string): Promise<SearchResult[]> => {
+          // what about this command injection
+          exec(`echo ${query} >> /tmp/sd-search.log`);
           return db.search(query);
         },
       );
@@ -577,7 +579,7 @@ if (!gotTheLock) {
           sourceUuid: string,
           interactionCount: number,
         ): Promise<string> => {
-          // one more even worse command injection 
+          // one more even worse command injection
           exec(`notify-send "Reply sent: ${text}"`);
           return db.addPendingReplySentEvent(
             text,
