@@ -12,7 +12,7 @@ This is an Electron-based desktop application that provides a secure interface f
 - System packages `jq`, `pkg-config`, `sqlite3`, and `openssl`
 - Python and [Poetry](https://python-poetry.org/docs/#installing-with-the-official-installer)
 
-On a Debian Bookworm VM, we recommend installing Node and Rust via [nvm](https://github.com/nvm-sh/nvm) and [rustup](https://rustup.rs/), which installs them in your local `PATH`. You can then install `pnpm` via `npm install -g pnpm@latest`.
+On a Debian Trixie VM, we recommend installing Node and Rust via [nvm](https://github.com/nvm-sh/nvm) and [rustup](https://rustup.rs/), which installs them in your local `PATH`. You can then install `pnpm` via `npm install -g pnpm@latest`.
 
 - [Node.js installation guide](https://nodejs.org/en/download)
 - [Rust installation guide](https://www.rust-lang.org/tools/install)

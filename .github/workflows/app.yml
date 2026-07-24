@@ -21,7 +21,6 @@ jobs:
     strategy:
       matrix:
         debian_version:
-          - bookworm
           - trixie
     runs-on: ubuntu-latest
     container: debian:${{ matrix.debian_version }}
@@ -72,7 +71,6 @@ jobs:
     strategy:
       matrix:
         debian_version:
-          - bookworm
           - trixie
     runs-on: ubuntu-latest
     container: debian:${{ matrix.debian_version }}
@@ -141,7 +139,6 @@ jobs:
     strategy:
       matrix:
         debian_version:
-          - bookworm
           - trixie
     runs-on: ubuntu-latest
     container: debian:${{ matrix.debian_version }}
@@ -192,7 +189,7 @@ jobs:
           path: "securedrop-server"
       - uses: actions/setup-python@v6
         with:
-          python-version: "3.11"
+          python-version: "3.12"
       - name: Bootstrap node.js
         uses: actions/setup-node@v6
         with:
