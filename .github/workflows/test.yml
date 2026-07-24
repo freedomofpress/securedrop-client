@@ -43,14 +43,25 @@ jobs:
           # We want to run tests as a regular user, similar to Qubes VMs
           useradd --create-home --shell /bin/bash user
       - name: Install Rust-specific dependencies
-        run: apt-get install --yes build-essential curl libssl-dev pkg-config
+        run: apt-get install --yes rustup build-essential curl libssl-dev pkg-config
         if: ${{ matrix.component == 'proxy' }}
+      - name: Cache Rust
+        if: ${{ matrix.component == 'proxy' }}
+        uses: actions/cache@v6
+        with:
+          key: ${{ runner.os }}-cargo-${{ hashFiles('rust-toolchain.toml', '**/Cargo.lock') }}
+          path: |
+            ~/.rustup
+            ~/.cargo/bin/
+            ~/.cargo/registry/index/
+            ~/.cargo/registry/cache/
+            target/
+      - name: Initialize Rust toolchain
+        if: ${{ matrix.component == 'proxy' }}
+        run: rustup show
       - uses: actions/checkout@v7
         with:
           persist-credentials: false
-      # Install Rust, keep in sync with rust-toolchain.toml
-      - uses: dtolnay/rust-toolchain@1.96.0
-        if: ${{ matrix.component == 'proxy' }}
       - name: Install dependencies
         run: |
           if [[ "${{ matrix.component }}" == "export" ]]; then

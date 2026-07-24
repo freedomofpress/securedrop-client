@@ -42,10 +42,6 @@ jobs:
           run_install: |
             - cwd: app
 
-      # Keep version in sync with rust-toolchain.toml
-      - name: Install Rust
-        uses: dtolnay/rust-toolchain@1.96.0
-
       - name: Build Mac demo DMG
         working-directory: app
         env:

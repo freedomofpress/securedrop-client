@@ -3,6 +3,5 @@ rules:
     config:
       policies:
         actions/*: ref-pin
-        dtolnay/rust-toolchain: ref-pin
         freedomofpress/*: any
         pnpm/action-setup: any
