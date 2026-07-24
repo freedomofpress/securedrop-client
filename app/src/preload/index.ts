@@ -2,7 +2,6 @@
 // https://www.electronjs.org/docs/latest/tutorial/process-model#preload-scripts
 import { contextBridge, ipcRenderer } from "electron";
 import {
-  type ProxyResponse,
   type Source,
   type SourceWithItems,
   type SourceItemCounts,
@@ -17,7 +16,6 @@ import {
   SyncStatus,
   DeviceStatus,
   PendingEventData,
-  ProxyRequest,
 } from "../types";
 
 // Log the performance of IPC calls
@@ -48,11 +46,6 @@ const electronAPI = {
   quitApp: logIpcCall<string>("quitApp", () => ipcRenderer.invoke("quitApp")),
   login: logIpcCall<LoginResult>("login", (credentials: LoginCredentials) =>
     ipcRenderer.invoke("login", credentials),
-  ),
-  requestStream: logIpcCall<ProxyResponse>(
-    "requestStream",
-    (request: ProxyRequest, downloadPath: string) =>
-      ipcRenderer.invoke("requestStream", request, downloadPath),
   ),
   syncMetadata: logIpcCall<SyncStatus>("syncMetadata", (request: SyncRequest) =>
     ipcRenderer.invoke("syncMetadata", request),
