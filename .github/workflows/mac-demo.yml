@@ -23,17 +23,17 @@ jobs:
   mac-demo:
     runs-on: macos-latest
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7
         with:
           persist-credentials: false
 
       - name: Bootstrap node.js
-        uses: actions/setup-node@v6
+        uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
         with:
           node-version: "24.15.x"
 
       - name: Install pnpm and dependencies
-        uses: pnpm/action-setup@v6.0.9
+        uses: pnpm/action-setup@0ebf47130e4866e96fce0953f49152a61190b271 # v6.0.9
         with:
           version: 10
           cache: true
@@ -44,7 +44,7 @@ jobs:
 
       # Keep version in sync with rust-toolchain.toml
       - name: Install Rust
-        uses: dtolnay/rust-toolchain@1.96.0
+        uses: dtolnay/rust-toolchain@c0e9df88980754dd93e5833b8dcb1b304c1fe173 # 1.96.0
 
       - name: Build Mac demo DMG
         working-directory: app
@@ -54,7 +54,7 @@ jobs:
         run: pnpm build:mac-demo
 
       - name: Upload DMG artifact
-        uses: actions/upload-artifact@v7
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:
           name: mac-demo
           path: app/dist/*.dmg
