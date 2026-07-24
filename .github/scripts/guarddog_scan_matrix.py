@@ -19,6 +19,7 @@ See: https://developers.securedrop.org/en/latest/dependency_updates.html
 
 import json
 import os
+import re
 import sys
 
 # git-pkgs ecosystem name -> GuardDog scan subcommand. Note the strings differ
@@ -26,6 +27,8 @@ import sys
 # subcommand is "github_action". Ecosystems GuardDog can't scan (cargo, ...)
 # aren't in this map and are reported as skipped.
 ECOSYSTEMS = {"npm": "npm", "pypi": "pypi", "github-actions": "github_action"}
+# Strip various constraints from before a version
+LEADING_CONSTRAINT = re.compile(r"^[~^=<>!]*\s*")
 
 
 def step_summary(line: str = "") -> None:
@@ -56,6 +59,10 @@ def normalize_github_action(name: str) -> str | None:
     return "/".join(parts[:2])
 
 
+def normalize_version(version: str) -> str:
+    return LEADING_CONSTRAINT.sub("", version)
+
+
 def collect_packages(diff: dict) -> list[dict]:
     """Pull added + modified entries from a git-pkgs diff, deduped."""
     seen: set[tuple[str, str, str]] = set()
@@ -66,7 +73,7 @@ def collect_packages(diff: dict) -> list[dict]:
             name = entry.get("name", "")
             # to_requirement is the *new* resolved version for both added and
             # modified entries; that is what we want to scan.
-            version = entry.get("to_requirement", "")
+            version = normalize_version(entry.get("to_requirement", ""))
             if ecosystem == "github-actions":
                 # Collapse subpaths to owner/repo (and drop local/docker
                 # actions) so GuardDog can scan them and so two actions from the
