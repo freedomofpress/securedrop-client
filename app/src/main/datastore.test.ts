@@ -90,6 +90,64 @@ describe("DB Component Tests", () => {
     expect(dirPermissions).toBe(0o700);
   });
 
+  it("uses one non-null fingerprint column for double-encryption state", () => {
+    db = new Datastore(crypto, new Storage());
+    const rawDb = db["db"]!;
+    const columns = rawDb.pragma("table_info(items)") as Array<{
+      name: string;
+      notnull: number;
+      dflt_value: string | null;
+    }>;
+
+    expect(columns.find(({ name }) => name === "is_double_encrypted")).toBe(
+      undefined,
+    );
+    expect(
+      columns.find(({ name }) => name === "double_encrypted_key_fingerprint"),
+    ).toMatchObject({ notnull: 1, dflt_value: "''" });
+
+    const projectedColumns = rawDb.pragma(
+      "table_info(items_projected)",
+    ) as Array<{ name: string }>;
+    expect(projectedColumns.map(({ name }) => name)).toContain(
+      "double_encrypted_key_fingerprint",
+    );
+    expect(projectedColumns.map(({ name }) => name)).not.toContain(
+      "is_double_encrypted",
+    );
+  });
+
+  it("persists the actual inner decryption key fingerprint", () => {
+    db = new Datastore(crypto, new Storage());
+    const rawDb = db["db"]!;
+    const fingerprint = "A".repeat(40);
+    rawDb.prepare("INSERT INTO items (uuid, data) VALUES (?, ?)").run(
+      "double-encrypted-item",
+      JSON.stringify({
+        kind: "message",
+        uuid: "double-encrypted-item",
+        source: "source-1",
+        size: 1,
+        is_read: false,
+        seen_by: [],
+        interaction_count: 1,
+      }),
+    );
+
+    db.completePlaintextItem("double-encrypted-item", "plaintext", fingerprint);
+
+    expect(db.getItem("double-encrypted-item")).toMatchObject({
+      doubleEncryptedKeyFingerprint: fingerprint,
+    });
+    expect(
+      rawDb
+        .prepare(
+          "SELECT double_encrypted_key_fingerprint AS fingerprint FROM items WHERE uuid = ?",
+        )
+        .get("double-encrypted-item"),
+    ).toEqual({ fingerprint });
+  });
+
   describe("items_kind_immutable trigger", () => {
     it("allows TOFU initial write", () => {
       db = new Datastore(crypto, new Storage());
@@ -357,7 +415,7 @@ describe("Datastore Method Tests", () => {
       source2Item1: mockItemMetadata("source2Item1", "source2"),
     });
 
-    db.completePlaintextItem("source1Item2", "plaintext");
+    db.completePlaintextItem("source1Item2", "plaintext", null);
 
     db.addPendingSourceEvent("source1", PendingEventType.SourceDeleted);
 
@@ -1313,7 +1371,7 @@ describe("Datastore Method Tests", () => {
     expect(sourceWithItems.items[0].data.interaction_count).toBe(1);
     expect(sourceWithItems.items[0].fetch_status).toBe(FetchStatus.Initial);
 
-    db.completePlaintextItem("item1", "plaintext");
+    db.completePlaintextItem("item1", "plaintext", null);
     sourceWithItems = db.getSourceWithItems("source1");
     expect(sourceWithItems.items.length).toBe(1);
     expect(sourceWithItems.items[0].uuid).toBe("item1");
@@ -1346,7 +1404,7 @@ describe("Datastore Method Tests", () => {
     db.updateItems({
       item1: mockItemMetadata("item1", "source1", "message"),
     });
-    db.completePlaintextItem("item1", "plaintext");
+    db.completePlaintextItem("item1", "plaintext", null);
 
     expect(() =>
       db.updateItems({
@@ -1379,9 +1437,9 @@ describe("Datastore Method Tests", () => {
     });
 
     // Set plaintext and filename for items
-    db.completePlaintextItem("item1", "reply message 1");
-    db.completePlaintextItem("item2", "submission message");
-    db.completeFileItem("item3", "/tmp/file3.txt", 1024);
+    db.completePlaintextItem("item1", "reply message 1", null);
+    db.completePlaintextItem("item2", "submission message", null);
+    db.completeFileItem("item3", "/tmp/file3.txt", 1024, null);
 
     source = db.getSource("source1");
     expect(source).not.toBeNull();
@@ -1403,7 +1461,7 @@ describe("Datastore Method Tests", () => {
       expect(source.messagePreview?.plaintext).toBeNull();
     }
 
-    db.completePlaintextItem("item4", "latest message");
+    db.completePlaintextItem("item4", "latest message", null);
     source = db.getSource("source1");
     expect(source).not.toBeNull();
     if (source) {
@@ -1433,10 +1491,10 @@ describe("Datastore Method Tests", () => {
       item6: mockItemMetadata("item6", "source3", "message", 5),
     });
 
-    db.completePlaintextItem("item1", "reply message 1");
-    db.completePlaintextItem("item2", "message 2");
-    db.completePlaintextItem("item3", "message 1");
-    db.completeFileItem("item4", "/tmp/filename.txt", 2048);
+    db.completePlaintextItem("item1", "reply message 1", null);
+    db.completePlaintextItem("item2", "message 2", null);
+    db.completePlaintextItem("item3", "message 1", null);
+    db.completeFileItem("item4", "/tmp/filename.txt", 2048, null);
 
     const sources = db.getSources();
     const s1 = sources.get("source1");
@@ -1485,7 +1543,7 @@ describe("Datastore Method Tests", () => {
 
     // Create a long ASCII-only message (no multi-byte chars) to test basic truncation
     const longAsciiMessage = "a".repeat(500);
-    db.completePlaintextItem("item1", longAsciiMessage);
+    db.completePlaintextItem("item1", longAsciiMessage, null);
 
     const sources = db.getSources();
     const source = sources.get("source1");
@@ -1519,7 +1577,7 @@ describe("Datastore Method Tests", () => {
     // Create a message with emojis - each emoji is 1 Unicode code point but 2 JS chars
     // "👋" is 1 code point, so 200 of them = 200 code points = 400 JS chars
     const emojiMessage = "👋".repeat(300);
-    db.completePlaintextItem("item1", emojiMessage);
+    db.completePlaintextItem("item1", emojiMessage, null);
 
     const sources = db.getSources();
     const source = sources.get("source1");
@@ -1893,9 +1951,9 @@ describe("Datastore Method Tests", () => {
       // Mark the first batch as complete so they leave the processable pool
       for (const id of batch1) {
         if (id.startsWith("msg")) {
-          db.completePlaintextItem(id, "decrypted");
+          db.completePlaintextItem(id, "decrypted", null);
         } else {
-          db.completeFileItem(id, `/tmp/${id}.txt`, 1024);
+          db.completeFileItem(id, `/tmp/${id}.txt`, 1024, null);
         }
       }
 
@@ -1931,7 +1989,7 @@ describe("Datastore Method Tests", () => {
       // Set some items to various in-progress states
       db.updateDownloadInProgress("msg1", 100);
       db.updateFetchStatus("msg2", FetchStatus.DecryptionInProgress);
-      db.completePlaintextItem("msg3", "already decrypted");
+      db.completePlaintextItem("msg3", "already decrypted", null);
 
       // Create many pending events for source1
       db.addPendingSourceEvent("source1", PendingEventType.Starred);

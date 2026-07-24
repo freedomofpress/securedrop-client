@@ -493,6 +493,11 @@ if (!gotTheLock) {
         return systemLanguage;
       });
 
+      ipcMain.handle(
+        "getSubmissionKeyFingerprint",
+        async (_event): Promise<string> => config.sd_submission_key_fpr,
+      );
+
       // Handle cleanup from source event: in cases of deletion or truncation,
       // we should abort fetches and delete from the fs
       async function sourceEventCleanup(

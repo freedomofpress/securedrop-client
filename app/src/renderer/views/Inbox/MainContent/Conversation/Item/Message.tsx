@@ -18,6 +18,7 @@ import {
   Check,
   CheckCheck,
 } from "lucide-react";
+import DoubleEncryptedBadge from "./DoubleEncryptedBadge";
 import { Button, Tooltip, theme } from "antd";
 import { ExclamationCircleTwoTone } from "@ant-design/icons";
 import {
@@ -25,7 +26,10 @@ import {
   SessionStatus,
 } from "../../../../../features/session/sessionSlice";
 import { getJournalistById } from "../../../../../features/journalists/journalistsSlice";
-import { useAppSelector } from "../../../../../hooks";
+import {
+  useAppSelector,
+  useSubmissionKeyFingerprint,
+} from "../../../../../hooks";
 import "../Item.css";
 import "./Reply.css";
 
@@ -53,6 +57,9 @@ const Message = memo(function Message(props: MessageProps) {
   const { kind, item, onDelete } = props;
   const { t } = useTranslation("MainContent");
   const { token } = theme.useToken();
+  const currentKeyFingerprint = useSubmissionKeyFingerprint(
+    kind === "message" && item.doubleEncryptedKeyFingerprint !== null,
+  );
   const [isDeleteFocused, setIsDeleteFocused] = useState(false);
   const showDelete = isDeleteFocused;
 
@@ -143,7 +150,18 @@ const Message = memo(function Message(props: MessageProps) {
 
   const displayMessage = () => {
     if (item.plaintext) {
-      return <TruncatedText text={item.plaintext} />;
+      return (
+        <>
+          <TruncatedText text={item.plaintext} />
+          {item.doubleEncryptedKeyFingerprint !== null &&
+            kind === "message" && (
+              <DoubleEncryptedBadge
+                keyFingerprint={item.doubleEncryptedKeyFingerprint!}
+                currentKeyFingerprint={currentKeyFingerprint}
+              />
+            )}
+        </>
+      );
     }
     switch (item.fetch_status) {
       case FetchStatus.FailedDecryptionRetryable:

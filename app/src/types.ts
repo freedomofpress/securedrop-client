@@ -232,6 +232,9 @@ export type Item = {
   fetch_status: FetchStatus | null;
   fetch_progress: number | null;
   decrypted_size: number | null;
+  // Full primary fingerprint of the key that decrypted the inner layer, or
+  // null when the item was not double-encrypted.
+  doubleEncryptedKeyFingerprint: string | null;
 };
 
 // Database representation
@@ -244,6 +247,7 @@ export type ItemRow = {
   fetch_progress: number | null;
   decrypted_size: number | null;
   is_read: number | null; // projected value from items_projected view
+  double_encrypted_key_fingerprint: string;
 };
 
 // Database representation

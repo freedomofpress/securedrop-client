@@ -13,7 +13,7 @@ import * as openpgp from "openpgp";
 import { execSync, spawn } from "child_process";
 import { EventEmitter } from "events";
 import { PassThrough } from "stream";
-import { Crypto, CryptoError, encryptMessage } from "../crypto";
+import { Crypto, CryptoError, encryptMessage, isPgpEncrypted } from "../crypto";
 import {
   createGpgTestEnvironment,
   createTestEncryptedFile,
@@ -110,7 +110,8 @@ describe("Crypto with Real GPG", () => {
       );
 
       // Decrypt using our crypto class
-      const decryptedMessage = await crypto.decryptMessage(encryptedContent);
+      const { plaintext: decryptedMessage } =
+        await crypto.decryptMessage(encryptedContent);
 
       expect(decryptedMessage).toBe(originalMessage);
     });
@@ -125,7 +126,8 @@ and symbols: !@#$%^&*()_+-={}[]|\\:";'<>?,./`;
         "utf-8",
       );
 
-      const decryptedMessage = await crypto.decryptMessage(encryptedContent);
+      const { plaintext: decryptedMessage } =
+        await crypto.decryptMessage(encryptedContent);
 
       expect(decryptedMessage).toBe(originalMessage);
     });
@@ -146,7 +148,8 @@ and symbols: !@#$%^&*()_+-={}[]|\\:";'<>?,./`;
         "utf-8",
       );
 
-      const decryptedMessage = await crypto.decryptMessage(encryptedContent);
+      const { plaintext: decryptedMessage } =
+        await crypto.decryptMessage(encryptedContent);
 
       expect(decryptedMessage).toBe(originalMessage);
     });
@@ -167,7 +170,7 @@ and symbols: !@#$%^&*()_+-={}[]|\\:";'<>?,./`;
 
       try {
         // Decrypt using our crypto class
-        const result = await crypto.decryptFile(
+        const { finalPath: result } = await crypto.decryptFile(
           storage,
           itemDirectory,
           filePath,
@@ -209,7 +212,7 @@ and symbols: !@#$%^&*()_+-={}[]|\\:";'<>?,./`;
       );
 
       try {
-        const result = await crypto.decryptFile(
+        const { finalPath: result } = await crypto.decryptFile(
           storage,
           itemDirectory,
           filePath,
@@ -241,7 +244,7 @@ and symbols: !@#$%^&*()_+-={}[]|\\:";'<>?,./`;
       );
 
       try {
-        const result = await crypto.decryptFile(
+        const { finalPath: result } = await crypto.decryptFile(
           storage,
           itemDirectory,
           filePath,
@@ -276,7 +279,8 @@ and symbols: !@#$%^&*()_+-={}[]|\\:";'<>?,./`;
         "utf-8",
       );
 
-      const decryptedMessage = await crypto.decryptMessage(encryptedMessage);
+      const { plaintext: decryptedMessage } =
+        await crypto.decryptMessage(encryptedMessage);
       expect(decryptedMessage).toBe(testData);
     });
 
@@ -293,7 +297,7 @@ and symbols: !@#$%^&*()_+-={}[]|\\:";'<>?,./`;
       );
 
       try {
-        const result = await crypto.decryptFile(
+        const { finalPath: result } = await crypto.decryptFile(
           storage,
           itemDirectory,
           filePath,
@@ -321,7 +325,8 @@ and symbols: !@#$%^&*()_+-={}[]|\\:";'<>?,./`;
       );
 
       const startTime = Date.now();
-      const decryptedMessage = await crypto.decryptMessage(encryptedContent);
+      const { plaintext: decryptedMessage } =
+        await crypto.decryptMessage(encryptedContent);
       const endTime = Date.now();
 
       expect(decryptedMessage).toBe(largeMessage);
@@ -346,7 +351,7 @@ and symbols: !@#$%^&*()_+-={}[]|\\:";'<>?,./`;
         encryptedMessages.map((encrypted) => crypto.decryptMessage(encrypted)),
       );
 
-      expect(results).toEqual(messages);
+      expect(results.map((r) => r.plaintext)).toEqual(messages);
     });
   });
 
@@ -499,7 +504,8 @@ and symbols: !@#$%^&*()_+-={}[]|\\:";'<>?,./`;
         "utf-8",
       );
 
-      const decryptedMessage = await crypto.decryptMessage(encryptedContent);
+      const { plaintext: decryptedMessage } =
+        await crypto.decryptMessage(encryptedContent);
       expect(decryptedMessage).toBe(originalMessage);
     });
   });
@@ -514,6 +520,8 @@ and symbols: !@#$%^&*()_+-={}[]|\\:";'<>?,./`;
       proc.stdout = new PassThrough();
       proc.stderr = new EventEmitter();
       proc.stdin = { write: vi.fn(), end: vi.fn() };
+      // fd 3 carries gpg's --status-fd output
+      proc.stdio = [proc.stdin, proc.stdout, proc.stderr, new PassThrough()];
       return proc;
     }
 
@@ -582,8 +590,360 @@ and symbols: !@#$%^&*()_+-={}[]|\\:";'<>?,./`;
       expect(encrypted).toContain("-----END PGP MESSAGE-----");
 
       // Decrypt with GPG to verify it matches the original plaintext
-      const decrypted = await crypto.decryptMessage(Buffer.from(encrypted));
+      const { plaintext: decrypted } = await crypto.decryptMessage(
+        Buffer.from(encrypted),
+      );
       expect(decrypted).toBe(plaintext);
+    });
+  });
+
+  describe("Double-encryption (real GPG)", () => {
+    // The "submission key" in this test environment is the only key whose secret
+    // is imported into the test keyring (testKeyId). A source that pre-encrypts
+    // to this key produces a payload the app can transparently decrypt.
+    // The "wrong key" is a key whose secret is NOT in the keyring (the test-key
+    // fixture), simulating a source who encrypted to some other key — the app
+    // detects the inner layer but cannot decrypt it.
+    let submissionPubKey: string;
+    let submissionFingerprint: string;
+    let wrongPubKey: string;
+
+    beforeEach(() => {
+      (Crypto as any).instance = undefined;
+      crypto = Crypto.initialize({
+        isQubes: false,
+        gpgHomedir: gpgEnv.homedir,
+        submissionKeyFingerprint: testKeyId,
+      });
+    });
+
+    beforeAll(() => {
+      // Export the public part of the in-keyring submission key
+      submissionPubKey = execSync(
+        `gpg --homedir "${gpgEnv.homedir}" --armor --export ${testKeyId}`,
+        { encoding: "utf8" },
+      );
+      submissionFingerprint = execSync(
+        `gpg --homedir "${gpgEnv.homedir}" --list-keys --with-colons ${testKeyId} | grep '^fpr' | head -1 | cut -d: -f10`,
+        { encoding: "utf8" },
+      ).trim();
+
+      // The test-key fixture's secret is never imported into the test keyring,
+      // so anything encrypted to it cannot be decrypted here.
+      wrongPubKey = fs.readFileSync(
+        path.join(__dirname, "files", "test-key.gpg.pub.asc"),
+        "utf8",
+      );
+    });
+
+    // Encrypt binary data to a single recipient, returning a binary OpenPGP packet
+    async function encryptBinary(
+      data: Buffer,
+      recipientPublicKey: string,
+    ): Promise<Buffer> {
+      const key = await openpgp.readKey({ armoredKey: recipientPublicKey });
+      const encrypted = await openpgp.encrypt({
+        message: await openpgp.createMessage({ binary: new Uint8Array(data) }),
+        encryptionKeys: key,
+        format: "binary",
+      });
+      return Buffer.from(encrypted as Uint8Array);
+    }
+
+    it("message: ascii-armored inner encrypted to submission key is transparently decrypted", async () => {
+      const secret = "the source pre-encrypted this message";
+
+      // Inner layer: source encrypts to the submission key (ASCII-armored)
+      const inner = await encryptMessage(secret, [submissionPubKey]);
+      // Outer layer: server re-encrypts the armored inner message
+      const outer = await encryptMessage(inner, [submissionPubKey]);
+
+      const result = await crypto.decryptMessage(Buffer.from(outer, "utf-8"));
+
+      expect(result.plaintext).toBe(secret);
+      expect(result.doubleEncryptedKeyFingerprint).toBe(submissionFingerprint);
+    });
+
+    it("message: malformed inner PGP is surfaced as-is without a double-encryption badge", async () => {
+      // Looks like an armored PGP message but the body is not valid OpenPGP data
+      // (a real PKESK prefix followed by non-base64 garbage, like a source who
+      // produced a corrupt block).
+      const malformed =
+        "-----BEGIN PGP MESSAGE-----\n\nhQIMA8PnxMCiIBsqARAAjXzqPikF0KPvRRzhDDElGzy7Wuo4KxH3KwcKrSHmrBA7\nhaha just kidding this isn't a real PGP message\n-----END PGP MESSAGE-----\n";
+      const outer = await encryptMessage(malformed, [submissionPubKey]);
+
+      const result = await crypto.decryptMessage(Buffer.from(outer, "utf-8"));
+
+      // The undecryptable inner layer is surfaced verbatim
+      expect(result.plaintext).toBe(malformed);
+      expect(result.doubleEncryptedKeyFingerprint).toBe(null);
+    });
+
+    it("file: ascii-armored inner encrypted to submission key is transparently decrypted", async () => {
+      const secret = "the source pre-encrypted this file";
+
+      // Inner layer: ASCII-armored message encrypted to the submission key
+      const inner = await encryptMessage(secret, [submissionPubKey]);
+      // Outer layer: gzip + encrypt to the submission key (server behavior)
+      const { filePath, cleanup } = createTestEncryptedFile(
+        inner,
+        "test.txt.asc",
+        testKeyId,
+        gpgEnv.homedir,
+      );
+
+      try {
+        const result = await crypto.decryptFile(
+          storage,
+          itemDirectory,
+          filePath,
+        );
+
+        expect(result.doubleEncryptedKeyFingerprint).toBe(
+          submissionFingerprint,
+        );
+        // The ".asc" extension is stripped from the inner filename
+        expect(path.basename(result.finalPath)).toBe("test.txt");
+        expect(fs.readFileSync(result.finalPath, "utf8")).toBe(secret);
+      } finally {
+        cleanup();
+      }
+    });
+
+    it("file: binary inner encrypted to submission key is transparently decrypted", async () => {
+      const secret = Buffer.from([
+        0x00, 0x01, 0x02, 0x03, 0xff, 0xfe, 0x42, 0x42, 0x10, 0x20,
+      ]);
+
+      // Inner layer: binary OpenPGP packet encrypted to the submission key
+      const inner = await encryptBinary(secret, submissionPubKey);
+      const { filePath, cleanup } = createTestEncryptedFile(
+        inner,
+        "test.txt.gpg",
+        testKeyId,
+        gpgEnv.homedir,
+      );
+
+      try {
+        const result = await crypto.decryptFile(
+          storage,
+          itemDirectory,
+          filePath,
+        );
+
+        expect(result.doubleEncryptedKeyFingerprint).toBe(
+          submissionFingerprint,
+        );
+        // The ".gpg" extension is stripped from the inner filename
+        expect(path.basename(result.finalPath)).toBe("test.txt");
+        expect(Buffer.compare(fs.readFileSync(result.finalPath), secret)).toBe(
+          0,
+        );
+      } finally {
+        cleanup();
+      }
+    });
+
+    it("file: ascii-armored inner encrypted to the wrong key is surfaced without a badge", async () => {
+      // Inner layer encrypted to a key whose secret is not in the keyring
+      const inner = await encryptMessage("unreachable contents", [wrongPubKey]);
+      const { filePath, cleanup } = createTestEncryptedFile(
+        inner,
+        "test.txt.asc",
+        testKeyId,
+        gpgEnv.homedir,
+      );
+
+      try {
+        const result = await crypto.decryptFile(
+          storage,
+          itemDirectory,
+          filePath,
+        );
+
+        expect(result.doubleEncryptedKeyFingerprint).toBe(null);
+        // The still-encrypted intermediate file is surfaced as-is
+        expect(isPgpEncrypted(fs.readFileSync(result.finalPath))).toBe(true);
+      } finally {
+        cleanup();
+      }
+    });
+
+    it("file: binary inner encrypted to the wrong key is surfaced without a badge", async () => {
+      const inner = await encryptBinary(
+        Buffer.from("unreachable binary contents"),
+        wrongPubKey,
+      );
+      const { filePath, cleanup } = createTestEncryptedFile(
+        inner,
+        "test.txt.gpg",
+        testKeyId,
+        gpgEnv.homedir,
+      );
+
+      try {
+        const result = await crypto.decryptFile(
+          storage,
+          itemDirectory,
+          filePath,
+        );
+
+        expect(result.doubleEncryptedKeyFingerprint).toBe(null);
+        expect(isPgpEncrypted(fs.readFileSync(result.finalPath))).toBe(true);
+      } finally {
+        cleanup();
+      }
+    });
+
+    // Simulates key rotation: the source encrypted to an old submission key
+    // that is still in the keyring but is no longer the configured
+    // submission key. Decryption succeeds, and the old key's fingerprint is
+    // surfaced so the UI can flag it.
+    describe("inner layer encrypted to a rotated (non-submission) key", () => {
+      // Import the test-key fixture's secret key and return its primary
+      // fingerprint. Deleted again after each test so the "wrong key" tests
+      // above stay meaningful if re-run.
+      function importRotatedKey(): string {
+        const rotatedPrivKey = fs.readFileSync(
+          path.join(__dirname, "files", "test-key.gpg.asc"),
+          "utf8",
+        );
+        gpgEnv.importKey(rotatedPrivKey);
+        return execSync(
+          `gpg --homedir "${gpgEnv.homedir}" --list-keys --with-colons test@securedrop.org | grep '^fpr' | head -1 | cut -d: -f10`,
+          { encoding: "utf8" },
+        ).trim();
+      }
+
+      function deleteRotatedKey(fingerprint: string) {
+        execSync(
+          `gpg --homedir "${gpgEnv.homedir}" --batch --yes --delete-secret-and-public-key ${fingerprint}`,
+        );
+      }
+
+      // Generate an ed25519/cv25519 key in the keyring, returning its
+      // primary fingerprint. gpg describes decryption with it as
+      // "encrypted with cv25519 key"; the inner-layer stderr allowlist must
+      // accept that legitimate algorithm while status validation stays strict.
+      function createEccRotatedKey(): string {
+        execSync(
+          `gpg --homedir "${gpgEnv.homedir}" --batch --passphrase '' --quick-gen-key "ecc-rotated <ecc-rotated@test.org>" ed25519 cert never`,
+        );
+        const fingerprint = execSync(
+          `gpg --homedir "${gpgEnv.homedir}" --list-keys --with-colons ecc-rotated@test.org | grep '^fpr' | head -1 | cut -d: -f10`,
+          { encoding: "utf8" },
+        ).trim();
+        execSync(
+          `gpg --homedir "${gpgEnv.homedir}" --batch --passphrase '' --quick-add-key ${fingerprint} cv25519 encr never`,
+        );
+        return fingerprint;
+      }
+
+      it("message: reports the rotated key's fingerprint", async () => {
+        const rotatedFingerprint = importRotatedKey();
+        try {
+          const secret = "message encrypted to a rotated submission key";
+          const inner = await encryptMessage(secret, [wrongPubKey]);
+          const outer = await encryptMessage(inner, [submissionPubKey]);
+
+          const result = await crypto.decryptMessage(
+            Buffer.from(outer, "utf-8"),
+          );
+
+          expect(result.plaintext).toBe(secret);
+          expect(result.doubleEncryptedKeyFingerprint).toBe(rotatedFingerprint);
+        } finally {
+          deleteRotatedKey(rotatedFingerprint);
+        }
+      });
+
+      it("file: reports the rotated key's fingerprint", async () => {
+        const rotatedFingerprint = importRotatedKey();
+        try {
+          const secret = "file encrypted to a rotated submission key";
+          const inner = await encryptMessage(secret, [wrongPubKey]);
+          const { filePath, cleanup } = createTestEncryptedFile(
+            inner,
+            "test.txt.asc",
+            testKeyId,
+            gpgEnv.homedir,
+          );
+
+          try {
+            const result = await crypto.decryptFile(
+              storage,
+              itemDirectory,
+              filePath,
+            );
+
+            expect(result.doubleEncryptedKeyFingerprint).toBe(
+              rotatedFingerprint,
+            );
+            expect(fs.readFileSync(result.finalPath, "utf8")).toBe(secret);
+          } finally {
+            cleanup();
+          }
+        } finally {
+          deleteRotatedKey(rotatedFingerprint);
+        }
+      });
+
+      // Regression test: the inner layer's gpg stderr uses the cv25519 key
+      // description, which must pass the generalized strict allowlist.
+      it("message: decrypts an inner layer encrypted to a rotated ECC key", async () => {
+        const eccFingerprint = createEccRotatedKey();
+        try {
+          const eccPubKey = execSync(
+            `gpg --homedir "${gpgEnv.homedir}" --armor --export ${eccFingerprint}`,
+            { encoding: "utf8" },
+          );
+          const secret = "message encrypted to a rotated ECC key";
+          const inner = await encryptMessage(secret, [eccPubKey]);
+          const outer = await encryptMessage(inner, [submissionPubKey]);
+
+          const result = await crypto.decryptMessage(
+            Buffer.from(outer, "utf-8"),
+          );
+
+          expect(result.plaintext).toBe(secret);
+          expect(result.doubleEncryptedKeyFingerprint).toBe(eccFingerprint);
+        } finally {
+          deleteRotatedKey(eccFingerprint);
+        }
+      });
+
+      it("file: decrypts an inner layer encrypted to a rotated ECC key", async () => {
+        const eccFingerprint = createEccRotatedKey();
+        try {
+          const eccPubKey = execSync(
+            `gpg --homedir "${gpgEnv.homedir}" --armor --export ${eccFingerprint}`,
+            { encoding: "utf8" },
+          );
+          const secret = "file encrypted to a rotated ECC key";
+          const inner = await encryptMessage(secret, [eccPubKey]);
+          const { filePath, cleanup } = createTestEncryptedFile(
+            inner,
+            "test.txt.asc",
+            testKeyId,
+            gpgEnv.homedir,
+          );
+
+          try {
+            const result = await crypto.decryptFile(
+              storage,
+              itemDirectory,
+              filePath,
+            );
+
+            expect(result.doubleEncryptedKeyFingerprint).toBe(eccFingerprint);
+            expect(fs.readFileSync(result.finalPath, "utf8")).toBe(secret);
+          } finally {
+            cleanup();
+          }
+        } finally {
+          deleteRotatedKey(eccFingerprint);
+        }
+      });
     });
   });
 });

@@ -22,7 +22,7 @@ CREATE TABLE items (
     fetch_retry_attempts INTEGER NOT NULL DEFAULT 0,
     interaction_count INTEGER GENERATED ALWAYS AS (json_extract(data, '$.interaction_count')),
     decrypted_size INTEGER
-);
+, double_encrypted_key_fingerprint TEXT NOT NULL DEFAULT '');
 CREATE TABLE journalists (
     uuid TEXT PRIMARY KEY,
     data JSON,
@@ -74,108 +74,6 @@ WHEN json_extract(OLD.data, '$.kind') IS NOT NULL
 BEGIN
     SELECT RAISE(ABORT, 'items.kind is immutable');
 END;
-CREATE VIEW items_projected AS
-SELECT
-    items.uuid,
-    items.data,
-    items.version,
-    items.plaintext,
-    items.filename,
-    items.kind,
-    CASE
-        WHEN items.is_read THEN 1
-        WHEN EXISTS (
-            SELECT 1 FROM pending_events
-            WHERE pending_events.item_uuid = items.uuid
-                AND pending_events.type = 'item_seen'
-        ) THEN 1
-        WHEN EXISTS (
-            SELECT 1 FROM pending_events
-            WHERE pending_events.source_uuid = items.source_uuid
-                AND pending_events.type = 'source_conversation_seen'
-                AND CAST(json_extract(pending_events.data, '$.upper_bound') AS INTEGER) >= items.interaction_count
-        ) THEN 1
-        ELSE 0
-    END AS is_read,
-    items.last_updated,
-    items.source_uuid,
-    items.fetch_progress,
-    items.fetch_status,
-    items.fetch_last_updated_at,
-    items.fetch_retry_attempts,
-    items.interaction_count,
-    items.decrypted_size
-FROM items
-WHERE NOT EXISTS (
-    SELECT 1
-    FROM pending_events
-    WHERE pending_events.item_uuid = items.uuid
-        AND pending_events.type = 'item_deleted'
-)
-    AND NOT EXISTS (
-        SELECT 1
-        FROM pending_events
-        WHERE pending_events.source_uuid = items.source_uuid
-            AND pending_events.type = 'source_deleted'
-    )
-    AND NOT EXISTS (
-        SELECT 1
-        FROM pending_events
-        WHERE pending_events.source_uuid = items.source_uuid
-            AND pending_events.type = 'source_conversation_truncated'
-            AND CAST(json_extract(pending_events.data, '$.upper_bound') AS INTEGER) >= items.interaction_count
-    )
-UNION ALL
-SELECT
-    json_extract(pending_events.data, '$.metadata.uuid') AS uuid,
-    json_extract(pending_events.data, '$.metadata') AS data,
-    NULL AS version,
-    json_extract(pending_events.data, '$.plaintext') AS plaintext,
-    NULL AS filename,
-    'reply' AS kind,
-    1 AS is_read,
-    NULL AS last_updated,
-    json_extract(pending_events.data, '$.metadata.source') AS source_uuid,
-    NULL AS fetch_progress,
-    NULL AS fetch_status,
-    NULL AS fetch_last_updated_at,
-    NULL AS fetch_retry_attempts,
-    json_extract(pending_events.data, '$.metadata.interaction_count') AS interaction_count,
-    NULL AS decrypted_size
-FROM pending_events
-WHERE pending_events.type = 'reply_sent'
-    AND NOT EXISTS (
-        SELECT 1
-        FROM pending_events later
-        WHERE (
-            (
-                later.source_uuid = json_extract(pending_events.data, '$.metadata.source')
-                AND later.type = 'source_deleted'
-            )
-            OR
-            (
-                later.source_uuid = json_extract(pending_events.data, '$.metadata.source')
-                AND later.type = 'source_conversation_truncated'
-                AND CAST(json_extract(later.data, '$.upper_bound') AS INTEGER) >= CAST(json_extract(pending_events.data, '$.metadata.interaction_count') AS INTEGER)
-            )
-            OR
-            (
-                later.item_uuid = json_extract(pending_events.data, '$.metadata.uuid')
-                AND later.type = 'item_deleted'
-            )
-        )
-        AND later.snowflake_id > pending_events.snowflake_id
-    )
-/* items_projected(uuid,data,version,plaintext,filename,kind,is_read,last_updated,source_uuid,fetch_progress,fetch_status,fetch_last_updated_at,fetch_retry_attempts,interaction_count,decrypted_size) */;
-CREATE VIEW sorted_items AS
-SELECT
-    *,
-    ROW_NUMBER() OVER (
-        PARTITION BY source_uuid
-        ORDER BY interaction_count DESC
-    ) AS rn
-FROM items_projected
-/* sorted_items(uuid,data,version,plaintext,filename,kind,is_read,last_updated,source_uuid,fetch_progress,fetch_status,fetch_last_updated_at,fetch_retry_attempts,interaction_count,decrypted_size,rn) */;
 CREATE VIEW sources_projected AS
 WITH
     latest_starred AS (
@@ -273,6 +171,110 @@ WHERE
             pending_events.type = 'source_deleted'
     )
 /* sources_projected(uuid,data,version,has_attachment,is_seen) */;
+CREATE VIEW items_projected AS
+SELECT
+    items.uuid,
+    items.data,
+    items.version,
+    items.plaintext,
+    items.filename,
+    items.kind,
+    CASE
+        WHEN items.is_read THEN 1
+        WHEN EXISTS (
+            SELECT 1 FROM pending_events
+            WHERE pending_events.item_uuid = items.uuid
+                AND pending_events.type = 'item_seen'
+        ) THEN 1
+        WHEN EXISTS (
+            SELECT 1 FROM pending_events
+            WHERE pending_events.source_uuid = items.source_uuid
+                AND pending_events.type = 'source_conversation_seen'
+                AND CAST(json_extract(pending_events.data, '$.upper_bound') AS INTEGER) >= items.interaction_count
+        ) THEN 1
+        ELSE 0
+    END AS is_read,
+    items.last_updated,
+    items.source_uuid,
+    items.fetch_progress,
+    items.fetch_status,
+    items.fetch_last_updated_at,
+    items.fetch_retry_attempts,
+    items.interaction_count,
+    items.decrypted_size,
+    items.double_encrypted_key_fingerprint
+FROM items
+WHERE NOT EXISTS (
+    SELECT 1
+    FROM pending_events
+    WHERE pending_events.item_uuid = items.uuid
+        AND pending_events.type = 'item_deleted'
+)
+    AND NOT EXISTS (
+        SELECT 1
+        FROM pending_events
+        WHERE pending_events.source_uuid = items.source_uuid
+            AND pending_events.type = 'source_deleted'
+    )
+    AND NOT EXISTS (
+        SELECT 1
+        FROM pending_events
+        WHERE pending_events.source_uuid = items.source_uuid
+            AND pending_events.type = 'source_conversation_truncated'
+            AND CAST(json_extract(pending_events.data, '$.upper_bound') AS INTEGER) >= items.interaction_count
+    )
+UNION ALL
+SELECT
+    json_extract(pending_events.data, '$.metadata.uuid') AS uuid,
+    json_extract(pending_events.data, '$.metadata') AS data,
+    NULL AS version,
+    json_extract(pending_events.data, '$.plaintext') AS plaintext,
+    NULL AS filename,
+    'reply' AS kind,
+    1 AS is_read,
+    NULL AS last_updated,
+    json_extract(pending_events.data, '$.metadata.source') AS source_uuid,
+    NULL AS fetch_progress,
+    NULL AS fetch_status,
+    NULL AS fetch_last_updated_at,
+    NULL AS fetch_retry_attempts,
+    json_extract(pending_events.data, '$.metadata.interaction_count') AS interaction_count,
+    NULL AS decrypted_size,
+    '' AS double_encrypted_key_fingerprint
+FROM pending_events
+WHERE pending_events.type = 'reply_sent'
+    AND NOT EXISTS (
+        SELECT 1
+        FROM pending_events later
+        WHERE (
+            (
+                later.source_uuid = json_extract(pending_events.data, '$.metadata.source')
+                AND later.type = 'source_deleted'
+            )
+            OR
+            (
+                later.source_uuid = json_extract(pending_events.data, '$.metadata.source')
+                AND later.type = 'source_conversation_truncated'
+                AND CAST(json_extract(later.data, '$.upper_bound') AS INTEGER) >= CAST(json_extract(pending_events.data, '$.metadata.interaction_count') AS INTEGER)
+            )
+            OR
+            (
+                later.item_uuid = json_extract(pending_events.data, '$.metadata.uuid')
+                AND later.type = 'item_deleted'
+            )
+        )
+        AND later.snowflake_id > pending_events.snowflake_id
+    )
+/* items_projected(uuid,data,version,plaintext,filename,kind,is_read,last_updated,source_uuid,fetch_progress,fetch_status,fetch_last_updated_at,fetch_retry_attempts,interaction_count,decrypted_size,double_encrypted_key_fingerprint) */;
+CREATE VIEW sorted_items AS
+SELECT
+    *,
+    ROW_NUMBER() OVER (
+        PARTITION BY source_uuid
+        ORDER BY interaction_count DESC
+    ) AS rn
+FROM items_projected
+/* sorted_items(uuid,data,version,plaintext,filename,kind,is_read,last_updated,source_uuid,fetch_progress,fetch_status,fetch_last_updated_at,fetch_retry_attempts,interaction_count,decrypted_size,double_encrypted_key_fingerprint,rn) */;
 CREATE TRIGGER items_source_immutable
 BEFORE UPDATE OF data ON items
 FOR EACH ROW
@@ -291,5 +293,6 @@ INSERT INTO "schema_migrations" (version) VALUES
   ('20260416000000'),
   ('20260507000000'),
   ('20260511000000'),
+  ('20260623163815'),
   ('20260624000000'),
   ('20260710151500');
