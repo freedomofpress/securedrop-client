@@ -104,6 +104,13 @@ const Toolbar = memo(function Toolbar({
             <Tooltip
               title={t("sourcelist.actions.bulkDelete")}
               trigger={["hover", "focus"]}
+              // Render below the button: the default "top" placement overlaps
+              // the account/journalist menu above the toolbar (the tooltip
+              // lingers while the button keeps focus after the delete modal
+              // closes). pointer-events: none is belt-and-braces so a decorative
+              // tooltip can never swallow a click wherever it ends up rendering.
+              placement="bottom"
+              styles={{ root: { pointerEvents: "none" } }}
             >
               <Button
                 type="text"

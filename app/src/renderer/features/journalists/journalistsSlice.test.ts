@@ -221,6 +221,13 @@ describe("journalistsSlice", () => {
         status: null,
       },
       drafts: { drafts: {} },
+      deleteModal: {
+        open: false,
+        pendingSources: [],
+        loading: false,
+        counts: { messages: 0, files: 0, replies: 0 },
+        lastDeletedSources: [],
+      },
     };
 
     it("getJournalistsState should return the entire journalists state", () => {
