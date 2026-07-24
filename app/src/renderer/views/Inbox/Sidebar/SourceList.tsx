@@ -20,6 +20,7 @@ import {
   type Source as SourceType,
 } from "../../../../types";
 import { useSidebarShortcuts, useShortcut } from "../../../shortcuts";
+import { setDeleteSourceHandler } from "../../../components/deleteSourceRequester";
 import type { FocusedPanel } from "../../Inbox";
 
 interface SourceRowProps {
@@ -210,6 +211,12 @@ function SourceList({ focusedPanel }: { focusedPanel: FocusedPanel }) {
   const handleBulkDelete = useCallback(async () => {
     await openDeleteModal(new Set(selectedSources));
   }, [selectedSources, openDeleteModal]);
+
+  // Allow other components (e.g. the source menu) to open the delete modal
+  useEffect(() => {
+    setDeleteSourceHandler((sources) => void openDeleteModal(sources));
+    return () => setDeleteSourceHandler(null);
+  }, [openDeleteModal]);
 
   // Keyboard shortcut: Ctrl+Delete deletes the current source
   useShortcut(

@@ -7,6 +7,11 @@ import {
   renderWithProviders,
 } from "../../../../test-component-setup";
 import { FetchStatus, type SourceWithItems } from "../../../../../types";
+import { requestDeleteSource } from "../../../../components/deleteSourceRequester";
+
+vi.mock("../../../../components/deleteSourceRequester", () => ({
+  requestDeleteSource: vi.fn(),
+}));
 
 describe("SourceMenu Component", () => {
   beforeEach(() => {
@@ -315,6 +320,19 @@ describe("SourceMenu Component", () => {
         expect(screen.getByText("Preparing to print.")).toBeInTheDocument();
         expect(screen.getByText("source transcript")).toBeInTheDocument();
       });
+    });
+
+    it("calls requestDeleteSource with the source uuid when Delete Source Account is clicked", async () => {
+      renderWithProviders(<SourceMenu sourceWithItems={s} />);
+      const menuButton = screen.getByRole("button");
+      await userEvent.click(menuButton);
+
+      const deleteSourceItem = await screen.findByRole("menuitem", {
+        name: /delete source/i,
+      });
+      await userEvent.click(deleteSourceItem);
+
+      expect(requestDeleteSource).toHaveBeenCalledWith(new Set(["source-1"]));
     });
   });
 });

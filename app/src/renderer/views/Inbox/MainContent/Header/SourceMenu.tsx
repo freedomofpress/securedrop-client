@@ -11,6 +11,7 @@ import { ExportWizard } from "../Conversation/Item/Export";
 import { PrintWizard } from "../Conversation/Item/Print";
 import { MenuProps, Dropdown, Button, Tooltip } from "antd";
 import { MoreOutlined } from "@ant-design/icons";
+import { requestDeleteSource } from "../../../../components/deleteSourceRequester";
 
 interface SourceMenuProps {
   sourceWithItems: SourceWithItems;
@@ -117,6 +118,9 @@ const SourceMenu = memo(function SourceMenu({
           console.error("Failed to print transcript:", error);
         }
         break;
+      case "deleteSource":
+        requestDeleteSource(new Set([sourceWithItems.uuid]));
+        break;
       default:
         break;
     }
@@ -132,39 +136,58 @@ const SourceMenu = memo(function SourceMenu({
 
   const hasConversation: boolean = sourceWithItems.items.length > 0;
 
+  const whistleFlowItems: MenuProps["items"] = [
+    {
+      type: "divider",
+    },
+    {
+      type: "group",
+      label: t("menu.WhistleflowExportGroup"),
+      children: [
+        {
+          key: "exportTranscriptToWhistleflow",
+          label: t("menu.exportTranscriptToWhistleflow"),
+          disabled: !hasConversation,
+        },
+        {
+          key: "exportSourceToWhistleflow",
+          label: t("menu.exportSourceToWhistleflow"),
+          disabled: !hasConversation,
+        },
+      ],
+    },
+  ];
+
   const items: MenuProps["items"] = [
     {
-      key: "exportTranscript",
-      label: t("menu.exportTranscript"),
-      disabled: !hasConversation,
+      type: "group",
+      label: t("menu.ExportGroup"),
+      children: [
+        {
+          key: "exportTranscript",
+          label: t("menu.exportTranscript"),
+          disabled: !hasConversation,
+        },
+        {
+          key: "exportSource",
+          label: t("menu.exportSource"),
+          disabled: !hasConversation,
+        },
+      ],
     },
-    ...(whistleflowEnabled
-      ? [
-          {
-            key: "exportTranscriptToWhistleflow",
-            label: t("menu.exportTranscriptToWhistleflow"),
-            disabled: !hasConversation,
-          },
-        ]
-      : []),
-    {
-      key: "exportSource",
-      label: t("menu.exportSource"),
-      disabled: !hasConversation,
-    },
-    ...(whistleflowEnabled
-      ? [
-          {
-            key: "exportSourceToWhistleflow",
-            label: t("menu.exportSourceToWhistleflow"),
-            disabled: !hasConversation,
-          },
-        ]
-      : []),
     {
       key: "printTranscript",
       label: t("menu.printTranscript"),
       disabled: !hasConversation,
+    },
+    ...(whistleflowEnabled ? whistleFlowItems : []),
+    {
+      type: "divider",
+    },
+    {
+      key: "deleteSource",
+      label: t("menu.deleteSource"),
+      danger: true,
     },
   ];
 
