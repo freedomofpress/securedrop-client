@@ -13,6 +13,10 @@ updates:
       interval: "weekly"
     cooldown:
       default-days: 7
+    ignore:
+      # electron major bumps are done manually
+      - dependency-name: "electron"
+        update-types: ["version-update:semver-major"]
     groups:
       frontend:
         patterns:
@@ -22,10 +26,18 @@ updates:
           - "@ant-design*"
       electron:
         patterns:
-          - "*electron*"
-          # better-sqlite3/node-abi need to upgrade with electron
-          - "node-abi"
+          - "electron"
+        update-types:
+          - "minor"
+          - "patch"
+      better-sqlite3:
+        patterns:
           - "better-sqlite3"
+          - "node-abi"
+      electron-support:
+        patterns:
+          - "electron-*"
+          - "@electron-toolkit/*"
       eslint:
         patterns: ["*eslint*"]
       vite:
