@@ -696,8 +696,8 @@ if (!gotTheLock) {
             if (!fs.existsSync(filePath)) {
               throw new Error(`Transcript file not found: ${filePath}`);
             }
-            const sourceWithItems = db.getSourceWithItems(sourceUuid);
-            const sourceName = sourceWithItems.data.journalist_designation;
+            const sourceName =
+              db.getSource(sourceUuid)?.data.journalist_designation;
             return await exporter.export(
               [filePath],
               passphrase,
@@ -738,8 +738,8 @@ if (!gotTheLock) {
             }
             filenames.push(item.filename);
             if (!sourceName) {
-              const source = db.getSourceWithItems(item.data.source);
-              sourceName = source.data.journalist_designation;
+              sourceName = db.getSource(item.data.source)?.data
+                .journalist_designation;
             }
           }
           return await exporter.export(
