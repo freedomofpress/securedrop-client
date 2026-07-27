@@ -20,12 +20,13 @@ const testState = vi.hoisted(() => {
     webContents = {
       send: vi.fn(),
       openDevTools: vi.fn(),
+      on: vi.fn(),
+      setWindowOpenHandler: vi.fn(),
     };
 
     on = vi.fn();
     show = vi.fn();
     loadURL = vi.fn();
-    loadFile = vi.fn();
     isDestroyed = vi.fn(() => false);
   }
 
@@ -60,6 +61,13 @@ const testState = vi.hoisted(() => {
         },
       },
     },
+    protocol: {
+      registerSchemesAsPrivileged: vi.fn(),
+      handle: vi.fn(),
+    },
+    net: {
+      fetch: vi.fn(),
+    },
     clipboard: {},
     optimizer: {
       watchWindowShortcuts: vi.fn(),
@@ -91,6 +99,8 @@ vi.mock("electron", () => ({
   BrowserWindow: testState.MockBrowserWindow,
   dialog: testState.dialog,
   ipcMain: testState.ipcMain,
+  net: testState.net,
+  protocol: testState.protocol,
   session: testState.session,
   clipboard: testState.clipboard,
 }));
