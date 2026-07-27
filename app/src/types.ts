@@ -188,6 +188,15 @@ export type SourceWithItems = {
   lastSeenInteractionCount?: number | null;
 };
 
+// Options for fetching a source's conversation items. `limit` is mandatory so
+// that every caller has to decide explicitly between a page ("N") and a
+// complete conversation ("all").
+export type SourceItemsQuery = {
+  limit: number | "all";
+  beforeInteractionCount?: number;
+  journalistUuid?: string;
+};
+
 export type SourceItemCounts = {
   messages: number;
   files: number;

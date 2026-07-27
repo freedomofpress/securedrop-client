@@ -50,7 +50,9 @@ describe.sequential("sending replies", () => {
 
   async function getItemCount(): Promise<number> {
     return withDb(async (db) => {
-      const sourceWithItems = db.getSourceWithItems(TARGET_SOURCE.uuid);
+      const sourceWithItems = db.getSourceWithItems(TARGET_SOURCE.uuid, {
+        limit: "all",
+      });
       return sourceWithItems.items.length;
     });
   }

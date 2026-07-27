@@ -23,6 +23,7 @@ import {
   type Source,
   type SourceWithItems,
   type SourceItemCounts,
+  type SourceItemsQuery,
   type Journalist,
   type AuthedRequest,
   type SyncRequest,
@@ -429,11 +430,7 @@ if (!gotTheLock) {
         async (
           _event,
           sourceUuid: string,
-          options?: {
-            limit?: number;
-            beforeInteractionCount?: number;
-            journalistUuid?: string;
-          },
+          options: SourceItemsQuery,
         ): Promise<SourceWithItems> => {
           const sourceWithItems = db.getSourceWithItems(sourceUuid, options);
           return sourceWithItems;
@@ -531,6 +528,7 @@ if (!gotTheLock) {
           }
           if (data?.upper_bound) {
             const items = db.getSourceWithItems(sourceUuid, {
+              limit: "all",
               beforeInteractionCount: data?.upper_bound + 1,
             }).items;
             const DELETE_BATCH_SIZE = 8;
@@ -769,7 +767,9 @@ if (!gotTheLock) {
               throw new Error(`Transcript file not found: ${transcriptPath}`);
             }
 
-            const sourceWithItems = db.getSourceWithItems(sourceUuid);
+            const sourceWithItems = db.getSourceWithItems(sourceUuid, {
+              limit: "all",
+            });
             const filenames: string[] = [transcriptPath];
             for (const item of sourceWithItems.items) {
               if (

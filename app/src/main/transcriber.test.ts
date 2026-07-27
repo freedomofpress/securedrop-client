@@ -265,6 +265,11 @@ Interesting message there
 `;
 
     const output: string = await writeTranscript(mockSourceWithItems.uuid, db);
+    // A transcript must cover the whole conversation, not one page of it
+    expect(db.getSourceWithItems).toHaveBeenCalledWith(
+      mockSourceWithItems.uuid,
+      { limit: "all" },
+    );
     expect(output).toContain("transcript.txt");
     expect(fs.existsSync(output)).toBe(true);
     console.log(`BANANA: ${output}`);
