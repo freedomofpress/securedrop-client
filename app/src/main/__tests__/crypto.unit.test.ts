@@ -369,7 +369,7 @@ describe("Crypto", () => {
       "[GNUPG:] DECRYPTION_OKAY\n" +
       "[GNUPG:] END_DECRYPTION\n";
     const validStderr =
-      'gpg: encrypted with cv25519 key, ID C3E7C4C0A2201B2A, created 2026-07-17\n      "Test Key <test@example.org>"\n';
+      'gpg: encrypted with rsa4096 key, ID C3E7C4C0A2201B2A, created 2026-07-17\n      "Test Key <test@example.org>"\n';
 
     beforeEach(() => {
       (Crypto as any).instance = undefined;
@@ -448,6 +448,16 @@ describe("Crypto", () => {
 
     it.each([
       ["unexpected stderr", validStatus, "gpg: forged diagnostic\n"],
+      [
+        "non-4096-bit RSA key",
+        validStatus,
+        'gpg: encrypted with 2048-bit RSA key, ID C3E7C4C0A2201B2A, created 2026-07-17\n      "Test Key <test@example.org>"\n',
+      ],
+      [
+        "non-RSA key",
+        validStatus,
+        'gpg: encrypted with cv25519 key, ID C3E7C4C0A2201B2A, created 2026-07-17\n      "Test Key <test@example.org>"\n',
+      ],
       [
         "unexpected status",
         validStatus + "[GNUPG:] DECRYPTION_FAILED\n",

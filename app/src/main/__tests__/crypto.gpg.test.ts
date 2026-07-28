@@ -822,9 +822,8 @@ and symbols: !@#$%^&*()_+-={}[]|\\:";'<>?,./`;
       }
 
       // Generate an ed25519/cv25519 key in the keyring, returning its
-      // primary fingerprint. gpg describes decryption with it as
-      // "encrypted with cv25519 key"; the inner-layer stderr allowlist must
-      // accept that legitimate algorithm while status validation stays strict.
+      // primary fingerprint. Inner layers encrypted to this key must be
+      // rejected because submission keys are required to be 4096-bit RSA.
       function createEccRotatedKey(): string {
         execSync(
           `gpg --homedir "${gpgEnv.homedir}" --batch --passphrase '' --quick-gen-key "ecc-rotated <ecc-rotated@test.org>" ed25519 cert never`,
@@ -888,9 +887,7 @@ and symbols: !@#$%^&*()_+-={}[]|\\:";'<>?,./`;
         }
       });
 
-      // Regression test: the inner layer's gpg stderr uses the cv25519 key
-      // description, which must pass the generalized strict allowlist.
-      it("message: decrypts an inner layer encrypted to a rotated ECC key", async () => {
+      it("message: rejects an inner layer encrypted to a rotated ECC key", async () => {
         const eccFingerprint = createEccRotatedKey();
         try {
           const eccPubKey = execSync(
@@ -905,14 +902,14 @@ and symbols: !@#$%^&*()_+-={}[]|\\:";'<>?,./`;
             Buffer.from(outer, "utf-8"),
           );
 
-          expect(result.plaintext).toBe(secret);
-          expect(result.doubleEncryptedKeyFingerprint).toBe(eccFingerprint);
+          expect(result.plaintext).toBe(inner);
+          expect(result.doubleEncryptedKeyFingerprint).toBeNull();
         } finally {
           deleteRotatedKey(eccFingerprint);
         }
       });
 
-      it("file: decrypts an inner layer encrypted to a rotated ECC key", async () => {
+      it("file: rejects an inner layer encrypted to a rotated ECC key", async () => {
         const eccFingerprint = createEccRotatedKey();
         try {
           const eccPubKey = execSync(
@@ -935,8 +932,8 @@ and symbols: !@#$%^&*()_+-={}[]|\\:";'<>?,./`;
               filePath,
             );
 
-            expect(result.doubleEncryptedKeyFingerprint).toBe(eccFingerprint);
-            expect(fs.readFileSync(result.finalPath, "utf8")).toBe(secret);
+            expect(result.doubleEncryptedKeyFingerprint).toBeNull();
+            expect(fs.readFileSync(result.finalPath, "utf8")).toBe(inner);
           } finally {
             cleanup();
           }

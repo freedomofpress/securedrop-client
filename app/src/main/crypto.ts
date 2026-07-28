@@ -39,6 +39,12 @@ const GPG_STDERR_ANONYMOUS_THEN_KNOWN =
 const GPG_STDERR_KNOWN_THEN_ANONYMOUS =
   /^(gpg: encrypted with (?:\d+-bit [A-Za-z0-9]+|[a-z][a-z0-9-]*) key, ID [0-9A-Fa-f]+, created \d{4}-\d{2}-\d{2}\n\s+"[^"]*"\n)(gpg: encrypted with (?:RSA|ELG|ECDH) key, ID [0-9A-Fa-f]+\n)$/;
 
+// Submission keys are required to be 4096-bit RSA keys. Restrict the
+// source-controlled inner layer to that profile so ciphertext for any other
+// key type or size is left untouched and handled as a regular submission.
+const GPG_STDERR_INNER_KEY =
+  /^gpg: encrypted with (?:4096-bit RSA|rsa4096) key, ID [0-9A-Fa-f]+, created \d{4}-\d{2}-\d{2}\n\s+"[^"]*"\n$/;
+
 function isExpectedGpgStderr(stderr: string): boolean {
   const normalized = stderr.trimEnd() + "\n";
   return (
@@ -132,7 +138,8 @@ function validateInnerGpgDecryption(
   statusOutput: string,
   stderr: string,
 ): string {
-  if (stderr.trim() && !isExpectedGpgStderr(stderr)) {
+  const normalizedStderr = stderr.trimEnd() + "\n";
+  if (!GPG_STDERR_INNER_KEY.test(normalizedStderr)) {
     throw new CryptoError(
       `GPG decryption emitted stderr: ${JSON.stringify(stderr.trim())}`,
     );
