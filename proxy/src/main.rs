@@ -127,15 +127,6 @@ fn extract_request_id(headers: &mut HashMap<String, String>) -> RequestId {
     }
 }
 
-/// An ` echoed` marker for the log line when the server echoed back an X-Request-ID
-fn echoed_request_id(resp: &Response) -> &'static str {
-    if resp.headers().contains_key(REQUEST_ID_HEADER) {
-        " echoed"
-    } else {
-        ""
-    }
-}
-
 /// Incoming HTTP requests (as JSON) received over stdin
 #[derive(Deserialize, Debug)]
 #[serde(deny_unknown_fields)]
@@ -197,10 +188,9 @@ async fn handle_json_response(
 ) -> Result<()> {
     let headers = headers_to_map(&resp)?;
     let status = resp.status().as_u16();
-    let echoed = echoed_request_id(&resp);
     let body = resp.text().await?;
     syslog.info(&format!(
-        "{request_id} response: status={status} size={}{echoed}",
+        "{request_id} response: status={status} size={}",
         body.len()
     ));
     let outgoing_response = OutgoingResponse {
@@ -221,7 +211,6 @@ async fn handle_stream_response(
     // Get the headers, will be output later but we want to fail early if it's missing/invalid
     let headers = headers_to_map(&resp)?;
     let status = resp.status().as_u16();
-    let echoed = echoed_request_id(&resp);
     let mut size: usize = 0;
     let mut stdout = io::stdout().lock();
     let mut stream = resp.bytes_stream();
@@ -234,7 +223,7 @@ async fn handle_stream_response(
         stdout.flush()?;
     }
     syslog.info(&format!(
-        "{request_id} response: status={status} size={size} stream=true{echoed}"
+        "{request_id} response: status={status} size={size} stream=true"
     ));
     // Emit the headers as stderr
     eprintln!(

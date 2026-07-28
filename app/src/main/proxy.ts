@@ -54,10 +54,8 @@ function logJSONResponse(
   response: ProxyJSONResponse,
   size: number,
 ) {
-  const echoed = getHeader(response.headers, "x-request-id");
   console.log(
-    `[proxy] ${requestID} response: status=${response.status} size=${size}` +
-      (echoed ? " echoed" : ""),
+    `[proxy] ${requestID} response: status=${response.status} size=${size}`,
   );
 }
 
@@ -295,10 +293,8 @@ export async function proxyStreamRequestInner(
           const headers: Map<string, string> = new Map(
             Object.entries(header["headers"]),
           );
-          const echoed = getHeader(headers, "x-request-id");
           console.log(
-            `[proxy] ${requestID} stream complete: bytesWritten=${bytesWritten}` +
-              (echoed ? " echoed" : ""),
+            `[proxy] ${requestID} stream complete: bytesWritten=${bytesWritten}`,
           );
           resolve({
             complete: true,

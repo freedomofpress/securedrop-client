@@ -366,7 +366,6 @@ describe("Test executing proxy with JSON requests", () => {
         (line) =>
           typeof line === "string" && line.includes("response: status=200"),
       ) as string;
-    expect(responseLog).toContain(" echoed");
     expect(responseLog).not.toContain("req-echoed");
   });
 
