@@ -136,8 +136,7 @@ def extract_tar_gz(tar_path, extract_to):
     extract_to.mkdir(parents=True, exist_ok=True)
 
     with tarfile.open(tar_path, "r:gz") as tar:
-        # TODO: use filter="data" once we're Python 3.12+
-        tar.extractall(extract_to)  # noqa: S202
+        tar.extractall(extract_to, filter="data")
 
 
 def find_node_file(directory):
