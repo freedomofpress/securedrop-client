@@ -45,6 +45,7 @@ const DoubleEncryptedBadge = memo(function DoubleEncryptedBadge({
         title={t("doubleEncryptedOtherKeyTooltip", {
           fingerprint: formatFingerprint(keyFingerprint),
         })}
+        placement="bottom"
       >
         <span
           className="double-encrypted-badge"
