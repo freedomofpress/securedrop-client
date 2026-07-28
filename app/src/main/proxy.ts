@@ -31,8 +31,8 @@ function ensureRequestID(request: ProxyRequest): string {
   if (existingKey) {
     delete request.headers[existingKey];
   }
-  request.headers["X-Request-ID"] = existing || `req-${crypto.randomUUID()}`;
-  return request.headers["X-Request-ID"];
+  request.headers["x-request-id"] = existing || `req-${crypto.randomUUID()}`;
+  return request.headers["x-request-id"];
 }
 
 // The proxy returns lowercased header names, but don't depend on that.
@@ -54,7 +54,7 @@ function logJSONResponse(
   response: ProxyJSONResponse,
   size: number,
 ) {
-  const echoed = getHeader(response.headers, "X-Request-ID");
+  const echoed = getHeader(response.headers, "x-request-id");
   console.log(
     `[proxy] ${requestID} response: status=${response.status} size=${size}` +
       (echoed ? " echoed" : ""),
@@ -295,7 +295,7 @@ export async function proxyStreamRequestInner(
           const headers: Map<string, string> = new Map(
             Object.entries(header["headers"]),
           );
-          const echoed = getHeader(headers, "X-Request-ID");
+          const echoed = getHeader(headers, "x-request-id");
           console.log(
             `[proxy] ${requestID} stream complete: bytesWritten=${bytesWritten}` +
               (echoed ? " echoed" : ""),

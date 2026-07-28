@@ -350,7 +350,7 @@ describe("Test executing proxy with JSON requests", () => {
     await proxyExec;
 
     const sent = JSON.parse(written.trim());
-    const requestID = sent.headers["X-Request-ID"];
+    const requestID = sent.headers["x-request-id"];
     expect(requestID).toMatch(REQUEST_ID_PATTERN);
     expect(logSpy).toHaveBeenCalledWith(
       `[proxy] ${requestID} GET /api/v2/index`,
@@ -381,7 +381,7 @@ describe("Test executing proxy with JSON requests", () => {
     const request: ProxyRequest = {
       method: "GET",
       path_query: "/api/v2/index",
-      headers: { "X-Request-ID": "req-preset" },
+      headers: { "x-request-id": "req-c5816c86-a6d8-4206-b58f-ec26ac4a653c" },
     };
 
     let written = "";
@@ -400,19 +400,21 @@ describe("Test executing proxy with JSON requests", () => {
     await proxyExec;
 
     const sent = JSON.parse(written.trim());
-    expect(sent.headers["X-Request-ID"]).toBe("req-preset");
+    expect(sent.headers["x-request-id"]).toBe(
+      "req-c5816c86-a6d8-4206-b58f-ec26ac4a653c",
+    );
   });
 
   it("includes the request ID in process failure errors", async () => {
     const proxyExec = proxyJSONRequest({
-      headers: { "X-Request-ID": "req-preset" },
+      headers: { "x-request-id": "req-c5816c86-a6d8-4206-b58f-ec26ac4a653c" },
     } as unknown as ProxyRequest);
 
     process.stderr?.emit("data", "error");
     process.emit("close", 1);
 
     await expect(proxyExec).rejects.toThrowError(
-      "req-preset: Process exited with non-zero code 1: error",
+      "req-c5816c86-a6d8-4206-b58f-ec26ac4a653c: Process exited with non-zero code 1: error",
     );
   });
 });
@@ -478,7 +480,9 @@ describe("Test executing proxy with streaming requests", () => {
 
   it("proxy should return on proxy-command exit error code", async () => {
     const proxyExec = proxyStreamRequest(
-      { headers: { "X-Request-ID": "req-test" } } as unknown as ProxyRequest,
+      {
+        headers: { "x-request-id": "req-23dd7b46-6dd9-4be9-b870-d55d4b7faa96" },
+      } as unknown as ProxyRequest,
       writeStream,
     );
 
@@ -491,7 +495,7 @@ describe("Test executing proxy with streaming requests", () => {
     const { complete, error } = (await proxyExec) as ProxyStreamResponse;
     expect(!complete);
     expect(error!.message).toEqual(
-      "req-test: Process exited with non-zero code 1: error",
+      "req-23dd7b46-6dd9-4be9-b870-d55d4b7faa96: Process exited with non-zero code 1: error",
     );
   });
 
@@ -542,7 +546,9 @@ describe("Test executing proxy with streaming requests", () => {
 
   it("proxy should handle SIGTERM", async () => {
     const proxyExec = proxyStreamRequest(
-      { headers: { "X-Request-ID": "req-test" } } as unknown as ProxyRequest,
+      {
+        headers: { "x-request-id": "req-a518a6e3-8767-4dac-99dd-01d411085abf" },
+      } as unknown as ProxyRequest,
       writeStream,
     );
 
@@ -553,7 +559,7 @@ describe("Test executing proxy with streaming requests", () => {
     const { complete, error } = (await proxyExec) as ProxyStreamResponse;
     expect(!complete);
     expect(error!.message).toEqual(
-      "req-test: Process terminated with signal SIGTERM",
+      "req-a518a6e3-8767-4dac-99dd-01d411085abf: Process terminated with signal SIGTERM",
     );
   });
 
@@ -576,6 +582,6 @@ describe("Test executing proxy with streaming requests", () => {
 
     await proxyExec;
 
-    expect(request.headers["X-Request-ID"]).toMatch(REQUEST_ID_PATTERN);
+    expect(request.headers["x-request-id"]).toMatch(REQUEST_ID_PATTERN);
   });
 });

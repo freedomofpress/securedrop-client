@@ -36,9 +36,9 @@ def header_echo_server():
         def do_GET(self):
             body = json.dumps({"headers": dict(self.headers)}).encode()
             self.send_response(200)
-            request_id = self.headers.get("X-Request-ID")
+            request_id = self.headers.get("x-request-id")
             if request_id:
-                self.send_header("X-Request-ID", request_id)
+                self.send_header("x-request-id", request_id)
             self.send_header("Content-Length", str(len(body)))
             self.end_headers()
             self.wfile.write(body)

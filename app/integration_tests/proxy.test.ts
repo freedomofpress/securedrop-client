@@ -242,7 +242,7 @@ describe("Test executing streaming proxy", async () => {
       {
         method: "GET",
         path_query: "/delay/10",
-        headers: { "X-Request-ID": requestId },
+        headers: { "x-request-id": requestId },
       },
       proxyCommand(100),
       writeStream,

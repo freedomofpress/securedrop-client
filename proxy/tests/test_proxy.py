@@ -133,7 +133,7 @@ def test_request_id_forwarded(proxy_request, header_echo_server):
         "method": "GET",
         "path_query": "/",
         "stream": False,
-        "headers": {"X-Request-ID": request_id},
+        "headers": {"x-request-id": request_id},
     }
 
     result = proxy_request(input=test_input, origin=header_echo_server)
@@ -145,7 +145,7 @@ def test_request_id_forwarded(proxy_request, header_echo_server):
 
 
 def test_request_id_not_added_when_missing(proxy_request, header_echo_server):
-    """If the request didn't specify an `X-Request-ID`, then the response must not have one
+    """If the request didn't specify an `x-request-id`, then the response must not have one
     either."""
     test_input = {
         "method": "GET",
@@ -176,7 +176,7 @@ def test_request_id_invalid_rejected(proxy_request, header_echo_server, invalid)
         "method": "GET",
         "path_query": "/",
         "stream": False,
-        "headers": {"X-Request-ID": invalid},
+        "headers": {"x-request-id": invalid},
     }
 
     result = proxy_request(input=test_input, origin=header_echo_server)

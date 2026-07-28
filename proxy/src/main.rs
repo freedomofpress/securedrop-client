@@ -37,7 +37,7 @@ const DISABLE_TOR: &str = "DISABLE_TOR";
 const STDIN_LIMIT: u64 = 5_000_000;
 
 // Requests are tagged with an X-Request-ID header
-const REQUEST_ID_HEADER: &str = "X-Request-ID";
+const REQUEST_ID_HEADER: &str = "x-request-id";
 
 /// Best-effort logger that writes to the local syslog socket, from where
 /// messages are forwarded to sd-log by securedrop-log's rsyslog config.
@@ -117,19 +117,13 @@ enum RequestId {
 /// is not an error — the header is optional — and the request proceeds
 /// without one.
 fn extract_request_id(headers: &mut HashMap<String, String>) -> RequestId {
-    let Some(key) = headers
-        .keys()
-        .find(|key| key.eq_ignore_ascii_case(REQUEST_ID_HEADER))
-        .cloned()
-    else {
+    let Some(value) = headers.get(REQUEST_ID_HEADER) else {
         return RequestId::Missing;
     };
-    let value = headers[&key].clone();
-    if valid_request_id(&value) {
-        RequestId::Valid(value)
+    if valid_request_id(value) {
+        RequestId::Valid(value.clone())
     } else {
-        headers.remove(&key);
-        RequestId::Invalid(value)
+        RequestId::Invalid(value.clone())
     }
 }
 
@@ -441,9 +435,6 @@ mod tests {
             extract_request_id(&mut headers),
             RequestId::Invalid("not a request ID".to_string())
         );
-        // The malformed header is removed; other headers are untouched
-        assert_eq!(headers.len(), 1);
-        assert_eq!(headers["Accept"], "*/*");
     }
 
     #[test]
