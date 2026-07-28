@@ -58,9 +58,9 @@ deactivate s
 alt stream: false, status: any
 p ->> c: stdout: {status, headers, body}<br>stderr: ∅<br>rc = 0
 else stream: true, status: 2xx/3xx
-p ->> c: stdout: HTTP response body<br>stderr: {headers}<br>rc = 0
+p ->> c: stdout: HTTP response body<br>stderr: {status, headers}<br>rc = 0
 else stream: true, status: 4xx/5xx
-p ->> c: stdout: {status, headers, body}<br>stderr: ∅<br>rc = 0
+p ->> c: stdout: ∅<br>stderr: {status, headers, body} [2]<br>rc = 0
 else proxy failure
 p ->> c: stdout: ∅ or partial HTTP response body<br>stderr: {error}<br>rc ≠ 0
 else killed by Inbox
@@ -74,6 +74,8 @@ deactivate p
 
 1. The request on the standard input MUST be a single-line JSON object, at most
    [`STDIN_LIMIT`] long.
+
+2. `body` MUST be capped at some length (TBD).
 
 ## Quick Start
 
