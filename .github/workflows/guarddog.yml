@@ -91,7 +91,7 @@ jobs:
       # No checkout: GuardDog scans remote packages, so this job needs nothing
       # from the repo. The matrix already carries everything the scan needs.
       - name: Set up Python
-        uses: actions/setup-python@v6
+        uses: actions/setup-python@v7
         with:
           python-version: '3.13'
 
