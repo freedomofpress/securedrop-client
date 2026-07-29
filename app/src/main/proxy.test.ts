@@ -19,6 +19,9 @@ import { PassThrough } from "node:stream";
 
 vi.mock("child_process");
 
+const REQUEST_ID_PATTERN =
+  /^req-[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
+
 const mockChildProcess = (): child_process.ChildProcess => {
   const proc = new EventEmitter() as child_process.ChildProcess;
 
@@ -310,6 +313,109 @@ describe("Test executing proxy with JSON requests", () => {
     const sent = JSON.parse(written.trim());
     expect(sent.timeout).toBe(45);
   });
+
+  it("generates an X-Request-ID header and logs the request and response", async () => {
+    const command: ProxyCommand = {
+      command: "",
+      options: [],
+      env: new Map(),
+      timeout: 100 as ms,
+    };
+
+    const request: ProxyRequest = {
+      method: "GET",
+      path_query: "/api/v2/index",
+      headers: {},
+    };
+
+    let written = "";
+    process.stdin = new Writable({
+      write(chunk, _encoding, callback) {
+        written += chunk.toString();
+        callback();
+      },
+    });
+
+    const logSpy = vi.spyOn(console, "log");
+
+    const proxyExec = proxyJSONRequestInner(request, command);
+
+    const response = {
+      status: 200,
+      headers: { "x-request-id": "req-echoed" },
+      body: {},
+    };
+    process.stdout?.emit("data", JSON.stringify(response));
+    process.emit("close", 0);
+    await proxyExec;
+
+    const sent = JSON.parse(written.trim());
+    const requestID = sent.headers["x-request-id"];
+    expect(requestID).toMatch(REQUEST_ID_PATTERN);
+    expect(logSpy).toHaveBeenCalledWith(
+      `[proxy] ${requestID} GET /api/v2/index`,
+    );
+    // The response log records only that the request ID was echoed, not its
+    // value (which is already the request ID at the start of the line).
+    expect(logSpy).toHaveBeenCalledWith(
+      expect.stringContaining(`[proxy] ${requestID} response: status=200`),
+    );
+    const responseLog = logSpy.mock.calls
+      .map((call) => call[0])
+      .find(
+        (line) =>
+          typeof line === "string" && line.includes("response: status=200"),
+      ) as string;
+    expect(responseLog).not.toContain("req-echoed");
+  });
+
+  it("preserves a caller-provided X-Request-ID header", async () => {
+    const command: ProxyCommand = {
+      command: "",
+      options: [],
+      env: new Map(),
+      timeout: 100 as ms,
+    };
+
+    const request: ProxyRequest = {
+      method: "GET",
+      path_query: "/api/v2/index",
+      headers: { "x-request-id": "req-c5816c86-a6d8-4206-b58f-ec26ac4a653c" },
+    };
+
+    let written = "";
+    process.stdin = new Writable({
+      write(chunk, _encoding, callback) {
+        written += chunk.toString();
+        callback();
+      },
+    });
+
+    const proxyExec = proxyJSONRequestInner(request, command);
+
+    const response = { status: 200, headers: {}, body: {} };
+    process.stdout?.emit("data", JSON.stringify(response));
+    process.emit("close", 0);
+    await proxyExec;
+
+    const sent = JSON.parse(written.trim());
+    expect(sent.headers["x-request-id"]).toBe(
+      "req-c5816c86-a6d8-4206-b58f-ec26ac4a653c",
+    );
+  });
+
+  it("includes the request ID in process failure errors", async () => {
+    const proxyExec = proxyJSONRequest({
+      headers: { "x-request-id": "req-c5816c86-a6d8-4206-b58f-ec26ac4a653c" },
+    } as unknown as ProxyRequest);
+
+    process.stderr?.emit("data", "error");
+    process.emit("close", 1);
+
+    await expect(proxyExec).rejects.toThrowError(
+      "req-c5816c86-a6d8-4206-b58f-ec26ac4a653c: Process exited with non-zero code 1: error",
+    );
+  });
 });
 
 const mockStreamingChildProcess = (): child_process.ChildProcess => {
@@ -372,7 +478,12 @@ describe("Test executing proxy with streaming requests", () => {
   });
 
   it("proxy should return on proxy-command exit error code", async () => {
-    const proxyExec = proxyStreamRequest({} as ProxyRequest, writeStream);
+    const proxyExec = proxyStreamRequest(
+      {
+        headers: { "x-request-id": "req-23dd7b46-6dd9-4be9-b870-d55d4b7faa96" },
+      } as unknown as ProxyRequest,
+      writeStream,
+    );
 
     process.stderr?.emit("data", "error");
 
@@ -383,7 +494,7 @@ describe("Test executing proxy with streaming requests", () => {
     const { complete, error } = (await proxyExec) as ProxyStreamResponse;
     expect(!complete);
     expect(error!.message).toEqual(
-      "Process exited with non-zero code 1: error",
+      "req-23dd7b46-6dd9-4be9-b870-d55d4b7faa96: Process exited with non-zero code 1: error",
     );
   });
 
@@ -433,7 +544,12 @@ describe("Test executing proxy with streaming requests", () => {
   });
 
   it("proxy should handle SIGTERM", async () => {
-    const proxyExec = proxyStreamRequest({} as ProxyRequest, writeStream);
+    const proxyExec = proxyStreamRequest(
+      {
+        headers: { "x-request-id": "req-a518a6e3-8767-4dac-99dd-01d411085abf" },
+      } as unknown as ProxyRequest,
+      writeStream,
+    );
 
     setTimeout(() => {
       process.emit("close", 0, "SIGTERM");
@@ -441,6 +557,30 @@ describe("Test executing proxy with streaming requests", () => {
 
     const { complete, error } = (await proxyExec) as ProxyStreamResponse;
     expect(!complete);
-    expect(error!.message).toEqual("Process terminated with signal SIGTERM");
+    expect(error!.message).toEqual(
+      "req-a518a6e3-8767-4dac-99dd-01d411085abf: Process terminated with signal SIGTERM",
+    );
+  });
+
+  it("generates an X-Request-ID header for stream requests", async () => {
+    const request = {
+      method: "GET",
+      path_query: "/api/v1/sources/abc/submissions/def/download",
+      headers: {},
+    } as ProxyRequest;
+
+    const proxyExec = proxyStreamRequest(request, writeStream);
+
+    if (process.stderr) {
+      process.stderr.emit("data", JSON.stringify({ headers: { etag: "x" } }));
+    }
+
+    setTimeout(() => {
+      process.emit("close", 0);
+    }, 10);
+
+    await proxyExec;
+
+    expect(request.headers["x-request-id"]).toMatch(REQUEST_ID_PATTERN);
   });
 });
