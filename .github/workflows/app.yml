@@ -41,7 +41,7 @@ jobs:
       - name: Bootstrap node.js
         uses: actions/setup-node@v7
         with:
-          node-version: "24.15.x"
+          node-version: "24.x"
       - name: Install pnpm and dependencies
         uses: pnpm/action-setup@v6.0.9
         with:
@@ -93,7 +93,7 @@ jobs:
       - name: Bootstrap node.js
         uses: actions/setup-node@v7
         with:
-          node-version: "24.15.x"
+          node-version: "24.x"
       - name: Install pnpm and dependencies
         uses: pnpm/action-setup@v6.0.9
         with:
@@ -158,7 +158,7 @@ jobs:
       - name: Bootstrap node.js
         uses: actions/setup-node@v7
         with:
-          node-version: "24.15.x"
+          node-version: "24.x"
       - name: Install pnpm and dependencies
         uses: pnpm/action-setup@v6.0.9
         with:
@@ -190,7 +190,7 @@ jobs:
       - name: Bootstrap node.js
         uses: actions/setup-node@v7
         with:
-          node-version: "24.15.x"
+          node-version: "24.x"
       - name: Install pnpm and dependencies
         uses: pnpm/action-setup@v6.0.9
         with:
