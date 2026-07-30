@@ -171,6 +171,14 @@ WHERE
             pending_events.type = 'source_deleted'
     )
 /* sources_projected(uuid,data,version,has_attachment,is_seen) */;
+CREATE TRIGGER items_source_immutable
+BEFORE UPDATE OF data ON items
+FOR EACH ROW
+WHEN json_extract(OLD.data, '$.source') IS NOT NULL
+    AND json_extract(NEW.data, '$.source') IS NOT json_extract(OLD.data, '$.source')
+BEGIN
+    SELECT RAISE(ABORT, 'items.source is immutable');
+END;
 CREATE VIEW items_projected AS
 SELECT
     items.uuid,
@@ -275,14 +283,6 @@ SELECT
     ) AS rn
 FROM items_projected
 /* sorted_items(uuid,data,version,plaintext,filename,kind,is_read,last_updated,source_uuid,fetch_progress,fetch_status,fetch_last_updated_at,fetch_retry_attempts,interaction_count,decrypted_size,double_encrypted_key_fingerprint,rn) */;
-CREATE TRIGGER items_source_immutable
-BEFORE UPDATE OF data ON items
-FOR EACH ROW
-WHEN json_extract(OLD.data, '$.source') IS NOT NULL
-    AND json_extract(NEW.data, '$.source') IS NOT json_extract(OLD.data, '$.source')
-BEGIN
-    SELECT RAISE(ABORT, 'items.source is immutable');
-END;
 -- Dbmate schema migrations
 INSERT INTO "schema_migrations" (version) VALUES
   ('20260203225412'),
