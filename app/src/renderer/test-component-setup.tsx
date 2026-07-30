@@ -106,6 +106,9 @@ beforeEach(() => {
     login: vi.fn().mockRejectedValue(new Error("mock not implemented")),
     requestStream: vi.fn().mockResolvedValue({ sha256sum: "abc" }),
     getSystemLanguage: vi.fn().mockResolvedValue("en"),
+    getSubmissionKeyFingerprint: vi
+      .fn()
+      .mockResolvedValue("AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"),
     getCSPNonce: vi.fn().mockResolvedValue("nonce"),
     // TODO: we may want a real mock here
     syncMetadata: vi.fn().mockRejectedValue(new Error("mock not implemented")),

@@ -329,10 +329,10 @@ export class DB {
       "DELETE FROM items WHERE uuid IN (SELECT value FROM json_each(@uuids_json))",
     );
     this.selectItem = this.db.prepare(
-      `SELECT uuid, data, plaintext, filename, fetch_status, fetch_progress, decrypted_size FROM items WHERE uuid = @uuid`,
+      `SELECT uuid, data, plaintext, filename, fetch_status, fetch_progress, decrypted_size, double_encrypted_key_fingerprint FROM items WHERE uuid = @uuid`,
     );
     this.selectItemMany = this.db.prepare(
-      `SELECT uuid, data, plaintext, filename, fetch_status, fetch_progress, decrypted_size FROM items WHERE uuid IN (SELECT value FROM json_each(@uuids_json))`,
+      `SELECT uuid, data, plaintext, filename, fetch_status, fetch_progress, decrypted_size, double_encrypted_key_fingerprint FROM items WHERE uuid IN (SELECT value FROM json_each(@uuids_json))`,
     );
 
     this.selectAllJournalistVersion = this.db.prepare(
@@ -381,13 +381,13 @@ export class DB {
       WHERE s.uuid = ?
     `);
     this.selectItemsBySourceId = this.db.prepare(`
-      SELECT uuid, data, plaintext, filename, fetch_status, fetch_progress, decrypted_size, is_read FROM items_projected
+      SELECT uuid, data, plaintext, filename, fetch_status, fetch_progress, decrypted_size, is_read, double_encrypted_key_fingerprint FROM items_projected
       WHERE source_uuid = ?
       ORDER BY interaction_count DESC
       LIMIT ?
     `);
     this.selectItemsBySourceIdBefore = this.db.prepare(`
-      SELECT uuid, data, plaintext, filename, fetch_status, fetch_progress, decrypted_size FROM items_projected
+      SELECT uuid, data, plaintext, filename, fetch_status, fetch_progress, decrypted_size, double_encrypted_key_fingerprint FROM items_projected
       WHERE source_uuid = ? AND interaction_count < ?
       ORDER BY interaction_count DESC
       LIMIT ?
@@ -627,6 +627,8 @@ export class DB {
             fetch_status: row.fetch_status as FetchStatus,
             fetch_progress: row.fetch_progress,
             decrypted_size: row.decrypted_size,
+            doubleEncryptedKeyFingerprint:
+              row.double_encrypted_key_fingerprint || null,
           });
         });
         // Delete from search index
@@ -878,6 +880,8 @@ export class DB {
         fetch_status: row.fetch_status,
         fetch_progress: row.fetch_progress,
         decrypted_size: row.decrypted_size,
+        doubleEncryptedKeyFingerprint:
+          row.double_encrypted_key_fingerprint || null,
       };
     });
 
@@ -1004,32 +1008,56 @@ export class DB {
       fetch_status: row.fetch_status as FetchStatus,
       fetch_progress: row.fetch_progress,
       decrypted_size: row.decrypted_size,
+      doubleEncryptedKeyFingerprint:
+        row.double_encrypted_key_fingerprint || null,
     };
   }
 
-  completePlaintextItem(itemUuid: string, plaintext: string) {
-    const stmt: Statement<{ uuid: string; plaintext: string }, void> =
-      this.db!.prepare(
-        `UPDATE items SET fetch_progress = null, fetch_status = ${FetchStatus.Complete}, plaintext = @plaintext, fetch_last_updated_at = CURRENT_TIMESTAMP WHERE uuid = @uuid`,
-      );
+  completePlaintextItem(
+    itemUuid: string,
+    plaintext: string,
+    doubleEncryptedKeyFingerprint: string | null,
+  ) {
+    const stmt: Statement<
+      {
+        uuid: string;
+        plaintext: string;
+        double_encrypted_key_fingerprint: string;
+      },
+      void
+    > = this.db!.prepare(
+      `UPDATE items SET fetch_progress = null, fetch_status = ${FetchStatus.Complete}, plaintext = @plaintext, double_encrypted_key_fingerprint = @double_encrypted_key_fingerprint, fetch_last_updated_at = CURRENT_TIMESTAMP WHERE uuid = @uuid`,
+    );
     stmt.run({
       uuid: itemUuid,
       plaintext: plaintext,
+      double_encrypted_key_fingerprint: doubleEncryptedKeyFingerprint ?? "",
     });
     this.searchIndex.indexItem(itemUuid);
   }
 
-  completeFileItem(itemUuid: string, filename: string, decryptedSize: number) {
+  completeFileItem(
+    itemUuid: string,
+    filename: string,
+    decryptedSize: number,
+    doubleEncryptedKeyFingerprint: string | null,
+  ) {
     const stmt: Statement<
-      { uuid: string; filename: string; decrypted_size: number },
+      {
+        uuid: string;
+        filename: string;
+        decrypted_size: number;
+        double_encrypted_key_fingerprint: string;
+      },
       void
     > = this.db!.prepare(
-      `UPDATE items SET fetch_progress = null, fetch_status = ${FetchStatus.Complete}, filename = @filename, decrypted_size = @decrypted_size, fetch_last_updated_at = CURRENT_TIMESTAMP WHERE uuid = @uuid`,
+      `UPDATE items SET fetch_progress = null, fetch_status = ${FetchStatus.Complete}, filename = @filename, decrypted_size = @decrypted_size, double_encrypted_key_fingerprint = @double_encrypted_key_fingerprint, fetch_last_updated_at = CURRENT_TIMESTAMP WHERE uuid = @uuid`,
     );
     stmt.run({
       uuid: itemUuid,
       filename: filename,
       decrypted_size: decryptedSize,
+      double_encrypted_key_fingerprint: doubleEncryptedKeyFingerprint ?? "",
     });
     this.searchIndex.indexItem(itemUuid);
   }
@@ -1399,7 +1427,7 @@ export class DB {
           data: metadataBlob,
           version: version,
         });
-        this.completePlaintextItem(replyData.uuid, replyData.plaintext);
+        this.completePlaintextItem(replyData.uuid, replyData.plaintext, null);
       }
       // Once event is applied, delete from pending events table
       this.deletePendingEvent.run({ snowflake_id: event.snowflake_id });

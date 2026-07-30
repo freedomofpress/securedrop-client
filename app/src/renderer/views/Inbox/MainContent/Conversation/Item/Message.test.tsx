@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import userEvent from "@testing-library/user-event";
-import { screen, fireEvent } from "@testing-library/react";
+import { screen, fireEvent, waitFor } from "@testing-library/react";
 import Message from "./Message";
 import {
   testMemoization,
@@ -32,6 +32,7 @@ describe("Message Component Memoization", () => {
     fetch_status: null,
     fetch_progress: null,
     decrypted_size: null,
+    doubleEncryptedKeyFingerprint: null,
   };
   const mockOnUpdate = vi.fn();
   const mockOnDelete = vi.fn();
@@ -128,6 +129,7 @@ describe("Reply", () => {
     fetch_status: null,
     fetch_progress: null,
     decrypted_size: null,
+    doubleEncryptedKeyFingerprint: null,
   };
 
   const mockJournalists: Array<{ uuid: string; data: JournalistMetadata }> = [
@@ -498,6 +500,7 @@ describe("Reply", () => {
       fetch_status: null,
       fetch_progress: null,
       decrypted_size: null,
+      doubleEncryptedKeyFingerprint: null,
     };
 
     describe("when authenticated (online mode)", () => {
@@ -852,6 +855,7 @@ describe("Reply", () => {
       fetch_status: null,
       fetch_progress: null,
       decrypted_size: null,
+      doubleEncryptedKeyFingerprint: null,
     };
 
     it("should display pending icon for pending replies", () => {
@@ -954,6 +958,7 @@ describe("Reply", () => {
       fetch_status: null,
       fetch_progress: null,
       decrypted_size: null,
+      doubleEncryptedKeyFingerprint: null,
     };
 
     const sentReplyItem: Item = {
@@ -973,6 +978,7 @@ describe("Reply", () => {
       fetch_status: null,
       fetch_progress: null,
       decrypted_size: null,
+      doubleEncryptedKeyFingerprint: null,
     };
 
     const seenReplyItem: Item = {
@@ -992,6 +998,7 @@ describe("Reply", () => {
       fetch_status: null,
       fetch_progress: null,
       decrypted_size: null,
+      doubleEncryptedKeyFingerprint: null,
     };
 
     it("should show pending icon for pending replies", () => {
@@ -1083,6 +1090,7 @@ describe("Message and Reply delete button keyboard accessibility", () => {
     fetch_status: null,
     fetch_progress: null,
     decrypted_size: null,
+    doubleEncryptedKeyFingerprint: null,
   };
 
   const mockReplyItem: Item = {
@@ -1102,6 +1110,7 @@ describe("Message and Reply delete button keyboard accessibility", () => {
     fetch_status: null,
     fetch_progress: null,
     decrypted_size: null,
+    doubleEncryptedKeyFingerprint: null,
   };
 
   beforeEach(() => {
@@ -1191,5 +1200,205 @@ describe("Message and Reply delete button keyboard accessibility", () => {
     await user.keyboard("{Enter}");
 
     expect(mockOnDelete).toHaveBeenCalledOnce();
+  });
+});
+
+describe("Double-encryption badge", () => {
+  const authState: Partial<RootState> = {
+    session: {
+      status: SessionStatus.Auth,
+      authData: {
+        expiration: "2025-07-16T19:25:44.388054+00:00",
+        journalistUUID: "journalist-1",
+        journalistFirstName: "Daniel",
+        journalistLastName: "Ellsberg",
+      },
+    },
+    journalists: { journalists: [], loading: false, error: null },
+  };
+
+  const mockMessageItem: Item = {
+    uuid: "msg-1",
+    data: {
+      uuid: "msg-1",
+      kind: "message",
+      seen_by: [],
+      size: 512,
+      source: "source-1",
+      is_read: false,
+      interaction_count: 0,
+    },
+    plaintext: "A pre-encrypted message",
+    filename: null,
+    fetch_status: null,
+    fetch_progress: null,
+    decrypted_size: null,
+    doubleEncryptedKeyFingerprint: null,
+  };
+
+  const mockReplyItem: Item = {
+    uuid: "reply-1",
+    data: {
+      kind: "reply",
+      uuid: "reply-1",
+      source: "source-1",
+      size: 1024,
+      journalist_uuid: "journalist-1",
+      is_deleted_by_source: false,
+      seen_by: [],
+      interaction_count: 1,
+    } as ReplyMetadata,
+    plaintext: "A reply",
+    filename: null,
+    fetch_status: null,
+    fetch_progress: null,
+    decrypted_size: null,
+    doubleEncryptedKeyFingerprint: null,
+  };
+
+  it("shows the normal badge when the inner layer used the current submission key", async () => {
+    const user = userEvent.setup();
+    renderWithProviders(
+      <Message
+        kind="message"
+        item={{
+          ...mockMessageItem,
+          doubleEncryptedKeyFingerprint:
+            "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
+        }}
+        designation="Test Source"
+        onUpdate={vi.fn()}
+        onDelete={vi.fn()}
+      />,
+      { preloadedState: authState },
+    );
+
+    const badge = screen.getByText("Source-encrypted");
+    expect(badge).toBeInTheDocument();
+    await waitFor(() =>
+      expect(window.electronAPI.getSubmissionKeyFingerprint).toHaveBeenCalled(),
+    );
+    expect(badge.style.color).toBe("");
+    await user.hover(badge);
+    expect(
+      await screen.findByText(
+        "This submission was encrypted by the source before uploading",
+      ),
+    ).toBeInTheDocument();
+    expect(
+      (await screen.findByRole("tooltip")).closest(".ant-tooltip"),
+    ).toHaveClass("ant-tooltip-placement-bottom");
+    // The message itself is still displayed
+    expect(screen.getByText("A pre-encrypted message")).toBeInTheDocument();
+  });
+
+  it("normalizes case and spacing when comparing full fingerprints", async () => {
+    vi.mocked(window.electronAPI.getSubmissionKeyFingerprint).mockResolvedValue(
+      "aaaa aaaa aaaa aaaa aaaa aaaa aaaa aaaa aaaa aaaa",
+    );
+    renderWithProviders(
+      <Message
+        kind="message"
+        item={{
+          ...mockMessageItem,
+          doubleEncryptedKeyFingerprint:
+            "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
+        }}
+        designation="Test Source"
+        onUpdate={vi.fn()}
+        onDelete={vi.fn()}
+      />,
+      { preloadedState: authState },
+    );
+
+    const badge = screen.getByText("Source-encrypted");
+    await waitFor(() =>
+      expect(window.electronAPI.getSubmissionKeyFingerprint).toHaveBeenCalled(),
+    );
+    expect(badge.style.color).toBe("");
+  });
+
+  it("does not treat a matching 16-character key ID as the current key", async () => {
+    renderWithProviders(
+      <Message
+        kind="message"
+        item={{
+          ...mockMessageItem,
+          doubleEncryptedKeyFingerprint: "AAAAAAAAAAAAAAAA",
+        }}
+        designation="Test Source"
+        onUpdate={vi.fn()}
+        onDelete={vi.fn()}
+      />,
+      { preloadedState: authState },
+    );
+
+    const badge = screen.getByText("Source-encrypted");
+    await waitFor(() => expect(badge.style.color).not.toBe(""));
+  });
+
+  it("shows a warning badge with the fingerprint in the tooltip when the inner layer used a non-submission key", async () => {
+    const user = userEvent.setup();
+    const { container } = renderWithProviders(
+      <Message
+        kind="message"
+        item={{
+          ...mockMessageItem,
+          doubleEncryptedKeyFingerprint:
+            "1234567890ABCDEF1234567890ABCDEF12345678",
+        }}
+        designation="Test Source"
+        onUpdate={vi.fn()}
+        onDelete={vi.fn()}
+      />,
+      { preloadedState: authState },
+    );
+
+    const badge = screen.getByText("Source-encrypted");
+    expect(badge).toBeInTheDocument();
+    // Same padlock icon, but tinted with the warning color
+    expect(container.querySelector(".lucide-lock-keyhole")).toBeTruthy();
+    await waitFor(() => expect(badge.style.color).not.toBe(""));
+
+    // The tooltip names the key's fingerprint, formatted in 4-char groups
+    await user.hover(badge);
+    expect(
+      await screen.findByText(
+        /1234 5678 90AB CDEF 1234 5678 90AB CDEF 1234 5678/,
+      ),
+    ).toBeInTheDocument();
+  });
+
+  it("does not show the badge on a normal message", () => {
+    renderWithProviders(
+      <Message
+        kind="message"
+        item={mockMessageItem}
+        designation="Test Source"
+        onUpdate={vi.fn()}
+        onDelete={vi.fn()}
+      />,
+      { preloadedState: authState },
+    );
+
+    expect(screen.queryByText("Source-encrypted")).not.toBeInTheDocument();
+  });
+
+  it("does not show the badge on a reply, even if flagged", () => {
+    // Replies are authored by journalists and are never source-double-encrypted
+    renderWithProviders(
+      <Message
+        kind="reply"
+        item={{
+          ...mockReplyItem,
+          doubleEncryptedKeyFingerprint:
+            "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
+        }}
+        onDelete={vi.fn()}
+      />,
+      { preloadedState: authState },
+    );
+
+    expect(screen.queryByText("Source-encrypted")).not.toBeInTheDocument();
   });
 });

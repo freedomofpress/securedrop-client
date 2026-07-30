@@ -170,7 +170,7 @@ describe("Search", () => {
         ["source1"]: mockSource("source1", "colorful caterpillar"),
       });
       db.updateItems({ ["item1"]: mockItem("item1", "source1", "message") });
-      db.completePlaintextItem("item1", "hello world secret document");
+      db.completePlaintextItem("item1", "hello world secret document", null);
 
       const results = db.search("secret");
       expect(results).toHaveLength(1);
@@ -187,7 +187,7 @@ describe("Search", () => {
         ["source1"]: mockSource("source1", "colorful caterpillar"),
       });
       db.updateItems({ ["item1"]: mockItem("item1", "source1", "file") });
-      db.completeFileItem("item1", "budget-report.pdf", 1000);
+      db.completeFileItem("item1", "budget-report.pdf", 1000, null);
 
       const results = db.search("budget");
       expect(results).toHaveLength(1);
@@ -200,7 +200,7 @@ describe("Search", () => {
         ["source1"]: mockSource("source1", "colorful caterpillar"),
       });
       db.updateItems({ ["item1"]: mockItem("item1", "source1", "reply") });
-      db.completePlaintextItem("item1", "thanks for the tip");
+      db.completePlaintextItem("item1", "thanks for the tip", null);
 
       const results = db.search("tip");
       expect(results).toHaveLength(1);
@@ -212,7 +212,7 @@ describe("Search", () => {
         ["source1"]: mockSource("source1", "colorful caterpillar"),
       });
       db.updateItems({ ["item1"]: mockItem("item1", "source1", "message") });
-      db.completePlaintextItem("item1", "colorful flowers in the garden");
+      db.completePlaintextItem("item1", "colorful flowers in the garden", null);
 
       // Both the source name and the message match, but we expect only one
       // result for source1 (the highest-ranked row).
@@ -251,7 +251,7 @@ describe("Search", () => {
         ["source1"]: mockSource("source1", "colorful caterpillar"),
       });
       db.updateItems({ ["item1"]: mockItem("item1", "source1", "message") });
-      db.completePlaintextItem("item1", "hello world");
+      db.completePlaintextItem("item1", "hello world", null);
 
       // These should not throw
       expect(() => db.search('"hello"')).not.toThrow();
@@ -278,7 +278,7 @@ describe("Search", () => {
         ["source1"]: mockSource("source1", "colorful caterpillar"),
       });
       db.updateItems({ ["item1"]: mockItem("item1", "source1", "message") });
-      db.completePlaintextItem("item1", "secret document");
+      db.completePlaintextItem("item1", "secret document", null);
 
       await db.deleteItemsAsync(["item1"]);
 
@@ -291,7 +291,7 @@ describe("Search", () => {
         ["source1"]: mockSource("source1", "colorful caterpillar"),
       });
       db.updateItems({ ["item1"]: mockItem("item1", "source1", "message") });
-      db.completePlaintextItem("item1", "secret document");
+      db.completePlaintextItem("item1", "secret document", null);
 
       db.addPendingItemEvent("item1", PendingEventType.ItemDeleted);
 
@@ -304,7 +304,7 @@ describe("Search", () => {
         ["source1"]: mockSource("source1", "colorful caterpillar"),
       });
       db.updateItems({ ["item1"]: mockItem("item1", "source1", "message") });
-      db.completePlaintextItem("item1", "secret document");
+      db.completePlaintextItem("item1", "secret document", null);
 
       db.addPendingSourceEvent(
         "source1",
@@ -321,7 +321,7 @@ describe("Search", () => {
         ["source1"]: mockSource("source1", "colorful caterpillar"),
       });
       db.updateItems({ ["item1"]: mockItem("item1", "source1", "message") });
-      db.completePlaintextItem("item1", "secret document");
+      db.completePlaintextItem("item1", "secret document", null);
 
       db.addPendingItemEvent("item1", PendingEventType.ItemDeleted);
 
@@ -337,7 +337,7 @@ describe("Search", () => {
         ["source1"]: mockSource("source1", "colorful caterpillar"),
       });
       db.updateItems({ ["item1"]: mockItem("item1", "source1", "message") });
-      db.completePlaintextItem("item1", "sensitive information");
+      db.completePlaintextItem("item1", "sensitive information", null);
 
       const results = db.search("sensitive");
       expect(results).toHaveLength(1);
@@ -350,7 +350,7 @@ describe("Search", () => {
         ["source1"]: mockSource("source1", "colorful caterpillar"),
       });
       db.updateItems({ ["item1"]: mockItem("item1", "source1", "file") });
-      db.completeFileItem("item1", "evidence.zip", 500);
+      db.completeFileItem("item1", "evidence.zip", 500, null);
 
       const results = db.search("evidence");
       expect(results).toHaveLength(1);
@@ -363,8 +363,8 @@ describe("Search", () => {
       });
       db.updateItems({ ["item1"]: mockItem("item1", "source1", "message") });
       // Set filename first, then plaintext — plaintext should win in the index
-      db.completeFileItem("item1", "original.txt", 100);
-      db.completePlaintextItem("item1", "the real content");
+      db.completeFileItem("item1", "original.txt", 100, null);
+      db.completePlaintextItem("item1", "the real content", null);
 
       const results = db.search("real content");
       expect(results).toHaveLength(1);
@@ -391,8 +391,8 @@ describe("Search", () => {
         ["source1"]: mockSource("source1", "colorful caterpillar"),
       });
       db.updateItems({ ["item1"]: mockItem("item1", "source1", "message") });
-      db.completePlaintextItem("item1", "old content");
-      db.completePlaintextItem("item1", "new content");
+      db.completePlaintextItem("item1", "old content", null);
+      db.completePlaintextItem("item1", "new content", null);
 
       expect(db.search("old")).toHaveLength(0);
       expect(db.search("new content")).toHaveLength(1);
@@ -442,7 +442,7 @@ describe("Search", () => {
         ["source1"]: mockSource("source1", "dramatic dolphin"),
       });
       db.updateItems({ ["item1"]: mockItem("item1", "source1", "message") });
-      db.completePlaintextItem("item1", "secret message");
+      db.completePlaintextItem("item1", "secret message", null);
 
       // Re-indexing the source should not remove the item row
       db.updateSources({
@@ -460,7 +460,7 @@ describe("Search", () => {
         ["source1"]: mockSource("source1", "dramatic dolphin"),
       });
       db.updateItems({ ["item1"]: mockItem("item1", "source1", "message") });
-      db.completePlaintextItem("item1", "secret info");
+      db.completePlaintextItem("item1", "secret info", null);
 
       await db.deleteSourcesAsync(["source1"]);
 
@@ -487,7 +487,7 @@ describe("Search", () => {
         ["source1"]: mockSource("source1", "dramatic dolphin"),
       });
       db.updateItems({ ["item1"]: mockItem("item1", "source1", "message") });
-      db.completePlaintextItem("item1", "secret info");
+      db.completePlaintextItem("item1", "secret info", null);
 
       await db.deleteItemsAsync(["item1"]);
 
@@ -504,8 +504,8 @@ describe("Search", () => {
         ["item1"]: mockItem("item1", "source1", "message"),
         ["item2"]: mockItem("item2", "source1", "message"),
       });
-      db.completePlaintextItem("item1", "first message");
-      db.completePlaintextItem("item2", "second message");
+      db.completePlaintextItem("item1", "first message", null);
+      db.completePlaintextItem("item2", "second message", null);
 
       await db.deleteItemsAsync(["item1"]);
 
@@ -520,7 +520,7 @@ describe("Search", () => {
         ["source1"]: mockSource("source1", "dramatic dolphin"),
       });
       db.updateItems({ ["item1"]: mockItem("item1", "source1", "message") });
-      db.completePlaintextItem("item1", "classified content");
+      db.completePlaintextItem("item1", "classified content", null);
 
       // Verify the item is indexed before deletion
       expect(db.search("classified")).toHaveLength(1);

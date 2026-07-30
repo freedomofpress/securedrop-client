@@ -487,6 +487,7 @@ describe.sequential("accessibility (axe)", () => {
       decrypted_size: null,
       fetch_progress: 1024,
       fetch_status: 3,
+      doubleEncryptedKeyFingerprint: null,
     });
 
     const replyItem = (
@@ -509,6 +510,7 @@ describe.sequential("accessibility (axe)", () => {
       decrypted_size: null,
       fetch_progress: 512,
       fetch_status: 3,
+      doubleEncryptedKeyFingerprint: null,
     });
 
     it("has no axe violations when no source is selected (renders nothing)", async () => {
@@ -573,6 +575,7 @@ describe.sequential("accessibility (axe)", () => {
       plaintext: null,
       filename: "/path/to/testfile.pdf",
       decrypted_size: null,
+      doubleEncryptedKeyFingerprint: null,
     };
 
     it("has no axe violations when closed", async () => {
@@ -613,6 +616,7 @@ describe.sequential("accessibility (axe)", () => {
       plaintext: null,
       filename: "/path/to/testfile.pdf",
       decrypted_size: null,
+      doubleEncryptedKeyFingerprint: null,
     };
 
     it("has no axe violations when the wizard is closed", async () => {
@@ -653,6 +657,7 @@ describe.sequential("accessibility (axe)", () => {
       fetch_progress: null,
       decrypted_size: null,
       fetch_status: FetchStatus.Initial,
+      doubleEncryptedKeyFingerprint: null,
       ...overrides,
     });
 
@@ -714,6 +719,7 @@ describe.sequential("accessibility (axe)", () => {
       fetch_status: null,
       fetch_progress: null,
       decrypted_size: null,
+      doubleEncryptedKeyFingerprint: null,
     };
 
     it("has no axe violations for a message item", async () => {

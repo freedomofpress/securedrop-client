@@ -17,7 +17,10 @@ export class Config {
     console.log("Loading with isQubes: ", isQubes);
     return {
       qubes_gpg_domain: read(isQubes, "QUBES_GPG_DOMAIN", ""),
-      sd_submission_key_fpr: read(isQubes, "SD_SUBMISSION_KEY_FPR"),
+      sd_submission_key_fpr: normalizeFingerprint(
+        read(isQubes, "SD_SUBMISSION_KEY_FPR"),
+        "SD_SUBMISSION_KEY_FPR",
+      ),
       // this is only needed for development, so we just read the environment
       gnupghome: readEnvironment("GNUPGHOME", ""),
       // TODO: implement SD_PROXY_VM_NAME
@@ -28,6 +31,14 @@ export class Config {
       whistleflow: read(isQubes, "WHISTLEFLOW", "false") === "true",
     };
   }
+}
+
+function normalizeFingerprint(value: string, key: string): string {
+  const normalized = value.replace(/\s/g, "").toUpperCase();
+  if (!/^[0-9A-F]{40}$/.test(normalized)) {
+    throw new Error(`${key} must be a full 40-character fingerprint`);
+  }
+  return normalized;
 }
 
 /**
