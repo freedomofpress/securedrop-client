@@ -15,7 +15,11 @@ set -euxo pipefail
 OCI_RUN_ARGUMENTS="--user=root -v $(pwd):/src:Z"
 
 # Default to podman if available
-if which podman > /dev/null 2>&1; then
+# HACK: Force usage of docker on CI while podman is broken:
+# <https://github.com/actions/runner-images/issues/14473>.
+if [[ "${CI:-}" == "true" ]]; then
+    OCI_BIN="docker"
+elif which podman > /dev/null 2>&1; then
     OCI_BIN="podman"
     # Make sure host UID/GID are mapped into container,
     # see podman-run(1) manual.
