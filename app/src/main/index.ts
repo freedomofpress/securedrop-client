@@ -348,6 +348,10 @@ if (!gotTheLock) {
         app.quit();
       });
 
+      ipcMain.handle("signOut", async () => {
+        await signOut();
+      });
+
       ipcMain.handle("getAppVersion", async (_event): Promise<string> => {
         return app.getVersion();
       });
@@ -923,12 +927,38 @@ if (!gotTheLock) {
     app.quit();
   });
 
-  app.on("before-quit", () => {
+  async function signOut() {
+    // Expire the session on the server so the token can't be reused
+    if (authToken) {
+      try {
+        await proxyJSONRequest({
+          method: "POST",
+          path_query: "/api/v1/logout",
+          stream: false,
+          headers: {
+            Accept: "application/json",
+            "Content-Type": "application/json",
+            Authorization: `Token ${authToken}`,
+          },
+        });
+        console.log("Successfully logged out");
+      } catch (e) {
+        // Logout is just best-effort since app is quitting
+        console.error("Failed to log out: ", e);
+      }
+      authToken = null;
+    }
+  }
+
+  app.on("before-quit", async () => {
     isQuitting = true;
+    // Gracefully shutdown DB + send shutdown signal to worker
     db.close();
     if (fetchWorker) {
       fetchWorker.postMessage({ type: "exit" });
     }
+    // Expire the session on the server so the token can't be reused
+    await signOut();
   });
 }
 

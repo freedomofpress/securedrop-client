@@ -45,7 +45,8 @@ const electronAPI = {
   getAppVersion: logIpcCall<string>("getAppVersion", () =>
     ipcRenderer.invoke("getAppVersion"),
   ),
-  quitApp: logIpcCall<string>("quitApp", () => ipcRenderer.invoke("quitApp")),
+  quitApp: logIpcCall("quitApp", () => ipcRenderer.invoke("quitApp")),
+  signOut: logIpcCall<void>("signOut", () => ipcRenderer.invoke("signOut")),
   login: logIpcCall<LoginResult>("login", (credentials: LoginCredentials) =>
     ipcRenderer.invoke("login", credentials),
   ),

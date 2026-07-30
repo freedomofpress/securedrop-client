@@ -33,7 +33,7 @@ export const draftsSlice = createSlice({
   },
   extraReducers: (builder) => {
     builder
-      .addCase(setUnauth, (state) => {
+      .addCase(setUnauth.fulfilled, (state) => {
         state.drafts = {};
       })
       .addCase(fetchSources.fulfilled, (state, action) => {
