@@ -55,12 +55,10 @@ p -->> s: HTTP request<br>(over Tor)
 s -->> p: HTTP response<br>(over Tor)
 deactivate s
 
-alt stream: false, status: any
+alt stream: false or status: 4xx/5xx
 p ->> c: stdout: {status, headers, body}<br>stderr: ∅<br>rc = 0
-else stream: true, status: 2xx/3xx
+else stream: true and status: 2xx/3xx
 p ->> c: stdout: HTTP response body<br>stderr: {headers}<br>rc = 0
-else stream: true, status: 4xx/5xx
-p ->> c: stdout: {status, headers, body}<br>stderr: ∅<br>rc = 0
 else proxy failure
 p ->> c: stdout: ∅ or partial HTTP response body<br>stderr: {error}<br>rc ≠ 0
 else killed by Inbox
