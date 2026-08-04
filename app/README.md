@@ -94,7 +94,7 @@ You can then access the [Demo Source Interface](https://demo-source.securedrop.o
 - `pnpm test` - Run unit tests with coverage
 - `pnpm integration-test` - Run integration tests
 - `pnpm build` - Build for production
-- `pnpm build:linux` - Build Linux distribution package
+- `pnpm build:unpack` - Build an unpacked application directory
 - `pnpm lint` - Check code style and linting
 - `pnpm fix` - Auto-fix linting and formatting issues
 - `pnpm typecheck` - Run TypeScript type checking
