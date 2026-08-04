@@ -35,7 +35,7 @@ request. (The server returning a malicious HTTP response is already game over.)
 ## How It Works
 
 _Solid and dashed lines indicate plaintext and encrypted connections,
-respectively._
+respectively. Boxes indicate VMs; lines between VMs take place over qrexec._
 
 ```mermaid
 sequenceDiagram
@@ -48,29 +48,30 @@ participant p as securedrop-proxy
 end
 participant s as SecureDrop
 
-c ->> p: request<br>(JSON over qrexec stdin)
+c ->> p: stdin: {method, path_query, stream, headers?, body?, timeout?} [1]
 activate p
 activate s
-p -->> s: HTTP over Tor
-s -->> p: HTTP over Tor
+p -->> s: HTTP request<br>(over Tor)
+s -->> p: HTTP response<br>(over Tor)
 deactivate s
 
-alt stream: false
-p ->> c: response<br>(JSON over qrexec stdout)
-else stream: true
-p ->> c: stream<br>(stream over qrexec stdout)
-else error
-p ->> c: error<br>(JSON over qrexec stderr)
+alt stream: false or status: 4xx/5xx
+p ->> c: stdout: {status, headers, body}<br>stderr: ∅<br>rc = 0
+else stream: true and status: 2xx/3xx
+p ->> c: stdout: HTTP response body<br>stderr: {headers}<br>rc = 0
+else proxy failure
+p ->> c: stdout: ∅ or partial HTTP response body<br>stderr: {error}<br>rc ≠ 0
+else killed by Inbox
+p ->> c: stdout: ∅ or partial HTTP response body<br>stderr: ∅<br>rc: none (signal)
 end
 
 deactivate p
 ```
 
-The proxy works by reading a JSON object from the standard input, generating an
-HTTP request from that JSON, making that request against the remote server, and
-then either (a) writing to the standard output a JSON object which represents
-the remote server's response or (b) streaming the response directly to the
-standard output.
+**Notes:**
+
+1. The request on the standard input MUST be a single-line JSON object, at most
+   [`STDIN_LIMIT`] long.
 
 ## Quick Start
 
@@ -108,3 +109,5 @@ with:
 ## Tests
 
 Unit tests can be run with `make test`.
+
+[`STDIN_LIMIT`]: https://github.com/freedomofpress/securedrop-client/blob/a00eb5da9b6795d09bbbcd524484d1543c1289d5/proxy/src/main.rs#L34
