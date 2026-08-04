@@ -30,10 +30,10 @@ package-mode = false
 redis = [
     {version = "=6.1.0", python = ">=3.13"}, # trixie
 ]
-mypy = "^2.2.0"
+mypy = "^2.3.0"
 types-redis = "<5"
-types-setuptools = ">=83.0.0.20260706,<84"
-fakeredis = "^2.36.0"
+types-setuptools = ">=83.0.0.20260724,<84"
+fakeredis = "^2.37.0"
 pyfakefs = "^6.2.0"
 pytest = "^9.1.1"
 
