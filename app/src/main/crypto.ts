@@ -601,7 +601,18 @@ export class Crypto {
         }
 
         signal?.removeEventListener("abort", abortListener);
+
+        // Try to flush the write to the `gpgOutputFile`.  If this fails, save
+        // the error but check other error conditions (which are likely *why*
+        // this has failed) first.
         gpgOutputFile.end();
+        let flushError: unknown = null;
+        try {
+          await finished(gpgOutputFile);
+        } catch (error) {
+          flushError = error;
+        }
+
         const errorMessage = stderr.toString("utf8");
 
         if (signal?.aborted) {
@@ -634,6 +645,22 @@ export class Crypto {
             // and could be the result of some sort of injection attack
             new CryptoError(
               `GPG file decryption emitted stderr: ${JSON.stringify(errorMessage.trim())}`,
+            ),
+          );
+          return;
+        }
+
+        // If flushing the write to `gpgOutputFile` failed for some other
+        // reason, report it as such.
+        if (flushError) {
+          await destroyAndCleanup();
+          isSettled = true;
+          reject(
+            new CryptoError(
+              "Failed to write decrypted GPG output to disk",
+              flushError instanceof Error
+                ? flushError
+                : new Error(String(flushError)),
             ),
           );
           return;
