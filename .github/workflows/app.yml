@@ -104,9 +104,19 @@ jobs:
           run_install: |
             - cwd: app
       - name: Install Rust-specific dependencies for sd-proxy
-        run: apt-get install --yes build-essential curl libssl-dev pkg-config
-      - name: Install Rust to build sd-proxy
-        uses: dtolnay/rust-toolchain@1.96.0
+        run: apt-get install --yes rustup build-essential curl libssl-dev pkg-config
+      - name: Cache Rust
+        uses: actions/cache@v6
+        with:
+          key: ${{ runner.os }}-cargo-${{ hashFiles('rust-toolchain.toml', '**/Cargo.lock') }}
+          path: |
+            ~/.rustup
+            ~/.cargo/bin/
+            ~/.cargo/registry/index/
+            ~/.cargo/registry/cache/
+            target/
+      - name: Initialize Rust toolchain
+        run: rustup show
       - name: Generate and insert test data
         working-directory: app
         run: |
@@ -169,9 +179,19 @@ jobs:
           run_install: |
             - cwd: app
       - name: Install Rust-specific dependencies for sd-proxy
-        run: apt-get install --yes build-essential curl libssl-dev pkg-config
-      - name: Install Rust to build sd-proxy
-        uses: dtolnay/rust-toolchain@1.96.0
+        run: apt-get install --yes rustup build-essential curl libssl-dev pkg-config
+      - name: Cache Rust
+        uses: actions/cache@v6
+        with:
+          key: ${{ runner.os }}-cargo-${{ hashFiles('rust-toolchain.toml', '**/Cargo.lock') }}
+          path: |
+            ~/.rustup
+            ~/.cargo/bin/
+            ~/.cargo/registry/index/
+            ~/.cargo/registry/cache/
+            target/
+      - name: Initialize Rust toolchain
+        run: rustup show
       - name: Run integration tests
         working-directory: app
         run: NODE_ENV=ci VITE_HTTPBIN_URL=http://httpbin:80 pnpm integration-test
@@ -201,9 +221,19 @@ jobs:
           run_install: |
             - cwd: app
       # n.b. because this runs on Ubuntu runner directly,
-      # build-essential, curl, libssl-dev and pkg-config are already installed
-      - name: Install Rust to build sd-proxy
-        uses: dtolnay/rust-toolchain@1.96.0
+      # rustup, build-essential, curl, libssl-dev and pkg-config are already installed
+      - name: Cache Rust
+        uses: actions/cache@v6
+        with:
+          key: ${{ runner.os }}-cargo-${{ hashFiles('rust-toolchain.toml', '**/Cargo.lock') }}
+          path: |
+            ~/.rustup
+            ~/.cargo/bin/
+            ~/.cargo/registry/index/
+            ~/.cargo/registry/cache/
+            target/
+      - name: Initialize Rust toolchain
+        run: rustup show
       - name: Install ffmpeg for video recording
         run: sudo apt-get update && sudo apt-get install -y ffmpeg
       - name: Prebuild SecureDrop Docker image

@@ -9,7 +9,7 @@ $OCI_BIN inspect $CONTAINER > /dev/null 2>&1 || missing=true
 
 if $missing; then
     # Build it if it doesn't
-    $OCI_BIN build -t $CONTAINER scripts/ --no-cache \
+    $OCI_BIN build . -t $CONTAINER -f scripts/Dockerfile --no-cache \
         --build-arg DISTRO=$DEBIAN_VERSION
 fi
 
@@ -26,7 +26,7 @@ if [[ $status == 42 ]]; then
     # and try again!
     echo "Rebuilding container to update dependencies"
     $OCI_BIN rmi $CONTAINER
-    $OCI_BIN build -t $CONTAINER scripts/ --no-cache
+    $OCI_BIN build . -t $CONTAINER -f scripts/Dockerfile --no-cache
     # Reset $status and re-run the dependency check
     status=0
     $OCI_BIN run --rm $OCI_RUN_ARGUMENTS \
