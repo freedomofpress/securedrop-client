@@ -65,7 +65,7 @@ jobs:
         run: pnpm test
       - name: Build
         working-directory: app
-        run: pnpm build:linux
+        run: pnpm build:unpack
 
   translator-screenshots:
     strategy:
