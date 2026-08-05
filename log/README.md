@@ -99,6 +99,7 @@ Here is an example code using Python logging
 import logging
 import logging.handlers
 
+
 def main():
     handler = logging.handlers.SysLogHandler(address="/dev/log")
     logging.basicConfig(level=logging.DEBUG, handlers=[handler])
@@ -109,7 +110,6 @@ def main():
 
 if __name__ == "__main__":
     main()
-
 ```
 
 Or use the logger command.
