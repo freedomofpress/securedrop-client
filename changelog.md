@@ -5,7 +5,6 @@
 * Handle double-encrypted messages and files (#3534)
 * Clean up source menu, add "delete source option" (#3625)
 * Do not trigger duplicate exports (#3428)
-* Add X-Request-ID header and logs (#3607)
 * Log out on Inbox quit (#3664)
 * Sync improvements:
   * Separate download and decryption queues (#3440, #3553)
@@ -13,6 +12,7 @@
   * Validate that uuid matches metadata.uuid (#3608)
   * Prevent mutation of an item's source (#3584)
   * Track retry attempts and the last status for pending events (#3540)
+  * Add X-Request-ID header and logs for request tracing (#3607)
 * Internal and development:
   * Have proxy explicitly depend on curl, for user debugging (#3628)
   * Remove bookworm support; set Python 3.13 as baseline (#3629)
