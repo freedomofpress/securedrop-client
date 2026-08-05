@@ -1,5 +1,47 @@
 # Changelog
 
+## 1.6.0
+
+* Handle double-encrypted messages and files (#3534)
+* Clean up source menu, add "delete source option" (#3625)
+* Do not trigger duplicate exports (#3428)
+* Log out on Inbox quit (#3664)
+* Sync improvements:
+  * Separate download and decryption queues (#3440, #3553)
+  * Validate interaction_count received from server (#3600)
+  * Validate that uuid matches metadata.uuid (#3608)
+  * Prevent mutation of an item's source (#3584)
+  * Track retry attempts and the last status for pending events (#3540)
+  * Add X-Request-ID header and logs for request tracing (#3607)
+* Internal and development:
+  * Have proxy explicitly depend on curl, for user debugging (#3628)
+  * Remove bookworm support; set Python 3.13 as baseline (#3629)
+  * Use filter="data" when extracting better-sqlite3 binaries (#3658)
+  * Run guarddog in GitHub Actions (#3490, #3635)
+  * Force CI builds to use docker to work around a GHA bug (#3663)
+  * Remove unused MANIFEST.in (#3523)
+  * Use pinned pnpm from corepack for Debian package builds (#3596)
+  * Run axe a11y tests sequentially (#3614)
+  * Document the Inbox's simpler relationship to the proxy (#3624)
+  * Try semgrep scanning in CI (#3605)
+* Dependency updates
+  * Upgrade to Electron 41.10.3 (#3662)
+  * Bump tar to 7.5.21 (#3630)
+  * Upgrade Rust toolchain to 1.96.0 (#3460)
+* Development dependency updates
+  * Bump actions/cache from 4 to 6 (#3546)
+  * Bump actions/checkout from 6 to 7 (#3548, #3603)
+  * Bump actions/create-github-app-token from 3.1.1 to 3.2.0 (#3466)
+  * Bump actions/setup-node from 6 to 7 (#3642)
+  * Bump pnpm/action-setup from 6.0.8 to 6.0.9 (#3545)
+  * Bump pytest from 9.0.3 to 9.1.1 in /proxy (#3528)
+  * Bump ruff from 0.15.2 to 0.15.21 (#3555, #3622)
+  * Bump semgrep from 1.163.0 to 1.169.0 (#3621)
+  * Bump multiple development dependencies (#3531)
+  * Bump zizmor from 1.25.2 to 1.26.1 (#3554)
+  * Update electron-builder (#3497)
+
+
 ## 1.5.0
 
 This release, along with SecureDrop Workstation 1.8.0, switches to Debian 13 (trixie).
