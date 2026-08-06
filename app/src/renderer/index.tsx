@@ -12,8 +12,8 @@ import { setupStore } from "./store";
 
 const store = setupStore();
 
-// Expose store to window for testing
-if (typeof window !== "undefined") {
+// Expose store to window for server tests
+if (import.meta.env.MODE === "test") {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   (window as any).__REDUX_STORE__ = store;
 }
