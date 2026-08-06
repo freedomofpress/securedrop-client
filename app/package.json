@@ -37,7 +37,7 @@
   "keywords": [],
   "license": "AGPL-3.0-or-later",
   "//": {
-    "better-sqlite": "12.9.1 doesn't have electron prebuilds working right now: https://github.com/WiseLibs/better-sqlite3/releases/tag/v12.9.1"
+    "better-sqlite": "held at 12.11.x because 13.x no longer publishes prebuilds at all: https://github.com/WiseLibs/better-sqlite3/releases/tag/v13.0.0"
   },
   "devDependencies": {
     "@ant-design/icons": "5.6.1",
@@ -63,7 +63,7 @@
     "@vitejs/plugin-react": "^5.1.2",
     "@vitest/coverage-v8": "^3.2.4",
     "antd": "^5.29.3",
-    "electron": "^41.10.3",
+    "electron": "^42.8.1",
     "electron-builder": "^26.15.3",
     "electron-devtools-installer": "^4.0.0",
     "electron-vite": "^5.0.0",
@@ -102,7 +102,7 @@
     "@electron-toolkit/utils": "^4.0.0",
     "@sapphire/snowflake": "^3.5.5",
     "better-queue": "^3.8.12",
-    "better-sqlite3": "~12.8.0",
+    "better-sqlite3": "~12.11.1",
     "blakejs": "^1.2.1",
     "dbmate": "^2.29.3",
     "liquidjs": "^10.27.0",
