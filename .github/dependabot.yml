@@ -33,7 +33,6 @@ updates:
       better-sqlite3:
         patterns:
           - "better-sqlite3"
-          - "node-abi"
       electron-support:
         patterns:
           - "electron-*"
@@ -49,7 +48,6 @@ updates:
           - "antd"
           - "@ant-design*"
           - "*electron*"
-          - "node-abi"
           - "better-sqlite3"
           - "*eslint*"
           - "*vite*"
@@ -62,7 +60,6 @@ updates:
           - "@ant-design*"
           - "*electron*"
           - "better-sqlite3"
-          - "node-abi"
           - "*eslint*"
           - "*vite*"
         dependency-type: "development"

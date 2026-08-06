@@ -1,9 +1,14 @@
 #!/usr/bin/make -f
 
 include /usr/share/dpkg/pkg-info.mk
+include /usr/share/dpkg/architecture.mk
 
 # Get the codename by splitting the version and taking the part after +
 VERSION_CODENAME := $(shell echo $(DEB_VERSION) | cut -d '+' -f 2)
+
+# better-sqlite3 bundles prebuilt binaries for every platform it supports;
+# this is the only one we want to ship
+BETTER_SQLITE3_PREBUILD := linux-$(subst amd64,x64,$(DEB_HOST_ARCH)).node
 
 %:
 	dh $@
@@ -27,6 +32,8 @@ override_dh_install:
 	rmdir debian/securedrop-app/usr/lib/securedrop-app/linux-unpacked
 	rm -rf debian/securedrop-app/usr/lib/securedrop-app/resources/app.asar.unpacked/node_modules/better-sqlite3/deps/
 	rm -rf debian/securedrop-app/usr/lib/securedrop-app/resources/app.asar.unpacked/node_modules/better-sqlite3/src/
+	find debian/securedrop-app/usr/lib/securedrop-app/resources/app.asar.unpacked/node_modules/better-sqlite3/prebuilds/ \
+		-type f ! -name '$(BETTER_SQLITE3_PREBUILD)' -delete
 	rm -rf debian/securedrop-app/usr/lib/securedrop-app/resources/app.asar.unpacked/node_modules/@dbmate/
 	install -Dm755 debian/securedrop-app-wrapper debian/securedrop-app/usr/bin/securedrop-app
 
