@@ -302,14 +302,14 @@ files = [
 
 [[package]]
 name = "click"
-version = "8.1.8"
+version = "8.4.2"
 description = "Composable command line interface toolkit"
 optional = false
-python-versions = ">=3.7"
+python-versions = ">=3.10"
 groups = ["dev"]
 files = [
-    {file = "click-8.1.8-py3-none-any.whl", hash = "sha256:63c132bbbed01578a06712a2d1f497bb62d9c1c0d329b7903a866228027263b2"},
-    {file = "click-8.1.8.tar.gz", hash = "sha256:ed53c9d8990d83c2a27deae68e4ee337473f6330c040a31d4225c9574d16096a"},
+    {file = "click-8.4.2-py3-none-any.whl", hash = "sha256:e6f9f66136c816745b9d65817da91d61d957fb16e02e4dcd0552553c5a197b76"},
+    {file = "click-8.4.2.tar.gz", hash = "sha256:9a6cea6e60b17ebe0a44c5cc636d94f09bd66142c1cd7d8b4cd731c4917a15f6"},
 ]
 
 [package.dependencies]
@@ -1519,26 +1519,26 @@ doc = ["Sphinx", "sphinx-rtd-theme"]
 
 [[package]]
 name = "semgrep"
-version = "1.169.0"
+version = "1.172.0"
 description = "Lightweight static analysis for many languages. Find bug variants with patterns that look like source code."
 optional = false
 python-versions = ">=3.10"
 groups = ["dev"]
 files = [
-    {file = "semgrep-1.169.0-cp310.cp311.cp312.cp313.cp314.py310.py311.py312.py313.py314-none-macosx_10_14_x86_64.whl", hash = "sha256:b8c776de8de61aeb59a5cd479276225a2325bf1195e4a4af1f9530e76bb5f827"},
-    {file = "semgrep-1.169.0-cp310.cp311.cp312.cp313.cp314.py310.py311.py312.py313.py314-none-macosx_11_0_arm64.whl", hash = "sha256:41c366ab1ecd04b5e55c8e2b67e0dfa50a744d79eb09be962353a8b98242b878"},
-    {file = "semgrep-1.169.0-cp310.cp311.cp312.cp313.cp314.py310.py311.py312.py313.py314-none-manylinux_2_34_aarch64.whl", hash = "sha256:ffc783021040bba9784289bcedf8719d7f5c52c73eee3b8bd1814e21422837ac"},
-    {file = "semgrep-1.169.0-cp310.cp311.cp312.cp313.cp314.py310.py311.py312.py313.py314-none-manylinux_2_34_x86_64.whl", hash = "sha256:48d899e7e31803fcbf69e69a9876a7a1ade2eddb4ef85828b6576eaa0b4940da"},
-    {file = "semgrep-1.169.0-cp310.cp311.cp312.cp313.cp314.py310.py311.py312.py313.py314-none-musllinux_1_2_aarch64.whl", hash = "sha256:ad0c8cb56f3e9ce5ac81795fc3395fd05d9a65726a2492d4ec64190ec5816911"},
-    {file = "semgrep-1.169.0-cp310.cp311.cp312.cp313.cp314.py310.py311.py312.py313.py314-none-musllinux_1_2_x86_64.whl", hash = "sha256:c5ffdf474a40302281af43cc2f2eefb31de5f46a6dbffcc2f4099638ed3cbfa2"},
-    {file = "semgrep-1.169.0-cp310.cp311.cp312.cp313.cp314.py310.py311.py312.py313.py314-none-win_amd64.whl", hash = "sha256:54336981cab97b95a5f06694b2f10a36f0af86738bdc9a2050fa1865d2e44d06"},
-    {file = "semgrep-1.169.0.tar.gz", hash = "sha256:46932f875b8dff4cb731cd4c908443a0f2f585edbb0a5baa92c4fc033246fdea"},
+    {file = "semgrep-1.172.0-cp310.cp311.cp312.cp313.cp314.py310.py311.py312.py313.py314-none-macosx_10_14_x86_64.whl", hash = "sha256:7bcac633a0ffb7dfe75b7b99e44876f839590f2c01cd159c44caecc35e591df4"},
+    {file = "semgrep-1.172.0-cp310.cp311.cp312.cp313.cp314.py310.py311.py312.py313.py314-none-macosx_11_0_arm64.whl", hash = "sha256:09e92c9e6c1635a1549d4e297b2d4a9684dcd351b216ed7f2eb51cfc55479c49"},
+    {file = "semgrep-1.172.0-cp310.cp311.cp312.cp313.cp314.py310.py311.py312.py313.py314-none-manylinux_2_34_aarch64.whl", hash = "sha256:c881a305b965e594b88b15c2c6419b398e76e438ec61e60916c8b2effe927240"},
+    {file = "semgrep-1.172.0-cp310.cp311.cp312.cp313.cp314.py310.py311.py312.py313.py314-none-manylinux_2_34_x86_64.whl", hash = "sha256:d8b94af4266a575287ad2cd844573743ab4fe58f6bfb6d9229327807937eade3"},
+    {file = "semgrep-1.172.0-cp310.cp311.cp312.cp313.cp314.py310.py311.py312.py313.py314-none-musllinux_1_2_aarch64.whl", hash = "sha256:8ba0d661c8cb3a451b27d4300b2d958483d6761262ce84e4dd5ff4f94e700346"},
+    {file = "semgrep-1.172.0-cp310.cp311.cp312.cp313.cp314.py310.py311.py312.py313.py314-none-musllinux_1_2_x86_64.whl", hash = "sha256:f13ddebc870e784b03c9247f095720f49f67244eca1e7da493364f55c65b4493"},
+    {file = "semgrep-1.172.0-cp310.cp311.cp312.cp313.cp314.py310.py311.py312.py313.py314-none-win_amd64.whl", hash = "sha256:e32868faeb67b241bbd3fabd82a12fba4b467464dedde9da285b9bf78e808ba3"},
+    {file = "semgrep-1.172.0.tar.gz", hash = "sha256:7377cc350c64c7b83de20090cb2843d875da1d806690fd604e446ed544b56d71"},
 ]
 
 [package.dependencies]
 attrs = ">=21.3"
 boltons = ">=21.0,<22.0"
-click = ">=8.1.8,<8.2.0"
+click = ">=8.4.2,<8.5.0"
 click-option-group = ">=0.5,<1.0"
 colorama = ">=0.4.0,<0.5.0"
 exceptiongroup = ">=1.2.0,<1.3.0"
