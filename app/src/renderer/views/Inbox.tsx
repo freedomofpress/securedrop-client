@@ -21,6 +21,7 @@ import { useGlobalShortcuts } from "../shortcuts";
 import { requestQuit } from "../components/quitRequester";
 import { requestHelp } from "../components/helpRequester";
 import KeyboardHelpModal from "../components/KeyboardHelpModal";
+import DeleteSourceModal from "../components/DeleteSourceModal";
 
 export type FocusedPanel = "sidebar" | "mainContent";
 
@@ -135,6 +136,7 @@ function InboxView() {
         <MainContent />
       </div>
       <KeyboardHelpModal />
+      <DeleteSourceModal />
     </div>
   );
 }

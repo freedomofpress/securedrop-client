@@ -5,6 +5,7 @@ import sourcesSlice from "./features/sources/sourcesSlice";
 import conversationSlice from "./features/conversation/conversationSlice";
 import syncSlice from "./features/sync/syncSlice";
 import draftsSlice from "./features/drafts/draftsSlice";
+import deleteModalSlice from "./features/deleteModal/deleteModalSlice";
 
 const rootReducer = combineReducers({
   session: sessionSlice,
@@ -13,6 +14,7 @@ const rootReducer = combineReducers({
   conversation: conversationSlice,
   sync: syncSlice,
   drafts: draftsSlice,
+  deleteModal: deleteModalSlice,
 });
 
 export const setupStore = (preloadedState?: Partial<RootState>) => {
