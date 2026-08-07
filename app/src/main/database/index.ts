@@ -224,7 +224,7 @@ export class DB {
     const legacyClientExists = fs.existsSync(legacyPath);
 
     // Create or open the SQLite database
-    const db = new Database(dbPath, { nativeBinding: this.getBinaryPath() });
+    const db = new Database(dbPath);
 
     // enable security pragmas
     db.pragma("secure_delete = ON");
@@ -450,36 +450,6 @@ export class DB {
          OR item_uuid IN (
            SELECT uuid FROM items WHERE source_uuid = @source_uuid
          )`);
-  }
-
-  // Detect runtime environment
-  private isElectron(): boolean {
-    return (
-      typeof process !== "undefined" &&
-      process.versions !== undefined &&
-      process.versions.electron !== undefined
-    );
-  }
-
-  // Get binary path for current runtime
-  private getBinaryPath(): string {
-    const runtime = this.isElectron() ? "electron" : "node";
-    const isPackaged = __dirname.includes("app.asar");
-    const basePath = isPackaged
-      ? path.join(process.resourcesPath, "app.asar.unpacked")
-      : process.cwd();
-    const binaryPath = path.join(
-      basePath,
-      "node_modules",
-      "better-sqlite3",
-      "build",
-      `Release-${runtime}`,
-      "better_sqlite3.node",
-    );
-    console.log(
-      `Loading better-sqlite3 from ${binaryPath} (packaged: ${isPackaged})`,
-    );
-    return binaryPath;
   }
 
   runMigrations(): void {

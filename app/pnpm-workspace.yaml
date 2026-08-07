@@ -20,5 +20,5 @@ ignoredBuiltDependencies:
   - ssh2
   - unrs-resolver
 
-onlyBuiltDependencies:
-  - electron
+# nothing needs to run install scripts
+onlyBuiltDependencies: []
