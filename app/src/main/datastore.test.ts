@@ -449,6 +449,50 @@ describe("Datastore Method Tests", () => {
     expect([...sources.keys()]).toEqual(["source1", "source2"]);
   });
 
+  it('getSourceWithItems with limit "all" should return conversations longer than one page', () => {
+    db = new Datastore(crypto, new Storage());
+    db.updateSources({ source1: mockSourceMetadata("source1") });
+
+    const items: Record<string, ItemMetadata> = {};
+    for (let i = 1; i <= 150; i++) {
+      items[`item${i}`] = mockItemMetadata(`item${i}`, "source1", "message", i);
+    }
+    db.updateItems(items);
+
+    const all = db.getSourceWithItems("source1", { limit: "all" });
+    expect(all.items.length).toEqual(150);
+    expect(all.hasMoreHistoricalItems).toBe(false);
+    // Items are returned oldest-first, so the whole history must be present
+    expect(all.items[0].uuid).toEqual("item1");
+    expect(all.items[149].uuid).toEqual("item150");
+  });
+
+  it("getSourceWithItems with a numeric limit should return only the newest page", () => {
+    db = new Datastore(crypto, new Storage());
+    db.updateSources({ source1: mockSourceMetadata("source1") });
+
+    const items: Record<string, ItemMetadata> = {};
+    for (let i = 1; i <= 150; i++) {
+      items[`item${i}`] = mockItemMetadata(`item${i}`, "source1", "message", i);
+    }
+    db.updateItems(items);
+
+    const page = db.getSourceWithItems("source1", { limit: 100 });
+    expect(page.items.length).toEqual(100);
+    expect(page.hasMoreHistoricalItems).toBe(true);
+    expect(page.items[0].uuid).toEqual("item51");
+    expect(page.items.map((i) => i.uuid)).not.toContain("item1");
+
+    // The remaining history is reachable via beforeInteractionCount
+    const rest = db.getSourceWithItems("source1", {
+      limit: "all",
+      beforeInteractionCount: page.items[0].data.interaction_count,
+    });
+    expect(rest.items.length).toEqual(50);
+    expect(rest.items[0].uuid).toEqual("item1");
+    expect(rest.hasMoreHistoricalItems).toBe(false);
+  });
+
   it("pending SourceConversationTruncated should remove items up to and including upper_bound", () => {
     db.updateSources({
       source1: mockSourceMetadata("source1"),
@@ -460,7 +504,7 @@ describe("Datastore Method Tests", () => {
       item3: mockItemMetadata("item3", "source1", "message", 3),
     });
 
-    let sourceWithItems = db.getSourceWithItems("source1");
+    let sourceWithItems = db.getSourceWithItems("source1", { limit: "all" });
     expect(sourceWithItems.items.length).toEqual(3);
 
     db.addPendingSourceEvent(
@@ -468,7 +512,7 @@ describe("Datastore Method Tests", () => {
       PendingEventType.SourceConversationTruncated,
       { upper_bound: 2 },
     );
-    sourceWithItems = db.getSourceWithItems("source1");
+    sourceWithItems = db.getSourceWithItems("source1", { limit: "all" });
     expect(sourceWithItems.items.length).toEqual(1);
   });
 
@@ -483,7 +527,7 @@ describe("Datastore Method Tests", () => {
       item3: mockItemMetadata("item3", "source1", "message", 3),
     });
 
-    let sourceWithItems = db.getSourceWithItems("source1");
+    let sourceWithItems = db.getSourceWithItems("source1", { limit: "all" });
     expect(sourceWithItems.items.length).toEqual(3);
 
     db.addPendingSourceEvent(
@@ -491,7 +535,7 @@ describe("Datastore Method Tests", () => {
       PendingEventType.SourceConversationTruncated,
       { upper_bound: 3 },
     );
-    sourceWithItems = db.getSourceWithItems("source1");
+    sourceWithItems = db.getSourceWithItems("source1", { limit: "all" });
     expect(sourceWithItems.items.length).toEqual(0);
 
     // Add source2 with 3 items
@@ -504,7 +548,7 @@ describe("Datastore Method Tests", () => {
       item5: mockItemMetadata("item5", "source2", "message", 2),
       item6: mockItemMetadata("item6", "source2", "message", 3),
     });
-    sourceWithItems = db.getSourceWithItems("source2");
+    sourceWithItems = db.getSourceWithItems("source2", { limit: "all" });
     expect(sourceWithItems.items.length).toEqual(3);
   });
 
@@ -802,11 +846,11 @@ describe("Datastore Method Tests", () => {
       item3: mockItemMetadata("item3", "source1"),
     });
 
-    let sourceWithItems = db.getSourceWithItems("source1");
+    let sourceWithItems = db.getSourceWithItems("source1", { limit: "all" });
     expect(sourceWithItems.items.length).toEqual(3);
 
     await db.addPendingReplySentEvent("here is a reply", "source1", 4);
-    sourceWithItems = db.getSourceWithItems("source1");
+    sourceWithItems = db.getSourceWithItems("source1", { limit: "all" });
     expect(sourceWithItems.items.length).toEqual(4);
     const reply = sourceWithItems.items[3];
     expect(reply?.plaintext).toBe("here is a reply");
@@ -840,7 +884,7 @@ describe("Datastore Method Tests", () => {
       },
     });
 
-    const sourceWithItems = db.getSourceWithItems("source1");
+    const sourceWithItems = db.getSourceWithItems("source1", { limit: "all" });
     const items = sourceWithItems.items;
 
     // Clone and sort by interaction_count
@@ -863,12 +907,12 @@ describe("Datastore Method Tests", () => {
       item3: mockItemMetadata("item3", "source1"),
     });
 
-    let sourceWithItems = db.getSourceWithItems("source1");
+    let sourceWithItems = db.getSourceWithItems("source1", { limit: "all" });
     expect(sourceWithItems.items.length).toEqual(3);
 
     db.addPendingItemEvent("item1", PendingEventType.ItemDeleted);
 
-    sourceWithItems = db.getSourceWithItems("source1");
+    sourceWithItems = db.getSourceWithItems("source1", { limit: "all" });
     expect(sourceWithItems.items.length).toEqual(2);
   });
 
@@ -899,7 +943,7 @@ describe("Datastore Method Tests", () => {
     });
 
     await db.addPendingReplySentEvent("reply text", "source1", 3);
-    let sourceWithItems = db.getSourceWithItems("source1");
+    let sourceWithItems = db.getSourceWithItems("source1", { limit: "all" });
     expect(sourceWithItems.items.length).toEqual(3);
 
     db.addPendingSourceEvent(
@@ -907,7 +951,7 @@ describe("Datastore Method Tests", () => {
       PendingEventType.SourceConversationTruncated,
       { upper_bound: 3 },
     );
-    sourceWithItems = db.getSourceWithItems("source1");
+    sourceWithItems = db.getSourceWithItems("source1", { limit: "all" });
     expect(sourceWithItems.items.length).toEqual(0);
   });
 
@@ -926,7 +970,7 @@ describe("Datastore Method Tests", () => {
       PendingEventType.SourceConversationTruncated,
       { upper_bound: 2 },
     )!;
-    let sourceWithItems = db.getSourceWithItems("source1");
+    let sourceWithItems = db.getSourceWithItems("source1", { limit: "all" });
     expect(sourceWithItems.items.length).toEqual(0);
 
     const snowflake2 = await db.addPendingReplySentEvent(
@@ -935,7 +979,7 @@ describe("Datastore Method Tests", () => {
       3,
     );
     expect(snowflake2 > snowflake1);
-    sourceWithItems = db.getSourceWithItems("source1");
+    sourceWithItems = db.getSourceWithItems("source1", { limit: "all" });
     expect(sourceWithItems.items.length).toEqual(1);
     expect(sourceWithItems.items[0].uuid).toMatch(
       /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i,
@@ -971,7 +1015,7 @@ describe("Datastore Method Tests", () => {
     });
 
     await db.addPendingReplySentEvent("reply text", "source1", 2);
-    let sourceWithItems = db.getSourceWithItems("source1");
+    let sourceWithItems = db.getSourceWithItems("source1", { limit: "all" });
     expect(sourceWithItems.items.length).toEqual(2);
     const pendingReplyUuid = sourceWithItems.items[1].uuid;
 
@@ -987,7 +1031,7 @@ describe("Datastore Method Tests", () => {
     });
 
     db.addPendingItemEvent(pendingReplyUuid, PendingEventType.ItemDeleted);
-    sourceWithItems = db.getSourceWithItems("source1");
+    sourceWithItems = db.getSourceWithItems("source1", { limit: "all" });
     expect(sourceWithItems.items.length).toEqual(1);
     expect(
       sourceWithItems.items.find((i) => i.uuid === pendingReplyUuid),
@@ -1008,7 +1052,7 @@ describe("Datastore Method Tests", () => {
     db.addPendingItemEvent("item1", PendingEventType.ItemDeleted);
     db.addPendingItemEvent("item3", PendingEventType.ItemDeleted);
 
-    const sourceWithItems = db.getSourceWithItems("source1");
+    const sourceWithItems = db.getSourceWithItems("source1", { limit: "all" });
     expect(sourceWithItems.items.length).toEqual(1);
     expect(sourceWithItems.items[0].uuid).toBe("item2");
   });
@@ -1124,7 +1168,7 @@ describe("Datastore Method Tests", () => {
     // Mark up to interaction_count=5 as seen
     db.addPendingSourceConversationSeen("source1", 5);
 
-    const sourceWithItems = db.getSourceWithItems("source1");
+    const sourceWithItems = db.getSourceWithItems("source1", { limit: "all" });
     const byUuid = Object.fromEntries(
       sourceWithItems.items.map((i) => [i.uuid, i]),
     );
@@ -1315,7 +1359,7 @@ describe("Datastore Method Tests", () => {
     });
 
     // Verify source and item exist
-    const sourceWithItems = db.getSourceWithItems("source1");
+    const sourceWithItems = db.getSourceWithItems("source1", { limit: "all" });
     expect(sourceWithItems).toBeDefined();
     expect(sourceWithItems.uuid).toEqual("source1");
     expect(sourceWithItems.items.length).toBe(1);
@@ -1469,7 +1513,7 @@ describe("Datastore Method Tests", () => {
       },
     });
 
-    let sourceWithItems = db.getSourceWithItems("source1");
+    let sourceWithItems = db.getSourceWithItems("source1", { limit: "all" });
     expect(sourceWithItems.items.length).toBe(1);
     expect(sourceWithItems.items[0].uuid).toBe("item1");
     expect(sourceWithItems.items[0].data.size).toBe(50);
@@ -1477,7 +1521,7 @@ describe("Datastore Method Tests", () => {
     expect(sourceWithItems.items[0].fetch_status).toBe(FetchStatus.Initial);
 
     db.completePlaintextItem("item1", "plaintext", null);
-    sourceWithItems = db.getSourceWithItems("source1");
+    sourceWithItems = db.getSourceWithItems("source1", { limit: "all" });
     expect(sourceWithItems.items.length).toBe(1);
     expect(sourceWithItems.items[0].uuid).toBe("item1");
     expect(sourceWithItems.items[0].plaintext).toBe("plaintext");
@@ -1492,7 +1536,7 @@ describe("Datastore Method Tests", () => {
       },
     });
 
-    sourceWithItems = db.getSourceWithItems("source1");
+    sourceWithItems = db.getSourceWithItems("source1", { limit: "all" });
     expect(sourceWithItems.items.length).toBe(1);
     expect(sourceWithItems.items[0].uuid).toBe("item1");
     expect(sourceWithItems.items[0].data.size).toBe(99);
@@ -1517,8 +1561,8 @@ describe("Datastore Method Tests", () => {
       }),
     ).toThrow("items.source is immutable");
 
-    const source1 = db.getSourceWithItems("source1");
-    const source2 = db.getSourceWithItems("source2");
+    const source1 = db.getSourceWithItems("source1", { limit: "all" });
+    const source2 = db.getSourceWithItems("source2", { limit: "all" });
     expect(source1.items).toHaveLength(1);
     expect(source1.items[0].plaintext).toBe("plaintext");
     expect(source2.items).toHaveLength(0);

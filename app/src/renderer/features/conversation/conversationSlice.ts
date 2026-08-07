@@ -120,8 +120,10 @@ export const deleteItem = createAsyncThunk(
       itemUuid,
       PendingEventType.ItemDeleted,
     );
-    const sourceWithItems =
-      await window.electronAPI.getSourceWithItems(sourceUuid);
+    const sourceWithItems = await window.electronAPI.getSourceWithItems(
+      sourceUuid,
+      { limit: CONVERSATION_PAGE_SIZE },
+    );
     return { sourceWithItems };
   },
 );
