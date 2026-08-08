@@ -601,7 +601,18 @@ export class Crypto {
         }
 
         signal?.removeEventListener("abort", abortListener);
+
+        // Try to flush the write to the `gpgOutputFile`.  If this fails, save
+        // the error but check other error conditions (which are likely *why*
+        // this has failed) first.
         gpgOutputFile.end();
+        let flushError: unknown = null;
+        try {
+          await finished(gpgOutputFile);
+        } catch (error) {
+          flushError = error;
+        }
+
         const errorMessage = stderr.toString("utf8");
 
         if (signal?.aborted) {
@@ -639,6 +650,22 @@ export class Crypto {
           return;
         }
 
+        // If flushing the write to `gpgOutputFile` failed for some other
+        // reason, report it as such.
+        if (flushError) {
+          await destroyAndCleanup();
+          isSettled = true;
+          reject(
+            new CryptoError(
+              "Failed to write decrypted GPG output to disk",
+              flushError instanceof Error
+                ? flushError
+                : new Error(String(flushError)),
+            ),
+          );
+          return;
+        }
+
         try {
           // Extract original filename from gzip header
           const originalFilename =
@@ -649,8 +676,11 @@ export class Crypto {
             originalFilename || path.basename(filepath, ".gpg");
           const finalAbsolutePath = itemDirectory.join(finalFilename);
 
-          // Stream decompress the gzipped content to final file
-          await this.streamDecompressGzipFile(tempGpgOutput, finalAbsolutePath);
+          await this.decompressGzipFileAtomically(
+            tempGpgOutput,
+            itemDirectory,
+            finalAbsolutePath,
+          );
 
           // Clean up temporary GPG output file
           fs.unlink(tempGpgOutput, () => {});
@@ -755,10 +785,37 @@ export class Crypto {
     outputPath: string,
   ): Promise<void> {
     const readStream = fs.createReadStream(gzipFilePath);
-    const writeStream = fs.createWriteStream(outputPath);
+    const writeStream = fs.createWriteStream(outputPath, { flags: "wx" });
     const gunzip = createGunzip();
 
     await pipeline(readStream, gunzip, writeStream);
+  }
+
+  /**
+   * Wrap streamDecompressGzipFile() so that the `finalOutputPath` is guaranteed
+   * to be complete if it exists.  The file is decompressed first to a file
+   * called `plaintext` in a temporary subdirectory of `itemDirectory`, then
+   * moved atomically to the `finalOutputPath`.
+   *
+   * NB. This operation is effectively an upsert: If `finalOutputPath` already
+   * exists, this function will overwrite it.
+   */
+  private async decompressGzipFileAtomically(
+    gzipFilePath: string,
+    itemDirectory: PathBuilder,
+    finalOutputPath: string,
+  ): Promise<void> {
+    const temporaryDirectory = fs.mkdtempSync(
+      itemDirectory.join(".securedrop-decrypt-"),
+    );
+    const temporaryOutputPath = path.join(temporaryDirectory, "plaintext");
+
+    try {
+      await this.streamDecompressGzipFile(gzipFilePath, temporaryOutputPath);
+      fs.renameSync(temporaryOutputPath, finalOutputPath);
+    } finally {
+      fs.rmSync(temporaryDirectory, { force: true, recursive: true });
+    }
   }
 
   /**

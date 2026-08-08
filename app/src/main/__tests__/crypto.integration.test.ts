@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach, vi, afterEach } from "vitest";
 import { spawn } from "child_process";
-import { EventEmitter } from "events";
 import * as fs from "fs";
+import { Writable } from "stream";
 import { Crypto, CryptoError } from "../crypto";
 import { Storage, PathBuilder, UnsafePathComponent } from "../storage";
 
@@ -30,6 +30,19 @@ type CryptoWithPrivateMethods = {
   ): Promise<void>;
   readFileHeader(filePath: string): Promise<Buffer>;
 };
+
+// Stand-in for the fs.WriteStream that GPG's stdout is piped to. Pass
+// `flushError` to simulate output that fails to reach disk on close.
+function makeMockWriteStream(flushError?: Error): Writable {
+  return new Writable({
+    write(_chunk, _encoding, callback) {
+      callback();
+    },
+    final(callback) {
+      callback(flushError ?? null);
+    },
+  });
+}
 
 describe("Crypto Integration Tests", () => {
   let mockProcess: {
@@ -207,14 +220,9 @@ describe("Crypto Integration Tests", () => {
   describe("File Decryption", () => {
     beforeEach(() => {
       // Mock filesystem operations
-      const mockWriteStream = Object.assign(new EventEmitter(), {
-        end: vi.fn(),
-        destroy: vi.fn(function (this: EventEmitter) {
-          setImmediate(() => this.emit("close"));
-        }),
-        writable: true,
-      });
-      mockFs.createWriteStream.mockReturnValue(mockWriteStream as never);
+      mockFs.createWriteStream.mockImplementation(
+        () => makeMockWriteStream() as never,
+      );
 
       mockFs.createReadStream.mockReturnValue({
         pipe: vi.fn(),
@@ -405,6 +413,84 @@ describe("Crypto Integration Tests", () => {
       await expect(
         crypto.decryptFile(storage, itemDirectory, testFilePath),
       ).rejects.toThrow("Failed to decompress decrypted file");
+    });
+
+    it("should handle failure to flush GPG output to disk", async () => {
+      const crypto = Crypto.initialize({
+        isQubes: false,
+        submissionKeyFingerprint: "",
+      });
+
+      const testFilePath = "/path/to/encrypted-file.gpg";
+
+      // Mock successful GPG process
+      mockProcess.on.mockImplementation(
+        (event: string, callback: (code: number) => void) => {
+          if (event === "close") {
+            setTimeout(() => callback(0), 10);
+          }
+          return mockProcess;
+        },
+      );
+
+      mockProcess.stderr.on.mockImplementation(() => mockProcess);
+
+      mockFs.createWriteStream.mockImplementation(
+        () =>
+          makeMockWriteStream(
+            new Error("ENOSPC: no space left on device"),
+          ) as never,
+      );
+
+      mockSpawn.mockReturnValue(mockProcess as never);
+
+      await expect(
+        crypto.decryptFile(storage, itemDirectory, testFilePath),
+      ).rejects.toThrow("Failed to write decrypted GPG output to disk");
+    });
+
+    it("should prefer the GPG error when the output flush also fails", async () => {
+      const crypto = Crypto.initialize({
+        isQubes: false,
+        submissionKeyFingerprint: "",
+      });
+
+      const testFilePath = "/path/to/encrypted-file.gpg";
+
+      // Mock failed GPG process. A GPG failure is the likely *cause* of the
+      // flush failure, so its error should be the one reported.
+      mockProcess.on.mockImplementation(
+        (event: string, callback: (code: number) => void) => {
+          if (event === "close") {
+            setTimeout(() => callback(2), 10);
+          }
+          return mockProcess;
+        },
+      );
+
+      mockProcess.stderr.on.mockImplementation(
+        (event: string, callback: (data: Buffer) => void) => {
+          if (event === "data") {
+            setTimeout(
+              () => callback(Buffer.from("GPG file decryption error")),
+              5,
+            );
+          }
+          return mockProcess;
+        },
+      );
+
+      mockFs.createWriteStream.mockImplementation(
+        () => makeMockWriteStream(new Error("EPIPE: broken pipe")) as never,
+      );
+
+      mockSpawn.mockReturnValue(mockProcess as never);
+
+      await expect(
+        crypto.decryptFile(storage, itemDirectory, testFilePath),
+      ).rejects.toThrow(
+        'GPG file decryption failed (exit code 2): "GPG file decryption error"',
+      );
     });
   });
 
