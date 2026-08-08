@@ -104,7 +104,6 @@ beforeEach(() => {
   // Mock the electronAPI before each test
   (window as any).electronAPI = {
     login: vi.fn().mockRejectedValue(new Error("mock not implemented")),
-    requestStream: vi.fn().mockResolvedValue({ sha256sum: "abc" }),
     getSystemLanguage: vi.fn().mockResolvedValue("en"),
     getSubmissionKeyFingerprint: vi
       .fn()
