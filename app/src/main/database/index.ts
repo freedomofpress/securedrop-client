@@ -32,6 +32,7 @@ import {
   FirstRunStatus,
   PendingEventData,
   SourceItemCounts,
+  SourceItemsQuery,
 } from "../../types";
 import { Crypto } from "../crypto";
 import { Search } from "./search";
@@ -39,7 +40,6 @@ import { Search } from "./search";
 // Truncate message previews to 200 Unicode code points
 // at the database layer; CSS will handle the rest
 export const MESSAGE_PREVIEW_LENGTH = 200;
-const DEFAULT_ITEM_LIMIT = 100;
 export const DEFAULT_PENDING_EVENTS_LIMIT = 20;
 
 interface KeyObject {
@@ -797,11 +797,7 @@ export class DB {
 
   getSourceWithItems(
     sourceUuid: string,
-    options?: {
-      limit?: number;
-      beforeInteractionCount?: number;
-      journalistUuid?: string;
-    },
+    options: SourceItemsQuery,
   ): SourceWithItems {
     if (!this.db) {
       throw new Error("Database is not open");
@@ -817,14 +813,12 @@ export class DB {
 
     const sourceData = JSON.parse(sourceRow.data);
 
-    let limit = DEFAULT_ITEM_LIMIT;
-    if (options?.limit) {
-      limit = options?.limit;
-    }
-    // Fetch limit+1 rows to detect if there are more historical items
-    const fetchLimit = limit + 1;
+    const fetchAll = options.limit === "all";
+    // A negative LIMIT means "no upper bound" in SQLite. Otherwise fetch
+    // limit+1 rows to detect if there are more historical items.
+    const fetchLimit = fetchAll ? -1 : (options.limit as number) + 1;
     let rows: ItemRow[];
-    if (options?.beforeInteractionCount) {
+    if (options.beforeInteractionCount) {
       rows = this.selectItemsBySourceIdBefore.all(
         sourceUuid,
         options.beforeInteractionCount,
@@ -833,9 +827,13 @@ export class DB {
     } else {
       rows = this.selectItemsBySourceId.all(sourceUuid, fetchLimit);
     }
-    const hasMoreHistoricalItems = rows.length > limit;
+    const hasMoreHistoricalItems = fetchAll
+      ? false
+      : rows.length > (options.limit as number);
     // Take at most `limit` rows (DESC order), then reverse to ASC for display
-    const itemRows = rows.slice(0, limit).reverse();
+    const itemRows = (
+      fetchAll ? rows : rows.slice(0, options.limit as number)
+    ).reverse();
 
     const items = itemRows.map((row) => {
       const data = JSON.parse(row.data) as ItemMetadata;

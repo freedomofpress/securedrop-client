@@ -319,7 +319,9 @@ export class TestHelpers {
   async getSourceItemCount(sourceUuid: string): Promise<number> {
     return this.dbHelper.withDb(async (db) => {
       try {
-        const sourceWithItems = db.getSourceWithItems(sourceUuid);
+        const sourceWithItems = db.getSourceWithItems(sourceUuid, {
+          limit: "all",
+        });
         return sourceWithItems.items.length;
       } catch {
         return 0;

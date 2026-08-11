@@ -5,6 +5,7 @@ import {
   type Source,
   type SourceWithItems,
   type SourceItemCounts,
+  type SourceItemsQuery,
   type Journalist,
   type SyncRequest,
   type LoginCredentials,
@@ -61,14 +62,8 @@ const electronAPI = {
   ),
   getSourceWithItems: logIpcCall<SourceWithItems>(
     "getSourceWithItems",
-    (
-      sourceUuid: string,
-      options?: {
-        limit?: number;
-        beforeInteractionCount?: number;
-        journalistUuid?: string;
-      },
-    ) => ipcRenderer.invoke("getSourceWithItems", sourceUuid, options),
+    (sourceUuid: string, options: SourceItemsQuery) =>
+      ipcRenderer.invoke("getSourceWithItems", sourceUuid, options),
   ),
   getSourceItemCounts: logIpcCall<SourceItemCounts>(
     "getSourceItemCounts",

@@ -63,7 +63,7 @@ export async function writeTranscript(
   const storage = new Storage();
 
   try {
-    const sourceWithItems = db.getSourceWithItems(sourceUuid);
+    const sourceWithItems = db.getSourceWithItems(sourceUuid, { limit: "all" });
     const filePath: string = join(
       storage.sourceDirectory(sourceUuid).path,
       "transcript.txt",
