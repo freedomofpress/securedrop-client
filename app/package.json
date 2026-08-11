@@ -25,7 +25,6 @@
     "typecheck:web": "tsc --noEmit -p tsconfig.web.json --composite false",
     "typecheck": "pnpm run typecheck:node && pnpm run typecheck:web",
     "build": "electron-vite build",
-    "postinstall": "./scripts/download-sqlite-binaries.py",
     "build:unpack": "pnpm run build && electron-builder --dir",
     "build:mac-demo": "cargo build --release --manifest-path ../proxy/Cargo.toml && PROXY_ORIGIN=https://demo-journalist.securedrop.org electron-vite build --mode mac-demo && electron-builder --mac",
     "dbmate": "sh -c 'dbmate --url sqlite:$HOME/.config/SecureDrop/db.sqlite --migrations-dir ./src/main/database/migrations --schema-file ./src/main/database/schema.sql \"$@\"' _",
@@ -36,9 +35,6 @@
   },
   "keywords": [],
   "license": "AGPL-3.0-or-later",
-  "//": {
-    "better-sqlite": "12.9.1 doesn't have electron prebuilds working right now: https://github.com/WiseLibs/better-sqlite3/releases/tag/v12.9.1"
-  },
   "devDependencies": {
     "@ant-design/icons": "5.6.1",
     "@ant-design/v5-patch-for-react-19": "^1.0.3",
@@ -63,7 +59,7 @@
     "@vitejs/plugin-react": "^5.1.2",
     "@vitest/coverage-v8": "^3.2.4",
     "antd": "^5.29.3",
-    "electron": "^41.10.3",
+    "electron": "^43.3.0",
     "electron-builder": "^26.15.3",
     "electron-devtools-installer": "^4.0.0",
     "electron-vite": "^5.0.0",
@@ -80,7 +76,6 @@
     "i18next": "^25.7.4",
     "jsdom": "^27.2.0",
     "lucide-react": "^0.562.0",
-    "node-abi": "^4.24.0",
     "otpauth": "^9.4.1",
     "prettier": "3.7.4",
     "react": "^19.2.3",
@@ -102,7 +97,7 @@
     "@electron-toolkit/utils": "^4.0.0",
     "@sapphire/snowflake": "^3.5.5",
     "better-queue": "^3.8.12",
-    "better-sqlite3": "~12.8.0",
+    "better-sqlite3": "~13.0.3",
     "blakejs": "^1.2.1",
     "dbmate": "^2.29.3",
     "liquidjs": "^10.28.0",
@@ -110,11 +105,6 @@
     "source-map-support": "^0.5.21",
     "tar": "^7.5.21",
     "zod": "^4.3.5"
-  },
-  "pnpm": {
-    "overrides": {
-      "prebuild-install": "file:empty-package"
-    }
   },
   "packageManager": "pnpm@10.14.0+sha512.ad27a79641b49c3e481a16a805baa71817a04bbe06a38d17e60e2eaee83f6a146c6a688125f5792e48dd5ba30e7da52a5cda4c3992b9ccf333f9ce223af84748"
 }
