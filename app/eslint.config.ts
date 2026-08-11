@@ -58,6 +58,10 @@ const a11yChecks = {
 
 // ---------------------------------------------------------------------------
 
+const openExternalMessage =
+  "shell.openExternal() is banned: it launches a URL in the host desktop's " +
+  "default handler.";
+
 export default tseslint.config(
   {
     ignores: [
@@ -90,6 +94,27 @@ export default tseslint.config(
     },
     rules: {
       curly: ["error", "all"],
+      // Forbid electron's shell.openExternal()
+      "no-restricted-syntax": [
+        "error",
+        {
+          selector: "MemberExpression[property.name='openExternal']",
+          message: openExternalMessage,
+        },
+        {
+          selector: "ImportSpecifier[imported.name='openExternal']",
+          message: openExternalMessage,
+        },
+        {
+          selector:
+            "ObjectPattern > Property[key.name='openExternal'][computed=false]",
+          message: openExternalMessage,
+        },
+        {
+          selector: "MemberExpression[property.value='openExternal']",
+          message: openExternalMessage,
+        },
+      ],
       "@typescript-eslint/no-unused-vars": [
         "error",
         {
