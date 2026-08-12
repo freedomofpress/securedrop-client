@@ -281,6 +281,13 @@ describe("conversationSlice", () => {
         lastSyncFinished: null,
         status: null,
       },
+      deleteModal: {
+        open: false,
+        pendingSources: [],
+        loading: false,
+        counts: { messages: 0, files: 0, replies: 0 },
+        lastDeletedSources: [],
+      },
     };
 
     it("selectConversation returns conversation for matching UUID", () => {

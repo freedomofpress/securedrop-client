@@ -8,7 +8,8 @@ import type { SearchResult, Source as SourceType } from "../../../../types";
 import { PendingEventType } from "../../../../types";
 import type { SourceProps } from "./SourceList/Source";
 import { renderWithProviders } from "../../../test-component-setup";
-import { requestDeleteSource } from "../../../components/deleteSourceRequester";
+import DeleteSourceModal from "../../../components/DeleteSourceModal";
+import { openDeleteModal } from "../../../features/deleteModal/deleteModalSlice";
 
 // Mock react-window to render all items instead of virtualizing
 vi.mock("react-window", () => ({
@@ -228,6 +229,9 @@ describe("Sources Component", () => {
     // Mock electronAPI with partial implementation for these tests
     window.electronAPI = {
       getSources: vi.fn().mockResolvedValue(mockSources),
+      getSourceItemCounts: vi
+        .fn()
+        .mockResolvedValue({ messages: 0, files: 0, replies: 0 }),
       search: vi
         .fn()
         .mockImplementation((query: string) =>
@@ -253,13 +257,19 @@ describe("Sources Component", () => {
     initialRoute = "/",
   ) => {
     return renderWithProviders(
-      <Routes>
-        <Route path="/" element={<SourceList focusedPanel="sidebar" />} />
-        <Route
-          path="/source/:sourceUuid"
-          element={<SourceList focusedPanel="sidebar" />}
-        />
-      </Routes>,
+      <>
+        <Routes>
+          <Route path="/" element={<SourceList focusedPanel="sidebar" />} />
+          <Route
+            path="/source/:sourceUuid"
+            element={<SourceList focusedPanel="sidebar" />}
+          />
+        </Routes>
+        {/* The delete modal now lives at the top of the tree, driven by the
+            deleteModal slice. Render it alongside so the integration flows
+            (bulk delete, keyboard shortcut, source menu) still exercise it. */}
+        <DeleteSourceModal />
+      </>,
       {
         initialEntries: [initialRoute],
         preloadedState: {
@@ -1050,6 +1060,21 @@ describe("Sources Component", () => {
     });
 
     it("clears selection after deleting sources", async () => {
+      // After the deletion is submitted, the projected source list no longer
+      // includes the deleted sources. The selection-pruning effect drops them
+      // from the checkbox selection once they leave the store.
+      const remainingSources = { ...mockSources };
+      delete remainingSources["source-1"];
+      delete remainingSources["source-2"];
+      window.electronAPI.addPendingSourceEventBatch = vi
+        .fn()
+        .mockImplementation(async () => {
+          window.electronAPI.getSources = vi
+            .fn()
+            .mockResolvedValue(remainingSources);
+          return ["123"];
+        });
+
       renderSourceList();
 
       await waitFor(() => {
@@ -1089,11 +1114,66 @@ describe("Sources Component", () => {
         ).toHaveBeenCalled();
       });
 
-      // Checkboxes should be unchecked
+      // The deleted sources leave the list and the selection-pruning effect
+      // drops them from the selection, so no bulk actions remain and the
+      // surviving source is not selected.
       await waitFor(() => {
-        expect(checkbox1).not.toBeChecked();
-        expect(checkbox2).not.toBeChecked();
+        expect(
+          screen.queryByTestId("source-checkbox-source-1"),
+        ).not.toBeInTheDocument();
+        expect(
+          screen.queryByTestId("source-checkbox-source-2"),
+        ).not.toBeInTheDocument();
       });
+      expect(
+        screen.queryByTestId("bulk-delete-button"),
+      ).not.toBeInTheDocument();
+      expect(screen.getByTestId("source-checkbox-source-3")).not.toBeChecked();
+    });
+
+    it("clears selection after deleting a conversation, though the source stays", async () => {
+      // "Delete conversation" truncates but keeps the account, so the source
+      // remains in the store and visibility pruning won't drop it. The
+      // completion signal must still clear it from the checkbox selection.
+      renderSourceList();
+
+      await waitFor(() => {
+        expect(screen.getByTestId("source-source-1")).toBeInTheDocument();
+      });
+
+      const checkbox1 = screen.getByTestId("source-checkbox-source-1");
+      await userEvent.click(checkbox1);
+      expect(checkbox1).toBeChecked();
+
+      await userEvent.click(screen.getByTestId("bulk-delete-button"));
+
+      await waitFor(() => {
+        expect(
+          screen.getByTestId("delete-modal-delete-conversation-button"),
+        ).toBeInTheDocument();
+      });
+
+      await userEvent.click(
+        screen.getByTestId("delete-modal-delete-conversation-button"),
+      );
+
+      await waitFor(() => {
+        expect(
+          window.electronAPI.addPendingSourceEventBatch,
+        ).toHaveBeenCalled();
+      });
+
+      // Source is still present (account kept) but no longer selected, so the
+      // bulk actions disappear.
+      await waitFor(() => {
+        expect(screen.getByTestId("source-source-1")).toBeInTheDocument();
+        expect(
+          screen.getByTestId("source-checkbox-source-1"),
+        ).not.toBeChecked();
+      });
+      expect(
+        screen.queryByTestId("bulk-delete-button"),
+      ).not.toBeInTheDocument();
     });
   });
 
@@ -1267,22 +1347,26 @@ describe("Sources Component", () => {
     });
   });
 
-  describe("Delete source requester integration (used by the source menu)", () => {
+  describe("Delete modal opened via openDeleteModal (used by the source menu)", () => {
     beforeEach(() => {
       window.electronAPI.addPendingSourceEventBatch = vi
         .fn()
         .mockResolvedValue(["123"]);
     });
 
-    it("opens the delete modal for the requested source while mounted", async () => {
-      renderSourceList(mockSources, false, "/source/source-1");
+    it("opens the delete modal for the requested source", async () => {
+      const { store } = renderSourceList(
+        mockSources,
+        false,
+        "/source/source-1",
+      );
 
       await waitFor(() => {
         expect(screen.getByTestId("source-source-1")).toBeInTheDocument();
       });
 
       act(() => {
-        requestDeleteSource(new Set(["source-1"]));
+        void store.dispatch(openDeleteModal(["source-1"]));
       });
 
       await waitFor(() => {
@@ -1294,7 +1378,11 @@ describe("Sources Component", () => {
     });
 
     it("does not disturb existing checkbox selection", async () => {
-      renderSourceList(mockSources, false, "/source/source-1");
+      const { store } = renderSourceList(
+        mockSources,
+        false,
+        "/source/source-1",
+      );
 
       await waitFor(() => {
         expect(screen.getByTestId("source-source-1")).toBeInTheDocument();
@@ -1304,7 +1392,7 @@ describe("Sources Component", () => {
       expect(screen.getByTestId("source-checkbox-source-2")).toBeChecked();
 
       act(() => {
-        requestDeleteSource(new Set(["source-1"]));
+        void store.dispatch(openDeleteModal(["source-1"]));
       });
 
       await waitFor(() => {
@@ -1316,7 +1404,11 @@ describe("Sources Component", () => {
     });
 
     it("deletes only the requested source, independent of the checked selection", async () => {
-      renderSourceList(mockSources, false, "/source/source-1");
+      const { store } = renderSourceList(
+        mockSources,
+        false,
+        "/source/source-1",
+      );
 
       await waitFor(() => {
         expect(screen.getByTestId("source-source-1")).toBeInTheDocument();
@@ -1326,7 +1418,7 @@ describe("Sources Component", () => {
       await userEvent.click(screen.getByTestId("source-checkbox-source-2"));
 
       act(() => {
-        requestDeleteSource(new Set(["source-1"]));
+        void store.dispatch(openDeleteModal(["source-1"]));
       });
 
       await waitFor(() => {
@@ -1352,8 +1444,8 @@ describe("Sources Component", () => {
       });
     });
 
-    it("does nothing when called after SourceList has unmounted", async () => {
-      const { unmount } = renderSourceList(
+    it("ignores an open request with no sources", async () => {
+      const { store } = renderSourceList(
         mockSources,
         false,
         "/source/source-1",
@@ -1363,11 +1455,13 @@ describe("Sources Component", () => {
         expect(screen.getByTestId("source-source-1")).toBeInTheDocument();
       });
 
-      unmount();
+      act(() => {
+        void store.dispatch(openDeleteModal([]));
+      });
 
-      expect(() => {
-        requestDeleteSource(new Set(["source-1"]));
-      }).not.toThrow();
+      // The thunk's condition guard skips empty requests, so no modal opens.
+      expect(screen.queryByTestId("delete-modal")).not.toBeInTheDocument();
+      expect(store.getState().deleteModal.open).toBe(false);
     });
   });
 
@@ -1713,12 +1807,17 @@ describe("Sources Component", () => {
       expect(screen.getByTestId("source-checkbox-source-2")).toBeChecked();
       expect(screen.getByTestId("source-checkbox-source-3")).not.toBeChecked();
 
-      // Select-all should be indeterminate: one of three visible sources is selected
-      const selectAllCheckbox = screen.getByTestId(
-        "select-all-checkbox",
-      ) as HTMLInputElement;
-      expect(selectAllCheckbox).not.toBeChecked();
-      expect(selectAllCheckbox.indeterminate).toBe(true);
+      // Select-all should be indeterminate: one of three visible sources is
+      // selected. antd sets the native `indeterminate` DOM property
+      // imperatively (unlike `checked`, which React syncs on commit), so it can
+      // lag a render behind. Await it rather than reading synchronously.
+      await waitFor(() => {
+        const selectAllCheckbox = screen.getByTestId(
+          "select-all-checkbox",
+        ) as HTMLInputElement;
+        expect(selectAllCheckbox).not.toBeChecked();
+        expect(selectAllCheckbox.indeterminate).toBe(true);
+      });
     });
 
     it("select all then search for one source then clear search: only that source stays selected", async () => {
@@ -1785,12 +1884,18 @@ describe("Sources Component", () => {
       expect(screen.getByTestId("source-checkbox-source-4")).not.toBeChecked();
       expect(screen.getByTestId("source-checkbox-source-5")).not.toBeChecked();
 
-      // Select-all should be indeterminate: one of five visible sources is selected
-      const selectAllCheckbox = screen.getByTestId(
-        "select-all-checkbox",
-      ) as HTMLInputElement;
-      expect(selectAllCheckbox).not.toBeChecked();
-      expect(selectAllCheckbox.indeterminate).toBe(true);
+      // Select-all should be indeterminate: one of five visible sources is
+      // selected. antd sets the native `indeterminate` DOM property
+      // imperatively (unlike `checked`, which React syncs on commit), so it can
+      // lag a render behind the debounce-driven settle. Await it rather than
+      // reading synchronously.
+      await waitFor(() => {
+        const selectAllCheckbox = screen.getByTestId(
+          "select-all-checkbox",
+        ) as HTMLInputElement;
+        expect(selectAllCheckbox).not.toBeChecked();
+        expect(selectAllCheckbox.indeterminate).toBe(true);
+      });
     });
   });
 });
