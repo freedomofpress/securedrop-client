@@ -1441,9 +1441,9 @@ describe("Datastore Method Tests", () => {
     let events = db.getPendingEvents();
     expect(events.map((e) => e.id)).toEqual([snowflakeSource, snowflakeItem]);
 
-    // The earlier (source) event fails to be accepted, bumping its retry count.
+    // The earlier (source) event is in-progress but not complete, bumping its retry count.
     db.updatePendingEvents({
-      [snowflakeSource.toString()]: [500, "error"],
+      [snowflakeSource.toString()]: [208, "AlreadyReported"],
     });
 
     // Should now be scheduled after the never-failed item event.
@@ -1457,46 +1457,99 @@ describe("Datastore Method Tests", () => {
       )
       .get(snowflakeSource.toString());
     expect(row.retry_attempts).toBe(1);
-    expect(row.last_event_status).toBe(500);
+    expect(row.last_event_status).toBe(208);
   });
 
-  it("updatePendingEvents should retain but exclude AlreadyReported events", () => {
+  it("updatePendingEvents should resubmit AlreadyReported events until the server completes them", () => {
     db.updateSources({
       source1: mockSourceMetadata("source1"),
-    });
-    db.updateItems({
-      item1: mockItemMetadata("item1", "source1"),
     });
 
     const snowflakeSource = db.addPendingSourceEvent(
       "source1",
       PendingEventType.Starred,
     )!;
-    const snowflakeItem = db.addPendingItemEvent(
-      "item1",
-      PendingEventType.ItemDeleted,
-    )!;
 
-    // The server reports the source event as already reported + accepted (208),
-    // and the item event as not yet accepted (500).
+    const pendingEventRow = () =>
+      (db as any).db
+        .prepare(
+          "SELECT retry_attempts, last_event_status FROM pending_events WHERE snowflake_id = ?",
+        )
+        .get(snowflakeSource.toString());
+
+    // Event is queued for its first submission.
+    expect(db.getPendingEvents().map((e) => e.id)).toEqual([snowflakeSource]);
+
+    // Round 1: server reports event as AlreadyReported
     db.updatePendingEvents({
-      [snowflakeSource.toString()]: [208, null],
-      [snowflakeItem.toString()]: [500, "error"],
+      [snowflakeSource.toString()]: [208, "AlreadyReported"],
+    });
+    expect(db.getPendingEvents().map((e) => e.id)).toEqual([snowflakeSource]);
+    expect(pendingEventRow().retry_attempts).toBe(1);
+
+    // Round 2: the server dropped the event.
+    // The inbox should keep the event in its batch to resubmit
+    db.updatePendingEvents({});
+    expect(db.getPendingEvents().map((e) => e.id)).toEqual([snowflakeSource]);
+    expect(pendingEventRow().retry_attempts).toBe(1);
+
+    // Round 3: the server marks event as complete.
+    db.updatePendingEvents({
+      [snowflakeSource.toString()]: [200, ""],
+    });
+    expect(db.getPendingEvents()).toEqual([]);
+  });
+
+  it("countFreshPendingEvents should exclude events awaiting resubmission", () => {
+    db.updateSources({
+      source1: mockSourceMetadata("source1"),
+      source2: mockSourceMetadata("source2"),
     });
 
-    // The AlreadyReported event must be excluded from future sync batches
-    const events = db.getPendingEvents();
-    expect(events.map((e) => e.id)).toEqual([snowflakeItem]);
+    expect(db.countFreshPendingEvents()).toBe(0);
 
-    // but event should be retained in the table to preserve projection state
-    // with the status recorded
+    const snowflake1 = db.addPendingSourceEvent(
+      "source1",
+      PendingEventType.Starred,
+    )!;
+    db.addPendingSourceEvent("source2", PendingEventType.Starred);
+    expect(db.countFreshPendingEvents()).toBe(2);
+
+    // Once the server reports a status, the event is a retry, not a fresh event
+    db.updatePendingEvents({
+      [snowflake1.toString()]: [208, "AlreadyReported"],
+    });
+    expect(db.getPendingEvents().length).toBe(2);
+    expect(db.countFreshPendingEvents()).toBe(1);
+  });
+
+  it("updatePendingEvents should stop resubmitting AlreadyReported events once the target is Gone", () => {
+    db.updateSources({
+      source1: mockSourceMetadata("source1"),
+    });
+
+    const snowflakeSource = db.addPendingSourceEvent(
+      "source1",
+      PendingEventType.Starred,
+    )!;
+
+    // The server reports the event as already reported but awaiting completion.
+    db.updatePendingEvents({
+      [snowflakeSource.toString()]: [208, "AlreadyReported"],
+    });
+    expect(db.getPendingEvents().map((e) => e.id)).toEqual([snowflakeSource]);
+
+    // The target is subsequently removed on the server (410 Gone): the event is
+    // a terminal no-op and must be dropped rather than resubmitted forever.
+    db.updatePendingEvents({
+      [snowflakeSource.toString()]: [410, "Gone"],
+    });
+    expect(db.getPendingEvents()).toEqual([]);
+
     const row = (db as any).db
-      .prepare(
-        "SELECT last_event_status FROM pending_events WHERE snowflake_id = ?",
-      )
+      .prepare("SELECT snowflake_id FROM pending_events WHERE snowflake_id = ?")
       .get(snowflakeSource.toString());
-    expect(row).toBeDefined();
-    expect(row.last_event_status).toBe(208);
+    expect(row).toBeUndefined();
   });
 
   it("updateItems should upsert items with conflicting uuid", () => {

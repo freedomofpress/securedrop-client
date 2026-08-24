@@ -905,8 +905,9 @@ if (!gotTheLock) {
             }
             wakeFetchWorkerIfNeeded();
           } while (
+            // While there are fresh pending events (not retries), continue syncing
             syncStatus === SyncStatus.UPDATED &&
-            db.getPendingEvents().length > 0
+            db.countFreshPendingEvents() > 0
           );
           // If we receive an auth error from sync, reset the auth token
           if (syncStatus === SyncStatus.FORBIDDEN) {
