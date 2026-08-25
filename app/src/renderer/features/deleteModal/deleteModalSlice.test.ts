@@ -101,7 +101,7 @@ describe("deleteModalSlice", () => {
     await store.dispatch(openDeleteModal(["source-1"]));
     expect(selectDeleteModalOpen(store.getState())).toBe(true);
 
-    store.dispatch(setUnauth(undefined));
+    await store.dispatch(setUnauth(undefined));
 
     expect(selectDeleteModal(store.getState())).toEqual({
       open: false,

@@ -67,7 +67,7 @@ export const deleteModalSlice = createSlice({
       // Drop any in-flight delete confirmation when the session ends, so a
       // modal left open at logout (e.g. a 403 during sync) doesn't reappear —
       // referencing stale sources — on the next login.
-      .addCase(setUnauth, () => initialState)
+      .addCase(setUnauth.fulfilled, () => initialState)
       .addCase(openDeleteModal.pending, (state, action) => {
         state.open = true;
         state.loading = true;
