@@ -21,6 +21,7 @@ import { useGlobalShortcuts } from "../shortcuts";
 import { requestQuit } from "../components/quitRequester";
 import { requestHelp } from "../components/helpRequester";
 import KeyboardHelpModal from "../components/KeyboardHelpModal";
+import SidebarResizer, { SIDEBAR_DEFAULT_WIDTH } from "./Inbox/SidebarResizer";
 
 export type FocusedPanel = "sidebar" | "mainContent";
 
@@ -34,6 +35,7 @@ function InboxView() {
   const sidebarRef = useRef<HTMLDivElement>(null);
   const mainContentRef = useRef<HTMLDivElement>(null);
   const [focusedPanel, setFocusedPanel] = useState<FocusedPanel>("sidebar");
+  const [sidebarWidth, setSidebarWidth] = useState(SIDEBAR_DEFAULT_WIDTH);
 
   const sync = useCallback(() => {
     if (session.authData && import.meta.env.MODE != "test") {
@@ -121,11 +123,13 @@ function InboxView() {
       <div
         ref={sidebarRef}
         tabIndex={-1}
-        className="h-full outline-0 focus:outline-2 focus:outline-blue-300 focus:-outline-offset-2"
+        style={{ width: sidebarWidth }}
+        className="h-full flex-shrink-0 outline-0 focus:outline-2 focus:outline-blue-300 focus:-outline-offset-2"
         data-testid="sidebar-panel"
       >
         <Sidebar focusedPanel={focusedPanel} />
       </div>
+      <SidebarResizer width={sidebarWidth} onWidthChange={setSidebarWidth} />
       <div
         ref={mainContentRef}
         tabIndex={-1}

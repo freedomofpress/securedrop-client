@@ -33,6 +33,7 @@ import { PrintWizard } from "./views/Inbox/MainContent/Conversation/Item/Print";
 import File from "./views/Inbox/MainContent/Conversation/Item/File";
 import Message from "./views/Inbox/MainContent/Conversation/Item/Message";
 import SourceList from "./views/Inbox/Sidebar/SourceList";
+import SidebarResizer from "./views/Inbox/SidebarResizer";
 import Source from "./views/Inbox/Sidebar/SourceList/Source";
 import MainMenu from "./views/Inbox/Sidebar/Account/MainMenu";
 import KeyboardHelp from "./views/Inbox/Sidebar/Account/KeyboardHelp";
@@ -251,6 +252,14 @@ describe.sequential("accessibility (axe)", () => {
   describe("Inbox", () => {
     it("has no axe violations on initial render", async () => {
       await renderAndCheckA11y(<InboxView />);
+    });
+  });
+
+  describe("SidebarResizer", () => {
+    it("has no axe violations", async () => {
+      await renderAndCheckA11y(
+        <SidebarResizer width={384} onWidthChange={vi.fn()} />,
+      );
     });
   });
 
