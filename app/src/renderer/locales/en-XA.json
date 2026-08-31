@@ -24,7 +24,12 @@
         "itemCountsHeader": "[!This will delete:!]",
         "fileCount_one": "[!{{count}} file!]",
         "fileCount_other": "[!{{count}} files!]",
-        "warning": "[!!!!!!!!!!!!!!!!!If you delete a source's account, they will no longer be able to sign in and send you messages. To communicate with this source in the future, they must create a new account.!!!!!!!!!!!!!!!!!]"
+        "warning": "[!!!!!!!!!!!!!!!!!If you delete a source's account, they will no longer be able to sign in and send you messages. To communicate with this source in the future, they must create a new account.!!!!!!!!!!!!!!!!!]",
+        "allSourcesWarning": "[!!!Notice: All sources have been selected!!!!]",
+        "all": {
+          "deleteAccountsButton": "[!Delete All Sources!]",
+          "keepAccountsButton": "[!!Delete All Conversations!!]"
+        }
       },
       "filters": {
         "starred": "[Starred]",
@@ -38,6 +43,15 @@
       },
       "actions": {
         "bulkDelete": "[!!Delete selected sources!!]"
+      },
+      "selectAll": "[!Select all sources!]",
+      "counts": {
+        "total_one": "[!!{{count}} total source!!]",
+        "total_other": "[!!{{count}} total sources!!]",
+        "visible_one": "[!{{count}} visible!]",
+        "visible_other": "[!{{count}} visible!]",
+        "selected_one": "[!{{count}} selected!]",
+        "selected_other": "[!{{count}} selected!]"
       }
     },
     "account": {
@@ -78,7 +92,8 @@
     "source": {
       "encryptedMessage": "[!Encrypted Message!]",
       "toggleStar": "[!Toggle star!]",
-      "encryptedFile": "[!Encrypted File!]"
+      "encryptedFile": "[!Encrypted File!]",
+      "selectSource": "[!!Select {{designation}}!!]"
     },
     "syncStatus": {
       "notloggedin": "[!Sync: not logged in!]",
@@ -171,14 +186,23 @@
     "filenameTooltip": "[!!!Filename available after downloading!!!]",
     "downloadFailed": "[!Download Failed!]",
     "resume": "[Resume]",
-    "exportToWhistleflow": "[!!Export to Whistleflow!!]"
+    "exportToWhistleflow": "[!!Export to Whistleflow!!]",
+    "downloadFile": "[!Download file!]",
+    "offlineFilenameTooltip": "[!!!!!!!Download disabled in offline mode. Filename available after downloading!!!!!!!]",
+    "fileActions": "[!File actions!]",
+    "deleteFile": "[!Delete item!]",
+    "doubleEncryptedBadge": "[!Source-encrypted!]",
+    "doubleEncryptedTooltip": "[!!!!!!This submission was encrypted by the source before uploading!!!!!!]",
+    "doubleEncryptedOtherKeyTooltip": "[!!!!!!!!!!!!!!This submission was encrypted by the source before uploading, using a key that is not the current submission key (fingerprint: {{fingerprint}})!!!!!!!!!!!!!!]"
   },
   "SignIn": {
     "title": "[!!Sign in to SecureDrop!!]",
     "passphrase": {
       "label": "[!Passphrase!]",
       "required": "[!!Please enter your passphrase.!!]",
-      "invalidLength": "[!!!!!!!That passphrase won't work. It should be between 14 and 128 characters long.!!!!!!!]"
+      "invalidLength": "[!!!!!!!That passphrase won't work. It should be between 14 and 128 characters long.!!!!!!!]",
+      "showPassphrase": "[!Show passphrase!]",
+      "hidePassphrase": "[!Hide passphrase!]"
     },
     "button": {
       "signingIn": "[!Signing in...!]",
@@ -226,8 +250,12 @@
       "printTranscript": "[!Print Transcript!]",
       "exportSource": "[!!Export Transcript and Files!!]",
       "clickToOpen": "[!Click to open!]",
-      "exportTranscriptToWhistleflow": "[!!!Export Transcript to Whistleflow!!!]",
-      "exportSourceToWhistleflow": "[!!!!Export Transcript and Files to Whistleflow!!!!]"
+      "exportTranscriptToWhistleflow": "[!Send Transcript!]",
+      "exportSourceToWhistleflow": "[!!Send Transcript and Files!!]",
+      "ExportGroup": "[!Export to USB!]",
+      "WhistleflowExportGroup": "[!Send to Whistleflow!]",
+      "deleteSource": "[!Delete Source!]",
+      "deleteConversation": "[!!Delete Files and Messages!!]"
     },
     "conversation": {
       "sendButton": "[Send]",
@@ -239,7 +267,7 @@
     },
     "emptyState": "[!!!!!!!!!<bold>Select a source</bold> from the list to read messages, retrieve files, or send responses.!!!!!!!!!]",
     "alreadyRunning": "[!!!The SecureDrop Inbox is already running!!!]",
-    "messageFailed": "[!!Failed to decrypt message!!]",
+    "messageFailed": "[!!Error handling message!!]",
     "seenReplyTooltip": "[!!!Reply seen and deleted by source!!!]",
     "pendingReplyTooltip": "[!!!!!!The reply is pending and will be sent to the source in the next sync!!!!!!]",
     "successReplyTooltip": "[!!Reply sent successfully!!]",
@@ -249,7 +277,18 @@
     "emptyConversation": "[!!!This conversation has no messages yet.!!!]",
     "nonProduction": "[!!WARNING: non-production mode!!]",
     "you": "[You]",
-    "unknown": "[Unknown]"
+    "unknown": "[Unknown]",
+    "itemFetching": "[!Fetching message...!]",
+    "messageDownloadFailed": "[!!Failed to download message!!]",
+    "messageDecryptionFailed": "[!!Failed to decrypt message!!]",
+    "deleteMessage": "[!Delete message!]",
+    "deleteReply": "[!Delete reply!]",
+    "deleteItemModal": {
+      "title": "[!Delete item?!]",
+      "content": "[!!!!!!!!!Are you sure you want to delete this item? Deleting is not reversible and will affect all users.!!!!!!!!!]",
+      "cancel": "[Cancel]",
+      "delete": "[Delete]"
+    }
   },
   "common": {
     "seeLess": "[See less]",
@@ -264,7 +303,7 @@
       "body": "[!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!Messages and documents sent to you via SecureDrop will show up here. Initial data synchronization may take several minutes.<br><br>You can press <kbd>F1</kbd> for help at any time. For further questions, consult your system administrator or reach out to SecureDrop support via Signal. Documentation and instructions for accessing support are available at securedrop.org/inbox, which can be accessed from a different computer.!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!]"
     },
     "migration": {
-      "body": "[!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!The application has been rewritten from the ground up to make it faster and to add long-requested features. Initial data synchronization may take several minutes. Any previously downloaded files will need to be re-downloaded.<br><br>If you encounter an issue or would like to use the original SecureDrop Client, you can access it for a limited time via Qubes Menu ▸ ⚙️ ▸ Other ▸ SecureDrop Client (legacy). If you need to return to the old Client, please reach out to SecureDrop support via Signal and tell us about the issues you encountered so we can address them.<br><br>You can press <kbd>F1</kbd> for help at any time. For further questions, consult your system administrator or reach out to SecureDrop support via Signal. Documentation and instructions for accessing support are available at securedrop.org/inbox, which can be accessed from a different computer.!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!]",
+      "body": "[!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!The application has been rewritten from the ground up to make it faster and to add long-requested features. Initial data synchronization may take several minutes. Any previously downloaded files will need to be re-downloaded.<br><br>You can press <kbd>F1</kbd> for help at any time. For further questions, consult your system administrator or reach out to SecureDrop support via Signal. Documentation and instructions for accessing support are available at securedrop.org/inbox, which can be accessed from a different computer.!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!]",
       "title": "[!!!Welcome to the new SecureDrop Inbox!!!]"
     }
   }
