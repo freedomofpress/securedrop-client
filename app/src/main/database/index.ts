@@ -193,11 +193,8 @@ export class DB {
     { snowflake_id: string; status: number },
     void
   >;
-  private setPendingEventStatus: Statement<
-    { snowflake_id: string; status: number },
-    void
-  >;
   private selectPendingEvents: Statement<[{ limit: number }], PendingEventRow>;
+  private selectFreshPendingEventsCount: Statement<[], { count: number }>;
   private deletePendingEventsBySourceScope: Statement<
     { source_uuid: string },
     void
@@ -432,17 +429,15 @@ export class DB {
       SET retry_attempts = retry_attempts + 1, last_event_status = @status
       WHERE snowflake_id = @snowflake_id
     `);
-    this.setPendingEventStatus = this.db.prepare(`
-      UPDATE pending_events
-      SET last_event_status = @status
-      WHERE snowflake_id = @snowflake_id
-    `);
-    // Schedule previously-failed events later, and exclude events already reported
-    // and accepted on the server that are just awaiting completion.
+    // Schedule new events first, and retries for events later.
+    // All pending events are resubmitted until the server reports completion.
     this.selectPendingEvents = this.db.prepare(`
       SELECT snowflake_id, source_uuid, item_uuid, type, data FROM pending_events
-      WHERE last_event_status IS NOT ${EventStatus.AlreadyReported}
       ORDER BY retry_attempts ASC, snowflake_id ASC LIMIT @limit
+    `);
+    // Events that have never been submitted or that were rejected due to conflict.
+    this.selectFreshPendingEventsCount = this.db.prepare(`
+      SELECT COUNT(*) AS count FROM pending_events WHERE retry_attempts = 0
     `);
     this.deletePendingEventsBySourceScope = this.db.prepare(`
       DELETE FROM pending_events
@@ -1343,6 +1338,12 @@ export class DB {
     return pendingEvents;
   }
 
+  // Number of pending events that have never been submitted to the server,
+  // i.e. excluding events awaiting resubmission.
+  countFreshPendingEvents(): number {
+    return this.selectFreshPendingEventsCount.get()!.count;
+  }
+
   // Takes pending events and their statuses from the server and applies
   // pending event updates as needed.
   // Should be run within a transaction that also updates index version.
@@ -1361,13 +1362,8 @@ export class DB {
       } else if (result === EventStatus.Gone) {
         // Target no longer exists on the server: remove pending_event.
         eventIDsToRemove.push(snowflake_id);
-      } else if (result === EventStatus.AlreadyReported) {
-        // Already reported to the server but awaiting completion.
-        // Retain the event but record the status so it's excluded from future
-        // sync batches and not re-sent.
-        this.setPendingEventStatus.run({ snowflake_id, status: result });
       } else {
-        // All other statuses indicate event was submitted but not accepted
+        // All other statuses indicate event was submitted but not yet complete.
         // Retain and bump the retry counter, recording the status.
         // This event will be re-scheduled in subsequent batches.
         this.incrementPendingEventRetry.run({ snowflake_id, status: result });
