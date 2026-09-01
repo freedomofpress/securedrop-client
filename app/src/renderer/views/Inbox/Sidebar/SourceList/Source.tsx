@@ -156,8 +156,12 @@ const Source = memo(function Source({
         />
       </Tooltip>
 
-      {/* Avatar with initials */}
-      <Avatar designation={designation} isActive={isActive} />
+      {/* Avatar with initials: hidden in the compact sidebar layout*/}
+      <Avatar
+        designation={designation}
+        isActive={isActive}
+        className="@max-[340px]:hidden"
+      />
 
       {/* Source info */}
       <div className="flex-1 min-w-0 py-2 pl-3">
