@@ -211,6 +211,8 @@ export async function syncMetadata(
   authToken: string,
   hintedRecords?: number,
   attempt?: number,
+  // Reports which pending events are in the batch currently being submitted
+  onEventsInFlight?: (eventIds: string[]) => void,
 ): Promise<SyncStatus> {
   console.log("[sync] syncing ", { hintedRecords, attempt });
 
@@ -271,7 +273,13 @@ export async function syncMetadata(
     "[sync] batch request:",
     JSON.stringify(sanitizeBatchRequest(request)),
   );
-  const batchResponse = await submitBatch(authToken, request);
+  onEventsInFlight?.(pendingEvents.map((event) => event.id));
+  let batchResponse;
+  try {
+    batchResponse = await submitBatch(authToken, request);
+  } finally {
+    onEventsInFlight?.([]);
+  }
   console.log(
     "[sync] batch response:",
     JSON.stringify(
