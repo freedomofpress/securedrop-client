@@ -1,8 +1,6 @@
-import { useState, useEffect, useMemo, useCallback, useRef } from "react";
-import { useParams, useNavigate } from "react-router";
+import { useState, useEffect, useMemo, useCallback } from "react";
+import { useParams } from "react-router";
 import { List, useListRef } from "react-window";
-import { useTranslation } from "react-i18next";
-import { Modal, Button } from "antd";
 
 import type { RowComponentProps } from "react-window";
 import Source from "./SourceList/Source";
@@ -11,7 +9,11 @@ import {
   fetchSources,
   selectSources,
 } from "../../../features/sources/sourcesSlice";
-import { fetchConversation } from "../../../features/conversation/conversationSlice";
+import {
+  openDeleteModal,
+  selectDeleteModalOpen,
+  selectLastDeletedSources,
+} from "../../../features/deleteModal/deleteModalSlice";
 import Toolbar, { type filterOption } from "./SourceList/Toolbar";
 import Counts from "./SourceList/Counts";
 import {
@@ -20,7 +22,6 @@ import {
   type Source as SourceType,
 } from "../../../../types";
 import { useSidebarShortcuts, useShortcut } from "../../../shortcuts";
-import { setDeleteSourceHandler } from "../../../components/deleteSourceRequester";
 import type { FocusedPanel } from "../../Inbox";
 
 interface SourceRowProps {
@@ -61,11 +62,10 @@ function SourceRow({
 function SourceList({ focusedPanel }: { focusedPanel: FocusedPanel }) {
   const { sourceUuid: activeSourceUuid } = useParams<{ sourceUuid?: string }>();
   const dispatch = useAppDispatch();
-  const navigate = useNavigate();
-  const { t } = useTranslation("Sidebar");
   const listRef = useListRef(null);
 
   const sources = useAppSelector(selectSources);
+  const deleteModalOpen = useAppSelector(selectDeleteModalOpen);
   const [selectedSources, setSelectedSources] = useState<Set<string>>(
     new Set(),
   );
@@ -73,19 +73,6 @@ function SourceList({ focusedPanel }: { focusedPanel: FocusedPanel }) {
   const [filter, setFilter] = useState<filterOption>("all");
   const [searchTerm, setSearchTerm] = useState("");
   const [dropdownOpen, setDropdownOpen] = useState(false);
-  const [deleteModalOpen, setDeleteModalOpen] = useState(false);
-  const [deleteModalLoading, setDeleteModalLoading] = useState(false);
-  const deleteModalTitleRef = useRef<HTMLHeadingElement | null>(null);
-  // Sources targeted for deletion
-  const [pendingDeleteSources, setPendingDeleteSources] = useState<Set<string>>(
-    new Set(),
-  );
-  const [deleteCounts, setDeleteCounts] = useState<{
-    messages: number;
-    files: number;
-    replies: number;
-  }>({ messages: 0, files: 0, replies: 0 });
-  const [buttonCountdown, setButtonCountdown] = useState(0);
 
   // Debounce search term to avoid excessive filtering
   const debouncedSearchTerm = useDebounce(searchTerm, 300);
@@ -97,36 +84,28 @@ function SourceList({ focusedPanel }: { focusedPanel: FocusedPanel }) {
     dispatch(fetchSources());
   }, [dispatch]);
 
-  // Countdown timer for delete buttons when > 30 sources selected
-  useEffect(() => {
-    if (deleteModalOpen && pendingDeleteSources.size > 30) {
-      setButtonCountdown(5);
-    } else {
-      setButtonCountdown(0);
-    }
-  }, [deleteModalOpen, pendingDeleteSources.size]);
+  // Only search once we have at least 3 characters.
+  const isSearchActive = debouncedSearchTerm.trim().length >= 3;
 
-  useEffect(() => {
-    if (buttonCountdown <= 0) {
-      return;
-    }
-
-    const timer = setTimeout(() => {
-      setButtonCountdown((prev) => prev - 1);
-    }, 1000);
-
-    return () => clearTimeout(timer);
-  }, [buttonCountdown]);
-
-  // Perform search via IPC when search term changes or sources update
-  useEffect(() => {
-    let cancelled = false;
-
-    // Do not search until we have at least 3 characters
-    if (debouncedSearchTerm.trim().length < 3) {
+  // When the search goes inactive (fewer than 3 characters), clear any stale
+  // results during render rather than in the effect below, so we don't commit a
+  // frame still showing outdated search results.
+  const [prevIsSearchActive, setPrevIsSearchActive] = useState(isSearchActive);
+  if (isSearchActive !== prevIsSearchActive) {
+    setPrevIsSearchActive(isSearchActive);
+    if (!isSearchActive) {
       setSearchResults(null);
+    }
+  }
+
+  // Perform the search via IPC when the term changes or sources update. This is
+  // a genuine async side effect, so it stays in an effect.
+  useEffect(() => {
+    if (!isSearchActive) {
       return;
     }
+
+    let cancelled = false;
 
     const performSearch = async () => {
       try {
@@ -147,7 +126,7 @@ function SourceList({ focusedPanel }: { focusedPanel: FocusedPanel }) {
     return () => {
       cancelled = true;
     };
-  }, [debouncedSearchTerm, sources]);
+  }, [debouncedSearchTerm, sources, isSearchActive]);
 
   // Handle individual source selection
   const handleSourceSelect = useCallback(
@@ -184,105 +163,23 @@ function SourceList({ focusedPanel }: { focusedPanel: FocusedPanel }) {
     [dispatch],
   );
 
-  // Opens the delete confirmation modal for the given set of sources.
-  const openDeleteModal = useCallback(async (sources: Set<string>) => {
-    if (sources.size === 0) {
-      return;
-    }
-
-    setPendingDeleteSources(sources);
-    setDeleteModalOpen(true);
-    setDeleteModalLoading(true);
-
-    try {
-      const counts = await window.electronAPI.getSourceItemCounts(
-        Array.from(sources),
-      );
-      setDeleteCounts(counts);
-    } catch (error) {
-      console.error("Error fetching source item counts:", error);
-      setDeleteCounts({ messages: 0, files: 0, replies: 0 });
-    } finally {
-      setDeleteModalLoading(false);
-    }
-  }, []);
-
-  // Bulk delete button: opens modal for the currently checked sources
-  const handleBulkDelete = useCallback(async () => {
-    await openDeleteModal(new Set(selectedSources));
-  }, [selectedSources, openDeleteModal]);
-
-  // Allow other components (e.g. the source menu) to open the delete modal
-  useEffect(() => {
-    setDeleteSourceHandler((sources) => void openDeleteModal(sources));
-    return () => setDeleteSourceHandler(null);
-  }, [openDeleteModal]);
+  // Bulk delete button: opens the shared delete modal for the currently
+  // checked sources. Deleted sources are dropped from the selection reactively
+  // by the selection-pruning effect once they leave the store.
+  const handleBulkDelete = useCallback(() => {
+    dispatch(openDeleteModal(Array.from(selectedSources)));
+  }, [dispatch, selectedSources]);
 
   // Keyboard shortcut: Ctrl+Delete deletes the current source
   useShortcut(
     "deleteSource",
     () => {
       if (!deleteModalOpen && activeSourceUuid) {
-        void openDeleteModal(new Set([activeSourceUuid]));
+        dispatch(openDeleteModal([activeSourceUuid]));
       }
     },
     undefined,
-    [openDeleteModal, deleteModalOpen, activeSourceUuid],
-  );
-
-  const handleDeleteModalCancel = useCallback(() => {
-    setPendingDeleteSources(new Set());
-    setDeleteModalOpen(false);
-    setButtonCountdown(0);
-  }, []);
-
-  const handleDeleteAction = useCallback(
-    async (eventType: PendingEventType) => {
-      try {
-        const events = [...pendingDeleteSources].map((sourceUuid) => {
-          const sourceToDelete = sources[sourceUuid];
-          return {
-            sourceUuid,
-            type: eventType,
-            data:
-              eventType === PendingEventType.SourceConversationTruncated
-                ? { upper_bound: sourceToDelete?.lastInteractionCount ?? 0 }
-                : undefined,
-          };
-        });
-        await window.electronAPI.addPendingSourceEventBatch(events);
-        // If we deleted an account and it was the currently active source, navigate away
-        if (
-          eventType === PendingEventType.SourceDeleted &&
-          activeSourceUuid &&
-          pendingDeleteSources.has(activeSourceUuid)
-        ) {
-          navigate("/");
-        }
-        // If we deleted a conversation and there's an active source, refresh the conversation
-        if (
-          eventType === PendingEventType.SourceConversationTruncated &&
-          activeSourceUuid
-        ) {
-          dispatch(fetchConversation(activeSourceUuid));
-        }
-        // Update local state immediately with projected changes
-        dispatch(fetchSources());
-        // Remove the deleted sources from the checkbox selection if they were checked
-        setSelectedSources((prev) => {
-          const next = new Set(prev);
-          for (const uuid of pendingDeleteSources) {
-            next.delete(uuid);
-          }
-          return next;
-        });
-        setPendingDeleteSources(new Set());
-        setDeleteModalOpen(false);
-      } catch (error) {
-        console.error("Failed to delete source(s):", error);
-      }
-    },
-    [pendingDeleteSources, dispatch, activeSourceUuid, navigate, sources],
+    [dispatch, deleteModalOpen, activeSourceUuid],
   );
 
   const handleToggleSort = useCallback(() => {
@@ -370,9 +267,6 @@ function SourceList({ focusedPanel }: { focusedPanel: FocusedPanel }) {
   );
 
   const totalSourceCount = Object.keys(sources).length;
-  const allSourcesPendingDelete =
-    pendingDeleteSources.size > 0 &&
-    pendingDeleteSources.size === totalSourceCount;
 
   // Handle select all checkbox
   const handleSelectAll = useCallback(
@@ -388,18 +282,45 @@ function SourceList({ focusedPanel }: { focusedPanel: FocusedPanel }) {
     [filteredSources],
   );
 
-  // When the visible sources change (due to filter or search), trim the selection
-  // to only sources that are still visible.
-  useEffect(() => {
+  // Selection-pruning: whenever the visible sources change — because of a
+  // filter, a search, or because sources were deleted and left the store —
+  // trim the selection down to only sources that are still visible.
+  //
+  // We adjust the selection during render (guarded by the previous
+  // `filteredSources` reference) rather than in an effect, so React re-renders
+  // with the pruned selection before committing to the DOM — no extra painted
+  // frame with a stale selection. `filteredSources` is memoized, so its
+  // reference only changes when the visible set can actually change.
+  const [prevFilteredSources, setPrevFilteredSources] =
+    useState(filteredSources);
+  if (filteredSources !== prevFilteredSources) {
+    setPrevFilteredSources(filteredSources);
     const visibleUuids = new Set(filteredSources.map((s) => s.uuid));
     setSelectedSources((prev) => {
       const next = new Set([...prev].filter((uuid) => visibleUuids.has(uuid)));
-      if (next.size !== prev.size) {
-        return next;
-      }
-      return prev;
+      return next.size !== prev.size ? next : prev;
     });
-  }, [filteredSources]);
+  }
+
+  // Drop sources from the selection once a delete completes. Pruning above only
+  // clears sources that leave the store, so it misses "delete conversation"
+  // (truncate), where the source stays visible; this covers that case. Guarded
+  // by the previous reference so it runs once per completed deletion.
+  const lastDeletedSources = useAppSelector(selectLastDeletedSources);
+  const [prevLastDeletedSources, setPrevLastDeletedSources] =
+    useState(lastDeletedSources);
+  if (lastDeletedSources !== prevLastDeletedSources) {
+    setPrevLastDeletedSources(lastDeletedSources);
+    if (lastDeletedSources.length > 0) {
+      setSelectedSources((prev) => {
+        const next = new Set(prev);
+        for (const uuid of lastDeletedSources) {
+          next.delete(uuid);
+        }
+        return next.size !== prev.size ? next : prev;
+      });
+    }
+  }
 
   // Helper to get all source option elements in the list
   const getSourceOptions = useCallback((): HTMLElement[] => {
@@ -499,128 +420,6 @@ function SourceList({ focusedPanel }: { focusedPanel: FocusedPanel }) {
         selectedCount={selectedSources.size}
         isFiltered={filter !== "all" || searchResults !== null}
       />
-
-      {/* Delete confirmation modal */}
-      <Modal
-        open={deleteModalOpen}
-        data-testid="delete-modal"
-        closable={false}
-        afterOpenChange={(open) => {
-          if (open) {
-            requestAnimationFrame(() => {
-              deleteModalTitleRef.current?.focus();
-            });
-          }
-        }}
-        title={
-          <h2
-            data-testid="delete-modal-title"
-            tabIndex={-1}
-            ref={deleteModalTitleRef}
-          >
-            {pendingDeleteSources.size === 1
-              ? t("sourcelist.deleteDialog.single.message")
-              : t("sourcelist.deleteDialog.multiple.message", {
-                  count: pendingDeleteSources.size,
-                })}
-          </h2>
-        }
-        getContainer={() => document.getElementById("root") || document.body}
-        onCancel={handleDeleteModalCancel}
-        footer={[
-          <Button
-            key="cancel"
-            data-testid="delete-modal-cancel-button"
-            onClick={handleDeleteModalCancel}
-          >
-            {t("sourcelist.deleteDialog.cancelButton")}
-          </Button>,
-          <Button
-            key="deleteConversation"
-            data-testid="delete-modal-delete-conversation-button"
-            type="primary"
-            disabled={buttonCountdown > 0}
-            onClick={() =>
-              handleDeleteAction(PendingEventType.SourceConversationTruncated)
-            }
-          >
-            {allSourcesPendingDelete
-              ? t("sourcelist.deleteDialog.all.keepAccountsButton")
-              : pendingDeleteSources.size === 1
-                ? t("sourcelist.deleteDialog.single.keepAccountButton")
-                : t("sourcelist.deleteDialog.multiple.keepAccountsButton")}
-          </Button>,
-          <Button
-            key="deleteAccount"
-            data-testid="delete-modal-delete-account-button"
-            type="primary"
-            danger
-            disabled={buttonCountdown > 0}
-            onClick={() => handleDeleteAction(PendingEventType.SourceDeleted)}
-          >
-            {allSourcesPendingDelete
-              ? t("sourcelist.deleteDialog.all.deleteAccountsButton")
-              : pendingDeleteSources.size === 1
-                ? t("sourcelist.deleteDialog.single.deleteAccountButton")
-                : t("sourcelist.deleteDialog.multiple.deleteAccountsButton")}
-          </Button>,
-          <span className="text-sm text-gray-500 italic ml-2">
-            {buttonCountdown > 0 && `${buttonCountdown}s`}
-          </span>,
-        ]}
-      >
-        <div
-          data-testid="delete-modal-content"
-          data-all-sources-selected={allSourcesPendingDelete}
-        >
-          <p>{t("sourcelist.deleteDialog.warning")}</p>
-          {allSourcesPendingDelete && (
-            <p className="font-semibold text-orange-600 mt-2">
-              {t("sourcelist.deleteDialog.allSourcesWarning")}
-            </p>
-          )}
-          {deleteModalLoading ? (
-            <p className="text-gray-600 italic">
-              {t("sourcelist.deleteDialog.countingItems")}
-            </p>
-          ) : (
-            <>
-              {(deleteCounts.messages > 0 ||
-                deleteCounts.files > 0 ||
-                deleteCounts.replies > 0) && (
-                <div className="mt-3">
-                  <p className="font-medium text-gray-800">
-                    {t("sourcelist.deleteDialog.itemCountsHeader")}
-                  </p>
-                  <ul className="mt-1 ml-4 list-none text-gray-700">
-                    {deleteCounts.messages > 0 && (
-                      <li>
-                        {t("sourcelist.deleteDialog.messageCount", {
-                          count: deleteCounts.messages,
-                        })}
-                      </li>
-                    )}
-                    {deleteCounts.files > 0 && (
-                      <li>
-                        {t("sourcelist.deleteDialog.fileCount", {
-                          count: deleteCounts.files,
-                        })}
-                      </li>
-                    )}
-                    {deleteCounts.replies > 0 && (
-                      <li>
-                        {t("sourcelist.deleteDialog.replyCount", {
-                          count: deleteCounts.replies,
-                        })}
-                      </li>
-                    )}
-                  </ul>
-                </div>
-              )}
-            </>
-          )}
-        </div>
-      </Modal>
     </div>
   );
 }

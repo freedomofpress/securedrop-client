@@ -328,6 +328,13 @@ describe("sourcesSlice", () => {
           status: null,
         },
         drafts: { drafts: {} },
+        deleteModal: {
+          open: false,
+          pendingSources: [],
+          loading: false,
+          counts: { messages: 0, files: 0, replies: 0 },
+          lastDeletedSources: [],
+        },
       };
 
       expect(selectSources(state)).toEqual(mockSourcesRecord);
@@ -356,6 +363,13 @@ describe("sourcesSlice", () => {
           status: null,
         },
         drafts: { drafts: {} },
+        deleteModal: {
+          open: false,
+          pendingSources: [],
+          loading: false,
+          counts: { messages: 0, files: 0, replies: 0 },
+          lastDeletedSources: [],
+        },
       };
 
       expect(selectActiveSourceUuid(state)).toBe("source-1");
@@ -384,6 +398,13 @@ describe("sourcesSlice", () => {
           status: null,
         },
         drafts: { drafts: {} },
+        deleteModal: {
+          open: false,
+          pendingSources: [],
+          loading: false,
+          counts: { messages: 0, files: 0, replies: 0 },
+          lastDeletedSources: [],
+        },
       };
 
       expect(selectSourcesLoading(state)).toBe(true);

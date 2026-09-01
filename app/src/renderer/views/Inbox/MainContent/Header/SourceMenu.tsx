@@ -11,7 +11,8 @@ import { ExportWizard } from "../Conversation/Item/Export";
 import { PrintWizard } from "../Conversation/Item/Print";
 import { MenuProps, Dropdown, Button, Tooltip } from "antd";
 import { MoreOutlined } from "@ant-design/icons";
-import { requestDeleteSource } from "../../../../components/deleteSourceRequester";
+import { useAppDispatch } from "../../../../hooks";
+import { openDeleteModal } from "../../../../features/deleteModal/deleteModalSlice";
 
 interface SourceMenuProps {
   sourceWithItems: SourceWithItems;
@@ -21,6 +22,7 @@ const SourceMenu = memo(function SourceMenu({
   sourceWithItems,
 }: SourceMenuProps) {
   const { t } = useTranslation("MainContent");
+  const dispatch = useAppDispatch();
 
   const [whistleflowEnabled, setWhistleflowEnabled] = useState(false);
   const [exportWhistleflow, setExportWhistleflow] = useState(false);
@@ -119,7 +121,7 @@ const SourceMenu = memo(function SourceMenu({
         }
         break;
       case "deleteSource":
-        requestDeleteSource(new Set([sourceWithItems.uuid]));
+        dispatch(openDeleteModal([sourceWithItems.uuid]));
         break;
       default:
         break;
