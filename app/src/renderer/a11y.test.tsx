@@ -34,6 +34,12 @@ import File from "./views/Inbox/MainContent/Conversation/Item/File";
 import Message from "./views/Inbox/MainContent/Conversation/Item/Message";
 import SourceList from "./views/Inbox/Sidebar/SourceList";
 import SidebarResizer from "./views/Inbox/SidebarResizer";
+import Sidebar from "./views/Inbox/Sidebar";
+import SyncSidebar, {
+  SYNC_SIDEBAR_COLLAPSED_HEIGHT,
+  SYNC_SIDEBAR_DEFAULT_HEIGHT,
+} from "./views/Inbox/Sidebar/SyncSidebar";
+import SyncSidebarResizer from "./views/Inbox/Sidebar/SyncSidebarResizer";
 import Source from "./views/Inbox/Sidebar/SourceList/Source";
 import MainMenu from "./views/Inbox/Sidebar/Account/MainMenu";
 import KeyboardHelp from "./views/Inbox/Sidebar/Account/KeyboardHelp";
@@ -259,6 +265,47 @@ describe.sequential("accessibility (axe)", () => {
     it("has no axe violations", async () => {
       await renderAndCheckA11y(
         <SidebarResizer width={384} onWidthChange={vi.fn()} />,
+      );
+    });
+  });
+
+  describe("Sidebar", () => {
+    it("has no axe violations on initial render", async () => {
+      await renderAndCheckA11y(<Sidebar focusedPanel="sidebar" />);
+    });
+  });
+
+  describe("SyncSidebar", () => {
+    it("has no axe violations when collapsed", async () => {
+      await renderAndCheckA11y(
+        <SyncSidebar
+          height={SYNC_SIDEBAR_COLLAPSED_HEIGHT}
+          collapsed={true}
+          onToggle={vi.fn()}
+        />,
+      );
+    });
+
+    it("has no axe violations when expanded", async () => {
+      await renderAndCheckA11y(
+        <SyncSidebar
+          height={SYNC_SIDEBAR_DEFAULT_HEIGHT}
+          collapsed={false}
+          onToggle={vi.fn()}
+        />,
+      );
+    });
+  });
+
+  describe("SyncSidebarResizer", () => {
+    it("has no axe violations", async () => {
+      await renderAndCheckA11y(
+        <SyncSidebarResizer
+          height={SYNC_SIDEBAR_COLLAPSED_HEIGHT}
+          minHeight={SYNC_SIDEBAR_COLLAPSED_HEIGHT}
+          maxHeight={SYNC_SIDEBAR_DEFAULT_HEIGHT}
+          onHeightChange={vi.fn()}
+        />,
       );
     });
   });

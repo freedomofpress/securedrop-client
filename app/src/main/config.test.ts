@@ -18,6 +18,7 @@ describe("Config", () => {
     delete (import.meta.env as any).QUBES_ENV_SOURCED;
     delete (import.meta.env as any).QUBES_GPG_DOMAIN;
     delete (import.meta.env as any).GNUPGHOME;
+    delete (import.meta.env as any).SYNC_SIDEBAR;
     // Clear mock state
     vi.clearAllMocks();
   });
@@ -45,6 +46,25 @@ describe("Config", () => {
       const config = Config.load(true);
 
       expect(config.qubes_gpg_domain).toBe("");
+      expect(config.sync_sidebar).toBe(false);
+    });
+
+    it("enables the sync sidebar when SYNC_SIDEBAR is set", () => {
+      (import.meta.env as any).SD_SUBMISSION_KEY_FPR = FINGERPRINT;
+      (import.meta.env as any).SYNC_SIDEBAR = "true";
+
+      const config = Config.load(true);
+
+      expect(config.sync_sidebar).toBe(true);
+    });
+
+    it("leaves the sync sidebar off for any other SYNC_SIDEBAR value", () => {
+      (import.meta.env as any).SD_SUBMISSION_KEY_FPR = FINGERPRINT;
+      (import.meta.env as any).SYNC_SIDEBAR = "1";
+
+      const config = Config.load(true);
+
+      expect(config.sync_sidebar).toBe(false);
     });
 
     it("loads GNUPGHOME from environment for development", () => {
@@ -144,6 +164,7 @@ describe("Config", () => {
 
       expect(config.sd_submission_key_fpr).toBe(FINGERPRINT);
       expect(config.qubes_gpg_domain).toBe("");
+      expect(config.sync_sidebar).toBe(false);
     });
 
     it("throws error if required config missing from QubesDB", () => {

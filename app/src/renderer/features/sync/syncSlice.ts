@@ -113,4 +113,32 @@ export const selectSyncError = (state: RootState) => state.sync.error;
 export const selectSyncStatus = (state: RootState) => state.sync.status;
 export const selectLastSyncFinished = (state: RootState) =>
   state.sync.lastSyncFinished;
+
+export enum SyncActivity {
+  SYNCING = "syncing",
+  UP_TO_DATE = "upToDate",
+  NEEDS_ATTENTION = "needsAttention",
+}
+
+const NEEDS_ATTENTION_STATUSES: (SyncStatus | null)[] = [
+  SyncStatus.ERROR,
+  SyncStatus.FORBIDDEN,
+  SyncStatus.TIMEOUT,
+];
+
+export const selectSyncActivity = (state: RootState): SyncActivity => {
+  const { lastSyncStarted, lastSyncFinished, status, error } = state.sync;
+
+  if (
+    lastSyncStarted !== null &&
+    (lastSyncFinished === null || lastSyncFinished < lastSyncStarted)
+  ) {
+    return SyncActivity.SYNCING;
+  }
+  if (error !== null || NEEDS_ATTENTION_STATUSES.includes(status)) {
+    return SyncActivity.NEEDS_ATTENTION;
+  }
+  return SyncActivity.UP_TO_DATE;
+};
+
 export default syncSlice.reducer;

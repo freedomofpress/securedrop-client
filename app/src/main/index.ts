@@ -632,6 +632,13 @@ if (!gotTheLock) {
         },
       );
 
+      ipcMain.handle(
+        "getSyncSidebarEnabled",
+        async (_event): Promise<boolean> => {
+          return config.sync_sidebar;
+        },
+      );
+
       ipcMain.handle("getCSPNonce", async (_event): Promise<string> => {
         return cspNonce;
       });

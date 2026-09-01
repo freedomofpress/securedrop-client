@@ -11,6 +11,7 @@ export class Config {
   readonly qubes_gpg_domain!: string;
   readonly sd_submission_key_fpr!: string;
   readonly whistleflow!: boolean;
+  readonly sync_sidebar!: boolean;
 
   public static load(noQubes: boolean): Config {
     const isQubes = noQubes ? !noQubes : detectQubes();
@@ -29,6 +30,7 @@ export class Config {
       // don't need to maintain a custom fork just for this; it'll go
       // away once we have proper "export to VM" capability.
       whistleflow: read(isQubes, "WHISTLEFLOW", "false") === "true",
+      sync_sidebar: read(isQubes, "SYNC_SIDEBAR", "false") === "true",
     };
   }
 }

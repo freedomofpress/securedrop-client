@@ -186,6 +186,9 @@ const electronAPI = {
   getWhistleflowEnabled: logIpcCall<boolean>("getWhistleflowEnabled", () =>
     ipcRenderer.invoke("getWhistleflowEnabled"),
   ),
+  getSyncSidebarEnabled: logIpcCall<boolean>("getSyncSidebarEnabled", () =>
+    ipcRenderer.invoke("getSyncSidebarEnabled"),
+  ),
   initiatePrint: logIpcCall<DeviceStatus>("initiatePrint", () =>
     ipcRenderer.invoke("initiatePrint"),
   ),
