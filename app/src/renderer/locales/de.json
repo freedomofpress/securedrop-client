@@ -114,7 +114,6 @@
     },
     "helpModals": {
       "aboutRepoTitle": "Quellcode",
-      "aboutLicence": "SecureDrop ist Open Source und wird unter der GNU Affero General Public License v3 veröffentlicht.",
       "keyboardTitle": "Tastenkombinationen",
       "aboutCopyright": "© 2013–2026 Aaron Swartz, James Dolan, Freedom of the Press Foundation, und SecureDrop Mitwirkende.",
       "aboutAppDesc": "Sichere Kommunikation für Journalisten und Informationsquellen",
@@ -237,7 +236,6 @@
     "resume": "Wiederaufnahme"
   },
   "QuitModal": {
-    "cancel": "Abbrechen",
     "withDrafts": "Entwürfe von Antworten werden gelöscht.",
     "Quit": "Beenden",
     "discardAndQuit": "Verwerfen und beenden",
