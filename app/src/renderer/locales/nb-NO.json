@@ -88,7 +88,6 @@
     },
     "helpModals": {
       "aboutRepoTitle": "",
-      "aboutLicence": "",
       "keyboardTitle": "",
       "aboutCopyright": "",
       "aboutAppDesc": "",
@@ -211,7 +210,6 @@
     }
   },
   "QuitModal": {
-    "cancel": "",
     "withDrafts": "",
     "Quit": "",
     "discardAndQuit": "",
