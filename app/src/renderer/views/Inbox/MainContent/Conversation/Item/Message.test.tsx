@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import userEvent from "@testing-library/user-event";
-import { screen, fireEvent, waitFor } from "@testing-library/react";
+import { screen, waitFor } from "@testing-library/react";
 import Message from "./Message";
 import {
   testMemoization,
@@ -1160,11 +1160,15 @@ describe("Message and Reply delete button keyboard accessibility", () => {
     const deleteBtn = screen.getByRole("button", { name: "Delete message" });
     const wrapper = deleteBtn.closest(".transition-opacity") as HTMLElement;
 
-    // Starts hidden
-    expect(wrapper.style.opacity).toBe("0");
+    // Hidden until the item is hovered or the button takes focus. jsdom does
+    // not evaluate :hover/:focus-within, so assert the classes that carry the
+    // behaviour rather than a computed opacity.
+    expect(wrapper).toHaveClass("opacity-0");
+    expect(wrapper).toHaveClass("focus-within:opacity-100");
+    expect(wrapper).toHaveClass("group-hover:opacity-100");
 
-    fireEvent.focus(deleteBtn);
-    expect(wrapper.style.opacity).toBe("1");
+    deleteBtn.focus();
+    expect(deleteBtn).toHaveFocus();
   });
 
   it("reply delete button is reachable by keyboard and becomes visible on focus", () => {
@@ -1176,10 +1180,12 @@ describe("Message and Reply delete button keyboard accessibility", () => {
     const deleteBtn = screen.getByRole("button", { name: "Delete reply" });
     const wrapper = deleteBtn.closest(".transition-opacity") as HTMLElement;
 
-    expect(wrapper.style.opacity).toBe("0");
+    expect(wrapper).toHaveClass("opacity-0");
+    expect(wrapper).toHaveClass("focus-within:opacity-100");
+    expect(wrapper).toHaveClass("group-hover:opacity-100");
 
-    fireEvent.focus(deleteBtn);
-    expect(wrapper.style.opacity).toBe("1");
+    deleteBtn.focus();
+    expect(deleteBtn).toHaveFocus();
   });
 
   it("message delete button calls onDelete when activated by keyboard", async () => {

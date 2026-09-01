@@ -214,8 +214,6 @@ const File = memo(function File({
   const titleCaseDesignation = toTitleCase(designation);
   const fetchStatus = item.fetch_status;
   const [isFileBoxHovered, setIsFileBoxHovered] = useState(false);
-  const [isDeleteFocused, setIsDeleteFocused] = useState(false);
-  const showDelete = isFileBoxHovered || isDeleteFocused;
 
   // Disable downloading of files in offline mode
   const session = useAppSelector(getSessionState);
@@ -347,10 +345,7 @@ const File = memo(function File({
             </div>
           </Tooltip>
           {!disableFetch && (
-            <div
-              className="flex-shrink-0 transition-opacity group-hover:opacity-100"
-              style={{ opacity: showDelete ? 1 : 0 }}
-            >
+            <div className="flex-shrink-0 transition-opacity opacity-0 group-hover:opacity-100 focus-within:opacity-100">
               <Button
                 type="text"
                 size="small"
@@ -358,8 +353,6 @@ const File = memo(function File({
                 icon={<Trash size={16} />}
                 onClick={onDelete}
                 aria-label={t("deleteFile")}
-                onFocus={() => setIsDeleteFocused(true)}
-                onBlur={() => setIsDeleteFocused(false)}
                 data-testid="file-delete-button"
               />
             </div>
