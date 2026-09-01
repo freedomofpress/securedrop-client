@@ -220,6 +220,15 @@ describe("journalistsSlice", () => {
         lastSyncFinished: null,
         status: null,
       },
+      syncActivity: {
+        downloads: {},
+        recentDownloads: [],
+        pendingEvents: [],
+        completedEvents: [],
+        inFlightEventIds: [],
+        loading: false,
+        error: null,
+      },
       drafts: { drafts: {} },
     };
 
