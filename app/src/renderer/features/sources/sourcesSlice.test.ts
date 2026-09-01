@@ -327,6 +327,15 @@ describe("sourcesSlice", () => {
           lastSyncFinished: null,
           status: null,
         },
+        syncActivity: {
+          downloads: {},
+          recentDownloads: [],
+          pendingEvents: [],
+          completedEvents: [],
+          inFlightEventIds: [],
+          loading: false,
+          error: null,
+        },
         drafts: { drafts: {} },
       };
 
@@ -355,6 +364,15 @@ describe("sourcesSlice", () => {
           lastSyncFinished: null,
           status: null,
         },
+        syncActivity: {
+          downloads: {},
+          recentDownloads: [],
+          pendingEvents: [],
+          completedEvents: [],
+          inFlightEventIds: [],
+          loading: false,
+          error: null,
+        },
         drafts: { drafts: {} },
       };
 
@@ -382,6 +400,15 @@ describe("sourcesSlice", () => {
           lastSyncStarted: null,
           lastSyncFinished: null,
           status: null,
+        },
+        syncActivity: {
+          downloads: {},
+          recentDownloads: [],
+          pendingEvents: [],
+          completedEvents: [],
+          inFlightEventIds: [],
+          loading: false,
+          error: null,
         },
         drafts: { drafts: {} },
       };
