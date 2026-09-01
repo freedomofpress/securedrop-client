@@ -164,32 +164,36 @@ const Source = memo(function Source({
       />
 
       {/* Source info */}
-      <div className="flex-1 min-w-0 py-2 pl-3">
-        <div className="flex items-center justify-between">
+      <div className="flex-1 min-w-0 py-2 ps-3">
+        <div className="flex items-center justify-between gap-2">
           <div className="flex items-center gap-2 min-w-0">
             <div className="flex flex-col min-w-0">
               <h3
-                className={`text-sm truncate ${
+                className={`text-sm overflow-hidden ${
                   isActive ? "text-white" : "text-gray-900"
                 } ${!source.isRead ? "font-bold" : "font-medium"}`}
                 data-testid={`source-designation-${source.uuid}`}
               >
-                {designation}
+                <bdi className="inline-block max-w-full truncate align-bottom">
+                  {designation}
+                </bdi>
               </h3>
               {source.messagePreview && (
                 <p
-                  className={`text-xs truncate ${
+                  className={`text-xs overflow-hidden ${
                     isActive ? "text-white opacity-80" : "text-gray-500"
                   } ${
                     !source.isRead ? "font-medium" : "font-normal"
                   } ${!source.messagePreview.plaintext ? "italic" : ""}`}
                   data-testid="message-preview"
                 >
-                  {!source.messagePreview.plaintext
-                    ? source.messagePreview.kind === "file"
-                      ? t("source.encryptedFile")
-                      : t("source.encryptedMessage")
-                    : source.messagePreview.plaintext}
+                  <bdi className="inline-block max-w-full truncate align-bottom">
+                    {!source.messagePreview.plaintext
+                      ? source.messagePreview.kind === "file"
+                        ? t("source.encryptedFile")
+                        : t("source.encryptedMessage")
+                      : source.messagePreview.plaintext}
+                  </bdi>
                 </p>
               )}
             </div>
@@ -202,7 +206,7 @@ const Source = memo(function Source({
                 isActive ? "text-white opacity-80" : "text-gray-500"
               } ${!source.isRead ? "font-bold" : "font-normal"}`}
             >
-              {lastUpdated}
+              <bdi>{lastUpdated}</bdi>
             </span>
             {source.hasAttachment && (
               <Paperclip
