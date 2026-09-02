@@ -119,7 +119,6 @@
     },
     "helpModals": {
       "aboutRepoTitle": "Código fuente",
-      "aboutLicence": "",
       "keyboardTitle": "Atajos del teclado",
       "aboutCopyright": "© 2013–2026 Aaron Swartz, James Dolan, Freedom of the Press Foundation, y colaboradores de SecureDrop. Lanzada bajo licencia AGPL-3.0.",
       "aboutAppDesc": "Comunicación segura para periodistas y fuentes",
@@ -243,7 +242,6 @@
     "exportToWhistleflow": "Exportar a Whistleflow"
   },
   "QuitModal": {
-    "cancel": "",
     "withDrafts": "Los borradores de respuestas serán descartados.",
     "Quit": "Salir",
     "discardAndQuit": "Descartar y Salir",

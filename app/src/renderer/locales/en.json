@@ -63,6 +63,10 @@
     }
   },
   "Sidebar": {
+    "resizer": {
+      "label": "Resize sidebar",
+      "hint": "Drag to resize the sidebar"
+    },
     "account": {
       "signOut": "Sign out",
       "offlineMode": "Offline Mode",

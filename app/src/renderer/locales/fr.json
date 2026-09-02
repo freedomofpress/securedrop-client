@@ -162,8 +162,7 @@
       "aboutMoreTitle": "Plus de renseignements",
       "aboutRepoTitle": "Code source",
       "aboutRepoContent": "https://github.com/freedomofpress/securedrop-client",
-      "aboutCopyright": "© 2013 à 2026 Aaron Swartz, James Dolan, Fondation « Freedom of the Press » et les contributeurs de SecureDrop. Publié sous licence AGPL-3.0.",
-      "aboutLicence": "SecureDrop est un logiciel à code source ouvert distribué sous licence GNU Licence générale publique Affero v3."
+      "aboutCopyright": "© 2013 à 2026 Aaron Swartz, James Dolan, Fondation « Freedom of the Press » et les contributeurs de SecureDrop. Publié sous licence AGPL-3.0."
     },
     "syncStatus": {
       "notloggedin": "Synchronisation : Vous n’êtes pas connecté",
@@ -297,8 +296,6 @@
   "QuitModal": {
     "title": "Fermer la boîte de réception SecureDrop ?",
     "withDrafts": "Les brouillons de réponse seront supprimés.",
-    "cancel": "Annuler",
-    "ok": "Oui, quitter",
     "goBack": "Retour",
     "Quit": "Fermer",
     "discardAndQuit": "Abandonner et fermer"
