@@ -111,6 +111,10 @@
       "aboutMoreTitle": "[!More Information!]",
       "aboutAppTitle": "[!SecureDrop Inbox!]",
       "aboutRepoContent": "[!!!!!https://github.com/freedomofpress/securedrop-client!!!!!]"
+    },
+    "resizer": {
+      "label": "[!Resize sidebar!]",
+      "hint": "[!!Drag to resize the sidebar!!]"
     }
   },
   "Item": {
