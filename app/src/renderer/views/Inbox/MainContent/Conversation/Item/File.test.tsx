@@ -1,4 +1,4 @@
-import { screen, fireEvent, waitFor } from "@testing-library/react";
+import { screen, waitFor } from "@testing-library/react";
 import { expect, describe, it, vi } from "vitest";
 import userEvent from "@testing-library/user-event";
 import File from "./File";
@@ -387,14 +387,16 @@ describe("File Component", () => {
     ) as HTMLElement;
     expect(trashButton).not.toBeNull();
 
-    // Before focus the wrapper is opacity 0
+    // Hidden until the row is hovered or the button takes focus. jsdom does
+    // not evaluate :hover/:focus-within, so assert the classes that carry the
+    // behaviour rather than a computed opacity.
     const wrapper = trashButton.closest(".transition-opacity") as HTMLElement;
-    expect(wrapper.style.opacity).toBe("0");
+    expect(wrapper).toHaveClass("opacity-0");
+    expect(wrapper).toHaveClass("group-hover:opacity-100");
+    expect(wrapper).toHaveClass("focus-within:opacity-100");
 
-    // fireEvent.focus triggers the React onFocus handler and flushes state,
-    // which should make the button visible so keyboard users can see it.
-    fireEvent.focus(trashButton);
-    expect(wrapper.style.opacity).toBe("1");
+    trashButton.focus();
+    expect(trashButton).toHaveFocus();
   });
 
   it("shows the double-encryption badge on a downloaded double-encrypted file", () => {
