@@ -471,6 +471,12 @@ function SourceList({ focusedPanel }: { focusedPanel: FocusedPanel }) {
           onToggleSort={handleToggleSort}
           onDropdownOpenChange={setDropdownOpen}
         />
+        <Counts
+          totalCount={totalSourceCount}
+          visibleCount={filteredSources.length}
+          selectedCount={selectedSources.size}
+          isFiltered={filter !== "all" || searchResults !== null}
+        />
       </div>
 
       {/* Sources list */}
@@ -491,14 +497,6 @@ function SourceList({ focusedPanel }: { focusedPanel: FocusedPanel }) {
           className="select-none"
         />
       </div>
-
-      {/* Source counts */}
-      <Counts
-        totalCount={totalSourceCount}
-        visibleCount={filteredSources.length}
-        selectedCount={selectedSources.size}
-        isFiltered={filter !== "all" || searchResults !== null}
-      />
 
       {/* Delete confirmation modal */}
       <Modal

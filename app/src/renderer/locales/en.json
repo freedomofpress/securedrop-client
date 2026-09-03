@@ -97,6 +97,18 @@
       "warning": "Sync: warning",
       "error": "Sync: error"
     },
+    "syncSidebar": {
+      "status": {
+        "syncing": "Syncing...",
+        "upToDate": "All caught up",
+        "needsAttention": "Needs attention"
+      },
+      "body": "Sync sidebar placeholder text",
+      "resizer": {
+        "label": "Resize sync activity panel",
+        "hint": "Drag to resize the sync activity panel"
+      }
+    },
     "sourcelist": {
       "filters": {
         "all": "All",
