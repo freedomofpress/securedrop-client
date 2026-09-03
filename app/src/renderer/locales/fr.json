@@ -169,6 +169,10 @@
       "ok": "Synchronisation : Valide",
       "warning": "Synchronisation : Avertissement",
       "error": "Synchronisation : Erreur"
+    },
+    "resizer": {
+      "label": "Redimensionner la barre latérale",
+      "hint": "Faire glisser pour redimensionner la barre latérale"
     }
   },
   "SignIn": {
