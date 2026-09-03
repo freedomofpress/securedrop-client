@@ -9,7 +9,7 @@ interface SidebarProps {
 
 const Sidebar = memo(function Sidebar({ focusedPanel }: SidebarProps) {
   return (
-    <div className="sd-border-secondary @container w-full flex flex-col h-full min-h-0 border-r">
+    <div className="sd-border-secondary @container w-full flex flex-col h-full min-h-0 border-e">
       <Account />
       <SourceList focusedPanel={focusedPanel} />
     </div>

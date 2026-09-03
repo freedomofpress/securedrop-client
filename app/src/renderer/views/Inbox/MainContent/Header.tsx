@@ -31,15 +31,15 @@ const Header = memo(function Header({
     <Flex justify="space-between" align="center">
       <Flex>
         <Avatar designation={designation} isActive={false} />
-        <div className="ml-2">
+        <div className="ms-2">
           <h2 data-testid="conversation-header-designation" tabIndex={-1}>
-            {designation}
+            <bdi>{designation}</bdi>
           </h2>
           <p
             className="text-sm text-gray-600"
             data-testid="conversation-header-last-activity"
           >
-            {t("lastSourceActivity")}: {formattedLastSeen}
+            {t("lastSourceActivity")}: <bdi>{formattedLastSeen}</bdi>
           </p>
         </div>
       </Flex>

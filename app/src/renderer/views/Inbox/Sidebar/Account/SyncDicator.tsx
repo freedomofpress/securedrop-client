@@ -2,7 +2,9 @@ import { Hexagon } from "lucide-react";
 import { memo } from "react";
 import { useTranslation } from "react-i18next";
 import { useAppSelector } from "../../../../hooks";
+import { textDirection } from "../../../../i18n";
 import { selectSyncStatus } from "../../../../features/sync/syncSlice";
+import { mirrorPlacement } from "../../../../utils";
 import { Tooltip } from "antd";
 
 interface HexWithHaloProps {
@@ -17,9 +19,13 @@ const HexWithHalo = memo(function HexWithHalo({
   label = "",
 }: HexWithHaloProps) {
   const { t } = useTranslation("Sidebar");
+  const direction = textDirection();
 
   return (
-    <Tooltip title={t(label)} placement="bottomRight">
+    <Tooltip
+      title={t(label)}
+      placement={mirrorPlacement("bottomRight", direction)}
+    >
       <Hexagon
         style={{ filter: `drop-shadow(0px 0px 2px ${color})` }}
         fill={color}

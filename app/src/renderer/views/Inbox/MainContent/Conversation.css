@@ -4,13 +4,13 @@
   max-height: calc(15lh + 24px); /* 15 lines + padding */
   overflow-y: auto !important;
   resize: none !important;
-  padding: 10px;
-  padding-right: 55px;
+  padding-inline-start: 10px;
+  padding-inline-end: 55px;
 }
 
 .conversation-send-btn {
   position: absolute;
-  right: 10px;
+  inset-inline-end: 10px;
   bottom: 10px;
   z-index: 2;
   padding: 0;

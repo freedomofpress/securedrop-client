@@ -8,6 +8,7 @@ import {
   formatJournalistName,
   prettyPrintBytes,
   formatFilename,
+  mirrorPlacement,
 } from "./utils";
 import type { JournalistMetadata } from "../types";
 
@@ -688,6 +689,27 @@ describe("utils", () => {
       expect(formatFilename("filename.reallylongext", 20, 6)).toBe(
         "...reallylongext",
       );
+    });
+  });
+  describe("mirrorPlacement", () => {
+    it("leaves placements untouched for left-to-right languages", () => {
+      expect(mirrorPlacement("bottomRight", "ltr")).toBe("bottomRight");
+      expect(mirrorPlacement("left", "ltr")).toBe("left");
+    });
+
+    it("mirrors horizontal placements for right-to-left languages", () => {
+      expect(mirrorPlacement("left", "rtl")).toBe("right");
+      expect(mirrorPlacement("right", "rtl")).toBe("left");
+      expect(mirrorPlacement("topRight", "rtl")).toBe("topLeft");
+      expect(mirrorPlacement("bottomRight", "rtl")).toBe("bottomLeft");
+      expect(mirrorPlacement("bottomLeft", "rtl")).toBe("bottomRight");
+      expect(mirrorPlacement("rightTop", "rtl")).toBe("leftTop");
+      expect(mirrorPlacement("leftBottom", "rtl")).toBe("rightBottom");
+    });
+
+    it("leaves placements without a horizontal side alone", () => {
+      expect(mirrorPlacement("top", "rtl")).toBe("top");
+      expect(mirrorPlacement("bottom", "rtl")).toBe("bottom");
     });
   });
 });

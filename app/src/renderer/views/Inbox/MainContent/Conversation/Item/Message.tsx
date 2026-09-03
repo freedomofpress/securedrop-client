@@ -6,7 +6,11 @@ import {
   type ItemUpdate,
   type ReplyMetadata,
 } from "../../../../../../types";
-import { toTitleCase, formatJournalistName } from "../../../../../utils";
+import {
+  toTitleCase,
+  formatJournalistName,
+  mirrorPlacement,
+} from "../../../../../utils";
 import Avatar from "../../../../../components/Avatar";
 import TruncatedText from "../../../../../components/TruncatedText";
 import { useTranslation } from "react-i18next";
@@ -30,6 +34,7 @@ import {
   useAppSelector,
   useSubmissionKeyFingerprint,
 } from "../../../../../hooks";
+import { textDirection } from "../../../../../i18n";
 import "../Item.css";
 import "./Reply.css";
 
@@ -57,6 +62,7 @@ const Message = memo(function Message(props: MessageProps) {
   const { kind, item, onDelete } = props;
   const { t } = useTranslation("MainContent");
   const { token } = theme.useToken();
+  const direction = textDirection();
   const currentKeyFingerprint = useSubmissionKeyFingerprint(
     kind === "message" && item.doubleEncryptedKeyFingerprint !== null,
   );
@@ -238,12 +244,17 @@ const Message = memo(function Message(props: MessageProps) {
         {...listItemAriaProps}
       >
         <Avatar designation={authorDisplay} isActive={false} />
-        <div className="ml-3">
+        <div className="ms-3">
           <div className="flex items-center mb-1">
-            <span className="author">{authorDisplay}</span>
+            <span className="author" dir="auto">
+              {authorDisplay}
+            </span>
           </div>
           <div className="flex items-center gap-1">
-            <div className="message-box whitespace-pre-wrap overflow-hidden">
+            <div
+              className="message-box whitespace-pre-wrap overflow-hidden"
+              dir="auto"
+            >
               {displayMessage()}
             </div>
             {!disableDelete && (
@@ -272,7 +283,9 @@ const Message = memo(function Message(props: MessageProps) {
     >
       <div>
         <div className="flex items-center justify-start mb-1 gap-1">
-          <span className="author reply-author">{authorDisplay}</span>
+          <span className="author reply-author" dir="auto">
+            {authorDisplay}
+          </span>
         </div>
         <div className="flex items-center gap-1">
           {!disableDelete && (
@@ -287,12 +300,15 @@ const Message = memo(function Message(props: MessageProps) {
               />
             </div>
           )}
-          <div className="reply-box whitespace-pre-wrap overflow-hidden relative with-status-icon">
+          <div
+            className="reply-box whitespace-pre-wrap overflow-hidden relative with-status-icon"
+            dir="auto"
+          >
             {displayMessage()}
             {statusIcon && (
               <Tooltip
                 title={statusIcon.tooltip}
-                placement="topRight"
+                placement={mirrorPlacement("topRight", direction)}
                 styles={{ root: { position: "fixed" } }}
               >
                 {statusIcon.icon}
