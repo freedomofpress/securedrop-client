@@ -19,16 +19,18 @@ See: https://developers.securedrop.org/en/latest/dependency_updates.html
 
 import json
 import os
-import re
 import sys
 
-# git-pkgs ecosystem name -> GuardDog scan subcommand. Note the strings differ
-# on both sides for Actions: git-pkgs says "github-actions", GuardDog's
-# subcommand is "github_action". Ecosystems GuardDog can't scan (cargo, ...)
-# aren't in this map and are reported as skipped.
-ECOSYSTEMS = {"npm": "npm", "pypi": "pypi", "github-actions": "github_action"}
-# Strip various constraints from before a version
-LEADING_CONSTRAINT = re.compile(r"^[~^=<>!]*\s*")
+# git-pkgs ecosystem name -> (GuardDog scan subcommand, manifest kind to scan).
+# Note the strings differ on both sides for Actions: git-pkgs says
+# "github-actions", GuardDog's subcommand is "github_action". Ecosystems
+# GuardDog can't scan (cargo, ...) aren't in this map and are reported as
+# skipped.
+ECOSYSTEMS = {
+    "npm": ("npm", "lockfile"),
+    "pypi": ("pypi", "lockfile"),
+    "github-actions": ("github_action", "manifest"),
+}
 
 
 def step_summary(line: str = "") -> None:
@@ -59,10 +61,6 @@ def normalize_github_action(name: str) -> str | None:
     return "/".join(parts[:2])
 
 
-def normalize_version(version: str) -> str:
-    return LEADING_CONSTRAINT.sub("", version)
-
-
 def collect_packages(diff: dict) -> list[dict]:
     """Pull added + modified entries from a git-pkgs diff, deduped."""
     seen: set[tuple[str, str, str]] = set()
@@ -71,9 +69,12 @@ def collect_packages(diff: dict) -> list[dict]:
         for entry in diff.get(change, []):
             ecosystem = entry.get("ecosystem", "")
             name = entry.get("name", "")
-            # to_requirement is the *new* resolved version for both added and
+            # to_requirement is the *new* requirement for both added and
             # modified entries; that is what we want to scan.
-            version = normalize_version(entry.get("to_requirement", ""))
+            version = entry.get("to_requirement", "")
+            kind = ECOSYSTEMS.get(ecosystem, (None, None))[1]
+            if kind is not None and entry.get("manifest_kind") != kind:
+                continue
             if ecosystem == "github-actions":
                 # Collapse subpaths to owner/repo (and drop local/docker
                 # actions) so GuardDog can scan them and so two actions from the
@@ -112,7 +113,7 @@ def main() -> int:
 
     packages = collect_packages(diff)
     scannable = [
-        {**p, "scanner": ECOSYSTEMS[p["ecosystem"]]}
+        {**p, "scanner": ECOSYSTEMS[p["ecosystem"]][0]}
         for p in packages
         if p["ecosystem"] in ECOSYSTEMS
     ]

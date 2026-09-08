@@ -16,7 +16,7 @@ concurrency:
   cancel-in-progress: true
 
 env:
-  GIT_PKGS_VERSION: 0.16.2
+  GIT_PKGS_VERSION: 0.20.0
 
 jobs:
   # Stage 1: figure out which packages changed and emit them as a job matrix.
