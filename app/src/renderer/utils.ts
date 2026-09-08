@@ -216,3 +216,32 @@ export function formatFilename(
 
   return `${prefix}...${suffix}${extPart}`;
 }
+
+export type TextDirection = "ltr" | "rtl";
+
+const MIRRORED_PLACEMENTS: Record<string, string> = {
+  left: "right",
+  right: "left",
+  leftTop: "rightTop",
+  leftBottom: "rightBottom",
+  rightTop: "leftTop",
+  rightBottom: "leftBottom",
+  topLeft: "topRight",
+  topRight: "topLeft",
+  bottomLeft: "bottomRight",
+  bottomRight: "bottomLeft",
+};
+
+/**
+ * Ant Design popup placements are physical ("bottomRight") and are not mirrored
+ * automatically for right-to-left languages. This manually mirrors the placement.
+ */
+export function mirrorPlacement<T extends string>(
+  placement: T,
+  direction: TextDirection,
+): T {
+  if (direction !== "rtl") {
+    return placement;
+  }
+  return (MIRRORED_PLACEMENTS[placement] ?? placement) as T;
+}

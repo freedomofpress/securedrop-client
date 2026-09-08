@@ -7,6 +7,7 @@ import { Form, Input, Button } from "antd";
 import { useTranslation } from "react-i18next";
 import { memo, useMemo, useCallback, useState, useEffect } from "react";
 import { useAppDispatch, useAppSelector, useDebounce } from "../../../hooks";
+import { textDirection } from "../../../i18n";
 import { useShortcut } from "../../../shortcuts";
 import { fetchSources } from "../../../features/sources/sourcesSlice";
 import {
@@ -87,6 +88,7 @@ const Conversation = memo(function Conversation({
   const savedDraft = useAppSelector(selectDraft(sourceUuid));
   const [form] = Form.useForm();
   const [messageValue, setMessageValue] = useState(savedDraft);
+  const direction = textDirection();
   const debouncedMessage = useDebounce(messageValue, 300);
   const {
     acknowledgeNewMessages,
@@ -333,6 +335,7 @@ const Conversation = memo(function Conversation({
             <Form.Item name="message">
               <Input.TextArea
                 data-testid="reply-textarea"
+                dir={direction}
                 maxLength={MAX_REPLY_LENGTH}
                 placeholder={placeholderText}
                 className="w-full rounded-lg p-3 text-gray-900 resize-none focus:outline-none focus:ring-2 focus:ring-blue-500 conversation-textarea"

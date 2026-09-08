@@ -312,7 +312,7 @@ const ConfirmSourceState = memo(function ConfirmSourceState({
     <div>
       <div className="flex items-center gap-3 mb-4">
         <Inbox size={24} className="text-blue-500" />
-        <div className="ml-3">
+        <div className="ms-3">
           <h3 className="text-lg font-semibold">
             {t("exportWizard.sourceExportTitle")}
           </h3>
@@ -350,7 +350,7 @@ const PreflightState = memo(function PreflightState({
         ) : (
           <Inbox size={24} className="text-blue-500" />
         )}
-        <div className="ml-3">
+        <div className="ms-3">
           <h3 className="text-lg font-semibold">
             {t("exportWizard.preparingExport")}
           </h3>
@@ -398,7 +398,7 @@ const InsertUSBState = memo(function InsertUSBState({
     <div>
       <div className="flex items-center gap-3 mb-4">
         <Inbox size={24} className="text-blue-500" />
-        <div className="ml-3">
+        <div className="ms-3">
           <h3 className="text-lg font-semibold">
             {t("exportWizard.readyExport")}
           </h3>
@@ -445,7 +445,7 @@ const UnlockDeviceState = memo(function UnlockDeviceState({
     <div>
       <div className="flex items-center gap-3 mb-4">
         <Unlock size={24} className="text-blue-500" />
-        <div className="ml-3">
+        <div className="ms-3">
           <h3 className="text-lg font-semibold">{t("exportWizard.unlock")}</h3>
         </div>
       </div>
@@ -485,7 +485,7 @@ const ExportingState = memo(function ExportingState({
           size={24}
           strokeWidth={1}
         />
-        <div className="ml-3">
+        <div className="ms-3">
           <h3 className="text-lg font-semibold">{t("wizard.pleaseWait")}</h3>
         </div>
       </div>
@@ -502,7 +502,7 @@ const SuccessState = memo(function SuccessState({ t }: StateComponentProps) {
     <div>
       <div className="flex items-center gap-3 mb-4">
         <Inbox size={24} className="text-blue-500" />
-        <div className="ml-3">
+        <div className="ms-3">
           <h3 className="text-lg font-semibold">
             {t("exportWizard.exportSuccess")}
           </h3>
@@ -534,7 +534,7 @@ const PartialSuccessState = memo(function PartialSuccessState({
     <div>
       <div className="flex items-center gap-3 mb-4">
         <Inbox size={24} className="text-blue-500" />
-        <div className="ml-3">
+        <div className="ms-3">
           <h3 className="text-lg font-semibold">
             {t("exportWizard.exportSuccessWithWarning")}
           </h3>
@@ -582,7 +582,7 @@ const ErrorState = memo(function ErrorState({
     <div>
       <div className="flex items-center gap-3 mb-4">
         <FileX2 size={24} strokeWidth={2} className="text-red-500" />
-        <div className="ml-3">
+        <div className="ms-3">
           <h3 className="text-lg font-semibold" ref={headingRef} tabIndex={-1}>
             {t("exportWizard.exportFailed")}
           </h3>

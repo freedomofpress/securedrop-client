@@ -121,6 +121,7 @@ const Toolbar = memo(function Toolbar({
         placeholder={t("sourcelist.search.placeholder")}
         prefix={<Search size={18} />}
         value={searchTerm}
+        dir="auto"
         data-testid="source-search-input"
         onChange={onSearchChange}
         className="flex-1 min-w-0 max-w-xs"

@@ -10,6 +10,8 @@ import { memo, useEffect, useState } from "react";
 import type { KeyboardEvent, MouseEvent } from "react";
 import { useTranslation } from "react-i18next";
 
+import { textDirection } from "../../i18n";
+
 export const SIDEBAR_DEFAULT_WIDTH = 384;
 
 export const SIDEBAR_MIN_WIDTH = 260;
@@ -21,6 +23,9 @@ export const SIDEBAR_RESIZE_STEP = 16;
 
 const clamp = (width: number) =>
   Math.min(SIDEBAR_MAX_WIDTH, Math.max(SIDEBAR_MIN_WIDTH, width));
+
+// Direction the sidebar grows when the handle moves in the +x direction.
+const growthPerPixel = () => (textDirection() === "rtl" ? -1 : 1);
 
 interface SidebarResizerProps {
   width: number;
@@ -53,7 +58,9 @@ const SidebarResizer = memo(function SidebarResizer({
     // Listen on the window, not the handle: the pointer routinely outruns a
     // few-pixel-wide divider mid-drag, and the drag must continue anyway.
     const handleMouseMove = (e: globalThis.MouseEvent) =>
-      onWidthChange(clamp(drag.width + (e.clientX - drag.x)));
+      onWidthChange(
+        clamp(drag.width + (e.clientX - drag.x) * growthPerPixel()),
+      );
     const handleMouseUp = () => setDrag(null);
 
     window.addEventListener("mousemove", handleMouseMove);
@@ -83,9 +90,10 @@ const SidebarResizer = memo(function SidebarResizer({
   };
 
   const handleKeyDown = (e: KeyboardEvent<HTMLDivElement>) => {
+    const step = SIDEBAR_RESIZE_STEP * growthPerPixel();
     const next = {
-      ArrowLeft: width - SIDEBAR_RESIZE_STEP,
-      ArrowRight: width + SIDEBAR_RESIZE_STEP,
+      ArrowLeft: width - step,
+      ArrowRight: width + step,
       Home: SIDEBAR_MIN_WIDTH,
       End: SIDEBAR_MAX_WIDTH,
     }[e.key];
