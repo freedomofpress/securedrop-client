@@ -1,15 +1,19 @@
+/* eslint-disable react-refresh/only-export-components */
 import { memo, useCallback, useEffect, useRef, useState } from "react";
+import { useTranslation } from "react-i18next";
 import Account from "./Sidebar/Account";
 import SourceList from "./Sidebar/SourceList";
 import SyncSidebar, {
   SYNC_SIDEBAR_COLLAPSED_HEIGHT,
   SYNC_SIDEBAR_DEFAULT_HEIGHT,
 } from "./Sidebar/SyncSidebar";
-import SyncSidebarResizer, {
-  SYNC_SIDEBAR_RESIZER_HEIGHT,
-} from "./Sidebar/SyncSidebarResizer";
+import PanelResizer from "../../components/PanelResizer";
 import { useSyncSidebarEnabled } from "../../hooks";
 import type { FocusedPanel } from "../Inbox";
+
+export const SYNC_SIDEBAR_RESIZER_HEIGHT = 4;
+
+const SYNC_SIDEBAR_RESIZE_STEP = 16;
 
 const SYNC_SIDEBAR_FALLBACK_MAX_HEIGHT = SYNC_SIDEBAR_DEFAULT_HEIGHT;
 
@@ -22,6 +26,7 @@ interface SidebarProps {
 }
 
 const Sidebar = memo(function Sidebar({ focusedPanel }: SidebarProps) {
+  const { t } = useTranslation("Sidebar");
   const syncSidebarEnabled = useSyncSidebarEnabled();
   const overlayAreaRef = useRef<HTMLDivElement>(null);
 
@@ -82,11 +87,16 @@ const Sidebar = memo(function Sidebar({ focusedPanel }: SidebarProps) {
             className="absolute inset-x-0 bottom-0 flex flex-col"
             data-testid="sync-sidebar-overlay"
           >
-            <SyncSidebarResizer
-              height={height}
-              minHeight={SYNC_SIDEBAR_COLLAPSED_HEIGHT}
-              maxHeight={maxHeight}
-              onHeightChange={setPreferredHeight}
+            <PanelResizer
+              growsToward="up"
+              size={height}
+              minSize={SYNC_SIDEBAR_COLLAPSED_HEIGHT}
+              maxSize={maxHeight}
+              step={SYNC_SIDEBAR_RESIZE_STEP}
+              onSizeChange={setPreferredHeight}
+              label={t("syncSidebar.resizer.label")}
+              hint={t("syncSidebar.resizer.hint")}
+              testId="sync-sidebar-resizer"
             />
             <SyncSidebar
               height={height}

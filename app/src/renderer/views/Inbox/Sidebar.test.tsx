@@ -3,12 +3,11 @@ import { screen, fireEvent, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 
 import { renderWithProviders } from "../../test-component-setup";
-import Sidebar from "./Sidebar";
+import Sidebar, { SYNC_SIDEBAR_RESIZER_HEIGHT } from "./Sidebar";
 import {
   SYNC_SIDEBAR_COLLAPSED_HEIGHT,
   SYNC_SIDEBAR_DEFAULT_HEIGHT,
 } from "./Sidebar/SyncSidebar";
-import { SYNC_SIDEBAR_RESIZER_HEIGHT } from "./Sidebar/SyncSidebarResizer";
 
 const OBSERVED_AREA_HEIGHT = 600;
 const MEASURED_MAX_HEIGHT = OBSERVED_AREA_HEIGHT - SYNC_SIDEBAR_RESIZER_HEIGHT;

@@ -20,8 +20,6 @@ export const SYNC_SIDEBAR_COLLAPSED_HEIGHT = 48;
 
 export const SYNC_SIDEBAR_DEFAULT_HEIGHT = 320;
 
-export const SOURCE_LIST_MIN_HEIGHT = 200;
-
 const HEADING_ID = "sync-sidebar-heading";
 const BODY_ID = "sync-sidebar-body";
 
