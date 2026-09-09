@@ -280,32 +280,52 @@ export async function proxyStreamRequestInner(
         });
         return;
       }
-      try {
-        // If we receive JSON data, parse and return
-        // Convert buffer chunks to string only when needed for JSON parsing
-        const stdout = Buffer.concat(stdoutChunks).toString("utf8");
-        const response = parseJSONResponse(stdout);
-        logJSONResponse(requestID, response, Buffer.byteLength(stdout, "utf8"));
-        resolve(response);
-      } catch {
+
+      // If the first byte is "{", is it a JSON response?
+      if (stdoutChunks[0]?.[0] === 0x7b /* "{" */) {
         try {
-          const header = JSON.parse(stderr);
-          const headers: Map<string, string> = new Map(
-            Object.entries(header["headers"]),
+          // To find out, convert the buffer chunks to string, then try to parse and return.
+          const stdout = Buffer.concat(stdoutChunks).toString("utf8");
+          const response = parseJSONResponse(stdout);
+          logJSONResponse(
+            requestID,
+            response,
+            Buffer.byteLength(stdout, "utf8"),
           );
-          console.log(
-            `[proxy] ${requestID} stream complete: bytesWritten=${bytesWritten}`,
-          );
-          resolve({
-            complete: true,
-            sha256sum: getHeader(headers, "etag") || "",
-            bytesWritten: bytesWritten,
-          });
+          resolve(response);
+          return;
         } catch (err) {
           reject(
-            `${requestID}: Error reading headers from proxy stderr: ${err}`,
+            new Error(
+              `${requestID}: Response was neither JSON nor streamed data`,
+              { cause: err },
+            ),
           );
+          return;
         }
+      }
+
+      // Otherwise, handle it as a stream response instead.
+      try {
+        const header = JSON.parse(stderr);
+        const headers: Map<string, string> = new Map(
+          Object.entries(header["headers"]),
+        );
+        console.log(
+          `[proxy] ${requestID} stream complete: bytesWritten=${bytesWritten}`,
+        );
+        resolve({
+          complete: true,
+          sha256sum: getHeader(headers, "etag") || "",
+          bytesWritten: bytesWritten,
+        });
+      } catch (err) {
+        reject(
+          new Error(
+            `${requestID}: Error reading headers from proxy stderr: ${err}`,
+            { cause: err },
+          ),
+        );
       }
     });
 
