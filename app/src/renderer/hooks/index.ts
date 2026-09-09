@@ -7,4 +7,3 @@ export const useAppStore = useStore.withTypes<AppStore>();
 
 export { useDebounce } from "./useDebounce";
 export { useSubmissionKeyFingerprint } from "./useSubmissionKeyFingerprint";
-export { useSyncSidebarEnabled } from "./useSyncSidebarEnabled";

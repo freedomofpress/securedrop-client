@@ -18,6 +18,7 @@ import { ExportStatus, PrintStatus } from "../types";
 (global as any).__APP_VERSION__ = "6.6.6-test";
 (global as any).__DEV_AUTO_LOGIN__ = false;
 (global as any).__IS_PRODUCTION__ = false;
+(global as any).__SYNC_SIDEBAR__ = false;
 
 // Mock ResizeObserver for react-window
 global.ResizeObserver = class {
@@ -237,7 +238,6 @@ beforeEach(() => {
     clearClipboard: vi.fn().mockResolvedValue(null),
     openFile: vi.fn().mockResolvedValue(undefined),
     getWhistleflowEnabled: vi.fn().mockResolvedValue(false),
-    getSyncSidebarEnabled: vi.fn().mockResolvedValue(false),
     initiateExport: vi.fn().mockResolvedValue(ExportStatus.DEVICE_LOCKED),
     exportTranscript: vi.fn().mockResolvedValue(ExportStatus.SUCCESS_EXPORT),
     exportSource: vi.fn().mockResolvedValue(ExportStatus.SUCCESS_EXPORT),

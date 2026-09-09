@@ -28,12 +28,8 @@ import { textDirection } from "../i18n";
 export type FocusedPanel = "sidebar" | "mainContent";
 
 export const SIDEBAR_DEFAULT_WIDTH = 384;
-
 export const SIDEBAR_MIN_WIDTH = 260;
-
 export const SIDEBAR_MAX_WIDTH = 640;
-
-// Pixels per arrow-key press when the resize handle has keyboard focus.
 export const SIDEBAR_RESIZE_STEP = 16;
 
 function InboxView() {

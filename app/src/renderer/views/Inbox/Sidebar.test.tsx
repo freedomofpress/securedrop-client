@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach, vi } from "vitest";
+import { describe, it, expect, beforeEach, afterEach } from "vitest";
 import { screen, fireEvent, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 
@@ -24,9 +24,12 @@ const dragBy = (delta: number) => {
   fireEvent.mouseUp(window);
 };
 
-const renderSidebar = async () => {
+const renderSidebar = () =>
   renderWithProviders(<Sidebar focusedPanel="sidebar" />);
-  await screen.findByTestId("sync-sidebar");
+
+const setSyncSidebarFlag = (enabled: boolean) => {
+  (globalThis as unknown as { __SYNC_SIDEBAR__: boolean }).__SYNC_SIDEBAR__ =
+    enabled;
 };
 
 const waitForMeasurement = () =>
@@ -40,13 +43,15 @@ const waitForMeasurement = () =>
 describe("Sidebar", () => {
   describe("sync sidebar", () => {
     beforeEach(() => {
-      window.electronAPI.getSyncSidebarEnabled = vi
-        .fn()
-        .mockResolvedValue(true);
+      setSyncSidebarFlag(true);
     });
 
-    it("starts collapsed to its status bar", async () => {
-      await renderSidebar();
+    afterEach(() => {
+      setSyncSidebarFlag(false);
+    });
+
+    it("starts collapsed to its status bar", () => {
+      renderSidebar();
 
       expect(syncSidebarHeight()).toBe(`${SYNC_SIDEBAR_COLLAPSED_HEIGHT}px`);
       expect(toggle()).toHaveAttribute("aria-expanded", "false");
@@ -54,7 +59,7 @@ describe("Sidebar", () => {
     });
 
     it("pops up to its default height when the status bar is clicked", async () => {
-      await renderSidebar();
+      renderSidebar();
 
       await userEvent.click(toggle());
 
@@ -63,8 +68,8 @@ describe("Sidebar", () => {
       expect(screen.getByTestId("sync-sidebar-body")).toBeVisible();
     });
 
-    it("pops up when the handle is dragged upwards", async () => {
-      await renderSidebar();
+    it("pops up when the handle is dragged upwards", () => {
+      renderSidebar();
 
       dragBy(200);
 
@@ -74,8 +79,8 @@ describe("Sidebar", () => {
       expect(toggle()).toHaveAttribute("aria-expanded", "true");
     });
 
-    it("collapses when the handle is dragged all the way down", async () => {
-      await renderSidebar();
+    it("collapses when the handle is dragged all the way down", () => {
+      renderSidebar();
 
       dragBy(200);
       dragBy(-400);
@@ -85,7 +90,7 @@ describe("Sidebar", () => {
     });
 
     it("pops back up to the default height, not a previously dragged one", async () => {
-      await renderSidebar();
+      renderSidebar();
 
       dragBy(150);
       expect(syncSidebarHeight()).toBe(
@@ -100,7 +105,7 @@ describe("Sidebar", () => {
     });
 
     it("expands far enough to cover the source list, leaving only the handle", async () => {
-      await renderSidebar();
+      renderSidebar();
       await waitForMeasurement();
 
       fireEvent.keyDown(resizer(), { key: "End" });
@@ -111,8 +116,8 @@ describe("Sidebar", () => {
       );
     });
 
-    it("keeps the collapsed bar's height out of the list, so no source hides under it", async () => {
-      await renderSidebar();
+    it("keeps the collapsed bar's height out of the list, so no source hides under it", () => {
+      renderSidebar();
 
       expect(
         screen
@@ -124,7 +129,7 @@ describe("Sidebar", () => {
     });
 
     it("overlays the source list rather than shrinking it when expanded", async () => {
-      await renderSidebar();
+      renderSidebar();
       await waitForMeasurement();
 
       const reserved = screen
@@ -147,7 +152,7 @@ describe("Sidebar", () => {
     });
 
     it("resizes with the keyboard and collapses at its lower bound", async () => {
-      await renderSidebar();
+      renderSidebar();
       await waitForMeasurement();
 
       fireEvent.keyDown(resizer(), { key: "End" });
@@ -160,10 +165,6 @@ describe("Sidebar", () => {
 
   describe("sync sidebar feature flag", () => {
     it("does not render the panel when the flag is off", async () => {
-      window.electronAPI.getSyncSidebarEnabled = vi
-        .fn()
-        .mockResolvedValue(false);
-
       renderWithProviders(<Sidebar focusedPanel="sidebar" />);
       await screen.findByRole("listbox");
 
@@ -173,10 +174,6 @@ describe("Sidebar", () => {
     });
 
     it("gives the whole sidebar to the source list when the flag is off", async () => {
-      window.electronAPI.getSyncSidebarEnabled = vi
-        .fn()
-        .mockResolvedValue(false);
-
       renderWithProviders(<Sidebar focusedPanel="sidebar" />);
       await screen.findByRole("listbox");
 
@@ -186,28 +183,6 @@ describe("Sidebar", () => {
           .getByTestId("source-list-area")
           .style.getPropertyValue("padding-bottom"),
       ).toBe("");
-    });
-
-    it("does not render the panel while the flag is still being read", () => {
-      // A promise that never settles stands in for the IPC round trip.
-      window.electronAPI.getSyncSidebarEnabled = vi
-        .fn()
-        .mockReturnValue(new Promise(() => {}));
-
-      renderWithProviders(<Sidebar focusedPanel="sidebar" />);
-
-      expect(screen.queryByTestId("sync-sidebar")).toBeNull();
-    });
-
-    it("leaves the panel out if the flag cannot be read", async () => {
-      window.electronAPI.getSyncSidebarEnabled = vi
-        .fn()
-        .mockRejectedValue(new Error("no IPC"));
-
-      renderWithProviders(<Sidebar focusedPanel="sidebar" />);
-      await screen.findByRole("listbox");
-
-      expect(screen.queryByTestId("sync-sidebar")).toBeNull();
     });
   });
 });

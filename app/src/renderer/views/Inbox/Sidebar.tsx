@@ -8,13 +8,10 @@ import SyncSidebar, {
   SYNC_SIDEBAR_DEFAULT_HEIGHT,
 } from "./Sidebar/SyncSidebar";
 import PanelResizer from "../../components/PanelResizer";
-import { useSyncSidebarEnabled } from "../../hooks";
 import type { FocusedPanel } from "../Inbox";
 
 export const SYNC_SIDEBAR_RESIZER_HEIGHT = 4;
-
 const SYNC_SIDEBAR_RESIZE_STEP = 16;
-
 const SYNC_SIDEBAR_FALLBACK_MAX_HEIGHT = SYNC_SIDEBAR_DEFAULT_HEIGHT;
 
 // Save pixels so the sidebar doesn't cover the bottom of the sourcelist
@@ -27,7 +24,6 @@ interface SidebarProps {
 
 const Sidebar = memo(function Sidebar({ focusedPanel }: SidebarProps) {
   const { t } = useTranslation("Sidebar");
-  const syncSidebarEnabled = useSyncSidebarEnabled();
   const overlayAreaRef = useRef<HTMLDivElement>(null);
 
   const [preferredHeight, setPreferredHeight] = useState(
@@ -37,7 +33,7 @@ const Sidebar = memo(function Sidebar({ focusedPanel }: SidebarProps) {
 
   useEffect(() => {
     const overlayArea = overlayAreaRef.current;
-    if (!syncSidebarEnabled || !overlayArea) {
+    if (!__SYNC_SIDEBAR__ || !overlayArea) {
       return;
     }
     const observer = new ResizeObserver(([entry]) =>
@@ -45,7 +41,7 @@ const Sidebar = memo(function Sidebar({ focusedPanel }: SidebarProps) {
     );
     observer.observe(overlayArea);
     return () => observer.disconnect();
-  }, [syncSidebarEnabled]);
+  }, []);
 
   const maxHeight =
     overlayAreaHeight > 0
@@ -74,7 +70,7 @@ const Sidebar = memo(function Sidebar({ focusedPanel }: SidebarProps) {
         <div
           className="flex flex-1 flex-col min-h-0"
           style={
-            syncSidebarEnabled
+            __SYNC_SIDEBAR__
               ? { paddingBottom: SYNC_SIDEBAR_RESERVED_HEIGHT }
               : undefined
           }
@@ -82,7 +78,7 @@ const Sidebar = memo(function Sidebar({ focusedPanel }: SidebarProps) {
         >
           <SourceList focusedPanel={focusedPanel} />
         </div>
-        {syncSidebarEnabled && (
+        {__SYNC_SIDEBAR__ && (
           <div
             className="absolute inset-x-0 bottom-0 flex flex-col"
             data-testid="sync-sidebar-overlay"
