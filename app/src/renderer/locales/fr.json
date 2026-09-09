@@ -7,7 +7,7 @@
   },
   "MainContent": {
     "emptyState": "<bold>Choisissez une source</bold> dans la liste pour lire les messages, récupérer les fichiers ou envoyer des réponses.",
-    "emptyConversation": "Cette conversation n’a pas encore de messages.",
+    "emptyConversation": "",
     "conversation": {
       "sendButton": "Envoyer",
       "messagePlaceholder": "Message {{designation}}…",

@@ -244,7 +244,7 @@
     "retryFetch": "[Retry]",
     "itemEncrypted": "[!!Message is encrypted...!!]",
     "lastSourceActivity": "[!!Last source activity!!]",
-    "emptyConversation": "[!!!This conversation has no messages yet.!!!]",
+    "emptyConversation": "",
     "nonProduction": "[!!WARNING: non-production mode!!]",
     "you": "[You]",
     "unknown": "[Unknown]"
