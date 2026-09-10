@@ -190,7 +190,7 @@ export class DB {
   >;
   private deletePendingEvent: Statement<{ snowflake_id: string }, void>;
   private incrementPendingEventRetry: Statement<
-    { snowflake_id: string; status: number },
+    { snowflake_id: string; status: number | null },
     void
   >;
   private selectPendingEvents: Statement<[{ limit: number }], PendingEventRow>;
@@ -636,12 +636,15 @@ export class DB {
     })(journalists);
   }
 
-  protected updateBatch(batchResponse: BatchResponse): {
+  protected updateBatch(
+    batchResponse: BatchResponse,
+    submittedEventIDs?: string[],
+  ): {
     deleted_items: Item[];
     deleted_sources: string[];
   } {
     return this.db!.transaction((batch: BatchResponse) => {
-      this.updatePendingEvents(batch.events);
+      this.updatePendingEvents(batch.events, submittedEventIDs);
       const deleted_items = this.updateItems(batch.items);
       const deleted_sources = this.updateSources(batch.sources);
       this.updateJournalists(batch.journalists);
@@ -1347,15 +1350,25 @@ export class DB {
   // Takes pending events and their statuses from the server and applies
   // pending event updates as needed.
   // Should be run within a transaction that also updates index version.
-  updatePendingEvents(events: {
-    [snowflake_id: string]: [number, string | null];
-  }) {
+  updatePendingEvents(
+    events: {
+      [snowflake_id: string]: [number, string | null];
+    },
+    submitted: string[] = Object.keys(events),
+  ) {
+    // Only update the statuses for events we submitted in this batch.
+    const submittedIDs = new Set(submitted);
+    for (const id of Object.keys(events)) {
+      if (!submittedIDs.has(id)) {
+        console.warn(`[sync] ignoring status for unsubmitted event ${id}`);
+      }
+    }
     // Remove successfully applied pending events. On failure, retain them in the
     // pending events table for resubmission on next sync
     const appliedEventIDs: string[] = [];
     const eventIDsToRemove: string[] = [];
-    Object.keys(events).forEach((snowflake_id: string) => {
-      const result = events[snowflake_id][0];
+    submitted.forEach((snowflake_id: string) => {
+      const result = events[snowflake_id]?.[0] ?? null;
       if (result === EventStatus.OK) {
         // Event has been accepted by the server: apply + remove from pending_events
         appliedEventIDs.push(snowflake_id);
@@ -1363,7 +1376,8 @@ export class DB {
         // Target no longer exists on the server: remove pending_event.
         eventIDsToRemove.push(snowflake_id);
       } else {
-        // All other statuses indicate event was submitted but not yet complete.
+        // All other statuses, or the absence of a returned status for an event
+        // we submitted, indicate the event is not complete.
         // Retain and bump the retry counter, recording the status.
         // This event will be re-scheduled in subsequent batches.
         this.incrementPendingEventRetry.run({ snowflake_id, status: result });
