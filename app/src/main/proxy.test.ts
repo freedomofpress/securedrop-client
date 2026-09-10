@@ -478,6 +478,73 @@ describe("Test executing proxy with streaming requests", () => {
     expect(sha256sum).toEqual(respSHA256);
   });
 
+  it("proxy should stream a body whose later chunks start with a JSON byte", async () => {
+    // Chunk boundaries fall wherever the pipe puts them, so an encrypted body
+    // can easily begin a later chunk with "{". Only the first byte of the
+    // response decides, and nothing after it may be retained.
+    const respSHA256 = "12345";
+    process.stdout = Readable.from([
+      Buffer.from("encrypted"),
+      Buffer.from('{"status": 200}'),
+    ]);
+
+    let data = "";
+
+    writeStream.on("data", (chunk) => {
+      data += chunk;
+    });
+
+    const proxyExec = proxyStreamRequest({} as ProxyRequest, writeStream);
+
+    if (process.stderr) {
+      process.stderr.emit(
+        "data",
+        JSON.stringify({ headers: { etag: respSHA256 } }),
+      );
+    }
+
+    setTimeout(() => {
+      process.emit("close", 0);
+    }, 10);
+
+    const { complete, sha256sum, bytesWritten } =
+      (await proxyExec) as ProxyStreamResponse;
+
+    expect(complete).toBe(true);
+    expect(sha256sum).toEqual(respSHA256);
+    expect(bytesWritten).toEqual(24);
+    expect(data).toEqual('encrypted{"status": 200}');
+  });
+
+  it("proxy should parse a JSON response split across chunks", async () => {
+    // A JSON response is retained in full, however many chunks it arrives in.
+    const respStatus = 403;
+    const body = JSON.stringify({
+      status: respStatus,
+      headers: {},
+      body: "Forbidden",
+    });
+    process.stdout = Readable.from([
+      Buffer.from(body.slice(0, 5)),
+      Buffer.from(body.slice(5)),
+    ]);
+
+    const proxyExec = proxyStreamRequest({} as ProxyRequest, writeStream);
+
+    if (process.stderr) {
+      process.stderr.emit("data", JSON.stringify({ headers: { etag: "x" } }));
+    }
+
+    setTimeout(() => {
+      process.emit("close", 0);
+    }, 10);
+
+    const { status, error } = (await proxyExec) as ProxyJSONResponse;
+
+    expect(status).toEqual(respStatus);
+    expect(error).toBe(true);
+  });
+
   it("proxy should return ProxyJSONResponse when the stream body is a proxy JSON response", async () => {
     // A stream request can still come back as a JSON response, e.g. when the
     // server rejects the download rather than sending file data.

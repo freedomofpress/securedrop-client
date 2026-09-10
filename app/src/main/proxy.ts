@@ -221,13 +221,20 @@ export async function proxyStreamRequestInner(
     // contents directly to the `writeStream`.
     process.stdout.pipe(writeStream);
 
-    // Store stdout as buffer array to avoid binary data corruption, and track bytes written
+    // Peek at the first byte of the first chunk of the returned stdout.  If it
+    // begins with "{", buffer it as JSON to be parsed on close; otherwise
+    // stream the response without retaining the chunks in memory.  Store stdout
+    // as buffer array to avoid binary data corruption, and track bytes written
     // to allow resuming incremental progress.
     const stdoutChunks: Buffer[] = [];
     let bytesWritten = 0;
+    let looksLikeJSON: boolean | undefined;
     process.stdout.on("data", (data) => {
       bytesWritten += data.length;
-      stdoutChunks.push(data);
+      looksLikeJSON ??= data[0] === 0x7b; /* "{" */
+      if (looksLikeJSON) {
+        stdoutChunks.push(data);
+      }
       // Report progress to caller if callback is provided
       if (onProgress) {
         try {
@@ -281,8 +288,8 @@ export async function proxyStreamRequestInner(
         return;
       }
 
-      // If the first byte is "{", is it a JSON response?
-      if (stdoutChunks[0]?.[0] === 0x7b /* "{" */) {
+      // If the first byte was "{", is it actually a JSON response?
+      if (looksLikeJSON) {
         try {
           // To find out, convert the buffer chunks to string, then try to parse and return.
           const stdout = Buffer.concat(stdoutChunks).toString("utf8");
