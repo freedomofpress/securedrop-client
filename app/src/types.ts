@@ -273,6 +273,71 @@ export type PendingEventRow = {
   data: string; // JSON stringified PendingEventData
 };
 
+// Database representation
+export type PendingEventActivityRow = {
+  snowflake_id: string;
+  type: string;
+  source_uuid: string | null;
+  item_uuid: string | null;
+  source_designation: string | null;
+  filename: string | null;
+  retry_attempts: number;
+  last_event_status: number | null; // EventStatus enum
+};
+
+// Database representation
+export type DownloadActivityRow = {
+  uuid: string;
+  source_uuid: string;
+  source_designation: string | null;
+  filename: string | null;
+  kind: string;
+  fetch_status: number; // FetchStatus enum
+  fetch_progress: number | null;
+  decrypted_size: number | null;
+  fetch_retry_attempts: number;
+  // SQLite CURRENT_TIMESTAMP text, e.g. "2026-09-01 12:34:56"
+  fetch_last_updated_at: string | null;
+};
+
+/** Sync activity types */
+
+export type PendingEventActivity = {
+  id: string;
+  type: PendingEventType;
+  sourceUuid: string | null;
+  itemUuid: string | null;
+  // The target's journalist designation, resolved through the item for
+  // item-targeted events. Null only if the target has since been deleted.
+  sourceDesignation: string | null;
+  // Filename of the targeted item, for item-targeted events.
+  filename: string | null;
+  retryAttempts: number;
+  // The last status the server reported for this event, or null if it has
+  // never been submitted.
+  lastEventStatus: EventStatus | null;
+};
+
+export type DownloadActivity = {
+  itemUuid: string;
+  sourceUuid: string;
+  sourceDesignation: string | null;
+  filename: string | null;
+  kind: "file" | "message" | "reply";
+  fetchStatus: FetchStatus;
+  // Bytes downloaded so far, or null when not downloading.
+  fetchProgress: number | null;
+  decryptedSize: number | null;
+  retryAttempts: number;
+  // Epoch millis of the last fetch state transition, for ordering.
+  updatedAt: number | null;
+};
+
+export type SyncActivitySnapshot = {
+  downloads: DownloadActivity[];
+  pendingEvents: PendingEventActivity[];
+};
+
 export enum FetchStatus {
   Initial = 0,
   DownloadInProgress = 1,

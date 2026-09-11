@@ -254,6 +254,10 @@ beforeEach(() => {
     quitApp: vi.fn().mockResolvedValue(null),
     signOut: vi.fn().mockResolvedValue(null),
     getAppVersion: vi.fn().mockResolvedValue("testVersion"),
+    getSyncActivity: vi
+      .fn()
+      .mockResolvedValue({ downloads: [], pendingEvents: [] }),
+    onPendingEventsInFlight: vi.fn().mockReturnValue(() => {}),
   } as ElectronAPI;
 });
 

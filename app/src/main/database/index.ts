@@ -33,6 +33,10 @@ import {
   PendingEventData,
   SourceItemCounts,
   SourceItemsQuery,
+  PendingEventActivity,
+  DownloadActivity,
+  PendingEventActivityRow,
+  DownloadActivityRow,
 } from "../../types";
 import { Crypto } from "../crypto";
 import { Search } from "./search";
@@ -41,6 +45,8 @@ import { Search } from "./search";
 // at the database layer; CSS will handle the rest
 export const MESSAGE_PREVIEW_LENGTH = 200;
 export const DEFAULT_PENDING_EVENTS_LIMIT = 20;
+// Cap on entities to fetch to populate the sync activity sidebar.
+export const DEFAULT_ACTIVITY_LIMIT = 100;
 
 interface KeyObject {
   [key: string]: object;
@@ -195,6 +201,14 @@ export class DB {
   >;
   private selectPendingEvents: Statement<[{ limit: number }], PendingEventRow>;
   private selectFreshPendingEventsCount: Statement<[], { count: number }>;
+  private selectPendingEventActivity: Statement<
+    [{ limit: number }],
+    PendingEventActivityRow
+  >;
+  private selectDownloadActivity: Statement<
+    [{ limit: number }],
+    DownloadActivityRow
+  >;
   private deletePendingEventsBySourceScope: Statement<
     { source_uuid: string },
     void
@@ -307,10 +321,10 @@ export class DB {
       "DELETE FROM items WHERE source_uuid = @source_uuid",
     );
     this.updateItemFetchStatus = this.db.prepare(
-      "UPDATE items SET fetch_status = @fetch_status WHERE uuid = @uuid",
+      "UPDATE items SET fetch_status = @fetch_status, fetch_last_updated_at = CURRENT_TIMESTAMP WHERE uuid = @uuid",
     );
     this.updateItemFetchStatusWithReset = this.db.prepare(
-      "UPDATE items SET fetch_status = @fetch_status, fetch_progress = 0 WHERE uuid = @uuid",
+      "UPDATE items SET fetch_status = @fetch_status, fetch_progress = 0, fetch_last_updated_at = CURRENT_TIMESTAMP WHERE uuid = @uuid",
     );
     this.updateItemsFetchStatusBySource = this.db.prepare(
       "UPDATE items SET fetch_status = @fetch_status WHERE source_uuid = @source_uuid",
@@ -438,6 +452,53 @@ export class DB {
     // Events that have never been submitted or that were rejected due to conflict.
     this.selectFreshPendingEventsCount = this.db.prepare(`
       SELECT COUNT(*) AS count FROM pending_events WHERE retry_attempts = 0
+    `);
+    // Fetch pending events for display in sync sidebar.
+    this.selectPendingEventActivity = this.db.prepare(`
+      SELECT
+        pe.snowflake_id,
+        pe.type,
+        pe.source_uuid,
+        pe.item_uuid,
+        COALESCE(
+          json_extract(src.data, '$.journalist_designation'),
+          json_extract(item_src.data, '$.journalist_designation')
+        ) AS source_designation,
+        item.filename,
+        pe.retry_attempts,
+        pe.last_event_status
+      FROM pending_events pe
+      LEFT JOIN sources src ON src.uuid = pe.source_uuid
+      LEFT JOIN items item ON item.uuid = pe.item_uuid
+      LEFT JOIN sources item_src ON item_src.uuid = item.source_uuid
+      ORDER BY pe.retry_attempts ASC, pe.snowflake_id ASC
+      LIMIT @limit
+    `);
+    // Fetch download activity for display in sync sidebar.
+    this.selectDownloadActivity = this.db.prepare(`
+      SELECT
+        item.uuid,
+        item.source_uuid,
+        json_extract(src.data, '$.journalist_designation') AS source_designation,
+        item.filename,
+        item.kind,
+        item.fetch_status,
+        item.fetch_progress,
+        item.decrypted_size,
+        item.fetch_retry_attempts,
+        item.fetch_last_updated_at
+      FROM items item
+      LEFT JOIN sources src ON src.uuid = item.source_uuid
+      WHERE item.fetch_status IN (
+        ${FetchStatus.DownloadInProgress},
+        ${FetchStatus.DecryptionInProgress},
+        ${FetchStatus.Paused},
+        ${FetchStatus.FailedDownloadRetryable},
+        ${FetchStatus.FailedDecryptionRetryable},
+        ${FetchStatus.FailedTerminal}
+      )
+      ORDER BY item.fetch_last_updated_at DESC, item.uuid ASC
+      LIMIT @limit
     `);
     this.deletePendingEventsBySourceScope = this.db.prepare(`
       DELETE FROM pending_events
@@ -1336,6 +1397,46 @@ export class DB {
     });
 
     return pendingEvents;
+  }
+
+  // Pending event queue for the sync sidebar.
+  getPendingEventActivity(limit?: number): PendingEventActivity[] {
+    const rows = this.selectPendingEventActivity.all({
+      limit: limit ?? DEFAULT_ACTIVITY_LIMIT,
+    });
+    return rows.map((r) => ({
+      id: r.snowflake_id,
+      type: r.type as PendingEventType,
+      sourceUuid: r.source_uuid,
+      itemUuid: r.item_uuid,
+      sourceDesignation: r.source_designation,
+      filename: r.filename,
+      retryAttempts: r.retry_attempts,
+      lastEventStatus: (r.last_event_status as EventStatus | null) ?? null,
+    }));
+  }
+
+  // Downloads that are in flight or waiting on the user, for the sync sidebar.
+  getDownloadActivity(limit?: number): DownloadActivity[] {
+    const rows = this.selectDownloadActivity.all({
+      limit: limit ?? DEFAULT_ACTIVITY_LIMIT,
+    });
+    return rows.map((r) => ({
+      itemUuid: r.uuid,
+      sourceUuid: r.source_uuid,
+      sourceDesignation: r.source_designation,
+      filename: r.filename,
+      kind: r.kind as DownloadActivity["kind"],
+      fetchStatus: r.fetch_status as FetchStatus,
+      fetchProgress: r.fetch_progress,
+      decryptedSize: r.decrypted_size,
+      retryAttempts: r.fetch_retry_attempts,
+      // SQLite writes CURRENT_TIMESTAMP as naive UTC, which Date parses as
+      // local time unless it is marked as UTC.
+      updatedAt: r.fetch_last_updated_at
+        ? Date.parse(`${r.fetch_last_updated_at.replace(" ", "T")}Z`)
+        : null,
+    }));
   }
 
   // Number of pending events that have never been submitted to the server,

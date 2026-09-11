@@ -9,9 +9,14 @@ import {
   syncMetadata,
   syncComplete,
   selectSyncStatus,
+  selectLastSyncFinished,
   clearStatus,
 } from "../features/sync/syncSlice";
 import { updateItem } from "../features/conversation/conversationSlice";
+import {
+  fetchSyncActivity,
+  setEventsInFlight,
+} from "../features/syncActivity/syncActivitySlice";
 import { updateSource } from "../features/sources/sourcesSlice";
 import { setUnauth } from "../features/session/sessionSlice";
 import { SyncStatus, type Item, type Source } from "../../types";
@@ -40,6 +45,7 @@ function InboxView() {
   const sidebarDirection = textDirection() === "rtl" ? "left" : "right";
   const session = useAppSelector((state) => state.session);
   const syncStatus = useAppSelector(selectSyncStatus);
+  const lastSyncFinished = useAppSelector(selectLastSyncFinished);
 
   const sidebarRef = useRef<HTMLDivElement>(null);
   const mainContentRef = useRef<HTMLDivElement>(null);
@@ -86,7 +92,18 @@ function InboxView() {
 
   useEffect(() => {
     dispatch(fetchJournalists());
+    dispatch(fetchSyncActivity());
   }, [dispatch]);
+
+  // Pending events only change when sync flushes them or the renderer queues a
+  // new one, so the existing sync-complete signal is enough to keep the sidebar
+  // current without a dedicated channel. Downloads stay live in between via the
+  // item-update stream the sync activity slice already listens to.
+  useEffect(() => {
+    if (syncStatus !== null) {
+      dispatch(fetchSyncActivity());
+    }
+  }, [dispatch, syncStatus, lastSyncFinished]);
 
   // Register IPC listeners for real-time updates from the main process
   useEffect(() => {
@@ -103,10 +120,15 @@ function InboxView() {
         dispatch(syncComplete(status));
       },
     );
+    const unsubscribeEventsInFlight =
+      window.electronAPI.onPendingEventsInFlight((eventIds: string[]) => {
+        dispatch(setEventsInFlight(eventIds));
+      });
     return () => {
       unsubscribeItem();
       unsubscribeSource();
       unsubscribeSync();
+      unsubscribeEventsInFlight();
     };
   }, [dispatch]);
 

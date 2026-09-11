@@ -3,6 +3,7 @@ import fs from "fs";
 import path from "path";
 import os from "os";
 import {
+  EventStatus,
   FetchStatus,
   ItemMetadata,
   PendingEventType,
@@ -355,10 +356,11 @@ describe("Datastore Method Tests", () => {
   function mockSourceMetadata(
     uuid: string,
     is_starred?: boolean,
+    journalist_designation?: string,
   ): SourceMetadata {
     return {
       uuid: uuid,
-      journalist_designation: "Foo Bar",
+      journalist_designation: journalist_designation ?? "Foo Bar",
       is_starred: is_starred ?? false,
       is_seen: false,
       has_attachment: false,
@@ -2339,6 +2341,149 @@ describe("Datastore Method Tests", () => {
 
       const counts = db.getSourceItemCounts(["source1"]);
       expect(counts).toEqual({ messages: 1, files: 0, replies: 0 });
+    });
+  });
+  describe("sync activity", () => {
+    beforeEach(() => {
+      db.updateSources({
+        source1: mockSourceMetadata("source1", false, "Crimson Falcon"),
+        source2: mockSourceMetadata("source2", false, "Aged Sutler"),
+      });
+      db.updateItems({
+        item1: mockItemMetadata("item1", "source1", "file"),
+        item2: mockItemMetadata("item2", "source2", "message"),
+      });
+    });
+
+    describe("getPendingEventActivity", () => {
+      it("keeps the retry bookkeeping that getPendingEvents drops", () => {
+        const id = db.addPendingSourceEvent(
+          "source1",
+          PendingEventType.Starred,
+        );
+
+        const [event] = db.getPendingEventActivity();
+        expect(event).toMatchObject({
+          id,
+          type: PendingEventType.Starred,
+          sourceUuid: "source1",
+          itemUuid: null,
+          retryAttempts: 0,
+          lastEventStatus: null,
+        });
+      });
+
+      it("names a source-targeted event", () => {
+        db.addPendingSourceEvent("source2", PendingEventType.SourceDeleted);
+
+        const [event] = db.getPendingEventActivity();
+        expect(event.sourceDesignation).toBe("Aged Sutler");
+      });
+
+      it("names an item-targeted event through its source", () => {
+        db.addPendingItemEvent("item1", PendingEventType.ItemDeleted);
+
+        const [event] = db.getPendingEventActivity();
+        expect(event).toMatchObject({
+          itemUuid: "item1",
+          sourceUuid: null,
+          // Resolved via items.source_uuid, not the event's own source_uuid.
+          sourceDesignation: "Crimson Falcon",
+        });
+      });
+
+      it("reports the last status the server returned", () => {
+        const id = db.addPendingSourceEvent(
+          "source1",
+          PendingEventType.SourceDeleted,
+        );
+
+        db.updatePendingEvents({ [id!]: [EventStatus.Conflict, null] });
+
+        const [event] = db.getPendingEventActivity();
+        expect(event).toMatchObject({
+          lastEventStatus: EventStatus.Conflict,
+          retryAttempts: 1,
+        });
+      });
+
+      it("orders fresh events before events awaiting resubmission", () => {
+        const first = db.addPendingSourceEvent(
+          "source1",
+          PendingEventType.Starred,
+        );
+        db.updatePendingEvents({ [first!]: [EventStatus.Processing, null] });
+        const second = db.addPendingSourceEvent(
+          "source2",
+          PendingEventType.Starred,
+        );
+
+        expect(db.getPendingEventActivity().map((e) => e.id)).toEqual([
+          second,
+          first,
+        ]);
+      });
+
+      it("respects the payload cap", () => {
+        db.addPendingSourceEvent("source1", PendingEventType.Starred);
+        db.addPendingSourceEvent("source2", PendingEventType.Starred);
+
+        expect(db.getPendingEventActivity(1)).toHaveLength(1);
+      });
+
+      it("is empty when nothing is queued", () => {
+        expect(db.getPendingEventActivity()).toEqual([]);
+      });
+    });
+
+    describe("getDownloadActivity", () => {
+      it("reports an in-flight download with its source named", () => {
+        db.updateFetchStatus("item1", FetchStatus.DownloadInProgress);
+
+        const [download] = db.getDownloadActivity();
+        expect(download).toMatchObject({
+          itemUuid: "item1",
+          sourceUuid: "source1",
+          sourceDesignation: "Crimson Falcon",
+          kind: "file",
+          fetchStatus: FetchStatus.DownloadInProgress,
+        });
+        expect(download.updatedAt).toBeTypeOf("number");
+      });
+
+      it.each([
+        FetchStatus.DownloadInProgress,
+        FetchStatus.DecryptionInProgress,
+        FetchStatus.Paused,
+        FetchStatus.FailedDownloadRetryable,
+        FetchStatus.FailedDecryptionRetryable,
+        FetchStatus.FailedTerminal,
+      ])("includes items in fetch status %s", (fetchStatus) => {
+        db.updateFetchStatus("item1", fetchStatus);
+
+        expect(db.getDownloadActivity().map((d) => d.itemUuid)).toEqual([
+          "item1",
+        ]);
+      });
+
+      it.each([
+        FetchStatus.Initial,
+        FetchStatus.Complete,
+        FetchStatus.Cancelled,
+        FetchStatus.ScheduledDeletion,
+      ])("excludes items in fetch status %s", (fetchStatus) => {
+        db.updateFetchStatus("item1", fetchStatus);
+
+        expect(db.getDownloadActivity()).toEqual([]);
+      });
+
+      it("respects the payload cap", () => {
+        db.updateFetchStatus("item1", FetchStatus.Paused);
+        db.updateFetchStatus("item2", FetchStatus.Paused);
+
+        expect(db.getDownloadActivity()).toHaveLength(2);
+        expect(db.getDownloadActivity(1)).toHaveLength(1);
+      });
     });
   });
 });
