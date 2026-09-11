@@ -19,7 +19,7 @@
   "MainContent": {
     "nonProduction": "WARNING: non-production mode",
     "emptyState": "<bold>Select a source</bold> from the list to read messages, retrieve files, or send responses.",
-    "emptyConversation": "This conversation has no messages yet.",
+    "emptyConversation": "All files and messages have been deleted for this source.",
     "conversation": {
       "sendButton": "Send",
       "messagePlaceholder": "Message {{designation}}...",
