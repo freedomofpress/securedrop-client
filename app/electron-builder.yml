@@ -20,8 +20,8 @@ electronFuses:
   # enableCookieEncryption: false
   enableNodeCliInspectArguments: false
   enableNodeOptionsEnvironmentVariable: false
-  # TODO: once we switch to a custom protocol, we should disable file://
-  # grantFileProtocolExtraPrivileges: false
+  # we use a custom protocol and not file://
+  grantFileProtocolExtraPrivileges: false
   # We don't use custom V8 snapshots
   # loadBrowserProcessSpecificV8Snapshot: false
   # The asar stuff is only useful on Windows/macOS with codesigning
