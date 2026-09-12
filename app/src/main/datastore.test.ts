@@ -1481,23 +1481,49 @@ describe("Datastore Method Tests", () => {
     expect(db.getPendingEvents().map((e) => e.id)).toEqual([snowflakeSource]);
 
     // Round 1: server reports event as AlreadyReported
-    db.updatePendingEvents({
-      [snowflakeSource.toString()]: [208, "AlreadyReported"],
-    });
+    db.updatePendingEvents(
+      {
+        [snowflakeSource.toString()]: [208, "AlreadyReported"],
+      },
+      [snowflakeSource.toString()],
+    );
     expect(db.getPendingEvents().map((e) => e.id)).toEqual([snowflakeSource]);
     expect(pendingEventRow().retry_attempts).toBe(1);
 
-    // Round 2: the server dropped the event.
-    // The inbox should keep the event in its batch to resubmit
-    db.updatePendingEvents({});
+    // Round 2: the server dropped the event from its response.  We did submit
+    // it, so that's a failure: keep it in the batch to resubmit, but bump the
+    // counter so it stops counting as fresh and can't spin the flush loop.
+    db.updatePendingEvents({}, [snowflakeSource.toString()]);
     expect(db.getPendingEvents().map((e) => e.id)).toEqual([snowflakeSource]);
-    expect(pendingEventRow().retry_attempts).toBe(1);
+    expect(pendingEventRow().retry_attempts).toBe(2);
+    expect(pendingEventRow().last_event_status).toBe(null);
 
     // Round 3: the server marks event as complete.
-    db.updatePendingEvents({
-      [snowflakeSource.toString()]: [200, ""],
-    });
+    db.updatePendingEvents(
+      {
+        [snowflakeSource.toString()]: [200, ""],
+      },
+      [snowflakeSource.toString()],
+    );
     expect(db.getPendingEvents()).toEqual([]);
+  });
+
+  it("updatePendingEvents should ignore statuses for events it did not submit", () => {
+    db.updateSources({
+      source1: mockSourceMetadata("source1"),
+    });
+
+    const snowflakeSource = db.addPendingSourceEvent(
+      "source1",
+      PendingEventType.Starred,
+    )!;
+
+    // The server reports success for an event we never submitted, e.g. one
+    // deferred past this batch's limit.  It must not be applied or removed.
+    db.updatePendingEvents({ [snowflakeSource.toString()]: [200, ""] }, []);
+
+    expect(db.getPendingEvents().map((e) => e.id)).toEqual([snowflakeSource]);
+    expect(db.countFreshPendingEvents()).toBe(1);
   });
 
   it("countFreshPendingEvents should exclude events awaiting resubmission", () => {
