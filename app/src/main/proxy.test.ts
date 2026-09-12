@@ -6,6 +6,7 @@ import { Readable, Writable } from "stream";
 import type {
   ProxyRequest,
   ProxyCommand,
+  ProxyJSONResponse,
   ProxyStreamResponse,
   ms,
 } from "../types";
@@ -446,7 +447,7 @@ describe("Test executing proxy with streaming requests", () => {
   it("proxy should return ProxyStreamResponse with data on successful response", async () => {
     const respData = "Hello, world";
     const respSHA256 = "12345";
-    process.stdout = Readable.from(respData);
+    process.stdout = Readable.from(Buffer.from(respData));
 
     let data = "";
 
@@ -475,6 +476,142 @@ describe("Test executing proxy with streaming requests", () => {
 
     expect(data.toString()).toEqual(respData);
     expect(sha256sum).toEqual(respSHA256);
+  });
+
+  it("proxy should stream a body whose later chunks start with a JSON byte", async () => {
+    // Chunk boundaries fall wherever the pipe puts them, so an encrypted body
+    // can easily begin a later chunk with "{". Only the first byte of the
+    // response decides, and nothing after it may be retained.
+    const respSHA256 = "12345";
+    process.stdout = Readable.from([
+      Buffer.from("encrypted"),
+      Buffer.from('{"status": 200}'),
+    ]);
+
+    let data = "";
+
+    writeStream.on("data", (chunk) => {
+      data += chunk;
+    });
+
+    const proxyExec = proxyStreamRequest({} as ProxyRequest, writeStream);
+
+    if (process.stderr) {
+      process.stderr.emit(
+        "data",
+        JSON.stringify({ headers: { etag: respSHA256 } }),
+      );
+    }
+
+    setTimeout(() => {
+      process.emit("close", 0);
+    }, 10);
+
+    const { complete, sha256sum, bytesWritten } =
+      (await proxyExec) as ProxyStreamResponse;
+
+    expect(complete).toBe(true);
+    expect(sha256sum).toEqual(respSHA256);
+    expect(bytesWritten).toEqual(24);
+    expect(data).toEqual('encrypted{"status": 200}');
+  });
+
+  it("proxy should parse a JSON response split across chunks", async () => {
+    // A JSON response is retained in full, however many chunks it arrives in.
+    const respStatus = 403;
+    const body = JSON.stringify({
+      status: respStatus,
+      headers: {},
+      body: "Forbidden",
+    });
+    process.stdout = Readable.from([
+      Buffer.from(body.slice(0, 5)),
+      Buffer.from(body.slice(5)),
+    ]);
+
+    const proxyExec = proxyStreamRequest({} as ProxyRequest, writeStream);
+
+    if (process.stderr) {
+      process.stderr.emit("data", JSON.stringify({ headers: { etag: "x" } }));
+    }
+
+    setTimeout(() => {
+      process.emit("close", 0);
+    }, 10);
+
+    const { status, error } = (await proxyExec) as ProxyJSONResponse;
+
+    expect(status).toEqual(respStatus);
+    expect(error).toBe(true);
+  });
+
+  it("proxy should return ProxyJSONResponse when the stream body is a proxy JSON response", async () => {
+    // A stream request can still come back as a JSON response, e.g. when the
+    // server rejects the download rather than sending file data.
+    const respStatus = 400;
+    process.stdout = Readable.from(
+      Buffer.from(
+        JSON.stringify({
+          status: respStatus,
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({ message: "Bad request" }),
+        }),
+      ),
+    );
+
+    const logSpy = vi.spyOn(console, "log").mockImplementation(() => {});
+
+    const proxyExec = proxyStreamRequest({} as ProxyRequest, writeStream);
+
+    if (process.stderr) {
+      process.stderr.emit("data", JSON.stringify({ headers: { etag: "x" } }));
+    }
+
+    setTimeout(() => {
+      process.emit("close", 0);
+    }, 10);
+
+    const { status, error } = (await proxyExec) as ProxyJSONResponse;
+
+    expect(status).toEqual(respStatus);
+    expect(error).toBe(true);
+
+    // Having resolved as JSON, we must not fall through and also handle this
+    // as a completed stream.
+    expect(logSpy).not.toHaveBeenCalledWith(
+      expect.stringContaining("stream complete"),
+    );
+  });
+
+  it("proxy should reject a JSON-shaped body that is not a proxy response", async () => {
+    // Downloads are OpenPGP-encrypted, so a body starting with "{" is neither
+    // a JSON response nor streamable data: fail rather than record a corrupt
+    // download as complete.
+    process.stdout = Readable.from(
+      Buffer.from(JSON.stringify({ not: "a proxy response" })),
+    );
+
+    const logSpy = vi.spyOn(console, "log").mockImplementation(() => {});
+
+    const proxyExec = proxyStreamRequest({} as ProxyRequest, writeStream);
+
+    if (process.stderr) {
+      process.stderr.emit("data", JSON.stringify({ headers: { etag: "x" } }));
+    }
+
+    setTimeout(() => {
+      process.emit("close", 0);
+    }, 10);
+
+    await expect(proxyExec).rejects.toThrowError(
+      /Response was neither JSON nor streamed data/,
+    );
+
+    // Having rejected, we must not fall through and log the failed download as
+    // a completed stream.
+    expect(logSpy).not.toHaveBeenCalledWith(
+      expect.stringContaining("stream complete"),
+    );
   });
 
   it("proxy should return on proxy-command exit error code", async () => {
