@@ -11,15 +11,22 @@
     "conversation": {
       "sendButton": "Envoyer",
       "messagePlaceholder": "Message {{designation}}…",
-      "newMessagesDivider": "nouveaux messages"
+      "newMessagesDivider": "nouveaux messages",
+      "messageHistoryAriaLabel": "Messages de la conversation",
+      "messagePositionAriaLabel": "Message {{index}} de {{total}}",
+      "replyPositionAriaLabel": "Réponse {{index}} de {{total}}"
     },
     "menu": {
       "exportTranscript": "Exporter la transcription",
       "printTranscript": "Imprimer la transcription",
       "clickToOpen": "Cliquer pour ouvrir",
       "exportSource": "Exporter la transcription et les fichiers",
-      "exportTranscriptToWhistleflow": "Exporter la transcription vers le flux d’alertes",
-      "exportSourceToWhistleflow": "Exporter la transcription et les fichiers vers le flux d’alertes"
+      "exportTranscriptToWhistleflow": "Envoyer la transcription",
+      "exportSourceToWhistleflow": "Envoyer la transcription et les fichiers",
+      "ExportGroup": "Exporter vers un périphérique USB",
+      "WhistleflowExportGroup": "Envoyer à Whistleflow",
+      "deleteSource": "Supprimer la source",
+      "deleteConversation": "Supprimer les fichiers et les messages"
     },
     "itemEncrypted": "Le message est chiffré…",
     "lastSourceActivity": "Dernière activité de la source",
@@ -28,10 +35,21 @@
     "pendingReplyTooltip": "La réponse est en attente et sera envoyée à la source lors de la prochaine synchronisation",
     "successReplyTooltip": "La réponse a été envoyée",
     "seenReplyTooltip": "La réponse a été vue et supprimée par la source",
-    "messageFailed": "Échec de déchiffrement du message",
+    "messageFailed": "Échec de traitement du message",
     "retryFetch": "Réessayer",
     "nonProduction": "AVERTISSEMENT : n’est pas en mode production",
-    "alreadyRunning": "La boîte de réception SecureDrop est déjà en fonction"
+    "alreadyRunning": "La boîte de réception SecureDrop est déjà en fonction",
+    "itemFetching": "Récupération du message…",
+    "messageDownloadFailed": "Échec de téléchargement du message",
+    "messageDecryptionFailed": "Échec dde déchiffrement du message",
+    "deleteMessage": "Supprimer le message",
+    "deleteReply": "Supprimer la réponse",
+    "deleteItemModal": {
+      "title": "Supprimer l'élément ?",
+      "content": "Confirmez-vous la suppression cet élément ? La suppression est irréversible et affectera tous les utilisateurs.",
+      "cancel": "Annuler",
+      "delete": "Supprimer"
+    }
   },
   "Sidebar": {
     "account": {
@@ -81,6 +99,11 @@
           "message": "Voulez-vous supprimer ces {{count}} comptes de sources ou les conversations ?",
           "deleteAccountsButton": "Supprimer les comptes",
           "keepAccountsButton": "Supprimer les conversations"
+        },
+        "allSourcesWarning": "Remarque : Toutes les sources ont été choisies",
+        "all": {
+          "deleteAccountsButton": "Supprimer toutes les sources",
+          "keepAccountsButton": "Supprimer toutes les conversations"
         }
       },
       "search": {
@@ -88,12 +111,25 @@
       },
       "sort": {
         "tooltip": "Ordre de tri"
+      },
+      "selectAll": "Choisir toutes les sources",
+      "counts": {
+        "total_one": "{{count}} source au total",
+        "total_many": "{{count}} de sources au total",
+        "total_other": "{{count}} sources au total",
+        "visible_one": "{{count}} visible",
+        "visible_many": "{{count}} de visibles",
+        "visible_other": "{{count}} visibles",
+        "selected_one": "{{count}} choisie",
+        "selected_many": "{{count}} de choisies",
+        "selected_other": "{{count}} choisies"
       }
     },
     "source": {
       "encryptedFile": "Fichier chiffré",
       "encryptedMessage": "Message chiffré",
-      "toggleStar": "Étoile"
+      "toggleStar": "Étoile",
+      "selectSource": "Choisir {{designation}}"
     },
     "shortcuts": {
       "quit": "Fermer SecureDrop",
@@ -133,6 +169,10 @@
       "ok": "Synchronisation : Valide",
       "warning": "Synchronisation : Avertissement",
       "error": "Synchronisation : Erreur"
+    },
+    "resizer": {
+      "label": "Redimensionner la barre latérale",
+      "hint": "Faire glisser pour redimensionner la barre latérale"
     }
   },
   "SignIn": {
@@ -145,7 +185,9 @@
     "passphrase": {
       "label": "Phrase de passe",
       "required": "Saisissez votre phrase de passe.",
-      "invalidLength": "Cette phrase de passe est invalide. Elle doit comporter entre 14 et 128 caractères."
+      "invalidLength": "Cette phrase de passe est invalide. Elle doit comporter entre 14 et 128 caractères.",
+      "showPassphrase": "Afficher la phrase de passe",
+      "hidePassphrase": "Cacher la phrase de passe"
     },
     "twoFactorCode": {
       "label": "Code d’authentification à deux facteurs",
@@ -245,7 +287,15 @@
       "errorMimetypeDiscovery": "Impossible de déterminer le type de fichier.",
       "errorUnknown": "Une erreur d’impression inconnue est survenue."
     },
-    "exportToWhistleflow": "Exporter vers le flux d’alertes"
+    "exportToWhistleflow": "Exporter vers le flux d’alertes",
+    "downloadFile": "Télécharger le fichier",
+    "filePositionAriaLabel": "File {{index}} de {{total}}",
+    "offlineFilenameTooltip": "Le téléchargement est désactivé en mode hors ligne. Le nom du fichier est disponible après le téléchargement",
+    "fileActions": "Opérations sur les fichiers",
+    "deleteFile": "Supprimer l’élément",
+    "doubleEncryptedBadge": "Chiffrée par la source",
+    "doubleEncryptedTooltip": "Cet envoi a été chiffré par la source avant son téléchargement",
+    "doubleEncryptedOtherKeyTooltip": "Cet envoi a été chiffré par la source avant son téléchargement, à l’aide d’une clé différente de la clé de l’envoi actuel (empreinte : {{fingerprint}})"
   },
   "QuitModal": {
     "title": "Fermer la boîte de réception SecureDrop ?",
@@ -261,7 +311,7 @@
       "body": "Les messages et documents qui vous sont envoyés avec SecureDrop s’affichent. La synchronisation initiale des données peut prendre plusieurs minutes.<br><br>Appuyez sur <kbd>F1</kbd> pour obtenir de l’aide. Pour toute autre question, contactez votre administrateur système ou l’assistance SecureDrop avec Signal. La documentation et les instructions pour contacter l’assistance se trouvent sur securedrop.org/inbox, accessibles à partir d’un autre ordinateur."
     },
     "migration": {
-      "body": "L’application a été entièrement réécrite pour la rendre plus rapide et y ajouter des fonctions attendues depuis longtemps. La synchronisation initiale des données peut prendre plusieurs minutes. Les fichiers téléchargés précédemment devront être retéléchargés.<br><br>Si vous rencontrez un problème ou si vous souhaitez utiliser l’ancienne version du client SecureDrop, vous pouvez y accéder pendant une durée limitée dans le menu Qubes ▸ ⚙️ ▸ Autres ▸ Client SecureDrop (ancienne version). Si vous devez revenir à l’ancien client, contactez l’assistance SecureDrop avec Signal et communiquez les problèmes que vous avez rencontrés afin que nous puissions y remédier.<br><br>Appuyez sur <kbd>F1</kbd> pour obtenir de l’aide. Pour toute autre question, contactez votre administrateur système ou l’assistance SecureDrop avec Signal. La documentation et les instructions pour contacter l’assistance se trouvent sur securedrop.org/inbox, accessibles à partir d’un autre ordinateur.",
+      "body": "L’application a été entièrement réécrite pour la rendre plus rapide et y ajouter des fonctions attendues depuis longtemps. La synchronisation initiale des données peut prendre plusieurs minutes. Les fichiers téléchargés précédemment devront être retéléchargés.<br><br>Appuyez sur <kbd>F1</kbd> pour obtenir de l’aide. Pour toute autre question, contactez votre administrateur système ou l’assistance SecureDrop avec Signal. La documentation et les instructions pour contacter l’assistance se trouvent sur securedrop.org/inbox, accessibles à partir d’un autre ordinateur.",
       "title": "Bienvenue dans la nouvelle boîte de réception SecureDrop"
     }
   }
