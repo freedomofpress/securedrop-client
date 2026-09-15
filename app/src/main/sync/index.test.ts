@@ -203,7 +203,7 @@ describe("syncMetadata", () => {
 
     expect(proxyMock).toHaveBeenCalledTimes(2);
     // Should update sources and items with new data
-    expect(db.updateBatch).toHaveBeenCalledWith(batch);
+    expect(db.updateBatch).toHaveBeenCalledWith(batch, []);
   });
 
   it("rejects a batch item whose map key differs from its metadata UUID", async () => {
@@ -549,7 +549,7 @@ describe("syncMetadata", () => {
 
     expect(proxyMock).toHaveBeenCalledTimes(2);
     expect(db.deleteItemsAsync).toHaveBeenCalledWith([ITEM_UUID_2]);
-    expect(db.updateBatch).toHaveBeenCalledWith(metadata);
+    expect(db.updateBatch).toHaveBeenCalledWith(metadata, []);
     expect(fs.promises.rm).toHaveBeenCalledTimes(1);
     expect(fs.promises.rm).toHaveBeenCalledWith(
       `/mock-home/.config/SecureDrop/files/${SOURCE_UUID_1}/${ITEM_UUID_2}/`,
@@ -631,7 +631,7 @@ describe("syncMetadata", () => {
     await syncModule.syncMetadata(db, "");
 
     expect(proxyMock).toHaveBeenCalledTimes(2);
-    expect(db.updateBatch).toHaveBeenCalledWith(metadata);
+    expect(db.updateBatch).toHaveBeenCalledWith(metadata, []);
   });
 
   it("deletes sources on sync + updates source delta", async () => {
@@ -677,12 +677,15 @@ describe("syncMetadata", () => {
 
     expect(proxyMock).toHaveBeenCalledTimes(2);
     expect(db.deleteSourcesAsync).toHaveBeenCalledWith([SOURCE_UUID_2]);
-    expect(db.updateBatch).toHaveBeenCalledWith({
-      items: {},
-      sources: {},
-      journalists: {},
-      events: {},
-    });
+    expect(db.updateBatch).toHaveBeenCalledWith(
+      {
+        items: {},
+        sources: {},
+        journalists: {},
+        events: {},
+      },
+      [],
+    );
   });
 
   it("deletes source directory from filesystem when source is deleted on server", async () => {
@@ -779,7 +782,7 @@ describe("syncMetadata", () => {
     // The batch request should include the pending events
     const batchRequestArg = proxyMock.mock.calls[1][0];
     expect(JSON.parse(batchRequestArg.body!).events).toEqual(pendingEvents);
-    expect(db.updateBatch).toHaveBeenCalledWith(batch);
+    expect(db.updateBatch).toHaveBeenCalledWith(batch, ["1", "2"]);
     expect(status).toBe(SyncStatus.UPDATED);
   });
 
@@ -861,7 +864,7 @@ describe("syncMetadata", () => {
     const status = await syncModule.syncMetadata(db, "");
 
     expect(proxyMock).toHaveBeenCalledTimes(2);
-    expect(db.updateBatch).toHaveBeenCalledWith(batch);
+    expect(db.updateBatch).toHaveBeenCalledWith(batch, ["1"]);
     expect(status).toBe(SyncStatus.UPDATED);
   });
 });
