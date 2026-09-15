@@ -1,4 +1,4 @@
-import { describe, it, beforeAll, afterAll } from "vitest";
+import { describe, it, beforeAll, afterAll, vi } from "vitest";
 import { expect } from "@playwright/test";
 
 import { TestContext } from "./helper";
@@ -7,7 +7,13 @@ describe.sequential("custom protocol", () => {
   let context: TestContext;
 
   beforeAll(async () => {
-    context = await TestContext.setup();
+    // Electron inherits this environment and builds its CSP at startup.
+    vi.stubEnv("NODE_ENV", "production");
+    try {
+      context = await TestContext.setup();
+    } finally {
+      vi.unstubAllEnvs();
+    }
   }, 120000);
 
   afterAll(async () => {
@@ -58,14 +64,14 @@ describe.sequential("custom protocol", () => {
     });
   });
 
-  // TODO: This only tests the dev CSP, not the prod one
-  it("applies the CSP to the document", async () => {
+  it("applies the production CSP to the document", async () => {
     const csp = await context.app.evaluate(async ({ net }) => {
       const response = await net.fetch("securedrop://app/");
       return response.headers.get("content-security-policy");
     });
     expect(csp).toContain("default-src 'none'");
-    expect(csp).toContain("script-src 'self'");
+    expect(csp).toContain("script-src 'self';");
+    expect(csp).not.toContain("connect-src");
 
     // And it's enforced: an inline script with no nonce must not execute
     const ran = await context.page.evaluate(() => {
