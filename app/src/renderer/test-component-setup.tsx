@@ -9,7 +9,7 @@ import { MemoryRouter, useLocation } from "react-router";
 import { Provider } from "react-redux";
 import React, { memo } from "react";
 
-import { setupStore, type RootState } from "./store";
+import { setupStore, type PreloadedRootState } from "./store";
 import "./i18n";
 import type { ElectronAPI } from "../preload/index";
 import { ExportStatus, PrintStatus } from "../types";
@@ -353,7 +353,7 @@ export const TestWrapper = ({
   children: React.ReactNode;
   initialEntries?: string[];
   onLocationChange?: (location: any) => void;
-  preloadedState?: Partial<RootState>;
+  preloadedState?: PreloadedRootState;
   store?: ReturnType<typeof setupStore>;
 }) => {
   const store = providedStore || setupStore(preloadedState);
@@ -375,7 +375,7 @@ export const renderWithProviders = (
   options?: {
     initialEntries?: string[];
     onLocationChange?: (location: any) => void;
-    preloadedState?: Partial<RootState>;
+    preloadedState?: PreloadedRootState;
   },
 ): RenderResult & { store: ReturnType<typeof setupStore> } => {
   recordRenderedComponents(ui);

@@ -1,5 +1,4 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { configureStore, type EnhancedStore } from "@reduxjs/toolkit";
 import type { Journalist } from "../../../types";
 import journalistsReducer, {
   fetchJournalists,
@@ -8,9 +7,8 @@ import journalistsReducer, {
   getJournalists,
   getJournalistsLoading,
   getJournalistsError,
-  type JournalistsState,
 } from "./journalistsSlice";
-import type { RootState } from "../../store";
+import { defaultSliceState, makeRootState, setupStore } from "../../store";
 
 // Mock electronAPI
 const mockElectronAPI = {
@@ -54,29 +52,16 @@ describe("journalistsSlice", () => {
     },
   ];
 
-  const initialState: JournalistsState = {
-    journalists: [],
-    loading: false,
-    error: null,
-  };
-
-  const loadingState: JournalistsState = {
-    journalists: [],
+  const initialState = defaultSliceState(journalistsReducer);
+  const loadingState = defaultSliceState(journalistsReducer, {
     loading: true,
-    error: null,
-  };
-
-  const loadedState: JournalistsState = {
+  });
+  const loadedState = defaultSliceState(journalistsReducer, {
     journalists: mockJournalists,
-    loading: false,
-    error: null,
-  };
-
-  const errorState: JournalistsState = {
-    journalists: [],
-    loading: false,
+  });
+  const errorState = defaultSliceState(journalistsReducer, {
     error: "Failed to fetch journalists",
-  };
+  });
 
   beforeEach(() => {
     vi.clearAllMocks();
@@ -103,16 +88,10 @@ describe("journalistsSlice", () => {
   });
 
   describe("fetchJournalists async thunk", () => {
-    let store: EnhancedStore<{
-      journalists: JournalistsState;
-    }>;
+    let store: ReturnType<typeof setupStore>;
 
     beforeEach(() => {
-      store = configureStore({
-        reducer: {
-          journalists: journalistsReducer,
-        },
-      });
+      store = setupStore();
     });
 
     it("should handle pending state", () => {
@@ -196,32 +175,7 @@ describe("journalistsSlice", () => {
   });
 
   describe("selectors", () => {
-    const mockRootState: RootState = {
-      journalists: loadedState,
-      session: {} as any, // Mock other state slices
-      sources: {
-        sources: {},
-        activeSourceUuid: null,
-        loading: false,
-        error: null,
-        conversationIndicators: {},
-      },
-      conversation: {
-        conversation: null,
-        loading: false,
-        error: null,
-        lastFetchTime: null,
-        hasMoreHistoricalItems: false,
-        olderItemsLoading: false,
-      },
-      sync: {
-        error: null,
-        lastSyncStarted: null,
-        lastSyncFinished: null,
-        status: null,
-      },
-      drafts: { drafts: {} },
-    };
+    const mockRootState = makeRootState({ journalists: loadedState });
 
     it("getJournalistsState should return the entire journalists state", () => {
       const result = getJournalistsState(mockRootState);
