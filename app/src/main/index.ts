@@ -4,10 +4,13 @@ import {
   BrowserWindow,
   dialog,
   ipcMain,
+  net,
+  protocol,
   session,
   clipboard,
 } from "electron";
 import { join, delimiter } from "path";
+import { pathToFileURL } from "url";
 import { randomBytes } from "crypto";
 
 import { optimizer, is } from "@electron-toolkit/utils";
@@ -61,6 +64,69 @@ initLogging();
 if (process.argv.includes("--version")) {
   console.log(`SecureDrop Inbox v${app.getVersion()}`);
   process.exit(0);
+}
+
+// The renderer is served from a custom scheme instead of file:// so that it has
+// a real (non-opaque) origin. This must be called before the app is ready.
+const APP_SCHEME = "securedrop";
+const APP_HOST = "app";
+const APP_ORIGIN = `${APP_SCHEME}://${APP_HOST}`;
+protocol.registerSchemesAsPrivileged([
+  {
+    scheme: APP_SCHEME,
+    privileges: { standard: true, secure: true },
+  },
+]);
+
+// True when the renderer is served by the Vite dev server (for HMR) rather than
+// from the packaged bundle over APP_SCHEME.
+const useRendererDevServer =
+  is.dev && Boolean(process.env["ELECTRON_RENDERER_URL"]);
+
+const rendererRoot = join(__dirname, "../renderer");
+
+// The exact set of filenames under out/renderer/assets, which is the only place
+// the bundle loads anything from. Vite content-hashes these names so they can't
+// be hardcoded; read them once, lazily, on the first request.
+let rendererAssets: Set<string> | null = null;
+function allowedRendererAssets(): Set<string> {
+  rendererAssets ??= new Set(fs.readdirSync(join(rendererRoot, "assets")));
+  return rendererAssets;
+}
+
+/**
+ * Serves the renderer bundle over APP_SCHEME.
+ *
+ * Only two kinds of URL are answered: the document itself, and an exact
+ * filename match within out/renderer/assets. Nothing from the request is ever
+ * joined onto a path unless it's a member of that known set, so path traversal
+ * is not possible.
+ */
+function handleAppProtocol(csp: string): void {
+  protocol.handle(APP_SCHEME, async (request) => {
+    const { host, pathname } = new URL(request.url);
+    let filePath: string;
+    if (host !== APP_HOST) {
+      return new Response("Not found", { status: 404 });
+    } else if (pathname === "/" || pathname === "/index.html") {
+      filePath = join(rendererRoot, "index.html");
+    } else {
+      const asset = pathname.slice("/assets/".length);
+      if (
+        !pathname.startsWith("/assets/") ||
+        !allowedRendererAssets().has(asset)
+      ) {
+        return new Response("Not found", { status: 404 });
+      }
+      filePath = join(rendererRoot, "assets", asset);
+    }
+
+    const response = await net.fetch(pathToFileURL(filePath).toString());
+    // webRequest.onHeadersReceived doesn't fire for protocol.handle responses,
+    // so the CSP has to be attached here.
+    response.headers.set("Content-Security-Policy", csp);
+    return response;
+  });
 }
 
 // Enforce single instance - quit if another instance is already running.
@@ -203,12 +269,33 @@ if (!gotTheLock) {
       }
     });
 
+    // The renderer is a single document that never navigates anywhere and never
+    // opens new windows, so every navigation is blocked outright. `will-navigate`
+    // doesn't fire for server-issued redirects — nor for the initial programmatic
+    // load — so `will-redirect` has to be blocked too, and both are registered
+    // before the first load so a redirect during it can't slip through.
+    const blockNavigation = (event: Electron.Event, url: string): void => {
+      // The Vite dev server reloads the page for changes it can't hot-patch,
+      // which arrives here as a navigation to the already-loaded URL.
+      if (useRendererDevServer && url === mainWindow.webContents.getURL()) {
+        return;
+      }
+      console.error(`Blocked navigation to ${url}`);
+      event.preventDefault();
+    };
+    mainWindow.webContents.on("will-navigate", blockNavigation);
+    mainWindow.webContents.on("will-redirect", blockNavigation);
+    mainWindow.webContents.setWindowOpenHandler(({ url }) => {
+      console.error(`Blocked window open for ${url}`);
+      return { action: "deny" };
+    });
+
     // HMR for renderer base on electron-vite cli.
-    // Load the remote URL for development or the local html file for production.
-    if (is.dev && process.env["ELECTRON_RENDERER_URL"]) {
-      mainWindow.loadURL(process.env["ELECTRON_RENDERER_URL"]);
+    // Load the remote URL for development or the packaged bundle for production.
+    if (useRendererDevServer) {
+      mainWindow.loadURL(process.env["ELECTRON_RENDERER_URL"]!);
     } else {
-      mainWindow.loadFile(join(__dirname, "../renderer/index.html"));
+      mainWindow.loadURL(`${APP_ORIGIN}/`);
     }
 
     // Intercept the window close button (X) to show the quit confirmation
@@ -272,13 +359,43 @@ if (!gotTheLock) {
     fetchWorker.postMessage({ type: "authedRequest", request: { authToken } });
   }
 
+  // Build the strict Content Security Policy, with nonce
+  function buildCSP(): string {
+    let scriptSrc = "script-src 'self'";
+    let styleSrc = `style-src 'self' 'nonce-${cspNonce}'`;
+    let connectSrc = "";
+    if (is.dev && process.env["NODE_ENV"] != "production") {
+      // Inject vite's nonce for auto-reload
+      scriptSrc += ` 'nonce-${viteNonce}'`;
+      styleSrc += ` 'nonce-${viteNonce}'`;
+      connectSrc = "connect-src 'self';";
+    }
+
+    return (
+      "default-src 'none'; " +
+      scriptSrc +
+      "; " +
+      styleSrc +
+      "; " +
+      "img-src 'self'; " +
+      "font-src 'self'; " +
+      connectSrc
+    );
+  }
+
   // This method will be called when Electron has finished
   // initialization and is ready to create browser windows.
   // Some APIs can only be used after this event occurs.
   app
     .whenReady()
     .then(() => {
-      // Set strict Content Security Policy via HTTP header with nonce
+      // Serve the renderer over our custom scheme (unless the Vite dev server
+      // is handling it), which also applies the CSP to those responses
+      if (!useRendererDevServer) {
+        handleAppProtocol(buildCSP());
+      }
+
+      // Set the CSP for anything still loaded over HTTP, i.e. the dev server
       session.defaultSession.webRequest.onHeadersReceived(
         (details, callback) => {
           // Don't set a CSP for devtools when we're in dev mode
@@ -291,29 +408,11 @@ if (!gotTheLock) {
             callback({ responseHeaders: details.responseHeaders });
             return;
           }
-          let scriptSrc = "script-src 'self'";
-          let styleSrc = `style-src 'self' 'nonce-${cspNonce}'`;
-          let connectSrc = "";
-          if (is.dev && process.env["NODE_ENV"] != "production") {
-            // Inject vite's nonce for auto-reload
-            scriptSrc += ` 'nonce-${viteNonce}'`;
-            styleSrc += ` 'nonce-${viteNonce}'`;
-            connectSrc = "connect-src 'self';";
-          }
 
           callback({
             responseHeaders: {
               ...details.responseHeaders,
-              "Content-Security-Policy": [
-                "default-src 'none'; " +
-                  scriptSrc +
-                  "; " +
-                  styleSrc +
-                  "; " +
-                  "img-src 'self'; " +
-                  "font-src 'self'; " +
-                  connectSrc,
-              ],
+              "Content-Security-Policy": [buildCSP()],
             },
           });
         },
