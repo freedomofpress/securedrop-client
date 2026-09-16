@@ -5,6 +5,7 @@ import { SyncStatus } from "../types";
 const testState = vi.hoisted(() => {
   const registeredHandlers = new Map<string, (...args: unknown[]) => unknown>();
   const workerInstances: MockWorker[] = [];
+  const windowInstances: MockBrowserWindow[] = [];
 
   class MockWorker {
     on = vi.fn();
@@ -20,18 +21,24 @@ const testState = vi.hoisted(() => {
     webContents = {
       send: vi.fn(),
       openDevTools: vi.fn(),
+      on: vi.fn(),
+      setWindowOpenHandler: vi.fn(),
     };
 
     on = vi.fn();
     show = vi.fn();
     loadURL = vi.fn();
-    loadFile = vi.fn();
     isDestroyed = vi.fn(() => false);
+
+    constructor() {
+      windowInstances.push(this);
+    }
   }
 
   return {
     registeredHandlers,
     workerInstances,
+    windowInstances,
     MockWorker,
     MockBrowserWindow,
     app: {
@@ -59,6 +66,13 @@ const testState = vi.hoisted(() => {
           onHeadersReceived: vi.fn(),
         },
       },
+    },
+    protocol: {
+      registerSchemesAsPrivileged: vi.fn(),
+      handle: vi.fn(),
+    },
+    net: {
+      fetch: vi.fn(),
     },
     clipboard: {},
     optimizer: {
@@ -91,6 +105,8 @@ vi.mock("electron", () => ({
   BrowserWindow: testState.MockBrowserWindow,
   dialog: testState.dialog,
   ipcMain: testState.ipcMain,
+  net: testState.net,
+  protocol: testState.protocol,
   session: testState.session,
   clipboard: testState.clipboard,
 }));
@@ -317,5 +333,71 @@ describe("syncMetadata IPC handler", () => {
     expect(testState.mockSleep).toHaveBeenNthCalledWith(1, 2000);
     expect(testState.mockSleep).toHaveBeenNthCalledWith(2, 4000);
     expect(testState.mockSleep).toHaveBeenNthCalledWith(3, 8000);
+  });
+});
+
+describe("renderer navigation lock", () => {
+  beforeEach(() => {
+    vi.resetModules();
+    testState.registeredHandlers.clear();
+    testState.workerInstances.length = 0;
+    testState.windowInstances.length = 0;
+    vi.spyOn(console, "error").mockImplementation(() => {});
+  });
+
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  function getWebContentsListener(event: string) {
+    const window = testState.windowInstances[0];
+    expect(window).toBeDefined();
+    const call = window!.webContents.on.mock.calls.find(
+      (call: unknown[]) => call[0] === event,
+    );
+    expect(call, `no listener registered for ${event}`).toBeDefined();
+    return call![1] as (
+      event: { preventDefault: () => void },
+      url: string,
+    ) => void;
+  }
+
+  // `will-navigate` doesn't fire for server-issued redirects, nor for the
+  // initial programmatic load, so both events have to be guarded or a redirect
+  // can walk the window off its origin.
+  it.each(["will-navigate", "will-redirect"])(
+    "blocks every %s, same-origin included",
+    async (event) => {
+      await loadMainProcessModule();
+      const listener = getWebContentsListener(event);
+
+      for (const url of [
+        "https://example.com/",
+        "securedrop://app/index.html",
+        "securedrop://app/",
+        "file:///etc/passwd",
+      ]) {
+        const navigation = { preventDefault: vi.fn() };
+        listener(navigation, url);
+        expect(
+          navigation.preventDefault,
+          `${url} was not blocked`,
+        ).toHaveBeenCalled();
+      }
+    },
+  );
+
+  it("guards both events before the first load", async () => {
+    await loadMainProcessModule();
+    const window = testState.windowInstances[0];
+    const events = window!.webContents.on.mock.calls.map(
+      (call: unknown[]) => call[0],
+    );
+    expect(events).toContain("will-navigate");
+    expect(events).toContain("will-redirect");
+    expect(window!.loadURL).toHaveBeenCalledWith("securedrop://app/");
+    expect(window!.webContents.on.mock.invocationCallOrder[0]).toBeLessThan(
+      window!.loadURL.mock.invocationCallOrder[0],
+    );
   });
 });
