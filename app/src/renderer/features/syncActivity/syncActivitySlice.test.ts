@@ -19,6 +19,7 @@ import reducer, {
   PendingEventDisplayStatus,
   RECENT_DOWNLOADS_LIMIT,
   clearCompletedEvents,
+  pruneCompletedEvents,
   clearRecentDownloads,
   fetchSyncActivity,
   selectCompletedEvents,
@@ -46,6 +47,7 @@ const initialState: SyncActivityState = {
   recentDownloads: [],
   pendingEvents: [],
   inFlightEventIds: [],
+  submittedEventIds: [],
   completedEvents: [],
   loading: false,
   error: null,
@@ -83,6 +85,7 @@ const makeDownload = (
   kind: "file",
   fetchStatus,
   fetchProgress: null,
+  size: 1024,
   decryptedSize: null,
   retryAttempts: 0,
   updatedAt: 1000,
@@ -320,12 +323,57 @@ describe("syncActivitySlice", () => {
   describe("completed events", () => {
     it("logs an event that has left the queue", () => {
       let state = reducer(initialState, snapshotOf([makeEvent("event-1")]));
+      state = reducer(state, setEventsInFlight(["event-1"]));
       state = reducer(state, snapshotOf([]));
 
       expect(state.completedEvents).toHaveLength(1);
       expect(state.completedEvents[0].id).toBe("event-1");
       expect(state.completedEvents[0].completedAt).toBeGreaterThan(0);
       expect(state.pendingEvents).toEqual([]);
+    });
+
+    it("still logs it once the in-flight batch has been cleared", () => {
+      let state = reducer(initialState, snapshotOf([makeEvent("event-1")]));
+      // Sync empties the in-flight list before it deletes the rows
+      state = reducer(state, setEventsInFlight(["event-1"]));
+      state = reducer(state, setEventsInFlight([]));
+      state = reducer(state, snapshotOf([]));
+
+      expect(state.completedEvents.map((event) => event.id)).toEqual([
+        "event-1",
+      ]);
+    });
+
+    it("ignores an event that left the queue without reaching the server", () => {
+      // A coalesced star toggle or an event purged by a source deletion
+      let state = reducer(initialState, snapshotOf([makeEvent("event-1")]));
+      state = reducer(state, snapshotOf([makeEvent("event-2")]));
+
+      expect(state.completedEvents).toEqual([]);
+    });
+
+    it("forgets the submission once the event is logged", () => {
+      let state = reducer(initialState, snapshotOf([makeEvent("event-1")]));
+      state = reducer(state, setEventsInFlight(["event-1"]));
+      state = reducer(state, snapshotOf([]));
+
+      expect(state.submittedEventIds).toEqual([]);
+    });
+
+    it("drops entries older than the cutoff", () => {
+      let state = reducer(initialState, snapshotOf([makeEvent("event-1")]));
+      state = reducer(state, setEventsInFlight(["event-1"]));
+      state = reducer(state, snapshotOf([]));
+
+      const [logged] = state.completedEvents;
+      expect(
+        reducer(state, pruneCompletedEvents(logged.completedAt - 1))
+          .completedEvents,
+      ).toHaveLength(1);
+      expect(
+        reducer(state, pruneCompletedEvents(logged.completedAt))
+          .completedEvents,
+      ).toEqual([]);
     });
 
     it("leaves outstanding events out of the log", () => {
@@ -347,6 +395,7 @@ describe("syncActivitySlice", () => {
         initialState,
         snapshotOf([makeEvent("event-1"), makeEvent("event-2")]),
       );
+      state = reducer(state, setEventsInFlight(["event-1", "event-2"]));
       state = reducer(state, snapshotOf([makeEvent("event-2")]));
       state = reducer(state, snapshotOf([]));
 
@@ -362,6 +411,10 @@ describe("syncActivitySlice", () => {
         (_, i) => makeEvent(`event-${i}`),
       );
       let state = reducer(initialState, snapshotOf(events));
+      state = reducer(
+        state,
+        setEventsInFlight(events.map((event) => event.id)),
+      );
       state = reducer(state, snapshotOf([]));
 
       expect(state.completedEvents).toHaveLength(COMPLETED_EVENTS_LIMIT);
@@ -372,6 +425,7 @@ describe("syncActivitySlice", () => {
 
     it("is exposed to the sidebar and clearable", () => {
       let state = reducer(initialState, snapshotOf([makeEvent("event-1")]));
+      state = reducer(state, setEventsInFlight(["event-1"]));
       state = reducer(state, snapshotOf([]));
 
       expect(selectCompletedEvents(stateWith(state))).toHaveLength(1);
