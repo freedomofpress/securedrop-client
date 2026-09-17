@@ -19,7 +19,7 @@
   "MainContent": {
     "nonProduction": "WARNING: non-production mode",
     "emptyState": "<bold>Select a source</bold> from the list to read messages, retrieve files, or send responses.",
-    "emptyConversation": "This conversation has no messages yet.",
+    "emptyConversation": "All files and messages have been deleted for this source.",
     "conversation": {
       "sendButton": "Send",
       "messagePlaceholder": "Message {{designation}}...",
@@ -96,6 +96,18 @@
       "ok": "Sync: OK",
       "warning": "Sync: warning",
       "error": "Sync: error"
+    },
+    "syncSidebar": {
+      "status": {
+        "syncing": "Syncing...",
+        "upToDate": "All caught up",
+        "needsAttention": "Needs attention"
+      },
+      "body": "Sync sidebar placeholder text",
+      "resizer": {
+        "label": "Resize sync activity panel",
+        "hint": "Drag to resize the sync activity panel"
+      }
     },
     "sourcelist": {
       "filters": {

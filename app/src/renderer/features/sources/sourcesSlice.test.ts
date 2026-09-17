@@ -1,5 +1,4 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
-import { configureStore } from "@reduxjs/toolkit";
 import type { Source as SourceType } from "../../../types";
 import sourcesSlice, {
   fetchSources,
@@ -12,15 +11,10 @@ import sourcesSlice, {
   selectConversationLastSeen,
   initializeConversationIndicator,
   markConversationLastSeen,
-  type SourcesState,
 } from "./sourcesSlice";
-import sessionSlice, {
-  SessionStatus,
-  type SessionState,
-} from "../session/sessionSlice";
-import conversationSlice, {
-  ConversationState,
-} from "../conversation/conversationSlice";
+import { SessionStatus, type SessionState } from "../session/sessionSlice";
+import { ConversationState } from "../conversation/conversationSlice";
+import { defaultSliceState, setupStore } from "../../store";
 
 // Mock data matching the structure from test-component-setup.tsx
 const mockSources: SourceType[] = [
@@ -68,18 +62,11 @@ const mockSourcesRecord: Record<string, SourceType> = Object.fromEntries(
 );
 
 describe("sourcesSlice", () => {
-  let store: ReturnType<typeof configureStore>;
+  let store: ReturnType<typeof setupStore>;
   const mockGetSources = vi.fn();
 
   beforeEach(() => {
-    // Create a test store with sources, session, and conversations slices for proper typing
-    store = configureStore({
-      reducer: {
-        sources: sourcesSlice,
-        session: sessionSlice,
-        conversation: conversationSlice,
-      },
-    });
+    store = setupStore();
 
     // Reset mocks
     vi.clearAllMocks();
@@ -105,26 +92,16 @@ describe("sourcesSlice", () => {
   describe("initial state", () => {
     it("has correct initial state", () => {
       const state = (store.getState() as any).sources;
-      expect(state).toEqual({
-        sources: {},
-        activeSourceUuid: null,
-        loading: false,
-        error: null,
-        conversationIndicators: {},
-      });
+      expect(state).toEqual(defaultSliceState(sourcesSlice));
     });
   });
 
   describe("clearError action", () => {
     it("clears the error state", () => {
       // First, set an error state
-      const initialState: SourcesState = {
-        sources: {},
-        activeSourceUuid: null,
-        loading: false,
+      const initialState = defaultSliceState(sourcesSlice, {
         error: "Some error message",
-        conversationIndicators: {},
-      };
+      });
 
       const action = clearError();
       const newState = sourcesSlice(initialState, action);
@@ -138,13 +115,7 @@ describe("sourcesSlice", () => {
 
   describe("setActiveSource action", () => {
     it("sets the active source UUID", () => {
-      const initialState: SourcesState = {
-        sources: {},
-        activeSourceUuid: null,
-        loading: false,
-        error: null,
-        conversationIndicators: {},
-      };
+      const initialState = defaultSliceState(sourcesSlice);
 
       const action = setActiveSource("source-1");
       const newState = sourcesSlice(initialState, action);
@@ -155,13 +126,9 @@ describe("sourcesSlice", () => {
 
   describe("clearActiveSource action", () => {
     it("clears the active source UUID", () => {
-      const initialState: SourcesState = {
-        sources: {},
+      const initialState = defaultSliceState(sourcesSlice, {
         activeSourceUuid: "source-1",
-        loading: false,
-        error: null,
-        conversationIndicators: {},
-      };
+      });
 
       const action = clearActiveSource();
       const newState = sourcesSlice(initialState, action);
@@ -172,13 +139,7 @@ describe("sourcesSlice", () => {
 
   describe("conversation indicator actions", () => {
     it("initializes indicator once per source", () => {
-      const initialState: SourcesState = {
-        sources: {},
-        activeSourceUuid: null,
-        loading: false,
-        error: null,
-        conversationIndicators: {},
-      };
+      const initialState = defaultSliceState(sourcesSlice);
 
       const initAction = initializeConversationIndicator({
         sourceUuid: "source-1",
@@ -204,13 +165,7 @@ describe("sourcesSlice", () => {
     });
 
     it("marks conversation last seen with latest count", () => {
-      const initialState: SourcesState = {
-        sources: {},
-        activeSourceUuid: null,
-        loading: false,
-        error: null,
-        conversationIndicators: {},
-      };
+      const initialState = defaultSliceState(sourcesSlice);
 
       const markedState = sourcesSlice(
         initialState,
@@ -364,13 +319,9 @@ describe("sourcesSlice", () => {
     it("selectSourcesLoading returns loading state", () => {
       const state = {
         session: mockSessionState,
-        sources: {
-          sources: {},
-          activeSourceUuid: null,
+        sources: defaultSliceState(sourcesSlice, {
           loading: true,
-          error: null,
-          conversationIndicators: {},
-        },
+        }),
         journalists: {
           journalists: [],
           loading: false,

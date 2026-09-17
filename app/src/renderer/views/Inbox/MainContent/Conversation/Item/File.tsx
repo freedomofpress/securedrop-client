@@ -9,6 +9,7 @@ import {
 } from "../../../../../../types";
 import {
   formatFilename,
+  mirrorPlacement,
   prettyPrintBytes,
   toTitleCase,
 } from "../../../../../utils";
@@ -23,6 +24,7 @@ import {
   useAppSelector,
   useSubmissionKeyFingerprint,
 } from "../../../../../hooks";
+import { textDirection } from "../../../../../i18n";
 import { Button, Tooltip, theme, Dropdown } from "antd";
 import type { MenuProps } from "antd";
 import {
@@ -303,9 +305,11 @@ const File = memo(function File({
       {...listItemAriaProps}
     >
       <Avatar designation={titleCaseDesignation ?? ""} isActive={false} />
-      <div className="ml-3">
+      <div className="ms-3">
         <div className="flex items-center mb-1">
-          <span className="author">{titleCaseDesignation ?? ""}</span>
+          <span className="author" dir="auto">
+            {titleCaseDesignation ?? ""}
+          </span>
         </div>
         <div className="flex items-center gap-1">
           <Tooltip
@@ -396,13 +400,13 @@ const InitialFile = memo(function InitialFile({
           className="file-icon"
           aria-hidden="true"
         />
-        <div className="ml-2">
+        <div className="ms-2">
           <p className="italic">{t("encryptedFile")}</p>
           <p className="italic">{fileSize}</p>
         </div>
       </div>
 
-      <div className="flex ml-8">
+      <div className="flex ms-8">
         <Button
           type="text"
           size="large"
@@ -462,7 +466,7 @@ const InProgressFile = memo(function InProgressFile({
         size={30}
         strokeWidth={1}
       />
-      <div className="ml-2">
+      <div className="ms-2">
         <p className="italic">{t("encryptedFile")}</p>
         <div className="flex items-center space-x-2 h-3">
           {/* Loading bar */}
@@ -522,6 +526,7 @@ const CompleteFile = memo(function CompleteFile({
   disableFetch: boolean;
 }) {
   const { t } = useTranslation("Item");
+  const direction = textDirection();
   const [whistleflowEnabled, setWhistleflowEnabled] = useState(false);
   const [exportWizardOpen, setExportWizardOpen] = useState(false);
   const [exportWizardKey, setExportWizardKey] = useState(0);
@@ -636,7 +641,7 @@ const CompleteFile = memo(function CompleteFile({
       <div className="flex items-center justify-between mt-2 mb-2">
         <div className="flex items-center">
           <Icon style={{ fontSize: 30, color }} className="file-icon" />
-          <div className="ml-2">
+          <div className="ms-2">
             <Tooltip title={tooltipTitle} trigger={["hover", "focus"]}>
               <Button
                 size="small"
@@ -644,6 +649,7 @@ const CompleteFile = memo(function CompleteFile({
                 className="file-namebtn"
                 onClick={handleOpenFile}
                 aria-label={filename}
+                dir="auto"
               >
                 {formattedFilename}
               </Button>
@@ -656,7 +662,7 @@ const CompleteFile = memo(function CompleteFile({
         <div className="flex gap-1">
           <Dropdown
             menu={{ items: menuItems }}
-            placement="bottomRight"
+            placement={mirrorPlacement("bottomRight", direction)}
             trigger={["click"]}
           >
             <Button
@@ -722,7 +728,7 @@ const FailedFile = memo(function FailedFile({
           twoToneColor={token.colorError}
           style={{ fontSize: 30 }}
         />
-        <div className="ml-2">
+        <div className="ms-2">
           <p className="italic">{t("encryptedFile")}</p>
           <p className="text-gray-700">{t("downloadFailed")}</p>
         </div>

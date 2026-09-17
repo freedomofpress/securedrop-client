@@ -1,16 +1,37 @@
 import i18n from "i18next";
 import { initReactI18next } from "react-i18next";
-import { resources } from "./locales";
+import { PSEUDO_RTL_LANGUAGE, resources } from "./locales";
+import { normalizeLocale, type TextDirection } from "./utils";
 
-// Get system language and update i18n
+export const directionFor = (language: string): TextDirection => {
+  if (language === PSEUDO_RTL_LANGUAGE) {
+    return "rtl";
+  }
+  return i18n.dir(language) as TextDirection;
+};
+
+const applyDocumentDirection = (language: string) => {
+  const root = document.documentElement;
+  root.lang = language;
+  root.dir = directionFor(language);
+};
+
+export const textDirection = (): TextDirection => directionFor(i18n.language);
+
 const initializeLanguage = async () => {
   try {
     const systemLanguage = await window.electronAPI.getSystemLanguage();
-    if (systemLanguage && systemLanguage !== i18n.language) {
-      await i18n.changeLanguage(systemLanguage);
+    if (!systemLanguage) {
+      return;
+    }
+    const language = normalizeLocale(systemLanguage);
+    if (language !== i18n.language) {
+      await i18n.changeLanguage(language);
     }
   } catch (error) {
     console.warn("Could not get system language:", error);
+  } finally {
+    applyDocumentDirection(i18n.language);
   }
 };
 
@@ -25,6 +46,8 @@ i18n.use(initReactI18next).init({
   },
 });
 
-// Initialize system language after i18n is ready
-initializeLanguage();
+applyDocumentDirection(i18n.language);
+
+export const languageReady = initializeLanguage();
+
 export default i18n;

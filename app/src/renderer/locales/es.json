@@ -22,7 +22,7 @@
     "retryFetch": "Reintentar",
     "itemEncrypted": "El mensaje está cifrado...",
     "lastSourceActivity": "Última actividad de la fuente",
-    "emptyConversation": "Esta conversación aún no tiene mensajes.",
+    "emptyConversation": "",
     "nonProduction": "ADVERTENCIA: no está en modo producción",
     "you": "Tu",
     "unknown": "Desconocido"

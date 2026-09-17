@@ -1,5 +1,4 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
-import { configureStore } from "@reduxjs/toolkit";
 import { FetchStatus, type SourceWithItems } from "../../../types";
 import conversationSlice, {
   fetchConversation,
@@ -11,6 +10,7 @@ import conversationSlice, {
   type ConversationState,
 } from "./conversationSlice";
 import { SessionStatus } from "../session/sessionSlice";
+import { defaultSliceState, setupStore } from "../../store";
 
 // Mock conversation data
 const mockSourceWithItems: SourceWithItems = {
@@ -103,17 +103,12 @@ const mockSourceWithItems2: SourceWithItems = {
 };
 
 describe("conversationSlice", () => {
-  let store: ReturnType<typeof configureStore>;
+  let store: ReturnType<typeof setupStore>;
   const mockGetSourceWithItems = vi.fn();
   const mockAddPendingSourceConversationSeen = vi.fn();
 
   beforeEach(() => {
-    // Create a test store with conversations slice
-    store = configureStore({
-      reducer: {
-        conversation: conversationSlice,
-      },
-    });
+    store = setupStore();
 
     // Reset mocks
     vi.clearAllMocks();
@@ -136,28 +131,16 @@ describe("conversationSlice", () => {
   describe("initial state", () => {
     it("has correct initial state", () => {
       const state = (store.getState() as any).conversation;
-      expect(state).toEqual({
-        conversation: null,
-        loading: false,
-        error: null,
-        lastFetchTime: null,
-        hasMoreHistoricalItems: false,
-        olderItemsLoading: false,
-      });
+      expect(state).toEqual(defaultSliceState(conversationSlice));
     });
   });
 
   describe("clearError action", () => {
     it("clears the error state", () => {
       // First, set an error state
-      const initialState: ConversationState = {
-        conversation: null,
-        loading: false,
+      const initialState = defaultSliceState(conversationSlice, {
         error: "Some error message",
-        lastFetchTime: null,
-        hasMoreHistoricalItems: false,
-        olderItemsLoading: false,
-      };
+      });
 
       const action = clearError();
       const newState = conversationSlice(initialState, action);
@@ -171,14 +154,10 @@ describe("conversationSlice", () => {
 
   describe("clearConversation action", () => {
     it("clears the current conversation", () => {
-      const initialState: ConversationState = {
+      const initialState = defaultSliceState(conversationSlice, {
         conversation: mockSourceWithItems,
-        loading: false,
-        error: null,
         lastFetchTime: 123456789,
-        hasMoreHistoricalItems: false,
-        olderItemsLoading: false,
-      };
+      });
 
       const action = clearConversation();
       const newState = conversationSlice(initialState, action);
@@ -267,14 +246,11 @@ describe("conversationSlice", () => {
         loading: false,
         error: null,
       },
-      conversation: {
+      conversation: defaultSliceState(conversationSlice, {
         conversation: mockSourceWithItems,
-        loading: false,
         error: "Test error",
         lastFetchTime: 123456789,
-        hasMoreHistoricalItems: false,
-        olderItemsLoading: false,
-      },
+      }),
       sync: {
         error: null,
         lastSyncStarted: null,
@@ -401,14 +377,9 @@ describe("conversationSlice", () => {
       items: [fileItem],
     };
 
-    const stateWithFile: ConversationState = {
+    const stateWithFile = defaultSliceState(conversationSlice, {
       conversation: sourceWithFile,
-      loading: false,
-      error: null,
-      lastFetchTime: null,
-      hasMoreHistoricalItems: false,
-      olderItemsLoading: false,
-    };
+    });
 
     it("does not resurrect a Cancelled item", () => {
       const canceledState: ConversationState = {

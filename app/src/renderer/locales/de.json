@@ -20,7 +20,7 @@
     "retryFetch": "Erneut versuchen",
     "itemEncrypted": "Die Nachricht ist verschlüsselt…",
     "lastSourceActivity": "Letzte Aktivität in der Quelle",
-    "emptyConversation": "In diesem Chat gibt es noch keine Nachrichten.",
+    "emptyConversation": "",
     "nonProduction": "WARNUNG: Nicht-Produktionsmodus",
     "you": "Du",
     "unknown": "Unbekannt"

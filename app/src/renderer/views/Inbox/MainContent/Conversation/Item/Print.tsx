@@ -189,7 +189,7 @@ const PreflightState = memo(function PreflightState({
         ) : (
           <PrinterIcon size={24} className="text-blue-500" />
         )}
-        <div className="ml-3">
+        <div className="ms-3">
           <h3 className="text-lg font-semibold">
             {t("printWizard.preparingPrint")}
           </h3>
@@ -231,7 +231,7 @@ const ConnectPrinterState = memo(function ConnectPrinterState({
         ) : (
           <PrinterIcon size={24} className="text-blue-500" />
         )}
-        <div className="ml-3">
+        <div className="ms-3">
           <h3 className="text-lg font-semibold">
             {t("printWizard.readyPrint")}
           </h3>
@@ -256,7 +256,7 @@ const PrintingState = memo(function PrintingState({ t }: StateComponentProps) {
     <div>
       <div className="flex items-center gap-3 mb-4">
         <PrinterIcon size={24} className="text-blue-500" />
-        <div className="ml-3">
+        <div className="ms-3">
           <h3 className="text-lg font-semibold">{t("wizard.pleaseWait")}</h3>
         </div>
       </div>
@@ -300,7 +300,7 @@ const ErrorState = memo(function ErrorState({
     <div>
       <div className="flex items-center gap-3 mb-4">
         <FileX2 size={24} strokeWidth={2} className="text-red-500" />
-        <div className="ml-3">
+        <div className="ms-3">
           <h3 className="text-lg font-semibold" ref={headingRef} tabIndex={-1}>
             {t("printWizard.printFailed")}
           </h3>

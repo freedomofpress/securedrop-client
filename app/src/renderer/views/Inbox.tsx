@@ -1,3 +1,4 @@
+/* eslint-disable react-refresh/only-export-components */
 import { useEffect, useCallback, useRef, useState } from "react";
 import { useDispatch } from "react-redux";
 import { useNavigate } from "react-router";
@@ -21,14 +22,22 @@ import { useGlobalShortcuts } from "../shortcuts";
 import { requestQuit } from "../components/quitRequester";
 import { requestHelp } from "../components/helpRequester";
 import KeyboardHelpModal from "../components/KeyboardHelpModal";
-import SidebarResizer, { SIDEBAR_DEFAULT_WIDTH } from "./Inbox/SidebarResizer";
+import PanelResizer from "../components/PanelResizer";
+import { textDirection } from "../i18n";
 
 export type FocusedPanel = "sidebar" | "mainContent";
+
+export const SIDEBAR_DEFAULT_WIDTH = 384;
+export const SIDEBAR_MIN_WIDTH = 260;
+export const SIDEBAR_MAX_WIDTH = 640;
+export const SIDEBAR_RESIZE_STEP = 16;
 
 function InboxView() {
   const dispatch = useDispatch<AppDispatch>();
   const navigate = useNavigate();
   const { t } = useTranslation("SignIn");
+  const { t: tSidebar } = useTranslation("Sidebar");
+  const sidebarDirection = textDirection() === "rtl" ? "left" : "right";
   const session = useAppSelector((state) => state.session);
   const syncStatus = useAppSelector(selectSyncStatus);
 
@@ -129,7 +138,17 @@ function InboxView() {
       >
         <Sidebar focusedPanel={focusedPanel} />
       </div>
-      <SidebarResizer width={sidebarWidth} onWidthChange={setSidebarWidth} />
+      <PanelResizer
+        growsToward={sidebarDirection}
+        size={sidebarWidth}
+        minSize={SIDEBAR_MIN_WIDTH}
+        maxSize={SIDEBAR_MAX_WIDTH}
+        step={SIDEBAR_RESIZE_STEP}
+        onSizeChange={setSidebarWidth}
+        label={tSidebar("resizer.label")}
+        hint={tSidebar("resizer.hint")}
+        testId="sidebar-resizer"
+      />
       <div
         ref={mainContentRef}
         tabIndex={-1}

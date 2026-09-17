@@ -1,10 +1,8 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
-import { configureStore } from "@reduxjs/toolkit";
+import { setupStore } from "../../store";
 import { Source as SourceType, SyncStatus } from "../../../types";
-import syncSlice, { syncMetadata } from "./syncSlice";
-import sourcesSlice from "../sources/sourcesSlice";
-import sessionSlice, { type AuthData } from "../session/sessionSlice";
-import conversationSlice from "../conversation/conversationSlice";
+import { syncMetadata } from "./syncSlice";
+import { type AuthData } from "../session/sessionSlice";
 
 function mockAuthData(): AuthData {
   return {
@@ -61,20 +59,12 @@ const mockSourcesRecord: Record<string, SourceType> = Object.fromEntries(
 );
 
 describe("syncSlice", () => {
-  let store: ReturnType<typeof configureStore>;
+  let store: ReturnType<typeof setupStore>;
   const mockGetSources = vi.fn();
   const mockSyncMetadata = vi.fn();
 
   beforeEach(() => {
-    // Create a test store with sources, session, conversations, and sync slices for proper typing
-    store = configureStore({
-      reducer: {
-        sources: sourcesSlice,
-        session: sessionSlice,
-        conversation: conversationSlice,
-        sync: syncSlice,
-      },
-    });
+    store = setupStore();
 
     // Reset mocks
     vi.clearAllMocks();
@@ -172,31 +162,7 @@ describe("syncSlice", () => {
     it("fetches conversation for active source during sync", async () => {
       const activeSourceUuid = "source-1";
 
-      // Set up store with active source
-      store = configureStore({
-        reducer: {
-          sources: sourcesSlice,
-          session: sessionSlice,
-          conversation: conversationSlice,
-          sync: syncSlice,
-        },
-        preloadedState: {
-          sources: {
-            sources: {},
-            activeSourceUuid: activeSourceUuid,
-            error: null,
-            lastFetchTime: null,
-            loading: false,
-            conversationIndicators: {},
-          },
-          sync: {
-            error: null,
-            lastSyncStarted: null,
-            lastSyncFinished: null,
-            status: null,
-          },
-        },
-      });
+      store = setupStore({ sources: { activeSourceUuid } });
 
       // Mock getSourceWithItems for the active conversation
       const mockGetSourceWithItems = vi.fn();

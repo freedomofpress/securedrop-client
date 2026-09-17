@@ -33,12 +33,17 @@ import { PrintWizard } from "./views/Inbox/MainContent/Conversation/Item/Print";
 import File from "./views/Inbox/MainContent/Conversation/Item/File";
 import Message from "./views/Inbox/MainContent/Conversation/Item/Message";
 import SourceList from "./views/Inbox/Sidebar/SourceList";
-import SidebarResizer from "./views/Inbox/SidebarResizer";
+import Sidebar from "./views/Inbox/Sidebar";
+import SyncSidebar, {
+  SYNC_SIDEBAR_COLLAPSED_HEIGHT,
+  SYNC_SIDEBAR_DEFAULT_HEIGHT,
+} from "./views/Inbox/Sidebar/SyncSidebar";
 import Source from "./views/Inbox/Sidebar/SourceList/Source";
 import MainMenu from "./views/Inbox/Sidebar/Account/MainMenu";
 import KeyboardHelp from "./views/Inbox/Sidebar/Account/KeyboardHelp";
 import { FirstRunPopup } from "./components/FirstRunPopup";
 import TruncatedText from "./components/TruncatedText";
+import PanelResizer from "./components/PanelResizer";
 
 import {
   SessionStatus,
@@ -255,10 +260,51 @@ describe.sequential("accessibility (axe)", () => {
     });
   });
 
-  describe("SidebarResizer", () => {
-    it("has no axe violations", async () => {
+  describe("PanelResizer", () => {
+    it.each(["right", "left", "up"] as const)(
+      "has no axe violations growing toward %s",
+      async (growsToward) => {
+        await renderAndCheckA11y(
+          <PanelResizer
+            growsToward={growsToward}
+            size={200}
+            minSize={48}
+            maxSize={400}
+            step={16}
+            label="Resize panel"
+            hint="Drag or use the arrow keys"
+            testId="panel-resizer"
+            onSizeChange={vi.fn()}
+          />,
+        );
+      },
+    );
+  });
+
+  describe("Sidebar", () => {
+    it("has no axe violations on initial render", async () => {
+      await renderAndCheckA11y(<Sidebar focusedPanel="sidebar" />);
+    });
+  });
+
+  describe("SyncSidebar", () => {
+    it("has no axe violations when collapsed", async () => {
       await renderAndCheckA11y(
-        <SidebarResizer width={384} onWidthChange={vi.fn()} />,
+        <SyncSidebar
+          height={SYNC_SIDEBAR_COLLAPSED_HEIGHT}
+          collapsed={true}
+          onToggle={vi.fn()}
+        />,
+      );
+    });
+
+    it("has no axe violations when expanded", async () => {
+      await renderAndCheckA11y(
+        <SyncSidebar
+          height={SYNC_SIDEBAR_DEFAULT_HEIGHT}
+          collapsed={false}
+          onToggle={vi.fn()}
+        />,
       );
     });
   });

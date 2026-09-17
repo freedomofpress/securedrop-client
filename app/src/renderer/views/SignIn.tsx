@@ -208,10 +208,10 @@ function SignInView() {
 
           <h1 className="mb-6">{t("title")}</h1>
           {authError && (
-            <div className="absolute top-14 -left-8 -right-8 p-4 bg-red-50 border border-red-200 rounded-lg z-10">
+            <div className="absolute top-14 -inset-x-8 p-4 bg-red-50 border border-red-200 rounded-lg z-10">
               <button
                 onClick={() => setAuthError(false)}
-                className="absolute top-3 right-3 text-gray-400 hover:text-gray-600"
+                className="absolute top-3 end-3 text-gray-400 hover:text-gray-600"
                 aria-label="Close error message"
               >
                 <CloseOutlined style={{ fontSize: 14 }} />

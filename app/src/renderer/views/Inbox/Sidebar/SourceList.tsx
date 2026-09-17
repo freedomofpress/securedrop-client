@@ -471,6 +471,12 @@ function SourceList({ focusedPanel }: { focusedPanel: FocusedPanel }) {
           onToggleSort={handleToggleSort}
           onDropdownOpenChange={setDropdownOpen}
         />
+        <Counts
+          totalCount={totalSourceCount}
+          visibleCount={filteredSources.length}
+          selectedCount={selectedSources.size}
+          isFiltered={filter !== "all" || searchResults !== null}
+        />
       </div>
 
       {/* Sources list */}
@@ -491,14 +497,6 @@ function SourceList({ focusedPanel }: { focusedPanel: FocusedPanel }) {
           className="select-none"
         />
       </div>
-
-      {/* Source counts */}
-      <Counts
-        totalCount={totalSourceCount}
-        visibleCount={filteredSources.length}
-        selectedCount={selectedSources.size}
-        isFiltered={filter !== "all" || searchResults !== null}
-      />
 
       {/* Delete confirmation modal */}
       <Modal
@@ -564,7 +562,7 @@ function SourceList({ focusedPanel }: { focusedPanel: FocusedPanel }) {
                 ? t("sourcelist.deleteDialog.single.deleteAccountButton")
                 : t("sourcelist.deleteDialog.multiple.deleteAccountsButton")}
           </Button>,
-          <span className="text-sm text-gray-500 italic ml-2">
+          <span className="text-sm text-gray-500 italic ms-2">
             {buttonCountdown > 0 && `${buttonCountdown}s`}
           </span>,
         ]}
@@ -592,7 +590,7 @@ function SourceList({ focusedPanel }: { focusedPanel: FocusedPanel }) {
                   <p className="font-medium text-gray-800">
                     {t("sourcelist.deleteDialog.itemCountsHeader")}
                   </p>
-                  <ul className="mt-1 ml-4 list-none text-gray-700">
+                  <ul className="mt-1 ms-4 list-none text-gray-700">
                     {deleteCounts.messages > 0 && (
                       <li>
                         {t("sourcelist.deleteDialog.messageCount", {

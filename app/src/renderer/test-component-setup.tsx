@@ -9,7 +9,7 @@ import { MemoryRouter, useLocation } from "react-router";
 import { Provider } from "react-redux";
 import React, { memo } from "react";
 
-import { setupStore, type RootState } from "./store";
+import { setupStore, type PreloadedRootState } from "./store";
 import "./i18n";
 import type { ElectronAPI } from "../preload/index";
 import { ExportStatus, PrintStatus } from "../types";
@@ -18,6 +18,7 @@ import { ExportStatus, PrintStatus } from "../types";
 (global as any).__APP_VERSION__ = "6.6.6-test";
 (global as any).__DEV_AUTO_LOGIN__ = false;
 (global as any).__IS_PRODUCTION__ = false;
+(global as any).__SYNC_SIDEBAR__ = false;
 
 // Mock ResizeObserver for react-window
 global.ResizeObserver = class {
@@ -352,7 +353,7 @@ export const TestWrapper = ({
   children: React.ReactNode;
   initialEntries?: string[];
   onLocationChange?: (location: any) => void;
-  preloadedState?: Partial<RootState>;
+  preloadedState?: PreloadedRootState;
   store?: ReturnType<typeof setupStore>;
 }) => {
   const store = providedStore || setupStore(preloadedState);
@@ -374,7 +375,7 @@ export const renderWithProviders = (
   options?: {
     initialEntries?: string[];
     onLocationChange?: (location: any) => void;
-    preloadedState?: Partial<RootState>;
+    preloadedState?: PreloadedRootState;
   },
 ): RenderResult & { store: ReturnType<typeof setupStore> } => {
   recordRenderedComponents(ui);

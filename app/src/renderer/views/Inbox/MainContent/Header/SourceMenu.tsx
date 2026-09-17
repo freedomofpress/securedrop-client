@@ -12,6 +12,8 @@ import { PrintWizard } from "../Conversation/Item/Print";
 import { MenuProps, Dropdown, Button, Tooltip } from "antd";
 import { MoreOutlined } from "@ant-design/icons";
 import { requestDeleteSource } from "../../../../components/deleteSourceRequester";
+import { textDirection } from "../../../../i18n";
+import { mirrorPlacement } from "../../../../utils";
 
 interface SourceMenuProps {
   sourceWithItems: SourceWithItems;
@@ -21,6 +23,7 @@ const SourceMenu = memo(function SourceMenu({
   sourceWithItems,
 }: SourceMenuProps) {
   const { t } = useTranslation("MainContent");
+  const direction = textDirection();
 
   const [whistleflowEnabled, setWhistleflowEnabled] = useState(false);
   const [exportWhistleflow, setExportWhistleflow] = useState(false);
@@ -202,7 +205,10 @@ const SourceMenu = memo(function SourceMenu({
 
   return (
     <>
-      <Tooltip title={t("menu.clickToOpen")} placement="left">
+      <Tooltip
+        title={t("menu.clickToOpen")}
+        placement={mirrorPlacement("left", direction)}
+      >
         <Dropdown menu={menuProps} trigger={["click"]}>
           <Button
             type="text"
