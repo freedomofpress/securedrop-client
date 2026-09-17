@@ -71,12 +71,15 @@ export class Datastore extends DB {
     super.updateJournalists(journalists);
   }
 
-  override updateBatch(batchResponse: BatchResponse): {
+  override updateBatch(
+    batchResponse: BatchResponse,
+    submittedEventIDs?: string[],
+  ): {
     deleted_items: Item[];
     deleted_sources: string[];
   } {
     // Perform all DB updates
-    const result = super.updateBatch(batchResponse);
+    const result = super.updateBatch(batchResponse, submittedEventIDs);
     // Perform all filesystem cleanups as necessary
     for (const item of result.deleted_items) {
       void this.storage.deleteItemFs(item);
