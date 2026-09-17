@@ -212,6 +212,7 @@ export class DB {
     { source_uuid: string },
     void
   >;
+  private deleteSourceStarEvents: Statement<{ source_uuid: string }, void>;
 
   protected constructor(crypto: Crypto, dbDir?: string) {
     this.crypto = crypto;
@@ -484,6 +485,7 @@ export class DB {
         item.kind,
         item.fetch_status,
         item.fetch_progress,
+        json_extract(item.data, '$.size') AS size,
         item.decrypted_size,
         item.fetch_retry_attempts,
         item.fetch_last_updated_at
@@ -506,6 +508,14 @@ export class DB {
          OR item_uuid IN (
            SELECT uuid FROM items WHERE source_uuid = @source_uuid
          )`);
+    this.deleteSourceStarEvents = this.db.prepare(`
+      DELETE FROM pending_events
+      WHERE source_uuid = @source_uuid
+        AND type IN (
+          '${PendingEventType.Starred}',
+          '${PendingEventType.Unstarred}'
+        )
+    `);
   }
 
   runMigrations(): void {
@@ -1194,6 +1204,14 @@ export class DB {
             data.upper_bound,
           );
         }
+      } else if (
+        type === PendingEventType.Starred ||
+        type === PendingEventType.Unstarred
+      ) {
+        // Star state is absolute, not a delta, and the projection only ever
+        // reads the newest one. Keep a single event per source so repeated
+        // toggling replaces rather than stacks.
+        this.deleteSourceStarEvents.run({ source_uuid: sourceUuid });
       }
 
       try {
@@ -1429,6 +1447,7 @@ export class DB {
       kind: r.kind as DownloadActivity["kind"],
       fetchStatus: r.fetch_status as FetchStatus,
       fetchProgress: r.fetch_progress,
+      size: r.size,
       decryptedSize: r.decrypted_size,
       retryAttempts: r.fetch_retry_attempts,
       // Mark the timestamp as UTC

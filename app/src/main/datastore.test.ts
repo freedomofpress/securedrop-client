@@ -1964,9 +1964,9 @@ describe("Datastore Method Tests", () => {
     db.addPendingItemEvent("item1", PendingEventType.ItemDeleted);
     db.addPendingItemEvent("item2", PendingEventType.ItemDeleted);
 
-    // Verify all 5 events exist
+    // 4, not 5: the two star events on source1 coalesce into one
     let events = db.getPendingEvents();
-    expect(events.length).toBe(5);
+    expect(events.length).toBe(4);
 
     // Delete both sources (should cascade to all related events)
     await db.deleteSourcesAsync(["source1", "source2"]);
@@ -2355,6 +2355,86 @@ describe("Datastore Method Tests", () => {
       });
     });
 
+    describe("star event coalescing", () => {
+      const starEvents = () =>
+        db
+          .getPendingEventActivity()
+          .filter((e) =>
+            [PendingEventType.Starred, PendingEventType.Unstarred].includes(
+              e.type,
+            ),
+          );
+
+      it("keeps only the latest of a repeated toggle", () => {
+        db.addPendingSourceEvent("source1", PendingEventType.Starred);
+        db.addPendingSourceEvent("source1", PendingEventType.Unstarred);
+        db.addPendingSourceEvent("source1", PendingEventType.Starred);
+        const last = db.addPendingSourceEvent(
+          "source1",
+          PendingEventType.Unstarred,
+        );
+
+        expect(starEvents()).toHaveLength(1);
+        expect(starEvents()[0]).toMatchObject({
+          id: last,
+          type: PendingEventType.Unstarred,
+        });
+      });
+
+      it("coalesces per source rather than across them", () => {
+        db.addPendingSourceEvent("source1", PendingEventType.Starred);
+        db.addPendingSourceEvent("source2", PendingEventType.Starred);
+        db.addPendingSourceEvent("source1", PendingEventType.Unstarred);
+
+        expect(starEvents().map((e) => [e.sourceUuid, e.type])).toEqual(
+          expect.arrayContaining([
+            ["source1", PendingEventType.Unstarred],
+            ["source2", PendingEventType.Starred],
+          ]),
+        );
+        expect(starEvents()).toHaveLength(2);
+      });
+
+      it("replaces an event that already failed against the server", () => {
+        const first = db.addPendingSourceEvent(
+          "source1",
+          PendingEventType.Starred,
+        );
+        db.updatePendingEvents({ [first!]: [EventStatus.Conflict, null] });
+
+        db.addPendingSourceEvent("source1", PendingEventType.Unstarred);
+
+        expect(starEvents()).toHaveLength(1);
+        expect(starEvents()[0]).toMatchObject({
+          type: PendingEventType.Unstarred,
+          retryAttempts: 0,
+          lastEventStatus: null,
+        });
+      });
+
+      it("leaves other queued work for the source alone", () => {
+        db.addPendingSourceEvent("source1", PendingEventType.Starred);
+        db.addPendingItemEvent("item1", PendingEventType.ItemDeleted);
+        db.addPendingSourceEvent("source1", PendingEventType.Unstarred);
+
+        expect(db.getPendingEventActivity().map((e) => e.type)).toEqual(
+          expect.arrayContaining([
+            PendingEventType.ItemDeleted,
+            PendingEventType.Unstarred,
+          ]),
+        );
+        expect(db.getPendingEventActivity()).toHaveLength(2);
+      });
+
+      it("shows the source as starred per the surviving event", () => {
+        db.addPendingSourceEvent("source1", PendingEventType.Starred);
+        db.addPendingSourceEvent("source1", PendingEventType.Unstarred);
+        db.addPendingSourceEvent("source1", PendingEventType.Starred);
+
+        expect(db.getSources().get("source1")!.data.is_starred).toBeTruthy();
+      });
+    });
+
     describe("getPendingEventActivity", () => {
       it("keeps the retry bookkeeping that getPendingEvents drops", () => {
         const id = db.addPendingSourceEvent(
@@ -2463,6 +2543,14 @@ describe("Datastore Method Tests", () => {
           fetchStatus: FetchStatus.DownloadInProgress,
         });
         expect(download.updatedAt).toBeTypeOf("number");
+      });
+
+      it("carries the server-reported size the sidebar divides progress by", () => {
+        db.updateFetchStatus("item1", FetchStatus.DownloadInProgress);
+        db.updateDownloadInProgress("item1", 25);
+
+        const [download] = db.getDownloadActivity();
+        expect(download).toMatchObject({ size: 50, fetchProgress: 25 });
       });
 
       it.each([
