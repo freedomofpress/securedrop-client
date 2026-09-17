@@ -221,13 +221,20 @@ export async function proxyStreamRequestInner(
     // contents directly to the `writeStream`.
     process.stdout.pipe(writeStream);
 
-    // Store stdout as buffer array to avoid binary data corruption, and track bytes written
+    // Peek at the first byte of the first chunk of the returned stdout.  If it
+    // begins with "{", buffer it as JSON to be parsed on close; otherwise
+    // stream the response without retaining the chunks in memory.  Store stdout
+    // as buffer array to avoid binary data corruption, and track bytes written
     // to allow resuming incremental progress.
     const stdoutChunks: Buffer[] = [];
     let bytesWritten = 0;
+    let looksLikeJSON: boolean | undefined;
     process.stdout.on("data", (data) => {
       bytesWritten += data.length;
-      stdoutChunks.push(data);
+      looksLikeJSON ??= data[0] === 0x7b; /* "{" */
+      if (looksLikeJSON) {
+        stdoutChunks.push(data);
+      }
       // Report progress to caller if callback is provided
       if (onProgress) {
         try {
@@ -280,32 +287,52 @@ export async function proxyStreamRequestInner(
         });
         return;
       }
-      try {
-        // If we receive JSON data, parse and return
-        // Convert buffer chunks to string only when needed for JSON parsing
-        const stdout = Buffer.concat(stdoutChunks).toString("utf8");
-        const response = parseJSONResponse(stdout);
-        logJSONResponse(requestID, response, Buffer.byteLength(stdout, "utf8"));
-        resolve(response);
-      } catch {
+
+      // If the first byte was "{", is it actually a JSON response?
+      if (looksLikeJSON) {
         try {
-          const header = JSON.parse(stderr);
-          const headers: Map<string, string> = new Map(
-            Object.entries(header["headers"]),
+          // To find out, convert the buffer chunks to string, then try to parse and return.
+          const stdout = Buffer.concat(stdoutChunks).toString("utf8");
+          const response = parseJSONResponse(stdout);
+          logJSONResponse(
+            requestID,
+            response,
+            Buffer.byteLength(stdout, "utf8"),
           );
-          console.log(
-            `[proxy] ${requestID} stream complete: bytesWritten=${bytesWritten}`,
-          );
-          resolve({
-            complete: true,
-            sha256sum: getHeader(headers, "etag") || "",
-            bytesWritten: bytesWritten,
-          });
+          resolve(response);
+          return;
         } catch (err) {
           reject(
-            `${requestID}: Error reading headers from proxy stderr: ${err}`,
+            new Error(
+              `${requestID}: Response was neither JSON nor streamed data`,
+              { cause: err },
+            ),
           );
+          return;
         }
+      }
+
+      // Otherwise, handle it as a stream response instead.
+      try {
+        const header = JSON.parse(stderr);
+        const headers: Map<string, string> = new Map(
+          Object.entries(header["headers"]),
+        );
+        console.log(
+          `[proxy] ${requestID} stream complete: bytesWritten=${bytesWritten}`,
+        );
+        resolve({
+          complete: true,
+          sha256sum: getHeader(headers, "etag") || "",
+          bytesWritten: bytesWritten,
+        });
+      } catch (err) {
+        reject(
+          new Error(
+            `${requestID}: Error reading headers from proxy stderr: ${err}`,
+            { cause: err },
+          ),
+        );
       }
     });
 
