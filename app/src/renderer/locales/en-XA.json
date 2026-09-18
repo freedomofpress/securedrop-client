@@ -115,6 +115,18 @@
     "resizer": {
       "label": "[!Resize sidebar!]",
       "hint": "[!!Drag to resize the sidebar!!]"
+    },
+    "syncSidebar": {
+      "status": {
+        "syncing": "[!Syncing...!]",
+        "upToDate": "[!All caught up!]",
+        "needsAttention": "[!Needs attention!]"
+      },
+      "body": "[!!Sync sidebar placeholder text!!]",
+      "resizer": {
+        "label": "[!!Resize sync activity panel!!]",
+        "hint": "[!!!Drag to resize the sync activity panel!!!]"
+      }
     }
   },
   "Item": {
@@ -276,7 +288,7 @@
     "retryFetch": "[Retry]",
     "itemEncrypted": "[!!Message is encrypted...!!]",
     "lastSourceActivity": "[!!Last source activity!!]",
-    "emptyConversation": "",
+    "emptyConversation": "[!!!!!All files and messages have been deleted for this source.!!!!!]",
     "nonProduction": "[!!WARNING: non-production mode!!]",
     "you": "[You]",
     "unknown": "[Unknown]",
