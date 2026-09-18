@@ -1,5 +1,43 @@
 # Changelog
 
+## 1.7.0
+
+* Add a placeholder for the sync activity sidebar (#3717)
+* Make the sidebar width adjustable (#3707)
+* Support right-to-left languages (#3714)
+* Update the empty conversation string to make deletion clearer (#3730)
+* Fix the delete button on hover (#3715)
+* Translations update from Weblate (#3705, #3712)
+* Remove translation keys the English source no longer has (#3716)
+* Resubmit AlreadyReported events until the server reports completion (#3702)
+* Security and hardening:
+  * Publish decrypted files only after gzip validation (#3583)
+  * Reject updates to a source's public_key or fingerprint (#3563)
+  * Require a limit when calling db.getSourceWithItems() (#3649)
+  * Only expose __REDUX_STORE__ in test mode (#3648)
+  * Remove the now-unused requestStream IPC (#3639)
+  * Have eslint ban usage of shell.openExternal() (#3656)
+* Internal and development:
+  * Switch to hash-pinned GitHub Actions (#3613)
+  * Strictly specify the stdin/stdout/stderr/rc contract between the Inbox and the proxy (#3659)
+  * Use the packaged version of rustup (#3636)
+  * Explicitly invoke install-electron to ensure it's present (#3737)
+  * Stop building snap and AppImage in CI (#3678)
+  * Remove the semgrep workflow (#3674)
+  * Only diff lockfiles for npm/pypi in guarddog (#3724)
+  * Allow dependabot to open all our JavaScript PRs (#3719)
+  * Have dependabot propose electron minor/patch updates (#3638)
+* Dependency updates
+  * Upgrade to Electron 43.6.0 (#3685, #3733)
+  * Bump React Router and LiquidJS (#3684)
+* Development dependency updates
+  * Bump actions/setup-python from 6.3.0 to 7.0.0 (#3689)
+  * Bump pnpm/action-setup from 6.0.9 to 6.0.10 (#3692)
+  * Bump ruff from 0.15.21 to 0.16.1 (#3668, #3690)
+  * Bump semgrep from 1.169.0 to 1.172.0 (#3688)
+  * Bump zizmor from 1.26.1 to 1.29.0 (#3671, #3693)
+
+
 ## 1.6.0
 
 * Handle double-encrypted messages and files (#3534)
