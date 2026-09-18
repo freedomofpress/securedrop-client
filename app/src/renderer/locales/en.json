@@ -122,10 +122,28 @@
       },
       "selectAll": "Select all sources",
       "deleteDialog": {
-        "warning": "If you delete a source's account, they will no longer be able to sign in and send you messages. To communicate with this source in the future, they must create a new account.",
+        "title_one": "Delete source account or conversation?",
+        "title_other": "Delete {{count}} source accounts or conversations?",
+        "titleWithDesignation": "Delete {{designation}}'s account or conversation?",
+        "body": {
+          "account_one": "Deleting a <bold>source account</bold> removes the source and all its data.",
+          "account_other": "Deleting <bold>source accounts</bold> removes the sources and all their data.",
+          "accountEffect_one": "They will no longer be able to sign in or send messages. To communicate with this source in the future, they must create a new account.",
+          "accountEffect_other": "They will no longer be able to sign in or send messages. To communicate with these sources in the future, they must create new accounts.",
+          "conversation_one": "Deleting only the <bold>conversation</bold> keeps the source account active.",
+          "conversation_other": "Deleting only the <bold>conversations</bold> keeps the source accounts active."
+        },
+        "scopeLabel": "What to delete",
+        "scopeConversation_one": "Delete conversation only",
+        "scopeConversation_other": "Delete conversations only",
+        "scopeAccount_one": "Delete source account and all data",
+        "scopeAccount_other": "Delete source accounts and all data",
         "allSourcesWarning": "Notice: All sources have been selected!",
         "countingItems": "Calculating items to delete...",
         "itemCountsHeader": "This will delete:",
+        "noItems": "No messages, files, or replies",
+        "sourceAccountCount_one": "{{count}} source account",
+        "sourceAccountCount_other": "{{count}} source accounts",
         "messageCount_one": "{{count}} message",
         "messageCount_other": "{{count}} messages",
         "fileCount_one": "{{count}} file",
@@ -133,20 +151,7 @@
         "replyCount_one": "{{count}} reply",
         "replyCount_other": "{{count}} replies",
         "cancelButton": "Cancel",
-        "single": {
-          "message": "Do you want to delete the source's account or just the conversation?",
-          "deleteAccountButton": "Delete Account",
-          "keepAccountButton": "Delete Conversation"
-        },
-        "multiple": {
-          "message": "Do you want to delete these {{count}} source accounts or just the conversations?",
-          "deleteAccountsButton": "Delete Accounts",
-          "keepAccountsButton": "Delete Conversations"
-        },
-        "all": {
-          "deleteAccountsButton": "Delete All Sources",
-          "keepAccountsButton": "Delete All Conversations"
-        }
+        "confirmButton": "Delete"
       },
       "counts": {
         "total_one": "{{count}} total source",

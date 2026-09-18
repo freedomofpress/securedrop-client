@@ -402,6 +402,48 @@ describe.sequential("accessibility (axe)", () => {
         ["aria-required-parent", "button-name", "label", "nested-interactive"],
       );
     });
+
+    describe("delete modal", () => {
+      // The modal portals itself outside the render container, so these axe
+      // the dialog element rather than the container renderAndCheckA11y uses.
+      // Scoping to the dialog also keeps the source list's own known
+      // violations (see the TODOs above) out of these results.
+      const openDeleteModal = async () => {
+        renderWithProviders(sourceListUi, {
+          preloadedState: sourcesState(),
+        });
+
+        await userEvent.click(screen.getByTestId("source-checkbox-source-1"));
+        await userEvent.click(screen.getByTestId("bulk-delete-button"));
+
+        await waitFor(() => {
+          expect(
+            screen.getByTestId("delete-modal-content"),
+          ).toBeInTheDocument();
+        });
+      };
+
+      it("has no axe violations with the conversation scope selected", async () => {
+        await openDeleteModal();
+
+        const results = await checkA11y(screen.getByRole("dialog"));
+        expect(results).toHaveNoViolations();
+      });
+
+      it("has no axe violations with the account scope selected", async () => {
+        await openDeleteModal();
+
+        await userEvent.click(screen.getByTestId("delete-modal-scope-account"));
+        await waitFor(() => {
+          expect(
+            screen.getByTestId("delete-modal-scope-account"),
+          ).toBeChecked();
+        });
+
+        const results = await checkA11y(screen.getByRole("dialog"));
+        expect(results).toHaveNoViolations();
+      });
+    });
   });
 
   describe("Source", () => {

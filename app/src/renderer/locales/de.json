@@ -44,16 +44,6 @@
         "tooltip": "Sortierreihenfolge ändern"
       },
       "deleteDialog": {
-        "single": {
-          "message": "Möchtest du das Konto des Absenders oder nur die Unterhaltung löschen?",
-          "keepAccountButton": "Unterhaltung löschen",
-          "deleteAccountButton": "Konto löschen"
-        },
-        "multiple": {
-          "keepAccountsButton": "Unterhaltungen löschen",
-          "deleteAccountsButton": "Konten löschen",
-          "message": "Möchtest du diese {{count}} Quellkonten oder nur die Unterhaltungen löschen?"
-        },
         "cancelButton": "Abbrechen",
         "messageCount_one": "{{count}} Nachricht",
         "messageCount_other": "{{count}} Nachrichten",
@@ -62,8 +52,7 @@
         "replyCount_other": "{{count}} Antworten",
         "itemCountsHeader": "Folgende Elemente werden gelöscht:",
         "fileCount_one": "{{count}} Datei",
-        "fileCount_other": "{{count}} Dateien",
-        "warning": "Wenn du das Konto einer Informationsquelle löschst, kann sich diese nicht mehr anmelden und dir keine Nachrichten mehr senden. Um in Zukunft mit dieser Informationsquelle zu kommunizieren, muss sie ein neues Konto erstellen."
+        "fileCount_other": "{{count}} Dateien"
       },
       "filters": {
         "starred": "Markiert",
