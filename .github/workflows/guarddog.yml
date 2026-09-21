@@ -23,7 +23,7 @@ jobs:
   discover:
     runs-on: ubuntu-latest
     outputs:
-      packages: ${{ steps.discover.outputs.packages }}
+      manifests: ${{ steps.discover.outputs.manifests }}
       any: ${{ steps.discover.outputs.any }}
     steps:
       - name: Checkout repository
@@ -68,28 +68,46 @@ jobs:
           # `git pkgs diff` reads the two refs' lockfiles directly, so no
           # one-time `git pkgs init` of the whole history is needed.
           git pkgs diff --from "${BASE_SHA}" --to "${HEAD_SHA}" -f json > diff.json
-          packages="$(python .github/scripts/guarddog_scan_matrix.py < diff.json)"
-          echo "packages=${packages}" >> "$GITHUB_OUTPUT"
-          if [ "$(jq 'length' <<<"${packages}")" -gt 0 ]; then
+          manifests="$(python .github/scripts/guarddog_scan_matrix.py \
+            --output-directory .guarddog-input < diff.json)"
+          echo "manifests=${manifests}" >> "$GITHUB_OUTPUT"
+          if [ "$(jq 'length' <<<"${manifests}")" -gt 0 ]; then
             echo "any=true" >> "$GITHUB_OUTPUT"
           else
             echo "any=false" >> "$GITHUB_OUTPUT"
           fi
 
-  # Stage 2: one job per changed package, scanned independently.
+      - name: Upload GuardDog input manifests
+        if: steps.discover.outputs.any == 'true'
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: guarddog-input
+          path: .guarddog-input
+          if-no-files-found: error
+          include-hidden-files: true
+          retention-days: 1
+
+  # Stage 2: one job per manifest, scanned independently.
   scan:
     needs: discover
     if: needs.discover.outputs.any == 'true'
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      security-events: write
     strategy:
-      # Scan every package even if one finds something.
+      # Scan every manifest even if one finds something.
       fail-fast: false
       matrix:
-        package: ${{ fromJSON(needs.discover.outputs.packages) }}
-    name: "Scan ${{ matrix.package.ecosystem }}:${{ matrix.package.name }}@${{ matrix.package.version }}"
+        manifest: ${{ fromJSON(needs.discover.outputs.manifests) }}
+    name: "Scan ${{ matrix.manifest.scanner }}"
     steps:
-      # No checkout: GuardDog scans remote packages, so this job needs nothing
-      # from the repo. The matrix already carries everything the scan needs.
+      - name: Download GuardDog input manifests
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
+        with:
+          name: guarddog-input
+          path: .guarddog-input
+
       - name: Set up Python
         uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
         with:
@@ -103,47 +121,27 @@ jobs:
 
       - name: Scan with GuardDog
         env:
-          SCANNER: ${{ matrix.package.scanner }}
-          NAME: ${{ matrix.package.name }}
-          VERSION: ${{ matrix.package.version }}
-        shell: python
+          MANIFEST: ${{ matrix.manifest.path }}
+          SCANNER: ${{ matrix.manifest.scanner }}
         run: |
-          import json, os, subprocess, sys
+          set -uo pipefail
+          set +e
+          guarddog --log-level debug "${SCANNER}" verify \
+            --output-format sarif \
+            "${MANIFEST}" > guarddog.sarif \
+            2> guarddog.stderr
+          status=$?
+          set -e
+          cat guarddog.stderr >&2
+          if grep -Fq "Some rules failed to run while scanning" guarddog.stderr; then
+            echo "::error::GuardDog could not run every rule; failing closed."
+            exit 1
+          fi
+          exit "${status}"
 
-          scanner, name, version = os.environ["SCANNER"], os.environ["NAME"], os.environ["VERSION"]
-          label = f"{name}@{version}"
-
-          # GuardDog fails quietly, so always run with debug logging and inspect
-          # the JSON report ourselves, failing closed on findings, a scan error,
-          # or a missing report.
-          cmd = [
-            "guarddog", "--log-level", "debug", scanner, "scan", name,
-            "--version", version, "--output-format", "json"
-          ]
-          print("Running: " + " ".join(cmd))
-          proc = subprocess.run(
-              cmd, capture_output=True, text=True, check=False
-          )
-          sys.stderr.write(proc.stderr)  # debug logs -> job log
-          print(f"----- GuardDog report: {label} (exit {proc.returncode}) -----")
-          print(proc.stdout)
-
-          def fail(message):
-              # Workflow commands (::error::) are only parsed from stdout.
-              print(f"::error::{message}")
-              sys.exit(1)
-
-          try:
-              result = json.loads(proc.stdout)
-          except json.JSONDecodeError:
-              fail(f"GuardDog produced no JSON report for {label}.")
-
-          issues = int(result.get("issues", 0) or 0)
-          errors = result.get("errors") or {}
-          if issues > 0:
-              print(json.dumps(result.get("results", {}), indent=2))
-              fail(f"GuardDog flagged {issues} finding(s) in {label}.")
-          if errors:
-              print(json.dumps(errors, indent=2))
-              fail(f"GuardDog could not scan {label}; failing closed.")
-          print(f"{label}: clean")
+      - name: Upload SARIF report
+        if: ${{ !cancelled() && hashFiles('guarddog.sarif') != '' }}
+        uses: github/codeql-action/upload-sarif@1c5b675653bb5c22dbe9b12b556ec555138e09fd # v4.38.1
+        with:
+          sarif_file: guarddog.sarif
+          category: ${{ matrix.manifest.category }}

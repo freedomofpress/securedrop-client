@@ -1,25 +1,26 @@
 #!/usr/bin/env python3
 """Build the GuardDog scan matrix from a git-pkgs diff.
 
-Reads `git pkgs diff -f json` on stdin and prints a JSON array on stdout, one
-object per npm / PyPI / GitHub Actions add-or-upgrade. That array becomes the
-GitHub Actions job matrix, so one scan job is spawned per dependency. The
-GuardDog scan itself runs inline in the workflow (see guarddog.yml), so this
-script -- and therefore a repo checkout -- is only needed in the discover job.
+Reads `git pkgs diff -f json` on stdin, groups npm / PyPI / GitHub Actions
+additions and upgrades by ecosystem, and writes one GuardDog input manifest per
+group. It prints a JSON array on stdout that becomes the GitHub Actions job
+matrix, so one scan job is spawned per generated manifest.
 
 Each emitted object has:
-  ecosystem  git-pkgs ecosystem name (npm, pypi, github-actions) -- for display
   scanner    GuardDog scan subcommand to run (npm, pypi, github_action)
-  name       package, or owner/repo for an action
-  version    resolved version / ref to scan
-  change     added | modified
+  path       repository-relative path to the generated input manifest
+  category   unique GitHub code-scanning category for this ecosystem
 
 See: https://developers.securedrop.org/en/latest/dependency_updates.html
 """
 
+import argparse
 import json
 import os
 import sys
+from collections import Counter
+from collections.abc import Callable
+from pathlib import Path
 
 # git-pkgs ecosystem name -> (GuardDog scan subcommand, manifest kind to scan).
 # Note the strings differ on both sides for Actions: git-pkgs says
@@ -30,6 +31,12 @@ ECOSYSTEMS = {
     "npm": ("npm", "lockfile"),
     "pypi": ("pypi", "lockfile"),
     "github-actions": ("github_action", "manifest"),
+}
+
+MANIFEST_NAMES = {
+    "npm": "package.json",
+    "pypi": "requirements.txt",
+    "github_action": "workflow.yml",
 }
 
 
@@ -97,7 +104,59 @@ def collect_packages(diff: dict) -> list[dict]:
     return packages
 
 
+def render_npm(dependencies: list[dict[str, str]]) -> str:
+    """Render exact npm versions, using aliases if a package appears twice."""
+    name_counts = Counter(dependency["name"] for dependency in dependencies)
+    manifest_dependencies = {}
+    for index, dependency in enumerate(dependencies):
+        name = dependency["name"]
+        version = dependency["version"]
+        if name_counts[name] == 1:
+            manifest_dependencies[name] = version
+        else:
+            manifest_dependencies[f"guarddog-dependency-{index}"] = f"npm:{name}@{version}"
+    return json.dumps({"private": True, "dependencies": manifest_dependencies}, indent=2) + "\n"
+
+
+def render_pypi(dependencies: list[dict[str, str]]) -> str:
+    """Render exact PyPI requirements."""
+    return "".join(
+        f"{dependency['name']}=={dependency['version']}\n" for dependency in dependencies
+    )
+
+
+def render_github_actions(dependencies: list[dict[str, str]]) -> str:
+    """Render a synthetic workflow containing each exact action reference."""
+    workflow = {
+        "name": "GuardDog dependency verification",
+        "on": "workflow_dispatch",
+        "jobs": {
+            "verify": {
+                "runs-on": "ubuntu-latest",
+                "steps": [
+                    {"uses": f"{dependency['name']}@{dependency['version']}"}
+                    for dependency in dependencies
+                ],
+            }
+        },
+    }
+    # GuardDog parses workflows with yaml.safe_load(), which accepts JSON syntax.
+    return json.dumps(workflow, indent=2) + "\n"
+
+
+RENDERERS: dict[str, Callable[[list[dict[str, str]]], str]] = {
+    "npm": render_npm,
+    "pypi": render_pypi,
+    "github_action": render_github_actions,
+}
+
+
 def main() -> int:
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--output-directory", type=Path, required=True)
+    args = parser.parse_args()
+    args.output_directory.mkdir(parents=True, exist_ok=True)
+
     raw = sys.stdin.read().strip()
     # With nothing to compare, git-pkgs prints this sentinel even with -f json.
     if not raw or raw == "No dependency changes.":
@@ -112,20 +171,50 @@ def main() -> int:
         return 1
 
     packages = collect_packages(diff)
-    scannable = [
-        {**p, "scanner": ECOSYSTEMS[p["ecosystem"]][0]}
-        for p in packages
-        if p["ecosystem"] in ECOSYSTEMS
-    ]
     skipped = [p for p in packages if p["ecosystem"] not in ECOSYSTEMS]
+    groups = []
+    for ecosystem, (scanner, _) in ECOSYSTEMS.items():
+        dependencies = [
+            {
+                "name": p["name"],
+                "version": p["version"],
+                "change": p["change"],
+            }
+            for p in packages
+            if p["ecosystem"] == ecosystem
+        ]
+        if dependencies:
+            groups.append(
+                {
+                    "ecosystem": ecosystem,
+                    "scanner": scanner,
+                    "dependencies": dependencies,
+                    "category": f"guarddog/{ecosystem}",
+                }
+            )
 
     step_summary("## GuardDog dependency scan")
     step_summary()
-    if scannable:
-        step_summary(f"Spawning a scan job for {len(scannable)} package(s):")
-        step_summary()
-        for p in scannable:
-            step_summary(f"- `{p['name']}` ({p['ecosystem']} {p['version']}, {p['change']})")
+    manifests = []
+    if groups:
+        for group in groups:
+            step_summary(f"Spawning a scan job for {group['ecosystem']} package(s):")
+            step_summary()
+            for p in group["dependencies"]:
+                step_summary(f"- `{p['name']}` ({p['version']}, {p['change']})")
+            step_summary()
+
+            manifest = args.output_directory / MANIFEST_NAMES[group["scanner"]]
+            manifest.write_text(
+                RENDERERS[group["scanner"]](group["dependencies"]), encoding="utf-8"
+            )
+            manifests.append(
+                {
+                    "category": group["category"],
+                    "scanner": group["scanner"],
+                    "path": manifest.as_posix(),
+                }
+            )
     else:
         step_summary("No npm/PyPI/Actions additions or upgrades to scan. ✅")
     if skipped:
@@ -133,7 +222,8 @@ def main() -> int:
         step_summary(f"\n_Skipped unsupported ecosystems: {others}._")
 
     # stdout: only the matrix, so the workflow can capture it cleanly.
-    print(json.dumps(scannable))
+    print(json.dumps(manifests))
+
     return 0
 
 
