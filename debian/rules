@@ -2,6 +2,7 @@
 
 include /usr/share/dpkg/pkg-info.mk
 include /usr/share/dpkg/architecture.mk
+export DEB_BUILD_MAINT_OPTIONS = hardening=+all
 
 # Get the codename by splitting the version and taking the part after +
 VERSION_CODENAME := $(shell echo $(DEB_VERSION) | cut -d '+' -f 2)
