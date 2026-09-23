@@ -10,7 +10,13 @@ import {
 } from "lucide-react";
 import { useTranslation } from "react-i18next";
 
-type filterOption = "all" | "read" | "unread" | "starred" | "unstarred";
+type filterOption =
+  | "all"
+  | "read"
+  | "unread"
+  | "starred"
+  | "unstarred"
+  | "drafts";
 
 interface ToolbarProps {
   // Select all state
@@ -81,6 +87,12 @@ const Toolbar = memo(function Toolbar({
         label: t("sourcelist.filters.unstarred"),
         onClick: () => onFilterChange("unstarred"),
         "data-testid": "filter-unstarred",
+      },
+      {
+        key: "drafts",
+        label: t("sourcelist.filters.drafts"),
+        onClick: () => onFilterChange("drafts"),
+        "data-testid": "filter-drafts",
       },
     ],
     [t, onFilterChange],

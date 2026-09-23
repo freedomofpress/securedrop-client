@@ -115,7 +115,8 @@
         "read": "Read",
         "unread": "Unread",
         "starred": "Starred",
-        "unstarred": "Unstarred"
+        "unstarred": "Unstarred",
+        "drafts": "Drafts"
       },
       "actions": {
         "bulkDelete": "Delete selected sources"
@@ -166,6 +167,7 @@
     "source": {
       "encryptedFile": "Encrypted File",
       "encryptedMessage": "Encrypted Message",
+      "draft": "Draft:",
       "toggleStar": "Toggle star",
       "selectSource": "Select {{designation}}"
     },
