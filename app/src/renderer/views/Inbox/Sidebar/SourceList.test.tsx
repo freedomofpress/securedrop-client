@@ -10,6 +10,20 @@ import type { SourceProps } from "./SourceList/Source";
 import { renderWithProviders } from "../../../test-component-setup";
 import { requestDeleteSource } from "../../../components/deleteSourceRequester";
 
+// The delete modal asks for a scope (conversation vs. account) via radio
+// buttons, then a single Delete button confirms. Tests go through this helper
+// so the two-step interaction stays in one place.
+const confirmDelete = async (scope: "account" | "conversation") => {
+  await waitFor(() => {
+    expect(
+      screen.getByTestId("delete-modal-confirm-button"),
+    ).toBeInTheDocument();
+  });
+
+  await userEvent.click(screen.getByTestId(`delete-modal-scope-${scope}`));
+  await userEvent.click(screen.getByTestId("delete-modal-confirm-button"));
+};
+
 // Mock react-window to render all items instead of virtualizing
 vi.mock("react-window", () => ({
   List: <RowProps extends object>({
@@ -814,16 +828,19 @@ describe("Sources Component", () => {
         expect(screen.getByTestId("delete-modal-content")).toBeInTheDocument();
       });
 
-      // Check that all three buttons are present
+      // Both scopes are offered, with the conversation-only default selected
       expect(
         screen.getByTestId("delete-modal-cancel-button"),
       ).toBeInTheDocument();
       expect(
-        screen.getByTestId("delete-modal-delete-conversation-button"),
+        screen.getByTestId("delete-modal-confirm-button"),
       ).toBeInTheDocument();
       expect(
-        screen.getByTestId("delete-modal-delete-account-button"),
-      ).toBeInTheDocument();
+        screen.getByTestId("delete-modal-scope-conversation"),
+      ).toBeChecked();
+      expect(
+        screen.getByTestId("delete-modal-scope-account"),
+      ).not.toBeChecked();
     });
 
     it("shows modal with correct message for multiple sources", async () => {
@@ -848,15 +865,15 @@ describe("Sources Component", () => {
         expect(screen.getByTestId("delete-modal-content")).toBeInTheDocument();
       });
 
-      // Check that all three buttons are present with correct text for multiple sources
+      // The title uses the plural form and names no single source
+      expect(screen.getByTestId("delete-modal-title")).toHaveTextContent(
+        "Delete 2 source accounts or conversations?",
+      );
       expect(
         screen.getByTestId("delete-modal-cancel-button"),
       ).toBeInTheDocument();
       expect(
-        screen.getByTestId("delete-modal-delete-conversation-button"),
-      ).toBeInTheDocument();
-      expect(
-        screen.getByTestId("delete-modal-delete-account-button"),
+        screen.getByTestId("delete-modal-confirm-button"),
       ).toBeInTheDocument();
     });
 
@@ -899,17 +916,8 @@ describe("Sources Component", () => {
       const deleteButton = screen.getByTestId("bulk-delete-button");
       await userEvent.click(deleteButton);
 
-      // Wait for modal to appear and click "Delete Account" button
-      await waitFor(() => {
-        expect(
-          screen.getByTestId("delete-modal-delete-account-button"),
-        ).toBeInTheDocument();
-      });
-
-      const deleteAccountButton = screen.getByTestId(
-        "delete-modal-delete-account-button",
-      );
-      await userEvent.click(deleteAccountButton);
+      // Wait for the modal, then pick a scope and confirm
+      await confirmDelete("account");
 
       await waitFor(() => {
         expect(
@@ -938,17 +946,8 @@ describe("Sources Component", () => {
       const deleteButton = screen.getByTestId("bulk-delete-button");
       await userEvent.click(deleteButton);
 
-      // Wait for modal to appear and click "Delete Conversation" button
-      await waitFor(() => {
-        expect(
-          screen.getByTestId("delete-modal-delete-conversation-button"),
-        ).toBeInTheDocument();
-      });
-
-      const deleteConversationButton = screen.getByTestId(
-        "delete-modal-delete-conversation-button",
-      );
-      await userEvent.click(deleteConversationButton);
+      // Wait for the modal, then pick a scope and confirm
+      await confirmDelete("conversation");
 
       await waitFor(() => {
         expect(
@@ -979,17 +978,8 @@ describe("Sources Component", () => {
       const deleteButton = screen.getByTestId("bulk-delete-button");
       await userEvent.click(deleteButton);
 
-      // Wait for modal to appear and click "Delete Accounts" button
-      await waitFor(() => {
-        expect(
-          screen.getByTestId("delete-modal-delete-account-button"),
-        ).toBeInTheDocument();
-      });
-
-      const deleteAccountsButton = screen.getByTestId(
-        "delete-modal-delete-account-button",
-      );
-      await userEvent.click(deleteAccountsButton);
+      // Wait for the modal, then pick a scope and confirm
+      await confirmDelete("account");
 
       await waitFor(() => {
         const addPendingSourceEventBatch =
@@ -1031,7 +1021,7 @@ describe("Sources Component", () => {
       const deleteButton = screen.getByTestId("bulk-delete-button");
       await userEvent.click(deleteButton);
 
-      // Wait for modal to appear and click "Cancel" button
+      // Wait for the modal, then pick a scope and confirm
       await waitFor(() => {
         expect(
           screen.getByTestId("delete-modal-cancel-button"),
@@ -1070,17 +1060,8 @@ describe("Sources Component", () => {
       const deleteButton = screen.getByTestId("bulk-delete-button");
       await userEvent.click(deleteButton);
 
-      // Wait for modal to appear and click "Delete Accounts" button
-      await waitFor(() => {
-        expect(
-          screen.getByTestId("delete-modal-delete-account-button"),
-        ).toBeInTheDocument();
-      });
-
-      const deleteAccountsButton = screen.getByTestId(
-        "delete-modal-delete-account-button",
-      );
-      await userEvent.click(deleteAccountsButton);
+      // Wait for the modal, then pick a scope and confirm
+      await confirmDelete("account");
 
       // Wait for the operation to complete
       await waitFor(() => {
@@ -1093,6 +1074,127 @@ describe("Sources Component", () => {
       await waitFor(() => {
         expect(checkbox1).not.toBeChecked();
         expect(checkbox2).not.toBeChecked();
+      });
+    });
+  });
+
+  describe("Delete modal scope selection", () => {
+    beforeEach(() => {
+      window.electronAPI.addPendingSourceEventBatch = vi
+        .fn()
+        .mockResolvedValue(["123"]);
+      window.electronAPI.getSourceItemCounts = vi
+        .fn()
+        .mockResolvedValue({ messages: 2, files: 1, replies: 3 });
+    });
+
+    const openModalForSource1 = async () => {
+      await waitFor(() => {
+        expect(screen.getByTestId("source-source-1")).toBeInTheDocument();
+      });
+
+      await userEvent.click(screen.getByTestId("source-checkbox-source-1"));
+      await userEvent.click(screen.getByTestId("bulk-delete-button"));
+
+      await waitFor(() => {
+        expect(screen.getByTestId("delete-modal-content")).toBeInTheDocument();
+      });
+    };
+
+    it("lists only the conversation items for the default scope", async () => {
+      renderSourceList();
+      await openModalForSource1();
+
+      const counts = await screen.findByTestId("delete-modal-item-counts");
+      expect(counts).toHaveTextContent("This will delete:");
+      expect(counts).toHaveTextContent("2 messages");
+      expect(counts).toHaveTextContent("1 file");
+      expect(counts).toHaveTextContent("3 replies");
+      expect(counts).not.toHaveTextContent("source account");
+    });
+
+    it("adds the source account to the list when the account scope is selected", async () => {
+      renderSourceList();
+      await openModalForSource1();
+
+      await userEvent.click(screen.getByTestId("delete-modal-scope-account"));
+
+      const counts = await screen.findByTestId("delete-modal-item-counts");
+      await waitFor(() => {
+        expect(counts).toHaveTextContent("1 source account");
+      });
+      // The concrete counts stay visible on the more destructive branch
+      expect(counts).toHaveTextContent("2 messages");
+      expect(counts).toHaveTextContent("1 file");
+      expect(counts).toHaveTextContent("3 replies");
+    });
+
+    it("says there is nothing to delete when the conversation is empty", async () => {
+      window.electronAPI.getSourceItemCounts = vi
+        .fn()
+        .mockResolvedValue({ messages: 0, files: 0, replies: 0 });
+
+      renderSourceList();
+      await openModalForSource1();
+
+      const counts = await screen.findByTestId("delete-modal-item-counts");
+      await waitFor(() => {
+        expect(counts).toHaveTextContent("No messages, files, or replies");
+      });
+    });
+
+    it("resets to the conversation scope when the modal is reopened", async () => {
+      renderSourceList();
+      await openModalForSource1();
+
+      await userEvent.click(screen.getByTestId("delete-modal-scope-account"));
+      await waitFor(() => {
+        expect(screen.getByTestId("delete-modal-scope-account")).toBeChecked();
+      });
+
+      await userEvent.click(screen.getByTestId("delete-modal-cancel-button"));
+
+      act(() => {
+        requestDeleteSource(new Set(["source-2"]));
+      });
+
+      await waitFor(() => {
+        expect(
+          screen.getByTestId("delete-modal-scope-conversation"),
+        ).toBeChecked();
+      });
+      expect(
+        screen.getByTestId("delete-modal-scope-account"),
+      ).not.toBeChecked();
+    });
+
+    it("disables the delete button until the countdown elapses for large selections", async () => {
+      const manySources: Record<string, SourceType> = {};
+      for (let i = 0; i < 31; i++) {
+        manySources[`bulk-${i}`] = {
+          ...mockSources["source-1"],
+          uuid: `bulk-${i}`,
+          data: { ...mockSources["source-1"].data, uuid: `bulk-${i}` },
+        };
+      }
+
+      // fetchSources() runs on mount and would otherwise replace the
+      // preloaded state with the default five-source fixture.
+      window.electronAPI.getSources = vi.fn().mockResolvedValue(manySources);
+
+      renderSourceList(manySources);
+
+      await waitFor(() => {
+        expect(screen.getByTestId("source-bulk-0")).toBeInTheDocument();
+      });
+
+      await userEvent.click(screen.getByTestId("select-all-checkbox"));
+      await userEvent.click(screen.getByTestId("bulk-delete-button"));
+
+      await waitFor(() => {
+        expect(
+          screen.getByTestId("delete-modal-confirm-button"),
+        ).toBeDisabled();
       });
     });
   });
@@ -1288,7 +1390,7 @@ describe("Sources Component", () => {
       await waitFor(() => {
         expect(screen.getByTestId("delete-modal")).toBeInTheDocument();
         expect(screen.getByTestId("delete-modal-title")).toHaveTextContent(
-          "Do you want to delete the source's account or just the conversation?",
+          "Delete Alice Wonderland's account or conversation?",
         );
       });
     });
@@ -1329,15 +1431,7 @@ describe("Sources Component", () => {
         requestDeleteSource(new Set(["source-1"]));
       });
 
-      await waitFor(() => {
-        expect(
-          screen.getByTestId("delete-modal-delete-account-button"),
-        ).toBeInTheDocument();
-      });
-
-      await userEvent.click(
-        screen.getByTestId("delete-modal-delete-account-button"),
-      );
+      await confirmDelete("account");
 
       await waitFor(() => {
         expect(
@@ -1563,15 +1657,7 @@ describe("Sources Component", () => {
       await userEvent.click(screen.getByTestId("source-checkbox-source-1"));
       await userEvent.click(screen.getByTestId("bulk-delete-button"));
 
-      await waitFor(() => {
-        expect(
-          screen.getByTestId("delete-modal-delete-account-button"),
-        ).toBeInTheDocument();
-      });
-
-      await userEvent.click(
-        screen.getByTestId("delete-modal-delete-account-button"),
-      );
+      await confirmDelete("account");
 
       await waitFor(() => {
         expect(
@@ -1646,15 +1732,7 @@ describe("Sources Component", () => {
       // Delete source accounts
       await userEvent.click(screen.getByTestId("bulk-delete-button"));
 
-      await waitFor(() => {
-        expect(
-          screen.getByTestId("delete-modal-delete-account-button"),
-        ).toBeInTheDocument();
-      });
-
-      await userEvent.click(
-        screen.getByTestId("delete-modal-delete-account-button"),
-      );
+      await confirmDelete("account");
 
       // Only the one starred source should have been submitted for deletion
       await waitFor(() => {

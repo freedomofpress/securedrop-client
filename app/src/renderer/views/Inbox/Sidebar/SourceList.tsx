@@ -1,8 +1,6 @@
-import { useState, useEffect, useMemo, useCallback, useRef } from "react";
+import { useState, useEffect, useMemo, useCallback } from "react";
 import { useParams, useNavigate } from "react-router";
 import { List, useListRef } from "react-window";
-import { useTranslation } from "react-i18next";
-import { Modal, Button } from "antd";
 
 import type { RowComponentProps } from "react-window";
 import Source from "./SourceList/Source";
@@ -21,6 +19,8 @@ import {
 } from "../../../../types";
 import { useSidebarShortcuts, useShortcut } from "../../../shortcuts";
 import { setDeleteSourceHandler } from "../../../components/deleteSourceRequester";
+import DeleteSourceModal from "../../../components/DeleteSourceModal";
+import { toTitleCase } from "../../../utils";
 import type { FocusedPanel } from "../../Inbox";
 
 interface SourceRowProps {
@@ -62,7 +62,6 @@ function SourceList({ focusedPanel }: { focusedPanel: FocusedPanel }) {
   const { sourceUuid: activeSourceUuid } = useParams<{ sourceUuid?: string }>();
   const dispatch = useAppDispatch();
   const navigate = useNavigate();
-  const { t } = useTranslation("Sidebar");
   const listRef = useListRef(null);
 
   const sources = useAppSelector(selectSources);
@@ -75,7 +74,6 @@ function SourceList({ focusedPanel }: { focusedPanel: FocusedPanel }) {
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
   const [deleteModalLoading, setDeleteModalLoading] = useState(false);
-  const deleteModalTitleRef = useRef<HTMLHeadingElement | null>(null);
   // Sources targeted for deletion
   const [pendingDeleteSources, setPendingDeleteSources] = useState<Set<string>>(
     new Set(),
@@ -374,6 +372,18 @@ function SourceList({ focusedPanel }: { focusedPanel: FocusedPanel }) {
     pendingDeleteSources.size > 0 &&
     pendingDeleteSources.size === totalSourceCount;
 
+  // When exactly one source is being deleted, name it in the modal so the
+  // confirmation is unambiguous (e.g. several sources checked in the sidebar,
+  // but the deletion was triggered from a single source's menu).
+  const pendingDeleteDesignation = useMemo(() => {
+    if (pendingDeleteSources.size !== 1) {
+      return undefined;
+    }
+    const [uuid] = [...pendingDeleteSources];
+    const designation = sources[uuid]?.data.journalist_designation;
+    return designation ? toTitleCase(designation) : undefined;
+  }, [pendingDeleteSources, sources]);
+
   // Handle select all checkbox
   const handleSelectAll = useCallback(
     (checked: boolean) => {
@@ -499,126 +509,17 @@ function SourceList({ focusedPanel }: { focusedPanel: FocusedPanel }) {
       </div>
 
       {/* Delete confirmation modal */}
-      <Modal
+      <DeleteSourceModal
         open={deleteModalOpen}
-        data-testid="delete-modal"
-        closable={false}
-        afterOpenChange={(open) => {
-          if (open) {
-            requestAnimationFrame(() => {
-              deleteModalTitleRef.current?.focus();
-            });
-          }
-        }}
-        title={
-          <h2
-            data-testid="delete-modal-title"
-            tabIndex={-1}
-            ref={deleteModalTitleRef}
-          >
-            {pendingDeleteSources.size === 1
-              ? t("sourcelist.deleteDialog.single.message")
-              : t("sourcelist.deleteDialog.multiple.message", {
-                  count: pendingDeleteSources.size,
-                })}
-          </h2>
-        }
-        getContainer={() => document.getElementById("root") || document.body}
+        sourceCount={pendingDeleteSources.size}
+        designation={pendingDeleteDesignation}
+        counts={deleteCounts}
+        loading={deleteModalLoading}
+        allSourcesSelected={allSourcesPendingDelete}
+        countdown={buttonCountdown}
+        onConfirm={handleDeleteAction}
         onCancel={handleDeleteModalCancel}
-        footer={[
-          <Button
-            key="cancel"
-            data-testid="delete-modal-cancel-button"
-            onClick={handleDeleteModalCancel}
-          >
-            {t("sourcelist.deleteDialog.cancelButton")}
-          </Button>,
-          <Button
-            key="deleteConversation"
-            data-testid="delete-modal-delete-conversation-button"
-            type="primary"
-            disabled={buttonCountdown > 0}
-            onClick={() =>
-              handleDeleteAction(PendingEventType.SourceConversationTruncated)
-            }
-          >
-            {allSourcesPendingDelete
-              ? t("sourcelist.deleteDialog.all.keepAccountsButton")
-              : pendingDeleteSources.size === 1
-                ? t("sourcelist.deleteDialog.single.keepAccountButton")
-                : t("sourcelist.deleteDialog.multiple.keepAccountsButton")}
-          </Button>,
-          <Button
-            key="deleteAccount"
-            data-testid="delete-modal-delete-account-button"
-            type="primary"
-            danger
-            disabled={buttonCountdown > 0}
-            onClick={() => handleDeleteAction(PendingEventType.SourceDeleted)}
-          >
-            {allSourcesPendingDelete
-              ? t("sourcelist.deleteDialog.all.deleteAccountsButton")
-              : pendingDeleteSources.size === 1
-                ? t("sourcelist.deleteDialog.single.deleteAccountButton")
-                : t("sourcelist.deleteDialog.multiple.deleteAccountsButton")}
-          </Button>,
-          <span className="text-sm text-gray-500 italic ms-2">
-            {buttonCountdown > 0 && `${buttonCountdown}s`}
-          </span>,
-        ]}
-      >
-        <div
-          data-testid="delete-modal-content"
-          data-all-sources-selected={allSourcesPendingDelete}
-        >
-          <p>{t("sourcelist.deleteDialog.warning")}</p>
-          {allSourcesPendingDelete && (
-            <p className="font-semibold text-orange-600 mt-2">
-              {t("sourcelist.deleteDialog.allSourcesWarning")}
-            </p>
-          )}
-          {deleteModalLoading ? (
-            <p className="text-gray-600 italic">
-              {t("sourcelist.deleteDialog.countingItems")}
-            </p>
-          ) : (
-            <>
-              {(deleteCounts.messages > 0 ||
-                deleteCounts.files > 0 ||
-                deleteCounts.replies > 0) && (
-                <div className="mt-3">
-                  <p className="font-medium text-gray-800">
-                    {t("sourcelist.deleteDialog.itemCountsHeader")}
-                  </p>
-                  <ul className="mt-1 ms-4 list-none text-gray-700">
-                    {deleteCounts.messages > 0 && (
-                      <li>
-                        {t("sourcelist.deleteDialog.messageCount", {
-                          count: deleteCounts.messages,
-                        })}
-                      </li>
-                    )}
-                    {deleteCounts.files > 0 && (
-                      <li>
-                        {t("sourcelist.deleteDialog.fileCount", {
-                          count: deleteCounts.files,
-                        })}
-                      </li>
-                    )}
-                    {deleteCounts.replies > 0 && (
-                      <li>
-                        {t("sourcelist.deleteDialog.replyCount", {
-                          count: deleteCounts.replies,
-                        })}
-                      </li>
-                    )}
-                  </ul>
-                </div>
-              )}
-            </>
-          )}
-        </div>
-      </Modal>
+      />
     </div>
   );
 }
