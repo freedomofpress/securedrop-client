@@ -8,6 +8,7 @@ import journalistsSlice from "./features/journalists/journalistsSlice";
 import sourcesSlice from "./features/sources/sourcesSlice";
 import conversationSlice from "./features/conversation/conversationSlice";
 import syncSlice from "./features/sync/syncSlice";
+import syncActivitySlice from "./features/syncActivity/syncActivitySlice";
 import draftsSlice from "./features/drafts/draftsSlice";
 
 export const rootReducer = combineReducers({
@@ -16,6 +17,7 @@ export const rootReducer = combineReducers({
   sources: sourcesSlice,
   conversation: conversationSlice,
   sync: syncSlice,
+  syncActivity: syncActivitySlice,
   drafts: draftsSlice,
 });
 
