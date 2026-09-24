@@ -1,112 +1,41 @@
 name: GuardDog
 on:
-  pull_request:
+  # Pull request alerts are compared against the latest analysis of main.
+  push:
+    branches: [main]
     paths:
       # GuardDog supports PyPI, NPM and GitHub Actions
       - '**/pnpm-lock.yaml'
       - '**/poetry.lock'
       - '.github/workflows/**'
+      - '.github/scripts/*guarddog_sarif.py'
+  pull_request:
+    paths:
+      - '**/pnpm-lock.yaml'
+      - '**/poetry.lock'
+      - '.github/workflows/**'
+      - '.github/scripts/*guarddog_sarif.py'
 
 permissions:
   contents: read
 
-# A given PR only needs the latest scan.
+# A given ref only needs the latest scan.
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
-env:
-  GIT_PKGS_VERSION: 0.20.0
-
 jobs:
-  # Stage 1: figure out which packages changed and emit them as a job matrix.
-  discover:
+  scan:
     runs-on: ubuntu-latest
-    outputs:
-      manifests: ${{ steps.discover.outputs.manifests }}
-      any: ${{ steps.discover.outputs.any }}
+    timeout-minutes: 60
+    permissions:
+      contents: read
+      security-events: write
     steps:
       - name: Checkout repository
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
-          # Need both the base and head commits for `git pkgs diff`.
-          fetch-depth: 0
           persist-credentials: false
-
-      # Note: This job never runs against main, so most likely there'll be no
-      # cached version available; it'll only be on PR updates we see cache hits
-      - name: Cache git-pkgs
-        id: cache-git-pkgs
-        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6
-        with:
-          path: /usr/local/bin/git-pkgs
-          key: git-pkgs-${{ runner.os }}-${{ env.GIT_PKGS_VERSION }}
-
-      - name: Install git-pkgs
-        if: steps.cache-git-pkgs.outputs.cache-hit != 'true'
-        env:
-          VERSION: ${{ env.GIT_PKGS_VERSION }}
-        run: |
-          set -euo pipefail
-          base="https://github.com/git-pkgs/git-pkgs/releases/download/v${VERSION}"
-          tarball="git-pkgs_${VERSION}_linux_amd64.tar.gz"
-          curl -fsSL "${base}/${tarball}" -o "${tarball}"
-          curl -fsSL "${base}/checksums.txt" -o checksums.txt
-          # Verify the download before trusting the binary.
-          grep " ${tarball}\$" checksums.txt | sha256sum --check --strict -
-          tar -xzf "${tarball}" git-pkgs
-          install -m 0755 git-pkgs /usr/local/bin/git-pkgs
-          rm -f "${tarball}" checksums.txt git-pkgs
-
-      - name: Discover changed packages
-        id: discover
-        env:
-          BASE_SHA: ${{ github.event.pull_request.base.sha }}
-          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
-        run: |
-          set -euo pipefail
-          # `git pkgs diff` reads the two refs' lockfiles directly, so no
-          # one-time `git pkgs init` of the whole history is needed.
-          git pkgs diff --from "${BASE_SHA}" --to "${HEAD_SHA}" -f json > diff.json
-          manifests="$(python .github/scripts/guarddog_scan_matrix.py \
-            --output-directory .guarddog-input < diff.json)"
-          echo "manifests=${manifests}" >> "$GITHUB_OUTPUT"
-          if [ "$(jq 'length' <<<"${manifests}")" -gt 0 ]; then
-            echo "any=true" >> "$GITHUB_OUTPUT"
-          else
-            echo "any=false" >> "$GITHUB_OUTPUT"
-          fi
-
-      - name: Upload GuardDog input manifests
-        if: steps.discover.outputs.any == 'true'
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
-        with:
-          name: guarddog-input
-          path: .guarddog-input
-          if-no-files-found: error
-          include-hidden-files: true
-          retention-days: 1
-
-  # Stage 2: one job per manifest, scanned independently.
-  scan:
-    needs: discover
-    if: needs.discover.outputs.any == 'true'
-    runs-on: ubuntu-latest
-    permissions:
-      contents: read
-      security-events: write
-    strategy:
-      # Scan every manifest even if one finds something.
-      fail-fast: false
-      matrix:
-        manifest: ${{ fromJSON(needs.discover.outputs.manifests) }}
-    name: "Scan ${{ matrix.manifest.scanner }}"
-    steps:
-      - name: Download GuardDog input manifests
-        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
-        with:
-          name: guarddog-input
-          path: .guarddog-input
 
       - name: Set up Python
         uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
@@ -115,33 +44,19 @@ jobs:
 
       - name: Install latest version of GuardDog
         run: |
-          pip install guarddog semgrep
+          pip install guarddog pytest pyyaml
           guarddog --version
-          semgrep --version
 
-      - name: Scan with GuardDog
-        env:
-          MANIFEST: ${{ matrix.manifest.path }}
-          SCANNER: ${{ matrix.manifest.scanner }}
-        run: |
-          set -uo pipefail
-          set +e
-          guarddog --log-level debug "${SCANNER}" verify \
-            --output-format sarif \
-            "${MANIFEST}" > guarddog.sarif \
-            2> guarddog.stderr
-          status=$?
-          set -e
-          cat guarddog.stderr >&2
-          if grep -Fq "Some rules failed to run while scanning" guarddog.stderr; then
-            echo "::error::GuardDog could not run every rule; failing closed."
-            exit 1
-          fi
-          exit "${status}"
+      # This scans every dependency, not just the ones a pull request changes.
+      # GitHub compares the results with main's and annotates the pull request
+      # with the new alerts only. The step fails if any scan fails, but not on
+      # findings: a code scanning ruleset blocks merging on high-severity alerts
+      # (GuardDog "high_risk"), and dismissing the alert after review unblocks it.
+      - name: Scan dependencies with GuardDog
+        run: python .github/scripts/guarddog_sarif.py guarddog.sarif
 
       - name: Upload SARIF report
-        if: ${{ !cancelled() && hashFiles('guarddog.sarif') != '' }}
         uses: github/codeql-action/upload-sarif@1c5b675653bb5c22dbe9b12b556ec555138e09fd # v4.38.1
         with:
           sarif_file: guarddog.sarif
-          category: ${{ matrix.manifest.category }}
+          category: guarddog
