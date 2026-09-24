@@ -1,7 +1,50 @@
-import { describe, it, vi } from "vitest";
+import { screen } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
+import { describe, expect, it, vi } from "vitest";
 import Toolbar from "./Toolbar";
-import { testMemoization } from "../../../../test-component-setup";
+import {
+  renderWithProviders,
+  testMemoization,
+} from "../../../../test-component-setup";
 import type { filterOption } from "./Toolbar";
+
+describe("Toolbar filter dropdown", () => {
+  const baseProps = {
+    allSelected: false,
+    selectedCount: 0,
+    totalCount: 4,
+    onSelectAll: vi.fn(),
+    onBulkDelete: vi.fn(),
+    searchTerm: "",
+    filter: "all" as filterOption,
+    sortedAsc: false,
+    dropdownOpen: false,
+    onSearchChange: vi.fn(),
+    onFilterChange: vi.fn(),
+    onToggleSort: vi.fn(),
+    onDropdownOpenChange: vi.fn(),
+  };
+
+  it("offers a Drafts filter", async () => {
+    const onFilterChange = vi.fn();
+    renderWithProviders(
+      <Toolbar {...baseProps} onFilterChange={onFilterChange} />,
+    );
+
+    await userEvent.click(screen.getByTestId("filter-dropdown"));
+    await userEvent.click(screen.getByText("Drafts"));
+
+    expect(onFilterChange).toHaveBeenCalledWith("drafts");
+  });
+
+  it("shows Drafts as the label when the drafts filter is active", () => {
+    renderWithProviders(<Toolbar {...baseProps} filter="drafts" />);
+
+    expect(screen.getByTestId("filter-dropdown").textContent).toContain(
+      "Drafts",
+    );
+  });
+});
 
 describe("Toolbar Component Memoization", () => {
   const mockOnSelectAll = vi.fn();

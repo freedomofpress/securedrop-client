@@ -42,6 +42,23 @@ describe("draftsSlice", () => {
       );
       expect(result.drafts).not.toHaveProperty("source-1");
     });
+
+    it("should delete key on whitespace-only content", () => {
+      const state: DraftsState = { drafts: { "source-1": "hello" } };
+      const result = draftsReducer(
+        state,
+        setDraft({ sourceUuid: "source-1", content: " \n\t " }),
+      );
+      expect(result.drafts).not.toHaveProperty("source-1");
+    });
+
+    it("should keep surrounding whitespace in non-empty content", () => {
+      const result = draftsReducer(
+        emptyState,
+        setDraft({ sourceUuid: "source-1", content: "  hello\n" }),
+      );
+      expect(result.drafts["source-1"]).toBe("  hello\n");
+    });
   });
 
   describe("clearDraft", () => {

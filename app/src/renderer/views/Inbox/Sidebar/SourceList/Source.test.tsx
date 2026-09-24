@@ -164,6 +164,85 @@ describe("Source Component", () => {
     });
   });
 
+  describe("draft preview functionality", () => {
+    const sourceWithPreview = createMockSource({
+      messagePreview: { kind: "message", plaintext: "latest message" },
+    });
+
+    it("displays the draft in place of the message preview", () => {
+      renderWithProviders(
+        <Source
+          source={sourceWithPreview}
+          {...defaultProps}
+          draft="my draft reply"
+        />,
+      );
+
+      const draftPreview = screen.getByTestId("draft-preview");
+      expect(draftPreview.textContent).toBe("Draft: my draft reply");
+      expect(screen.queryByTestId("message-preview")).toBeNull();
+    });
+
+    it("displays the draft even when there is no message preview", () => {
+      renderWithProviders(
+        <Source source={createMockSource()} {...defaultProps} draft="hello" />,
+      );
+
+      expect(screen.getByTestId("draft-preview").textContent).toBe(
+        "Draft: hello",
+      );
+    });
+
+    it("collapses newlines and repeated whitespace in the draft", () => {
+      renderWithProviders(
+        <Source
+          source={createMockSource()}
+          {...defaultProps}
+          draft={"  first line\n\n  second\tline  "}
+        />,
+      );
+
+      expect(screen.getByTestId("draft-preview").textContent).toBe(
+        "Draft: first line second line",
+      );
+    });
+
+    it("displays the message preview when the draft is whitespace-only", () => {
+      renderWithProviders(
+        <Source source={sourceWithPreview} {...defaultProps} draft={" \n "} />,
+      );
+
+      expect(screen.queryByTestId("draft-preview")).toBeNull();
+      expect(screen.getByTestId("message-preview").textContent).toBe(
+        "latest message",
+      );
+    });
+
+    it("styles the Draft label blue when not active", () => {
+      renderWithProviders(
+        <Source source={createMockSource()} {...defaultProps} draft="hello" />,
+      );
+
+      expect(screen.getByText("Draft:").className).toContain("text-blue-600");
+    });
+
+    it("styles the Draft label white and semibold when active", () => {
+      renderWithProviders(
+        <Source
+          source={createMockSource()}
+          {...defaultProps}
+          isActive={true}
+          draft="hello"
+        />,
+      );
+
+      const label = screen.getByText("Draft:");
+      expect(label.className).toContain("text-white");
+      expect(label.className).toContain("font-semibold");
+      expect(label.className).not.toContain("text-blue-600");
+    });
+  });
+
   describe("checkbox selection functionality", () => {
     it("displays checked checkbox when isSelected is true", () => {
       const source = createMockSource();
@@ -329,7 +408,14 @@ describe("Source Component", () => {
       messagePreview: null,
     };
 
-    const baseProps = {
+    const baseProps: {
+      source: SourceType;
+      isSelected: boolean;
+      isActive: boolean;
+      draft?: string;
+      onSelect: typeof mockOnSelect;
+      onToggleStar: typeof mockOnToggleStar;
+    } = {
       source: mockSource,
       isSelected: false,
       isActive: false,
@@ -371,6 +457,12 @@ describe("Source Component", () => {
         },
         5,
       ],
+      // Add a draft - should re-render
+      [{ ...baseProps, draft: "hello" }, 6],
+      // Same draft - should not re-render
+      [{ ...baseProps, draft: "hello" }, 6],
+      // Change draft - should re-render
+      [{ ...baseProps, draft: "hello there" }, 7],
     ];
 
     it("should handle memoization correctly", testMemoization(Source, cases));
