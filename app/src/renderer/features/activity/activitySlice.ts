@@ -1,4 +1,9 @@
-import { createSlice, createAsyncThunk, PayloadAction } from "@reduxjs/toolkit";
+import {
+  createSlice,
+  createAsyncThunk,
+  createSelector,
+  PayloadAction,
+} from "@reduxjs/toolkit";
 
 import type { RootState } from "../../store";
 import {
@@ -7,7 +12,7 @@ import {
   type DownloadActivity,
   type Item,
   type PendingEventActivity,
-  type SyncActivitySnapshot,
+  type ActivitySnapshot,
 } from "../../../types";
 import { setUnauth } from "../session/sessionSlice";
 import { updateItem } from "../conversation/conversationSlice";
@@ -42,7 +47,7 @@ export type CompletedEventActivity = PendingEventActivity & {
   completedAt: number;
 };
 
-export interface SyncActivityState {
+export interface ActivityState {
   downloads: Record<string, DownloadActivity>;
   recentDownloads: DownloadActivity[];
   pendingEvents: PendingEventActivity[];
@@ -52,7 +57,7 @@ export interface SyncActivityState {
   error: string | null;
 }
 
-const initialState: SyncActivityState = {
+const initialState: ActivityState = {
   downloads: {},
   recentDownloads: [],
   pendingEvents: [],
@@ -62,10 +67,10 @@ const initialState: SyncActivityState = {
   error: null,
 };
 
-export const fetchSyncActivity = createAsyncThunk(
-  "syncActivity/fetchSyncActivity",
-  async (): Promise<SyncActivitySnapshot> => {
-    return window.electronAPI.getSyncActivity();
+export const fetchActivity = createAsyncThunk(
+  "activity/fetchActivity",
+  async (): Promise<ActivitySnapshot> => {
+    return window.electronAPI.getActivity();
   },
 );
 
@@ -80,13 +85,14 @@ const toDownloadActivity = (
   kind: item.data.kind,
   fetchStatus: item.fetch_status ?? FetchStatus.Initial,
   fetchProgress: item.fetch_progress,
+  size: item.data.size,
   decryptedSize: item.decrypted_size,
   retryAttempts: previous?.retryAttempts ?? 0,
   updatedAt: Date.now(),
 });
 
 const recordCompletedEvents = (
-  state: SyncActivityState,
+  state: ActivityState,
   pendingEvents: PendingEventActivity[],
 ) => {
   const stillPending = new Set(pendingEvents.map((event) => event.id));
@@ -107,8 +113,8 @@ const recordCompletedEvents = (
   );
 };
 
-export const syncActivitySlice = createSlice({
-  name: "syncActivity",
+export const activitySlice = createSlice({
+  name: "activity",
   initialState,
   reducers: {
     setEventsInFlight: (state, action: PayloadAction<string[]>) => {
@@ -149,10 +155,10 @@ export const syncActivitySlice = createSlice({
         // Otherwise it is cancelled or scheduled for deletion
         delete state.downloads[item.uuid];
       })
-      .addCase(fetchSyncActivity.pending, (state) => {
+      .addCase(fetchActivity.pending, (state) => {
         state.loading = true;
       })
-      .addCase(fetchSyncActivity.fulfilled, (state, action) => {
+      .addCase(fetchActivity.fulfilled, (state, action) => {
         state.loading = false;
         state.error = null;
         recordCompletedEvents(state, action.payload.pendingEvents);
@@ -169,15 +175,15 @@ export const syncActivitySlice = createSlice({
           }),
         );
       })
-      .addCase(fetchSyncActivity.rejected, (state, action) => {
+      .addCase(fetchActivity.rejected, (state, action) => {
         state.loading = false;
-        state.error = action.error.message || "Failed to read sync activity";
+        state.error = action.error.message || "Failed to read activity";
       });
   },
 });
 
 export const { setEventsInFlight, clearRecentDownloads, clearCompletedEvents } =
-  syncActivitySlice.actions;
+  activitySlice.actions;
 
 export enum PendingEventDisplayStatus {
   QUEUED = "queued",
@@ -236,43 +242,43 @@ const downloadDisplayStatus = (
   }
 };
 
-export const selectSyncActivityLoading = (state: RootState) =>
-  state.syncActivity.loading;
-export const selectSyncActivityError = (state: RootState) =>
-  state.syncActivity.error;
+export const selectActivityLoading = (state: RootState) =>
+  state.activity.loading;
+export const selectActivityError = (state: RootState) => state.activity.error;
 export const selectRecentDownloads = (state: RootState) =>
-  state.syncActivity.recentDownloads;
+  state.activity.recentDownloads;
 // Session-local activity log: events that left the queue since sign in.
 export const selectCompletedEvents = (
   state: RootState,
-): CompletedEventActivity[] => state.syncActivity.completedEvents;
+): CompletedEventActivity[] => state.activity.completedEvents;
 
 export const selectPendingEventActivity = (
   state: RootState,
 ): PendingEventWithStatus[] =>
-  state.syncActivity.pendingEvents.map((event) => ({
+  state.activity.pendingEvents.map((event) => ({
     ...event,
     displayStatus: pendingEventDisplayStatus(
       event,
-      state.syncActivity.inFlightEventIds,
+      state.activity.inFlightEventIds,
     ),
   }));
 
-export const selectDownloadActivity = (
-  state: RootState,
-): DownloadWithStatus[] =>
-  Object.values(state.syncActivity.downloads).map((download) => ({
-    ...download,
-    displayStatus: downloadDisplayStatus(download),
-  }));
+export const selectDownloadActivity = createSelector(
+  [(state: RootState) => state.activity.downloads],
+  (downloads): DownloadWithStatus[] =>
+    Object.values(downloads).map((download) => ({
+      ...download,
+      displayStatus: downloadDisplayStatus(download),
+    })),
+);
 
 export const selectNeedsAttentionCount = (state: RootState): number => {
-  const events = state.syncActivity.pendingEvents.filter(
+  const events = state.activity.pendingEvents.filter(
     (event) =>
       event.lastEventStatus !== null &&
       FAILED_EVENT_STATUSES.has(event.lastEventStatus),
   ).length;
-  const downloads = Object.values(state.syncActivity.downloads).filter(
+  const downloads = Object.values(state.activity.downloads).filter(
     (download) =>
       download.fetchStatus === FetchStatus.FailedDownloadRetryable ||
       download.fetchStatus === FetchStatus.FailedDecryptionRetryable ||
@@ -282,13 +288,13 @@ export const selectNeedsAttentionCount = (state: RootState): number => {
 };
 
 export const selectHasActivityInFlight = (state: RootState): boolean =>
-  state.syncActivity.inFlightEventIds.length > 0 ||
-  Object.values(state.syncActivity.downloads).some((download) =>
+  state.activity.inFlightEventIds.length > 0 ||
+  Object.values(state.activity.downloads).some((download) =>
     IN_FLIGHT_STATUSES.has(download.fetchStatus),
   );
 
 export const selectPendingEventCount = (state: RootState): number =>
-  state.syncActivity.pendingEvents.length;
+  state.activity.pendingEvents.length;
 
 export const selectSyncSummary = (state: RootState): SyncActivity => {
   const transport = selectSyncActivity(state);
@@ -305,4 +311,4 @@ export const selectSyncSummary = (state: RootState): SyncActivity => {
   return SyncActivity.UP_TO_DATE;
 };
 
-export default syncActivitySlice.reducer;
+export default activitySlice.reducer;

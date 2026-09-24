@@ -18,7 +18,7 @@ import { ExportStatus, PrintStatus } from "../types";
 (global as any).__APP_VERSION__ = "6.6.6-test";
 (global as any).__DEV_AUTO_LOGIN__ = false;
 (global as any).__IS_PRODUCTION__ = false;
-(global as any).__SYNC_SIDEBAR__ = false;
+(global as any).__ACTIVITY_SIDEBAR__ = false;
 
 // Mock ResizeObserver for react-window
 global.ResizeObserver = class {
@@ -254,7 +254,7 @@ beforeEach(() => {
     quitApp: vi.fn().mockResolvedValue(null),
     signOut: vi.fn().mockResolvedValue(null),
     getAppVersion: vi.fn().mockResolvedValue("testVersion"),
-    getSyncActivity: vi
+    getActivity: vi
       .fn()
       .mockResolvedValue({ downloads: [], pendingEvents: [] }),
     onPendingEventsInFlight: vi.fn().mockReturnValue(() => {}),

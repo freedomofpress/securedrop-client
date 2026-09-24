@@ -292,13 +292,14 @@ export type DownloadActivityRow = {
   kind: string;
   fetch_status: number; // FetchStatus enum
   fetch_progress: number | null;
+  size: number | null;
   decrypted_size: number | null;
   fetch_retry_attempts: number;
   // SQLite CURRENT_TIMESTAMP text, e.g. "2026-09-01 12:34:56"
   fetch_last_updated_at: string | null;
 };
 
-/** Sync activity types */
+/** Activity types */
 
 export type PendingEventActivity = {
   id: string;
@@ -319,12 +320,14 @@ export type DownloadActivity = {
   kind: "file" | "message" | "reply";
   fetchStatus: FetchStatus;
   fetchProgress: number | null;
+  // Server-reported ciphertext size, the denominator for download progress
+  size: number | null;
   decryptedSize: number | null;
   retryAttempts: number;
   updatedAt: number | null;
 };
 
-export type SyncActivitySnapshot = {
+export type ActivitySnapshot = {
   downloads: DownloadActivity[];
   pendingEvents: PendingEventActivity[];
 };

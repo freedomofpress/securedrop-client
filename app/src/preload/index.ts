@@ -15,7 +15,7 @@ import {
   Item,
   PendingEventType,
   SyncStatus,
-  type SyncActivitySnapshot,
+  type ActivitySnapshot,
   DeviceStatus,
   PendingEventData,
 } from "../types";
@@ -153,8 +153,8 @@ const electronAPI = {
     ipcRenderer.on("sync-complete", listener);
     return () => ipcRenderer.removeListener("sync-complete", listener);
   },
-  getSyncActivity: logIpcCall<SyncActivitySnapshot>("getSyncActivity", () =>
-    ipcRenderer.invoke("getSyncActivity"),
+  getActivity: logIpcCall<ActivitySnapshot>("getActivity", () =>
+    ipcRenderer.invoke("getActivity"),
   ),
   onPendingEventsInFlight: (callback: (eventIds: string[]) => void) => {
     const listener = (_event: Electron.IpcRendererEvent, eventIds: string[]) =>

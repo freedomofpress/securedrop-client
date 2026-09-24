@@ -39,7 +39,7 @@ import {
   FetchStatus,
   PendingEventType,
   SyncStatus,
-  type SyncActivitySnapshot,
+  type ActivitySnapshot,
   PendingEventData,
   type ms,
 } from "../types";
@@ -567,8 +567,8 @@ if (!gotTheLock) {
       );
 
       ipcMain.handle(
-        "getSyncActivity",
-        async (_event): Promise<SyncActivitySnapshot> => {
+        "getActivity",
+        async (_event): Promise<ActivitySnapshot> => {
           return {
             downloads: db.getDownloadActivity(),
             pendingEvents: db.getPendingEventActivity(),

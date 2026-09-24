@@ -3,20 +3,20 @@ import { memo, useCallback, useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import Account from "./Sidebar/Account";
 import SourceList from "./Sidebar/SourceList";
-import SyncSidebar, {
-  SYNC_SIDEBAR_COLLAPSED_HEIGHT,
-  SYNC_SIDEBAR_DEFAULT_HEIGHT,
-} from "./Sidebar/SyncSidebar";
+import ActivitySidebar, {
+  ACTIVITY_SIDEBAR_COLLAPSED_HEIGHT,
+  ACTIVITY_SIDEBAR_DEFAULT_HEIGHT,
+} from "./Sidebar/ActivitySidebar";
 import PanelResizer from "../../components/PanelResizer";
 import type { FocusedPanel } from "../Inbox";
 
-export const SYNC_SIDEBAR_RESIZER_HEIGHT = 4;
-const SYNC_SIDEBAR_RESIZE_STEP = 16;
-const SYNC_SIDEBAR_FALLBACK_MAX_HEIGHT = SYNC_SIDEBAR_DEFAULT_HEIGHT;
+export const ACTIVITY_SIDEBAR_RESIZER_HEIGHT = 4;
+const ACTIVITY_SIDEBAR_RESIZE_STEP = 16;
+const ACTIVITY_SIDEBAR_FALLBACK_MAX_HEIGHT = ACTIVITY_SIDEBAR_DEFAULT_HEIGHT;
 
 // Save pixels so the sidebar doesn't cover the bottom of the sourcelist
-const SYNC_SIDEBAR_RESERVED_HEIGHT =
-  SYNC_SIDEBAR_COLLAPSED_HEIGHT + SYNC_SIDEBAR_RESIZER_HEIGHT;
+const ACTIVITY_SIDEBAR_RESERVED_HEIGHT =
+  ACTIVITY_SIDEBAR_COLLAPSED_HEIGHT + ACTIVITY_SIDEBAR_RESIZER_HEIGHT;
 
 interface SidebarProps {
   focusedPanel: FocusedPanel;
@@ -27,13 +27,13 @@ const Sidebar = memo(function Sidebar({ focusedPanel }: SidebarProps) {
   const overlayAreaRef = useRef<HTMLDivElement>(null);
 
   const [preferredHeight, setPreferredHeight] = useState(
-    SYNC_SIDEBAR_COLLAPSED_HEIGHT,
+    ACTIVITY_SIDEBAR_COLLAPSED_HEIGHT,
   );
   const [overlayAreaHeight, setOverlayAreaHeight] = useState(0);
 
   useEffect(() => {
     const overlayArea = overlayAreaRef.current;
-    if (!__SYNC_SIDEBAR__ || !overlayArea) {
+    if (!__ACTIVITY_SIDEBAR__ || !overlayArea) {
       return;
     }
     const observer = new ResizeObserver(([entry]) =>
@@ -46,17 +46,19 @@ const Sidebar = memo(function Sidebar({ focusedPanel }: SidebarProps) {
   const maxHeight =
     overlayAreaHeight > 0
       ? Math.max(
-          SYNC_SIDEBAR_COLLAPSED_HEIGHT,
-          overlayAreaHeight - SYNC_SIDEBAR_RESIZER_HEIGHT,
+          ACTIVITY_SIDEBAR_COLLAPSED_HEIGHT,
+          overlayAreaHeight - ACTIVITY_SIDEBAR_RESIZER_HEIGHT,
         )
-      : SYNC_SIDEBAR_FALLBACK_MAX_HEIGHT;
+      : ACTIVITY_SIDEBAR_FALLBACK_MAX_HEIGHT;
 
   const height = Math.min(preferredHeight, maxHeight);
-  const collapsed = height <= SYNC_SIDEBAR_COLLAPSED_HEIGHT;
+  const collapsed = height <= ACTIVITY_SIDEBAR_COLLAPSED_HEIGHT;
 
   const handleToggle = useCallback(() => {
     setPreferredHeight(
-      collapsed ? SYNC_SIDEBAR_DEFAULT_HEIGHT : SYNC_SIDEBAR_COLLAPSED_HEIGHT,
+      collapsed
+        ? ACTIVITY_SIDEBAR_DEFAULT_HEIGHT
+        : ACTIVITY_SIDEBAR_COLLAPSED_HEIGHT,
     );
   }, [collapsed]);
 
@@ -70,31 +72,31 @@ const Sidebar = memo(function Sidebar({ focusedPanel }: SidebarProps) {
         <div
           className="flex flex-1 flex-col min-h-0"
           style={
-            __SYNC_SIDEBAR__
-              ? { paddingBottom: SYNC_SIDEBAR_RESERVED_HEIGHT }
+            __ACTIVITY_SIDEBAR__
+              ? { paddingBottom: ACTIVITY_SIDEBAR_RESERVED_HEIGHT }
               : undefined
           }
           data-testid="source-list-area"
         >
           <SourceList focusedPanel={focusedPanel} />
         </div>
-        {__SYNC_SIDEBAR__ && (
+        {__ACTIVITY_SIDEBAR__ && (
           <div
             className="absolute inset-x-0 bottom-0 flex flex-col"
-            data-testid="sync-sidebar-overlay"
+            data-testid="activity-sidebar-overlay"
           >
             <PanelResizer
               growsToward="up"
               size={height}
-              minSize={SYNC_SIDEBAR_COLLAPSED_HEIGHT}
+              minSize={ACTIVITY_SIDEBAR_COLLAPSED_HEIGHT}
               maxSize={maxHeight}
-              step={SYNC_SIDEBAR_RESIZE_STEP}
+              step={ACTIVITY_SIDEBAR_RESIZE_STEP}
               onSizeChange={setPreferredHeight}
-              label={t("syncSidebar.resizer.label")}
-              hint={t("syncSidebar.resizer.hint")}
-              testId="sync-sidebar-resizer"
+              label={t("activitySidebar.resizer.label")}
+              hint={t("activitySidebar.resizer.hint")}
+              testId="activity-sidebar-resizer"
             />
-            <SyncSidebar
+            <ActivitySidebar
               height={height}
               collapsed={collapsed}
               onToggle={handleToggle}

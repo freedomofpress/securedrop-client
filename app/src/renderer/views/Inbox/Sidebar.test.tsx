@@ -3,20 +3,21 @@ import { screen, fireEvent, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 
 import { renderWithProviders } from "../../test-component-setup";
-import Sidebar, { SYNC_SIDEBAR_RESIZER_HEIGHT } from "./Sidebar";
+import Sidebar, { ACTIVITY_SIDEBAR_RESIZER_HEIGHT } from "./Sidebar";
 import {
-  SYNC_SIDEBAR_COLLAPSED_HEIGHT,
-  SYNC_SIDEBAR_DEFAULT_HEIGHT,
-} from "./Sidebar/SyncSidebar";
+  ACTIVITY_SIDEBAR_COLLAPSED_HEIGHT,
+  ACTIVITY_SIDEBAR_DEFAULT_HEIGHT,
+} from "./Sidebar/ActivitySidebar";
 
 const OBSERVED_AREA_HEIGHT = 600;
-const MEASURED_MAX_HEIGHT = OBSERVED_AREA_HEIGHT - SYNC_SIDEBAR_RESIZER_HEIGHT;
+const MEASURED_MAX_HEIGHT =
+  OBSERVED_AREA_HEIGHT - ACTIVITY_SIDEBAR_RESIZER_HEIGHT;
 
-const syncSidebarHeight = () =>
-  screen.getByTestId("sync-sidebar").style.getPropertyValue("height");
+const activitySidebarHeight = () =>
+  screen.getByTestId("activity-sidebar").style.getPropertyValue("height");
 
-const toggle = () => screen.getByTestId("sync-sidebar-toggle");
-const resizer = () => screen.getByTestId("sync-sidebar-resizer");
+const toggle = () => screen.getByTestId("activity-sidebar-toggle");
+const resizer = () => screen.getByTestId("activity-sidebar-resizer");
 
 const dragBy = (delta: number) => {
   fireEvent.mouseDown(resizer(), { button: 0, clientY: 500 });
@@ -27,9 +28,10 @@ const dragBy = (delta: number) => {
 const renderSidebar = () =>
   renderWithProviders(<Sidebar focusedPanel="sidebar" />);
 
-const setSyncSidebarFlag = (enabled: boolean) => {
-  (globalThis as unknown as { __SYNC_SIDEBAR__: boolean }).__SYNC_SIDEBAR__ =
-    enabled;
+const setActivitySidebarFlag = (enabled: boolean) => {
+  (
+    globalThis as unknown as { __ACTIVITY_SIDEBAR__: boolean }
+  ).__ACTIVITY_SIDEBAR__ = enabled;
 };
 
 const waitForMeasurement = () =>
@@ -41,21 +43,23 @@ const waitForMeasurement = () =>
   );
 
 describe("Sidebar", () => {
-  describe("sync sidebar", () => {
+  describe("activity sidebar", () => {
     beforeEach(() => {
-      setSyncSidebarFlag(true);
+      setActivitySidebarFlag(true);
     });
 
     afterEach(() => {
-      setSyncSidebarFlag(false);
+      setActivitySidebarFlag(false);
     });
 
     it("starts collapsed to its status bar", () => {
       renderSidebar();
 
-      expect(syncSidebarHeight()).toBe(`${SYNC_SIDEBAR_COLLAPSED_HEIGHT}px`);
+      expect(activitySidebarHeight()).toBe(
+        `${ACTIVITY_SIDEBAR_COLLAPSED_HEIGHT}px`,
+      );
       expect(toggle()).toHaveAttribute("aria-expanded", "false");
-      expect(screen.getByTestId("sync-sidebar-body")).not.toBeVisible();
+      expect(screen.getByTestId("activity-sidebar-body")).not.toBeVisible();
     });
 
     it("pops up to its default height when the status bar is clicked", async () => {
@@ -63,9 +67,11 @@ describe("Sidebar", () => {
 
       await userEvent.click(toggle());
 
-      expect(syncSidebarHeight()).toBe(`${SYNC_SIDEBAR_DEFAULT_HEIGHT}px`);
+      expect(activitySidebarHeight()).toBe(
+        `${ACTIVITY_SIDEBAR_DEFAULT_HEIGHT}px`,
+      );
       expect(toggle()).toHaveAttribute("aria-expanded", "true");
-      expect(screen.getByTestId("sync-sidebar-body")).toBeVisible();
+      expect(screen.getByTestId("activity-sidebar-body")).toBeVisible();
     });
 
     it("pops up when the handle is dragged upwards", () => {
@@ -73,8 +79,8 @@ describe("Sidebar", () => {
 
       dragBy(200);
 
-      expect(syncSidebarHeight()).toBe(
-        `${SYNC_SIDEBAR_COLLAPSED_HEIGHT + 200}px`,
+      expect(activitySidebarHeight()).toBe(
+        `${ACTIVITY_SIDEBAR_COLLAPSED_HEIGHT + 200}px`,
       );
       expect(toggle()).toHaveAttribute("aria-expanded", "true");
     });
@@ -85,7 +91,9 @@ describe("Sidebar", () => {
       dragBy(200);
       dragBy(-400);
 
-      expect(syncSidebarHeight()).toBe(`${SYNC_SIDEBAR_COLLAPSED_HEIGHT}px`);
+      expect(activitySidebarHeight()).toBe(
+        `${ACTIVITY_SIDEBAR_COLLAPSED_HEIGHT}px`,
+      );
       expect(toggle()).toHaveAttribute("aria-expanded", "false");
     });
 
@@ -93,15 +101,19 @@ describe("Sidebar", () => {
       renderSidebar();
 
       dragBy(150);
-      expect(syncSidebarHeight()).toBe(
-        `${SYNC_SIDEBAR_COLLAPSED_HEIGHT + 150}px`,
+      expect(activitySidebarHeight()).toBe(
+        `${ACTIVITY_SIDEBAR_COLLAPSED_HEIGHT + 150}px`,
       );
 
       await userEvent.click(toggle());
-      expect(syncSidebarHeight()).toBe(`${SYNC_SIDEBAR_COLLAPSED_HEIGHT}px`);
+      expect(activitySidebarHeight()).toBe(
+        `${ACTIVITY_SIDEBAR_COLLAPSED_HEIGHT}px`,
+      );
 
       await userEvent.click(toggle());
-      expect(syncSidebarHeight()).toBe(`${SYNC_SIDEBAR_DEFAULT_HEIGHT}px`);
+      expect(activitySidebarHeight()).toBe(
+        `${ACTIVITY_SIDEBAR_DEFAULT_HEIGHT}px`,
+      );
     });
 
     it("expands far enough to cover the source list, leaving only the handle", async () => {
@@ -110,8 +122,8 @@ describe("Sidebar", () => {
 
       fireEvent.keyDown(resizer(), { key: "End" });
 
-      expect(syncSidebarHeight()).toBe(`${MEASURED_MAX_HEIGHT}px`);
-      expect(MEASURED_MAX_HEIGHT + SYNC_SIDEBAR_RESIZER_HEIGHT).toBe(
+      expect(activitySidebarHeight()).toBe(`${MEASURED_MAX_HEIGHT}px`);
+      expect(MEASURED_MAX_HEIGHT + ACTIVITY_SIDEBAR_RESIZER_HEIGHT).toBe(
         OBSERVED_AREA_HEIGHT,
       );
     });
@@ -124,7 +136,7 @@ describe("Sidebar", () => {
           .getByTestId("source-list-area")
           .style.getPropertyValue("padding-bottom"),
       ).toBe(
-        `${SYNC_SIDEBAR_COLLAPSED_HEIGHT + SYNC_SIDEBAR_RESIZER_HEIGHT}px`,
+        `${ACTIVITY_SIDEBAR_COLLAPSED_HEIGHT + ACTIVITY_SIDEBAR_RESIZER_HEIGHT}px`,
       );
     });
 
@@ -146,8 +158,8 @@ describe("Sidebar", () => {
           .getByTestId("source-list-area")
           .style.getPropertyValue("padding-bottom"),
       ).toBe(reserved);
-      expect(screen.getByTestId("sync-sidebar-overlay")).toContainElement(
-        screen.getByTestId("sync-sidebar"),
+      expect(screen.getByTestId("activity-sidebar-overlay")).toContainElement(
+        screen.getByTestId("activity-sidebar"),
       );
     });
 
@@ -158,19 +170,21 @@ describe("Sidebar", () => {
       fireEvent.keyDown(resizer(), { key: "End" });
       fireEvent.keyDown(resizer(), { key: "Home" });
 
-      expect(syncSidebarHeight()).toBe(`${SYNC_SIDEBAR_COLLAPSED_HEIGHT}px`);
+      expect(activitySidebarHeight()).toBe(
+        `${ACTIVITY_SIDEBAR_COLLAPSED_HEIGHT}px`,
+      );
       expect(toggle()).toHaveAttribute("aria-expanded", "false");
     });
   });
 
-  describe("sync sidebar feature flag", () => {
+  describe("activity sidebar feature flag", () => {
     it("does not render the panel when the flag is off", async () => {
       renderWithProviders(<Sidebar focusedPanel="sidebar" />);
       await screen.findByRole("listbox");
 
-      expect(screen.queryByTestId("sync-sidebar-overlay")).toBeNull();
-      expect(screen.queryByTestId("sync-sidebar")).toBeNull();
-      expect(screen.queryByTestId("sync-sidebar-resizer")).toBeNull();
+      expect(screen.queryByTestId("activity-sidebar-overlay")).toBeNull();
+      expect(screen.queryByTestId("activity-sidebar")).toBeNull();
+      expect(screen.queryByTestId("activity-sidebar-resizer")).toBeNull();
     });
 
     it("gives the whole sidebar to the source list when the flag is off", async () => {

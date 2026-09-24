@@ -34,10 +34,10 @@ import File from "./views/Inbox/MainContent/Conversation/Item/File";
 import Message from "./views/Inbox/MainContent/Conversation/Item/Message";
 import SourceList from "./views/Inbox/Sidebar/SourceList";
 import Sidebar from "./views/Inbox/Sidebar";
-import SyncSidebar, {
-  SYNC_SIDEBAR_COLLAPSED_HEIGHT,
-  SYNC_SIDEBAR_DEFAULT_HEIGHT,
-} from "./views/Inbox/Sidebar/SyncSidebar";
+import ActivitySidebar, {
+  ACTIVITY_SIDEBAR_COLLAPSED_HEIGHT,
+  ACTIVITY_SIDEBAR_DEFAULT_HEIGHT,
+} from "./views/Inbox/Sidebar/ActivitySidebar";
 import Source from "./views/Inbox/Sidebar/SourceList/Source";
 import MainMenu from "./views/Inbox/Sidebar/Account/MainMenu";
 import KeyboardHelp from "./views/Inbox/Sidebar/Account/KeyboardHelp";
@@ -287,11 +287,11 @@ describe.sequential("accessibility (axe)", () => {
     });
   });
 
-  describe("SyncSidebar", () => {
+  describe("ActivitySidebar", () => {
     it("has no axe violations when collapsed", async () => {
       await renderAndCheckA11y(
-        <SyncSidebar
-          height={SYNC_SIDEBAR_COLLAPSED_HEIGHT}
+        <ActivitySidebar
+          height={ACTIVITY_SIDEBAR_COLLAPSED_HEIGHT}
           collapsed={true}
           onToggle={vi.fn()}
         />,
@@ -300,8 +300,8 @@ describe.sequential("accessibility (axe)", () => {
 
     it("has no axe violations when expanded", async () => {
       await renderAndCheckA11y(
-        <SyncSidebar
-          height={SYNC_SIDEBAR_DEFAULT_HEIGHT}
+        <ActivitySidebar
+          height={ACTIVITY_SIDEBAR_DEFAULT_HEIGHT}
           collapsed={false}
           onToggle={vi.fn()}
         />,

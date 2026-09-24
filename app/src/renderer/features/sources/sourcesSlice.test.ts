@@ -282,7 +282,7 @@ describe("sourcesSlice", () => {
           lastSyncFinished: null,
           status: null,
         },
-        syncActivity: {
+        activity: {
           downloads: {},
           recentDownloads: [],
           pendingEvents: [],
@@ -319,7 +319,7 @@ describe("sourcesSlice", () => {
           lastSyncFinished: null,
           status: null,
         },
-        syncActivity: {
+        activity: {
           downloads: {},
           recentDownloads: [],
           pendingEvents: [],
@@ -352,7 +352,7 @@ describe("sourcesSlice", () => {
           lastSyncFinished: null,
           status: null,
         },
-        syncActivity: {
+        activity: {
           downloads: {},
           recentDownloads: [],
           pendingEvents: [],

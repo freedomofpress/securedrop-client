@@ -97,16 +97,45 @@
       "warning": "Sync: warning",
       "error": "Sync: error"
     },
-    "syncSidebar": {
+    "activitySidebar": {
       "status": {
         "syncing": "Syncing...",
         "upToDate": "All caught up",
         "needsAttention": "Needs attention"
       },
-      "body": "Sync sidebar placeholder text",
+      "empty": "Nothing waiting to sync",
+      "section": {
+        "downloads": "Downloading",
+        "expand": "Show {{section}}",
+        "collapse": "Hide {{section}}"
+      },
+      "unknownSource": "Unknown source",
+      "encryptedFile": "Encrypted file",
+      "download": {
+        "open": "Open",
+        "openLabel": "Open {{filename}}",
+        "percent": "{{percent}}%",
+        "percentLabel": "{{percent}}% downloaded"
+      },
+      "downloadStatus": {
+        "queued": "Queued",
+        "downloading": "Downloading",
+        "decrypting": "Decrypting",
+        "stopped": "Stopped",
+        "needsAttention": "Needs attention"
+      },
+      "attention": {
+        "summary": "{{action}} → {{target}} {{reason}}",
+        "heading": "Needs attention"
+      },
+      "attentionReason": {
+        "downloadRetrying": "download failed, retrying",
+        "decryptionRetrying": "decryption failed, retrying",
+        "downloadFailed": "download failed"
+      },
       "resizer": {
-        "label": "Resize sync activity panel",
-        "hint": "Drag to resize the sync activity panel"
+        "label": "Resize activity panel",
+        "hint": "Drag to resize the activity panel"
       }
     },
     "sourcelist": {

@@ -2369,7 +2369,7 @@ describe("Datastore Method Tests", () => {
       expect(counts).toEqual({ messages: 1, files: 0, replies: 0 });
     });
   });
-  describe("sync activity", () => {
+  describe("activity", () => {
     beforeEach(() => {
       db.updateSources({
         source1: mockSourceMetadata("source1", false, "Crimson Falcon"),
@@ -2489,6 +2489,14 @@ describe("Datastore Method Tests", () => {
           fetchStatus: FetchStatus.DownloadInProgress,
         });
         expect(download.updatedAt).toBeTypeOf("number");
+      });
+
+      it("carries the server-reported size the sidebar divides progress by", () => {
+        db.updateFetchStatus("item1", FetchStatus.DownloadInProgress);
+        db.updateDownloadInProgress("item1", 25);
+
+        const [download] = db.getDownloadActivity();
+        expect(download).toMatchObject({ size: 50, fetchProgress: 25 });
       });
 
       it.each([

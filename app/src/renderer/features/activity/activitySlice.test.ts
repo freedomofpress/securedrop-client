@@ -20,7 +20,7 @@ import reducer, {
   RECENT_DOWNLOADS_LIMIT,
   clearCompletedEvents,
   clearRecentDownloads,
-  fetchSyncActivity,
+  fetchActivity,
   selectCompletedEvents,
   selectDownloadActivity,
   selectHasActivityInFlight,
@@ -29,11 +29,11 @@ import reducer, {
   selectRecentDownloads,
   selectSyncSummary,
   setEventsInFlight,
-  type SyncActivityState,
-} from "./syncActivitySlice";
+  type ActivityState,
+} from "./activitySlice";
 
 const mockElectronAPI = {
-  getSyncActivity: vi.fn(),
+  getActivity: vi.fn(),
 };
 
 Object.defineProperty(window, "electronAPI", {
@@ -41,7 +41,7 @@ Object.defineProperty(window, "electronAPI", {
   writable: true,
 });
 
-const initialState: SyncActivityState = {
+const initialState: ActivityState = {
   downloads: {},
   recentDownloads: [],
   pendingEvents: [],
@@ -83,6 +83,7 @@ const makeDownload = (
   kind: "file",
   fetchStatus,
   fetchProgress: null,
+  size: 1024,
   decryptedSize: null,
   retryAttempts: 0,
   updatedAt: 1000,
@@ -104,14 +105,14 @@ const makeEvent = (
 });
 
 const snapshotOf = (pendingEvents: PendingEventActivity[]) =>
-  fetchSyncActivity.fulfilled({ downloads: [], pendingEvents }, "", undefined);
+  fetchActivity.fulfilled({ downloads: [], pendingEvents }, "", undefined);
 
 const stateWith = (
-  syncActivity: Partial<SyncActivityState>,
+  activity: Partial<ActivityState>,
   sync: Partial<RootState["sync"]> = {},
 ): RootState =>
   ({
-    syncActivity: { ...initialState, ...syncActivity },
+    activity: { ...initialState, ...activity },
     sync: {
       error: null,
       lastSyncStarted: null,
@@ -121,7 +122,7 @@ const stateWith = (
     },
   }) as RootState;
 
-describe("syncActivitySlice", () => {
+describe("activitySlice", () => {
   beforeEach(() => {
     vi.clearAllMocks();
   });
@@ -220,7 +221,7 @@ describe("syncActivitySlice", () => {
       // whatever the last snapshot knew.
       let state = reducer(
         initialState,
-        fetchSyncActivity.fulfilled(
+        fetchActivity.fulfilled(
           {
             downloads: [makeDownload("item-1", FetchStatus.DownloadInProgress)],
             pendingEvents: [],
@@ -262,7 +263,7 @@ describe("syncActivitySlice", () => {
 
       state = reducer(
         state,
-        fetchSyncActivity.fulfilled(
+        fetchActivity.fulfilled(
           {
             downloads: [makeDownload("item-1", FetchStatus.DownloadInProgress)],
             pendingEvents: [makeEvent("event-1")],
@@ -283,7 +284,7 @@ describe("syncActivitySlice", () => {
     it("records a read failure", () => {
       const state = reducer(
         initialState,
-        fetchSyncActivity.rejected(new Error("database is locked"), ""),
+        fetchActivity.rejected(new Error("database is locked"), ""),
       );
 
       expect(state.loading).toBe(false);
@@ -296,12 +297,12 @@ describe("syncActivitySlice", () => {
         downloads: [makeDownload("item-1", FetchStatus.DownloadInProgress)],
         pendingEvents: [makeEvent("event-1")],
       };
-      mockElectronAPI.getSyncActivity.mockResolvedValue(snapshot);
+      mockElectronAPI.getActivity.mockResolvedValue(snapshot);
 
-      await store.dispatch(fetchSyncActivity());
+      await store.dispatch(fetchActivity());
 
-      expect(mockElectronAPI.getSyncActivity).toHaveBeenCalledTimes(1);
-      expect(store.getState().syncActivity.pendingEvents).toEqual(
+      expect(mockElectronAPI.getActivity).toHaveBeenCalledTimes(1);
+      expect(store.getState().activity.pendingEvents).toEqual(
         snapshot.pendingEvents,
       );
     });
@@ -383,7 +384,7 @@ describe("syncActivitySlice", () => {
 
   describe("reset", () => {
     it("clears everything on sign out", () => {
-      const populated: SyncActivityState = {
+      const populated: ActivityState = {
         ...initialState,
         downloads: { "item-1": makeDownload("item-1", FetchStatus.Paused) },
         pendingEvents: [makeEvent("event-1")],
@@ -396,7 +397,7 @@ describe("syncActivitySlice", () => {
     });
 
     it("clears recents on request", () => {
-      const populated: SyncActivityState = {
+      const populated: ActivityState = {
         ...initialState,
         recentDownloads: [makeDownload("item-1", FetchStatus.Complete)],
       };

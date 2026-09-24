@@ -113,7 +113,7 @@ export default defineConfig(({ mode }) => {
         __DEV_AUTO_LOGIN__: mode === "development",
         __IS_PRODUCTION__: mode === "production",
         __RENDERER_ONLY__: "true",
-        __SYNC_SIDEBAR__: process.env.SYNC_SIDEBAR === "true",
+        __ACTIVITY_SIDEBAR__: process.env.ACTIVITY_SIDEBAR === "true",
       },
       build: {
         assetsInlineLimit: 0, // Disable inlining assets as data URIs for strict CSP

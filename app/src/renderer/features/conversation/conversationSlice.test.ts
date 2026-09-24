@@ -234,7 +234,7 @@ describe("conversationSlice", () => {
       drafts: {
         drafts: {},
       },
-      syncActivity: {
+      activity: {
         downloads: {},
         recentDownloads: [],
         completedEvents: [],

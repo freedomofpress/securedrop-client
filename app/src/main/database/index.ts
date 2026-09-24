@@ -452,7 +452,7 @@ export class DB {
     this.selectFreshPendingEventsCount = this.db.prepare(`
       SELECT COUNT(*) AS count FROM pending_events WHERE retry_attempts = 0
     `);
-    // Fetch pending events for display in sync sidebar (excludes Seen events)
+    // Fetch pending events for display in activity sidebar (excludes Seen events)
     this.selectPendingEventActivity = this.db.prepare(`
       SELECT
         pe.snowflake_id,
@@ -474,7 +474,7 @@ export class DB {
       ORDER BY pe.retry_attempts ASC, pe.snowflake_id ASC
       LIMIT @limit
     `);
-    // Fetch download activity for display in sync sidebar.
+    // Fetch download activity for display in activity sidebar.
     this.selectDownloadActivity = this.db.prepare(`
       SELECT
         item.uuid,
@@ -484,6 +484,7 @@ export class DB {
         item.kind,
         item.fetch_status,
         item.fetch_progress,
+        json_extract(item.data, '$.size') AS size,
         item.decrypted_size,
         item.fetch_retry_attempts,
         item.fetch_last_updated_at
@@ -1402,7 +1403,7 @@ export class DB {
     return pendingEvents;
   }
 
-  // Pending event queue for the sync sidebar.
+  // Pending event queue for the activity sidebar.
   getPendingEventActivity(limit?: number): PendingEventActivity[] {
     const rows = this.selectPendingEventActivity.all({
       limit: limit ?? DEFAULT_ACTIVITY_LIMIT,
@@ -1419,7 +1420,7 @@ export class DB {
     }));
   }
 
-  // Downloads that are in flight or waiting on the user, for the sync sidebar.
+  // Downloads that are in flight or waiting on the user, for the activity sidebar.
   getDownloadActivity(limit?: number): DownloadActivity[] {
     const rows = this.selectDownloadActivity.all({
       limit: limit ?? DEFAULT_ACTIVITY_LIMIT,
@@ -1432,6 +1433,7 @@ export class DB {
       kind: r.kind as DownloadActivity["kind"],
       fetchStatus: r.fetch_status as FetchStatus,
       fetchProgress: r.fetch_progress,
+      size: r.size,
       decryptedSize: r.decrypted_size,
       retryAttempts: r.fetch_retry_attempts,
       // Mark the timestamp as UTC

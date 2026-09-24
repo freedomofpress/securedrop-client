@@ -14,9 +14,9 @@ import {
 } from "../features/sync/syncSlice";
 import { updateItem } from "../features/conversation/conversationSlice";
 import {
-  fetchSyncActivity,
+  fetchActivity,
   setEventsInFlight,
-} from "../features/syncActivity/syncActivitySlice";
+} from "../features/activity/activitySlice";
 import { updateSource } from "../features/sources/sourcesSlice";
 import { setUnauth } from "../features/session/sessionSlice";
 import { SyncStatus, type Item, type Source } from "../../types";
@@ -92,12 +92,12 @@ function InboxView() {
 
   useEffect(() => {
     dispatch(fetchJournalists());
-    dispatch(fetchSyncActivity());
+    dispatch(fetchActivity());
   }, [dispatch]);
 
   useEffect(() => {
     if (syncStatus !== null) {
-      dispatch(fetchSyncActivity());
+      dispatch(fetchActivity());
     }
   }, [dispatch, syncStatus, lastSyncFinished]);
 
