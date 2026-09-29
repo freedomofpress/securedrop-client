@@ -39,11 +39,14 @@ import yaml
 NO_RISK = "no_risks_detected"
 INCOMPLETE = "incomplete"
 
-# Rule ID -> (SARIF level, GitHub security-severity, description). The first
-# three IDs are GuardDog's risk labels. Their security-severity is the lowest
-# score GuardDog gives the label, which falls in GitHub's matching band: high
-# (7.0-8.9), medium (4.0-6.9), low (0.1-3.9). An incomplete scan may understate
-# the risk, so it is treated as high.
+# RULES defines the set of rules we use in the SARIF report we generate. high_risk,
+# suspicious, and low are the labels GuardDog uses, which we use as the rule IDs.
+# Each tuple is then:
+#   - SARIF standard level
+#   - The lowest score GuardDog gives that label (see calculate_risk_score in risk_engine.py)
+#   - Rule description
+# We also add an "incomplete" rule for any dependencies that GuardDog isn't able
+# to assess, which we treat as high risk to err on the side of caution.
 RULES = {
     "high_risk": ("error", "7.0", "GuardDog rates this dependency version high_risk"),
     "suspicious": ("warning", "5.0", "GuardDog rates this dependency version suspicious"),
@@ -294,11 +297,11 @@ def to_sarif(assessments: list[tuple[Dependency, Location, dict]]) -> dict:
                     }
                 }
             ],
-            # GitHub identifies an alert by its rule, file and this hash alone.
-            # Left unset, upload-sarif would hash the anchored line and the text
-            # after it, so an unrelated edit nearby would reopen a dismissed
-            # alert. Hashing the dependency version makes a dismissal cover
-            # exactly that version, wherever its line moves.
+            # GitHub decides whether a result is the same alert as last run
+            # (and so stays dismissed) by comparing rule ID, file and this hash.
+            # We hash the ecosystem, package name, and version, so a dismissed
+            # finding will stay suppressed. Only new versions of the dependency
+            # will trigger a new finding.
             "partialFingerprints": {
                 "primaryLocationLineHash": hashlib.sha256(str(dependency).encode()).hexdigest()
             },
