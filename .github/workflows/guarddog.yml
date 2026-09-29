@@ -44,7 +44,7 @@ jobs:
 
       - name: Install latest version of GuardDog
         run: |
-          pip install guarddog pytest pyyaml
+          pip install guarddog pyyaml
           guarddog --version
 
       # This scans every dependency, not just the ones a pull request changes.
