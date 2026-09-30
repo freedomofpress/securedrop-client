@@ -21,7 +21,7 @@ export const draftsSlice = createSlice({
       action: PayloadAction<{ sourceUuid: string; content: string }>,
     ) => {
       const { sourceUuid, content } = action.payload;
-      if (content) {
+      if (content.trim()) {
         state.drafts[sourceUuid] = content;
       } else {
         delete state.drafts[sourceUuid];
@@ -46,6 +46,8 @@ export const draftsSlice = createSlice({
   },
 });
 export const { setDraft, clearDraft } = draftsSlice.actions;
+
+export const selectDrafts = (state: RootState) => state.drafts.drafts;
 
 export const selectDraft = (sourceUuid: string) => (state: RootState) =>
   state.drafts.drafts[sourceUuid] ?? "";

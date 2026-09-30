@@ -11,10 +11,8 @@ import {
 import type { LucideIcon } from "lucide-react";
 
 import { useAppSelector } from "../../../hooks";
-import {
-  SyncActivity,
-  selectSyncActivity,
-} from "../../../features/sync/syncSlice";
+import { SyncActivity } from "../../../features/sync/syncSlice";
+import { selectSyncSummary } from "../../../features/syncActivity/syncActivitySlice";
 
 export const SYNC_SIDEBAR_COLLAPSED_HEIGHT = 48;
 
@@ -59,7 +57,7 @@ const SyncSidebar = memo(function SyncSidebar({
   onToggle,
 }: SyncSidebarProps) {
   const { t } = useTranslation("Sidebar");
-  const activity = useAppSelector(selectSyncActivity);
+  const activity = useAppSelector(selectSyncSummary);
 
   const { icon: Icon, iconClass, labelKey, spin } = PRESENTATION[activity];
   const Chevron = collapsed ? ChevronUp : ChevronDown;

@@ -12,6 +12,7 @@ import {
   selectSources,
 } from "../../../features/sources/sourcesSlice";
 import { fetchConversation } from "../../../features/conversation/conversationSlice";
+import { selectDrafts } from "../../../features/drafts/draftsSlice";
 import Toolbar, { type filterOption } from "./SourceList/Toolbar";
 import Counts from "./SourceList/Counts";
 import {
@@ -27,6 +28,7 @@ interface SourceRowProps {
   filteredSources: SourceType[];
   selectedSources: Set<string>;
   activeSourceUuid: string | undefined;
+  drafts: Record<string, string>;
   onSelect: (sourceId: string, checked: boolean) => void;
   onToggleStar: (sourceId: string, currentlyStarred: boolean) => void;
 }
@@ -38,6 +40,7 @@ function SourceRow({
   filteredSources,
   selectedSources,
   activeSourceUuid,
+  drafts,
   onSelect,
   onToggleStar,
 }: RowComponentProps<SourceRowProps>) {
@@ -51,6 +54,7 @@ function SourceRow({
         source={source}
         isSelected={isSelected}
         isActive={isActive}
+        draft={drafts[source.uuid]}
         onSelect={onSelect}
         onToggleStar={onToggleStar}
       />
@@ -66,6 +70,7 @@ function SourceList({ focusedPanel }: { focusedPanel: FocusedPanel }) {
   const listRef = useListRef(null);
 
   const sources = useAppSelector(selectSources);
+  const drafts = useAppSelector(selectDrafts);
   const [selectedSources, setSelectedSources] = useState<Set<string>>(
     new Set(),
   );
@@ -345,6 +350,8 @@ function SourceList({ focusedPanel }: { focusedPanel: FocusedPanel }) {
             return source.data.is_starred;
           case "unstarred":
             return !source.data.is_starred;
+          case "drafts":
+            return source.uuid in drafts;
           case "all":
           default:
             return true;
@@ -360,7 +367,13 @@ function SourceList({ focusedPanel }: { focusedPanel: FocusedPanel }) {
           return dateB - dateA;
         }
       });
-  }, [sources, searchResults, filter, sortedAsc]);
+  }, [sources, searchResults, filter, sortedAsc, drafts]);
+
+  // While searching, rows show the matching search snippet instead of drafts
+  const visibleDrafts = useMemo(
+    () => (searchResults !== null ? {} : drafts),
+    [searchResults, drafts],
+  );
 
   const allSelected = useMemo(
     () =>
@@ -491,6 +504,7 @@ function SourceList({ focusedPanel }: { focusedPanel: FocusedPanel }) {
             filteredSources,
             selectedSources,
             activeSourceUuid,
+            drafts: visibleDrafts,
             onSelect: handleSourceSelect,
             onToggleStar: handleToggleStar,
           }}

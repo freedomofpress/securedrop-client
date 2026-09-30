@@ -234,6 +234,15 @@ describe("conversationSlice", () => {
       drafts: {
         drafts: {},
       },
+      syncActivity: {
+        downloads: {},
+        recentDownloads: [],
+        completedEvents: [],
+        pendingEvents: [],
+        inFlightEventIds: [],
+        loading: false,
+        error: null,
+      },
       sources: {
         sources: {},
         activeSourceUuid: null,

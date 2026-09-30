@@ -9,6 +9,7 @@ import { PendingEventType } from "../../../../types";
 import type { SourceProps } from "./SourceList/Source";
 import { renderWithProviders } from "../../../test-component-setup";
 import { requestDeleteSource } from "../../../components/deleteSourceRequester";
+import { setDraft } from "../../../features/drafts/draftsSlice";
 
 // Mock react-window to render all items instead of virtualizing
 vi.mock("react-window", () => ({
@@ -47,6 +48,7 @@ vi.mock("./SourceList/Source", () => ({
     source,
     isSelected,
     isActive,
+    draft,
     onSelect,
     onToggleStar,
   }: SourceProps) => (
@@ -58,6 +60,7 @@ vi.mock("./SourceList/Source", () => ({
       data-testid={`source-${source.uuid}`}
       data-selected={isSelected}
       data-active={isActive}
+      data-draft={draft}
     >
       {/* Checkbox - using input to match test expectations */}
       <input
@@ -251,6 +254,7 @@ describe("Sources Component", () => {
     sources = mockSources,
     loading = false,
     initialRoute = "/",
+    drafts: Record<string, string> = {},
   ) => {
     return renderWithProviders(
       <Routes>
@@ -270,6 +274,7 @@ describe("Sources Component", () => {
             error: null,
             conversationIndicators: {},
           },
+          drafts: { drafts },
         },
       },
     );
@@ -654,6 +659,107 @@ describe("Sources Component", () => {
       expect(screen.getByTestId("source-source-2")).toBeInTheDocument();
       expect(screen.getByTestId("source-source-3")).toBeInTheDocument();
       expect(screen.getByTestId("source-source-4")).toBeInTheDocument();
+    });
+  });
+
+  describe("Drafts", () => {
+    const drafts = {
+      "source-2": "reply to bob",
+      "source-4": "reply to diana",
+    };
+
+    it("passes each source's draft to its row", async () => {
+      renderSourceList(mockSources, false, "/", drafts);
+
+      await waitFor(() => {
+        expect(screen.getByTestId("source-source-2")).toBeInTheDocument();
+      });
+
+      expect(
+        screen.getByTestId("source-source-2").getAttribute("data-draft"),
+      ).toBe("reply to bob");
+      expect(
+        screen.getByTestId("source-source-4").getAttribute("data-draft"),
+      ).toBe("reply to diana");
+      expect(
+        screen.getByTestId("source-source-1").hasAttribute("data-draft"),
+      ).toBe(false);
+    });
+
+    it("does not pass drafts to rows while searching", async () => {
+      renderSourceList(mockSources, false, "/", drafts);
+
+      await waitFor(() => {
+        expect(screen.getByTestId("source-source-2")).toBeInTheDocument();
+      });
+
+      await userEvent.type(screen.getByTestId("source-search-input"), "bob");
+
+      await waitFor(() => {
+        expect(screen.queryByTestId("source-source-1")).not.toBeInTheDocument();
+      });
+      expect(
+        screen.getByTestId("source-source-2").hasAttribute("data-draft"),
+      ).toBe(false);
+    });
+
+    it("filters to show only sources with drafts", async () => {
+      renderSourceList(mockSources, false, "/", drafts);
+
+      await waitFor(() => {
+        expect(screen.getByTestId("source-source-1")).toBeInTheDocument();
+      });
+
+      await userEvent.click(screen.getByTestId("filter-dropdown"));
+      await userEvent.click(screen.getByText("Drafts"));
+
+      expect(screen.queryByTestId("source-source-1")).not.toBeInTheDocument();
+      expect(screen.getByTestId("source-source-2")).toBeInTheDocument();
+      expect(screen.queryByTestId("source-source-3")).not.toBeInTheDocument();
+      expect(screen.getByTestId("source-source-4")).toBeInTheDocument();
+      expect(screen.queryByTestId("source-source-5")).not.toBeInTheDocument();
+    });
+
+    it("applies both search and the drafts filter together", async () => {
+      renderSourceList(mockSources, false, "/", drafts);
+
+      await waitFor(() => {
+        expect(screen.getByTestId("source-source-1")).toBeInTheDocument();
+      });
+
+      // "bob" matches bob builder (draft) and bob ross (no draft)
+      await userEvent.type(screen.getByTestId("source-search-input"), "bob");
+      await userEvent.click(screen.getByTestId("filter-dropdown"));
+      await userEvent.click(screen.getByText("Drafts"));
+
+      // diana ross has a draft but doesn't match the search
+      await waitFor(() => {
+        expect(screen.queryByTestId("source-source-4")).not.toBeInTheDocument();
+      });
+      expect(screen.getByTestId("source-source-2")).toBeInTheDocument();
+      expect(screen.queryByTestId("source-source-5")).not.toBeInTheDocument();
+    });
+
+    it("updates the drafts filter as drafts are added and cleared", async () => {
+      const { store } = renderSourceList(mockSources, false, "/", drafts);
+
+      await waitFor(() => {
+        expect(screen.getByTestId("source-source-1")).toBeInTheDocument();
+      });
+
+      await userEvent.click(screen.getByTestId("filter-dropdown"));
+      await userEvent.click(screen.getByText("Drafts"));
+      expect(screen.queryByTestId("source-source-1")).not.toBeInTheDocument();
+
+      act(() => {
+        store.dispatch(setDraft({ sourceUuid: "source-1", content: "new" }));
+      });
+      expect(screen.getByTestId("source-source-1")).toBeInTheDocument();
+
+      act(() => {
+        store.dispatch(setDraft({ sourceUuid: "source-2", content: "" }));
+      });
+      expect(screen.queryByTestId("source-source-2")).not.toBeInTheDocument();
     });
   });
 

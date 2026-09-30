@@ -273,6 +273,62 @@ export type PendingEventRow = {
   data: string; // JSON stringified PendingEventData
 };
 
+export type PendingEventActivityRow = {
+  snowflake_id: string;
+  type: string;
+  source_uuid: string | null;
+  item_uuid: string | null;
+  source_designation: string | null;
+  filename: string | null;
+  retry_attempts: number;
+  last_event_status: number | null; // EventStatus enum
+};
+
+export type DownloadActivityRow = {
+  uuid: string;
+  source_uuid: string;
+  source_designation: string | null;
+  filename: string | null;
+  kind: string;
+  fetch_status: number; // FetchStatus enum
+  fetch_progress: number | null;
+  decrypted_size: number | null;
+  fetch_retry_attempts: number;
+  // SQLite CURRENT_TIMESTAMP text, e.g. "2026-09-01 12:34:56"
+  fetch_last_updated_at: string | null;
+};
+
+/** Sync activity types */
+
+export type PendingEventActivity = {
+  id: string;
+  type: PendingEventType;
+  sourceUuid: string | null;
+  itemUuid: string | null;
+  sourceDesignation: string | null;
+  filename: string | null;
+  retryAttempts: number;
+  lastEventStatus: EventStatus | null;
+};
+
+export type DownloadActivity = {
+  itemUuid: string;
+  sourceUuid: string;
+  sourceDesignation: string | null;
+  filename: string | null;
+  kind: "file" | "message" | "reply";
+  fetchStatus: FetchStatus;
+  fetchProgress: number | null;
+  decryptedSize: number | null;
+  retryAttempts: number;
+  updatedAt: number | null;
+};
+
+export type SyncActivitySnapshot = {
+  downloads: DownloadActivity[];
+  pendingEvents: PendingEventActivity[];
+};
+
 export enum FetchStatus {
   Initial = 0,
   DownloadInProgress = 1,

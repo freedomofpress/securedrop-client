@@ -19,6 +19,7 @@ export interface SourceProps {
   source: SourceType;
   isSelected: boolean;
   isActive: boolean;
+  draft?: string;
   onSelect: (sourceId: string, checked: boolean) => void;
   onToggleStar: (sourceId: string, currentlyStarred: boolean) => void;
 }
@@ -27,6 +28,7 @@ const Source = memo(function Source({
   source,
   isSelected,
   isActive,
+  draft,
   onSelect,
   onToggleStar,
 }: SourceProps) {
@@ -43,6 +45,12 @@ const Source = memo(function Source({
   const lastUpdated = useMemo(
     () => formatDateShort(source.data.last_updated, i18n.language, tCommon),
     [source.data.last_updated, i18n.language, tCommon],
+  );
+
+  // Collapse newlines and runs of whitespace so the draft fits on one line
+  const draftPreview = useMemo(
+    () => draft?.replace(/\s+/g, " ").trim(),
+    [draft],
   );
 
   const focusConversationHeading = useCallback(() => {
@@ -178,23 +186,41 @@ const Source = memo(function Source({
                   {designation}
                 </bdi>
               </h3>
-              {source.messagePreview && (
+              {draftPreview ? (
                 <p
-                  className={`text-xs overflow-hidden ${
+                  className={`text-xs truncate ${
                     isActive ? "text-white opacity-80" : "text-gray-500"
-                  } ${
-                    !source.isRead ? "font-medium" : "font-normal"
-                  } ${!source.messagePreview.plaintext ? "italic" : ""}`}
-                  data-testid="message-preview"
+                  } ${!source.isRead ? "font-medium" : "font-normal"}`}
+                  data-testid="draft-preview"
                 >
-                  <bdi className="inline-block max-w-full truncate align-bottom">
-                    {!source.messagePreview.plaintext
-                      ? source.messagePreview.kind === "file"
-                        ? t("source.encryptedFile")
-                        : t("source.encryptedMessage")
-                      : source.messagePreview.plaintext}
-                  </bdi>
+                  <span
+                    className={
+                      isActive ? "text-white font-semibold" : "text-blue-600"
+                    }
+                  >
+                    {t("source.draft")}
+                  </span>{" "}
+                  <bdi>{draftPreview}</bdi>
                 </p>
+              ) : (
+                source.messagePreview && (
+                  <p
+                    className={`text-xs overflow-hidden ${
+                      isActive ? "text-white opacity-80" : "text-gray-500"
+                    } ${
+                      !source.isRead ? "font-medium" : "font-normal"
+                    } ${!source.messagePreview.plaintext ? "italic" : ""}`}
+                    data-testid="message-preview"
+                  >
+                    <bdi className="inline-block max-w-full truncate align-bottom">
+                      {!source.messagePreview.plaintext
+                        ? source.messagePreview.kind === "file"
+                          ? t("source.encryptedFile")
+                          : t("source.encryptedMessage")
+                        : source.messagePreview.plaintext}
+                    </bdi>
+                  </p>
+                )
               )}
             </div>
           </div>

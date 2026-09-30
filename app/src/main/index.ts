@@ -39,6 +39,7 @@ import {
   FetchStatus,
   PendingEventType,
   SyncStatus,
+  type SyncActivitySnapshot,
   PendingEventData,
   type ms,
 } from "../types";
@@ -566,6 +567,16 @@ if (!gotTheLock) {
       );
 
       ipcMain.handle(
+        "getSyncActivity",
+        async (_event): Promise<SyncActivitySnapshot> => {
+          return {
+            downloads: db.getDownloadActivity(),
+            pendingEvents: db.getPendingEventActivity(),
+          };
+        },
+      );
+
+      ipcMain.handle(
         "updateFetchStatus",
         async (_event, itemUuid: string, fetchStatus: number) => {
           // If the user is pausing or cancelling, abort any in-progress download
@@ -997,7 +1008,19 @@ if (!gotTheLock) {
           const authedRequest: AuthedRequest = { authToken, ...request };
           let syncStatus = SyncStatus.NOT_MODIFIED;
           do {
-            syncStatus = await syncWithLock(syncLock, db, authedRequest);
+            syncStatus = await syncWithLock(
+              syncLock,
+              db,
+              authedRequest,
+              (eventIds) => {
+                if (!mainWindow.isDestroyed()) {
+                  mainWindow.webContents.send(
+                    "pending-events-in-flight",
+                    eventIds,
+                  );
+                }
+              },
+            );
             // Update renderer on each sync cycle completion
             if (!mainWindow.isDestroyed()) {
               mainWindow.webContents.send("sync-complete", syncStatus);
@@ -1069,6 +1092,7 @@ async function syncWithLock(
   syncLock: Lock,
   db: Datastore,
   request: AuthedRequest,
+  onEventsInFlight?: (eventIds: string[]) => void,
 ): Promise<SyncStatus> {
   const MAX_SYNC_RETRIES = 3;
 
@@ -1082,6 +1106,7 @@ async function syncWithLock(
           request.authToken,
           request.hintedRecords,
           retryCount,
+          onEventsInFlight,
         );
       }, 1000);
     } catch (error) {

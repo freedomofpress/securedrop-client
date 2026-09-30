@@ -39,6 +39,7 @@ import SyncSidebar, {
   SYNC_SIDEBAR_DEFAULT_HEIGHT,
 } from "./views/Inbox/Sidebar/SyncSidebar";
 import Source from "./views/Inbox/Sidebar/SourceList/Source";
+import Toolbar from "./views/Inbox/Sidebar/SourceList/Toolbar";
 import MainMenu from "./views/Inbox/Sidebar/Account/MainMenu";
 import KeyboardHelp from "./views/Inbox/Sidebar/Account/KeyboardHelp";
 import { FirstRunPopup } from "./components/FirstRunPopup";
@@ -438,6 +439,60 @@ describe.sequential("accessibility (axe)", () => {
         />,
         undefined,
         ["aria-required-parent", "button-name", "label", "nested-interactive"],
+      );
+    });
+
+    it("has no axe violations on a source with a draft", async () => {
+      // TODO(a11y): same known source row violations as above.
+      await renderAndCheckA11y(
+        <Source
+          source={createMockSource()}
+          isSelected={false}
+          isActive={false}
+          draft="Draft reply text"
+          onSelect={vi.fn()}
+          onToggleStar={vi.fn()}
+        />,
+        undefined,
+        ["aria-required-parent", "button-name", "label", "nested-interactive"],
+      );
+    });
+
+    it("has no axe violations on an active source with a draft", async () => {
+      // TODO(a11y): same known source row violations as above.
+      await renderAndCheckA11y(
+        <Source
+          source={createMockSource()}
+          isSelected={false}
+          isActive={true}
+          draft="Draft reply text"
+          onSelect={vi.fn()}
+          onToggleStar={vi.fn()}
+        />,
+        undefined,
+        ["aria-required-parent", "button-name", "label", "nested-interactive"],
+      );
+    });
+  });
+
+  describe("Toolbar", () => {
+    it("has no axe violations with the drafts filter active", async () => {
+      await renderAndCheckA11y(
+        <Toolbar
+          allSelected={false}
+          selectedCount={0}
+          totalCount={4}
+          onSelectAll={vi.fn()}
+          onBulkDelete={vi.fn()}
+          searchTerm=""
+          filter="drafts"
+          sortedAsc={false}
+          dropdownOpen={false}
+          onSearchChange={vi.fn()}
+          onFilterChange={vi.fn()}
+          onToggleSort={vi.fn()}
+          onDropdownOpenChange={vi.fn()}
+        />,
       );
     });
   });
