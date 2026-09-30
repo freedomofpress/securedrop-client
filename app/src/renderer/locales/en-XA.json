@@ -36,7 +36,8 @@
         "unread": "[Unread]",
         "read": "[Read]",
         "unstarred": "[Unstarred]",
-        "all": "[All]"
+        "all": "[All]",
+        "drafts": "[Drafts]"
       },
       "search": {
         "placeholder": "[Search]"
@@ -93,7 +94,8 @@
       "encryptedMessage": "[!Encrypted Message!]",
       "toggleStar": "[!Toggle star!]",
       "encryptedFile": "[!Encrypted File!]",
-      "selectSource": "[!!Select {{designation}}!!]"
+      "selectSource": "[!!Select {{designation}}!!]",
+      "draft": "[Draft:]"
     },
     "syncStatus": {
       "notloggedin": "[!Sync: not logged in!]",
