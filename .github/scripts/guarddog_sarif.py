@@ -48,9 +48,9 @@ INCOMPLETE = "incomplete"
 # We also add an "incomplete" rule for any dependencies that GuardDog isn't able
 # to assess, which we treat as high risk to err on the side of caution.
 RULES = {
-    "high_risk": ("error", "7.0", "GuardDog rates {dependency} high_risk"),
-    "suspicious": ("warning", "5.0", "GuardDog rates {dependency} suspicious"),
-    "low": ("note", "0.1", "GuardDog rates {dependency} low"),
+    "high_risk": ("error", "7.0", "{dependency}: high_risk"),
+    "suspicious": ("warning", "5.0", "{dependency}: suspicious"),
+    "low": ("note", "0.1", "{dependency}: low"),
     INCOMPLETE: ("error", "7.0", "GuardDog could not fully assess {dependency}"),
 }
 
