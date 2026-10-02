@@ -39,8 +39,8 @@ import yaml
 NO_RISK = "no_risks_detected"
 INCOMPLETE = "incomplete"
 
-# RULES defines the set of rules we use in the SARIF report we generate. high_risk,
-# suspicious, and low are the labels GuardDog uses, which we use as the rule IDs.
+# RULES defines the finding categories in the SARIF report we generate.
+# high_risk, suspicious, and low are the labels GuardDog uses.
 # Each tuple is then:
 #   - SARIF standard level
 #   - The lowest score GuardDog gives that label (see calculate_risk_score in risk_engine.py)
@@ -48,10 +48,10 @@ INCOMPLETE = "incomplete"
 # We also add an "incomplete" rule for any dependencies that GuardDog isn't able
 # to assess, which we treat as high risk to err on the side of caution.
 RULES = {
-    "high_risk": ("error", "7.0", "GuardDog rates this dependency version high_risk"),
-    "suspicious": ("warning", "5.0", "GuardDog rates this dependency version suspicious"),
-    "low": ("note", "0.1", "GuardDog rates this dependency version low"),
-    INCOMPLETE: ("error", "7.0", "GuardDog could not fully assess this dependency version"),
+    "high_risk": ("error", "7.0", "{dependency}: high_risk"),
+    "suspicious": ("warning", "5.0", "{dependency}: suspicious"),
+    "low": ("note", "0.1", "{dependency}: low"),
+    INCOMPLETE: ("error", "7.0", "GuardDog could not fully assess {dependency}"),
 }
 
 HELP = """\
@@ -230,13 +230,6 @@ def scan(dependency: Dependency) -> dict:
     return report
 
 
-def rule_for(report: dict) -> str:
-    """Return the SARIF rule ID for an assessment, or NO_RISK if it needs no alert."""
-    if report.get("errors"):
-        return INCOMPLETE
-    return report["risk_score"]["label"]
-
-
 def describe(dependency: Dependency, report: dict) -> str:
     """Summarize an assessment and its evidence as a plain-text alert message."""
     what = f"{dependency.ecosystem} dependency {dependency.name} {dependency.version}"
@@ -275,45 +268,53 @@ def describe(dependency: Dependency, report: dict) -> str:
 
 
 def to_sarif(assessments: list[tuple[Dependency, Location, dict]]) -> dict:
-    rules = [
-        {
-            "id": rule,
-            "shortDescription": {"text": description},
-            "help": {"text": HELP, "markdown": HELP},
-            "defaultConfiguration": {"level": level},
-            "properties": {"security-severity": severity, "tags": ["security"]},
-        }
-        for rule, (level, severity, description) in RULES.items()
-    ]
-    results = [
-        {
-            "ruleId": rule_for(report),
-            "message": {"text": describe(dependency, report)},
-            "locations": [
-                {
-                    "physicalLocation": {
-                        "artifactLocation": {"uri": location.path},
-                        "region": {"startLine": location.line},
+    rules, results = [], []
+    for dependency, location, report in sorted(assessments, key=lambda a: a[1]):
+        category = INCOMPLETE if report.get("errors") else report["risk_score"]["label"]
+        if category == NO_RISK:
+            continue
+        level, severity, description = RULES[category]
+        # GitHub uses the rule description as the alert title. Each dependency
+        # version therefore needs its own rule, with an ID stable across scans.
+        rule_id = f"{category}:{dependency}"
+        rules.append(
+            {
+                "id": rule_id,
+                "shortDescription": {"text": description.format(dependency=dependency)},
+                "help": {"text": HELP, "markdown": HELP},
+                "defaultConfiguration": {"level": level},
+                "properties": {"security-severity": severity, "tags": ["security"]},
+            }
+        )
+        results.append(
+            {
+                "ruleId": rule_id,
+                "message": {"text": describe(dependency, report)},
+                "locations": [
+                    {
+                        "physicalLocation": {
+                            "artifactLocation": {"uri": location.path},
+                            "region": {"startLine": location.line},
+                        }
                     }
-                }
-            ],
-            # GitHub decides whether a result is the same alert as last run
-            # (and so stays dismissed) by comparing rule ID, file and this hash.
-            # We hash the ecosystem, package name, and version, so a dismissed
-            # finding will stay suppressed. Only new versions of the dependency
-            # will trigger a new finding.
-            "partialFingerprints": {
-                "primaryLocationLineHash": hashlib.sha256(str(dependency).encode()).hexdigest()
-            },
-            "properties": {
-                "guarddog": {
-                    key: report[key] for key in ("risk_score", "risks", "errors") if report.get(key)
-                }
-            },
-        }
-        for dependency, location, report in sorted(assessments, key=lambda a: a[1])
-        if rule_for(report) != NO_RISK
-    ]
+                ],
+                # GitHub decides whether a result is the same alert as last run
+                # (and so stays dismissed) by comparing rule ID, file and this hash.
+                # We hash the ecosystem, package name, and version, so a dismissed
+                # finding will stay suppressed. Only new versions of the dependency
+                # will trigger a new finding.
+                "partialFingerprints": {
+                    "primaryLocationLineHash": hashlib.sha256(str(dependency).encode()).hexdigest()
+                },
+                "properties": {
+                    "guarddog": {
+                        key: report[key]
+                        for key in ("risk_score", "risks", "errors")
+                        if report.get(key)
+                    }
+                },
+            }
+        )
     return {
         "$schema": "https://json.schemastore.org/sarif-2.1.0.json",
         "version": "2.1.0",
