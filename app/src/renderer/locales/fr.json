@@ -71,7 +71,8 @@
         "read": "Lus",
         "unread": "Non lus",
         "starred": "Avec étoile",
-        "unstarred": "Sans étoile"
+        "unstarred": "Sans étoile",
+        "drafts": "Brouillons"
       },
       "actions": {
         "bulkDelete": "Supprimer les sources choisies"
@@ -129,7 +130,8 @@
       "encryptedFile": "Fichier chiffré",
       "encryptedMessage": "Message chiffré",
       "toggleStar": "Étoile",
-      "selectSource": "Choisir {{designation}}"
+      "selectSource": "Choisir {{designation}}",
+      "draft": "Brouillon :"
     },
     "shortcuts": {
       "quit": "Fermer SecureDrop",
