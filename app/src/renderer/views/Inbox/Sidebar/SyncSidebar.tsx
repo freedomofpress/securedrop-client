@@ -1,5 +1,5 @@
 /* eslint-disable react-refresh/only-export-components */
-import { memo } from "react";
+import { memo, useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import {
   ChevronDown,
@@ -10,9 +10,25 @@ import {
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 
-import { useAppSelector } from "../../../hooks";
+import { useAppDispatch, useAppSelector } from "../../../hooks";
 import { SyncActivity } from "../../../features/sync/syncSlice";
-import { selectSyncSummary } from "../../../features/syncActivity/syncActivitySlice";
+import {
+  COMPLETED_EVENT_DISPLAY_MS,
+  DownloadDisplayStatus,
+  PendingEventDisplayStatus,
+  pruneCompletedEvents,
+  selectCompletedEvents,
+  selectDownloadActivity,
+  selectPendingEventActivity,
+  selectRecentDownloads,
+  selectSyncSummary,
+} from "../../../features/syncActivity/syncActivitySlice";
+import ActivitySection from "./SyncSidebar/ActivitySection";
+import AttentionBanner from "./SyncSidebar/AttentionBanner";
+import { CompletedDownloadRow, DownloadRow } from "./SyncSidebar/DownloadRow";
+import PendingEventRow, {
+  CompletedEventRow,
+} from "./SyncSidebar/PendingEventRow";
 
 export const SYNC_SIDEBAR_COLLAPSED_HEIGHT = 48;
 
@@ -57,7 +73,56 @@ const SyncSidebar = memo(function SyncSidebar({
   onToggle,
 }: SyncSidebarProps) {
   const { t } = useTranslation("Sidebar");
+  const dispatch = useAppDispatch();
   const activity = useAppSelector(selectSyncSummary);
+  const downloads = useAppSelector(selectDownloadActivity);
+  const events = useAppSelector(selectPendingEventActivity);
+  const completedEvents = useAppSelector(selectCompletedEvents);
+  const allRecentDownloads = useAppSelector(selectRecentDownloads);
+
+  // Events often sync faster than the eye can follow, so a drained one lingers
+  // briefly before being dropped. Evict on the oldest entry's deadline.
+  useEffect(() => {
+    const oldest = completedEvents.at(-1);
+    if (!oldest) {
+      return;
+    }
+    const timer = setTimeout(
+      () =>
+        dispatch(pruneCompletedEvents(Date.now() - COMPLETED_EVENT_DISPLAY_MS)),
+      Math.max(0, oldest.completedAt + COMPLETED_EVENT_DISPLAY_MS - Date.now()),
+    );
+    return () => clearTimeout(timer);
+  }, [completedEvents, dispatch]);
+
+  // Anything stuck is lifted out of its section and surfaced at the top of
+  // the panel, so each list below only carries work that is still moving.
+  const stuckDownloads = downloads.filter(
+    (download) =>
+      download.displayStatus === DownloadDisplayStatus.NEEDS_ATTENTION,
+  );
+  const stuckEvents = events.filter(
+    (event) =>
+      event.displayStatus === PendingEventDisplayStatus.NEEDS_ATTENTION,
+  );
+  const activeDownloads = downloads.filter(
+    (download) =>
+      download.displayStatus !== DownloadDisplayStatus.NEEDS_ATTENTION,
+  );
+  const queuedEvents = events.filter(
+    (event) =>
+      event.displayStatus !== PendingEventDisplayStatus.NEEDS_ATTENTION,
+  );
+  // Only files can be opened once they land, so other kinds just drop off
+  const recentDownloads = allRecentDownloads.filter(
+    (download) => download.kind === "file" && download.filename !== null,
+  );
+
+  const isEmpty =
+    downloads.length === 0 &&
+    events.length === 0 &&
+    completedEvents.length === 0 &&
+    recentDownloads.length === 0;
 
   const { icon: Icon, iconClass, labelKey, spin } = PRESENTATION[activity];
   const Chevron = collapsed ? ChevronUp : ChevronDown;
@@ -93,14 +158,50 @@ const SyncSidebar = memo(function SyncSidebar({
         </button>
       </h2>
 
-      {/* TODO: replace placeholder body with sync sidebar data */}
       <div
         id={BODY_ID}
         hidden={collapsed}
         data-testid="sync-sidebar-body"
-        className="sd-text-tertiary min-h-0 flex-1 overflow-y-auto px-4 py-3 text-sm"
+        className="sd-bg-secondary min-h-0 flex-1 overflow-y-auto px-4 py-3"
       >
-        {t("syncSidebar.body")}
+        {isEmpty ? (
+          <p className="sd-text-tertiary" data-testid="sync-sidebar-empty">
+            {t("syncSidebar.empty")}
+          </p>
+        ) : (
+          <div className="flex flex-col gap-3">
+            <AttentionBanner events={stuckEvents} downloads={stuckDownloads} />
+            {(activeDownloads.length > 0 || recentDownloads.length > 0) && (
+              <ActivitySection
+                title={t("syncSidebar.section.downloads")}
+                testId="sync-sidebar-downloads"
+              >
+                {activeDownloads.map((download) => (
+                  <DownloadRow key={download.itemUuid} download={download} />
+                ))}
+                {recentDownloads.map((download) => (
+                  <CompletedDownloadRow
+                    key={download.itemUuid}
+                    download={download}
+                  />
+                ))}
+              </ActivitySection>
+            )}
+            {(queuedEvents.length > 0 || completedEvents.length > 0) && (
+              <ActivitySection
+                title={t("syncSidebar.section.pending")}
+                testId="sync-sidebar-pending"
+              >
+                {queuedEvents.map((event) => (
+                  <PendingEventRow key={event.id} event={event} />
+                ))}
+                {completedEvents.map((event) => (
+                  <CompletedEventRow key={event.id} event={event} />
+                ))}
+              </ActivitySection>
+            )}
+          </div>
+        )}
       </div>
     </section>
   );
