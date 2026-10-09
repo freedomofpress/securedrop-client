@@ -2,7 +2,7 @@
 
 ## 1.7.1
 
-* Preload kernel modules required to support LUKS and Veracrypt export devices (#3773)
+* Preload kernel modules required to support LUKS and Veracrypt export devices (#3773, #3775)
 
 ## 1.7.0
 
