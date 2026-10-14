@@ -258,6 +258,7 @@ beforeEach(() => {
       .fn()
       .mockResolvedValue({ downloads: [], pendingEvents: [] }),
     onPendingEventsInFlight: vi.fn().mockReturnValue(() => {}),
+    onPendingEventsChanged: vi.fn().mockReturnValue(() => {}),
   } as ElectronAPI;
 });
 

@@ -156,6 +156,11 @@ const electronAPI = {
   getSyncActivity: logIpcCall<SyncActivitySnapshot>("getSyncActivity", () =>
     ipcRenderer.invoke("getSyncActivity"),
   ),
+  onPendingEventsChanged: (callback: () => void) => {
+    const listener = () => callback();
+    ipcRenderer.on("pending-events-changed", listener);
+    return () => ipcRenderer.removeListener("pending-events-changed", listener);
+  },
   onPendingEventsInFlight: (callback: (eventIds: string[]) => void) => {
     const listener = (_event: Electron.IpcRendererEvent, eventIds: string[]) =>
       callback(eventIds);

@@ -1,4 +1,9 @@
-import { createSlice, createAsyncThunk, PayloadAction } from "@reduxjs/toolkit";
+import {
+  createSlice,
+  createAsyncThunk,
+  createSelector,
+  PayloadAction,
+} from "@reduxjs/toolkit";
 
 import type { RootState } from "../../store";
 import {
@@ -15,6 +20,9 @@ import { SyncActivity, selectSyncActivity } from "../sync/syncSlice";
 
 export const RECENT_DOWNLOADS_LIMIT = 5;
 export const COMPLETED_EVENTS_LIMIT = 50;
+// How long a drained event lingers in the sidebar before it is dropped, so
+// that work which syncs quickly is still legible
+export const COMPLETED_EVENT_DISPLAY_MS = 5000;
 
 const IN_FLIGHT_STATUSES: ReadonlySet<FetchStatus> = new Set([
   FetchStatus.DownloadInProgress,
@@ -38,7 +46,7 @@ const FAILED_EVENT_STATUSES: ReadonlySet<EventStatus> = new Set([
 ]);
 
 export type CompletedEventActivity = PendingEventActivity & {
-  // Renderer-side timestamp to order events
+  // Renderer-side timestamp, used to age the event out of the sidebar
   completedAt: number;
 };
 
@@ -47,6 +55,9 @@ export interface SyncActivityState {
   recentDownloads: DownloadActivity[];
   pendingEvents: PendingEventActivity[];
   inFlightEventIds: string[];
+  // Events handed to the server at least once. An event that leaves the queue
+  // without appearing here was superseded or purged locally, not synced.
+  submittedEventIds: string[];
   completedEvents: CompletedEventActivity[];
   loading: boolean;
   error: string | null;
@@ -57,6 +68,7 @@ const initialState: SyncActivityState = {
   recentDownloads: [],
   pendingEvents: [],
   inFlightEventIds: [],
+  submittedEventIds: [],
   completedEvents: [],
   loading: false,
   error: null,
@@ -80,6 +92,7 @@ const toDownloadActivity = (
   kind: item.data.kind,
   fetchStatus: item.fetch_status ?? FetchStatus.Initial,
   fetchProgress: item.fetch_progress,
+  size: item.data.size,
   decryptedSize: item.decrypted_size,
   retryAttempts: previous?.retryAttempts ?? 0,
   updatedAt: Date.now(),
@@ -90,11 +103,19 @@ const recordCompletedEvents = (
   pendingEvents: PendingEventActivity[],
 ) => {
   const stillPending = new Set(pendingEvents.map((event) => event.id));
+  const submitted = new Set(state.submittedEventIds);
   const completedAt = Date.now();
 
+  // Only events that reached the server count as done. Coalesced star toggles
+  // and events purged by a source deletion also leave the queue, but showing
+  // those as synced would be a lie.
   const completed = state.pendingEvents
-    .filter((event) => !stillPending.has(event.id))
+    .filter((event) => !stillPending.has(event.id) && submitted.has(event.id))
     .map((event) => ({ ...event, completedAt }));
+
+  state.submittedEventIds = state.submittedEventIds.filter((id) =>
+    stillPending.has(id),
+  );
 
   if (completed.length === 0) {
     return;
@@ -113,6 +134,23 @@ export const syncActivitySlice = createSlice({
   reducers: {
     setEventsInFlight: (state, action: PayloadAction<string[]>) => {
       state.inFlightEventIds = action.payload;
+      // The queue is cleared before the events are deleted, so remember what
+      // went out rather than reading inFlightEventIds when they disappear
+      const submitted = new Set(state.submittedEventIds);
+      for (const id of action.payload) {
+        submitted.add(id);
+      }
+      state.submittedEventIds = [...submitted];
+    },
+    pruneCompletedEvents: (state, action: PayloadAction<number>) => {
+      const remaining = state.completedEvents.filter(
+        (event) => event.completedAt > action.payload,
+      );
+      // Reassigning unconditionally would re-arm the eviction timer on every
+      // prune, even the ones that drop nothing
+      if (remaining.length !== state.completedEvents.length) {
+        state.completedEvents = remaining;
+      }
     },
     clearRecentDownloads: (state) => {
       state.recentDownloads = [];
@@ -176,8 +214,12 @@ export const syncActivitySlice = createSlice({
   },
 });
 
-export const { setEventsInFlight, clearRecentDownloads, clearCompletedEvents } =
-  syncActivitySlice.actions;
+export const {
+  setEventsInFlight,
+  pruneCompletedEvents,
+  clearRecentDownloads,
+  clearCompletedEvents,
+} = syncActivitySlice.actions;
 
 export enum PendingEventDisplayStatus {
   QUEUED = "queued",
@@ -242,29 +284,32 @@ export const selectSyncActivityError = (state: RootState) =>
   state.syncActivity.error;
 export const selectRecentDownloads = (state: RootState) =>
   state.syncActivity.recentDownloads;
-// Session-local activity log: events that left the queue since sign in.
+// Events that finished syncing recently, still shown while they age out.
 export const selectCompletedEvents = (
   state: RootState,
 ): CompletedEventActivity[] => state.syncActivity.completedEvents;
 
-export const selectPendingEventActivity = (
-  state: RootState,
-): PendingEventWithStatus[] =>
-  state.syncActivity.pendingEvents.map((event) => ({
-    ...event,
-    displayStatus: pendingEventDisplayStatus(
-      event,
-      state.syncActivity.inFlightEventIds,
-    ),
-  }));
+// Memoized so subscribing components only re-render when the queue itself moves
+export const selectPendingEventActivity = createSelector(
+  [
+    (state: RootState) => state.syncActivity.pendingEvents,
+    (state: RootState) => state.syncActivity.inFlightEventIds,
+  ],
+  (pendingEvents, inFlightEventIds): PendingEventWithStatus[] =>
+    pendingEvents.map((event) => ({
+      ...event,
+      displayStatus: pendingEventDisplayStatus(event, inFlightEventIds),
+    })),
+);
 
-export const selectDownloadActivity = (
-  state: RootState,
-): DownloadWithStatus[] =>
-  Object.values(state.syncActivity.downloads).map((download) => ({
-    ...download,
-    displayStatus: downloadDisplayStatus(download),
-  }));
+export const selectDownloadActivity = createSelector(
+  [(state: RootState) => state.syncActivity.downloads],
+  (downloads): DownloadWithStatus[] =>
+    Object.values(downloads).map((download) => ({
+      ...download,
+      displayStatus: downloadDisplayStatus(download),
+    })),
+);
 
 export const selectNeedsAttentionCount = (state: RootState): number => {
   const events = state.syncActivity.pendingEvents.filter(
