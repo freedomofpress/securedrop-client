@@ -60,6 +60,7 @@ override_dh_installsystemd:
 	dh_installsystemd --name securedrop-get-secret-keys
 	dh_installsystemd --name securedrop-proxy-onion-config
 	dh_installsystemd --name securedrop-mime-handling
+	dh_installsystemd --name securedrop-setup-journalist-vault
 
 # chrome-sandbox must be setuid to create new namespaces; see
 # https://github.com/chromium/chromium/blob/836ab130/sandbox/linux/README.md#setuid2
