@@ -54,6 +54,12 @@ Depends: ${misc:Depends}, ${shlibs:Depends}, tor, libqubesdb, python3, python3-q
 Description: This is securedrop Qubes proxy service
  This package provides the network proxy on Qubes to talk to the SecureDrop server.
 
+Package: securedrop-vault
+Architecture: all
+Depends: ${misc:Depends}, keepassxc
+Description: This package provides a KeePassXC database template that is copied to the
+ journalist vault VM on boot, if one does not exist yet.
+
 Package: securedrop-workstation-config
 Architecture: all
 Depends: python3-qubesdb, rsyslog, mailcap, apparmor, nautilus, securedrop-keyring, xfce4-terminal, locales-all
