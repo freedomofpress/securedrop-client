@@ -1,11 +1,13 @@
 [Unit]
 Description=Qubes SecureDrop Journalist Vault VM setup
 ConditionPathExists=/var/run/qubes-service/securedrop-setup-journalist-vault
-ConditionPathExists=!%h/journalist-keepassx.kdbx
+ConditionPathExists=!%h/Persistent/journalist-keepassx.kdbx
 
 [Service]
 Type=exec
-ExecStart=/usr/bin/cp /usr/share/securedrop/templates/journalist-keepassx.kdbx %h/
+Environment=PASS_DIR=%h/Persistent/
+ExecStartPre=/usr/bin/mkdir -p ${PASS_DIR}
+ExecStart=/usr/bin/cp /usr/share/securedrop/templates/journalist-keepassx.kdbx ${PASS_DIR}/
 
 [Install]
 WantedBy=default.target
