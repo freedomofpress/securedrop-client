@@ -1,0 +1,8 @@
+# Description is in debian/control - this is a false positive
+securedrop-vault: extended-description-is-empty
+
+# FIXME: section shouldn't be "unknown"
+securedrop-vault: section-is-dh_make-template
+
+# We override conffile for /etc/
+securedrop-vault: control-file-is-empty [conffiles]
