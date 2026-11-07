@@ -5,16 +5,6 @@
         "tooltip": ""
       },
       "deleteDialog": {
-        "single": {
-          "message": "",
-          "keepAccountButton": "",
-          "deleteAccountButton": ""
-        },
-        "multiple": {
-          "keepAccountsButton": "",
-          "deleteAccountsButton": "",
-          "message": ""
-        },
         "cancelButton": "",
         "messageCount_one": "",
         "messageCount_other": "",
@@ -23,8 +13,7 @@
         "replyCount_other": "",
         "itemCountsHeader": "",
         "fileCount_one": "",
-        "fileCount_other": "",
-        "warning": ""
+        "fileCount_other": ""
       },
       "filters": {
         "starred": "",

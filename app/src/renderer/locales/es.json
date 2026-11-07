@@ -46,16 +46,6 @@
         "tooltip": "Cambiar orden"
       },
       "deleteDialog": {
-        "single": {
-          "message": "¿Quieres eliminar la cuenta de la fuente o solo la conversación?",
-          "keepAccountButton": "Eliminar Conversación",
-          "deleteAccountButton": "Eliminar Cuenta"
-        },
-        "multiple": {
-          "keepAccountsButton": "Eliminar Conversaciones",
-          "deleteAccountsButton": "Eliminar Cuentas",
-          "message": "¿Quieres eliminar estas {{count}} cuentas de fuentes o solo las conversaciones?"
-        },
         "cancelButton": "Cancelar",
         "messageCount_one": "{{count}} mensaje",
         "messageCount_many": "{{count}} mensajes",
@@ -67,8 +57,7 @@
         "itemCountsHeader": "Esto eliminará:",
         "fileCount_one": "{{count}} archivo",
         "fileCount_many": "{{count}} archivos",
-        "fileCount_other": "{{count}} archivos",
-        "warning": "Si eliminas la cuenta de una fuente, ya no podrá iniciar sesión y enviarte mensajes. Para comunicarte con esta fuente en el futuro, deberá crear una nueva cuenta."
+        "fileCount_other": "{{count}} archivos"
       },
       "filters": {
         "starred": "Marcadas",
