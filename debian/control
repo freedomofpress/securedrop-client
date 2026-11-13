@@ -56,7 +56,7 @@ Description: This is securedrop Qubes proxy service
 
 Package: securedrop-vault
 Architecture: all
-Depends: ${misc:Depends}, keepassxc
+Depends: ${misc:Depends}, keepassxc-minimal
 Description: This package provides a KeePassXC database template that is copied to the
  journalist vault VM on boot, if one does not exist yet.
 
