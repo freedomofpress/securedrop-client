@@ -149,6 +149,8 @@ const Source = memo(function Source({
         <Button
           type="text"
           size="large"
+          aria-label={`${t("source.toggleStar")}: ${designation}`}
+          aria-pressed={source.data.is_starred}
           icon={
             source.data.is_starred ? (
               <StarFilled color={starredStarColor} size={20} />

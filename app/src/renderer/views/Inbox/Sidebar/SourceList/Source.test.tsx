@@ -355,6 +355,35 @@ describe("Source Component", () => {
       expect(mockNavigate).toHaveBeenCalledWith("/");
     });
 
+    it("exposes the star button's accessible name and unstarred state", () => {
+      const source = createMockSource();
+
+      renderWithProviders(<Source source={source} {...defaultProps} />);
+
+      const starButton = screen.getByRole("button", {
+        name: /toggle star: test source/i,
+      });
+
+      expect(starButton).toHaveAttribute("aria-pressed", "false");
+    });
+
+    it("exposes the starred state to assistive technology", () => {
+      const source = createMockSource({
+        data: {
+          ...createMockSource().data,
+          is_starred: true,
+        },
+      });
+
+      renderWithProviders(<Source source={source} {...defaultProps} />);
+
+      const starButton = screen.getByRole("button", {
+        name: /toggle star: test source/i,
+      });
+
+      expect(starButton).toHaveAttribute("aria-pressed", "true");
+    });
+
     it("calls onToggleStar when star button is clicked", async () => {
       const user = userEvent.setup();
       const starredSource = createMockSource({
