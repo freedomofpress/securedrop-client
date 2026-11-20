@@ -273,24 +273,32 @@ export class TestHelpers {
     });
   }
 
-  async clickDeleteAccount(): Promise<void> {
+  async selectDeleteAccount(): Promise<void> {
+    await this.context.page.getByTestId("delete-modal-scope-account").check();
+  }
+
+  async selectDeleteConversation(): Promise<void> {
     await this.context.page
-      .getByTestId("delete-modal-delete-account-button")
-      .click();
+      .getByTestId("delete-modal-scope-conversation")
+      .check();
+  }
+
+  async clickDelete(): Promise<void> {
+    await this.context.page.getByTestId("delete-modal-confirm-button").click();
     // Wait for the modal to close before proceeding
     await expect(
       this.context.page.getByTestId("delete-modal-content"),
     ).not.toBeVisible({ timeout: 5000 });
   }
 
+  async clickDeleteAccount(): Promise<void> {
+    await this.selectDeleteAccount();
+    await this.clickDelete();
+  }
+
   async clickDeleteConversation(): Promise<void> {
-    await this.context.page
-      .getByTestId("delete-modal-delete-conversation-button")
-      .click();
-    // Wait for the modal to close before proceeding
-    await expect(
-      this.context.page.getByTestId("delete-modal-content"),
-    ).not.toBeVisible({ timeout: 5000 });
+    await this.selectDeleteConversation();
+    await this.clickDelete();
   }
 
   async sendReply(message: string): Promise<void> {
