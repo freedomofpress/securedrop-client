@@ -7,7 +7,7 @@
   },
   "MainContent": {
     "emptyState": "<bold>Choisissez une source</bold> dans la liste pour lire les messages, récupérer les fichiers ou envoyer des réponses.",
-    "emptyConversation": "",
+    "emptyConversation": "Tous les fichiers et messages ont été supprimés pour cette source.",
     "conversation": {
       "sendButton": "Envoyer",
       "messagePlaceholder": "Message {{designation}}…",
@@ -71,7 +71,8 @@
         "read": "Lus",
         "unread": "Non lus",
         "starred": "Avec étoile",
-        "unstarred": "Sans étoile"
+        "unstarred": "Sans étoile",
+        "drafts": "Brouillons"
       },
       "actions": {
         "bulkDelete": "Supprimer les sources choisies"
@@ -129,7 +130,8 @@
       "encryptedFile": "Fichier chiffré",
       "encryptedMessage": "Message chiffré",
       "toggleStar": "Étoile",
-      "selectSource": "Choisir {{designation}}"
+      "selectSource": "Choisir {{designation}}",
+      "draft": "Brouillon :"
     },
     "shortcuts": {
       "quit": "Fermer SecureDrop",
@@ -173,6 +175,18 @@
     "resizer": {
       "label": "Redimensionner la barre latérale",
       "hint": "Faire glisser pour redimensionner la barre latérale"
+    },
+    "syncSidebar": {
+      "status": {
+        "syncing": "Synchronisation…",
+        "upToDate": "Tout est à jour",
+        "needsAttention": "À surveiller"
+      },
+      "body": "Texte d’espace réservé de la barre latérale de synchronisation",
+      "resizer": {
+        "label": "Redimensionner le panneau d’activité de synchronisation",
+        "hint": "Faites glisser pour redimensionner le panneau d’activité de synchronisation"
+      }
     }
   },
   "SignIn": {

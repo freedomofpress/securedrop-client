@@ -4,26 +4,46 @@
       "exportTranscript": "Transkript exportieren",
       "printTranscript": "Transkript drucken",
       "exportSource": "Transkript und Dateien exportieren",
-      "clickToOpen": "Zum Öffnen bitte anklicken"
+      "clickToOpen": "Zum Öffnen bitte anklicken",
+      "ExportGroup": "Auf USB exportieren",
+      "WhistleflowExportGroup": "An Whistleflow senden",
+      "exportSourceToWhistleflow": "Transkript und Dateien senden",
+      "exportTranscriptToWhistleflow": "Transkript senden",
+      "deleteSource": "Quelle löschen",
+      "deleteConversation": "Dateien und Nachrichten löschen"
     },
     "conversation": {
       "sendButton": "Senden",
       "newMessagesDivider": "Neue Nachrichten",
-      "messagePlaceholder": "Nachricht {{designation}}..."
+      "messagePlaceholder": "Nachricht {{designation}}...",
+      "messageHistoryAriaLabel": "Chat-Nachrichten",
+      "messagePositionAriaLabel": "Nachricht {{index}} von {{total}}",
+      "replyPositionAriaLabel": "Antwort {{index}} von {{total}}"
     },
     "emptyState": "<bold>Wähle eine Quelle</bold> aus der Liste aus, um Nachrichten zu lesen, Dateien abzurufen oder Antworten zu senden.",
     "alreadyRunning": "Der SecureDrop-Posteingang ist bereits in Betrieb",
-    "messageFailed": "Die Entschlüsselung der Nachricht ist fehlgeschlagen",
+    "messageFailed": "Fehlerbehandlungsmeldung",
     "seenReplyTooltip": "Antwort von der Quelle gesehen und gelöscht",
     "pendingReplyTooltip": "Die Antwort steht noch aus und wird bei der nächsten Synchronisierung an die Quelle gesendet",
     "successReplyTooltip": "Antwort erfolgreich gesendet",
     "retryFetch": "Erneut versuchen",
     "itemEncrypted": "Die Nachricht ist verschlüsselt…",
     "lastSourceActivity": "Letzte Aktivität in der Quelle",
-    "emptyConversation": "",
+    "emptyConversation": "Alle Dateien und Nachrichten zu dieser Quelle wurden gelöscht.",
     "nonProduction": "WARNUNG: Nicht-Produktionsmodus",
     "you": "Du",
-    "unknown": "Unbekannt"
+    "unknown": "Unbekannt",
+    "itemFetching": "Nachricht wird abgerufen…",
+    "messageDownloadFailed": "Fehler beim Herunterladen der Nachricht",
+    "messageDecryptionFailed": "Die Entschlüsselung der Nachricht ist fehlgeschlagen",
+    "deleteMessage": "Nachricht löschen",
+    "deleteReply": "Antwort löschen",
+    "deleteItemModal": {
+      "title": "Eintrag löschen?",
+      "content": "Möchtest du diesen Eintrag wirklich löschen? Das Löschen kann nicht rückgängig gemacht werden und wirkt sich auf alle Benutzer aus.",
+      "cancel": "Abbrechen",
+      "delete": "Löschen"
+    }
   },
   "Sidebar": {
     "account": {
@@ -63,7 +83,12 @@
         "itemCountsHeader": "Folgende Elemente werden gelöscht:",
         "fileCount_one": "{{count}} Datei",
         "fileCount_other": "{{count}} Dateien",
-        "warning": "Wenn du das Konto einer Informationsquelle löschst, kann sich diese nicht mehr anmelden und dir keine Nachrichten mehr senden. Um in Zukunft mit dieser Informationsquelle zu kommunizieren, muss sie ein neues Konto erstellen."
+        "warning": "Wenn du das Konto einer Informationsquelle löschst, kann sich diese nicht mehr anmelden und dir keine Nachrichten mehr senden. Um in Zukunft mit dieser Informationsquelle zu kommunizieren, muss sie ein neues Konto erstellen.",
+        "allSourcesWarning": "Hinweis: Alle Quellen wurden ausgewählt!",
+        "all": {
+          "deleteAccountsButton": "Alle Quellen löschen",
+          "keepAccountsButton": "Alle Unterhaltungen löschen"
+        }
       },
       "filters": {
         "starred": "Markiert",
@@ -77,6 +102,15 @@
       },
       "actions": {
         "bulkDelete": "Ausgewählte Quellen löschen"
+      },
+      "selectAll": "Alle Quellen auswählen",
+      "counts": {
+        "total_one": "Insgesamt {{count}} Quelle",
+        "total_other": "Insgesamt {{count}} Quellen",
+        "visible_one": "Insgesamt {{count}} sichtbar",
+        "visible_other": "Insgesamt {{count}} sichtbar",
+        "selected_one": "Insgesamt {{count}} ausgewählt",
+        "selected_other": "Insgesamt {{count}} ausgewählt"
       }
     },
     "shortcuts": {
@@ -104,7 +138,8 @@
     "source": {
       "encryptedMessage": "Verschlüsselte Nachricht",
       "toggleStar": "Markierung ändern",
-      "encryptedFile": "Verschlüsselte Datei"
+      "encryptedFile": "Verschlüsselte Datei",
+      "selectSource": "Wähle {{designation}}"
     },
     "syncStatus": {
       "notloggedin": "Sync: Nicht angemeldet",
@@ -115,13 +150,29 @@
     "helpModals": {
       "aboutRepoTitle": "Quellcode",
       "keyboardTitle": "Tastenkombinationen",
-      "aboutCopyright": "© 2013–2026 Aaron Swartz, James Dolan, Freedom of the Press Foundation, und SecureDrop Mitwirkende.",
+      "aboutCopyright": "© 2013–2026 Aaron Swartz, James Dolan, Freedom of the Press Foundation, und SecureDrop Mitwirkende. Veröffentlicht unter der AGPL-3.0.",
       "aboutAppDesc": "Sichere Kommunikation für Journalisten und Informationsquellen",
       "aboutMoreContent": "https://securedrop.org/inbox",
       "aboutAppVersion": "Version",
       "aboutMoreTitle": "Weitere Informationen",
       "aboutAppTitle": "SecureDrop Posteingang",
       "aboutRepoContent": "https://github.com/freedomofpress/securedrop-client"
+    },
+    "resizer": {
+      "label": "Größe der Seitenleiste anpassen",
+      "hint": "Zum Ändern der Größe der Seitenleiste ziehen"
+    },
+    "syncSidebar": {
+      "status": {
+        "syncing": "Synchronisierung…",
+        "upToDate": "Alles erledigt",
+        "needsAttention": "Muss beachtet werden"
+      },
+      "body": "Platzhaltertext für die Synchronisierungs-Seitenleiste",
+      "resizer": {
+        "label": "Größe des Synchronisierungs-Aktivitätsfensters anpassen",
+        "hint": "Ziehe, um die Größe des Synchronisierungsaktivitätsfensters anzupassen"
+      }
     }
   },
   "SignIn": {
@@ -133,7 +184,9 @@
     "passphrase": {
       "label": "Passphrase",
       "invalidLength": "Diese Passphrase wird nicht funktionieren. Sie sollte zwischen 14 und 128 Zeichen lang sein.",
-      "required": "Bitte Passphrase eingeben."
+      "required": "Bitte Passphrase eingeben.",
+      "showPassphrase": "Passphrase anzeigen",
+      "hidePassphrase": "Passphrase verbergen"
     },
     "twoFactorCode": {
       "label": "Zwei-Faktor-Code",
@@ -233,7 +286,16 @@
     "pause": "Pause",
     "filenameTooltip": "Dateiname nach dem Herunterladen verfügbar",
     "downloadFailed": "Download fehlgeschlagen",
-    "resume": "Wiederaufnahme"
+    "resume": "Wiederaufnahme",
+    "downloadFile": "Datei herunterladen",
+    "filePositionAriaLabel": "Datei {{index}} von {{total}}",
+    "offlineFilenameTooltip": "Download im Offline-Modus deaktiviert. Dateiname nach dem Herunterladen verfügbar",
+    "fileActions": "Dateiaktionen",
+    "exportToWhistleflow": "In Whistleflow exportieren",
+    "deleteFile": "Eintrag löschen",
+    "doubleEncryptedBadge": "Quellenverschlüsselt",
+    "doubleEncryptedTooltip": "Diese Datei wurde vor dem Hochladen von der Quelle verschlüsselt",
+    "doubleEncryptedOtherKeyTooltip": "Diese Übermittlung wurde vor dem Hochladen von der Quelle verschlüsselt, wobei ein Schlüssel verwendet wurde, der nicht dem aktuellen Übermittlungsschlüssel entspricht (Fingerprint {{fingerprint}})"
   },
   "QuitModal": {
     "withDrafts": "Entwürfe von Antworten werden gelöscht.",
@@ -255,7 +317,7 @@
       "body": "Nachrichten und Dokumente, die dir über SecureDrop gesendet wurden, werden hier angezeigt. Die anfängliche Datensynchronisierung kann einige Minuten dauern.<br><br>Du kannst jederzeit <kbd>F1</kbd> drücken, um Hilfe zu erhalten. Bei weiteren Fragen wende dich bitte an deinen Systemadministrator oder kontaktiere den SecureDrop-Support über Signal. Dokumentation und Anleitungen für den Zugang zum Support findest du unter securedrop.org/inbox, auf das du auch von einem anderen Computer aus zugreifen kannst."
     },
     "migration": {
-      "body": "Die Anwendung wurde von Grund auf neu programmiert, um sie schneller zu machen und seit langem gewünschte Funktionen hinzuzufügen. Die anfängliche Datensynchronisierung kann einige Minuten dauern. Zuvor heruntergeladene Dateien müssen erneut heruntergeladen werden.<br><br>Solltest du auf ein Problem stoßen oder den ursprünglichen SecureDrop-Client verwenden möchten, kannst du für einen begrenzten Zeitraum über das Qubes-Menü ▸ ⚙️ darauf zugreifen ▸ Sonstiges ▸ SecureDrop-Client (Legacy). Wenn du zum alten Client zurückkehren musst, wende dich bitte über Signal an den SecureDrop-Support und teile uns die aufgetretenen Probleme mit, damit wir sie beheben können.<br><br>Du kannst jederzeit <kbd>F1</kbd> drücken, um Hilfe zu erhalten. Bei weiteren Fragen wende dich bitte an deinen Systemadministrator oder kontaktiere den SecureDrop-Support über Signal. Dokumentation und Anleitungen für den Support findest du unter securedrop.org/inbox, auf das du von einem anderen Computer aus zugreifen kannst.",
+      "body": "Die Anwendung wurde von Grund auf neu programmiert, um sie schneller zu machen und seit langem gewünschte Funktionen hinzuzufügen. Die anfängliche Datensynchronisierung kann einige Minuten dauern. Zuvor heruntergeladene Dateien müssen erneut heruntergeladen werden.<br><br>Du kannst jederzeit <kbd>F1</kbd> drücken, um Hilfe zu erhalten. Bei weiteren Fragen wende dich bitte an deinen Systemadministrator oder kontaktiere den SecureDrop-Support über Signal. Dokumentation und Anleitungen für den Support findest du unter securedrop.org/inbox, auf das du von einem anderen Computer aus zugreifen kannst.",
       "title": "Willkommen im neuen Posteingang von SecureDrop"
     }
   }
