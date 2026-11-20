@@ -103,7 +103,58 @@
         "upToDate": "All caught up",
         "needsAttention": "Needs attention"
       },
-      "body": "Sync sidebar placeholder text",
+      "empty": "Nothing waiting to sync",
+      "section": {
+        "downloads": "Downloading",
+        "pending": "Pending",
+        "expand": "Show {{section}}",
+        "collapse": "Hide {{section}}"
+      },
+      "unknownSource": "Unknown source",
+      "encryptedFile": "Encrypted file",
+      "download": {
+        "open": "Open",
+        "openLabel": "Open {{filename}}",
+        "percent": "{{percent}}%",
+        "percentLabel": "{{percent}}% downloaded"
+      },
+      "downloadStatus": {
+        "queued": "Queued",
+        "downloading": "Downloading",
+        "decrypting": "Decrypting",
+        "stopped": "Stopped",
+        "needsAttention": "Needs attention"
+      },
+      "eventStatus": {
+        "queued": "Queued",
+        "sending": "Sending",
+        "needsAttention": "Needs attention",
+        "done": "Done"
+      },
+      "eventType": {
+        "reply_sent": "Reply",
+        "item_deleted": "Delete Item",
+        "source_deleted": "Delete Account",
+        "source_conversation_truncated": "Delete Conversation",
+        "source_starred": "Star",
+        "source_unstarred": "Unstar",
+        "source_conversation_seen": "Mark as Seen",
+        "undefined": "Unknown Change"
+      },
+      "attention": {
+        "summary": "{{action}} → {{target}} {{reason}}",
+        "heading": "Needs attention"
+      },
+      "attentionReason": {
+        "badRequest": "rejected by the server",
+        "notFound": "no longer exists",
+        "conflict": "conflicts with a newer change",
+        "notImplemented": "unsupported by the server",
+        "eventFailed": "failed to send",
+        "downloadRetrying": "download failed, retrying",
+        "decryptionRetrying": "decryption failed, retrying",
+        "downloadFailed": "download failed"
+      },
       "resizer": {
         "label": "Resize sync activity panel",
         "hint": "Drag to resize the sync activity panel"

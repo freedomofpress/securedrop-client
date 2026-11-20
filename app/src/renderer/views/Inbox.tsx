@@ -120,11 +120,19 @@ function InboxView() {
       window.electronAPI.onPendingEventsInFlight((eventIds: string[]) => {
         dispatch(setEventsInFlight(eventIds));
       });
+    // A queued event can be flushed before the next sync finishes, so refresh
+    // as soon as one is written rather than waiting for sync-complete
+    const unsubscribeEventsChanged = window.electronAPI.onPendingEventsChanged(
+      () => {
+        dispatch(fetchSyncActivity());
+      },
+    );
     return () => {
       unsubscribeItem();
       unsubscribeSource();
       unsubscribeSync();
       unsubscribeEventsInFlight();
+      unsubscribeEventsChanged();
     };
   }, [dispatch]);
 

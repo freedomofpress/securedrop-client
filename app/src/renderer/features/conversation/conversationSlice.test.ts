@@ -240,6 +240,7 @@ describe("conversationSlice", () => {
         completedEvents: [],
         pendingEvents: [],
         inFlightEventIds: [],
+        submittedEventIds: [],
         loading: false,
         error: null,
       },

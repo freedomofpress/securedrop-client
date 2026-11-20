@@ -1,5 +1,11 @@
-import { screen, fireEvent, cleanup } from "@testing-library/react";
-import { expect, describe, it, beforeEach, afterEach } from "vitest";
+import {
+  screen,
+  fireEvent,
+  cleanup,
+  act,
+  waitFor,
+} from "@testing-library/react";
+import { expect, describe, it, beforeEach, afterEach, vi } from "vitest";
 import { renderWithProviders } from "../test-component-setup";
 import i18n from "../i18n";
 import { PSEUDO_RTL_LANGUAGE } from "../locales";
@@ -96,6 +102,34 @@ describe("InboxView Component", () => {
         fireEvent.keyDown(separator, { key: "ArrowRight" });
         expect(sidebarWidth()).toBe(`${SIDEBAR_DEFAULT_WIDTH}px`);
       });
+    });
+  });
+
+  describe("sync activity", () => {
+    it("re-reads the activity snapshot when a pending event is written", async () => {
+      renderWithProviders(<InboxView />);
+      const api = window.electronAPI;
+
+      await waitFor(() => expect(api.getSyncActivity).toHaveBeenCalledTimes(1));
+
+      // A write in the main process announces itself; without this the queue
+      // would stay invisible until the next sync finished.
+      const notify = vi.mocked(api.onPendingEventsChanged).mock.calls[0][0];
+      await act(async () => notify());
+
+      await waitFor(() => expect(api.getSyncActivity).toHaveBeenCalledTimes(2));
+    });
+
+    it("stops listening once the inbox goes away", () => {
+      const unsubscribe = vi.fn();
+      vi.mocked(window.electronAPI.onPendingEventsChanged).mockReturnValue(
+        unsubscribe,
+      );
+
+      const { unmount } = renderWithProviders(<InboxView />);
+      unmount();
+
+      expect(unsubscribe).toHaveBeenCalled();
     });
   });
 });

@@ -650,6 +650,16 @@ if (!gotTheLock) {
         }
       }
 
+      // A queued event is usually flushed within a sync or two, so the sidebar
+      // would miss it entirely if it only refreshed on sync completion. Tell
+      // the renderer to re-read the activity snapshot as soon as one is
+      // written. Seen events are left out: the sidebar never shows them.
+      function notifyPendingEventsChanged(): void {
+        if (!mainWindow.isDestroyed()) {
+          mainWindow.webContents.send("pending-events-changed");
+        }
+      }
+
       ipcMain.handle(
         "addPendingSourceEvent",
         async (
@@ -659,7 +669,11 @@ if (!gotTheLock) {
           data?: PendingEventData,
         ): Promise<string | null> => {
           await sourceEventCleanup(sourceUuid, type, data);
-          return db.addPendingSourceEvent(sourceUuid, type, data);
+          const id = db.addPendingSourceEvent(sourceUuid, type, data);
+          if (id !== null) {
+            notifyPendingEventsChanged();
+          }
+          return id;
         },
       );
 
@@ -682,7 +696,11 @@ if (!gotTheLock) {
               ),
             );
           }
-          return db.addPendingSourceEventBatch(events);
+          const ids = db.addPendingSourceEventBatch(events);
+          if (ids.some((id) => id !== null)) {
+            notifyPendingEventsChanged();
+          }
+          return ids;
         },
       );
 
@@ -694,11 +712,13 @@ if (!gotTheLock) {
           sourceUuid: string,
           interactionCount: number,
         ): Promise<string> => {
-          return db.addPendingReplySentEvent(
+          const id = db.addPendingReplySentEvent(
             text,
             sourceUuid,
             interactionCount,
           );
+          notifyPendingEventsChanged();
+          return id;
         },
       );
 
@@ -715,7 +735,11 @@ if (!gotTheLock) {
               db.deleteItemFs(item);
             }
           }
-          return db.addPendingItemEvent(itemUuid, type);
+          const id = db.addPendingItemEvent(itemUuid, type);
+          if (id !== null) {
+            notifyPendingEventsChanged();
+          }
+          return id;
         },
       );
 
