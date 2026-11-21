@@ -98,7 +98,7 @@
     "@electron-toolkit/utils": "^4.0.0",
     "@sapphire/snowflake": "^3.5.5",
     "better-queue": "^3.8.12",
-    "better-sqlite3": "~13.0.3",
+    "better-sqlite3": "~13.2.0",
     "blakejs": "^1.2.1",
     "dbmate": "^2.29.3",
     "liquidjs": "^10.28.0",
