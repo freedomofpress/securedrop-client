@@ -748,7 +748,9 @@ if (!gotTheLock) {
 
       ipcMain.handle("clearClipboard", async (_event): Promise<void> => {
         clipboard.clear();
-        clipboard.clear("selection");
+        if (clipboard.selection) {
+          clipboard.selection.clear();
+        }
         return;
       });
 
