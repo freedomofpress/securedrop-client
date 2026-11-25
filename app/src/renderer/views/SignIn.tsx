@@ -124,7 +124,7 @@ function SignInView() {
         );
 
         // Clear the clipboard in case they pasted their password
-        window.electronAPI.clearClipboard();
+        await window.electronAPI.clearClipboard();
 
         // Redirect to home
         navigate("/");
